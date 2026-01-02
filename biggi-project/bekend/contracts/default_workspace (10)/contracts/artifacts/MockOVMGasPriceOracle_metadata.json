@@ -1,0 +1,84 @@
+{
+	"compiler": {
+		"version": "0.8.24+commit.e11b9ed9"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "bytes",
+						"name": "",
+						"type": "bytes"
+					}
+				],
+				"name": "getL1Fee",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "pure",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"name": "getL1FeeUpperBound",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "pure",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/MockOVMGasPriceOracle.sol": "MockOVMGasPriceOracle"
+		},
+		"evmVersion": "shanghai",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/MockOVMGasPriceOracle.sol": {
+			"keccak256": "0xf5ab5cdbab7056ca5bd0776cb452b631993c24baf6bf9e9e44c50c1d61a0c85e",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://e90ef4609156dba243c213af88051f2f1338f40c229eccb5a0ff4e4aff8ca001",
+				"dweb:/ipfs/QmYFk9fxyPsZ3bD8A5UbAFePed5WsNzp4qmKud1Qce1Hes"
+			]
+		}
+	},
+	"version": 1
+}

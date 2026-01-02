@@ -1,0 +1,26 @@
+.buyback-flow {
+  border-radius: 16px;
+  border: 1px solid #13182a;
+  background: #040914;
+  padding: 18px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.buyback-flow__header h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.buyback-flow__header p {
+  margin: 0 0 12px;
+  color: #7686a5;
+  font-size: 0.85rem;
+}
+
+.buyback-flow__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

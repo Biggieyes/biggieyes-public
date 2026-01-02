@@ -1,0 +1,511 @@
+[
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "token_",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "router_",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "pair_",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "distributor_",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "buyback_",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "reserve_",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "lm_",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "vault_",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "dripDistributor_",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "tokenRewards_",
+				"type": "address"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"inputs": [],
+		"name": "BUYBACK",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "DISTRIBUTOR",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "DRIP_DISTRIBUTOR",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getFullStatus",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "token",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "weth",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "router",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "pair",
+						"type": "address"
+					},
+					{
+						"internalType": "uint112",
+						"name": "reserveNative",
+						"type": "uint112"
+					},
+					{
+						"internalType": "uint112",
+						"name": "reserveBiggi",
+						"type": "uint112"
+					},
+					{
+						"internalType": "uint256",
+						"name": "lpTotalSupply",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "biggiPerNative",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "nativePerBiggi",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct BiggiTokenomikReader.CoreStatus",
+				"name": "core",
+				"type": "tuple"
+			},
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "distributor",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "totalReceived",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "pendingBuyback",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "collectionRewards",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "reserve",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "buybackAgent",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "treasury",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "communityCenter",
+						"type": "address"
+					}
+				],
+				"internalType": "struct BiggiTokenomikReader.DistributorStatus",
+				"name": "dist",
+				"type": "tuple"
+			},
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "buybackAgent",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "nativeBalance",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "biggiBalance",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "totalNativeReceived",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "totalNativeSpent",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "totalBiggiAcquired",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "autoBuybackEnabled",
+						"type": "bool"
+					},
+					{
+						"internalType": "bool",
+						"name": "paused",
+						"type": "bool"
+					},
+					{
+						"internalType": "uint256",
+						"name": "lastBuybackAt",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "router",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "wrappedNative",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "treasury",
+						"type": "address"
+					}
+				],
+				"internalType": "struct BiggiTokenomikReader.BuybackStatus",
+				"name": "buy",
+				"type": "tuple"
+			},
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "reserve",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "maticBalance",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "waitingBiggi",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "dexRefillBiggi",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "liquidityManager",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "keeper",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "liquidityVault",
+						"type": "address"
+					},
+					{
+						"internalType": "bool",
+						"name": "pairWhitelisted",
+						"type": "bool"
+					},
+					{
+						"internalType": "uint256",
+						"name": "lpBalanceInVault",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct BiggiTokenomikReader.ReserveStatus",
+				"name": "res",
+				"type": "tuple"
+			},
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "dripDistributor",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "availableTokens",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "totalTopUp",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "totalClaimed",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "totalNotified",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "tokensPerMint",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "dripLM",
+						"type": "address"
+					}
+				],
+				"internalType": "struct BiggiTokenomikReader.DripStatus",
+				"name": "drip",
+				"type": "tuple"
+			},
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "tokenRewards",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "rewardsCap",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "rewardsMinted",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "balance",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "unitReward",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint8[11]",
+						"name": "blockWeights",
+						"type": "uint8[11]"
+					},
+					{
+						"internalType": "address",
+						"name": "token",
+						"type": "address"
+					}
+				],
+				"internalType": "struct BiggiTokenomikReader.TokenRewardsStatus",
+				"name": "tr",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "LIQUIDITY_MANAGER",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "LIQUIDITY_VAULT",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "PAIR",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "RESERVE",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "ROUTER",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "TOKEN",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "TOKEN_REWARDS",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "WETH",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]

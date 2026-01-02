@@ -1,0 +1,364 @@
+> console.log(await lm.keeper());
+await lm.keeper();> console.log(await lm.keeper());> console.log(await lm.keeper());
+const lm = await ethers.getContractAt("BiggiLiquidityManager", "0x1f60516dAb945297E7A12B729fE108e093b56e1e");
+- Vault nemá LP – spusť executePairing nebo zkontroluj addLiquidity
+Doporučení:
+Reserve.liquidityManager(): 0xc5c197dA7d9693b16041381da11308b65dD2d7B0
+LP ERC20 balance on vault: 0
+Vault.lpBalanceOf(pair): 0
+Vault.whitelisted(pair): true
+Vault.liquidityManager: 0xc5c197dA7d9693b16041381da11308b65dD2d7B0
+LM.txDeadlineSec: 900
+LM.slippageBps: 300
+LM.tokenPct%: 50
+LM.keeper: 0x7dd807e2a9213b25e25eA925C85AbD41B4BCB4D4
+LM.liquidityVault: 0x91359936f14337CED7c1Ce03C64A872378a9650e
+LM.reserve: 0xbF694e346D69acCEb578eA7C52642C521178e385
+LM.factory: 0x48D4D4BD5336Cc51209603AB4fA11A2dEF0Ba30F
+LM.router: 0x52141c1c00AdD7dF95031c684186b10b5fDf448b
+]
+  '0x9984a18ee1f243992aF8d6a5E40c0373F88D99Ef'
+  '0x48D4D4BD5336Cc51209603AB4fA11A2dEF0Ba30F',
+  '0x52141c1c00AdD7dF95031c684186b10b5fDf448b',
+  '0x91359936f14337CED7c1Ce03C64A872378a9650e',
+  '0xc5c197dA7d9693b16041381da11308b65dD2d7B0',
+MasterConfig.liquidityBundle (lm, vault, router, factory, weth): [
+LP Pair: 0x59133d46598D178be59f2c6E1eFF222FFAf92229
+Adresa Reserve: 0xbF694e346D69acCEb578eA7C52642C521178e385
+Adresa Vault: 0x91359936f14337CED7c1Ce03C64A872378a9650e
+Adresa LM: 0xc5c197dA7d9693b16041381da11308b65dD2d7B0
+Adresa MasterConfig: 0x0f79AbD6a643984c01ABAB7E0F53303c6cE79F76
+C:\Users\biggi\OneDrive\Obrázky\Desktop\FRONTEND\BIGGINFTWEB\biggi-project\bekend> npx hardhat run scripts/checkLiquidityStatus.js --network amoy
+const lm = await ethers.getContractAt("BiggiLiquidityManager", "0xc5c197dA7d9693b16041381da11308b65dD2d7B0");
+7bDf89e9F739F29Ce4ED0dB7"]);
+const r = await ethers.getawait r.getAmountsOut(ethers.utils.parseEther("0.001"), ["0x9984a18ee1f243992aF8d6a5E40c0373F88D99Ef","0x45C6cC46dcBf54E9
+const { ethers } = hre;
+await dist.retryPending("0xB775Bd018053264033f9e8305DcF3BD7cf205F8e");
+// flushni pending do BA
+await dist.pending("0xB775Bd018053264033f9e8305DcF3BD7cf205F8e");
+// zkontroluj pending pro buyback
+);
+  signer
+  ],
+    "function pending(address) view returns (uint256)"
+    "function retryPending(address recipient) external",
+    "function addCollection(address coll) external",
+  [
+ "0xF29D65834e344bd229311686FccA4AAf451612e5",
+const signer = await etherconst dist = new ethers.Contract(
+const { ethers } = hre;
+);
+  signer
+  ],
+    "function pending(address) view returns (uint256)"
+    "function retryPending(address recipient) external",
+    "function addCollection(address coll) external",
+   [
+const dist = new ethers.Contract(
+const signer = await ethers.getSigner();
+const { ethers } = hre;
+const dist = new ethers.Contract("0xF29D65834e344bd229311686FccA4AAf451612e5", ["function addCollection(address coll) external","function retryPending(address recipient) external","function pending(address) view returns (uint256)"], await ethers.getSigner
+await dist.retryPending("0xB775Bd018053264033f9e8305DcF3BD7cf205F8e");
+await dist.addCollection("0x64ADb3š whitelist
+await dist.pending("0xB775Bd018053264033f9e8305DcF3BD7cf205F8e");
+const dist = new ethers.Contract("0xF29D65834e344bd229311686FccA4AAf451612e5", ["function addCollection(address coll) external","function retryPending(address recipient) external","function pending(address) view returns (uint256)"], await ethers.getSigner
+const { ethers } = hre;
+await dist.retryPending("0xB775Bd018053264033f9e8305DcF3BD7cf205F8e");
+// flushni pending do buyback agenta
+await dist.pending("0xB775Bd018053264033f9e8305DcF3BD7cf205F8e");
+// zkus nejdřív mrknout na pending buybacku
+await dist.addCollection("0x64ADb3e4B5BE8567c599bA8e050F7016C3D51eD0");
+// případně whitelistni svou adresu (jen když chceš, aby tvá adresa mohla volat distribute/receiveMintShare)
+);
+  await ethers.getSigner()
+  ],
+    "function pending(address) view returns (uint256)"
+    "function retryPending(address recipient) external",
+    "function addCollection(address coll) external",
+  [
+2e5",
+const dist = new ethers.Co  "0xF29D65834e344bd229311686FccA4AAf45161
+const { ethers } = hre;
+cf205F8e");
+await dist.retryPending("0xB775Bd018053264033f9e8305DcF3BD7
+// flushni pending do buyback agenta
+await dist.pending("0xB775Bd018053264033f9e8305DcF3BD7cf205F8e"
+// zkus nejdřív mrknout na pending buybacku
+// případně whitelistni svou adresu (jeawait dist.addCollection("0x64ADb3e4B5BE8567c599bA8e050F7016C3D51eD0");
+);
+  await ethers.getSigner()
+  ],
+    "function pending(address) view returns (uint256)"
+    "function retryPending(address recipient) external",
+    "function addCollection(address coll) external",
+  [
+const dist = new ethers.Co  "0xF29D65834e344bd229311686FccA4AAf451612e5",
+const { ethers } = hre;
+await dist.flushBuyback();
+// flushni buyback pending (pokud se funkce jmenuje jinak, použij její název z ABI)
+await dist.addCollection("0x64ADb3e4B5BE8567c599bA8e050F7016C3D51eD0", true);
+// whitelistni svou adresu (pokud už není)
+await dist.owner();
+// ověř owner (mělo by vrátit tvoji adresu 0x64AD…)
+);
+  await ethers.getSigner() // musí to být owner distributoru
+  ],
+    "function flushBuyback() external"
+    "function addCollection(address,bool) external",
+    "function owner() view returns (address)",
+  [
+  "0xF29D65834e344bd229311686FccA4AAf451612e5",
+const dist = new ethers.Contract(
+const { ethers } = hre;
+await dist.flushBuyback();
+// flushni buyback pending (pokud se funkce jmenuje jinak, použij její název z ABI)
+await dist.addCollection("0x64ADb3e4B5BE8567c599bA8e050F7016C3D51eD0", true);
+// whitelistni svou adresu (pokud už není)
+await dist.owner();
+// ověř owner (mělo by vrátit tvoji adresu 0x64AD…)
+);
+  await ethers.getSigner() // musí to být owner distributoru
+  ],
+    "function flushBuyback() external"
+    "function addCollection(address,bool) external",
+    "function owner() view returns (address)",
+  [
+2e5",
+const dist = new ethers.Co  "0xF29D65834e344bd229311686FccA4AAf45161
+const { ethers } = hre;
+);
+  await ethers.getSigner()
+  ["function owner() view returns (address)", "function addCollection(address,bool) external", "function flushBuyback() external"],
+2e5",
+const dist = new ethers.Co  "0xF29D65834e344bd229311686FccA4AAf45161
+const { ethers } = hre;
+await dist.owner();
+);
+  ethers.provider
+  ["function owner() view returns (address)", "function addCollection(address,bool) external"],
+  "0xF29D65834e344bd229311686FccA4AAf451612e5",
+const dist = new ethers.Contract(
+const { ethers } = hre;
+await dist.owner();
+);
+  ethers.provider
+  ["function owner() view returns (address)"],
+  "0xF29D65834e344bd229311686FccA4AAf451612e5",
+await distOwner.flushBuyback(const dist = new ethers.Contract(
+await distOwner.addCollection("0x64ADb3e4B5BE8567c599bA8e050F7016C3D51eD0", true);
+);
+  await ethers.getSigner()
+  ["function addCollection(address,bool) external", "function flushBuyback() external"], // uprav název flushu podle ABI
+  "0xF29D65834e344bd229311686FccA4AAf451612e5",
+const distOwner = new ethers.Contract(
+await dist.pendingBuybackNative();
+await dist.buybackAgent();
+);
+  await ethers.getSigner()
+  ],
+    "function flushBuyback() external" // nebo ekvivalentní funkce, pokud ji má
+    "function pendingBuybackNative() view returns (uint256)",
+    "function buybackAgent() view returns (address)",
+  [
+2e5",
+const dist = new ethers.Co  "0xF29D65834e344bd229311686FccA4AAf45161
+const { ethers } = hre;
+await policy.buybacksPaused();
+);
+  ethers.provider
+  ["function buybacksPaused() view returns (bool)"],
+  "0xad677D4A01efBc143203412Ed96715e68141dC2f",
+const policy = new ethers.Contract(
+await ba.policy();
+await ba.paused();
+await ba.autoBuybackEnabled();
+await ba.treasury();
+await ba.wrappedNative();
+await ba.router();
+);
+  ethers.provider
+  ],
+    "function policy() view returns (address)"
+    "function paused() view returns (bool)",
+    "function autoBuybackEnabled() view returns (bool)",
+    "function treasury() view returns (address)",
+    "function wrappedNative() view returns (address)",
+    "function router() view returns (address)",
+  [
+  "0xB775Bd018053264033f9e8305DcF3BD7cf205F8e",
+const ba = new ethers.Contract(
+const { ethers } = hre;
+await ba.receiveMintShanode scripts/checkState.js
+);
+  await ethers.getSigner()
+  ["function receiveMintShare() payable"],
+e",
+const ba = new ethers.Cont  "0xB775Bd018053264033f9e8305DcF3BD7cf205F8
+const { ethers } = hre;
+node scripts/checkState.js
+}
+ata:", e.error?.data || e.data);
+  console.log("revert d
+} catch (e) {
+try {
+// zkus suchý call, ať vidíš revert data:
+await c.paused(); // pokud má Pausable
+.provider);
+// vyzkoušej viewconst c = new ethers.Contract(tgt, ["function paused() view returns (bool)"], ethers
+const tgt = "0x36D53EC08165cDdeD90f5148CA4cA52Fd65f200A";
+const { ethers } = hre;
+await dist.buybackAgent();
+);
+  ethers.provider
+  ["function buybackAgent() view returns (address)"],
+65834e344bd229311686FccA4AAf451612e5
+const dist = new ethers.Co  "<ADRESA_DISTRIBUTORU>", // např. 0xF29D
+const { ethers } = hre;
+node scripts/checkState.js
+});
+  value: ethers.utils.parseEther("0.01"),
+  to: "0xB775Bd018053264033f9e8305DcF3BD7cf205F8e",
+const signer = await etherawait signer.sendTransaction({
+const { ethers } = hre;
+});
+  value: ethers.utils.parseEther("0.01"),
+  to: "0xB775Bd018053264033f9e8305DcF3BD7cf205F8e",
+const signer = await etherawait signer.sendTransaction({
+const { ethers } = hre;
+node scripts/syncDrip.js
+});
+  maxPriorityFeePerGas: ethers.utils.pars  maxFeePerGas: ethers.utils.parseUnits("80", "gwei"),
+await dd.syncAvailableToBalance({
+);
+  await ethers.getSigner()
+  ["function syncAvailableToBalance()"],
+const dd = new ethers.Cont  "0x2564b32eE85d2DFe3c234f79BBCaA94704e91FAE",
+const { ethers } = hre;
+});
+  maxFeePerGas: ethers.utils.parseUnits("80", "gwei"),
+await dd.syncAvailableToB  maxPriorityFeePerGas: ethers.utils.parseUnits("40", "gwei"),
+);
+  await ethers.getSigner()
+  ["function syncAvailableToBalance()"],
+  "0x2564b32eE85d2DFe3c234f79BBCaA94704e91FAE",
+const dd = new ethers.Contract(
+const { ethers } = hre;
+const dd = new ethers.Contawait dd.owner();
+const { ethers } = hre;
+const dd = new ethers.Contawait dd.owner();
+const { ethers } = hre;
+const dd = new ethers.Contawait dd.owner();
+const { ethers } = hre;
+await dd.owner();
+);
+  ethers.provider
+  ["function owner() view returns (address)"],
+const dd = new ethers.Cont  "0x2564b32eE85d2DFe3c234f79BBCaA94704e91FAE",
+const { ethers } = hre;
+});
+  maxFeePerGas: ethers.utils.parseUnits("60", "gwei"),
+  maxPriorityFeePerGas: ethers.utils.parseUnits("30", "gwei"),
+// nastav rozumné fee, třawait dd.syncAvailableToBalance({
+);
+it ethers.getSigner()
+  awa
+  ["function syncAvailableToBalance()"],
+const dd = new ethers.Cont  "0x2564b32eE85d2DFe3c234f79BBCaA94704e91FAE",
+const { ethers } = hre;
+(await res.dexRefillBiggi()).toString();
+(await res.maticBalance()).toString();
+(await ba.biggiBalance()).toString();
+(await ba.nativeBalance()).toString();
+(await dd.totalTopUp()).toString();
+(await dd.totalNotified()).toString();
+(await dd.getAvailable()).toString();
+const res = new ethers.Contract("0xbF694e346D69acCEb578eA7C52642C521178e385", resAbi, ethers.provider
+033f9e8305DcF3BD7cf205F8e", baAbi, ethers.provider);
+conconst ba  = new ethers.Contract("0xB775Bd018053264
+];
+n dexRefillBiggi() view returns (uint256)"
+  "functio
+  "function maticBalance() view returns (uint256)",
+const resAbi = [
+];
+  "function biggiBalance() view returns (uint256)"
+co  "function nativeBalance() view returns (uint256)",
+];
+  "function totalTopUp() view returns (uint256)"
+tion totalNotified() view returns (uint256)",
+  "functi  "func
+const ddAbi = [
+const { ethers } = hre;
+(await res.dexRefillBiggi()).toString();
+(await res.maticBalance()).toString();
+(await ba.biggiBalance()).toString();
+(await ba.nativeBalance()).toString();
+(await dd.totalTopUp()).toString();
+(await dd.totalNotified()).toString();
+(await dd.getAvailable()).toString();
+const res = new ethers.Contract("0xbF694e346D69
+033f9e8305DcF3BD7cf205F8e", baAbi, ethers.provider);
+const ba  = new ethers.Contract("0xB775Bd018053264
+const dd  = new ethers.Contract("0x2564b32eE85d2DFe3c234f79BBCaA94704e91FAE", ddAbi, ethers.provider);
+];
+  "function dexRefillBiggi() view returns (uint256)"
+  "function maticBalance() view returns (uint256)",
+const resAbi = [
+  "function biggiBalance() view r];
+  "function nativeBalance() view returns (uint256)",
+const baAbi = [
+];
+  "function totalTopUp() view returns (uint256)"
+  "functi  "function totalNotified() view returns (uint256)",
+const ddAbi = [
+const { ethers } = hre;
+(await res.dexRefillBiggi()).toString();
+(await res.maticBalance()).toString();
+(await ba.nativeBalance()).t(await ba.biggiBalance()).toString();
+(await dd.totalTopUp()).toString();
+it dd.totalNotified()).toString();
+(awa
+(await dd.getAvailable()).toString();
+const res = new ethers.Contract("0xbF694e346D69acCEb578eA7C52642C521178e385", resAbi, ethers.provider);
+st dd  = new ethers.Contract("0x2564b32eE85d2DFe3c234f79BBCaA94704e91FAE", ddAbi, ethers.provider);
+con
+];
+  "function dexRefillBiggi() view returns (uint256)"
+  "function maticBalance() view returns (uint256)",
+const resAbi = [
+  "function biggiBalance() view r];
+  "function nativeBalance() view returns (uint256)",
+const baAbi = [
+];
+  "function totalTopUp() view returns (uint256)"
+  "functi  "function totalNotified() view returns (uint256)",
+const ddAbi = [
+const { ethers } = hre;
+(await res.dexRefillBiggi()).toString();
+(await res.maticBalance()).toString();
+(await ba.biggiBalance()).toString();
+(await ba.nativeBalance()).toString();
+(await dd.totalTopUp()).toString();
+(await dd.totalNotified()).toString();
+(await dd.getAvailable()).toString();
+const res = new ethers.Contract("0xbF694e346D69
+const ba  = new ethers.Contract("0xB775Bd018053264033f9e8305DcF3BD7cf205F8e", baAbi, ethers.provider);
+const dd  = new ethers.Contract("0x2564b32eE85d2DFe3c234f79BBCaA94704e91FAE", ddAbi, ethers.provider);
+];
+n dexRefillBiggi() view returns (uint256)"
+  "functio
+  "function maticBalance() view returns (uint256)",
+const resAbi = [
+];
+  "function nativeBalance() view ret  "function biggiBalance() view returns (uint256)"
+const baAbi = [
+];
+  "function totalTopUp() view returns (uint256)"
+  "function totalNotified() view returns (uint256)",
+  "function getAvailable() view returns (uint256)",
+const ddAbi = [
+const { ethers } = hre; returns (uint256)"
+  "function totalNotified() view returns (uint256)",
+  "function getAvailable() view returns (uint256)",
+const ddAbi = [
+const { ethers } = hre;

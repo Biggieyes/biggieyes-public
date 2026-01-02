@@ -1,0 +1,31 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  directory = "api"
+
+[dev]
+  command = "npm run dev"
+  targetPort = 5173
+  port = 8888
+
+[[redirects]]
+  from = "/api/nonce"
+  to = "/.netlify/functions/nonce"
+  status = 200
+
+[[redirects]]
+  from = "/api/message"
+  to = "/.netlify/functions/message"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin/editMessage"
+  to = "/.netlify/functions/admin-editMessage"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin/updateRules"
+  to = "/.netlify/functions/admin-updateRules"
+  status = 200

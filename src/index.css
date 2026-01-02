@@ -1,0 +1,219 @@
+:root {
+  --font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --line-height: 1.5;
+  --font-weight: 400;
+
+  --text-color: rgba(255, 255, 255, 0.87);
+  --bg-color: #242424;
+
+  --link-color: #646cff;
+  --link-hover: #535bf2;
+
+  --btn-bg: #1a1a1a;
+  --btn-hover: #646cff;
+  --btn-border-radius: 8px;
+
+  /* progress gradient */
+  --progress-start: rgba(255,122,0,0.95);
+  --progress-end: rgba(255,210,55,0.95);
+
+  color-scheme: light dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Box model a mobilní vykreslování */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+/* Tělo */
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100svh; /* fallback: 100vh */
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  overflow-x: hidden;
+  font-family: var(--font-family);
+  line-height: var(--line-height);
+  font-weight: var(--font-weight);
+}
+
+/* Kořen */
+#root {
+  min-height: inherit;
+  display: block;
+  padding: 0;
+}
+.full-bg { min-height: 100svh; }
+
+/* Odkazy */
+a {
+  font-weight: 500;
+  color: var(--link-color);
+  text-decoration: inherit;
+}
+a:hover { color: var(--link-hover); }
+
+/* Typografie */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.2;
+}
+h1 { font-size: clamp(2rem, 6vw, 3.2rem); }
+
+/* Buttony */
+button {
+  border-radius: var(--btn-border-radius);
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: var(--btn-bg);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: border-color 0.25s, background-color 0.25s;
+}
+button:hover { border-color: var(--btn-hover); }
+button:focus, button:focus-visible { outline: 4px auto -webkit-focus-ring-color; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Média */
+img, svg, canvas, video { max-width: 100%; height: auto; display: block; }
+
+/* Light mode */
+@media (prefers-color-scheme: light) {
+  :root {
+    --text-color: #213547;
+    --bg-color: #ffffff;
+    --link-hover: #747bff;
+    --btn-bg: #f9f9f9;
+  }
+}
+
+/* Malé obrazovky */
+@media (max-width: 700px) {
+  #root { padding: 12px; }
+  button { padding: 0.6em 1em; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* =========================
+   Loading overlay styles
+   =========================
+   Přidáno: viz komponenta LoadingOverlay (React).
+   Třídy:
+    - .loading-overlay  (full-screen dark backdrop)
+    - .loading-card     (středový tray)
+    - .progress-wrap    (track)
+    - .progress-bar     (animated fill)
+    - .percent .msg     (texty)
+*/
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+
+  /* jemný gradient, lehce průhledné */
+  background: linear-gradient(180deg, rgba(4,6,8,0.92), rgba(10,12,16,0.96));
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: opacity 280ms ease, visibility 280ms ease;
+  will-change: opacity;
+}
+
+.loading-card {
+  width: min(760px, 92vw);
+  max-width: 920px;
+  padding: 26px;
+  border-radius: 14px;
+  text-align: center;
+  color: var(--text-color);
+  box-shadow: 0 8px 30px rgba(2,6,12,0.6);
+  background: linear-gradient(180deg, rgba(18,18,18,0.92), rgba(30,30,30,0.88));
+  border: 1px solid rgba(255,255,255,0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+}
+
+/* Nadpis / logo text */
+.loading-card h1 {
+  font-size: clamp(1.15rem, 3vw, 1.5rem);
+  letter-spacing: 0.4px;
+  margin: 0;
+  font-weight: 700;
+}
+
+/* progress */
+.progress-wrap {
+  width: 100%;
+  height: 12px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 6px;
+  position: relative;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--progress-start), var(--progress-end));
+  transition: width 160ms linear;
+  border-radius: 999px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35), inset 0 -2px 8px rgba(255,255,255,0.02);
+  will-change: width;
+}
+
+/* procento a zpráva */
+.percent {
+  font-size: 20px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+.msg {
+  color: rgba(255,255,255,0.78);
+  font-size: 13px;
+  margin-top: 2px;
+  max-width: 88%;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+/* malé obrazovky: zmenšit tray a text */
+@media (max-width: 520px) {
+  .loading-card { padding: 18px; border-radius: 12px; gap: 10px; }
+  .progress-wrap { height: 10px; }
+  .percent { font-size: 18px; }
+  .loading-card h1 { font-size: 1.1rem; }
+}
+
+/* drobné vizuální úpravy pro tmavý/light mód */
+@media (prefers-color-scheme: light) {
+  .loading-overlay { background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(250,250,250,0.96)); }
+  .loading-card { background: linear-gradient(180deg, #ffffff, #f8f9fb); color: #102030; border: 1px solid rgba(16,32,48,0.04); }
+  .progress-wrap { background: rgba(16,32,48,0.05); }
+}
+
+/* small helper: visually-hidden for accessibility if needed */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}

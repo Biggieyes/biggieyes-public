@@ -1,0 +1,226 @@
+{
+	"id": "9e213d0bd2d26ac41c910ef6989e9cde",
+	"_format": "hh-sol-build-info-1",
+	"solcVersion": "0.8.24",
+	"solcLongVersion": "0.8.24+commit.e11b9ed9",
+	"input": {
+		"language": "Solidity",
+		"sources": {
+			"contracts/IVRFCoordinatorV2PlusMigration.sol": {
+				"content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.24;\n\n// Future versions of VRFCoordinatorV2Plus must implement IVRFCoordinatorV2PlusMigration\n// to support migrations from previous versions\ninterface IVRFCoordinatorV2PlusMigration {\n  /**\n   * @notice called by older versions of coordinator for migration.\n   * @notice only callable by older versions of coordinator\n   * @notice supports transfer of native currency\n   * @param encodedData - user data from older version of coordinator\n   */\n  function onMigration(bytes calldata encodedData) external payable;\n}\n"
+			}
+		},
+		"settings": {
+			"optimizer": {
+				"enabled": true,
+				"runs": 200
+			},
+			"outputSelection": {
+				"*": {
+					"": [
+						"ast"
+					],
+					"*": [
+						"abi",
+						"metadata",
+						"devdoc",
+						"userdoc",
+						"storageLayout",
+						"evm.legacyAssembly",
+						"evm.bytecode",
+						"evm.deployedBytecode",
+						"evm.methodIdentifiers",
+						"evm.gasEstimates",
+						"evm.assembly"
+					]
+				}
+			},
+			"remappings": []
+		}
+	},
+	"output": {
+		"contracts": {
+			"contracts/IVRFCoordinatorV2PlusMigration.sol": {
+				"IVRFCoordinatorV2PlusMigration": {
+					"abi": [
+						{
+							"inputs": [
+								{
+									"internalType": "bytes",
+									"name": "encodedData",
+									"type": "bytes"
+								}
+							],
+							"name": "onMigration",
+							"outputs": [],
+							"stateMutability": "payable",
+							"type": "function"
+						}
+					],
+					"devdoc": {
+						"kind": "dev",
+						"methods": {
+							"onMigration(bytes)": {
+								"params": {
+									"encodedData": "- user data from older version of coordinator"
+								}
+							}
+						},
+						"version": 1
+					},
+					"evm": {
+						"assembly": "",
+						"bytecode": {
+							"functionDebugData": {},
+							"generatedSources": [],
+							"linkReferences": {},
+							"object": "",
+							"opcodes": "",
+							"sourceMap": ""
+						},
+						"deployedBytecode": {
+							"functionDebugData": {},
+							"generatedSources": [],
+							"immutableReferences": {},
+							"linkReferences": {},
+							"object": "",
+							"opcodes": "",
+							"sourceMap": ""
+						},
+						"gasEstimates": null,
+						"legacyAssembly": null,
+						"methodIdentifiers": {
+							"onMigration(bytes)": "ce3f4719"
+						}
+					},
+					"metadata": "{\"compiler\":{\"version\":\"0.8.24+commit.e11b9ed9\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"encodedData\",\"type\":\"bytes\"}],\"name\":\"onMigration\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"onMigration(bytes)\":{\"params\":{\"encodedData\":\"- user data from older version of coordinator\"}}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"onMigration(bytes)\":{\"notice\":\"called by older versions of coordinator for migration.only callable by older versions of coordinatorsupports transfer of native currency\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/IVRFCoordinatorV2PlusMigration.sol\":\"IVRFCoordinatorV2PlusMigration\"},\"evmVersion\":\"shanghai\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"contracts/IVRFCoordinatorV2PlusMigration.sol\":{\"keccak256\":\"0x3d4d589540533109ba9a0ad91e83578d823bf72e83442b1d759ba48abf2a9cf6\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://dd8bd59c15b94901078e815c84caa224ef16a82a18cc7fa2de98591416b17218\",\"dweb:/ipfs/QmQtN4T2sRLAg1UikqLmPpi1YGDU7PbwouXzu3dqu9MyUr\"]}},\"version\":1}",
+					"storageLayout": {
+						"storage": [],
+						"types": null
+					},
+					"userdoc": {
+						"kind": "user",
+						"methods": {
+							"onMigration(bytes)": {
+								"notice": "called by older versions of coordinator for migration.only callable by older versions of coordinatorsupports transfer of native currency"
+							}
+						},
+						"version": 1
+					}
+				}
+			}
+		},
+		"sources": {
+			"contracts/IVRFCoordinatorV2PlusMigration.sol": {
+				"ast": {
+					"absolutePath": "contracts/IVRFCoordinatorV2PlusMigration.sol",
+					"exportedSymbols": {
+						"IVRFCoordinatorV2PlusMigration": [
+							8
+						]
+					},
+					"id": 9,
+					"license": "MIT",
+					"nodeType": "SourceUnit",
+					"nodes": [
+						{
+							"id": 1,
+							"literals": [
+								"solidity",
+								"^",
+								"0.8",
+								".24"
+							],
+							"nodeType": "PragmaDirective",
+							"src": "32:24:0"
+						},
+						{
+							"abstract": false,
+							"baseContracts": [],
+							"canonicalName": "IVRFCoordinatorV2PlusMigration",
+							"contractDependencies": [],
+							"contractKind": "interface",
+							"fullyImplemented": false,
+							"id": 8,
+							"linearizedBaseContracts": [
+								8
+							],
+							"name": "IVRFCoordinatorV2PlusMigration",
+							"nameLocation": "205:30:0",
+							"nodeType": "ContractDefinition",
+							"nodes": [
+								{
+									"documentation": {
+										"id": 2,
+										"nodeType": "StructuredDocumentation",
+										"src": "240:257:0",
+										"text": " @notice called by older versions of coordinator for migration.\n @notice only callable by older versions of coordinator\n @notice supports transfer of native currency\n @param encodedData - user data from older version of coordinator"
+									},
+									"functionSelector": "ce3f4719",
+									"id": 7,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "onMigration",
+									"nameLocation": "509:11:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 5,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 4,
+												"mutability": "mutable",
+												"name": "encodedData",
+												"nameLocation": "536:11:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 7,
+												"src": "521:26:0",
+												"stateVariable": false,
+												"storageLocation": "calldata",
+												"typeDescriptions": {
+													"typeIdentifier": "t_bytes_calldata_ptr",
+													"typeString": "bytes"
+												},
+												"typeName": {
+													"id": 3,
+													"name": "bytes",
+													"nodeType": "ElementaryTypeName",
+													"src": "521:5:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_bytes_storage_ptr",
+														"typeString": "bytes"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "520:28:0"
+									},
+									"returnParameters": {
+										"id": 6,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "565:0:0"
+									},
+									"scope": 8,
+									"src": "500:66:0",
+									"stateMutability": "payable",
+									"virtual": false,
+									"visibility": "external"
+								}
+							],
+							"scope": 9,
+							"src": "195:373:0",
+							"usedErrors": [],
+							"usedEvents": []
+						}
+					],
+					"src": "32:537:0"
+				},
+				"id": 0
+			}
+		}
+	}
+}

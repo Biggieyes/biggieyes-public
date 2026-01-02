@@ -1,0 +1,30 @@
+[
+  {
+    "inputs": [],
+    "name": "pumpBundle",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "_buybackAgent",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_dripLM",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_dripDistributor",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_policy",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

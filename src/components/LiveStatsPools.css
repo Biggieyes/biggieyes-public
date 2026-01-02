@@ -1,0 +1,114 @@
+:root {
+  --biggi-teal: #00c9c7;
+  --biggi-yellow: #ffd166;
+}
+
+.pools-card {
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: linear-gradient(180deg, rgba(3, 8, 20, 0.95), rgba(5, 8, 15, 0.9));
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.55), 0 0 60px rgba(255, 209, 102, 0.12);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pools-card__header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pools-card__body {
+  border-radius: 18px;
+  background: rgba(8, 12, 28, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px;
+  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.6), 0 0 16px rgba(0, 201, 199, 0.05);
+}
+
+.pools-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+.pools-table thead th {
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  font-size: 0.75rem;
+  padding: 10px;
+  font-weight: 800;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  position: sticky;
+  top: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.95));
+}
+
+.pools-table tbody td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.pools-table code {
+  font-family: "JetBrains Mono", "IBM Plex Mono", monospace;
+}
+
+@media (max-width: 640px) {
+  .pools-card {
+    padding: 14px;
+  }
+
+  .pools-card__body {
+    padding: 6px;
+  }
+
+  .pools-table thead th {
+    letter-spacing: 0.15em;
+  }
+}
+
+@media (max-width: 900px) {
+  .pools-card__body {
+    padding: 8px;
+  }
+
+  .pools-table {
+    display: block;
+    table-layout: auto !important;
+  }
+
+  .pools-table colgroup,
+  .pools-table thead {
+    display: none;
+  }
+
+  .pools-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .pools-table tbody tr {
+    display: grid;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .pools-table tbody td {
+    display: block;
+    width: 100% !important;
+    padding: 0 !important;
+    border-bottom: 0;
+    text-align: left !important;
+    white-space: normal !important;
+  }
+
+  .pools-table tbody td:last-child {
+    align-self: flex-start;
+  }
+}

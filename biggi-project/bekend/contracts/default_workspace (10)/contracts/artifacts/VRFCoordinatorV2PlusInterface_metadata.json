@@ -1,0 +1,133 @@
+{
+	"compiler": {
+		"version": "0.8.24+commit.e11b9ed9"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"name": "getConfig",
+				"outputs": [
+					{
+						"internalType": "uint16",
+						"name": "minimumRequestConfirmations",
+						"type": "uint16"
+					},
+					{
+						"internalType": "uint32",
+						"name": "maxGasLimit",
+						"type": "uint32"
+					},
+					{
+						"internalType": "uint32",
+						"name": "stalenessSeconds",
+						"type": "uint32"
+					},
+					{
+						"internalType": "uint256",
+						"name": "gasAfterPaymentCalculation",
+						"type": "uint256"
+					},
+					{
+						"internalType": "int256",
+						"name": "fallbackWeiPerUnitLink",
+						"type": "int256"
+					},
+					{
+						"internalType": "int256",
+						"name": "fallbackWeiPerUnitNative",
+						"type": "int256"
+					},
+					{
+						"internalType": "uint96",
+						"name": "feeConfig",
+						"type": "uint96"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "keyHash",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint16",
+						"name": "minimumRequestConfirmations",
+						"type": "uint16"
+					},
+					{
+						"internalType": "uint32",
+						"name": "callbackGasLimit",
+						"type": "uint32"
+					},
+					{
+						"internalType": "uint32",
+						"name": "numWords",
+						"type": "uint32"
+					},
+					{
+						"internalType": "address",
+						"name": "extraArgs",
+						"type": "address"
+					}
+				],
+				"name": "requestRandomWords",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "requestId",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/VRFCoordinatorV2PlusInterface.sol": "VRFCoordinatorV2PlusInterface"
+		},
+		"evmVersion": "shanghai",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/VRFCoordinatorV2PlusInterface.sol": {
+			"keccak256": "0x86e8be93448bb65f7b2a7ce9ff6b98dae1134d31674a00a31bb919ce28e9802c",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://dff221aad4da8c6d744179ca3ba60e9914c238532aecfe8e95deed20edb3de35",
+				"dweb:/ipfs/QmcLxgcZLiQhgt8hQXViqnBBFp2L2SKJsbxrBHXxBjge1w"
+			]
+		}
+	},
+	"version": 1
+}

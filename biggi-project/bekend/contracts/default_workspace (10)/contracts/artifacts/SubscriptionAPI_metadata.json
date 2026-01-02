@@ -1,0 +1,1091 @@
+{
+	"compiler": {
+		"version": "0.8.6+commit.11564f7e"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "internalBalance",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "externalBalance",
+						"type": "uint256"
+					}
+				],
+				"name": "BalanceInvariantViolated",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "FailedToSendNative",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "FailedToTransferLink",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "IndexOutOfRange",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "InsufficientBalance",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "InvalidCalldata",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "consumer",
+						"type": "address"
+					}
+				],
+				"name": "InvalidConsumer",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "InvalidSubscription",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "LinkAlreadySet",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "LinkNotSet",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "proposedOwner",
+						"type": "address"
+					}
+				],
+				"name": "MustBeRequestedOwner",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					}
+				],
+				"name": "MustBeSubOwner",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "OnlyCallableFromLink",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "PendingRequestExists",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "Reentrant",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "TooManyConsumers",
+				"type": "error"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "FundsRecovered",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "NativeFundsRecovered",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "from",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					}
+				],
+				"name": "OwnershipTransferRequested",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "from",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					}
+				],
+				"name": "OwnershipTransferred",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amountLink",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amountNative",
+						"type": "uint256"
+					}
+				],
+				"name": "SubscriptionCanceled",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "consumer",
+						"type": "address"
+					}
+				],
+				"name": "SubscriptionConsumerAdded",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "consumer",
+						"type": "address"
+					}
+				],
+				"name": "SubscriptionConsumerRemoved",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					}
+				],
+				"name": "SubscriptionCreated",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "oldBalance",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "newBalance",
+						"type": "uint256"
+					}
+				],
+				"name": "SubscriptionFunded",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "oldNativeBalance",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "newNativeBalance",
+						"type": "uint256"
+					}
+				],
+				"name": "SubscriptionFundedWithNative",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "from",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					}
+				],
+				"name": "SubscriptionOwnerTransferRequested",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "from",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					}
+				],
+				"name": "SubscriptionOwnerTransferred",
+				"type": "event"
+			},
+			{
+				"inputs": [],
+				"name": "LINK",
+				"outputs": [
+					{
+						"internalType": "contract LinkTokenInterface",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "LINK_NATIVE_FEED",
+				"outputs": [
+					{
+						"internalType": "contract AggregatorV3Interface",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "MAX_CONSUMERS",
+				"outputs": [
+					{
+						"internalType": "uint16",
+						"name": "",
+						"type": "uint16"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "acceptOwnership",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					}
+				],
+				"name": "acceptSubscriptionOwnerTransfer",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "consumer",
+						"type": "address"
+					}
+				],
+				"name": "addConsumer",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					}
+				],
+				"name": "cancelSubscription",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "createSubscription",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					}
+				],
+				"name": "fundSubscriptionWithNative",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "startIndex",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "maxCount",
+						"type": "uint256"
+					}
+				],
+				"name": "getActiveSubscriptionIds",
+				"outputs": [
+					{
+						"internalType": "uint256[]",
+						"name": "ids",
+						"type": "uint256[]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					}
+				],
+				"name": "getSubscription",
+				"outputs": [
+					{
+						"internalType": "uint96",
+						"name": "balance",
+						"type": "uint96"
+					},
+					{
+						"internalType": "uint96",
+						"name": "nativeBalance",
+						"type": "uint96"
+					},
+					{
+						"internalType": "uint64",
+						"name": "reqCount",
+						"type": "uint64"
+					},
+					{
+						"internalType": "address",
+						"name": "subOwner",
+						"type": "address"
+					},
+					{
+						"internalType": "address[]",
+						"name": "consumers",
+						"type": "address[]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bytes",
+						"name": "data",
+						"type": "bytes"
+					}
+				],
+				"name": "onTokenTransfer",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "owner",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					}
+				],
+				"name": "ownerCancelSubscription",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					}
+				],
+				"name": "pendingRequestExists",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					}
+				],
+				"name": "recoverFunds",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "to",
+						"type": "address"
+					}
+				],
+				"name": "recoverNativeFunds",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "consumer",
+						"type": "address"
+					}
+				],
+				"name": "removeConsumer",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "subId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "newOwner",
+						"type": "address"
+					}
+				],
+				"name": "requestSubscriptionOwnerTransfer",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "s_config",
+				"outputs": [
+					{
+						"internalType": "uint16",
+						"name": "minimumRequestConfirmations",
+						"type": "uint16"
+					},
+					{
+						"internalType": "uint32",
+						"name": "maxGasLimit",
+						"type": "uint32"
+					},
+					{
+						"internalType": "bool",
+						"name": "reentrancyLock",
+						"type": "bool"
+					},
+					{
+						"internalType": "uint32",
+						"name": "stalenessSeconds",
+						"type": "uint32"
+					},
+					{
+						"internalType": "uint32",
+						"name": "gasAfterPaymentCalculation",
+						"type": "uint32"
+					},
+					{
+						"internalType": "uint32",
+						"name": "fulfillmentFlatFeeNativePPM",
+						"type": "uint32"
+					},
+					{
+						"internalType": "uint32",
+						"name": "fulfillmentFlatFeeLinkDiscountPPM",
+						"type": "uint32"
+					},
+					{
+						"internalType": "uint8",
+						"name": "nativePremiumPercentage",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint8",
+						"name": "linkPremiumPercentage",
+						"type": "uint8"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "s_currentSubNonce",
+				"outputs": [
+					{
+						"internalType": "uint64",
+						"name": "",
+						"type": "uint64"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "s_totalBalance",
+				"outputs": [
+					{
+						"internalType": "uint96",
+						"name": "",
+						"type": "uint96"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "s_totalNativeBalance",
+				"outputs": [
+					{
+						"internalType": "uint96",
+						"name": "",
+						"type": "uint96"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "link",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "linkNativeFeed",
+						"type": "address"
+					}
+				],
+				"name": "setLINKAndLINKNativeFeed",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					}
+				],
+				"name": "transferOwnership",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "recipient",
+						"type": "address"
+					}
+				],
+				"name": "withdraw",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "recipient",
+						"type": "address"
+					}
+				],
+				"name": "withdrawNative",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {
+				"acceptSubscriptionOwnerTransfer(uint256)": {
+					"details": "will revert if original owner of subId has not requested that msg.sender become the new owner.",
+					"params": {
+						"subId": "- ID of the subscription"
+					}
+				},
+				"addConsumer(uint256,address)": {
+					"params": {
+						"consumer": "- New consumer which can use the subscription",
+						"subId": "- ID of the subscription"
+					}
+				},
+				"cancelSubscription(uint256,address)": {
+					"params": {
+						"subId": "- ID of the subscription",
+						"to": "- Where to send the remaining LINK to"
+					}
+				},
+				"createSubscription()": {
+					"details": "You can manage the consumer set dynamically with addConsumer/removeConsumer.Note to fund the subscription with LINK, use transferAndCall. For exampleLINKTOKEN.transferAndCall(address(COORDINATOR),amount,abi.encode(subId));Note to fund the subscription with Native, use fundSubscriptionWithNative. Be sureto send Native with the call, for example:COORDINATOR.fundSubscriptionWithNative{value: amount}(subId);",
+					"returns": {
+						"subId": "- A unique subscription id."
+					}
+				},
+				"fundSubscriptionWithNative(uint256)": {
+					"params": {
+						"subId": "- ID of the subscription"
+					}
+				},
+				"getActiveSubscriptionIds(uint256,uint256)": {
+					"details": "the order of IDs in the list is **not guaranteed**, therefore, if making successive calls, oneshould consider keeping the blockheight constant to ensure a holistic picture of the contract state",
+					"params": {
+						"maxCount": "maximum number of subscriptions to return, 0 to return all",
+						"startIndex": "index of the subscription to start from"
+					}
+				},
+				"getSubscription(uint256)": {
+					"params": {
+						"subId": "- ID of the subscription"
+					},
+					"returns": {
+						"balance": "- LINK balance of the subscription in juels.",
+						"consumers": "- list of consumer address which are able to use this subscription.",
+						"nativeBalance": "- native balance of the subscription in wei.",
+						"reqCount": "- Requests count of subscription.",
+						"subOwner": "- owner of the subscription."
+					}
+				},
+				"ownerCancelSubscription(uint256)": {
+					"details": "notably can be called even if there are pending requests, outstanding ones may fail onchain",
+					"params": {
+						"subId": "subscription id"
+					}
+				},
+				"recoverFunds(address)": {
+					"params": {
+						"to": "address to send link to"
+					}
+				},
+				"recoverNativeFunds(address)": {
+					"params": {
+						"to": "address to send native to"
+					}
+				},
+				"removeConsumer(uint256,address)": {
+					"params": {
+						"consumer": "- Consumer to remove from the subscription",
+						"subId": "- ID of the subscription"
+					}
+				},
+				"requestSubscriptionOwnerTransfer(uint256,address)": {
+					"params": {
+						"newOwner": "- proposed new owner of the subscription",
+						"subId": "- ID of the subscription"
+					}
+				},
+				"setLINKAndLINKNativeFeed(address,address)": {
+					"params": {
+						"link": "- address of link token",
+						"linkNativeFeed": "address of the link native feed"
+					}
+				}
+			},
+			"stateVariables": {
+				"LINK": {
+					"details": "may not be provided upon construction on some chains due to lack of availability"
+				},
+				"LINK_NATIVE_FEED": {
+					"details": "may not be provided upon construction on some chains due to lack of availability"
+				}
+			},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {
+				"acceptOwnership()": {
+					"notice": "Allows an ownership transfer to be completed by the recipient."
+				},
+				"acceptSubscriptionOwnerTransfer(uint256)": {
+					"notice": "Accept subscription owner transfer."
+				},
+				"addConsumer(uint256,address)": {
+					"notice": "Add a consumer to a VRF subscription."
+				},
+				"cancelSubscription(uint256,address)": {
+					"notice": "Cancel a subscription"
+				},
+				"createSubscription()": {
+					"notice": "Create a VRF subscription."
+				},
+				"fundSubscriptionWithNative(uint256)": {
+					"notice": "Fund a subscription with native.This method expects msg.value to be greater than or equal to 0."
+				},
+				"getActiveSubscriptionIds(uint256,uint256)": {
+					"notice": "Paginate through all active VRF subscriptions."
+				},
+				"getSubscription(uint256)": {
+					"notice": "Get a VRF subscription."
+				},
+				"owner()": {
+					"notice": "Get the current owner"
+				},
+				"ownerCancelSubscription(uint256)": {
+					"notice": "Owner cancel subscription, sends remaining link directly to the subscription owner."
+				},
+				"recoverFunds(address)": {
+					"notice": "Recover link sent with transfer instead of transferAndCall."
+				},
+				"recoverNativeFunds(address)": {
+					"notice": "Recover native sent with transfer/call/send instead of fundSubscription."
+				},
+				"removeConsumer(uint256,address)": {
+					"notice": "Remove a consumer from a VRF subscription."
+				},
+				"requestSubscriptionOwnerTransfer(uint256,address)": {
+					"notice": "Request subscription owner transfer."
+				},
+				"setLINKAndLINKNativeFeed(address,address)": {
+					"notice": "set the LINK token contract and link native feed to be used by this coordinator"
+				},
+				"transferOwnership(address)": {
+					"notice": "Allows an owner to begin transferring ownership to a new address."
+				}
+			},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/SubscriptionAPI.sol": "SubscriptionAPI"
+		},
+		"evmVersion": "berlin",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/ConfirmedOwner.sol": {
+			"keccak256": "0x27ce5123999f051890556eec8b9337fcd256148d691cf13ea0ed308060f0aa7e",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://77bd955a399267ec48e5a1c0853033dd644df3774054edd4193010cac1df9309",
+				"dweb:/ipfs/QmfFgJuP4bEiufZjQy2LZGtiVgVXEuTuUANn5KFQ7qW3V9"
+			]
+		},
+		"contracts/EnumerableSetWithBytes16.sol": {
+			"keccak256": "0x480663e3216bd9ed6fc27db83c45d54bf64aebf05e5982ccd467e4f7b333a571",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://5601e9e0c174c3adab6a9aa7b596d7d1a7607083384e5e6a759b26c1419b6c32",
+				"dweb:/ipfs/QmSBNTabn9P1XXh4tqzc7ceswnWzxeFsdeAk48Jx6BPuED"
+			]
+		},
+		"contracts/IOwnable.sol": {
+			"keccak256": "0x885de72b7b4e4f1bf8ba817a3f2bcc37fd9022d342c4ce76782151c30122d767",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://17c636625a5d29a140612db496d2cca9fb4b48c673adb0fd7b3957d287e75921",
+				"dweb:/ipfs/QmNoBX8TY424bdQWyQC7y3kpKfgxyWxhLw7KEhhEEoBN9q"
+			]
+		},
+		"contracts/IVRFSubscriptionV2Plus.sol": {
+			"keccak256": "0x85b348297ce36794e3bf97a47c001fc216bd0ee243e91514a7b395f3fcd189b0",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://5b67dd54c0f1083d804f9c0ac6b6a62db1727b090f6d1afb0a8107baea7b40d8",
+				"dweb:/ipfs/QmbD4vuTA7sBtR4DxeDjKr2pC51xgw8RRef2AmodnH5B1F"
+			]
+		},
+		"contracts/SubscriptionAPI.sol": {
+			"keccak256": "0x65887e360162d98640d3e0503e5086d500480d0fb156ccfc116fde177be373bc",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://78194537c626b135b9c89549cfcb61f8bd2955dbc4a55e0050ae7823eccad093",
+				"dweb:/ipfs/QmTYJ2gFQ8seXWZmdSHg2aoaMJHeoA7MVAbHMihYT4xoBQ"
+			]
+		},
+		"contracts/shared/AggregatorV3Interface.sol": {
+			"keccak256": "0x257a8d28fa83d3d942547c8e129ef465e4b5f3f31171e7be4739a4c98da6b4f0",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://6d39e11b1dc7b9b8ccdabbc9be442ab7cda4a81c748f57e316dcb1bcb4a28bf9",
+				"dweb:/ipfs/QmaG6vz6W6iEUBsbHSBob5mdcitYxWjoygxREHpsJHfWrS"
+			]
+		},
+		"contracts/shared/ConfirmedOwnerWithProposal.sol": {
+			"keccak256": "0x7558766f3bcb700e7db37eadb1ad336748da7ade92160328ce74188fcbef6686",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://cbf5856cd9627aa219e04294135ae28eede4214f85f226173273509c394cbb07",
+				"dweb:/ipfs/QmcYukz1C41EjGZNNefhtcVLByHFnq3Ku2nm2o5QxHiCLf"
+			]
+		},
+		"contracts/shared/IERC677Receiver.sol": {
+			"keccak256": "0x5f9ee31598e2250815033c2f4e1e7e747f917815378938505063df1d4ae603ec",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://15aaf96a97cdeded001c705795bfd5c12bce211ed73cc6593a02dc8214c72124",
+				"dweb:/ipfs/Qmab5F6iSFyKGUpR1H2pqotNeE2FHEqbLPSr3zQ3xtNjtg"
+			]
+		},
+		"contracts/shared/LinkTokenInterface.sol": {
+			"keccak256": "0xd3643595b0a46f577fff806736cbe4e3f81707c93fb1693a8a7960466e5cd321",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://f7cccfc386f9cdb9037db66dd85a31347af8b733f39a18cbc12dbf1f5812d02d",
+				"dweb:/ipfs/QmcE3Hef9XLSbthiS3DKQFF1ZpYDZsPLHwW1DY5iUGAfcd"
+			]
+		}
+	},
+	"version": 1
+}

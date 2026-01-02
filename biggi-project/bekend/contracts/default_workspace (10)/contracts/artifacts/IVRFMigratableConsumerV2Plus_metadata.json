@@ -1,0 +1,64 @@
+{
+	"compiler": {
+		"version": "0.8.6+commit.11564f7e"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "newCoordinator",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "oldSubId",
+						"type": "uint256"
+					}
+				],
+				"name": "onMigration",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/IVRFMigratableConsumerV2Plus.sol": "IVRFMigratableConsumerV2Plus"
+		},
+		"evmVersion": "berlin",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/IVRFMigratableConsumerV2Plus.sol": {
+			"keccak256": "0x9193763eaf7998c4c8b704a29a411b1cbdefb3a9cf4e26e3192b36baae155c8c",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://b58b565063a0ebbe540e9d69286eb9d0e87e67c72ccf27866d40559de381d9f5",
+				"dweb:/ipfs/QmYbNYgv9XPtvjo5feLx52vWfA8i1upVKZowqvkqSBHsV5"
+			]
+		}
+	},
+	"version": 1
+}

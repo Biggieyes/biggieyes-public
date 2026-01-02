@@ -1,0 +1,45 @@
+{
+	"compiler": {
+		"version": "0.8.24+commit.e11b9ed9"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/BiggiPriceLibrary.sol": "BiggiPriceLibrary"
+		},
+		"evmVersion": "shanghai",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/BiggiPriceLibrary.sol": {
+			"keccak256": "0x152c4f3d28739fa6713f613ea547922e7aca7365e76ddcc0ebf6fa4e71f76de3",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://cbb1e803530bdb9f4d38c12a61d08c781126a1745b90844ce423256b43b2c835",
+				"dweb:/ipfs/QmR6Zbg6bvvFPk1mMWJxcqnGXGEqzoqmQsGfAkDLe5DEoB"
+			]
+		}
+	},
+	"version": 1
+}

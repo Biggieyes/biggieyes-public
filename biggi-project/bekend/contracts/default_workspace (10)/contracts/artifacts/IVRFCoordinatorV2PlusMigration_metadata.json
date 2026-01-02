@@ -1,0 +1,69 @@
+{
+	"compiler": {
+		"version": "0.8.24+commit.e11b9ed9"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "bytes",
+						"name": "encodedData",
+						"type": "bytes"
+					}
+				],
+				"name": "onMigration",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {
+				"onMigration(bytes)": {
+					"params": {
+						"encodedData": "- user data from older version of coordinator"
+					}
+				}
+			},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {
+				"onMigration(bytes)": {
+					"notice": "called by older versions of coordinator for migration.only callable by older versions of coordinatorsupports transfer of native currency"
+				}
+			},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/IVRFCoordinatorV2PlusMigration.sol": "IVRFCoordinatorV2PlusMigration"
+		},
+		"evmVersion": "shanghai",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/IVRFCoordinatorV2PlusMigration.sol": {
+			"keccak256": "0x3d4d589540533109ba9a0ad91e83578d823bf72e83442b1d759ba48abf2a9cf6",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://dd8bd59c15b94901078e815c84caa224ef16a82a18cc7fa2de98591416b17218",
+				"dweb:/ipfs/QmQtN4T2sRLAg1UikqLmPpi1YGDU7PbwouXzu3dqu9MyUr"
+			]
+		}
+	},
+	"version": 1
+}

@@ -1,0 +1,145 @@
+{
+	"deploy": {
+		"VM:-": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"main:1": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"ropsten:3": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"rinkeby:4": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"kovan:42": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"goerli:5": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"Custom": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		}
+	},
+	"data": {
+		"bytecode": {
+			"functionDebugData": {},
+			"generatedSources": [],
+			"linkReferences": {},
+			"object": "",
+			"opcodes": "",
+			"sourceMap": ""
+		},
+		"deployedBytecode": {
+			"functionDebugData": {},
+			"generatedSources": [],
+			"immutableReferences": {},
+			"linkReferences": {},
+			"object": "",
+			"opcodes": "",
+			"sourceMap": ""
+		},
+		"gasEstimates": null,
+		"methodIdentifiers": {
+			"getConfig()": "c3f909d4",
+			"requestRandomWords(bytes32,uint256,uint16,uint32,uint32,address)": "70c2096a"
+		}
+	},
+	"abi": [
+		{
+			"inputs": [],
+			"name": "getConfig",
+			"outputs": [
+				{
+					"internalType": "uint16",
+					"name": "minimumRequestConfirmations",
+					"type": "uint16"
+				},
+				{
+					"internalType": "uint32",
+					"name": "maxGasLimit",
+					"type": "uint32"
+				},
+				{
+					"internalType": "uint32",
+					"name": "stalenessSeconds",
+					"type": "uint32"
+				},
+				{
+					"internalType": "uint256",
+					"name": "gasAfterPaymentCalculation",
+					"type": "uint256"
+				},
+				{
+					"internalType": "int256",
+					"name": "fallbackWeiPerUnitLink",
+					"type": "int256"
+				},
+				{
+					"internalType": "int256",
+					"name": "fallbackWeiPerUnitNative",
+					"type": "int256"
+				},
+				{
+					"internalType": "uint96",
+					"name": "feeConfig",
+					"type": "uint96"
+				}
+			],
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "bytes32",
+					"name": "keyHash",
+					"type": "bytes32"
+				},
+				{
+					"internalType": "uint256",
+					"name": "subId",
+					"type": "uint256"
+				},
+				{
+					"internalType": "uint16",
+					"name": "minimumRequestConfirmations",
+					"type": "uint16"
+				},
+				{
+					"internalType": "uint32",
+					"name": "callbackGasLimit",
+					"type": "uint32"
+				},
+				{
+					"internalType": "uint32",
+					"name": "numWords",
+					"type": "uint32"
+				},
+				{
+					"internalType": "address",
+					"name": "extraArgs",
+					"type": "address"
+				}
+			],
+			"name": "requestRandomWords",
+			"outputs": [
+				{
+					"internalType": "uint256",
+					"name": "requestId",
+					"type": "uint256"
+				}
+			],
+			"stateMutability": "nonpayable",
+			"type": "function"
+		}
+	]
+}
