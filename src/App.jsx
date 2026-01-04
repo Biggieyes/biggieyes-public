@@ -36,6 +36,7 @@ import { useGlobalShortcuts } from "./hooks/useGlobalShortcuts";
 import { useStatsRewards } from "./hooks/useStatsRewards";
 import { useAdminActions } from "./hooks/useAdminActions";
 import useDistributor from "./hooks/useDistributor";
+import useTransparencyData from "./hooks/useTransparencyData";
 import AppCore from "./app/AppCore";
 import { BACKGROUND_NAMES, getSafeDeployBlock, queryLogsBatched, ERC20_MINI } from "./utils/shared";
 import { mergeAttrs, getCachedPriceAttrs, setCachedPriceAttrs } from "./utils/metadata";
@@ -207,6 +208,7 @@ function App() {
 
   const isMobile = useIsMobile(700);
   const { data: distributorData, refresh: fetchDistributorInfo } = useDistributor();
+  const { data: transparencyData, loading: transparencyLoading, refreshTransparency } = useTransparencyData({ enabled: true });
 
   const getRO = React.useCallback(() => getROHelper(contractRef, getReadOnlyContract), []);
 
@@ -982,6 +984,9 @@ const isCommunityCenterOpen = navOpen && navAlt === "COMMUNITY CENTER";
             <NavPanelSwitch
               activeAlt={navAlt}
               modalText={ICONS[openNavIdx].modalText}
+              transparencyData={transparencyData}
+              transparencyLoading={transparencyLoading}
+              refreshTransparency={refreshTransparency}
               compact={isMobile}
               walletAddress={walletAddress}
               getSignerProvider={getSignerProvider}

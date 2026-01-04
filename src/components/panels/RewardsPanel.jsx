@@ -2,7 +2,9 @@ import * as React from "react";
 import { ethers } from "ethers";
 import TokenRewardsService from "../../services/tokenRewardsService";
 import CollectionRewardsService from "../../services/collectionRewardsService";
-import NFTRewardsService from "../../services/nftRewardsService";
+import useTokenRewards from "../../hooks/useTokenRewards";
+import useCollectionRewards from "../../hooks/useCollectionRewards";
+import useNFTRewards from "../../hooks/useNFTRewards";
 import { ADDR } from "../../utils/addresses";
 import { getROProvider } from "../../utils/contract";
 import CollectionRewardsSection from "./CollectionRewardsSection";
@@ -90,9 +92,6 @@ function RewardsPanel({
   onClaim,
 }) {
   const [activeTab, setActiveTab] = React.useState("token");
-  const [tokenStats, setTokenStats] = React.useState(null);
-  const [collectionStats, setCollectionStats] = React.useState(null);
-  const [nftSummary, setNftSummary] = React.useState(() => ({ ...DEFAULT_NFT_SUMMARY }));
   const [claimPreview, setClaimPreview] = React.useState(null);
   const [previewLoading, setPreviewLoading] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
@@ -126,6 +125,13 @@ function RewardsPanel({
       return null;
     }
   }, [provider]);
+
+  const { data: tokenStats, refresh: refreshTokenStats } = useTokenRewards(readProvider);
+  const { data: collectionStats, refresh: refreshCollectionStats } = useCollectionRewards(
+    walletAddress,
+    readProvider
+  );
+  const { data: nftSummary, refresh: refreshNftStats } = useNFTRewards(readProvider);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -178,18 +184,6 @@ function RewardsPanel({
     },
     [readProvider]
   );
-  const nftService = React.useMemo(
-    () => {
-      if (!readProvider) return null;
-      try {
-        return new NFTRewardsService(ADDR.NFT_REWARDS, readProvider);
-      } catch (err) {
-        console.error("RewardsPanel: NFT service init failed", err);
-        return null;
-      }
-    },
-    [readProvider]
-  );
 
   const eligibleTokenIds = React.useMemo(() => {
     return (items || [])
@@ -203,56 +197,6 @@ function RewardsPanel({
       })
       .filter(Boolean);
   }, [items]);
-
-  const loadTokenStats = React.useCallback(
-    async (signal = {}) => {
-      if (!tokenService) return;
-      try {
-        const stats = await tokenService.getAllStats();
-        if (signal.aborted) return;
-        const formatted = await TokenRewardsService.formatUsingTokenMeta(stats);
-        if (signal.aborted) return;
-        setTokenStats(formatted);
-      } catch (err) {
-        console.error("RewardsPanel token stats failed", err);
-      }
-    },
-    [tokenService]
-  );
-
-  const loadCollectionStats = React.useCallback(
-    async (signal = {}) => {
-      if (!collectionService) return;
-      try {
-        const stats = await collectionService.getAllStats(walletAddress);
-        if (signal.aborted) return;
-        setCollectionStats(stats);
-      } catch (err) {
-        console.error("RewardsPanel collection stats failed", err);
-      }
-    },
-    [collectionService, walletAddress]
-  );
-
-
-  const loadNftStats = React.useCallback(
-    async (signal = {}) => {
-      if (!nftService) return;
-      try {
-        const stats = await nftService.getAllStats();
-        if (signal.aborted) return;
-        const nextReward = Number(stats.nextRewardId?.toString?.() ?? stats.nextRewardId ?? 0);
-        if (signal.aborted) return;
-        setNftSummary((prev) => ({
-          ...prev,
-          totalMinted: Number.isFinite(nextReward) ? nextReward : prev.totalMinted,
-        }));
-      } catch (err) {
-        console.error("RewardsPanel NFT stats failed", err);
-      }
-    },
-    [nftService]
-  );
 
   const loadClaimPreview = React.useCallback(
     async (signal = {}) => {
@@ -272,7 +216,7 @@ function RewardsPanel({
       try {
         const [units, amount] = await tokenService.claimablePreview(eligibleTokenIds);
         if (signal.aborted) return;
-        const decimals = Number(tokenStats?.tokenMeta?.decimals_) || 18;
+        const decimals = Number(tokenStats?.tokenMeta?.decimals_ ?? tokenStats?.tokenDecimals ?? 18) || 18;
         setClaimPreview({
           units: units?.toString?.() ?? "0",
           amount: amount ? ethers.utils.formatUnits(amount, decimals) : "0",
@@ -286,16 +230,6 @@ function RewardsPanel({
     },
     [eligibleTokenIds, tokenService, tokenStats]
   );
-
-  React.useEffect(() => {
-    const signal = { aborted: false };
-    loadTokenStats(signal);
-    loadCollectionStats(signal);
-    loadNftStats(signal);
-    return () => {
-      signal.aborted = true;
-    };
-  }, [loadTokenStats, loadCollectionStats, loadNftStats]);
 
   React.useEffect(() => {
     const signal = { aborted: false };
@@ -325,15 +259,15 @@ function RewardsPanel({
     setRefreshing(true);
     try {
       await Promise.all([
-        loadTokenStats(),
-        loadCollectionStats(),
-        loadNftStats(),
+        refreshTokenStats(),
+        refreshCollectionStats(),
+        refreshNftStats(),
         loadClaimPreview(),
       ]);
     } finally {
       setRefreshing(false);
     }
-  }, [loadTokenStats, loadCollectionStats, loadNftStats, loadClaimPreview, refreshing]);
+  }, [refreshTokenStats, refreshCollectionStats, refreshNftStats, loadClaimPreview, refreshing]);
 
   const handleClaim = React.useCallback(async () => {
     if (!onClaim) return;
@@ -349,6 +283,12 @@ function RewardsPanel({
       setClaiming(false);
     }
   }, [onClaim]);
+
+  const tokenSymbol =
+    tokenStats?.tokenMeta?.symbol_ ??
+    tokenStats?.tokenMeta?.symbol ??
+    tokenStats?.tokenSymbol ??
+    "BIGGI";
 
   const handleClaimBlockReward = React.useCallback(
     async (blockIdx) => {
@@ -414,7 +354,7 @@ function RewardsPanel({
   );
 
   const heroCards = React.useMemo(() => {
-    const symbol = tokenStats?.tokenMeta?.symbol || "BIGGI";
+    const symbol = tokenSymbol;
     const previewAmount = claimPreview?.amount;
     const previewUnits = claimPreview?.units;
 
@@ -455,7 +395,7 @@ function RewardsPanel({
         tone: "token",
       },
     ];
-  }, [tokenStats, claimPreview]);
+  }, [tokenSymbol, tokenStats, claimPreview]);
 
   const tokenStatusGrid = React.useMemo(() => {
     const weightsRaw = tokenStats?.blockWeights;
@@ -487,16 +427,18 @@ function RewardsPanel({
 
   const claimableLabel = walletAddress
     ? claimable != null
-      ? `${formatDecimal(claimable, 4)} BIGGI`
+      ? `${formatDecimal(claimable, 4)} ${tokenSymbol}`
       : "Syncing..."
     : "Connect wallet";
   const claimPreviewLabel = claimPreview?.amount
-    ? `${formatDecimal(claimPreview.amount, 4)} BIGGI / ${claimPreview.units} units`
+    ? `${formatDecimal(claimPreview.amount, 4)} ${tokenSymbol} / ${claimPreview.units} units`
     : "No tokens tracked yet.";
 
   const collectionStatus = React.useMemo(() => {
     if (!collectionStats) return [];
-    const rainbowClaimed = Boolean(collectionStats.rainbowClaimed);
+    const rainbowClaimed = Boolean(
+      collectionStats.rainbowClaimed ?? collectionStats.rainbowRewardClaimedGlobal
+    );
     return [
       {
         label: "Block winners",
@@ -518,11 +460,11 @@ function RewardsPanel({
 
   const nftData = React.useMemo(
     () => ({
-      ...nftSummary,
+      ...DEFAULT_NFT_SUMMARY,
+      ...(nftSummary || {}),
       baseURIs: {
-        character: nftSummary.baseURIs.character,
-        leaderboard: nftSummary.baseURIs.leaderboard,
-        mystery: nftSummary.baseURIs.mystery,
+        ...DEFAULT_NFT_SUMMARY.baseURIs,
+        ...(nftSummary?.baseURIs || {}),
       },
     }),
     [nftSummary]
@@ -530,7 +472,9 @@ function RewardsPanel({
 
   const blockPaid = collectionStats?.blockPaid ?? [];
   const orangeMainIdPaid = collectionStats?.orangeMainIdPaid ?? [];
-  const rainbowClaimed = Boolean(collectionStats?.rainbowClaimed);
+  const rainbowClaimed = Boolean(
+    collectionStats?.rainbowClaimed ?? collectionStats?.rainbowRewardClaimedGlobal
+  );
   const claimedOrange = Boolean(collectionStats?.claimedOrange);
   const metadataRows = [
     { label: "Distributor", value: collectionStats?.distributor },
@@ -604,7 +548,7 @@ function RewardsPanel({
               <div className="rewards-panel__stat">
                 <span className="label">Remaining pool</span>
                 <span className="value">
-                  {tokenStats ? `${formatDecimal(tokenStats.remainingCap, 2)} ${tokenStats?.tokenMeta?.symbol || "BIGGI"}` : "--"}
+                  {tokenStats ? `${formatDecimal(tokenStats.remainingCap, 2)} ${tokenSymbol}` : "--"}
                 </span>
               </div>
             </div>

@@ -30,8 +30,8 @@ contract BiggiTokenRewards is Ownable, ReentrancyGuard, Pausable {
     error ArrayLengthMismatch();
     error InvalidCollection();
 
-    IBiggiMainNFT public immutable mainNFT;   // původní main
-    IBiggiMainNFT public immutable main2NFT;  // optional second main (legacy support)
+    IBiggiMainNFT public mainNFT;   // primary main collection
+    IBiggiMainNFT public main2NFT;  // optional second main (legacy support)
     IBiggiToken    public immutable biggi;
 
     address public treasure; // optional top-up address (allowed to transferFrom)
@@ -65,6 +65,8 @@ contract BiggiTokenRewards is Ownable, ReentrancyGuard, Pausable {
     event TopUpPulled(address indexed from, uint256 amount);
     event DistributedRecorded(uint256 amount, uint64 weekNow);
     event CollectionAllowedSet(address indexed coll, bool allowed);
+    event MainNFTSet(address indexed oldAddr, address indexed newAddr);
+    event Main2NFTSet(address indexed oldAddr, address indexed newAddr);
 
     constructor(address mainNFT_, address main2NFT_, address biggiToken_, address owner_) Ownable(owner_) {
         if (mainNFT_ == address(0) || main2NFT_ == address(0) || biggiToken_ == address(0) || owner_ == address(0)) revert ZeroAddress();
@@ -72,6 +74,8 @@ contract BiggiTokenRewards is Ownable, ReentrancyGuard, Pausable {
         main2NFT = IBiggiMainNFT(main2NFT_);
         biggi    = IBiggiToken(biggiToken_);
         lastRecordedWeek = _week();
+        emit MainNFTSet(address(0), mainNFT_);
+        emit Main2NFTSet(address(0), main2NFT_);
     }
 
     /* ===== admin ===== */
@@ -82,6 +86,18 @@ contract BiggiTokenRewards is Ownable, ReentrancyGuard, Pausable {
         if (treasure_ == address(0)) revert ZeroAddress();
         emit TreasureSet(treasure, treasure_);
         treasure = treasure_;
+    }
+
+    function setMainNFT(address newMain) external onlyOwner {
+        if (newMain == address(0)) revert ZeroAddress();
+        emit MainNFTSet(address(mainNFT), newMain);
+        mainNFT = IBiggiMainNFT(newMain);
+    }
+
+    function setMain2NFT(address newMain2) external onlyOwner {
+        if (newMain2 == address(0)) revert ZeroAddress();
+        emit Main2NFTSet(address(main2NFT), newMain2);
+        main2NFT = IBiggiMainNFT(newMain2);
     }
 
     function setUnitReward(uint256 newUnit) external onlyOwner {

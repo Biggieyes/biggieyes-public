@@ -1,7 +1,12 @@
 import { ethers } from "ethers";
 import { AMOY, PUBLIC_AMOY_RPCS } from "../utils/contract";
 
-const { JsonRpcProvider, FallbackProvider } = ethers.providers;
+// Static provider avoids network autodetect calls that can fail due to CORS/rate limits.
+const { StaticJsonRpcProvider, FallbackProvider } = ethers.providers;
+
+function makeStaticProvider(url, chainId) {
+  return new StaticJsonRpcProvider({ url, chainId, name: "polygon-amoy" }, chainId);
+}
 const BAD_RPC_SUBSTRINGS = ["tenderly", "drpc.org"]; // noisy / rate-limited endpoints
 const BAD_CORS_RPCS = ["rpc-amoy.polygon.technology"]; // official Amoy RPC blocks browser CORS
 
@@ -55,7 +60,7 @@ function parseRpcUrls() {
 export function createJsonRpcProvider(rpcUrl, chainId = parseChainId()) {
   const url = rpcUrl || parseRpcUrls()[0];
   if (!url) throw new Error("No RPC URL configured (set VITE_JSON_RPC_URL or VITE_AMOY_RPC_URL)");
-  return new JsonRpcProvider(url, chainId);
+  return makeStaticProvider(url, chainId);
 }
 
 export function createFallbackProvider(urls, chainId = parseChainId()) {
@@ -64,7 +69,7 @@ export function createFallbackProvider(urls, chainId = parseChainId()) {
   if (list.length === 1) return createJsonRpcProvider(list[0], chainId);
 
   const configs = list.map((url, index) => ({
-    provider: new JsonRpcProvider(url, chainId),
+    provider: makeStaticProvider(url, chainId),
     priority: index + 1,
     stallTimeout: 1500,
     weight: 1,

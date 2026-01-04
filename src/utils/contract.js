@@ -15,10 +15,10 @@ import {
   ABI_COLLECTION_VRF, ABI_COLLECTION_PUBLIC,
   // nové ABI (pokud jsi je přidal do indexu)
   ABI_NFTREWARDS, ABI_EVENTS, ABI_DRIPLM, ABI_DRIP_DISTRIBUTOR,
-  ABI_COMPUTE, ABI_LIQUIDITY_AUTOMATION, ABI_LIQUIDITY_SETUP
+  ABI_COMPUTE, ABI_LIQUIDITY_AUTOMATION, ABI_LIQUIDITY_SETUP, ABI_DRIP_KEEPER
 } from "./abi/index.js";
 
-const { JsonRpcProvider, Web3Provider, FallbackProvider } = ethers.providers;
+const { StaticJsonRpcProvider, Web3Provider, FallbackProvider } = ethers.providers;
 const { parseEther: _parseEther, formatEther: _formatEther } = ethers.utils;
 
 const LOCAL_STORAGE_RPC_SYNC_KEY = "biggi_amoy_rpc_synced_v1";
@@ -60,7 +60,7 @@ function _uniq(values) {
   return out;
 }
 
-function _secureRandomInt(maxExclusive) {
+export function _secureRandomInt(maxExclusive) {
   if (maxExclusive <= 1) return 0;
   try {
     if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
@@ -72,17 +72,6 @@ function _secureRandomInt(maxExclusive) {
     // ignore crypto unavailability
   }
   return Math.floor(Math.random() * maxExclusive);
-}
-
-function _shuffle(values) {
-  const arr = [...values];
-  for (let i = arr.length - 1; i > 0; i -= 1) {
-    const j = _secureRandomInt(i + 1);
-    const tmp = arr[i];
-    arr[i] = arr[j];
-    arr[j] = tmp;
-  }
-  return arr;
 }
 
 function _loadPreferredRpc() {
@@ -120,7 +109,9 @@ function _clearPreferredRpc() {
 function _rankRpcUrls(urls) {
   const deduped = _uniq(urls.filter(Boolean));
   if (!deduped.length) return deduped;
-  const preferred = _loadPreferredRpc();
+  const ignorePreferred = _env("VITE_FORCE_RPC") === "1" || _env("VITE_IGNORE_RPC_PREFERENCE") === "1";
+  const preferred = ignorePreferred ? null : _loadPreferredRpc();
+  if (ignorePreferred) _clearPreferredRpc();
   if (preferred && deduped.includes(preferred)) {
     return [preferred, ...deduped.filter((u) => u !== preferred)];
   }
@@ -143,16 +134,10 @@ function _filterOutBadRpcs(urls) {
 export const PUBLIC_AMOY_RPCS = [
   // Public endpoints that allow browser CORS; official RPC omitted because it blocks CORS.
   "https://polygon-amoy-bor.publicnode.com",
-  "https://rpc.ankr.com/polygon_amoy",
 ];
-
-const INFURA_PROJECT_ID = _env("VITE_INFURA_PROJECT_ID");
-const INFURA_AMOY_RPC = _env("VITE_INFURA_AMOY_RPC_URL") ||
-  (INFURA_PROJECT_ID ? `https://polygon-amoy.infura.io/v3/${INFURA_PROJECT_ID}` : null);
 
 const AMOY_RPC_CANDIDATES = _uniq([
   _env("VITE_AMOY_RPC_URL"),
-  INFURA_AMOY_RPC,
   ..._splitCsv(_env("VITE_ADDITIONAL_RPC_URLS")),
   ...PUBLIC_AMOY_RPCS,
 ]);
@@ -171,26 +156,6 @@ export { ADDR };
 
 let _roProvider = undefined;
 
-async function _withTimeout(promise, ms) {
-  return await Promise.race([
-    promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error("rpc_timeout")), ms)),
-  ]);
-}
-
-async function _buildHealthyProvider(urls) {
-  for (const url of urls) {
-    try {
-      const p = _applyPollingInterval(_mkRpcProvider(url));
-      // quick health check to avoid sticky noNetwork
-      await _withTimeout(p.getNetwork(), 3000);
-      return p;
-    } catch {
-      // try next url
-    }
-  }
-  throw new Error("No healthy Amoy RPC available");
-}
 
 function _applyPollingInterval(provider) {
   const pollMs = Number(_env("VITE_RPC_POLL_INTERVAL_MS") || 8000);
@@ -228,7 +193,7 @@ export function getPrimaryRpcUrl() {
 
 function _mkRpcProvider(url) {
   // Plain provider is more tolerant of flaky RPCs than batch in some gateways.
-  return new JsonRpcProvider(url, AMOY.chainId);
+  return new StaticJsonRpcProvider({ url, chainId: AMOY.chainId, name: "polygon-amoy" }, AMOY.chainId);
 }
 
 export function getROProvider() {
@@ -296,7 +261,7 @@ export function getROProvider() {
     return _applyPollingInterval(_roProvider);
   } catch (err) {
     console.warn("getROProvider: FallbackProvider construction failed, using first RPC:", err?.message || err);
-    _roProvider = new JsonRpcProvider(urls[0], AMOY.chainId);
+    _roProvider = _mkRpcProvider(urls[0]);
     return _applyPollingInterval(_roProvider);
   }
 }
@@ -463,6 +428,17 @@ export const getCollectionRewards   = () => _mkRW(ADDR.COLLECTION_REWARDS, ABI_C
 
 export const getDripDistributorRO = (provider) => _mkRO(ADDR.DRIP_DISTRIBUTOR, ABI_DRIP_DISTRIBUTOR, provider);
 export const getDripDistributor   = () => _mkRW(ADDR.DRIP_DISTRIBUTOR, ABI_DRIP_DISTRIBUTOR);
+
+export const getDripKeeperRO = (provider) => {
+  const addr = ADDR.DRIP_KEEPER_PROXY ?? ADDR.DRIP_KEEPER ?? null;
+  if (!addr) throw new Error("DripKeeper address not configured in ADDR (expected DRIP_KEEPER_PROXY)");
+  return _mkRO(addr, ABI_DRIP_KEEPER, provider);
+};
+export const getDripKeeper = () => {
+  const addr = ADDR.DRIP_KEEPER_PROXY ?? ADDR.DRIP_KEEPER ?? null;
+  if (!addr) throw new Error("DripKeeper address not configured in ADDR (expected DRIP_KEEPER_PROXY)");
+  return _mkRW(addr, ABI_DRIP_KEEPER);
+};
 
 // legacy aliases
 export const getRewardsRO = getCollectionRewardsRO;
@@ -728,6 +704,9 @@ export function getReadOnlyContract(kindOrAddressOrProvider, abiOrProvider, prov
     compute: { addr: () => ADDR.COMPUTE, abi: ABI_COMPUTE },
     liquidityautomation: { addr: () => ADDR.LIQUIDITY_AUTOMATION, abi: ABI_LIQUIDITY_AUTOMATION },
     liquiditysetup: { addr: () => ADDR.LIQUIDITY_SETUP, abi: ABI_LIQUIDITY_SETUP },
+    dripdistributor: { addr: () => ADDR.DRIP_DISTRIBUTOR, abi: ABI_DRIP_DISTRIBUTOR },
+    driplm: { addr: () => ADDR.DRIP_LM ?? ADDR.DRIPLM ?? ADDR.DRIP_LIQUIDITY_MANAGER, abi: ABI_DRIPLM },
+    dripkeeper: { addr: () => ADDR.DRIP_KEEPER_PROXY ?? ADDR.DRIP_KEEPER, abi: ABI_DRIP_KEEPER },
     tokenrewards: { addr: () => ADDR.TOKEN_REWARDS, abi: ABI_TOKEN_REWARDS },
     collectionrewards: { addr: () => ADDR.COLLECTION_REWARDS, abi: ABI_COLLECTION_REWARDS },
     nftrewards: { addr: () => ADDR.NFT_REWARDS, abi: Array.isArray(ABI_NFTREWARDS) && ABI_NFTREWARDS.length ? ABI_NFTREWARDS : ABI_READER },

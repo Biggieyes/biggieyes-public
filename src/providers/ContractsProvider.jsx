@@ -43,6 +43,8 @@ import {
   getDripDistributor,
   getDripLMRO,
   getDripLM,
+  getDripKeeperRO,
+  getDripKeeper,
   // additional read-only readers (ensure exports exist in utils/contract.js)
   getBiggiMainReaderRO,
   getBiggiRewardsReaderRO,
@@ -243,6 +245,15 @@ export function ContractsProvider({ children }) {
         }
       },
       dripLMWrite: rwOrRo(getDripLM, () => getDripLMRO(effectiveROProvider())),
+
+      dripKeeperRead: () => {
+        try {
+          return getDripKeeperRO(effectiveROProvider());
+        } catch {
+          return getDripKeeperRO();
+        }
+      },
+      dripKeeperWrite: rwOrRo(getDripKeeper, () => getDripKeeperRO(effectiveROProvider())),
 
       factoryRead: () => {
         try {

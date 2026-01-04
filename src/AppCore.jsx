@@ -40,6 +40,7 @@ import VRFPanel from "./components/VRF/VRFPanel";
 import UserPanel from "./components/user/UserPanel";
 import AdminPanel from "./components/admin/AdminPanel";
 import * as WC from "./wallet/wc";
+import useTransparencyData from "./hooks/useTransparencyData";
 
 const pickInjectedProvider = () => {
   if (typeof window === "undefined") return null;
@@ -500,6 +501,7 @@ function App() {
   const [userLastClaimTs, setUserLastClaimTs] = React.useState(null);
 
   const isMobile = useIsMobile(700);
+  const { data: transparencyData, loading: transparencyLoading, refreshTransparency } = useTransparencyData({ enabled: true });
 
   const formatEthNum = (bnOrNum) => {
     if (bnOrNum == null) return null;
@@ -3204,7 +3206,9 @@ function App() {
               />
             </React.Suspense>
           ) : (
-            <InfoPanel compact={isMobile}>{ICONS[openNavIdx].modalText}</InfoPanel>
+            <InfoPanel compact={isMobile} data={transparencyData} loading={transparencyLoading} onRefresh={refreshTransparency}>
+              {ICONS[openNavIdx].modalText}
+            </InfoPanel>
           )
         )}
       </FullscreenPanel>

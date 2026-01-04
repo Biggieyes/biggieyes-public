@@ -1,20 +1,38 @@
 import * as React from "react";
 import "../panels/RewardsPanel.css";
 import "./VRFPanel.css";
+import { useVRF } from "../../hooks/useVRF";
 
 export default function VRFPanel({
   data = {},
+  walletAddress = "",
   onRequestRandomness = () => {},
-  onRefresh = () => {},
+  onRefresh = null,
   onCancelPending = () => {},
   onOpenExplorer = () => {},
 }) {
   const [active, setActive] = React.useState("requests");
   const [infoOpen, setInfoOpen] = React.useState(false);
 
-  const last = data.last || {};
-  const hist = Array.isArray(data.history) ? data.history : [];
-  const userAddr = data.user?.address || data.userAddress || data.address || "";
+  const { refreshVRFPanel: refreshVRFPanelHook } = useVRF();
+  const [hookData, setHookData] = React.useState(null);
+
+  const refreshData = React.useCallback(async () => {
+    if (typeof onRefresh === "function") {
+      return await onRefresh();
+    }
+    const next = await refreshVRFPanelHook(walletAddress);
+    if (next) setHookData(next);
+    return next;
+  }, [onRefresh, refreshVRFPanelHook, walletAddress]);
+
+  const hasExternalData = data && Object.keys(data).length > 0;
+  const viewData = hasExternalData ? data : hookData || {};
+
+  const last = viewData.last || {};
+  const hist = Array.isArray(viewData.history) ? viewData.history : [];
+  const userAddr =
+    viewData.user?.address || viewData.userAddress || viewData.address || walletAddress || "";
 
   // ====== PALETTE (shared) ======
   const C = {
@@ -34,10 +52,10 @@ export default function VRFPanel({
     let mounted = true;
     (async () => {
       try {
-        await onRefresh();
+        await refreshData();
       } catch (e) {
         // log it, but do not crash render
-        console.error("VRFPanel: onRefresh failed", e);
+        console.error("VRFPanel: refresh failed", e);
       } finally {
         if (!mounted) return;
       }
@@ -45,7 +63,7 @@ export default function VRFPanel({
     return () => {
       mounted = false;
     };
-  }, [onRefresh]);
+  }, [refreshData]);
 
   // ===== helpers (shared) =====
   const short = (addr) =>
@@ -208,7 +226,7 @@ export default function VRFPanel({
 
   // ====== derived ======
   const netLabel = React.useMemo(() => {
-    const id = Number(data.networkId ?? data.chainId);
+    const id = Number(viewData.networkId ?? viewData.chainId);
     const map = {
       1: "Ethereum",
       5: "Goerli",
@@ -220,8 +238,8 @@ export default function VRFPanel({
       42161: "Arbitrum",
     };
     if (Number.isFinite(id)) return `${map[id] || "EVM"} (${id})`;
-    return data.network || "EVM";
-  }, [data.networkId, data.chainId, data.network]);
+    return viewData.network || "EVM";
+  }, [viewData.networkId, viewData.chainId, viewData.network]);
 
   const effectiveLast = React.useMemo(() => {
     const L = { ...last };
@@ -277,12 +295,12 @@ export default function VRFPanel({
   ];
 
   const hasData = Boolean(
-    data &&
-      (data.params ||
-        (Array.isArray(data.history) && data.history.length) ||
-        (data.last &&
-          (data.last.requestId ||
-            (Array.isArray(data.last.randomWords) && data.last.randomWords.length))))
+    viewData &&
+      (viewData.params ||
+        (Array.isArray(viewData.history) && viewData.history.length) ||
+        (viewData.last &&
+          (viewData.last.requestId ||
+            (Array.isArray(viewData.last.randomWords) && viewData.last.randomWords.length))))
   );
 
   const StatusRibbon = () => {
@@ -411,7 +429,7 @@ export default function VRFPanel({
           <div style={{ marginBottom: 12 }}>
             <Card title="No VRF data" hue="y" subtitle="Connect wallet and press Refresh to load your VRF status.">
               <div style={{ display: "flex", gap: 8 }}>
-                <GhostBtn onClick={onRefresh}>Refresh</GhostBtn>
+                <GhostBtn onClick={refreshData}>Refresh</GhostBtn>
               </div>
             </Card>
           </div>
@@ -426,7 +444,7 @@ export default function VRFPanel({
               subtitle={`Network: ${netLabel}`}
               right={
                 <>
-                  <GhostBtn onClick={onRefresh}>Refresh</GhostBtn>
+                  <GhostBtn onClick={refreshData}>Refresh</GhostBtn>
                   {String(effectiveLast.status).toLowerCase() === "pending" && effectiveLast.requestId && (
                     <GhostBtn onClick={() => onCancelPending(effectiveLast.requestId)}>
                       Cancel My Pending

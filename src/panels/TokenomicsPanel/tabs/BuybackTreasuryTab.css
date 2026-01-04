@@ -42,6 +42,10 @@
   align-items: stretch;
 }
 
+.buyback-tab__stats--top {
+  margin-top: 6px;
+}
+
 .buyback-tab__alert {
   color: #ffb347;
   background: rgba(255, 179, 71, 0.08);
@@ -62,7 +66,7 @@
   flex: 1;
   min-width: 260px;
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: 1fr 1fr;
   gap: 16px;
   height: 100%;
 }
@@ -78,6 +82,10 @@
   height: 100%;
 }
 
+.buyback-tab__flow {
+  margin-top: 8px;
+}
+
 .buyback-tab__panel h3 {
   margin: 0 0 12px;
   font-size: 1rem;
@@ -85,8 +93,8 @@
 
 .buyback-tab__charts {
   display: grid;
-  grid-template-columns: repeat(3, minmax(200px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap: 16px;
   align-items: stretch;
 }
 
@@ -141,6 +149,10 @@
     grid-template-columns: 1fr;
   }
 
+  .buyback-tab__stats--top {
+    margin-top: 4px;
+  }
+
   .buyback-tab__split {
     grid-template-columns: 1fr;
     gap: 12px;
@@ -156,6 +168,7 @@
 
   .buyback-tab__charts {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .buyback-tab__chart-card--wide {

@@ -154,25 +154,6 @@
 				"internalType": "address",
 				"name": "lpPair",
 				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "newBalance",
-				"type": "uint256"
-			}
-		],
-		"name": "PairSynced",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "lpPair",
-				"type": "address"
 			}
 		],
 		"name": "PairWhitelisted",
@@ -251,6 +232,25 @@
 			}
 		],
 		"name": "RescueNative",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "lpPair",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "newBalance",
+				"type": "uint256"
+			}
+		],
+		"name": "Synced",
 		"type": "event"
 	},
 	{

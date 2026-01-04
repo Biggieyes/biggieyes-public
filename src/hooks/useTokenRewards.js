@@ -1,78 +1,79 @@
 // src/hooks/useTokenRewards.js
 import * as React from "react";
-import { ethers } from "ethers";
-import { getReadOnlyContract } from "../utils/contract"; // přizpůsob podle projektu
-import { ABI_TOKEN_REWARDS } from "../utils/abi/index.js";
+import TokenRewardsService from "../services/tokenRewardsService";
+import { ADDR, getROProvider } from "../utils/contract";
+import { getCached } from "../utils/fetchCache";
 
-/**
- * Hook pro čtení informací z TokenRewards kontraktu.
- * Čte stav odměn v tokenech a týdenní statistiky.
- */
-export default function useTokenRewards() {
-  const [data, setData] = React.useState({
-    totalDistributed: "0",
-    claimableNow: "0",
-    currentWeek: 0,
-    lastDistribution: null,
-    nextDistribution: null,
-    rewardToken: null,
-  });
+const DEFAULT_DATA = {
+  address: null,
+  unitReward: "0",
+  rewardsMinted: "0",
+  rewardsCap: "0",
+  remainingCap: "0",
+  totalDistributed: "0",
+  distributedThisWeek: "0",
+  currentWeek: 0,
+  lastRecordedWeek: 0,
+  lastWeekDistributed: "0",
+  blockWeights: [],
+  tokenMeta: null,
+  tokenSymbol: "BIGGI",
+  tokenDecimals: 18,
+  mainNFT: null,
+  main2NFT: null,
+  owner: null,
+  paused: false,
+  treasure: null,
+};
+
+export default function useTokenRewards(providerOverride = null) {
+  const [data, setData] = React.useState(DEFAULT_DATA);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
 
-  const fetchTokenRewards = React.useCallback(async () => {
+  const refresh = React.useCallback(async (options = {}) => {
     setLoading(true);
     setError(null);
     try {
-      const contract = await getReadOnlyContract("tokenRewards", ABI_TOKEN_REWARDS);
-      if (!contract) throw new Error("TokenRewards contract not found");
+      const provider = providerOverride || getROProvider();
+      if (!provider) throw new Error("Read-only provider not available");
 
-      const [
-        totalDistributedWei,
-        claimableNowWei,
-        currentWeekBN,
-        rewardToken,
-        lastDistRaw,
-        nextDistRaw,
-      ] = await Promise.all([
-        contract.totalDistributed?.().catch(() => ethers.constants.Zero),
-        contract.claimableNow?.().catch(() => ethers.constants.Zero),
-        contract.currentWeek?.().catch(() => 0),
-        contract.rewardToken?.().catch(() => contract.token?.().catch(() => null)),
-        contract.lastDistributionAt?.().catch(() => 0),
-        contract.nextDistributionAt?.().catch(() => 0),
-      ]);
+      const svc = new TokenRewardsService(ADDR.TOKEN_REWARDS, provider);
+      const cacheKey = `tokenRewards:${svc.address || ADDR.TOKEN_REWARDS || "unknown"}`;
+      const snapshot = await getCached(
+        cacheKey,
+        async () => {
+          const raw = await svc.getAllStats();
+          const formatted = await TokenRewardsService.formatUsingTokenMeta(raw);
+          const meta = formatted?.tokenMeta || null;
+          const tokenSymbol = meta?.symbol_ ?? meta?.symbol ?? "BIGGI";
+          const rawDecimals = meta?.decimals_ ?? meta?.decimals ?? 18;
+          const tokenDecimals = Number(rawDecimals?.toString?.() ?? rawDecimals ?? 18) || 18;
 
-      let lastDistribution = null;
-      let nextDistribution = null;
-      try {
-        const l = Number(lastDistRaw?.toString?.() || 0);
-        const n = Number(nextDistRaw?.toString?.() || 0);
-        if (l > 0) lastDistribution = new Date(l * 1000).toLocaleString();
-        if (n > 0) nextDistribution = new Date(n * 1000).toLocaleString();
-      } catch (err) {
-        console.debug("tokenRewards date parsing failed", err);
-      }
+          return {
+            ...DEFAULT_DATA,
+            ...formatted,
+            address: svc.address,
+            tokenMeta: meta,
+            tokenSymbol,
+            tokenDecimals,
+          };
+        },
+        { force: options?.force === true }
+      );
 
-      setData({
-        totalDistributed: ethers.utils.formatEther(totalDistributedWei || 0),
-        claimableNow: ethers.utils.formatEther(claimableNowWei || 0),
-        currentWeek: Number(currentWeekBN || 0),
-        lastDistribution,
-        nextDistribution,
-        rewardToken: rewardToken || null,
-      });
+      setData(snapshot);
     } catch (e) {
-      console.error("useTokenRewards.fetchTokenRewards", e);
+      console.error("useTokenRewards.refresh", e);
       setError(e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [providerOverride]);
 
   React.useEffect(() => {
-    fetchTokenRewards();
-  }, [fetchTokenRewards]);
+    refresh();
+  }, [refresh]);
 
-  return { data, loading, error, refresh: fetchTokenRewards };
+  return { data, loading, error, refresh };
 }

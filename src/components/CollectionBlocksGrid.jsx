@@ -4,6 +4,7 @@ import "./CollectionBlocksGrid.css";
 
 import useIsMobile from "../hooks/useIsMobile";
 import useIsTouch from "../hooks/useIsTouch";
+import { useStatsRewards } from "../hooks/useStatsRewards";
 import {
   DEFAULT_BLOCKS,
   BASE_PRICES,
@@ -53,6 +54,7 @@ import FutureCollectionsModal from "./CollectionBlocksGrid.FutureCollectionsModa
 import ModalPortal from "./common/ModalPortal";
 
 const ExpansionPanelLazy = React.lazy(() => import("./panels/ExpansionPanel"));
+const NOOP = () => {};
 
 const resolveButtonStyle = (name) => {
   const variant = BTN_STYLES[safeBlockFolder(name)] || FALLBACK_BTN_STYLE;
@@ -91,6 +93,24 @@ function CollectionBlocksGrid({
 
   const isMobile = useIsMobile(MOBILE_BREAKPOINT);
   const isTouch = useIsTouch();
+
+  const [fallbackPrices, setFallbackPrices] = React.useState(Array(MAX_BLOCKS).fill(null));
+  const [fallbackMinted, setFallbackMinted] = React.useState(Array(MAX_BLOCKS).fill(null));
+  const [fallbackBgMinted, setFallbackBgMinted] = React.useState(Array(MAX_BLOCKS).fill(null));
+
+  const { fetchStats: fetchSnapshotStats } = useStatsRewards({
+    setTicketPrice: NOOP,
+    setTicketMinted: NOOP,
+    setBiggiMinted: NOOP,
+    setBlockPrices: setFallbackPrices,
+    setBlockMintCounts: setFallbackMinted,
+    setBackgroundMintCounts: setFallbackBgMinted,
+    setRewardPool: NOOP,
+    setMintVolumeMatic: NOOP,
+    walletAddress: "",
+    myNFTs: [],
+    setMyClaimable: NOOP,
+  });
   let contracts;
   try {
     contracts = useContracts();
@@ -200,6 +220,15 @@ function CollectionBlocksGrid({
     return () => { cancelled = true; };
   }, [contracts, reloadCounter]);
 
+  React.useEffect(() => {
+    const missingPrices = !Array.isArray(blockPricesProp) || blockPricesProp.length === 0;
+    const missingMintCounts = !Array.isArray(blockMintCountsProp) || blockMintCountsProp.length === 0;
+    if (!missingPrices && !missingMintCounts) return;
+    fetchSnapshotStats().catch((err) => {
+      console.debug("CollectionBlocksGrid snapshot fallback failed", err);
+    });
+  }, [blockPricesProp, blockMintCountsProp, fetchSnapshotStats]);
+
 // ====== normalizace vstupů + on-chain fallbacky ======
   const normalizedNames = React.useMemo(() => {
     const source = Array.isArray(blockNames) && blockNames.length ? blockNames : DEFAULT_BLOCKS;
@@ -214,14 +243,14 @@ function CollectionBlocksGrid({
     const fromProps = Array.isArray(blockPricesProp) ? blockPricesProp.slice(0, MAX_BLOCKS) : [];
     while (fromProps.length < MAX_BLOCKS) fromProps.push(null);
     // pokud props chybí, použij livePrices
-    return fromProps.map((v, i) => (v == null ? livePrices[i] : v));
-  }, [blockPricesProp, livePrices]);
+    return fromProps.map((v, i) => (v == null ? (livePrices[i] ?? fallbackPrices[i]) : v));
+  }, [blockPricesProp, livePrices, fallbackPrices]);
 
   const normalizedMintCounts = React.useMemo(() => {
     const fromProps = Array.isArray(blockMintCountsProp) ? blockMintCountsProp.slice(0, MAX_BLOCKS) : [];
     while (fromProps.length < MAX_BLOCKS) fromProps.push(null);
-    return fromProps.map((v, i) => (v == null ? liveMinted[i] : v));
-  }, [blockMintCountsProp, liveMinted]);
+    return fromProps.map((v, i) => (v == null ? (liveMinted[i] ?? fallbackMinted[i]) : v));
+  }, [blockMintCountsProp, liveMinted, fallbackMinted]);
 
   const blockEntries = React.useMemo(
     () =>

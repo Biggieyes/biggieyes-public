@@ -32,6 +32,21 @@ import useLiquidityHistory from "../../hooks/tokenomics/useLiquidityHistory";
 import useTokenDexSnapshot from "../../hooks/tokenomics/useTokenDexSnapshot";
 import useTokenDexHistory from "../../hooks/tokenomics/useTokenDexHistory";
 import useBuybackStabilityHistory from "../../hooks/tokenomics/useBuybackStabilityHistory";
+import useBiggiToken from "../../hooks/useBiggiToken";
+import useBiggiTokenomicsReader from "../../hooks/useBiggiTokenomicsReader";
+import useBuyback from "../../hooks/useBuyback";
+import useReserve from "../../hooks/useReserve";
+import useTreasury from "../../hooks/useTreasury";
+import usePolicy from "../../hooks/usePolicy";
+import useDripDistributor from "../../hooks/useDripDistributor";
+import useDripLM from "../../hooks/useDripLM";
+import useLiquidityManager from "../../hooks/useLiquidityManager";
+import useLiquidityVault from "../../hooks/useLiquidityVault";
+import useLiquidityAutomation from "../../hooks/useLiquidityAutomation";
+import useBuybackKeeper from "../../hooks/useBuybackKeeper";
+import useLiquidityKeeper from "../../hooks/useLiquidityKeeper";
+import useDripKeeper from "../../hooks/useDripKeeper";
+import useDistributor from "../../hooks/useDistributor";
 
 class EcosystemErrorBoundary extends React.Component {
   constructor(props) {
@@ -69,12 +84,6 @@ class EcosystemErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
-
-const ERC20_ABI_MIN = [
-  "function totalSupply() view returns (uint256)",
-  "function balanceOf(address) view returns (uint256)",
-  "function decimals() view returns (uint8)",
-];
 
 const getROSafe = () => {
   try {
@@ -265,6 +274,7 @@ const Card = ({ title, subtitle, tone = "c", action, children }) => (
 const BiggiTokenInner = ({
   data,
   distributorData,
+  walletAddress = "",
   onRefreshTokenMeta,
   onRefreshRewards,
   onPreviewClaim,
@@ -282,18 +292,87 @@ const BiggiTokenInner = ({
   onAddLiquidityFromBalance,
   onBuybackAndSendToTreasury,
 }) => {
-  const tok = data?.token || data?.tok || {};
-  const dist = data?.distributor || data?.dist || {};
+  const { data: tokenHook } = useBiggiToken(walletAddress);
+  const { status: tokenomicsStatus } = useBiggiTokenomicsReader();
+  const { data: buybackHook } = useBuyback();
+  const { data: reserveHook } = useReserve();
+  const { data: treasuryHook } = useTreasury();
+  const { data: policyHook } = usePolicy();
+  const { data: dripDistributorHook } = useDripDistributor();
+  const { data: dripLMHook } = useDripLM();
+  const { data: liquidityManagerHook } = useLiquidityManager();
+  const { data: liquidityVaultHook } = useLiquidityVault();
+  const { data: liquidityAutomationHook } = useLiquidityAutomation();
+  const { data: buybackKeeperHook } = useBuybackKeeper();
+  const { data: liquidityKeeperHook } = useLiquidityKeeper();
+  const { data: dripKeeperHook } = useDripKeeper(walletAddress);
+  const { data: distributorHook } = useDistributor();
+
+  const tokBase = data?.token || data?.tok || {};
+  const tok = tokenHook?.address ? { ...tokBase, ...tokenHook } : tokBase;
+
+  const distBase = data?.distributor || data?.dist || {};
+  const dist = distributorHook?.address ? { ...distBase, ...distributorHook } : distBase;
+  if (!dist.pendingBuyback && dist.pendingBuybackAgent) dist.pendingBuyback = dist.pendingBuybackAgent;
+
   const distributorSnapshot = distributorData || dist;
-  const reserve = data?.reserve || {};
-  const treasury = data?.treasury || {};
-  const liquidity = data?.liquidity || {};
-  const router = data?.router || {};
-  const buyback = data?.buyback || {};
-  const drip = data?.drip || {};
-  const policy = data?.policy || {};
-  
-  
+
+  const reserveBase = data?.reserve || {};
+  const reserve = reserveHook?.address ? { ...reserveBase, ...reserveHook } : reserveBase;
+  if (!reserve.reserveAddress && reserve.address) reserve.reserveAddress = reserve.address;
+  if (!reserve.liquidityManager && liquidityManagerHook?.address) {
+    reserve.liquidityManager = liquidityManagerHook.address;
+  }
+  if (!reserve.liquidityVault && liquidityVaultHook?.address) {
+    reserve.liquidityVault = liquidityVaultHook.address;
+  }
+  if (!reserve.keeper && liquidityManagerHook?.keeper) reserve.keeper = liquidityManagerHook.keeper;
+  if (!reserve.keeper && liquidityKeeperHook?.address) reserve.keeper = liquidityKeeperHook.address;
+
+  const treasuryBase = data?.treasury || {};
+  const treasury = treasuryHook?.treasuryAddress ? { ...treasuryBase, ...treasuryHook } : treasuryBase;
+
+  const buybackBase = data?.buyback || {};
+  const buyback = buybackHook?.address ? { ...buybackBase, ...buybackHook } : buybackBase;
+  if (!buyback.buybackAgent && buyback.address) buyback.buybackAgent = buyback.address;
+  if (!buyback.dripLm && buyback.dripLM) buyback.dripLm = buyback.dripLM;
+  if (!buyback.dripLm && dripLMHook?.address) buyback.dripLm = dripLMHook.address;
+  if (buybackKeeperHook?.upkeepNeeded != null) buyback.upkeepNeeded = buybackKeeperHook.upkeepNeeded;
+  if (!buyback.upkeepAddress && buybackKeeperHook?.address) buyback.upkeepAddress = buybackKeeperHook.address;
+
+  const dripBase = data?.drip || {};
+  const drip = dripDistributorHook?.address ? { ...dripBase, ...dripDistributorHook } : dripBase;
+  if (!drip.dripDistributor && drip.address) drip.dripDistributor = drip.address;
+  if (!drip.dripLm && dripLMHook?.address) drip.dripLm = dripLMHook.address;
+  if (!drip.dripLM && dripLMHook?.address) drip.dripLM = dripLMHook.address;
+  if (!drip.dripLm && dripKeeperHook?.dripLM) drip.dripLm = dripKeeperHook.dripLM;
+
+  const policyBase = data?.policy || {};
+  const policyHasSignal = Object.values(policyHook || {}).some((val) => val && val !== 0 && val !== "0");
+  const policy = policyHasSignal ? { ...policyBase, ...policyHook } : policyBase;
+
+  const liquidityBase = data?.liquidity || {};
+  const derived = tokenomicsStatus?.derived || {};
+  const liquidity = {
+    ...liquidityBase,
+    reserveNative: liquidityBase.reserveNative ?? derived.reserveNative,
+    reserveBiggi: liquidityBase.reserveBiggi ?? derived.reserveBiggi,
+    biggiPerNative: liquidityBase.biggiPerNative ?? derived.priceBiggiPerNative,
+    nativePerBiggi: liquidityBase.nativePerBiggi ?? derived.priceNativePerBiggi,
+  };
+
+  const routerBase = data?.router || {};
+  const router = {
+    ...routerBase,
+    routerAddress:
+      routerBase.routerAddress ??
+      liquidityAutomationHook?.router ??
+      liquidityManagerHook?.router ??
+      tok.routerAddr ??
+      null,
+    wrappedNative: routerBase.wrappedNative ?? tok.weth,
+  };
+
   const [lmLoading, setLmLoading] = React.useState(false);
   const [svcBuyback, setSvcBuyback] = React.useState(null);
   const [svcDrip, setSvcDrip] = React.useState(null);
@@ -348,7 +427,7 @@ const BiggiTokenInner = ({
       try {
         const provider = getROSafe();
         if (!provider) return;
-        const token = new ethers.Contract(ADDR.BIGGI, ERC20_ABI_MIN, provider);
+        const token = new ethers.Contract(ADDR.BIGGI, ABI_TOKEN, provider);
         const bal = await withTimeout(() => token.balanceOf(ADDR.DRIP_DISTRIBUTOR), 8000, "dripDistributor.balanceOf");
         if (cancelled || bal == null) return;
         setDripDistributorBiggi(Number(ethers.utils.formatUnits(bal, 18)));
@@ -361,9 +440,16 @@ const BiggiTokenInner = ({
       cancelled = true;
     };
   }, [isDripTab]);
-  const dripLmAddress = buyback?.dripLm || drip?.dripLm || drip?.dripLM || dist?.dripLm;
-  const dripDistributorAddress = drip?.dripDistributor || dist?.distributor;
-  const buybackAgentAddress = buyback?.buybackAgent || dist?.buybackAgent;
+  const dripLmAddress =
+    buyback?.dripLm ||
+    buyback?.dripLM ||
+    drip?.dripLm ||
+    drip?.dripLM ||
+    dripLMHook?.address ||
+    dist?.dripLm;
+  const dripDistributorAddress =
+    drip?.dripDistributor || dripDistributorHook?.address || dist?.distributor;
+  const buybackAgentAddress = buyback?.buybackAgent || buyback?.address || dist?.buybackAgent;
   const treasuryAddressRaw =
     treasury?.treasuryAddress ||
     treasury?.address ||
@@ -394,6 +480,29 @@ const BiggiTokenInner = ({
     community: policy?.communityBps ?? 1000,
   };
   const pct = (bps) => (bps != null ? `${(Number(bps) / 100).toFixed(1)} %` : "--");
+  const lmTokenPct =
+    lmView?.tokenPct ??
+    liquidityManagerHook?.tokenPct ??
+    liquidityAutomationHook?.tokenPct ??
+    null;
+  const lmSlippageBps = lmView?.slippageBps ?? liquidityManagerHook?.slippageBps ?? null;
+  const lmDeadlineSec = lmView?.txDeadlineSec ?? liquidityManagerHook?.txDeadlineSec ?? null;
+  const lmKeeperAddress =
+    lmView?.keeper ||
+    reserve.keeper ||
+    liquidityManagerHook?.keeper ||
+    liquidityKeeperHook?.address ||
+    null;
+  const lmAddress =
+    lmView?.reserveAddr ||
+    reserve.liquidityManager ||
+    liquidityManagerHook?.address ||
+    null;
+  const lmVaultAddress =
+    lmView?.liquidityVault ||
+    reserve.liquidityVault ||
+    liquidityVaultHook?.address ||
+    null;
 
   const heroStats = React.useMemo(
     () => [
@@ -513,7 +622,11 @@ const BiggiTokenInner = ({
   }, [tokenDexHistory, liquidity?.reserveNative, liquidity?.reserveBiggi, liquidity?.biggiPerNative]);
 
   const buybackStabilityHistory = useBuybackStabilityHistory({ buybackSnapshot, dripSnapshot });
-  const dripAvailableValue = dripSnapshot?.distributor?.availableTokens ?? data?.rewards?.dripAvailable;
+  const dripAvailableValue =
+    dripSnapshot?.distributor?.availableTokens ??
+    data?.rewards?.dripAvailable ??
+    drip?.availableTokens ??
+    tokenomicsStatus?.derived?.dripAvailable;
 
   const fetchLmReserveVaultSnapshot = React.useCallback(async () => {
     setLmLoading(true);
@@ -535,7 +648,7 @@ const BiggiTokenInner = ({
       const lmContract = new ethers.Contract(ADDR.LM, ABI_LM, provider);
       const reserveContract = new ethers.Contract(ADDR.RESERVE, ABI_RESERVE, provider);
       const pairContract = new ethers.Contract(ADDR.PAIR, ABI_PAIR, provider);
-      const tokenContract = new ethers.Contract(ADDR.BIGGI, ERC20_ABI_MIN, provider);
+      const tokenContract = new ethers.Contract(ADDR.BIGGI, ABI_TOKEN, provider);
 
       const [owner, keeper, tokenPct, slippageBps, txDeadlineSec, liquidityVaultAddr, reserveAddr, routerAddr, factoryAddr] = await Promise.all([
         lmContract.owner(),
@@ -617,7 +730,7 @@ const BiggiTokenInner = ({
       const distributor = new ethers.Contract(ADDR.DRIP_DISTRIBUTOR, ABI_DRIP_DISTRIBUTOR, provider);
       const routerContract = new ethers.Contract(ADDR.ROUTER, ABI_ROUTER, provider);
       const pair = new ethers.Contract(ADDR.PAIR, ABI_PAIR, provider);
-      const token = new ethers.Contract(ADDR.BIGGI, ERC20_ABI_MIN, provider);
+      const token = new ethers.Contract(ADDR.BIGGI, ABI_TOKEN, provider);
 
       let masterConfig = null;
       if (Array.isArray(masterConfigAbi) && masterConfigAbi.length && ADDR.MASTER_CONFIG) {
@@ -1096,14 +1209,6 @@ const BiggiTokenInner = ({
           ))}
         </div>
 
-        {tab !== "flow" && (
-          <div style={{ display: "flex", justifyContent: "flex-end", margin: "8px 0 16px" }}>
-            <Button variant="c" disabled={tabBusy} onClick={() => refreshTab(tab)}>
-              {tabBusy ? "Refreshing..." : "Refresh current tab"}
-            </Button>
-          </div>
-        )}
-
         {tab === "reserve" && <TokenomicsPanel />}
 
         <div className="rewards-grid__cards">
@@ -1260,6 +1365,10 @@ const BiggiTokenInner = ({
                   <div className="biggi-contract-box">
                     <Line label="Auto buyback" value={buyback.autoBuybackEnabled ? "On" : "Off"} />
                     <Line label="Paused" value={buyback.paused ? "Yes" : "No"} />
+                    <Line
+                      label="Upkeep needed"
+                      value={buyback.upkeepNeeded != null ? (buyback.upkeepNeeded ? "Yes" : "No") : "--"}
+                    />
                     <Line label="Native balance" tone="native" value={fmtVal(buyback.nativeBalance, "POL")} />
                     <Line label="BIGGI balance" tone="token" value={fmtVal(buyback.biggiBalance, "BIGGI")} />
                     <Line
@@ -1362,23 +1471,23 @@ const BiggiTokenInner = ({
                   </div>
                   <div className="lv-row">
                     <span>LM token %</span>
-                    <span className="mono lv-value">{lmView?.tokenPct != null ? `${lmView.tokenPct}%` : "--"}</span>
+                    <span className="mono lv-value">{lmTokenPct != null ? `${lmTokenPct}%` : "--"}</span>
                   </div>
                   <div className="lv-row">
                     <span>LM slippage</span>
-                    <span className="mono lv-value">{lmView?.slippageBps != null ? `${lmView.slippageBps} bps` : "--"}</span>
+                    <span className="mono lv-value">{lmSlippageBps != null ? `${lmSlippageBps} bps` : "--"}</span>
                   </div>
                   <div className="lv-row">
                     <span>LM deadline</span>
-                    <span className="mono lv-value">{lmView?.txDeadlineSec != null ? `${lmView.txDeadlineSec} s` : "--"}</span>
+                    <span className="mono lv-value">{lmDeadlineSec != null ? `${lmDeadlineSec} s` : "--"}</span>
                   </div>
                   <div className="lv-row">
                     <span>Keeper</span>
-                    <span className="mono lv-value lv-value--addr">{shortAddr(lmView?.keeper || reserve.keeper)}</span>
+                    <span className="mono lv-value lv-value--addr">{shortAddr(lmKeeperAddress)}</span>
                   </div>
                   <div className="lv-row">
                     <span>Liquidity Manager</span>
-                    <span className="mono lv-value lv-value--addr">{shortAddr(lmView?.reserveAddr || reserve.liquidityManager)}</span>
+                    <span className="mono lv-value lv-value--addr">{shortAddr(lmAddress)}</span>
                   </div>
                   <div className="lv-row">
                     <span>Reserve contract</span>
@@ -1386,7 +1495,7 @@ const BiggiTokenInner = ({
                   </div>
                   <div className="lv-row">
                     <span>Liquidity Vault</span>
-                    <span className="mono lv-value lv-value--addr">{shortAddr(lmView?.liquidityVault || reserve.liquidityVault)}</span>
+                    <span className="mono lv-value lv-value--addr">{shortAddr(lmVaultAddress)}</span>
                   </div>
                   <div className="lv-row">
                     <span>Pair whitelisted</span>

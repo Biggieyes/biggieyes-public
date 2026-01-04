@@ -2,6 +2,7 @@
 import * as React from "react";
 import { ethers } from "ethers";
 import { getPolicyRO } from "../utils/contract";
+import { getCached } from "../utils/fetchCache";
 
 /**
  * Hook pro čtení dat z Policy kontraktu.
@@ -29,68 +30,76 @@ export default function usePolicy() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
 
-  const fetchPolicy = React.useCallback(async () => {
+  const fetchPolicy = React.useCallback(async (options = {}) => {
     setLoading(true);
     setError(null);
     try {
       const contract = getPolicyRO();
       if (!contract) throw new Error("Policy contract not found");
+      const cacheKey = `policy:${contract.address || "unknown"}`;
 
-      const fmt = (v) => {
-        try { return ethers.utils.formatEther(v); } catch { return "0"; }
-      };
+      const snapshot = await getCached(
+        cacheKey,
+        async () => {
+          const fmt = (v) => {
+            try { return ethers.utils.formatEther(v); } catch { return "0"; }
+          };
 
-      const [
-        alphaBuybackBps,
-        betaBurnBps,
-        gammaStakingBps,
-        deltaReserveBps,
-        swapSlippageBps,
-        lpSlippageBps,
-        txDeadlineSec,
-        minBuybackInterval,
-        epsilonPriceBandBps,
-        twapLookbackSec,
-        maxDailyBuybackNative,
-        buybacksPaused,
-        refillsPaused,
-        lpAddsPaused,
-        endOfCollectionPaused,
-      ] = await Promise.all([
-        contract.alphaBuybackBps?.().catch(() => 0),
-        contract.betaBurnBps?.().catch(() => 0),
-        contract.gammaStakingBps?.().catch(() => 0),
-        contract.deltaReserveBps?.().catch(() => 0),
-        contract.swapSlippageBps?.().catch(() => 0),
-        contract.lpSlippageBps?.().catch(() => 0),
-        contract.txDeadlineSec?.().catch(() => 0),
-        contract.minBuybackInterval?.().catch(() => 0),
-        contract.epsilonPriceBandBps?.().catch(() => 0),
-        contract.twapLookbackSec?.().catch(() => 0),
-        contract.maxDailyBuybackNative?.().catch(() => 0),
-        contract.buybacksPaused?.().catch(() => false),
-        contract.refillsPaused?.().catch(() => false),
-        contract.lpAddsPaused?.().catch(() => false),
-        contract.endOfCollectionPaused?.().catch(() => false),
-      ]);
+          const [
+            alphaBuybackBps,
+            betaBurnBps,
+            gammaStakingBps,
+            deltaReserveBps,
+            swapSlippageBps,
+            lpSlippageBps,
+            txDeadlineSec,
+            minBuybackInterval,
+            epsilonPriceBandBps,
+            twapLookbackSec,
+            maxDailyBuybackNative,
+            buybacksPaused,
+            refillsPaused,
+            lpAddsPaused,
+            endOfCollectionPaused,
+          ] = await Promise.all([
+            contract.alphaBuybackBps?.().catch(() => 0),
+            contract.betaBurnBps?.().catch(() => 0),
+            contract.gammaStakingBps?.().catch(() => 0),
+            contract.deltaReserveBps?.().catch(() => 0),
+            contract.swapSlippageBps?.().catch(() => 0),
+            contract.lpSlippageBps?.().catch(() => 0),
+            contract.txDeadlineSec?.().catch(() => 0),
+            contract.minBuybackInterval?.().catch(() => 0),
+            contract.epsilonPriceBandBps?.().catch(() => 0),
+            contract.twapLookbackSec?.().catch(() => 0),
+            contract.maxDailyBuybackNative?.().catch(() => 0),
+            contract.buybacksPaused?.().catch(() => false),
+            contract.refillsPaused?.().catch(() => false),
+            contract.lpAddsPaused?.().catch(() => false),
+            contract.endOfCollectionPaused?.().catch(() => false),
+          ]);
 
-      setData({
-        alphaBuybackBps: Number(alphaBuybackBps),
-        betaBurnBps: Number(betaBurnBps),
-        gammaStakingBps: Number(gammaStakingBps),
-        deltaReserveBps: Number(deltaReserveBps),
-        swapSlippageBps: Number(swapSlippageBps),
-        lpSlippageBps: Number(lpSlippageBps),
-        txDeadlineSec: Number(txDeadlineSec),
-        minBuybackInterval: Number(minBuybackInterval),
-        epsilonPriceBandBps: Number(epsilonPriceBandBps),
-        twapLookbackSec: Number(twapLookbackSec),
-        maxDailyBuybackNative: fmt(maxDailyBuybackNative),
-        buybacksPaused: Boolean(buybacksPaused),
-        refillsPaused: Boolean(refillsPaused),
-        lpAddsPaused: Boolean(lpAddsPaused),
-        endOfCollectionPaused: Boolean(endOfCollectionPaused),
-      });
+          return {
+            alphaBuybackBps: Number(alphaBuybackBps),
+            betaBurnBps: Number(betaBurnBps),
+            gammaStakingBps: Number(gammaStakingBps),
+            deltaReserveBps: Number(deltaReserveBps),
+            swapSlippageBps: Number(swapSlippageBps),
+            lpSlippageBps: Number(lpSlippageBps),
+            txDeadlineSec: Number(txDeadlineSec),
+            minBuybackInterval: Number(minBuybackInterval),
+            epsilonPriceBandBps: Number(epsilonPriceBandBps),
+            twapLookbackSec: Number(twapLookbackSec),
+            maxDailyBuybackNative: fmt(maxDailyBuybackNative),
+            buybacksPaused: Boolean(buybacksPaused),
+            refillsPaused: Boolean(refillsPaused),
+            lpAddsPaused: Boolean(lpAddsPaused),
+            endOfCollectionPaused: Boolean(endOfCollectionPaused),
+          };
+        },
+        { force: options?.force === true }
+      );
+      setData(snapshot);
     } catch (e) {
       console.error("usePolicy.fetchPolicy", e);
       setError(e);

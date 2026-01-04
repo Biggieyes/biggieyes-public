@@ -18,7 +18,9 @@ import ABI_MASTER_CONFIG from './BiggiMasterTokenomicsConfig.json' assert { type
 import ABI_COMPUTE from './BiggiCompute.json' assert { type: 'json' };
 import ABI_LIQUIDITY_AUTOMATION from './LiquidityAutomation.json' assert { type: 'json' };
 import ABI_LIQUIDITY_SETUP from './LiquiditySetup.json' assert { type: 'json' };
+import ABI_LIQUIDITY_KEEPER from './LiquidityKeeper.json' assert { type: 'json' };
 import ABI_DRIP_DISTRIBUTOR from './BiggiDripDistributor.json' assert { type: 'json' };
+import ABI_DRIP_KEEPER from './BiggiDripKeeper.json' assert { type: 'json' };
 import ABI_DRIPLM from './BiggiDripLM.json' assert { type: 'json' };
 import ABI_LM from './LiquidityManager.json' assert { type: 'json' };
 import ABI_LIQUIDITY_VAULT from './LiquidityVault.json' assert { type: 'json' };
@@ -73,7 +75,9 @@ export {
   ABI_COMPUTE,
   ABI_LIQUIDITY_AUTOMATION,
   ABI_LIQUIDITY_SETUP,
+  ABI_LIQUIDITY_KEEPER,
   ABI_DRIP_DISTRIBUTOR,
+  ABI_DRIP_KEEPER,
   ABI_DRIPLM,
   ABI_LM,
   ABI_LIQUIDITY_VAULT,

@@ -53,7 +53,10 @@ const CommunityCenterPanel = React.lazy(() => import("./CommunityCenterPanel.jsx
 export default function NavPanelSwitch({
   activeAlt,
   modalText,
-  compact,
+  transparencyData,
+  transparencyLoading,
+  refreshTransparency,
+  compact = false,
   walletAddress,
   getSignerProvider,
   getROProvider,
@@ -135,6 +138,7 @@ export default function NavPanelSwitch({
       ) : activeAlt === "VRF MINT" ? (
         <VRFPanel
           data={vrfUIData}
+          walletAddress={walletAddress}
           onRequestRandomness={onVRFRequest}
           onRefresh={onVRFRefresh}
           onCancelPending={onVRFCancelPending}
@@ -151,6 +155,7 @@ export default function NavPanelSwitch({
             <BiggiToken
               key={tokenPanelReloadKey}
               data={biggiData}
+              walletAddress={walletAddress}
               onRefreshTokenMeta={onRefreshTokenMeta}
               onRefreshRewards={onRefreshRewards}
               onPreviewClaim={onRefreshRewards}
@@ -228,7 +233,14 @@ export default function NavPanelSwitch({
           />
         </React.Suspense>
       ) : (
-        <InfoPanel compact={compact}>{modalText}</InfoPanel>
+        <InfoPanel
+          compact={compact}
+          data={transparencyData}
+          loading={transparencyLoading}
+          onRefresh={refreshTransparency}
+        >
+          {modalText}
+        </InfoPanel>
       )}
     </React.Suspense>
   );

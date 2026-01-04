@@ -1,5 +1,6 @@
 import * as React from "react";
 import { createDripLMService } from "../services/factories";
+import { getCached } from "../utils/fetchCache";
 
 /**
  * Hook pro Drip Liquidity Manager (prodeje do buybacku / drip distribuci).
@@ -19,23 +20,31 @@ export default function useDripLM() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
 
-  const refresh = React.useCallback(async () => {
+  const refresh = React.useCallback(async (options = {}) => {
     setLoading(true);
     setError(null);
     try {
       const svc = createDripLMService();
-      const raw = await svc.getAllStats();
-      setData({
-        address: svc.address,
-        biggiToken: raw.BIGGI || null,
-        buybackAgent: raw.buybackAgent || null,
-        dripDistributor: raw.dripDistributor || null,
-        reserve: raw.reserve || null,
-        router: raw.router || null,
-        sellPct: raw.sellPct?.toString?.() ?? raw.sellPct ?? null,
-        slippageBps: raw.slippageBps?.toString?.() ?? raw.slippageBps ?? null,
-        txDeadlineSec: raw.txDeadlineSec?.toString?.() ?? raw.txDeadlineSec ?? null,
-      });
+      const cacheKey = `dripLM:${svc.address || "unknown"}`;
+      const snapshot = await getCached(
+        cacheKey,
+        async () => {
+          const raw = await svc.getAllStats();
+          return {
+            address: svc.address,
+            biggiToken: raw.BIGGI || null,
+            buybackAgent: raw.buybackAgent || null,
+            dripDistributor: raw.dripDistributor || null,
+            reserve: raw.reserve || null,
+            router: raw.router || null,
+            sellPct: raw.sellPct?.toString?.() ?? raw.sellPct ?? null,
+            slippageBps: raw.slippageBps?.toString?.() ?? raw.slippageBps ?? null,
+            txDeadlineSec: raw.txDeadlineSec?.toString?.() ?? raw.txDeadlineSec ?? null,
+          };
+        },
+        { force: options?.force === true }
+      );
+      setData(snapshot);
     } catch (e) {
       console.error("useDripLM.refresh", e);
       setError(e);

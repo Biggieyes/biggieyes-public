@@ -1,79 +1,75 @@
 // src/hooks/useNFTRewards.js
 import * as React from "react";
-import { ethers } from "ethers";
-import { useContracts } from "../providers/ContractsProvider";
+import NFTRewardsService from "../services/nftRewardsService";
+import { ADDR, getROProvider, getSignerProvider } from "../utils/contract";
+import { getCached } from "../utils/fetchCache";
 
-/**
- * Čte a spravuje data z NFTRewards kontraktu.
- * Zahrnuje claimable odměny, historii a funkci claim().
- */
-export default function useNFTRewards() {
-  const { nftRewardsRead, nftRewardsWrite } = useContracts();
-  const [rewards, setRewards] = React.useState({
-    currentWeek: null,
-    claimable: "0",
-    totalClaimed: "0",
-    lastClaimAt: null,
-    userShareBps: null,
-  });
+const DEFAULT_DATA = {
+  baseURIs: { character: null, leaderboard: null, mystery: null },
+  characterClaimed: {},
+  leaderboardClaimed: {},
+  mysteryClaimed: {},
+  totalMinted: 0,
+  contractAddress: ADDR.NFT_REWARDS,
+};
 
-  const fmt = (v) => {
+export default function useNFTRewards(providerOverride = null) {
+  const [data, setData] = React.useState(DEFAULT_DATA);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState(null);
+
+  const refresh = React.useCallback(async (options = {}) => {
+    setLoading(true);
+    setError(null);
     try {
-      return ethers.utils.formatEther(v);
-    } catch {
-      return "0";
+      const provider = providerOverride || getROProvider();
+      if (!provider) throw new Error("Read-only provider not available");
+
+      const svc = new NFTRewardsService(ADDR.NFT_REWARDS, provider);
+      const cacheKey = `nftRewards:${svc.address || ADDR.NFT_REWARDS || "unknown"}`;
+      const snapshot = await getCached(
+        cacheKey,
+        async () => {
+          const stats = await svc.getAllStats();
+          const nextReward = Number(stats.nextRewardId?.toString?.() ?? stats.nextRewardId ?? 0);
+          return {
+            totalMinted: Number.isFinite(nextReward) ? nextReward : null,
+            contractAddress: svc.address,
+          };
+        },
+        { force: options?.force === true }
+      );
+
+      setData((prev) => ({
+        ...prev,
+        totalMinted: snapshot.totalMinted == null ? prev.totalMinted : snapshot.totalMinted,
+        contractAddress: snapshot.contractAddress || prev.contractAddress,
+      }));
+    } catch (e) {
+      console.error("useNFTRewards.refresh", e);
+      setError(e);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [providerOverride]);
 
-  /** Načti aktuální informace o odměnách uživatele */
-  const refreshRewards = React.useCallback(
-    async (address) => {
-      const ctr = nftRewardsRead?.();
-      if (!ctr || !address) return;
-      try {
-        const [week, claimable, totalClaimed, lastClaimAt, shareBps] =
-          await Promise.all([
-            ctr.currentWeek?.().catch(() => null),
-            ctr.claimable?.(address).catch(() => 0),
-            ctr.totalClaimed?.(address).catch(() => 0),
-            ctr.lastClaimAt?.(address).catch(() => 0),
-            ctr.userShareBps?.(address).catch(() => null),
-          ]);
+  const claimReward = React.useCallback(async (rewardId, overrides = {}) => {
+    setError(null);
+    try {
+      const provider = getSignerProvider();
+      const svc = new NFTRewardsService(ADDR.NFT_REWARDS, provider);
+      svc.connectWithSigner(provider.getSigner());
+      return await svc.claim(rewardId, overrides);
+    } catch (e) {
+      console.error("useNFTRewards.claimReward", e);
+      setError(e);
+      throw e;
+    }
+  }, []);
 
-        setRewards({
-          currentWeek: week != null ? Number(week) : null,
-          claimable: fmt(claimable),
-          totalClaimed: fmt(totalClaimed),
-          lastClaimAt:
-            Number(lastClaimAt) > 0
-              ? new Date(Number(lastClaimAt) * 1000).toLocaleString()
-              : null,
-          userShareBps: shareBps != null ? Number(shareBps) : null,
-        });
-      } catch (e) {
-        console.error("refreshRewards", e);
-      }
-    },
-    [nftRewardsRead]
-  );
+  React.useEffect(() => {
+    refresh();
+  }, [refresh]);
 
-  /** Claim všech aktuálních NFT odměn */
-  const claimAll = React.useCallback(
-    async (address) => {
-      const ctr = nftRewardsWrite?.();
-      if (!ctr || !address) return alert("Wallet not connected");
-      try {
-        const tx = await ctr.claimAll?.();
-        await tx.wait();
-        await refreshRewards(address);
-        alert("NFT rewards claimed.");
-      } catch (e) {
-        console.error("claimAll", e);
-        alert("Claim failed: " + (e?.reason || e?.message || "Unknown error"));
-      }
-    },
-    [nftRewardsWrite, refreshRewards]
-  );
-
-  return { rewards, refreshRewards, claimAll };
+  return { data, loading, error, refresh, claimReward };
 }

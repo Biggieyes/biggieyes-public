@@ -149,6 +149,8 @@ contract BiggiEyesMain is ERC721, Ownable, Pausable, ReentrancyGuard {
     event BiggiRateUpdated(uint256 biggiPerEth);
     event TokenSinkUpdated(address sink, uint256 bps);
     event DistributorSet(address distributor);
+    event TicketPriceManuallySet(uint256 oldPrice, uint256 newPrice);
+    event BlockPriceManuallySet(uint16 indexed blockIdx, uint256 oldPrice, uint256 newPrice);
 
     uint8 private constant URI_REWARDS    = 0;
     uint8 private constant URI_CHARACTERS = 1;
@@ -200,6 +202,21 @@ contract BiggiEyesMain is ERC721, Ownable, Pausable, ReentrancyGuard {
         tokenSink = sink;
         tokenSinkBps = bps;
         emit TokenSinkUpdated(sink, bps);
+    }
+
+    /* ===== Manual price overrides ===== */
+    function setTicketPrice(uint256 newPriceWei) external onlyOwner {
+        require(newPriceWei > 0, "price0");
+        emit TicketPriceManuallySet(ticketPrice, newPriceWei);
+        ticketPrice = newPriceWei;
+    }
+
+    function setBlockCurrentPrice(uint16 blockIdx, uint256 newPriceWei) external onlyOwner {
+        if (blockIdx < 1 || blockIdx > 10) revert InvalidBlock();
+        require(newPriceWei > 0, "price0");
+        BiggiPriceMathLib.BlockInfo storage bi = blockInfos[blockIdx - 1];
+        emit BlockPriceManuallySet(blockIdx, bi.currentPrice, newPriceWei);
+        bi.currentPrice = newPriceWei;
     }
 
     /* ===== URI ===== */

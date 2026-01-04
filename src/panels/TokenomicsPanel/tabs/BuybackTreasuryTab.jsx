@@ -9,13 +9,14 @@ import { explorerBaseFor } from "../../../utils/explorer";
 import "./BuybackTreasuryTab.css";
 
 const BuybackTreasuryTab = ({ snapshot, nativeSeries, biggiSeries, treasurySeries, isLoading, error }) => {
-  const flows = mapBuybackSnapshotToFlowRows(snapshot);
   const statusLabel = snapshot?.derived?.statusLabel ?? (isLoading ? "Loading" : "Waiting");
   const statusTone = snapshot?.derived?.statusTone ?? "default";
   const explorerBase = explorerBaseFor(80002) || "https://amoy.polygonscan.com";
   const shortAddr = (addr) => (typeof addr === "string" && addr.length > 12 ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr || "--");
   const isAddress = (addr) => typeof addr === "string" && /^0x[0-9a-fA-F]{40}$/.test(addr);
   const exploreHref = (addr) => (isAddress(addr) ? `${explorerBase}/address/${addr}` : null);
+
+  const flows = mapBuybackSnapshotToFlowRows(snapshot);
 
   const stats = [
     {
@@ -33,12 +34,6 @@ const BuybackTreasuryTab = ({ snapshot, nativeSeries, biggiSeries, treasurySerie
       value: snapshot?.buyback?.totalBiggiAcquired ?? "--",
       hint: snapshot?.buyback?.biggiBalance ?? "--",
     },
-    {
-      label: "Treasury BIGGI",
-      value: snapshot?.treasury?.biggiBalance ?? "--",
-      hint: "Total received",
-      accent: "secondary",
-    },
   ];
 
   return (
@@ -54,6 +49,12 @@ const BuybackTreasuryTab = ({ snapshot, nativeSeries, biggiSeries, treasurySerie
     <div className="buyback-tab__meta">
       <span>Updated {snapshot?.tsLabel ?? "N/A"}</span>
       <span>{nativeSeries?.length ? `${nativeSeries.length} snapshots` : "No history yet"}</span>
+    </div>
+
+    <div className="buyback-tab__stats buyback-tab__stats--top">
+      {stats.map((stat) => (
+        <StatCard key={stat.label} {...stat} />
+      ))}
     </div>
 
     <div className="buyback-tab__charts">
@@ -80,12 +81,6 @@ const BuybackTreasuryTab = ({ snapshot, nativeSeries, biggiSeries, treasurySerie
       </div>
     </div>
 
-    <div className="buyback-tab__stats">
-      {stats.map((stat) => (
-        <StatCard key={stat.label} {...stat} />
-      ))}
-    </div>
-
       {error ? <div className="buyback-tab__alert">{error.message || "Unable to refresh buyback data."}</div> : null}
 
       <div className="buyback-tab__split">
@@ -96,6 +91,9 @@ const BuybackTreasuryTab = ({ snapshot, nativeSeries, biggiSeries, treasurySerie
             <ValueRow label="Wrapped native" value={shortAddr(snapshot?.buyback?.wrappedNative)} href={exploreHref(snapshot?.buyback?.wrappedNative)} />
             <ValueRow label="Policy" value={shortAddr(snapshot?.buyback?.policy)} href={exploreHref(snapshot?.buyback?.policy)} />
             <ValueRow label="Auto buyback" value={snapshot?.buyback?.autoBuybackEnabled ? "Enabled" : "Manual"} />
+            <div className="buyback-tab__flow">
+              <BuybackFlow flows={flows} />
+            </div>
           </div>
           <div className="buyback-tab__panel">
             <h3>Treasury view</h3>
@@ -105,7 +103,6 @@ const BuybackTreasuryTab = ({ snapshot, nativeSeries, biggiSeries, treasurySerie
             <ValueRow label="Total native in" value={snapshot?.treasury?.totalMaticReceived ?? "--"} hint={`Distributor: ${snapshot?.treasury?.totalMaticFromDistributor ?? "--"}`} />
             <ValueRow label="Total BIGGI in" value={snapshot?.treasury?.totalBiggiReceived ?? "--"} />
           </div>
-          <BuybackFlow flows={flows} />
         </div>
       </div>
   </section>
