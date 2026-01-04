@@ -67,7 +67,7 @@ class EcosystemErrorBoundary extends React.Component {
       return (
         <section className="rewards-grid biggi-skin" style={{ padding: "24px" }}>
           <div className="rewards-grid__surface biggi-token-surface">
-            <header className="rewards-grid__header biggi-header">
+            <header className="rewards-grid__header biggi-header panel-header panel-header--ecosystem">
               <div className="rewards-grid__headline">
                 <h2 className="rewards-grid__title">BIGGI ECOSYSTEM</h2>
                 <p className="rewards-grid__subtitle">Panel spadl na chybe. Zkuste refresh nebo overit RPC.</p>
@@ -1180,7 +1180,7 @@ const BiggiTokenInner = ({
   return (
     <section className={`${styles.ecosystem} rewards-grid biggi-skin${compact ? " is-compact" : ""}`}>
       <div className="rewards-grid__surface biggi-token-surface">
-        <header className="rewards-grid__header biggi-header">
+        <header className="rewards-grid__header biggi-header panel-header panel-header--ecosystem">
           <div className="rewards-grid__headline">
             <h2 className="rewards-grid__title">BIGGI ECOSYSTEM</h2>
             <p className="rewards-grid__subtitle">
@@ -1622,7 +1622,7 @@ const BiggiToken = (props) => {
     return (
       <section className="rewards-grid biggi-skin" style={{ padding: "24px" }}>
         <div className="rewards-grid__surface biggi-token-surface">
-          <header className="rewards-grid__header biggi-header">
+          <header className="rewards-grid__header biggi-header panel-header panel-header--ecosystem">
             <div className="rewards-grid__headline">
               <h2 className="rewards-grid__title">BIGGI ECOSYSTEM</h2>
               <p className="rewards-grid__subtitle">

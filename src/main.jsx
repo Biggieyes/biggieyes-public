@@ -1,4 +1,5 @@
 // src/main.jsx
+import "./polyfills/module.js";
 import * as React from "react";
 import { render } from "preact/compat";
 import { Buffer } from "buffer/";
@@ -32,6 +33,13 @@ if (typeof window !== "undefined") {
    Inline LoadingOverlay
    ------------------------- */
 function LoadingOverlay({ percent = 0, message = "Loading..." }) {
+  React.useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+    document.body.classList.add("loading-locked");
+    return () => {
+      document.body.classList.remove("loading-locked");
+    };
+  }, []);
   return (
     <div className="loading-overlay" role="status" aria-live="polite">
       <div className="loading-overlay__bg" aria-hidden />

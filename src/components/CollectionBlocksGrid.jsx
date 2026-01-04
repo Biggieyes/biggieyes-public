@@ -514,7 +514,7 @@ const renderExpansionPanel = () => (
   return (
     <section className="collection-grid">
       <div className={`collection-grid__surface${isMobile ? " is-mobile" : ""}`}>
-        <header className="collection-grid__header">
+        <header className="collection-grid__header panel-header panel-header--collection">
           <div>
             <h2 className="collection-grid__title">Biggi Collection</h2>
             <p className="collection-grid__subtitle">Collections hub - live on-chain stats</p>

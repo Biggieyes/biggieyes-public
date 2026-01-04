@@ -520,7 +520,7 @@ export default function ExpansionPanel({ compact = false }) {
           }}
         />
 
-        <header className="rewards-grid__header biggi-header">
+        <header className="rewards-grid__header biggi-header panel-header panel-header--collection">
           <div className="rewards-grid__headline">
             <h2 className="rewards-grid__title">Expansion - Distributor</h2>
             <p className="rewards-grid__subtitle">Mint-share flow and collection readiness overview.</p>

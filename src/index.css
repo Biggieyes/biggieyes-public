@@ -143,6 +143,7 @@ img, svg, canvas, video { max-width: 100%; height: auto; display: block; }
   background-size: auto;
   image-rendering: auto;
   pointer-events: none;
+  background-attachment: fixed;
 }
 
 .loading-card {
@@ -161,12 +162,12 @@ img, svg, canvas, video { max-width: 100%; height: auto; display: block; }
   align-items: center;
   position: relative;
   z-index: 1;
-  animation: loadingCardIn 260ms ease-out;
+  animation: loadingCardIn 220ms ease-out;
 }
 
 @keyframes loadingCardIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* Nadpis / logo text */

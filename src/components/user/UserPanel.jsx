@@ -576,7 +576,7 @@ export default function UserPanel({
   return (
     <section className={`user-panel${compact ? " user-panel--compact" : ""}`}>
       <div className="user-panel__surface">
-        <header className="user-panel__header">
+      <header className="user-panel__header panel-header panel-header--user">
           <div>
             <h2 className="user-panel__title">User Control Center</h2>
             <p className="user-panel__subtitle">

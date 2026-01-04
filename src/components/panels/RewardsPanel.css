@@ -870,41 +870,56 @@
   align-items: center;
   text-align: center;
   gap: 16px;
-  padding: 14px 18px;
-  border-radius: 20px;
+  padding: 16px 20px;
+  border-radius: 18px 18px 0 0;
   background:
-    linear-gradient(180deg, rgba(22, 26, 36, 0.45), rgba(12, 14, 20, 0.75)),
-    url("/images/bg-tab1.png");
+    linear-gradient(135deg, rgba(10, 12, 18, 0.5), rgba(6, 8, 14, 0.42)),
+    url("/images/panels/rewards.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  border: 1px solid var(--panel-border);
+  border: 1px solid rgba(255, 232, 0, 0.22);
   box-shadow:
-    0 12px 26px rgba(0, 0, 0, 0.38),
-    inset 0 1px 0 rgba(255, 232, 0, 0.06);
+    0 16px 32px rgba(0, 0, 0, 0.42),
+    0 0 18px rgba(255, 232, 0, 0.16);
   position: relative;
   overflow: hidden;
-  backdrop-filter: blur(10px) saturate(125%);
+  backdrop-filter: blur(8px);
   margin-bottom: 0;
+}
+.panel-header--rewards {
+  background-image:
+    linear-gradient(135deg, rgba(10, 12, 18, 0.5), rgba(6, 8, 14, 0.42)),
+    url("/images/panels/ecosystem.png");
+}
+.panel-header--vrf {
+  background-image:
+    linear-gradient(135deg, rgba(10, 12, 18, 0.5), rgba(6, 8, 14, 0.42)),
+    url("/images/panels/ecosystem.png");
+}
+.panel-header--community {
+  background-image:
+    linear-gradient(135deg, rgba(10, 12, 18, 0.5), rgba(6, 8, 14, 0.42)),
+    url("/images/panels/ecosystem.png");
+}
+.panel-header--ecosystem {
+  background-image:
+    linear-gradient(135deg, rgba(10, 12, 18, 0.5), rgba(6, 8, 14, 0.42)),
+    url("/images/panels/ecosystem.png");
 }
 
 .rewards-grid__header::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(120% 90% at 50% 10%, rgba(255, 232, 0, 0.12), transparent 60%);
-  opacity: 0.35;
+  background:
+    radial-gradient(120% 90% at 12% 10%, rgba(255, 232, 0, 0.24), transparent 58%),
+    radial-gradient(110% 80% at 86% 32%, rgba(95, 219, 255, 0.18), transparent 60%);
+  opacity: 0.6;
   pointer-events: none;
 }
 .rewards-grid__header::after {
-  content: "";
-  position: absolute;
-  left: 12%;
-  right: 12%;
-  bottom: -1px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 232, 0, 0.45), transparent);
-  opacity: 0.7;
+  content: none;
 }
 
 .rewards-panel__countdown-tile {

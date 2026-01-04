@@ -422,7 +422,7 @@ export default function CommunityCenterPanel({
           }}
         />
 
-        <header className="rewards-grid__header biggi-header">
+        <header className="rewards-grid__header biggi-header panel-header panel-header--community">
           <div className="rewards-grid__headline">
             <h2 className="rewards-grid__title">Community Center</h2>
             <p className="rewards-grid__subtitle">

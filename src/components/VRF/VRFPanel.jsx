@@ -344,7 +344,7 @@ export default function VRFPanel({
   return (
     <section className="rewards-grid biggi-skin vrf-panel">
       <div className="rewards-grid__surface biggi-token-surface">
-        <header className="rewards-grid__header biggi-header">
+        <header className="rewards-grid__header biggi-header panel-header panel-header--vrf">
           <div className="rewards-grid__headline">
             <span className="biggi-badge">Verifiable Randomness</span>
             <h2 className="rewards-grid__title">Chainlink VRF</h2>

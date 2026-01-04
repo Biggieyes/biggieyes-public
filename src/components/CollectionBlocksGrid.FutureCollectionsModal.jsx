@@ -60,7 +60,7 @@ const FutureCollectionsModal = React.memo(({
         className="collection-grid__future-modal biggi-token-surface"
         onClick={handleModalClick}
       >
-        <header className="rewards-grid__header biggi-header" style={{ marginBottom: 20 }}>
+        <header className="rewards-grid__header biggi-header panel-header panel-header--collection" style={{ marginBottom: 20 }}>
           <div className="rewards-grid__headline">
             <h2 id="future-modal-title" className="rewards-grid__title">Future Collections</h2>
             <p className="rewards-grid__subtitle">Preview upcoming drops preparing integration with the Distributor.</p>

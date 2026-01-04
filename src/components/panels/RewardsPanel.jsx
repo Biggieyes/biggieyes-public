@@ -687,7 +687,7 @@ function RewardsPanel({
   return (
     <section className={`rewards-grid biggi-skin${compact ? " is-compact" : ""}`}>
       <div className="rewards-grid__surface biggi-token-surface">
-        <header className="rewards-grid__header biggi-header">
+        <header className="rewards-grid__header biggi-header panel-header panel-header--rewards">
           <div className="rewards-grid__headline">
             <h2 className="rewards-grid__title">Biggi Rewards</h2>
             <p className="rewards-grid__subtitle">
