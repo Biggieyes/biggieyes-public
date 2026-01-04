@@ -124,7 +124,9 @@ export async function handler(event) {
     return { statusCode: 200, headers: corsHeaders, body: "" };
   }
   if (method !== "POST") return jsonResponse(405, { success: false, error: "Method not allowed" });
-  if (!allowRequest()) return jsonResponse(429, { success: false, error: "Rate limit exceeded" });
+  // derive client id (prefer IP), pass to limiter so Redis can throttle per-client when available
+  const clientIp = (getHeader(event.headers, "x-forwarded-for") || getHeader(event.headers, "x-real-ip") || getHeader(event.headers, "origin") || "global").split(",")[0].trim();
+  if (!(await allowRequest(clientIp))) return jsonResponse(429, { success: false, error: "Rate limit exceeded" });
 
   let buffer = null;
   let name = "";
