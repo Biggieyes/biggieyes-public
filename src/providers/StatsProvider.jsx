@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ethers } from "ethers";
 import { useContracts } from "./ContractsProvider";
-import { resolveTicketPriceWeiFromHub } from "../utils/contract";
+import { resolveTicketPriceWeiFromHub, getFrontendSnapshotLiteActive } from "../utils/contract";
 
 const Ctx = React.createContext(null);
 
@@ -28,29 +28,33 @@ export function StatsProvider({ children }) {
       setLoading(true);
       try {
         const reader = readerRead?.();
-        if (reader && typeof reader.getFrontendSnapshotLite === "function") {
-          // Primary path through Reader
-          const snap = await reader.getFrontendSnapshotLite();
-          const ticketPriceWei = snap?.[0] ?? ethers.constants.Zero;
-          const ticketMintedBN = snap?.[1] ?? 0;
-          const biggiMintedBN = snap?.[2] ?? 0;
-          const blockPricesWeiArr = snap?.[3] ?? [];
-          const blocksMintedArr = snap?.[4] ?? [];
-          const bgsMintedArr = snap?.[5] ?? [];
-          const charactersMintedBN = snap?.[6] ?? 0;
+        if (reader) {
+          try {
+            // Primary path through Reader
+            const snap = await getFrontendSnapshotLiteActive(reader);
+            const ticketPriceWei = snap?.[0] ?? ethers.constants.Zero;
+            const ticketMintedBN = snap?.[1] ?? 0;
+            const biggiMintedBN = snap?.[2] ?? 0;
+            const blockPricesWeiArr = snap?.[3] ?? [];
+            const blocksMintedArr = snap?.[4] ?? [];
+            const bgsMintedArr = snap?.[5] ?? [];
+            const charactersMintedBN = snap?.[6] ?? 0;
 
-          setData({
-            ticketPrice: Number(ethers.utils.formatEther(ticketPriceWei)),
-            biggiMinted: Number(biggiMintedBN),
-            ticketMinted: Number(ticketMintedBN),
-            blockMintCounts: Array.from(blocksMintedArr).map((x) => Number(x)),
-            blockPrices: Array.from(blockPricesWeiArr).map((x) =>
-              Number(ethers.utils.formatEther(x))
-            ),
-            bgsMinted: Array.from(bgsMintedArr).map((x) => Number(x)),
-            charactersMinted: Number(charactersMintedBN),
-          });
-          return;
+            setData({
+              ticketPrice: Number(ethers.utils.formatEther(ticketPriceWei)),
+              biggiMinted: Number(biggiMintedBN),
+              ticketMinted: Number(ticketMintedBN),
+              blockMintCounts: Array.from(blocksMintedArr).map((x) => Number(x)),
+              blockPrices: Array.from(blockPricesWeiArr).map((x) =>
+                Number(ethers.utils.formatEther(x))
+              ),
+              bgsMinted: Array.from(bgsMintedArr).map((x) => Number(x)),
+              charactersMinted: Number(charactersMintedBN),
+            });
+            return;
+          } catch (err) {
+            console.debug("StatsProvider.refresh reader snapshot failed", err);
+          }
         }
 
         // Fallback via MAIN + helper for ticketPrice

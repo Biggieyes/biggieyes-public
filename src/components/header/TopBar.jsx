@@ -8,6 +8,8 @@ function TopBar({
   onClaim,
   isRedeeming,
   vrfPending,
+  actionPerforming,
+  actionError,
   icons = [],        // ✅ fallback, kdyby ještě nebyly k dispozici
   onIconClick,
   isMobile = false,  // ⬅️ přijmeme od Appu
@@ -25,6 +27,8 @@ function TopBar({
               onClaim={onClaim}
               isRedeeming={isRedeeming}
               vrfPending={vrfPending}
+              performing={actionPerforming}
+              actionError={actionError}
             />
           </div>
 
@@ -57,6 +61,8 @@ function TopBar({
               onClaim={onClaim}
               isRedeeming={isRedeeming}
               vrfPending={vrfPending}
+              performing={actionPerforming}
+              actionError={actionError}
             />
           </div>
         </>

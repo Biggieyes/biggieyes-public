@@ -1,5 +1,9 @@
 import { BACKGROUND_NAMES, BACKGROUND_CODES } from "./shared";
 
+const PRICE_KEYS = ["Ticket Price", "Block Price", "Final Price"];
+const keyFor = (tokenId) => `biggi_meta_prices_${String(tokenId)}`;
+const normKey = (s) => String(s ?? "").trim().toLowerCase();
+
 export function canonBackgroundName(val) {
   if (!val) return null;
   const u = String(val).trim().toUpperCase();
@@ -21,24 +25,44 @@ export function backgroundIndexFromAny(val) {
 }
 
 export function mergeAttrs(baseArr, patchArr) {
-  const out = Array.isArray(baseArr) ? [...baseArr] : [];
-  if (!Array.isArray(patchArr)) return out;
-  for (const p of patchArr) {
-    if (!p || !p.trait_type) continue;
-    const i = out.findIndex((a) => String(a?.trait_type) === String(p.trait_type));
-    if (i === -1) out.push(p);
-    else out[i] = { ...out[i], value: p.value };
+  const base = Array.isArray(baseArr) ? baseArr : [];
+  const patch = Array.isArray(patchArr) ? patchArr : [];
+
+  const map = new Map();
+  for (const a of base) {
+    if (!a || typeof a.trait_type !== "string") continue;
+    const k = normKey(a.trait_type);
+    if (!k) continue;
+    map.set(k, { ...a, trait_type: a.trait_type });
   }
-  return out;
+  for (const p of patch) {
+    if (!p || typeof p.trait_type !== "string") continue;
+    const k = normKey(p.trait_type);
+    if (!k) continue;
+    const prev = map.get(k);
+    map.set(k, prev ? { ...prev, ...p, trait_type: prev.trait_type } : { ...p });
+  }
+
+  return Array.from(map.values());
 }
 
 export function getCachedPriceAttrs(tokenId) {
   try {
-    const raw = localStorage.getItem(`biggi_meta_prices_${String(tokenId)}`);
+    if (typeof window === "undefined" || !window.localStorage) return null;
+    const raw = window.localStorage.getItem(keyFor(tokenId));
     if (!raw) return null;
     const obj = JSON.parse(raw);
     const attrs = Array.isArray(obj?.attributes) ? obj.attributes : null;
-    return attrs?.length ? attrs : null;
+    if (!attrs) return null;
+    return attrs
+      .filter(
+        (a) =>
+          a &&
+          typeof a.trait_type === "string" &&
+          PRICE_KEYS.includes(a.trait_type) &&
+          Object.prototype.hasOwnProperty.call(a, "value")
+      )
+      .map((a) => ({ ...a }));
   } catch {
     return null;
   }
@@ -46,13 +70,18 @@ export function getCachedPriceAttrs(tokenId) {
 
 export function setCachedPriceAttrs(tokenId, attrs) {
   try {
-    const keep = ["Ticket Price", "Block Price", "Final Price"];
-    const compact = (Array.isArray(attrs) ? attrs : []).filter((a) => keep.includes(String(a?.trait_type)));
+    if (typeof window === "undefined" || !window.localStorage) return;
+    const compact = (Array.isArray(attrs) ? attrs : []).filter(
+      (a) =>
+        a &&
+        typeof a.trait_type === "string" &&
+        PRICE_KEYS.includes(a.trait_type) &&
+        Object.prototype.hasOwnProperty.call(a, "value")
+    );
     if (compact.length) {
-      localStorage.setItem(
-        `biggi_meta_prices_${String(tokenId)}`,
-        JSON.stringify({ attributes: compact })
-      );
+      window.localStorage.setItem(keyFor(tokenId), JSON.stringify({ attributes: compact }));
+    } else {
+      window.localStorage.removeItem(keyFor(tokenId));
     }
   } catch {
     // ignore cache write errors

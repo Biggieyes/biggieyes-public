@@ -3,17 +3,10 @@ import * as React from "react";
 import { ethers } from "ethers";
 import { ADDR } from "../../utils/addresses.js";
 import { getROProvider } from "../../utils/contract";
-import communityCenterAbiJson from "../../utils/abi/BiggiCommunityCenter.js?raw";
+import communityCenterAbi from "../../utils/abi/BiggiCommunityCenter.js";
 import { supabase } from "../../services/chatClient";
 
-const COMMUNITY_CENTER_ABI = (() => {
-  try {
-    const parsed = JSON.parse(communityCenterAbiJson);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-})();
+const COMMUNITY_CENTER_ABI = Array.isArray(communityCenterAbi) ? communityCenterAbi : [];
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const CHAT_API_BASE = import.meta.env.VITE_CHAT_API_BASE || "";

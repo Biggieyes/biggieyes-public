@@ -3,6 +3,7 @@ import { ethers } from "ethers";
 import "./UserPanel.css";
 import { useWeb3 } from "../../providers/Web3Provider";
 import { useContracts } from "../../providers/ContractsProvider";
+import { getFrontendSnapshotLiteActive } from "../../utils/contract";
 
 const DEPLOY_BLOCK = 27105642;
 const DEFAULT_MAX_SUPPLY = 550;
@@ -156,7 +157,7 @@ function useUserPanelData({
     try {
       const reader = contracts.readerRead?.();
       if (reader) {
-        const snapshot = await reader.getFrontendSnapshotLite();
+        const snapshot = await getFrontendSnapshotLiteActive(reader);
         nextState.ticketPriceWei = snapshot?.[0] ?? null;
         nextState.ticketPrice = snapshot?.[0]
           ? Number(ethers.utils.formatEther(snapshot[0]))
@@ -463,7 +464,7 @@ export default function UserPanel({
         if (!value) {
           const reader = contracts.readerRead?.();
           if (reader) {
-            const snapshot = await reader.getFrontendSnapshotLite();
+            const snapshot = await getFrontendSnapshotLiteActive(reader);
             value = snapshot?.[0];
           }
         }

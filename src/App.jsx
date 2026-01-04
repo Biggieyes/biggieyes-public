@@ -179,6 +179,8 @@ function App() {
 
   const [vrfPending, setVrfPending] = React.useState(false);
   const [isRedeeming, setIsRedeeming] = React.useState(false);
+  const [claimPerforming, setClaimPerforming] = React.useState(false);
+  const [claimError, setClaimError] = React.useState(null);
   const [redeemMsg, setRedeemMsg] = React.useState("");
   const [redeemStartBlock, setRedeemStartBlock] = React.useState(null);
   const [redeemStartedAt, setRedeemStartedAt] = React.useState(null);
@@ -388,6 +390,8 @@ function App() {
   const claimRewards = React.useCallback(
     async () => {
       if (!walletAddress) return alert("Please connect MetaMask first.");
+      setClaimPerforming(true);
+      setClaimError(null);
       try {
         await ensureAmoy();
 
@@ -442,8 +446,11 @@ function App() {
         await fetchStats();
         alert("Rewards claimed.");
       } catch (err) {
+        setClaimError(err);
         alert("Claim failed: " + prettyError(err));
         console.error("claimRewards", err);
+      } finally {
+        setClaimPerforming(false);
       }
     },
     [walletAddress, myNFTs, fetchRewards, fetchStats, prettyError]
@@ -661,6 +668,8 @@ function App() {
   }, [connectMetaMask, runPostConnect]);
 
   const {
+    performing: mintRedeemPerforming,
+    error: mintRedeemError,
     resolveTicketPriceWei,
     mintTicket,
     redeemTicket,
@@ -697,9 +706,8 @@ function App() {
     setTopFirstId,
   });
 
-
-
-
+  const actionPerforming = mintRedeemPerforming || claimPerforming;
+  const actionError = claimError || mintRedeemError;
 
   const onVrfOpenExplorer = React.useCallback((hashOrId) => openVrfExplorer(hashOrId, getReadOnlyContract), []);
 
@@ -893,6 +901,8 @@ const isCommunityCenterOpen = navOpen && navAlt === "COMMUNITY CENTER";
         mintTicket={mintTicket}
         redeemTicket={redeemTicket}
         claimRewards={claimRewards}
+        actionPerforming={actionPerforming}
+        actionError={actionError}
         icons={ICONS}
         setOpenNavIdx={setOpenNavIdx}
         isMobile={isMobile}

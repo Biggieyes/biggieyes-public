@@ -2,6 +2,7 @@
 // Ethers v5 compatible helpers and contract factories
 import { ethers } from "ethers";
 import { ADDR } from "./addresses.js";
+import { AMOY, PUBLIC_AMOY_RPCS, getRpcUrls, setPreferredRpc } from "./rpcConfig.js";
 import {
   ABI_MAIN, ABI_MAIN2, ABI_VRF,
   ABI_TOKEN, ABI_DISTRIBUTOR, ABI_RESERVE, ABI_TREASURY, ABI_BUYBACK, ABI_POLICY,
@@ -10,21 +11,29 @@ import {
   ABI_LM, ABI_UPKEEP, ABI_READER,
   ABI_BiggiMainReader, ABI_BiggiRewardsReader, ABI_BiggiTokenomicsReader, ABI_BiggiTokenReader,
   // granular fallbacks (if present)
-  ABI_NFTRewardsReader, ABI_CollectionRewardsReader, ABI_TokenRewardsReader,
+  ABI_NFTRewardsReader, ABI_CollectionRewardsReader,
   ABI_ReserveReader, ABI_LiquidityManagerReader,
   ABI_COLLECTION_VRF, ABI_COLLECTION_PUBLIC,
   // nové ABI (pokud jsi je přidal do indexu)
-  ABI_NFTREWARDS, ABI_EVENTS, ABI_DRIPLM, ABI_DRIP_DISTRIBUTOR,
-  ABI_COMPUTE, ABI_LIQUIDITY_AUTOMATION, ABI_LIQUIDITY_SETUP, ABI_DRIP_KEEPER
+  ABI_NFTREWARDS, ABI_DRIPLM, ABI_DRIP_DISTRIBUTOR,
+  ABI_LIQUIDITY_AUTOMATION, ABI_DRIP_KEEPER
 } from "./abi/index.js";
 
 const { StaticJsonRpcProvider, Web3Provider, FallbackProvider } = ethers.providers;
 const { parseEther: _parseEther, formatEther: _formatEther } = ethers.utils;
 
 const LOCAL_STORAGE_RPC_SYNC_KEY = "biggi_amoy_rpc_synced_v1";
-const LOCAL_STORAGE_RPC_PREF_KEY = "biggi_last_amoy_rpc_v1";
-const BAD_RPC_SUBSTRINGS = ["tenderly", "drpc.org"]; // noisy / rate-limited endpoints
-const BAD_CORS_RPCS = ["rpc-amoy.polygon.technology"]; // official Amoy RPC blocks browser CORS
+
+function _sameAddr(a, b) {
+  if (!a || !b) return false;
+  return String(a).toLowerCase() === String(b).toLowerCase();
+}
+
+const MAIN_ADDR_ACTIVE = ADDR.COLLECTION_VRF || ADDR.MAIN;
+const ABI_MAIN_ACTIVE =
+  _sameAddr(MAIN_ADDR_ACTIVE, ADDR.MAIN2) || _sameAddr(MAIN_ADDR_ACTIVE, ADDR.COLLECTION_PUBLIC)
+    ? ABI_MAIN2
+    : ABI_MAIN;
 
 function _env(key) {
   try {
@@ -38,26 +47,6 @@ function _env(key) {
     // ignore process env lookup errors
   }
   return undefined;
-}
-
-function _splitCsv(value) {
-  if (!value) return [];
-  return String(value)
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
-function _uniq(values) {
-  const seen = new Set();
-  const out = [];
-  for (const value of values) {
-    const v = (value || "").trim();
-    if (!v || seen.has(v)) continue;
-    seen.add(v);
-    out.push(v);
-  }
-  return out;
 }
 
 export function _secureRandomInt(maxExclusive) {
@@ -74,85 +63,7 @@ export function _secureRandomInt(maxExclusive) {
   return Math.floor(Math.random() * maxExclusive);
 }
 
-function _loadPreferredRpc() {
-  try {
-    if (typeof window !== "undefined" && window.localStorage) {
-      return window.localStorage.getItem(LOCAL_STORAGE_RPC_PREF_KEY) || null;
-    }
-  } catch {
-    // ignore localStorage issues
-  }
-  return null;
-}
-
-function _storePreferredRpc(url) {
-  if (!url) return;
-  try {
-    if (typeof window !== "undefined" && window.localStorage) {
-      window.localStorage.setItem(LOCAL_STORAGE_RPC_PREF_KEY, url);
-    }
-  } catch {
-    // ignore store failures
-  }
-}
-
-function _clearPreferredRpc() {
-  try {
-    if (typeof window !== "undefined" && window.localStorage) {
-      window.localStorage.removeItem(LOCAL_STORAGE_RPC_PREF_KEY);
-    }
-  } catch {
-    // ignore clear failures
-  }
-}
-
-function _rankRpcUrls(urls) {
-  const deduped = _uniq(urls.filter(Boolean));
-  if (!deduped.length) return deduped;
-  const ignorePreferred = _env("VITE_FORCE_RPC") === "1" || _env("VITE_IGNORE_RPC_PREFERENCE") === "1";
-  const preferred = ignorePreferred ? null : _loadPreferredRpc();
-  if (ignorePreferred) _clearPreferredRpc();
-  if (preferred && deduped.includes(preferred)) {
-    return [preferred, ...deduped.filter((u) => u !== preferred)];
-  }
-  // Preserve declared order to avoid bouncing into rate-limited endpoints unexpectedly.
-  return deduped;
-}
-
-function _filterOutBadRpcs(urls) {
-  const allowTenderly = _env("VITE_ALLOW_TENDERLY_RPC") === "1";
-  const isBrowser = typeof window !== "undefined";
-  return urls.filter((u) => {
-    if (!u) return false;
-    const lower = String(u).toLowerCase();
-    if (!allowTenderly && BAD_RPC_SUBSTRINGS.some((x) => lower.includes(x))) return false;
-    if (isBrowser && BAD_CORS_RPCS.some((x) => lower.includes(x))) return false;
-    return true;
-  });
-}
-
-export const PUBLIC_AMOY_RPCS = [
-  // Public endpoints that allow browser CORS; official RPC omitted because it blocks CORS.
-  "https://polygon-amoy-bor.publicnode.com",
-];
-
-const AMOY_RPC_CANDIDATES = _uniq([
-  _env("VITE_AMOY_RPC_URL"),
-  ..._splitCsv(_env("VITE_ADDITIONAL_RPC_URLS")),
-  ...PUBLIC_AMOY_RPCS,
-]);
-
-export const AMOY = {
-  chainId: 80002,
-  hex: "0x13882",
-  name: "Polygon Amoy",
-  rpcUrls: AMOY_RPC_CANDIDATES,
-  rpcUrl: AMOY_RPC_CANDIDATES[0] || PUBLIC_AMOY_RPCS[0],
-  currency: { name: "POL", symbol: "POL", decimals: 18 },
-  explorer: "https://amoy.polygonscan.com",
-};
-
-export { ADDR };
+export { ADDR, AMOY, PUBLIC_AMOY_RPCS };
 
 let _roProvider = undefined;
 
@@ -169,39 +80,24 @@ function _applyPollingInterval(provider) {
   return provider;
 }
 
-function _candidateRpcUrls() {
-  const primaryList = Array.isArray(AMOY.rpcUrls) && AMOY.rpcUrls.length ? AMOY.rpcUrls : [];
-  const filtered = _filterOutBadRpcs(primaryList);
-  if (!filtered.length && primaryList.length) {
-    // preferred RPC was filtered out; clear stored preference to avoid stale Tenderly picks
-    _clearPreferredRpc();
-  }
-
-  const rankedFiltered = _rankRpcUrls(filtered);
-  if (rankedFiltered.length) return rankedFiltered;
-
-  const fallback = [];
-  if (AMOY.rpcUrl) fallback.push(AMOY.rpcUrl);
-  fallback.push(...PUBLIC_AMOY_RPCS);
-  return _rankRpcUrls(_filterOutBadRpcs(fallback));
-}
-
 export function getPrimaryRpcUrl() {
-  const urls = _candidateRpcUrls();
-  return urls[0] || PUBLIC_AMOY_RPCS[0] || "";
+  const urls = getRpcUrls();
+  return urls[0] || "";
 }
 
 function _mkRpcProvider(url) {
   // Plain provider is more tolerant of flaky RPCs than batch in some gateways.
-  return new StaticJsonRpcProvider({ url, chainId: AMOY.chainId, name: "polygon-amoy" }, AMOY.chainId);
+  return new StaticJsonRpcProvider({ url, chainId: AMOY.chainId, name: AMOY.name }, AMOY.chainId);
 }
 
 export function getROProvider() {
   // Always rebuild provider to avoid sticky stale/blocked endpoints.
   _roProvider = undefined;
 
-  const urls = _candidateRpcUrls();
-  if (!urls.length) throw new Error("No RPC endpoints configured for Polygon Amoy. Set VITE_AMOY_RPC_URL.");
+  const urls = getRpcUrls();
+  if (!urls.length) {
+    throw new Error("No RPC endpoints configured for Polygon Amoy. Set VITE_JSON_RPC_URL or VITE_AMOY_RPC_URL.");
+  }
 
   // Prefer injected if allowed and on the right chain
   const preferInjectedEnv = _env("VITE_PREFER_INJECTED") === "true"; // default false
@@ -242,7 +138,7 @@ export function getROProvider() {
   }
 
   // RPC path (synchronous, no async health probes to avoid invalid provider objects)
-  _storePreferredRpc(urls[0]);
+  setPreferredRpc(urls[0]);
 
   if (urls.length === 1) {
     _roProvider = _mkRpcProvider(urls[0]);
@@ -307,7 +203,7 @@ export async function syncAmoyRpcIfNeeded(externalProvider, { force = false } = 
   if (!_hasRequest(provider)) throw new Error("Ethereum provider not available");
   if (!force && _hasSyncedRpc()) return false;
 
-  const rpcUrls = _candidateRpcUrls();
+  const rpcUrls = getRpcUrls();
   const params = {
     chainId: AMOY.hex,
     chainName: AMOY.name,
@@ -382,8 +278,8 @@ const _mkRW = (addr, abi, signerProvider) => {
 /* ---------------- Exports (contract factories) ---------------- */
 
 /* Core contracts */
-export const getReadOnlyMain   = (provider) => _mkRO(ADDR.MAIN,  ABI_MAIN, provider);
-export const getMain           = () => _mkRW(ADDR.MAIN,  ABI_MAIN);
+export const getReadOnlyMain   = (provider) => _mkRO(MAIN_ADDR_ACTIVE, ABI_MAIN_ACTIVE, provider);
+export const getMain           = () => _mkRW(MAIN_ADDR_ACTIVE, ABI_MAIN_ACTIVE);
 
 export const getReadOnlyMain2  = (provider) => _mkRO(ADDR.MAIN2, ABI_MAIN2, provider);
 export const getMain2          = () => _mkRW(ADDR.MAIN2, ABI_MAIN2);
@@ -392,7 +288,13 @@ export const getCollectionVRF      = () => _mkRW(ADDR.COLLECTION_VRF || ADDR.MAI
 export const getCollectionPublicRO = (provider) => _mkRO(ADDR.COLLECTION_PUBLIC || ADDR.MAIN2, ABI_COLLECTION_PUBLIC, provider);
 export const getCollectionPublic   = () => _mkRW(ADDR.COLLECTION_PUBLIC || ADDR.MAIN2, ABI_COLLECTION_PUBLIC);
 
-export const getVRFRO          = (provider) => _mkRO(ADDR.VRF_ROUTER, ABI_VRF, provider);
+export const getVRFRO          = (provider) => {
+  if (!ADDR.VRF_ROUTER) {
+    console.warn("getVRFRO: VRF router address not configured; returning null");
+    return null;
+  }
+  return _mkRO(ADDR.VRF_ROUTER, ABI_VRF, provider);
+};
 
 export const getTokenRO        = (provider) => _mkRO(ADDR.BIGGI,  ABI_TOKEN, provider);
 export const getToken          = () => _mkRW(ADDR.BIGGI,  ABI_TOKEN);
@@ -412,13 +314,8 @@ export const getBuyback        = () => _mkRW(ADDR.BUYBACK_AGENT, ABI_BUYBACK);
 export const getPolicyRO       = (provider) => _mkRO(ADDR.POLICY, ABI_POLICY, provider);
 export const getPolicy         = () => _mkRW(ADDR.POLICY, ABI_POLICY);
 
-export const getComputeRO      = (provider) => _mkRO(ADDR.COMPUTE, ABI_COMPUTE, provider);
-
 export const getLiquidityAutomationRO = (provider) => _mkRO(ADDR.LIQUIDITY_AUTOMATION, ABI_LIQUIDITY_AUTOMATION, provider);
 export const getLiquidityAutomation   = () => _mkRW(ADDR.LIQUIDITY_AUTOMATION, ABI_LIQUIDITY_AUTOMATION);
-
-export const getLiquiditySetupRO = (provider) => _mkRO(ADDR.LIQUIDITY_SETUP, ABI_LIQUIDITY_SETUP, provider);
-export const getLiquiditySetup   = () => _mkRW(ADDR.LIQUIDITY_SETUP, ABI_LIQUIDITY_SETUP);
 
 export const getTokenRewardsRO = (provider) => _mkRO(ADDR.TOKEN_REWARDS,      ABI_TOKEN_REWARDS, provider);
 export const getTokenRewards   = () => _mkRW(ADDR.TOKEN_REWARDS,      ABI_TOKEN_REWARDS);
@@ -457,9 +354,83 @@ export const getUpkeep    = () => _mkRW(ADDR.UPKEEP_PROXY, ABI_UPKEEP);
 
 export const getReaderRO  = (provider) => {
   const addr = ADDR.READER ?? ADDR.MAIN_READER ?? null;
-  if (!addr) throw new Error("Reader address not configured in ADDR (expected READER or MAIN_READER)");
+  if (!addr) {
+    console.warn("getReaderRO: reader address not configured; falling back to MAIN");
+    return getReadOnlyMain(provider);
+  }
   return _mkRO(addr, ABI_READER, provider);
 };
+
+export async function getFrontendSnapshotLiteActive(readerOverride) {
+  const reader = readerOverride || getReaderRO();
+  const useMain2 = _sameAddr(ADDR.MAIN, ADDR.MAIN2) || _sameAddr(ADDR.MAIN, ADDR.COLLECTION_PUBLIC);
+  const targetMain = ADDR.COLLECTION_VRF || ADDR.MAIN || null;
+  const targetPublic = ADDR.COLLECTION_PUBLIC || ADDR.MAIN2 || null;
+
+  const tryCall = async (fn, ...args) => {
+    try {
+      return await fn(...args);
+    } catch (err) {
+      return { __error: err };
+    }
+  };
+
+  if (useMain2 && typeof reader.getFrontendSnapshotLiteMain2 === "function") {
+    const res = await tryCall(reader.getFrontendSnapshotLiteMain2.bind(reader));
+    if (!res?.__error) return res;
+  }
+  if (useMain2 && typeof reader.getFrontendSnapshotLiteFor === "function" && targetPublic) {
+    const res = await tryCall(reader.getFrontendSnapshotLiteFor.bind(reader), targetPublic);
+    if (!res?.__error) return res;
+  }
+  if (typeof reader.getFrontendSnapshotLiteFor === "function" && targetMain) {
+    const res = await tryCall(reader.getFrontendSnapshotLiteFor.bind(reader), targetMain);
+    if (!res?.__error) return res;
+  }
+  if (typeof reader.getFrontendSnapshotLite === "function") {
+    const res = await tryCall(reader.getFrontendSnapshotLite.bind(reader));
+    if (!res?.__error) return res;
+  }
+
+  // Fallback: build snapshot directly from main contract to avoid reader reverts.
+  const main = getReadOnlyMain();
+  const safeBn = (v) => (v && ethers.BigNumber.isBigNumber(v) ? v : ethers.BigNumber.from(v || 0));
+  const [
+    ticketPriceWei,
+    ticketMinted_,
+    biggiMinted_,
+  ] = await Promise.all([
+    main.getTicketPrice?.().catch(() => main.ticketPrice?.().catch(() => ethers.constants.Zero)),
+    main.ticketMinted?.().catch(() => ethers.constants.Zero),
+    main.biggiMinted?.().catch(() => ethers.constants.Zero),
+  ]);
+
+  const blockPricePromises = [];
+  const blockMintPromises = [];
+  for (let i = 1; i <= 10; i += 1) {
+    blockPricePromises.push(main.getCurrentBlockPrice?.(i).catch(() => ethers.constants.Zero));
+    blockMintPromises.push(main.getBlockMintCount?.(i).catch(() => ethers.constants.Zero));
+  }
+  const bgMintPromises = [];
+  for (let j = 0; j < 10; j += 1) {
+    bgMintPromises.push(main.backgroundMintCounts?.(j).catch(() => ethers.constants.Zero));
+  }
+
+  const currentBlockPrices = (await Promise.all(blockPricePromises)).map(safeBn);
+  const blocksMinted = (await Promise.all(blockMintPromises)).map(safeBn);
+  const bgsMinted = (await Promise.all(bgMintPromises)).map(safeBn);
+  const charactersMinted = ethers.BigNumber.from(0);
+
+  return [
+    safeBn(ticketPriceWei),
+    safeBn(ticketMinted_),
+    safeBn(biggiMinted_),
+    currentBlockPrices,
+    blocksMinted,
+    bgsMinted,
+    charactersMinted,
+  ];
+}
 
 /* ---------------- New reader factories (explicit names) ---------------- */
 
@@ -496,25 +467,6 @@ export const getBiggiRewardsReader   = () => {
     null;
   if (!addr) throw new Error("BiggiRewardsReader address not configured in ADDR (expected *_REWARDS_READER)");
   const abi = ABI_BiggiRewardsReader.length ? ABI_BiggiRewardsReader : (ABI_CollectionRewardsReader || ABI_NFTRewardsReader || ABI_READER);
-  return _mkRW(addr, abi);
-};
-
-export const getTokenRewardsReaderRO = (provider) => {
-  const addr =
-    ADDR.TOKEN_REWARDS_READER ??
-    ADDR.TokenRewardsReader ??
-    null;
-  if (!addr) throw new Error("TokenRewardsReader address not configured in ADDR (expected TOKEN_REWARDS_READER)");
-  const abi = ABI_TokenRewardsReader.length ? ABI_TokenRewardsReader : ABI_TOKEN_REWARDS;
-  return _mkRO(addr, abi, provider);
-};
-export const getTokenRewardsReader   = () => {
-  const addr =
-    ADDR.TOKEN_REWARDS_READER ??
-    ADDR.TokenRewardsReader ??
-    null;
-  if (!addr) throw new Error("TokenRewardsReader address not configured in ADDR (expected TOKEN_REWARDS_READER)");
-  const abi = ABI_TokenRewardsReader.length ? ABI_TokenRewardsReader : ABI_TOKEN_REWARDS;
   return _mkRW(addr, abi);
 };
 
@@ -580,30 +532,6 @@ export const getNFTRewards = () => {
   return _mkRW(addr, abi);
 };
 
-/* Events / Pool (viewer + claim) */
-export const getEventsRO = (provider) => {
-  const addr =
-    ADDR.EVENTS ??
-    ADDR.Events ??
-    ADDR.EVENTS_CONTRACT ??
-    ADDR.EVENTS_READER ??
-    null;
-  if (!addr) throw new Error("Events address not configured in ADDR (expected EVENTS)");
-  const abi = Array.isArray(ABI_EVENTS) && ABI_EVENTS.length ? ABI_EVENTS : ABI_READER;
-  return _mkRO(addr, abi, provider);
-};
-export const getEvents = () => {
-  const addr =
-    ADDR.EVENTS ??
-    ADDR.Events ??
-    ADDR.EVENTS_CONTRACT ??
-    ADDR.EVENTS_READER ??
-    null;
-  if (!addr) throw new Error("Events address not configured in ADDR (expected EVENTS)");
-  const abi = Array.isArray(ABI_EVENTS) && ABI_EVENTS.length ? ABI_EVENTS : ABI_READER;
-  return _mkRW(addr, abi);
-};
-
 /* Drip Liquidity Manager */
 export const getDripLMRO = (provider) => {
   const addr =
@@ -626,7 +554,7 @@ export const getDripLM = () => {
   return _mkRW(addr, abi);
 };
 
-/* Events / NFTReaders already added above; if you need more reader aliases add here */
+/* Reader aliases already added above; if you need more reader aliases add here */
 
 /* ---------------- Helpers ---------------- */
 export const toWei   = (n)  => _parseEther(String(n));
@@ -690,7 +618,7 @@ export function getReadOnlyContract(kindOrAddressOrProvider, abiOrProvider, prov
 
   const kind = _normalizeKind(input);
   const kindMap = {
-    main: { addr: () => ADDR.MAIN, abi: ABI_MAIN },
+    main: { addr: () => MAIN_ADDR_ACTIVE, abi: ABI_MAIN_ACTIVE },
     main2: { addr: () => ADDR.MAIN2, abi: ABI_MAIN2 },
     token: { addr: () => ADDR.BIGGI, abi: ABI_TOKEN },
     biggi: { addr: () => ADDR.BIGGI, abi: ABI_TOKEN },
@@ -701,9 +629,7 @@ export function getReadOnlyContract(kindOrAddressOrProvider, abiOrProvider, prov
     buyback: { addr: () => ADDR.BUYBACK_AGENT, abi: ABI_BUYBACK },
     buybackagent: { addr: () => ADDR.BUYBACK_AGENT, abi: ABI_BUYBACK },
     policy: { addr: () => ADDR.POLICY, abi: ABI_POLICY },
-    compute: { addr: () => ADDR.COMPUTE, abi: ABI_COMPUTE },
     liquidityautomation: { addr: () => ADDR.LIQUIDITY_AUTOMATION, abi: ABI_LIQUIDITY_AUTOMATION },
-    liquiditysetup: { addr: () => ADDR.LIQUIDITY_SETUP, abi: ABI_LIQUIDITY_SETUP },
     dripdistributor: { addr: () => ADDR.DRIP_DISTRIBUTOR, abi: ABI_DRIP_DISTRIBUTOR },
     driplm: { addr: () => ADDR.DRIP_LM ?? ADDR.DRIPLM ?? ADDR.DRIP_LIQUIDITY_MANAGER, abi: ABI_DRIPLM },
     dripkeeper: { addr: () => ADDR.DRIP_KEEPER_PROXY ?? ADDR.DRIP_KEEPER, abi: ABI_DRIP_KEEPER },
@@ -797,7 +723,7 @@ export async function resolveTicketPriceWeiFromHub() {
   }
   const reader = getReaderRO();
   try {
-    const snap = await reader.getFrontendSnapshotLite();
+    const snap = await getFrontendSnapshotLiteActive(reader);
     const wei = Array.isArray(snap) ? snap[0] : snap?.ticketPriceWei;
     if (wei != null) return ethers.BigNumber.from(wei);
   } catch {

@@ -1,6 +1,6 @@
 // useAppCore.js
 import * as React from "react";
-import { getContract, getReadOnlyContract, getReaderRO, getReadOnlyLiquidityContract } from "../utils/contract";
+import { getContract, getReadOnlyContract, getReaderRO, getReadOnlyLiquidityContract, getFrontendSnapshotLiteActive } from "../utils/contract";
 import { useWallet } from "./useWallet";
 import { useGallery } from "./useGallery";
 import { useStatsRewards } from "./useStatsRewards";
@@ -54,7 +54,7 @@ export function useAppCore() {
         }
       }
     const reader = getReaderRO();
-    const snap = await reader.getFrontendSnapshotLite();
+    const snap = await getFrontendSnapshotLiteActive(reader);
     const wei = Array.isArray(snap) ? snap[0] : snap?.ticketPriceWei;
     if (wei == null) throw new Error("Ticket price unavailable");
     return wei;

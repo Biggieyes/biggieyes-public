@@ -1,15 +1,18 @@
 // useGallery.js
 import * as React from "react";
 import { getReadOnlyContract } from "../utils/contract";
+import { ADDR } from "../utils/addresses";
 import { useIPFS } from "./useIPFS";
 import { useUtils } from "./useUtils";
 import { readGalleryCache, saveGalleryCache } from "../services/gallery/gallery.cache";
+import { getSafeDeployBlock } from "../utils/shared";
 
 export function useGallery() {
   const { readJsonFromURI, resolveImageUrl } = useIPFS();
   const { mapLimit, mergeAttrs, getCachedPriceAttrs } = useUtils();
 
   const [galleryLoading, setGalleryLoading] = React.useState(false);
+  const [error, setError] = React.useState(null);
 
   const queryLogsBatched = React.useCallback(async (contract, filter, fromBlock, toBlock, step = 2000) => {
     const out = [];
@@ -33,6 +36,7 @@ export function useGallery() {
   }, []);
 
   const fetchMyTickets = React.useCallback(async (addr) => {
+    setError(null);
     try {
       const contract = getReadOnlyContract();
       let ids = [];
@@ -42,7 +46,7 @@ export function useGallery() {
         } else {
           // fallback: scan logs (simplified)
           const latest = await contract.provider.getBlockNumber();
-          const FROM = Math.max(0, latest - 50000);
+          const FROM = await getSafeDeployBlock(contract.provider);
           const toFilter = contract.filters.Transfer(null, addr, null);
           const logs = await queryLogsBatched(contract, toFilter, FROM, latest);
           ids = logs.map((l) => l.args?.tokenId).filter(Boolean);
@@ -70,18 +74,20 @@ export function useGallery() {
       return metas;
     } catch (e) {
       console.error("fetchMyTickets", e);
+      setError(e);
       return [];
     }
   }, [mapLimit, readJsonFromURI, resolveImageUrl, queryLogsBatched]);
 
   const fetchOwnedNFTsViaTransfers = React.useCallback(
     async (addr) => {
-      const cacheRecord = readGalleryCache(addr);
+      const cacheRecord = readGalleryCache(addr, ADDR.MAIN);
+      setError(null);
       try {
         setGalleryLoading(true);
         const contract = getReadOnlyContract();
         const latest = await contract.provider.getBlockNumber();
-        const FROM = Math.max(0, latest - 50000);
+        const FROM = await getSafeDeployBlock(contract.provider);
 
         const toFilter = contract.filters.Transfer(null, addr, null);
         const fromFilter = contract.filters.Transfer(addr, null, null);
@@ -138,13 +144,14 @@ export function useGallery() {
 
         const finalList = metas.filter(Boolean);
         if (finalList.length) {
-          saveGalleryCache(addr, finalList);
+          saveGalleryCache(addr, finalList, ADDR.MAIN);
           return finalList;
         }
         if (cacheRecord?.items?.length) return cacheRecord.items;
         return [];
       } catch (e) {
         console.error("fetchOwnedNFTsViaTransfers", e);
+        setError(e);
         if (cacheRecord?.items?.length) return cacheRecord.items;
         return [];
       } finally {
@@ -156,6 +163,7 @@ export function useGallery() {
 
   return {
     galleryLoading,
+    error,
     fetchMyTickets,
     fetchOwnedNFTsViaTransfers,
     queryLogsBatched,

@@ -2,7 +2,7 @@
 import * as React from "react";
 import NFTRewardsService from "../services/nftRewardsService";
 import { ADDR, getROProvider, getSignerProvider } from "../utils/contract";
-import { getCached } from "../utils/fetchCache";
+import { getCached, invalidateCache } from "../utils/fetchCache";
 
 const DEFAULT_DATA = {
   baseURIs: { character: null, leaderboard: null, mystery: null },
@@ -16,6 +16,7 @@ const DEFAULT_DATA = {
 export default function useNFTRewards(providerOverride = null) {
   const [data, setData] = React.useState(DEFAULT_DATA);
   const [loading, setLoading] = React.useState(false);
+  const [performing, setPerforming] = React.useState(false);
   const [error, setError] = React.useState(null);
 
   const refresh = React.useCallback(async (options = {}) => {
@@ -54,22 +55,29 @@ export default function useNFTRewards(providerOverride = null) {
   }, [providerOverride]);
 
   const claimReward = React.useCallback(async (rewardId, overrides = {}) => {
+    setPerforming(true);
     setError(null);
     try {
       const provider = getSignerProvider();
       const svc = new NFTRewardsService(ADDR.NFT_REWARDS, provider);
       svc.connectWithSigner(provider.getSigner());
-      return await svc.claim(rewardId, overrides);
+      const receipt = await svc.claim(rewardId, overrides);
+      const cacheKey = `nftRewards:${svc.address || ADDR.NFT_REWARDS || "unknown"}`;
+      invalidateCache(cacheKey);
+      await refresh({ force: true }).catch(() => {});
+      return receipt;
     } catch (e) {
       console.error("useNFTRewards.claimReward", e);
       setError(e);
       throw e;
+    } finally {
+      setPerforming(false);
     }
-  }, []);
+  }, [refresh]);
 
   React.useEffect(() => {
     refresh();
   }, [refresh]);
 
-  return { data, loading, error, refresh, claimReward };
+  return { data, loading, performing, error, refresh, claimReward };
 }

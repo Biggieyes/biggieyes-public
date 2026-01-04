@@ -11,6 +11,7 @@ import {
   getMain as getContract,
   getLMRO as getReadOnlyLiquidityContract,
   getLM as getLiquidityContract,
+  getFrontendSnapshotLiteActive,
   getReaderRO,
   getROProvider,
   getSignerProvider,
@@ -41,6 +42,7 @@ import UserPanel from "./components/user/UserPanel";
 import AdminPanel from "./components/admin/AdminPanel";
 import * as WC from "./wallet/wc";
 import useTransparencyData from "./hooks/useTransparencyData";
+import { mergeAttrs, getCachedPriceAttrs, setCachedPriceAttrs } from "./utils/metadata";
 
 const pickInjectedProvider = () => {
   if (typeof window === "undefined") return null;
@@ -292,41 +294,6 @@ function backgroundIndexFromAny(val) {
   idx = BACKGROUND_NAMES.indexOf(u);
   if (idx !== -1) return idx + 1;
   return null;
-}
-
-function mergeAttrs(baseArr, patchArr) {
-  const out = Array.isArray(baseArr) ? [...baseArr] : [];
-  if (!Array.isArray(patchArr)) return out;
-  for (const p of patchArr) {
-    if (!p || !p.trait_type) continue;
-    const i = out.findIndex((a) => String(a?.trait_type) === String(p?.trait_type));
-    if (i === -1) out.push(p);
-    else out[i] = { ...out[i], value: p.value };
-  }
-  return out;
-}
-function getCachedPriceAttrs(tokenId) {
-  try {
-    const raw = localStorage.getItem(`biggi_meta_prices_${String(tokenId)}`);
-    if (!raw) return null;
-    const obj = JSON.parse(raw);
-    const attrs = Array.isArray(obj?.attributes) ? obj.attributes : null;
-    return attrs?.length ? attrs : null;
-  } catch {
-    return null;
-  }
-}
-function setCachedPriceAttrs(tokenId, attrs) {
-  try {
-    const keep = ["Ticket Price", "Block Price", "Final Price"];
-    const compact = (Array.isArray(attrs) ? attrs : []).filter((a) => keep.includes(String(a?.trait_type)));
-    if (compact.length) {
-      localStorage.setItem(
-        `biggi_meta_prices_${String(tokenId)}`,
-        JSON.stringify({ attributes: compact })
-      );
-    }
-  } catch {}
 }
 
 /* ======================================================================== */
@@ -717,11 +684,9 @@ function App() {
       const reader = getCachedReaderInstance(k);
       if (!reader) continue;
       try {
-        if (typeof reader.getFrontendSnapshotLite === "function") {
-          const snap = await reader.getFrontendSnapshotLite();
-          const wei = Array.isArray(snap) ? snap[0] : snap?.ticketPriceWei;
-          if (wei != null) return wei;
-        }
+        const snap = await getFrontendSnapshotLiteActive(reader);
+        const wei = Array.isArray(snap) ? snap[0] : snap?.ticketPriceWei;
+        if (wei != null) return wei;
         if (typeof reader.getTicketPrice === "function") {
           const v = await reader.getTicketPrice();
           if (v != null) return v;
@@ -927,10 +892,9 @@ function App() {
       for (const k of readerKinds) {
         try {
           const r = getCachedReaderInstance(k);
-          if (r && typeof r.getFrontendSnapshotLite === "function") {
-            snap = await r.getFrontendSnapshotLite();
-            if (snap) break;
-          }
+          if (!r) continue;
+          snap = await getFrontendSnapshotLiteActive(r);
+          if (snap) break;
         } catch {}
       }
       if (snap) {

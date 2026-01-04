@@ -1,7 +1,7 @@
 // src/hooks/useDripKeeper.js
 import * as React from "react";
 import { useContracts } from "../providers/ContractsProvider";
-import { getCached } from "../utils/fetchCache";
+import { getCached, invalidateCache } from "../utils/fetchCache";
 
 export default function useDripKeeper(walletAddress = "") {
   const { dripKeeperRead, dripKeeperWrite } = useContracts();
@@ -78,6 +78,9 @@ export default function useDripKeeper(walletAddress = "") {
       if (!contract) throw new Error("Signer not available for DripKeeper");
       const tx = await contract.performUpkeep(performData, overrides);
       const receipt = await tx.wait(1);
+      const cacheKey = `dripKeeper:${contract.address || "unknown"}:${walletAddress || "anon"}`;
+      invalidateCache(cacheKey);
+      await refresh({ force: true }).catch(() => {});
       return receipt;
     } catch (e) {
       console.error("useDripKeeper.performUpkeep", e);
@@ -86,7 +89,7 @@ export default function useDripKeeper(walletAddress = "") {
     } finally {
       setPerforming(false);
     }
-  }, [dripKeeperWrite]);
+  }, [dripKeeperWrite, refresh, walletAddress]);
 
   React.useEffect(() => {
     refresh();

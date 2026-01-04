@@ -11,6 +11,8 @@ export default function HeaderControls({
   mintTicket,
   redeemTicket,
   claimRewards,
+  actionPerforming,
+  actionError,
   icons,
   setOpenNavIdx,
   isMobile,
@@ -49,6 +51,8 @@ export default function HeaderControls({
         onClaim={claimRewards}
         isRedeeming={isRedeeming}
         vrfPending={vrfPending}
+        actionPerforming={actionPerforming}
+        actionError={actionError}
         icons={icons}
         onIconClick={(idx) => setOpenNavIdx(idx)}
         isMobile={isMobile}

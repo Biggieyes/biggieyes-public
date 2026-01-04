@@ -4,7 +4,7 @@ import { ethers } from "ethers";
 import { ADDR } from "../utils/addresses";
 import { ABI_LIQUIDITY_KEEPER } from "../utils/abi/index.js";
 import { getReadOnlyContract, getSignerProvider } from "../utils/contract";
-import { getCached } from "../utils/fetchCache";
+import { getCached, invalidateCache } from "../utils/fetchCache";
 
 export default function useLiquidityKeeper() {
   const [data, setData] = React.useState({
@@ -48,6 +48,9 @@ export default function useLiquidityKeeper() {
       const contract = new ethers.Contract(addr, ABI_LIQUIDITY_KEEPER, provider.getSigner());
       const tx = await contract.executePairing(requestedMatic, overrides);
       const receipt = await tx.wait(1);
+      const cacheKey = `liquidityKeeper:${addr}`;
+      invalidateCache(cacheKey);
+      await refresh({ force: true }).catch(() => {});
       return receipt;
     } catch (e) {
       console.error("useLiquidityKeeper.executePairing", e);
@@ -56,7 +59,7 @@ export default function useLiquidityKeeper() {
     } finally {
       setPerforming(false);
     }
-  }, []);
+  }, [refresh]);
 
   React.useEffect(() => {
     refresh();

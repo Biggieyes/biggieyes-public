@@ -12,6 +12,8 @@ export default function MainLayout({
   mintTicket,
   redeemTicket,
   claimRewards,
+  actionPerforming,
+  actionError,
   icons,
   setOpenNavIdx,
   isMobile,
@@ -70,6 +72,8 @@ export default function MainLayout({
         mintTicket={mintTicket}
         redeemTicket={redeemTicket}
         claimRewards={claimRewards}
+        actionPerforming={actionPerforming}
+        actionError={actionError}
         icons={icons}
         setOpenNavIdx={setOpenNavIdx}
         isMobile={isMobile}

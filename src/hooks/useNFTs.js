@@ -21,6 +21,8 @@ export function useNFTs({
   const [redeemMsg, setRedeemMsg] = React.useState("");
   const [pendingTicketId, setPendingTicketId] = React.useState(null);
   const [lastMinted, setLastMinted] = React.useState({});
+  const [performing, setPerforming] = React.useState(false);
+  const [error, setError] = React.useState(null);
   const unsubRef = React.useRef(() => {});
 
   /* ------------------- pomocné funkce ------------------- */
@@ -84,6 +86,8 @@ export function useNFTs({
   /* ------------------- MINT TICKET ------------------- */
   const mintTicket = React.useCallback(async () => {
     if (!walletAddress) return alert("Please connect MetaMask first.");
+    setPerforming(true);
+    setError(null);
     try {
       await ensureAmoy();
       const contract = getContract();
@@ -102,8 +106,11 @@ export function useNFTs({
       await fetchRewards();
       alert("Ticket minted.");
     } catch (err) {
+      setError(err);
       alert("Mint failed: " + prettyError(err));
       console.error("mintTicket", err);
+    } finally {
+      setPerforming(false);
     }
   }, [walletAddress, fetchWalletAssets, fetchStats, fetchRewards, ensureAmoy, prettyError]);
 
@@ -111,6 +118,8 @@ export function useNFTs({
   const redeemTicket = React.useCallback(async () => {
     if (!walletAddress) return alert("Please connect MetaMask first.");
     if (isRedeeming || vrfPending) return;
+    setPerforming(true);
+    setError(null);
     try {
       await ensureAmoy();
       const contract = getContract();
@@ -143,17 +152,22 @@ export function useNFTs({
       await fetchRewards();
       await fetchStats();
     } catch (err) {
+      setError(err);
       setIsRedeeming(false);
       setVrfPending(false);
       setRedeemMsg("");
       alert("Redeem failed: " + prettyError(err));
       console.error("redeemTicket", err);
+    } finally {
+      setPerforming(false);
     }
   }, [walletAddress, isRedeeming, vrfPending, fetchWalletAssets, fetchStats, fetchRewards, ensureAmoy, findTicketsViaLogs, prettyError]);
 
   /* ------------------- CLAIM REWARDS ------------------- */
   const claimRewards = React.useCallback(async () => {
     if (!walletAddress) return alert("Please connect MetaMask first.");
+    setPerforming(true);
+    setError(null);
     try {
       await ensureAmoy();
       const ids = myNFTs.filter((x) => !x.isTicket).map((x) => ethers.BigNumber.from(x.tokenId));
@@ -167,8 +181,11 @@ export function useNFTs({
       await fetchStats();
       alert("Rewards claimed.");
     } catch (err) {
+      setError(err);
       alert("Claim failed: " + prettyError(err));
       console.error("claimRewards", err);
+    } finally {
+      setPerforming(false);
     }
   }, [walletAddress, myNFTs, fetchRewards, fetchStats, ensureAmoy, prettyError]);
 
@@ -222,6 +239,8 @@ export function useNFTs({
     vrfPending,
     redeemMsg,
     pendingTicketId,
+    performing,
+    error,
     mintTicket,
     redeemTicket,
     claimRewards,

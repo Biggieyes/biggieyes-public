@@ -3,16 +3,35 @@ import "./InfoButton.css";
 
 const ProjectInfoModal = React.lazy(() => import("../INFO/ProjectInfoModal"));
 
-export default function ActionButtons({ onMint, onRedeem, onClaim, isRedeeming, vrfPending }) {
+export default function ActionButtons({
+  onMint,
+  onRedeem,
+  onClaim,
+  isRedeeming,
+  vrfPending,
+  performing = false,
+  actionError = null,
+}) {
   const lockRef = React.useRef(false);
   const [infoOpen, setInfoOpen] = React.useState(false);
 
-  const disabled = isRedeeming || vrfPending;
+  const redeemDisabled = Boolean(isRedeeming || vrfPending || performing);
+  const actionDisabled = Boolean(performing);
+  const errorText = React.useMemo(() => {
+    if (!actionError) return "";
+    if (typeof actionError === "string") return actionError;
+    return (
+      actionError?.data?.message ||
+      actionError?.reason ||
+      actionError?.message ||
+      String(actionError)
+    );
+  }, [actionError]);
 
-  const safeRedeem = () => {
-    if (disabled || lockRef.current) return;
+  const runOnce = (handler, isDisabled) => () => {
+    if (isDisabled || lockRef.current) return;
     lockRef.current = true;
-    try { onRedeem?.(); } finally {
+    try { handler?.(); } finally {
       setTimeout(() => { lockRef.current = false; }, 800);
     }
   };
@@ -132,12 +151,14 @@ export default function ActionButtons({ onMint, onRedeem, onClaim, isRedeeming, 
         justifyContent: "center",
         flexWrap: "wrap",
       }}>
-        {buttonWrapper("/images/mint.png", "Mint Ticket", onMint, {
+        {buttonWrapper("/images/mint.png", "Mint Ticket", runOnce(onMint, actionDisabled), {
+          isDisabled: actionDisabled,
           variant: "mint",
           borderColor: "#26f7d1",
           glow: "rgba(38, 247, 209, 0.55)",
         })}
-        {buttonWrapper("/images/claim.png", "Claim Rewards", onClaim, {
+        {buttonWrapper("/images/claim.png", "Claim Rewards", runOnce(onClaim, actionDisabled), {
+          isDisabled: actionDisabled,
           variant: "mint",
           borderColor: "#26f7d1",
           glow: "rgba(38, 247, 209, 0.55)",
@@ -150,8 +171,8 @@ export default function ActionButtons({ onMint, onRedeem, onClaim, isRedeeming, 
         justifyContent: "center",
         flexWrap: "wrap",
       }}>
-        {buttonWrapper("/images/redeem-button.png", "Redeem Ticket", safeRedeem, {
-          isDisabled: disabled,
+        {buttonWrapper("/images/redeem-button.png", "Redeem Ticket", runOnce(onRedeem, redeemDisabled), {
+          isDisabled: redeemDisabled,
           variant: "mint",
           borderColor: "#26f7d1",
           glow: "rgba(38, 247, 209, 0.55)",
@@ -161,6 +182,23 @@ export default function ActionButtons({ onMint, onRedeem, onClaim, isRedeeming, 
           glow: "rgba(255, 232, 0, 0.6)",
         })}
       </div>
+
+      {(performing || errorText) && (
+        <div style={{
+          marginTop: 10,
+          textAlign: "center",
+          fontSize: 12,
+          color: "#ffd54f",
+          maxWidth: 320,
+        }}>
+          {performing && <div>Processing transaction...</div>}
+          {errorText && (
+            <div role="alert" style={{ color: "#ff7b7b" }}>
+              Last error: {errorText}
+            </div>
+          )}
+        </div>
+      )}
 
       {infoOpen && (
         <React.Suspense fallback={null}>

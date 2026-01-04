@@ -15,9 +15,7 @@ import ABI_COLLECTION_REWARDS from './BiggiCollectionRewards.json' assert { type
 import ABI_NFTREWARDS from './BiggiNFTRewards.json' assert { type: 'json' };
 import ABI_REWARDS_READER from './BiggiRewardsReader.json' assert { type: 'json' };
 import ABI_MASTER_CONFIG from './BiggiMasterTokenomicsConfig.json' assert { type: 'json' };
-import ABI_COMPUTE from './BiggiCompute.json' assert { type: 'json' };
 import ABI_LIQUIDITY_AUTOMATION from './LiquidityAutomation.json' assert { type: 'json' };
-import ABI_LIQUIDITY_SETUP from './LiquiditySetup.json' assert { type: 'json' };
 import ABI_LIQUIDITY_KEEPER from './LiquidityKeeper.json' assert { type: 'json' };
 import ABI_DRIP_DISTRIBUTOR from './BiggiDripDistributor.json' assert { type: 'json' };
 import ABI_DRIP_KEEPER from './BiggiDripKeeper.json' assert { type: 'json' };
@@ -48,13 +46,11 @@ const ABI_BiggiTokenomicsReader = ABI_TOKENOMIC_READER || [];
 const ABI_BiggiTokenReader = ABI_TOKEN || [];
 const ABI_NFTRewardsReader = ABI_NFTREWARDS || [];
 const ABI_CollectionRewardsReader = ABI_COLLECTION_REWARDS || [];
-const ABI_TokenRewardsReader = ABI_TOKEN_REWARDS || [];
 const ABI_ReserveReader = ABI_RESERVE || [];
 const ABI_BuybackReader = ABI_BUYBACK || [];
 const ABI_LiquidityManagerReader = ABI_LM || [];
-const ABI_COLLECTION_VRF = ABI_MAIN2 || [];
+const ABI_COLLECTION_VRF = ABI_MAIN || [];
 const ABI_COLLECTION_PUBLIC = ABI_MAIN2 || [];
-const ABI_EVENTS = [];
 
 // Export canonical names expected by the rest of the codebase
 export {
@@ -72,9 +68,7 @@ export {
   ABI_NFTREWARDS,
   ABI_REWARDS_READER,
   ABI_MASTER_CONFIG,
-  ABI_COMPUTE,
   ABI_LIQUIDITY_AUTOMATION,
-  ABI_LIQUIDITY_SETUP,
   ABI_LIQUIDITY_KEEPER,
   ABI_DRIP_DISTRIBUTOR,
   ABI_DRIP_KEEPER,
@@ -98,13 +92,11 @@ export {
   ABI_BiggiTokenReader,
   ABI_NFTRewardsReader,
   ABI_CollectionRewardsReader,
-  ABI_TokenRewardsReader,
   ABI_ReserveReader,
   ABI_BuybackReader,
   ABI_LiquidityManagerReader,
   ABI_COLLECTION_VRF,
   ABI_COLLECTION_PUBLIC,
-  ABI_EVENTS,
 };
 
 // default export (minimal)

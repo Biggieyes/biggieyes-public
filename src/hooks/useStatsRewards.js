@@ -3,10 +3,11 @@ import { ethers } from "ethers";
 import {
   ADDR,
   getReaderRO,
+  getFrontendSnapshotLiteActive,
   getReadOnlyMain as getReadOnlyContract,
   getLMRO as getReadOnlyLiquidityContract,
 } from "../utils/contract";
-import { getSafeDeployBlock } from "../utils/shared";
+import { getSafeDeployBlock, queryLogsBatched } from "../utils/shared";
 import { callFirst } from "../utils/contracts-helpers";
 
 export function useStatsRewards({
@@ -32,7 +33,7 @@ export function useStatsRewards({
         currentBlockPrices,
         blocksMinted,
         bgsMinted,
-      ] = await reader.getFrontendSnapshotLite();
+      ] = await getFrontendSnapshotLiteActive(reader);
 
       setTicketPrice(Number(ethers.utils.formatEther(ticketPriceWei)));
       setTicketMinted(Number(ticketMinted_));
@@ -159,8 +160,8 @@ export function useStatsRewards({
           const toFilter = contract.filters.Transfer(null, walletAddress, null);
           const fromFilter = contract.filters.Transfer(walletAddress, null, null);
           const [toLogs, fromLogs] = await Promise.all([
-            contract.queryFilter(toFilter, FROM, latest),
-            contract.queryFilter(fromFilter, FROM, latest),
+            queryLogsBatched(contract, toFilter, FROM, latest),
+            queryLogsBatched(contract, fromFilter, FROM, latest),
           ]);
           const all = [...toLogs, ...fromLogs].sort((a, b) => {
             if (a.blockNumber !== b.blockNumber) return a.blockNumber - b.blockNumber;

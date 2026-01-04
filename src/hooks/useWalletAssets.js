@@ -1,6 +1,7 @@
 import * as React from "react";
 import { ethers } from "ethers";
 import { getReadOnlyMain as getReadOnlyContract } from "../utils/contract";
+import { ADDR } from "../utils/addresses";
 import {
   loadWalletCache,
   saveWalletCache,
@@ -134,10 +135,11 @@ export function useWalletAssets(params) {
   const fetchOwnedNFTsViaOwnerScan = React.useCallback(
     async (addr) => {
       try {
-        const cached = loadWalletCache(addr, { allowExpired: true });
+        const contract = getReadOnlyContract();
+        const cacheAddr = contract?.address || ADDR.MAIN;
+        const cached = loadWalletCache(addr, { allowExpired: true }, cacheAddr);
         if (cached?.length) return cached;
 
-        const contract = getReadOnlyContract();
         const lower = String(addr || "").toLowerCase();
         let totalMinted = 0;
         try {
@@ -188,7 +190,7 @@ export function useWalletAssets(params) {
         });
 
         const filtered = owned.filter(Boolean);
-        saveWalletCache(addr, filtered);
+        saveWalletCache(addr, filtered, cacheAddr);
         return filtered;
       } catch (err) {
         console.error("fetchOwnedNFTsViaOwnerScan", err);
@@ -202,6 +204,7 @@ export function useWalletAssets(params) {
     async (addr, ticketCount = 0) => {
       try {
         const contract = getReadOnlyContract();
+        const cacheAddr = contract?.address || ADDR.MAIN;
         const latest = await contract.provider.getBlockNumber();
         const FROM = await getSafeDeployBlock(contract.provider);
 
@@ -275,7 +278,7 @@ export function useWalletAssets(params) {
           console.debug("fetchOwnedNFTsViaTransfers balance fallback failed", err);
         }
 
-        saveWalletCache(addr, resolved);
+        saveWalletCache(addr, resolved, cacheAddr);
         return resolved;
       } catch (e) {
         console.error("fetchOwnedNFTsViaTransfers", e);
@@ -323,11 +326,13 @@ export function useWalletAssets(params) {
   const fetchWalletAssets = React.useCallback(
     async (addr) => {
       if (!addr) return [];
+      const cacheContract = getReadOnlyContract();
+      const cacheAddr = cacheContract?.address || ADDR.MAIN;
       if (walletFetchRef.current.inFlight && walletFetchRef.current.addr === addr) {
         return walletFetchRef.current.inFlight;
       }
 
-      const cachedRecord = readGalleryCache(addr);
+      const cachedRecord = readGalleryCache(addr, cacheAddr);
       const cachedItemsRaw = cachedRecord?.items || [];
       const cachedItems = pendingTicketId
         ? cachedItemsRaw.filter((item) => String(item?.tokenId ?? item?.id ?? "") !== String(pendingTicketId))
@@ -354,7 +359,7 @@ export function useWalletAssets(params) {
           if (hasCached) {
             let onChainCount = null;
             try {
-            const contract = getReadOnlyContract();
+              const contract = getReadOnlyContract();
               const balRaw = await contract.balanceOf(addr);
               const parsed = Number(balRaw?.toString?.() || balRaw || 0);
               if (Number.isFinite(parsed)) onChainCount = parsed;
@@ -490,7 +495,7 @@ export function useWalletAssets(params) {
           }
 
           mergeWithTopFirst(merged);
-          saveGalleryCache(addr, merged);
+          saveGalleryCache(addr, merged, cacheAddr);
           if (typeof setGalleryNotice === "function") {
             setGalleryNotice(usedCacheFallback ? "RPC/IPFS failed, showing cached NFTs." : "");
           }

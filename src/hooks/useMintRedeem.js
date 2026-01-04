@@ -1,5 +1,6 @@
 import * as React from "react";
 import { ethers } from "ethers";
+import { getFrontendSnapshotLiteActive } from "../utils/contract";
 
 export function useMintRedeem(params) {
   const {
@@ -30,6 +31,8 @@ export function useMintRedeem(params) {
     setVrfPending,
     setTopFirstId,
   } = params;
+  const [performing, setPerforming] = React.useState(false);
+  const [error, setError] = React.useState(null);
 
   const resolveTicketPriceWei = React.useCallback(async () => {
     const c = contractRef.current || getReadOnlyContract();
@@ -45,8 +48,8 @@ export function useMintRedeem(params) {
           }
         }
     }
-    const reader = getReaderRO();
-    const snap = await reader.getFrontendSnapshotLite();
+    const reader = typeof getReaderRO === "function" ? getReaderRO() : null;
+    const snap = await getFrontendSnapshotLiteActive(reader);
     const wei = Array.isArray(snap) ? snap[0] : snap?.ticketPriceWei;
     if (wei == null) throw new Error("Ticket price unavailable");
     return ethers.BigNumber.from(wei);
@@ -54,12 +57,39 @@ export function useMintRedeem(params) {
 
   const mintTicket = React.useCallback(async () => {
     if (!walletAddress) return alert("Please connect MetaMask first.");
+    setPerforming(true);
+    setError(null);
     try {
       const contract = contractRef.current || getContract();
       contractRef.current = contract;
 
       const net = await contract.provider.getNetwork();
       if (Number(net?.chainId) !== 80002) await ensureAmoy();
+
+      if (typeof contract.mintTicket !== "function") {
+        if (typeof contract.mintPublic === "function") {
+          alert("Tento kontrakt je public (main2). Mint lístků není podporovaný. Použij Collection 2 panel.");
+        } else {
+          alert("Mint není na tomto kontraktu dostupný.");
+        }
+        return;
+      }
+
+      // Preflight: distributor must be configured and deployed (prevents "distributor fwd failed").
+      try {
+        if (typeof contract.distributor === "function") {
+          const dist = await contract.distributor().catch(() => "");
+          if (!dist || dist === ethers.constants.AddressZero) {
+            return alert("Distributor není nastavený na kontraktu. Mint nebude fungovat.");
+          }
+          const code = await contract.provider.getCode(dist).catch(() => "0x");
+          if (!code || code === "0x") {
+            return alert("Distributor adresa nemá žádný bytecode. Zkontroluj konfiguraci kontraktu.");
+          }
+        }
+      } catch (err) {
+        console.debug("mintTicket distributor preflight failed", err);
+      }
 
       const price = ethers.BigNumber.from(await resolveTicketPriceWei());
       if (!price || price.lte(0)) {
@@ -97,12 +127,15 @@ export function useMintRedeem(params) {
       alert("Ticket minted.");
       refreshVRFPanel();
     } catch (err) {
+      setError(err);
       const msg =
         err?.errorName === "MaxPerWallet"
           ? "Max per wallet reached. Try a different wallet or wait until limit resets."
           : err?.data?.message || err?.reason || err?.message || prettyError(err);
       alert("Mint failed: " + msg);
       console.error("mintTicket", err);
+    } finally {
+      setPerforming(false);
     }
   }, [
     walletAddress,
@@ -121,10 +154,17 @@ export function useMintRedeem(params) {
   const redeemTicket = React.useCallback(async () => {
     if (!walletAddress) return alert("Please connect MetaMask first.");
     if (isRedeeming || vrfPending) return;
+    setPerforming(true);
+    setError(null);
     try {
       const contract = contractRef.current || getContract();
       const net = await contract.provider.getNetwork();
       if (Number(net?.chainId) !== 80002) await ensureAmoy();
+
+      if (typeof contract.redeemTicketAndMintNFT !== "function") {
+        alert("Redeem není na public kolekci dostupný. Použij Collection 2 panel.");
+        return;
+      }
 
       if (typeof contract.paused === "function" && (await contract.paused())) {
         return alert("Redeem is paused.");
@@ -209,6 +249,7 @@ export function useMintRedeem(params) {
         })();
       }, 25000);
     } catch (err) {
+      setError(err);
       setIsRedeeming(false);
       setVrfPending(false);
       setRedeemMsg("");
@@ -218,6 +259,8 @@ export function useMintRedeem(params) {
       }
       alert("Redeem failed: " + prettyError(err));
       console.error("redeemTicket", err);
+    } finally {
+      setPerforming(false);
     }
   }, [
     walletAddress,
@@ -266,6 +309,8 @@ export function useMintRedeem(params) {
   }, []);
 
   return {
+    performing,
+    error,
     resolveTicketPriceWei,
     mintTicket,
     redeemTicket,

@@ -1,5 +1,10 @@
 // useUtils.js
 import * as React from "react";
+import {
+  mergeAttrs as mergeAttrsUtil,
+  getCachedPriceAttrs as getCachedPriceAttrsUtil,
+  setCachedPriceAttrs as setCachedPriceAttrsUtil,
+} from "../utils/metadata";
 
 export function useUtils() {
   const mapLimit = React.useCallback(async (items, limit, mapper) => {
@@ -16,15 +21,7 @@ export function useUtils() {
   }, []);
 
   const mergeAttrs = React.useCallback((baseArr, patchArr) => {
-    const out = Array.isArray(baseArr) ? [...baseArr] : [];
-    if (!Array.isArray(patchArr)) return out;
-    for (const p of patchArr) {
-      if (!p || !p.trait_type) continue;
-      const i = out.findIndex((a) => String(a?.trait_type) === String(p.trait_type));
-      if (i === -1) out.push(p);
-      else out[i] = { ...out[i], value: p.value };
-    }
-    return out;
+    return mergeAttrsUtil(baseArr, patchArr);
   }, []);
 
   const canonBackgroundName = React.useCallback((val) => {
@@ -52,30 +49,11 @@ export function useUtils() {
   }, []);
 
   const getCachedPriceAttrs = React.useCallback((tokenId) => {
-    try {
-      const raw = localStorage.getItem(`biggi_meta_prices_${String(tokenId)}`);
-      if (!raw) return null;
-      const obj = JSON.parse(raw);
-      const attrs = Array.isArray(obj?.attributes) ? obj.attributes : null;
-      return attrs?.length ? attrs : null;
-    } catch {
-      return null;
-    }
+    return getCachedPriceAttrsUtil(tokenId);
   }, []);
 
   const setCachedPriceAttrs = React.useCallback((tokenId, attrs) => {
-    try {
-      const keep = ["Ticket Price", "Block Price", "Final Price"];
-      const compact = (Array.isArray(attrs) ? attrs : []).filter((a) => keep.includes(String(a?.trait_type)));
-      if (compact.length) {
-        localStorage.setItem(
-          `biggi_meta_prices_${String(tokenId)}`,
-          JSON.stringify({ attributes: compact })
-        );
-      }
-    } catch (err) {
-      console.debug("setCachedPriceAttrs failed", err);
-    }
+    return setCachedPriceAttrsUtil(tokenId, attrs);
   }, []);
 
   return {

@@ -1,8 +1,9 @@
 import * as React from "react";
 import { ethers } from "ethers";
 import { ADDR } from "../utils/addresses";
-import { getROProvider, getReaderRO, getReadOnlyLiquidityContract, getPolicyRO } from "../utils/contract";
+import { getROProvider, getReaderRO, getReadOnlyLiquidityContract, getPolicyRO, getFrontendSnapshotLiteActive } from "../utils/contract";
 import { callFirst } from "../utils/contracts-helpers";
+import { getCached } from "../utils/fetchCache";
 
 const WEEKLY_POOL_FNS = [
   "weeklyPool",
@@ -25,90 +26,103 @@ function fmtEth(bn) {
 export function useTransparencyData({ enabled = true } = {}) {
   const [state, setState] = React.useState({ loading: true, data: null, error: null });
 
-  const load = React.useCallback(async () => {
+  const load = React.useCallback(async (options = {}) => {
     if (!enabled) {
       setState({ loading: false, data: null, error: null });
       return;
     }
 
-    const provider = getROProvider();
-    const rpcUrl = provider?.connection?.url || "";
-    let latencyMs = null;
-    let rpcError = null;
+    setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      const start = performance.now();
-      await Promise.race([
-        provider.getBlockNumber(),
-        new Promise((_, rej) => setTimeout(() => rej(new Error("rpc_timeout")), 4000)),
-      ]);
-      latencyMs = Math.round(performance.now() - start);
-    } catch (err) {
-      rpcError = err?.message || String(err);
-    }
+      const provider = getROProvider();
+      if (!provider) throw new Error("Read-only provider not available");
+      const rpcUrl = provider?.connection?.url || "";
+      const cacheKey = `transparency:${rpcUrl}:${ADDR.MAIN}:${ADDR.READER || ADDR.MAIN_READER}:${ADDR.NFT_REWARDS}:${ADDR.BIGGI_TOKENOMICS_READER}:${ADDR.TREASURY}:${ADDR.BUYBACK_AGENT}:${ADDR.RESERVE}`;
 
-    let snapshot = null;
-    let rewards = null;
-    let policy = null;
+      const data = await getCached(
+        cacheKey,
+        async () => {
+          let latencyMs = null;
+          let rpcError = null;
+          try {
+            const start = performance.now();
+            await Promise.race([
+              provider.getBlockNumber(),
+              new Promise((_, rej) => setTimeout(() => rej(new Error("rpc_timeout")), 4000)),
+            ]);
+            latencyMs = Math.round(performance.now() - start);
+          } catch (err) {
+            rpcError = err?.message || String(err);
+          }
 
-    try {
-      const reader = getReaderRO();
-      const snap = await reader.getFrontendSnapshotLite();
-      const arr = Array.isArray(snap) ? snap : [];
-      snapshot = {
-        ticketPriceEth: snap?.ticketPriceWei ? fmtEth(snap.ticketPriceWei) : fmtEth(arr[0]),
-        ticketMinted: snap?.ticketMinted_ ?? arr[1] ?? null,
-        biggiMinted: snap?.biggiMinted_ ?? arr[2] ?? null,
-      };
-    } catch (err) {
-      snapshot = { error: err?.message || String(err) };
-    }
+          let snapshot = null;
+          let rewards = null;
+          let policy = null;
 
-    try {
-      const lm = await getReadOnlyLiquidityContract();
-      const poolWei = await callFirst(lm, WEEKLY_POOL_FNS);
-      const prov = provider;
-      const [treasuryBal, buybackBal, reserveBal] = await Promise.all([
-        prov.getBalance(ADDR.TREASURY).catch(() => null),
-        prov.getBalance(ADDR.BUYBACK_AGENT).catch(() => null),
-        prov.getBalance(ADDR.RESERVE).catch(() => null),
-      ]);
-      rewards = {
-        rewardPoolEth: poolWei ? fmtEth(poolWei) : null,
-        treasuryEth: fmtEth(treasuryBal),
-        buybackEth: fmtEth(buybackBal),
-        reserveEth: fmtEth(reserveBal),
-      };
-    } catch (err) {
-      rewards = { error: err?.message || String(err) };
-    }
+          try {
+            const reader = getReaderRO();
+            const snap = await getFrontendSnapshotLiteActive(reader);
+            const arr = Array.isArray(snap) ? snap : [];
+            snapshot = {
+              ticketPriceEth: snap?.ticketPriceWei ? fmtEth(snap.ticketPriceWei) : fmtEth(arr[0]),
+              ticketMinted: snap?.ticketMinted_ ?? arr[1] ?? null,
+              biggiMinted: snap?.biggiMinted_ ?? arr[2] ?? null,
+            };
+          } catch (err) {
+            snapshot = { error: err?.message || String(err) };
+          }
 
-    try {
-      const policyRO = getPolicyRO();
-      const gamma = policyRO?.gammaStakingBps ? await policyRO.gammaStakingBps() : null;
-      policy = { gammaBps: gamma != null ? Number(gamma) : null };
-    } catch (err) {
-      policy = { error: err?.message || String(err) };
-    }
+          try {
+            const lm = await getReadOnlyLiquidityContract();
+            const poolWei = await callFirst(lm, WEEKLY_POOL_FNS);
+            const prov = provider;
+            const [treasuryBal, buybackBal, reserveBal] = await Promise.all([
+              prov.getBalance(ADDR.TREASURY).catch(() => null),
+              prov.getBalance(ADDR.BUYBACK_AGENT).catch(() => null),
+              prov.getBalance(ADDR.RESERVE).catch(() => null),
+            ]);
+            rewards = {
+              rewardPoolEth: poolWei ? fmtEth(poolWei) : null,
+              treasuryEth: fmtEth(treasuryBal),
+              buybackEth: fmtEth(buybackBal),
+              reserveEth: fmtEth(reserveBal),
+            };
+          } catch (err) {
+            rewards = { error: err?.message || String(err) };
+          }
 
-    setState({
-      loading: false,
-      error: null,
-      data: {
-        rpc: { url: rpcUrl, latencyMs, error: rpcError },
-        snapshot,
-        rewards,
-        policy,
-        addresses: {
-          main: ADDR.MAIN,
-          reader: ADDR.READER || ADDR.MAIN_READER,
-          rewards: ADDR.NFT_REWARDS,
-          tokenomicsReader: ADDR.BIGGI_TOKENOMICS_READER,
-          treasury: ADDR.TREASURY,
-          buyback: ADDR.BUYBACK_AGENT,
-          reserve: ADDR.RESERVE,
+          try {
+            const policyRO = getPolicyRO();
+            const gamma = policyRO?.gammaStakingBps ? await policyRO.gammaStakingBps() : null;
+            policy = { gammaBps: gamma != null ? Number(gamma) : null };
+          } catch (err) {
+            policy = { error: err?.message || String(err) };
+          }
+
+          return {
+            rpc: { url: rpcUrl, latencyMs, error: rpcError },
+            snapshot,
+            rewards,
+            policy,
+            addresses: {
+              main: ADDR.MAIN,
+              reader: ADDR.READER || ADDR.MAIN_READER,
+              rewards: ADDR.NFT_REWARDS,
+              tokenomicsReader: ADDR.BIGGI_TOKENOMICS_READER,
+              treasury: ADDR.TREASURY,
+              buyback: ADDR.BUYBACK_AGENT,
+              reserve: ADDR.RESERVE,
+            },
+          };
         },
-      },
-    });
+        { force: options?.force === true }
+      );
+
+      setState({ loading: false, data, error: null });
+    } catch (err) {
+      console.error("useTransparencyData.load", err);
+      setState((prev) => ({ ...prev, loading: false, error: err }));
+    }
   }, [enabled]);
 
   React.useEffect(() => {

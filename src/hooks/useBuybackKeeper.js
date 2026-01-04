@@ -1,7 +1,7 @@
 // src/hooks/useBuybackKeeper.js
 import * as React from "react";
 import { getUpkeepRO, getUpkeep } from "../utils/contract";
-import { getCached } from "../utils/fetchCache";
+import { getCached, invalidateCache } from "../utils/fetchCache";
 
 export default function useBuybackKeeper() {
   const [data, setData] = React.useState({
@@ -58,6 +58,9 @@ export default function useBuybackKeeper() {
       if (!contract) throw new Error("Upkeep contract not found");
       const tx = await contract.performUpkeep(performData, overrides);
       const receipt = await tx.wait(1);
+      const cacheKey = `buybackKeeper:${contract.address || "unknown"}:0x`;
+      invalidateCache(cacheKey);
+      await refresh({ force: true }).catch(() => {});
       return receipt;
     } catch (e) {
       console.error("useBuybackKeeper.performUpkeep", e);
@@ -66,7 +69,7 @@ export default function useBuybackKeeper() {
     } finally {
       setPerforming(false);
     }
-  }, []);
+  }, [refresh]);
 
   React.useEffect(() => {
     refresh();
