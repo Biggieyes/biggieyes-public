@@ -3,7 +3,11 @@
   publish = "dist"
 
 [functions]
-  directory = "api"
+  directory = "functions"
+  node_bundler = "esbuild"
+
+[build.environment]
+  NODE_VERSION = "18.18.0"
 
 [dev]
   command = "npm run dev"
@@ -28,4 +32,9 @@
 [[redirects]]
   from = "/api/admin/updateRules"
   to = "/.netlify/functions/admin-updateRules"
+  status = 200
+
+[[redirects]]
+  from = "/functions/*"
+  to = "/.netlify/functions/:splat"
   status = 200
