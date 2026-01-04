@@ -38,7 +38,8 @@ export default function MainLayout({
   setCardsHelpOpen,
   galleryLoading,
   galleryNotice,
-  setAdminOpen,
+  onOpenAdmin,
+  isAdmin = false,
   hideExtras,
   setTopFirstId,
   fetchDynamicTraitsFor,
@@ -102,24 +103,26 @@ export default function MainLayout({
           isMobile={isMobile}
         />
 
-        <div style={{ display: "flex", justifyContent: "flex-end", margin: "6px 12px 0" }}>
-          <button
-            onClick={() => setAdminOpen(true)}
-            style={{
-              background: "transparent",
-              border: "none",
-              color: "#cfd2db",
-              fontSize: 13,
-              textDecoration: "underline",
-              cursor: "pointer",
-              padding: 0,
-              lineHeight: 1,
-            }}
-            aria-label="Open admin menu"
-          >
-            Admin
-          </button>
-        </div>
+        {isAdmin ? (
+          <div style={{ display: "flex", justifyContent: "flex-end", margin: "6px 12px 0" }}>
+            <button
+              onClick={onOpenAdmin}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#cfd2db",
+                fontSize: 13,
+                textDecoration: "underline",
+                cursor: "pointer",
+                padding: 0,
+                lineHeight: 1,
+              }}
+              aria-label="Open admin menu"
+            >
+              Admin
+            </button>
+          </div>
+        ) : null}
 
         <GallerySection
           cardsHelpOpen={cardsHelpOpen}

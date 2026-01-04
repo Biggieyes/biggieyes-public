@@ -455,6 +455,7 @@ function App() {
   const [topFirstId, setTopFirstId] = React.useState(null);
 
   const [adminOpen, setAdminOpen] = React.useState(false);
+  const [adminOwner, setAdminOwner] = React.useState("");
   const [cardsHelpOpen, setCardsHelpOpen] = React.useState(false);
 
   const statsTimer = React.useRef(null);
@@ -485,6 +486,40 @@ function App() {
   const getRO = React.useCallback(() => {
     return contractRef.current || getReadOnlyContract();
   }, []);
+
+  const isAdmin =
+    adminOwner &&
+    walletAddress &&
+    adminOwner.toLowerCase() === walletAddress.toLowerCase();
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const c = contractRef.current || getReadOnlyContract();
+        if (c && typeof c.owner === "function") {
+          const addr = await c.owner().catch(() => "");
+          if (!cancelled) setAdminOwner(addr || "");
+        } else if (!cancelled) {
+          setAdminOwner("");
+        }
+      } catch {
+        if (!cancelled) setAdminOwner("");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [getReadOnlyContract]);
+
+  React.useEffect(() => {
+    if (!isAdmin && adminOpen) setAdminOpen(false);
+  }, [isAdmin, adminOpen]);
+
+  const openAdmin = React.useCallback(() => {
+    if (!isAdmin) return;
+    setAdminOpen(true);
+  }, [isAdmin]);
 
   const onRefreshPolicy = React.useCallback(async () => {
     try {
@@ -2724,24 +2759,26 @@ function App() {
           />
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", margin: "6px 12px 0" }}>
-          <button
-            onClick={() => setAdminOpen(true)}
-            style={{
-              background: "transparent",
-              border: "none",
-              color: "#cfd2db",
-              fontSize: 13,
-              textDecoration: "underline",
-              cursor: "pointer",
-              padding: 0,
-              lineHeight: 1,
-            }}
-            aria-label="Open admin menu"
-          >
-            Admin
-          </button>
-        </div>
+        {isAdmin ? (
+          <div style={{ display: "flex", justifyContent: "flex-end", margin: "6px 12px 0" }}>
+            <button
+              onClick={openAdmin}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#cfd2db",
+                fontSize: 13,
+                textDecoration: "underline",
+                cursor: "pointer",
+                padding: 0,
+                lineHeight: 1,
+              }}
+              aria-label="Open admin menu"
+            >
+              Admin
+            </button>
+          </div>
+        ) : null}
 
         {!hideExtras && (
           <div className="gallery-section">
@@ -2868,7 +2905,7 @@ function App() {
       </main>
 
       <AdminPanel
-        open={adminOpen}
+        open={adminOpen && isAdmin}
         onClose={() => setAdminOpen(false)}
         data={{ ...adminSnapshot, frontend: frontendInfo }}
         actions={{

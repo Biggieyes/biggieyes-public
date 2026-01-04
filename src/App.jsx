@@ -189,6 +189,7 @@ function App() {
 
   const [adminOpen, setAdminOpen] = React.useState(false);
   const [cardsHelpOpen, setCardsHelpOpen] = React.useState(false);
+  const [adminOwner, setAdminOwner] = React.useState("");
 
   useGlobalShortcuts({
     zoomImg,
@@ -213,6 +214,40 @@ function App() {
   const { data: transparencyData, loading: transparencyLoading, refreshTransparency } = useTransparencyData({ enabled: true });
 
   const getRO = React.useCallback(() => getROHelper(contractRef, getReadOnlyContract), []);
+
+  const isAdmin =
+    adminOwner &&
+    walletAddress &&
+    adminOwner.toLowerCase() === walletAddress.toLowerCase();
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const c = contractRef.current || getReadOnlyContract();
+        if (c && typeof c.owner === "function") {
+          const addr = await c.owner().catch(() => "");
+          if (!cancelled) setAdminOwner(addr || "");
+        } else if (!cancelled) {
+          setAdminOwner("");
+        }
+      } catch {
+        if (!cancelled) setAdminOwner("");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [getReadOnlyContract]);
+
+  React.useEffect(() => {
+    if (!isAdmin && adminOpen) setAdminOpen(false);
+  }, [isAdmin, adminOpen]);
+
+  const openAdmin = React.useCallback(() => {
+    if (!isAdmin) return;
+    setAdminOpen(true);
+  }, [isAdmin]);
 
   const onRefreshPolicy = React.useCallback(async () => {
     try {
@@ -927,7 +962,8 @@ const isCommunityCenterOpen = navOpen && navAlt === "COMMUNITY CENTER";
         setCardsHelpOpen={setCardsHelpOpen}
         galleryLoading={galleryLoading}
         galleryNotice={galleryNotice}
-        setAdminOpen={setAdminOpen}
+        onOpenAdmin={openAdmin}
+        isAdmin={isAdmin}
         hideExtras={hideExtras}
         setTopFirstId={setTopFirstId}
         fetchDynamicTraitsFor={fetchDynamicTraitsFor}
@@ -1044,7 +1080,7 @@ const isCommunityCenterOpen = navOpen && navAlt === "COMMUNITY CENTER";
 
       <React.Suspense fallback={null}>
         <AdminPanel
-          open={adminOpen}
+          open={adminOpen && isAdmin}
           onClose={() => setAdminOpen(false)}
           data={{ ...adminSnapshot, frontend: frontendInfo }}
           actions={adminActions}
