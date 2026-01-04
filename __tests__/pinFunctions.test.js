@@ -1,16 +1,8 @@
-﻿import { beforeEach, describe, expect, it, vi } from "vitest";
-
-vi.mock("axios", () => ({
-  default: {
-    post: vi.fn(),
-  },
-}));
-
-import axios from "axios";
+﻿import axios from "axios";
 import { handler as pinFileHandler } from "../functions/pinFile.js";
 import { handler as pinJsonHandler } from "../functions/pinJson.js";
 
-const mockPost = axios.post;
+let mockPost;
 
 const buildEvent = (body) => ({
   httpMethod: "POST",
@@ -20,7 +12,8 @@ const buildEvent = (body) => ({
 });
 
 beforeEach(() => {
-  mockPost.mockReset();
+  mockPost = vi.fn();
+  axios.post = mockPost;
   process.env.PINATA_API_KEY = "test_key";
   process.env.PINATA_SECRET_API_KEY = "test_secret";
   delete process.env.PINATA_JWT;
