@@ -34,6 +34,7 @@ if (typeof window !== "undefined") {
 function LoadingOverlay({ percent = 0, message = "Loading..." }) {
   return (
     <div className="loading-overlay" role="status" aria-live="polite">
+      <div className="loading-overlay__bg" aria-hidden />
       <div className="loading-card">
         <h1>BiggiEyes</h1>
         <div className="progress-wrap" aria-hidden>
