@@ -12,10 +12,12 @@ function detectTouch() {
   // check for its existence and cast to any to avoid TypeScript errors.
   return (
     "ontouchstart" in window ||
-    (navigator.maxTouchPoints > 0) ||
+    navigator.maxTouchPoints > 0 ||
     (() => {
       if ("msMaxTouchPoints" in navigator) {
-        const navWithMs = navigator as Navigator & { msMaxTouchPoints?: number };
+        const navWithMs = navigator as Navigator & {
+          msMaxTouchPoints?: number;
+        };
         return (navWithMs.msMaxTouchPoints ?? 0) > 0;
       }
       return false;

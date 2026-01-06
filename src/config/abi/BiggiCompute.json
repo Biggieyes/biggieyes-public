@@ -1,40 +1,40 @@
 [
-	{
-		"inputs": [
-			{
-				"internalType": "uint16",
-				"name": "bg",
-				"type": "uint16"
-			}
-		],
-		"name": "bgBonus",
-		"outputs": [
-			{
-				"internalType": "uint8",
-				"name": "",
-				"type": "uint8"
-			}
-		],
-		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint16",
-				"name": "bg",
-				"type": "uint16"
-			}
-		],
-		"name": "bgIncreasePct",
-		"outputs": [
-			{
-				"internalType": "uint8",
-				"name": "",
-				"type": "uint8"
-			}
-		],
-		"stateMutability": "pure",
-		"type": "function"
-	}
+  {
+    "inputs": [
+      {
+        "internalType": "uint16",
+        "name": "bg",
+        "type": "uint16"
+      }
+    ],
+    "name": "bgBonus",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint16",
+        "name": "bg",
+        "type": "uint16"
+      }
+    ],
+    "name": "bgIncreasePct",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  }
 ]

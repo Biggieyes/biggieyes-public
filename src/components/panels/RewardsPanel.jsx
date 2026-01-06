@@ -3,10 +3,15 @@ import { ethers } from "ethers";
 import TokenRewardsService from "../../services/tokenRewardsService";
 import CollectionRewardsService from "../../services/collectionRewardsService";
 import useTokenRewards from "../../hooks/useTokenRewards";
-import useCollectionRewards from "../../hooks/useCollectionRewards";
+import { useCollectionRewards } from "../../hooks/useCollectionRewards";
 import useNFTRewards from "../../hooks/useNFTRewards";
 import { ADDR } from "../../utils/addresses";
-import { getROProvider } from "../../utils/contract";
+import { getROProvider, ABI_REWARDS_READER } from "../../utils/contract";
+// Helper to get RewardsReader contract instance
+function getRewardsReaderContract(provider, address) {
+  if (!provider || !address) return null;
+  return new ethers.Contract(address, ABI_REWARDS_READER, provider);
+}
 import CollectionRewardsSection from "./CollectionRewardsSection";
 import NftRewardsTab from "./NftRewardsTab";
 import useWeeklyCountdown from "../../hooks/useWeeklyCountdown";
@@ -76,7 +81,10 @@ const formatUriDisplay = (uri) => {
 };
 
 const SectionHeader = ({ label, accent = "#ffe800" }) => (
-  <div className="rewards-grid__section-header" style={{ "--section-accent": accent }}>
+  <div
+    className="rewards-grid__section-header"
+    style={{ "--section-accent": accent }}
+  >
     <span className="rewards-grid__section-title">{label}</span>
     <span className="rewards-grid__section-line" />
   </div>
@@ -104,7 +112,8 @@ function RewardsPanel({
     orange: null,
     rainbow: false,
   });
-  const [collectionClaimFeedback, setCollectionClaimFeedback] = React.useState(null);
+  const [collectionClaimFeedback, setCollectionClaimFeedback] =
+    React.useState(null);
 
   const {
     displayed: weeklyDisplayed,
@@ -126,12 +135,27 @@ function RewardsPanel({
     }
   }, [provider]);
 
-  const { data: tokenStats, refresh: refreshTokenStats } = useTokenRewards(readProvider);
-  const { data: collectionStats, refresh: refreshCollectionStats } = useCollectionRewards(
-    walletAddress,
-    readProvider
+  // RewardsReader contract instances for all reward types
+  const rewardsReaderToken = getRewardsReaderContract(
+    readProvider,
+    ADDR.TOKEN_REWARDS,
   );
-  const { data: nftSummary, refresh: refreshNftStats } = useNFTRewards(readProvider);
+  const rewardsReaderCollection = getRewardsReaderContract(
+    readProvider,
+    ADDR.COLLECTION_REWARDS,
+  );
+  const rewardsReaderNFT = getRewardsReaderContract(
+    readProvider,
+    ADDR.NFT_REWARDS,
+  );
+
+  // TODO: Refactor hooks/services to use these contracts for unified on-chain reads
+  const { data: tokenStats, refresh: refreshTokenStats } =
+    useTokenRewards(readProvider);
+  const { data: collectionStats, refresh: refreshCollectionStats } =
+    useCollectionRewards(walletAddress, readProvider);
+  const { data: nftSummary, refresh: refreshNftStats } =
+    useNFTRewards(readProvider);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -146,7 +170,10 @@ function RewardsPanel({
         if (cancelled) return;
         setExplorerBase(explorerBaseForChain(net?.chainId));
       } catch (err) {
-        console.warn("RewardsPanel: network detection failed, using default explorer", err);
+        console.warn(
+          "RewardsPanel: network detection failed, using default explorer",
+          err,
+        );
         if (!cancelled) setExplorerBase(DEFAULT_EXPLORER_BASE);
       }
     };
@@ -160,30 +187,27 @@ function RewardsPanel({
     syncWeeklyInfo();
   }, [syncWeeklyInfo]);
 
-  const tokenService = React.useMemo(
-    () => {
-      if (!readProvider) return null;
-      try {
-        return new TokenRewardsService(ADDR.TOKEN_REWARDS, readProvider);
-      } catch (err) {
-        console.error("RewardsPanel: token service init failed", err);
-        return null;
-      }
-    },
-    [readProvider]
-  );
-  const collectionService = React.useMemo(
-    () => {
-      if (!readProvider) return null;
-      try {
-        return new CollectionRewardsService(ADDR.COLLECTION_REWARDS, readProvider);
-      } catch (err) {
-        console.error("RewardsPanel: collection service init failed", err);
-        return null;
-      }
-    },
-    [readProvider]
-  );
+  const tokenService = React.useMemo(() => {
+    if (!readProvider) return null;
+    try {
+      return new TokenRewardsService(ADDR.TOKEN_REWARDS, readProvider);
+    } catch (err) {
+      console.error("RewardsPanel: token service init failed", err);
+      return null;
+    }
+  }, [readProvider]);
+  const collectionService = React.useMemo(() => {
+    if (!readProvider) return null;
+    try {
+      return new CollectionRewardsService(
+        ADDR.COLLECTION_REWARDS,
+        readProvider,
+      );
+    } catch (err) {
+      console.error("RewardsPanel: collection service init failed", err);
+      return null;
+    }
+  }, [readProvider]);
 
   const eligibleTokenIds = React.useMemo(() => {
     return (items || [])
@@ -214,9 +238,13 @@ function RewardsPanel({
       }
       setPreviewLoading(true);
       try {
-        const [units, amount] = await tokenService.claimablePreview(eligibleTokenIds);
+        const [units, amount] =
+          await tokenService.claimablePreview(eligibleTokenIds);
         if (signal.aborted) return;
-        const decimals = Number(tokenStats?.tokenMeta?.decimals_ ?? tokenStats?.tokenDecimals ?? 18) || 18;
+        const decimals =
+          Number(
+            tokenStats?.tokenMeta?.decimals_ ?? tokenStats?.tokenDecimals ?? 18,
+          ) || 18;
         setClaimPreview({
           units: units?.toString?.() ?? "0",
           amount: amount ? ethers.utils.formatUnits(amount, decimals) : "0",
@@ -228,7 +256,7 @@ function RewardsPanel({
         if (!signal.aborted) setPreviewLoading(false);
       }
     },
-    [eligibleTokenIds, tokenService, tokenStats]
+    [eligibleTokenIds, tokenService, tokenStats],
   );
 
   React.useEffect(() => {
@@ -245,13 +273,14 @@ function RewardsPanel({
   }, [walletAddress]);
 
   const canClaimCollection = React.useMemo(
-    () => Boolean(
-      walletAddress &&
-      provider &&
-      typeof provider.getSigner === "function" &&
-      collectionService
-    ),
-    [walletAddress, provider, collectionService]
+    () =>
+      Boolean(
+        walletAddress &&
+          provider &&
+          typeof provider.getSigner === "function" &&
+          collectionService,
+      ),
+    [walletAddress, provider, collectionService],
   );
 
   const handleRefresh = React.useCallback(async () => {
@@ -267,7 +296,13 @@ function RewardsPanel({
     } finally {
       setRefreshing(false);
     }
-  }, [refreshTokenStats, refreshCollectionStats, refreshNftStats, loadClaimPreview, refreshing]);
+  }, [
+    refreshTokenStats,
+    refreshCollectionStats,
+    refreshNftStats,
+    loadClaimPreview,
+    refreshing,
+  ]);
 
   const handleClaim = React.useCallback(async () => {
     if (!onClaim) return;
@@ -299,16 +334,22 @@ function RewardsPanel({
         const signer = provider.getSigner();
         collectionService.connectWithSigner(signer);
         await collectionService.claimBlockReward(blockIdx);
-        setCollectionClaimFeedback({ tone: "success", text: `Block ${blockIdx} request submitted.` });
+        setCollectionClaimFeedback({
+          tone: "success",
+          text: `Block ${blockIdx} request submitted.`,
+        });
         await handleRefresh();
       } catch (err) {
         console.error("RewardsPanel collection block claim failed", err);
-        setCollectionClaimFeedback({ tone: "error", text: "Block claim failed. Check the console." });
+        setCollectionClaimFeedback({
+          tone: "error",
+          text: "Block claim failed. Check the console.",
+        });
       } finally {
         setCollectionClaiming((prev) => ({ ...prev, block: null }));
       }
     },
-    [canClaimCollection, collectionService, provider, handleRefresh]
+    [canClaimCollection, collectionService, provider, handleRefresh],
   );
 
   const handleClaimOrangeReward = React.useCallback(
@@ -320,38 +361,47 @@ function RewardsPanel({
         const signer = provider.getSigner();
         collectionService.connectWithSigner(signer);
         await collectionService.claimOrangeReward(mainId);
-        setCollectionClaimFeedback({ tone: "success", text: `Orange reward for Main ID ${mainId} submitted.` });
+        setCollectionClaimFeedback({
+          tone: "success",
+          text: `Orange reward for Main ID ${mainId} submitted.`,
+        });
         await handleRefresh();
       } catch (err) {
         console.error("RewardsPanel collection orange claim failed", err);
-        setCollectionClaimFeedback({ tone: "error", text: "Orange claim failed. Check the console." });
+        setCollectionClaimFeedback({
+          tone: "error",
+          text: "Orange claim failed. Check the console.",
+        });
       } finally {
         setCollectionClaiming((prev) => ({ ...prev, orange: null }));
       }
     },
-    [canClaimCollection, collectionService, provider, handleRefresh]
+    [canClaimCollection, collectionService, provider, handleRefresh],
   );
 
-  const handleClaimRainbowReward = React.useCallback(
-    async () => {
-      if (!canClaimCollection || !collectionService) return;
-      setCollectionClaimFeedback(null);
-      setCollectionClaiming((prev) => ({ ...prev, rainbow: true }));
-      try {
-        const signer = provider.getSigner();
-        collectionService.connectWithSigner(signer);
-        await collectionService.claimRainbowReward();
-        setCollectionClaimFeedback({ tone: "success", text: "Rainbow reward submitted." });
-        await handleRefresh();
-      } catch (err) {
-        console.error("RewardsPanel collection rainbow claim failed", err);
-        setCollectionClaimFeedback({ tone: "error", text: "Rainbow claim failed. Check the console." });
-      } finally {
-        setCollectionClaiming((prev) => ({ ...prev, rainbow: false }));
-      }
-    },
-    [canClaimCollection, collectionService, provider, handleRefresh]
-  );
+  const handleClaimRainbowReward = React.useCallback(async () => {
+    if (!canClaimCollection || !collectionService) return;
+    setCollectionClaimFeedback(null);
+    setCollectionClaiming((prev) => ({ ...prev, rainbow: true }));
+    try {
+      const signer = provider.getSigner();
+      collectionService.connectWithSigner(signer);
+      await collectionService.claimRainbowReward();
+      setCollectionClaimFeedback({
+        tone: "success",
+        text: "Rainbow reward submitted.",
+      });
+      await handleRefresh();
+    } catch (err) {
+      console.error("RewardsPanel collection rainbow claim failed", err);
+      setCollectionClaimFeedback({
+        tone: "error",
+        text: "Rainbow claim failed. Check the console.",
+      });
+    } finally {
+      setCollectionClaiming((prev) => ({ ...prev, rainbow: false }));
+    }
+  }, [canClaimCollection, collectionService, provider, handleRefresh]);
 
   const heroCards = React.useMemo(() => {
     const symbol = tokenSymbol;
@@ -366,32 +416,44 @@ function RewardsPanel({
     return [
       {
         label: "Token pool",
-        value: tokenStats ? `${formatTokenValue(tokenStats.rewardsCap, 0)} ${symbol}` : "--",
+        value: tokenStats
+          ? `${formatTokenValue(tokenStats.rewardsCap, 0)} ${symbol}`
+          : "--",
         hint: "Treasury cap",
         tone: "token",
       },
       {
         label: "Unit reward",
-        value: tokenStats ? `${formatTokenValue(tokenStats.unitReward, 4)} ${symbol}` : "\u2014",
+        value: tokenStats
+          ? `${formatTokenValue(tokenStats.unitReward, 4)} ${symbol}`
+          : "\u2014",
         hint: "Per block weight",
         tone: "token",
       },
       {
         label: "Distributed total",
-        value: tokenStats ? `${formatTokenValue(tokenStats.totalDistributed, 2)} ${symbol}` : "\u2014",
+        value: tokenStats
+          ? `${formatTokenValue(tokenStats.totalDistributed, 2)} ${symbol}`
+          : "\u2014",
         hint: "Since launch",
         tone: "token",
       },
       {
         label: "This week",
-        value: tokenStats ? `${formatTokenValue(tokenStats.distributedThisWeek, 2)} ${symbol}` : "\u2014",
+        value: tokenStats
+          ? `${formatTokenValue(tokenStats.distributedThisWeek, 2)} ${symbol}`
+          : "\u2014",
         hint: `Week ${tokenStats?.currentWeek ?? "\u2014"}`,
         tone: "native",
       },
       {
         label: "My preview",
-        value: previewAmount ? `${formatTokenValue(previewAmount, 4)} ${symbol}` : "\u2014",
-        hint: previewUnits ? `${formatInteger(previewUnits)} units tracked` : "Sync to compute",
+        value: previewAmount
+          ? `${formatTokenValue(previewAmount, 4)} ${symbol}`
+          : "\u2014",
+        hint: previewUnits
+          ? `${formatInteger(previewUnits)} units tracked`
+          : "Sync to compute",
         tone: "token",
       },
     ];
@@ -403,7 +465,8 @@ function RewardsPanel({
     const weights = weightsRaw.length === 11 ? weightsRaw.slice(1) : weightsRaw;
     const toNumber = (value) => {
       if (value == null) return null;
-      if (typeof value === "number") return Number.isFinite(value) ? value : null;
+      if (typeof value === "number")
+        return Number.isFinite(value) ? value : null;
       if (typeof value === "bigint") return Number(value);
       if (typeof value === "string") {
         const parsed = Number(value);
@@ -416,7 +479,10 @@ function RewardsPanel({
       }
     };
     const parsed = weights.map(toNumber);
-    const max = parsed.reduce((acc, val) => (Number.isFinite(val) && val > acc ? val : acc), 0);
+    const max = parsed.reduce(
+      (acc, val) => (Number.isFinite(val) && val > acc ? val : acc),
+      0,
+    );
     const scale = max > 0 && max <= 10 ? 10 : 1;
     return parsed.map((weight, idx) => ({
       id: idx + 1,
@@ -437,7 +503,8 @@ function RewardsPanel({
   const collectionStatus = React.useMemo(() => {
     if (!collectionStats) return [];
     const rainbowClaimed = Boolean(
-      collectionStats.rainbowClaimed ?? collectionStats.rainbowRewardClaimedGlobal
+      collectionStats.rainbowClaimed ??
+        collectionStats.rainbowRewardClaimedGlobal,
     );
     return [
       {
@@ -467,13 +534,14 @@ function RewardsPanel({
         ...(nftSummary?.baseURIs || {}),
       },
     }),
-    [nftSummary]
+    [nftSummary],
   );
 
   const blockPaid = collectionStats?.blockPaid ?? [];
   const orangeMainIdPaid = collectionStats?.orangeMainIdPaid ?? [];
   const rainbowClaimed = Boolean(
-    collectionStats?.rainbowClaimed ?? collectionStats?.rainbowRewardClaimedGlobal
+    collectionStats?.rainbowClaimed ??
+      collectionStats?.rainbowRewardClaimedGlobal,
   );
   const claimedOrange = Boolean(collectionStats?.claimedOrange);
   const metadataRows = [
@@ -495,21 +563,32 @@ function RewardsPanel({
   }, [weeklyDisplayed.remainingSeconds]);
 
   const heroSection = (
-    <div className="biggi-hero rewards-panel__hero" aria-label="Token reward highlights">
+    <div
+      className="biggi-hero rewards-panel__hero"
+      aria-label="Token reward highlights"
+    >
       {heroCards.map((card) => (
-        <article className={`biggi-hero__stat tone-${card.tone || "token"}`} key={card.label}>
+        <article
+          className={`biggi-hero__stat tone-${card.tone || "token"}`}
+          key={card.label}
+        >
           <div className="biggi-hero__value">{card.value}</div>
           <div className="biggi-hero__label">{card.label}</div>
           {card.hint && <div className="biggi-hero__sub">{card.hint}</div>}
         </article>
       ))}
-      <article className="biggi-hero__stat rewards-panel__countdown-tile" key="weekly-countdown">
+      <article
+        className="biggi-hero__stat rewards-panel__countdown-tile"
+        key="weekly-countdown"
+      >
         <div className="rewards-panel__countdown-title">Next claim window</div>
         <div className="rewards-panel__countdown-value" aria-live="polite">
           {countdownText}
         </div>
         <div className="rewards-panel__countdown-meta">
-          {weeklyDisplayed.status === "claimable" ? "Claim open" : "Claim pending"}
+          {weeklyDisplayed.status === "claimable"
+            ? "Claim open"
+            : "Claim pending"}
         </div>
       </article>
     </div>
@@ -542,13 +621,15 @@ function RewardsPanel({
               <div className="rewards-panel__stat">
                 <span className="label">Preview</span>
                 <span className="value">
-                {previewLoading ? "Syncing preview..." : claimPreviewLabel}
+                  {previewLoading ? "Syncing preview..." : claimPreviewLabel}
                 </span>
               </div>
               <div className="rewards-panel__stat">
                 <span className="label">Remaining pool</span>
                 <span className="value">
-                  {tokenStats ? `${formatDecimal(tokenStats.remainingCap, 2)} ${tokenSymbol}` : "--"}
+                  {tokenStats
+                    ? `${formatDecimal(tokenStats.remainingCap, 2)} ${tokenSymbol}`
+                    : "--"}
                 </span>
               </div>
             </div>
@@ -559,7 +640,11 @@ function RewardsPanel({
                 disabled={!walletAddress || !onClaim || claiming}
                 onClick={handleClaim}
               >
-                {claiming ? "Claiming..." : walletAddress ? "Claim rewards" : "Connect wallet to claim"}
+                {claiming
+                  ? "Claiming..."
+                  : walletAddress
+                    ? "Claim rewards"
+                    : "Connect wallet to claim"}
               </button>
               <button
                 type="button"
@@ -570,7 +655,11 @@ function RewardsPanel({
                 {refreshing ? "Refreshing..." : "Refresh stats"}
               </button>
             </div>
-            {claimMessage && <div className="rewards-grid__alert rewards-panel__alert">{claimMessage}</div>}
+            {claimMessage && (
+              <div className="rewards-grid__alert rewards-panel__alert">
+                {claimMessage}
+              </div>
+            )}
           </div>
         </article>
 
@@ -608,27 +697,29 @@ function RewardsPanel({
             </div>
           </div>
           <div className="rewards-panel__address-grid">
-            {[{ label: "Token rewards", addr: ADDR.TOKEN_REWARDS }, { label: "Collection rewards", addr: ADDR.COLLECTION_REWARDS }, { label: "NFT rewards", addr: ADDR.NFT_REWARDS }].map(
-              (row) => (
-                <div className="rewards-panel__address-row" key={row.label}>
-                  <div>
-                    <div className="label">{row.label}</div>
-                    <div className="value">{shortAddress(row.addr)}</div>
-                  </div>
-                  <button
-                    type="button"
-                    className="biggi-btn biggi-btn--ghost rewards-panel__address-btn"
-                    onClick={() => {
-                      const url = row.addr ? `${explorerBase}${row.addr}` : null;
-                      if (!url || typeof window === "undefined") return;
-                      window.open(url, "_blank", "noopener,noreferrer");
-                    }}
-                  >
-                    Explorer
-                  </button>
+            {[
+              { label: "Token rewards", addr: ADDR.TOKEN_REWARDS },
+              { label: "Collection rewards", addr: ADDR.COLLECTION_REWARDS },
+              { label: "NFT rewards", addr: ADDR.NFT_REWARDS },
+            ].map((row) => (
+              <div className="rewards-panel__address-row" key={row.label}>
+                <div>
+                  <div className="label">{row.label}</div>
+                  <div className="value">{shortAddress(row.addr)}</div>
                 </div>
-              )
-            )}
+                <button
+                  type="button"
+                  className="biggi-btn biggi-btn--ghost rewards-panel__address-btn"
+                  onClick={() => {
+                    const url = row.addr ? `${explorerBase}${row.addr}` : null;
+                    if (!url || typeof window === "undefined") return;
+                    window.open(url, "_blank", "noopener,noreferrer");
+                  }}
+                >
+                  Explorer
+                </button>
+              </div>
+            ))}
           </div>
         </article>
       </div>
@@ -685,14 +776,16 @@ function RewardsPanel({
   };
 
   return (
-    <section className={`rewards-grid biggi-skin${compact ? " is-compact" : ""}`}>
+    <section
+      className={`rewards-grid biggi-skin${compact ? " is-compact" : ""}`}
+    >
       <div className="rewards-grid__surface biggi-token-surface">
         <header className="rewards-grid__header biggi-header panel-header panel-header--rewards">
           <div className="rewards-grid__headline">
             <h2 className="rewards-grid__title">Biggi Rewards</h2>
             <p className="rewards-grid__subtitle">
-              Token, Collection and NFT claims are grouped by contract. The token view highlights pool stats
-              and your personal claim preview.
+              Token, Collection and NFT claims are grouped by contract. The
+              token view highlights pool stats and your personal claim preview.
             </p>
           </div>
         </header>
@@ -717,19 +810,25 @@ function RewardsPanel({
               <div className="rewards-grid__info-body">
                 <div className="rewards-grid__info-column">
                   <p>
-                    This panel groups all reward rails in one place. Use the tabs to switch between token,
-                    collection, and NFT rewards.
+                    This panel groups all reward rails in one place. Use the
+                    tabs to switch between token, collection, and NFT rewards.
                   </p>
                   <ul className="rewards-grid__info-list">
-                    <li>Token tab shows your claim preview and weekly block weights.</li>
-                    <li>Collection tab tracks block, orange, and rainbow claims.</li>
+                    <li>
+                      Token tab shows your claim preview and weekly block
+                      weights.
+                    </li>
+                    <li>
+                      Collection tab tracks block, orange, and rainbow claims.
+                    </li>
                     <li>NFT tab lists reward ranks and claim status.</li>
                   </ul>
                 </div>
                 <div className="rewards-grid__info-column">
                   <p>
-                    Rewards are pulled from on-chain contracts. Use Refresh to sync the latest values and
-                    Explorer buttons to verify addresses.
+                    Rewards are pulled from on-chain contracts. Use Refresh to
+                    sync the latest values and Explorer buttons to verify
+                    addresses.
                   </p>
                   <ul className="rewards-grid__info-list">
                     <li>Connect a wallet to claim rewards.</li>
@@ -779,5 +878,3 @@ function RewardsPanel({
 }
 
 export default RewardsPanel;
-
-

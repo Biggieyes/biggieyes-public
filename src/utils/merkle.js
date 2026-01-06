@@ -7,14 +7,14 @@ import { ethers } from "ethers";
 export const buildLeaf = (slotId, walletAddress, amountWei) => {
   const packed = ethers.utils.solidityPack(
     ["uint256", "address", "uint256"],
-    [Number(slotId), walletAddress, amountWei]
+    [Number(slotId), walletAddress, amountWei],
   );
   return keccak256(packed);
 };
 
 export const buildTree = (entries = []) => {
   const leaves = entries.map((entry) =>
-    buildLeaf(entry.slotId, entry.wallet, entry.amountWei)
+    buildLeaf(entry.slotId, entry.wallet, entry.amountWei),
   );
   return new MerkleTree(leaves, keccak256, { sortPairs: true });
 };
@@ -28,7 +28,7 @@ export const buildProofs = (entries = []) => {
     wallet: entry.wallet,
     amountWei: entry.amountWei,
     proof: tree.getHexProof(
-      buildLeaf(entry.slotId, entry.wallet, entry.amountWei)
+      buildLeaf(entry.slotId, entry.wallet, entry.amountWei),
     ),
   }));
   return { root: tree.getHexRoot(), proofs };

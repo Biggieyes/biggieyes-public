@@ -1,8 +1,12 @@
-
 // src/components/panels/ExpansionPanel.jsx
 import * as React from "react";
 import { ethers } from "ethers";
-import { getROProvider, getSignerProvider, getReadOnlyMain2, getBiggiTokenomicsReaderRO } from "../../utils/contract";
+import {
+  getROProvider,
+  getSignerProvider,
+  getReadOnlyMain2,
+  getBiggiTokenomicsReaderRO,
+} from "../../utils/contract";
 import { ADDR } from "../../utils/addresses";
 import { getFullStatusSafe } from "../../utils/tokenomicsFullStatus.js";
 import "../panels/RewardsPanel.css";
@@ -18,25 +22,41 @@ const DISTRIBUTOR_ABI = [
   "function collectionRewards() view returns (address)",
   "function buybackAgent() view returns (address)",
   "function treasury() view returns (address)",
-  "event MintShareAccepted(address indexed collection, uint256 amount)"
+  "event MintShareAccepted(address indexed collection, uint256 amount)",
 ];
 
 const Badge = React.memo(function Badge({ children }) {
   return <span className="biggi-badge">{children}</span>;
 });
 
-const GhostBtn = React.memo(function GhostBtn({ children, tone = "#FFE800", className = "", style = {}, ...props }) {
-  const baseStyle = React.useMemo(() => ({
-    border: `1px solid ${tone || "#FFE800"}55`,
-    background: `linear-gradient(180deg, ${(tone || "#FFE800")}1a, rgba(0,0,0,0.35))`,
-    color: "var(--text-0)",
-  }), [tone]);
+const GhostBtn = React.memo(function GhostBtn({
+  children,
+  tone = "#FFE800",
+  className = "",
+  style = {},
+  ...props
+}) {
+  const baseStyle = React.useMemo(
+    () => ({
+      border: `1px solid ${tone || "#FFE800"}55`,
+      background: `linear-gradient(180deg, ${tone || "#FFE800"}1a, rgba(0,0,0,0.35))`,
+      color: "var(--text-0)",
+    }),
+    [tone],
+  );
 
   return (
     <button
       {...props}
       className={`rewards-grid__btn rewards-grid__btn--ghost biggi-ghost-btn ${className}`.trim()}
-      style={{ padding: "10px 16px", borderRadius: 10, fontWeight: 700, cursor: "pointer", ...baseStyle, ...style }}
+      style={{
+        padding: "10px 16px",
+        borderRadius: 10,
+        fontWeight: 700,
+        cursor: "pointer",
+        ...baseStyle,
+        ...style,
+      }}
     >
       {children}
     </button>
@@ -61,7 +81,14 @@ const KeyValueGrid = React.memo(function KeyValueGrid({ items = [] }) {
   );
 });
 
-const Card = React.memo(function Card({ title, subtitle, icon, tone = "y", action = null, children }) {
+const Card = React.memo(function Card({
+  title,
+  subtitle,
+  icon,
+  tone = "y",
+  action = null,
+  children,
+}) {
   const toneClass = tone ? ` biggi-card--${tone}` : "";
   return (
     <article className={`rewards-grid__card biggi-card${toneClass}`}>
@@ -70,7 +97,11 @@ const Card = React.memo(function Card({ title, subtitle, icon, tone = "y", actio
         <div className="biggi-card__heading">
           {title ? (
             <h3>
-              {icon ? <span className="biggi-card__icon" aria-hidden>{icon}</span> : null}
+              {icon ? (
+                <span className="biggi-card__icon" aria-hidden>
+                  {icon}
+                </span>
+              ) : null}
               {title}
             </h3>
           ) : null}
@@ -88,8 +119,13 @@ const formatNumber = (value, { decimals = 4, fallback = "--" } = {}) => {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return String(value);
   if (numeric === 0) return "0";
-  if (numeric >= 1) return numeric.toLocaleString(undefined, { maximumFractionDigits: decimals });
-  return numeric.toLocaleString(undefined, { maximumFractionDigits: Math.min(6, decimals + 2) });
+  if (numeric >= 1)
+    return numeric.toLocaleString(undefined, {
+      maximumFractionDigits: decimals,
+    });
+  return numeric.toLocaleString(undefined, {
+    maximumFractionDigits: Math.min(6, decimals + 2),
+  });
 };
 
 const shortAddress = (addr) => {
@@ -167,18 +203,26 @@ const buildSparkPoints = (values = []) => {
   const max = Math.max(...data, 1);
   const step = 100 / (data.length - 1 || 1);
   return data
-    .map((v, i) => `${(i * step).toFixed(2)},${(100 - (v / max) * 100).toFixed(2)}`)
+    .map(
+      (v, i) =>
+        `${(i * step).toFixed(2)},${(100 - (v / max) * 100).toFixed(2)}`,
+    )
     .join(" ");
 };
 
 const explorerUrlFor = (address, networkName) => {
   if (!address) return "#";
   const n = (networkName || "").toLowerCase();
-  if (n.includes("polygon") || n.includes("matic")) return `https://polygonscan.com/address/${address}`;
-  if (n.includes("amoy")) return `https://amoy.polygonscan.com/address/${address}`;
-  if (n.includes("goerli")) return `https://goerli.etherscan.io/address/${address}`;
-  if (n.includes("sepolia")) return `https://sepolia.etherscan.io/address/${address}`;
-  if (n.includes("mainnet") || n === "homestead") return `https://etherscan.io/address/${address}`;
+  if (n.includes("polygon") || n.includes("matic"))
+    return `https://polygonscan.com/address/${address}`;
+  if (n.includes("amoy"))
+    return `https://amoy.polygonscan.com/address/${address}`;
+  if (n.includes("goerli"))
+    return `https://goerli.etherscan.io/address/${address}`;
+  if (n.includes("sepolia"))
+    return `https://sepolia.etherscan.io/address/${address}`;
+  if (n.includes("mainnet") || n === "homestead")
+    return `https://etherscan.io/address/${address}`;
   return `https://etherscan.io/address/${address}`;
 };
 
@@ -215,7 +259,10 @@ export default function ExpansionPanel({ compact = false }) {
   });
   const [tokenomicsReader, setTokenomicsReader] = React.useState(null);
   const [tokenomicsStatus, setTokenomicsStatus] = React.useState(null);
-  const [main2Stats, setMain2Stats] = React.useState({ minted: null, ticketPrice: null });
+  const [main2Stats, setMain2Stats] = React.useState({
+    minted: null,
+    ticketPrice: null,
+  });
 
   const [loading, setLoading] = React.useState(false);
   const [status, setStatus] = React.useState("");
@@ -228,16 +275,42 @@ export default function ExpansionPanel({ compact = false }) {
       Number(poolsBalances.treasury),
     ].filter((v) => Number.isFinite(v) && v > 0);
     return buildSparkPoints(vals);
-  }, [poolsBalances.buybackAgent, poolsBalances.collectionRewards, poolsBalances.reserve, poolsBalances.treasury]);
+  }, [
+    poolsBalances.buybackAgent,
+    poolsBalances.collectionRewards,
+    poolsBalances.reserve,
+    poolsBalances.treasury,
+  ]);
 
-  const flowNodes = React.useMemo(() => ([
-    { label: "Main2", value: main2Stats?.minted ? `${formatNumber(main2Stats.minted)} minted` : "Mint" },
-    { label: "Distributor", value: `${formatNumber(totalReceived, { decimals: 2 })} POL` },
-    { label: "Reserve", value: formatBalance(poolsBalances.reserve) },
-    { label: "Treasury", value: formatBalance(poolsBalances.treasury) },
-    { label: "Buyback", value: formatBalance(poolsBalances.buybackAgent) },
-    { label: "Rewards", value: formatBalance(poolsBalances.collectionRewards) },
-  ]), [main2Stats?.minted, poolsBalances.buybackAgent, poolsBalances.collectionRewards, poolsBalances.reserve, poolsBalances.treasury, totalReceived]);
+  const flowNodes = React.useMemo(
+    () => [
+      {
+        label: "Main2",
+        value: main2Stats?.minted
+          ? `${formatNumber(main2Stats.minted)} minted`
+          : "Mint",
+      },
+      {
+        label: "Distributor",
+        value: `${formatNumber(totalReceived, { decimals: 2 })} POL`,
+      },
+      { label: "Reserve", value: formatBalance(poolsBalances.reserve) },
+      { label: "Treasury", value: formatBalance(poolsBalances.treasury) },
+      { label: "Buyback", value: formatBalance(poolsBalances.buybackAgent) },
+      {
+        label: "Rewards",
+        value: formatBalance(poolsBalances.collectionRewards),
+      },
+    ],
+    [
+      main2Stats?.minted,
+      poolsBalances.buybackAgent,
+      poolsBalances.collectionRewards,
+      poolsBalances.reserve,
+      poolsBalances.treasury,
+      totalReceived,
+    ],
+  );
 
   const [activeTab, setActiveTab] = React.useState("overview");
 
@@ -246,7 +319,11 @@ export default function ExpansionPanel({ compact = false }) {
       try {
         const prov = getROProvider();
         setProvider(prov);
-        const dist = new ethers.Contract(DISTRIBUTOR_ADDRESS, DISTRIBUTOR_ABI, prov);
+        const dist = new ethers.Contract(
+          DISTRIBUTOR_ADDRESS,
+          DISTRIBUTOR_ABI,
+          prov,
+        );
         setContract(dist);
         try {
           const tor = getBiggiTokenomicsReaderRO?.(prov);
@@ -302,7 +379,9 @@ export default function ExpansionPanel({ compact = false }) {
 
       if (account) {
         const [colShare, whitelisted] = await Promise.all([
-          contract.receivedByCollection(account).catch(() => ethers.BigNumber.from(0)),
+          contract
+            .receivedByCollection(account)
+            .catch(() => ethers.BigNumber.from(0)),
           contract.isCollection(account).catch(() => false),
         ]);
         setReceivedForAddr(ethers.utils.formatEther(colShare || 0));
@@ -333,7 +412,10 @@ export default function ExpansionPanel({ compact = false }) {
       }
 
       try {
-        if (tokenomicsReader && typeof tokenomicsReader.getFullStatus === "function") {
+        if (
+          tokenomicsReader &&
+          typeof tokenomicsReader.getFullStatus === "function"
+        ) {
           const snap = await getFullStatusSafe(tokenomicsReader);
           const [core, dist, buy, res, drip] = Array.isArray(snap)
             ? snap
@@ -371,20 +453,42 @@ export default function ExpansionPanel({ compact = false }) {
           collAddr ? prov.getBalance(collAddr).catch(() => null) : null,
           buyAddr ? prov.getBalance(buyAddr).catch(() => null) : null,
           treasuryAddr ? prov.getBalance(treasuryAddr).catch(() => null) : null,
-          dripDistributor ? prov.getBalance(dripDistributor).catch(() => null) : null,
+          dripDistributor
+            ? prov.getBalance(dripDistributor).catch(() => null)
+            : null,
           dripLm ? prov.getBalance(dripLm).catch(() => null) : null,
-          liquidityManager ? prov.getBalance(liquidityManager).catch(() => null) : null,
-          liquidityVault ? prov.getBalance(liquidityVault).catch(() => null) : null,
+          liquidityManager
+            ? prov.getBalance(liquidityManager).catch(() => null)
+            : null,
+          liquidityVault
+            ? prov.getBalance(liquidityVault).catch(() => null)
+            : null,
         ]);
         setPoolsBalances({
-          reserve: balances[0] ? Number(ethers.utils.formatEther(balances[0])) : null,
-          collectionRewards: balances[1] ? Number(ethers.utils.formatEther(balances[1])) : null,
-          buybackAgent: balances[2] ? Number(ethers.utils.formatEther(balances[2])) : null,
-          treasury: balances[3] ? Number(ethers.utils.formatEther(balances[3])) : null,
-          dripDistributor: balances[4] ? Number(ethers.utils.formatEther(balances[4])) : null,
-          dripLm: balances[5] ? Number(ethers.utils.formatEther(balances[5])) : null,
-          liquidityManager: balances[6] ? Number(ethers.utils.formatEther(balances[6])) : null,
-          liquidityVault: balances[7] ? Number(ethers.utils.formatEther(balances[7])) : null,
+          reserve: balances[0]
+            ? Number(ethers.utils.formatEther(balances[0]))
+            : null,
+          collectionRewards: balances[1]
+            ? Number(ethers.utils.formatEther(balances[1]))
+            : null,
+          buybackAgent: balances[2]
+            ? Number(ethers.utils.formatEther(balances[2]))
+            : null,
+          treasury: balances[3]
+            ? Number(ethers.utils.formatEther(balances[3]))
+            : null,
+          dripDistributor: balances[4]
+            ? Number(ethers.utils.formatEther(balances[4]))
+            : null,
+          dripLm: balances[5]
+            ? Number(ethers.utils.formatEther(balances[5]))
+            : null,
+          liquidityManager: balances[6]
+            ? Number(ethers.utils.formatEther(balances[6]))
+            : null,
+          liquidityVault: balances[7]
+            ? Number(ethers.utils.formatEther(balances[7]))
+            : null,
         });
       } catch (err) {
         console.warn("Pool balances", err);
@@ -394,7 +498,9 @@ export default function ExpansionPanel({ compact = false }) {
         const main2 = getReadOnlyMain2();
         const [mintedRaw, ticketRaw] = await Promise.all([
           main2.biggiMinted?.().catch(() => null),
-          (main2.getTicketPrice?.() ?? main2.ticketPrice?.())?.catch?.(() => null) || main2.ticketPrice?.().catch(() => null),
+          (main2.getTicketPrice?.() ?? main2.ticketPrice?.())?.catch?.(
+            () => null,
+          ) || main2.ticketPrice?.().catch(() => null),
         ]);
         setMain2Stats({
           minted: mintedRaw ? Number(mintedRaw.toString()) : null,
@@ -404,15 +510,26 @@ export default function ExpansionPanel({ compact = false }) {
         console.debug("MAIN2 fetch", err);
       }
 
-      const latest = provider ? await provider.getBlockNumber().catch(() => null) : null;
+      const latest = provider
+        ? await provider.getBlockNumber().catch(() => null)
+        : null;
       const fromBlock = Math.max(0, (latest || 0) - 200_000);
-      const ev = await contract.queryFilter(contract.filters.MintShareAccepted(), fromBlock, latest || "latest");
-      const mapped = (ev || []).slice(-12).reverse().map((entry) => ({
-        tx: entry.transactionHash,
-        block: entry.blockNumber,
-        collection: String(entry.args?.collection ?? entry.args?.[0] ?? ""),
-        amount: ethers.utils.formatEther(entry.args?.amount ?? entry.args?.[1] ?? 0),
-      }));
+      const ev = await contract.queryFilter(
+        contract.filters.MintShareAccepted(),
+        fromBlock,
+        latest || "latest",
+      );
+      const mapped = (ev || [])
+        .slice(-12)
+        .reverse()
+        .map((entry) => ({
+          tx: entry.transactionHash,
+          block: entry.blockNumber,
+          collection: String(entry.args?.collection ?? entry.args?.[0] ?? ""),
+          amount: ethers.utils.formatEther(
+            entry.args?.amount ?? entry.args?.[1] ?? 0,
+          ),
+        }));
       setEvents(mapped);
       setStatus("");
     } catch (err) {
@@ -458,40 +575,71 @@ export default function ExpansionPanel({ compact = false }) {
     setTimeout(() => setStatus(""), 1500);
   }, [account]);
 
-  const openExplorer = React.useCallback(async (address = DISTRIBUTOR_ADDRESS) => {
-    let net = networkName;
-    if (!net && provider) {
-      try {
-        const n = await provider.getNetwork();
-        net = n?.name || "";
-        setNetworkName(net);
-      } catch {}
-    }
-    const url = explorerUrlFor(address, net);
-    window.open(url, "_blank", "noopener");
-  }, [networkName, provider]);
+  const openExplorer = React.useCallback(
+    async (address = DISTRIBUTOR_ADDRESS) => {
+      let net = networkName;
+      if (!net && provider) {
+        try {
+          const n = await provider.getNetwork();
+          net = n?.name || "";
+          setNetworkName(net);
+        } catch {}
+      }
+      const url = explorerUrlFor(address, net);
+      window.open(url, "_blank", "noopener");
+    },
+    [networkName, provider],
+  );
 
-  const statsItems = React.useMemo(() => ([
-    { k: "Total Received", v: `${formatNumber(totalReceived, { decimals: 2 })} POL`, tone: "#FFE800" },
-    { k: "My Collection Share", v: `${formatNumber(receivedForAddr, { decimals: 2 })} POL`, tone: "#27D9D2" },
-    { k: "MAIN2 Minted", v: main2Stats.minted != null ? formatNumber(main2Stats.minted, { decimals: 0 }) : "--", tone: "#9B7BFF" },
-    { k: "Ticket Price", v: main2Stats.ticketPrice ? `${main2Stats.ticketPrice} ETH` : "--", tone: "#5DDCFF" },
-  ]), [totalReceived, receivedForAddr, main2Stats]);
+  const statsItems = React.useMemo(
+    () => [
+      {
+        k: "Total Received",
+        v: `${formatNumber(totalReceived, { decimals: 2 })} POL`,
+        tone: "#FFE800",
+      },
+      {
+        k: "My Collection Share",
+        v: `${formatNumber(receivedForAddr, { decimals: 2 })} POL`,
+        tone: "#27D9D2",
+      },
+      {
+        k: "MAIN2 Minted",
+        v:
+          main2Stats.minted != null
+            ? formatNumber(main2Stats.minted, { decimals: 0 })
+            : "--",
+        tone: "#9B7BFF",
+      },
+      {
+        k: "Ticket Price",
+        v: main2Stats.ticketPrice ? `${main2Stats.ticketPrice} ETH` : "--",
+        tone: "#5DDCFF",
+      },
+    ],
+    [totalReceived, receivedForAddr, main2Stats],
+  );
 
-  const poolRows = React.useMemo(() => ([
-    { key: "reserve", label: "Reserve" },
-    { key: "collectionRewards", label: "Collection Rewards" },
-    { key: "buybackAgent", label: "Buyback Agent" },
-    { key: "treasury", label: "Treasury" },
-    { key: "dripDistributor", label: "Drip Distributor" },
-    { key: "dripLm", label: "Drip LM" },
-    { key: "liquidityManager", label: "Liquidity Manager" },
-    { key: "liquidityVault", label: "Liquidity Vault" },
-  ]), []);
+  const poolRows = React.useMemo(
+    () => [
+      { key: "reserve", label: "Reserve" },
+      { key: "collectionRewards", label: "Collection Rewards" },
+      { key: "buybackAgent", label: "Buyback Agent" },
+      { key: "treasury", label: "Treasury" },
+      { key: "dripDistributor", label: "Drip Distributor" },
+      { key: "dripLm", label: "Drip LM" },
+      { key: "liquidityManager", label: "Liquidity Manager" },
+      { key: "liquidityVault", label: "Liquidity Vault" },
+    ],
+    [],
+  );
 
   const poolChartData = React.useMemo(() => {
     const keys = ["reserve", "treasury", "buybackAgent", "collectionRewards"];
-    const sum = keys.reduce((acc, k) => acc + (Number(poolsBalances[k]) || 0), 0);
+    const sum = keys.reduce(
+      (acc, k) => acc + (Number(poolsBalances[k]) || 0),
+      0,
+    );
     if (!sum) return [];
     return keys.map((k) => ({
       key: k,
@@ -499,15 +647,25 @@ export default function ExpansionPanel({ compact = false }) {
       value: Number(poolsBalances[k]) || 0,
       pct: ((Number(poolsBalances[k]) || 0) / sum) * 100,
     }));
-  }, [poolsBalances.buybackAgent, poolsBalances.collectionRewards, poolsBalances.reserve, poolsBalances.treasury]);
+  }, [
+    poolsBalances.buybackAgent,
+    poolsBalances.collectionRewards,
+    poolsBalances.reserve,
+    poolsBalances.treasury,
+  ]);
 
   const eventSparkPoints = React.useMemo(() => {
-    const vals = (events || []).slice(0, 20).map((e) => Number(e.amount)).filter((v) => Number.isFinite(v));
+    const vals = (events || [])
+      .slice(0, 20)
+      .map((e) => Number(e.amount))
+      .filter((v) => Number.isFinite(v));
     return buildSparkPoints(vals);
   }, [events]);
 
   return (
-    <section className={`rewards-grid biggi-skin${compact ? " is-compact" : ""}`}>
+    <section
+      className={`rewards-grid biggi-skin${compact ? " is-compact" : ""}`}
+    >
       <div className="rewards-grid__surface biggi-token-surface">
         <div
           aria-hidden
@@ -515,7 +673,8 @@ export default function ExpansionPanel({ compact = false }) {
             position: "absolute",
             inset: 0,
             pointerEvents: "none",
-            background: "radial-gradient(900px 360px at 80% -20%, rgba(255,232,0,0.12), transparent 70%)",
+            background:
+              "radial-gradient(900px 360px at 80% -20%, rgba(255,232,0,0.12), transparent 70%)",
             mixBlendMode: "screen",
           }}
         />
@@ -523,14 +682,22 @@ export default function ExpansionPanel({ compact = false }) {
         <header className="rewards-grid__header biggi-header panel-header panel-header--collection">
           <div className="rewards-grid__headline">
             <h2 className="rewards-grid__title">Expansion - Distributor</h2>
-            <p className="rewards-grid__subtitle">Mint-share flow and collection readiness overview.</p>
+            <p className="rewards-grid__subtitle">
+              Mint-share flow and collection readiness overview.
+            </p>
           </div>
           <div className="rewards-grid__header-actions">
-            <GhostBtn tone="#FFE800" onClick={() => openExplorer()}>Distributor Explorer</GhostBtn>
+            <GhostBtn tone="#FFE800" onClick={() => openExplorer()}>
+              Distributor Explorer
+            </GhostBtn>
           </div>
         </header>
         <div className="rewards-grid__tabs">
-          {[{ id: "overview", label: "Overview" }, { id: "events", label: "Events" }, { id: "pools", label: "Pools" }].map((tab) => (
+          {[
+            { id: "overview", label: "Overview" },
+            { id: "events", label: "Events" },
+            { id: "pools", label: "Pools" },
+          ].map((tab) => (
             <button
               key={tab.id}
               className={`rewards-grid__tab${activeTab === tab.id ? " is-active" : ""}`}
@@ -565,17 +732,56 @@ export default function ExpansionPanel({ compact = false }) {
             </Card>
             <Card title="Pool Distribution" tone="c">
               {poolChartData.length ? (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px,1fr))", gap: 10 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(180px,1fr))",
+                    gap: 10,
+                  }}
+                >
                   {poolChartData.map((item) => (
-                    <div key={item.key} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: 10 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#9ba5b9" }}>
+                    <div
+                      key={item.key}
+                      style={{
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.05)",
+                        borderRadius: 10,
+                        padding: 10,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: 12,
+                          color: "#9ba5b9",
+                        }}
+                      >
                         <span>{item.label}</span>
                         <span>{item.pct.toFixed(1)}%</span>
                       </div>
-                      <div style={{ marginTop: 6, height: 8, borderRadius: 999, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
-                        <div style={{ width: `${item.pct}%`, height: "100%", background: "linear-gradient(90deg, #4ac0ff, #2be2a4)", boxShadow: "0 0 10px rgba(74,192,255,0.35)" }} />
+                      <div
+                        style={{
+                          marginTop: 6,
+                          height: 8,
+                          borderRadius: 999,
+                          background: "rgba(255,255,255,0.06)",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: `${item.pct}%`,
+                            height: "100%",
+                            background:
+                              "linear-gradient(90deg, #4ac0ff, #2be2a4)",
+                            boxShadow: "0 0 10px rgba(74,192,255,0.35)",
+                          }}
+                        />
                       </div>
-                      <div style={{ marginTop: 6, fontWeight: 700 }}>{formatBalance(item.value)}</div>
+                      <div style={{ marginTop: 6, fontWeight: 700 }}>
+                        {formatBalance(item.value)}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -585,11 +791,30 @@ export default function ExpansionPanel({ compact = false }) {
             </Card>
             <Card title="Event Volume" tone="v">
               {eventSparkPoints ? (
-                <div style={{ padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <svg viewBox="0 0 100 40" preserveAspectRatio="none" aria-label="Event volume trend" style={{ width: "100%", height: 60 }}>
-                    <polyline points={eventSparkPoints} fill="none" stroke="#9B7BFF" strokeWidth="3" />
+                <div
+                  style={{
+                    padding: 10,
+                    borderRadius: 12,
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                  }}
+                >
+                  <svg
+                    viewBox="0 0 100 40"
+                    preserveAspectRatio="none"
+                    aria-label="Event volume trend"
+                    style={{ width: "100%", height: 60 }}
+                  >
+                    <polyline
+                      points={eventSparkPoints}
+                      fill="none"
+                      stroke="#9B7BFF"
+                      strokeWidth="3"
+                    />
                   </svg>
-                  <span style={{ color: "#9ba5b9", fontSize: 12 }}>Last {Math.min(events.length, 20)} events (POL)</span>
+                  <span style={{ color: "#9ba5b9", fontSize: 12 }}>
+                    Last {Math.min(events.length, 20)} events (POL)
+                  </span>
                 </div>
               ) : (
                 <div className="muted">No events yet.</div>
@@ -606,21 +831,51 @@ export default function ExpansionPanel({ compact = false }) {
               ) : events.length === 0 ? (
                 <div className="muted">No recent events found.</div>
               ) : (
-                <div className="biggi-grid" style={{ gap: 6, maxHeight: 300, overflowY: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <div
+                  className="biggi-grid"
+                  style={{ gap: 6, maxHeight: 300, overflowY: "auto" }}
+                >
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      fontSize: 13,
+                    }}
+                  >
                     <thead>
-                      <tr style={{ textAlign: "left", color: "var(--text-dim)" }}>
+                      <tr
+                        style={{ textAlign: "left", color: "var(--text-dim)" }}
+                      >
                         <th style={{ padding: "6px" }}>Collection</th>
-                        <th style={{ padding: "6px", textAlign: "right" }}>Amount</th>
-                        <th style={{ padding: "6px", textAlign: "right" }}>Block</th>
+                        <th style={{ padding: "6px", textAlign: "right" }}>
+                          Amount
+                        </th>
+                        <th style={{ padding: "6px", textAlign: "right" }}>
+                          Block
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {events.slice(0, 6).map((ev, idx) => (
-                        <tr key={`${ev.tx}-${idx}`} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                          <td style={{ padding: "8px 6px" }}>{shortAddress(ev.collection)}</td>
-                          <td style={{ padding: "8px 6px", textAlign: "right" }}>{Number(ev.amount).toFixed(4)} POL</td>
-                          <td style={{ padding: "8px 6px", textAlign: "right" }}>{ev.block}</td>
+                        <tr
+                          key={`${ev.tx}-${idx}`}
+                          style={{
+                            borderTop: "1px solid rgba(255,255,255,0.05)",
+                          }}
+                        >
+                          <td style={{ padding: "8px 6px" }}>
+                            {shortAddress(ev.collection)}
+                          </td>
+                          <td
+                            style={{ padding: "8px 6px", textAlign: "right" }}
+                          >
+                            {Number(ev.amount).toFixed(4)} POL
+                          </td>
+                          <td
+                            style={{ padding: "8px 6px", textAlign: "right" }}
+                          >
+                            {ev.block}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -634,22 +889,52 @@ export default function ExpansionPanel({ compact = false }) {
         {activeTab === "pools" && (
           <div className="rewards-grid__cards">
             <Card title="Pools (Recipients)" tone="v">
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontSize: 13,
+                }}
+              >
                 <thead>
                   <tr style={{ color: "var(--text-dim)", textAlign: "left" }}>
                     <th style={{ padding: "6px" }}>Pool</th>
-                    <th style={{ padding: "6px", textAlign: "right" }}>Balance</th>
-                    <th style={{ padding: "6px", textAlign: "right" }}>Address</th>
+                    <th style={{ padding: "6px", textAlign: "right" }}>
+                      Balance
+                    </th>
+                    <th style={{ padding: "6px", textAlign: "right" }}>
+                      Address
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {poolRows.map(({ key, label }) => (
-                    <tr key={key} style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                    <tr
+                      key={key}
+                      style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+                    >
                       <td style={{ padding: "8px 6px" }}>{label}</td>
-                      <td style={{ padding: "8px 6px", textAlign: "right" }}>{formatBalance(poolsBalances[key])}</td>
-                      <td style={{ padding: "8px 6px", textAlign: "right", whiteSpace: "nowrap" }}>
-                        <span style={{ marginRight: 8 }}>{shortAddress(pools[key])}</span>
-                        <GhostBtn onClick={() => pools[key] && openExplorer(pools[key])} tone="#5DDCFF" disabled={!pools[key]} style={{ padding: "4px 8px" }}>View</GhostBtn>
+                      <td style={{ padding: "8px 6px", textAlign: "right" }}>
+                        {formatBalance(poolsBalances[key])}
+                      </td>
+                      <td
+                        style={{
+                          padding: "8px 6px",
+                          textAlign: "right",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        <span style={{ marginRight: 8 }}>
+                          {shortAddress(pools[key])}
+                        </span>
+                        <GhostBtn
+                          onClick={() => pools[key] && openExplorer(pools[key])}
+                          tone="#5DDCFF"
+                          disabled={!pools[key]}
+                          style={{ padding: "4px 8px" }}
+                        >
+                          View
+                        </GhostBtn>
                       </td>
                     </tr>
                   ))}
@@ -657,16 +942,29 @@ export default function ExpansionPanel({ compact = false }) {
               </table>
               {sparklinePoints ? (
                 <div style={FLOW_STYLES.spark}>
-                  <svg viewBox="0 0 100 40" preserveAspectRatio="none" aria-label="Pool balance trend">
-                    <polyline points={sparklinePoints} fill="none" stroke="#4ac0ff" strokeWidth="3" />
+                  <svg
+                    viewBox="0 0 100 40"
+                    preserveAspectRatio="none"
+                    aria-label="Pool balance trend"
+                  >
+                    <polyline
+                      points={sparklinePoints}
+                      fill="none"
+                      stroke="#4ac0ff"
+                      strokeWidth="3"
+                    />
                   </svg>
-                  <span style={FLOW_STYLES.sparkLabel}>Pool balances (relative)</span>
+                  <span style={FLOW_STYLES.sparkLabel}>
+                    Pool balances (relative)
+                  </span>
                 </div>
               ) : null}
             </Card>
             <Card title="Security" tone="y">
               <p className="muted">
-                Never sign transactions you do not understand. This panel is read-only apart from the optional wallet connection that shows personal stats.
+                Never sign transactions you do not understand. This panel is
+                read-only apart from the optional wallet connection that shows
+                personal stats.
               </p>
             </Card>
           </div>
@@ -675,6 +973,3 @@ export default function ExpansionPanel({ compact = false }) {
     </section>
   );
 }
-
-
-

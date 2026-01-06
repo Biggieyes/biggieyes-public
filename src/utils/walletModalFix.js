@@ -5,8 +5,16 @@ function applyStyles(root, { top, z }) {
   try {
     // hosty + vnitřní kontejnery (širší match)
     const candidates = [
-      "w3m-modal", "#w3m-modal", ".w3m-modal", ".w3m-modal__container", ".w3m-modal-container",
-      "wcm-modal", "#wcm-modal", ".wcm-modal", ".wcm-modal__inner", ".wcm-modal-container",
+      "w3m-modal",
+      "#w3m-modal",
+      ".w3m-modal",
+      ".w3m-modal__container",
+      ".w3m-modal-container",
+      "wcm-modal",
+      "#wcm-modal",
+      ".wcm-modal",
+      ".wcm-modal__inner",
+      ".wcm-modal-container",
       "[class*='w3m-'][class*='modal']",
       "[class*='wcm-'][class*='modal']",
     ];
@@ -15,26 +23,42 @@ function applyStyles(root, { top, z }) {
     wrappers.forEach((el) => {
       el.style.setProperty("align-items", "flex-start", "important");
       el.style.setProperty("justify-content", "center", "important");
-      el.style.setProperty("padding-top", `calc(${top} + env(safe-area-inset-top))`, "important");
+      el.style.setProperty(
+        "padding-top",
+        `calc(${top} + env(safe-area-inset-top))`,
+        "important",
+      );
       el.style.setProperty("z-index", String(z), "important");
       el.style.setProperty("inset", "0", "important");
       el.style.setProperty("position", "fixed", "important");
     });
 
-    const panels = root.querySelectorAll([
-      ".w3m-modal-container", ".w3m-modal__container", ".w3m-modal-card",
-      ".wcm-modal-container", ".wcm-modal-card", ".wcm-desktop-connecting-container",
-      "[class*='w3m-'][class*='card']",
-      "[class*='wcm-'][class*='card']",
-    ].join(","));
+    const panels = root.querySelectorAll(
+      [
+        ".w3m-modal-container",
+        ".w3m-modal__container",
+        ".w3m-modal-card",
+        ".wcm-modal-container",
+        ".wcm-modal-card",
+        ".wcm-desktop-connecting-container",
+        "[class*='w3m-'][class*='card']",
+        "[class*='wcm-'][class*='card']",
+      ].join(","),
+    );
     panels.forEach((el) => {
-      el.style.setProperty("max-height", `calc(100svh - (${top} + env(safe-area-inset-top)))`, "important");
+      el.style.setProperty(
+        "max-height",
+        `calc(100svh - (${top} + env(safe-area-inset-top)))`,
+        "important",
+      );
       el.style.setProperty("overflow", "auto", "important");
       el.style.setProperty("margin-top", "0", "important");
       el.style.setProperty("overscroll-behavior", "contain", "important");
     });
 
-    const overlays = root.querySelectorAll(".w3m-overlay, .wcm-overlay, [class*='w3m-'][class*='overlay'], [class*='wcm-'][class*='overlay']");
+    const overlays = root.querySelectorAll(
+      ".w3m-overlay, .wcm-overlay, [class*='w3m-'][class*='overlay'], [class*='wcm-'][class*='overlay']",
+    );
     overlays.forEach((el) => {
       el.style.setProperty("z-index", String(z - 1), "important");
       el.style.setProperty("position", "fixed", "important");
@@ -53,7 +77,9 @@ function patchOne(el, opts) {
 }
 
 function hasAnyModalInDom() {
-  return !!document.querySelector("w3m-modal,#w3m-modal,.w3m-modal,.w3m-modal-container,wcm-modal,#wcm-modal,.wcm-modal");
+  return !!document.querySelector(
+    "w3m-modal,#w3m-modal,.w3m-modal,.w3m-modal-container,wcm-modal,#wcm-modal,.wcm-modal",
+  );
 }
 
 function scanAndPatch(opts) {
@@ -66,17 +92,18 @@ function scanAndPatch(opts) {
   if (!hasAnyModalInDom()) return;
 
   const hosts = [
-    ...document.querySelectorAll("w3m-modal, w3m-connect-button, w3m-core-button, wcm-modal"),
-    ...document.querySelectorAll("#w3m-modal, #wcm-modal, .w3m-modal, .wcm-modal"),
+    ...document.querySelectorAll(
+      "w3m-modal, w3m-connect-button, w3m-core-button, wcm-modal",
+    ),
+    ...document.querySelectorAll(
+      "#w3m-modal, #wcm-modal, .w3m-modal, .wcm-modal",
+    ),
   ];
   hosts.forEach((h) => patchOne(h, opts));
   patchOne(document.body, opts);
 }
 
-export function installWalletModalFix({
-  top = "2vh",
-  zIndex = 10000,
-} = {}) {
+export function installWalletModalFix({ top = "2vh", zIndex = 10000 } = {}) {
   if (typeof document === "undefined") return;
   if (document.documentElement.hasAttribute(PATCH_ID)) return;
   document.documentElement.setAttribute(PATCH_ID, "1");
@@ -93,7 +120,11 @@ export function installWalletModalFix({
   obs.observe(document.documentElement, { childList: true, subtree: true });
 
   const intId = setInterval(() => {
-    if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+    if (
+      typeof document !== "undefined" &&
+      document.visibilityState !== "visible"
+    )
+      return;
     scanAndPatch(opts);
   }, 1200);
 

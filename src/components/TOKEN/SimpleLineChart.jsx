@@ -5,7 +5,8 @@ const DEFAULT_WIDTH = 640;
 const GRID_ROWS = 4;
 const GRID_COLS = 6;
 
-const isFiniteNumber = (value) => typeof value === "number" && Number.isFinite(value);
+const isFiniteNumber = (value) =>
+  typeof value === "number" && Number.isFinite(value);
 
 const toNumber = (value) => {
   if (isFiniteNumber(value)) return value;
@@ -13,7 +14,16 @@ const toNumber = (value) => {
   return Number.isFinite(num) ? num : null;
 };
 
-const buildSegments = (data, key, min, max, width, height, offsetX, offsetY) => {
+const buildSegments = (
+  data,
+  key,
+  min,
+  max,
+  width,
+  height,
+  offsetX,
+  offsetY,
+) => {
   const range = max - min || 1;
   const segments = [];
   let current = [];
@@ -29,7 +39,8 @@ const buildSegments = (data, key, min, max, width, height, offsetX, offsetY) => 
       }
       return;
     }
-    const x = offsetX + (count === 1 ? width / 2 : (width / (count - 1)) * index);
+    const x =
+      offsetX + (count === 1 ? width / 2 : (width / (count - 1)) * index);
     const y = offsetY + height - ((value - min) / range) * height;
     current.push({ x, y });
   });
@@ -68,7 +79,9 @@ const SimpleLineChart = ({
   const padding = { top: 16, right: 12, bottom: 22, left: 20 };
   const plotWidth = Math.max(1, safeWidth - padding.left - padding.right);
   const plotHeight = Math.max(1, safeHeight - padding.top - padding.bottom);
-  const clipIdRef = React.useRef(`simple-chart-clip-${Math.random().toString(36).slice(2, 9)}`);
+  const clipIdRef = React.useRef(
+    `simple-chart-clip-${Math.random().toString(36).slice(2, 9)}`,
+  );
   const clipId = clipIdRef.current;
 
   return (
@@ -81,17 +94,39 @@ const SimpleLineChart = ({
       >
         <defs>
           <clipPath id={clipId}>
-            <rect x={padding.left} y={padding.top} width={plotWidth} height={plotHeight} rx="6" />
+            <rect
+              x={padding.left}
+              y={padding.top}
+              width={plotWidth}
+              height={plotHeight}
+              rx="6"
+            />
           </clipPath>
         </defs>
         <g className="simple-chart__grid">
           {Array.from({ length: GRID_ROWS + 1 }, (_, i) => {
             const y = padding.top + (plotHeight / GRID_ROWS) * i;
-            return <line key={`h-${i}`} x1={padding.left} x2={padding.left + plotWidth} y1={y} y2={y} />;
+            return (
+              <line
+                key={`h-${i}`}
+                x1={padding.left}
+                x2={padding.left + plotWidth}
+                y1={y}
+                y2={y}
+              />
+            );
           })}
           {Array.from({ length: GRID_COLS + 1 }, (_, i) => {
             const x = padding.left + (plotWidth / GRID_COLS) * i;
-            return <line key={`v-${i}`} x1={x} x2={x} y1={padding.top} y2={padding.top + plotHeight} />;
+            return (
+              <line
+                key={`v-${i}`}
+                x1={x}
+                x2={x}
+                y1={padding.top}
+                y2={padding.top + plotHeight}
+              />
+            );
           })}
         </g>
         <line
@@ -103,7 +138,16 @@ const SimpleLineChart = ({
         />
         {seriesList.map((item, idx) => {
           const color = item.color || "#4ad2ff";
-          const segments = buildSegments(points, item.key, min, max, plotWidth, plotHeight, padding.left, padding.top);
+          const segments = buildSegments(
+            points,
+            item.key,
+            min,
+            max,
+            plotWidth,
+            plotHeight,
+            padding.left,
+            padding.top,
+          );
           if (!segments.length) return null;
           const lastSegment = segments[segments.length - 1] || [];
           const lastPoint = lastSegment[lastSegment.length - 1];
@@ -111,7 +155,9 @@ const SimpleLineChart = ({
           return (
             <g key={item.key || idx} clipPath={`url(#${clipId})`}>
               {segments.map((segment, segIdx) => {
-                const pointsAttr = segment.map((pt) => `${pt.x},${pt.y}`).join(" ");
+                const pointsAttr = segment
+                  .map((pt) => `${pt.x},${pt.y}`)
+                  .join(" ");
                 return (
                   <g key={`${item.key || idx}-${segIdx}`}>
                     <polyline
@@ -129,7 +175,13 @@ const SimpleLineChart = ({
                 );
               })}
               {lastPoint ? (
-                <circle className="simple-chart__marker" cx={lastPoint.x} cy={lastPoint.y} r="3.5" fill={color} />
+                <circle
+                  className="simple-chart__marker"
+                  cx={lastPoint.x}
+                  cy={lastPoint.y}
+                  r="3.5"
+                  fill={color}
+                />
               ) : null}
             </g>
           );
@@ -139,7 +191,10 @@ const SimpleLineChart = ({
         <div className="simple-chart__legend">
           {seriesList.map((item, idx) => (
             <span key={item.key || idx} className="simple-chart__legend-item">
-              <span className="simple-chart__legend-dot" style={{ background: item.color || "#4ad2ff" }} />
+              <span
+                className="simple-chart__legend-dot"
+                style={{ background: item.color || "#4ad2ff" }}
+              />
               {item.label || item.key}
             </span>
           ))}

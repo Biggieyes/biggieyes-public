@@ -12,7 +12,10 @@ const GRID_COLS = 5;
 const LineChart = ({ points = [], width = 320, height = 150 }) => {
   const sanitized = points
     .map((point) => ({
-      value: typeof point.value === "number" ? point.value : Number(point.value) || 0,
+      value:
+        typeof point.value === "number"
+          ? point.value
+          : Number(point.value) || 0,
       label: point.label || "",
     }))
     .filter((point) => Number.isFinite(point.value));
@@ -28,15 +31,21 @@ const LineChart = ({ points = [], width = 320, height = 150 }) => {
   const padding = { top: 12, right: 12, bottom: 20, left: 20 };
   const plotWidth = Math.max(1, width - padding.left - padding.right);
   const plotHeight = Math.max(1, height - padding.top - padding.bottom);
-  const clipIdRef = React.useRef(`line-chart-clip-${Math.random().toString(36).slice(2, 9)}`);
+  const clipIdRef = React.useRef(
+    `line-chart-clip-${Math.random().toString(36).slice(2, 9)}`,
+  );
   const clipId = clipIdRef.current;
 
-  const coords = sanitized
-    .map((entry, index) => {
-      const x = padding.left + (sanitized.length === 1 ? plotWidth / 2 : (plotWidth / (sanitized.length - 1)) * index);
-      const y = padding.top + plotHeight - ((entry.value - min) / range) * plotHeight;
-      return { x, y };
-    });
+  const coords = sanitized.map((entry, index) => {
+    const x =
+      padding.left +
+      (sanitized.length === 1
+        ? plotWidth / 2
+        : (plotWidth / (sanitized.length - 1)) * index);
+    const y =
+      padding.top + plotHeight - ((entry.value - min) / range) * plotHeight;
+    return { x, y };
+  });
   const svgPoints = coords.map((pt) => `${pt.x},${pt.y}`).join(" ");
 
   const latest = sanitized[sanitized.length - 1];
@@ -52,17 +61,39 @@ const LineChart = ({ points = [], width = 320, height = 150 }) => {
       >
         <defs>
           <clipPath id={clipId}>
-            <rect x={padding.left} y={padding.top} width={plotWidth} height={plotHeight} rx="6" />
+            <rect
+              x={padding.left}
+              y={padding.top}
+              width={plotWidth}
+              height={plotHeight}
+              rx="6"
+            />
           </clipPath>
         </defs>
         <g className="line-chart__grid">
           {Array.from({ length: GRID_ROWS + 1 }, (_, i) => {
             const y = padding.top + (plotHeight / GRID_ROWS) * i;
-            return <line key={`h-${i}`} x1={padding.left} x2={padding.left + plotWidth} y1={y} y2={y} />;
+            return (
+              <line
+                key={`h-${i}`}
+                x1={padding.left}
+                x2={padding.left + plotWidth}
+                y1={y}
+                y2={y}
+              />
+            );
           })}
           {Array.from({ length: GRID_COLS + 1 }, (_, i) => {
             const x = padding.left + (plotWidth / GRID_COLS) * i;
-            return <line key={`v-${i}`} x1={x} x2={x} y1={padding.top} y2={padding.top + plotHeight} />;
+            return (
+              <line
+                key={`v-${i}`}
+                x1={x}
+                x2={x}
+                y1={padding.top}
+                y2={padding.top + plotHeight}
+              />
+            );
           })}
         </g>
         <line
@@ -73,16 +104,32 @@ const LineChart = ({ points = [], width = 320, height = 150 }) => {
           y2={padding.top + plotHeight}
         />
         <g clipPath={`url(#${clipId})`}>
-          <polyline className="line-chart__line line-chart__line--glow" points={svgPoints} stroke="#4ad2ff" />
-          <polyline className="line-chart__line" points={svgPoints} stroke="#4ad2ff" />
+          <polyline
+            className="line-chart__line line-chart__line--glow"
+            points={svgPoints}
+            stroke="#4ad2ff"
+          />
+          <polyline
+            className="line-chart__line"
+            points={svgPoints}
+            stroke="#4ad2ff"
+          />
           {lastPoint ? (
-            <circle className="line-chart__marker" cx={lastPoint.x} cy={lastPoint.y} r="3.2" fill="#4ad2ff" />
+            <circle
+              className="line-chart__marker"
+              cx={lastPoint.x}
+              cy={lastPoint.y}
+              r="3.2"
+              fill="#4ad2ff"
+            />
           ) : null}
         </g>
       </svg>
       <div className="line-chart__meta">
         <span>Latest: {_formatNumber(latest.value)}</span>
-        <span>Range: {_formatNumber(min)} - {_formatNumber(max)}</span>
+        <span>
+          Range: {_formatNumber(min)} - {_formatNumber(max)}
+        </span>
       </div>
     </div>
   );

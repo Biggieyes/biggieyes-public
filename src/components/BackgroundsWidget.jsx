@@ -18,7 +18,7 @@ const BLOCK_COLORS = {
   VIOLET: "#9256d9",
   RED: "#e34e4e",
   PINK: "#ff63c2",
-  RAINBOW: "linear-gradient(90deg,#ff3,#0ff,#9f3,#f0f,#3cf,#f66,#ffe800)"
+  RAINBOW: "linear-gradient(90deg,#ff3,#0ff,#9f3,#f0f,#3cf,#f66,#ffe800)",
 };
 
 const BACKGROUND_INCREASES = {
@@ -31,7 +31,7 @@ const BACKGROUND_INCREASES = {
   VIOLET: "35%",
   RED: "40%",
   PINK: "45%",
-  RAINBOW: "50%"
+  RAINBOW: "50%",
 };
 
 const BLOCK_BASE_PRICES = {
@@ -44,7 +44,7 @@ const BLOCK_BASE_PRICES = {
   VIOLET: 700,
   RED: 800,
   PINK: 900,
-  RAINBOW: 1000
+  RAINBOW: 1000,
 };
 
 const GROWTH_BY_BG_INDEX = [5, 2, 2, 3, 3, 4, 4, 5, 5, 10];
@@ -58,8 +58,10 @@ const getBlockColor = (name) => {
     color: textColor,
     fontWeight: "bold",
     border: "2px solid #ffe800",
-    boxShadow: upperName === "RAINBOW" ? "0 0 14px #ffe80055" : "0 0 7px #ffe80050",
-    textShadow: upperName === "RAINBOW" ? "0 1px 4px #fff9, 0 0 8px #ffe80044" : "none",
+    boxShadow:
+      upperName === "RAINBOW" ? "0 0 14px #ffe80055" : "0 0 7px #ffe80050",
+    textShadow:
+      upperName === "RAINBOW" ? "0 1px 4px #fff9, 0 0 8px #ffe80044" : "none",
     borderRadius: 8,
     padding: "6px 4px",
     textAlign: "center",
@@ -67,7 +69,7 @@ const getBlockColor = (name) => {
     overflow: "hidden",
     textOverflow: "ellipsis",
     transition: "all 0.3s ease",
-    minWidth: "80px"
+    minWidth: "80px",
   };
 };
 
@@ -79,40 +81,73 @@ const cellBase = {
   overflow: "hidden",
   textOverflow: "ellipsis",
   textShadow: "0 1px 3px rgba(0,0,0,0.6)",
-  borderBottom: "1px solid rgba(255,232,0,0.2)"
+  borderBottom: "1px solid rgba(255,232,0,0.2)",
 };
-const priceStyle = { ...cellBase, color: "#5ddcff", textShadow: "0 0 5px #5ddcff55" };
-const priceStyleWhite = { ...cellBase, color: "#ffffff", textShadow: "0 0 5px #ffffff33" };
-const mintedStyle = { ...cellBase, color: "#ff6b6b", textShadow: "0 0 5px #ff6b6b55" };
-const maxSupplyStyle = { ...cellBase, color: "#ffffff", textShadow: "0 0 5px #ffffff33" };
-const linkedBlockStyle = { ...cellBase, color: "#ffffff", textShadow: "0 0 5px #ffffff33" };
+const priceStyle = {
+  ...cellBase,
+  color: "#5ddcff",
+  textShadow: "0 0 5px #5ddcff55",
+};
+const priceStyleWhite = {
+  ...cellBase,
+  color: "#ffffff",
+  textShadow: "0 0 5px #ffffff33",
+};
+const mintedStyle = {
+  ...cellBase,
+  color: "#ff6b6b",
+  textShadow: "0 0 5px #ff6b6b55",
+};
+const maxSupplyStyle = {
+  ...cellBase,
+  color: "#ffffff",
+  textShadow: "0 0 5px #ffffff33",
+};
+const linkedBlockStyle = {
+  ...cellBase,
+  color: "#ffffff",
+  textShadow: "0 0 5px #ffffff33",
+};
 
 const pretty = (upper) => upper.charAt(0) + upper.slice(1).toLowerCase();
 
 const fmt0 = (n) =>
   Number.isFinite(n)
-    ? new Intl.NumberFormat("cs-CZ", { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(n))
+    ? new Intl.NumberFormat("cs-CZ", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(Math.round(n))
     : "0";
 
 const BackgroundsWidget = ({
   blockNames = [],
   backgroundMintCounts = [],
   blockPrices = [],
-  onBack
+  onBack,
 }) => {
   const [infoVisible, setInfoVisible] = React.useState(false);
 
   const [isPhone, setIsPhone] = React.useState(() =>
-    typeof window !== "undefined" ? window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches : false
+    typeof window !== "undefined"
+      ? window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches
+      : false,
   );
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
     const onChange = (e) => setIsPhone(e.matches);
-    try { mq.addEventListener("change", onChange); } catch { mq.addListener(onChange); }
+    try {
+      mq.addEventListener("change", onChange);
+    } catch {
+      mq.addListener(onChange);
+    }
     return () => {
-      try { mq.removeEventListener("change", onChange); } catch { mq.removeListener(onChange); }
+      try {
+        mq.removeEventListener("change", onChange);
+      } catch {
+        mq.removeListener(onChange);
+      }
     };
   }, []);
 
@@ -131,7 +166,7 @@ const BackgroundsWidget = ({
         countByName: countMap,
         priceByName: priceMap,
         maxSupplyByName: supplyMap,
-        normalizedNames: namesUC
+        normalizedNames: namesUC,
       };
     }, [blockNames, backgroundMintCounts, blockPrices]);
 
@@ -142,7 +177,7 @@ const BackgroundsWidget = ({
     "BG Inc",
     "Mint %",
     "Max Supply",
-    "Block Price Δ"
+    "Block Price Δ",
   ];
 
   const handleRowHoverEnter = React.useCallback((e, bgIndex) => {
@@ -150,7 +185,8 @@ const BackgroundsWidget = ({
   }, []);
 
   const handleRowHoverLeave = React.useCallback((e, bgIndex) => {
-    e.currentTarget.style.background = bgIndex % 2 === 0 ? 'rgba(255,232,0,0.05)' : 'rgba(255,232,0,0.02)';
+    e.currentTarget.style.background =
+      bgIndex % 2 === 0 ? "rgba(255,232,0,0.05)" : "rgba(255,232,0,0.02)";
   }, []);
 
   return (
@@ -167,15 +203,13 @@ const BackgroundsWidget = ({
       </div>
 
       <div className="bgw-table-wrapper">
-        <table
-          className="bgw-head"
-        >
+        <table className="bgw-head">
           <thead>
             <tr>
               {headerTitles.map((title, idx) => {
                 const isFirst = idx === 0;
                 const isLast = idx === headerTitles.length - 1;
-                const color = (isFirst || isLast) ? "#ffe800" : "#5ddcff";
+                const color = isFirst || isLast ? "#ffe800" : "#5ddcff";
                 return (
                   <th
                     key={title}
@@ -187,7 +221,7 @@ const BackgroundsWidget = ({
                           ? "none"
                           : "1px solid rgba(255,232,0,0.22)",
                       borderTopLeftRadius: isFirst ? 10 : 0,
-                      borderTopRightRadius: isLast ? 10 : 0
+                      borderTopRightRadius: isLast ? 10 : 0,
                     }}
                   >
                     {title}
@@ -201,9 +235,13 @@ const BackgroundsWidget = ({
               const minted = Number(countByName[upper] ?? 0);
               const currentPrice = Number(priceByName[upper] ?? 0);
               const basePrice = Number(BLOCK_BASE_PRICES[upper] ?? 0);
-              const rawDiff = Number.isFinite(currentPrice - basePrice) ? (currentPrice - basePrice) : 0;
+              const rawDiff = Number.isFinite(currentPrice - basePrice)
+                ? currentPrice - basePrice
+                : 0;
               const priceDiff = minted > 0 ? fmt0(rawDiff) : "—";
-              const maxSupply = Number(maxSupplyByName[upper] ?? BLOCK_MAX_SUPPLY[i] ?? 0);
+              const maxSupply = Number(
+                maxSupplyByName[upper] ?? BLOCK_MAX_SUPPLY[i] ?? 0,
+              );
               const growthPct = `${GROWTH_BY_BG_INDEX[i] || 0}%`;
 
               return (
@@ -211,7 +249,10 @@ const BackgroundsWidget = ({
                   key={upper}
                   style={{
                     transition: "all 0.2s ease",
-                    background: i % 2 === 0 ? 'rgba(255,232,0,0.05)' : 'rgba(255,232,0,0.02)'
+                    background:
+                      i % 2 === 0
+                        ? "rgba(255,232,0,0.05)"
+                        : "rgba(255,232,0,0.02)",
                   }}
                   onMouseEnter={(e) => handleRowHoverEnter(e, i)}
                   onMouseLeave={(e) => handleRowHoverLeave(e, i)}
@@ -219,10 +260,14 @@ const BackgroundsWidget = ({
                   <td style={getBlockColor(upper)}>{upper}</td>
                   <td style={mintedStyle}>{minted}</td>
                   <td style={linkedBlockStyle}>{pretty(upper)}</td>
-                  <td style={priceStyleWhite}>{BACKGROUND_INCREASES[upper] || "-"}</td>
+                  <td style={priceStyleWhite}>
+                    {BACKGROUND_INCREASES[upper] || "-"}
+                  </td>
                   <td style={priceStyleWhite}>{growthPct}</td>
                   <td style={maxSupplyStyle}>{maxSupply}</td>
-                  <td style={priceStyle}>{minted > 0 ? `${priceDiff} POL` : "—"}</td>
+                  <td style={priceStyle}>
+                    {minted > 0 ? `${priceDiff} POL` : "—"}
+                  </td>
                 </tr>
               );
             })}
@@ -231,10 +276,7 @@ const BackgroundsWidget = ({
       </div>
 
       <div className="bgw-button-container">
-        <button
-          onClick={onBack}
-          className="bgw-button"
-        >
+        <button onClick={onBack} className="bgw-button">
           BACK
         </button>
       </div>
@@ -256,7 +298,6 @@ const BackgroundsWidget = ({
             </div>
 
             <div className="bgw-modal-body">
-
               <table className="bgw-info-table">
                 <thead>
                   <tr>
@@ -267,31 +308,48 @@ const BackgroundsWidget = ({
                 <tbody>
                   <tr>
                     <td className="bgw-k">Background</td>
-                    <td className="bgw-v">Background color of the NFT; also used to determine a one-time price bonus.</td>
+                    <td className="bgw-v">
+                      Background color of the NFT; also used to determine a
+                      one-time price bonus.
+                    </td>
                   </tr>
                   <tr>
                     <td className="bgw-k">Minted</td>
-                    <td className="bgw-v">How many NFTs with this background have been minted.</td>
+                    <td className="bgw-v">
+                      How many NFTs with this background have been minted.
+                    </td>
                   </tr>
                   <tr>
                     <td className="bgw-k">Linked Block</td>
-                    <td className="bgw-v">Human-readable name of the linked block (same as background name).</td>
+                    <td className="bgw-v">
+                      Human-readable name of the linked block (same as
+                      background name).
+                    </td>
                   </tr>
                   <tr>
                     <td className="bgw-k">BG Inc</td>
-                    <td className="bgw-v">One-off bonus applied to the current block price (5–50%).</td>
+                    <td className="bgw-v">
+                      One-off bonus applied to the current block price (5–50%).
+                    </td>
                   </tr>
                   <tr>
                     <td className="bgw-k">Mint %</td>
-                    <td className="bgw-v">Derived helper percentage based on the background index (1..10).</td>
+                    <td className="bgw-v">
+                      Derived helper percentage based on the background index
+                      (1..10).
+                    </td>
                   </tr>
                   <tr>
                     <td className="bgw-k">Max Supply</td>
-                    <td className="bgw-v">Maximum number of NFTs in that segment (informational).</td>
+                    <td className="bgw-v">
+                      Maximum number of NFTs in that segment (informational).
+                    </td>
                   </tr>
                   <tr>
                     <td className="bgw-k">Block Price Δ</td>
-                    <td className="bgw-v">Current block price minus base block price.</td>
+                    <td className="bgw-v">
+                      Current block price minus base block price.
+                    </td>
                   </tr>
                 </tbody>
               </table>

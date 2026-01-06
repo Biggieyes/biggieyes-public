@@ -2,7 +2,10 @@ import { BACKGROUND_NAMES, BACKGROUND_CODES } from "./shared";
 
 const PRICE_KEYS = ["Ticket Price", "Block Price", "Final Price"];
 const keyFor = (tokenId) => `biggi_meta_prices_${String(tokenId)}`;
-const normKey = (s) => String(s ?? "").trim().toLowerCase();
+const normKey = (s) =>
+  String(s ?? "")
+    .trim()
+    .toLowerCase();
 
 export function canonBackgroundName(val) {
   if (!val) return null;
@@ -40,7 +43,10 @@ export function mergeAttrs(baseArr, patchArr) {
     const k = normKey(p.trait_type);
     if (!k) continue;
     const prev = map.get(k);
-    map.set(k, prev ? { ...prev, ...p, trait_type: prev.trait_type } : { ...p });
+    map.set(
+      k,
+      prev ? { ...prev, ...p, trait_type: prev.trait_type } : { ...p },
+    );
   }
 
   return Array.from(map.values());
@@ -60,7 +66,7 @@ export function getCachedPriceAttrs(tokenId) {
           a &&
           typeof a.trait_type === "string" &&
           PRICE_KEYS.includes(a.trait_type) &&
-          Object.prototype.hasOwnProperty.call(a, "value")
+          Object.prototype.hasOwnProperty.call(a, "value"),
       )
       .map((a) => ({ ...a }));
   } catch {
@@ -76,10 +82,13 @@ export function setCachedPriceAttrs(tokenId, attrs) {
         a &&
         typeof a.trait_type === "string" &&
         PRICE_KEYS.includes(a.trait_type) &&
-        Object.prototype.hasOwnProperty.call(a, "value")
+        Object.prototype.hasOwnProperty.call(a, "value"),
     );
     if (compact.length) {
-      window.localStorage.setItem(keyFor(tokenId), JSON.stringify({ attributes: compact }));
+      window.localStorage.setItem(
+        keyFor(tokenId),
+        JSON.stringify({ attributes: compact }),
+      );
     } else {
       window.localStorage.removeItem(keyFor(tokenId));
     }

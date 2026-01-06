@@ -1,7 +1,13 @@
 // src/components/TransactionsModal.jsx
 import * as React from "react";
 
-export default function TransactionsModal({ open, status, txHash, message, onClose }) {
+export default function TransactionsModal({
+  open,
+  status,
+  txHash,
+  message,
+  onClose,
+}) {
   if (!open) return null;
   return (
     <div className="moderator-center__modal" role="dialog" aria-modal="true">
@@ -18,9 +24,13 @@ export default function TransactionsModal({ open, status, txHash, message, onClo
           )}
         </div>
         <div className="moderator-center__actions">
-          <button type="button" className="biggi-btn biggi-btn--ghost" onClick={onClose}>
+          <button
+            type="button"
+            className="biggi-btn biggi-btn--ghost"
+            onClick={onClose}
+          >
             Close
-        </button>
+          </button>
         </div>
       </div>
     </div>

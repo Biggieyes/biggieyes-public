@@ -1,7 +1,12 @@
 ﻿import * as React from "react";
 
 const DEFAULT_MAX_SIZE = 5 * 1024 * 1024;
-const DEFAULT_ALLOWED = ["image/png", "image/jpeg", "image/webp", "application/json"];
+const DEFAULT_ALLOWED = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "application/json",
+];
 
 function formatBytes(bytes) {
   if (!Number.isFinite(bytes)) return "";
@@ -14,7 +19,8 @@ async function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result || "");
-    reader.onerror = () => reject(reader.error || new Error("Failed to read file"));
+    reader.onerror = () =>
+      reject(reader.error || new Error("Failed to read file"));
     reader.readAsDataURL(file);
   });
 }
@@ -55,11 +61,12 @@ export default function PinUploader({
       }
       return "";
     },
-    [allowedTypes, maxSizeBytes]
+    [allowedTypes, maxSizeBytes],
   );
 
   const onFileChange = (e) => {
-    const nextFile = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+    const nextFile =
+      e.target.files && e.target.files[0] ? e.target.files[0] : null;
     const err = validateFile(nextFile);
     setError(err);
     setFile(err ? null : nextFile);
@@ -148,16 +155,27 @@ export default function PinUploader({
         <img
           src={previewUrl}
           alt="Preview"
-          style={{ width: 240, height: "auto", borderRadius: 10, border: "1px solid #2b2b2b" }}
+          style={{
+            width: 240,
+            height: "auto",
+            borderRadius: 10,
+            border: "1px solid #2b2b2b",
+          }}
         />
       ) : null}
 
-      <button type="button" onClick={handleUpload} disabled={!file || uploading}>
+      <button
+        type="button"
+        onClick={handleUpload}
+        disabled={!file || uploading}
+      >
         {uploading ? "Uploading..." : "Pin to Pinata"}
       </button>
 
       {status ? <div style={{ fontSize: 13 }}>{status}</div> : null}
-      {error ? <div style={{ color: "#e25b5b", fontSize: 13 }}>{error}</div> : null}
+      {error ? (
+        <div style={{ color: "#e25b5b", fontSize: 13 }}>{error}</div>
+      ) : null}
     </div>
   );
 }

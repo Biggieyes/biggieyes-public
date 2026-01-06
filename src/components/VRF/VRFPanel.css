@@ -24,7 +24,11 @@
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid rgba(255, 232, 0, 0.22);
-  background: linear-gradient(135deg, rgba(255, 232, 0, 0.08), rgba(0, 0, 0, 0.2));
+  background: linear-gradient(
+    135deg,
+    rgba(255, 232, 0, 0.08),
+    rgba(0, 0, 0, 0.2)
+  );
 }
 
 .vrf-panel__ribbon-dot {
@@ -85,7 +89,11 @@
   border: 1px solid rgba(255, 232, 0, 0.22);
   border-radius: 12px;
   overflow: hidden;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.16));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(0, 0, 0, 0.16)
+  );
 }
 
 .vrf-panel__history-scroll {

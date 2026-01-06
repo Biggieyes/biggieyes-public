@@ -28,11 +28,17 @@ function normalizeFullStatus(raw) {
     drip,
     tr,
     derived: {
-      priceNativePerBiggi: core?.nativePerBiggi ? toEther(core.nativePerBiggi) : null,
-      priceBiggiPerNative: core?.biggiPerNative ? toEther(core.biggiPerNative) : null,
+      priceNativePerBiggi: core?.nativePerBiggi
+        ? toEther(core.nativePerBiggi)
+        : null,
+      priceBiggiPerNative: core?.biggiPerNative
+        ? toEther(core.biggiPerNative)
+        : null,
       reserveBiggi: core?.reserveBiggi ? toEther(core.reserveBiggi) : null,
       reserveNative: core?.reserveNative ? toEther(core.reserveNative) : null,
-      dripAvailable: drip?.availableTokens ? toEther(drip.availableTokens) : null,
+      dripAvailable: drip?.availableTokens
+        ? toEther(drip.availableTokens)
+        : null,
       tokenRewardsBalance: tr?.balance ? toEther(tr.balance) : null,
       tokenRewardsCap: tr?.rewardsCap ? toEther(tr.rewardsCap) : null,
     },

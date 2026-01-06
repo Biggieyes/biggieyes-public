@@ -24,7 +24,10 @@ export default function LiveStatsPanel({
   isMobile,
 }) {
   return (
-    <div className="widget-center-wrapper" style={isMobile ? { paddingTop: 8 } : undefined}>
+    <div
+      className="widget-center-wrapper"
+      style={isMobile ? { paddingTop: 8 } : undefined}
+    >
       <React.Suspense fallback={null}>
         <LiveStats
           walletAddress={walletAddress}

@@ -1,4 +1,3 @@
-
 // Auto-generated placeholder for src/constants/blocks.js
 export const ROWS_BY_BLOCK = {};
 export const DEFAULT_BLOCKS = [];

@@ -11,9 +11,21 @@
   --rewards-border: rgba(255, 232, 0, 0.28);
   --panel-border: rgba(255, 232, 0, 0.24);
   --panel-border-strong: rgba(255, 232, 0, 0.5);
-  --panel-surface-grad: linear-gradient(180deg, rgba(9, 11, 18, 0.78), rgba(6, 7, 11, 0.96));
-  --panel-card-grad: linear-gradient(165deg, rgba(20, 22, 30, 0.92), rgba(10, 12, 18, 0.98));
-  --panel-card-hover: linear-gradient(165deg, rgba(22, 24, 34, 0.96), rgba(11, 13, 20, 0.99));
+  --panel-surface-grad: linear-gradient(
+    180deg,
+    rgba(9, 11, 18, 0.78),
+    rgba(6, 7, 11, 0.96)
+  );
+  --panel-card-grad: linear-gradient(
+    165deg,
+    rgba(20, 22, 30, 0.92),
+    rgba(10, 12, 18, 0.98)
+  );
+  --panel-card-hover: linear-gradient(
+    165deg,
+    rgba(22, 24, 34, 0.96),
+    rgba(11, 13, 20, 0.99)
+  );
   --panel-shadow: 0 20px 46px rgba(0, 0, 0, 0.6);
   --panel-shadow-soft: 0 12px 28px rgba(0, 0, 0, 0.48);
   --panel-text-dim: rgba(198, 207, 222, 0.9);
@@ -24,8 +36,16 @@
   margin: 0;
   position: relative;
   background:
-    radial-gradient(900px 420px at 85% -10%, rgba(255, 232, 0, 0.08), transparent 60%),
-    radial-gradient(720px 360px at 0% 120%, rgba(87, 186, 255, 0.08), transparent 60%),
+    radial-gradient(
+      900px 420px at 85% -10%,
+      rgba(255, 232, 0, 0.08),
+      transparent 60%
+    ),
+    radial-gradient(
+      720px 360px at 0% 120%,
+      rgba(87, 186, 255, 0.08),
+      transparent 60%
+    ),
     var(--panel-surface-grad);
   border-radius: 22px;
   border: 1px solid var(--panel-border);
@@ -61,44 +81,49 @@
 .rewards-grid__section-line {
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, var(--section-accent, #ffe800), transparent);
+  background: linear-gradient(
+    90deg,
+    var(--section-accent, #ffe800),
+    transparent
+  );
   opacity: 0.85;
 }
 
 /* Force yellow borders across rewards containers and panels */
-.rewards-grid :is(
-  .rewards-grid__surface,
-  .rewards-grid__header,
-  .rewards-grid__tabs,
-  .rewards-grid__tab,
-  .rewards-grid__hero,
-  .rewards-grid__hero-card,
-  .rewards-grid__cards-panel,
-  .rewards-grid__card,
-  .rewards-grid__mini-card,
-  .rewards-grid__panel,
-  .rewards-grid__stat-card,
-  .rewards-grid__status-item,
-  .rewards-panel__stat,
-  .rewards-panel__status,
-  .rewards-panel__address-row,
-  .rewards-panel__claim-group,
-  .rewards-panel__claim-row,
-  .rewards-panel__meta,
-  .nft-rewards__stat,
-  .nft-rewards__table,
-  .nft-rewards__table th,
-  .nft-rewards__table td,
-  .rewards-grid__preview-thumb,
-  .collection-claim-card,
-  .collection-claim__group,
-  .collection-claim__item,
-  .collection-claim__rainbow-row,
-  .collection-claim__meta,
-  .rewards-grid__note,
-  .rewards-grid__token-list,
-  .rewards-grid__token-item
-) {
+.rewards-grid
+  :is(
+    .rewards-grid__surface,
+    .rewards-grid__header,
+    .rewards-grid__tabs,
+    .rewards-grid__tab,
+    .rewards-grid__hero,
+    .rewards-grid__hero-card,
+    .rewards-grid__cards-panel,
+    .rewards-grid__card,
+    .rewards-grid__mini-card,
+    .rewards-grid__panel,
+    .rewards-grid__stat-card,
+    .rewards-grid__status-item,
+    .rewards-panel__stat,
+    .rewards-panel__status,
+    .rewards-panel__address-row,
+    .rewards-panel__claim-group,
+    .rewards-panel__claim-row,
+    .rewards-panel__meta,
+    .nft-rewards__stat,
+    .nft-rewards__table,
+    .nft-rewards__table th,
+    .nft-rewards__table td,
+    .rewards-grid__preview-thumb,
+    .collection-claim-card,
+    .collection-claim__group,
+    .collection-claim__item,
+    .collection-claim__rainbow-row,
+    .collection-claim__meta,
+    .rewards-grid__note,
+    .rewards-grid__token-list,
+    .rewards-grid__token-item
+  ) {
   border-color: var(--rewards-border) !important;
 }
 
@@ -261,8 +286,14 @@
   padding: 12px;
   border-radius: 12px;
   border: 1px solid var(--panel-border);
-  background: linear-gradient(160deg, rgba(255, 232, 0, 0.06), rgba(10, 12, 18, 0.92));
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02), 0 10px 20px rgba(0, 0, 0, 0.28);
+  background: linear-gradient(
+    160deg,
+    rgba(255, 232, 0, 0.06),
+    rgba(10, 12, 18, 0.92)
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 10px 20px rgba(0, 0, 0, 0.28);
 }
 .rewards-panel__stat .label {
   font-size: 0.78rem;
@@ -289,7 +320,10 @@
     var(--btn-shadow, 0 10px 26px rgba(0, 0, 0, 0.35)),
     0 0 0 1px rgba(255, 232, 0, 0.25),
     0 0 16px rgba(255, 232, 0, 0.18);
-  transition: box-shadow 0.22s ease, border-color 0.22s ease, filter 0.22s ease;
+  transition:
+    box-shadow 0.22s ease,
+    border-color 0.22s ease,
+    filter 0.22s ease;
 }
 
 .rewards-panel__alert {
@@ -358,9 +392,15 @@
 }
 .rewards-panel__status-grid--collection .rewards-panel__status {
   border: 1px solid rgba(255, 232, 0, 0.22);
-  background: linear-gradient(170deg, rgba(255, 232, 0, 0.06), rgba(0, 0, 0, 0.2));
+  background: linear-gradient(
+    170deg,
+    rgba(255, 232, 0, 0.06),
+    rgba(0, 0, 0, 0.2)
+  );
   border-radius: 12px;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02), 0 8px 16px rgba(0, 0, 0, 0.28);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 8px 16px rgba(0, 0, 0, 0.28);
   align-items: center;
   gap: 6px;
 }
@@ -380,7 +420,11 @@
   gap: 8px;
 }
 .collection-stats-grid .rewards-panel__stat {
-  background: linear-gradient(140deg, rgba(255, 232, 0, 0.08), rgba(87, 186, 255, 0.08));
+  background: linear-gradient(
+    140deg,
+    rgba(255, 232, 0, 0.08),
+    rgba(87, 186, 255, 0.08)
+  );
   border: 1px solid rgba(255, 232, 0, 0.25);
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.02),
@@ -434,7 +478,11 @@
   padding: 12px;
   border-radius: 14px;
   border: 1px solid rgba(87, 186, 255, 0.18);
-  background: linear-gradient(160deg, rgba(87, 186, 255, 0.08), rgba(0, 0, 0, 0.2));
+  background: linear-gradient(
+    160deg,
+    rgba(87, 186, 255, 0.08),
+    rgba(0, 0, 0, 0.2)
+  );
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
   display: flex;
   flex-direction: column;
@@ -490,7 +538,9 @@
   padding: 10px;
   background: rgba(15, 17, 24, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.55), inset 0 0 40px rgba(255, 232, 0, 0.1);
+  box-shadow:
+    0 16px 28px rgba(0, 0, 0, 0.55),
+    inset 0 0 40px rgba(255, 232, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -546,9 +596,15 @@
   flex-shrink: 0;
   border-radius: 14px;
   overflow: hidden;
-  background: linear-gradient(180deg, rgba(255, 232, 0, 0.4), rgba(12, 12, 20, 0.6));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 232, 0, 0.4),
+    rgba(12, 12, 20, 0.6)
+  );
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2), 0 8px 16px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.2),
+    0 8px 16px rgba(0, 0, 0, 0.3);
 }
 .rewards-panel__claim-thumbnail img {
   width: 100%;
@@ -758,8 +814,14 @@
   padding: 12px;
   border-radius: 12px;
   border: 1px solid var(--panel-border);
-  background: linear-gradient(170deg, rgba(255, 232, 0, 0.06), rgba(10, 12, 18, 0.92));
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02), 0 10px 20px rgba(0, 0, 0, 0.28);
+  background: linear-gradient(
+    170deg,
+    rgba(255, 232, 0, 0.06),
+    rgba(10, 12, 18, 0.92)
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 10px 20px rgba(0, 0, 0, 0.28);
   display: grid;
   gap: 6px;
 }
@@ -786,7 +848,11 @@
   border-radius: 12px;
 }
 .nft-rewards__table thead {
-  background: linear-gradient(120deg, rgba(255, 232, 0, 0.16), rgba(87, 186, 255, 0.16));
+  background: linear-gradient(
+    120deg,
+    rgba(255, 232, 0, 0.16),
+    rgba(87, 186, 255, 0.16)
+  );
 }
 .nft-rewards__table th,
 .nft-rewards__table td {
@@ -835,7 +901,11 @@
     linear-gradient(180deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   background-size: 120px 120px;
   opacity: 0.18;
-  mask-image: radial-gradient(circle at 50% 30%, rgba(0, 0, 0, 0.35), transparent 65%);
+  mask-image: radial-gradient(
+    circle at 50% 30%,
+    rgba(0, 0, 0, 0.35),
+    transparent 65%
+  );
 }
 .rewards-grid__surface::after {
   content: "";
@@ -843,8 +913,16 @@
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(140% 100% at 50% -10%, rgba(255, 232, 0, 0.08), transparent 58%),
-    radial-gradient(120% 80% at 20% 100%, rgba(122, 215, 255, 0.08), transparent 60%);
+    radial-gradient(
+      140% 100% at 50% -10%,
+      rgba(255, 232, 0, 0.08),
+      transparent 58%
+    ),
+    radial-gradient(
+      120% 80% at 20% 100%,
+      rgba(122, 215, 255, 0.08),
+      transparent 60%
+    );
   mix-blend-mode: screen;
   opacity: 0.45;
 }
@@ -913,8 +991,16 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(120% 90% at 12% 10%, rgba(255, 232, 0, 0.24), transparent 58%),
-    radial-gradient(110% 80% at 86% 32%, rgba(95, 219, 255, 0.18), transparent 60%);
+    radial-gradient(
+      120% 90% at 12% 10%,
+      rgba(255, 232, 0, 0.24),
+      transparent 58%
+    ),
+    radial-gradient(
+      110% 80% at 86% 32%,
+      rgba(95, 219, 255, 0.18),
+      transparent 60%
+    );
   opacity: 0.6;
   pointer-events: none;
 }
@@ -930,8 +1016,14 @@
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  background: linear-gradient(165deg, rgba(8, 12, 20, 0.65), rgba(3, 5, 12, 0.9));
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5), 0 0 14px rgba(255, 232, 0, 0.15);
+  background: linear-gradient(
+    165deg,
+    rgba(8, 12, 20, 0.65),
+    rgba(3, 5, 12, 0.9)
+  );
+  box-shadow:
+    0 15px 30px rgba(0, 0, 0, 0.5),
+    0 0 14px rgba(255, 232, 0, 0.15);
   min-width: 220px;
   text-align: center;
 }
@@ -1011,7 +1103,11 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(120% 90% at 80% 0%, rgba(95, 219, 255, 0.18), transparent 55%);
+  background: radial-gradient(
+    120% 90% at 80% 0%,
+    rgba(95, 219, 255, 0.18),
+    transparent 55%
+  );
   pointer-events: none;
 }
 
@@ -1066,7 +1162,11 @@
 .biggi-bar__fill {
   display: block;
   height: 100%;
-  background: linear-gradient(135deg, rgba(95, 219, 255, 0.9), rgba(155, 123, 255, 0.9));
+  background: linear-gradient(
+    135deg,
+    rgba(95, 219, 255, 0.9),
+    rgba(155, 123, 255, 0.9)
+  );
   box-shadow: 0 10px 18px rgba(95, 219, 255, 0.26);
 }
 
@@ -1180,18 +1280,28 @@
   text-align: left;
   position: relative;
   overflow: hidden;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
 }
 .rewards-grid__hero-card::before {
   content: "";
   position: absolute;
   inset: -40%;
-  background: radial-gradient(320px 180px at 80% 10%, rgba(255, 232, 0, 0.12), transparent 60%);
+  background: radial-gradient(
+    320px 180px at 80% 10%,
+    rgba(255, 232, 0, 0.12),
+    transparent 60%
+  );
   opacity: 0.55;
   pointer-events: none;
   z-index: 0;
 }
-.rewards-grid__hero-card > * { position: relative; z-index: 1; }
+.rewards-grid__hero-card > * {
+  position: relative;
+  z-index: 1;
+}
 .rewards-grid__hero-card:hover {
   transform: translateY(-2px);
   border-color: var(--panel-border-strong);
@@ -1233,7 +1343,11 @@
   border: 1px solid transparent;
   border-radius: 999px;
   padding: 10px 18px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.2));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(0, 0, 0, 0.2)
+  );
   color: #d7dde9;
   font-size: 0.8rem;
   font-weight: 700;
@@ -1251,14 +1365,23 @@
 .rewards-grid__tab:hover {
   color: #ffe800;
   border-color: var(--panel-border-strong);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 232, 0, 0.2);
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.32),
+    0 0 0 1px rgba(255, 232, 0, 0.2);
 }
 
 .rewards-grid__tab.is-active {
-  background: linear-gradient(145deg, rgba(255, 232, 0, 0.22), rgba(255, 232, 0, 0.08));
+  background: linear-gradient(
+    145deg,
+    rgba(255, 232, 0, 0.22),
+    rgba(255, 232, 0, 0.08)
+  );
   color: #ffe800;
   border-color: var(--panel-border-strong);
-  box-shadow: 0 12px 26px rgba(255, 232, 0, 0.22), 0 0 0 1px rgba(255, 232, 0, 0.28), 0 0 20px rgba(255, 232, 0, 0.12);
+  box-shadow:
+    0 12px 26px rgba(255, 232, 0, 0.22),
+    0 0 0 1px rgba(255, 232, 0, 0.28),
+    0 0 20px rgba(255, 232, 0, 0.12);
 }
 
 .rewards-grid__info {
@@ -1430,7 +1553,6 @@
   margin: 0;
 }
 
-
 .rewards-grid__section--token {
   padding-left: clamp(72px, 12vw, 160px);
 }
@@ -1440,7 +1562,6 @@
     padding-left: 18px;
   }
 }
-
 
 .rewards-grid__section--collection {
   padding-left: clamp(72px, 12vw, 160px);
@@ -1714,19 +1835,29 @@
   position: relative;
   overflow: hidden;
   backdrop-filter: blur(6px) saturate(115%);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 .rewards-grid__card::before {
   content: "";
   position: absolute;
   inset: -40% -40% auto auto;
   height: 60%;
-  background: radial-gradient(360px 200px at 80% 20%, rgba(255, 232, 0, 0.1), transparent 65%);
+  background: radial-gradient(
+    360px 200px at 80% 20%,
+    rgba(255, 232, 0, 0.1),
+    transparent 65%
+  );
   pointer-events: none;
   opacity: 0.6;
   z-index: 0;
 }
-.rewards-grid__card > * { position: relative; z-index: 1; }
+.rewards-grid__card > * {
+  position: relative;
+  z-index: 1;
+}
 .rewards-grid__card:hover {
   transform: translateY(-2px);
   background: var(--panel-card-hover);
@@ -1747,7 +1878,10 @@
   display: grid;
   gap: 6px;
   backdrop-filter: blur(4px);
-  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    border-color 0.16s ease;
 }
 .rewards-grid__mini-card:hover {
   transform: translateY(-1px);
@@ -1815,7 +1949,11 @@
 
 .rewards-grid__card--rainbow .rewards-grid__amount {
   border-color: rgba(255, 105, 180, 0.4);
-  background: linear-gradient(145deg, rgba(255, 77, 77, 0.25), rgba(169, 139, 255, 0.22));
+  background: linear-gradient(
+    145deg,
+    rgba(255, 77, 77, 0.25),
+    rgba(169, 139, 255, 0.22)
+  );
   color: #ffd6ff;
 }
 
@@ -1839,7 +1977,11 @@
 }
 
 .collection-claim-card {
-  background: linear-gradient(140deg, rgba(16, 22, 36, 0.94), rgba(9, 12, 18, 0.92));
+  background: linear-gradient(
+    140deg,
+    rgba(16, 22, 36, 0.94),
+    rgba(9, 12, 18, 0.92)
+  );
   border: 1px solid rgba(255, 232, 0, 0.22);
   box-shadow:
     0 20px 38px rgba(0, 0, 0, 0.45),
@@ -1856,7 +1998,11 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(160% 90% at 90% 10%, rgba(255, 232, 0, 0.12), transparent 55%);
+  background: radial-gradient(
+    160% 90% at 90% 10%,
+    rgba(255, 232, 0, 0.12),
+    transparent 55%
+  );
   pointer-events: none;
 }
 
@@ -1867,7 +2013,11 @@
 }
 
 .collection-claim__group {
-  background: linear-gradient(145deg, rgba(20, 26, 40, 0.9), rgba(12, 16, 24, 0.94));
+  background: linear-gradient(
+    145deg,
+    rgba(20, 26, 40, 0.9),
+    rgba(12, 16, 24, 0.94)
+  );
   border: 1px solid rgba(93, 220, 255, 0.24);
   border-radius: 14px;
   padding: 12px 12px 10px;
@@ -2073,9 +2223,16 @@
 
 .rewards-grid__btn--accent {
   border-color: rgba(255, 232, 0, 0.4);
-  background: linear-gradient(135deg, rgba(255, 232, 0, 0.9), rgba(255, 205, 0, 0.82));
+  background: linear-gradient(
+    135deg,
+    rgba(255, 232, 0, 0.9),
+    rgba(255, 205, 0, 0.82)
+  );
   color: #111;
-  box-shadow: 0 10px 26px rgba(255, 232, 0, 0.3), 0 0 0 1px rgba(255, 232, 0, 0.26), 0 0 24px rgba(255, 232, 0, 0.18);
+  box-shadow:
+    0 10px 26px rgba(255, 232, 0, 0.3),
+    0 0 0 1px rgba(255, 232, 0, 0.26),
+    0 0 24px rgba(255, 232, 0, 0.18);
 }
 
 .rewards-grid__btn--ghost {
@@ -2086,7 +2243,10 @@
 
 .rewards-grid__btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(255, 232, 0, 0.2), 0 0 20px rgba(255, 232, 0, 0.14);
+  box-shadow:
+    0 12px 26px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(255, 232, 0, 0.2),
+    0 0 20px rgba(255, 232, 0, 0.14);
 }
 
 .rewards-grid__btn:disabled {
@@ -2174,7 +2334,11 @@
 .rewards-grid__section--collection .rewards-grid__status-item {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, rgba(18, 22, 34, 0.96), rgba(10, 12, 20, 0.92));
+  background: linear-gradient(
+    135deg,
+    rgba(18, 22, 34, 0.96),
+    rgba(10, 12, 20, 0.92)
+  );
   border-radius: 14px;
   padding: 14px 16px;
   border: 1px solid rgba(255, 232, 0, 0.2);
@@ -2186,7 +2350,11 @@
   inset: 0;
   opacity: 0;
   transition: opacity 0.2s ease;
-  background: radial-gradient(circle at top right, rgba(255, 232, 0, 0.18), transparent 55%);
+  background: radial-gradient(
+    circle at top right,
+    rgba(255, 232, 0, 0.18),
+    transparent 55%
+  );
   pointer-events: none;
 }
 
@@ -2203,7 +2371,11 @@
 
 .rewards-grid__section--collection .rewards-grid__status-item.is-available {
   border-color: rgba(115, 255, 198, 0.55);
-  background: linear-gradient(140deg, rgba(24, 48, 40, 0.95), rgba(14, 26, 22, 0.9));
+  background: linear-gradient(
+    140deg,
+    rgba(24, 48, 40, 0.95),
+    rgba(14, 26, 22, 0.9)
+  );
   box-shadow:
     0 16px 28px rgba(12, 60, 45, 0.35),
     inset 0 0 22px rgba(115, 255, 198, 0.16);
@@ -2211,7 +2383,11 @@
 
 .rewards-grid__section--collection .rewards-grid__status-item.is-claimed {
   border-color: rgba(255, 140, 156, 0.6);
-  background: linear-gradient(140deg, rgba(54, 20, 28, 0.92), rgba(30, 10, 16, 0.9));
+  background: linear-gradient(
+    140deg,
+    rgba(54, 20, 28, 0.92),
+    rgba(30, 10, 16, 0.9)
+  );
   box-shadow:
     0 16px 28px rgba(80, 26, 36, 0.35),
     inset 0 0 22px rgba(255, 140, 156, 0.18);
@@ -2219,21 +2395,31 @@
 
 .rewards-grid__section--collection .rewards-grid__status-item.is-locked {
   border-color: rgba(138, 145, 175, 0.4);
-  background: linear-gradient(140deg, rgba(28, 32, 44, 0.96), rgba(18, 20, 30, 0.92));
+  background: linear-gradient(
+    140deg,
+    rgba(28, 32, 44, 0.96),
+    rgba(18, 20, 30, 0.92)
+  );
   box-shadow:
     0 12px 24px rgba(8, 12, 20, 0.35),
     inset 0 0 16px rgba(138, 145, 175, 0.08);
 }
 
-.rewards-grid__section--collection .rewards-grid__status-item.is-available .rewards-grid__status-label {
+.rewards-grid__section--collection
+  .rewards-grid__status-item.is-available
+  .rewards-grid__status-label {
   color: #a6ffdf;
 }
 
-.rewards-grid__section--collection .rewards-grid__status-item.is-claimed .rewards-grid__status-label {
+.rewards-grid__section--collection
+  .rewards-grid__status-item.is-claimed
+  .rewards-grid__status-label {
   color: #ffc0c8;
 }
 
-.rewards-grid__section--collection .rewards-grid__status-item.is-locked .rewards-grid__status-label {
+.rewards-grid__section--collection
+  .rewards-grid__status-item.is-locked
+  .rewards-grid__status-label {
   color: #9da3bf;
 }
 
@@ -2251,19 +2437,29 @@
   position: relative;
   overflow: hidden;
   backdrop-filter: blur(8px) saturate(120%);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
 }
 .rewards-grid__panel::before {
   content: "";
   position: absolute;
   inset: -50% 10% auto -50%;
   height: 70%;
-  background: radial-gradient(520px 240px at 40% 10%, rgba(255, 232, 0, 0.14), transparent 70%);
+  background: radial-gradient(
+    520px 240px at 40% 10%,
+    rgba(255, 232, 0, 0.14),
+    transparent 70%
+  );
   pointer-events: none;
   opacity: 0.85;
   z-index: 0;
 }
-.rewards-grid__panel > * { position: relative; z-index: 1; }
+.rewards-grid__panel > * {
+  position: relative;
+  z-index: 1;
+}
 .rewards-grid__panel:hover {
   transform: translateY(-2px);
   border-color: rgba(255, 232, 0, 0.26);
@@ -2359,7 +2555,11 @@
   padding: 12px 16px;
   border-radius: 12px;
   border: 1px solid rgba(155, 123, 255, 0.32);
-  background: linear-gradient(135deg, rgba(155, 123, 255, 0.18), rgba(155, 123, 255, 0.08));
+  background: linear-gradient(
+    135deg,
+    rgba(155, 123, 255, 0.18),
+    rgba(155, 123, 255, 0.08)
+  );
 }
 
 .rewards-grid__weights-name {

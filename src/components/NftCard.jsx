@@ -38,7 +38,10 @@ const fmtEtherNum = (v) => {
 
 const formatMatic = (value) => {
   if (value == null || Number.isNaN(Number(value))) return "--";
-  const f = new Intl.NumberFormat("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const f = new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
   return `${f.format(Number(value))} POL`;
 };
 
@@ -184,7 +187,8 @@ export default function NftCard({
 
   /* === Current block price (on-chain now) === */
   const blockIdFromTraits = React.useMemo(() => {
-    if (dynamicTraits?.blockId && Number(dynamicTraits.blockId) > 0) return Number(dynamicTraits.blockId);
+    if (dynamicTraits?.blockId && Number(dynamicTraits.blockId) > 0)
+      return Number(dynamicTraits.blockId);
     if (dynamicTraits?.linkedBlockId && Number(dynamicTraits.linkedBlockId) > 0)
       return Number(dynamicTraits.linkedBlockId);
 
@@ -197,9 +201,13 @@ export default function NftCard({
       byKey("linked block")?.value ||
       null;
 
-    if (blockColor && COLOR_TO_BLOCKID[blockColor]) return COLOR_TO_BLOCKID[blockColor];
+    if (blockColor && COLOR_TO_BLOCKID[blockColor])
+      return COLOR_TO_BLOCKID[blockColor];
 
-    if (typeof dynamicTraits?.linkedBlock === "string" && COLOR_TO_BLOCKID[dynamicTraits.linkedBlock])
+    if (
+      typeof dynamicTraits?.linkedBlock === "string" &&
+      COLOR_TO_BLOCKID[dynamicTraits.linkedBlock]
+    )
       return COLOR_TO_BLOCKID[dynamicTraits.linkedBlock];
 
     return null;
@@ -211,7 +219,9 @@ export default function NftCard({
     const loadCurrentBlockPrice = async () => {
       if (!contracts) {
         setCurrentBlockPrice(
-          mintData?.blockPrice ?? parseMatic(dynamicTraits?.currentBlockPrice) ?? null
+          mintData?.blockPrice ??
+            parseMatic(dynamicTraits?.currentBlockPrice) ??
+            null,
         );
         return;
       }
@@ -222,7 +232,11 @@ export default function NftCard({
         setLoadingBlockNow(true);
 
         // prefer reader by tokenId
-        if (reader && typeof reader.getCurrentBlockPriceByTokenId === "function" && tokenId) {
+        if (
+          reader &&
+          typeof reader.getCurrentBlockPriceByTokenId === "function" &&
+          tokenId
+        ) {
           try {
             const wei = await reader.getCurrentBlockPriceByTokenId(tokenId);
             if (!cancelled && wei != null) {
@@ -233,7 +247,11 @@ export default function NftCard({
         }
 
         // reader by blockId
-        if (reader && typeof reader.getCurrentBlockPrice === "function" && blockIdFromTraits) {
+        if (
+          reader &&
+          typeof reader.getCurrentBlockPrice === "function" &&
+          blockIdFromTraits
+        ) {
           try {
             const wei = await reader.getCurrentBlockPrice(blockIdFromTraits);
             if (!cancelled && wei != null) {
@@ -244,7 +262,11 @@ export default function NftCard({
         }
 
         // main fallbacks
-        if (main && typeof main.getCurrentBlockPriceByTokenId === "function" && tokenId) {
+        if (
+          main &&
+          typeof main.getCurrentBlockPriceByTokenId === "function" &&
+          tokenId
+        ) {
           try {
             const wei = await main.getCurrentBlockPriceByTokenId(tokenId);
             if (!cancelled && wei != null) {
@@ -253,7 +275,11 @@ export default function NftCard({
             }
           } catch (e) {}
         }
-        if (main && typeof main.getCurrentBlockPrice === "function" && blockIdFromTraits) {
+        if (
+          main &&
+          typeof main.getCurrentBlockPrice === "function" &&
+          blockIdFromTraits
+        ) {
           try {
             const wei = await main.getCurrentBlockPrice(blockIdFromTraits);
             if (!cancelled && wei != null) {
@@ -268,13 +294,17 @@ export default function NftCard({
           setCurrentBlockPrice(
             mintData?.blockPrice ??
               parseMatic(dynamicTraits?.currentBlockPrice) ??
-              parseMatic(dynamicTraits?.mintBlock)
+              parseMatic(dynamicTraits?.mintBlock),
           );
         }
       } catch (err) {
         console.warn("loadCurrentBlockPrice failed", err);
         if (!cancelled) {
-          setCurrentBlockPrice(mintData?.blockPrice ?? parseMatic(dynamicTraits?.mintBlock) ?? null);
+          setCurrentBlockPrice(
+            mintData?.blockPrice ??
+              parseMatic(dynamicTraits?.mintBlock) ??
+              null,
+          );
         }
       } finally {
         if (!cancelled) setLoadingBlockNow(false);
@@ -296,34 +326,44 @@ export default function NftCard({
 
   const derivedMintData = React.useMemo(
     () => ({
-      ticketPrice: mintData?.ticketPrice ?? parseMatic(dynamicTraits?.mintTicket),
+      ticketPrice:
+        mintData?.ticketPrice ?? parseMatic(dynamicTraits?.mintTicket),
       blockPriceNow:
         currentBlockPrice != null
           ? currentBlockPrice
-          : mintData?.blockPrice ?? parseMatic(dynamicTraits?.mintBlock),
-      finalPrice: mintData?.finalPrice ?? parseMatic(dynamicTraits?.mintFinal ?? dynamicTraits?.finalPrice),
+          : (mintData?.blockPrice ?? parseMatic(dynamicTraits?.mintBlock)),
+      finalPrice:
+        mintData?.finalPrice ??
+        parseMatic(dynamicTraits?.mintFinal ?? dynamicTraits?.finalPrice),
     }),
-    [mintData, dynamicTraits, currentBlockPrice]
+    [mintData, dynamicTraits, currentBlockPrice],
   );
 
   const attributes = React.useMemo(() => {
     const base = normaliseAttributes(metadata);
-    const dyn = Array.isArray(dynamicTraits?.attributes) ? dynamicTraits.attributes : [];
+    const dyn = Array.isArray(dynamicTraits?.attributes)
+      ? dynamicTraits.attributes
+      : [];
     return [
       ...base,
       ...dyn
-        .map((e) => ({ trait_type: String(e?.trait_type ?? ""), value: String(e?.value ?? "") }))
+        .map((e) => ({
+          trait_type: String(e?.trait_type ?? ""),
+          value: String(e?.value ?? ""),
+        }))
         .filter((e) => e.trait_type),
     ];
   }, [metadata, dynamicTraits]);
 
   const visibleAttributes = React.useMemo(
     () => (detailsOpen ? attributes : attributes.slice(0, 4)),
-    [attributes, detailsOpen]
+    [attributes, detailsOpen],
   );
 
-  const title = metadata?.name || nft?.name || (tokenId ? `#${tokenId}` : "Biggi NFT");
-  const rarityLabel = nft?.rarityRank != null ? `Rank #${nft.rarityRank}` : null;
+  const title =
+    metadata?.name || nft?.name || (tokenId ? `#${tokenId}` : "Biggi NFT");
+  const rarityLabel =
+    nft?.rarityRank != null ? `Rank #${nft.rarityRank}` : null;
   const imageSrc = image ? ipfsToHttp(image) : PLACEHOLDER_IMG;
 
   const handleToggleDetails = () => {
@@ -365,7 +405,9 @@ export default function NftCard({
       <div className="nft-card__body">
         <div className="nft-card__header">
           <h3 className="nft-card__title">{title}</h3>
-          {rarityLabel && <span className="nft-card__rarity">{rarityLabel}</span>}
+          {rarityLabel && (
+            <span className="nft-card__rarity">{rarityLabel}</span>
+          )}
         </div>
 
         <div className="nft-card__section">
@@ -373,15 +415,27 @@ export default function NftCard({
           <div className="nft-card__stats">
             <div>
               <span>Ticket</span>
-              <strong>{loadingMint ? "..." : formatMatic(derivedMintData?.ticketPrice ?? 0)}</strong>
+              <strong>
+                {loadingMint
+                  ? "..."
+                  : formatMatic(derivedMintData?.ticketPrice ?? 0)}
+              </strong>
             </div>
             <div title="Current block price">
               <span>Block (now)</span>
-              <strong>{loadingBlockNow ? "..." : formatMatic(derivedMintData?.blockPriceNow ?? 0)}</strong>
+              <strong>
+                {loadingBlockNow
+                  ? "..."
+                  : formatMatic(derivedMintData?.blockPriceNow ?? 0)}
+              </strong>
             </div>
             <div>
               <span>Final</span>
-              <strong>{loadingMint ? "..." : formatMatic(derivedMintData?.finalPrice ?? 0)}</strong>
+              <strong>
+                {loadingMint
+                  ? "..."
+                  : formatMatic(derivedMintData?.finalPrice ?? 0)}
+              </strong>
             </div>
           </div>
         </div>
@@ -397,7 +451,10 @@ export default function NftCard({
           {attributes.length > 0 && (
             <div className="nft-card__attributes">
               {visibleAttributes.map((attr, idx) => (
-                <div key={`${attr.trait_type}-${idx}`} className="nft-card__attribute">
+                <div
+                  key={`${attr.trait_type}-${idx}`}
+                  className="nft-card__attribute"
+                >
                   <span>{attr.trait_type}</span>
                   <strong>{attr.value}</strong>
                 </div>
@@ -407,11 +464,20 @@ export default function NftCard({
         </div>
 
         <div className="nft-card__actions">
-          <button type="button" className="nft-card__toggle" onClick={handleToggleDetails}>
+          <button
+            type="button"
+            className="nft-card__toggle"
+            onClick={handleToggleDetails}
+          >
             {detailsOpen ? "Hide details" : "Show details"}
           </button>
           {metadata?.external_url && (
-            <a className="nft-card__external" href={metadata.external_url} target="_blank" rel="noreferrer">
+            <a
+              className="nft-card__external"
+              href={metadata.external_url}
+              target="_blank"
+              rel="noreferrer"
+            >
               External link
             </a>
           )}

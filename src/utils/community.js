@@ -7,8 +7,9 @@ export async function fetchCommunityCenterStats() {
     if (!distributor) return {};
 
     const communityCenterAddr =
-      (typeof distributor.communityCenter === "function" ? await distributor.communityCenter().catch(() => null) : null) ||
-      null;
+      (typeof distributor.communityCenter === "function"
+        ? await distributor.communityCenter().catch(() => null)
+        : null) || null;
 
     const pendingCommunityPromise =
       typeof distributor.pendingCommunity === "function"
@@ -23,7 +24,9 @@ export async function fetchCommunityCenterStats() {
       typeof distributor.communityBalance === "function"
         ? distributor.communityBalance().catch(() => null)
         : communityCenterAddr && distributor.provider
-          ? distributor.provider.getBalance(communityCenterAddr).catch(() => null)
+          ? distributor.provider
+              .getBalance(communityCenterAddr)
+              .catch(() => null)
           : Promise.resolve(null);
 
     const [pendingCommunity, communityPoolBalance] = await Promise.all([

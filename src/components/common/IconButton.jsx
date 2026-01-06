@@ -10,13 +10,16 @@ export default function IconButton({
   disabled = false,
   style,
 }) {
-  const handleKey = React.useCallback((e) => {
-    if (disabled) return;
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      onClick?.(e);
-    }
-  }, [disabled, onClick]);
+  const handleKey = React.useCallback(
+    (e) => {
+      if (disabled) return;
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onClick?.(e);
+      }
+    },
+    [disabled, onClick],
+  );
 
   return (
     <img

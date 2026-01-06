@@ -10,7 +10,12 @@ const TokenFlow = ({ flows = [] }) => (
     </header>
     <div className="token-flow__rows">
       {flows.map((flow) => (
-        <ValueRow key={flow.label} label={flow.label} value={flow.amount} hint={flow.hint} />
+        <ValueRow
+          key={flow.label}
+          label={flow.label}
+          value={flow.amount}
+          hint={flow.hint}
+        />
       ))}
     </div>
   </section>

@@ -61,7 +61,7 @@ export default function AppCore({
         } catch {}
       }, delay);
     },
-    [fetchStats]
+    [fetchStats],
   );
 
   const scheduleFetchRewards = React.useCallback(
@@ -74,7 +74,7 @@ export default function AppCore({
         } catch {}
       }, delay);
     },
-    [fetchRewards]
+    [fetchRewards],
   );
 
   const attachEventListeners = useContractListeners({
@@ -124,7 +124,13 @@ export default function AppCore({
     return () => {
       cancelled = true;
     };
-  }, [fetchStats, fetchRewards, fetchLastMinted, refreshVRFPanel, fetchCountdownMeta]);
+  }, [
+    fetchStats,
+    fetchRewards,
+    fetchLastMinted,
+    refreshVRFPanel,
+    fetchCountdownMeta,
+  ]);
 
   // VRF pending polling
   React.useEffect(() => {

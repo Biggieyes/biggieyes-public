@@ -32,7 +32,11 @@ export default function useReserve() {
         cacheKey,
         async () => {
           const fmt = (v) => {
-            try { return ethers.utils.formatEther(v); } catch { return "0"; }
+            try {
+              return ethers.utils.formatEther(v);
+            } catch {
+              return "0";
+            }
           };
 
           const [
@@ -61,7 +65,7 @@ export default function useReserve() {
             maticBalance: fmt(maticBalance),
           };
         },
-        { force: options?.force === true }
+        { force: options?.force === true },
       );
 
       setData(snapshot);

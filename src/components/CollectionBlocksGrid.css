@@ -11,9 +11,21 @@
   position: relative;
   background:
     linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.22)),
-    radial-gradient(1000px 500px at 90% -10%, rgba(255, 232, 0, 0.1), transparent 60%),
-    radial-gradient(900px 480px at -10% 120%, rgba(155, 123, 255, 0.1), transparent 60%),
-    radial-gradient(800px 440px at 50% 120%, rgba(39, 217, 210, 0.1), transparent 60%),
+    radial-gradient(
+      1000px 500px at 90% -10%,
+      rgba(255, 232, 0, 0.1),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 480px at -10% 120%,
+      rgba(155, 123, 255, 0.1),
+      transparent 60%
+    ),
+    radial-gradient(
+      800px 440px at 50% 120%,
+      rgba(39, 217, 210, 0.1),
+      transparent 60%
+    ),
     url("/images/bg-tab0.png");
   background-size: cover;
   background-repeat: no-repeat;
@@ -40,7 +52,11 @@
     linear-gradient(180deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   background-size: 120px 120px;
   opacity: 0.35;
-  mask-image: radial-gradient(circle at 50% 30%, rgba(0, 0, 0, 0.35), transparent 65%);
+  mask-image: radial-gradient(
+    circle at 50% 30%,
+    rgba(0, 0, 0, 0.35),
+    transparent 65%
+  );
 }
 
 .collection-grid__surface > * {
@@ -70,54 +86,59 @@
 .collection-grid__section-line {
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, var(--section-accent, #ffe800), transparent);
+  background: linear-gradient(
+    90deg,
+    var(--section-accent, #ffe800),
+    transparent
+  );
   opacity: 0.85;
 }
 
 /* Force yellow borders across collection containers and panels */
-.collection-grid :is(
-  .collection-grid__surface,
-  .collection-grid__header,
-  .collection-top-panel,
-  .collection-hero__card,
-  .collection-grid__tabs,
-  .collection-grid__tab,
-  .collection-grid__info-toggle,
-  .collection-grid__info,
-  .collection-grid__info-column,
-  .collection-grid__table-wrapper,
-  .collection-grid__table,
-  .collection-grid__table th,
-  .collection-grid__table td,
-  .collection-grid__cards-panel,
-  .collection-grid__card,
-  .collection-grid__card-header,
-  .collection-grid__thumb img,
-  .collection-grid__panel,
-  .collection-grid__panel--glass,
-  .collection-grid__panel--glass-inner,
-  .collection-grid__stat-item,
-  .collection-grid__stat-card,
-  .collection-grid__summary-card,
-  .collection-grid__future-card,
-  .collection-grid__modal-content,
-  .collection-grid__modal-item,
-  .collection-grid__future-modal,
-  .collection-grid__onchain-warning,
-  .collection-grid__chart-row,
-  .collection-grid__micro-chart,
-  .collection-grid__sparkline,
-  .collection-grid__card-small,
-  .collection-grid__value-chip,
-  .collection-grid__detail-pill,
-  .collection-grid__diff,
-  .collection-grid__key-values div,
-  .block-card__title,
-  .block-card__media-shell,
-  .block-card__stat,
-  .block-card__badge,
-  .block-card__stat-chip
-) {
+.collection-grid
+  :is(
+    .collection-grid__surface,
+    .collection-grid__header,
+    .collection-top-panel,
+    .collection-hero__card,
+    .collection-grid__tabs,
+    .collection-grid__tab,
+    .collection-grid__info-toggle,
+    .collection-grid__info,
+    .collection-grid__info-column,
+    .collection-grid__table-wrapper,
+    .collection-grid__table,
+    .collection-grid__table th,
+    .collection-grid__table td,
+    .collection-grid__cards-panel,
+    .collection-grid__card,
+    .collection-grid__card-header,
+    .collection-grid__thumb img,
+    .collection-grid__panel,
+    .collection-grid__panel--glass,
+    .collection-grid__panel--glass-inner,
+    .collection-grid__stat-item,
+    .collection-grid__stat-card,
+    .collection-grid__summary-card,
+    .collection-grid__future-card,
+    .collection-grid__modal-content,
+    .collection-grid__modal-item,
+    .collection-grid__future-modal,
+    .collection-grid__onchain-warning,
+    .collection-grid__chart-row,
+    .collection-grid__micro-chart,
+    .collection-grid__sparkline,
+    .collection-grid__card-small,
+    .collection-grid__value-chip,
+    .collection-grid__detail-pill,
+    .collection-grid__diff,
+    .collection-grid__key-values div,
+    .block-card__title,
+    .block-card__media-shell,
+    .block-card__stat,
+    .block-card__badge,
+    .block-card__stat-chip
+  ) {
   border-color: var(--collection-border) !important;
 }
 
@@ -205,7 +226,11 @@
   padding: 14px 16px;
   border-radius: 16px;
   background:
-    linear-gradient(135deg, rgba(90, 228, 255, 0.05), rgba(163, 140, 255, 0.04)),
+    linear-gradient(
+      135deg,
+      rgba(90, 228, 255, 0.05),
+      rgba(163, 140, 255, 0.04)
+    ),
     rgba(13, 16, 28, 0.22);
   border: 1px solid rgba(113, 205, 255, 0.12);
   box-shadow:
@@ -220,8 +245,16 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(120% 90% at 18% 12%, rgba(255, 255, 255, 0.08), transparent 52%),
-    radial-gradient(110% 80% at 82% 0%, rgba(95, 219, 255, 0.28), transparent 52%);
+    radial-gradient(
+      120% 90% at 18% 12%,
+      rgba(255, 255, 255, 0.08),
+      transparent 52%
+    ),
+    radial-gradient(
+      110% 80% at 82% 0%,
+      rgba(95, 219, 255, 0.28),
+      transparent 52%
+    );
   pointer-events: none;
 }
 
@@ -279,7 +312,11 @@
   border: 1px solid transparent !important;
   border-radius: 999px;
   padding: 10px 18px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.2));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(0, 0, 0, 0.2)
+  );
   color: #d7dde9;
   font-size: 0.8rem;
   font-weight: 700;
@@ -297,11 +334,17 @@
 .collection-grid__tab:hover {
   color: #ffe800;
   border-color: var(--panel-border-strong) !important;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 232, 0, 0.2);
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.32),
+    0 0 0 1px rgba(255, 232, 0, 0.2);
 }
 
 .collection-grid__tab.is-active {
-  background: linear-gradient(145deg, rgba(255, 232, 0, 0.22), rgba(255, 232, 0, 0.08));
+  background: linear-gradient(
+    145deg,
+    rgba(255, 232, 0, 0.22),
+    rgba(255, 232, 0, 0.08)
+  );
   color: #ffe800;
   border-color: var(--panel-border-strong) !important;
   box-shadow:
@@ -316,22 +359,36 @@
 
 .collection-grid__tab--future {
   color: #ffe800;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.2));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(0, 0, 0, 0.2)
+  );
   border-color: rgba(255, 232, 0, 0.22) !important;
   box-shadow: none;
 }
 .collection-grid__tab--future:hover {
   color: #ffe800;
   border-color: var(--panel-border-strong) !important;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.2));
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 232, 0, 0.2);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(0, 0, 0, 0.2)
+  );
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.32),
+    0 0 0 1px rgba(255, 232, 0, 0.2);
 }
 
 .collection-grid__info-toggle {
   padding: 10px 16px;
   border-radius: 12px;
   border: 1px solid rgba(255, 232, 0, 0.28);
-  background: linear-gradient(150deg, rgba(255, 232, 0, 0.12), rgba(93, 220, 255, 0.1));
+  background: linear-gradient(
+    150deg,
+    rgba(255, 232, 0, 0.12),
+    rgba(93, 220, 255, 0.1)
+  );
   color: #f6f7fb;
   font-size: 0.82rem;
   font-weight: 800;
@@ -453,12 +510,18 @@
 }
 
 .collection-grid__info .collection-grid__table--info-guide tbody tr,
-.collection-grid__info .collection-grid__table--info-guide tbody tr:first-child {
+.collection-grid__info
+  .collection-grid__table--info-guide
+  tbody
+  tr:first-child {
   grid-template-columns: minmax(120px, 0.9fr) minmax(0, 1.6fr);
 }
 
 .collection-grid__info .collection-grid__table--info-blocks tbody tr,
-.collection-grid__info .collection-grid__table--info-blocks tbody tr:first-child {
+.collection-grid__info
+  .collection-grid__table--info-blocks
+  tbody
+  tr:first-child {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
@@ -512,7 +575,10 @@
 
 .collection-grid__table tbody tr {
   display: grid;
-  grid-template-columns: minmax(200px, 1.1fr) minmax(160px, 0.9fr) minmax(220px, 1fr) minmax(200px, 1fr);
+  grid-template-columns: minmax(200px, 1.1fr) minmax(160px, 0.9fr) minmax(
+      220px,
+      1fr
+    ) minmax(200px, 1fr);
   gap: 10px;
   align-items: center;
   padding: 14px 16px;
@@ -524,14 +590,25 @@
   box-shadow:
     0 12px 24px rgba(0, 0, 0, 0.35),
     inset 0 0 0 1px rgba(255, 255, 255, 0.02);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
 }
 
 .collection-grid__table tbody tr:first-child {
   grid-template-columns: 1fr;
   background:
-    radial-gradient(120% 80% at 15% 10%, rgba(255, 232, 0, 0.12), transparent 55%),
-    radial-gradient(120% 80% at 80% 20%, rgba(87, 186, 255, 0.12), transparent 60%),
+    radial-gradient(
+      120% 80% at 15% 10%,
+      rgba(255, 232, 0, 0.12),
+      transparent 55%
+    ),
+    radial-gradient(
+      120% 80% at 80% 20%,
+      rgba(87, 186, 255, 0.12),
+      transparent 60%
+    ),
     rgba(9, 11, 16, 0.92);
 }
 
@@ -612,7 +689,11 @@
   color: #111;
   padding: 8px 12px;
   border-radius: 12px;
-  background: linear-gradient(145deg, rgba(255, 232, 0, 0.9), rgba(87, 186, 255, 0.9));
+  background: linear-gradient(
+    145deg,
+    rgba(255, 232, 0, 0.9),
+    rgba(87, 186, 255, 0.9)
+  );
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
 }
 
@@ -708,8 +789,7 @@
   background:
     linear-gradient(180deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.75)),
     linear-gradient(135deg, rgba(87, 186, 255, 0.08), rgba(72, 255, 199, 0.06)),
-    url("/images/bg-tab0.png"),
-    rgba(11, 13, 18, 0.82);
+    url("/images/bg-tab0.png"), rgba(11, 13, 18, 0.82);
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
@@ -780,9 +860,17 @@
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(120deg, rgba(255, 232, 0, 0.35), rgba(95, 219, 255, 0.25));
-  -webkit-mask: linear-gradient(#000, #000) content-box, linear-gradient(#000, #000);
-  mask: linear-gradient(#000, #000) content-box, linear-gradient(#000, #000);
+  background: linear-gradient(
+    120deg,
+    rgba(255, 232, 0, 0.35),
+    rgba(95, 219, 255, 0.25)
+  );
+  -webkit-mask:
+    linear-gradient(#000, #000) content-box,
+    linear-gradient(#000, #000);
+  mask:
+    linear-gradient(#000, #000) content-box,
+    linear-gradient(#000, #000);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   opacity: 0.65;
@@ -804,7 +892,9 @@
   text-align: center;
   background: rgba(255, 255, 255, 0.02);
   box-shadow: inset 0 0 0 1px rgba(255, 232, 0, 0.14);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .collection-grid__card.is-hovered .collection-grid__card-header,
@@ -1073,7 +1163,11 @@
   --collection-border: rgba(255, 92, 62, 0.45);
   border-color: rgba(255, 92, 62, 0.45);
   background:
-    radial-gradient(140% 120% at 10% -20%, rgba(255, 92, 62, 0.2), transparent 55%),
+    radial-gradient(
+      140% 120% at 10% -20%,
+      rgba(255, 92, 62, 0.2),
+      transparent 55%
+    ),
     linear-gradient(180deg, rgba(18, 6, 8, 0.96), rgba(7, 3, 6, 0.96));
   box-shadow:
     0 18px 40px rgba(0, 0, 0, 0.55),
@@ -1107,8 +1201,16 @@
 
 .collection-grid__panel--inferno .collection-grid__table tbody tr:first-child {
   background:
-    radial-gradient(120% 80% at 12% 15%, rgba(255, 92, 62, 0.18), transparent 60%),
-    radial-gradient(120% 80% at 85% 20%, rgba(255, 232, 0, 0.12), transparent 62%),
+    radial-gradient(
+      120% 80% at 12% 15%,
+      rgba(255, 92, 62, 0.18),
+      transparent 60%
+    ),
+    radial-gradient(
+      120% 80% at 85% 20%,
+      rgba(255, 232, 0, 0.12),
+      transparent 62%
+    ),
     rgba(8, 6, 10, 0.96);
 }
 
@@ -1121,7 +1223,11 @@
 
 .collection-grid__panel--inferno .collection-grid__metric-label {
   color: #ffe800;
-  background: linear-gradient(145deg, rgba(45, 6, 8, 0.92), rgba(15, 4, 7, 0.92));
+  background: linear-gradient(
+    145deg,
+    rgba(45, 6, 8, 0.92),
+    rgba(15, 4, 7, 0.92)
+  );
   border: 1px solid rgba(255, 92, 62, 0.45);
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45);
 }
@@ -1320,7 +1426,11 @@
   padding: 12px 18px;
   border-radius: 12px;
   border: 1px solid rgba(255, 232, 0, 0.35);
-  background: linear-gradient(135deg, rgba(255, 232, 0, 0.9), rgba(255, 205, 0, 0.85));
+  background: linear-gradient(
+    135deg,
+    rgba(255, 232, 0, 0.9),
+    rgba(255, 205, 0, 0.85)
+  );
   color: #111;
   font-weight: 800;
   text-transform: uppercase;
@@ -1515,7 +1625,11 @@
   max-width: 1000px;
   padding: 20px;
   border-radius: 18px;
-  background: linear-gradient(150deg, rgba(12, 14, 20, 0.9), rgba(6, 8, 14, 0.9));
+  background: linear-gradient(
+    150deg,
+    rgba(12, 14, 20, 0.9),
+    rgba(6, 8, 14, 0.9)
+  );
   border: 1px solid rgba(255, 232, 0, 0.2);
   box-shadow:
     0 20px 40px rgba(0, 0, 0, 0.55),
@@ -1773,10 +1887,15 @@
 }
 
 .collection-grid__micro-chart-track::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.15) 45%, transparent 90%);
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.15) 45%,
+    transparent 90%
+  );
   mix-blend-mode: screen;
   pointer-events: none;
 }
@@ -1952,7 +2071,11 @@
   padding: 8px 12px;
   border-radius: 8px;
   border: 1px solid rgba(255, 232, 0, 0.18);
-  background: linear-gradient(135deg, rgba(255, 232, 0, 0.95), rgba(255, 205, 0, 0.85));
+  background: linear-gradient(
+    135deg,
+    rgba(255, 232, 0, 0.95),
+    rgba(255, 205, 0, 0.85)
+  );
   color: #111;
   font-weight: 700;
   cursor: pointer;
@@ -2137,18 +2260,17 @@
     justify-content: space-between;
   }
 
-
-@media (max-width: 1100px) {
-  .collection-grid__cards {
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  @media (max-width: 1100px) {
+    .collection-grid__cards {
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
   }
-}
 
-@media (max-width: 700px) {
-  .collection-grid__cards {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  @media (max-width: 700px) {
+    .collection-grid__cards {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
   }
-}
   .collection-grid__tab {
     flex: 1;
     text-align: center;

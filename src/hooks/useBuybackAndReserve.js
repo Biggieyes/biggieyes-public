@@ -40,8 +40,20 @@ export default function useBuybackAndReserve() {
     dripLM: dripLM.data,
 
     // pro stav UI
-    loading: policy.loading || reserve.loading || treasury.loading || buyback.loading || dripDistributor.loading || dripLM.loading,
-    error: policy.error || reserve.error || treasury.error || buyback.error || dripDistributor.error || dripLM.error,
+    loading:
+      policy.loading ||
+      reserve.loading ||
+      treasury.loading ||
+      buyback.loading ||
+      dripDistributor.loading ||
+      dripLM.loading,
+    error:
+      policy.error ||
+      reserve.error ||
+      treasury.error ||
+      buyback.error ||
+      dripDistributor.error ||
+      dripLM.error,
 
     refreshAll,
     refreshPolicy: policy.refresh,

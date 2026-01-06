@@ -1,7 +1,7 @@
 import { Contract, ethers } from "ethers";
 import { getProvider } from "../../web3/provider";
 import { getTokenDexContracts } from "../../web3/contracts/tokenDex.contracts";
-import UniswapV2Pair from '../../config/abi/UniswapV2Pair.json';
+import UniswapV2Pair from "../../config/abi/UniswapV2Pair.json";
 
 async function _callOptional(method, fallback = null) {
   if (typeof method !== "function") return fallback;
@@ -15,24 +15,46 @@ async function _callOptional(method, fallback = null) {
 
 export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
   const signerOrProvider = provider || getProvider();
-  const { token, router, factory, pair: configuredPair, priceFeed, addrs } = getTokenDexContracts(chainId, signerOrProvider);
+  const {
+    token,
+    router,
+    factory,
+    pair: configuredPair,
+    priceFeed,
+    addrs,
+  } = getTokenDexContracts(chainId, signerOrProvider);
 
   const decimals = (await _callOptional(() => token.decimals(), 18)) || 18;
   const oneToken = ethers.utils.parseUnits("1", decimals);
-  const wethAddress = addrs.weth || (await _callOptional(() => router.WETH(), null));
-  const routerFactory = addrs.factory || (await _callOptional(() => router.factory(), null));
+  const wethAddress =
+    addrs.weth || (await _callOptional(() => router.WETH(), null));
+  const routerFactory =
+    addrs.factory || (await _callOptional(() => router.factory(), null));
   const routerAmountsOut = await _callOptional(
-    () => (wethAddress ? router.getAmountsOut(oneToken, [token.address, wethAddress]) : null),
+    () =>
+      wethAddress
+        ? router.getAmountsOut(oneToken, [token.address, wethAddress])
+        : null,
     null,
   );
 
   let pairContract = configuredPair;
   let resolvedPairAddress = addrs.pairAddress || null;
   if (!pairContract && factory && wethAddress) {
-    const remotePairAddress = await _callOptional(() => factory.getPair(token.address, wethAddress), null);
-    if (remotePairAddress && remotePairAddress !== ethers.constants.AddressZero) {
+    const remotePairAddress = await _callOptional(
+      () => factory.getPair(token.address, wethAddress),
+      null,
+    );
+    if (
+      remotePairAddress &&
+      remotePairAddress !== ethers.constants.AddressZero
+    ) {
       resolvedPairAddress = remotePairAddress;
-      pairContract = new Contract(remotePairAddress, UniswapV2Pair, signerOrProvider);
+      pairContract = new Contract(
+        remotePairAddress,
+        UniswapV2Pair,
+        signerOrProvider,
+      );
     }
   }
 
@@ -45,10 +67,18 @@ export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
       ])
     : [null, null, null, null];
 
-  const priceFeedRound = priceFeed ? await _callOptional(() => priceFeed.latestRoundData()) : null;
-  const priceFeedReserves = priceFeed ? await _callOptional(() => priceFeed.readReserves()) : null;
-  const priceFeedPair = priceFeed ? await _callOptional(() => priceFeed.pair()) : null;
-  const priceFeedDecimals = priceFeed ? await _callOptional(() => priceFeed.decimals(), null) : null;
+  const priceFeedRound = priceFeed
+    ? await _callOptional(() => priceFeed.latestRoundData())
+    : null;
+  const priceFeedReserves = priceFeed
+    ? await _callOptional(() => priceFeed.readReserves())
+    : null;
+  const priceFeedPair = priceFeed
+    ? await _callOptional(() => priceFeed.pair())
+    : null;
+  const priceFeedDecimals = priceFeed
+    ? await _callOptional(() => priceFeed.decimals(), null)
+    : null;
 
   const [
     name,
@@ -79,11 +109,21 @@ export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
     dripDistributorBalance,
     rewardsBalance,
   ] = await Promise.all([
-    addrs.reserve ? _callOptional(() => token.balanceOf(addrs.reserve), null) : null,
-    addrs.liquidityVault ? _callOptional(() => token.balanceOf(addrs.liquidityVault), null) : null,
-    addrs.treasury ? _callOptional(() => token.balanceOf(addrs.treasury), null) : null,
-    dripDistributorAddress ? _callOptional(() => token.balanceOf(dripDistributorAddress), null) : null,
-    tokenRewardsAddress ? _callOptional(() => token.balanceOf(tokenRewardsAddress), null) : null,
+    addrs.reserve
+      ? _callOptional(() => token.balanceOf(addrs.reserve), null)
+      : null,
+    addrs.liquidityVault
+      ? _callOptional(() => token.balanceOf(addrs.liquidityVault), null)
+      : null,
+    addrs.treasury
+      ? _callOptional(() => token.balanceOf(addrs.treasury), null)
+      : null,
+    dripDistributorAddress
+      ? _callOptional(() => token.balanceOf(dripDistributorAddress), null)
+      : null,
+    tokenRewardsAddress
+      ? _callOptional(() => token.balanceOf(tokenRewardsAddress), null)
+      : null,
   ]);
 
   return {

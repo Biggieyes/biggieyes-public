@@ -25,19 +25,24 @@ export const parsePrice = (value) => {
  * Formatuje cenu pro zobrazení
  */
 export const formatPrice = (v) =>
-  typeof v === "number" && Number.isFinite(v) ? `${Math.round(v)} POL` : FALLBACK_VALUE;
+  typeof v === "number" && Number.isFinite(v)
+    ? `${Math.round(v)} POL`
+    : FALLBACK_VALUE;
 
 /**
  * Formatuje počet pro zobrazení
  */
 export const formatCount = (v) =>
-  typeof v === "number" && Number.isFinite(v) ? String(Math.round(v)) : FALLBACK_VALUE;
+  typeof v === "number" && Number.isFinite(v)
+    ? String(Math.round(v))
+    : FALLBACK_VALUE;
 
 /**
  * Počítá rozdíl mezi aktuální a base cenou
  */
 export const computeDiff = (currentPrice, basePrice) => {
-  if (!Number.isFinite(currentPrice) || !Number.isFinite(basePrice)) return null;
+  if (!Number.isFinite(currentPrice) || !Number.isFinite(basePrice))
+    return null;
   const delta = currentPrice - basePrice;
   const percent = basePrice === 0 ? 0 : (delta / basePrice) * 100;
   return {
@@ -50,12 +55,14 @@ export const computeDiff = (currentPrice, basePrice) => {
 /**
  * Validuje, zda je cena platná
  */
-export const isValidPrice = (price) => typeof price === "number" && Number.isFinite(price);
+export const isValidPrice = (price) =>
+  typeof price === "number" && Number.isFinite(price);
 
 /**
  * Validuje, zda je počet platný
  */
-export const isValidCount = (count) => typeof count === "number" && Number.isFinite(count);
+export const isValidCount = (count) =>
+  typeof count === "number" && Number.isFinite(count);
 
 /**
  * Bezpečně volá async funkci s fallbackem

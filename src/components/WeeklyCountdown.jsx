@@ -33,7 +33,8 @@ export default function WeeklyCountdown({
   const segments = breakdown(remaining);
   const percent = Math.min(100, Math.max(0, info.percentComplete ?? 0));
   const statusKey = info.status || "claimable";
-  const badge = STATUS_MAP[info.error ? "error" : statusKey] || STATUS_MAP.claimable;
+  const badge =
+    STATUS_MAP[info.error ? "error" : statusKey] || STATUS_MAP.claimable;
   const hasError = Boolean(info.error);
 
   const timerDigits = React.useMemo(
@@ -43,16 +44,20 @@ export default function WeeklyCountdown({
       { label: "MM", value: formatNumber(segments.mm) },
       { label: "SS", value: formatNumber(segments.ss) },
     ],
-    [segments]
+    [segments],
   );
 
   const badgeClass = `wc-badge wc-badge--${badge.tone}`;
   const metaLine = info.blockNumber
     ? `Authoritative by block #${info.blockNumber} (UTC)`
     : "Authoritative clock (UTC)";
-  const lastSync = info.lastSync ? new Date(info.lastSync).toLocaleString() : "-";
+  const lastSync = info.lastSync
+    ? new Date(info.lastSync).toLocaleString()
+    : "-";
   const buttonLabel = claimSuccess ? "Claimed!" : "Claim";
-  const weekLabel = info.currentWeek ? `Week ${info.currentWeek}` : "Week in progress";
+  const weekLabel = info.currentWeek
+    ? `Week ${info.currentWeek}`
+    : "Week in progress";
   const remainingLabel = `${pad(segments.dd)}d ${pad(segments.hh)}h ${pad(segments.mm)}m ${pad(segments.ss)}s`;
   const statusLabel = badge.label;
   const progressLabel = `${percent.toFixed(0)}% complete`;
@@ -141,7 +146,9 @@ export default function WeeklyCountdown({
           <span>{isClaiming ? "Waiting for mint..." : buttonLabel}</span>
         </button>
         {info.error && <div className="wc-error">{info.error}</div>}
-        {claimSuccess && <div className="wc-toast">Claim confirmed! Re-syncing...</div>}
+        {claimSuccess && (
+          <div className="wc-toast">Claim confirmed! Re-syncing...</div>
+        )}
       </div>
     </div>
   );

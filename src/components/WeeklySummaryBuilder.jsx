@@ -56,7 +56,11 @@ export default function WeeklySummaryBuilder({ onEntries }) {
         />
       </div>
       <div className="moderator-center__actions">
-        <button type="button" className="biggi-btn biggi-btn--ghost" onClick={loadSummary}>
+        <button
+          type="button"
+          className="biggi-btn biggi-btn--ghost"
+          onClick={loadSummary}
+        >
           Load from Supabase
         </button>
       </div>

@@ -88,30 +88,32 @@ export function Web3Provider({ children }) {
         await refresh();
       }
     },
-    [refresh]
+    [refresh],
   );
 
   /** Primary connect for MetaMask/injected. */
-  const connectMetaMask = React.useCallback(
-    async () => {
-      const eth = pickInjectedProvider();
-      if (!eth) throw new Error("Wallet is not available");
-      setIsConnecting(true);
-      try {
-        await eth.request({ method: "eth_requestAccounts" });
-        const chainHex = await eth.request({ method: "eth_chainId" }).catch(() => null);
-        const currentId = typeof chainHex === "string" ? Number.parseInt(chainHex, 16) : undefined;
-        if (currentId !== AMOY.chainId) {
-          await ensureChain(AMOY.chainId);
-        } else {
-          await refresh();
-        }
-      } finally {
-        setIsConnecting(false);
+  const connectMetaMask = React.useCallback(async () => {
+    const eth = pickInjectedProvider();
+    if (!eth) throw new Error("Wallet is not available");
+    setIsConnecting(true);
+    try {
+      await eth.request({ method: "eth_requestAccounts" });
+      const chainHex = await eth
+        .request({ method: "eth_chainId" })
+        .catch(() => null);
+      const currentId =
+        typeof chainHex === "string"
+          ? Number.parseInt(chainHex, 16)
+          : undefined;
+      if (currentId !== AMOY.chainId) {
+        await ensureChain(AMOY.chainId);
+      } else {
+        await refresh();
       }
-    },
-    [ensureChain, refresh]
-  );
+    } finally {
+      setIsConnecting(false);
+    }
+  }, [ensureChain, refresh]);
 
   const disconnect = React.useCallback(() => {
     setSigner(null);

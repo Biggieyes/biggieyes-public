@@ -12,8 +12,16 @@ import {
   BACKGROUND_BONUSES,
 } from "../utils/shared";
 import { readJsonFromURI, resolveImageUrl } from "../utils/ipfs";
-import { mergeAttrs, getCachedPriceAttrs, canonBackgroundName, backgroundIndexFromAny } from "../utils/metadata";
-import { readGalleryCache, saveGalleryCache } from "../services/gallery/gallery.cache";
+import {
+  mergeAttrs,
+  getCachedPriceAttrs,
+  canonBackgroundName,
+  backgroundIndexFromAny,
+} from "../utils/metadata";
+import {
+  readGalleryCache,
+  saveGalleryCache,
+} from "../services/gallery/gallery.cache";
 import { mergeGalleryLists } from "../services/gallery/gallery.merge";
 
 const TOKEN_URI_CACHE_LIMIT = 800;
@@ -82,7 +90,10 @@ export function useWalletAssets(params) {
     const onlyTickets = [];
     for (const tid of tokenIds) {
       try {
-        const isT = typeof contract?.isTicket === "function" ? await contract.isTicket(tid) : false;
+        const isT =
+          typeof contract?.isTicket === "function"
+            ? await contract.isTicket(tid)
+            : false;
         if (isT) onlyTickets.push(ethers.BigNumber.from(tid));
       } catch (err) {
         console.debug("findTicketsViaLogs isTicket check failed", err);
@@ -91,46 +102,52 @@ export function useWalletAssets(params) {
     return onlyTickets;
   }, []);
 
-  const fetchMyTickets = React.useCallback(async (addr) => {
-    try {
-      const contract = getReadOnlyContract();
-
-      let ids = [];
+  const fetchMyTickets = React.useCallback(
+    async (addr) => {
       try {
-        if (typeof contract.findTicket === "function") {
-          ids = await contract.findTicket(addr);
-        } else {
-          ids = await findTicketsViaLogs(contract, addr);
-        }
-      } catch (err) {
-        console.debug("fetchMyTickets findTicket fallback triggered", err);
-        ids = await findTicketsViaLogs(contract, addr);
-      }
+        const contract = getReadOnlyContract();
 
-      const metas = await mapLimit(ids, 4, async (idBN) => {
-        const id = idBN.toString();
-        let meta = { name: `Ticket #${id}`, description: "Redeem this ticket to mint a BiggiEyes NFT." };
-        let image = "/images/Biggi.png";
+        let ids = [];
         try {
-          const uri = await getTokenUriCached(contract, idBN);
-          const j = await readJsonFromURI(uri);
-          if (j) {
-            meta = j;
-            const imgUrl = j?.image || j?.image_url;
-            image = resolveImageUrl(imgUrl, uri) || image;
+          if (typeof contract.findTicket === "function") {
+            ids = await contract.findTicket(addr);
+          } else {
+            ids = await findTicketsViaLogs(contract, addr);
           }
         } catch (err) {
-          console.debug("fetchMyTickets tokenURI failed", err);
+          console.debug("fetchMyTickets findTicket fallback triggered", err);
+          ids = await findTicketsViaLogs(contract, addr);
         }
-        return { tokenId: id, image, meta, isTicket: true };
-      });
 
-      return metas;
-    } catch (e) {
-      console.error("fetchMyTickets", e);
-      return [];
-    }
-  }, [findTicketsViaLogs]);
+        const metas = await mapLimit(ids, 4, async (idBN) => {
+          const id = idBN.toString();
+          let meta = {
+            name: `Ticket #${id}`,
+            description: "Redeem this ticket to mint a BiggiEyes NFT.",
+          };
+          let image = "/images/Biggi.png";
+          try {
+            const uri = await getTokenUriCached(contract, idBN);
+            const j = await readJsonFromURI(uri);
+            if (j) {
+              meta = j;
+              const imgUrl = j?.image || j?.image_url;
+              image = resolveImageUrl(imgUrl, uri) || image;
+            }
+          } catch (err) {
+            console.debug("fetchMyTickets tokenURI failed", err);
+          }
+          return { tokenId: id, image, meta, isTicket: true };
+        });
+
+        return metas;
+      } catch (e) {
+        console.error("fetchMyTickets", e);
+        return [];
+      }
+    },
+    [findTicketsViaLogs],
+  );
 
   const fetchOwnedNFTsViaOwnerScan = React.useCallback(
     async (addr) => {
@@ -149,11 +166,17 @@ export function useWalletAssets(params) {
             totalMinted = Number((await contract.totalSupply()).toString());
           }
         } catch (err) {
-          console.debug("fetchOwnedNFTsViaOwnerScan total supply lookup failed", err);
+          console.debug(
+            "fetchOwnedNFTsViaOwnerScan total supply lookup failed",
+            err,
+          );
         }
         if (!totalMinted || totalMinted <= 0) return [];
 
-        const indices = Array.from({ length: totalMinted }, (_, idx) => idx + 1);
+        const indices = Array.from(
+          { length: totalMinted },
+          (_, idx) => idx + 1,
+        );
         const owned = await mapLimit(indices, 2, async (tokenId) => {
           try {
             const owner = await contract.ownerOf(tokenId);
@@ -161,9 +184,15 @@ export function useWalletAssets(params) {
 
             let isTicket = false;
             try {
-              isTicket = typeof contract.isTicket === "function" ? await contract.isTicket(tokenId) : false;
+              isTicket =
+                typeof contract.isTicket === "function"
+                  ? await contract.isTicket(tokenId)
+                  : false;
             } catch (err) {
-              console.debug("fetchOwnedNFTsViaOwnerScan owner scan isTicket failed", err);
+              console.debug(
+                "fetchOwnedNFTsViaOwnerScan owner scan isTicket failed",
+                err,
+              );
             }
             if (isTicket) return null;
 
@@ -179,7 +208,10 @@ export function useWalletAssets(params) {
               const imgUrl = j?.image || j?.image_url;
               image = resolveImageUrl(imgUrl, uri) || image;
             } catch (err) {
-              console.debug("fetchOwnedNFTsViaOwnerScan owner tokenURI failed", err);
+              console.debug(
+                "fetchOwnedNFTsViaOwnerScan owner tokenURI failed",
+                err,
+              );
             }
 
             return { tokenId: String(tokenId), image, meta, isTicket: false };
@@ -197,7 +229,7 @@ export function useWalletAssets(params) {
         return [];
       }
     },
-    [enrichMetaWithPrices]
+    [enrichMetaWithPrices],
   );
 
   const fetchOwnedNFTsViaTransfers = React.useCallback(
@@ -216,7 +248,8 @@ export function useWalletAssets(params) {
         ]);
 
         const all = [...toLogs, ...fromLogs].sort((a, b) => {
-          if (a.blockNumber !== b.blockNumber) return a.blockNumber - b.blockNumber;
+          if (a.blockNumber !== b.blockNumber)
+            return a.blockNumber - b.blockNumber;
           return a.logIndex - b.logIndex;
         });
 
@@ -235,9 +268,15 @@ export function useWalletAssets(params) {
         const metas = await mapLimit(tokenIds, 4, async (tid) => {
           let isT = false;
           try {
-            isT = typeof contract?.isTicket === "function" ? await contract.isTicket(tid) : false;
+            isT =
+              typeof contract?.isTicket === "function"
+                ? await contract.isTicket(tid)
+                : false;
           } catch (err) {
-            console.debug("fetchOwnedNFTsViaTransfers ticket check failed", err);
+            console.debug(
+              "fetchOwnedNFTsViaTransfers ticket check failed",
+              err,
+            );
           }
           if (isT) return null;
 
@@ -255,7 +294,10 @@ export function useWalletAssets(params) {
             const imgUrl = j?.image || j?.image_url;
             image = resolveImageUrl(imgUrl, uri) || image;
           } catch (err) {
-            console.debug("fetchOwnedNFTsViaTransfers token metadata failed", err);
+            console.debug(
+              "fetchOwnedNFTsViaTransfers token metadata failed",
+              err,
+            );
           }
           return { tokenId: String(tid), image, meta, isTicket: false };
         });
@@ -275,7 +317,10 @@ export function useWalletAssets(params) {
             }
           }
         } catch (err) {
-          console.debug("fetchOwnedNFTsViaTransfers balance fallback failed", err);
+          console.debug(
+            "fetchOwnedNFTsViaTransfers balance fallback failed",
+            err,
+          );
         }
 
         saveWalletCache(addr, resolved, cacheAddr);
@@ -285,14 +330,16 @@ export function useWalletAssets(params) {
         return fetchOwnedNFTsViaOwnerScan(addr);
       }
     },
-    [fetchOwnedNFTsViaOwnerScan, enrichMetaWithPrices]
+    [fetchOwnedNFTsViaOwnerScan, enrichMetaWithPrices],
   );
 
   const orderWithTopFirst = React.useCallback(
     (finalList, prev) => {
       const pending = prev.find((x) => x.isPending);
       if (vrfPending && pending) {
-        const dedup = finalList.filter((x) => !x.isPending && x.tokenId !== pending.tokenId);
+        const dedup = finalList.filter(
+          (x) => !x.isPending && x.tokenId !== pending.tokenId,
+        );
         return [pending, ...dedup];
       }
       if (topFirstId) {
@@ -302,14 +349,14 @@ export function useWalletAssets(params) {
       }
       return finalList;
     },
-    [vrfPending, topFirstId]
+    [vrfPending, topFirstId],
   );
 
   const mergeWithTopFirst = React.useCallback(
     (finalList) => {
       return setMyNFTs((prev) => orderWithTopFirst(finalList, prev));
     },
-    [orderWithTopFirst, setMyNFTs]
+    [orderWithTopFirst, setMyNFTs],
   );
 
   const primeFromCache = React.useCallback(
@@ -320,7 +367,7 @@ export function useWalletAssets(params) {
         return orderWithTopFirst(cachedItems, prev);
       });
     },
-    [orderWithTopFirst, setMyNFTs]
+    [orderWithTopFirst, setMyNFTs],
   );
 
   const fetchWalletAssets = React.useCallback(
@@ -328,14 +375,21 @@ export function useWalletAssets(params) {
       if (!addr) return [];
       const cacheContract = getReadOnlyContract();
       const cacheAddr = cacheContract?.address || ADDR.MAIN;
-      if (walletFetchRef.current.inFlight && walletFetchRef.current.addr === addr) {
+      if (
+        walletFetchRef.current.inFlight &&
+        walletFetchRef.current.addr === addr
+      ) {
         return walletFetchRef.current.inFlight;
       }
 
       const cachedRecord = readGalleryCache(addr, cacheAddr);
       const cachedItemsRaw = cachedRecord?.items || [];
       const cachedItems = pendingTicketId
-        ? cachedItemsRaw.filter((item) => String(item?.tokenId ?? item?.id ?? "") !== String(pendingTicketId))
+        ? cachedItemsRaw.filter(
+            (item) =>
+              String(item?.tokenId ?? item?.id ?? "") !==
+              String(pendingTicketId),
+          )
         : cachedItemsRaw;
       const hasCached = cachedItems.length > 0;
       let usedCacheFallback = false;
@@ -350,7 +404,9 @@ export function useWalletAssets(params) {
         try {
           const tickets = await fetchMyTickets(addr);
           const nfts = await fetchOwnedNFTsViaTransfers(addr, tickets.length);
-          const ticketIdSet = new Set(tickets.map((t) => String(t?.tokenId ?? "")));
+          const ticketIdSet = new Set(
+            tickets.map((t) => String(t?.tokenId ?? "")),
+          );
           const byId = new Map();
           for (const t of tickets) byId.set(t.tokenId, t);
           for (const n of nfts) byId.set(n.tokenId, n);
@@ -370,7 +426,8 @@ export function useWalletAssets(params) {
             const canTrustTickets =
               ticketIdSet.size > 0 ||
               (Number.isFinite(onChainCount) && onChainCount <= nfts.length);
-            const needsCacheMerge = onChainCount == null || onChainCount > final.length;
+            const needsCacheMerge =
+              onChainCount == null || onChainCount > final.length;
             if (needsCacheMerge) {
               const filteredCache = cachedItems.filter((item) => {
                 if (!item) return false;
@@ -389,20 +446,32 @@ export function useWalletAssets(params) {
             }
           }
           const shouldProbeRecent =
-            redeemStartedAt && Date.now() - Number(redeemStartedAt) < 15 * 60 * 1000;
+            redeemStartedAt &&
+            Date.now() - Number(redeemStartedAt) < 15 * 60 * 1000;
           if (shouldProbeRecent) {
             let addedFromEvents = false;
             try {
               const contract = getReadOnlyContract();
-              const existingIds = new Set(merged.map((item) => String(item?.tokenId ?? item?.id ?? "")));
+              const existingIds = new Set(
+                merged.map((item) => String(item?.tokenId ?? item?.id ?? "")),
+              );
               const latest = await contract.provider.getBlockNumber();
               const fromBase = Number.isFinite(Number(redeemStartBlock))
                 ? Math.max(0, Number(redeemStartBlock) - 2000)
                 : Math.max(0, latest - 20_000);
               const mintFilter = contract.filters.NFTMinted(addr);
-              const mintLogs = await queryLogsBatched(contract, mintFilter, fromBase, latest, 5000);
+              const mintLogs = await queryLogsBatched(
+                contract,
+                mintFilter,
+                fromBase,
+                latest,
+                5000,
+              );
               const mintedIds = mintLogs
-                .map((l) => l.args?.tokenId?.toString?.() || l.args?.[1]?.toString?.())
+                .map(
+                  (l) =>
+                    l.args?.tokenId?.toString?.() || l.args?.[1]?.toString?.(),
+                )
                 .filter(Boolean);
               const uniqueIds = Array.from(new Set(mintedIds)).reverse();
               if (uniqueIds.length) {
@@ -420,7 +489,12 @@ export function useWalletAssets(params) {
                   } catch {
                     // ignore
                   }
-                  recentAdds.push({ tokenId: String(id), image, meta, isTicket: false });
+                  recentAdds.push({
+                    tokenId: String(id),
+                    image,
+                    meta,
+                    isTicket: false,
+                  });
                   existingIds.add(String(id));
                 }
                 if (recentAdds.length) {
@@ -433,17 +507,25 @@ export function useWalletAssets(params) {
             }
             if (!addedFromEvents) {
               try {
-                const existingIds = new Set(merged.map((item) => String(item?.tokenId ?? item?.id ?? "")));
+                const existingIds = new Set(
+                  merged.map((item) => String(item?.tokenId ?? item?.id ?? "")),
+                );
                 const contract = getReadOnlyContract();
                 let total = 0;
                 try {
-                  total = Number((await contract.biggiMinted?.().catch(() => null))?.toString?.() || 0);
+                  total = Number(
+                    (
+                      await contract.biggiMinted?.().catch(() => null)
+                    )?.toString?.() || 0,
+                  );
                 } catch {
                   // ignore
                 }
                 if (!total && typeof contract.totalSupply === "function") {
                   try {
-                    total = Number((await contract.totalSupply())?.toString?.() || 0);
+                    total = Number(
+                      (await contract.totalSupply())?.toString?.() || 0,
+                    );
                   } catch {
                     // ignore
                   }
@@ -461,10 +543,17 @@ export function useWalletAssets(params) {
                     } catch {
                       continue;
                     }
-                    if (String(owner || "").toLowerCase() !== String(addr).toLowerCase()) continue;
+                    if (
+                      String(owner || "").toLowerCase() !==
+                      String(addr).toLowerCase()
+                    )
+                      continue;
                     let isT = false;
                     try {
-                      isT = typeof contract.isTicket === "function" ? await contract.isTicket(tokenId) : false;
+                      isT =
+                        typeof contract.isTicket === "function"
+                          ? await contract.isTicket(tokenId)
+                          : false;
                     } catch {
                       // ignore
                     }
@@ -475,13 +564,22 @@ export function useWalletAssets(params) {
                     try {
                       const uri = await getTokenUriCached(contract, tokenId);
                       const j = await readJsonFromURI(uri);
-                      meta = await enrichMetaWithPrices(contract, tokenId, j || {});
+                      meta = await enrichMetaWithPrices(
+                        contract,
+                        tokenId,
+                        j || {},
+                      );
                       const imgUrl = j?.image || j?.image_url;
                       image = resolveImageUrl(imgUrl, uri) || image;
                     } catch {
                       // ignore
                     }
-                    recentAdds.push({ tokenId: key, image, meta, isTicket: false });
+                    recentAdds.push({
+                      tokenId: key,
+                      image,
+                      meta,
+                      isTicket: false,
+                    });
                     existingIds.add(key);
                   }
                   if (recentAdds.length) {
@@ -497,7 +595,9 @@ export function useWalletAssets(params) {
           mergeWithTopFirst(merged);
           saveGalleryCache(addr, merged, cacheAddr);
           if (typeof setGalleryNotice === "function") {
-            setGalleryNotice(usedCacheFallback ? "RPC/IPFS failed, showing cached NFTs." : "");
+            setGalleryNotice(
+              usedCacheFallback ? "RPC/IPFS failed, showing cached NFTs." : "",
+            );
           }
           return merged;
         } catch {
@@ -538,7 +638,7 @@ export function useWalletAssets(params) {
       redeemStartBlock,
       redeemStartedAt,
       enrichMetaWithPrices,
-    ]
+    ],
   );
 
   const fetchLastMinted = React.useCallback(async () => {
@@ -546,12 +646,20 @@ export function useWalletAssets(params) {
       const contract = getReadOnlyContract();
       const total = Number(await contract.biggiMinted());
       if (total === 0) {
-        setLastMinted({ tokenId: "-", image: "/images/Biggi.png", blockName: "-", backgroundName: "-" });
+        setLastMinted({
+          tokenId: "-",
+          image: "/images/Biggi.png",
+          blockName: "-",
+          backgroundName: "-",
+        });
         return;
       }
       const latest = await contract.provider.getBlockNumber();
       const filter = contract.filters.NFTMinted();
-      const from = Math.max(await getSafeDeployBlock(contract.provider), latest - 60_000);
+      const from = Math.max(
+        await getSafeDeployBlock(contract.provider),
+        latest - 60_000,
+      );
       const logs = await queryLogsBatched(contract, filter, from, latest);
       const last = logs[logs.length - 1];
       if (!last) return;
@@ -559,23 +667,37 @@ export function useWalletAssets(params) {
       const tokenId = last.args.tokenId.toString();
       const uri = await getTokenUriCached(contract, tokenId);
       const meta = await readJsonFromURI(uri);
-      let image = resolveImageUrl(meta?.image || meta?.image_url, uri) || "/images/Biggi.png";
+      let image =
+        resolveImageUrl(meta?.image || meta?.image_url, uri) ||
+        "/images/Biggi.png";
 
       let blockName = "-";
       let backgroundName = "-";
       if (meta?.attributes) {
         const blockAttr =
-          meta.attributes.find((a) => ["Eye Color", "Eyes", "Block/Eye Color"].includes(a.trait_type)) ||
-          meta.attributes.find((a) => a.trait_type === "Block" || a.trait_type === "Block ID");
+          meta.attributes.find((a) =>
+            ["Eye Color", "Eyes", "Block/Eye Color"].includes(a.trait_type),
+          ) ||
+          meta.attributes.find(
+            (a) => a.trait_type === "Block" || a.trait_type === "Block ID",
+          );
         if (blockAttr) blockName = blockAttr.value;
-        const bgAttr = meta.attributes.find((a) => ["Background", "Background Color"].includes(a.trait_type));
-        if (bgAttr) backgroundName = canonBackgroundName(bgAttr.value) || bgAttr.value;
+        const bgAttr = meta.attributes.find((a) =>
+          ["Background", "Background Color"].includes(a.trait_type),
+        );
+        if (bgAttr)
+          backgroundName = canonBackgroundName(bgAttr.value) || bgAttr.value;
       }
 
       setLastMinted({ tokenId, image, blockName, backgroundName });
     } catch (e) {
       console.error("fetchLastMinted", e);
-      setLastMinted({ tokenId: "-", image: "/images/Biggi.png", blockName: "-", backgroundName: "-" });
+      setLastMinted({
+        tokenId: "-",
+        image: "/images/Biggi.png",
+        blockName: "-",
+        backgroundName: "-",
+      });
     }
   }, [setLastMinted]);
 
@@ -595,19 +717,27 @@ export function useWalletAssets(params) {
         if (nft.meta && nft.meta.dynamicTraitsLoaded) return;
         if (nft.meta && nft.meta.mintTicket) return;
 
-        if (setDynamicTraitsById && typeof setDynamicTraitsById === "function") {
+        if (
+          setDynamicTraitsById &&
+          typeof setDynamicTraitsById === "function"
+        ) {
           if (setDynamicTraitsById((prev) => prev[tokenId])) return;
         }
 
         const contract = getReadOnlyContract();
 
-        const fmt = (n) => (typeof n === "number" && !Number.isNaN(n) ? `${n.toFixed(4)} POL` : "");
+        const fmt = (n) =>
+          typeof n === "number" && !Number.isNaN(n)
+            ? `${n.toFixed(4)} POL`
+            : "";
 
         let meta = nft.meta;
         if (!meta) {
           try {
             const uri = await getTokenUriCached(contract, nft.tokenId);
-            const url = uri.startsWith("ipfs://") ? `https://ipfs.io/ipfs/${uri.replace("ipfs://", "")}` : uri;
+            const url = uri.startsWith("ipfs://")
+              ? `https://ipfs.io/ipfs/${uri.replace("ipfs://", "")}`
+              : uri;
             const resp = await fetch(url, { cache: "no-cache" });
             if (resp.ok) meta = await resp.json();
           } catch (err) {
@@ -616,7 +746,9 @@ export function useWalletAssets(params) {
         }
         const attrs = Array.isArray(meta?.attributes) ? meta.attributes : [];
         const getAttr = (names) =>
-          attrs.find((a) => names.some((n) => String(a?.trait_type || "").toLowerCase() === n));
+          attrs.find((a) =>
+            names.some((n) => String(a?.trait_type || "").toLowerCase() === n),
+          );
 
         let blockId = null;
         const blockIdAttr = getAttr(["block id", "block"]);
@@ -643,10 +775,19 @@ export function useWalletAssets(params) {
         let mintBlockNumber = null;
         try {
           const tokenIdBN = ethers.BigNumber.from(tokenId);
-          const mintFilter = contract.filters.Transfer("0x0000000000000000000000000000000000000000", null, tokenIdBN);
+          const mintFilter = contract.filters.Transfer(
+            "0x0000000000000000000000000000000000000000",
+            null,
+            tokenIdBN,
+          );
           const latestBlock = await contract.provider.getBlockNumber();
           const FROM = await getSafeDeployBlock(contract.provider);
-          const mintLogs = await queryLogsBatched(contract, mintFilter, FROM, latestBlock);
+          const mintLogs = await queryLogsBatched(
+            contract,
+            mintFilter,
+            FROM,
+            latestBlock,
+          );
           if (mintLogs && mintLogs.length) {
             mintBlockNumber = mintLogs[0].blockNumber;
           }
@@ -660,14 +801,18 @@ export function useWalletAssets(params) {
 
         if (mintBlockNumber != null) {
           try {
-            const tpPast = await contract.getTicketPrice({ blockTag: mintBlockNumber });
+            const tpPast = await contract.getTicketPrice({
+              blockTag: mintBlockNumber,
+            });
             mintTicket = Number(ethers.utils.formatEther(tpPast));
           } catch (err) {
             console.debug("fetchDynamicTraitsFor ticket price failed", err);
           }
 
           try {
-            const bpPast = await contract.getCurrentBlockPrice(blockId, { blockTag: mintBlockNumber });
+            const bpPast = await contract.getCurrentBlockPrice(blockId, {
+              blockTag: mintBlockNumber,
+            });
             mintBlock = Number(ethers.utils.formatEther(bpPast));
           } catch (err) {
             console.debug("fetchDynamicTraitsFor block price failed", err);
@@ -681,7 +826,10 @@ export function useWalletAssets(params) {
         const dynamicData = {
           mintTicket: fmt(mintTicket),
           mintBlock: fmt(mintBlock),
-          mintFinal: mintFinal != null ? `${mintFinal.toFixed(4)} POL (${bonusPct}% bonus)` : "",
+          mintFinal:
+            mintFinal != null
+              ? `${mintFinal.toFixed(4)} POL (${bonusPct}% bonus)`
+              : "",
           ticketPrice: undefined,
           blockPrice: undefined,
           finalPrice: undefined,
@@ -695,16 +843,24 @@ export function useWalletAssets(params) {
         }
 
         if (meta && enrichMetaWithPricesFn) {
-          const enriched = await enrichMetaWithPricesFn(contract, tokenId, meta);
+          const enriched = await enrichMetaWithPricesFn(
+            contract,
+            tokenId,
+            meta,
+          );
           setMyNFTs((prev) =>
-            prev.map((n) => (n.tokenId === tokenId ? { ...n, meta: enriched, dynamicTraitsLoaded: true } : n))
+            prev.map((n) =>
+              n.tokenId === tokenId
+                ? { ...n, meta: enriched, dynamicTraitsLoaded: true }
+                : n,
+            ),
           );
         }
       } catch (e) {
         console.error("fetchDynamicTraitsFor error", e);
       }
     },
-    [setDynamicTraitsById, setMyNFTs]
+    [setDynamicTraitsById, setMyNFTs],
   );
 
   return {

@@ -11,18 +11,113 @@ import { ethers } from "ethers";
 import { getROProvider, ADDR } from "../utils/contract";
 
 const ABI = [
-  { "inputs":[{"internalType":"uint256","name":"eventId","type":"uint256"},{"internalType":"address","name":"who","type":"address"}],"name":"assignedAmountOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-  { "inputs":[{"internalType":"uint256","name":"eventId","type":"uint256"}],"name":"balanceOfEvent","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-  { "inputs":[{"internalType":"uint256","name":"eventId","type":"uint256"}],"name":"claim","outputs":[],"stateMutability":"nonpayable","type":"function"},
-  { "inputs":[],"name":"distributor","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-  { "inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"events","outputs":[{"internalType":"string","name":"title","type":"string"},{"internalType":"string","name":"ipfsHash","type":"string"},{"internalType":"uint256","name":"start","type":"uint256"},{"internalType":"uint256","name":"end","type":"uint256"},{"internalType":"uint256","name":"totalPrize","type":"uint256"},{"internalType":"uint256","name":"locked","type":"uint256"},{"internalType":"bool","name":"exists","type":"bool"}],"stateMutability":"view","type":"function"},
-  { "inputs":[{"internalType":"uint256","name":"eventId","type":"uint256"}],"name":"getEvent","outputs":[{"internalType":"string","name":"title","type":"string"},{"internalType":"string","name":"ipfsHash","type":"string"},{"internalType":"uint256","name":"start","type":"uint256"},{"internalType":"uint256","name":"end","type":"uint256"},{"internalType":"uint256","name":"totalPrize","type":"uint256"},{"internalType":"uint256","name":"locked","type":"uint256"},{"internalType":"bool","name":"exists","type":"bool"}],"stateMutability":"view","type":"function"},
-  { "inputs":[{"internalType":"uint256","name":"eventId","type":"uint256"}],"name":"getEventWinners","outputs":[{"internalType":"address[]","name":"winners","type":"address[]"},{"internalType":"uint256[]","name":"amounts","type":"uint256[]"},{"internalType":"bool[]","name":"claimed","type":"bool[]"}],"stateMutability":"view","type":"function"},
-  { "inputs":[],"name":"getEvents","outputs":[{"internalType":"uint256[]","name":"","type":"uint256[]"}],"stateMutability":"view","type":"function"},
-  { "inputs":[],"name":"nextEventId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-  { "inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-  { "inputs":[],"name":"paused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
-  { "inputs":[],"name":"poolBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
+  {
+    inputs: [
+      { internalType: "uint256", name: "eventId", type: "uint256" },
+      { internalType: "address", name: "who", type: "address" },
+    ],
+    name: "assignedAmountOf",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "eventId", type: "uint256" }],
+    name: "balanceOfEvent",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "eventId", type: "uint256" }],
+    name: "claim",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "distributor",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    name: "events",
+    outputs: [
+      { internalType: "string", name: "title", type: "string" },
+      { internalType: "string", name: "ipfsHash", type: "string" },
+      { internalType: "uint256", name: "start", type: "uint256" },
+      { internalType: "uint256", name: "end", type: "uint256" },
+      { internalType: "uint256", name: "totalPrize", type: "uint256" },
+      { internalType: "uint256", name: "locked", type: "uint256" },
+      { internalType: "bool", name: "exists", type: "bool" },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "eventId", type: "uint256" }],
+    name: "getEvent",
+    outputs: [
+      { internalType: "string", name: "title", type: "string" },
+      { internalType: "string", name: "ipfsHash", type: "string" },
+      { internalType: "uint256", name: "start", type: "uint256" },
+      { internalType: "uint256", name: "end", type: "uint256" },
+      { internalType: "uint256", name: "totalPrize", type: "uint256" },
+      { internalType: "uint256", name: "locked", type: "uint256" },
+      { internalType: "bool", name: "exists", type: "bool" },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "eventId", type: "uint256" }],
+    name: "getEventWinners",
+    outputs: [
+      { internalType: "address[]", name: "winners", type: "address[]" },
+      { internalType: "uint256[]", name: "amounts", type: "uint256[]" },
+      { internalType: "bool[]", name: "claimed", type: "bool[]" },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "getEvents",
+    outputs: [{ internalType: "uint256[]", name: "", type: "uint256[]" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "nextEventId",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "owner",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "paused",
+    outputs: [{ internalType: "bool", name: "", type: "bool" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "poolBalance",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
 ];
 
 export default class CommunityCenterService {
@@ -82,28 +177,62 @@ export default class CommunityCenterService {
   }
 
   // ------------------- Read getters -------------------
-  async assignedAmountOf(eventId, who) { return await this.contract.assignedAmountOf(eventId, who); }
-  async balanceOfEvent(eventId) { return await this.contract.balanceOfEvent(eventId); }
-  async distributor() { return await this.contract.distributor(); }
-  async events(idx) { return await this.contract.events(idx); } // struct view
-  async getEvent(eventId) { return await this.contract.getEvent(eventId); }
-  async getEventWinners(eventId) { return await this.contract.getEventWinners(eventId); } // (winners, amounts, claimed)
-  async getEvents() { return await this.contract.getEvents(); } // ids array
-  async nextEventId() { return await this.contract.nextEventId(); }
-  async owner() { return await this.contract.owner(); }
-  async paused() { return await this.contract.paused(); }
-  async poolBalance() { return await this.contract.poolBalance(); }
+  async assignedAmountOf(eventId, who) {
+    return await this.contract.assignedAmountOf(eventId, who);
+  }
+  async balanceOfEvent(eventId) {
+    return await this.contract.balanceOfEvent(eventId);
+  }
+  async distributor() {
+    return await this.contract.distributor();
+  }
+  async events(idx) {
+    return await this.contract.events(idx);
+  } // struct view
+  async getEvent(eventId) {
+    return await this.contract.getEvent(eventId);
+  }
+  async getEventWinners(eventId) {
+    return await this.contract.getEventWinners(eventId);
+  } // (winners, amounts, claimed)
+  async getEvents() {
+    return await this.contract.getEvents();
+  } // ids array
+  async nextEventId() {
+    return await this.contract.nextEventId();
+  }
+  async owner() {
+    return await this.contract.owner();
+  }
+  async paused() {
+    return await this.contract.paused();
+  }
+  async poolBalance() {
+    return await this.contract.poolBalance();
+  }
 
   // ------------------- Write (claim) -------------------
   async _sendTx(methodName, args = [], overrides = {}) {
-    if (!this._signerConnected) throw new Error("Signer not connected. Call connectWithSigner(signer) first.");
+    if (!this._signerConnected)
+      throw new Error(
+        "Signer not connected. Call connectWithSigner(signer) first.",
+      );
     try {
       const method = this.contract[methodName];
       if (!method) throw new Error("Method not found: " + methodName);
       // odhad gas, pokud jde
       let gasEstimate = null;
-      try { gasEstimate = await this.contract.estimateGas[methodName](...args, overrides); } catch { gasEstimate = null; }
-      const sendOverrides = gasEstimate ? { gasLimit: gasEstimate.mul(120).div(100), ...overrides } : overrides;
+      try {
+        gasEstimate = await this.contract.estimateGas[methodName](
+          ...args,
+          overrides,
+        );
+      } catch {
+        gasEstimate = null;
+      }
+      const sendOverrides = gasEstimate
+        ? { gasLimit: gasEstimate.mul(120).div(100), ...overrides }
+        : overrides;
       const tx = await method(...args, sendOverrides);
       const receipt = await tx.wait(1);
       return receipt;
@@ -127,9 +256,10 @@ export default class CommunityCenterService {
       this.getEvents(),
       this.poolBalance(),
       this.owner(),
-      this.paused()
+      this.paused(),
     ];
-    const [distributor, nextEventId, eventsList, poolBalance, owner, paused] = await Promise.all(calls);
+    const [distributor, nextEventId, eventsList, poolBalance, owner, paused] =
+      await Promise.all(calls);
     return { distributor, nextEventId, eventsList, poolBalance, owner, paused };
   }
 
@@ -148,7 +278,7 @@ export default class CommunityCenterService {
       const id = idBn.toString();
       const [eventStruct, winnersTuple] = await Promise.all([
         this.getEvent(id),
-        this.getEventWinners(id)
+        this.getEventWinners(id),
       ]);
       const [winners, amounts, claimed] = winnersTuple;
       return {
@@ -162,7 +292,7 @@ export default class CommunityCenterService {
         exists: eventStruct.exists,
         winners,
         amounts,
-        claimed
+        claimed,
       };
     });
     return await Promise.all(promises);
@@ -180,7 +310,10 @@ export default class CommunityCenterService {
         const stats = await this.getAllStats();
         callback(blockNumber, stats);
       } catch (e) {
-        console.error("CommunityCenterService subscribeOnBlock handler error", e);
+        console.error(
+          "CommunityCenterService subscribeOnBlock handler error",
+          e,
+        );
       }
     };
     this.provider.on("block", this._onBlockHandler);
@@ -196,17 +329,23 @@ export default class CommunityCenterService {
   // ------------------- Utilities -------------------
   static bnToString(bn, decimals = 18) {
     if (!bn) return "0";
-    try { return ethers.utils.formatUnits(bn, decimals); } catch { return bn.toString(); }
+    try {
+      return ethers.utils.formatUnits(bn, decimals);
+    } catch {
+      return bn.toString();
+    }
   }
 
   static formatSummary(stats) {
     return {
       distributor: stats.distributor,
       nextEventId: stats.nextEventId?.toString?.() ?? stats.nextEventId,
-      eventsCount: Array.isArray(stats.eventsList) ? stats.eventsList.length : 0,
+      eventsCount: Array.isArray(stats.eventsList)
+        ? stats.eventsList.length
+        : 0,
       poolBalance: CommunityCenterService.bnToString(stats.poolBalance, 18),
       owner: stats.owner,
-      paused: stats.paused
+      paused: stats.paused,
     };
   }
 }

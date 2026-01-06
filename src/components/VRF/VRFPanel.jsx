@@ -32,7 +32,11 @@ export default function VRFPanel({
   const last = viewData.last || {};
   const hist = Array.isArray(viewData.history) ? viewData.history : [];
   const userAddr =
-    viewData.user?.address || viewData.userAddress || viewData.address || walletAddress || "";
+    viewData.user?.address ||
+    viewData.userAddress ||
+    viewData.address ||
+    walletAddress ||
+    "";
 
   // ====== PALETTE (shared) ======
   const C = {
@@ -77,14 +81,14 @@ export default function VRFPanel({
       tone === "warn"
         ? "rgba(255,93,162,.4)"
         : tone === "ok"
-        ? "rgba(107,238,91,.4)"
-        : "rgba(255,232,0,.35)";
+          ? "rgba(107,238,91,.4)"
+          : "rgba(255,232,0,.35)";
     const bg =
       tone === "warn"
         ? "rgba(255,93,162,.12)"
         : tone === "ok"
-        ? "rgba(107,238,91,.12)"
-        : "rgba(255,232,0,.12)";
+          ? "rgba(107,238,91,.12)"
+          : "rgba(255,232,0,.12)";
     return (
       <span
         className="rewards-grid__pill"
@@ -96,7 +100,11 @@ export default function VRFPanel({
   };
 
   const Tabs = () => (
-    <div role="tablist" aria-label="VRF tabs" className="view-tabs rewards-panel__tabs">
+    <div
+      role="tablist"
+      aria-label="VRF tabs"
+      className="view-tabs rewards-panel__tabs"
+    >
       <button
         type="button"
         role="tab"
@@ -130,9 +138,20 @@ export default function VRFPanel({
 
   const Card = ({ title, right, hue = "y", children, subtitle }) => {
     const ring =
-      hue === "y" ? C.y : hue === "v" ? C.v : hue === "p" ? C.p : hue === "c" ? C.c : C.g;
+      hue === "y"
+        ? C.y
+        : hue === "v"
+          ? C.v
+          : hue === "p"
+            ? C.p
+            : hue === "c"
+              ? C.c
+              : C.g;
     return (
-      <article className="biggi-card rewards-grid__card vrf-card" style={{ borderColor: `${ring}55` }}>
+      <article
+        className="biggi-card rewards-grid__card vrf-card"
+        style={{ borderColor: `${ring}55` }}
+      >
         <div className="biggi-card__glow" aria-hidden />
         <div className="biggi-card__header">
           <div className="biggi-card__heading">
@@ -154,7 +173,8 @@ export default function VRFPanel({
 
   const Value = ({ mono, children, tone = "neutral" }) => {
     const toneMap = {
-      neutral: "linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.18))",
+      neutral:
+        "linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.18))",
       warm: `linear-gradient(180deg, ${C.y}14, rgba(0,0,0,.18))`,
       cool: `linear-gradient(180deg, ${C.c}14, rgba(0,0,0,.18))`,
       violet: `linear-gradient(180deg, ${C.v}14, rgba(0,0,0,.18))`,
@@ -174,7 +194,9 @@ export default function VRFPanel({
           background: toneMap[tone] || toneMap.neutral,
           fontWeight: 800,
           color: C.text,
-          fontFamily: mono ? "ui-monospace,Menlo,Consolas,monospace" : "inherit",
+          fontFamily: mono
+            ? "ui-monospace,Menlo,Consolas,monospace"
+            : "inherit",
         }}
       >
         {children}
@@ -202,13 +224,21 @@ export default function VRFPanel({
       className="rewards-grid__hero-card"
       style={{
         borderColor: accent ? `${accent}55` : undefined,
-        boxShadow: accent ? `0 10px 24px rgba(0,0,0,0.28), 0 0 12px ${accent}22` : undefined,
+        boxShadow: accent
+          ? `0 10px 24px rgba(0,0,0,0.28), 0 0 12px ${accent}22`
+          : undefined,
       }}
     >
-      <span className="rewards-grid__hero-label" style={{ color: accent || C.dim }}>
+      <span
+        className="rewards-grid__hero-label"
+        style={{ color: accent || C.dim }}
+      >
         {label}
       </span>
-      <span className="rewards-grid__hero-value" style={{ fontFamily: "ui-monospace,Menlo,Consolas,monospace" }}>
+      <span
+        className="rewards-grid__hero-value"
+        style={{ fontFamily: "ui-monospace,Menlo,Consolas,monospace" }}
+      >
         {value}
       </span>
       <div className="rewards-grid__hero-bar">
@@ -218,7 +248,10 @@ export default function VRFPanel({
   );
 
   const SectionHeader = ({ label, accent = C.y }) => (
-    <div className="rewards-grid__section-header" style={{ "--section-accent": accent }}>
+    <div
+      className="rewards-grid__section-header"
+      style={{ "--section-accent": accent }}
+    >
       <span className="rewards-grid__section-title">{label}</span>
       <span className="rewards-grid__section-line" />
     </div>
@@ -243,17 +276,25 @@ export default function VRFPanel({
 
   const effectiveLast = React.useMemo(() => {
     const L = { ...last };
-    if ((Array.isArray(L.randomWords) && L.randomWords.length > 0) || L.txHash) {
+    if (
+      (Array.isArray(L.randomWords) && L.randomWords.length > 0) ||
+      L.txHash
+    ) {
       return { ...L, status: "fulfilled" };
     }
-    const fulfilled = hist.find((h) => String(h.status).toLowerCase() === "fulfilled");
+    const fulfilled = hist.find(
+      (h) => String(h.status).toLowerCase() === "fulfilled",
+    );
     if (String(L.status).toLowerCase() === "pending" && fulfilled) {
       return {
         requestId: L.requestId || fulfilled.requestId || "",
         status: "fulfilled",
         requestedAt: L.requestedAt || fulfilled.time || "",
         txHash: fulfilled.tx || L.txHash || "",
-        blockNumber: typeof fulfilled.blockNumber === "number" ? fulfilled.blockNumber : L.blockNumber,
+        blockNumber:
+          typeof fulfilled.blockNumber === "number"
+            ? fulfilled.blockNumber
+            : L.blockNumber,
         randomWords:
           Array.isArray(fulfilled.randomWords) && fulfilled.randomWords.length
             ? fulfilled.randomWords
@@ -273,7 +314,9 @@ export default function VRFPanel({
     return L;
   }, [last, hist]);
 
-  const lastStatusLabel = String(effectiveLast.status || "Unknown").toUpperCase();
+  const lastStatusLabel = String(
+    effectiveLast.status || "Unknown",
+  ).toUpperCase();
 
   const quickStats = [
     { label: "Network", value: netLabel, accent: C.y },
@@ -300,21 +343,25 @@ export default function VRFPanel({
         (Array.isArray(viewData.history) && viewData.history.length) ||
         (viewData.last &&
           (viewData.last.requestId ||
-            (Array.isArray(viewData.last.randomWords) && viewData.last.randomWords.length))))
+            (Array.isArray(viewData.last.randomWords) &&
+              viewData.last.randomWords.length)))),
   );
 
   const StatusRibbon = () => {
     const status = String(effectiveLast.status || "idle").toLowerCase();
-    const tone = status === "fulfilled" ? C.g : status === "pending" ? C.v : C.y;
+    const tone =
+      status === "fulfilled" ? C.g : status === "pending" ? C.v : C.y;
     const text =
       status === "fulfilled"
         ? "Last request fulfilled"
         : status === "pending"
-        ? "Randomness pending"
-        : "No active VRF request";
+          ? "Randomness pending"
+          : "No active VRF request";
     const toneClass = status === "fulfilled" ? "is-success" : "";
     return (
-      <div className={`rewards-grid__alert vrf-panel__ribbon${toneClass ? ` ${toneClass}` : ""}`}>
+      <div
+        className={`rewards-grid__alert vrf-panel__ribbon${toneClass ? ` ${toneClass}` : ""}`}
+      >
         <span
           className="vrf-panel__ribbon-dot"
           style={{
@@ -324,16 +371,23 @@ export default function VRFPanel({
           aria-hidden
         />
         <div className="vrf-panel__ribbon-text">
-          <strong style={{ letterSpacing: 0.06, textTransform: "uppercase" }}>{text}</strong>
+          <strong style={{ letterSpacing: 0.06, textTransform: "uppercase" }}>
+            {text}
+          </strong>
           <span style={{ color: C.dim, fontSize: 13 }}>
-            Req ID: {effectiveLast.requestId || "-"} | Block: {effectiveLast.blockNumber ?? "-"} | Words:{" "}
-            {Array.isArray(effectiveLast.randomWords) && effectiveLast.randomWords.length
+            Req ID: {effectiveLast.requestId || "-"} | Block:{" "}
+            {effectiveLast.blockNumber ?? "-"} | Words:{" "}
+            {Array.isArray(effectiveLast.randomWords) &&
+            effectiveLast.randomWords.length
               ? effectiveLast.randomWords.length
               : "-"}
           </span>
         </div>
         {effectiveLast.txHash ? (
-          <GhostBtn onClick={() => onOpenExplorer(effectiveLast.txHash, "tx")} className="vrf-panel__ribbon-cta">
+          <GhostBtn
+            onClick={() => onOpenExplorer(effectiveLast.txHash, "tx")}
+            className="vrf-panel__ribbon-cta"
+          >
             View tx
           </GhostBtn>
         ) : null}
@@ -349,8 +403,9 @@ export default function VRFPanel({
             <span className="biggi-badge">Verifiable Randomness</span>
             <h2 className="rewards-grid__title">Chainlink VRF</h2>
             <p className="rewards-grid__subtitle">
-              Monitor randomness requests, proofs, and contract parameters on {netLabel}. Every update is streamed
-              directly from the smart contracts.
+              Monitor randomness requests, proofs, and contract parameters on{" "}
+              {netLabel}. Every update is streamed directly from the smart
+              contracts.
             </p>
           </div>
         </header>
@@ -376,35 +431,58 @@ export default function VRFPanel({
                 </button>
               </div>
               <div className="rewards-grid__info-body">
-                <div className="rewards-grid__info-column" style={{ width: "100%" }}>
+                <div
+                  className="rewards-grid__info-column"
+                  style={{ width: "100%" }}
+                >
                   <table className="vrf-panel__info-table">
                     <tbody>
                       <tr>
-                        <td style={{ padding: "10px 12px", fontWeight: 800 }}>What is VRF?</td>
+                        <td style={{ padding: "10px 12px", fontWeight: 800 }}>
+                          What is VRF?
+                        </td>
                         <td style={{ padding: "10px 12px" }}>
-                          Chainlink VRF provides <strong>verifiable</strong> randomness with proofs validated on-chain.
+                          Chainlink VRF provides <strong>verifiable</strong>{" "}
+                          randomness with proofs validated on-chain.
                         </td>
                       </tr>
                       <tr>
-                        <td style={{ padding: "10px 12px", fontWeight: 800 }}>Request -&gt; Fulfill</td>
+                        <td style={{ padding: "10px 12px", fontWeight: 800 }}>
+                          Request -&gt; Fulfill
+                        </td>
                         <td style={{ padding: "10px 12px" }}>
-                          You request randomness; oracle responds via <code>fulfillRandomWords</code>.
+                          You request randomness; oracle responds via{" "}
+                          <code>fulfillRandomWords</code>.
                         </td>
                       </tr>
                       <tr>
-                        <td style={{ padding: "10px 12px", fontWeight: 800 }}>Key Hash</td>
-                        <td style={{ padding: "10px 12px" }}>Identifies gas lane / key for VRF.</td>
+                        <td style={{ padding: "10px 12px", fontWeight: 800 }}>
+                          Key Hash
+                        </td>
+                        <td style={{ padding: "10px 12px" }}>
+                          Identifies gas lane / key for VRF.
+                        </td>
                       </tr>
                       <tr>
-                        <td style={{ padding: "10px 12px", fontWeight: 800 }}>Confirmations</td>
-                        <td style={{ padding: "10px 12px" }}>Blocks to wait before delivery.</td>
+                        <td style={{ padding: "10px 12px", fontWeight: 800 }}>
+                          Confirmations
+                        </td>
+                        <td style={{ padding: "10px 12px" }}>
+                          Blocks to wait before delivery.
+                        </td>
                       </tr>
                       <tr>
-                        <td style={{ padding: "10px 12px", fontWeight: 800 }}>Num Words</td>
-                        <td style={{ padding: "10px 12px" }}>How many random numbers to return.</td>
+                        <td style={{ padding: "10px 12px", fontWeight: 800 }}>
+                          Num Words
+                        </td>
+                        <td style={{ padding: "10px 12px" }}>
+                          How many random numbers to return.
+                        </td>
                       </tr>
                       <tr>
-                        <td style={{ padding: "10px 12px", fontWeight: 800 }}>Callback Gas</td>
+                        <td style={{ padding: "10px 12px", fontWeight: 800 }}>
+                          Callback Gas
+                        </td>
                         <td style={{ padding: "10px 12px" }}>
                           Must cover your processing in the callback.
                         </td>
@@ -427,7 +505,11 @@ export default function VRFPanel({
 
         {!hasData && (
           <div style={{ marginBottom: 12 }}>
-            <Card title="No VRF data" hue="y" subtitle="Connect wallet and press Refresh to load your VRF status.">
+            <Card
+              title="No VRF data"
+              hue="y"
+              subtitle="Connect wallet and press Refresh to load your VRF status."
+            >
               <div style={{ display: "flex", gap: 8 }}>
                 <GhostBtn onClick={refreshData}>Refresh</GhostBtn>
               </div>
@@ -445,17 +527,25 @@ export default function VRFPanel({
               right={
                 <>
                   <GhostBtn onClick={refreshData}>Refresh</GhostBtn>
-                  {String(effectiveLast.status).toLowerCase() === "pending" && effectiveLast.requestId && (
-                    <GhostBtn onClick={() => onCancelPending(effectiveLast.requestId)}>
-                      Cancel My Pending
-                    </GhostBtn>
-                  )}
+                  {String(effectiveLast.status).toLowerCase() === "pending" &&
+                    effectiveLast.requestId && (
+                      <GhostBtn
+                        onClick={() => onCancelPending(effectiveLast.requestId)}
+                      >
+                        Cancel My Pending
+                      </GhostBtn>
+                    )}
                   {!!effectiveLast.txHash && (
-                    <GhostBtn onClick={() => onOpenExplorer(effectiveLast.txHash, "tx")}>
+                    <GhostBtn
+                      onClick={() => onOpenExplorer(effectiveLast.txHash, "tx")}
+                    >
                       View on Explorer
                     </GhostBtn>
                   )}
-                  <GhostBtn onClick={() => onRequestRandomness()} title="Request randomness for your wallet">
+                  <GhostBtn
+                    onClick={() => onRequestRandomness()}
+                    title="Request randomness for your wallet"
+                  >
                     Request My Randomness
                   </GhostBtn>
                 </>
@@ -463,23 +553,64 @@ export default function VRFPanel({
             >
               <KV
                 items={[
-                  { k: "Your Address", v: userAddr ? short(userAddr) : "-", mono: true, tone: "cool", title: userAddr },
-                  { k: "Status", v: String(effectiveLast.status || "idle").toUpperCase(), tone: "warm" },
-                  { k: "Last Request ID", v: effectiveLast.requestId || "-", mono: true, tone: "violet", title: effectiveLast.requestId },
-                  { k: "Requested at", v: effectiveLast.requestedAt || "-", tone: "neutral" },
-                  { k: "Fulfilled Tx", v: effectiveLast.txHash ? short(effectiveLast.txHash) : "-", mono: true, tone: "violet", title: effectiveLast.txHash },
-                  { k: "Block", v: effectiveLast.blockNumber ?? "-", mono: true, tone: "neutral" },
+                  {
+                    k: "Your Address",
+                    v: userAddr ? short(userAddr) : "-",
+                    mono: true,
+                    tone: "cool",
+                    title: userAddr,
+                  },
+                  {
+                    k: "Status",
+                    v: String(effectiveLast.status || "idle").toUpperCase(),
+                    tone: "warm",
+                  },
+                  {
+                    k: "Last Request ID",
+                    v: effectiveLast.requestId || "-",
+                    mono: true,
+                    tone: "violet",
+                    title: effectiveLast.requestId,
+                  },
+                  {
+                    k: "Requested at",
+                    v: effectiveLast.requestedAt || "-",
+                    tone: "neutral",
+                  },
+                  {
+                    k: "Fulfilled Tx",
+                    v: effectiveLast.txHash ? short(effectiveLast.txHash) : "-",
+                    mono: true,
+                    tone: "violet",
+                    title: effectiveLast.txHash,
+                  },
+                  {
+                    k: "Block",
+                    v: effectiveLast.blockNumber ?? "-",
+                    mono: true,
+                    tone: "neutral",
+                  },
                 ]}
               />
             </Card>
 
-            <Card title="My Latest Result" hue="g" right={null} subtitle="Most recent fulfilled randomness for your address.">
+            <Card
+              title="My Latest Result"
+              hue="g"
+              right={null}
+              subtitle="Most recent fulfilled randomness for your address."
+            >
               <div className="vrf-panel__result">
                 <div className="vrf-panel__row">
                   <div className="vrf-panel__row-label">Random Word(s)</div>
                   <div className="vrf-panel__row-value">
-                    <Value mono tone="green" title={(effectiveLast.randomWords || []).join(", ")}>
-                      {Array.isArray(effectiveLast.randomWords) && effectiveLast.randomWords.length
+                    <Value
+                      mono
+                      tone="green"
+                      title={(effectiveLast.randomWords || []).join(", ")}
+                    >
+                      {Array.isArray(effectiveLast.randomWords) &&
+                      effectiveLast.randomWords.length
                         ? effectiveLast.randomWords.slice(0, 3).join(", ") +
                           (effectiveLast.randomWords.length > 3 ? ", ..." : "")
                         : "-"}
@@ -490,7 +621,11 @@ export default function VRFPanel({
                   <div className="vrf-panel__row-label">Fulfilled Tx</div>
                   <div className="vrf-panel__row-value">
                     {effectiveLast.txHash ? (
-                      <GhostBtn onClick={() => onOpenExplorer(effectiveLast.txHash, "tx")}>
+                      <GhostBtn
+                        onClick={() =>
+                          onOpenExplorer(effectiveLast.txHash, "tx")
+                        }
+                      >
                         {short(effectiveLast.txHash)}
                       </GhostBtn>
                     ) : (
@@ -512,13 +647,25 @@ export default function VRFPanel({
         {active === "history" && (
           <div className="rewards-grid__cards">
             <SectionHeader label="History" accent={C.v} />
-            <Card title="My History" hue="p" right={<Badge>read-only</Badge>} subtitle="Recent randomness requests.">
+            <Card
+              title="My History"
+              hue="p"
+              right={<Badge>read-only</Badge>}
+              subtitle="Recent randomness requests."
+            >
               <div className="vrf-panel__history">
                 <div className="vrf-panel__history-scroll">
                   <table className="vrf-panel__history-table">
                     <thead>
                       <tr>
-                        {["Time", "RequestId", "Status", "Conf", "Words", "Tx"].map((h, i, arr) => (
+                        {[
+                          "Time",
+                          "RequestId",
+                          "Status",
+                          "Conf",
+                          "Words",
+                          "Tx",
+                        ].map((h, i, arr) => (
                           <th
                             key={h}
                             className={`vrf-panel__history-head${i === 0 ? " is-first" : ""}${i === arr.length - 1 ? " is-last" : ""}`}
@@ -533,20 +680,34 @@ export default function VRFPanel({
                         hist.map((r, idx) => (
                           <tr
                             key={`${r.requestId}-${idx}`}
-                            className={idx % 2 === 0 ? "vrf-panel__history-row" : "vrf-panel__history-row is-alt"}
+                            className={
+                              idx % 2 === 0
+                                ? "vrf-panel__history-row"
+                                : "vrf-panel__history-row is-alt"
+                            }
                           >
-                            <td className="vrf-panel__history-cell">{r.time || "-"}</td>
+                            <td className="vrf-panel__history-cell">
+                              {r.time || "-"}
+                            </td>
                             <td className="vrf-panel__history-cell vrf-panel__history-cell--mono">
                               <Value mono>{short(r.requestId)}</Value>
                             </td>
                             <td className="vrf-panel__history-cell vrf-panel__history-cell--strong">
                               {String(r.status || "-").toUpperCase()}
                             </td>
-                            <td className="vrf-panel__history-cell">{r.confirmations ?? "-"}</td>
-                            <td className="vrf-panel__history-cell">{r.words ?? "-"}</td>
+                            <td className="vrf-panel__history-cell">
+                              {r.confirmations ?? "-"}
+                            </td>
+                            <td className="vrf-panel__history-cell">
+                              {r.words ?? "-"}
+                            </td>
                             <td className="vrf-panel__history-cell">
                               {r.tx ? (
-                                <GhostBtn onClick={() => onOpenExplorer(r.tx, "tx")}>{short(r.tx)}</GhostBtn>
+                                <GhostBtn
+                                  onClick={() => onOpenExplorer(r.tx, "tx")}
+                                >
+                                  {short(r.tx)}
+                                </GhostBtn>
                               ) : (
                                 "-"
                               )}

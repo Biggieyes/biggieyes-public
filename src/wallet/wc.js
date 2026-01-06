@@ -6,12 +6,13 @@ import { AMOY, PUBLIC_AMOY_RPCS, getPrimaryRpcUrl } from "../utils/contract";
 const WC_PROJECT_ID = import.meta.env.VITE_WC_PROJECT_ID;
 
 // Public RPC fallback for Amoy. Prefer your own infra in production.
-const DEFAULT_AMOY_RPC = getPrimaryRpcUrl() || AMOY?.rpcUrl || PUBLIC_AMOY_RPCS[0];
+const DEFAULT_AMOY_RPC =
+  getPrimaryRpcUrl() || AMOY?.rpcUrl || PUBLIC_AMOY_RPCS[0];
 
 const RPC_MAP = {
-  80002: DEFAULT_AMOY_RPC,           // Polygon Amoy
-  137: "https://polygon-rpc.com",    // Polygon Mainnet
-  1: "https://cloudflare-eth.com",   // Ethereum Mainnet
+  80002: DEFAULT_AMOY_RPC, // Polygon Amoy
+  137: "https://polygon-rpc.com", // Polygon Mainnet
+  1: "https://cloudflare-eth.com", // Ethereum Mainnet
 };
 
 export async function connectWithWalletConnect() {
@@ -24,7 +25,15 @@ export async function connectWithWalletConnect() {
     rpcMap: RPC_MAP,
     showQrModal: true,
     qrModalOptions: {
-      mobileLinks: ["metamask", "trust", "okx", "rainbow", "zerion", "bitget", "coinbase"],
+      mobileLinks: [
+        "metamask",
+        "trust",
+        "okx",
+        "rainbow",
+        "zerion",
+        "bitget",
+        "coinbase",
+      ],
     },
     methods: [
       "eth_requestAccounts",
@@ -36,12 +45,20 @@ export async function connectWithWalletConnect() {
       "wallet_switchEthereumChain",
       "wallet_addEthereumChain",
     ],
-    optionalMethods: ["wallet_switchEthereumChain", "wallet_addEthereumChain", "eth_signTypedData", "eth_signTypedData_v4"],
+    optionalMethods: [
+      "wallet_switchEthereumChain",
+      "wallet_addEthereumChain",
+      "eth_signTypedData",
+      "eth_signTypedData_v4",
+    ],
     events: ["chainChanged", "accountsChanged", "disconnect", "session_delete"],
     metadata: {
       name: "BiggiEyes",
       description: "BiggiEyes DApp",
-      url: typeof window !== "undefined" ? window.location.origin : "https://example.org",
+      url:
+        typeof window !== "undefined"
+          ? window.location.origin
+          : "https://example.org",
       icons: ["https://walletconnect.com/walletconnect-logo.png"],
     },
   });
@@ -86,7 +103,14 @@ export async function connectWithWalletConnect() {
     }
   };
 
-  return { provider: wc, ethersProvider, signer, address, chainId: connectedChainId, disconnect };
+  return {
+    provider: wc,
+    ethersProvider,
+    signer,
+    address,
+    chainId: connectedChainId,
+    disconnect,
+  };
 }
 
 /* ---------------- Helpers ---------------- */
@@ -105,10 +129,15 @@ async function ensureAmoy(wc) {
         {
           chainId: CHAIN_HEX,
           chainName: AMOY?.name || "Polygon Amoy",
-          nativeCurrency: AMOY?.currency || { name: "POL", symbol: "POL", decimals: 18 },
-          rpcUrls: (Array.isArray(AMOY?.rpcUrls) && AMOY.rpcUrls.length
-            ? AMOY.rpcUrls
-            : [DEFAULT_AMOY_RPC]),
+          nativeCurrency: AMOY?.currency || {
+            name: "POL",
+            symbol: "POL",
+            decimals: 18,
+          },
+          rpcUrls:
+            Array.isArray(AMOY?.rpcUrls) && AMOY.rpcUrls.length
+              ? AMOY.rpcUrls
+              : [DEFAULT_AMOY_RPC],
           blockExplorerUrls: [AMOY?.explorer].filter(Boolean),
         },
       ],
@@ -124,13 +153,17 @@ async function resolveChainId(provider) {
   const raw = provider?.chainId;
   if (typeof raw === "number" && Number.isFinite(raw)) return raw;
   if (typeof raw === "string") {
-    const parsed = raw.startsWith("0x") ? Number.parseInt(raw, 16) : Number(raw);
+    const parsed = raw.startsWith("0x")
+      ? Number.parseInt(raw, 16)
+      : Number(raw);
     if (Number.isFinite(parsed)) return parsed;
   }
   try {
     const hex = await provider.request({ method: "eth_chainId" });
     if (typeof hex === "string") {
-      const parsed = hex.startsWith("0x") ? Number.parseInt(hex, 16) : Number(hex);
+      const parsed = hex.startsWith("0x")
+        ? Number.parseInt(hex, 16)
+        : Number(hex);
       if (Number.isFinite(parsed)) return parsed;
     }
   } catch {
@@ -146,12 +179,22 @@ async function resolveChainId(provider) {
  * from/to: block numbers
  * step: batch size (default 10k)
  */
-export async function getLogsBatched(provider, filter, from, to, step = 10_000) {
+export async function getLogsBatched(
+  provider,
+  filter,
+  from,
+  to,
+  step = 10_000,
+) {
   const logs = [];
   for (let start = from; start <= to; start += step) {
     const end = Math.min(start + step - 1, to);
     // ethers v5/v6 compatible getLogs call
-    const part = await provider.getLogs({ ...filter, fromBlock: start, toBlock: end });
+    const part = await provider.getLogs({
+      ...filter,
+      fromBlock: start,
+      toBlock: end,
+    });
     if (part?.length) logs.push(...part);
   }
   return logs;

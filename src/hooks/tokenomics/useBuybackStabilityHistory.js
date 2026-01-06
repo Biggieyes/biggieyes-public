@@ -10,7 +10,10 @@ const fmtLabel = (ts) =>
     minute: "2-digit",
   });
 
-export default function useBuybackStabilityHistory({ buybackSnapshot, dripSnapshot } = {}) {
+export default function useBuybackStabilityHistory({
+  buybackSnapshot,
+  dripSnapshot,
+} = {}) {
   const [history, setHistory] = React.useState([]);
 
   React.useEffect(() => {
@@ -28,9 +31,12 @@ export default function useBuybackStabilityHistory({ buybackSnapshot, dripSnapsh
       treasury: buybackSnapshot?.treasury?.biggiBalanceNumeric ?? null,
     };
 
-    const hasValue = [point.dripDistributor, point.dripLm, point.buybackAgent, point.treasury].some(
-      (val) => typeof val === "number" && Number.isFinite(val)
-    );
+    const hasValue = [
+      point.dripDistributor,
+      point.dripLm,
+      point.buybackAgent,
+      point.treasury,
+    ].some((val) => typeof val === "number" && Number.isFinite(val));
     if (!hasValue) return;
 
     setHistory((prev) => {

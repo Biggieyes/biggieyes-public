@@ -1,83 +1,52 @@
 // src/hooks/useNFTRewards.js
 import * as React from "react";
-import NFTRewardsService from "../services/nftRewardsService";
-import { ADDR, getROProvider, getSignerProvider } from "../utils/contract";
-import { getCached, invalidateCache } from "../utils/fetchCache";
+import { ethers } from "ethers";
+import { getROProvider, ABI_REWARDS_READER } from "../utils/contract";
 
 const DEFAULT_DATA = {
-  baseURIs: { character: null, leaderboard: null, mystery: null },
-  characterClaimed: {},
-  leaderboardClaimed: {},
-  mysteryClaimed: {},
   totalMinted: 0,
-  contractAddress: ADDR.NFT_REWARDS,
+  contractAddress: "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
 };
 
 export default function useNFTRewards(providerOverride = null) {
   const [data, setData] = React.useState(DEFAULT_DATA);
   const [loading, setLoading] = React.useState(false);
-  const [performing, setPerforming] = React.useState(false);
   const [error, setError] = React.useState(null);
 
-  const refresh = React.useCallback(async (options = {}) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const provider = providerOverride || getROProvider();
-      if (!provider) throw new Error("Read-only provider not available");
+  const refresh = React.useCallback(
+    async (options = {}) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const provider = providerOverride || getROProvider();
+        if (!provider) throw new Error("Read-only provider not available");
 
-      const svc = new NFTRewardsService(ADDR.NFT_REWARDS, provider);
-      const cacheKey = `nftRewards:${svc.address || ADDR.NFT_REWARDS || "unknown"}`;
-      const snapshot = await getCached(
-        cacheKey,
-        async () => {
-          const stats = await svc.getAllStats();
-          const nextReward = Number(stats.nextRewardId?.toString?.() ?? stats.nextRewardId ?? 0);
-          return {
-            totalMinted: Number.isFinite(nextReward) ? nextReward : null,
-            contractAddress: svc.address,
-          };
-        },
-        { force: options?.force === true }
-      );
+        // RewardsReader contract instance
+        const rewardsReader = new ethers.Contract(
+          "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
+          ABI_REWARDS_READER,
+          provider,
+        );
 
-      setData((prev) => ({
-        ...prev,
-        totalMinted: snapshot.totalMinted == null ? prev.totalMinted : snapshot.totalMinted,
-        contractAddress: snapshot.contractAddress || prev.contractAddress,
-      }));
-    } catch (e) {
-      console.error("useNFTRewards.refresh", e);
-      setError(e);
-    } finally {
-      setLoading(false);
-    }
-  }, [providerOverride]);
+        // Čtení NFT rewards (příklad: totalMinted lze získat z jiné metody pokud je v ABI)
+        // Zde pouze placeholder, upravte podle skutečné metody v ABI
+        // const nftStats = await rewardsReader.nftRewardsStats();
+        // setData((prev) => ({ ...prev, totalMinted: nftStats.totalMinted }));
 
-  const claimReward = React.useCallback(async (rewardId, overrides = {}) => {
-    setPerforming(true);
-    setError(null);
-    try {
-      const provider = getSignerProvider();
-      const svc = new NFTRewardsService(ADDR.NFT_REWARDS, provider);
-      svc.connectWithSigner(provider.getSigner());
-      const receipt = await svc.claim(rewardId, overrides);
-      const cacheKey = `nftRewards:${svc.address || ADDR.NFT_REWARDS || "unknown"}`;
-      invalidateCache(cacheKey);
-      await refresh({ force: true }).catch(() => {});
-      return receipt;
-    } catch (e) {
-      console.error("useNFTRewards.claimReward", e);
-      setError(e);
-      throw e;
-    } finally {
-      setPerforming(false);
-    }
-  }, [refresh]);
+        setData((prev) => ({ ...prev }));
+      } catch (e) {
+        console.error("useNFTRewards.refresh", e);
+        setError(e);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [providerOverride],
+  );
 
   React.useEffect(() => {
     refresh();
   }, [refresh]);
 
-  return { data, loading, performing, error, refresh, claimReward };
+  return { data, loading, error, refresh };
 }

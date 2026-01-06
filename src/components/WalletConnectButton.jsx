@@ -16,7 +16,9 @@ export default function WalletConnectButton({
     <div className="moderator-center__wallet">
       <div className="moderator-center__wallet-info">
         <span className="muted">Wallet</span>
-        <strong>{walletAddress ? shortAddr(walletAddress) : "Not connected"}</strong>
+        <strong>
+          {walletAddress ? shortAddr(walletAddress) : "Not connected"}
+        </strong>
       </div>
       <div className="moderator-center__wallet-actions">
         <button

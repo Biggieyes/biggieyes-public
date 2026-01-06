@@ -86,26 +86,44 @@ export default class CollectionRewardsService {
   }
 
   async _sendTx(methodName, args = [], overrides = {}) {
-    if (!this._signerConnected) throw new Error("Signer not connected. Call connectWithSigner(signer) first.");
+    if (!this._signerConnected)
+      throw new Error(
+        "Signer not connected. Call connectWithSigner(signer) first.",
+      );
     const method = this.contract[methodName];
     if (!method) throw new Error("Method not found: " + methodName);
-      let gasEstimate = null;
-      try {
-        gasEstimate = await this.contract.estimateGas[methodName](...args, overrides);
-      } catch (err) {
-        console.debug("CollectionRewardsService estimateGas failed", methodName, err);
-        gasEstimate = null;
-      }
-      const sendOverrides = gasEstimate ? { gasLimit: gasEstimate.mul(120).div(100), ...overrides } : overrides;
+    let gasEstimate = null;
+    try {
+      gasEstimate = await this.contract.estimateGas[methodName](
+        ...args,
+        overrides,
+      );
+    } catch (err) {
+      console.debug(
+        "CollectionRewardsService estimateGas failed",
+        methodName,
+        err,
+      );
+      gasEstimate = null;
+    }
+    const sendOverrides = gasEstimate
+      ? { gasLimit: gasEstimate.mul(120).div(100), ...overrides }
+      : overrides;
     const tx = await method(...args, sendOverrides);
     const receipt = await tx.wait(1);
     return receipt;
   }
 
   async getAllStats(walletAddress = null) {
-    const blockPaidPromise = Promise.all(BLOCK_INDICES.map((idx) => this.blockPaid(idx)));
-    const orangePaidPromise = Promise.all(ORANGE_MAIN_IDS.map((id) => this.orangeMainIdPaid(id)));
-    const claimedOrangePromise = walletAddress ? this.claimedOrange(walletAddress) : Promise.resolve(false);
+    const blockPaidPromise = Promise.all(
+      BLOCK_INDICES.map((idx) => this.blockPaid(idx)),
+    );
+    const orangePaidPromise = Promise.all(
+      ORANGE_MAIN_IDS.map((id) => this.orangeMainIdPaid(id)),
+    );
+    const claimedOrangePromise = walletAddress
+      ? this.claimedOrange(walletAddress)
+      : Promise.resolve(false);
     const promises = [
       this.blockReward(),
       this.blockWinnersCount(),

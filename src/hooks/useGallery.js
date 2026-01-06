@@ -4,7 +4,10 @@ import { getReadOnlyContract } from "../utils/contract";
 import { ADDR } from "../utils/addresses";
 import { useIPFS } from "./useIPFS";
 import { useUtils } from "./useUtils";
-import { readGalleryCache, saveGalleryCache } from "../services/gallery/gallery.cache";
+import {
+  readGalleryCache,
+  saveGalleryCache,
+} from "../services/gallery/gallery.cache";
 import { getSafeDeployBlock } from "../utils/shared";
 
 export function useGallery() {
@@ -14,70 +17,84 @@ export function useGallery() {
   const [galleryLoading, setGalleryLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
 
-  const queryLogsBatched = React.useCallback(async (contract, filter, fromBlock, toBlock, step = 2000) => {
-    const out = [];
-    let start = fromBlock;
-    let batch = step;
-    while (start <= toBlock) {
-      const end = Math.min(start + batch - 1, toBlock);
-      try {
-        const part = await contract.queryFilter(filter, start, end);
-        if (part?.length) out.push(...part);
-        start = end + 1;
-        batch = step;
-      } catch (err) {
-        console.debug("queryLogsBatched chunk failed", err);
-        if (batch <= 1) throw err;
-        batch = Math.max(1, Math.floor(batch / 2));
-        continue;
-      }
-    }
-    return out;
-  }, []);
-
-  const fetchMyTickets = React.useCallback(async (addr) => {
-    setError(null);
-    try {
-      const contract = getReadOnlyContract();
-      let ids = [];
-      try {
-        if (typeof contract.findTicket === "function") {
-          ids = await contract.findTicket(addr);
-        } else {
-          // fallback: scan logs (simplified)
-          const latest = await contract.provider.getBlockNumber();
-          const FROM = await getSafeDeployBlock(contract.provider);
-          const toFilter = contract.filters.Transfer(null, addr, null);
-          const logs = await queryLogsBatched(contract, toFilter, FROM, latest);
-          ids = logs.map((l) => l.args?.tokenId).filter(Boolean);
-        }
-      } catch (err) {
-        console.debug("fetchMyTickets ticket query failed", err);
-      }
-      const metas = await mapLimit(ids, 4, async (idBN) => {
-        const id = idBN.toString();
-        let meta = { name: `Ticket #${id}`, description: "Redeem this ticket to mint a BiggiEyes NFT." };
-        let image = "/images/Biggi.png";
+  const queryLogsBatched = React.useCallback(
+    async (contract, filter, fromBlock, toBlock, step = 2000) => {
+      const out = [];
+      let start = fromBlock;
+      let batch = step;
+      while (start <= toBlock) {
+        const end = Math.min(start + batch - 1, toBlock);
         try {
-          const uri = await contract.tokenURI(idBN);
-          const j = await readJsonFromURI(uri);
-          if (j) {
-            meta = j;
-            const imgUrl = j?.image || j?.image_url;
-            image = resolveImageUrl(imgUrl, uri) || image;
+          const part = await contract.queryFilter(filter, start, end);
+          if (part?.length) out.push(...part);
+          start = end + 1;
+          batch = step;
+        } catch (err) {
+          console.debug("queryLogsBatched chunk failed", err);
+          if (batch <= 1) throw err;
+          batch = Math.max(1, Math.floor(batch / 2));
+          continue;
+        }
+      }
+      return out;
+    },
+    [],
+  );
+
+  const fetchMyTickets = React.useCallback(
+    async (addr) => {
+      setError(null);
+      try {
+        const contract = getReadOnlyContract();
+        let ids = [];
+        try {
+          if (typeof contract.findTicket === "function") {
+            ids = await contract.findTicket(addr);
+          } else {
+            // fallback: scan logs (simplified)
+            const latest = await contract.provider.getBlockNumber();
+            const FROM = await getSafeDeployBlock(contract.provider);
+            const toFilter = contract.filters.Transfer(null, addr, null);
+            const logs = await queryLogsBatched(
+              contract,
+              toFilter,
+              FROM,
+              latest,
+            );
+            ids = logs.map((l) => l.args?.tokenId).filter(Boolean);
           }
         } catch (err) {
-          console.debug("fetchMyTickets tokenURI read failed", err);
+          console.debug("fetchMyTickets ticket query failed", err);
         }
-        return { tokenId: id, image, meta, isTicket: true };
-      });
-      return metas;
-    } catch (e) {
-      console.error("fetchMyTickets", e);
-      setError(e);
-      return [];
-    }
-  }, [mapLimit, readJsonFromURI, resolveImageUrl, queryLogsBatched]);
+        const metas = await mapLimit(ids, 4, async (idBN) => {
+          const id = idBN.toString();
+          let meta = {
+            name: `Ticket #${id}`,
+            description: "Redeem this ticket to mint a BiggiEyes NFT.",
+          };
+          let image = "/images/Biggi.png";
+          try {
+            const uri = await contract.tokenURI(idBN);
+            const j = await readJsonFromURI(uri);
+            if (j) {
+              meta = j;
+              const imgUrl = j?.image || j?.image_url;
+              image = resolveImageUrl(imgUrl, uri) || image;
+            }
+          } catch (err) {
+            console.debug("fetchMyTickets tokenURI read failed", err);
+          }
+          return { tokenId: id, image, meta, isTicket: true };
+        });
+        return metas;
+      } catch (e) {
+        console.error("fetchMyTickets", e);
+        setError(e);
+        return [];
+      }
+    },
+    [mapLimit, readJsonFromURI, resolveImageUrl, queryLogsBatched],
+  );
 
   const fetchOwnedNFTsViaTransfers = React.useCallback(
     async (addr) => {
@@ -97,7 +114,8 @@ export function useGallery() {
         ]);
 
         const all = [...toLogs, ...fromLogs].sort((a, b) => {
-          if (a.blockNumber !== b.blockNumber) return a.blockNumber - b.blockNumber;
+          if (a.blockNumber !== b.blockNumber)
+            return a.blockNumber - b.blockNumber;
           return a.logIndex - b.logIndex;
         });
 
@@ -116,9 +134,15 @@ export function useGallery() {
         const metas = await mapLimit(tokenIds, 4, async (tid) => {
           let isT = false;
           try {
-            isT = typeof contract?.isTicket === "function" ? await contract.isTicket(tid) : false;
+            isT =
+              typeof contract?.isTicket === "function"
+                ? await contract.isTicket(tid)
+                : false;
           } catch (err) {
-            console.debug("fetchOwnedNFTsViaTransfers isTicket check failed", err);
+            console.debug(
+              "fetchOwnedNFTsViaTransfers isTicket check failed",
+              err,
+            );
           }
           if (isT) return null;
 
@@ -137,7 +161,10 @@ export function useGallery() {
             const imgUrl = j?.image || j?.image_url;
             image = resolveImageUrl(imgUrl, uri) || image;
           } catch (err) {
-            console.debug("fetchOwnedNFTsViaTransfers tokenURI read failed", err);
+            console.debug(
+              "fetchOwnedNFTsViaTransfers tokenURI read failed",
+              err,
+            );
           }
           return { tokenId: String(tid), image, meta, isTicket: false };
         });
@@ -158,7 +185,14 @@ export function useGallery() {
         setGalleryLoading(false);
       }
     },
-    [mapLimit, queryLogsBatched, readJsonFromURI, resolveImageUrl, getCachedPriceAttrs, mergeAttrs]
+    [
+      mapLimit,
+      queryLogsBatched,
+      readJsonFromURI,
+      resolveImageUrl,
+      getCachedPriceAttrs,
+      mergeAttrs,
+    ],
   );
 
   return {

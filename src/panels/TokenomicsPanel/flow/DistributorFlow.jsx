@@ -10,7 +10,12 @@ const DistributorFlow = ({ flows = [] }) => (
     </header>
     <div className="distributor-flow__rows">
       {flows.map((flow) => (
-        <ValueRow key={flow.label} label={flow.label} value={flow.amount} hint={flow.hint} />
+        <ValueRow
+          key={flow.label}
+          label={flow.label}
+          value={flow.amount}
+          hint={flow.hint}
+        />
       ))}
     </div>
   </section>

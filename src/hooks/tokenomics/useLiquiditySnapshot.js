@@ -5,7 +5,12 @@ import { canPoll, getPollInterval } from "../../utils/polling";
 
 const DEFAULT_POLL_INTERVAL = getPollInterval(12_000, "VITE_LIQUIDITY_POLL_MS");
 
-export default function useLiquiditySnapshot({ chainId, provider, pollingInterval = DEFAULT_POLL_INTERVAL, enabled = true } = {}) {
+export default function useLiquiditySnapshot({
+  chainId,
+  provider,
+  pollingInterval = DEFAULT_POLL_INTERVAL,
+  enabled = true,
+} = {}) {
   const [snapshot, setSnapshot] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);

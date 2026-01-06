@@ -36,15 +36,37 @@ export const writeFirst = async (targets, names, ...args) => {
       }
     }
   }
-  throw new Error(`No matching method found (${names.join(" | ")}) on provided contracts`);
+  throw new Error(
+    `No matching method found (${names.join(" | ")}) on provided contracts`,
+  );
 };
 
 export const setVRFAllOrPartial = async (vrf) => {
   const targets = [getContract];
-  const combinedNames = ["setVRFParams", "setVrfParams", "configureVRF", "configureVrf", "setChainlinkVRF"];
+  const combinedNames = [
+    "setVRFParams",
+    "setVrfParams",
+    "configureVRF",
+    "configureVrf",
+    "setChainlinkVRF",
+  ];
   const argsCombo = [
-    [vrf.keyHash, vrf.confirmations, vrf.callbackGasLimit, vrf.numWords, vrf.coordinator, vrf.subscriptionId],
-    [vrf.keyHash, vrf.confirmations, vrf.numWords, vrf.callbackGasLimit, vrf.coordinator, vrf.subscriptionId],
+    [
+      vrf.keyHash,
+      vrf.confirmations,
+      vrf.callbackGasLimit,
+      vrf.numWords,
+      vrf.coordinator,
+      vrf.subscriptionId,
+    ],
+    [
+      vrf.keyHash,
+      vrf.confirmations,
+      vrf.numWords,
+      vrf.callbackGasLimit,
+      vrf.coordinator,
+      vrf.subscriptionId,
+    ],
   ];
   for (const a of argsCombo) {
     try {

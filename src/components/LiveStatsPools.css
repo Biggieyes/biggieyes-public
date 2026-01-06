@@ -6,8 +6,14 @@
 .pools-card {
   border-radius: 22px;
   border: 1px solid rgba(255, 255, 255, 0.22);
-  background: linear-gradient(180deg, rgba(3, 8, 20, 0.95), rgba(5, 8, 15, 0.9));
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.55), 0 0 60px rgba(255, 209, 102, 0.12);
+  background: linear-gradient(
+    180deg,
+    rgba(3, 8, 20, 0.95),
+    rgba(5, 8, 15, 0.9)
+  );
+  box-shadow:
+    0 20px 45px rgba(0, 0, 0, 0.55),
+    0 0 60px rgba(255, 209, 102, 0.12);
   padding: 18px;
   display: flex;
   flex-direction: column;
@@ -27,14 +33,20 @@
   background: rgba(8, 12, 28, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.06);
   padding: 10px;
-  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.6), 0 0 16px rgba(0, 201, 199, 0.05);
+  box-shadow:
+    inset 0 0 25px rgba(0, 0, 0, 0.6),
+    0 0 16px rgba(0, 201, 199, 0.05);
 }
 
 .pools-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 .pools-table thead th {

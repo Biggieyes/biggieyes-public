@@ -15,7 +15,12 @@ export function VrfProvider({ children }) {
     callbackGasLimit: 300000,
   });
   const [subscriptionId, setSubscriptionId] = React.useState("");
-  const [last, setLast] = React.useState({ requestId: "", status: "idle", requestedAt: "", txHash: "" });
+  const [last, setLast] = React.useState({
+    requestId: "",
+    status: "idle",
+    requestedAt: "",
+    txHash: "",
+  });
   const [history, setHistory] = React.useState([]);
   const [vrfPending, setVrfPending] = React.useState(false);
   const [isRedeeming, setIsRedeeming] = React.useState(false);
@@ -49,23 +54,29 @@ export function VrfProvider({ children }) {
           const reqLogs = await c.queryFilter(
             c.filters.VRFRequested?.(userAddr) ?? c.filters.VRFRequested(),
             Math.max(DEPLOY_BLOCK, latest - 120000),
-            latest
+            latest,
           );
           const fulfRaw = await c.queryFilter(
             c.filters.VRFFulfillStarted?.() ?? c.filters.VRFFulfillStarted(),
             Math.max(DEPLOY_BLOCK, latest - 120000),
-            latest
+            latest,
           );
           const fulf = fulfRaw.filter(
-            (l) => (l.args?.minter || l.args?.[1] || "").toLowerCase?.() === userAddr.toLowerCase()
+            (l) =>
+              (l.args?.minter || l.args?.[1] || "").toLowerCase?.() ===
+              userAddr.toLowerCase(),
           );
           const byReq = new Map(
-            fulf.map((l) => [(l.args?.requestId || l.args?.[0])?.toString?.() || "", l])
+            fulf.map((l) => [
+              (l.args?.requestId || l.args?.[0])?.toString?.() || "",
+              l,
+            ]),
           );
 
           const rows = [];
           for (const rl of reqLogs) {
-            const rid = (rl.args?.requestId || rl.args?.[1])?.toString?.() || "";
+            const rid =
+              (rl.args?.requestId || rl.args?.[1])?.toString?.() || "";
             const f = byReq.get(rid);
             rows.push({
               requestId: rid,
@@ -82,7 +93,7 @@ export function VrfProvider({ children }) {
         console.error("VrfProvider.refresh", e);
       }
     },
-    [mainRO]
+    [mainRO],
   );
 
   const requestRedeem = React.useCallback(
@@ -119,7 +130,7 @@ export function VrfProvider({ children }) {
         throw e;
       }
     },
-    [mainRW]
+    [mainRW],
   );
 
   const checkResolution = React.useCallback(
@@ -127,9 +138,13 @@ export function VrfProvider({ children }) {
       try {
         if (!userAddr) return;
         const c = await mainRO();
-        const rid = await c.pendingMintRequest(userAddr).catch(() => ethers.BigNumber.from(0));
+        const rid = await c
+          .pendingMintRequest(userAddr)
+          .catch(() => ethers.BigNumber.from(0));
         const isZero =
-          rid && typeof rid.isZero === "function" ? rid.isZero() : String(rid || "0") === "0";
+          rid && typeof rid.isZero === "function"
+            ? rid.isZero()
+            : String(rid || "0") === "0";
         if (isZero) {
           setVrfPending(false);
           setIsRedeeming(false);
@@ -138,7 +153,7 @@ export function VrfProvider({ children }) {
         }
       } catch {}
     },
-    [mainRO]
+    [mainRO],
   );
 
   return (

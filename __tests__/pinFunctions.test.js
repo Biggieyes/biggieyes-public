@@ -12,7 +12,7 @@ const buildEvent = (body) => ({
 });
 
 beforeEach(() => {
-  mockPost = vi.fn();
+  mockPost = jest.fn();
   axios.post = mockPost;
   process.env.PINATA_API_KEY = "test_key";
   process.env.PINATA_SECRET_API_KEY = "test_secret";

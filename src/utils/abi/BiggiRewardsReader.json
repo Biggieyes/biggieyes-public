@@ -3,9 +3,21 @@
     "inputs": [
       { "internalType": "address", "name": "_nftRewards", "type": "address" },
       { "internalType": "address", "name": "_tokenRewards", "type": "address" },
-      { "internalType": "address", "name": "_communityRewards", "type": "address" },
-      { "internalType": "address", "name": "_collectionRewards", "type": "address" },
-      { "internalType": "address", "name": "_collectionDistributor", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "_communityRewards",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_collectionRewards",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_collectionDistributor",
+        "type": "address"
+      }
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
@@ -14,7 +26,11 @@
     "inputs": [
       { "internalType": "address", "name": "target", "type": "address" },
       { "internalType": "address", "name": "owner", "type": "address" },
-      { "internalType": "uint256[]", "name": "collectionIds", "type": "uint256[]" }
+      {
+        "internalType": "uint256[]",
+        "name": "collectionIds",
+        "type": "uint256[]"
+      }
     ],
     "name": "aggregateCollectionClaimableForOwner",
     "outputs": [
@@ -59,23 +75,33 @@
     "type": "function"
   },
   {
-    "inputs": [{ "internalType": "address", "name": "target", "type": "address" }],
+    "inputs": [
+      { "internalType": "address", "name": "target", "type": "address" }
+    ],
     "name": "getCollectionTotalPending",
-    "outputs": [{ "internalType": "uint256", "name": "totalPending", "type": "uint256" }],
+    "outputs": [
+      { "internalType": "uint256", "name": "totalPending", "type": "uint256" }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
-    "inputs": [{ "internalType": "address", "name": "user", "type": "address" }],
+    "inputs": [
+      { "internalType": "address", "name": "user", "type": "address" }
+    ],
     "name": "getCommunityPending",
-    "outputs": [{ "internalType": "uint256", "name": "pendingForUser", "type": "uint256" }],
+    "outputs": [
+      { "internalType": "uint256", "name": "pendingForUser", "type": "uint256" }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "getCommunityTotalPending",
-    "outputs": [{ "internalType": "uint256", "name": "totalPending", "type": "uint256" }],
+    "outputs": [
+      { "internalType": "uint256", "name": "totalPending", "type": "uint256" }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -93,13 +119,21 @@
     "inputs": [],
     "name": "getTokenRewardsStatus",
     "outputs": [
-      { "internalType": "address", "name": "tokenRewardsAddr", "type": "address" },
+      {
+        "internalType": "address",
+        "name": "tokenRewardsAddr",
+        "type": "address"
+      },
       { "internalType": "address", "name": "tokenAddr", "type": "address" },
       { "internalType": "uint256", "name": "rewardsCap", "type": "uint256" },
       { "internalType": "uint256", "name": "rewardsMinted", "type": "uint256" },
       { "internalType": "uint256", "name": "unitReward", "type": "uint256" },
       { "internalType": "uint256", "name": "tokenBalance", "type": "uint256" },
-      { "internalType": "uint8[11]", "name": "blockWeights", "type": "uint8[11]" }
+      {
+        "internalType": "uint8[11]",
+        "name": "blockWeights",
+        "type": "uint8[11]"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -127,7 +161,11 @@
   {
     "inputs": [
       { "internalType": "address", "name": "target", "type": "address" },
-      { "internalType": "uint256[]", "name": "collectionIds", "type": "uint256[]" }
+      {
+        "internalType": "uint256[]",
+        "name": "collectionIds",
+        "type": "uint256[]"
+      }
     ],
     "name": "probeCollectionClaimableBatch",
     "outputs": [

@@ -1,8 +1,11 @@
 // src/hooks/useCollectionRewards.js
 import * as React from "react";
 import { ethers } from "ethers";
-import { getCollectionRewardsRO } from "../utils/contract";
-import { BLOCK_INDICES, ORANGE_MAIN_IDS } from "../services/collectionRewardsService";
+import { ABI_REWARDS_READER, getROProvider } from "../utils/contract";
+import {
+  BLOCK_INDICES,
+  ORANGE_MAIN_IDS,
+} from "../services/collectionRewardsService";
 import { getCached } from "../utils/fetchCache";
 
 function toNumber(value) {
@@ -22,9 +25,9 @@ function toEther(value) {
   }
 }
 
-export default function useCollectionRewards(walletAddress = "", providerOverride = null) {
+export function useCollectionRewards(walletAddress, providerOverride) {
   const [data, setData] = React.useState({
-    address: null,
+    address: "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
     blockReward: "0",
     blockWinnersCount: 0,
     blockPaid: [],
@@ -42,87 +45,46 @@ export default function useCollectionRewards(walletAddress = "", providerOverrid
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
 
-  const refresh = React.useCallback(async (options = {}) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const contract = getCollectionRewardsRO(providerOverride || undefined);
-      if (!contract) throw new Error("CollectionRewards contract not found");
-      const cacheKey = `collectionRewards:${contract.address || "unknown"}:${walletAddress || "anon"}`;
-      const snapshot = await getCached(
-        cacheKey,
-        async () => {
-          const safeCall = async (name, args = [], fallback = null) => {
-            try {
-              const fn = contract?.[name];
-              if (typeof fn !== "function") return fallback;
-              const res = await fn(...args);
-              return res ?? fallback;
-            } catch {
-              return fallback;
-            }
-          };
+  const refresh = React.useCallback(
+    async (options = {}) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const provider = providerOverride || getROProvider();
+        if (!provider) throw new Error("Read-only provider not available");
 
-          const [
-            blockReward,
-            blockWinnersCount,
-            orangeReward,
-            orangeWinnersCount,
-            rainbowReward,
-            rainbowRewardClaimedGlobal,
-            distributor,
-            main,
-            owner,
-          ] = await Promise.all([
-            safeCall("blockReward", [], ethers.constants.Zero),
-            safeCall("blockWinnersCount", [], 0),
-            safeCall("orangeReward", [], ethers.constants.Zero),
-            safeCall("orangeWinnersCount", [], 0),
-            safeCall("rainbowReward", [], ethers.constants.Zero),
-            safeCall("rainbowRewardClaimedGlobal", [], false),
-            safeCall("distributor", [], null),
-            safeCall("main", [], null),
-            safeCall("owner", [], null),
-          ]);
+        // RewardsReader contract instance
+        const rewardsReader = new ethers.Contract(
+          "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
+          ABI_REWARDS_READER,
+          provider,
+        );
 
-          const blockPaidRaw = await Promise.all(
-            BLOCK_INDICES.map((idx) => safeCall("blockPaid", [idx], false))
-          );
-          const orangePaidRaw = await Promise.all(
-            ORANGE_MAIN_IDS.map((id) => safeCall("orangeMainIdPaid", [id], false))
-          );
-          const claimedOrangeRaw = walletAddress
-            ? await safeCall("claimedOrange", [walletAddress], false)
-            : false;
+        // Čtení globálního snapshotu (viz ABI)
+        const global = await rewardsReader.globalSnapshot();
 
-          return {
-            address: contract.address,
-            blockReward: toEther(blockReward),
-            blockWinnersCount: toNumber(blockWinnersCount),
-            blockPaid: blockPaidRaw.map(Boolean),
-            orangeReward: toEther(orangeReward),
-            orangeWinnersCount: toNumber(orangeWinnersCount),
-            orangeMainIdPaid: orangePaidRaw.map(Boolean),
-            rainbowReward: toEther(rainbowReward),
-            rainbowRewardClaimedGlobal: Boolean(rainbowRewardClaimedGlobal),
-            rainbowClaimed: Boolean(rainbowRewardClaimedGlobal),
-            claimedOrange: Boolean(claimedOrangeRaw),
-            distributor: distributor || null,
-            main: main || null,
-            owner: owner || null,
-          };
-        },
-        { force: options?.force === true }
-      );
+        // Načtení odměn pro všechny bloky
+        const blockPaid = await Promise.all(
+          BLOCK_INDICES.map((idx) => rewardsReader.blockPaid(idx)),
+        );
 
-      setData(snapshot);
-    } catch (e) {
-      console.error("useCollectionRewards.refresh", e);
-      setError(e);
-    } finally {
-      setLoading(false);
-    }
-  }, [walletAddress, providerOverride]);
+        setData((prev) => ({
+          ...prev,
+          address: "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
+          blockReward: global.remainingBlock?.toString?.() ?? "0",
+          orangeReward: global.remainingOrange?.toString?.() ?? "0",
+          blockPaid, // pole s odměnami pro každý blok
+          // ...další pole podle potřeby
+        }));
+      } catch (e) {
+        console.error("useCollectionRewards.refresh", e);
+        setError(e);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [walletAddress, providerOverride],
+  );
 
   React.useEffect(() => {
     refresh();

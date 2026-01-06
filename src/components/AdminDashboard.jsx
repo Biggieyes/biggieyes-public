@@ -1,6 +1,11 @@
 // src/components/AdminDashboard.jsx
 import * as React from "react";
-import { getModeratorsRewardsContract, getConfig, isOwner, parseWei } from "../utils/eth";
+import {
+  getModeratorsRewardsContract,
+  getConfig,
+  isOwner,
+  parseWei,
+} from "../utils/eth";
 
 const shortAddr = (addr) => {
   if (!addr) return "--";
@@ -43,7 +48,7 @@ export default function AdminDashboard({ walletAddress, onTx }) {
           addr = await callFirst(
             contract,
             ["getSlotAddress", "slotAddress", "slotToAddress", "slotWallet"],
-            [i]
+            [i],
           );
         } catch {
           addr = "";
@@ -64,11 +69,19 @@ export default function AdminDashboard({ walletAddress, onTx }) {
       const tx = await callFirst(
         contract,
         ["setSlotAddress", "setSlotWallet", "setSlot"],
-        [Number(slotId), slotWallet]
+        [Number(slotId), slotWallet],
       );
-      onTx?.({ status: "pending", txHash: tx.hash, message: "Slot update submitted." });
+      onTx?.({
+        status: "pending",
+        txHash: tx.hash,
+        message: "Slot update submitted.",
+      });
       await tx.wait();
-      onTx?.({ status: "confirmed", txHash: tx.hash, message: "Slot updated." });
+      onTx?.({
+        status: "confirmed",
+        txHash: tx.hash,
+        message: "Slot updated.",
+      });
       setStatus("Slot updated.");
     } catch (err) {
       setStatus("Slot update failed.");
@@ -81,10 +94,22 @@ export default function AdminDashboard({ walletAddress, onTx }) {
     try {
       setPending(true);
       const contract = await getModeratorsRewardsContract({ signer: true });
-      const tx = await callFirst(contract, ["revokeSlot"], [Number(revokeSlotId)]);
-      onTx?.({ status: "pending", txHash: tx.hash, message: "Slot revoke submitted." });
+      const tx = await callFirst(
+        contract,
+        ["revokeSlot"],
+        [Number(revokeSlotId)],
+      );
+      onTx?.({
+        status: "pending",
+        txHash: tx.hash,
+        message: "Slot revoke submitted.",
+      });
       await tx.wait();
-      onTx?.({ status: "confirmed", txHash: tx.hash, message: "Slot revoked." });
+      onTx?.({
+        status: "confirmed",
+        txHash: tx.hash,
+        message: "Slot revoked.",
+      });
       setStatus("Slot revoked.");
     } catch (err) {
       setStatus("Slot revoke failed.");
@@ -102,11 +127,19 @@ export default function AdminDashboard({ walletAddress, onTx }) {
         contract,
         ["distributeWeek"],
         [Number(weekNumber), merkleRoot, totalWei],
-        { value: totalWei }
+        { value: totalWei },
       );
-      onTx?.({ status: "pending", txHash: tx.hash, message: "Distribution submitted." });
+      onTx?.({
+        status: "pending",
+        txHash: tx.hash,
+        message: "Distribution submitted.",
+      });
       await tx.wait();
-      onTx?.({ status: "confirmed", txHash: tx.hash, message: "Distribution confirmed." });
+      onTx?.({
+        status: "confirmed",
+        txHash: tx.hash,
+        message: "Distribution confirmed.",
+      });
       setStatus("Distribution confirmed.");
     } catch (err) {
       setStatus("Distribution failed.");
@@ -121,9 +154,17 @@ export default function AdminDashboard({ walletAddress, onTx }) {
       const valueWei = parseWei(fundAmount || "0");
       const contract = await getModeratorsRewardsContract({ signer: true });
       const tx = await callFirst(contract, ["fund"], [], { value: valueWei });
-      onTx?.({ status: "pending", txHash: tx.hash, message: "Funding submitted." });
+      onTx?.({
+        status: "pending",
+        txHash: tx.hash,
+        message: "Funding submitted.",
+      });
       await tx.wait();
-      onTx?.({ status: "confirmed", txHash: tx.hash, message: "Contract funded." });
+      onTx?.({
+        status: "confirmed",
+        txHash: tx.hash,
+        message: "Contract funded.",
+      });
       setStatus("Contract funded.");
     } catch (err) {
       setStatus("Funding failed.");
@@ -163,11 +204,19 @@ export default function AdminDashboard({ walletAddress, onTx }) {
 
       <div className="moderator-center__field">
         <label>Slot ID</label>
-        <input value={slotId} onChange={(e) => setSlotId(e.target.value)} placeholder="0-9" />
+        <input
+          value={slotId}
+          onChange={(e) => setSlotId(e.target.value)}
+          placeholder="0-9"
+        />
       </div>
       <div className="moderator-center__field">
         <label>Slot wallet</label>
-        <input value={slotWallet} onChange={(e) => setSlotWallet(e.target.value)} placeholder="0x..." />
+        <input
+          value={slotWallet}
+          onChange={(e) => setSlotWallet(e.target.value)}
+          placeholder="0x..."
+        />
       </div>
       <div className="moderator-center__actions">
         <button
@@ -178,7 +227,11 @@ export default function AdminDashboard({ walletAddress, onTx }) {
         >
           Set slot
         </button>
-        <button type="button" className="biggi-btn biggi-btn--ghost" onClick={loadSlots}>
+        <button
+          type="button"
+          className="biggi-btn biggi-btn--ghost"
+          onClick={loadSlots}
+        >
           Load slots
         </button>
       </div>
@@ -227,15 +280,27 @@ export default function AdminDashboard({ walletAddress, onTx }) {
 
       <div className="moderator-center__field">
         <label>Week</label>
-        <input value={weekNumber} onChange={(e) => setWeekNumber(e.target.value)} placeholder="e.g. 2025-W12" />
+        <input
+          value={weekNumber}
+          onChange={(e) => setWeekNumber(e.target.value)}
+          placeholder="e.g. 2025-W12"
+        />
       </div>
       <div className="moderator-center__field">
         <label>Merkle root</label>
-        <input value={merkleRoot} onChange={(e) => setMerkleRoot(e.target.value)} placeholder="0x..." />
+        <input
+          value={merkleRoot}
+          onChange={(e) => setMerkleRoot(e.target.value)}
+          placeholder="0x..."
+        />
       </div>
       <div className="moderator-center__field">
         <label>Total amount (POL)</label>
-        <input value={totalAmount} onChange={(e) => setTotalAmount(e.target.value)} placeholder="e.g. 12.5" />
+        <input
+          value={totalAmount}
+          onChange={(e) => setTotalAmount(e.target.value)}
+          placeholder="e.g. 12.5"
+        />
       </div>
       <div className="moderator-center__actions">
         <button
@@ -252,7 +317,11 @@ export default function AdminDashboard({ walletAddress, onTx }) {
 
       <div className="moderator-center__field">
         <label>Fund contract (POL)</label>
-        <input value={fundAmount} onChange={(e) => setFundAmount(e.target.value)} placeholder="e.g. 10" />
+        <input
+          value={fundAmount}
+          onChange={(e) => setFundAmount(e.target.value)}
+          placeholder="e.g. 10"
+        />
       </div>
       <div className="moderator-center__actions">
         <button

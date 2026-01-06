@@ -19,7 +19,10 @@ export default function useLiquidityKeeper() {
     setError(null);
     try {
       const addr = ADDR.KEEPER_PROXY || null;
-      if (!addr) throw new Error("LiquidityKeeper address not configured (KEEPER_PROXY)");
+      if (!addr)
+        throw new Error(
+          "LiquidityKeeper address not configured (KEEPER_PROXY)",
+        );
       const cacheKey = `liquidityKeeper:${addr}`;
       const snapshot = await getCached(
         cacheKey,
@@ -27,7 +30,7 @@ export default function useLiquidityKeeper() {
           const contract = getReadOnlyContract(addr, ABI_LIQUIDITY_KEEPER);
           return { address: contract.address };
         },
-        { force: options?.force === true }
+        { force: options?.force === true },
       );
       setData(snapshot);
     } catch (e) {
@@ -38,28 +41,38 @@ export default function useLiquidityKeeper() {
     }
   }, []);
 
-  const executePairing = React.useCallback(async (requestedMatic, overrides = {}) => {
-    setPerforming(true);
-    setError(null);
-    try {
-      const addr = ADDR.KEEPER_PROXY || null;
-      if (!addr) throw new Error("LiquidityKeeper address not configured (KEEPER_PROXY)");
-      const provider = getSignerProvider();
-      const contract = new ethers.Contract(addr, ABI_LIQUIDITY_KEEPER, provider.getSigner());
-      const tx = await contract.executePairing(requestedMatic, overrides);
-      const receipt = await tx.wait(1);
-      const cacheKey = `liquidityKeeper:${addr}`;
-      invalidateCache(cacheKey);
-      await refresh({ force: true }).catch(() => {});
-      return receipt;
-    } catch (e) {
-      console.error("useLiquidityKeeper.executePairing", e);
-      setError(e);
-      throw e;
-    } finally {
-      setPerforming(false);
-    }
-  }, [refresh]);
+  const executePairing = React.useCallback(
+    async (requestedMatic, overrides = {}) => {
+      setPerforming(true);
+      setError(null);
+      try {
+        const addr = ADDR.KEEPER_PROXY || null;
+        if (!addr)
+          throw new Error(
+            "LiquidityKeeper address not configured (KEEPER_PROXY)",
+          );
+        const provider = getSignerProvider();
+        const contract = new ethers.Contract(
+          addr,
+          ABI_LIQUIDITY_KEEPER,
+          provider.getSigner(),
+        );
+        const tx = await contract.executePairing(requestedMatic, overrides);
+        const receipt = await tx.wait(1);
+        const cacheKey = `liquidityKeeper:${addr}`;
+        invalidateCache(cacheKey);
+        await refresh({ force: true }).catch(() => {});
+        return receipt;
+      } catch (e) {
+        console.error("useLiquidityKeeper.executePairing", e);
+        setError(e);
+        throw e;
+      } finally {
+        setPerforming(false);
+      }
+    },
+    [refresh],
+  );
 
   React.useEffect(() => {
     refresh();

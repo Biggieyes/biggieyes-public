@@ -31,17 +31,17 @@ export default function useTreasury() {
         cacheKey,
         async () => {
           const provider = contract.provider;
-          const [
-            treasuryAddr,
-            tokenAddr,
-            lastRefillAtRaw,
-            operator,
-          ] = await Promise.all([
-            contract.treasury?.().catch(() => contract.treasuryAddress?.().catch(() => null)),
-            contract.token?.().catch(() => contract.tokenAddress?.().catch(() => null)),
-            contract.lastRefillAt?.().catch(() => 0),
-            contract.operator?.().catch(() => null),
-          ]);
+          const [treasuryAddr, tokenAddr, lastRefillAtRaw, operator] =
+            await Promise.all([
+              contract
+                .treasury?.()
+                .catch(() => contract.treasuryAddress?.().catch(() => null)),
+              contract
+                .token?.()
+                .catch(() => contract.tokenAddress?.().catch(() => null)),
+              contract.lastRefillAt?.().catch(() => 0),
+              contract.operator?.().catch(() => null),
+            ]);
 
           let nativeBalance = "0";
           let tokenBalance = "0";
@@ -57,10 +57,14 @@ export default function useTreasury() {
 
           if (tokenAddr && treasuryAddr && provider) {
             try {
-              const erc20 = new ethers.Contract(tokenAddr, [
-                "function balanceOf(address) view returns (uint256)",
-                "function symbol() view returns (string)",
-              ], provider);
+              const erc20 = new ethers.Contract(
+                tokenAddr,
+                [
+                  "function balanceOf(address) view returns (uint256)",
+                  "function symbol() view returns (string)",
+                ],
+                provider,
+              );
               const [bal, sym] = await Promise.all([
                 erc20.balanceOf(treasuryAddr),
                 erc20.symbol().catch(() => "BIGGI"),
@@ -73,7 +77,9 @@ export default function useTreasury() {
 
           let lastRefillAt = null;
           try {
-            const n = Number(lastRefillAtRaw?.toString?.() || lastRefillAtRaw || 0);
+            const n = Number(
+              lastRefillAtRaw?.toString?.() || lastRefillAtRaw || 0,
+            );
             if (Number.isFinite(n) && n > 0) {
               lastRefillAt = new Date(n * 1000).toLocaleString();
             }
@@ -89,7 +95,7 @@ export default function useTreasury() {
             operator: operator || null,
           };
         },
-        { force: options?.force === true }
+        { force: options?.force === true },
       );
 
       setData(snapshot);

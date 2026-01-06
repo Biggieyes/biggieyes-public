@@ -16,11 +16,12 @@ import { ethers } from "ethers";
 export async function getReserveLmLvStats() {
   // Reserve
   const reserve = reserveService;
-  const [liquidityManager, totalMaticReceived, biggiBalance] = await Promise.all([
-    reserve.getLiquidityManagerAddress().catch(() => null),
-    reserve.getTotalMaticReceivedFormatted().catch(() => "0"),
-    reserve.getBiggiBalanceFormatted().catch(() => "0"),
-  ]);
+  const [liquidityManager, totalMaticReceived, biggiBalance] =
+    await Promise.all([
+      reserve.getLiquidityManagerAddress().catch(() => null),
+      reserve.getTotalMaticReceivedFormatted().catch(() => "0"),
+      reserve.getBiggiBalanceFormatted().catch(() => "0"),
+    ]);
 
   const reserveStats = {
     address: ADDR.RESERVE,
@@ -52,7 +53,11 @@ export async function getReserveLmLvStats() {
   ]);
 
   const liquidityVaultStats = {
-    address: (liquidityVault && liquidityVault !== "0x0000000000000000000000000000000000000000") ? liquidityVault : ADDR.LIQUIDITY_VAULT,
+    address:
+      liquidityVault &&
+      liquidityVault !== "0x0000000000000000000000000000000000000000"
+        ? liquidityVault
+        : ADDR.LIQUIDITY_VAULT,
     owner,
     liquidityManager: vaultLiquidityManager,
   };
@@ -78,8 +83,16 @@ export async function getBiggiBalancesAcrossReserveLmLv(provider = null) {
   const reserveAddr = ADDR.RESERVE;
   let lmAddr = null;
   let lvAddr = null;
-  try { lmAddr = await reserveService.getLiquidityManagerAddress(); } catch { lmAddr = ADDR.LM; }
-  try { lvAddr = await liquidityManagerService.getLiquidityVaultAddress(); } catch { lvAddr = ADDR.LIQUIDITY_VAULT; }
+  try {
+    lmAddr = await reserveService.getLiquidityManagerAddress();
+  } catch {
+    lmAddr = ADDR.LM;
+  }
+  try {
+    lvAddr = await liquidityManagerService.getLiquidityVaultAddress();
+  } catch {
+    lvAddr = ADDR.LIQUIDITY_VAULT;
+  }
 
   const [reserveRaw, lmRaw, lvRaw] = await Promise.all([
     token.balanceOf(reserveAddr).catch(() => ethers.constants.Zero),
@@ -91,6 +104,10 @@ export async function getBiggiBalancesAcrossReserveLmLv(provider = null) {
     reserve: fromWei(reserveRaw),
     liquidityManager: fromWei(lmRaw),
     liquidityVault: fromWei(lvRaw),
-    raw: { reserve: reserveRaw, liquidityManager: lmRaw, liquidityVault: lvRaw }
+    raw: {
+      reserve: reserveRaw,
+      liquidityManager: lmRaw,
+      liquidityVault: lvRaw,
+    },
   };
 }

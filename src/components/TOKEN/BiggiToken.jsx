@@ -13,13 +13,61 @@ import BuybackDripButton from "./BuybackDripButton";
 import LMReserveTokenDexButton from "./LMReserveTokenDexButton";
 import PolicyButton from "./PolicyButton";
 import { getBiggiBalancesAcrossReserveLmLv } from "../../services/composed";
+import { BiggiLpPriceFeed as ABI_LP_PRICE_FEED } from "../../config/abi/index.js";
 import { createBuybackService, createDripDistributorService } from "../../services/factories";
 import { getROProvider, getSignerProvider, ensureAmoy, ADDR, AMOY } from "../../utils/contract";
+// import { ethers } from "ethers"; // odstraněno duplicitně
+import BiggiBuybackReader from "../../config/abi/BiggiBuybackReader.json";
+import BiggiDripReader from "../../config/abi/BiggiDripReader.json";
+  // --- On-chain buyback and drip balances via their readers ---
+  const [onchainBuyback, setOnchainBuyback] = React.useState({ biggi: null, matic: null, loading: false, error: null });
+  const [onchainDrip, setOnchainDrip] = React.useState({ biggi: null, matic: null, loading: false, error: null });
+  React.useEffect(() => {
+    let cancelled = false;
+    async function fetchBuybackOnchain() {
+      setOnchainBuyback((prev) => ({ ...prev, loading: true, error: null }));
+      try {
+        const provider = getROProvider();
+        const reader = new ethers.Contract(ADDR.BUYBACK_READER, ABI_BUYBACK_READER, provider);
+        const summary = await reader.simpleSummary();
+        if (cancelled) return;
+        setOnchainBuyback({
+          biggi: Number(ethers.utils.formatUnits(summary.biggiHeld, 18)),
+          matic: Number(ethers.utils.formatEther(summary.maticHeld)),
+          loading: false,
+          error: null,
+        });
+      } catch (err) {
+        if (cancelled) return;
+        setOnchainBuyback((prev) => ({ ...prev, loading: false, error: err?.message || String(err) }));
+      }
+    }
+    async function fetchDripOnchain() {
+      setOnchainDrip((prev) => ({ ...prev, loading: true, error: null }));
+      try {
+        const provider = getROProvider();
+        const reader = new ethers.Contract(ADDR.DRIP_READER, ABI_DRIP_READER, provider);
+        const summary = await reader.simpleSummary();
+        if (cancelled) return;
+        setOnchainDrip({
+          biggi: Number(ethers.utils.formatUnits(summary.biggiHeld, 18)),
+          matic: Number(ethers.utils.formatEther(summary.maticHeld)),
+          loading: false,
+          error: null,
+        });
+      } catch (err) {
+        if (cancelled) return;
+        setOnchainDrip((prev) => ({ ...prev, loading: false, error: err?.message || String(err) }));
+      }
+    }
+    fetchBuybackOnchain();
+    fetchDripOnchain();
+    return () => { cancelled = true; };
+  }, []);
 import { getProvider } from "../../web3/provider";
 import TokenRewardsService from "../../services/tokenRewardsService";
 import {
   BiggiLiquidityManager as ABI_LM,
-  BiggiReserveV4 as ABI_RESERVE,
   UniswapV2Pair as ABI_PAIR,
   LiquidityVault as ABI_LIQUIDITY_VAULT,
   BiggiToken as ABI_TOKEN,
@@ -302,6 +350,55 @@ const BiggiTokenInner = ({
   onAddLiquidityFromBalance,
   onBuybackAndSendToTreasury,
 }) => {
+  // --- LP price feed (live) ---
+  const [lpPrice, setLpPrice] = React.useState(null);
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const provider = getROProvider();
+        const feedAddr = ADDR.LP_PRICE_FEED;
+        if (feedAddr) {
+          const feed = new ethers.Contract(feedAddr, ABI_LP_PRICE_FEED, provider);
+          const round = await feed.latestRoundData().catch(() => null);
+          const dec = await feed.decimals().catch(() => 18);
+          if (!alive) return;
+          if (round && round.answer != null) {
+            const price = Number(ethers.utils.formatUnits(round.answer, dec));
+            if (Number.isFinite(price)) setLpPrice(price);
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+  // --- On-chain treasury balances via TreasuryReader ---
+  const [onchainTreasury, setOnchainTreasury] = React.useState({ biggi: null, matic: null, loading: false, error: null });
+  React.useEffect(() => {
+    let cancelled = false;
+    async function fetchTreasuryOnchain() {
+      setOnchainTreasury((prev) => ({ ...prev, loading: true, error: null }));
+      try {
+        const provider = getROProvider();
+        const reader = new ethers.Contract(ADDR.TREASURY_READER, ABI_TREASURY_READER, provider);
+        const summary = await reader.simpleSummary();
+        if (cancelled) return;
+        setOnchainTreasury({
+          biggi: Number(ethers.utils.formatUnits(summary.biggiHeld, 18)),
+          matic: Number(ethers.utils.formatEther(summary.maticHeld)),
+          loading: false,
+          error: null,
+        });
+      } catch (err) {
+        if (cancelled) return;
+        setOnchainTreasury((prev) => ({ ...prev, loading: false, error: err?.message || String(err) }));
+      }
+    }
+    fetchTreasuryOnchain();
+    return () => { cancelled = true; };
+  }, []);
   const { data: tokenHook } = useBiggiToken(walletAddress);
   const { status: tokenomicsStatus } = useBiggiTokenomicsReader();
   const { data: buybackHook } = useBuyback();
@@ -468,7 +565,13 @@ const BiggiTokenInner = ({
     dist?.treasury ||
     ADDR.TREASURY;
   const treasuryAddress = isAddress(treasuryAddressRaw) ? treasuryAddressRaw : null;
-  const treasuryNativeValue = fmtVal(treasury.nativeBalance, "POL");
+  // Prefer on-chain value if available
+  const treasuryNativeValue = onchainTreasury.matic != null ? fmtVal(onchainTreasury.matic, "POL") : fmtVal(treasury.nativeBalance, "POL");
+  const treasuryBiggiValue = onchainTreasury.biggi != null ? fmtVal(onchainTreasury.biggi, "BIGGI") : fmtVal(treasury.tokenBalance, "BIGGI");
+  const buybackNativeValue = onchainBuyback.matic != null ? fmtVal(onchainBuyback.matic, "POL") : fmtVal(buyback.nativeBalance, "POL");
+  const buybackBiggiValue = onchainBuyback.biggi != null ? fmtVal(onchainBuyback.biggi, "BIGGI") : fmtVal(buyback.biggiBalance, "BIGGI");
+  const dripNativeValue = onchainDrip.matic != null ? fmtVal(onchainDrip.matic, "POL") : "--";
+  const dripBiggiValue = onchainDrip.biggi != null ? fmtVal(onchainDrip.biggi, "BIGGI") : "--";
   const treasuryNativeDisplay = treasuryAddress ? (
     <span className="biggi-line-value__inline">
       <span>{treasuryNativeValue}</span>
@@ -519,10 +622,11 @@ const BiggiTokenInner = ({
       { label: "Total supply", value: fmtVal(tok?.totalSupply, "BIGGI", 0), tone: "token" },
       { label: "Mintable left", value: fmtVal(tok?.remainingMintable, "BIGGI", 0), tone: "token" },
       { label: "Reserve balance", value: fmtVal(reserve?.maticBalance, "POL", 4), tone: "native" },
-      { label: "Treasury balance", value: fmtVal(treasury?.nativeBalance, "POL", 4), tone: "native" },
+      { label: "Treasury balance", value: treasuryNativeValue, tone: "native" },
       { label: "LP in vault", value: fmtLp(lmView?.lpBalance ?? reserve?.lpBalanceInVault), tone: "token" },
+      { label: "LP token price", value: lpPrice != null ? `${lpPrice} POL` : "--", tone: "native" },
     ],
-    [lmView?.lpBalance, reserve?.lpBalanceInVault, reserve?.maticBalance, tok?.remainingMintable, tok?.totalSupply, treasury?.nativeBalance]
+    [lmView?.lpBalance, reserve?.lpBalanceInVault, reserve?.maticBalance, tok?.remainingMintable, tok?.totalSupply, treasuryNativeValue, lpPrice]
   );
   const dripDistributorBiggiValue =
     dripDistributorBiggi ??
@@ -1226,7 +1330,7 @@ const BiggiTokenInner = ({
                       <Line label="Mint -> Distributor" tone="native" value={fmtVal(dist?.totalReceived, "POL")} />
                       <Line label="Flow to Reserve" tone="native" value={fmtVal(reserve?.totalMaticReceived, "POL")} />
                       <Line label="Flow to Buyback" tone="native" value={fmtVal(dist?.pendingBuyback, "POL")} />
-                      <Line label="Flow to Treasury" tone="native" value={fmtVal(treasury?.nativeBalance, "POL")} />
+                      <Line label="Flow to Treasury" tone="native" value={treasuryNativeValue} />
                       <Line label="Community pool" tone="native" value={fmtVal(dist?.communityPoolBalance, "POL")} />
                       <AddressLine
                         label="Reserve contract"
@@ -1299,7 +1403,7 @@ const BiggiTokenInner = ({
                       </div>
                       <div className="flow-big-value-row">
                         <span className="flow-big-label">Treasury BIGGI</span>
-                        <span className="flow-big-value tone-token">{fmtVal(treasury?.tokenBalance, "BIGGI")}</span>
+                        <span className="flow-big-value tone-token">{treasuryBiggiValue}</span>
                       </div>
                       <Line label="Pending CR/NFT" tone="token" value={fmtVal(dist?.pendingCollectionRewards, "BIGGI")} />
                       <div className="flow-big-value-row">
@@ -1349,8 +1453,8 @@ const BiggiTokenInner = ({
                       label="Upkeep needed"
                       value={buyback.upkeepNeeded != null ? (buyback.upkeepNeeded ? "Yes" : "No") : "--"}
                     />
-                    <Line label="Native balance" tone="native" value={fmtVal(buyback.nativeBalance, "POL")} />
-                    <Line label="BIGGI balance" tone="token" value={fmtVal(buyback.biggiBalance, "BIGGI")} />
+                    <Line label="Native balance" tone="native" value={buybackNativeValue} />
+                    <Line label="BIGGI balance" tone="token" value={buybackBiggiValue} />
                     <Line
                       label="(svc) Native / BIGGI"
                       value={svcBuyback ? `${fmtVal(svcBuyback.native, "POL")} / ${fmtVal(svcBuyback.biggi, "BIGGI")}` : "--"}
@@ -1365,7 +1469,7 @@ const BiggiTokenInner = ({
                   </div>
                   <div className="biggi-contract-box">
                     <Line label="Treasury native" tone="native" value={treasuryNativeDisplay} />
-                    <Line label="Treasury BIGGI" tone="token" value={fmtVal(treasury.tokenBalance, "BIGGI")} />
+                    <Line label="Treasury BIGGI" tone="token" value={treasuryBiggiValue} />
                     <Line label="Reserve native" tone="native" value={fmtVal(reserve.maticBalance, "POL")} />
                     <Line label="Reserve BIGGI" tone="token" value={fmtVal(reserve.biggiBalance, "BIGGI")} />
                     <Line label="Distributor pending BB" tone="native" value={fmtVal(dist.pendingBuyback, "POL")} />
@@ -1464,7 +1568,7 @@ const BiggiTokenInner = ({
                   <div className="lv-row">
                     <span>Keeper</span>
                     <span className="mono lv-value lv-value--addr">{shortAddr(lmKeeperAddress)}</span>
-                  </div>
+                                   </div>
                   <div className="lv-row">
                     <span>Liquidity Manager</span>
                     <span className="mono lv-value lv-value--addr">{shortAddr(lmAddress)}</span>
@@ -1495,15 +1599,21 @@ const BiggiTokenInner = ({
           </>
         )}
         {tab === "drip" && (
-          <DripTab
-            snapshot={dripSnapshot}
-            availableSeries={dripAvailableSeries}
-            capSeries={dripCapSeries}
-            nativeSeries={dripNativeSeries}
-            stabilitySeries={buybackStabilityHistory}
-            isLoading={dripLoading}
-            error={dripError}
-          />
+          <>
+            <div style={{marginBottom: 12}}>
+              <Line label="Drip native (on-chain)" tone="native" value={dripNativeValue} />
+              <Line label="Drip BIGGI (on-chain)" tone="token" value={dripBiggiValue} />
+            </div>
+            <DripTab
+              snapshot={dripSnapshot}
+              availableSeries={dripAvailableSeries}
+              capSeries={dripCapSeries}
+              nativeSeries={dripNativeSeries}
+              stabilitySeries={buybackStabilityHistory}
+              isLoading={dripLoading}
+              error={dripError}
+            />
+          </>
         )}
 
         {tab === "policy" && (

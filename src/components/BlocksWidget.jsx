@@ -19,7 +19,7 @@ const BLOCK_COLORS = {
   VIOLET: "#9256d9",
   RED: "#e34e4e",
   PINK: "#ff63c2",
-  RAINBOW: "linear-gradient(90deg,#ff3,#0ff,#9f3,#f0f,#3cf,#f66,#ffe800)"
+  RAINBOW: "linear-gradient(90deg,#ff3,#0ff,#9f3,#f0f,#3cf,#f66,#ffe800)",
 };
 
 const LINKED_BG = {
@@ -32,7 +32,7 @@ const LINKED_BG = {
   VIOLET: "V",
   RED: "R",
   PINK: "P",
-  RAINBOW: "RB"
+  RAINBOW: "RB",
 };
 
 const getBlockColor = (name) => {
@@ -53,7 +53,7 @@ const getBlockColor = (name) => {
     overflow: "hidden",
     textOverflow: "ellipsis",
     transition: "all 0.3s ease",
-    minWidth: "80px"
+    minWidth: "80px",
   };
 };
 
@@ -65,26 +65,48 @@ const cellBase = {
   overflow: "hidden",
   textOverflow: "ellipsis",
   textShadow: "0 1px 3px rgba(0,0,0,0.6)",
-  borderBottom: "1px solid rgba(255,232,0,0.2)"
+  borderBottom: "1px solid rgba(255,232,0,0.2)",
 };
 
-const mintedStyle = { ...cellBase, color: "#ff6b6b", textShadow: "0 0 5px #ff6b6b55" };
-const priceStyle = { ...cellBase, color: "#5ddcff", textShadow: "0 0 5px #5ddcff55" };
-const cellStyle = { ...cellBase, color: "#ffffff", textShadow: "0 0 5px #ffffff33" };
+const mintedStyle = {
+  ...cellBase,
+  color: "#ff6b6b",
+  textShadow: "0 0 5px #ff6b6b55",
+};
+const priceStyle = {
+  ...cellBase,
+  color: "#5ddcff",
+  textShadow: "0 0 5px #5ddcff55",
+};
+const cellStyle = {
+  ...cellBase,
+  color: "#ffffff",
+  textShadow: "0 0 5px #ffffff33",
+};
 
 const BlocksWidget = ({ blockNames, blockMintCounts, blockPrices, onBack }) => {
   const [infoVisible, setInfoVisible] = React.useState(false);
   const [isPhone, setIsPhone] = React.useState(() =>
-    typeof window !== "undefined" ? window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches : false
+    typeof window !== "undefined"
+      ? window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches
+      : false,
   );
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
     const onChange = (e) => setIsPhone(e.matches);
-    try { mq.addEventListener("change", onChange); } catch { mq.addListener(onChange); }
+    try {
+      mq.addEventListener("change", onChange);
+    } catch {
+      mq.addListener(onChange);
+    }
     return () => {
-      try { mq.removeEventListener("change", onChange); } catch { mq.removeListener(onChange); }
+      try {
+        mq.removeEventListener("change", onChange);
+      } catch {
+        mq.removeListener(onChange);
+      }
     };
   }, []);
 
@@ -102,7 +124,8 @@ const BlocksWidget = ({ blockNames, blockMintCounts, blockPrices, onBack }) => {
   }, []);
 
   const handleRowHoverLeave = React.useCallback((e, bgIndex) => {
-    e.currentTarget.style.background = bgIndex % 2 === 0 ? 'rgba(255,232,0,0.05)' : 'rgba(255,232,0,0.02)';
+    e.currentTarget.style.background =
+      bgIndex % 2 === 0 ? "rgba(255,232,0,0.05)" : "rgba(255,232,0,0.02)";
   }, []);
 
   return (
@@ -119,15 +142,13 @@ const BlocksWidget = ({ blockNames, blockMintCounts, blockPrices, onBack }) => {
       </div>
 
       <div className="bw-table-wrapper">
-        <table
-          className="bw-head"
-        >
+        <table className="bw-head">
           <thead>
             <tr>
               {headerTitles.map((title, idx) => {
                 const isFirst = idx === 0;
                 const isLast = idx === headerTitles.length - 1;
-                const color = (isFirst || isLast) ? "#ffe800" : "#5ddcff";
+                const color = isFirst || isLast ? "#ffe800" : "#5ddcff";
                 return (
                   <th
                     key={title}
@@ -154,14 +175,19 @@ const BlocksWidget = ({ blockNames, blockMintCounts, blockPrices, onBack }) => {
                 key={name}
                 style={{
                   transition: "all 0.2s ease",
-                  background: i % 2 === 0 ? 'rgba(255,232,0,0.05)' : 'rgba(255,232,0,0.02)'
+                  background:
+                    i % 2 === 0
+                      ? "rgba(255,232,0,0.05)"
+                      : "rgba(255,232,0,0.02)",
                 }}
                 onMouseEnter={handleRowHoverEnter}
                 onMouseLeave={(e) => handleRowHoverLeave(e, i)}
               >
                 <td style={getBlockColor(name)}>{name}</td>
                 <td style={mintedStyle}>{blockMintCounts[i]}</td>
-                <td style={cellStyle}>{LINKED_BG[name.toUpperCase()] || "-"}</td>
+                <td style={cellStyle}>
+                  {LINKED_BG[name.toUpperCase()] || "-"}
+                </td>
                 <td style={cellStyle}>{BLOCK_MAX_SUPPLY[i]}</td>
                 <td style={cellStyle}>{BASE_PRICES[i]}</td>
                 <td style={priceStyle}>
@@ -174,10 +200,7 @@ const BlocksWidget = ({ blockNames, blockMintCounts, blockPrices, onBack }) => {
       </div>
 
       <div className="bw-button-container">
-        <button
-          onClick={onBack}
-          className="bw-button"
-        >
+        <button onClick={onBack} className="bw-button">
           BACK
         </button>
       </div>
@@ -199,7 +222,6 @@ const BlocksWidget = ({ blockNames, blockMintCounts, blockPrices, onBack }) => {
             </div>
 
             <div className="bw-modal-body">
-
               <table className="bw-info-table">
                 <thead>
                   <tr>
@@ -211,31 +233,42 @@ const BlocksWidget = ({ blockNames, blockMintCounts, blockPrices, onBack }) => {
                   <tr>
                     <td className="bw-k">Eyes Color</td>
                     <td className="bw-v">
-                      Block name (NFT eye color). Example: <span className="bw-chip">BLUE</span>, <span className="bw-chip">GREEN</span>.
+                      Block name (NFT eye color). Example:{" "}
+                      <span className="bw-chip">BLUE</span>,{" "}
+                      <span className="bw-chip">GREEN</span>.
                     </td>
                   </tr>
                   <tr>
                     <td className="bw-k">Minted Eyes</td>
-                    <td className="bw-v">Number of NFTs already minted in this block.</td>
+                    <td className="bw-v">
+                      Number of NFTs already minted in this block.
+                    </td>
                   </tr>
                   <tr>
                     <td className="bw-k">Linked BG</td>
                     <td className="bw-v">
-                      Abbreviation of the background linked to the block (e.g., <span className="bw-chip bw-mono">BL</span>, <span className="bw-chip bw-mono">G</span>).
+                      Abbreviation of the background linked to the block (e.g.,{" "}
+                      <span className="bw-chip bw-mono">BL</span>,{" "}
+                      <span className="bw-chip bw-mono">G</span>).
                     </td>
                   </tr>
                   <tr>
                     <td className="bw-k">Max Supply</td>
-                    <td className="bw-v">Maximum number of NFTs in this block.</td>
+                    <td className="bw-v">
+                      Maximum number of NFTs in this block.
+                    </td>
                   </tr>
                   <tr>
                     <td className="bw-k">Base Price</td>
-                    <td className="bw-v">Starting price of the block before any increases.</td>
+                    <td className="bw-v">
+                      Starting price of the block before any increases.
+                    </td>
                   </tr>
                   <tr>
                     <td className="bw-k">Current Price</td>
                     <td className="bw-v">
-                      Live price after increases driven solely by background mints (<span className="bw-chip">BG Inc</span>).
+                      Live price after increases driven solely by background
+                      mints (<span className="bw-chip">BG Inc</span>).
                     </td>
                   </tr>
                 </tbody>

@@ -8,7 +8,9 @@ import communityCenterAbi from "../../utils/abi/BiggiCommunityCenter.js";
 import FullscreenPanel from "../common/FullscreenPanel";
 import ModeratorCenterPanel from "./ModeratorCenterPanel";
 
-const COMMUNITY_CENTER_ABI = Array.isArray(communityCenterAbi) ? communityCenterAbi : [];
+const COMMUNITY_CENTER_ABI = Array.isArray(communityCenterAbi)
+  ? communityCenterAbi
+  : [];
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
@@ -206,7 +208,8 @@ function computeEventStatus(event) {
   const now = nowSeconds();
   if (now < event.start) return "Upcoming";
   if (now > event.end) return "Finished";
-  if (event.capacity && event.attendeeCount >= event.capacity) return "At capacity";
+  if (event.capacity && event.attendeeCount >= event.capacity)
+    return "At capacity";
   return "Live";
 }
 
@@ -248,7 +251,9 @@ export default function CommunityCenterPanel({
   onConnectMetaMask,
   onConnectWalletConnect,
 }) {
-  const [address, setAddress] = React.useState(() => resolveCommunityCenterAddress());
+  const [address, setAddress] = React.useState(() =>
+    resolveCommunityCenterAddress(),
+  );
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
   const [moderatorOpen, setModeratorOpen] = React.useState(false);
@@ -270,7 +275,7 @@ export default function CommunityCenterPanel({
         acc[status] = (acc[status] || 0) + 1;
         return acc;
       },
-      { Pending: 0, "Voting live": 0, Finalizing: 0, Executed: 0, Canceled: 0 }
+      { Pending: 0, "Voting live": 0, Finalizing: 0, Executed: 0, Canceled: 0 },
     );
 
     const eventCounts = events.reduce(
@@ -279,7 +284,7 @@ export default function CommunityCenterPanel({
         acc[status] = (acc[status] || 0) + 1;
         return acc;
       },
-      { Upcoming: 0, Live: 0, Finished: 0, Completed: 0, Canceled: 0 }
+      { Upcoming: 0, Live: 0, Finished: 0, Completed: 0, Canceled: 0 },
     );
 
     const liveTurnout = proposals
@@ -292,8 +297,10 @@ export default function CommunityCenterPanel({
 
   const voteBars = React.useMemo(() => {
     return proposals.slice(0, 4).map((proposal) => {
-      const total = proposal.forVotes + proposal.againstVotes + proposal.abstainVotes;
-      const pct = total > 0 ? Math.min(100, (proposal.forVotes / total) * 100) : 0;
+      const total =
+        proposal.forVotes + proposal.againstVotes + proposal.abstainVotes;
+      const pct =
+        total > 0 ? Math.min(100, (proposal.forVotes / total) * 100) : 0;
       return {
         id: proposal.id,
         label: `#${proposal.id}`,
@@ -331,7 +338,10 @@ export default function CommunityCenterPanel({
         return;
       }
 
-      if (!Array.isArray(COMMUNITY_CENTER_ABI) || COMMUNITY_CENTER_ABI.length === 0) {
+      if (
+        !Array.isArray(COMMUNITY_CENTER_ABI) ||
+        COMMUNITY_CENTER_ABI.length === 0
+      ) {
         setPlaceholder();
         return;
       }
@@ -348,11 +358,32 @@ export default function CommunityCenterPanel({
           return;
         }
 
-        const contract = new ethers.Contract(resolvedAddress, COMMUNITY_CENTER_ABI, provider);
+        const contract = new ethers.Contract(
+          resolvedAddress,
+          COMMUNITY_CENTER_ABI,
+          provider,
+        );
 
-        const [proposalCountBn, eventCountBn, quorumBn, thresholdBn, durationBn, poolBalanceBn] = await Promise.all([
-          safeContractCall(contract, "proposalCount", [], ethers.BigNumber.from(0)),
-          safeContractCall(contract, "eventCount", [], ethers.BigNumber.from(0)),
+        const [
+          proposalCountBn,
+          eventCountBn,
+          quorumBn,
+          thresholdBn,
+          durationBn,
+          poolBalanceBn,
+        ] = await Promise.all([
+          safeContractCall(
+            contract,
+            "proposalCount",
+            [],
+            ethers.BigNumber.from(0),
+          ),
+          safeContractCall(
+            contract,
+            "eventCount",
+            [],
+            ethers.BigNumber.from(0),
+          ),
           safeContractCall(contract, "quorumPercent", [], null),
           safeContractCall(contract, "proposalThreshold", [], null),
           safeContractCall(contract, "votingDuration", [], null),
@@ -363,14 +394,27 @@ export default function CommunityCenterPanel({
         const eventCount = bnToNumber(eventCountBn);
 
         const fetchedProposals = [];
-        for (let id = proposalCount - 1; id >= 0 && fetchedProposals.length < 5; id -= 1) {
-          const raw = await safeContractCall(contract, "getProposal", [id], null);
+        for (
+          let id = proposalCount - 1;
+          id >= 0 && fetchedProposals.length < 5;
+          id -= 1
+        ) {
+          const raw = await safeContractCall(
+            contract,
+            "getProposal",
+            [id],
+            null,
+          );
           if (!raw) continue;
           fetchedProposals.push(parseProposal(raw, id));
         }
 
         const fetchedEvents = [];
-        for (let id = eventCount - 1; id >= 0 && fetchedEvents.length < 5; id -= 1) {
+        for (
+          let id = eventCount - 1;
+          id >= 0 && fetchedEvents.length < 5;
+          id -= 1
+        ) {
           const raw = await safeContractCall(contract, "getEvent", [id], null);
           if (!raw) continue;
           fetchedEvents.push(parseEvent(raw, id));
@@ -381,7 +425,8 @@ export default function CommunityCenterPanel({
             proposalCount,
             eventCount,
             quorumPercent: quorumBn != null ? bnToNumber(quorumBn) : null,
-            proposalThreshold: thresholdBn != null ? bnToNumber(thresholdBn) : null,
+            proposalThreshold:
+              thresholdBn != null ? bnToNumber(thresholdBn) : null,
             votingDuration: durationBn != null ? bnToNumber(durationBn) : null,
           });
           setProposals(fetchedProposals);
@@ -389,247 +434,402 @@ export default function CommunityCenterPanel({
           setPoolBalance(poolBalanceBn);
         }
       } catch (err) {
-        if (!cancelled) setError(err?.message || "Failed to load community center data.");
+        if (!cancelled)
+          setError(err?.message || "Failed to load community center data.");
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const summaryItems = React.useMemo(() => ([
-    { k: "Proposals", v: loading ? "..." : summary.proposalCount.toLocaleString(), tone: "#FFE800", mono: true },
-    { k: "Events", v: loading ? "..." : summary.eventCount.toLocaleString(), tone: "#5DDCFF", mono: true },
-    { k: "Quorum", v: loading ? "..." : formatPercent(summary.quorumPercent), tone: "#9B7BFF" },
-    { k: "Threshold", v: loading ? "..." : formatThreshold(summary.proposalThreshold), tone: "#27D9D2", mono: true },
-    { k: "Voting window", v: loading ? "..." : formatDuration(summary.votingDuration), tone: "#FFE800" },
-    { k: "Pool balance", v: loading ? "..." : formatNative(poolBalance), tone: "#FFE800" },
-  ]), [loading, summary, poolBalance]);
+  const summaryItems = React.useMemo(
+    () => [
+      {
+        k: "Proposals",
+        v: loading ? "..." : summary.proposalCount.toLocaleString(),
+        tone: "#FFE800",
+        mono: true,
+      },
+      {
+        k: "Events",
+        v: loading ? "..." : summary.eventCount.toLocaleString(),
+        tone: "#5DDCFF",
+        mono: true,
+      },
+      {
+        k: "Quorum",
+        v: loading ? "..." : formatPercent(summary.quorumPercent),
+        tone: "#9B7BFF",
+      },
+      {
+        k: "Threshold",
+        v: loading ? "..." : formatThreshold(summary.proposalThreshold),
+        tone: "#27D9D2",
+        mono: true,
+      },
+      {
+        k: "Voting window",
+        v: loading ? "..." : formatDuration(summary.votingDuration),
+        tone: "#FFE800",
+      },
+      {
+        k: "Pool balance",
+        v: loading ? "..." : formatNative(poolBalance),
+        tone: "#FFE800",
+      },
+    ],
+    [loading, summary, poolBalance],
+  );
   return (
     <>
-      <section className={`rewards-grid biggi-skin${compact ? " is-compact" : ""}`}>
+      <section
+        className={`rewards-grid biggi-skin${compact ? " is-compact" : ""}`}
+      >
         <div className="rewards-grid__surface biggi-token-surface">
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
-            background: "radial-gradient(900px 360px at 82% -15%, rgba(95,219,255,0.16), transparent 70%)",
-            mixBlendMode: "screen",
-          }}
-        />
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              inset: 0,
+              pointerEvents: "none",
+              background:
+                "radial-gradient(900px 360px at 82% -15%, rgba(95,219,255,0.16), transparent 70%)",
+              mixBlendMode: "screen",
+            }}
+          />
 
-        <header className="rewards-grid__header biggi-header panel-header panel-header--community">
-          <div className="rewards-grid__headline">
-            <h2 className="rewards-grid__title">Community Center</h2>
-            <p className="rewards-grid__subtitle">
-              Governance proposals, community events, and participation telemetry.
-            </p>
-          </div>
-          <div className="rewards-grid__header-actions">
-            <button
-              type="button"
-              className="biggi-btn biggi-btn--ghost"
-              onClick={() => setModeratorOpen(true)}
-            >
-              Moderator Center
-            </button>
-            <span className="rewards-grid__subtitle" style={{ fontSize: "0.78rem", color: "#c8cae3" }}>
-              {address ? `Contract ${shorten(address, 24)}` : "Contract address missing"}
-            </span>
-          </div>
-        </header>
+          <header className="rewards-grid__header biggi-header panel-header panel-header--community">
+            <div className="rewards-grid__headline">
+              <h2 className="rewards-grid__title">Community Center</h2>
+              <p className="rewards-grid__subtitle">
+                Governance proposals, community events, and participation
+                telemetry.
+              </p>
+            </div>
+            <div className="rewards-grid__header-actions">
+              <button
+                type="button"
+                className="biggi-btn biggi-btn--ghost"
+                onClick={() => setModeratorOpen(true)}
+              >
+                Moderator Center
+              </button>
+              <span
+                className="rewards-grid__subtitle"
+                style={{ fontSize: "0.78rem", color: "#c8cae3" }}
+              >
+                {address
+                  ? `Contract ${shorten(address, 24)}`
+                  : "Contract address missing"}
+              </span>
+            </div>
+          </header>
 
-        {!error && (
-          <div className="biggi-hero">
-            <div className="biggi-hero__card">
-              <span className="biggi-hero__label">Live Participation</span>
-              <strong className="biggi-hero__value">{loading ? "..." : formatVotes(counts.liveTurnout)}</strong>
-              <span className="biggi-hero__hint">Votes across live proposals</span>
-            </div>
-            <div className="biggi-hero__card">
-              <span className="biggi-hero__label">Proposals</span>
-              <strong className="biggi-hero__value">{loading ? "..." : summary.proposalCount}</strong>
-              <span className="biggi-hero__hint">{counts.statusCounts["Voting live"] || 0} live / {counts.statusCounts.Pending || 0} pending</span>
-            </div>
-            <div className="biggi-hero__card">
-              <span className="biggi-hero__label">Events</span>
-              <strong className="biggi-hero__value">{loading ? "..." : summary.eventCount}</strong>
-              <span className="biggi-hero__hint">{counts.eventCounts.Live || 0} live / {counts.eventCounts.Upcoming || 0} upcoming</span>
-            </div>
-            <div className="biggi-hero__card">
-              <span className="biggi-hero__label">Quorum Target</span>
-              <strong className="biggi-hero__value">{loading ? "..." : formatPercent(summary.quorumPercent)}</strong>
-              <span className="biggi-hero__hint">Threshold {formatThreshold(summary.proposalThreshold)}</span>
-            </div>
-            <div className="biggi-hero__card">
-              <span className="biggi-hero__label">Pool Balance</span>
-              <strong className="biggi-hero__value">{loading ? "..." : formatNative(poolBalance)}</strong>
-              <span className="biggi-hero__hint">Community pool in native</span>
-            </div>
-          </div>
-        )}
-
-        {error ? null : (
-          <>
-            <section className="rewards-grid__cards-panel">
-              <div className="rewards-grid__cards">
-                <Card title="Community snapshot" subtitle="Key governance metrics" tone="y">
-                  <KeyValueGrid items={summaryItems} />
-                </Card>
-
-                <Card title="Participation heat" subtitle="For-votes share on latest proposals" tone="c">
-                  {loading ? (
-                    <p className="muted">Loading participation...</p>
-                  ) : voteBars.length ? (
-                    <div className="biggi-bars">
-                      {voteBars.map((bar) => (
-                        <div key={bar.id} className="biggi-bar">
-                          <div className="biggi-bar__meta">
-                            <span className="biggi-value mono">{bar.label}</span>
-                            <span className="muted">{bar.status}</span>
-                            <span className="muted">{formatVotes(bar.total)} votes</span>
-                          </div>
-                          <div className="biggi-bar__track">
-                            <span className="biggi-bar__fill" style={{ width: `${bar.pct}%` }} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="muted">No participation data yet.</p>
-                  )}
-                </Card>
-
-                <Card title="Recent proposals" subtitle="Voting tallies & timeline" tone="c">
-                  {loading ? (
-                    <p className="muted">Loading proposals...</p>
-                  ) : proposals.length ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                      {proposals.map((proposal) => (
-                        <div
-                          key={proposal.id}
-                          style={{
-                            borderRadius: 12,
-                            border: "1px solid rgba(95, 219, 255, 0.16)",
-                            background: "rgba(17, 17, 24, 0.55)",
-                            padding: 12,
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 6,
-                          }}
-                        >
-                          <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                            <span className="biggi-value mono">#{proposal.id}</span>
-                            <span className="muted">{computeProposalStatus(proposal)}</span>
-                          </div>
-                          <div className="muted" style={{ fontSize: "0.8rem" }}>
-                            {proposal.ipfs ? shorten(proposal.ipfs, 28) : "No metadata (IPFS)"}
-                          </div>
-                          <div className="biggi-grid" style={{ gap: 4 }}>
-                            <div className="biggi-line">
-                              <span className="muted">For</span>
-                              <span className="biggi-value mono">{formatVotes(proposal.forVotes)}</span>
-                            </div>
-                            <div className="biggi-line">
-                              <span className="muted">Against</span>
-                              <span className="biggi-value mono">{formatVotes(proposal.againstVotes)}</span>
-                            </div>
-                            <div className="biggi-line">
-                              <span className="muted">Abstain</span>
-                              <span className="biggi-value mono">{formatVotes(proposal.abstainVotes)}</span>
-                            </div>
-                          </div>
-                          <div className="muted" style={{ fontSize: "0.75rem" }}>
-                            {formatDate(proposal.start)} - {formatDate(proposal.end)}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="muted">No proposals recorded yet.</p>
-                  )}
-                </Card>
+          {!error && (
+            <div className="biggi-hero">
+              <div className="biggi-hero__card">
+                <span className="biggi-hero__label">Live Participation</span>
+                <strong className="biggi-hero__value">
+                  {loading ? "..." : formatVotes(counts.liveTurnout)}
+                </strong>
+                <span className="biggi-hero__hint">
+                  Votes across live proposals
+                </span>
               </div>
-            </section>
+              <div className="biggi-hero__card">
+                <span className="biggi-hero__label">Proposals</span>
+                <strong className="biggi-hero__value">
+                  {loading ? "..." : summary.proposalCount}
+                </strong>
+                <span className="biggi-hero__hint">
+                  {counts.statusCounts["Voting live"] || 0} live /{" "}
+                  {counts.statusCounts.Pending || 0} pending
+                </span>
+              </div>
+              <div className="biggi-hero__card">
+                <span className="biggi-hero__label">Events</span>
+                <strong className="biggi-hero__value">
+                  {loading ? "..." : summary.eventCount}
+                </strong>
+                <span className="biggi-hero__hint">
+                  {counts.eventCounts.Live || 0} live /{" "}
+                  {counts.eventCounts.Upcoming || 0} upcoming
+                </span>
+              </div>
+              <div className="biggi-hero__card">
+                <span className="biggi-hero__label">Quorum Target</span>
+                <strong className="biggi-hero__value">
+                  {loading ? "..." : formatPercent(summary.quorumPercent)}
+                </strong>
+                <span className="biggi-hero__hint">
+                  Threshold {formatThreshold(summary.proposalThreshold)}
+                </span>
+              </div>
+              <div className="biggi-hero__card">
+                <span className="biggi-hero__label">Pool Balance</span>
+                <strong className="biggi-hero__value">
+                  {loading ? "..." : formatNative(poolBalance)}
+                </strong>
+                <span className="biggi-hero__hint">
+                  Community pool in native
+                </span>
+              </div>
+            </div>
+          )}
 
-            <section className="rewards-grid__cards-panel">
-              <div className="rewards-grid__cards">
-                <Card title="Latest events" subtitle="Community gatherings & RSVP stats" tone="b">
-                  {loading ? (
-                    <p className="muted">Loading events...</p>
-                  ) : events.length ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                      {events.map((event) => (
-                        <div
-                          key={event.id}
-                          style={{
-                            borderRadius: 12,
-                            border: "1px solid rgba(155, 123, 255, 0.18)",
-                            background: "rgba(17, 17, 24, 0.55)",
-                            padding: 12,
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 6,
-                          }}
-                        >
-                          <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                            <span className="biggi-value mono">Event #{event.id}</span>
-                            <span className="muted">{computeEventStatus(event)}</span>
-                          </div>
-                          <div className="muted" style={{ fontSize: "0.8rem" }}>
-                            {event.ipfs ? shorten(event.ipfs, 28) : "No metadata (IPFS)"}
-                          </div>
-                          <div className="biggi-grid" style={{ gap: 4 }}>
-                            <div className="biggi-line">
-                              <span className="muted">Capacity</span>
+          {error ? null : (
+            <>
+              <section className="rewards-grid__cards-panel">
+                <div className="rewards-grid__cards">
+                  <Card
+                    title="Community snapshot"
+                    subtitle="Key governance metrics"
+                    tone="y"
+                  >
+                    <KeyValueGrid items={summaryItems} />
+                  </Card>
+
+                  <Card
+                    title="Participation heat"
+                    subtitle="For-votes share on latest proposals"
+                    tone="c"
+                  >
+                    {loading ? (
+                      <p className="muted">Loading participation...</p>
+                    ) : voteBars.length ? (
+                      <div className="biggi-bars">
+                        {voteBars.map((bar) => (
+                          <div key={bar.id} className="biggi-bar">
+                            <div className="biggi-bar__meta">
                               <span className="biggi-value mono">
-                                {event.capacity
-                                  ? `${event.attendeeCount}/${event.capacity}`
-                                  : `${event.attendeeCount}`}
+                                {bar.label}
+                              </span>
+                              <span className="muted">{bar.status}</span>
+                              <span className="muted">
+                                {formatVotes(bar.total)} votes
                               </span>
                             </div>
-                            <div className="biggi-line">
-                              <span className="muted">Deposit</span>
-                              <span className="biggi-value mono">{formatDeposit(event.depositWei)}</span>
+                            <div className="biggi-bar__track">
+                              <span
+                                className="biggi-bar__fill"
+                                style={{ width: `${bar.pct}%` }}
+                              />
                             </div>
                           </div>
-                          <div className="muted" style={{ fontSize: "0.75rem" }}>
-                            {formatDate(event.start)} - {formatDate(event.end)}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="muted">No community events scheduled yet.</p>
-                  )}
-                </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="muted">No participation data yet.</p>
+                    )}
+                  </Card>
 
-                <Card title="Contract details" subtitle="Runtime diagnostics" tone="p">
-                  <div className="biggi-grid">
-                    <div className="biggi-line">
-                      <span className="muted">Contract</span>
-                      <span className="biggi-value mono">{address ? shorten(address, 28) : "Not set"}</span>
+                  <Card
+                    title="Recent proposals"
+                    subtitle="Voting tallies & timeline"
+                    tone="c"
+                  >
+                    {loading ? (
+                      <p className="muted">Loading proposals...</p>
+                    ) : proposals.length ? (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 14,
+                        }}
+                      >
+                        {proposals.map((proposal) => (
+                          <div
+                            key={proposal.id}
+                            style={{
+                              borderRadius: 12,
+                              border: "1px solid rgba(95, 219, 255, 0.16)",
+                              background: "rgba(17, 17, 24, 0.55)",
+                              padding: 12,
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 6,
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                gap: 12,
+                              }}
+                            >
+                              <span className="biggi-value mono">
+                                #{proposal.id}
+                              </span>
+                              <span className="muted">
+                                {computeProposalStatus(proposal)}
+                              </span>
+                            </div>
+                            <div
+                              className="muted"
+                              style={{ fontSize: "0.8rem" }}
+                            >
+                              {proposal.ipfs
+                                ? shorten(proposal.ipfs, 28)
+                                : "No metadata (IPFS)"}
+                            </div>
+                            <div className="biggi-grid" style={{ gap: 4 }}>
+                              <div className="biggi-line">
+                                <span className="muted">For</span>
+                                <span className="biggi-value mono">
+                                  {formatVotes(proposal.forVotes)}
+                                </span>
+                              </div>
+                              <div className="biggi-line">
+                                <span className="muted">Against</span>
+                                <span className="biggi-value mono">
+                                  {formatVotes(proposal.againstVotes)}
+                                </span>
+                              </div>
+                              <div className="biggi-line">
+                                <span className="muted">Abstain</span>
+                                <span className="biggi-value mono">
+                                  {formatVotes(proposal.abstainVotes)}
+                                </span>
+                              </div>
+                            </div>
+                            <div
+                              className="muted"
+                              style={{ fontSize: "0.75rem" }}
+                            >
+                              {formatDate(proposal.start)} -{" "}
+                              {formatDate(proposal.end)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="muted">No proposals recorded yet.</p>
+                    )}
+                  </Card>
+                </div>
+              </section>
+
+              <section className="rewards-grid__cards-panel">
+                <div className="rewards-grid__cards">
+                  <Card
+                    title="Latest events"
+                    subtitle="Community gatherings & RSVP stats"
+                    tone="b"
+                  >
+                    {loading ? (
+                      <p className="muted">Loading events...</p>
+                    ) : events.length ? (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 14,
+                        }}
+                      >
+                        {events.map((event) => (
+                          <div
+                            key={event.id}
+                            style={{
+                              borderRadius: 12,
+                              border: "1px solid rgba(155, 123, 255, 0.18)",
+                              background: "rgba(17, 17, 24, 0.55)",
+                              padding: 12,
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 6,
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                gap: 12,
+                              }}
+                            >
+                              <span className="biggi-value mono">
+                                Event #{event.id}
+                              </span>
+                              <span className="muted">
+                                {computeEventStatus(event)}
+                              </span>
+                            </div>
+                            <div
+                              className="muted"
+                              style={{ fontSize: "0.8rem" }}
+                            >
+                              {event.ipfs
+                                ? shorten(event.ipfs, 28)
+                                : "No metadata (IPFS)"}
+                            </div>
+                            <div className="biggi-grid" style={{ gap: 4 }}>
+                              <div className="biggi-line">
+                                <span className="muted">Capacity</span>
+                                <span className="biggi-value mono">
+                                  {event.capacity
+                                    ? `${event.attendeeCount}/${event.capacity}`
+                                    : `${event.attendeeCount}`}
+                                </span>
+                              </div>
+                              <div className="biggi-line">
+                                <span className="muted">Deposit</span>
+                                <span className="biggi-value mono">
+                                  {formatDeposit(event.depositWei)}
+                                </span>
+                              </div>
+                            </div>
+                            <div
+                              className="muted"
+                              style={{ fontSize: "0.75rem" }}
+                            >
+                              {formatDate(event.start)} -{" "}
+                              {formatDate(event.end)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="muted">
+                        No community events scheduled yet.
+                      </p>
+                    )}
+                  </Card>
+
+                  <Card
+                    title="Contract details"
+                    subtitle="Runtime diagnostics"
+                    tone="p"
+                  >
+                    <div className="biggi-grid">
+                      <div className="biggi-line">
+                        <span className="muted">Contract</span>
+                        <span className="biggi-value mono">
+                          {address ? shorten(address, 28) : "Not set"}
+                        </span>
+                      </div>
+                      <div className="biggi-line">
+                        <span className="muted">ABI entries</span>
+                        <span className="biggi-value mono">
+                          {COMMUNITY_CENTER_ABI.length
+                            ? COMMUNITY_CENTER_ABI.length
+                            : "None"}
+                        </span>
+                      </div>
+                      <div className="biggi-line">
+                        <span className="muted">Provider</span>
+                        <span className="biggi-value">Read-only</span>
+                      </div>
                     </div>
-                    <div className="biggi-line">
-                      <span className="muted">ABI entries</span>
-                      <span className="biggi-value mono">
-                        {COMMUNITY_CENTER_ABI.length ? COMMUNITY_CENTER_ABI.length : "None"}
-                      </span>
-                    </div>
-                    <div className="biggi-line">
-                      <span className="muted">Provider</span>
-                      <span className="biggi-value">Read-only</span>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            </section>
-          </>
-        )}
+                  </Card>
+                </div>
+              </section>
+            </>
+          )}
         </div>
       </section>
 

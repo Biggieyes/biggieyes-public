@@ -85,18 +85,35 @@ export default function useRewardsReader(walletAddress) {
             collectionDistributorAddr,
           ] = await Promise.all([
             reader.getTokenRewardsStatus(),
-            typeof reader.tokenRewards === "function" ? reader.tokenRewards() : Promise.resolve(null),
-            typeof reader.collectionRewards === "function" ? reader.collectionRewards() : Promise.resolve(null),
-            typeof reader.communityRewards === "function" ? reader.communityRewards() : Promise.resolve(null),
-            typeof reader.nftRewards === "function" ? reader.nftRewards() : Promise.resolve(null),
-            typeof reader.collectionDistributor === "function" ? reader.collectionDistributor() : Promise.resolve(null),
+            typeof reader.tokenRewards === "function"
+              ? reader.tokenRewards()
+              : Promise.resolve(null),
+            typeof reader.collectionRewards === "function"
+              ? reader.collectionRewards()
+              : Promise.resolve(null),
+            typeof reader.communityRewards === "function"
+              ? reader.communityRewards()
+              : Promise.resolve(null),
+            typeof reader.nftRewards === "function"
+              ? reader.nftRewards()
+              : Promise.resolve(null),
+            typeof reader.collectionDistributor === "function"
+              ? reader.collectionDistributor()
+              : Promise.resolve(null),
           ]);
 
-          const [collectionTotalPending, communityTotalPending, communityPendingForUser] = await Promise.all([
-            collectionRewardsAddr && typeof reader.getCollectionTotalPending === "function"
+          const [
+            collectionTotalPending,
+            communityTotalPending,
+            communityPendingForUser,
+          ] = await Promise.all([
+            collectionRewardsAddr &&
+            typeof reader.getCollectionTotalPending === "function"
               ? reader.getCollectionTotalPending(collectionRewardsAddr)
               : Promise.resolve(null),
-            typeof reader.getCommunityTotalPending === "function" ? reader.getCommunityTotalPending() : Promise.resolve(null),
+            typeof reader.getCommunityTotalPending === "function"
+              ? reader.getCommunityTotalPending()
+              : Promise.resolve(null),
             walletAddress && typeof reader.getCommunityPending === "function"
               ? reader.getCommunityPending(walletAddress)
               : Promise.resolve(null),
@@ -122,7 +139,10 @@ export default function useRewardsReader(walletAddress) {
           return;
         }
 
-        if (!reader?.collectionRewardsInfo) throw new Error("Rewards reader ABI mismatch (missing collectionRewardsInfo/getTokenRewardsStatus)");
+        if (!reader?.collectionRewardsInfo)
+          throw new Error(
+            "Rewards reader ABI mismatch (missing collectionRewardsInfo/getTokenRewardsStatus)",
+          );
         if (!cancelled && mountedRef.current) setHubStatus(null);
 
         // collectionRewardsInfo()
@@ -141,9 +161,14 @@ export default function useRewardsReader(walletAddress) {
         // userCollectionLists(address)
         if (walletAddress) {
           try {
-            const u = await readerRef.current.userCollectionLists(walletAddress);
-            const orange = ((u?.orangeMainIds ?? u?.[0]) || []).map((bn) => bnToNumber(bn));
-            const blocks = ((u?.blockWins ?? u?.[1]) || []).map((bn) => bnToNumber(bn));
+            const u =
+              await readerRef.current.userCollectionLists(walletAddress);
+            const orange = ((u?.orangeMainIds ?? u?.[0]) || []).map((bn) =>
+              bnToNumber(bn),
+            );
+            const blocks = ((u?.blockWins ?? u?.[1]) || []).map((bn) =>
+              bnToNumber(bn),
+            );
             if (!cancelled && mountedRef.current) {
               setOrangeMainIds(orange);
               setBlockWins(blocks);
@@ -181,14 +206,19 @@ export default function useRewardsReader(walletAddress) {
 
   async function loadNextPage(pageSize = 50) {
     if (!readerRef.current || !walletAddress) return;
-    if (typeof readerRef.current.rewardTokensByOwnerPaged !== "function") return;
+    if (typeof readerRef.current.rewardTokensByOwnerPaged !== "function")
+      return;
     if (loadingPageRef.current) return;
     if (!hasMorePages) return;
     loadingPageRef.current = true;
     let cancelled = false;
 
     try {
-      const res = await readerRef.current.rewardTokensByOwnerPaged(walletAddress, cursorRef.current, pageSize);
+      const res = await readerRef.current.rewardTokensByOwnerPaged(
+        walletAddress,
+        cursorRef.current,
+        pageSize,
+      );
       const ids = ((res?.ids ?? res?.[0]) || []).map((bn) => bnToNumber(bn));
       const newCursor = bnToNumber(res?.newCursor ?? res?.[1]);
       if (mountedRef.current && !cancelled) {
@@ -216,8 +246,10 @@ export default function useRewardsReader(walletAddress) {
   }
 
   async function getRewardTokenInfo(tokenId) {
-    if (!readerRef.current) throw new Error("Rewards reader is not initialized");
-    if (typeof readerRef.current.getRewardTokenInfo !== "function") throw new Error("getRewardTokenInfo is not supported by this reader");
+    if (!readerRef.current)
+      throw new Error("Rewards reader is not initialized");
+    if (typeof readerRef.current.getRewardTokenInfo !== "function")
+      throw new Error("getRewardTokenInfo is not supported by this reader");
     let cancelled = false;
     try {
       const r = await readerRef.current.getRewardTokenInfo(tokenId);

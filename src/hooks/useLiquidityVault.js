@@ -1,6 +1,7 @@
 // src/hooks/useLiquidityVault.js
 import * as React from "react";
-import { getReadOnlyContract } from "../utils/contract";
+import { ethers } from "ethers";
+import { getROProvider, ABI_LIQUIDITY_VAULT_READER } from "../utils/contract";
 import { getCached } from "../utils/fetchCache";
 
 export default function useLiquidityVault() {
@@ -16,8 +17,12 @@ export default function useLiquidityVault() {
     setLoading(true);
     setError(null);
     try {
-      const contract = getReadOnlyContract("liquidityvault");
-      if (!contract) throw new Error("LiquidityVault contract not found");
+      // Nový LiquidityVaultReader contract instance
+      const contract = new ethers.Contract(
+        "0xaCbc930541E08c7dF9E4d3597173b5D781FD161b",
+        ABI_LIQUIDITY_VAULT_READER,
+        getROProvider(),
+      );
       const cacheKey = `liquidityVault:${contract.address || "unknown"}`;
 
       const snapshot = await getCached(
@@ -34,7 +39,7 @@ export default function useLiquidityVault() {
             owner: owner || null,
           };
         },
-        { force: options?.force === true }
+        { force: options?.force === true },
       );
 
       setData(snapshot);

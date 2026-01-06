@@ -9,13 +9,19 @@ import {
 
 let provider = null;
 
-export function getProvider({ preferLegacy = false, forceRefresh = false } = {}) {
+export function getProvider({
+  preferLegacy = false,
+  forceRefresh = false,
+} = {}) {
   if (preferLegacy) return getROProvider();
   if (!provider || forceRefresh) {
     try {
       provider = getSharedFallbackProvider({ forceRefresh });
     } catch (err) {
-      console.warn("Fallback provider failed, using legacy getROProvider", err?.message || err);
+      console.warn(
+        "Fallback provider failed, using legacy getROProvider",
+        err?.message || err,
+      );
       provider = getROProvider();
     }
   }
@@ -32,6 +38,12 @@ export async function getChainId() {
   }
 }
 
-export { createFallbackProvider, createJsonRpcProvider, getRpcUrls, getSharedFallbackProvider, resetSharedFallbackProvider };
+export {
+  createFallbackProvider,
+  createJsonRpcProvider,
+  getRpcUrls,
+  getSharedFallbackProvider,
+  resetSharedFallbackProvider,
+};
 
 export default getProvider();

@@ -22,7 +22,9 @@ async function getHeldTokenIds(c, addr) {
   ]);
 
   const all = [...toLogs, ...fromLogs].sort((a, b) =>
-    a.blockNumber !== b.blockNumber ? a.blockNumber - b.blockNumber : a.logIndex - b.logIndex
+    a.blockNumber !== b.blockNumber
+      ? a.blockNumber - b.blockNumber
+      : a.logIndex - b.logIndex,
   );
 
   const held = new Set();
@@ -82,11 +84,11 @@ export function InventoryProvider({ children }) {
           } catch {}
           if (!isT) return null;
           return { tokenId: id, image, meta, isTicket: true };
-        })
+        }),
       );
       return metas.filter(Boolean);
     },
-    [mainRO]
+    [mainRO],
   );
 
   // Fetch other NFTs
@@ -125,12 +127,12 @@ export function InventoryProvider({ children }) {
             console.error(`Error while loading NFT metadata ${tid}:`, e);
           }
           return { tokenId: String(tid), image, meta, isTicket: false };
-        })
+        }),
       );
 
       return metas.filter(Boolean);
     },
-    [mainRO]
+    [mainRO],
   );
 
   // Refresh inventory
@@ -139,7 +141,10 @@ export function InventoryProvider({ children }) {
       if (!addr) return;
       setLoading(true);
       try {
-        const [tickets, nfts] = await Promise.all([fetchMyTickets(addr), fetchOwnedNFTs(addr)]);
+        const [tickets, nfts] = await Promise.all([
+          fetchMyTickets(addr),
+          fetchOwnedNFTs(addr),
+        ]);
         const map = new Map();
         for (const t of tickets) map.set(t.tokenId, t);
         for (const n of nfts) map.set(n.tokenId, n);
@@ -150,11 +155,14 @@ export function InventoryProvider({ children }) {
         setLoading(false);
       }
     },
-    [fetchMyTickets, fetchOwnedNFTs]
+    [fetchMyTickets, fetchOwnedNFTs],
   );
 
   // Memoize context value
-  const ctxValue = React.useMemo(() => ({ items, loading, refresh }), [items, loading, refresh]);
+  const ctxValue = React.useMemo(
+    () => ({ items, loading, refresh }),
+    [items, loading, refresh],
+  );
 
   return <Ctx.Provider value={ctxValue}>{children}</Ctx.Provider>;
 }

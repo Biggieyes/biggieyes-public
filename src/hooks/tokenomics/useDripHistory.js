@@ -17,16 +17,28 @@ export default function useDripHistory(snapshot) {
   }, [snapshot]);
 
   const availableSeries = React.useMemo(
-    () => mapDripHistoryToChartPoints(history, (entry) => entry?.distributor?.availableNumeric ?? null),
-    [history]
+    () =>
+      mapDripHistoryToChartPoints(
+        history,
+        (entry) => entry?.distributor?.availableNumeric ?? null,
+      ),
+    [history],
   );
   const capSeries = React.useMemo(
-    () => mapDripHistoryToChartPoints(history, (entry) => entry?.distributor?.capRemainingNumeric ?? null),
-    [history]
+    () =>
+      mapDripHistoryToChartPoints(
+        history,
+        (entry) => entry?.distributor?.capRemainingNumeric ?? null,
+      ),
+    [history],
   );
   const nativeSeries = React.useMemo(
-    () => mapDripHistoryToChartPoints(history, (entry) => entry?.dripLM?.nativeBalanceNumeric ?? null),
-    [history]
+    () =>
+      mapDripHistoryToChartPoints(
+        history,
+        (entry) => entry?.dripLM?.nativeBalanceNumeric ?? null,
+      ),
+    [history],
   );
 
   return { history, availableSeries, capSeries, nativeSeries };

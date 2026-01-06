@@ -38,30 +38,38 @@ export function useStatsRewards({
       setTicketPrice(Number(ethers.utils.formatEther(ticketPriceWei)));
       setTicketMinted(Number(ticketMinted_));
       setBiggiMinted(Number(biggiMinted_));
-      setBlockPrices(currentBlockPrices.map((x) => Number(ethers.utils.formatEther(x))));
+      setBlockPrices(
+        currentBlockPrices.map((x) => Number(ethers.utils.formatEther(x))),
+      );
       setBlockMintCounts(blocksMinted.map((x) => Number(x)));
       setBackgroundMintCounts(bgsMinted.map((x) => Number(x)));
     } catch (err) {
       console.error("fetchStats(reader)", err);
       try {
         const main = getReadOnlyContract();
-        const priceCandidates = ["getTicketPrice", "ticketPrice", "getTicketPriceWei", "ticketPriceWei"];
+        const priceCandidates = [
+          "getTicketPrice",
+          "ticketPrice",
+          "getTicketPriceWei",
+          "ticketPriceWei",
+        ];
         let priceWei = null;
         for (const fn of priceCandidates) {
           const f = main?.[fn];
           if (typeof f === "function") {
-        try {
-          const v = await f();
-          if (v != null) {
-            priceWei = v;
-            break;
+            try {
+              const v = await f();
+              if (v != null) {
+                priceWei = v;
+                break;
+              }
+            } catch (err) {
+              console.debug("fetchStats fallback price candidate failed", err);
+            }
           }
-        } catch (err) {
-          console.debug("fetchStats fallback price candidate failed", err);
         }
-          }
-        }
-        if (priceWei != null) setTicketPrice(Number(ethers.utils.formatEther(priceWei)));
+        if (priceWei != null)
+          setTicketPrice(Number(ethers.utils.formatEther(priceWei)));
 
         try {
           const tm = await main.ticketMinted();
@@ -83,17 +91,23 @@ export function useStatsRewards({
           try {
             const p = await main.getCurrentBlockPrice(i);
             prices.push(Number(ethers.utils.formatEther(p)));
-          } catch { prices.push(0); }
+          } catch {
+            prices.push(0);
+          }
           try {
             const c = await main.getBlockMintCount(i);
             blkCounts.push(Number(c?.toString?.() || c || 0));
-          } catch { blkCounts.push(0); }
+          } catch {
+            blkCounts.push(0);
+          }
         }
         for (let j = 0; j < 10; j++) {
           try {
             const c = await main.backgroundMintCounts(j);
             bgCounts.push(Number(c?.toString?.() || c || 0));
-          } catch { bgCounts.push(0); }
+          } catch {
+            bgCounts.push(0);
+          }
         }
         setBlockPrices(prices);
         setBlockMintCounts(blkCounts);
@@ -102,13 +116,28 @@ export function useStatsRewards({
         console.error("fetchStats(fallback main)", e2);
       }
     }
-  }, [setTicketPrice, setTicketMinted, setBiggiMinted, setBlockPrices, setBlockMintCounts, setBackgroundMintCounts]);
+  }, [
+    setTicketPrice,
+    setTicketMinted,
+    setBiggiMinted,
+    setBlockPrices,
+    setBlockMintCounts,
+    setBackgroundMintCounts,
+  ]);
 
   const fetchRewards = React.useCallback(async () => {
     try {
       const main = getReadOnlyContract();
 
-      const volumeCandidates = ["totalMintVolume","mintVolume","getMintVolume","totalRevenue","totalRevenueMatic","accMintValue","mintedValue"];
+      const volumeCandidates = [
+        "totalMintVolume",
+        "mintVolume",
+        "getMintVolume",
+        "totalRevenue",
+        "totalRevenueMatic",
+        "accMintValue",
+        "mintedValue",
+      ];
       let volWei = await callFirst(main, volumeCandidates);
       if (volWei) {
         const vol = Number(ethers.utils.formatEther(volWei));
@@ -120,7 +149,15 @@ export function useStatsRewards({
       let weeklyWei = null;
       try {
         const brl = await getReadOnlyLiquidityContract();
-        const weeklyPoolFns = ["weeklyPool","currentWeekPool","getWeeklyPool","weekPool","poolForCurrentWeek","rewardPool","currentRewardPool"];
+        const weeklyPoolFns = [
+          "weeklyPool",
+          "currentWeekPool",
+          "getWeeklyPool",
+          "weekPool",
+          "poolForCurrentWeek",
+          "rewardPool",
+          "currentRewardPool",
+        ];
         weeklyWei = await callFirst(brl, weeklyPoolFns);
       } catch (err) {
         console.debug("fetchRewards weekly pool lookup failed", err);
@@ -128,7 +165,9 @@ export function useStatsRewards({
 
       if (weeklyWei != null) {
         try {
-          const isPositive = ethers.BigNumber.isBigNumber(weeklyWei) ? weeklyWei.gt(0) : Number(weeklyWei) > 0;
+          const isPositive = ethers.BigNumber.isBigNumber(weeklyWei)
+            ? weeklyWei.gt(0)
+            : Number(weeklyWei) > 0;
           if (isPositive) {
             setRewardPool(Number(ethers.utils.formatEther(weeklyWei)));
           } else if (volWei) {
@@ -137,40 +176,52 @@ export function useStatsRewards({
             setRewardPool(0);
           }
         } catch {
-          if (volWei) setRewardPool(Number(ethers.utils.formatEther(volWei)) * 0.22);
+          if (volWei)
+            setRewardPool(Number(ethers.utils.formatEther(volWei)) * 0.22);
           else setRewardPool(0);
         }
       } else {
-        if (volWei) setRewardPool(Number(ethers.utils.formatEther(volWei)) * 0.22);
+        if (volWei)
+          setRewardPool(Number(ethers.utils.formatEther(volWei)) * 0.22);
         else setRewardPool(0);
       }
 
       if (walletAddress) {
         const brl = await getReadOnlyLiquidityContract();
 
-        let tokenIds = myNFTs.filter((x) => !x.isTicket).map((x) => ethers.BigNumber.from(x.tokenId));
+        let tokenIds = myNFTs
+          .filter((x) => !x.isTicket)
+          .map((x) => ethers.BigNumber.from(x.tokenId));
 
         if (!tokenIds.length) {
           const contract = getReadOnlyContract();
           const latest = await contract.provider.getBlockNumber();
           const fallbackFrom = Number(ADDR?.DEPLOY_BLOCK);
-          const FROM = Number.isFinite(fallbackFrom) && fallbackFrom > 0
-            ? fallbackFrom
-            : await getSafeDeployBlock(contract.provider);
+          const FROM =
+            Number.isFinite(fallbackFrom) && fallbackFrom > 0
+              ? fallbackFrom
+              : await getSafeDeployBlock(contract.provider);
           const toFilter = contract.filters.Transfer(null, walletAddress, null);
-          const fromFilter = contract.filters.Transfer(walletAddress, null, null);
+          const fromFilter = contract.filters.Transfer(
+            walletAddress,
+            null,
+            null,
+          );
           const [toLogs, fromLogs] = await Promise.all([
             queryLogsBatched(contract, toFilter, FROM, latest),
             queryLogsBatched(contract, fromFilter, FROM, latest),
           ]);
           const all = [...toLogs, ...fromLogs].sort((a, b) => {
-            if (a.blockNumber !== b.blockNumber) return a.blockNumber - b.blockNumber;
+            if (a.blockNumber !== b.blockNumber)
+              return a.blockNumber - b.blockNumber;
             return a.logIndex - b.logIndex;
           });
           const held = new Set();
           const me = String(walletAddress || "").toLowerCase();
           for (const l of all) {
-            const from = String(l.args?.from ?? l.args?.[0] ?? "").toLowerCase();
+            const from = String(
+              l.args?.from ?? l.args?.[0] ?? "",
+            ).toLowerCase();
             const to = String(l.args?.to ?? l.args?.[1] ?? "").toLowerCase();
             const tid = (l.args?.tokenId ?? l.args?.[2])?.toString?.() || "";
             if (!tid) continue;
@@ -181,7 +232,10 @@ export function useStatsRewards({
           const nonTickets = [];
           for (const tid of arr) {
             try {
-              const isT = typeof contract?.isTicket === "function" ? await contract.isTicket(tid) : false;
+              const isT =
+                typeof contract?.isTicket === "function"
+                  ? await contract.isTicket(tid)
+                  : false;
               if (!isT) nonTickets.push(ethers.BigNumber.from(tid));
             } catch {
               nonTickets.push(ethers.BigNumber.from(tid));
@@ -204,7 +258,13 @@ export function useStatsRewards({
     } catch (e) {
       console.error("fetchRewards", e);
     }
-  }, [walletAddress, myNFTs, setMintVolumeMatic, setRewardPool, setMyClaimable]);
+  }, [
+    walletAddress,
+    myNFTs,
+    setMintVolumeMatic,
+    setRewardPool,
+    setMyClaimable,
+  ]);
 
   return { fetchStats, fetchRewards };
 }

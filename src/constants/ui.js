@@ -16,7 +16,11 @@ export const ICONS = [
   { src: rewards, alt: "REWARDS", modalText: "Rewards and Staking" },
   { src: collection, alt: "COLLECTION", modalText: "NFT Collection" },
   { src: mint, alt: "VRF MINT", modalText: "Mint NFTs and VRF" },
-  { src: token, alt: "BIGGI ECOSYSTEM", modalText: "Ecosystem Data and Liquidity" },
+  {
+    src: token,
+    alt: "BIGGI ECOSYSTEM",
+    modalText: "Ecosystem Data and Liquidity",
+  },
   { src: users, alt: "USERS", modalText: "Users and Holders" },
   { src: expansion, alt: "COMMUNITY CENTER", modalText: "Community Center" },
 ];

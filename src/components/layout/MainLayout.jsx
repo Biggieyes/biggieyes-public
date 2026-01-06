@@ -104,7 +104,13 @@ export default function MainLayout({
         />
 
         {isAdmin ? (
-          <div style={{ display: "flex", justifyContent: "flex-end", margin: "6px 12px 0" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              margin: "6px 12px 0",
+            }}
+          >
             <button
               onClick={onOpenAdmin}
               style={{

@@ -11,7 +11,9 @@ export function galleryCacheKey(addr, contractAddr) {
 export function readGalleryCache(addr, contractAddr) {
   try {
     if (typeof window === "undefined" || !window.localStorage) return null;
-    const raw = window.localStorage.getItem(galleryCacheKey(addr, contractAddr));
+    const raw = window.localStorage.getItem(
+      galleryCacheKey(addr, contractAddr),
+    );
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object") return null;

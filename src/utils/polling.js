@@ -2,9 +2,10 @@
 // Shared polling helpers to reduce redundant work in background tabs.
 
 export const getPollInterval = (fallbackMs, envKey) => {
-  const raw = envKey && typeof import.meta !== "undefined" && import.meta.env
-    ? import.meta.env[envKey]
-    : undefined;
+  const raw =
+    envKey && typeof import.meta !== "undefined" && import.meta.env
+      ? import.meta.env[envKey]
+      : undefined;
   const val = Number(raw);
   return Number.isFinite(val) && val > 0 ? val : fallbackMs;
 };

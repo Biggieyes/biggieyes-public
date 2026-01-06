@@ -14,7 +14,10 @@ async function _callOptional(fn, fallback = null) {
 
 export async function fetchDripSnapshot({ chainId, provider } = {}) {
   const signerOrProvider = provider || getProvider();
-  const { dripDistributor, dripLM, token, addrs } = getDripContracts(chainId, signerOrProvider);
+  const { dripDistributor, dripLM, token, addrs } = getDripContracts(
+    chainId,
+    signerOrProvider,
+  );
 
   const [
     cap,
@@ -34,20 +37,35 @@ export async function fetchDripSnapshot({ chainId, provider } = {}) {
     nativeBalance,
   ] = await Promise.all([
     _callOptional(() => dripDistributor.CAP(), ethers.constants.Zero),
-    _callOptional(() => dripDistributor.availableTokens(), ethers.constants.Zero),
+    _callOptional(
+      () => dripDistributor.availableTokens(),
+      ethers.constants.Zero,
+    ),
     _callOptional(() => dripDistributor.capRemaining(), ethers.constants.Zero),
     _callOptional(() => dripDistributor.tokensPerMint(), ethers.constants.Zero),
     _callOptional(() => dripDistributor.getAvailable(), ethers.constants.Zero),
-    _callOptional(() => dripDistributor.getTotalClaimed(), ethers.constants.Zero),
-    _callOptional(() => dripDistributor.getTotalNotified(), ethers.constants.Zero),
+    _callOptional(
+      () => dripDistributor.getTotalClaimed(),
+      ethers.constants.Zero,
+    ),
+    _callOptional(
+      () => dripDistributor.getTotalNotified(),
+      ethers.constants.Zero,
+    ),
     _callOptional(() => dripDistributor.getTotalTopUp(), ethers.constants.Zero),
     _callOptional(() => dripDistributor.paused(), false),
     _callOptional(() => dripLM.sellPct(), 0),
     _callOptional(() => dripLM.slippageBps(), ethers.constants.Zero),
     _callOptional(() => dripLM.txDeadlineSec(), ethers.constants.Zero),
-    _callOptional(() => token.balanceOf(addrs.dripDistributor), ethers.constants.Zero),
+    _callOptional(
+      () => token.balanceOf(addrs.dripDistributor),
+      ethers.constants.Zero,
+    ),
     _callOptional(() => token.balanceOf(addrs.dripLM), ethers.constants.Zero),
-    _callOptional(() => signerOrProvider.getBalance(addrs.dripLM), ethers.constants.Zero),
+    _callOptional(
+      () => signerOrProvider.getBalance(addrs.dripLM),
+      ethers.constants.Zero,
+    ),
   ]);
 
   return {

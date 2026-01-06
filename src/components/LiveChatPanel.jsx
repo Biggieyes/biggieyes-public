@@ -19,7 +19,10 @@ const formatTime = (iso) => {
   if (!iso) return "--";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "--";
-  return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 const hasProfanity = (value) => {
@@ -27,7 +30,8 @@ const hasProfanity = (value) => {
   return BAD_WORDS.some((word) => text.includes(word));
 };
 
-const buildPayload = (nonce, content, timestamp) => `${nonce}|${content}|${timestamp}`;
+const buildPayload = (nonce, content, timestamp) =>
+  `${nonce}|${content}|${timestamp}`;
 
 const buildApiUrl = (path) => {
   if (!API_BASE) return `/api${path}`;
@@ -63,7 +67,9 @@ function LiveChatPanel({ walletAddress = "" }) {
         supabase.from("rules").select("text").eq("id", 1).maybeSingle(),
         supabase
           .from("messages")
-          .select("id,author_address,author_name,content,created_at,edited_at,deleted")
+          .select(
+            "id,author_address,author_name,content,created_at,edited_at,deleted",
+          )
           .order("created_at", { ascending: false })
           .limit(80),
       ]);
@@ -103,7 +109,7 @@ function LiveChatPanel({ walletAddress = "" }) {
             if (merged.length > 200) merged.splice(0, merged.length - 200);
             return merged;
           });
-        }
+        },
       )
       .subscribe();
 
@@ -146,7 +152,10 @@ function LiveChatPanel({ walletAddress = "" }) {
 
     setSending(true);
     try {
-      const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+      const provider = new ethers.providers.Web3Provider(
+        window.ethereum,
+        "any",
+      );
       const signer = provider.getSigner();
       const signerAddress = await signer.getAddress();
 
@@ -196,10 +205,16 @@ function LiveChatPanel({ walletAddress = "" }) {
         <div>
           <div className="live-chat-panel__title">Live Chat</div>
           <div className="live-chat-panel__subtitle">
-            {isConnected ? `Connected: ${shortAddress(walletAddress)}` : "Connect a wallet to chat"}
+            {isConnected
+              ? `Connected: ${shortAddress(walletAddress)}`
+              : "Connect a wallet to chat"}
           </div>
         </div>
-        <button type="button" className="live-chat-panel__refresh" onClick={loadInitial}>
+        <button
+          type="button"
+          className="live-chat-panel__refresh"
+          onClick={loadInitial}
+        >
           Refresh
         </button>
       </header>
@@ -213,21 +228,28 @@ function LiveChatPanel({ walletAddress = "" }) {
       {error && <div className="live-chat-panel__error">{error}</div>}
 
       <div className="live-chat-panel__list" ref={listRef} aria-live="polite">
-        {loading && <div className="live-chat-panel__status">Loading chat...</div>}
+        {loading && (
+          <div className="live-chat-panel__status">Loading chat...</div>
+        )}
         {!loading && sortedMessages.length === 0 && (
           <div className="live-chat-panel__status">No messages yet.</div>
         )}
         {sortedMessages.map((msg) => {
-          const authorLabel = msg.author_name || shortAddress(msg.author_address);
+          const authorLabel =
+            msg.author_name || shortAddress(msg.author_address);
           return (
             <div className="live-chat-panel__message" key={msg.id}>
               <div className="live-chat-panel__meta">
                 <span className="live-chat-panel__author">{authorLabel}</span>
-                <span className="live-chat-panel__time">{formatTime(msg.created_at)}</span>
+                <span className="live-chat-panel__time">
+                  {formatTime(msg.created_at)}
+                </span>
               </div>
               <div className="live-chat-panel__body">
                 {msg.deleted ? (
-                  <span className="live-chat-panel__deleted">Message removed</span>
+                  <span className="live-chat-panel__deleted">
+                    Message removed
+                  </span>
                 ) : (
                   msg.content
                 )}
@@ -252,7 +274,9 @@ function LiveChatPanel({ walletAddress = "" }) {
         <input
           type="text"
           className="live-chat-panel__input"
-          placeholder={isConnected ? "Type your message..." : "Connect wallet to chat"}
+          placeholder={
+            isConnected ? "Type your message..." : "Connect wallet to chat"
+          }
           maxLength={MAX_LEN}
           value={content}
           onChange={(e) => setContent(e.target.value)}

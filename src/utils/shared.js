@@ -1,15 +1,41 @@
 import { ADDR } from "./addresses";
 
-export const BACKGROUND_NAMES = ["ORANGE","BLACK","WHITE","BROWN","BLUE","GREEN","VIOLET","RED","PINK","RAINBOW"];
-export const BACKGROUND_CODES = ["O","B","W","BR","BL","G","V","R","P","RB"];
-export const BACKGROUND_BONUSES = [5,10,15,20,25,30,35,40,45,50];
+export const BACKGROUND_NAMES = [
+  "ORANGE",
+  "BLACK",
+  "WHITE",
+  "BROWN",
+  "BLUE",
+  "GREEN",
+  "VIOLET",
+  "RED",
+  "PINK",
+  "RAINBOW",
+];
+export const BACKGROUND_CODES = [
+  "O",
+  "B",
+  "W",
+  "BR",
+  "BL",
+  "G",
+  "V",
+  "R",
+  "P",
+  "RB",
+];
+export const BACKGROUND_BONUSES = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50];
 
 // Smaller batches reduce RPC 400/429s on public endpoints
 const LOGS_BATCH = 300;
 const PRUNED_LOOKBACK_DEFAULT = 49_000;
 const PRUNED_LOOKBACK = (() => {
   try {
-    if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_LOG_LOOKBACK) {
+    if (
+      typeof import.meta !== "undefined" &&
+      import.meta.env &&
+      import.meta.env.VITE_LOG_LOOKBACK
+    ) {
       const v = Number(import.meta.env.VITE_LOG_LOOKBACK);
       if (Number.isFinite(v) && v > 0) return v;
     }
@@ -36,7 +62,8 @@ export function loadWalletCache(addr, options = {}, contractAddr) {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object") return null;
-    const isExpired = parsed.ts && Date.now() - Number(parsed.ts) > WALLET_CACHE_TTL;
+    const isExpired =
+      parsed.ts && Date.now() - Number(parsed.ts) > WALLET_CACHE_TTL;
     if (isExpired && !options.allowExpired) return null;
     return Array.isArray(parsed.items) ? parsed.items : null;
   } catch {
@@ -62,7 +89,13 @@ export async function getSafeDeployBlock(provider) {
   return Math.max(0, latest - 49_999);
 }
 
-export async function queryLogsBatched(contract, filter, fromBlock, toBlock, step = LOGS_BATCH) {
+export async function queryLogsBatched(
+  contract,
+  filter,
+  fromBlock,
+  toBlock,
+  step = LOGS_BATCH,
+) {
   const out = [];
   let start = fromBlock;
   let batch = step;
@@ -80,7 +113,9 @@ export async function queryLogsBatched(contract, filter, fromBlock, toBlock, ste
       if (isPruned) {
         if (!prunedWarned) {
           prunedWarned = true;
-          console.warn("RPC history pruned: falling back to recent blocks. Use an archive RPC for full history.");
+          console.warn(
+            "RPC history pruned: falling back to recent blocks. Use an archive RPC for full history.",
+          );
         }
         let latest = null;
         try {
@@ -88,7 +123,10 @@ export async function queryLogsBatched(contract, filter, fromBlock, toBlock, ste
         } catch {
           latest = typeof toBlock === "number" ? toBlock : null;
         }
-        const lookback = Number.isFinite(PRUNED_LOOKBACK) && PRUNED_LOOKBACK > 0 ? PRUNED_LOOKBACK : PRUNED_LOOKBACK_DEFAULT;
+        const lookback =
+          Number.isFinite(PRUNED_LOOKBACK) && PRUNED_LOOKBACK > 0
+            ? PRUNED_LOOKBACK
+            : PRUNED_LOOKBACK_DEFAULT;
         const latestNum = Number(latest || 0);
         const newFrom = Math.max(0, latestNum - lookback);
         if (Number.isFinite(newFrom) && newFrom > start) {
@@ -117,12 +155,14 @@ export const ERC20_MINI = [
 export async function mapLimit(items, limit, mapper) {
   const ret = [];
   let i = 0;
-  const workers = new Array(Math.min(limit, items.length)).fill(0).map(async () => {
-    while (i < items.length) {
-      const cur = i++;
-      ret[cur] = await mapper(items[cur], cur);
-    }
-  });
+  const workers = new Array(Math.min(limit, items.length))
+    .fill(0)
+    .map(async () => {
+      while (i < items.length) {
+        const cur = i++;
+        ret[cur] = await mapper(items[cur], cur);
+      }
+    });
   await Promise.all(workers);
   return ret;
 }

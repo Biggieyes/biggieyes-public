@@ -1,9 +1,20 @@
 // src/lib/mintAuto.js
-import { getContract as getMainRW, resolveTicketPriceWeiFromHub, ensureAmoy } from "../utils/contract";
+import {
+  getContract as getMainRW,
+  resolveTicketPriceWeiFromHub,
+  ensureAmoy,
+} from "../utils/contract";
 import { ethers } from "ethers";
 
 function pickMintName(c) {
-  const prefer = ["mint", "buyTicket", "purchase", "mintTicket", "mintWithVRF", "buy"];
+  const prefer = [
+    "mint",
+    "buyTicket",
+    "purchase",
+    "mintTicket",
+    "mintWithVRF",
+    "buy",
+  ];
   const have = prefer.filter((n) => typeof c[n] === "function");
   if (have.length) return have[0];
 
@@ -13,7 +24,7 @@ function pickMintName(c) {
       ["payable", "nonpayable"].includes(f.stateMutability) &&
       f.inputs &&
       f.inputs.length <= 1 &&
-      /mint|buy|purchase/i.test(f.name)
+      /mint|buy|purchase/i.test(f.name),
   );
   return frags[0]?.name || null;
 }
@@ -32,7 +43,8 @@ export async function mintAuto(qty = 1) {
 
   const c = await getMainRW();
   const fn = pickMintName(c);
-  if (!fn) throw new Error("Contract does not expose a recognized mint function.");
+  if (!fn)
+    throw new Error("Contract does not expose a recognized mint function.");
 
   // check payable
   const fragment = c.interface.getFunction(fn);
@@ -41,7 +53,9 @@ export async function mintAuto(qty = 1) {
   // price per item
   const unitWeiBN = ethers.BigNumber.from(await resolveTicketPriceWeiFromHub());
   // total
-  const totalValue = isPayable ? unitWeiBN.mul(ethers.BigNumber.from(qty)) : ethers.constants.Zero;
+  const totalValue = isPayable
+    ? unitWeiBN.mul(ethers.BigNumber.from(qty))
+    : ethers.constants.Zero;
 
   // gas estimate
   let gas;
@@ -50,7 +64,7 @@ export async function mintAuto(qty = 1) {
   } catch (err) {
     console.debug("mintAuto gas estimate (no qty) failed", err);
   }
- if (!gas) {
+  if (!gas) {
     try {
       gas = await c.estimateGas?.[fn]?.(qty, { value: totalValue });
     } catch (err) {

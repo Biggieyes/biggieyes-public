@@ -1,5 +1,8 @@
 import * as React from "react";
-import { BLOCK_INDICES, ORANGE_MAIN_IDS } from "../../services/collectionRewardsService";
+import {
+  BLOCK_INDICES,
+  ORANGE_MAIN_IDS,
+} from "../../services/collectionRewardsService";
 import { ADDR } from "../../utils/addresses";
 
 const FEEDBACK_CLASS = {
@@ -15,7 +18,9 @@ const thumbnailPath = (segments) => {
 const orangeThumbnailsForId = (mainId) => {
   if (mainId == null || mainId < 1) return [];
   const folder = `page${mainId}`;
-  return Array.from({ length: 10 }, (_, idx) => thumbnailPath(["rewards", "orange", folder, `${idx + 1}.png`]));
+  return Array.from({ length: 10 }, (_, idx) =>
+    thumbnailPath(["rewards", "orange", folder, `${idx + 1}.png`]),
+  );
 };
 
 const blockThumbnailsForId = (blockId) => {
@@ -23,12 +28,14 @@ const blockThumbnailsForId = (blockId) => {
   const folder = `page${blockId}`;
   const base = (blockId - 1) * 10;
   return Array.from({ length: 10 }, (_, idx) =>
-    thumbnailPath(["rewards", "block", folder, `${base + idx + 1}.png`])
+    thumbnailPath(["rewards", "block", folder, `${base + idx + 1}.png`]),
   );
 };
 
 const rainbowThumbnails = () =>
-  Array.from({ length: 10 }, (_, idx) => thumbnailPath(["rewards", "rainbow", `${idx + 1}.png`]));
+  Array.from({ length: 10 }, (_, idx) =>
+    thumbnailPath(["rewards", "rainbow", `${idx + 1}.png`]),
+  );
 
 const renderThumbnailPlate = (paths = [], label = "Preview") => {
   if (!paths.length) {
@@ -37,7 +44,14 @@ const renderThumbnailPlate = (paths = [], label = "Preview") => {
   return (
     <div className="rewards-panel__claim-thumbnail-row" aria-label={label}>
       {paths.map((src) => (
-        <img key={src} src={src} alt={`${label} preview`} loading="React.lazy" width="56" height="56" />
+        <img
+          key={src}
+          src={src}
+          alt={`${label} preview`}
+          loading="React.lazy"
+          width="56"
+          height="56"
+        />
       ))}
     </div>
   );
@@ -63,7 +77,8 @@ function CollectionRewardsSection({
 }) {
   const hasStats = Boolean(stats);
   const blockStatusesLoaded = blockPaid.length === BLOCK_INDICES.length;
-  const orangeStatusesLoaded = orangeMainIdPaid.length === ORANGE_MAIN_IDS.length;
+  const orangeStatusesLoaded =
+    orangeMainIdPaid.length === ORANGE_MAIN_IDS.length;
   const blockClaimedCount = blockPaid.filter(Boolean).length;
   const orangeClaimedCount = orangeMainIdPaid.filter(Boolean).length;
   const formatValue =
@@ -73,15 +88,18 @@ function CollectionRewardsSection({
           value == null
             ? WAITING_VALUE
             : Number.isFinite(Number(value))
-            ? Number(value).toLocaleString(undefined, {
-                minimumFractionDigits: digits,
-                maximumFractionDigits: digits,
-              })
-            : String(value);
+              ? Number(value).toLocaleString(undefined, {
+                  minimumFractionDigits: digits,
+                  maximumFractionDigits: digits,
+                })
+              : String(value);
   const formattedMetadata = metadataRows.length
     ? metadataRows
     : [
-        { label: "Distributor", value: stats?.distributor ?? ADDR.COLLECTION_REWARDS },
+        {
+          label: "Distributor",
+          value: stats?.distributor ?? ADDR.COLLECTION_REWARDS,
+        },
         { label: "Eyes main", value: stats?.main },
         { label: "Owner", value: stats?.owner },
       ];
@@ -95,19 +113,28 @@ function CollectionRewardsSection({
   const collectionStatRows = [
     {
       label: "Block reward",
-      value: hasStats ? `${formatValue(stats.blockReward, 3)} POL` : WAITING_VALUE,
+      value: hasStats
+        ? `${formatValue(stats.blockReward, 3)} POL`
+        : WAITING_VALUE,
     },
     {
       label: "Orange reward",
-      value: hasStats ? `${formatValue(stats.orangeReward, 3)} POL` : WAITING_VALUE,
+      value: hasStats
+        ? `${formatValue(stats.orangeReward, 3)} POL`
+        : WAITING_VALUE,
     },
     {
       label: "Rainbow reward",
-      value: hasStats ? `${formatValue(stats.rainbowReward, 3)} POL` : WAITING_VALUE,
+      value: hasStats
+        ? `${formatValue(stats.rainbowReward, 3)} POL`
+        : WAITING_VALUE,
     },
     {
       label: "Native pool",
-      value: rewardPool != null ? `${formatValue(rewardPool, 2)} POL` : WAITING_VALUE,
+      value:
+        rewardPool != null
+          ? `${formatValue(rewardPool, 2)} POL`
+          : WAITING_VALUE,
     },
   ];
 
@@ -148,7 +175,10 @@ function CollectionRewardsSection({
               )}
               <ul className="rewards-grid__info-list">
                 <li>Block winners share the same reward amount each round.</li>
-                <li>Orange winners and the Rainbow drop are minted once per block window.</li>
+                <li>
+                  Orange winners and the Rainbow drop are minted once per block
+                  window.
+                </li>
               </ul>
             </div>
           </article>
@@ -166,11 +196,16 @@ function CollectionRewardsSection({
               <div className="rewards-panel__claim-list">
                 <div className="rewards-panel__claim-row">
                   <div className="rewards-panel__claim-plate">
-                    {renderThumbnailPlate(rainbowThumbnails(), "Rainbow preview")}
+                    {renderThumbnailPlate(
+                      rainbowThumbnails(),
+                      "Rainbow preview",
+                    )}
                   </div>
                   <div className="rewards-panel__claim-info">
                     <div className="label">Rainbow reward</div>
-                    <div className={`pill ${rainbowClaimed ? "is-claimed" : "is-available"}`}>
+                    <div
+                      className={`pill ${rainbowClaimed ? "is-claimed" : "is-available"}`}
+                    >
                       {rainbowClaimed ? "Paid" : "Open"}
                     </div>
                   </div>
@@ -178,7 +213,11 @@ function CollectionRewardsSection({
                     type="button"
                     className="biggi-btn biggi-btn--ghost"
                     onClick={onClaimRainbowReward}
-                    disabled={rainbowClaimed || claimState.rainbow || !canClaimCollection}
+                    disabled={
+                      rainbowClaimed ||
+                      claimState.rainbow ||
+                      !canClaimCollection
+                    }
                   >
                     {claimState.rainbow ? "Sending..." : "Claim"}
                   </button>
@@ -211,24 +250,44 @@ function CollectionRewardsSection({
                     const idx = blockIdx - 1;
                     const paid = blockPaid[idx];
                     const available = blockStatusesLoaded && !paid;
-                    const statusLabel = blockStatusesLoaded ? (paid ? "Paid" : "Open") : "Loading...";
+                    const statusLabel = blockStatusesLoaded
+                      ? paid
+                        ? "Paid"
+                        : "Open"
+                      : "Loading...";
                     const blockThumbs = blockThumbnailsForId(blockIdx);
                     return (
-                      <div key={`block-${blockIdx}`} className="rewards-panel__claim-row">
+                      <div
+                        key={`block-${blockIdx}`}
+                        className="rewards-panel__claim-row"
+                      >
                         <div className="rewards-panel__claim-plate">
-                          {renderThumbnailPlate(blockThumbs, `Block ${blockIdx}`)}
+                          {renderThumbnailPlate(
+                            blockThumbs,
+                            `Block ${blockIdx}`,
+                          )}
                         </div>
                         <div className="rewards-panel__claim-info">
                           <div className="label">Block {blockIdx}</div>
-                          <div className={`pill ${paid ? "is-claimed" : "is-available"}`}>{statusLabel}</div>
+                          <div
+                            className={`pill ${paid ? "is-claimed" : "is-available"}`}
+                          >
+                            {statusLabel}
+                          </div>
                         </div>
                         <button
                           type="button"
                           className="biggi-btn biggi-btn--ghost"
                           onClick={() => onClaimBlockReward?.(blockIdx)}
-                          disabled={!available || claimState.block === blockIdx || !canClaimCollection}
+                          disabled={
+                            !available ||
+                            claimState.block === blockIdx ||
+                            !canClaimCollection
+                          }
                         >
-                          {claimState.block === blockIdx ? "Sending..." : "Claim"}
+                          {claimState.block === blockIdx
+                            ? "Sending..."
+                            : "Claim"}
                         </button>
                       </div>
                     );
@@ -241,23 +300,43 @@ function CollectionRewardsSection({
                     <div className="collection-table__title">Orange drop</div>
                     <small>Each Main ID (1-10) can mint once.</small>
                   </div>
-                  <span className="rewards-panel__chip">{orangeBadgeLabel}</span>
+                  <span className="rewards-panel__chip">
+                    {orangeBadgeLabel}
+                  </span>
                 </div>
                 <div className="rewards-panel__claim-list">
                   {ORANGE_MAIN_IDS.map((mainId) => {
                     const idx = mainId - 1;
                     const paid = orangeMainIdPaid[idx];
-                    const statusLabel = paid ? "Paid" : claimedOrange ? "Already claimed" : "Open";
-                    const disabled = paid || claimedOrange || claimState.orange === mainId || !canClaimCollection;
+                    const statusLabel = paid
+                      ? "Paid"
+                      : claimedOrange
+                        ? "Already claimed"
+                        : "Open";
+                    const disabled =
+                      paid ||
+                      claimedOrange ||
+                      claimState.orange === mainId ||
+                      !canClaimCollection;
                     const orangeThumbs = orangeThumbnailsForId(mainId);
                     return (
-                      <div key={`orange-${mainId}`} className="rewards-panel__claim-row">
+                      <div
+                        key={`orange-${mainId}`}
+                        className="rewards-panel__claim-row"
+                      >
                         <div className="rewards-panel__claim-plate">
-                          {renderThumbnailPlate(orangeThumbs, `Main ID ${mainId}`)}
+                          {renderThumbnailPlate(
+                            orangeThumbs,
+                            `Main ID ${mainId}`,
+                          )}
                         </div>
                         <div className="rewards-panel__claim-info">
                           <div className="label">Main ID {mainId}</div>
-                          <div className={`pill ${paid ? "is-claimed" : "is-available"}`}>{statusLabel}</div>
+                          <div
+                            className={`pill ${paid ? "is-claimed" : "is-available"}`}
+                          >
+                            {statusLabel}
+                          </div>
                         </div>
                         <button
                           type="button"
@@ -265,7 +344,9 @@ function CollectionRewardsSection({
                           onClick={() => onClaimOrangeReward?.(mainId)}
                           disabled={disabled}
                         >
-                          {claimState.orange === mainId ? "Sending..." : "Claim"}
+                          {claimState.orange === mainId
+                            ? "Sending..."
+                            : "Claim"}
                         </button>
                       </div>
                     );
@@ -278,13 +359,17 @@ function CollectionRewardsSection({
               {formattedMetadata.map((row) => (
                 <div className="row" key={row.label}>
                   <span className="label">{row.label}</span>
-                  <span className="value" title={row.value || ""}>{formatAddressValue(row.value)}</span>
+                  <span className="value" title={row.value || ""}>
+                    {formatAddressValue(row.value)}
+                  </span>
                 </div>
               ))}
             </div>
 
             {feedback && (
-              <div className={`rewards-grid__alert ${FEEDBACK_CLASS[feedback.tone] ?? ""}`.trim()}>
+              <div
+                className={`rewards-grid__alert ${FEEDBACK_CLASS[feedback.tone] ?? ""}`.trim()}
+              >
                 {feedback.text}
               </div>
             )}
@@ -297,7 +382,9 @@ function CollectionRewardsSection({
           statusRows.map((status) => (
             <div key={status.label} className="rewards-panel__status">
               <span className="label">{status.label}</span>
-              <span className={`value ${status.tone ?? ""}`.trim()}>{status.value}</span>
+              <span className={`value ${status.tone ?? ""}`.trim()}>
+                {status.value}
+              </span>
             </div>
           ))
         ) : (

@@ -5,7 +5,11 @@ import { useContracts } from "../providers/ContractsProvider";
 import { useWeb3 } from "../providers/Web3Provider";
 import { ethers } from "ethers";
 import { ADDR } from "../utils/addresses.js";
-import { readJsonFromURI, resolveImageUrl, httpFromIpfs } from "../services/ipfs.js";
+import {
+  readJsonFromURI,
+  resolveImageUrl,
+  httpFromIpfs,
+} from "../services/ipfs.js";
 
 const PAGE_SIZE_DESKTOP = 12;
 const PAGE_SIZE_MOBILE = 6;
@@ -31,7 +35,9 @@ async function getSafeDeployBlock(provider) {
     if (!provider || typeof provider.getBlockNumber !== "function") return 0;
     const latest = await provider.getBlockNumber().catch(() => null);
     if (latest == null) {
-      console.warn("getSafeDeployBlock: provider.getBlockNumber failed, falling back to 0");
+      console.warn(
+        "getSafeDeployBlock: provider.getBlockNumber failed, falling back to 0",
+      );
       return 0;
     }
     return Math.max(0, latest - 49_999);
@@ -41,7 +47,13 @@ async function getSafeDeployBlock(provider) {
   }
 }
 
-async function queryLogsBatched(contract, filter, fromBlock, toBlock, step = LOGS_BATCH) {
+async function queryLogsBatched(
+  contract,
+  filter,
+  fromBlock,
+  toBlock,
+  step = LOGS_BATCH,
+) {
   const out = [];
   let start = fromBlock;
   let batch = step;
@@ -54,7 +66,9 @@ async function queryLogsBatched(contract, filter, fromBlock, toBlock, step = LOG
       batch = step;
     } catch (err) {
       // snaha o degradaci batchu při chybách (provider může odmítnout velké intervaly)
-      console.warn(`queryLogsBatched: batch ${batch} failed, reducing. err: ${err?.message || err}`);
+      console.warn(
+        `queryLogsBatched: batch ${batch} failed, reducing. err: ${err?.message || err}`,
+      );
       if (batch <= 1) throw new Error("queryFilter failed even at batch=1");
       batch = Math.max(1, Math.floor(batch / 2));
     }
@@ -77,7 +91,8 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
       // běžné pojmenování v readeru v různých implementacích: getUserRewardTokenIds, getUserTokenIds, tokensOfOwner
       if (typeof reader.getUserRewardTokenIds === "function") {
         const res = await reader.getUserRewardTokenIds(address);
-        if (Array.isArray(res) && res.length) return res.map((id) => ethers.BigNumber.from(id));
+        if (Array.isArray(res) && res.length)
+          return res.map((id) => ethers.BigNumber.from(id));
       }
     } catch (e) {
       console.warn("reader.getUserRewardTokenIds failed, falling back", e);
@@ -85,7 +100,8 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
     try {
       if (typeof reader.getUserTokenIds === "function") {
         const res = await reader.getUserTokenIds(address);
-        if (Array.isArray(res) && res.length) return res.map((id) => ethers.BigNumber.from(id));
+        if (Array.isArray(res) && res.length)
+          return res.map((id) => ethers.BigNumber.from(id));
       }
     } catch (e) {
       console.warn("reader.getUserTokenIds failed, falling back", e);
@@ -93,7 +109,8 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
     try {
       if (typeof reader.tokensOfOwner === "function") {
         const res = await reader.tokensOfOwner(address);
-        if (Array.isArray(res) && res.length) return res.map((id) => ethers.BigNumber.from(id));
+        if (Array.isArray(res) && res.length)
+          return res.map((id) => ethers.BigNumber.from(id));
       }
     } catch (e) {
       console.warn("reader.tokensOfOwner failed, falling back", e);
@@ -104,10 +121,15 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
   try {
     if (typeof mainContract.tokensOfOwner === "function") {
       const ids = await mainContract.tokensOfOwner(address);
-      return Array.isArray(ids) ? ids.map((id) => ethers.BigNumber.from(id)) : [];
+      return Array.isArray(ids)
+        ? ids.map((id) => ethers.BigNumber.from(id))
+        : [];
     }
   } catch (e) {
-    console.warn("tokensOfOwner failed on mainContract, falling back to logs", e);
+    console.warn(
+      "tokensOfOwner failed on mainContract, falling back to logs",
+      e,
+    );
   }
 
   // 3) Fallback přes logy (robustní, ale pomalejší)
@@ -120,7 +142,9 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
 
     const latest = await provider.getBlockNumber().catch(() => null);
     if (latest == null) {
-      console.warn("resolveHeldTokenIds: provider.getBlockNumber failed, aborting log scan");
+      console.warn(
+        "resolveHeldTokenIds: provider.getBlockNumber failed, aborting log scan",
+      );
       return [];
     }
 
@@ -224,7 +248,9 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
               metaUriUsed = uri;
               const imgCandidate = meta.image || meta.image_url;
               if (imgCandidate) {
-                const resolved = await resolveImageUrl(imgCandidate, uri).catch(() => null);
+                const resolved = await resolveImageUrl(imgCandidate, uri).catch(
+                  () => null,
+                );
                 image = resolved || httpFromIpfs(imgCandidate);
               }
             }
@@ -233,7 +259,11 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
           let isTicket = false;
           try {
             if (reader) {
-              const readerChecks = ["isTicketToken", "tokenIsTicket", "isTicket"];
+              const readerChecks = [
+                "isTicketToken",
+                "tokenIsTicket",
+                "isTicket",
+              ];
               for (const fn of readerChecks) {
                 if (isTicket) break;
                 if (typeof reader[fn] === "function") {
@@ -261,8 +291,13 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
           }
 
           if (isTicket && !meta && ticketBaseUri) {
-            const normalizedBase = ticketBaseUri.endsWith("/") ? ticketBaseUri : `${ticketBaseUri}/`;
-            const guesses = [`${normalizedBase}${idStr}`, `${normalizedBase}${idStr}.json`];
+            const normalizedBase = ticketBaseUri.endsWith("/")
+              ? ticketBaseUri
+              : `${ticketBaseUri}/`;
+            const guesses = [
+              `${normalizedBase}${idStr}`,
+              `${normalizedBase}${idStr}.json`,
+            ];
             for (const guess of guesses) {
               if (meta) break;
               const candidate = await readJsonFromURI(guess).catch(() => null);
@@ -274,7 +309,10 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
             if (meta) {
               const imgCandidate = meta.image || meta.image_url;
               if (imgCandidate) {
-                const resolved = await resolveImageUrl(imgCandidate, metaUriUsed || normalizedBase).catch(() => null);
+                const resolved = await resolveImageUrl(
+                  imgCandidate,
+                  metaUriUsed || normalizedBase,
+                ).catch(() => null);
                 image = resolved || httpFromIpfs(imgCandidate);
               }
             }
@@ -342,7 +380,7 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
             isTicket: false,
           };
         }
-      })
+      }),
     );
     results.push(...chunkRes);
     // malá pauza v případě, že provider je pomalý (strategické snížení pressure)
@@ -386,10 +424,11 @@ export default function Gallery({
   const [isMobile, setIsMobile] = React.useState(() =>
     typeof window !== "undefined"
       ? window.matchMedia("(max-width: 768px)").matches
-      : false
+      : false,
   );
 
-  const address = (addressProp || ctxAddress) ? String(addressProp || ctxAddress) : "";
+  const address =
+    addressProp || ctxAddress ? String(addressProp || ctxAddress) : "";
   const isConnected = Boolean(address);
 
   const providedItems = Array.isArray(itemsProp) ? itemsProp : [];
@@ -431,7 +470,8 @@ export default function Gallery({
     let cancelled = false;
     const loadFromChain = async () => {
       if (useProvidedOnly) return;
-      if (!isConnected || providedItems.length || !address || !contracts) return;
+      if (!isConnected || providedItems.length || !address || !contracts)
+        return;
       setFetching(true);
       try {
         // contracts may expose factory functions or actual instances
@@ -480,8 +520,10 @@ export default function Gallery({
   const processedItems = React.useMemo(() => {
     let list = renderedItems;
     if (filterRarity !== "all") {
-      list = list.filter((item) =>
-        String(item?.rarity ?? "").toLowerCase() === String(filterRarity).toLowerCase()
+      list = list.filter(
+        (item) =>
+          String(item?.rarity ?? "").toLowerCase() ===
+          String(filterRarity).toLowerCase(),
       );
     }
     const sorted = [...list];
@@ -493,7 +535,9 @@ export default function Gallery({
       });
     } else if (sortBy === "rarity") {
       sorted.sort(
-        (a, b) => (a?.rarityRank ?? Number.MAX_SAFE_INTEGER) - (b?.rarityRank ?? Number.MAX_SAFE_INTEGER)
+        (a, b) =>
+          (a?.rarityRank ?? Number.MAX_SAFE_INTEGER) -
+          (b?.rarityRank ?? Number.MAX_SAFE_INTEGER),
       );
     } else if (sortBy === "token") {
       sorted.sort((a, b) => Number(a?.tokenId ?? 0) - Number(b?.tokenId ?? 0));
@@ -517,7 +561,8 @@ export default function Gallery({
   }, [processedItems, page, pageSize]);
 
   const handlePrev = () => setPage((prev) => Math.max(0, prev - 1));
-  const handleNext = () => setPage((prev) => Math.min(totalPages - 1, prev + 1));
+  const handleNext = () =>
+    setPage((prev) => Math.min(totalPages - 1, prev + 1));
 
   const totalOwned = renderedItems.length;
 
@@ -536,7 +581,8 @@ export default function Gallery({
         <div>
           <h2 className="gallery__title">My Biggi Collection</h2>
           <p className="gallery__subtitle">
-            Browse every Biggi token linked to your wallet. Sort, filter, and inspect detailed metadata pulled directly from the smart contracts.
+            Browse every Biggi token linked to your wallet. Sort, filter, and
+            inspect detailed metadata pulled directly from the smart contracts.
           </p>
         </div>
         <div className="gallery__header-actions">
@@ -581,7 +627,11 @@ export default function Gallery({
       <div className="gallery__summary">
         <div className="gallery__summary-item">
           <span>Wallet</span>
-          <strong>{address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "Not connected"}</strong>
+          <strong>
+            {address
+              ? `${address.slice(0, 6)}...${address.slice(-4)}`
+              : "Not connected"}
+          </strong>
         </div>
         <div className="gallery__summary-item">
           <span>Total Owned</span>
@@ -619,7 +669,8 @@ export default function Gallery({
           <div className="gallery__placeholder">
             <h3>No NFTs detected</h3>
             <p>
-              Mint a Biggi NFT or connect a different wallet to see your collection here.
+              Mint a Biggi NFT or connect a different wallet to see your
+              collection here.
             </p>
           </div>
         )}
@@ -664,11 +715,11 @@ export default function Gallery({
       )}
 
       {infoOpen && (
-        <div className="gallery__dialog-backdrop" onClick={() => setInfoOpen(false)}>
-          <div
-            className="gallery__dialog"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div
+          className="gallery__dialog-backdrop"
+          onClick={() => setInfoOpen(false)}
+        >
+          <div className="gallery__dialog" onClick={(e) => e.stopPropagation()}>
             <div className="gallery__dialog-header">
               <h3>Gallery Tips</h3>
               <button type="button" onClick={() => setInfoOpen(false)}>
@@ -677,10 +728,17 @@ export default function Gallery({
             </div>
             <div className="gallery__dialog-body">
               <ul>
-                <li>Sort by name, token ID, or rarity to reorganise your view.</li>
+                <li>
+                  Sort by name, token ID, or rarity to reorganise your view.
+                </li>
                 <li>Filter rarities to focus on legendary or rare pieces.</li>
-                <li>Open any card to review mint-time prices and full metadata.</li>
-                <li>The import button saves the NFT to MetaMask via <code>wallet_watchAsset</code>.</li>
+                <li>
+                  Open any card to review mint-time prices and full metadata.
+                </li>
+                <li>
+                  The import button saves the NFT to MetaMask via{" "}
+                  <code>wallet_watchAsset</code>.
+                </li>
               </ul>
             </div>
           </div>

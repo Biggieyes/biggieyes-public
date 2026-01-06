@@ -7,17 +7,24 @@ import * as React from "react";
  *
  * @param rewardsPath e.g. "/collection/rewards-info"
  */
-export default function useHashRouting(rewardsPath: string = "/collection/rewards-info") {
+export default function useHashRouting(
+  rewardsPath: string = "/collection/rewards-info",
+) {
   const normTarget = rewardsPath.toLowerCase().replace(/\/+$/, ""); // strip trailing slash
 
-  const parse = React.useCallback((): { onRewards: boolean; anchor: string | null } => {
+  const parse = React.useCallback((): {
+    onRewards: boolean;
+    anchor: string | null;
+  } => {
     if (typeof window === "undefined") {
       return { onRewards: false, anchor: null };
     }
 
     const href = window.location.href;
     const usesHashRouter = href.includes("/#/");
-    const pathnameLower = (window.location.pathname || "").toLowerCase().replace(/\/+$/, "");
+    const pathnameLower = (window.location.pathname || "")
+      .toLowerCase()
+      .replace(/\/+$/, "");
     const hashFull = window.location.hash || "";
 
     if (usesHashRouter) {
@@ -31,7 +38,7 @@ export default function useHashRouting(rewardsPath: string = "/collection/reward
 
       // anchor is the part after the LAST '#', if any
       const hashPos = afterHash.lastIndexOf("#");
-      const anchor = hashPos >= 0 ? ("#" + afterHash.slice(hashPos + 1)) : null;
+      const anchor = hashPos >= 0 ? "#" + afterHash.slice(hashPos + 1) : null;
 
       return { onRewards, anchor };
     } else {
@@ -68,7 +75,7 @@ export default function useHashRouting(rewardsPath: string = "/collection/reward
       };
       requestAnimationFrame(() => tryScroll());
     },
-    [state.anchor]
+    [state.anchor],
   );
 
   // auto-scroll on first mount if already on target path
@@ -78,7 +85,11 @@ export default function useHashRouting(rewardsPath: string = "/collection/reward
   }, []); // run once
 
   return React.useMemo(
-    () => ({ onRewards: state.onRewards, anchor: state.anchor, scrollToAnchor }),
-    [state.onRewards, state.anchor, scrollToAnchor]
+    () => ({
+      onRewards: state.onRewards,
+      anchor: state.anchor,
+      scrollToAnchor,
+    }),
+    [state.onRewards, state.anchor, scrollToAnchor],
   );
 }

@@ -3,129 +3,357 @@ import TreasuryService from "../services/treasuryService";
 import { parseIdsCsv } from "./ids";
 
 export const ABI_RESERVE = [
-  { anonymous: false, inputs: [
-      { indexed: false, internalType: "bytes32", name: "bucket", type: "bytes32" },
-      { indexed: false, internalType: "uint256", name: "amount", type: "uint256" },
-      { indexed: false, internalType: "uint256", name: "waitingBal", type: "uint256" },
-      { indexed: false, internalType: "uint256", name: "refillBal", type: "uint256" }
-    ], name: "BiggiNotified", type: "event" },
-  { anonymous: false, inputs: [
-      { indexed: false, internalType: "address", name: "lm", type: "address" }
-    ], name: "LMSet", type: "event" },
-  { anonymous: false, inputs: [
-      { indexed: false, internalType: "uint256", name: "amount", type: "uint256" }
-    ], name: "MintShareFromDistributor", type: "event" },
-  { anonymous: false, inputs: [
-      { indexed: true, internalType: "address", name: "previousOwner", type: "address" },
-      { indexed: true, internalType: "address", name: "newOwner", type: "address" }
-    ], name: "OwnershipTransferStarted", type: "event" },
-  { anonymous: false, inputs: [
-      { indexed: true, internalType: "address", name: "previousOwner", type: "address" },
-      { indexed: true, internalType: "address", name: "newOwner", type: "address" }
-    ], name: "OwnershipTransferred", type: "event" },
-  { anonymous: false, inputs: [
-      { indexed: false, internalType: "address", name: "account", type: "address" }
-    ], name: "Paused", type: "event" },
-  { anonymous: false, inputs: [
-      { indexed: false, internalType: "uint256", name: "biggiAmt", type: "uint256" },
-      { indexed: false, internalType: "uint256", name: "maticAmt", type: "uint256" },
-      { indexed: false, internalType: "address", name: "to", type: "address" }
-    ], name: "PulledToLM", type: "event" },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "bytes32",
+        name: "bucket",
+        type: "bytes32",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "waitingBal",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "refillBal",
+        type: "uint256",
+      },
+    ],
+    name: "BiggiNotified",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: false, internalType: "address", name: "lm", type: "address" },
+    ],
+    name: "LMSet",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
+    ],
+    name: "MintShareFromDistributor",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "previousOwner",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "newOwner",
+        type: "address",
+      },
+    ],
+    name: "OwnershipTransferStarted",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "previousOwner",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "newOwner",
+        type: "address",
+      },
+    ],
+    name: "OwnershipTransferred",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "address",
+        name: "account",
+        type: "address",
+      },
+    ],
+    name: "Paused",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "biggiAmt",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "maticAmt",
+        type: "uint256",
+      },
+      { indexed: false, internalType: "address", name: "to", type: "address" },
+    ],
+    name: "PulledToLM",
+    type: "event",
+  },
   { anonymous: false, inputs: [], name: "TopUpRequested", type: "event" },
-  { anonymous: false, inputs: [
-      { indexed: false, internalType: "address", name: "account", type: "address" }
-    ], name: "Unpaused", type: "event" },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "address",
+        name: "account",
+        type: "address",
+      },
+    ],
+    name: "Unpaused",
+    type: "event",
+  },
 
-  { inputs: [], name: "BIGGI", outputs: [
-      { internalType: "contract IERC20", name: "", type: "address" }
-    ], stateMutability: "view", type: "function" },
-  { inputs: [], name: "DEX_REFILL", outputs: [
-      { internalType: "bytes32", name: "", type: "bytes32" }
-    ], stateMutability: "view", type: "function" },
-  { inputs: [], name: "WAITING", outputs: [
-      { internalType: "bytes32", name: "", type: "bytes32" }
-    ], stateMutability: "view", type: "function" },
+  {
+    inputs: [],
+    name: "BIGGI",
+    outputs: [{ internalType: "contract IERC20", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "DEX_REFILL",
+    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "WAITING",
+    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
+    stateMutability: "view",
+    type: "function",
+  },
 
-  { inputs: [], name: "acceptOwnership", outputs: [], stateMutability: "nonpayable", type: "function" },
+  {
+    inputs: [],
+    name: "acceptOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
 
-  { inputs: [], name: "biggiBalance", outputs: [
-      { internalType: "uint256", name: "", type: "uint256" }
-    ], stateMutability: "view", type: "function" },
-  { inputs: [], name: "dexRefillBiggi", outputs: [
-      { internalType: "uint256", name: "", type: "uint256" }
-    ], stateMutability: "view", type: "function" },
-  { inputs: [], name: "liquidityManager", outputs: [
-      { internalType: "address", name: "", type: "address" }
-    ], stateMutability: "view", type: "function" },
+  {
+    inputs: [],
+    name: "biggiBalance",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "dexRefillBiggi",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "liquidityManager",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
 
-  { inputs: [
+  {
+    inputs: [
       { internalType: "address", name: "to", type: "address" },
-      { internalType: "uint256", name: "amount", type: "uint256" }
-    ], name: "lmPullBiggiDexRefill", outputs: [], stateMutability: "nonpayable", type: "function" },
-  { inputs: [
-      { internalType: "address payable", name: "to", type: "address" },
-      { internalType: "uint256", name: "amount", type: "uint256" }
-    ], name: "lmPullMaticDexRefill", outputs: [], stateMutability: "nonpayable", type: "function" },
-
-  { inputs: [], name: "maticBalance", outputs: [
-      { internalType: "uint256", name: "", type: "uint256" }
-    ], stateMutability: "view", type: "function" },
-
-  { inputs: [
       { internalType: "uint256", name: "amount", type: "uint256" },
-      { internalType: "bytes32", name: "bucket", type: "bytes32" }
-    ], name: "onBiggiMintedToReserve", outputs: [], stateMutability: "nonpayable", type: "function" },
+    ],
+    name: "lmPullBiggiDexRefill",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "address payable", name: "to", type: "address" },
+      { internalType: "uint256", name: "amount", type: "uint256" },
+    ],
+    name: "lmPullMaticDexRefill",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
 
-  { inputs: [], name: "owner", outputs: [
-      { internalType: "address", name: "", type: "address" }
-    ], stateMutability: "view", type: "function" },
-  { inputs: [], name: "pause", outputs: [], stateMutability: "nonpayable", type: "function" },
-  { inputs: [], name: "paused", outputs: [
-      { internalType: "bool", name: "", type: "bool" }
-    ], stateMutability: "view", type: "function" },
-  { inputs: [], name: "pendingOwner", outputs: [
-      { internalType: "address", name: "", type: "address" }
-    ], stateMutability: "view", type: "function" },
+  {
+    inputs: [],
+    name: "maticBalance",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
 
-  { inputs: [], name: "receiveMintShare", outputs: [], stateMutability: "payable", type: "function" },
+  {
+    inputs: [
+      { internalType: "uint256", name: "amount", type: "uint256" },
+      { internalType: "bytes32", name: "bucket", type: "bytes32" },
+    ],
+    name: "onBiggiMintedToReserve",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
 
-  { inputs: [], name: "renounceOwnership", outputs: [], stateMutability: "nonpayable", type: "function" },
-  { inputs: [], name: "requestTopUpToLM", outputs: [], stateMutability: "nonpayable", type: "function" },
+  {
+    inputs: [],
+    name: "owner",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "pause",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "paused",
+    outputs: [{ internalType: "bool", name: "", type: "bool" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "pendingOwner",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
 
-  { inputs: [
-      { internalType: "address", name: "lm", type: "address" }
-    ], name: "setLiquidityManager", outputs: [], stateMutability: "nonpayable", type: "function" },
+  {
+    inputs: [],
+    name: "receiveMintShare",
+    outputs: [],
+    stateMutability: "payable",
+    type: "function",
+  },
 
-  { inputs: [], name: "totalMaticReceived", outputs: [
-      { internalType: "uint256", name: "", type: "uint256" }
-    ], stateMutability: "view", type: "function" },
+  {
+    inputs: [],
+    name: "renounceOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "requestTopUpToLM",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
 
-  { inputs: [
-      { internalType: "address", name: "newOwner", type: "address" }
-    ], name: "transferOwnership", outputs: [], stateMutability: "nonpayable", type: "function" },
+  {
+    inputs: [{ internalType: "address", name: "lm", type: "address" }],
+    name: "setLiquidityManager",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
 
-  { inputs: [], name: "unpause", outputs: [], stateMutability: "nonpayable", type: "function" },
+  {
+    inputs: [],
+    name: "totalMaticReceived",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
 
-  { inputs: [], name: "waitingBiggi", outputs: [
-      { internalType: "uint256", name: "", type: "uint256" }
-    ], stateMutability: "view", type: "function" },
+  {
+    inputs: [{ internalType: "address", name: "newOwner", type: "address" }],
+    name: "transferOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+
+  {
+    inputs: [],
+    name: "unpause",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+
+  {
+    inputs: [],
+    name: "waitingBiggi",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
 
   { stateMutability: "payable", type: "receive" },
 ];
 
-export async function refreshRouterInfo({ getReadOnlyLiquidityContract, onRefreshPolicy, setBiggiData }) {
+export async function refreshRouterInfo({
+  getReadOnlyLiquidityContract,
+  onRefreshPolicy,
+  setBiggiData,
+}) {
   const brl = await getReadOnlyLiquidityContract();
   const [ri, path] = await Promise.all([brl.routerInfo(), brl.getSwapPath()]);
   setBiggiData((prev) => ({
     ...prev,
-    router: { routerAddress: ri?.[0], wrappedNative: ri?.[1], swapPath: Array.isArray(path) ? path : [] },
+    router: {
+      routerAddress: ri?.[0],
+      wrappedNative: ri?.[1],
+      swapPath: Array.isArray(path) ? path : [],
+    },
   }));
-  try { await onRefreshPolicy(); } catch {
+  try {
+    await onRefreshPolicy();
+  } catch {
     // ignore policy refresh failure
   }
 }
 
-export async function refreshLiquidityPreview({ getReadOnlyLiquidityContract, setBiggiData }) {
+export async function refreshLiquidityPreview({
+  getReadOnlyLiquidityContract,
+  setBiggiData,
+}) {
   const brl = await getReadOnlyLiquidityContract();
   const res = await brl.liquidityPreview();
   const f = (v) => (v != null ? ethers.utils.formatEther(v) : "0");
@@ -142,7 +370,12 @@ export async function refreshLiquidityPreview({ getReadOnlyLiquidityContract, se
   }));
 }
 
-export async function refreshBuybackInfo({ getBuybackRO, getReadOnlyLiquidityContract, ERC20_MINI, setBiggiData }) {
+export async function refreshBuybackInfo({
+  getBuybackRO,
+  getReadOnlyLiquidityContract,
+  ERC20_MINI,
+  setBiggiData,
+}) {
   const b = await getBuybackRO();
   const [
     router,
@@ -199,7 +432,8 @@ export async function refreshBuybackInfo({ getBuybackRO, getReadOnlyLiquidityCon
       fallbackSlipBps: slip != null ? Number(slip) : null,
       fallbackDeadlineSec: deadline != null ? Number(deadline) : null,
       fallbackCooldownSec: cooldown != null ? Number(cooldown) : null,
-      autoBuybackEnabled: autoEnabled != null ? !!autoEnabled : prev?.buyback?.autoBuybackEnabled,
+      autoBuybackEnabled:
+        autoEnabled != null ? !!autoEnabled : prev?.buyback?.autoBuybackEnabled,
       paused: pausedFlag != null ? !!pausedFlag : prev?.buyback?.paused,
       nativeBalance: nativeBalFmt ?? prev?.buyback?.nativeBalance,
       biggiBalance: biggiBalFmt ?? prev?.buyback?.biggiBalance,
@@ -217,12 +451,20 @@ export async function fetchReserveInfo({
   const main = contractRef.current || getReadOnlyContract();
   const provider = main.provider;
 
-  const reserveAddress = await callFirst(main, ["reserve", "reserveAddress", "getReserve"]);
+  const reserveAddress = await callFirst(main, [
+    "reserve",
+    "reserveAddress",
+    "getReserve",
+  ]);
   if (!reserveAddress || reserveAddress === ZERO_ADDRESS) {
     return {};
   }
 
-  const reserveContract = new ethers.Contract(reserveAddress, ABI_RESERVE, provider);
+  const reserveContract = new ethers.Contract(
+    reserveAddress,
+    ABI_RESERVE,
+    provider,
+  );
 
   const [
     liquidityManager,
@@ -242,7 +484,8 @@ export async function fetchReserveInfo({
 
   const payload = {
     reserveAddress,
-    liquidityManager: liquidityManager !== ZERO_ADDRESS ? liquidityManager : "\u2014",
+    liquidityManager:
+      liquidityManager !== ZERO_ADDRESS ? liquidityManager : "\u2014",
     totalMaticReceived: ethers.utils.formatEther(totalMaticReceived),
     waitingBiggi: ethers.utils.formatEther(waitingBiggi),
     dexRefillBiggi: ethers.utils.formatEther(dexRefillBiggi),
@@ -258,13 +501,25 @@ export async function fetchReserveInfo({
   return payload;
 }
 
-export async function fetchTreasuryInfo({ getReadOnlyLiquidityContract, callFirst, ERC20_MINI, setBiggiData }) {
+export async function fetchTreasuryInfo({
+  getReadOnlyLiquidityContract,
+  callFirst,
+  ERC20_MINI,
+  setBiggiData,
+}) {
   const brl = await getReadOnlyLiquidityContract();
   const provider = brl.provider;
 
-  const treasuryAddr = (await callFirst(brl, ["treasury", "treasuryAddress", "getTreasury"])) || null;
+  const treasuryAddr =
+    (await callFirst(brl, ["treasury", "treasuryAddress", "getTreasury"])) ||
+    null;
 
-  const tokenAddr = await callFirst(brl, ["tokenAddress", "biggi", "getToken", "getBIGGI"]);
+  const tokenAddr = await callFirst(brl, [
+    "tokenAddress",
+    "biggi",
+    "getToken",
+    "getBIGGI",
+  ]);
   let tokenBalance = "\u2014";
   let nativeBalance = "\u2014";
   let totalBiggiReceived = "\u2014";
@@ -283,14 +538,18 @@ export async function fetchTreasuryInfo({ getReadOnlyLiquidityContract, callFirs
       totalBiggiReceived = summary.totalBiggiReceived;
       totalBiggiReceivedFromBuyback = summary.totalBiggiReceivedFromBuyback;
       totalMaticReceived = summary.totalMaticReceived;
-      totalMaticReceivedFromDistributor = summary.totalMaticReceivedFromDistributor;
+      totalMaticReceivedFromDistributor =
+        summary.totalMaticReceivedFromDistributor;
       biggiToken = summary.biggiToken || biggiToken;
     } catch {
       // ignore treasury snapshot failure
     }
   }
 
-  if (treasuryAddr && (tokenBalance === "\u2014" || nativeBalance === "\u2014")) {
+  if (
+    treasuryAddr &&
+    (tokenBalance === "\u2014" || nativeBalance === "\u2014")
+  ) {
     try {
       if (tokenAddr) {
         const erc20 = new ethers.Contract(tokenAddr, ERC20_MINI, provider);
@@ -314,7 +573,8 @@ export async function fetchTreasuryInfo({ getReadOnlyLiquidityContract, callFirs
     const ts = await callFirst(brl, ["lastRefillAt", "treasuryLastRefillAt"]);
     if (ts) {
       const n = Number(ts.toString?.() || ts);
-      if (Number.isFinite(n) && n > 0) lastRefillAt = new Date(n * 1000).toLocaleString();
+      if (Number.isFinite(n) && n > 0)
+        lastRefillAt = new Date(n * 1000).toLocaleString();
     }
   } catch {
     // ignore lastRefillAt fetch
@@ -340,7 +600,11 @@ export async function fetchTreasuryInfo({ getReadOnlyLiquidityContract, callFirs
   return payload;
 }
 
-export async function refreshRewards({ getReadOnlyLiquidityContract, setBiggiData, tokenIdsCsv = "" }) {
+export async function refreshRewards({
+  getReadOnlyLiquidityContract,
+  setBiggiData,
+  tokenIdsCsv = "",
+}) {
   const brl = await getReadOnlyLiquidityContract();
 
   const [week, weights, unit, ids] = await Promise.all([
@@ -366,7 +630,12 @@ export async function refreshRewards({ getReadOnlyLiquidityContract, setBiggiDat
   try {
     if (ids.length) {
       const [cNow, w, b] = await brl.claimStatus(ids);
-      stat = { tokenIds: ids.map((x) => x.toString()), claimableNow: cNow, weights: w, blockIdxs: b };
+      stat = {
+        tokenIds: ids.map((x) => x.toString()),
+        claimableNow: cNow,
+        weights: w,
+        blockIdxs: b,
+      };
     }
   } catch {
     // ignore claim status fetch

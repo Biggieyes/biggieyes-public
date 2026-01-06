@@ -24,7 +24,7 @@ const ModalTopbar = React.memo(
       nextIcon,
       closeIcon,
     },
-    ref
+    ref,
   ) {
     const colors = {
       text: "#f6f7fb",
@@ -107,7 +107,7 @@ const ModalTopbar = React.memo(
         boxSizing: "border-box",
         ...style,
       }),
-      [style, isPhone]
+      [style, isPhone],
     );
 
     const TitleBlock = (
@@ -177,9 +177,7 @@ const ModalTopbar = React.memo(
           borderRadius: 10,
           background:
             "linear-gradient(180deg, rgba(20,20,25,.85), rgba(8,8,12,.85))",
-          border: `1px solid ${
-            disabled ? colors.line : "rgba(255,232,0,.45)"
-          }`,
+          border: `1px solid ${disabled ? colors.line : "rgba(255,232,0,.45)"}`,
           color: disabled ? colors.line : colors.accent,
           fontWeight: 900,
           fontSize: isPhone ? 15 : 18,
@@ -292,7 +290,7 @@ const ModalTopbar = React.memo(
         </div>
       </div>
     );
-  })
+  }),
 );
 
 ModalTopbar.propTypes = {
@@ -317,12 +315,3 @@ ModalTopbar.propTypes = {
 };
 
 export default ModalTopbar;
-
-
-
-
-
-
-
-
-

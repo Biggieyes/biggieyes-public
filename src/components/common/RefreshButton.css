@@ -21,7 +21,9 @@
 }
 
 .refresh-button:focus-visible {
-  box-shadow: 0 0 0 2px rgba(255, 232, 0, 0.6), 0 0 0 4px rgba(8, 255, 230, 0.5);
+  box-shadow:
+    0 0 0 2px rgba(255, 232, 0, 0.6),
+    0 0 0 4px rgba(8, 255, 230, 0.5);
   outline: none;
 }
 

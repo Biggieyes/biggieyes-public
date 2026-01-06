@@ -20,7 +20,8 @@ export default function StatusBanner({
 
   const msg = React.useMemo(() => {
     if (redeemMsg) return redeemMsg;
-    if (isRedeeming && !vrfPending) return "Sending and confirming the transaction...";
+    if (isRedeeming && !vrfPending)
+      return "Sending and confirming the transaction...";
     if (vrfPending) return "Waiting for the VRF reveal...";
     return "";
   }, [redeemMsg, isRedeeming, vrfPending]);

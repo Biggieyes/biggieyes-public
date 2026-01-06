@@ -4,7 +4,9 @@
  */
 export async function getHealthyRpcUrl() {
   const urls = getRpcUrls();
-  const checks = await Promise.all(urls.map(async (url) => ({ url, ...(await checkRpcHealth(url)) })));
+  const checks = await Promise.all(
+    urls.map(async (url) => ({ url, ...(await checkRpcHealth(url)) })),
+  );
   const healthy = checks.filter((c) => c.ok);
   if (!healthy.length) return null;
   // Prefer lowest latency
@@ -35,7 +37,8 @@ const BAD_CORS_RPCS = ["rpc-amoy.polygon.technology"];
 
 function env(key) {
   try {
-    if (typeof import.meta !== "undefined" && import.meta.env) return import.meta.env[key];
+    if (typeof import.meta !== "undefined" && import.meta.env)
+      return import.meta.env[key];
   } catch {
     // ignore env lookup errors
   }
@@ -125,7 +128,8 @@ export function clearPreferredRpc() {
 function rankRpcUrls(urls) {
   const deduped = uniq((urls || []).filter(Boolean));
   if (!deduped.length) return deduped;
-  const ignorePreferred = env("VITE_FORCE_RPC") === "1" || env("VITE_IGNORE_RPC_PREFERENCE") === "1";
+  const ignorePreferred =
+    env("VITE_FORCE_RPC") === "1" || env("VITE_IGNORE_RPC_PREFERENCE") === "1";
   const preferred = ignorePreferred ? null : getPreferredRpc();
   if (ignorePreferred) clearPreferredRpc();
   if (preferred && deduped.includes(preferred)) {
@@ -152,7 +156,8 @@ function filterOutBadRpcs(urls) {
 }
 
 export function getRpcUrls() {
-  const primaryList = Array.isArray(AMOY.rpcUrls) && AMOY.rpcUrls.length ? AMOY.rpcUrls : [];
+  const primaryList =
+    Array.isArray(AMOY.rpcUrls) && AMOY.rpcUrls.length ? AMOY.rpcUrls : [];
   const filtered = filterOutBadRpcs(primaryList);
   if (!filtered.length && primaryList.length) {
     // preferred RPC was filtered out; clear stored preference to avoid stale picks

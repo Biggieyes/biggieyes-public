@@ -1,6 +1,6 @@
 // Minimal browser-friendly process shim with a default export for CJS interop.
 const proc = {
-  env: (typeof process !== "undefined" && process.env) ? process.env : {},
+  env: typeof process !== "undefined" && process.env ? process.env : {},
   argv: [],
 };
 

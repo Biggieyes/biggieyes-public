@@ -103,7 +103,10 @@ const RewardsWidget = ({
     }
 
     loadPool();
-    const id = setInterval(loadPool, getPollInterval(20_000, "VITE_REWARDS_POOL_POLL_MS"));
+    const id = setInterval(
+      loadPool,
+      getPollInterval(20_000, "VITE_REWARDS_POOL_POLL_MS"),
+    );
     return () => {
       mounted = false;
       clearInterval(id);
@@ -112,7 +115,9 @@ const RewardsWidget = ({
 
   // === mobile detection ===
   const [isPhone, setIsPhone] = React.useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(max-width: 700px)").matches : false
+    typeof window !== "undefined"
+      ? window.matchMedia("(max-width: 700px)").matches
+      : false,
   );
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -155,33 +160,78 @@ const RewardsWidget = ({
   }, []);
 
   // map claimed counts
-  const orangeClaimed = Number(rewardsData.orange ?? rewardsData.orangeBlock ?? 0) || 0;
-  const blockWinnersClaimed = Number(rewardsData.blockWinners ?? rewardsData.blocksRewards ?? 0) || 0;
+  const orangeClaimed =
+    Number(rewardsData.orange ?? rewardsData.orangeBlock ?? 0) || 0;
+  const blockWinnersClaimed =
+    Number(rewardsData.blockWinners ?? rewardsData.blocksRewards ?? 0) || 0;
   const rainbowClaimed =
     typeof rewardsData.rainbow === "boolean"
       ? rewardsData.rainbow
         ? 1
         : 0
       : Number(rewardsData.rainbowRewards ?? 0) || 0;
-  const charactersClaimed = Number(rewardsData.charactersMinted ?? rewardsData.specialCharacterNFT ?? 0) || 0;
-  const specialRainbowNFTClaimed = Number(rewardsData.specialRainbowNFT ?? 0) || 0;
+  const charactersClaimed =
+    Number(
+      rewardsData.charactersMinted ?? rewardsData.specialCharacterNFT ?? 0,
+    ) || 0;
+  const specialRainbowNFTClaimed =
+    Number(rewardsData.specialRainbowNFT ?? 0) || 0;
 
   const rewards = React.useMemo(
     () => [
-      { name: "CHARACTER NFT", kind: "NFT", claimed: charactersClaimed, max: 10, price: "NFT" },
-      { name: "SPECIAL NFT", kind: "NFT", claimed: specialRainbowNFTClaimed, max: 9, price: "NFT" },
-      { name: "ORANGE BLOCK", kind: "Money", claimed: orangeClaimed, max: 3, price: "3000 $" },
-      { name: "BLOCKS REWARDS", kind: "Money", claimed: blockWinnersClaimed, max: 3, price: "5000 $" },
-      { name: "RAINBOW REWARDS", kind: "Money", claimed: rainbowClaimed, max: 1, price: "10000 $" },
+      {
+        name: "CHARACTER NFT",
+        kind: "NFT",
+        claimed: charactersClaimed,
+        max: 10,
+        price: "NFT",
+      },
+      {
+        name: "SPECIAL NFT",
+        kind: "NFT",
+        claimed: specialRainbowNFTClaimed,
+        max: 9,
+        price: "NFT",
+      },
+      {
+        name: "ORANGE BLOCK",
+        kind: "Money",
+        claimed: orangeClaimed,
+        max: 3,
+        price: "3000 $",
+      },
+      {
+        name: "BLOCKS REWARDS",
+        kind: "Money",
+        claimed: blockWinnersClaimed,
+        max: 3,
+        price: "5000 $",
+      },
+      {
+        name: "RAINBOW REWARDS",
+        kind: "Money",
+        claimed: rainbowClaimed,
+        max: 1,
+        price: "10000 $",
+      },
     ],
-    [charactersClaimed, specialRainbowNFTClaimed, orangeClaimed, blockWinnersClaimed, rainbowClaimed]
+    [
+      charactersClaimed,
+      specialRainbowNFTClaimed,
+      orangeClaimed,
+      blockWinnersClaimed,
+      rainbowClaimed,
+    ],
   );
 
   // pick value: on-chain or computed from mints or fallback prop
   const volNum = mintVolumeMatic != null ? Number(mintVolumeMatic) : null;
   const shareNum = Number(sharePercent ?? 22);
   const computedFromVolume =
-    volNum != null && Number.isFinite(volNum) && volNum >= 0 && Number.isFinite(shareNum)
+    volNum != null &&
+    Number.isFinite(volNum) &&
+    volNum >= 0 &&
+    Number.isFinite(shareNum)
       ? (volNum * shareNum) / 100
       : null;
 
@@ -194,8 +244,11 @@ const RewardsWidget = ({
           ? Number(rewardsPool)
           : 0;
 
-  const poolStr = Number.isFinite(poolValue) ? poolValue.toFixed(6) : "0.000000";
-  const claimStr = typeof myClaimable === "number" ? myClaimable.toFixed(6) : null;
+  const poolStr = Number.isFinite(poolValue)
+    ? poolValue.toFixed(6)
+    : "0.000000";
+  const claimStr =
+    typeof myClaimable === "number" ? myClaimable.toFixed(6) : null;
 
   const poolLabel =
     onChainPoolMatic != null
@@ -207,7 +260,12 @@ const RewardsWidget = ({
   return (
     <div
       className="rewards-widget"
-      style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center" }}
+      style={{
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
     >
       <style>{`
         .rw-th { position: relative; overflow: hidden; cursor: default; transition: transform .18s ease, box-shadow .18s ease, text-shadow .18s ease; }
@@ -301,7 +359,11 @@ const RewardsWidget = ({
             flexWrap: "wrap",
           }}
         >
-          <span style={{ color: "#fff", letterSpacing: "1px", fontWeight: 700 }}>{poolLabel}</span>
+          <span
+            style={{ color: "#fff", letterSpacing: "1px", fontWeight: 700 }}
+          >
+            {poolLabel}
+          </span>
           <span
             title={`${poolWei} wei${rewardsAddr ? ` @ ${rewardsAddr}` : ""}`}
             style={{ color: "#5ddcff", fontWeight: 900, fontSize: "1.3em" }}
@@ -311,11 +373,18 @@ const RewardsWidget = ({
           {claimStr !== null && (
             <>
               <span
-                style={{ color: "#9ee5ff", letterSpacing: "1px", fontWeight: 700, marginLeft: 10 }}
+                style={{
+                  color: "#9ee5ff",
+                  letterSpacing: "1px",
+                  fontWeight: 700,
+                  marginLeft: 10,
+                }}
               >
                 Your claimable
               </span>
-              <span style={{ color: "#9ee5ff", fontWeight: 900 }}>{claimStr} POL</span>
+              <span style={{ color: "#9ee5ff", fontWeight: 900 }}>
+                {claimStr} POL
+              </span>
             </>
           )}
         </div>
@@ -356,11 +425,41 @@ const RewardsWidget = ({
           </thead>
           <tbody>
             {[
-              { name: "CHARACTER NFT", kind: "NFT", claimed: charactersClaimed, max: 10, price: "NFT" },
-              { name: "SPECIAL NFT", kind: "NFT", claimed: specialRainbowNFTClaimed, max: 9, price: "NFT" },
-              { name: "ORANGE BLOCK", kind: "Money", claimed: orangeClaimed, max: 3, price: "3000 $" },
-              { name: "BLOCKS REWARDS", kind: "Money", claimed: blockWinnersClaimed, max: 3, price: "5000 $" },
-              { name: "RAINBOW REWARDS", kind: "Money", claimed: rainbowClaimed, max: 1, price: "10000 $" },
+              {
+                name: "CHARACTER NFT",
+                kind: "NFT",
+                claimed: charactersClaimed,
+                max: 10,
+                price: "NFT",
+              },
+              {
+                name: "SPECIAL NFT",
+                kind: "NFT",
+                claimed: specialRainbowNFTClaimed,
+                max: 9,
+                price: "NFT",
+              },
+              {
+                name: "ORANGE BLOCK",
+                kind: "Money",
+                claimed: orangeClaimed,
+                max: 3,
+                price: "3000 $",
+              },
+              {
+                name: "BLOCKS REWARDS",
+                kind: "Money",
+                claimed: blockWinnersClaimed,
+                max: 3,
+                price: "5000 $",
+              },
+              {
+                name: "RAINBOW REWARDS",
+                kind: "Money",
+                claimed: rainbowClaimed,
+                max: 1,
+                price: "10000 $",
+              },
             ].map((r, index) => (
               <tr key={r.name}>
                 <td
@@ -466,7 +565,14 @@ const RewardsWidget = ({
       </div>
 
       {/* Back */}
-      <div style={{ width: "100%", maxWidth: 678, display: "flex", justifyContent: "center" }}>
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 678,
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
         <button
           onClick={onBack}
           style={{
@@ -503,38 +609,38 @@ const RewardsWidget = ({
           aria-labelledby="rw-modal-title"
           aria-modal="true"
         >
+          <div
+            style={{
+              width: "min(640px, 94vw)",
+              maxHeight: "70vh",
+              background: "#0f1116",
+              borderRadius: 14,
+              boxShadow: "0 12px 30px rgba(0,0,0,0.55)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div
+              id="rw-modal-title"
               style={{
-                width: "min(640px, 94vw)",
-                maxHeight: "70vh",
-                background: "#0f1116",
-                borderRadius: 14,
-                boxShadow: "0 12px 30px rgba(0,0,0,0.55)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "column",
+                textAlign: "center",
+                padding: "12px",
+                color: "#e9edf6",
+                fontWeight: 800,
+                fontSize: 18,
+                letterSpacing: "0.2px",
+                background: "#151823",
+                borderBottom: "1px solid rgba(255,255,255,0.1)",
               }}
-              onClick={(e) => e.stopPropagation()}
             >
-              <div
-                id="rw-modal-title"
-                style={{
-                  textAlign: "center",
-                  padding: "12px",
-                  color: "#e9edf6",
-                  fontWeight: 800,
-                  fontSize: 18,
-                  letterSpacing: "0.2px",
-                  background: "#151823",
-                  borderBottom: "1px solid rgba(255,255,255,0.1)",
-                }}
-              >
-                Rewards Info
-              </div>
+              Rewards Info
+            </div>
 
-              <div style={{ padding: 12, overflowY: "auto" }}>
-                <style>{`
+            <div style={{ padding: 12, overflowY: "auto" }}>
+              <style>{`
                   .rw-info-table { width: 100%; border-collapse: separate; border-spacing: 0;
                     background: #0f1116;
                     border: 1px solid rgba(255,255,255,.12); border-radius: 12px; overflow: hidden;
@@ -552,86 +658,99 @@ const RewardsWidget = ({
                     font-weight: 700; color: #e9edf6; }
                 `}</style>
 
-                <table className="rw-info-table">
-                  <thead>
-                    <tr>
-                      <th>Concept</th>
-                      <th>Explanation</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="rw-k">{poolLabel}</td>
-                      <td className="rw-v">
-                        <strong>{poolStr} POL</strong>
-                        {onChainPoolMatic != null
-                          ? " — on-chain balance."
-                          : computedFromVolume != null
-                            ? ` — ${shareNum}% of total mints.`
-                            : " — current pool size."}
-                        {rewardsAddr ? ` @ ${rewardsAddr}` : ""}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="rw-k">Your Claimable</td>
-                      <td className="rw-v">
-                        {claimStr !== null ? <strong>{claimStr} POL</strong> : "—"}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="rw-k">Reward Type</td>
-                      <td className="rw-v">
-                        Specific reward category (e.g., ORANGE BLOCK, RAINBOW REWARDS, CHARACTER NFT).
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="rw-k">Kind</td>
-                      <td className="rw-v">
-                        Whether the reward is <span className="rw-chip">Money</span> or an{" "}
-                        <span className="rw-chip">NFT</span>.
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="rw-k">Claimed</td>
-                      <td className="rw-v">How many rewards of that type have already been distributed.</td>
-                    </tr>
-                    <tr>
-                      <td className="rw-k">Max</td>
-                      <td className="rw-v">Maximum number of rewards available for that category.</td>
-                    </tr>
-                    <tr>
-                      <td className="rw-k">Payout</td>
-                      <td className="rw-v">Dollar value or NFT item granted when the reward is won.</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+              <table className="rw-info-table">
+                <thead>
+                  <tr>
+                    <th>Concept</th>
+                    <th>Explanation</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="rw-k">{poolLabel}</td>
+                    <td className="rw-v">
+                      <strong>{poolStr} POL</strong>
+                      {onChainPoolMatic != null
+                        ? " — on-chain balance."
+                        : computedFromVolume != null
+                          ? ` — ${shareNum}% of total mints.`
+                          : " — current pool size."}
+                      {rewardsAddr ? ` @ ${rewardsAddr}` : ""}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="rw-k">Your Claimable</td>
+                    <td className="rw-v">
+                      {claimStr !== null ? (
+                        <strong>{claimStr} POL</strong>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="rw-k">Reward Type</td>
+                    <td className="rw-v">
+                      Specific reward category (e.g., ORANGE BLOCK, RAINBOW
+                      REWARDS, CHARACTER NFT).
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="rw-k">Kind</td>
+                    <td className="rw-v">
+                      Whether the reward is{" "}
+                      <span className="rw-chip">Money</span> or an{" "}
+                      <span className="rw-chip">NFT</span>.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="rw-k">Claimed</td>
+                    <td className="rw-v">
+                      How many rewards of that type have already been
+                      distributed.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="rw-k">Max</td>
+                    <td className="rw-v">
+                      Maximum number of rewards available for that category.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="rw-k">Payout</td>
+                    <td className="rw-v">
+                      Dollar value or NFT item granted when the reward is won.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
-              <div
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                padding: "10px",
+                borderTop: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <button
                 style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  padding: "10px",
-                  borderTop: "1px solid rgba(255,255,255,0.08)",
+                  background: "#151823",
+                  color: "#e9edf6",
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  fontWeight: 700,
+                  padding: "6px 12px",
+                  borderRadius: 10,
+                  cursor: "pointer",
                 }}
+                onClick={() => setInfoVisible(false)}
               >
-                <button
-                  style={{
-                    background: "#151823",
-                    color: "#e9edf6",
-                    border: "1px solid rgba(255,255,255,0.18)",
-                    fontWeight: 700,
-                    padding: "6px 12px",
-                    borderRadius: 10,
-                    cursor: "pointer",
-                  }}
-                  onClick={() => setInfoVisible(false)}
-                >
-                  Close
-                </button>
-              </div>
+                Close
+              </button>
             </div>
           </div>
+        </div>
       )}
     </div>
   );

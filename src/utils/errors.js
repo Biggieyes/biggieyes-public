@@ -1,6 +1,7 @@
 export function prettyError(err) {
   const name = err?.errorName || "";
-  const reason = err?.reason || err?.data?.message || err?.message || "Unknown error";
+  const reason =
+    err?.reason || err?.data?.message || err?.message || "Unknown error";
   const map = {
     InsufficientPayment: "Sent value is lower than the ticket price.",
     MaxPerWallet: "Per-wallet limit (10 tickets) exceeded.",
@@ -13,7 +14,8 @@ export function prettyError(err) {
     Paused: "Contract is paused.",
     NoEligibleTokens: "No eligible NFTs to claim this week.",
     CapExceeded: "Token cap would be exceeded.",
-    NotFullyConfigured: "Contract metadata is not fully configured (owner must finish batch setup).",
+    NotFullyConfigured:
+      "Contract metadata is not fully configured (owner must finish batch setup).",
     BiggiTokenNotSet: "BIGGI token is not configured yet.",
   };
   return map[name] || reason;

@@ -5,13 +5,25 @@ export function createPreloadManager({ smoothing = true } = {}) {
   let listeners = [];
   let message = "";
 
-  function onUpdate(cb) { listeners.push(cb); return () => listeners = listeners.filter(x => x !== cb); }
+  function onUpdate(cb) {
+    listeners.push(cb);
+    return () => (listeners = listeners.filter((x) => x !== cb));
+  }
   function notify() {
     const ratio = total === 0 ? 1 : done / total;
-    listeners.forEach(cb => cb({ ratio, percent: ratio * 100, message }));
+    listeners.forEach((cb) => cb({ ratio, percent: ratio * 100, message }));
   }
-  function addTask(weight = 1) { total += weight; return (w = 1) => { done += w; notify(); }; }
-  function setMessage(m) { message = m; notify(); }
+  function addTask(weight = 1) {
+    total += weight;
+    return (w = 1) => {
+      done += w;
+      notify();
+    };
+  }
+  function setMessage(m) {
+    message = m;
+    notify();
+  }
 
   // smoothing helper: animates percent toward target
   if (smoothing) {
@@ -20,11 +32,18 @@ export function createPreloadManager({ smoothing = true } = {}) {
     const tick = () => {
       const target = total === 0 ? 100 : (done / total) * 100;
       current += (target - current) * 0.12; // smoothing factor
-      listeners.forEach(cb => cb({ ratio: current/100, percent: current, message }));
+      listeners.forEach((cb) =>
+        cb({ ratio: current / 100, percent: current, message }),
+      );
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return { onUpdate, addTask, setMessage, stop: () => cancelAnimationFrame(raf) };
+    return {
+      onUpdate,
+      addTask,
+      setMessage,
+      stop: () => cancelAnimationFrame(raf),
+    };
   }
 
   return { onUpdate, addTask, setMessage, stop: () => {} };
@@ -36,12 +55,21 @@ export function createPreloadManager({ smoothing = true } = {}) {
 export function preloadImages(urls, manager) {
   const done = manager.addTask(urls.length);
   return Promise.all(
-    urls.map(url => new Promise(res => {
-      const img = new Image();
-      img.onload = () => { done(1); res(true); };
-      img.onerror = () => { done(1); res(false); };
-      img.src = url;
-    }))
+    urls.map(
+      (url) =>
+        new Promise((res) => {
+          const img = new Image();
+          img.onload = () => {
+            done(1);
+            res(true);
+          };
+          img.onerror = () => {
+            done(1);
+            res(false);
+          };
+          img.src = url;
+        }),
+    ),
   );
 }
 
@@ -72,5 +100,17 @@ export async function preloadFetchWithBytes(urls, manager) {
 // convenience: count N generic promises
 export async function trackPromises(promises, manager) {
   const task = manager.addTask(promises.length);
-  await Promise.all(promises.map(p => p.then(r => { task(1); return r; }).catch(() => { task(1); return null; })));
+  await Promise.all(
+    promises.map((p) =>
+      p
+        .then((r) => {
+          task(1);
+          return r;
+        })
+        .catch(() => {
+          task(1);
+          return null;
+        }),
+    ),
+  );
 }

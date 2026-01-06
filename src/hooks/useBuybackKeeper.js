@@ -22,58 +22,72 @@ export default function useBuybackKeeper() {
     return { upkeepNeeded, performData: nextData };
   }, []);
 
-  const refresh = React.useCallback(async (options = {}) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const contract = getUpkeepRO();
-      if (!contract) throw new Error("Upkeep contract not found");
-      const cacheKey = `buybackKeeper:${contract.address || "unknown"}:0x`;
-      const snapshot = await getCached(
-        cacheKey,
-        async () => {
-          const { upkeepNeeded, performData } = await checkUpkeep("0x");
-          return {
-            address: contract.address,
-            upkeepNeeded,
-            performData,
-          };
-        },
-        { force: options?.force === true }
-      );
-      setData(snapshot);
-    } catch (e) {
-      console.error("useBuybackKeeper.refresh", e);
-      setError(e);
-    } finally {
-      setLoading(false);
-    }
-  }, [checkUpkeep]);
+  const refresh = React.useCallback(
+    async (options = {}) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const contract = getUpkeepRO();
+        if (!contract) throw new Error("Upkeep contract not found");
+        const cacheKey = `buybackKeeper:${contract.address || "unknown"}:0x`;
+        const snapshot = await getCached(
+          cacheKey,
+          async () => {
+            const { upkeepNeeded, performData } = await checkUpkeep("0x");
+            return {
+              address: contract.address,
+              upkeepNeeded,
+              performData,
+            };
+          },
+          { force: options?.force === true },
+        );
+        setData(snapshot);
+      } catch (e) {
+        console.error("useBuybackKeeper.refresh", e);
+        setError(e);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [checkUpkeep],
+  );
 
-  const performUpkeep = React.useCallback(async (performData = "0x", overrides = {}) => {
-    setPerforming(true);
-    setError(null);
-    try {
-      const contract = getUpkeep();
-      if (!contract) throw new Error("Upkeep contract not found");
-      const tx = await contract.performUpkeep(performData, overrides);
-      const receipt = await tx.wait(1);
-      const cacheKey = `buybackKeeper:${contract.address || "unknown"}:0x`;
-      invalidateCache(cacheKey);
-      await refresh({ force: true }).catch(() => {});
-      return receipt;
-    } catch (e) {
-      console.error("useBuybackKeeper.performUpkeep", e);
-      setError(e);
-      throw e;
-    } finally {
-      setPerforming(false);
-    }
-  }, [refresh]);
+  const performUpkeep = React.useCallback(
+    async (performData = "0x", overrides = {}) => {
+      setPerforming(true);
+      setError(null);
+      try {
+        const contract = getUpkeep();
+        if (!contract) throw new Error("Upkeep contract not found");
+        const tx = await contract.performUpkeep(performData, overrides);
+        const receipt = await tx.wait(1);
+        const cacheKey = `buybackKeeper:${contract.address || "unknown"}:0x`;
+        invalidateCache(cacheKey);
+        await refresh({ force: true }).catch(() => {});
+        return receipt;
+      } catch (e) {
+        console.error("useBuybackKeeper.performUpkeep", e);
+        setError(e);
+        throw e;
+      } finally {
+        setPerforming(false);
+      }
+    },
+    [refresh],
+  );
 
   React.useEffect(() => {
     refresh();
   }, [refresh]);
 
-  return { data, loading, performing, error, refresh, checkUpkeep, performUpkeep };
+  return {
+    data,
+    loading,
+    performing,
+    error,
+    refresh,
+    checkUpkeep,
+    performUpkeep,
+  };
 }

@@ -6,14 +6,70 @@ import { ethers } from "ethers";
 import { multicallAggregate } from "../utils/multicall";
 
 const ABI = [
-  { "inputs": [], "name": "BIGGI", "outputs": [{ "internalType": "contract IERC20", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "buybackAgent", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "dripDistributor", "outputs": [{ "internalType": "contract IDripDistributor", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "reserve", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "router", "outputs": [{ "internalType": "contract IUniswapV2Router02", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "sellPct", "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "slippageBps", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "txDeadlineSec", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" }
+  {
+    inputs: [],
+    name: "BIGGI",
+    outputs: [{ internalType: "contract IERC20", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "buybackAgent",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "dripDistributor",
+    outputs: [
+      { internalType: "contract IDripDistributor", name: "", type: "address" },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "reserve",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "router",
+    outputs: [
+      {
+        internalType: "contract IUniswapV2Router02",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "sellPct",
+    outputs: [{ internalType: "uint8", name: "", type: "uint8" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "slippageBps",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "txDeadlineSec",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
 ];
 
 export default class DripLMService {
@@ -53,14 +109,30 @@ export default class DripLMService {
   }
 
   // -------- GETTERY (ABI) --------
-  async BIGGI() { return await this.contract.BIGGI(); } // address
-  async buybackAgent() { return await this.contract.buybackAgent(); } // address
-  async dripDistributor() { return await this.contract.dripDistributor(); } // address
-  async reserve() { return await this.contract.reserve(); } // address
-  async router() { return await this.contract.router(); } // address
-  async sellPct() { return await this.contract.sellPct(); } // uint8
-  async slippageBps() { return await this.contract.slippageBps(); } // BigNumber
-  async txDeadlineSec() { return await this.contract.txDeadlineSec(); } // BigNumber
+  async BIGGI() {
+    return await this.contract.BIGGI();
+  } // address
+  async buybackAgent() {
+    return await this.contract.buybackAgent();
+  } // address
+  async dripDistributor() {
+    return await this.contract.dripDistributor();
+  } // address
+  async reserve() {
+    return await this.contract.reserve();
+  } // address
+  async router() {
+    return await this.contract.router();
+  } // address
+  async sellPct() {
+    return await this.contract.sellPct();
+  } // uint8
+  async slippageBps() {
+    return await this.contract.slippageBps();
+  } // BigNumber
+  async txDeadlineSec() {
+    return await this.contract.txDeadlineSec();
+  } // BigNumber
 
   /**
    * Paralelní načtení hlavních metrik pro dashboard.
@@ -69,16 +141,54 @@ export default class DripLMService {
   async getAllStats() {
     try {
       const iface = new ethers.utils.Interface(ABI);
-      const methods = ["BIGGI", "buybackAgent", "dripDistributor", "reserve", "router", "sellPct", "slippageBps", "txDeadlineSec"];
-      const calls = methods.map((m) => ({ target: this.address, iface, method: m }));
-      const decoded = await multicallAggregate(this.provider, calls).catch(() => null);
+      const methods = [
+        "BIGGI",
+        "buybackAgent",
+        "dripDistributor",
+        "reserve",
+        "router",
+        "sellPct",
+        "slippageBps",
+        "txDeadlineSec",
+      ];
+      const calls = methods.map((m) => ({
+        target: this.address,
+        iface,
+        method: m,
+      }));
+      const decoded = await multicallAggregate(this.provider, calls).catch(
+        () => null,
+      );
       if (decoded && decoded.length === methods.length) {
-        const vals = decoded.map((d) => (Array.isArray(d) && d.length === 1 ? d[0] : d));
-        const [BIGGI, buybackAgent, dripDistributor, reserve, router, sellPct, slippageBps, txDeadlineSec] = vals;
-        return { BIGGI, buybackAgent, dripDistributor, reserve, router, sellPct, slippageBps, txDeadlineSec };
+        const vals = decoded.map((d) =>
+          Array.isArray(d) && d.length === 1 ? d[0] : d,
+        );
+        const [
+          BIGGI,
+          buybackAgent,
+          dripDistributor,
+          reserve,
+          router,
+          sellPct,
+          slippageBps,
+          txDeadlineSec,
+        ] = vals;
+        return {
+          BIGGI,
+          buybackAgent,
+          dripDistributor,
+          reserve,
+          router,
+          sellPct,
+          slippageBps,
+          txDeadlineSec,
+        };
       }
     } catch (e) {
-      console.warn("DripLMService multicall failed, falling back", e?.message || e);
+      console.warn(
+        "DripLMService multicall failed, falling back",
+        e?.message || e,
+      );
     }
 
     const calls = [
@@ -89,13 +199,30 @@ export default class DripLMService {
       this.router(),
       this.sellPct(),
       this.slippageBps(),
-      this.txDeadlineSec()
+      this.txDeadlineSec(),
     ];
 
-    const [BIGGI, buybackAgent, dripDistributor, reserve, router, sellPct, slippageBps, txDeadlineSec] =
-      await Promise.all(calls);
+    const [
+      BIGGI,
+      buybackAgent,
+      dripDistributor,
+      reserve,
+      router,
+      sellPct,
+      slippageBps,
+      txDeadlineSec,
+    ] = await Promise.all(calls);
 
-    return { BIGGI, buybackAgent, dripDistributor, reserve, router, sellPct, slippageBps, txDeadlineSec };
+    return {
+      BIGGI,
+      buybackAgent,
+      dripDistributor,
+      reserve,
+      router,
+      sellPct,
+      slippageBps,
+      txDeadlineSec,
+    };
   }
 
   /**
@@ -126,7 +253,11 @@ export default class DripLMService {
   /** Convert BigNumber -> readable string. Default decimals = 18. */
   static bnToString(bn, decimals = 18) {
     if (bn === undefined || bn === null) return "0";
-    try { return ethers.utils.formatUnits(bn, decimals); } catch { return bn.toString(); }
+    try {
+      return ethers.utils.formatUnits(bn, decimals);
+    } catch {
+      return bn.toString();
+    }
   }
 
   /** Lightweight UI summary formatting (stringified values) */
@@ -139,7 +270,7 @@ export default class DripLMService {
       router: stats.router,
       sellPct: stats.sellPct?.toString?.() ?? stats.sellPct,
       slippageBps: stats.slippageBps?.toString?.() ?? stats.slippageBps,
-      txDeadlineSec: stats.txDeadlineSec?.toString?.() ?? stats.txDeadlineSec
+      txDeadlineSec: stats.txDeadlineSec?.toString?.() ?? stats.txDeadlineSec,
     };
   }
 }

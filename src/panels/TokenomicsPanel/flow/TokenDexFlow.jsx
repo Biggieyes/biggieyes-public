@@ -10,15 +10,18 @@ const _formatDelta = (value) => {
 
 const TokenDexFlow = ({ snapshot, history = [] }) => {
   const latest = snapshot?.dex?.pair?.reserves ?? {};
-  const previousSnapshot = history.length > 1 ? history[history.length - 2] : null;
+  const previousSnapshot =
+    history.length > 1 ? history[history.length - 2] : null;
   const previous = previousSnapshot?.dex?.pair?.reserves ?? {};
 
   const biggiDelta =
-    typeof latest.biggiNumeric === "number" && typeof previous.biggiNumeric === "number"
+    typeof latest.biggiNumeric === "number" &&
+    typeof previous.biggiNumeric === "number"
       ? latest.biggiNumeric - previous.biggiNumeric
       : null;
   const nativeDelta =
-    typeof latest.nativeNumeric === "number" && typeof previous.nativeNumeric === "number"
+    typeof latest.nativeNumeric === "number" &&
+    typeof previous.nativeNumeric === "number"
       ? latest.nativeNumeric - previous.nativeNumeric
       : null;
 
@@ -26,12 +29,16 @@ const TokenDexFlow = ({ snapshot, history = [] }) => {
     nativeDelta == null
       ? "balanced"
       : Math.abs(nativeDelta) < 0.01
-      ? "balanced"
-      : nativeDelta < 0
-      ? "buy-pressure"
-      : "sell-pressure";
+        ? "balanced"
+        : nativeDelta < 0
+          ? "buy-pressure"
+          : "sell-pressure";
   const statusLabel =
-    status === "balanced" ? "Balanced" : status === "buy-pressure" ? "Buy pressure" : "Sell pressure";
+    status === "balanced"
+      ? "Balanced"
+      : status === "buy-pressure"
+        ? "Buy pressure"
+        : "Sell pressure";
 
   const rows = [
     {
@@ -61,7 +68,11 @@ const TokenDexFlow = ({ snapshot, history = [] }) => {
         <div className="token-dex-flow__node">BIGGI token</div>
         <div className={`token-dex-flow__arrow ${status}`}>
           <span>{statusLabel}</span>
-          <small>{nativeDelta != null ? `${_formatDelta(nativeDelta)} native` : "Waiting for data"}</small>
+          <small>
+            {nativeDelta != null
+              ? `${_formatDelta(nativeDelta)} native`
+              : "Waiting for data"}
+          </small>
         </div>
         <div className="token-dex-flow__node">DEX pair</div>
       </div>

@@ -1,12 +1,16 @@
-import { BigNumber, utils } from "ethers";
+import { ethers } from "ethers";
 
 const PLACEHOLDER = "N/A";
 const DECIMALS = 18;
 
 function _formatAmount(raw, decimals = DECIMALS) {
-  if (raw === undefined || raw === null) return { display: PLACEHOLDER, numeric: null };
+  if (raw === undefined || raw === null)
+    return { display: PLACEHOLDER, numeric: null };
   try {
-    const formatted = utils.formatUnits(BigNumber.isBigNumber(raw) ? raw : BigNumber.from(raw), decimals);
+    const formatted = ethers.utils.formatUnits(
+      ethers.BigNumber.isBigNumber(raw) ? raw : ethers.BigNumber.from(raw),
+      decimals,
+    );
     const numeric = Number(formatted);
     const display = Number.isFinite(numeric)
       ? numeric.toLocaleString("en-US", { maximumFractionDigits: 2 })
@@ -79,7 +83,9 @@ export function mapRawSnapshotToUI(raw) {
       address: vault.address,
       shortAddress: _shortAddress(vault.address),
       liquidityManager: vault.liquidityManager,
-      liquidityManagerShort: _shortAddress(vault.liquidityManager || manager.address),
+      liquidityManagerShort: _shortAddress(
+        vault.liquidityManager || manager.address,
+      ),
       totalLpLocked: vaultLp.display,
       totalLpLockedNumeric: vaultLp.numeric,
     },
@@ -145,5 +151,7 @@ export function mapHistoryToChartPoints(history = []) {
       label: entry?.tsLabel,
       value: entry?.vault?.totalLpLockedNumeric ?? null,
     }))
-    .filter((entry) => typeof entry.value === "number" && isFinite(entry.value));
+    .filter(
+      (entry) => typeof entry.value === "number" && isFinite(entry.value),
+    );
 }

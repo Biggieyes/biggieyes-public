@@ -26,7 +26,9 @@ export default function RedeemOverlay({
     let alive = true;
     async function loadNet() {
       try {
-        const idHex = await window.ethereum?.request?.({ method: "eth_chainId" });
+        const idHex = await window.ethereum?.request?.({
+          method: "eth_chainId",
+        });
         const id = idHex ? parseInt(idHex, 16) : null;
         const map = {
           1: "Ethereum",
@@ -40,7 +42,9 @@ export default function RedeemOverlay({
         };
         if (alive) {
           setChainId(id);
-          setNetworkLabel(Number.isFinite(id) ? `${map[id] || "EVM"} (${id})` : "EVM");
+          setNetworkLabel(
+            Number.isFinite(id) ? `${map[id] || "EVM"} (${id})` : "EVM",
+          );
         }
       } catch {
         if (alive) {
@@ -65,7 +69,12 @@ export default function RedeemOverlay({
 
   const shallowEqualPos = (a, b) => {
     if (!a || !b) return false;
-    return a.top === b.top && a.left === b.left && a.width === b.width && a.height === b.height;
+    return (
+      a.top === b.top &&
+      a.left === b.left &&
+      a.width === b.width &&
+      a.height === b.height
+    );
   };
 
   const measurePos = React.useCallback(() => {
@@ -140,7 +149,7 @@ export default function RedeemOverlay({
           obs.disconnect();
           intersectionObserverRef.current = null;
         },
-        { threshold: [0.7] }
+        { threshold: [0.7] },
       );
       intersectionObserverRef.current.observe(anchorElRef.current);
     }
@@ -213,7 +222,13 @@ export default function RedeemOverlay({
   const S = styles;
 
   return (
-    <div ref={layerRef} style={S.layer} role="dialog" aria-modal="true" aria-label="Redeem progress">
+    <div
+      ref={layerRef}
+      style={S.layer}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Redeem progress"
+    >
       <style>{`
         @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
         @keyframes pulse { 0%{opacity:.7} 50%{opacity:1} 100%{opacity:.7} }
@@ -285,25 +300,49 @@ export default function RedeemOverlay({
           {/* ---- Table-like steps ---- */}
           <div style={S.stepTable} role="table" aria-label="Redeem steps">
             <div style={S.stepHeader} role="row">
-              <div style={{ ...S.hCell, justifyContent: "center" }} role="columnheader">
+              <div
+                style={{ ...S.hCell, justifyContent: "center" }}
+                role="columnheader"
+              >
                 STEP
               </div>
               <div style={S.hCell} role="columnheader">
                 DETAIL
               </div>
-              <div style={{ ...S.hCell, justifyContent: "center" }} role="columnheader">
+              <div
+                style={{ ...S.hCell, justifyContent: "center" }}
+                role="columnheader"
+              >
                 STATUS
               </div>
             </div>
 
             {/* 1) Wallet confirmation */}
-            <Row step={1} label="Wallet confirmation" active={phase === "tx"} done={phase === "vrf"} even={false} />
+            <Row
+              step={1}
+              label="Wallet confirmation"
+              active={phase === "tx"}
+              done={phase === "vrf"}
+              even={false}
+            />
 
             {/* 2) On-chain transaction (voucher/ticket burn on new contracts) */}
-            <Row step={2} label="On-chain transaction (ticket burn)" active={phase === "tx"} done={phase === "vrf"} even />
+            <Row
+              step={2}
+              label="On-chain transaction (ticket burn)"
+              active={phase === "tx"}
+              done={phase === "vrf"}
+              even
+            />
 
             {/* 3) VRF & metadata generation (v2.5-ready) */}
-            <Row step={3} label="Chainlink VRF & metadata generation" active={phase === "vrf"} done={false} even={false} />
+            <Row
+              step={3}
+              label="Chainlink VRF & metadata generation"
+              active={phase === "vrf"}
+              done={false}
+              even={false}
+            />
           </div>
 
           <div style={S.note} aria-live="polite">
@@ -327,7 +366,9 @@ export default function RedeemOverlay({
               decoding="async"
               fetchPriority="low"
             />
-            <div style={S.tip}>Your NFT will automatically appear in your gallery once revealed.</div>
+            <div style={S.tip}>
+              Your NFT will automatically appear in your gallery once revealed.
+            </div>
           </div>
 
           <div style={S.arrowUp} />
@@ -340,7 +381,11 @@ export default function RedeemOverlay({
 // Memoized row to avoid rerender unless props change
 const Row = React.memo(function Row({ step, active, done, label, even }) {
   const S = styles;
-  const chipStyle = done ? S.statusDone : active ? S.statusActive : S.statusIdle;
+  const chipStyle = done
+    ? S.statusDone
+    : active
+      ? S.statusActive
+      : S.statusIdle;
   const statusText = done ? "Completed" : active ? "In Progress" : "Pending";
   const rowStyle = {
     ...S.stepRow,
@@ -408,7 +453,8 @@ const styles = {
   },
   card: {
     width: "min(700px, 92vw)",
-    background: "linear-gradient(135deg, rgba(25,28,45,0.95) 0%, rgba(15,18,35,0.98) 100%)",
+    background:
+      "linear-gradient(135deg, rgba(25,28,45,0.95) 0%, rgba(15,18,35,0.98) 100%)",
     border: "1px solid rgba(255,255,255,0.1)",
     borderRadius: "20px",
     boxShadow: "0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,232,0,0.2)",
@@ -515,7 +561,8 @@ const styles = {
     border: "1px solid rgba(8,255,230,0.15)",
     borderRadius: "16px",
     overflow: "hidden",
-    background: "linear-gradient(145deg, rgba(13,20,38,0.9) 0%, rgba(9,13,26,0.85) 100%)",
+    background:
+      "linear-gradient(145deg, rgba(13,20,38,0.9) 0%, rgba(9,13,26,0.85) 100%)",
     marginTop: "24px",
     marginBottom: "24px",
     boxShadow:
@@ -525,7 +572,8 @@ const styles = {
   stepHeader: {
     display: "grid",
     gridTemplateColumns: "70px 1fr 140px",
-    background: "linear-gradient(90deg, rgba(8,255,230,0.14) 0%, rgba(8,255,230,0) 100%)",
+    background:
+      "linear-gradient(90deg, rgba(8,255,230,0.14) 0%, rgba(8,255,230,0) 100%)",
     borderBottom: "1px solid rgba(255,255,255,0.08)",
   },
   hCell: {
@@ -552,12 +600,14 @@ const styles = {
     background: "rgba(255,255,255,0.015)",
   },
   stepRowActive: {
-    background: "linear-gradient(90deg, rgba(8,255,230,0.18) 0%, rgba(8,255,230,0.03) 100%)",
+    background:
+      "linear-gradient(90deg, rgba(8,255,230,0.18) 0%, rgba(8,255,230,0.03) 100%)",
     boxShadow: "inset 0 0 0 1px rgba(8,255,230,0.25)",
     borderLeft: "4px solid rgba(8,255,230,0.55)",
   },
   stepRowDone: {
-    background: "linear-gradient(90deg, rgba(255,232,0,0.18) 0%, rgba(255,232,0,0.03) 100%)",
+    background:
+      "linear-gradient(90deg, rgba(255,232,0,0.18) 0%, rgba(255,232,0,0.03) 100%)",
     boxShadow: "inset 0 0 0 1px rgba(255,232,0,0.22)",
     borderLeft: "4px solid rgba(255,232,0,0.6)",
   },
@@ -595,7 +645,8 @@ const styles = {
     borderRadius: "12px",
     border: "1px solid rgba(255,255,255,0.18)",
     color: "rgba(255,255,255,0.8)",
-    background: "linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%)",
+    background:
+      "linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%)",
     fontWeight: 700,
     fontSize: "15px",
     boxShadow: "0 6px 16px rgba(0,0,0,0.3)",
@@ -604,14 +655,18 @@ const styles = {
   stepPillActive: {
     borderColor: "rgba(8,255,230,0.7)",
     color: "#08FFE6",
-    background: "linear-gradient(135deg, rgba(8,255,230,0.25) 0%, rgba(8,255,230,0.05) 100%)",
-    boxShadow: "0 0 0 1px rgba(8,255,230,0.3), 0 12px 24px rgba(8,255,230,0.22)",
+    background:
+      "linear-gradient(135deg, rgba(8,255,230,0.25) 0%, rgba(8,255,230,0.05) 100%)",
+    boxShadow:
+      "0 0 0 1px rgba(8,255,230,0.3), 0 12px 24px rgba(8,255,230,0.22)",
   },
   stepPillDone: {
     borderColor: "rgba(255,232,0,0.65)",
     color: "#FFE800",
-    background: "linear-gradient(135deg, rgba(255,232,0,0.25) 0%, rgba(255,232,0,0.05) 100%)",
-    boxShadow: "0 0 0 1px rgba(255,232,0,0.3), 0 12px 24px rgba(255,232,0,0.25)",
+    background:
+      "linear-gradient(135deg, rgba(255,232,0,0.25) 0%, rgba(255,232,0,0.05) 100%)",
+    boxShadow:
+      "0 0 0 1px rgba(255,232,0,0.3), 0 12px 24px rgba(255,232,0,0.25)",
   },
   statusChip: {
     display: "inline-flex",

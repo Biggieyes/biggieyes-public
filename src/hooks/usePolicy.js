@@ -42,7 +42,11 @@ export default function usePolicy() {
         cacheKey,
         async () => {
           const fmt = (v) => {
-            try { return ethers.utils.formatEther(v); } catch { return "0"; }
+            try {
+              return ethers.utils.formatEther(v);
+            } catch {
+              return "0";
+            }
           };
 
           const [
@@ -97,7 +101,7 @@ export default function usePolicy() {
             endOfCollectionPaused: Boolean(endOfCollectionPaused),
           };
         },
-        { force: options?.force === true }
+        { force: options?.force === true },
       );
       setData(snapshot);
     } catch (e) {

@@ -1,31 +1,57 @@
 import * as React from "react";
 
-export function useGlobalShortcuts({ zoomImg, setZoomImg, adminOpen, setAdminOpen, openNavIdx, setOpenNavIdx, cardsHelpOpen, setCardsHelpOpen }) {
+export function useGlobalShortcuts({
+  zoomImg,
+  setZoomImg,
+  adminOpen,
+  setAdminOpen,
+  openNavIdx,
+  setOpenNavIdx,
+  cardsHelpOpen,
+  setCardsHelpOpen,
+}) {
   // Arrow up/down to scroll
   React.useEffect(() => {
-    if (typeof window === "undefined" || typeof document === "undefined") return undefined;
+    if (typeof window === "undefined" || typeof document === "undefined")
+      return undefined;
     const handleArrowScroll = (event) => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       const key = event.key || event.code || "";
-      if (key !== "ArrowDown" && key !== "ArrowUp" && event.keyCode !== 40 && event.keyCode !== 38) return;
+      if (
+        key !== "ArrowDown" &&
+        key !== "ArrowUp" &&
+        event.keyCode !== 40 &&
+        event.keyCode !== 38
+      )
+        return;
       const tag = event.target?.tagName?.toLowerCase?.() ?? "";
       const interactiveTargets = ["input", "textarea", "select"];
-      if (interactiveTargets.includes(tag) || event.target?.isContentEditable) return;
-      const step = window.innerHeight ? Math.round(window.innerHeight * 0.85) : 600;
+      if (interactiveTargets.includes(tag) || event.target?.isContentEditable)
+        return;
+      const step = window.innerHeight
+        ? Math.round(window.innerHeight * 0.85)
+        : 600;
 
       // Find nearest scrollable ancestor for in-panel scrolling
       const findScrollable = (start) => {
         let el = start;
         while (el) {
-          const style = el instanceof HTMLElement ? window.getComputedStyle(el) : null;
+          const style =
+            el instanceof HTMLElement ? window.getComputedStyle(el) : null;
           const canScroll =
             style &&
-            (style.overflowY === "auto" || style.overflowY === "scroll" || style.overflowY === "overlay") &&
+            (style.overflowY === "auto" ||
+              style.overflowY === "scroll" ||
+              style.overflowY === "overlay") &&
             el.scrollHeight - el.clientHeight > 4;
           if (canScroll) return el;
           el = el.parentElement || null;
         }
-        return document?.scrollingElement || document?.documentElement || document?.body;
+        return (
+          document?.scrollingElement ||
+          document?.documentElement ||
+          document?.body
+        );
       };
       const scrollEl = findScrollable(event.target);
       const scrollBy = (delta) => {
@@ -48,8 +74,12 @@ export function useGlobalShortcuts({ zoomImg, setZoomImg, adminOpen, setAdminOpe
         scrollBy(-step);
       }
     };
-    document.addEventListener("keydown", handleArrowScroll, { passive: false, capture: true });
-    return () => document.removeEventListener("keydown", handleArrowScroll, true);
+    document.addEventListener("keydown", handleArrowScroll, {
+      passive: false,
+      capture: true,
+    });
+    return () =>
+      document.removeEventListener("keydown", handleArrowScroll, true);
   }, []);
 
   // Escape to close overlays/nav
@@ -78,5 +108,14 @@ export function useGlobalShortcuts({ zoomImg, setZoomImg, adminOpen, setAdminOpe
     };
     window.addEventListener("keydown", handleEscapeBack);
     return () => window.removeEventListener("keydown", handleEscapeBack);
-  }, [zoomImg, adminOpen, openNavIdx, cardsHelpOpen, setZoomImg, setAdminOpen, setOpenNavIdx, setCardsHelpOpen]);
+  }, [
+    zoomImg,
+    adminOpen,
+    openNavIdx,
+    cardsHelpOpen,
+    setZoomImg,
+    setAdminOpen,
+    setOpenNavIdx,
+    setCardsHelpOpen,
+  ]);
 }

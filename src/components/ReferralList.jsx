@@ -29,7 +29,10 @@ export default function ReferralList({ items = [] }) {
             <span>Purchase</span>
           </div>
           {items.map((row, idx) => (
-            <div key={`${row.wallet}-${idx}`} className="moderator-center__table-row">
+            <div
+              key={`${row.wallet}-${idx}`}
+              className="moderator-center__table-row"
+            >
               <span className="mono">{shortAddr(row.wallet)}</span>
               <span>{fmtDate(row.firstSeen)}</span>
               <span className={row.purchased ? "ok" : "muted"}>

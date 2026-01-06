@@ -1,7 +1,7 @@
 // src/hooks/useDistributor.js
 import * as React from "react";
 import { ethers } from "ethers";
-import { getDistributorRO } from "../utils/contract";
+import { getMultiCollectionDistributorRO } from "../utils/contract";
 import { getCached } from "../utils/fetchCache";
 
 /**
@@ -35,7 +35,7 @@ export default function useDistributor() {
     setLoading(true);
     setError(null);
     try {
-      const contract = getDistributorRO();
+      const contract = getMultiCollectionDistributorRO();
       if (!contract) throw new Error("Distributor contract not found");
       const cacheKey = `distributor:${contract.address || "unknown"}`;
 
@@ -54,16 +54,23 @@ export default function useDistributor() {
             }
           };
 
-          const [totalReceivedRaw, totalPendingRaw, reserve, collectionRewards, buybackAgent, treasury, communityCenter] =
-            await Promise.all([
-              safeCall("totalReceived", [], ethers.constants.Zero),
-              safeCall("totalPending", [], ethers.constants.Zero),
-              safeCall("reserve", [], null),
-              safeCall("collectionRewards", [], null),
-              safeCall("buybackAgent", [], null),
-              safeCall("treasury", [], null),
-              safeCall("communityCenter", [], null),
-            ]);
+          const [
+            totalReceivedRaw,
+            totalPendingRaw,
+            reserve,
+            collectionRewards,
+            buybackAgent,
+            treasury,
+            communityCenter,
+          ] = await Promise.all([
+            safeCall("totalReceived", [], ethers.constants.Zero),
+            safeCall("totalPending", [], ethers.constants.Zero),
+            safeCall("reserve", [], null),
+            safeCall("collectionRewards", [], null),
+            safeCall("buybackAgent", [], null),
+            safeCall("treasury", [], null),
+            safeCall("communityCenter", [], null),
+          ]);
 
           const pendingFor = async (addr) => {
             if (!addr || addr === ZERO) return ethers.constants.Zero;
@@ -72,17 +79,26 @@ export default function useDistributor() {
             return safeCall("pending", [addr], ethers.constants.Zero);
           };
 
-          const [pendingReserveRaw, pendingCollectionRewardsRaw, pendingBuybackRaw, pendingTreasuryRaw, pendingCommunityRaw] =
-            await Promise.all([
-              pendingFor(reserve),
-              pendingFor(collectionRewards),
-              pendingFor(buybackAgent),
-              pendingFor(treasury),
-              pendingFor(communityCenter),
-            ]);
+          const [
+            pendingReserveRaw,
+            pendingCollectionRewardsRaw,
+            pendingBuybackRaw,
+            pendingTreasuryRaw,
+            pendingCommunityRaw,
+          ] = await Promise.all([
+            pendingFor(reserve),
+            pendingFor(collectionRewards),
+            pendingFor(buybackAgent),
+            pendingFor(treasury),
+            pendingFor(communityCenter),
+          ]);
 
           const fmt = (v) => {
-            try { return ethers.utils.formatEther(v); } catch { return "0"; }
+            try {
+              return ethers.utils.formatEther(v);
+            } catch {
+              return "0";
+            }
           };
 
           return {
@@ -105,7 +121,7 @@ export default function useDistributor() {
             pendingCommunityCenter: fmt(pendingCommunityRaw),
           };
         },
-        { force: options?.force === true }
+        { force: options?.force === true },
       );
 
       setData(snapshot);

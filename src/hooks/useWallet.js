@@ -39,8 +39,13 @@ export function useWallet({ onConnected } = {}) {
       const addr = accounts?.[0];
       if (!addr) throw new Error("No account returned from wallet.");
 
-      const chainHex = await eth.request({ method: "eth_chainId" }).catch(() => null);
-      const currentId = typeof chainHex === "string" ? Number.parseInt(chainHex, 16) : undefined;
+      const chainHex = await eth
+        .request({ method: "eth_chainId" })
+        .catch(() => null);
+      const currentId =
+        typeof chainHex === "string"
+          ? Number.parseInt(chainHex, 16)
+          : undefined;
       if (currentId !== 80002) {
         await ensureAmoy();
       }
@@ -91,10 +96,12 @@ export function useWallet({ onConnected } = {}) {
       const accountCb = async (accs) => {
         const a = accs?.[0] || "";
         setWalletAddress(a);
-        if (typeof handlers.onAccountsChanged === "function") await handlers.onAccountsChanged(a);
+        if (typeof handlers.onAccountsChanged === "function")
+          await handlers.onAccountsChanged(a);
       };
       const chainCb = async () => {
-        if (typeof handlers.onChainChanged === "function") await handlers.onChainChanged();
+        if (typeof handlers.onChainChanged === "function")
+          await handlers.onChainChanged();
       };
 
       window.ethereum?.on?.("accountsChanged", accountCb);

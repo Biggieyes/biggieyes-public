@@ -67,8 +67,10 @@ export async function fetchWithTimeout(url, ms = 8000, fetchImpl = fetch) {
 export function httpFromIpfs(uri) {
   if (!uri) return uri;
   const s = String(uri);
-  const isIpns = s.startsWith("ipns://") || s.startsWith("/ipns/") || s.startsWith("ipns/");
-  const isIpfs = s.startsWith("ipfs://") || s.startsWith("/ipfs/") || s.startsWith("ipfs/");
+  const isIpns =
+    s.startsWith("ipns://") || s.startsWith("/ipns/") || s.startsWith("ipns/");
+  const isIpfs =
+    s.startsWith("ipfs://") || s.startsWith("/ipfs/") || s.startsWith("ipfs/");
 
   if (isIpfs || isIpns) {
     const builder = GWS[0] || makeGateway("https://ipfs.io");
@@ -93,11 +95,17 @@ export async function resolveImageUrl(imageField, metadataUri, options = {}) {
     img.startsWith("/ipfs/") ||
     img.startsWith("/ipns/")
   ) {
-    const isIpns = img.startsWith("ipns://") || img.startsWith("/ipns/") || img.startsWith("ipns/");
+    const isIpns =
+      img.startsWith("ipns://") ||
+      img.startsWith("/ipns/") ||
+      img.startsWith("ipns/");
     const p = normalizeIpfsPath(img);
     for (const gw of gateways) {
       try {
-        const url = typeof gw === "function" ? gw(p, isIpns) : makeGateway(String(gw))(p, isIpns);
+        const url =
+          typeof gw === "function"
+            ? gw(p, isIpns)
+            : makeGateway(String(gw))(p, isIpns);
         const resp = await fetchWithTimeout(url, timeout, fetchImpl);
         if (resp?.ok) return url;
       } catch {
@@ -129,14 +137,23 @@ export async function readJsonFromURI(uri, options = {}) {
     if (!uri) return null;
     const u = String(uri).trim();
 
-    const isIpns = u.startsWith("ipns://") || u.startsWith("/ipns/") || u.startsWith("ipns/");
-    const isIpfs = u.startsWith("ipfs://") || u.startsWith("/ipfs/") || u.startsWith("ipfs/");
+    const isIpns =
+      u.startsWith("ipns://") ||
+      u.startsWith("/ipns/") ||
+      u.startsWith("ipns/");
+    const isIpfs =
+      u.startsWith("ipfs://") ||
+      u.startsWith("/ipfs/") ||
+      u.startsWith("ipfs/");
 
     if (isIpfs || isIpns) {
       const p = normalizeIpfsPath(u);
       for (const gw of gateways) {
         try {
-          const url = typeof gw === "function" ? gw(p, isIpns) : makeGateway(String(gw))(p, isIpns);
+          const url =
+            typeof gw === "function"
+              ? gw(p, isIpns)
+              : makeGateway(String(gw))(p, isIpns);
           const resp = await fetchWithTimeout(url, timeout, fetchImpl);
           if (resp?.ok) return await resp.json();
         } catch {

@@ -4,7 +4,6 @@ import { AMOY, getRpcUrls as getConfiguredRpcUrls } from "../utils/rpcConfig";
 // Static provider avoids network autodetect calls that can fail due to CORS/rate limits.
 const { StaticJsonRpcProvider, FallbackProvider } = ethers.providers;
 
-
 function makeStaticProvider(url, chainId = AMOY.chainId) {
   return new StaticJsonRpcProvider({ url, chainId, name: AMOY.name }, chainId);
 }
@@ -14,15 +13,22 @@ export function createJsonRpcProvider(rpcUrl, chainId = AMOY.chainId) {
   // Synchronous provider creation for compatibility with FallbackProvider
   if (!rpcUrl) {
     const urls = getConfiguredRpcUrls();
-    if (!urls.length) throw new Error("No RPC URL configured (set VITE_JSON_RPC_URL or VITE_AMOY_RPC_URL)");
+    if (!urls.length)
+      throw new Error(
+        "No RPC URL configured (set VITE_JSON_RPC_URL or VITE_AMOY_RPC_URL)",
+      );
     rpcUrl = urls[0];
   }
   return makeStaticProvider(rpcUrl, chainId);
 }
 
 export function createFallbackProvider(urls, chainId = AMOY.chainId) {
-  const list = Array.isArray(urls) && urls.length ? urls : getConfiguredRpcUrls();
-  if (!list.length) throw new Error("No RPC URLs configured (set VITE_JSON_RPC_URL or VITE_AMOY_RPC_URL)");
+  const list =
+    Array.isArray(urls) && urls.length ? urls : getConfiguredRpcUrls();
+  if (!list.length)
+    throw new Error(
+      "No RPC URLs configured (set VITE_JSON_RPC_URL or VITE_AMOY_RPC_URL)",
+    );
   if (list.length === 1) return createJsonRpcProvider(list[0], chainId);
 
   const configs = list.map((url, index) => ({
@@ -35,7 +41,10 @@ export function createFallbackProvider(urls, chainId = AMOY.chainId) {
   try {
     return new FallbackProvider(configs, 1);
   } catch (err) {
-    console.warn("FallbackProvider failed, using first RPC", err?.message || err);
+    console.warn(
+      "FallbackProvider failed, using first RPC",
+      err?.message || err,
+    );
     return createJsonRpcProvider(list[0], chainId);
   }
 }

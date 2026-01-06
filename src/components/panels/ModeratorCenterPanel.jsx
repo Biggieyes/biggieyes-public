@@ -10,7 +10,12 @@ import WeeklySummaryBuilder from "../WeeklySummaryBuilder";
 import MerkleTool from "../MerkleTool";
 import TransactionsModal from "../TransactionsModal";
 import { supabase, supabaseReady } from "../../supabaseClient";
-import { getNonce, moderatorLogin, adminLogin, requestPasswordReset } from "../../services/api";
+import {
+  getNonce,
+  moderatorLogin,
+  adminLogin,
+  requestPasswordReset,
+} from "../../services/api";
 import { getConfig, isOwner } from "../../utils/eth";
 import "./ModeratorCenterPanel.css";
 
@@ -29,10 +34,18 @@ export default function ModeratorCenterPanel({
   const [moderatorStats, setModeratorStats] = React.useState({});
   const [referrals, setReferrals] = React.useState([]);
   const [weeklyEntries, setWeeklyEntries] = React.useState([]);
-  const [txModal, setTxModal] = React.useState({ open: false, status: "", txHash: "", message: "" });
+  const [txModal, setTxModal] = React.useState({
+    open: false,
+    status: "",
+    txHash: "",
+    message: "",
+  });
 
   const cfg = getConfig();
-  const baseUrl = React.useMemo(() => (typeof window !== "undefined" ? window.location.origin : ""), []);
+  const baseUrl = React.useMemo(
+    () => (typeof window !== "undefined" ? window.location.origin : ""),
+    [],
+  );
 
   const loadModeratorData = React.useCallback(async (slotId) => {
     if (!supabaseReady) {
@@ -76,7 +89,9 @@ export default function ModeratorCenterPanel({
     if (typeof window === "undefined" || !window.ethereum) {
       throw new Error("Wallet provider is not available.");
     }
-    await window.ethereum.request?.({ method: "eth_requestAccounts" }).catch(() => {});
+    await window.ethereum
+      .request?.({ method: "eth_requestAccounts" })
+      .catch(() => {});
     const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
     const signer = provider.getSigner();
     return signer.signMessage(payload);
@@ -149,7 +164,9 @@ export default function ModeratorCenterPanel({
   const showAdmin = isOwner(walletAddress) && adminSession;
 
   return (
-    <section className={`moderator-center biggi-skin${compact ? " is-compact" : ""}`}>
+    <section
+      className={`moderator-center biggi-skin${compact ? " is-compact" : ""}`}
+    >
       <header className="moderator-center__header">
         <div>
           <h2>Moderator Center</h2>
@@ -228,7 +245,9 @@ export default function ModeratorCenterPanel({
               <p className="muted">
                 Admin tools require signing in with the owner wallet.
               </p>
-              {adminError && <div className="moderator-center__error">{adminError}</div>}
+              {adminError && (
+                <div className="moderator-center__error">{adminError}</div>
+              )}
               <div className="moderator-center__actions">
                 <button
                   type="button"
@@ -263,7 +282,9 @@ export default function ModeratorCenterPanel({
         status={txModal.status}
         txHash={txModal.txHash}
         message={txModal.message}
-        onClose={() => setTxModal({ open: false, status: "", txHash: "", message: "" })}
+        onClose={() =>
+          setTxModal({ open: false, status: "", txHash: "", message: "" })
+        }
       />
     </section>
   );

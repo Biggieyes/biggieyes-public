@@ -22,22 +22,118 @@ import { multicallAggregate } from "../utils/multicall";
 
 // --- vlož ABI sem ---
 const ABI = [
-  { "inputs": [], "name": "BIGGI", "outputs": [{ "internalType": "contract IERC20", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "CAP", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "availableTokens", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "capRemaining", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "tokensPerMint", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "getAvailable", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "getTotalClaimed", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "getTotalNotified", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "getTotalTopUp", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "totalClaimed", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "totalNotified", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "totalTopUp", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "dripLM", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "treasury", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [{ "internalType": "address", "name": "a", "type": "address" }], "name": "isCollection", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "paused", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" }
+  {
+    inputs: [],
+    name: "BIGGI",
+    outputs: [{ internalType: "contract IERC20", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "CAP",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "availableTokens",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "capRemaining",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "tokensPerMint",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "getAvailable",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "getTotalClaimed",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "getTotalNotified",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "getTotalTopUp",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "totalClaimed",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "totalNotified",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "totalTopUp",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "dripLM",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "treasury",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "address", name: "a", type: "address" }],
+    name: "isCollection",
+    outputs: [{ internalType: "bool", name: "", type: "bool" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "paused",
+    outputs: [{ internalType: "bool", name: "", type: "bool" }],
+    stateMutability: "view",
+    type: "function",
+  },
 ];
 
 export default class DripDistributorService {
@@ -75,22 +171,54 @@ export default class DripDistributorService {
   }
 
   // --- jednotlivé read-gettery (odpovídají ABI) ---
-  async BIGGI() { return await this.contract.BIGGI(); }
-  async CAP() { return await this.contract.CAP(); }
-  async availableTokens() { return await this.contract.availableTokens(); }
-  async capRemaining() { return await this.contract.capRemaining(); }
-  async tokensPerMint() { return await this.contract.tokensPerMint(); }
-  async getAvailable() { return await this.contract.getAvailable(); }
-  async getTotalClaimed() { return await this.contract.getTotalClaimed(); }
-  async getTotalNotified() { return await this.contract.getTotalNotified(); }
-  async getTotalTopUp() { return await this.contract.getTotalTopUp(); }
-  async totalClaimed() { return await this.contract.totalClaimed(); }
-  async totalNotified() { return await this.contract.totalNotified(); }
-  async totalTopUp() { return await this.contract.totalTopUp(); }
-  async dripLM() { return await this.contract.dripLM(); }
-  async treasury() { return await this.contract.treasury(); }
-  async isCollection(addr) { return await this.contract.isCollection(addr); }
-  async paused() { return await this.contract.paused(); }
+  async BIGGI() {
+    return await this.contract.BIGGI();
+  }
+  async CAP() {
+    return await this.contract.CAP();
+  }
+  async availableTokens() {
+    return await this.contract.availableTokens();
+  }
+  async capRemaining() {
+    return await this.contract.capRemaining();
+  }
+  async tokensPerMint() {
+    return await this.contract.tokensPerMint();
+  }
+  async getAvailable() {
+    return await this.contract.getAvailable();
+  }
+  async getTotalClaimed() {
+    return await this.contract.getTotalClaimed();
+  }
+  async getTotalNotified() {
+    return await this.contract.getTotalNotified();
+  }
+  async getTotalTopUp() {
+    return await this.contract.getTotalTopUp();
+  }
+  async totalClaimed() {
+    return await this.contract.totalClaimed();
+  }
+  async totalNotified() {
+    return await this.contract.totalNotified();
+  }
+  async totalTopUp() {
+    return await this.contract.totalTopUp();
+  }
+  async dripLM() {
+    return await this.contract.dripLM();
+  }
+  async treasury() {
+    return await this.contract.treasury();
+  }
+  async isCollection(addr) {
+    return await this.contract.isCollection(addr);
+  }
+  async paused() {
+    return await this.contract.paused();
+  }
 
   /**
    * Rychlé načtení většiny statistik paralelně.
@@ -100,22 +228,71 @@ export default class DripDistributorService {
     try {
       const iface = new ethers.utils.Interface(ABI);
       const methods = [
-        "CAP", "availableTokens", "capRemaining", "tokensPerMint", "getAvailable",
-        "getTotalClaimed", "getTotalNotified", "getTotalTopUp", "totalClaimed", "totalNotified",
-        "totalTopUp", "dripLM", "treasury", "paused"
+        "CAP",
+        "availableTokens",
+        "capRemaining",
+        "tokensPerMint",
+        "getAvailable",
+        "getTotalClaimed",
+        "getTotalNotified",
+        "getTotalTopUp",
+        "totalClaimed",
+        "totalNotified",
+        "totalTopUp",
+        "dripLM",
+        "treasury",
+        "paused",
       ];
-      const calls = methods.map((m) => ({ target: this.address, iface, method: m }));
-      const decoded = await multicallAggregate(this.provider, calls).catch(() => null);
+      const calls = methods.map((m) => ({
+        target: this.address,
+        iface,
+        method: m,
+      }));
+      const decoded = await multicallAggregate(this.provider, calls).catch(
+        () => null,
+      );
       if (decoded && decoded.length === methods.length) {
-        const vals = decoded.map((d) => (Array.isArray(d) && d.length === 1 ? d[0] : d));
-        const [CAP, availableTokens, capRemaining, tokensPerMint, getAvailable,
-          getTotalClaimed, getTotalNotified, getTotalTopUp,
-          totalClaimed, totalNotified, totalTopUp, dripLM, treasury, paused
+        const vals = decoded.map((d) =>
+          Array.isArray(d) && d.length === 1 ? d[0] : d,
+        );
+        const [
+          CAP,
+          availableTokens,
+          capRemaining,
+          tokensPerMint,
+          getAvailable,
+          getTotalClaimed,
+          getTotalNotified,
+          getTotalTopUp,
+          totalClaimed,
+          totalNotified,
+          totalTopUp,
+          dripLM,
+          treasury,
+          paused,
         ] = vals;
-        return { CAP, availableTokens, capRemaining, tokensPerMint, getAvailable, getTotalClaimed, getTotalNotified, getTotalTopUp, totalClaimed, totalNotified, totalTopUp, dripLM, treasury, paused };
+        return {
+          CAP,
+          availableTokens,
+          capRemaining,
+          tokensPerMint,
+          getAvailable,
+          getTotalClaimed,
+          getTotalNotified,
+          getTotalTopUp,
+          totalClaimed,
+          totalNotified,
+          totalTopUp,
+          dripLM,
+          treasury,
+          paused,
+        };
       }
     } catch (e) {
-      console.warn("DripDistributorService multicall failed, falling back", e?.message || e);
+      console.warn(
+        "DripDistributorService multicall failed, falling back",
+        e?.message || e,
+      );
     }
 
     const calls = [
@@ -132,17 +309,39 @@ export default class DripDistributorService {
       this.totalTopUp(),
       this.dripLM(),
       this.treasury(),
-      this.paused()
+      this.paused(),
     ];
     const [
-      CAP, availableTokens, capRemaining, tokensPerMint, getAvailable,
-      getTotalClaimed, getTotalNotified, getTotalTopUp,
-      totalClaimed, totalNotified, totalTopUp, dripLM, treasury, paused
+      CAP,
+      availableTokens,
+      capRemaining,
+      tokensPerMint,
+      getAvailable,
+      getTotalClaimed,
+      getTotalNotified,
+      getTotalTopUp,
+      totalClaimed,
+      totalNotified,
+      totalTopUp,
+      dripLM,
+      treasury,
+      paused,
     ] = await Promise.all(calls);
     return {
-      CAP, availableTokens, capRemaining, tokensPerMint, getAvailable,
-      getTotalClaimed, getTotalNotified, getTotalTopUp,
-      totalClaimed, totalNotified, totalTopUp, dripLM, treasury, paused
+      CAP,
+      availableTokens,
+      capRemaining,
+      tokensPerMint,
+      getAvailable,
+      getTotalClaimed,
+      getTotalNotified,
+      getTotalTopUp,
+      totalClaimed,
+      totalNotified,
+      totalTopUp,
+      dripLM,
+      treasury,
+      paused,
     };
   }
 

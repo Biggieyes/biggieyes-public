@@ -36,7 +36,9 @@ const _formatUnits = (val, dec) => {
     return ethers.utils.formatUnits(val, dec);
   } catch {
     try {
-      const bn = ethers.BigNumber.isBigNumber(val) ? val : ethers.BigNumber.from(val);
+      const bn = ethers.BigNumber.isBigNumber(val)
+        ? val
+        : ethers.BigNumber.from(val);
       return ethers.utils.formatUnits(bn, dec);
     } catch {
       return "0";
@@ -48,7 +50,9 @@ const _formatEther = (val) => {
     return ethers.utils.formatEther(val);
   } catch {
     try {
-      const bn = ethers.BigNumber.isBigNumber(val) ? val : ethers.BigNumber.from(val);
+      const bn = ethers.BigNumber.isBigNumber(val)
+        ? val
+        : ethers.BigNumber.from(val);
       return ethers.utils.formatEther(bn);
     } catch {
       if (typeof val === "bigint") return (Number(val) / 1e18).toString();
@@ -103,7 +107,39 @@ function LiveStats({
   weekSeconds = 7 * 24 * 60 * 60,
   fetchChainNowTs = null,
   lastFinalPrice = null,
+  // lpPrice,
+  // setLpPrice,
 }) {
+  // LP price state
+  const [lpPrice, setLpPrice] = React.useState(null);
+  // Fetch LP price from on-chain feed
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const prov = getROProvider();
+        const feedAddr = ADDR.LP_PRICE_FEED;
+        if (feedAddr) {
+          const feed = new ethers.Contract(feedAddr, BiggiLpPriceFeed, prov);
+          const round = await feed.latestRoundData().catch(() => null);
+          const dec = await feed.decimals().catch(() => 18);
+          if (!alive) return;
+          if (round && round.answer != null) {
+            const price = Number(ethers.utils.formatUnits(round.answer, dec));
+            if (Number.isFinite(price)) setLpPrice(price);
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Zobrazení LP ceny v UI (příklad, uprav dle skutečného layoutu):
+  // <div>LP token price: {lpPrice != null ? lpPrice + ' POL' : '--'}</div>
   const [showBlocks, setShowBlocks] = React.useState(false);
   const [showBgStats, setShowBgStats] = React.useState(false);
   const [showRewards, setShowRewards] = React.useState(false);
@@ -129,10 +165,14 @@ function LiveStats({
   });
 
   const [isPhone, setIsPhone] = React.useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(max-width: 700px)").matches : false
+    typeof window !== "undefined"
+      ? window.matchMedia("(max-width: 700px)").matches
+      : false,
   );
   const [isTiny, setIsTiny] = React.useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(max-width: 480px)").matches : false
+    typeof window !== "undefined"
+      ? window.matchMedia("(max-width: 480px)").matches
+      : false,
   );
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -174,7 +214,7 @@ function LiveStats({
 
   const effectiveBlockPrices = React.useMemo(
     () => blockPricesFromChain ?? currentBlockPrices ?? blockPrices ?? [],
-    [blockPricesFromChain, currentBlockPrices, blockPrices]
+    [blockPricesFromChain, currentBlockPrices, blockPrices],
   );
 
   const effectiveBlockMintCounts = blocksMinted ?? blockMintCounts ?? [];
@@ -227,7 +267,15 @@ function LiveStats({
     };
     window.addEventListener("keydown", handleEscapeBack);
     return () => window.removeEventListener("keydown", handleEscapeBack);
-  }, [showBlocks, showBgStats, showRewards, weeklyOpen, poolsOpen, chatOpen, resetAll]);
+  }, [
+    showBlocks,
+    showBgStats,
+    showRewards,
+    weeklyOpen,
+    poolsOpen,
+    chatOpen,
+    resetAll,
+  ]);
 
   const weeklyCountdownInfo = React.useMemo(
     () => ({
@@ -235,12 +283,14 @@ function LiveStats({
       loading: weeklyLoading,
       error: weeklyError,
     }),
-    [weeklyDisplayed, weeklyLoading, weeklyError]
+    [weeklyDisplayed, weeklyLoading, weeklyError],
   );
 
   const computedRewardsPool = React.useMemo(() => {
-    if (typeof rewardPool === "number" && !Number.isNaN(rewardPool)) return rewardPool;
-    if (typeof poolFromContract === "number" && !Number.isNaN(poolFromContract)) return poolFromContract;
+    if (typeof rewardPool === "number" && !Number.isNaN(rewardPool))
+      return rewardPool;
+    if (typeof poolFromContract === "number" && !Number.isNaN(poolFromContract))
+      return poolFromContract;
     if (
       typeof mintVolumeMatic === "number" &&
       !Number.isNaN(mintVolumeMatic) &&
@@ -266,15 +316,29 @@ function LiveStats({
         if (!r) return;
 
         const calls = [];
-        calls.push(typeof r.getBlockWeights === "function" ? r.getBlockWeights() : Promise.resolve(null));
-        calls.push(typeof r.unitReward === "function" ? r.unitReward() : Promise.resolve(null));
-        calls.push(typeof r.tokenMeta === "function" ? r.tokenMeta() : Promise.resolve(null));
+        calls.push(
+          typeof r.getBlockWeights === "function"
+            ? r.getBlockWeights()
+            : Promise.resolve(null),
+        );
+        calls.push(
+          typeof r.unitReward === "function"
+            ? r.unitReward()
+            : Promise.resolve(null),
+        );
+        calls.push(
+          typeof r.tokenMeta === "function"
+            ? r.tokenMeta()
+            : Promise.resolve(null),
+        );
 
         const [wArr, unitWei, meta] = await Promise.all(calls);
         if (!alive) return;
 
         if (wArr && Array.isArray(wArr)) {
-          const w = Array.from(wArr).slice(1).map((n) => Number(n || 0));
+          const w = Array.from(wArr)
+            .slice(1)
+            .map((n) => Number(n || 0));
           setWeightsFromContract(w.length === 10 ? w : null);
         }
 
@@ -294,7 +358,10 @@ function LiveStats({
   }, []);
 
   const WEIGHTS = React.useMemo(() => {
-    if (Array.isArray(weightsFromContract) && weightsFromContract.length === 10) {
+    if (
+      Array.isArray(weightsFromContract) &&
+      weightsFromContract.length === 10
+    ) {
       return weightsFromContract;
     }
     return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -418,7 +485,12 @@ function LiveStats({
         })();
         if (!liq) return;
 
-        const candidates = ["getCurrentBlockPrices", "currentBlockPrices", "blockPrices", "getBlockPrices"];
+        const candidates = [
+          "getCurrentBlockPrices",
+          "currentBlockPrices",
+          "blockPrices",
+          "getBlockPrices",
+        ];
         for (const fn of candidates) {
           const f = liq?.[fn];
           if (typeof f === "function") {
@@ -437,7 +509,9 @@ function LiveStats({
                 });
                 const anyValid = nums.some((n) => Number.isFinite(n));
                 if (!cancelled && anyValid) {
-                  setBlockPricesFromChain(nums.map((n) => (Number.isFinite(n) ? n : null)));
+                  setBlockPricesFromChain(
+                    nums.map((n) => (Number.isFinite(n) ? n : null)),
+                  );
                   break;
                 }
               }
@@ -484,13 +558,29 @@ function LiveStats({
         treasuryAddr,
         communityCenterAddr,
       ] = await Promise.all([
-        typeof r.totalReceived === "function" ? r.totalReceived() : Promise.resolve(ethers.constants.Zero),
-        typeof r.receivedByCollection === "function" ? r.receivedByCollection(ADDR.MAIN) : Promise.resolve(ethers.constants.Zero),
-        typeof r.reserve === "function" ? r.reserve() : Promise.resolve(ADDR.RESERVE || ethers.constants.AddressZero),
-        typeof r.collectionRewards === "function" ? r.collectionRewards() : Promise.resolve(ADDR.COLLECTION_REWARDS || ethers.constants.AddressZero),
-        typeof r.buybackAgent === "function" ? r.buybackAgent() : Promise.resolve(ADDR.BUYBACK_AGENT || ethers.constants.AddressZero),
-        typeof r.treasury === "function" ? r.treasury() : Promise.resolve(ADDR.TREASURY || ethers.constants.AddressZero),
-        typeof r.communityCenter === "function" ? r.communityCenter() : Promise.resolve(ethers.constants.AddressZero),
+        typeof r.totalReceived === "function"
+          ? r.totalReceived()
+          : Promise.resolve(ethers.constants.Zero),
+        typeof r.receivedByCollection === "function"
+          ? r.receivedByCollection(ADDR.MAIN)
+          : Promise.resolve(ethers.constants.Zero),
+        typeof r.reserve === "function"
+          ? r.reserve()
+          : Promise.resolve(ADDR.RESERVE || ethers.constants.AddressZero),
+        typeof r.collectionRewards === "function"
+          ? r.collectionRewards()
+          : Promise.resolve(
+              ADDR.COLLECTION_REWARDS || ethers.constants.AddressZero,
+            ),
+        typeof r.buybackAgent === "function"
+          ? r.buybackAgent()
+          : Promise.resolve(ADDR.BUYBACK_AGENT || ethers.constants.AddressZero),
+        typeof r.treasury === "function"
+          ? r.treasury()
+          : Promise.resolve(ADDR.TREASURY || ethers.constants.AddressZero),
+        typeof r.communityCenter === "function"
+          ? r.communityCenter()
+          : Promise.resolve(ethers.constants.AddressZero),
       ]);
 
       const targets = [
@@ -498,18 +588,27 @@ function LiveStats({
         { key: "rewards", name: "CollectionRewards", addr: collRewardsAddr },
         { key: "buyback", name: "BuybackAgent", addr: buybackAddr },
         { key: "treasury", name: "Treasury", addr: treasuryAddr },
-        { key: "community", name: "CommunityCenter", addr: communityCenterAddr },
+        {
+          key: "community",
+          name: "CommunityCenter",
+          addr: communityCenterAddr,
+        },
       ];
 
       const communityPoolBalance = communityCenterAddr
-        ? await new CommunityCenterService(communityCenterAddr, prov).poolBalance().catch(() => null)
+        ? await new CommunityCenterService(communityCenterAddr, prov)
+            .poolBalance()
+            .catch(() => null)
         : null;
 
       const balancesArr = await Promise.all(
         targets.map((t) => {
-          if (t.key === "community") return Promise.resolve(communityPoolBalance ?? ethers.constants.Zero);
+          if (t.key === "community")
+            return Promise.resolve(
+              communityPoolBalance ?? ethers.constants.Zero,
+            );
           return prov.getBalance(t.addr).catch(() => ethers.constants.Zero);
-        })
+        }),
       );
 
       const balances = {};
@@ -517,7 +616,9 @@ function LiveStats({
         balances[t.key] = balancesArr[i];
       });
 
-      const distBal = await prov.getBalance(ADDR.DISTRIBUTOR).catch(() => ethers.constants.Zero);
+      const distBal = await prov
+        .getBalance(ADDR.DISTRIBUTOR)
+        .catch(() => ethers.constants.Zero);
 
       setPools({
         distributor: ADDR.DISTRIBUTOR,
@@ -541,10 +642,11 @@ function LiveStats({
   const [circulatingSupply, setCirculatingSupply] = React.useState(null);
   const biggiMcap = React.useMemo(() => {
     const supplyForMarketCap =
-      typeof circulatingSupply === "number"
-        ? circulatingSupply
-        : biggiSupply;
-    if (typeof biggiPrice === "number" && typeof supplyForMarketCap === "number") {
+      typeof circulatingSupply === "number" ? circulatingSupply : biggiSupply;
+    if (
+      typeof biggiPrice === "number" &&
+      typeof supplyForMarketCap === "number"
+    ) {
       return biggiPrice * supplyForMarketCap;
     }
     return null;
@@ -563,7 +665,8 @@ function LiveStats({
         })();
         if (!prov) return;
 
-        const tokenAddr = (ADDR && (ADDR.BIGGI || ADDR.TOKEN || ADDR.BIGGI_TOKEN)) || null;
+        const tokenAddr =
+          (ADDR && (ADDR.BIGGI || ADDR.TOKEN || ADDR.BIGGI_TOKEN)) || null;
 
         if (tokenAddr) {
           const erc20Abi = [
@@ -593,7 +696,8 @@ function LiveStats({
           }
         }
 
-        const priceOracleAddr = (ADDR && (ADDR.BIGGI_PRICE_ORACLE || ADDR.PRICE_ORACLE)) || null;
+        const priceOracleAddr =
+          (ADDR && (ADDR.BIGGI_PRICE_ORACLE || ADDR.PRICE_ORACLE)) || null;
 
         if (priceOracleAddr) {
           const oracleAbi = [
@@ -601,7 +705,10 @@ function LiveStats({
             "function decimals() view returns (uint8)",
           ];
           const oracle = new ethers.Contract(priceOracleAddr, oracleAbi, prov);
-          const [round, dec] = await Promise.all([oracle.latestRoundData().catch(() => null), oracle.decimals().catch(() => 8)]);
+          const [round, dec] = await Promise.all([
+            oracle.latestRoundData().catch(() => null),
+            oracle.decimals().catch(() => 8),
+          ]);
           if (!alive) return;
           if (round && round.answer != null) {
             const p = Number(_formatUnits(round.answer, Number(dec)));
@@ -620,7 +727,11 @@ function LiveStats({
 
   React.useEffect(() => {
     let alive = true;
-    if (biggiSupply == null || typeof biggiSupply !== "number" || biggiSupply === 0) {
+    if (
+      biggiSupply == null ||
+      typeof biggiSupply !== "number" ||
+      biggiSupply === 0
+    ) {
       setCirculatingSupply(null);
       return () => {
         alive = false;
@@ -647,20 +758,28 @@ function LiveStats({
         })();
         if (!token || typeof token.balanceOf !== "function") return;
 
-        const lockedAddrs = [ADDR.RESERVE, ADDR.TOKEN_REWARDS, ADDR.DRIP_DISTRIBUTOR].filter(Boolean);
+        const lockedAddrs = [
+          ADDR.RESERVE,
+          ADDR.TOKEN_REWARDS,
+          ADDR.DRIP_DISTRIBUTOR,
+        ].filter(Boolean);
         if (!lockedAddrs.length) return;
 
-        const decimalsForLocked = Number.isFinite(Number(tokenDecimals)) ? Number(tokenDecimals) : 18;
+        const decimalsForLocked = Number.isFinite(Number(tokenDecimals))
+          ? Number(tokenDecimals)
+          : 18;
 
         const balances = await Promise.all(
           lockedAddrs.map((addr) =>
-            token.balanceOf(addr).catch(() => ethers.constants.Zero)
-          )
+            token.balanceOf(addr).catch(() => ethers.constants.Zero),
+          ),
         );
         if (!alive) return;
 
         const locked = balances.reduce((sum, bn) => {
-          const n = Number(_formatUnits(bn ?? ethers.constants.Zero, decimalsForLocked));
+          const n = Number(
+            _formatUnits(bn ?? ethers.constants.Zero, decimalsForLocked),
+          );
           return sum + (Number.isFinite(n) ? n : 0);
         }, 0);
         if (!Number.isFinite(locked)) return;
@@ -703,10 +822,19 @@ function LiveStats({
 
         const erc20Meta = async (addr) => {
           try {
-            const abi = ["function decimals() view returns (uint8)", "function symbol() view returns (string)"];
+            const abi = [
+              "function decimals() view returns (uint8)",
+              "function symbol() view returns (string)",
+            ];
             const erc = new ethers.Contract(addr, abi, getROProvider());
-            const [dec, sym] = await Promise.all([erc.decimals().catch(() => 18), erc.symbol().catch(() => "")]);
-            return { decimals: Number(dec) || 18, symbol: typeof sym === "string" && sym.length ? sym : "" };
+            const [dec, sym] = await Promise.all([
+              erc.decimals().catch(() => 18),
+              erc.symbol().catch(() => ""),
+            ]);
+            return {
+              decimals: Number(dec) || 18,
+              symbol: typeof sym === "string" && sym.length ? sym : "",
+            };
           } catch {
             return { decimals: 18, symbol: "" };
           }
@@ -719,14 +847,24 @@ function LiveStats({
         if (addr0 === biggiAddr) {
           const base = Number(_formatUnits(r0, m0.decimals));
           const quote = Number(_formatUnits(r1, m1.decimals));
-          if (Number.isFinite(base) && base > 0 && Number.isFinite(quote) && quote > 0) {
+          if (
+            Number.isFinite(base) &&
+            base > 0 &&
+            Number.isFinite(quote) &&
+            quote > 0
+          ) {
             price = quote / base;
             if (m1.symbol) setPriceQuoteSymbol(m1.symbol);
           }
         } else if (addr1 === biggiAddr) {
           const base = Number(_formatUnits(r1, m1.decimals));
           const quote = Number(_formatUnits(r0, m0.decimals));
-          if (Number.isFinite(base) && base > 0 && Number.isFinite(quote) && quote > 0) {
+          if (
+            Number.isFinite(base) &&
+            base > 0 &&
+            Number.isFinite(quote) &&
+            quote > 0
+          ) {
             price = quote / base;
             if (m0.symbol) setPriceQuoteSymbol(m0.symbol);
           }
@@ -746,7 +884,11 @@ function LiveStats({
 
   // Layout
   const BOX = isPhone ? (isTiny ? 110 : 130) : 150;
-  const PADDING = isPhone ? (isTiny ? "14px 12px 12px 12px" : "24px 16px 18px 16px") : "38px 44px 32px 44px";
+  const PADDING = isPhone
+    ? isTiny
+      ? "14px 12px 12px 12px"
+      : "24px 16px 18px 16px"
+    : "38px 44px 32px 44px";
   const boxFontSize = isTiny ? "0.75em" : isPhone ? "0.85em" : "0.95em";
   const boxBigFontSize = isTiny ? "1.0em" : isPhone ? "1.15em" : "1.3em";
   const infoCardFontSize = isTiny ? "0.7em" : isPhone ? "0.8em" : "0.9em";
@@ -851,12 +993,12 @@ function LiveStats({
 
   const titleStyle = { color: "#fff", fontWeight: 700, fontSize: boxFontSize };
 
-
   const thBase = {
     position: "sticky",
     top: 0,
     zIndex: 1,
-    background: "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.85) 100%)",
+    background:
+      "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.85) 100%)",
     backdropFilter: "blur(3px)",
     color: "#ffe800",
     textAlign: "center",
@@ -881,7 +1023,7 @@ function LiveStats({
       borderCollapse: "collapse",
       tableLayout: "fixed",
     }),
-    []
+    [],
   );
 
   // ====== CLAIM integration ======
@@ -925,17 +1067,30 @@ function LiveStats({
       const signer = provider.getSigner();
 
       const rewardsAddr =
-        ADDR?.TOKEN_REWARDS || ADDR?.BIGGI_TOKEN_REWARDS || ADDR?.REWARDS || null;
+        ADDR?.TOKEN_REWARDS ||
+        ADDR?.BIGGI_TOKEN_REWARDS ||
+        ADDR?.REWARDS ||
+        null;
       if (!rewardsAddr) throw new Error("Rewards contract address missing");
 
-      const rewards = new ethers.Contract(rewardsAddr, TOKEN_REWARDS_MIN_ABI, signer);
+      const rewards = new ethers.Contract(
+        rewardsAddr,
+        TOKEN_REWARDS_MIN_ABI,
+        signer,
+      );
       const tokenIds = collectTokenIds();
 
       // gas estimate
       let gas;
       try {
-        const est = rewards.estimateGas?.claim ? await rewards.estimateGas.claim(tokenIds) : null;
-        gas = est ? (ethers.BigNumber.isBigNumber(est) ? est.mul(110).div(100) : est) : undefined;
+        const est = rewards.estimateGas?.claim
+          ? await rewards.estimateGas.claim(tokenIds)
+          : null;
+        gas = est
+          ? ethers.BigNumber.isBigNumber(est)
+            ? est.mul(110).div(100)
+            : est
+          : undefined;
       } catch {
         gas = undefined;
       }
@@ -944,14 +1099,18 @@ function LiveStats({
       const tx = await rewards.claim(tokenIds, gas ? { gasLimit: gas } : {});
       setClaimMsg(`Pending: ${tx.hash || ""}`);
 
-      const receipt = await (tx.wait ? tx.wait() : provider.waitForTransaction(tx.hash));
+      const receipt = await (tx.wait
+        ? tx.wait()
+        : provider.waitForTransaction(tx.hash));
       if (receipt?.status === 0) throw new Error("Transaction failed");
 
       setClaimMsg("Claim successful");
       alert("Claim successful.");
     } catch (err) {
       console.error("Claim failed", err);
-      const msg = String(err?.reason || err?.data?.message || err?.message || err);
+      const msg = String(
+        err?.reason || err?.data?.message || err?.message || err,
+      );
       setClaimMsg(`Failed: ${msg}`);
       alert(`Claim failed: ${msg}`);
     } finally {
@@ -968,7 +1127,7 @@ function LiveStats({
       cursor: "pointer",
       minWidth: 180,
     }),
-    [isPhone]
+    [isPhone],
   );
 
   const modalOverlayStyle = React.useMemo(
@@ -987,7 +1146,7 @@ function LiveStats({
       backgroundColor: "rgba(0,0,0,0.75)",
       backdropFilter: "blur(6px)",
     }),
-    []
+    [],
   );
 
   const fullscreenModalFrameStyle = React.useMemo(
@@ -999,7 +1158,7 @@ function LiveStats({
       alignItems: "center",
       padding: 0,
     }),
-    []
+    [],
   );
 
   const fullscreenModalCardStyle = React.useMemo(() => {
@@ -1038,7 +1197,7 @@ function LiveStats({
       backdropFilter: "blur(6px)",
       zIndex: 5,
     }),
-    [isPhone]
+    [isPhone],
   );
 
   const handleToggleWeekly = React.useCallback(() => {
@@ -1066,7 +1225,14 @@ function LiveStats({
       { label: "BACKGROUNDS", active: showBgStats, onClick: openBackgrounds },
       { label: "REWARDS", active: showRewards, onClick: openRewards },
     ],
-    [showBlocks, openBlocks, showBgStats, openBackgrounds, showRewards, openRewards]
+    [
+      showBlocks,
+      openBlocks,
+      showBgStats,
+      openBackgrounds,
+      showRewards,
+      openRewards,
+    ],
   );
 
   const topButtonsRow = (
@@ -1089,7 +1255,9 @@ function LiveStats({
           onClick={btn.onClick}
           style={{
             padding: isPhone ? "10px 8px" : "8px 14px",
-            ...(isPhone ? { flex: "1 1 0%", minWidth: 0, textAlign: "center" } : { minWidth: 120 }),
+            ...(isPhone
+              ? { flex: "1 1 0%", minWidth: 0, textAlign: "center" }
+              : { minWidth: 120 }),
             fontWeight: 700,
             borderRadius: 12,
             border: btn.active ? "2px solid #08dfff" : "2px solid #555",
@@ -1099,8 +1267,14 @@ function LiveStats({
             transition: "all 0.3s ease",
             textShadow: "0 1px 3px rgba(0,0,0,0.8)",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 0 12px #08dfff")}
-          onMouseLeave={(e) => (e.currentTarget.style.boxShadow = btn.active ? "0 0 12px #08dfff" : "none")}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.boxShadow = "0 0 12px #08dfff")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.boxShadow = btn.active
+              ? "0 0 12px #08dfff"
+              : "none")
+          }
         >
           {btn.label}
         </button>
@@ -1122,7 +1296,11 @@ function LiveStats({
           const s = val.toString();
           n = Number(s);
         }
-      } else if (typeof val === "string" || typeof val === "number" || typeof val === "bigint") {
+      } else if (
+        typeof val === "string" ||
+        typeof val === "number" ||
+        typeof val === "bigint"
+      ) {
         n = Number(val);
       }
       if (!Number.isFinite(n)) return null;
@@ -1145,11 +1323,22 @@ function LiveStats({
         : null;
 
     return base;
-  }, [lastFinalFromChain, lastFinalPrice, safeBlockNames, lastBlockName, effectiveBlockPrices]);
+  }, [
+    lastFinalFromChain,
+    lastFinalPrice,
+    safeBlockNames,
+    lastBlockName,
+    effectiveBlockPrices,
+  ]);
 
   // If oracle/pair price is missing, fall back to computed final price so the widget always shows a value
   React.useEffect(() => {
-    if (biggiPrice == null && typeof computedFinalPrice === "number" && Number.isFinite(computedFinalPrice) && computedFinalPrice > 0) {
+    if (
+      biggiPrice == null &&
+      typeof computedFinalPrice === "number" &&
+      Number.isFinite(computedFinalPrice) &&
+      computedFinalPrice > 0
+    ) {
       setBiggiPrice(computedFinalPrice);
     }
   }, [biggiPrice, computedFinalPrice]);
@@ -1159,8 +1348,14 @@ function LiveStats({
     const arr = Array.isArray(items) ? items : [];
     for (const it of arr) {
       if (!it || it.isTicket) continue;
-      const attrs = Array.isArray(it.meta?.attributes) ? it.meta.attributes : [];
-      const blockIdAttr = attrs.find((a) => ["block id", "block"].includes(String(a?.trait_type || "").toLowerCase()));
+      const attrs = Array.isArray(it.meta?.attributes)
+        ? it.meta.attributes
+        : [];
+      const blockIdAttr = attrs.find((a) =>
+        ["block id", "block"].includes(
+          String(a?.trait_type || "").toLowerCase(),
+        ),
+      );
       let idx = 0;
       if (blockIdAttr && !Number.isNaN(Number(blockIdAttr.value))) {
         const n = Math.max(1, Math.min(10, Number(blockIdAttr.value)));
@@ -1181,12 +1376,19 @@ function LiveStats({
     return counts;
   }, [items, safeBlockNames]);
 
-  const userUnitsByBlock = React.useMemo(() => userBlockCounts.map((c, i) => c * WEIGHTS[i]), [userBlockCounts, WEIGHTS]);
-  const userTotalUnits = React.useMemo(() => userUnitsByBlock.reduce((a, b) => a + b, 0), [userUnitsByBlock]);
+  const userUnitsByBlock = React.useMemo(
+    () => userBlockCounts.map((c, i) => c * WEIGHTS[i]),
+    [userBlockCounts, WEIGHTS],
+  );
+  const userTotalUnits = React.useMemo(
+    () => userUnitsByBlock.reduce((a, b) => a + b, 0),
+    [userUnitsByBlock],
+  );
 
   const unitsToTokenAmountStr = (units) => {
     try {
-      if (!unitRewardWei || !Number.isFinite(units)) return `${units} ${tokenSymbol}`;
+      if (!unitRewardWei || !Number.isFinite(units))
+        return `${units} ${tokenSymbol}`;
       const amountWei = ethers.BigNumber.isBigNumber(unitRewardWei)
         ? _mul(unitRewardWei, units || 0)
         : _mul(_bn(unitRewardWei), _bn(units || 0));
@@ -1245,7 +1447,8 @@ function LiveStats({
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = "scale(1.05)";
-              e.currentTarget.style.boxShadow = "0 6px 25px rgba(0,0,0,0.7), 0 0 18px #ffe800";
+              e.currentTarget.style.boxShadow =
+                "0 6px 25px rgba(0,0,0,0.7), 0 0 18px #ffe800";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = "scale(1)";
@@ -1269,22 +1472,52 @@ function LiveStats({
             color: "#ffe800",
           }}
         >
-          <div style={{ color: "#fff", textTransform: "uppercase", fontSize: infoCardFontSize }}>
+          <div
+            style={{
+              color: "#fff",
+              textTransform: "uppercase",
+              fontSize: infoCardFontSize,
+            }}
+          >
             LAST NFT:&nbsp;
             <span className="highlight" style={{ color: "#ff0000" }}>
               #{lastNftId}
             </span>
           </div>
-          <div style={{ color: "#fff", textTransform: "uppercase", fontSize: infoCardFontSize }}>
+          <div
+            style={{
+              color: "#fff",
+              textTransform: "uppercase",
+              fontSize: infoCardFontSize,
+            }}
+          >
             BLOCK:&nbsp;
-            <span className="highlight">{String(lastBlockName || "-").toUpperCase()}</span>
+            <span className="highlight">
+              {String(lastBlockName || "-").toUpperCase()}
+            </span>
           </div>
-          <div style={{ color: "#fff", textTransform: "uppercase", fontSize: infoCardFontSize }}>
+          <div
+            style={{
+              color: "#fff",
+              textTransform: "uppercase",
+              fontSize: infoCardFontSize,
+            }}
+          >
             BACKGROUND:&nbsp;
-            <span className="highlight">{String(lastBackgroundName || "-").toUpperCase()}</span>
+            <span className="highlight">
+              {String(lastBackgroundName || "-").toUpperCase()}
+            </span>
           </div>
           <div>
-            <span className="highlight" style={{ color: "#5ddcff", fontSize: infoCardBigFontSize, fontWeight: 800, whiteSpace: "nowrap" }}>
+            <span
+              className="highlight"
+              style={{
+                color: "#5ddcff",
+                fontSize: infoCardBigFontSize,
+                fontWeight: 800,
+                whiteSpace: "nowrap",
+              }}
+            >
               {computedFinalPrice !== null ? `${computedFinalPrice} POL` : "-"}
             </span>
           </div>
@@ -1302,7 +1535,10 @@ function LiveStats({
             </span>{" "}
             / <span style={{ color: "#fff" }}>{maxTickets}</span>
           </div>
-          <div className="widget-title" style={{ ...titleStyle, marginTop: isPhone ? 6 : 8 }}>
+          <div
+            className="widget-title"
+            style={{ ...titleStyle, marginTop: isPhone ? 6 : 8 }}
+          >
             NFT MINTED
           </div>
           <div style={{ fontSize: boxFontSize }}>
@@ -1318,8 +1554,17 @@ function LiveStats({
             TICKET PRICE
           </div>
           <div>
-            <span className="highlight" style={{ color: "#5ddcff", fontWeight: 900, fontSize: boxBigFontSize }}>
-              {typeof ticketPrice === "number" ? ticketPrice.toFixed(3) : ticketPrice || "-"}
+            <span
+              className="highlight"
+              style={{
+                color: "#5ddcff",
+                fontWeight: 900,
+                fontSize: boxBigFontSize,
+              }}
+            >
+              {typeof ticketPrice === "number"
+                ? ticketPrice.toFixed(3)
+                : ticketPrice || "-"}
             </span>
           </div>
         </div>
@@ -1331,21 +1576,40 @@ function LiveStats({
             BIGGI PRICE
           </div>
           <div style={{ fontSize: boxFontSize }}>
-            <span className="highlight" style={{ color: "#5ddcff", fontWeight: 900, fontSize: boxBigFontSize }}>
-              {typeof biggiPrice === "number" ? `${biggiPrice.toFixed(biggiPrice >= 1 ? 3 : 6)} ${priceQuoteSymbol}` : "-"}
+            <span
+              className="highlight"
+              style={{
+                color: "#5ddcff",
+                fontWeight: 900,
+                fontSize: boxBigFontSize,
+              }}
+            >
+              {typeof biggiPrice === "number"
+                ? `${biggiPrice.toFixed(biggiPrice >= 1 ? 3 : 6)} ${priceQuoteSymbol}`
+                : "-"}
             </span>
           </div>
-          <div className="widget-title" style={{ ...titleStyle, marginTop: isPhone ? 6 : 8 }}>
+          <div
+            className="widget-title"
+            style={{ ...titleStyle, marginTop: isPhone ? 6 : 8 }}
+          >
             24H CHANGE
           </div>
           <div
             style={{
               fontWeight: 900,
-              color: biggiChange24h == null ? "#aaa" : biggiChange24h >= 0 ? "#47ff9a" : "#ff6b6b",
+              color:
+                biggiChange24h == null
+                  ? "#aaa"
+                  : biggiChange24h >= 0
+                    ? "#47ff9a"
+                    : "#ff6b6b",
               fontSize: boxFontSize,
             }}
           >
-            {typeof biggiChange24h === "number" ? `${biggiChange24h.toFixed(2)} %` : "-"}
+            {typeof biggiChange24h === "number"
+              ? `${biggiChange24h.toFixed(2)} %`
+              : "-"}
           </div>
         </div>
 
@@ -1353,14 +1617,33 @@ function LiveStats({
           <div className="widget-title" style={titleStyle}>
             SUPPLY
           </div>
-          <div style={{ fontSize: boxFontSize, color: "#ffe800", fontWeight: 900 }}>
-            {typeof biggiSupply === "number" ? biggiSupply.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "-"} {tokenSymbol}
+          <div
+            style={{ fontSize: boxFontSize, color: "#ffe800", fontWeight: 900 }}
+          >
+            {typeof biggiSupply === "number"
+              ? biggiSupply.toLocaleString(undefined, {
+                  maximumFractionDigits: 2,
+                })
+              : "-"}{" "}
+            {tokenSymbol}
           </div>
-          <div className="widget-title" style={{ ...titleStyle, marginTop: isPhone ? 6 : 8 }}>
+          <div
+            className="widget-title"
+            style={{ ...titleStyle, marginTop: isPhone ? 6 : 8 }}
+          >
             MARKET CAP
           </div>
-          <div style={{ color: "#5ddcff", fontWeight: 900, fontSize: boxBigFontSize, whiteSpace: "nowrap" }}>
-            {typeof biggiMcap === "number" ? `${biggiMcap.toLocaleString(undefined, { maximumFractionDigits: 2 })} POL` : "-"}
+          <div
+            style={{
+              color: "#5ddcff",
+              fontWeight: 900,
+              fontSize: boxBigFontSize,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {typeof biggiMcap === "number"
+              ? `${biggiMcap.toLocaleString(undefined, { maximumFractionDigits: 2 })} POL`
+              : "-"}
           </div>
         </div>
       </div>
@@ -1375,7 +1658,15 @@ function LiveStats({
         <>
           {mainStats}
 
-          <div style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap", marginTop: isPhone ? 8 : 12 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: 12,
+              flexWrap: "wrap",
+              marginTop: isPhone ? 8 : 12,
+            }}
+          >
             <button
               ref={weeklyBtnRef}
               onClick={handleToggleWeekly}
@@ -1390,11 +1681,13 @@ function LiveStats({
               }}
               onMouseEnter={(event) => {
                 event.currentTarget.style.transform = "translateY(-2px)";
-                event.currentTarget.style.boxShadow = "0 0 20px rgba(8,223,255,0.4)";
+                event.currentTarget.style.boxShadow =
+                  "0 0 20px rgba(8,223,255,0.4)";
               }}
               onMouseLeave={(event) => {
                 event.currentTarget.style.transform = "none";
-                event.currentTarget.style.boxShadow = "0 0 14px rgba(8,223,255,0.25)";
+                event.currentTarget.style.boxShadow =
+                  "0 0 14px rgba(8,223,255,0.25)";
               }}
             >
               BIGGI WEEKLY
@@ -1413,11 +1706,13 @@ function LiveStats({
               }}
               onMouseEnter={(event) => {
                 event.currentTarget.style.transform = "translateY(-2px)";
-                event.currentTarget.style.boxShadow = "0 0 20px rgba(255,232,0,0.4)";
+                event.currentTarget.style.boxShadow =
+                  "0 0 20px rgba(255,232,0,0.4)";
               }}
               onMouseLeave={(event) => {
                 event.currentTarget.style.transform = "none";
-                event.currentTarget.style.boxShadow = "0 0 14px rgba(255,232,0,0.25)";
+                event.currentTarget.style.boxShadow =
+                  "0 0 14px rgba(255,232,0,0.25)";
               }}
             >
               POOLS
@@ -1436,11 +1731,13 @@ function LiveStats({
               }}
               onMouseEnter={(event) => {
                 event.currentTarget.style.transform = "translateY(-2px)";
-                event.currentTarget.style.boxShadow = "0 0 20px rgba(255,232,0,0.4)";
+                event.currentTarget.style.boxShadow =
+                  "0 0 20px rgba(255,232,0,0.4)";
               }}
               onMouseLeave={(event) => {
                 event.currentTarget.style.transform = "none";
-                event.currentTarget.style.boxShadow = "0 0 14px rgba(255,232,0,0.25)";
+                event.currentTarget.style.boxShadow =
+                  "0 0 14px rgba(255,232,0,0.25)";
               }}
             >
               LIVE CHAT
@@ -1452,7 +1749,10 @@ function LiveStats({
             <ModalPortal lockScroll={false}>
               <div style={modalOverlayStyle}>
                 <div style={{ ...fullscreenModalFrameStyle, padding: 0 }}>
-                  <div style={fullscreenModalCardStyle} className="wc-fullscreen-shell">
+                  <div
+                    style={fullscreenModalCardStyle}
+                    className="wc-fullscreen-shell"
+                  >
                     <button
                       type="button"
                       className="wc-fullscreen-close"
@@ -1462,13 +1762,13 @@ function LiveStats({
                       Close
                     </button>
                     <div className="wc-fullscreen-wrapper">
-                  <WeeklyCountdown
-                    info={weeklyCountdownInfo}
-                    isClaiming={weeklyIsClaiming}
-                    claimSuccess={weeklyClaimSuccess}
-                    onClaim={weeklyHandleClaim}
-                    onRefresh={syncWeeklyInfo}
-                  />
+                      <WeeklyCountdown
+                        info={weeklyCountdownInfo}
+                        isClaiming={weeklyIsClaiming}
+                        claimSuccess={weeklyClaimSuccess}
+                        onClaim={weeklyHandleClaim}
+                        onRefresh={syncWeeklyInfo}
+                      />
                     </div>
                   </div>
                 </div>
@@ -1482,7 +1782,9 @@ function LiveStats({
                 <div style={fullscreenModalFrameStyle}>
                   <div style={fullscreenModalCardStyle}>
                     <div style={modalHeaderStyle}>
-                      <div style={{ color: "#ffe800", fontWeight: 900 }}>POOLS</div>
+                      <div style={{ color: "#ffe800", fontWeight: 900 }}>
+                        POOLS
+                      </div>
                       <button
                         onClick={() => setPoolsOpen(false)}
                         aria-label="Close pools"
@@ -1501,7 +1803,10 @@ function LiveStats({
                       </button>
                     </div>
 
-                    <div className="pools-card" style={{ marginTop: isPhone ? 8 : 12 }}>
+                    <div
+                      className="pools-card"
+                      style={{ marginTop: isPhone ? 8 : 12 }}
+                    >
                       <div className="pools-card__header">
                         <div style={{ color: "#cfefff", fontSize: 12 }}>
                           Distributor:&nbsp;
@@ -1509,7 +1814,10 @@ function LiveStats({
                             href={`${OKLINK_BASE}${pools?.distributor || ADDR.DISTRIBUTOR}`}
                             target="_blank"
                             rel="noreferrer"
-                            style={{ color: "#ffe800", textDecoration: "underline" }}
+                            style={{
+                              color: "#ffe800",
+                              textDecoration: "underline",
+                            }}
                           >
                             {pools?.distributor || ADDR.DISTRIBUTOR}
                           </a>
@@ -1517,17 +1825,35 @@ function LiveStats({
                             <>
                               {" "}
                               &nbsp;|&nbsp; Balance:{" "}
-                              <span style={{ color: "#5ddcff", fontWeight: 800 }}>{fmtPOL(pools.distributorBal)} POL</span>
+                              <span
+                                style={{ color: "#5ddcff", fontWeight: 800 }}
+                              >
+                                {fmtPOL(pools.distributorBal)} POL
+                              </span>
                             </>
                           )}
                         </div>
-                        <div style={{ marginTop: 6, color: "#cfefff", fontSize: 12 }}>
+                        <div
+                          style={{
+                            marginTop: 6,
+                            color: "#cfefff",
+                            fontSize: 12,
+                          }}
+                        >
                           {pools ? (
                             <>
                               Total received:{" "}
-                              <span style={{ color: "#5ddcff", fontWeight: 800 }}>{fmtPOL(pools.totalReceived)} POL</span>
+                              <span
+                                style={{ color: "#5ddcff", fontWeight: 800 }}
+                              >
+                                {fmtPOL(pools.totalReceived)} POL
+                              </span>
                               &nbsp;|&nbsp; For MAIN:{" "}
-                              <span style={{ color: "#5ddcff", fontWeight: 800 }}>{fmtPOL(pools.receivedForMain)} POL</span>
+                              <span
+                                style={{ color: "#5ddcff", fontWeight: 800 }}
+                              >
+                                {fmtPOL(pools.receivedForMain)} POL
+                              </span>
                             </>
                           ) : (
                             "Loading..."
@@ -1536,157 +1862,246 @@ function LiveStats({
                       </div>
                       <div className="pools-card__body">
                         <table className="pools-table" style={poolsTableStyle}>
-                      <colgroup>
-                        <col style={{ width: "26%" }} />
-                        <col style={{ width: "54%" }} />
-                        <col style={{ width: "20%" }} />
-                      </colgroup>
-                      <thead>
-                        <tr>
-                          <th style={{ ...thBase, borderTopLeftRadius: 12 }}>Pool</th>
-                          <th style={thBase}>Address</th>
-                          <th style={{ ...thBase, borderTopRightRadius: 12 }}>Balance</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(pools?.targets || []).map((t, i) => {
-                          const rowBg =
-                            i % 2 === 0
-                              ? "linear-gradient(120deg, rgba(255,232,0,0.08), rgba(8,223,255,0.08))"
-                              : "linear-gradient(120deg, rgba(255,232,0,0.03), rgba(8,223,255,0.04))";
-                          const bal = t.key && pools?.balances?.[t.key] != null ? fmtPOL(pools.balances[t.key]) : "-";
+                          <colgroup>
+                            <col style={{ width: "26%" }} />
+                            <col style={{ width: "54%" }} />
+                            <col style={{ width: "20%" }} />
+                          </colgroup>
+                          <thead>
+                            <tr>
+                              <th
+                                style={{ ...thBase, borderTopLeftRadius: 12 }}
+                              >
+                                Pool
+                              </th>
+                              <th style={thBase}>Address</th>
+                              <th
+                                style={{ ...thBase, borderTopRightRadius: 12 }}
+                              >
+                                Balance
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(pools?.targets || []).map((t, i) => {
+                              const rowBg =
+                                i % 2 === 0
+                                  ? "linear-gradient(120deg, rgba(255,232,0,0.08), rgba(8,223,255,0.08))"
+                                  : "linear-gradient(120deg, rgba(255,232,0,0.03), rgba(8,223,255,0.04))";
+                              const bal =
+                                t.key && pools?.balances?.[t.key] != null
+                                  ? fmtPOL(pools.balances[t.key])
+                                  : "-";
 
-                          const prettyName = t.key === "rewards" ? "Collections" : t.key === "buyback" ? "Buyback" : t.name;
-                          const keyLabel = (t.key || "").replace(/_/g, " ").toUpperCase();
+                              const prettyName =
+                                t.key === "rewards"
+                                  ? "Collections"
+                                  : t.key === "buyback"
+                                    ? "Buyback"
+                                    : t.name;
+                              const keyLabel = (t.key || "")
+                                .replace(/_/g, " ")
+                                .toUpperCase();
 
-                          return (
-                            <tr key={t.key} style={{ background: rowBg }}>
-                              <td style={{ ...tdBase, color: "#ffe800", fontWeight: 900, whiteSpace: "nowrap", textAlign: "left" }}>
-                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                                  <span>{prettyName}</span>
-                                  <span
+                              return (
+                                <tr key={t.key} style={{ background: rowBg }}>
+                                  <td
                                     style={{
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: 6,
-                                      fontSize: 11,
-                                      letterSpacing: 0.2,
-                                      textTransform: "uppercase",
-                                      color: "#0de6ff",
-                                      padding: "2px 8px",
-                                      borderRadius: 999,
-                                      border: "1px solid rgba(13,230,255,0.35)",
-                                      background: "rgba(13,230,255,0.09)",
-                                      width: "fit-content",
+                                      ...tdBase,
+                                      color: "#ffe800",
+                                      fontWeight: 900,
+                                      whiteSpace: "nowrap",
+                                      textAlign: "left",
                                     }}
                                   >
-                                    {keyLabel || "POOL"}
-                                  </span>
-                                </div>
-                              </td>
-                              <td style={{ ...tdBase, textAlign: "left" }}>
-                                <div
-                                  style={{
-                                    border: "1px solid rgba(255,255,255,0.12)",
-                                    borderRadius: 16,
-                                    padding: isPhone ? "10px" : "14px",
-                                    background: "linear-gradient(135deg, rgba(255,255,255,0.04), rgba(8,223,255,0.08))",
-                                    boxShadow: "0 12px 28px rgba(0,0,0,0.35)",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: 10,
-                                  }}
-                                >
-                                  <div
-                                    style={{
-                                      display: "flex",
-                                      flexDirection: isPhone ? "column" : "row",
-                                      gap: 8,
-                                      justifyContent: "space-between",
-                                      alignItems: isPhone ? "flex-start" : "center",
-                                    }}
-                                  >
-                                    <span style={{ fontSize: 11, color: "#9fb4c9", letterSpacing: 0.3 }}>Address</span>
-                                    <code
+                                    <div
                                       style={{
-                                        fontFamily: "'JetBrains Mono','SFMono-Regular',monospace",
-                                        fontSize: isPhone ? 11 : 12,
-                                        color: "#fff",
-                                        wordBreak: "break-word",
-                                        lineHeight: 1.3,
-                                      }}
-                                      title={t.addr}
-                                    >
-                                      {t.addr}
-                                    </code>
-                                  </div>
-                                  <div
-                                    style={{
-                                      display: "flex",
-                                      flexDirection: isPhone ? "column" : "row",
-                                      gap: 8,
-                                      justifyContent: "space-between",
-                                      alignItems: isPhone ? "flex-start" : "center",
-                                    }}
-                                  >
-                                    <span style={{ fontSize: 11, color: "#9fb4c9", letterSpacing: 0.3 }}>Explorer</span>
-                                    <a
-                                      href={`${OKLINK_BASE}${t.addr}`}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      style={{
-                                        color: "#5ddcff",
-                                        textDecoration: "none",
-                                        fontSize: isPhone ? 11 : 12,
-                                        fontWeight: 800,
-                                        display: "inline-flex",
-                                        alignItems: "center",
+                                        display: "flex",
+                                        flexDirection: "column",
                                         gap: 6,
                                       }}
                                     >
-                                      View on OKLink
-                                      <span aria-hidden="true" style={{ fontSize: 14, color: "#ffe800" }}>
-                                        {"\u2197"}
+                                      <span>{prettyName}</span>
+                                      <span
+                                        style={{
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                          gap: 6,
+                                          fontSize: 11,
+                                          letterSpacing: 0.2,
+                                          textTransform: "uppercase",
+                                          color: "#0de6ff",
+                                          padding: "2px 8px",
+                                          borderRadius: 999,
+                                          border:
+                                            "1px solid rgba(13,230,255,0.35)",
+                                          background: "rgba(13,230,255,0.09)",
+                                          width: "fit-content",
+                                        }}
+                                      >
+                                        {keyLabel || "POOL"}
                                       </span>
-                                    </a>
-                                  </div>
-                                </div>
-                              </td>
-                              <td style={{ ...tdBase, whiteSpace: "nowrap" }}>
-                                <div
-                                  style={{
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                    padding: "6px 14px",
-                                    borderRadius: 999,
-                                    border: "1px solid rgba(93,220,255,0.45)",
-                                    background: "linear-gradient(120deg, rgba(8,223,255,0.15), rgba(255,232,0,0.12))",
-                                    color: "#5ddcff",
-                                    fontWeight: 900,
-                                    boxShadow: "0 8px 18px rgba(0,0,0,0.35)",
-                                  }}
+                                    </div>
+                                  </td>
+                                  <td style={{ ...tdBase, textAlign: "left" }}>
+                                    <div
+                                      style={{
+                                        border:
+                                          "1px solid rgba(255,255,255,0.12)",
+                                        borderRadius: 16,
+                                        padding: isPhone ? "10px" : "14px",
+                                        background:
+                                          "linear-gradient(135deg, rgba(255,255,255,0.04), rgba(8,223,255,0.08))",
+                                        boxShadow:
+                                          "0 12px 28px rgba(0,0,0,0.35)",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 10,
+                                      }}
+                                    >
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          flexDirection: isPhone
+                                            ? "column"
+                                            : "row",
+                                          gap: 8,
+                                          justifyContent: "space-between",
+                                          alignItems: isPhone
+                                            ? "flex-start"
+                                            : "center",
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            fontSize: 11,
+                                            color: "#9fb4c9",
+                                            letterSpacing: 0.3,
+                                          }}
+                                        >
+                                          Address
+                                        </span>
+                                        <code
+                                          style={{
+                                            fontFamily:
+                                              "'JetBrains Mono','SFMono-Regular',monospace",
+                                            fontSize: isPhone ? 11 : 12,
+                                            color: "#fff",
+                                            wordBreak: "break-word",
+                                            lineHeight: 1.3,
+                                          }}
+                                          title={t.addr}
+                                        >
+                                          {t.addr}
+                                        </code>
+                                      </div>
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          flexDirection: isPhone
+                                            ? "column"
+                                            : "row",
+                                          gap: 8,
+                                          justifyContent: "space-between",
+                                          alignItems: isPhone
+                                            ? "flex-start"
+                                            : "center",
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            fontSize: 11,
+                                            color: "#9fb4c9",
+                                            letterSpacing: 0.3,
+                                          }}
+                                        >
+                                          Explorer
+                                        </span>
+                                        <a
+                                          href={`${OKLINK_BASE}${t.addr}`}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          style={{
+                                            color: "#5ddcff",
+                                            textDecoration: "none",
+                                            fontSize: isPhone ? 11 : 12,
+                                            fontWeight: 800,
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: 6,
+                                          }}
+                                        >
+                                          View on OKLink
+                                          <span
+                                            aria-hidden="true"
+                                            style={{
+                                              fontSize: 14,
+                                              color: "#ffe800",
+                                            }}
+                                          >
+                                            {"\u2197"}
+                                          </span>
+                                        </a>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td
+                                    style={{ ...tdBase, whiteSpace: "nowrap" }}
+                                  >
+                                    <div
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: 6,
+                                        padding: "6px 14px",
+                                        borderRadius: 999,
+                                        border:
+                                          "1px solid rgba(93,220,255,0.45)",
+                                        background:
+                                          "linear-gradient(120deg, rgba(8,223,255,0.15), rgba(255,232,0,0.12))",
+                                        color: "#5ddcff",
+                                        fontWeight: 900,
+                                        boxShadow:
+                                          "0 8px 18px rgba(0,0,0,0.35)",
+                                      }}
+                                    >
+                                      <span>{bal}</span>
+                                      <span
+                                        style={{
+                                          fontSize: 11,
+                                          color: "#ffe800",
+                                          letterSpacing: 1,
+                                        }}
+                                      >
+                                        POL
+                                      </span>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                            {(!pools || (pools.targets || []).length === 0) && (
+                              <tr>
+                                <td
+                                  colSpan={3}
+                                  style={{ ...tdBase, color: "#aaa" }}
                                 >
-                                  <span>{bal}</span>
-                                  <span style={{ fontSize: 11, color: "#ffe800", letterSpacing: 1 }}>POL</span>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                        {(!pools || (pools.targets || []).length === 0) && (
-                          <tr>
-                            <td colSpan={3} style={{ ...tdBase, color: "#aaa" }}>
-                              Loading...
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
+                                  Loading...
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
                         </table>
                       </div>
                     </div>
 
-                    <div style={{ marginTop: isPhone ? 10 : 12, display: "flex", justifyContent: "center" }}>
+                    <div
+                      style={{
+                        marginTop: isPhone ? 10 : 12,
+                        display: "flex",
+                        justifyContent: "center",
+                      }}
+                    >
                       <button
                         onClick={() => setPoolsOpen(false)}
                         style={{
@@ -1715,7 +2130,9 @@ function LiveStats({
                 <div style={fullscreenModalFrameStyle}>
                   <div style={fullscreenModalCardStyle}>
                     <div style={modalHeaderStyle}>
-                      <div style={{ color: "#ffe800", fontWeight: 900 }}>LIVE CHAT</div>
+                      <div style={{ color: "#ffe800", fontWeight: 900 }}>
+                        LIVE CHAT
+                      </div>
                       <button
                         onClick={() => setChatOpen(false)}
                         aria-label="Close live chat"
@@ -1741,7 +2158,6 @@ function LiveStats({
               </div>
             </ModalPortal>
           )}
-
         </>
       )}
 
@@ -1766,7 +2182,9 @@ function LiveStats({
       {showRewards && (
         <RewardsWidget
           onBack={resetAll}
-          rewardsPool={typeof computedRewardsPool === "number" ? computedRewardsPool : 0}
+          rewardsPool={
+            typeof computedRewardsPool === "number" ? computedRewardsPool : 0
+          }
           myClaimable={typeof myClaimable === "number" ? myClaimable : null}
         />
       )}

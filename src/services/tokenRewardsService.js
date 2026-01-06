@@ -49,45 +49,112 @@ export default class TokenRewardsService {
   }
 
   // --------- View getters (ABI) ---------
-  async allowedCollections(addr) { return await this.contract.allowedCollections(addr); } // bool
-  async blockWeight() { return await this.contract.blockWeight(); } // uint8
-  async claimablePreview(tokenIds) { return await this.contract.claimablePreview(tokenIds); } // (units, amount)
-  async claimablePreviewFor(collections, tokenIds) { return await this.contract.claimablePreviewFor(collections, tokenIds); } // (units, amount)
-  async currentWeek() { return await this.contract.currentWeek(); } // uint64
-  async distributedThisWeek() { return await this.contract.distributedThisWeek(); } // uint256
-  async getBlockWeights() { return await this.contract.getBlockWeights(); } // uint8[11]
-  async isAllowedCollection(coll) { return await this.contract.isAllowedCollection(coll); } // bool
-  async lastRecordedWeek() { return await this.contract.lastRecordedWeek(); } // uint64
-  async lastUserClaimWeek(addr) { return await this.contract.lastUserClaimWeek(addr); } // uint64 (mapping)
-  async lastWeekDistributed() { return await this.contract.lastWeekDistributed(); } // uint256
-  async main2NFT() { return await this.contract.main2NFT(); } // address
-  async mainNFT() { return await this.contract.mainNFT(); } // address
-  async nextClaimWeekFor(tokenId) { return await this.contract.nextClaimWeekFor(tokenId); } // uint64
-  async nextClaimWeekForCollection(collection, tokenId) { return await this.contract.nextClaimWeekForCollection(collection, tokenId); } // uint64
-  async owner() { return await this.contract.owner(); } // address
-  async paused() { return await this.contract.paused(); } // bool
-  async remainingCap() { return await this.contract.remainingCap(); } // BigNumber
-  async rewardsCap() { return await this.contract.rewardsCap(); }
-  async rewardsMinted() { return await this.contract.rewardsMinted(); }
-  async rewardsStats() { return await this.contract.rewardsStats(); } // (minted, cap_)
-  async tokenAddress() { return await this.contract.tokenAddress(); } // address
-  async tokenLastClaimWeek(collection, tokenId) { return await this.contract.tokenLastClaimWeek(collection, tokenId); } // uint64 mapping
-  async tokenMeta() { return await this.contract.tokenMeta(); } // (name,symbol,decimals)
-  async totalDistributed() { return await this.contract.totalDistributed(); } // BigNumber
-  async treasure() { return await this.contract.treasure(); } // address
-  async unitReward() { return await this.contract.unitReward(); } // BigNumber
+  async allowedCollections(addr) {
+    return await this.contract.allowedCollections(addr);
+  } // bool
+  async blockWeight() {
+    return await this.contract.blockWeight();
+  } // uint8
+  async claimablePreview(tokenIds) {
+    return await this.contract.claimablePreview(tokenIds);
+  } // (units, amount)
+  async claimablePreviewFor(collections, tokenIds) {
+    return await this.contract.claimablePreviewFor(collections, tokenIds);
+  } // (units, amount)
+  async currentWeek() {
+    return await this.contract.currentWeek();
+  } // uint64
+  async distributedThisWeek() {
+    return await this.contract.distributedThisWeek();
+  } // uint256
+  async getBlockWeights() {
+    return await this.contract.getBlockWeights();
+  } // uint8[11]
+  async isAllowedCollection(coll) {
+    return await this.contract.isAllowedCollection(coll);
+  } // bool
+  async lastRecordedWeek() {
+    return await this.contract.lastRecordedWeek();
+  } // uint64
+  async lastUserClaimWeek(addr) {
+    return await this.contract.lastUserClaimWeek(addr);
+  } // uint64 (mapping)
+  async lastWeekDistributed() {
+    return await this.contract.lastWeekDistributed();
+  } // uint256
+  async main2NFT() {
+    return await this.contract.main2NFT();
+  } // address
+  async mainNFT() {
+    return await this.contract.mainNFT();
+  } // address
+  async nextClaimWeekFor(tokenId) {
+    return await this.contract.nextClaimWeekFor(tokenId);
+  } // uint64
+  async nextClaimWeekForCollection(collection, tokenId) {
+    return await this.contract.nextClaimWeekForCollection(collection, tokenId);
+  } // uint64
+  async owner() {
+    return await this.contract.owner();
+  } // address
+  async paused() {
+    return await this.contract.paused();
+  } // bool
+  async remainingCap() {
+    return await this.contract.remainingCap();
+  } // BigNumber
+  async rewardsCap() {
+    return await this.contract.rewardsCap();
+  }
+  async rewardsMinted() {
+    return await this.contract.rewardsMinted();
+  }
+  async rewardsStats() {
+    return await this.contract.rewardsStats();
+  } // (minted, cap_)
+  async tokenAddress() {
+    return await this.contract.tokenAddress();
+  } // address
+  async tokenLastClaimWeek(collection, tokenId) {
+    return await this.contract.tokenLastClaimWeek(collection, tokenId);
+  } // uint64 mapping
+  async tokenMeta() {
+    return await this.contract.tokenMeta();
+  } // (name,symbol,decimals)
+  async totalDistributed() {
+    return await this.contract.totalDistributed();
+  } // BigNumber
+  async treasure() {
+    return await this.contract.treasure();
+  } // address
+  async unitReward() {
+    return await this.contract.unitReward();
+  } // BigNumber
 
   // --------- Write methods (claim) ----------
   // internal tx sender: estimate gas (+ buffer) -> send -> wait(1)
   async _sendTx(methodName, args = [], overrides = {}) {
-    if (!this._signerConnected) throw new Error("Signer not connected. Call connectWithSigner(signer) first.");
+    if (!this._signerConnected)
+      throw new Error(
+        "Signer not connected. Call connectWithSigner(signer) first.",
+      );
     try {
       const method = this.contract[methodName];
-      if (!method) throw new Error("Method not found on contract: " + methodName);
+      if (!method)
+        throw new Error("Method not found on contract: " + methodName);
       // attempt gas estimate
       let gasEstimate = null;
-      try { gasEstimate = await this.contract.estimateGas[methodName](...args, overrides); } catch { gasEstimate = null; }
-      const sendOverrides = gasEstimate ? { gasLimit: gasEstimate.mul(120).div(100), ...overrides } : overrides;
+      try {
+        gasEstimate = await this.contract.estimateGas[methodName](
+          ...args,
+          overrides,
+        );
+      } catch {
+        gasEstimate = null;
+      }
+      const sendOverrides = gasEstimate
+        ? { gasLimit: gasEstimate.mul(120).div(100), ...overrides }
+        : overrides;
       const tx = await method(...args, sendOverrides);
       const receipt = await tx.wait(1);
       return receipt;
@@ -112,7 +179,11 @@ export default class TokenRewardsService {
    * @param {Array<number|string>} tokenIds
    */
   async claimWithCollections(collections, tokenIds, overrides = {}) {
-    return await this._sendTx("claimWithCollections", [collections, tokenIds], overrides);
+    return await this._sendTx(
+      "claimWithCollections",
+      [collections, tokenIds],
+      overrides,
+    );
   }
 
   // --------- Batch helper: getAllStats ----------
@@ -133,18 +204,44 @@ export default class TokenRewardsService {
       this.main2NFT(),
       this.owner(),
       this.paused(),
-      this.treasure()
+      this.treasure(),
     ];
     const [
-      unitReward, rewardsMinted, rewardsCap, remainingCap, totalDistributed,
-      distributedThisWeek, currentWeek, lastRecordedWeek, lastWeekDistributed, blockWeights,
-      tokenMeta, mainNFT, main2NFT, owner, paused, treasure
+      unitReward,
+      rewardsMinted,
+      rewardsCap,
+      remainingCap,
+      totalDistributed,
+      distributedThisWeek,
+      currentWeek,
+      lastRecordedWeek,
+      lastWeekDistributed,
+      blockWeights,
+      tokenMeta,
+      mainNFT,
+      main2NFT,
+      owner,
+      paused,
+      treasure,
     ] = await Promise.all(calls);
 
     return {
-      unitReward, rewardsMinted, rewardsCap, remainingCap, totalDistributed,
-      distributedThisWeek, currentWeek, lastRecordedWeek, lastWeekDistributed, blockWeights,
-      tokenMeta, mainNFT, main2NFT, owner, paused, treasure
+      unitReward,
+      rewardsMinted,
+      rewardsCap,
+      remainingCap,
+      totalDistributed,
+      distributedThisWeek,
+      currentWeek,
+      lastRecordedWeek,
+      lastWeekDistributed,
+      blockWeights,
+      tokenMeta,
+      mainNFT,
+      main2NFT,
+      owner,
+      paused,
+      treasure,
     };
   }
 
@@ -182,22 +279,38 @@ export default class TokenRewardsService {
     const decimals = statsObj?.tokenMeta?.decimals_ ?? 18;
     return {
       unitReward: TokenRewardsService.bnToString(statsObj.unitReward, decimals),
-      rewardsMinted: TokenRewardsService.bnToString(statsObj.rewardsMinted, decimals),
+      rewardsMinted: TokenRewardsService.bnToString(
+        statsObj.rewardsMinted,
+        decimals,
+      ),
       rewardsCap: TokenRewardsService.bnToString(statsObj.rewardsCap, decimals),
-      remainingCap: TokenRewardsService.bnToString(statsObj.remainingCap, decimals),
-      totalDistributed: TokenRewardsService.bnToString(statsObj.totalDistributed, decimals),
-      distributedThisWeek: TokenRewardsService.bnToString(statsObj.distributedThisWeek, decimals),
+      remainingCap: TokenRewardsService.bnToString(
+        statsObj.remainingCap,
+        decimals,
+      ),
+      totalDistributed: TokenRewardsService.bnToString(
+        statsObj.totalDistributed,
+        decimals,
+      ),
+      distributedThisWeek: TokenRewardsService.bnToString(
+        statsObj.distributedThisWeek,
+        decimals,
+      ),
       // leaving other non-BN fields as-is
       currentWeek: statsObj.currentWeek?.toString?.() ?? statsObj.currentWeek,
-      lastRecordedWeek: statsObj.lastRecordedWeek?.toString?.() ?? statsObj.lastRecordedWeek,
-      lastWeekDistributed: TokenRewardsService.bnToString(statsObj.lastWeekDistributed, decimals),
+      lastRecordedWeek:
+        statsObj.lastRecordedWeek?.toString?.() ?? statsObj.lastRecordedWeek,
+      lastWeekDistributed: TokenRewardsService.bnToString(
+        statsObj.lastWeekDistributed,
+        decimals,
+      ),
       blockWeights: statsObj.blockWeights,
       tokenMeta: statsObj.tokenMeta,
       mainNFT: statsObj.mainNFT,
       main2NFT: statsObj.main2NFT,
       owner: statsObj.owner,
       paused: statsObj.paused,
-      treasure: statsObj.treasure
+      treasure: statsObj.treasure,
     };
   }
 }

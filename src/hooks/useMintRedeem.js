@@ -36,17 +36,22 @@ export function useMintRedeem(params) {
 
   const resolveTicketPriceWei = React.useCallback(async () => {
     const c = contractRef.current || getReadOnlyContract();
-    const candidates = ["getTicketPrice", "ticketPrice", "getTicketPriceWei", "ticketPriceWei"];
+    const candidates = [
+      "getTicketPrice",
+      "ticketPrice",
+      "getTicketPriceWei",
+      "ticketPriceWei",
+    ];
     for (const n of candidates) {
       const f = c[n];
-        if (typeof f === "function") {
-          try {
-            const v = await f();
-            if (v != null) return ethers.BigNumber.from(v);
-          } catch (err) {
-            console.debug("resolveTicketPriceWei candidate failed", n, err);
-          }
+      if (typeof f === "function") {
+        try {
+          const v = await f();
+          if (v != null) return ethers.BigNumber.from(v);
+        } catch (err) {
+          console.debug("resolveTicketPriceWei candidate failed", n, err);
         }
+      }
     }
     const reader = typeof getReaderRO === "function" ? getReaderRO() : null;
     const snap = await getFrontendSnapshotLiteActive(reader);
@@ -68,7 +73,9 @@ export function useMintRedeem(params) {
 
       if (typeof contract.mintTicket !== "function") {
         if (typeof contract.mintPublic === "function") {
-          alert("Tento kontrakt je public (main2). Mint lístků není podporovaný. Použij Collection 2 panel.");
+          alert(
+            "Tento kontrakt je public (main2). Mint lístků není podporovaný. Použij Collection 2 panel.",
+          );
         } else {
           alert("Mint není na tomto kontraktu dostupný.");
         }
@@ -80,11 +87,15 @@ export function useMintRedeem(params) {
         if (typeof contract.distributor === "function") {
           const dist = await contract.distributor().catch(() => "");
           if (!dist || dist === ethers.constants.AddressZero) {
-            return alert("Distributor není nastavený na kontraktu. Mint nebude fungovat.");
+            return alert(
+              "Distributor není nastavený na kontraktu. Mint nebude fungovat.",
+            );
           }
           const code = await contract.provider.getCode(dist).catch(() => "0x");
           if (!code || code === "0x") {
-            return alert("Distributor adresa nemá žádný bytecode. Zkontroluj konfiguraci kontraktu.");
+            return alert(
+              "Distributor adresa nemá žádný bytecode. Zkontroluj konfiguraci kontraktu.",
+            );
           }
         }
       } catch (err) {
@@ -103,7 +114,10 @@ export function useMintRedeem(params) {
         const msg =
           err?.errorName === "MaxPerWallet"
             ? "Max per wallet reached. Try a different wallet or wait until limit resets."
-            : err?.data?.message || err?.reason || err?.message || "Unknown error";
+            : err?.data?.message ||
+              err?.reason ||
+              err?.message ||
+              "Unknown error";
         return alert("Mint would revert: " + msg);
       }
 
@@ -114,7 +128,10 @@ export function useMintRedeem(params) {
         const msg =
           err?.errorName === "MaxPerWallet"
             ? "Max per wallet reached. Try a different wallet or wait until limit resets."
-            : err?.data?.message || err?.reason || err?.message || "Unknown error";
+            : err?.data?.message ||
+              err?.reason ||
+              err?.message ||
+              "Unknown error";
         return alert("Mint gas estimation failed: " + msg);
       }
       const tx = await contract.mintTicket({ value: price });
@@ -131,7 +148,10 @@ export function useMintRedeem(params) {
       const msg =
         err?.errorName === "MaxPerWallet"
           ? "Max per wallet reached. Try a different wallet or wait until limit resets."
-          : err?.data?.message || err?.reason || err?.message || prettyError(err);
+          : err?.data?.message ||
+            err?.reason ||
+            err?.message ||
+            prettyError(err);
       alert("Mint failed: " + msg);
       console.error("mintTicket", err);
     } finally {
@@ -162,7 +182,9 @@ export function useMintRedeem(params) {
       if (Number(net?.chainId) !== 80002) await ensureAmoy();
 
       if (typeof contract.redeemTicketAndMintNFT !== "function") {
-        alert("Redeem není na public kolekci dostupný. Použij Collection 2 panel.");
+        alert(
+          "Redeem není na public kolekci dostupný. Použij Collection 2 panel.",
+        );
         return;
       }
 
@@ -201,7 +223,10 @@ export function useMintRedeem(params) {
       try {
         await contract.estimateGas.redeemTicketAndMintNFT(ticketIdBN);
       } catch (err) {
-        console.warn("estimateGas redeemTicketAndMintNFT failed, sending anyway", err);
+        console.warn(
+          "estimateGas redeemTicketAndMintNFT failed, sending anyway",
+          err,
+        );
       }
       setRedeemMsg("Please confirm in your wallet...");
       const tx = await contract.redeemTicketAndMintNFT(ticketIdBN);
@@ -226,8 +251,13 @@ export function useMintRedeem(params) {
       setTopFirstId(ticketIdStr);
 
       const ticketsNow = await fetchMyTickets(walletAddress);
-      const nftsNow = await fetchOwnedNFTsViaTransfers(walletAddress, ticketsNow.length);
-      const filteredTickets = ticketsNow.filter((t) => String(t.tokenId) !== ticketIdStr);
+      const nftsNow = await fetchOwnedNFTsViaTransfers(
+        walletAddress,
+        ticketsNow.length,
+      );
+      const filteredTickets = ticketsNow.filter(
+        (t) => String(t.tokenId) !== ticketIdStr,
+      );
       const byId = new Map();
       for (const t of filteredTickets) byId.set(t.tokenId, t);
       for (const n of nftsNow) byId.set(n.tokenId, n);
@@ -298,7 +328,14 @@ export function useMintRedeem(params) {
     if (walletAddress) await fetchWalletAssets(walletAddress);
     await refreshVRFPanel();
     await checkVrfResolution();
-  }, [fetchStats, fetchRewards, fetchWalletAssets, walletAddress, refreshVRFPanel, checkVrfResolution]);
+  }, [
+    fetchStats,
+    fetchRewards,
+    fetchWalletAssets,
+    walletAddress,
+    refreshVRFPanel,
+    checkVrfResolution,
+  ]);
 
   const onVRFCancelPending = React.useCallback(() => {
     alert("Cancel pending is not available in this UI.");

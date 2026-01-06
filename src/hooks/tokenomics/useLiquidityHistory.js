@@ -16,7 +16,10 @@ export default function useLiquidityHistory(snapshot) {
     });
   }, [snapshot]);
 
-  const chartPoints = React.useMemo(() => mapHistoryToChartPoints(history), [history]);
+  const chartPoints = React.useMemo(
+    () => mapHistoryToChartPoints(history),
+    [history],
+  );
 
   return { history, chartPoints };
 }

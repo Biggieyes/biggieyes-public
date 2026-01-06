@@ -19,7 +19,12 @@ export function getCached(key, fetcher, { ttlMs = 10000, force = false } = {}) {
   const promise = Promise.resolve()
     .then(fetcher)
     .then((value) => {
-      cache.set(key, { value, hasValue: true, expiresAt: now + ttlMs, promise: null });
+      cache.set(key, {
+        value,
+        hasValue: true,
+        expiresAt: now + ttlMs,
+        promise: null,
+      });
       return value;
     })
     .catch((err) => {

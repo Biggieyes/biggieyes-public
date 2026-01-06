@@ -1,4 +1,4 @@
-import { utils } from "ethers";
+import { ethers } from "ethers";
 import { explorerBaseFor } from "../../utils/explorer";
 
 const DECIMALS = 18;
@@ -6,9 +6,10 @@ const PLACEHOLDER = "--";
 const EXPLORER_BASE = explorerBaseFor(80002) || "https://amoy.polygonscan.com";
 
 function _formatAmount(raw, decimals = DECIMALS) {
-  if (raw === undefined || raw === null) return { display: PLACEHOLDER, numeric: null };
+  if (raw === undefined || raw === null)
+    return { display: PLACEHOLDER, numeric: null };
   try {
-    const formatted = utils.formatUnits(raw, decimals);
+    const formatted = ethers.utils.formatUnits(raw, decimals);
     const numeric = Number(formatted);
     const display = Number.isFinite(numeric)
       ? numeric.toLocaleString("en-US", { maximumFractionDigits: 2 })
@@ -58,9 +59,13 @@ export function mapBuybackSnapshotToUI(raw) {
   const treasuryBiggi = _formatAmount(treasuryRaw.biggiBalance);
   const treasuryMatic = _formatAmount(treasuryRaw.maticBalance);
   const treasuryTokenBalance = _formatAmount(treasuryRaw.tokenBalance);
-  const treasuryTotalReceived = _formatAmount(treasuryRaw.totalBiggiReceived || treasuryRaw.totalBiggiReceivedFromBuyback);
+  const treasuryTotalReceived = _formatAmount(
+    treasuryRaw.totalBiggiReceived || treasuryRaw.totalBiggiReceivedFromBuyback,
+  );
   const treasuryMaticReceived = _formatAmount(treasuryRaw.totalMaticReceived);
-  const treasuryMaticFromDistributor = _formatAmount(treasuryRaw.totalMaticReceivedFromDistributor);
+  const treasuryMaticFromDistributor = _formatAmount(
+    treasuryRaw.totalMaticReceivedFromDistributor,
+  );
 
   const lastBuybackTs = Number(buybackRaw.lastBuyback || 0);
   const lastBuybackLabel = lastBuybackTs
@@ -73,12 +78,22 @@ export function mapBuybackSnapshotToUI(raw) {
     : "N/A";
 
   const avgBuybackSize =
-    totalNativeSpent.numeric != null && totalBiggiAcquired.numeric != null && totalBiggiAcquired.numeric > 0
+    totalNativeSpent.numeric != null &&
+    totalBiggiAcquired.numeric != null &&
+    totalBiggiAcquired.numeric > 0
       ? totalNativeSpent.numeric / totalBiggiAcquired.numeric
       : null;
 
-  const statusLabel = buybackRaw.paused ? "Paused" : buybackRaw.autoBuybackEnabled ? "Auto" : "Manual";
-  const statusTone = buybackRaw.paused ? "paused" : buybackRaw.autoBuybackEnabled ? "active" : "warning";
+  const statusLabel = buybackRaw.paused
+    ? "Paused"
+    : buybackRaw.autoBuybackEnabled
+      ? "Auto"
+      : "Manual";
+  const statusTone = buybackRaw.paused
+    ? "paused"
+    : buybackRaw.autoBuybackEnabled
+      ? "active"
+      : "warning";
 
   return {
     ts,
@@ -108,7 +123,9 @@ export function mapBuybackSnapshotToUI(raw) {
       paused: !!buybackRaw.paused,
       tokenBalance: tokenBalance.display,
       tokenBalanceNumeric: tokenBalance.numeric,
-      nativeOnChain: buybackRaw.nativeOnChain ? Number(utils.formatEther(buybackRaw.nativeOnChain)) : null,
+      nativeOnChain: buybackRaw.nativeOnChain
+        ? Number(utils.formatEther(buybackRaw.nativeOnChain))
+        : null,
     },
     treasury: {
       address: treasuryRaw.address,
@@ -129,7 +146,8 @@ export function mapBuybackSnapshotToUI(raw) {
     derived: {
       statusLabel,
       statusTone,
-      avgBuybackSize: avgBuybackSize != null ? avgBuybackSize.toFixed(4) : PLACEHOLDER,
+      avgBuybackSize:
+        avgBuybackSize != null ? avgBuybackSize.toFixed(4) : PLACEHOLDER,
     },
   };
 }
@@ -172,5 +190,8 @@ export function mapBuybackHistoryToChartPoints(history = [], accessor) {
       const value = accessor(entry);
       return { label: entry?.tsLabel, value };
     })
-    .filter((point) => typeof point.value === "number" && Number.isFinite(point.value));
+    .filter(
+      (point) =>
+        typeof point.value === "number" && Number.isFinite(point.value),
+    );
 }

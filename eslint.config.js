@@ -69,9 +69,11 @@ const tsConfig = {
 
 const testConfig = {
   files: ['**/*.test.*', '**/*.spec.*'],
-  env: {
-    jest: true,
-    node: true,
+  languageOptions: {
+    globals: {
+      ...globals.jest,
+      ...globals.node,
+    },
   },
   rules: {
     'no-unused-expressions': 'off',

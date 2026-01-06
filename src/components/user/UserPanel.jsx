@@ -112,9 +112,10 @@ async function resolveHeldTokenIds({ address, items, mainContract }) {
   const output = [];
   for (const tokenId of owned) {
     try {
-      const isTicket = typeof mainContract.isTicket === "function"
-        ? await mainContract.isTicket(tokenId)
-        : false;
+      const isTicket =
+        typeof mainContract.isTicket === "function"
+          ? await mainContract.isTicket(tokenId)
+          : false;
       if (!isTicket) output.push(ethers.BigNumber.from(tokenId));
     } catch {
       output.push(ethers.BigNumber.from(tokenId));
@@ -162,8 +163,10 @@ function useUserPanelData({
         nextState.ticketPrice = snapshot?.[0]
           ? Number(ethers.utils.formatEther(snapshot[0]))
           : null;
-        nextState.ticketsMinted = snapshot?.[1] != null ? Number(snapshot[1]) : null;
-        nextState.totalMinted = snapshot?.[2] != null ? Number(snapshot[2]) : null;
+        nextState.ticketsMinted =
+          snapshot?.[1] != null ? Number(snapshot[1]) : null;
+        nextState.totalMinted =
+          snapshot?.[2] != null ? Number(snapshot[2]) : null;
       }
     } catch (err) {
       console.error("UserPanel: reader snapshot failed", err);
@@ -242,9 +245,7 @@ function useUserPanelData({
 
   const summary = React.useMemo(() => {
     const maxSupply =
-      maxSupplyProp ??
-      chainStats.maxSupply ??
-      DEFAULT_MAX_SUPPLY;
+      maxSupplyProp ?? chainStats.maxSupply ?? DEFAULT_MAX_SUPPLY;
     const totalMinted = mintedProp ?? chainStats.totalMinted;
     const ticketsMinted = chainStats.ticketsMinted;
     const ticketsLeft =
@@ -314,23 +315,13 @@ export default function UserPanel({
   items = [],
   compact = false,
 }) {
-  const {
-    account,
-    connectMetaMask,
-    isConnecting,
-    ensureChain,
-  } = useWeb3();
+  const { account, connectMetaMask, isConnecting, ensureChain } = useWeb3();
   const contracts = useContracts();
   const [actionStatus, setActionStatus] = React.useState("");
   const [isMinting, setIsMinting] = React.useState(false);
   const [isClaiming, setIsClaiming] = React.useState(false);
 
-  const {
-    summary,
-    loading,
-    error,
-    refresh,
-  } = useUserPanelData({
+  const { summary, loading, error, refresh } = useUserPanelData({
     address,
     items,
     ticketPriceProp,
@@ -351,41 +342,58 @@ export default function UserPanel({
       items
         .filter((item) => item && !item.isTicket)
         .map((item) => ethers.BigNumber.from(item.tokenId)),
-    [items]
+    [items],
   );
 
   const ticketsHeld = React.useMemo(
     () => items.filter((item) => item && item.isTicket).length,
-    [items]
+    [items],
   );
 
   const hasWallet = Boolean(address);
 
-  const ticketPriceLabel = summary.ticketPrice != null
-    ? `${formatNumber(summary.ticketPrice, { maximumFractionDigits: 4 })} POL`
-    : "--";
+  const ticketPriceLabel =
+    summary.ticketPrice != null
+      ? `${formatNumber(summary.ticketPrice, { maximumFractionDigits: 4 })} POL`
+      : "--";
 
-  const claimableLabel = summary.claimable != null
-    ? `${formatNumber(summary.claimable, { maximumFractionDigits: 4 })} BIGGI`
-    : "--";
+  const claimableLabel =
+    summary.claimable != null
+      ? `${formatNumber(summary.claimable, { maximumFractionDigits: 4 })} BIGGI`
+      : "--";
 
   const mintedPercent = React.useMemo(() => {
-    if (summary.maxSupply && summary.totalMinted != null && summary.maxSupply > 0) {
-      return Math.min(100, Math.max(0, (summary.totalMinted / summary.maxSupply) * 100));
+    if (
+      summary.maxSupply &&
+      summary.totalMinted != null &&
+      summary.maxSupply > 0
+    ) {
+      return Math.min(
+        100,
+        Math.max(0, (summary.totalMinted / summary.maxSupply) * 100),
+      );
     }
     return null;
   }, [summary.totalMinted, summary.maxSupply]);
 
   const rewardCoveragePercent = React.useMemo(() => {
-    if (summary.rewardPool != null && summary.rewardPool > 0 && summary.claimable != null) {
-      return Math.min(100, Math.max(0, (summary.claimable / summary.rewardPool) * 100));
+    if (
+      summary.rewardPool != null &&
+      summary.rewardPool > 0 &&
+      summary.claimable != null
+    ) {
+      return Math.min(
+        100,
+        Math.max(0, (summary.claimable / summary.rewardPool) * 100),
+      );
     }
     if (summary.claimable === 0) return 0;
     return null;
   }, [summary.rewardPool, summary.claimable]);
 
   const heroStats = React.useMemo(() => {
-    const ticketsLeftValue = summary.ticketsLeft ??
+    const ticketsLeftValue =
+      summary.ticketsLeft ??
       (summary.maxSupply != null && summary.ticketsMinted != null
         ? Math.max(0, summary.maxSupply - summary.ticketsMinted)
         : null);
@@ -414,9 +422,10 @@ export default function UserPanel({
       {
         key: "rewardPool",
         label: "Reward Pool",
-        value: summary.rewardPool != null
-          ? `${formatNumber(summary.rewardPool, { maximumFractionDigits: 2 })} BIGGI`
-          : "--",
+        value:
+          summary.rewardPool != null
+            ? `${formatNumber(summary.rewardPool, { maximumFractionDigits: 2 })} BIGGI`
+            : "--",
         hint: "Current weekly pool",
       },
       {
@@ -480,7 +489,14 @@ export default function UserPanel({
     } finally {
       setIsMinting(false);
     }
-  }, [onMint, ensureChain, contracts, summary.ticketPriceWei, refresh, isMinting]);
+  }, [
+    onMint,
+    ensureChain,
+    contracts,
+    summary.ticketPriceWei,
+    refresh,
+    isMinting,
+  ]);
 
   const handleClaim = React.useCallback(async () => {
     if (isClaiming) return;
@@ -518,7 +534,16 @@ export default function UserPanel({
     } finally {
       setIsClaiming(false);
     }
-  }, [onClaim, ensureChain, contracts, nonTicketIds, address, items, refresh, isClaiming]);
+  }, [
+    onClaim,
+    ensureChain,
+    contracts,
+    nonTicketIds,
+    address,
+    items,
+    refresh,
+    isClaiming,
+  ]);
 
   const handleRefresh = React.useCallback(async () => {
     setActionStatus("");
@@ -543,28 +568,32 @@ export default function UserPanel({
             summary.ticketsLeft ??
               (summary.maxSupply != null && summary.ticketsMinted != null
                 ? Math.max(0, summary.maxSupply - summary.ticketsMinted)
-                : null)
+                : null),
           );
           break;
         case "rewardPool":
-          value = summary.rewardPool != null
-            ? `${formatNumber(summary.rewardPool, { maximumFractionDigits: 2 })} BIGGI`
-            : "--";
+          value =
+            summary.rewardPool != null
+              ? `${formatNumber(summary.rewardPool, { maximumFractionDigits: 2 })} BIGGI`
+              : "--";
           break;
         case "mintVolume":
-          value = mintVolumeMatic != null
-            ? `${formatNumber(mintVolumeMatic, { maximumFractionDigits: 2 })} POL`
-            : "--";
+          value =
+            mintVolumeMatic != null
+              ? `${formatNumber(mintVolumeMatic, { maximumFractionDigits: 2 })} POL`
+              : "--";
           break;
         case "tokenPrice":
-          value = tokenPrice != null
-            ? `${formatNumber(tokenPrice, { maximumFractionDigits: 4 })} POL`
-            : "--";
+          value =
+            tokenPrice != null
+              ? `${formatNumber(tokenPrice, { maximumFractionDigits: 4 })} POL`
+              : "--";
           break;
         case "sharePercent":
-          value = sharePercent != null
-            ? `${formatNumber(sharePercent, { maximumFractionDigits: 2 })}%`
-            : "--";
+          value =
+            sharePercent != null
+              ? `${formatNumber(sharePercent, { maximumFractionDigits: 2 })}%`
+              : "--";
           break;
         default:
           value = "--";
@@ -576,11 +605,12 @@ export default function UserPanel({
   return (
     <section className={`user-panel${compact ? " user-panel--compact" : ""}`}>
       <div className="user-panel__surface">
-      <header className="user-panel__header panel-header panel-header--user">
+        <header className="user-panel__header panel-header panel-header--user">
           <div>
             <h2 className="user-panel__title">User Control Center</h2>
             <p className="user-panel__subtitle">
-              Track your holdings, mint new tickets, and harvest weekly rewards directly from the smart contracts.
+              Track your holdings, mint new tickets, and harvest weekly rewards
+              directly from the smart contracts.
             </p>
           </div>
           <div className="user-panel__header-actions">
@@ -598,7 +628,11 @@ export default function UserPanel({
               onClick={handleConnect}
               disabled={isConnecting}
             >
-              {isConnecting ? "Connecting..." : hasWallet ? "Wallet Connected" : "Connect Wallet"}
+              {isConnecting
+                ? "Connecting..."
+                : hasWallet
+                  ? "Wallet Connected"
+                  : "Connect Wallet"}
             </button>
           </div>
         </header>
@@ -634,9 +668,17 @@ export default function UserPanel({
               type="button"
               className="user-panel__btn user-panel__btn--accent"
               onClick={handleClaim}
-              disabled={isClaiming || summary.claimable == null || summary.claimable === 0}
+              disabled={
+                isClaiming ||
+                summary.claimable == null ||
+                summary.claimable === 0
+              }
             >
-              {isClaiming ? "Claiming..." : summary.claimable ? "Claim Rewards" : "Nothing to Claim"}
+              {isClaiming
+                ? "Claiming..."
+                : summary.claimable
+                  ? "Claim Rewards"
+                  : "Nothing to Claim"}
             </button>
           </div>
         </div>
@@ -654,21 +696,33 @@ export default function UserPanel({
                 aria-label="Minted vs max supply"
               >
                 <div className="user-panel__chart-ring-center">
-                  <strong>{mintedPercent != null ? `${formatNumber(mintedPercent, { maximumFractionDigits: 1 })}%` : "--"}</strong>
+                  <strong>
+                    {mintedPercent != null
+                      ? `${formatNumber(mintedPercent, { maximumFractionDigits: 1 })}%`
+                      : "--"}
+                  </strong>
                   <span>Minted</span>
                 </div>
               </div>
               <div className="user-panel__visual-meta">
                 <div>
                   <span className="user-panel__meta-label">Total Minted</span>
-                  <span className="user-panel__meta-value">{formatNumber(summary.totalMinted)}</span>
+                  <span className="user-panel__meta-value">
+                    {formatNumber(summary.totalMinted)}
+                  </span>
                 </div>
                 <div>
                   <span className="user-panel__meta-label">Max Supply</span>
-                  <span className="user-panel__meta-value">{formatNumber(summary.maxSupply)}</span>
+                  <span className="user-panel__meta-value">
+                    {formatNumber(summary.maxSupply)}
+                  </span>
                 </div>
                 <div className="user-panel__meta-bar">
-                  <span style={{ width: `${mintedPercent != null ? mintedPercent : 0}%` }} />
+                  <span
+                    style={{
+                      width: `${mintedPercent != null ? mintedPercent : 0}%`,
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -677,46 +731,59 @@ export default function UserPanel({
           <article className="user-panel__card user-panel__card--visual">
             <div className="user-panel__card-head">
               <h3>Rewards Snapshot</h3>
-              <span className="user-panel__chip user-panel__chip--cyan">BIGGI</span>
+              <span className="user-panel__chip user-panel__chip--cyan">
+                BIGGI
+              </span>
             </div>
             <div className="user-panel__visual-body">
               <div
                 className="user-panel__chart-ring user-panel__chart-ring--cyan"
-                style={{ ["--pct"]: rewardCoveragePercent != null ? rewardCoveragePercent : 0 }}
+                style={{
+                  ["--pct"]:
+                    rewardCoveragePercent != null ? rewardCoveragePercent : 0,
+                }}
                 aria-label="Claimable vs pool"
               >
                 <div className="user-panel__chart-ring-center">
-                  <strong>{rewardCoveragePercent != null ? `${formatNumber(rewardCoveragePercent, { maximumFractionDigits: 1 })}%` : "--"}</strong>
+                  <strong>
+                    {rewardCoveragePercent != null
+                      ? `${formatNumber(rewardCoveragePercent, { maximumFractionDigits: 1 })}%`
+                      : "--"}
+                  </strong>
                   <span>Claimable share</span>
                 </div>
               </div>
               <div className="user-panel__visual-meta">
                 <div>
                   <span className="user-panel__meta-label">Reward Pool</span>
-                  <span className="user-panel__meta-value">{summary.rewardPool != null ? `${formatNumber(summary.rewardPool, { maximumFractionDigits: 2 })} BIGGI` : "--"}</span>
+                  <span className="user-panel__meta-value">
+                    {summary.rewardPool != null
+                      ? `${formatNumber(summary.rewardPool, { maximumFractionDigits: 2 })} BIGGI`
+                      : "--"}
+                  </span>
                 </div>
                 <div>
                   <span className="user-panel__meta-label">Claimable</span>
-                  <span className="user-panel__meta-value">{claimableLabel}</span>
+                  <span className="user-panel__meta-value">
+                    {claimableLabel}
+                  </span>
                 </div>
                 <div className="user-panel__meta-bar user-panel__meta-bar--cyan">
-                  <span style={{ width: `${rewardCoveragePercent != null ? rewardCoveragePercent : 0}%` }} />
+                  <span
+                    style={{
+                      width: `${rewardCoveragePercent != null ? rewardCoveragePercent : 0}%`,
+                    }}
+                  />
                 </div>
               </div>
             </div>
           </article>
         </div>
 
-        {error && (
-          <div className="user-panel__alert">
-            {error}
-          </div>
-        )}
+        {error && <div className="user-panel__alert">{error}</div>}
 
         {actionStatus && (
-          <div className="user-panel__status">
-            {actionStatus}
-          </div>
+          <div className="user-panel__status">{actionStatus}</div>
         )}
 
         <div className="user-panel__grid user-panel__grid--primary">
@@ -725,15 +792,25 @@ export default function UserPanel({
             <dl className="user-panel__list">
               <div>
                 <dt>Address</dt>
-                <dd>{hasWallet ? truncateAddress(address) : "Not connected"}</dd>
+                <dd>
+                  {hasWallet ? truncateAddress(address) : "Not connected"}
+                </dd>
               </div>
               <div>
                 <dt>Native Balance</dt>
-                <dd>{summary.nativeBalance != null ? `${formatNumber(summary.nativeBalance, { maximumFractionDigits: 4 })} POL` : "--"}</dd>
+                <dd>
+                  {summary.nativeBalance != null
+                    ? `${formatNumber(summary.nativeBalance, { maximumFractionDigits: 4 })} POL`
+                    : "--"}
+                </dd>
               </div>
               <div>
                 <dt>BIGGI Balance</dt>
-                <dd>{summary.biggiBalance != null ? `${formatNumber(summary.biggiBalance, { maximumFractionDigits: 4 })} BIGGI` : "--"}</dd>
+                <dd>
+                  {summary.biggiBalance != null
+                    ? `${formatNumber(summary.biggiBalance, { maximumFractionDigits: 4 })} BIGGI`
+                    : "--"}
+                </dd>
               </div>
               <div>
                 <dt>NFTs Held</dt>
@@ -761,7 +838,8 @@ export default function UserPanel({
           <article className="user-panel__card">
             <h3>Mint Ticket</h3>
             <p className="user-panel__muted">
-              Mint price updates directly from the contract. Make sure you are on the Polygon Amoy network.
+              Mint price updates directly from the contract. Make sure you are
+              on the Polygon Amoy network.
             </p>
             <div className="user-panel__statline">
               <span>Current Price</span>
@@ -780,7 +858,8 @@ export default function UserPanel({
           <article className="user-panel__card">
             <h3>Claim Rewards</h3>
             <p className="user-panel__muted">
-              Weekly reward accrual is based on non-ticket NFTs. Connect your wallet to preview the current payout.
+              Weekly reward accrual is based on non-ticket NFTs. Connect your
+              wallet to preview the current payout.
             </p>
             <div className="user-panel__statline">
               <span>Claimable</span>
@@ -790,9 +869,17 @@ export default function UserPanel({
               type="button"
               className="user-panel__btn user-panel__btn--accent user-panel__btn--wide"
               onClick={handleClaim}
-              disabled={isClaiming || summary.claimable == null || summary.claimable === 0}
+              disabled={
+                isClaiming ||
+                summary.claimable == null ||
+                summary.claimable === 0
+              }
             >
-              {isClaiming ? "Claiming..." : summary.claimable ? "Claim Rewards" : "Nothing to Claim"}
+              {isClaiming
+                ? "Claiming..."
+                : summary.claimable
+                  ? "Claim Rewards"
+                  : "Nothing to Claim"}
             </button>
           </article>
         </div>
@@ -800,7 +887,9 @@ export default function UserPanel({
         <div className="user-panel__grid user-panel__grid--stats">
           {statCards.map(({ key, label, icon, value }) => (
             <article key={key} className="user-panel__stat-card">
-              <span className="user-panel__stat-icon" aria-hidden="true">{icon}</span>
+              <span className="user-panel__stat-icon" aria-hidden="true">
+                {icon}
+              </span>
               <div>
                 <span className="user-panel__stat-label">{label}</span>
                 <span className="user-panel__stat-value">{value}</span>
@@ -819,11 +908,19 @@ export default function UserPanel({
               </div>
               <div>
                 <dt>Next Reward Share</dt>
-                <dd>{sharePercent != null ? `${formatNumber(sharePercent, { maximumFractionDigits: 2 })}%` : "--"}</dd>
+                <dd>
+                  {sharePercent != null
+                    ? `${formatNumber(sharePercent, { maximumFractionDigits: 2 })}%`
+                    : "--"}
+                </dd>
               </div>
               <div>
                 <dt>Mint Volume</dt>
-                <dd>{mintVolumeMatic != null ? `${formatNumber(mintVolumeMatic, { maximumFractionDigits: 2 })} POL` : "--"}</dd>
+                <dd>
+                  {mintVolumeMatic != null
+                    ? `${formatNumber(mintVolumeMatic, { maximumFractionDigits: 2 })} POL`
+                    : "--"}
+                </dd>
               </div>
             </dl>
           </article>

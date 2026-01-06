@@ -1,5 +1,5 @@
-import { useRef } from 'react';
-import { useSyncExternalStore } from 'preact/compat';
+import { useRef } from "react";
+import { useSyncExternalStore } from "preact/compat";
 
 // Lightweight selector-aware hook to satisfy recharts under preact/compat
 export function useSyncExternalStoreWithSelector(
@@ -7,7 +7,7 @@ export function useSyncExternalStoreWithSelector(
   getSnapshot,
   getServerSnapshot,
   selector,
-  isEqual
+  isEqual,
 ) {
   const lastSelector = useRef();
   const lastSnapshot = useRef();
@@ -16,7 +16,7 @@ export function useSyncExternalStoreWithSelector(
   const selectedValue = useSyncExternalStore(
     subscribe,
     () => getSnapshot(),
-    getServerSnapshot ? () => getServerSnapshot() : undefined
+    getServerSnapshot ? () => getServerSnapshot() : undefined,
   );
 
   const nextSnapshot = selectedValue;
@@ -25,7 +25,9 @@ export function useSyncExternalStoreWithSelector(
 
   const selectorChanged = lastSelector.current !== nextSelector;
   const snapshotChanged = lastSnapshot.current !== nextSnapshot;
-  const equal = isEqual ? isEqual(lastValue.current, nextValue) : lastValue.current === nextValue;
+  const equal = isEqual
+    ? isEqual(lastValue.current, nextValue)
+    : lastValue.current === nextValue;
 
   if (selectorChanged || snapshotChanged || !equal) {
     lastSelector.current = nextSelector;

@@ -21,7 +21,9 @@ export default function useDistributorHistory(distributorData) {
 
   React.useEffect(() => {
     if (!distributorData) return;
-    const totalReceived = toNumber(distributorData.totalReceived ?? distributorData.totalDistributed);
+    const totalReceived = toNumber(
+      distributorData.totalReceived ?? distributorData.totalDistributed,
+    );
     if (totalReceived == null) return;
     const ts = Date.now();
 
@@ -34,8 +36,12 @@ export default function useDistributorHistory(distributorData) {
   }, [distributorData]);
 
   const points = React.useMemo(
-    () => history.map((entry) => ({ label: fmtLabel(entry.ts), value: entry.total })),
-    [history]
+    () =>
+      history.map((entry) => ({
+        label: fmtLabel(entry.ts),
+        value: entry.total,
+      })),
+    [history],
   );
 
   return { history, points };

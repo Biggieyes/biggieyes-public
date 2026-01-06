@@ -14,8 +14,8 @@ export default function ModeratorLogin({
     <section className="moderator-center__card">
       <h3>Moderator access</h3>
       <p className="muted">
-        Login uses a wallet signature + slot secret. The session token is short-lived
-        and comes from the backend API.
+        Login uses a wallet signature + slot secret. The session token is
+        short-lived and comes from the backend API.
       </p>
 
       <div className="moderator-center__field">

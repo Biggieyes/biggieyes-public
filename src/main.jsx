@@ -10,7 +10,10 @@ import { ContractsProvider } from "./providers/ContractsProvider.jsx";
 import { RewardsProvider } from "./providers/RewardsProvider.jsx";
 
 // Restore global Buffer so WalletConnect/ethers helpers depending on it keep working in-browser.
-if (typeof globalThis !== "undefined" && typeof globalThis.Buffer === "undefined") {
+if (
+  typeof globalThis !== "undefined" &&
+  typeof globalThis.Buffer === "undefined"
+) {
   globalThis.Buffer = Buffer;
 }
 
@@ -19,7 +22,8 @@ if (typeof window !== "undefined") {
   (async () => {
     try {
       const mod = await import("./utils/walletModalFix");
-      const installWalletModalFix = mod.installWalletModalFix || mod.default || null;
+      const installWalletModalFix =
+        mod.installWalletModalFix || mod.default || null;
       if (typeof installWalletModalFix === "function") {
         installWalletModalFix({ top: "2vh", zIndex: 10000 });
       }
@@ -48,10 +52,14 @@ function LoadingOverlay({ percent = 0, message = "Loading..." }) {
         <div className="progress-wrap" aria-hidden>
           <div
             className="progress-bar"
-            style={{ width: `${Math.max(0, Math.min(100, Math.floor(percent)))}%` }}
+            style={{
+              width: `${Math.max(0, Math.min(100, Math.floor(percent)))}%`,
+            }}
           />
         </div>
-        <div className="percent" aria-hidden>{Math.floor(percent)}%</div>
+        <div className="percent" aria-hidden>
+          {Math.floor(percent)}%
+        </div>
         <div className="msg">{message}</div>
       </div>
     </div>
@@ -104,7 +112,10 @@ function Bootstrap({ children }) {
         // wait for window load but with safety timeout
         const waitForWindowLoad = new Promise((res) => {
           if (document.readyState === "complete") return res();
-          const onLoad = () => { window.removeEventListener("load", onLoad); res(); };
+          const onLoad = () => {
+            window.removeEventListener("load", onLoad);
+            res();
+          };
           window.addEventListener("load", onLoad);
           setTimeout(res, 3000); // safety fallback
         });
@@ -113,9 +124,10 @@ function Bootstrap({ children }) {
         setTargetClamped(30);
 
         // fonts
-        const fontsReady = (document.fonts && document.fonts.ready)
-          ? document.fonts.ready
-          : Promise.resolve();
+        const fontsReady =
+          document.fonts && document.fonts.ready
+            ? document.fonts.ready
+            : Promise.resolve();
 
         // small background buffer
         const smallDelay = new Promise((res) => setTimeout(res, 500));
@@ -163,7 +175,9 @@ function Bootstrap({ children }) {
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -192,5 +206,5 @@ render(
       </Web3Provider>
     </Bootstrap>
   </React.StrictMode>,
-  rootEl
+  rootEl,
 );

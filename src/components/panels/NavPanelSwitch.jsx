@@ -28,12 +28,30 @@ class PanelErrorBoundary extends React.Component {
     if (error) {
       const msg = error?.message || String(error);
       return (
-        <div style={{ padding: 16, color: "#f66", background: "#130c0c", borderRadius: 12, border: "1px solid #f66" }}>
+        <div
+          style={{
+            padding: 16,
+            color: "#f66",
+            background: "#130c0c",
+            borderRadius: 12,
+            border: "1px solid #f66",
+          }}
+        >
           <p style={{ margin: "0 0 8px" }}>Panel crashed. Close or retry.</p>
           <p style={{ margin: "0 0 8px", color: "#faa" }}>{msg}</p>
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => this.handleReset()} style={{ padding: "6px 10px" }}>Retry</button>
-            <button onClick={() => this.props.onClose?.()} style={{ padding: "6px 10px" }}>Close</button>
+            <button
+              onClick={() => this.handleReset()}
+              style={{ padding: "6px 10px" }}
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => this.props.onClose?.()}
+              style={{ padding: "6px 10px" }}
+            >
+              Close
+            </button>
           </div>
         </div>
       );
@@ -47,8 +65,12 @@ const InfoPanel = React.lazy(() => import("./InfoPanel.jsx"));
 const VRFPanel = React.lazy(() => import("../VRF/VRFPanel"));
 const UserPanel = React.lazy(() => import("../user/UserPanel"));
 const BiggiToken = React.lazy(() => import("../TOKEN/BiggiToken"));
-const CollectionBlocksGrid = React.lazy(() => import("../CollectionBlocksGrid"));
-const CommunityCenterPanel = React.lazy(() => import("./CommunityCenterPanel.jsx"));
+const CollectionBlocksGrid = React.lazy(
+  () => import("../CollectionBlocksGrid"),
+);
+const CommunityCenterPanel = React.lazy(
+  () => import("./CommunityCenterPanel.jsx"),
+);
 
 export default function NavPanelSwitch({
   activeAlt,
@@ -111,7 +133,11 @@ export default function NavPanelSwitch({
           walletAddress={walletAddress}
           provider={(function () {
             try {
-              if (walletAddress && typeof window !== "undefined" && window.ethereum) {
+              if (
+                walletAddress &&
+                typeof window !== "undefined" &&
+                window.ethereum
+              ) {
                 return getSignerProvider();
               }
             } catch {}
@@ -178,23 +204,43 @@ export default function NavPanelSwitch({
                 }
               }}
               onBootstrapLiquidity={async ({ tokenAmountWei, nativeEth }) => {
-                const amountBN = ethers.BigNumber.from(String(tokenAmountWei || "0"));
-                const overrides = { value: ethers.utils.parseEther(String(nativeEth || "0")) };
-                await writeFirst([getLiquidityContract], ["bootstrapLiquidity"], amountBN, overrides);
+                const amountBN = ethers.BigNumber.from(
+                  String(tokenAmountWei || "0"),
+                );
+                const overrides = {
+                  value: ethers.utils.parseEther(String(nativeEth || "0")),
+                };
+                await writeFirst(
+                  [getLiquidityContract],
+                  ["bootstrapLiquidity"],
+                  amountBN,
+                  overrides,
+                );
                 await onRefreshLiquidityPreview();
               }}
               onAddLiquidityFromBalance={async () => {
-                await writeFirst([getLiquidityContract], ["addLiquidityFromBalance"]);
+                await writeFirst(
+                  [getLiquidityContract],
+                  ["addLiquidityFromBalance"],
+                );
                 await onRefreshLiquidityPreview();
               }}
               onBuybackAndSendToTreasury={async ({ minOutWei, nativeEth }) => {
-                const minOutBN = ethers.BigNumber.from(String(minOutWei || "0"));
-                const overrides = { value: ethers.utils.parseEther(String(nativeEth || "0")) };
+                const minOutBN = ethers.BigNumber.from(
+                  String(minOutWei || "0"),
+                );
+                const overrides = {
+                  value: ethers.utils.parseEther(String(nativeEth || "0")),
+                };
                 await writeFirst(
                   [getLiquidityContract],
-                  ["buyBiggiAndSendToTreasury", "buybackAllToTreasury", "buybackToTreasury"],
+                  [
+                    "buyBiggiAndSendToTreasury",
+                    "buybackAllToTreasury",
+                    "buybackToTreasury",
+                  ],
                   minOutBN,
-                  overrides
+                  overrides,
                 );
                 await onRefreshRouterInfo();
                 await onRefreshBuybackInfo();
@@ -213,10 +259,16 @@ export default function NavPanelSwitch({
           claimable={myClaimable}
           rewardPool={rewardPool}
           mintVolumeMatic={mintVolumeMatic}
-          sharePercent={biggiData?.policy?.gammaStakingBps != null ? Number(biggiData.policy.gammaStakingBps) / 100 : null}
+          sharePercent={
+            biggiData?.policy?.gammaStakingBps != null
+              ? Number(biggiData.policy.gammaStakingBps) / 100
+              : null
+          }
           tokenPrice={biggiData?.token?.price ?? null}
           liquidityPool={
-            biggiData?.liquidity?.contractEthBalance != null ? `${biggiData.liquidity.contractEthBalance} POL` : null
+            biggiData?.liquidity?.contractEthBalance != null
+              ? `${biggiData.liquidity.contractEthBalance} POL`
+              : null
           }
           items={myNFTs}
           onMint={mintTicket}

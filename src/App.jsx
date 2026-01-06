@@ -16,12 +16,13 @@ import {
   getPolicyRO,
   getPolicy,
   getBuybackRO,
-  getBiggiTokenomicsReaderRO,
   getDistributorRO,
   resetROProvider,
   getReserve,
 } from "./utils/contract";
-import './styles/biggi-token.skin.css';
+
+import { useContracts } from "./providers/ContractsProvider";
+import "./styles/biggi-token.skin.css";
 import MainLayout from "./components/layout/MainLayout";
 import ModalsLayer from "./components/layout/ModalsLayer";
 import { prettyError } from "./utils/errors";
@@ -38,8 +39,17 @@ import { useAdminActions } from "./hooks/useAdminActions";
 import useDistributor from "./hooks/useDistributor";
 import useTransparencyData from "./hooks/useTransparencyData";
 import AppCore from "./app/AppCore";
-import { BACKGROUND_NAMES, getSafeDeployBlock, queryLogsBatched, ERC20_MINI } from "./utils/shared";
-import { mergeAttrs, getCachedPriceAttrs, setCachedPriceAttrs } from "./utils/metadata";
+import {
+  BACKGROUND_NAMES,
+  getSafeDeployBlock,
+  queryLogsBatched,
+  ERC20_MINI,
+} from "./utils/shared";
+import {
+  mergeAttrs,
+  getCachedPriceAttrs,
+  setCachedPriceAttrs,
+} from "./utils/metadata";
 import {
   buildVRFHistory as buildVRFHistoryUtil,
   resolvePendingFromHistoryOrOwnership as resolvePendingFromHistoryOrOwnershipUtil,
@@ -61,9 +71,10 @@ import {
 import { refreshTokenMeta } from "./utils/tokenMeta";
 import { refreshPolicy } from "./utils/policy";
 
-
 /* ========= LAZY LOADED HEAVY PANELS ========= */
-const FullscreenPanel = React.lazy(() => import("./components/common/FullscreenPanel"));
+const FullscreenPanel = React.lazy(
+  () => import("./components/common/FullscreenPanel"),
+);
 const AdminPanel = React.lazy(() => import("./components/admin/AdminPanel"));
 
 const pickInjectedProvider = () => {
@@ -94,12 +105,36 @@ const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 /* ======================================================================== */
 
 const ICONS = [
-  { src: "/images/icons/rewards.png", alt: "REWARDS", modalText: MODAL_TEXTS.rewards || "" },
-  { src: "/images/icons/collection.png", alt: "COLLECTION", modalText: MODAL_TEXTS.collection },
-  { src: "/images/icons/mint.png", alt: "VRF MINT", modalText: MODAL_TEXTS.mint },
-  { src: "/images/icons/token.png", alt: "BIGGI ECOSYSTEM", modalText: MODAL_TEXTS.chance },
-  { src: "/images/icons/users.png", alt: "USERS", modalText: MODAL_TEXTS.community || "" },
-  { src: "/images/icons/expansion.png", alt: "COMMUNITY CENTER", modalText: MODAL_TEXTS.communityCenter || MODAL_TEXTS.expansion },
+  {
+    src: "/images/icons/rewards.png",
+    alt: "REWARDS",
+    modalText: MODAL_TEXTS.rewards || "",
+  },
+  {
+    src: "/images/icons/collection.png",
+    alt: "COLLECTION",
+    modalText: MODAL_TEXTS.collection,
+  },
+  {
+    src: "/images/icons/mint.png",
+    alt: "VRF MINT",
+    modalText: MODAL_TEXTS.mint,
+  },
+  {
+    src: "/images/icons/token.png",
+    alt: "BIGGI ECOSYSTEM",
+    modalText: MODAL_TEXTS.chance,
+  },
+  {
+    src: "/images/icons/users.png",
+    alt: "USERS",
+    modalText: MODAL_TEXTS.community || "",
+  },
+  {
+    src: "/images/icons/expansion.png",
+    alt: "COMMUNITY CENTER",
+    modalText: MODAL_TEXTS.communityCenter || MODAL_TEXTS.expansion,
+  },
 ];
 
 // 🔵 WalletConnect helper
@@ -117,6 +152,21 @@ const connectWithWalletConnect = async () => {
 };
 
 function App() {
+  // Přístup ke všem contract factory přes context
+  const contracts = useContracts();
+  // DEMO: použití contract factory z contextu
+  React.useEffect(() => {
+    // Příklad volání BiggiMainReader a BiggiTokenomicsReader
+    try {
+      const mainReader = contracts.biggiMainReaderRead?.();
+      const tokenomicsReader = contracts.biggiTokenomicsReaderRead?.();
+      // Můžeš zde volat metody na těchto instancích, např. mainReader.něco()
+      // console.log("mainReader", mainReader);
+      // console.log("tokenomicsReader", tokenomicsReader);
+    } catch (e) {
+      // ignore if not available
+    }
+  }, [contracts]);
   const [openNavIdx, setOpenNavIdx] = React.useState(null);
   const [walletAddress, setWalletAddress] = React.useState("");
 
@@ -125,9 +175,13 @@ function App() {
   const [maxSupply] = React.useState(550);
   const [ticketMinted, setTicketMinted] = React.useState(0);
   const [maxTickets] = React.useState(550);
-  const [blockMintCounts, setBlockMintCounts] = React.useState(new Array(10).fill(0));
+  const [blockMintCounts, setBlockMintCounts] = React.useState(
+    new Array(10).fill(0),
+  );
   const [blockPrices, setBlockPrices] = React.useState(new Array(10).fill(0));
-  const [backgroundMintCounts, setBackgroundMintCounts] = React.useState(new Array(10).fill(0));
+  const [backgroundMintCounts, setBackgroundMintCounts] = React.useState(
+    new Array(10).fill(0),
+  );
 
   const [myNFTs, setMyNFTs] = React.useState([]);
   const [galleryLoading, setGalleryLoading] = React.useState(false);
@@ -147,7 +201,10 @@ function App() {
   const [mintVolumeMatic, setMintVolumeMatic] = React.useState(null);
   const onRefreshTokenMetaRef = React.useRef(() => {});
 
-  const sleep = React.useCallback((ms) => new Promise((resolve) => setTimeout(resolve, ms)), []);
+  const sleep = React.useCallback(
+    (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+    [],
+  );
 
   const withRetry = React.useCallback(
     async (fn, { attempts = 3, delayMs = 700 } = {}) => {
@@ -165,15 +222,34 @@ function App() {
       }
       throw lastErr;
     },
-    [sleep]
+    [sleep],
   );
 
-  const [biggiData, setBiggiData] = React.useState({ token: {}, rewards: {}, router: {}, liquidity: {}, policy: {}, buyback: {} });
+  const [biggiData, setBiggiData] = React.useState({
+    token: {},
+    rewards: {},
+    router: {},
+    liquidity: {},
+    policy: {},
+    buyback: {},
+  });
   const [vrfUIData, setVrfUIData] = React.useState({
     network: "EVM",
     subscription: { id: "", linkBalance: "", consumers: [] },
-    params: { keyHash: "", confirmations: 3, numWords: 1, callbackGasLimit: 300000 },
-    last: { requestId: "", status: "idle", requestedAt: "", txHash: "", blockNumber: undefined, randomWords: [] },
+    params: {
+      keyHash: "",
+      confirmations: 3,
+      numWords: 1,
+      callbackGasLimit: 300000,
+    },
+    last: {
+      requestId: "",
+      status: "idle",
+      requestedAt: "",
+      txHash: "",
+      blockNumber: undefined,
+      randomWords: [],
+    },
     history: [],
   });
 
@@ -210,10 +286,18 @@ function App() {
   const [userLastClaimTs, setUserLastClaimTs] = React.useState(null);
 
   const isMobile = useIsMobile(700);
-  const { data: distributorData, refresh: fetchDistributorInfo } = useDistributor();
-  const { data: transparencyData, loading: transparencyLoading, refreshTransparency } = useTransparencyData({ enabled: true });
+  const { data: distributorData, refresh: fetchDistributorInfo } =
+    useDistributor();
+  const {
+    data: transparencyData,
+    loading: transparencyLoading,
+    refreshTransparency,
+  } = useTransparencyData({ enabled: true });
 
-  const getRO = React.useCallback(() => getROHelper(contractRef, getReadOnlyContract), []);
+  const getRO = React.useCallback(
+    () => getROHelper(contractRef, getReadOnlyContract),
+    [],
+  );
 
   const isAdmin =
     adminOwner &&
@@ -263,7 +347,12 @@ function App() {
     try {
       const latest = await contract.provider.getBlockNumber();
       const from = await getSafeDeployBlock(contract.provider);
-      const logs = await queryLogsBatched(contract, contract.filters.NFTMinted(), from, latest);
+      const logs = await queryLogsBatched(
+        contract,
+        contract.filters.NFTMinted(),
+        from,
+        latest,
+      );
       for (let i = logs.length - 1; i >= 0; i--) {
         const l = logs[i];
         const tid = l.args?.tokenId || l.args?.[1];
@@ -281,8 +370,6 @@ function App() {
       return null;
     }
   }, []);
-
-
 
   const { fetchStats, fetchRewards } = useStatsRewards({
     setTicketPrice,
@@ -307,13 +394,17 @@ function App() {
 
         try {
           const reader = getReaderRO();
-          const [tp, bp, fp] = await reader.getMintDataByTokenId(ethers.BigNumber.from(String(tokenId)));
+          const [tp, bp, fp] = await reader.getMintDataByTokenId(
+            ethers.BigNumber.from(String(tokenId)),
+          );
           const ticket = formatEthNum(tp);
           const blockP = formatEthNum(bp);
           const finalP = formatEthNum(fp);
 
           const pushOrReplace = (trait_type, value) => {
-            const i = attrs.findIndex((a) => String(a?.trait_type) === trait_type);
+            const i = attrs.findIndex(
+              (a) => String(a?.trait_type) === trait_type,
+            );
             const v = value != null ? `${value.toFixed(4)} POL` : "\u2014";
             if (i === -1) attrs.push({ trait_type, value: v });
             else attrs[i] = { ...attrs[i], value: v };
@@ -331,7 +422,7 @@ function App() {
         return meta;
       }
     },
-    []
+    [],
   );
 
   const {
@@ -360,7 +451,6 @@ function App() {
     enrichMetaWithPrices,
   });
 
-  
   /* ---------- Stats přes Reader ---------- */
 
   const fetchBackgroundMintCounts = React.useCallback(async () => {
@@ -392,8 +482,13 @@ function App() {
         const unset = await contract.findUnsetIndices();
         const missing = Array.from(unset || []);
         if (missing.length > 0) {
-          const sample = missing.slice(0, 10).map((x) => x.toString()).join(", ");
-          const e = new Error(`NotFullyConfigured: ${missing.length} unset NFT indices (sample: ${sample}).`);
+          const sample = missing
+            .slice(0, 10)
+            .map((x) => x.toString())
+            .join(", ");
+          const e = new Error(
+            `NotFullyConfigured: ${missing.length} unset NFT indices (sample: ${sample}).`,
+          );
           e.errorName = "NotFullyConfigured";
           throw e;
         }
@@ -405,8 +500,12 @@ function App() {
             const b = Number(info?.background || info?.[0] || 0);
             const bl = Number(info?.blockIdx || info?.[1] || 0);
             const m = Number(info?.mainId || info?.[2] || 0);
-            if (!(b >= 1 && b <= 10 && bl >= 1 && bl <= 10 && m >= 1 && m <= 10)) {
-              const e = new Error(`NotFullyConfigured: index ${i} invalid (background=${b}, blockIdx=${bl}, mainId=${m}).`);
+            if (
+              !(b >= 1 && b <= 10 && bl >= 1 && bl <= 10 && m >= 1 && m <= 10)
+            ) {
+              const e = new Error(
+                `NotFullyConfigured: index ${i} invalid (background=${b}, blockIdx=${bl}, mainId=${m}).`,
+              );
               e.errorName = "NotFullyConfigured";
               throw e;
             }
@@ -420,78 +519,82 @@ function App() {
     }
   }, []);
 
+  const claimRewards = React.useCallback(async () => {
+    if (!walletAddress) return alert("Please connect MetaMask first.");
+    setClaimPerforming(true);
+    setClaimError(null);
+    try {
+      await ensureAmoy();
 
+      let tokenIds = myNFTs
+        .filter((x) => !x.isTicket)
+        .map((x) => ethers.BigNumber.from(x.tokenId));
 
-  const claimRewards = React.useCallback(
-    async () => {
-      if (!walletAddress) return alert("Please connect MetaMask first.");
-      setClaimPerforming(true);
-      setClaimError(null);
-      try {
-        await ensureAmoy();
-
-        let tokenIds = myNFTs.filter((x) => !x.isTicket).map((x) => ethers.BigNumber.from(x.tokenId));
-
-        if (!tokenIds.length) {
-          const contract = contractRef.current || getReadOnlyContract();
-          const latest = await contract.provider.getBlockNumber();
-          const FROM = await getSafeDeployBlock(contract.provider);
-          const toFilter = contract.filters.Transfer(null, walletAddress, null);
-          const fromFilter = contract.filters.Transfer(walletAddress, null, null);
-          const [toLogs, fromLogs] = await Promise.all([
-            queryLogsBatched(contract, toFilter, FROM, latest),
-            queryLogsBatched(contract, fromFilter, FROM, latest),
-          ]);
-          const all = [...toLogs, ...fromLogs].sort((a, b) => {
-            if (a.blockNumber !== b.blockNumber) return a.blockNumber - b.blockNumber;
-            return a.logIndex - b.logIndex;
-          });
-          const held = new Set();
-          const me = String(walletAddress || "").toLowerCase();
-          for (const l of all) {
-            const from = String(l.args?.from ?? l.args?.[0] ?? "").toLowerCase();
-            const to = String(l.args?.to ?? l.args?.[1] ?? "").toLowerCase();
-            const tid = (l.args?.tokenId ?? l.args?.[2])?.toString?.() || "";
-            if (!tid) continue;
-            if (to === me) held.add(tid);
-            if (from === me) held.delete(tid);
-          }
-          const arr = Array.from(held);
-          const nonTickets = [];
-          for (const tid of arr) {
-            try {
-              const isT = typeof contract?.isTicket === "function" ? await contract.isTicket(tid) : false;
-              if (!isT) nonTickets.push(ethers.BigNumber.from(tid));
-            } catch {
-              nonTickets.push(ethers.BigNumber.from(tid));
-            }
-          }
-          tokenIds = nonTickets;
+      if (!tokenIds.length) {
+        const contract = contractRef.current || getReadOnlyContract();
+        const latest = await contract.provider.getBlockNumber();
+        const FROM = await getSafeDeployBlock(contract.provider);
+        const toFilter = contract.filters.Transfer(null, walletAddress, null);
+        const fromFilter = contract.filters.Transfer(walletAddress, null, null);
+        const [toLogs, fromLogs] = await Promise.all([
+          queryLogsBatched(contract, toFilter, FROM, latest),
+          queryLogsBatched(contract, fromFilter, FROM, latest),
+        ]);
+        const all = [...toLogs, ...fromLogs].sort((a, b) => {
+          if (a.blockNumber !== b.blockNumber)
+            return a.blockNumber - b.blockNumber;
+          return a.logIndex - b.logIndex;
+        });
+        const held = new Set();
+        const me = String(walletAddress || "").toLowerCase();
+        for (const l of all) {
+          const from = String(l.args?.from ?? l.args?.[0] ?? "").toLowerCase();
+          const to = String(l.args?.to ?? l.args?.[1] ?? "").toLowerCase();
+          const tid = (l.args?.tokenId ?? l.args?.[2])?.toString?.() || "";
+          if (!tid) continue;
+          if (to === me) held.add(tid);
+          if (from === me) held.delete(tid);
         }
-
-        if (!tokenIds.length) {
-          return alert("No eligible NFTs to claim this week.");
+        const arr = Array.from(held);
+        const nonTickets = [];
+        for (const tid of arr) {
+          try {
+            const isT =
+              typeof contract?.isTicket === "function"
+                ? await contract.isTicket(tid)
+                : false;
+            if (!isT) nonTickets.push(ethers.BigNumber.from(tid));
+          } catch {
+            nonTickets.push(ethers.BigNumber.from(tid));
+          }
         }
-
-        const brl = await getLiquidityContract();
-        const tx = await brl.claim(tokenIds);
-        await tx.wait();
-
-        await fetchRewards();
-        await fetchStats();
-        alert("Rewards claimed.");
-      } catch (err) {
-        setClaimError(err);
-        alert("Claim failed: " + prettyError(err));
-        console.error("claimRewards", err);
-      } finally {
-        setClaimPerforming(false);
+        tokenIds = nonTickets;
       }
-    },
-    [walletAddress, myNFTs, fetchRewards, fetchStats, prettyError]
-  );
 
-  const fetchCommunityCenterStats = React.useCallback(fetchCommunityCenterStatsRO, []);
+      if (!tokenIds.length) {
+        return alert("No eligible NFTs to claim this week.");
+      }
+
+      const brl = await getLiquidityContract();
+      const tx = await brl.claim(tokenIds);
+      await tx.wait();
+
+      await fetchRewards();
+      await fetchStats();
+      alert("Rewards claimed.");
+    } catch (err) {
+      setClaimError(err);
+      alert("Claim failed: " + prettyError(err));
+      console.error("claimRewards", err);
+    } finally {
+      setClaimPerforming(false);
+    }
+  }, [walletAddress, myNFTs, fetchRewards, fetchStats, prettyError]);
+
+  const fetchCommunityCenterStats = React.useCallback(
+    fetchCommunityCenterStatsRO,
+    [],
+  );
 
   const onRefreshTokenMeta = React.useCallback(async () => {
     try {
@@ -502,28 +605,49 @@ function App() {
           getBiggiTokenomicsReaderRO,
           fetchCommunityCenterStats,
           setBiggiData,
-        })
+        }),
       );
     } catch (e) {
       console.error("onRefreshTokenMeta", e);
     }
-  }, [getReadOnlyLiquidityContract, callFirst, getBiggiTokenomicsReaderRO, fetchCommunityCenterStats, withRetry]);
+  }, [
+    getReadOnlyLiquidityContract,
+    callFirst,
+    getBiggiTokenomicsReaderRO,
+    fetchCommunityCenterStats,
+    withRetry,
+  ]);
 
   React.useEffect(() => {
     onRefreshTokenMetaRef.current = onRefreshTokenMeta;
   }, [onRefreshTokenMeta]);
 
-  const onRefreshRewards = React.useCallback(async (tokenIdsCsv = "") => {
-    try {
-      await withRetry(() => refreshRewards({ getReadOnlyLiquidityContract, setBiggiData, tokenIdsCsv }));
-    } catch (e) {
-      console.error("onRefreshRewards", e);
-    }
-  }, [getReadOnlyLiquidityContract, withRetry]);
+  const onRefreshRewards = React.useCallback(
+    async (tokenIdsCsv = "") => {
+      try {
+        await withRetry(() =>
+          refreshRewards({
+            getReadOnlyLiquidityContract,
+            setBiggiData,
+            tokenIdsCsv,
+          }),
+        );
+      } catch (e) {
+        console.error("onRefreshRewards", e);
+      }
+    },
+    [getReadOnlyLiquidityContract, withRetry],
+  );
 
   const onRefreshRouterInfo = React.useCallback(async () => {
     try {
-      await withRetry(() => refreshRouterInfo({ getReadOnlyLiquidityContract, onRefreshPolicy, setBiggiData }));
+      await withRetry(() =>
+        refreshRouterInfo({
+          getReadOnlyLiquidityContract,
+          onRefreshPolicy,
+          setBiggiData,
+        }),
+      );
     } catch (e) {
       console.error("onRefreshRouterInfo", e);
     }
@@ -531,7 +655,9 @@ function App() {
 
   const onRefreshLiquidityPreview = React.useCallback(async () => {
     try {
-      await withRetry(() => refreshLiquidityPreview({ getReadOnlyLiquidityContract, setBiggiData }));
+      await withRetry(() =>
+        refreshLiquidityPreview({ getReadOnlyLiquidityContract, setBiggiData }),
+      );
     } catch (e) {
       console.error("onRefreshLiquidityPreview", e);
     }
@@ -539,7 +665,14 @@ function App() {
 
   const onRefreshBuybackInfo = React.useCallback(async () => {
     try {
-      await withRetry(() => refreshBuybackInfo({ getBuybackRO, getReadOnlyLiquidityContract, ERC20_MINI, setBiggiData }));
+      await withRetry(() =>
+        refreshBuybackInfo({
+          getBuybackRO,
+          getReadOnlyLiquidityContract,
+          ERC20_MINI,
+          setBiggiData,
+        }),
+      );
     } catch (e) {
       console.error("onRefreshBuybackInfo", e);
     }
@@ -595,7 +728,7 @@ function App() {
 
   const resolvePendingFromHistoryOrOwnership = React.useCallback(
     (c, user) => resolvePendingFromHistoryOrOwnershipUtil(c, user),
-    []
+    [],
   );
 
   const refreshVRFPanel = React.useCallback(() => {
@@ -609,7 +742,8 @@ function App() {
       fetchWalletAssets,
       fetchStats,
       fetchRewards,
-      resolvePendingFromHistoryOrOwnershipFn: resolvePendingFromHistoryOrOwnership,
+      resolvePendingFromHistoryOrOwnershipFn:
+        resolvePendingFromHistoryOrOwnership,
       setVrfPending,
       setIsRedeeming,
       setRedeemMsg,
@@ -645,7 +779,14 @@ function App() {
         });
       });
     },
-    [fetchStats, fetchRewards, fetchWalletAssets, fetchLastMinted, refreshVRFPanel, checkVrfResolution]
+    [
+      fetchStats,
+      fetchRewards,
+      fetchWalletAssets,
+      fetchLastMinted,
+      refreshVRFPanel,
+      checkVrfResolution,
+    ],
   );
 
   const connectMetaMask = React.useCallback(async () => {
@@ -683,7 +824,9 @@ function App() {
         await connectMetaMask();
         return;
       }
-      alert("WalletConnect is not configured. Add VITE_WC_PROJECT_ID to .env.local.");
+      alert(
+        "WalletConnect is not configured. Add VITE_WC_PROJECT_ID to .env.local.",
+      );
       return;
     }
     try {
@@ -744,7 +887,10 @@ function App() {
   const actionPerforming = mintRedeemPerforming || claimPerforming;
   const actionError = claimError || mintRedeemError;
 
-  const onVrfOpenExplorer = React.useCallback((hashOrId) => openVrfExplorer(hashOrId, getReadOnlyContract), []);
+  const onVrfOpenExplorer = React.useCallback(
+    (hashOrId) => openVrfExplorer(hashOrId, getReadOnlyContract),
+    [],
+  );
 
   const fetchChainNowTs = React.useCallback(async () => {
     try {
@@ -761,23 +907,48 @@ function App() {
     try {
       const brl = await getReadOnlyLiquidityContract();
 
-      const epochRaw = await callFirst(brl, ["epochStart","weekEpochStart","firstWeekStart","startEpoch","rewardsEpochStart"]);
-      const epochNum = epochRaw != null ? Number(epochRaw.toString ? epochRaw.toString() : epochRaw) : null;
-      setEpochStartTs(Number.isFinite(epochNum) && epochNum > 0 ? epochNum : null);
+      const epochRaw = await callFirst(brl, [
+        "epochStart",
+        "weekEpochStart",
+        "firstWeekStart",
+        "startEpoch",
+        "rewardsEpochStart",
+      ]);
+      const epochNum =
+        epochRaw != null
+          ? Number(epochRaw.toString ? epochRaw.toString() : epochRaw)
+          : null;
+      setEpochStartTs(
+        Number.isFinite(epochNum) && epochNum > 0 ? epochNum : null,
+      );
 
       let lastRaw = null;
       if (walletAddress) {
-        lastRaw = await callFirst(brl, ["lastClaim","lastClaimedAt","userLastClaim","claimedAt"], [walletAddress]);
+        lastRaw = await callFirst(
+          brl,
+          ["lastClaim", "lastClaimedAt", "userLastClaim", "claimedAt"],
+          [walletAddress],
+        );
         if (!lastRaw) {
-          const next = await callFirst(brl, ["nextClaimAt","userNextClaimAt"], [walletAddress]);
+          const next = await callFirst(
+            brl,
+            ["nextClaimAt", "userNextClaimAt"],
+            [walletAddress],
+          );
           if (next) {
-            const n = Number(next.toString ? next.toString() : next) - 7 * 24 * 60 * 60;
+            const n =
+              Number(next.toString ? next.toString() : next) - 7 * 24 * 60 * 60;
             lastRaw = n > 0 ? n : null;
           }
         }
       }
-      const lastNum = lastRaw != null ? Number(lastRaw.toString ? lastRaw.toString() : lastRaw) : null;
-      setUserLastClaimTs(Number.isFinite(lastNum) && lastNum > 0 ? lastNum : null);
+      const lastNum =
+        lastRaw != null
+          ? Number(lastRaw.toString ? lastRaw.toString() : lastRaw)
+          : null;
+      setUserLastClaimTs(
+        Number.isFinite(lastNum) && lastNum > 0 ? lastNum : null,
+      );
     } catch (e) {
       console.error("fetchCountdownMeta", e);
       setEpochStartTs(null);
@@ -797,21 +968,45 @@ function App() {
         const meta = await callFirst(brl, ["tokenMeta"]);
         if (Array.isArray(meta) && meta[1]) tokenSymbol = meta[1];
         else {
-          const tAddr = await callFirst(brl, ["tokenAddress","biggi","getToken","getBIGGI"]);
+          const tAddr = await callFirst(brl, [
+            "tokenAddress",
+            "biggi",
+            "getToken",
+            "getBIGGI",
+          ]);
           if (tAddr) {
             const erc20 = new ethers.Contract(tAddr, ERC20_MINI, provider);
-            tokenSymbol = (await erc20.symbol().catch(() => tokenSymbol)) || tokenSymbol;
+            tokenSymbol =
+              (await erc20.symbol().catch(() => tokenSymbol)) || tokenSymbol;
           }
         }
       } catch {}
 
       const nativeSymbol = "POL";
-      const policy = (await callFirst(main, ["policy","policyAddress"])) || "\u2014";
-      const treasury = (await callFirst(brl, ["treasury","treasuryAddress","getTreasury"])) || (await callFirst(main, ["treasury","treasuryAddress"])) || "\u2014";
-      const reserve = (await callFirst(main, ["reserve","reserveAddress"])) || "\u2014";
+      const policy =
+        (await callFirst(main, ["policy", "policyAddress"])) || "\u2014";
+      const treasury =
+        (await callFirst(brl, [
+          "treasury",
+          "treasuryAddress",
+          "getTreasury",
+        ])) ||
+        (await callFirst(main, ["treasury", "treasuryAddress"])) ||
+        "\u2014";
+      const reserve =
+        (await callFirst(main, ["reserve", "reserveAddress"])) || "\u2014";
       const liquidity = brl.address || "\u2014";
 
-      return { nativeSymbol, tokenSymbol, policy, treasury, reserve, liquidity, network: net?.name || "unknown", chainId: String(net?.chainId ?? "") };
+      return {
+        nativeSymbol,
+        tokenSymbol,
+        policy,
+        treasury,
+        reserve,
+        liquidity,
+        network: net?.name || "unknown",
+        chainId: String(net?.chainId ?? ""),
+      };
     } catch (e) {
       console.error("fetchLiveStatus", e);
       return {};
@@ -820,23 +1015,35 @@ function App() {
 
   // Effects moved to AppCore
 
-const navOpen = openNavIdx !== null;
-const navAlt = navOpen ? ICONS[openNavIdx].alt : "";
-const isInfoOpen = navOpen && navAlt === "INFO";
-const isCollectionOpen = navOpen && navAlt === "COLLECTION";
-const isRewardsOpen = navOpen && navAlt === "REWARDS";
-const isTokenPanelOpen = navOpen && navAlt === "BIGGI ECOSYSTEM";
-const isUserPanelOpen = navOpen && navAlt === "USERS";
-const isVRFPanelOpen = navOpen && navAlt === "VRF MINT";
-const isCommunityCenterOpen = navOpen && navAlt === "COMMUNITY CENTER";
+  const navOpen = openNavIdx !== null;
+  const navAlt = navOpen ? ICONS[openNavIdx].alt : "";
+  const isInfoOpen = navOpen && navAlt === "INFO";
+  const isCollectionOpen = navOpen && navAlt === "COLLECTION";
+  const isRewardsOpen = navOpen && navAlt === "REWARDS";
+  const isTokenPanelOpen = navOpen && navAlt === "BIGGI ECOSYSTEM";
+  const isUserPanelOpen = navOpen && navAlt === "USERS";
+  const isVRFPanelOpen = navOpen && navAlt === "VRF MINT";
+  const isCommunityCenterOpen = navOpen && navAlt === "COMMUNITY CENTER";
 
-  const hideExtras = navOpen && (navAlt === "COLLECTION" || navAlt === "VRF MINT" || navAlt === "BIGGI ECOSYSTEM" || navAlt === "USERS" || navAlt === "COMMUNITY CENTER");
+  const hideExtras =
+    navOpen &&
+    (navAlt === "COLLECTION" ||
+      navAlt === "VRF MINT" ||
+      navAlt === "BIGGI ECOSYSTEM" ||
+      navAlt === "USERS" ||
+      navAlt === "COMMUNITY CENTER");
 
   const goNextPanel = React.useCallback(() => {
-    setOpenNavIdx((idx) => { if (idx === null) return 0; return (idx + 1) % ICONS.length; });
+    setOpenNavIdx((idx) => {
+      if (idx === null) return 0;
+      return (idx + 1) % ICONS.length;
+    });
   }, []);
   const goPrevPanel = React.useCallback(() => {
-    setOpenNavIdx((idx) => { if (idx === null) return ICONS.length - 1; return (idx - 1 + ICONS.length) % ICONS.length; });
+    setOpenNavIdx((idx) => {
+      if (idx === null) return ICONS.length - 1;
+      return (idx - 1 + ICONS.length) % ICONS.length;
+    });
   }, []);
 
   useNavHotkeys(navOpen, goNextPanel, goPrevPanel);
@@ -1015,10 +1222,10 @@ const isCommunityCenterOpen = navOpen && navAlt === "COMMUNITY CENTER";
                   boxShadow: "none",
                 }
               : isCollectionOpen ||
-                isTokenPanelOpen ||
-                isUserPanelOpen ||
-                isVRFPanelOpen ||
-                isCommunityCenterOpen
+                  isTokenPanelOpen ||
+                  isUserPanelOpen ||
+                  isVRFPanelOpen ||
+                  isCommunityCenterOpen
                 ? {
                     width: isMobile ? "min(100vw, 96vw)" : "min(1700px, 96vw)",
                     maxHeight: "100%",

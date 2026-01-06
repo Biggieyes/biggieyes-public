@@ -9,7 +9,11 @@ import { LiquidityVault as ABI_LIQUIDITY_VAULT } from "../config/abi/index.js";
  */
 async function getLiquidityVaultRO() {
   const provider = await getROProvider();
-  return getReadOnlyContract(ADDR.LIQUIDITY_VAULT, ABI_LIQUIDITY_VAULT, provider);
+  return getReadOnlyContract(
+    ADDR.LIQUIDITY_VAULT,
+    ABI_LIQUIDITY_VAULT,
+    provider,
+  );
 }
 
 /**

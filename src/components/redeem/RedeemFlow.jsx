@@ -40,16 +40,26 @@ export default function RedeemFlow({
 
       {/* Step indicator */}
       <ol className="redeem-steps">
-        <li className={`step ${stepIndex >= 0 ? "done" : ""} ${stepIndex === 0 ? "active" : ""}`}>
+        <li
+          className={`step ${stepIndex >= 0 ? "done" : ""} ${stepIndex === 0 ? "active" : ""}`}
+        >
           <span className="dot" />
           <span className="label">Ready to Redeem</span>
         </li>
-        <li className={`step ${stepIndex >= 1 ? "done" : ""} ${stepIndex === 1 ? "active" : ""}`}>
-          <span className="dot">{isRedeeming && <span className="spinner" />}</span>
+        <li
+          className={`step ${stepIndex >= 1 ? "done" : ""} ${stepIndex === 1 ? "active" : ""}`}
+        >
+          <span className="dot">
+            {isRedeeming && <span className="spinner" />}
+          </span>
           <span className="label">Tx Confirmation</span>
         </li>
-        <li className={`step ${stepIndex >= 2 ? "done" : ""} ${stepIndex === 2 ? "active" : ""}`}>
-          <span className="dot">{vrfPending && <span className="spinner" />}</span>
+        <li
+          className={`step ${stepIndex >= 2 ? "done" : ""} ${stepIndex === 2 ? "active" : ""}`}
+        >
+          <span className="dot">
+            {vrfPending && <span className="spinner" />}
+          </span>
           <span className="label">VRF Pending</span>
         </li>
       </ol>
@@ -75,7 +85,11 @@ export default function RedeemFlow({
           onClick={canRedeem ? onRedeem : undefined}
           disabled={!canRedeem}
         >
-          {canRedeem ? "Redeem Ticket" : isRedeeming ? "Submitting..." : "Waiting for VRF..."}
+          {canRedeem
+            ? "Redeem Ticket"
+            : isRedeeming
+              ? "Submitting..."
+              : "Waiting for VRF..."}
         </button>
 
         {vrfPending && (
@@ -87,8 +101,8 @@ export default function RedeemFlow({
 
       {/* Tiny helper note */}
       <p className="redeem-note">
-        After your ticket burns, the NFT is selected via Chainlink VRF.
-        It will auto-appear in your gallery once revealed.
+        After your ticket burns, the NFT is selected via Chainlink VRF. It will
+        auto-appear in your gallery once revealed.
       </p>
     </section>
   );

@@ -10,9 +10,9 @@ function TopBar({
   vrfPending,
   actionPerforming,
   actionError,
-  icons = [],        // ✅ fallback, kdyby ještě nebyly k dispozici
+  icons = [], // ✅ fallback, kdyby ještě nebyly k dispozici
   onIconClick,
-  isMobile = false,  // ⬅️ přijmeme od Appu
+  isMobile = false, // ⬅️ přijmeme od Appu
 }) {
   return (
     <div className={`top-bar ${isMobile ? "mobile" : "desktop"}`}>
@@ -20,7 +20,11 @@ function TopBar({
       {!isMobile && (
         <>
           <div className="left-block">
-            <img src="/images/main-logo1.png" className="left-logo" alt="BiggiEyes Logo" />
+            <img
+              src="/images/main-logo1.png"
+              className="left-logo"
+              alt="BiggiEyes Logo"
+            />
             <ActionButtons
               onMint={onMint}
               onRedeem={onRedeem}
@@ -35,9 +39,14 @@ function TopBar({
           <IconRow icons={icons} onIconClick={onIconClick} />
 
           <div className="right-logo-group">
-            <img src="/images/main-logo2.png" className="right-logo" alt="BiggiEyes Secondary Logo" />
+            <img
+              src="/images/main-logo2.png"
+              className="right-logo"
+              alt="BiggiEyes Secondary Logo"
+            />
             <div className="right-logo-desc">
-              BiggiEyes: A Dynamic NFT Ecosystem with Progression and a $500,000 Grand Prize
+              BiggiEyes: A Dynamic NFT Ecosystem with Progression and a $500,000
+              Grand Prize
             </div>
           </div>
         </>
@@ -47,7 +56,11 @@ function TopBar({
       {isMobile && (
         <>
           <div className="mobile-hero">
-            <img src="/images/main-logo1.png" className="mobile-hero__logo" alt="BiggiEyes Logo" />
+            <img
+              src="/images/main-logo1.png"
+              className="mobile-hero__logo"
+              alt="BiggiEyes Logo"
+            />
           </div>
 
           <div className="mobile-icons">

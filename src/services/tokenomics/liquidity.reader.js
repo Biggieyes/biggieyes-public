@@ -13,7 +13,9 @@ async function _callOptional(method, fallback = null) {
   }
 }
 
-const LP_BALANCE_ABI = ["function lpBalanceOf(address lpPair) view returns (uint256)"];
+const LP_BALANCE_ABI = [
+  "function lpBalanceOf(address lpPair) view returns (uint256)",
+];
 
 async function _readTotalLpLocked({ vault, signerOrProvider, chainId }) {
   if (!vault) return null;
@@ -25,10 +27,15 @@ async function _readTotalLpLocked({ vault, signerOrProvider, chainId }) {
       if (res != null) return res;
     }
   } catch (error) {
-    const emptyData = typeof error?.data === "string" ? error.data === "0x" : false;
+    const emptyData =
+      typeof error?.data === "string" ? error.data === "0x" : false;
     // ignore "missing selector" errors and try fallback below
     if (!emptyData) {
-      console.warn("Liquidity snapshot helper call failed", "totalLpLocked", error);
+      console.warn(
+        "Liquidity snapshot helper call failed",
+        "totalLpLocked",
+        error,
+      );
     }
   }
 
@@ -38,7 +45,11 @@ async function _readTotalLpLocked({ vault, signerOrProvider, chainId }) {
   if (!pairAddress) return null;
 
   try {
-    const vaultCompat = new Contract(vault.address, LP_BALANCE_ABI, signerOrProvider);
+    const vaultCompat = new Contract(
+      vault.address,
+      LP_BALANCE_ABI,
+      signerOrProvider,
+    );
     return await vaultCompat.lpBalanceOf(pairAddress);
   } catch (error) {
     console.warn("Liquidity snapshot helper call failed", "lpBalanceOf", error);
@@ -48,9 +59,19 @@ async function _readTotalLpLocked({ vault, signerOrProvider, chainId }) {
 
 export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
   const signerOrProvider = provider || getProvider();
-  const { reserve, manager, vault } = getLiquidityContracts(chainId, signerOrProvider);
+  const { reserve, manager, vault } = getLiquidityContracts(
+    chainId,
+    signerOrProvider,
+  );
 
-  let maticBalance, biggiBalance, totalMaticReceived, waitingBiggi, dexRefillBiggi, routerAddress, factoryAddress, vaultAddress;
+  let maticBalance,
+    biggiBalance,
+    totalMaticReceived,
+    waitingBiggi,
+    dexRefillBiggi,
+    routerAddress,
+    factoryAddress,
+    vaultAddress;
   try {
     [
       maticBalance,
@@ -78,13 +99,17 @@ export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
     console.warn("[LiquiditySnapshot] Chyba při načítání adres/metod:", err);
   }
 
-  let vaultLiquidityManager = null, totalLpLocked = null;
+  let vaultLiquidityManager = null,
+    totalLpLocked = null;
   try {
     [vaultLiquidityManager, totalLpLocked] = await Promise.all([
       _callOptional(vault.liquidityManager),
       _readTotalLpLocked({ vault, signerOrProvider, chainId }),
     ]);
-    console.log("[LiquiditySnapshot] vault.liquidityManager:", vaultLiquidityManager);
+    console.log(
+      "[LiquiditySnapshot] vault.liquidityManager:",
+      vaultLiquidityManager,
+    );
     console.log("[LiquiditySnapshot] vault.totalLpLocked:", totalLpLocked);
   } catch (err) {
     console.warn("[LiquiditySnapshot] Chyba při načítání vault hodnot:", err);

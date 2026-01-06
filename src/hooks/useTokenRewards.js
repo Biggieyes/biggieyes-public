@@ -1,11 +1,11 @@
 // src/hooks/useTokenRewards.js
 import * as React from "react";
-import TokenRewardsService from "../services/tokenRewardsService";
-import { ADDR, getROProvider } from "../utils/contract";
+import { ethers } from "ethers";
+import { getROProvider, ABI_REWARDS_READER } from "../utils/contract";
 import { getCached } from "../utils/fetchCache";
 
 const DEFAULT_DATA = {
-  address: null,
+  address: "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
   unitReward: "0",
   rewardsMinted: "0",
   rewardsCap: "0",
@@ -31,45 +31,43 @@ export default function useTokenRewards(providerOverride = null) {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
 
-  const refresh = React.useCallback(async (options = {}) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const provider = providerOverride || getROProvider();
-      if (!provider) throw new Error("Read-only provider not available");
+  const refresh = React.useCallback(
+    async (options = {}) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const provider = providerOverride || getROProvider();
+        if (!provider) throw new Error("Read-only provider not available");
 
-      const svc = new TokenRewardsService(ADDR.TOKEN_REWARDS, provider);
-      const cacheKey = `tokenRewards:${svc.address || ADDR.TOKEN_REWARDS || "unknown"}`;
-      const snapshot = await getCached(
-        cacheKey,
-        async () => {
-          const raw = await svc.getAllStats();
-          const formatted = await TokenRewardsService.formatUsingTokenMeta(raw);
-          const meta = formatted?.tokenMeta || null;
-          const tokenSymbol = meta?.symbol_ ?? meta?.symbol ?? "BIGGI";
-          const rawDecimals = meta?.decimals_ ?? meta?.decimals ?? 18;
-          const tokenDecimals = Number(rawDecimals?.toString?.() ?? rawDecimals ?? 18) || 18;
+        // RewardsReader contract instance
+        const rewardsReader = new ethers.Contract(
+          "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
+          ABI_REWARDS_READER,
+          provider,
+        );
 
-          return {
-            ...DEFAULT_DATA,
-            ...formatted,
-            address: svc.address,
-            tokenMeta: meta,
-            tokenSymbol,
-            tokenDecimals,
-          };
-        },
-        { force: options?.force === true }
-      );
+        // Čtení globálního snapshotu (viz ABI)
+        const global = await rewardsReader.globalSnapshot();
+        // Další data lze načíst podle potřeby
 
-      setData(snapshot);
-    } catch (e) {
-      console.error("useTokenRewards.refresh", e);
-      setError(e);
-    } finally {
-      setLoading(false);
-    }
-  }, [providerOverride]);
+        setData((prev) => ({
+          ...prev,
+          address: "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
+          currentWeek: Number(global.weekNow),
+          rewardsMinted: global.tokenRewardsMinted?.toString?.() ?? "0",
+          rewardsCap: global.tokenRewardsCap?.toString?.() ?? "0",
+          totalDistributed: global.treasuryBiggi?.toString?.() ?? "0",
+          // ...další pole podle potřeby
+        }));
+      } catch (e) {
+        console.error("useTokenRewards.refresh", e);
+        setError(e);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [providerOverride],
+  );
 
   React.useEffect(() => {
     refresh();

@@ -6,8 +6,8 @@ export default function WalletButton({
   onConnect,
   onConnectWC,
   wcLabel = "Connect Wallet (WC)",
-  wcRight = 30,   // vzdálenost od pravého okraje (jako MetaMask)
-  wcTop = 72      // svislá pozice (pod MetaMask)
+  wcRight = 30, // vzdálenost od pravého okraje (jako MetaMask)
+  wcTop = 72, // svislá pozice (pod MetaMask)
 }) {
   const lockRef = React.useRef(false);
 
@@ -17,13 +17,19 @@ export default function WalletButton({
     return s.slice(0, 6) + "..." + s.slice(-4);
   }, [walletAddress]);
 
-  const label = walletAddress ? `Connected: ${displayAddress}` : "Connect MetaMask";
+  const label = walletAddress
+    ? `Connected: ${displayAddress}`
+    : "Connect MetaMask";
 
   const clickGuard = (fn) => {
     if (lockRef.current) return;
     lockRef.current = true;
-    try { fn?.(); } finally {
-      setTimeout(() => { lockRef.current = false; }, 800);
+    try {
+      fn?.();
+    } finally {
+      setTimeout(() => {
+        lockRef.current = false;
+      }, 800);
     }
   };
 
@@ -45,11 +51,18 @@ export default function WalletButton({
         onClick={handleMetaMaskClick}
         onContextMenu={handleContextMenu}
         aria-label={label}
-        title={walletAddress ? "Right-click to copy address" : "Connect MetaMask"}
+        title={
+          walletAddress ? "Right-click to copy address" : "Connect MetaMask"
+        }
         aria-live="polite"
         aria-atomic="true"
       >
-        <img src="/images/metamask-fox.svg" alt="" className="fox-icon" aria-hidden="true" />
+        <img
+          src="/images/metamask-fox.svg"
+          alt=""
+          className="fox-icon"
+          aria-hidden="true"
+        />
         <span style={{ marginLeft: 8 }}>{label}</span>
       </button>
 

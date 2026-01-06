@@ -80,16 +80,25 @@ function writeStore(obj: Record<string, boolean>): void {
   }
 }
 
-function key(address: string | null | undefined, tokenId: string | number | null | undefined): string {
+function key(
+  address: string | null | undefined,
+  tokenId: string | number | null | undefined,
+): string {
   const addr = String(address || "").toLowerCase();
   const tid = String(tokenId ?? "");
   return `${addr}:${tid}`;
 }
-function isImported(address: string | null | undefined, tokenId: string | number | null | undefined): boolean {
+function isImported(
+  address: string | null | undefined,
+  tokenId: string | number | null | undefined,
+): boolean {
   const db = readStore();
   return !!db[key(address, tokenId)];
 }
-function markImported(address: string | null | undefined, tokenId: string | number | null | undefined): void {
+function markImported(
+  address: string | null | undefined,
+  tokenId: string | number | null | undefined,
+): void {
   const db = readStore();
   db[key(address, tokenId)] = true;
   writeStore(db);
@@ -116,7 +125,10 @@ interface ImportNftButtonProps {
 
 type EthereumProvider = {
   on?: (_event: string, _listener: (..._args: unknown[]) => void) => void;
-  removeListener?: (_event: string, _listener: (..._args: unknown[]) => void) => void;
+  removeListener?: (
+    _event: string,
+    _listener: (..._args: unknown[]) => void,
+  ) => void;
 };
 
 type WindowWithEthereum = Window & {
@@ -215,13 +227,19 @@ export default function ImportNftButton({
       throw new Error("wallet_watchAsset rejected");
     } catch (err) {
       console.error("MetaMask import failed", err);
-      alert("Import failed. Make sure your wallet supports ERC-721 imports and that you confirmed the request.");
+      alert(
+        "Import failed. Make sure your wallet supports ERC-721 imports and that you confirmed the request.",
+      );
     } finally {
       setBusy(false);
     }
   };
 
-  const mergedClassName = ["import-button", imported ? "is-imported" : null, className]
+  const mergedClassName = [
+    "import-button",
+    imported ? "is-imported" : null,
+    className,
+  ]
     .filter(Boolean)
     .join(" ");
 

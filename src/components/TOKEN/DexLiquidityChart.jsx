@@ -21,9 +21,17 @@ export default function DexLiquidityChart({ data, height = 320 }) {
 
   return (
     <div className="dex-chart" style={{ minHeight: safeHeight }}>
-      <SimpleLineChart data={chartData} series={series} height={safeHeight} emptyLabel="No DEX history yet." />
+      <SimpleLineChart
+        data={chartData}
+        series={series}
+        height={safeHeight}
+        emptyLabel="No DEX history yet."
+      />
       {isSample ? (
-        <div className="dex-chart__hint">Sample data shown - fill liquidity history (time, reserveNative, reserveBiggi, price).</div>
+        <div className="dex-chart__hint">
+          Sample data shown - fill liquidity history (time, reserveNative,
+          reserveBiggi, price).
+        </div>
       ) : null}
     </div>
   );

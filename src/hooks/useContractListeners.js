@@ -47,14 +47,14 @@ export function useContractListeners({
             scheduleFetchRewards(800);
             refreshVRFPanel();
 
-          if (fromL === me && toL === zeroL) {
-            setVrfPending(true);
-            setRedeemMsg("Redeem confirmed. Waiting for VRF reveal...");
-            if (typeof setRedeemStartedAt === "function") {
-              setRedeemStartedAt((prev) => prev || Date.now());
+            if (fromL === me && toL === zeroL) {
+              setVrfPending(true);
+              setRedeemMsg("Redeem confirmed. Waiting for VRF reveal...");
+              if (typeof setRedeemStartedAt === "function") {
+                setRedeemStartedAt((prev) => prev || Date.now());
+              }
+              setMyNFTs((prev) => prev.filter((x) => x.tokenId !== tid));
             }
-            setMyNFTs((prev) => prev.filter((x) => x.tokenId !== tid));
-          }
 
             if (toL === me) {
               let isT = false;
@@ -87,8 +87,15 @@ export function useContractListeners({
 
                 setMyNFTs((prev) => {
                   const withoutPending = prev.filter((x) => !x.isPending);
-                  const withoutSame = withoutPending.filter((x) => x.tokenId !== tid);
-                  const card = { tokenId: tid, image, meta: meta || {}, isTicket: false };
+                  const withoutSame = withoutPending.filter(
+                    (x) => x.tokenId !== tid,
+                  );
+                  const card = {
+                    tokenId: tid,
+                    image,
+                    meta: meta || {},
+                    isTicket: false,
+                  };
                   return [card, ...withoutSame];
                 });
                 setTopFirstId(tid);
@@ -99,12 +106,18 @@ export function useContractListeners({
                     try {
                       await fetchWalletAssets(addr);
                     } catch (err) {
-                      console.debug("fetchWalletAssets after transfer failed", err);
+                      console.debug(
+                        "fetchWalletAssets after transfer failed",
+                        err,
+                      );
                     }
                   })();
                 }, 1500);
               } else {
-                setMyNFTs((prev) => [{ tokenId: tid, image, meta: meta || {}, isTicket: true }, ...prev]);
+                setMyNFTs((prev) => [
+                  { tokenId: tid, image, meta: meta || {}, isTicket: true },
+                  ...prev,
+                ]);
               }
             }
 
@@ -172,7 +185,10 @@ export function useContractListeners({
           } catch (err) {
             console.debug("remove Transfer listener failed", err);
           }
-          window.ethereum?.removeListener?.("accountsChanged", handleAccountsChanged);
+          window.ethereum?.removeListener?.(
+            "accountsChanged",
+            handleAccountsChanged,
+          );
           window.ethereum?.removeListener?.("chainChanged", handleChainChanged);
           prev?.();
         };
@@ -207,6 +223,6 @@ export function useContractListeners({
       resolveImageUrl,
       unsubRef,
       walletAddress,
-    ]
+    ],
   );
 }

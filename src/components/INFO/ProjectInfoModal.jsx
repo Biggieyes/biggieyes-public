@@ -43,7 +43,13 @@ const SidebarButton = ({ active, icon, children, ...props }) => (
     }}
   >
     <span aria-hidden>{icon}</span>
-    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+    <span
+      style={{
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+      }}
+    >
       {children}
     </span>
   </button>
@@ -62,7 +68,9 @@ const Card = ({ tone = "v", title, children }) => (
 );
 
 const Heading = ({ children }) => (
-  <h4 style={{ margin: "6px 0", fontWeight: 900, color: COLORS.y }}>{children}</h4>
+  <h4 style={{ margin: "6px 0", fontWeight: 900, color: COLORS.y }}>
+    {children}
+  </h4>
 );
 
 const Divider = ({ tone = COLORS.v }) => (
@@ -132,7 +140,13 @@ const ArrowButton = ({ onClick, title, children }) => (
   </button>
 );
 
-const ProjectInfoModal = ({ open, onClose = () => {}, onPrev, onNext, asPanel = false }) => {
+const ProjectInfoModal = ({
+  open,
+  onClose = () => {},
+  onPrev,
+  onNext,
+  asPanel = false,
+}) => {
   const sections = React.useMemo(() => SECTIONS, []);
   const [active, setActive] = React.useState(sections[0].id);
   const [isMobile, setIsMobile] = React.useState(() => {
@@ -213,8 +227,14 @@ const ProjectInfoModal = ({ open, onClose = () => {}, onPrev, onNext, asPanel = 
   );
 
   const Content = (
-    <Card tone="c" title={sections.find((entry) => entry.id === active)?.label ?? ""}>
-      <div className="rewards-info" style={{ display: "grid", gap: 16, lineHeight: 1.7 }}>
+    <Card
+      tone="c"
+      title={sections.find((entry) => entry.id === active)?.label ?? ""}
+    >
+      <div
+        className="rewards-info"
+        style={{ display: "grid", gap: 16, lineHeight: 1.7 }}
+      >
         {active === "overview" && (
           <>
             <Heading>How it works — 3 steps</Heading>
@@ -223,10 +243,12 @@ const ProjectInfoModal = ({ open, onClose = () => {}, onPrev, onNext, asPanel = 
                 <strong>Mint ticket:</strong> pay in ETH or BIGGI.
               </li>
               <li>
-                <strong>Redeem:</strong> redeem the ticket and request randomness via Chainlink VRF.
+                <strong>Redeem:</strong> redeem the ticket and request
+                randomness via Chainlink VRF.
               </li>
               <li>
-                <strong>Mint NFT:</strong> VRF assigns block, background and mainId, and the NFT is minted immediately.
+                <strong>Mint NFT:</strong> VRF assigns block, background and
+                mainId, and the NFT is minted immediately.
               </li>
             </ol>
 
@@ -235,13 +257,16 @@ const ProjectInfoModal = ({ open, onClose = () => {}, onPrev, onNext, asPanel = 
             <Heading>Pricing in a nutshell</Heading>
             <ul style={{ marginLeft: 18 }}>
               <li>
-                <strong>Permanent background effect:</strong> each background permanently increases the price of its own block.
+                <strong>Permanent background effect:</strong> each background
+                permanently increases the price of its own block.
               </li>
               <li>
-                <strong>Final price:</strong> current price of the block at mint time plus background bonus.
+                <strong>Final price:</strong> current price of the block at mint
+                time plus background bonus.
               </li>
               <li>
-                We store three values: <code>ticketPrice</code>, <code>blockPrice</code> and <code>finalPrice</code>.
+                We store three values: <code>ticketPrice</code>,{" "}
+                <code>blockPrice</code> and <code>finalPrice</code>.
               </li>
             </ul>
           </>
@@ -252,11 +277,16 @@ const ProjectInfoModal = ({ open, onClose = () => {}, onPrev, onNext, asPanel = 
             <Heading>Core principles</Heading>
             <ul style={{ marginLeft: 18 }}>
               <li>
-                Each mint stores <code>ticketPrice</code>, <code>blockPrice</code> (current block price at mint) and{" "}
+                Each mint stores <code>ticketPrice</code>,{" "}
+                <code>blockPrice</code> (current block price at mint) and{" "}
                 <code>finalPrice</code>.
               </li>
-              <li>Backgrounds permanently raise the price of their own block.</li>
-              <li>Ticket price increases independently on every mint (~0.33%).</li>
+              <li>
+                Backgrounds permanently raise the price of their own block.
+              </li>
+              <li>
+                Ticket price increases independently on every mint (~0.33%).
+              </li>
             </ul>
 
             <Heading>Order of calculation</Heading>
@@ -273,8 +303,13 @@ const ProjectInfoModal = ({ open, onClose = () => {}, onPrev, onNext, asPanel = 
             <Heading>On-chain data</Heading>
             <ul style={{ marginLeft: 18 }}>
               <li>Live ticket price, block prices, minted/remaining supply.</li>
-              <li>Background increases, reward pool balance, claim eligibility.</li>
-              <li>Per NFT: <code>ticketPrice</code>, <code>blockPrice</code>, <code>finalPrice</code>.</li>
+              <li>
+                Background increases, reward pool balance, claim eligibility.
+              </li>
+              <li>
+                Per NFT: <code>ticketPrice</code>, <code>blockPrice</code>,{" "}
+                <code>finalPrice</code>.
+              </li>
             </ul>
 
             <Heading>Provably fair randomness</Heading>
@@ -286,9 +321,13 @@ const ProjectInfoModal = ({ open, onClose = () => {}, onPrev, onNext, asPanel = 
           <>
             <Heading>UX elements</Heading>
             <ul style={{ marginLeft: 18 }}>
-              <li>Gallery with filters by block/background/mainId and search.</li>
+              <li>
+                Gallery with filters by block/background/mainId and search.
+              </li>
               <li>Live redeem/VRF state and detailed mint price breakdown.</li>
-              <li>Claim preview with exact reasons why an NFT is (not) claimable.</li>
+              <li>
+                Claim preview with exact reasons why an NFT is (not) claimable.
+              </li>
             </ul>
           </>
         )}
@@ -299,14 +338,18 @@ const ProjectInfoModal = ({ open, onClose = () => {}, onPrev, onNext, asPanel = 
             <ul style={{ marginLeft: 18 }}>
               <li>Expanded frontend, full claim centre, VRF view, timeline.</li>
               <li>Liquidity tools, LP overview, historical snapshots.</li>
-              <li>Token utilities: sink routing, conversion controls, guides.</li>
+              <li>
+                Token utilities: sink routing, conversion controls, guides.
+              </li>
             </ul>
 
             <Heading>Community & Legal</Heading>
             <ul style={{ marginLeft: 18 }}>
               <li>Moderated community space with verified addresses.</li>
               <li>Crypto/NFT risks apply; nothing is financial advice.</li>
-              <li>Using the app implies acceptance of Terms & Privacy Policy.</li>
+              <li>
+                Using the app implies acceptance of Terms & Privacy Policy.
+              </li>
             </ul>
           </>
         )}
@@ -314,7 +357,10 @@ const ProjectInfoModal = ({ open, onClose = () => {}, onPrev, onNext, asPanel = 
         {active === "faq" && (
           <>
             <Heading>FAQ</Heading>
-            <p>Coming soon — we will cover claims, pricing, metadata, transactions and wallets.</p>
+            <p>
+              Coming soon — we will cover claims, pricing, metadata,
+              transactions and wallets.
+            </p>
           </>
         )}
 
@@ -322,13 +368,21 @@ const ProjectInfoModal = ({ open, onClose = () => {}, onPrev, onNext, asPanel = 
           <>
             <Heading>Token overview</Heading>
             <ul style={{ marginLeft: 18 }}>
-              <li>BIGGI is the rewards token; the app shows address, meta and remaining emission.</li>
+              <li>
+                BIGGI is the rewards token; the app shows address, meta and
+                remaining emission.
+              </li>
             </ul>
 
             <Heading>Weekly rewards</Heading>
             <ul style={{ marginLeft: 18 }}>
-              <li>Each NFT can claim once per week based on block weight (1–10).</li>
-              <li>The interface highlights the current reward week and next eligible claim date.</li>
+              <li>
+                Each NFT can claim once per week based on block weight (1–10).
+              </li>
+              <li>
+                The interface highlights the current reward week and next
+                eligible claim date.
+              </li>
             </ul>
           </>
         )}
@@ -337,13 +391,22 @@ const ProjectInfoModal = ({ open, onClose = () => {}, onPrev, onNext, asPanel = 
           <>
             <Heading>Router & path</Heading>
             <ul style={{ marginLeft: 18 }}>
-              <li>Shows DEX router, wrapped native token and swap path (typically WNATIVE → BIGGI).</li>
+              <li>
+                Shows DEX router, wrapped native token and swap path (typically
+                WNATIVE → BIGGI).
+              </li>
             </ul>
 
             <Heading>LP workflow</Heading>
             <ul style={{ marginLeft: 18 }}>
-              <li><code>bootstrapLiquidity</code> creates the pool and mints LP tokens.</li>
-              <li><code>addLiquidityFromBalance</code> swaps part to BIGGI, keeps part in native and deposits both.</li>
+              <li>
+                <code>bootstrapLiquidity</code> creates the pool and mints LP
+                tokens.
+              </li>
+              <li>
+                <code>addLiquidityFromBalance</code> swaps part to BIGGI, keeps
+                part in native and deposits both.
+              </li>
             </ul>
           </>
         )}
@@ -365,7 +428,8 @@ const ProjectInfoModal = ({ open, onClose = () => {}, onPrev, onNext, asPanel = 
               >
                 <VideoPill index={1} tone={COLORS.y} />
                 <div>
-                  <strong>Mint / Redeem:</strong> buying tickets, redeem flow and VRF fulfillment.
+                  <strong>Mint / Redeem:</strong> buying tickets, redeem flow
+                  and VRF fulfillment.
                 </div>
               </div>
 
@@ -382,7 +446,8 @@ const ProjectInfoModal = ({ open, onClose = () => {}, onPrev, onNext, asPanel = 
               >
                 <VideoPill index={2} tone={COLORS.p} />
                 <div>
-                  <strong>Blocks / Backgrounds:</strong> permanent block increases and one-off background bonuses.
+                  <strong>Blocks / Backgrounds:</strong> permanent block
+                  increases and one-off background bonuses.
                 </div>
               </div>
 
@@ -399,7 +464,8 @@ const ProjectInfoModal = ({ open, onClose = () => {}, onPrev, onNext, asPanel = 
               >
                 <VideoPill index={3} tone={COLORS.v} />
                 <div>
-                  <strong>VRF:</strong> provably fair randomness, request/fulfill and auditing on explorer.
+                  <strong>VRF:</strong> provably fair randomness,
+                  request/fulfill and auditing on explorer.
                 </div>
               </div>
 
@@ -416,7 +482,8 @@ const ProjectInfoModal = ({ open, onClose = () => {}, onPrev, onNext, asPanel = 
               >
                 <VideoPill index={4} tone={COLORS.c} />
                 <div>
-                  <strong>Liquidity:</strong> router, pair, bootstrap/add-liquidity and LP token flow.
+                  <strong>Liquidity:</strong> router, pair,
+                  bootstrap/add-liquidity and LP token flow.
                 </div>
               </div>
 
@@ -433,7 +500,8 @@ const ProjectInfoModal = ({ open, onClose = () => {}, onPrev, onNext, asPanel = 
               >
                 <VideoPill index={5} tone={COLORS.g} />
                 <div>
-                  <strong>Users:</strong> wallet connection, NFT import, gallery and rewards claim.
+                  <strong>Users:</strong> wallet connection, NFT import, gallery
+                  and rewards claim.
                 </div>
               </div>
             </div>
@@ -478,8 +546,16 @@ const ProjectInfoModal = ({ open, onClose = () => {}, onPrev, onNext, asPanel = 
             gap: 6,
           }}
         >
-          {typeof onPrev === "function" && <ArrowButton onClick={onPrev} title="Previous">◄</ArrowButton>}
-          {typeof onNext === "function" && <ArrowButton onClick={onNext} title="Next">►</ArrowButton>}
+          {typeof onPrev === "function" && (
+            <ArrowButton onClick={onPrev} title="Previous">
+              ◄
+            </ArrowButton>
+          )}
+          {typeof onNext === "function" && (
+            <ArrowButton onClick={onNext} title="Next">
+              ►
+            </ArrowButton>
+          )}
           <button
             type="button"
             onClick={onClose}
@@ -548,8 +624,8 @@ const ProjectInfoModal = ({ open, onClose = () => {}, onPrev, onNext, asPanel = 
           textAlign: "center",
         }}
       >
-        © {new Date().getFullYear()} BIGGI / BiggiEyes. All rights reserved. • Nothing here is financial advice. • Use
-        at your own risk.
+        © {new Date().getFullYear()} BIGGI / BiggiEyes. All rights reserved. •
+        Nothing here is financial advice. • Use at your own risk.
       </footer>
     </>
   );
@@ -630,4 +706,3 @@ const ProjectInfoModal = ({ open, onClose = () => {}, onPrev, onNext, asPanel = 
 };
 
 export default ProjectInfoModal;
-

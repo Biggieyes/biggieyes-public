@@ -40,22 +40,26 @@ export function useIPFS() {
     return IPFS_GATEWAYS[0](cid);
   }, []);
 
-  const resolveImageUrl = React.useCallback((imageField, metadataUri) => {
-    if (!imageField) return null;
-    if (imageField.startsWith("ipfs://")) return normalizeIpfsImage(imageField);
-    if (/^https?:\/\//i.test(imageField)) return imageField;
+  const resolveImageUrl = React.useCallback(
+    (imageField, metadataUri) => {
+      if (!imageField) return null;
+      if (imageField.startsWith("ipfs://"))
+        return normalizeIpfsImage(imageField);
+      if (/^https?:\/\//i.test(imageField)) return imageField;
 
-    const metaHttp = httpFromIpfs(metadataUri);
-    try {
-      const u = new URL(metaHttp);
-      const clean = String(imageField).replace(/^\.?\//, "");
-      u.pathname = u.pathname.replace(/\/[^/]*$/, `/${clean}`);
-      return u.toString();
-    } catch (err) {
-      console.debug("resolveImageUrl URL parse failed", err);
-      return imageField;
-    }
-  }, [httpFromIpfs, normalizeIpfsImage]);
+      const metaHttp = httpFromIpfs(metadataUri);
+      try {
+        const u = new URL(metaHttp);
+        const clean = String(imageField).replace(/^\.?\//, "");
+        u.pathname = u.pathname.replace(/\/[^/]*$/, `/${clean}`);
+        return u.toString();
+      } catch (err) {
+        console.debug("resolveImageUrl URL parse failed", err);
+        return imageField;
+      }
+    },
+    [httpFromIpfs, normalizeIpfsImage],
+  );
 
   const readJsonFromURI = React.useCallback(async (uri) => {
     try {
@@ -67,7 +71,11 @@ export function useIPFS() {
             const resp = await fetchWithTimeout(build(cid), 8000);
             if (resp.ok) return await resp.json();
           } catch (err) {
-            console.debug("readJsonFromURI IPFS gateway failed", build(cid), err);
+            console.debug(
+              "readJsonFromURI IPFS gateway failed",
+              build(cid),
+              err,
+            );
           }
         }
         return null;

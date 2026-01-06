@@ -34,7 +34,9 @@ export function RewardsProvider({ children }) {
             } catch {}
           }
         }
-        setMintVolumeMatic(volWei ? Number(ethers.utils.formatEther(volWei)) : null);
+        setMintVolumeMatic(
+          volWei ? Number(ethers.utils.formatEther(volWei)) : null,
+        );
 
         // weekly pool
         let weeklyWei = null;
@@ -81,7 +83,7 @@ export function RewardsProvider({ children }) {
         console.error("RewardsProvider.refresh", e);
       }
     },
-    [mainRO, liqRO]
+    [mainRO, liqRO],
   );
 
   const claim = React.useCallback(
@@ -90,11 +92,13 @@ export function RewardsProvider({ children }) {
       const tx = await lr.claim(tokenIdsBN);
       await tx.wait();
     },
-    [liqRW]
+    [liqRW],
   );
 
   return (
-    <Ctx.Provider value={{ rewardPool, myClaimable, mintVolumeMatic, refresh, claim }}>
+    <Ctx.Provider
+      value={{ rewardPool, myClaimable, mintVolumeMatic, refresh, claim }}
+    >
       {children}
     </Ctx.Provider>
   );

@@ -17,7 +17,11 @@ const TokenomicsPanel = () => {
   const [activeSegment, setActiveSegment] = React.useState("reserve");
   const { snapshot, loading, error } = useLiquiditySnapshot();
   const { history, chartPoints } = useLiquidityHistory(snapshot);
-  const { snapshot: tokenDexSnapshot, loading: tokenDexLoading, error: tokenDexError } = useTokenDexSnapshot();
+  const {
+    snapshot: tokenDexSnapshot,
+    loading: tokenDexLoading,
+    error: tokenDexError,
+  } = useTokenDexSnapshot();
   const { history: tokenDexHistory } = useTokenDexHistory(tokenDexSnapshot);
 
   return (
@@ -27,7 +31,9 @@ const TokenomicsPanel = () => {
           <p className="tokenomics-panel__eyebrow">Reserve / LM / Vault</p>
           <h2>Liquidity nerves</h2>
         </div>
-        <span className="tokenomics-panel__ts">Updated {snapshot?.tsLabel ?? "N/A"}</span>
+        <span className="tokenomics-panel__ts">
+          Updated {snapshot?.tsLabel ?? "N/A"}
+        </span>
       </header>
 
       <div className="tokenomics-panel__tabs">

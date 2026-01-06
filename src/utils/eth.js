@@ -2,23 +2,25 @@
 // Shared ethers helpers for Moderator Center.
 import { ethers } from "ethers";
 import moderatorsRewardsAbi from "../abis/ModeratorsRewards.json";
-import { getSharedFallbackProvider, createJsonRpcProvider } from "../web3/rpcProviders";
+import {
+  getSharedFallbackProvider,
+  createJsonRpcProvider,
+} from "../web3/rpcProviders";
 
 const MOD_REWARDS_ADDRESS =
   import.meta.env.VITE_MOD_REWARDS_CONTRACT ||
   import.meta.env.VITE_MOD_REWARDS_ADDRESS ||
   "";
 const CHAIN_RPC_URL =
-  import.meta.env.VITE_MOD_CHAIN_RPC ||
-  import.meta.env.VITE_JSON_RPC_URL ||
-  "";
+  import.meta.env.VITE_MOD_CHAIN_RPC || import.meta.env.VITE_JSON_RPC_URL || "";
 const OWNER_ADDRESS = import.meta.env.VITE_MOD_OWNER_ADDRESS || "";
 
 export const getConfig = () => ({
   contractAddress: MOD_REWARDS_ADDRESS,
   chainRpc: CHAIN_RPC_URL,
   ownerAddress: OWNER_ADDRESS,
-  abiReady: Array.isArray(moderatorsRewardsAbi) && moderatorsRewardsAbi.length > 0,
+  abiReady:
+    Array.isArray(moderatorsRewardsAbi) && moderatorsRewardsAbi.length > 0,
 });
 
 export const isOwner = (address) => {
@@ -50,7 +52,9 @@ export const getReadOnlyProvider = () => {
 
 export const getSignerProvider = async () => {
   if (typeof window === "undefined" || !window.ethereum) return null;
-  await window.ethereum.request?.({ method: "eth_requestAccounts" }).catch(() => {});
+  await window.ethereum
+    .request?.({ method: "eth_requestAccounts" })
+    .catch(() => {});
   return new ethers.providers.Web3Provider(window.ethereum, "any");
 };
 

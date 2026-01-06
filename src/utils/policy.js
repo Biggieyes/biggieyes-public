@@ -4,7 +4,12 @@ export async function refreshPolicy({ getPolicyRO, setBiggiData }) {
   const pol = await getPolicyRO();
   if (!pol) return;
 
-  let splits = { reserveBps: null, buybackBps: null, collRewardsBps: null, treasuryBps: null };
+  let splits = {
+    reserveBps: null,
+    buybackBps: null,
+    collRewardsBps: null,
+    treasuryBps: null,
+  };
   try {
     if (typeof pol.getDistributorSplits === "function") {
       const s = await pol.getDistributorSplits();
@@ -68,13 +73,16 @@ export async function refreshPolicy({ getPolicyRO, setBiggiData }) {
     if (lpSlip != null) guards.lpSlippageBps = Number(lpSlip);
     if (deadline != null) guards.txDeadlineSec = Number(deadline);
     if (cooldown != null) guards.minBuybackInterval = Number(cooldown);
-    if (dailyCap != null) guards.maxDailyBuybackNative = ethers.utils.formatEther(dailyCap);
+    if (dailyCap != null)
+      guards.maxDailyBuybackNative = ethers.utils.formatEther(dailyCap);
   } catch {
     // ignore guard fetch fallback
   }
 
   let buybacksPaused = null;
-  try { buybacksPaused = !!(await pol.buybacksPaused()); } catch {
+  try {
+    buybacksPaused = !!(await pol.buybacksPaused());
+  } catch {
     // ignore pause fetch
   }
 

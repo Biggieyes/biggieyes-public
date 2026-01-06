@@ -63,7 +63,11 @@
 .gallery__info-btn {
   border-radius: 999px;
   border: 1px solid rgba(255, 232, 0, 0.35);
-  background: linear-gradient(135deg, rgba(255, 232, 0, 0.9), rgba(255, 205, 0, 0.82));
+  background: linear-gradient(
+    135deg,
+    rgba(255, 232, 0, 0.9),
+    rgba(255, 205, 0, 0.82)
+  );
   color: #111;
   font-weight: 800;
   padding: 10px 18px;
@@ -131,7 +135,11 @@
   position: absolute;
   inset: 0;
   border-radius: 18px;
-  background: linear-gradient(145deg, rgba(255, 232, 0, 0.05), rgba(18, 18, 24, 0.85));
+  background: linear-gradient(
+    145deg,
+    rgba(255, 232, 0, 0.05),
+    rgba(18, 18, 24, 0.85)
+  );
   backdrop-filter: none;
   z-index: 1;
   pointer-events: none;

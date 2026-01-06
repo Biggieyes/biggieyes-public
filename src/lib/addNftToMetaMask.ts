@@ -10,8 +10,8 @@ type AssetOptions = {
 type AddSingleParams = {
   contractAddress: string;
   tokenId: string | number;
-  chainId?: HexChainId;      // např. "0x1" (Ethereum), "0xaa36a7" (Sepolia), "0x13882" (Polygon Amoy)
-  trySwitchChain?: boolean;  // default: true
+  chainId?: HexChainId; // např. "0x1" (Ethereum), "0xaa36a7" (Sepolia), "0x13882" (Polygon Amoy)
+  trySwitchChain?: boolean; // default: true
   assetOptions?: AssetOptions;
 };
 
@@ -32,7 +32,7 @@ interface EthereumishProvider {
   request(_args: EthereumishRequest): Promise<unknown>;
   sendAsync?: (
     _payload: EthereumishRequest | EthereumishRequest[],
-    _cb: (_err: unknown, _result: unknown) => void
+    _cb: (_err: unknown, _result: unknown) => void,
   ) => void;
 }
 
@@ -96,7 +96,7 @@ export async function addManyNftsToMetaMask({
   const anyProvider = provider as EthereumishProvider & {
     sendAsync?: (
       _payload: EthereumishRequest | EthereumishRequest[],
-      _cb: (_err: unknown, _result: unknown) => void
+      _cb: (_err: unknown, _result: unknown) => void,
     ) => void;
   };
   if (typeof anyProvider.sendAsync !== "function") {
@@ -119,7 +119,9 @@ export async function addManyNftsToMetaMask({
       const array = Array.isArray(results) ? results : [];
       const success = array.reduce((acc, entry) => {
         if (typeof entry === "object" && entry !== null && "result" in entry) {
-          return acc + (((entry as unknown) as { result?: boolean }).result ? 1 : 0);
+          return (
+            acc + ((entry as unknown as { result?: boolean }).result ? 1 : 0)
+          );
         }
         return acc;
       }, 0);
@@ -133,7 +135,8 @@ export async function addManyNftsToMetaMask({
 /* ----------------- interní pomocníci ----------------- */
 
 function getProvider(): EthereumishProvider {
-  const eth = (globalThis as unknown as { ethereum?: EthereumishProvider }).ethereum;
+  const eth = (globalThis as unknown as { ethereum?: EthereumishProvider })
+    .ethereum;
   if (!eth || typeof eth.request !== "function") {
     throw new Error("MetaMask provider not found");
   }
@@ -143,7 +146,7 @@ function getProvider(): EthereumishProvider {
 async function ensureOnChain(
   provider: EthereumishProvider,
   chainId: HexChainId,
-  trySwitch: boolean
+  trySwitch: boolean,
 ): Promise<void> {
   const current = (await provider.request({ method: "eth_chainId" })) as string;
   if (normalizeHex(current) === normalizeHex(chainId)) return;

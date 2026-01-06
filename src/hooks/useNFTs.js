@@ -1,6 +1,10 @@
 import * as React from "react";
 import { ethers } from "ethers";
-import { getContract, getReadOnlyContract, getLiquidityContract } from "../utils/contract";
+import {
+  getContract,
+  getReadOnlyContract,
+  getLiquidityContract,
+} from "../utils/contract";
 import { getLogsBatched } from "../wallet/wc";
 import { readJsonFromURI, resolveImageUrl } from "../services/ipfs";
 
@@ -38,7 +42,7 @@ export function useNFTs({
     const all = [...toLogs, ...fromLogs].sort((a, b) =>
       a.blockNumber !== b.blockNumber
         ? a.blockNumber - b.blockNumber
-        : a.logIndex - b.logIndex
+        : a.logIndex - b.logIndex,
     );
     const held = new Set();
     const me = addr.toLowerCase();
@@ -54,34 +58,37 @@ export function useNFTs({
   }, []);
 
   /* ------------------- FETCH WALLET ASSETS ------------------- */
-  const fetchWalletAssets = React.useCallback(async (addr) => {
-    if (!addr) return;
-    const contract = getReadOnlyContract();
-    try {
-      const ids = await findTicketsViaLogs(contract, addr);
-      const metas = await Promise.all(
-        ids.map(async (tid) => {
-          let image = "/images/Biggi.png";
-          let meta = { name: `Token #${tid}`, description: "" };
-          try {
-            const uri = await contract.tokenURI(tid);
-            const json = await readJsonFromURI(uri);
-            if (json) {
-              meta = json;
-              const imgUrl = json.image || json.image_url;
-              image = resolveImageUrl(imgUrl, uri) || image;
+  const fetchWalletAssets = React.useCallback(
+    async (addr) => {
+      if (!addr) return;
+      const contract = getReadOnlyContract();
+      try {
+        const ids = await findTicketsViaLogs(contract, addr);
+        const metas = await Promise.all(
+          ids.map(async (tid) => {
+            let image = "/images/Biggi.png";
+            let meta = { name: `Token #${tid}`, description: "" };
+            try {
+              const uri = await contract.tokenURI(tid);
+              const json = await readJsonFromURI(uri);
+              if (json) {
+                meta = json;
+                const imgUrl = json.image || json.image_url;
+                image = resolveImageUrl(imgUrl, uri) || image;
+              }
+            } catch (err) {
+              console.debug("fetchWalletAssets tokenURI read failed", err);
             }
-          } catch (err) {
-            console.debug("fetchWalletAssets tokenURI read failed", err);
-          }
-          return { tokenId: String(tid), image, meta };
-        })
-      );
-      setMyNFTs(metas);
-    } catch (e) {
-      console.error("fetchWalletAssets", e);
-    }
-  }, [findTicketsViaLogs]);
+            return { tokenId: String(tid), image, meta };
+          }),
+        );
+        setMyNFTs(metas);
+      } catch (e) {
+        console.error("fetchWalletAssets", e);
+      }
+    },
+    [findTicketsViaLogs],
+  );
 
   /* ------------------- MINT TICKET ------------------- */
   const mintTicket = React.useCallback(async () => {
@@ -112,7 +119,14 @@ export function useNFTs({
     } finally {
       setPerforming(false);
     }
-  }, [walletAddress, fetchWalletAssets, fetchStats, fetchRewards, ensureAmoy, prettyError]);
+  }, [
+    walletAddress,
+    fetchWalletAssets,
+    fetchStats,
+    fetchRewards,
+    ensureAmoy,
+    prettyError,
+  ]);
 
   /* ------------------- REDEEM TICKET ------------------- */
   const redeemTicket = React.useCallback(async () => {
@@ -141,7 +155,9 @@ export function useNFTs({
       await contract.estimateGas.redeemTicketAndMintNFT(ticketId);
       setRedeemMsg("Please confirm in your wallet…");
 
-      const tx = await contract.redeemTicketAndMintNFT(ticketId, { value: price });
+      const tx = await contract.redeemTicketAndMintNFT(ticketId, {
+        value: price,
+      });
       await tx.wait();
 
       setPendingTicketId(ticketId.toString());
@@ -161,7 +177,17 @@ export function useNFTs({
     } finally {
       setPerforming(false);
     }
-  }, [walletAddress, isRedeeming, vrfPending, fetchWalletAssets, fetchStats, fetchRewards, ensureAmoy, findTicketsViaLogs, prettyError]);
+  }, [
+    walletAddress,
+    isRedeeming,
+    vrfPending,
+    fetchWalletAssets,
+    fetchStats,
+    fetchRewards,
+    ensureAmoy,
+    findTicketsViaLogs,
+    prettyError,
+  ]);
 
   /* ------------------- CLAIM REWARDS ------------------- */
   const claimRewards = React.useCallback(async () => {
@@ -170,7 +196,9 @@ export function useNFTs({
     setError(null);
     try {
       await ensureAmoy();
-      const ids = myNFTs.filter((x) => !x.isTicket).map((x) => ethers.BigNumber.from(x.tokenId));
+      const ids = myNFTs
+        .filter((x) => !x.isTicket)
+        .map((x) => ethers.BigNumber.from(x.tokenId));
       if (!ids.length) return alert("No eligible NFTs to claim.");
 
       const brl = getLiquidityContract();
@@ -187,7 +215,14 @@ export function useNFTs({
     } finally {
       setPerforming(false);
     }
-  }, [walletAddress, myNFTs, fetchRewards, fetchStats, ensureAmoy, prettyError]);
+  }, [
+    walletAddress,
+    myNFTs,
+    fetchRewards,
+    fetchStats,
+    ensureAmoy,
+    prettyError,
+  ]);
 
   /* ------------------- LAST MINTED ------------------- */
   const fetchLastMinted = React.useCallback(async () => {

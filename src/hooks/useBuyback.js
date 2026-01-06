@@ -35,13 +35,19 @@ export default function useBuyback() {
         async () => {
           const raw = await svc.getAllStats();
           const fmt = (bn) => {
-            try { return ethers.utils.formatUnits(bn || 0, 18); } catch { return "0"; }
+            try {
+              return ethers.utils.formatUnits(bn || 0, 18);
+            } catch {
+              return "0";
+            }
           };
           const toTs = (bn) => {
             try {
               const n = Number(bn?.toString?.() || bn || 0);
               return Number.isFinite(n) && n > 0 ? n : null;
-            } catch { return null; }
+            } catch {
+              return null;
+            }
           };
 
           return {
@@ -59,7 +65,7 @@ export default function useBuyback() {
             dripLM: raw.dripLM || null,
           };
         },
-        { force: options?.force === true }
+        { force: options?.force === true },
       );
       setData(snapshot);
     } catch (e) {
@@ -70,7 +76,9 @@ export default function useBuyback() {
     }
   }, []);
 
-  React.useEffect(() => { refresh(); }, [refresh]);
+  React.useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   return { data, loading, error, refresh };
 }

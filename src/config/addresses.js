@@ -30,17 +30,18 @@ const ADDR = {
   dripd: "0x2564b32eE85d2DFe3c234f79BBCaA94704e91FAE", // DripDistributor
   dripLm: "0xf1A1f9C8fB64b8E14BbB35b6a41E139C7980db52", // DripLM
   reserve: "0xbF694e346D69acCEb578eA7C52642C521178e385", // BiggiReserve
-    BiggiMain: "0x304C08cdC4511649D97469E0F7A1f71270BC91E6",
-    BiggiMain2: "0x1703EA074C72F550ecacb955ECE1aac1c5100Be5",
-    BiggiMasterTokenomicsConfig: "", // doplnit správnou adresu
-    BiggiReserve: "0xbF694e346D69acCEb578eA7C52642C521178e385",
-    BiggiRewardsReader: "", // doplnit správnou adresu
-    DripDistributor: "0x2564b32eE85d2DFe3c234f79BBCaA94704e91FAE",
-    DripLM: "0xf1A1f9C8fB64b8E14BbB35b6a41E139C7980db52",
-    LiquidityKeeper: "", // doplnit správnou adresu
+  BiggiMain: "0x304C08cdC4511649D97469E0F7A1f71270BC91E6",
+  BiggiMain2: "0x1703EA074C72F550ecacb955ECE1aac1c5100Be5",
+  BiggiMasterTokenomicsConfig: "", // doplnit správnou adresu
+  BiggiReserve: "0xbF694e346D69acCEb578eA7C52642C521178e385",
+  BiggiRewardsReader: "", // doplnit správnou adresu
+  DripDistributor: "0x2564b32eE85d2DFe3c234f79BBCaA94704e91FAE",
+  DripLM: "0xf1A1f9C8fB64b8E14BbB35b6a41E139C7980db52",
+  LiquidityKeeper: "", // doplnit správnou adresu
   COLLECTION_REWARDS: "0xaD59A214a629daa6c0b91951A7967b233Ae7d8b8",
   COMMUNITY_CENTER: "0x3462BC1561c3209848FC77e47cc1fF28d4a61b80",
   DISTRIBUTOR: "0xF29D65834e344bd229311686FccA4AAf451612e5",
+  MULTI_COLLECTION_DISTRIBUTOR: "0x5b77FaD0db9fb9d6DFdc17240e800E442a38Bf51",
   DRIP_KEEPER_PROXY: "0xc9C97929DA142DcA433C9A56A790291Aa4B90E6E",
   KEEPER_PROXY: "0x60D0e1791299E1c5AfDc76106380EA08B106B6CF",
   LIQUIDITY_AUTOMATION: "0x47CaDB979De8Beb8136bc2Be3Be7898F83941566",
@@ -52,7 +53,6 @@ const ADDR = {
 
   // Poznámka: PRIVATE_KEY zde neukládejte, patří do .env!
   // PRIVATE_KEY: "0xc823138b3db8f7e3953b96ff3bdda4f39217b624fbe189b25067f15a87b6ea0d",
-
 
   // Další adresy mimo hlavní logiku (přidejte podle potřeby):
   COMPUTE: "0x1Be0b75859747ABF7452b82359bFe68D77faD2F0",
@@ -117,12 +117,17 @@ export function getLiquidityAddresses(chainId) {
 
 export function getDripAddresses(chainId) {
   const resolvedId = Number(chainId) || DEFAULT_CHAIN_ID;
-  return DRIP_CHAIN_ADDRESSES[resolvedId] || DRIP_CHAIN_ADDRESSES[DEFAULT_CHAIN_ID];
+  return (
+    DRIP_CHAIN_ADDRESSES[resolvedId] || DRIP_CHAIN_ADDRESSES[DEFAULT_CHAIN_ID]
+  );
 }
 
 export function getBuybackAddresses(chainId) {
   const resolvedId = Number(chainId) || DEFAULT_CHAIN_ID;
-  return BUYBACK_CHAIN_ADDRESSES[resolvedId] || BUYBACK_CHAIN_ADDRESSES[DEFAULT_CHAIN_ID];
+  return (
+    BUYBACK_CHAIN_ADDRESSES[resolvedId] ||
+    BUYBACK_CHAIN_ADDRESSES[DEFAULT_CHAIN_ID]
+  );
 }
 
 function _tokenDexAddresses() {
@@ -132,7 +137,7 @@ function _tokenDexAddresses() {
     factory: ADDR.FACTORY,
     weth: ADDR.WETH,
     pairAddress: ADDR.PAIR,
-    lpPriceFeed: ADDR.BIGGI_PRICE_ORACLE,
+    lpPriceFeed: ADDR.LP_PRICE_FEED,
     reserve: ADDR.RESERVE,
     liquidityVault: ADDR.LIQUIDITY_VAULT,
     treasury: ADDR.TREASURY,
@@ -147,10 +152,19 @@ const TOKEN_DEX_CHAIN_ADDRESSES = {
 
 export function getTokenDexAddresses(chainId) {
   const resolvedId = Number(chainId) || DEFAULT_CHAIN_ID;
-  return TOKEN_DEX_CHAIN_ADDRESSES[resolvedId] || TOKEN_DEX_CHAIN_ADDRESSES[DEFAULT_CHAIN_ID];
+  return (
+    TOKEN_DEX_CHAIN_ADDRESSES[resolvedId] ||
+    TOKEN_DEX_CHAIN_ADDRESSES[DEFAULT_CHAIN_ID]
+  );
 }
 
-export { CHAIN_ADDRESSES, DEFAULT_CHAIN_ID, DRIP_CHAIN_ADDRESSES, BUYBACK_CHAIN_ADDRESSES, ADDR };
+export {
+  CHAIN_ADDRESSES,
+  DEFAULT_CHAIN_ID,
+  DRIP_CHAIN_ADDRESSES,
+  BUYBACK_CHAIN_ADDRESSES,
+  ADDR,
+};
 export default {
   CHAIN_ADDRESSES,
   DRIP_CHAIN_ADDRESSES,

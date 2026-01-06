@@ -5,7 +5,12 @@ import { canPoll, getPollInterval } from "../../utils/polling";
 
 const DEFAULT_POLL_INTERVAL = getPollInterval(15_000, "VITE_TOKEN_DEX_POLL_MS");
 
-export default function useTokenDexSnapshot({ chainId, provider, pollingInterval = DEFAULT_POLL_INTERVAL, enabled = true } = {}) {
+export default function useTokenDexSnapshot({
+  chainId,
+  provider,
+  pollingInterval = DEFAULT_POLL_INTERVAL,
+  enabled = true,
+} = {}) {
   const [snapshot, setSnapshot] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);

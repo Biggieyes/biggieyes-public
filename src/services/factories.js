@@ -26,19 +26,31 @@ export function getLiquidityVaultService() {
 }
 
 // Class-based services: provide factory that instantiates with a read-only provider
-export function createBuybackService(address = ADDR.BUYBACK_AGENT, provider = getROProvider()) {
+export function createBuybackService(
+  address = ADDR.BUYBACK_AGENT,
+  provider = getROProvider(),
+) {
   return new BuybackService(address, provider);
 }
 
-export function createDripDistributorService(address = ADDR.DRIP_DISTRIBUTOR, provider = getROProvider()) {
+export function createDripDistributorService(
+  address = ADDR.DRIP_DISTRIBUTOR,
+  provider = getROProvider(),
+) {
   return new DripDistributorService(address, provider);
 }
 
-export function createDripLMService(address = ADDR.DRIP_LM, provider = getROProvider()) {
+export function createDripLMService(
+  address = ADDR.DRIP_LM,
+  provider = getROProvider(),
+) {
   return new DripLMService(address, provider);
 }
 
-export function createTokenRewardsService(address = ADDR.TOKEN_REWARDS, provider = getROProvider()) {
+export function createTokenRewardsService(
+  address = ADDR.TOKEN_REWARDS,
+  provider = getROProvider(),
+) {
   return new TokenRewardsService(address, provider);
 }
 

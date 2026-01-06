@@ -46,7 +46,7 @@ export default function useLiquidityAutomation() {
             tokenPct: toNumber(tokenPct),
           };
         },
-        { force: options?.force === true }
+        { force: options?.force === true },
       );
 
       setData(snapshot);

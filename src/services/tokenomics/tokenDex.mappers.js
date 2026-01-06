@@ -1,4 +1,4 @@
-import { BigNumber, utils } from "ethers";
+import { ethers } from "ethers";
 
 const DEFAULT_DECIMALS = 18;
 const PLACEHOLDER = "N/A";
@@ -6,11 +6,13 @@ const PLACEHOLDER = "N/A";
 function _formatAmount(raw, decimals = DEFAULT_DECIMALS, options = {}) {
   if (raw == null) return { display: PLACEHOLDER, numeric: null };
   try {
-    const bn = BigNumber.isBigNumber(raw) ? raw : BigNumber.from(raw);
-    const formatted = utils.formatUnits(bn, decimals);
+    const bn = ethers.BigNumber.isBigNumber(raw) ? raw : ethers.BigNumber.from(raw);
+    const formatted = ethers.utils.formatUnits(bn, decimals);
     const numeric = Number(formatted);
     const display = Number.isFinite(numeric)
-      ? numeric.toLocaleString("en-US", { maximumFractionDigits: options.maximumFractionDigits ?? 2 })
+      ? numeric.toLocaleString("en-US", {
+          maximumFractionDigits: options.maximumFractionDigits ?? 2,
+        })
       : formatted;
     return {
       display,
@@ -30,7 +32,8 @@ function _shortAddress(address = "") {
 }
 
 function _safeDivide(numerator, denominator) {
-  if (typeof numerator !== "number" || typeof denominator !== "number") return null;
+  if (typeof numerator !== "number" || typeof denominator !== "number")
+    return null;
   if (denominator === 0) return null;
   return numerator / denominator;
 }
@@ -86,53 +89,94 @@ export function mapRawSnapshotToUI(raw) {
   const pairRes = _resolvePairReserves(pairRaw, tokenRaw.address, dexRaw.weth);
   const tokenDecimals = tokenRaw.decimals ?? DEFAULT_DECIMALS;
 
-  const totalSupply = _formatAmount(tokenRaw.totalSupply, tokenDecimals, { maximumFractionDigits: 0 });
-  const cap = _formatAmount(tokenRaw.cap, tokenDecimals, { maximumFractionDigits: 0 });
-  const remainingMintable = _formatAmount(tokenRaw.remainingMintable, tokenDecimals, { maximumFractionDigits: 0 });
+  const totalSupply = _formatAmount(tokenRaw.totalSupply, tokenDecimals, {
+    maximumFractionDigits: 0,
+  });
+  const cap = _formatAmount(tokenRaw.cap, tokenDecimals, {
+    maximumFractionDigits: 0,
+  });
+  const remainingMintable = _formatAmount(
+    tokenRaw.remainingMintable,
+    tokenDecimals,
+    { maximumFractionDigits: 0 },
+  );
 
-  const reserveBalance = _formatAmount(tokenRaw.balances?.reserve, tokenDecimals);
-  const vaultBalance = _formatAmount(tokenRaw.balances?.liquidityVault, tokenDecimals);
-  const treasuryBalance = _formatAmount(tokenRaw.balances?.treasury, tokenDecimals);
-  const dripBalance = _formatAmount(tokenRaw.balances?.dripDistributor, tokenDecimals);
-  const rewardsBalance = _formatAmount(tokenRaw.balances?.tokenRewards, tokenDecimals);
+  const reserveBalance = _formatAmount(
+    tokenRaw.balances?.reserve,
+    tokenDecimals,
+  );
+  const vaultBalance = _formatAmount(
+    tokenRaw.balances?.liquidityVault,
+    tokenDecimals,
+  );
+  const treasuryBalance = _formatAmount(
+    tokenRaw.balances?.treasury,
+    tokenDecimals,
+  );
+  const dripBalance = _formatAmount(
+    tokenRaw.balances?.dripDistributor,
+    tokenDecimals,
+  );
+  const rewardsBalance = _formatAmount(
+    tokenRaw.balances?.tokenRewards,
+    tokenDecimals,
+  );
 
   const pairBiggiReserve = _formatAmount(pairRes.biggiRaw, tokenDecimals);
   const pairNativeReserve = _formatAmount(pairRes.nativeRaw, DEFAULT_DECIMALS);
   const lpSupply = _formatAmount(pairRaw.totalSupply, DEFAULT_DECIMALS);
 
-  const routerNative = _formatAmount(dexRaw.routerNativeOut, DEFAULT_DECIMALS, { maximumFractionDigits: 6 });
-  const routerBiggiPerNativeNumeric = routerNative.numeric ? 1 / routerNative.numeric : null;
+  const routerNative = _formatAmount(dexRaw.routerNativeOut, DEFAULT_DECIMALS, {
+    maximumFractionDigits: 6,
+  });
+  const routerBiggiPerNativeNumeric = routerNative.numeric
+    ? 1 / routerNative.numeric
+    : null;
   const routerBiggiPerNativeDisplay =
     typeof routerBiggiPerNativeNumeric === "number"
-      ? routerBiggiPerNativeNumeric.toLocaleString("en-US", { maximumFractionDigits: 6 })
+      ? routerBiggiPerNativeNumeric.toLocaleString("en-US", {
+          maximumFractionDigits: 6,
+        })
       : PLACEHOLDER;
 
-  const pairNativePerBiggiNumeric = _safeDivide(pairNativeReserve.numeric, pairBiggiReserve.numeric);
+  const pairNativePerBiggiNumeric = _safeDivide(
+    pairNativeReserve.numeric,
+    pairBiggiReserve.numeric,
+  );
   const pairNativePerBiggiDisplay =
     typeof pairNativePerBiggiNumeric === "number"
-      ? pairNativePerBiggiNumeric.toLocaleString("en-US", { maximumFractionDigits: 6 })
+      ? pairNativePerBiggiNumeric.toLocaleString("en-US", {
+          maximumFractionDigits: 6,
+        })
       : PLACEHOLDER;
-  const pairBiggiPerNativeNumeric = pairNativePerBiggiNumeric ? 1 / pairNativePerBiggiNumeric : null;
+  const pairBiggiPerNativeNumeric = pairNativePerBiggiNumeric
+    ? 1 / pairNativePerBiggiNumeric
+    : null;
   const pairBiggiPerNativeDisplay =
     typeof pairBiggiPerNativeNumeric === "number"
-      ? pairBiggiPerNativeNumeric.toLocaleString("en-US", { maximumFractionDigits: 6 })
+      ? pairBiggiPerNativeNumeric.toLocaleString("en-US", {
+          maximumFractionDigits: 6,
+        })
       : PLACEHOLDER;
 
   const priceFeed = dexRaw.priceFeed;
   const feedPrice = priceFeed?.latestRoundData?.answer
-    ? _formatAmount(priceFeed.latestRoundData.answer, priceFeed.decimals ?? 8, { maximumFractionDigits: 6 })
+    ? _formatAmount(priceFeed.latestRoundData.answer, priceFeed.decimals ?? 8, {
+        maximumFractionDigits: 6,
+      })
     : { display: PLACEHOLDER, numeric: null };
 
   const priceSource =
     feedPrice.numeric != null
       ? "Price feed"
       : routerNative.numeric != null
-      ? "Router"
-      : pairNativePerBiggiNumeric != null
-      ? "Pair reserves"
-      : "N/A";
+        ? "Router"
+        : pairNativePerBiggiNumeric != null
+          ? "Pair reserves"
+          : "N/A";
 
-  const tvlNativeNumeric = pairNativeReserve.numeric != null ? pairNativeReserve.numeric * 2 : null;
+  const tvlNativeNumeric =
+    pairNativeReserve.numeric != null ? pairNativeReserve.numeric * 2 : null;
   const tvlNativeDisplay =
     typeof tvlNativeNumeric === "number"
       ? `${tvlNativeNumeric.toLocaleString("en-US", { maximumFractionDigits: 2 })} POL`
@@ -142,25 +186,38 @@ export function mapRawSnapshotToUI(raw) {
     (pairNativeReserve.numeric ?? 0) + (pairBiggiReserve.numeric ?? 0);
   const liquidityDepthDisplay =
     liquidityDepthNumeric > 0
-      ? liquidityDepthNumeric.toLocaleString("en-US", { maximumFractionDigits: 2 })
+      ? liquidityDepthNumeric.toLocaleString("en-US", {
+          maximumFractionDigits: 2,
+        })
       : PLACEHOLDER;
 
   const priceImpactNumeric =
     routerNative.numeric != null && pairNativePerBiggiNumeric != null
-      ? Math.abs((routerNative.numeric - pairNativePerBiggiNumeric) / Math.max(pairNativePerBiggiNumeric, 0.0000001)) * 100
+      ? Math.abs(
+          (routerNative.numeric - pairNativePerBiggiNumeric) /
+            Math.max(pairNativePerBiggiNumeric, 0.0000001),
+        ) * 100
       : null;
   const priceImpactDisplay =
-    typeof priceImpactNumeric === "number" ? `${priceImpactNumeric.toFixed(2)}%` : PLACEHOLDER;
+    typeof priceImpactNumeric === "number"
+      ? `${priceImpactNumeric.toFixed(2)}%`
+      : PLACEHOLDER;
 
   let marketHealth = "Thin";
   let marketHealthTone = "warning";
   if (pairBiggiReserve.numeric >= 100_000 && pairNativeReserve.numeric >= 60) {
     marketHealth = "Healthy";
     marketHealthTone = "primary";
-  } else if (pairBiggiReserve.numeric >= 50_000 && pairNativeReserve.numeric >= 20) {
+  } else if (
+    pairBiggiReserve.numeric >= 50_000 &&
+    pairNativeReserve.numeric >= 20
+  ) {
     marketHealth = "Steady";
     marketHealthTone = "secondary";
-  } else if (pairBiggiReserve.numeric != null && pairNativeReserve.numeric != null) {
+  } else if (
+    pairBiggiReserve.numeric != null &&
+    pairNativeReserve.numeric != null
+  ) {
     marketHealth = "Watchlist";
     marketHealthTone = "warning";
   }
@@ -261,15 +318,26 @@ function _mapHistory(history = [], selector) {
       label: entry?.tsLabel ?? "",
       value: selector(entry),
     }))
-    .filter((entry) => typeof entry.value === "number" && Number.isFinite(entry.value));
+    .filter(
+      (entry) =>
+        typeof entry.value === "number" && Number.isFinite(entry.value),
+    );
 }
 
 export function mapHistoryToPricePoints(history = []) {
-  return _mapHistory(history, (entry) => entry?.dex?.price?.pair?.nativePerBiggiNumeric ?? entry?.dex?.price?.pair?.nativePerBiggi);
+  return _mapHistory(
+    history,
+    (entry) =>
+      entry?.dex?.price?.pair?.nativePerBiggiNumeric ??
+      entry?.dex?.price?.pair?.nativePerBiggi,
+  );
 }
 
 export function mapHistoryToReservePoints(history = []) {
-  return _mapHistory(history, (entry) => entry?.dex?.pair?.reserves?.nativeNumeric);
+  return _mapHistory(
+    history,
+    (entry) => entry?.dex?.pair?.reserves?.nativeNumeric,
+  );
 }
 
 export function mapHistoryToLpPoints(history = []) {

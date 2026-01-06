@@ -5,20 +5,23 @@ import { getSafeDeployBlock, queryLogsBatched } from "./shared";
 
 export async function buildVRFHistory(contract, address) {
   const latest = await contract.provider.getBlockNumber();
-  const from = Math.max(await getSafeDeployBlock(contract.provider), latest - 120_000);
+  const from = Math.max(
+    await getSafeDeployBlock(contract.provider),
+    latest - 120_000,
+  );
 
   const reqLogs = await queryLogsBatched(
     contract,
     contract.filters.VRFRequested(address),
     from,
-    latest
+    latest,
   );
 
   const fulfillLogsRaw = await queryLogsBatched(
     contract,
     contract.filters.VRFFulfillStarted(),
     from,
-    latest
+    latest,
   );
   const fulfillLogs = fulfillLogsRaw.filter((l) => {
     const m = (l.args?.minter || l.args?.[1] || "").toLowerCase?.() || "";
@@ -45,7 +48,8 @@ export async function buildVRFHistory(contract, address) {
     let time = "";
     try {
       const block = await contract.provider.getBlock(rl.blockNumber);
-      if (block?.timestamp) time = new Date(block.timestamp * 1000).toLocaleString();
+      if (block?.timestamp)
+        time = new Date(block.timestamp * 1000).toLocaleString();
     } catch {
       // ignore block lookup errors
     }
@@ -72,7 +76,12 @@ export async function resolvePendingFromHistoryOrOwnership(contract, user) {
   try {
     const latest = await contract.provider.getBlockNumber();
     const FROM = await getSafeDeployBlock(contract.provider);
-    const toLogs = await queryLogsBatched(contract, contract.filters.Transfer(null, user, null), FROM, latest);
+    const toLogs = await queryLogsBatched(
+      contract,
+      contract.filters.Transfer(null, user, null),
+      FROM,
+      latest,
+    );
     for (const l of toLogs.slice(-40).reverse()) {
       const tid = l.args?.tokenId?.toString?.();
       if (!tid) continue;
@@ -99,7 +108,11 @@ export async function resolvePendingFromHistoryOrOwnership(contract, user) {
   }
 }
 
-export async function refreshVRFPanel(walletAddress, setVrfUIData, buildHistory) {
+export async function refreshVRFPanel(
+  walletAddress,
+  setVrfUIData,
+  buildHistory,
+) {
   try {
     const c = getReadOnlyContract();
     const net = await c.provider.getNetwork();
@@ -125,12 +138,21 @@ export async function refreshVRFPanel(walletAddress, setVrfUIData, buildHistory)
       // ignore params fetch
     }
 
-    let last = { requestId: "", status: "idle", requestedAt: "", txHash: "", blockNumber: undefined, randomWords: [] };
+    let last = {
+      requestId: "",
+      status: "idle",
+      requestedAt: "",
+      txHash: "",
+      blockNumber: undefined,
+      randomWords: [],
+    };
     let history = [];
 
     if (walletAddress) {
       try {
-        const pendingReqIdBN = await c.pendingMintRequest(walletAddress).catch(() => ethers.BigNumber.from(0));
+        const pendingReqIdBN = await c
+          .pendingMintRequest(walletAddress)
+          .catch(() => ethers.BigNumber.from(0));
         const ridStr = pendingReqIdBN?.toString?.() || "0";
 
         history = await buildHistory(c, walletAddress);
@@ -173,7 +195,9 @@ export async function refreshVRFPanel(walletAddress, setVrfUIData, buildHistory)
     }
 
     setVrfUIData({
-      network: net?.name ? `${net.name} (${net.chainId})` : `chainId ${net.chainId}`,
+      network: net?.name
+        ? `${net.name} (${net.chainId})`
+        : `chainId ${net.chainId}`,
       chainId: Number(net?.chainId),
       userAddress: walletAddress || "",
       subscription: { id: subId, linkBalance: "", consumers: [] },
@@ -209,7 +233,10 @@ export async function checkVrfResolution({
     } catch {
       return;
     }
-    const isZero = rid && typeof rid.isZero === "function" ? rid.isZero() : String(rid || "0") === "0";
+    const isZero =
+      rid && typeof rid.isZero === "function"
+        ? rid.isZero()
+        : String(rid || "0") === "0";
 
     const inferredFulfilled = isZero
       ? true
@@ -233,7 +260,10 @@ export async function checkVrfResolution({
   }
 }
 
-export function openVrfExplorer(hashOrId, getReadOnlyContractFn = getReadOnlyContract) {
+export function openVrfExplorer(
+  hashOrId,
+  getReadOnlyContractFn = getReadOnlyContract,
+) {
   (async () => {
     try {
       const c = getReadOnlyContractFn();

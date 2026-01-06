@@ -46,13 +46,27 @@ export default class TreasuryService {
   }
 
   // --- GETTERY ---
-  async BIGGI() { return await this.contract.BIGGI(); } // address
-  async biggiBalance() { return await this.contract.biggiBalance(); } // BigNumber
-  async maticBalance() { return await this.contract.maticBalance(); } // BigNumber (wei)
-  async totalBiggiReceived() { return await this.contract.totalBiggiReceived(); }
-  async totalBiggiReceivedFromBuyback() { return await this.contract.totalBiggiReceivedFromBuyback(); }
-  async totalMaticReceived() { return await this.contract.totalMaticReceived(); }
-  async totalMaticReceivedFromDistributor() { return await this.contract.totalMaticReceivedFromDistributor(); }
+  async BIGGI() {
+    return await this.contract.BIGGI();
+  } // address
+  async biggiBalance() {
+    return await this.contract.biggiBalance();
+  } // BigNumber
+  async maticBalance() {
+    return await this.contract.maticBalance();
+  } // BigNumber (wei)
+  async totalBiggiReceived() {
+    return await this.contract.totalBiggiReceived();
+  }
+  async totalBiggiReceivedFromBuyback() {
+    return await this.contract.totalBiggiReceivedFromBuyback();
+  }
+  async totalMaticReceived() {
+    return await this.contract.totalMaticReceived();
+  }
+  async totalMaticReceivedFromDistributor() {
+    return await this.contract.totalMaticReceivedFromDistributor();
+  }
 
   /**
    * Paralelní načtení všech statistik.
@@ -66,7 +80,7 @@ export default class TreasuryService {
       this.totalBiggiReceived(),
       this.totalBiggiReceivedFromBuyback(),
       this.totalMaticReceived(),
-      this.totalMaticReceivedFromDistributor()
+      this.totalMaticReceivedFromDistributor(),
     ];
     const [
       BIGGI,
@@ -75,7 +89,7 @@ export default class TreasuryService {
       totalBiggiReceived,
       totalBiggiReceivedFromBuyback,
       totalMaticReceived,
-      totalMaticReceivedFromDistributor
+      totalMaticReceivedFromDistributor,
     ] = await Promise.all(calls);
 
     return {
@@ -85,7 +99,7 @@ export default class TreasuryService {
       totalBiggiReceived,
       totalBiggiReceivedFromBuyback,
       totalMaticReceived,
-      totalMaticReceivedFromDistributor
+      totalMaticReceivedFromDistributor,
     };
   }
 
@@ -130,10 +144,22 @@ export default class TreasuryService {
       biggiToken: stats.BIGGI,
       biggiBalance: TreasuryService.bnToString(stats.biggiBalance, 18),
       maticBalanceEth: TreasuryService.bnToString(stats.maticBalance, 18),
-      totalBiggiReceived: TreasuryService.bnToString(stats.totalBiggiReceived, 18),
-      totalBiggiReceivedFromBuyback: TreasuryService.bnToString(stats.totalBiggiReceivedFromBuyback, 18),
-      totalMaticReceived: TreasuryService.bnToString(stats.totalMaticReceived, 18),
-      totalMaticReceivedFromDistributor: TreasuryService.bnToString(stats.totalMaticReceivedFromDistributor, 18)
+      totalBiggiReceived: TreasuryService.bnToString(
+        stats.totalBiggiReceived,
+        18,
+      ),
+      totalBiggiReceivedFromBuyback: TreasuryService.bnToString(
+        stats.totalBiggiReceivedFromBuyback,
+        18,
+      ),
+      totalMaticReceived: TreasuryService.bnToString(
+        stats.totalMaticReceived,
+        18,
+      ),
+      totalMaticReceivedFromDistributor: TreasuryService.bnToString(
+        stats.totalMaticReceivedFromDistributor,
+        18,
+      ),
     };
   }
 }

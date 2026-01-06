@@ -38,11 +38,13 @@ export default function useDripLM() {
             reserve: raw.reserve || null,
             router: raw.router || null,
             sellPct: raw.sellPct?.toString?.() ?? raw.sellPct ?? null,
-            slippageBps: raw.slippageBps?.toString?.() ?? raw.slippageBps ?? null,
-            txDeadlineSec: raw.txDeadlineSec?.toString?.() ?? raw.txDeadlineSec ?? null,
+            slippageBps:
+              raw.slippageBps?.toString?.() ?? raw.slippageBps ?? null,
+            txDeadlineSec:
+              raw.txDeadlineSec?.toString?.() ?? raw.txDeadlineSec ?? null,
           };
         },
-        { force: options?.force === true }
+        { force: options?.force === true },
       );
       setData(snapshot);
     } catch (e) {
@@ -53,7 +55,9 @@ export default function useDripLM() {
     }
   }, []);
 
-  React.useEffect(() => { refresh(); }, [refresh]);
+  React.useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   return { data, loading, error, refresh };
 }

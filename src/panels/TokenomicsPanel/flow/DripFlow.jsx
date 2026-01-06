@@ -6,7 +6,9 @@ const DripFlow = ({ flows = [] }) => (
   <section className="drip-flow">
     <header className="drip-flow__header">
       <h3>Drip flow</h3>
-      <p>BIGGI passes from DripDistributor into DripLM and then to the reserve.</p>
+      <p>
+        BIGGI passes from DripDistributor into DripLM and then to the reserve.
+      </p>
     </header>
     <div className="drip-flow__rows">
       {flows.map((flow) => (

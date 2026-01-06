@@ -54,11 +54,13 @@ export const COLLECTION_TABS = {
 export const INFO_CONCEPTS = [
   {
     concept: "Blocks",
-    explanation: "Each block groups NFTs by eye colour. Tap a card to open the full preview.",
+    explanation:
+      "Each block groups NFTs by eye colour. Tap a card to open the full preview.",
   },
   {
     concept: "Base vs live price",
-    explanation: "Base price is a reference. Live price comes from the contract.",
+    explanation:
+      "Base price is a reference. Live price comes from the contract.",
   },
   {
     concept: "Minted",

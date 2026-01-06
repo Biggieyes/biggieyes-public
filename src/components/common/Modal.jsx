@@ -3,16 +3,16 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 
 const FOCUSABLE = [
-  'a[href]',
-  'button:not([disabled])',
-  'textarea:not([disabled])',
+  "a[href]",
+  "button:not([disabled])",
+  "textarea:not([disabled])",
   'input[type="text"]:not([disabled])',
   'input[type="search"]:not([disabled])',
   'input[type="radio"]:not([disabled])',
   'input[type="checkbox"]:not([disabled])',
-  'select:not([disabled])',
+  "select:not([disabled])",
   '[tabindex]:not([tabindex="-1"])',
-].join(',');
+].join(",");
 
 export default function Modal({
   open,
@@ -36,45 +36,54 @@ export default function Modal({
   closeButtonContent = "Close",
 }) {
   const overlayRef = React.useRef(null);
-  const windowRef  = React.useRef(null);
+  const windowRef = React.useRef(null);
   const lastActiveRef = React.useRef(null);
   const inertElsRef = React.useRef([]);
   const overlayPressStartRef = React.useRef(false);
 
   const autoDialogLabelId = React.useId();
-  const computedAriaLabel = ariaLabel || (!ariaLabelledby ? "Dialog" : undefined);
+  const computedAriaLabel =
+    ariaLabel || (!ariaLabelledby ? "Dialog" : undefined);
   const computedAriaLabelledby = ariaLabelledby || undefined;
 
-  const onKeyDown = React.useCallback((e) => {
-    if (closeOnEsc && e.key === "Escape") {
-      e.stopPropagation();
-      onClose("esc");
-      return;
-    }
-    if (e.key === "Enter" && document.activeElement === overlayRef.current) {
-      if (closeOnOverlay) onClose("overlay-enter");
-    }
-    if (trapFocus && e.key === "Tab") {
-      const root = windowRef.current;
-      if (!root) return;
-      const nodes = root.querySelectorAll(FOCUSABLE);
-      const list = Array.from(nodes);
-      if (list.length === 0) { e.preventDefault(); return; }
-      const first = list[0];
-      const last = list[list.length - 1];
-      const active = document.activeElement;
-
-      if (e.shiftKey) {
-        if (active === first || !root.contains(active)) {
-          e.preventDefault(); last.focus();
+  const onKeyDown = React.useCallback(
+    (e) => {
+      if (closeOnEsc && e.key === "Escape") {
+        e.stopPropagation();
+        onClose("esc");
+        return;
+      }
+      if (e.key === "Enter" && document.activeElement === overlayRef.current) {
+        if (closeOnOverlay) onClose("overlay-enter");
+      }
+      if (trapFocus && e.key === "Tab") {
+        const root = windowRef.current;
+        if (!root) return;
+        const nodes = root.querySelectorAll(FOCUSABLE);
+        const list = Array.from(nodes);
+        if (list.length === 0) {
+          e.preventDefault();
+          return;
         }
-      } else {
-        if (active === last) {
-          e.preventDefault(); first.focus();
+        const first = list[0];
+        const last = list[list.length - 1];
+        const active = document.activeElement;
+
+        if (e.shiftKey) {
+          if (active === first || !root.contains(active)) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (active === last) {
+            e.preventDefault();
+            first.focus();
+          }
         }
       }
-    }
-  }, [closeOnEsc, trapFocus, onClose, closeOnOverlay]);
+    },
+    [closeOnEsc, trapFocus, onClose, closeOnOverlay],
+  );
 
   React.useEffect(() => {
     if (!open) return;
@@ -106,7 +115,8 @@ export default function Modal({
     if (preventScroll) {
       prevOverflow = document.body.style.overflow;
       prevPaddingRight = document.body.style.paddingRight;
-      const scrollBarW = window.innerWidth - document.documentElement.clientWidth;
+      const scrollBarW =
+        window.innerWidth - document.documentElement.clientWidth;
       if (scrollBarW > 0) {
         document.body.style.paddingRight = `calc(${parseInt(prevPaddingRight || 0, 10)}px + ${scrollBarW}px)`;
       }
@@ -165,11 +175,11 @@ export default function Modal({
       }}
       onPointerDown={(e) => {
         if (!closeOnOverlay) return;
-        overlayPressStartRef.current = (e.target === overlayRef.current);
+        overlayPressStartRef.current = e.target === overlayRef.current;
       }}
       onPointerUp={(e) => {
         if (!closeOnOverlay) return;
-        const isSameTarget = (e.target === overlayRef.current);
+        const isSameTarget = e.target === overlayRef.current;
         if (overlayPressStartRef.current && isSameTarget) {
           onClose("overlay");
         }
@@ -184,7 +194,11 @@ export default function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={computedAriaLabel}
-        aria-labelledby={computedAriaLabel ? undefined : (computedAriaLabelledby || autoDialogLabelId)}
+        aria-labelledby={
+          computedAriaLabel
+            ? undefined
+            : computedAriaLabelledby || autoDialogLabelId
+        }
         aria-describedby={ariaDescribedby}
         tabIndex={-1}
         onPointerDown={(e) => e.stopPropagation()}
@@ -223,16 +237,10 @@ export default function Modal({
           {closeButtonContent}
         </button>
 
-        <div className="modal-content">
-          {children}
-        </div>
+        <div className="modal-content">{children}</div>
       </div>
     </div>
   );
 
   return ReactDOM.createPortal(content, document.body);
 }
-
-
-
-

@@ -1,6 +1,12 @@
 // useAppCore.js
 import * as React from "react";
-import { getContract, getReadOnlyContract, getReaderRO, getReadOnlyLiquidityContract, getFrontendSnapshotLiteActive } from "../utils/contract";
+import {
+  getContract,
+  getReadOnlyContract,
+  getReaderRO,
+  getReadOnlyLiquidityContract,
+  getFrontendSnapshotLiteActive,
+} from "../utils/contract";
 import { useWallet } from "./useWallet";
 import { useGallery } from "./useGallery";
 import { useStatsRewards } from "./useStatsRewards";
@@ -13,7 +19,12 @@ import { ensureAmoy } from "../utils/contract"; // správná relativní cesta
 export function useAppCore() {
   // states
   const [myNFTs, setMyNFTs] = React.useState([]);
-  const [lastMinted, setLastMinted] = React.useState({ tokenId: "-", image: "/images/Biggi.png", blockName: "-", backgroundName: "-" });
+  const [lastMinted, setLastMinted] = React.useState({
+    tokenId: "-",
+    image: "/images/Biggi.png",
+    blockName: "-",
+    backgroundName: "-",
+  });
   const [dynamicTraitsById, setDynamicTraitsById] = React.useState({});
   const [vrfPending, setVrfPending] = React.useState(false);
   const [isRedeeming, setIsRedeeming] = React.useState(false);
@@ -27,11 +38,14 @@ export function useAppCore() {
   const contractRef = React.useRef(null);
 
   // hooks
-  const wallet = useWallet({ onConnected: async () => {
-    // on connect - minimal orchestrace (fetchers mohou být použity volajícím)
-    contractRef.current = getContract();
-  }});
-  const { fetchMyTickets, fetchOwnedNFTsViaTransfers, queryLogsBatched } = useGallery();
+  const wallet = useWallet({
+    onConnected: async () => {
+      // on connect - minimal orchestrace (fetchers mohou být použity volajícím)
+      contractRef.current = getContract();
+    },
+  });
+  const { fetchMyTickets, fetchOwnedNFTsViaTransfers, queryLogsBatched } =
+    useGallery();
   const stats = useStatsRewards();
   const vrf = useVRF();
   const utils = useUtils();
@@ -41,18 +55,23 @@ export function useAppCore() {
   // expose some key helpers and actions
   const resolveTicketPriceWei = React.useCallback(async () => {
     const c = contractRef.current || getReadOnlyContract();
-    const candidates = ["getTicketPrice", "ticketPrice", "getTicketPriceWei", "ticketPriceWei"];
-      for (const n of candidates) {
-        const f = c[n];
-        if (typeof f === "function") {
-          try {
-            const v = await f();
-            if (v != null) return v;
-          } catch (err) {
-            console.debug("resolveTicketPriceWei candidate failed", n, err);
-          }
+    const candidates = [
+      "getTicketPrice",
+      "ticketPrice",
+      "getTicketPriceWei",
+      "ticketPriceWei",
+    ];
+    for (const n of candidates) {
+      const f = c[n];
+      if (typeof f === "function") {
+        try {
+          const v = await f();
+          if (v != null) return v;
+        } catch (err) {
+          console.debug("resolveTicketPriceWei candidate failed", n, err);
         }
       }
+    }
     const reader = getReaderRO();
     const snap = await getFrontendSnapshotLiteActive(reader);
     const wei = Array.isArray(snap) ? snap[0] : snap?.ticketPriceWei;
@@ -62,7 +81,8 @@ export function useAppCore() {
 
   const prettyError = React.useCallback((err) => {
     const name = err?.errorName || "";
-    const reason = err?.reason || err?.data?.message || err?.message || "Unknown error";
+    const reason =
+      err?.reason || err?.data?.message || err?.message || "Unknown error";
     const map = {
       InsufficientPayment: "Sent value is lower than the ticket price.",
       MaxPerWallet: "Per-wallet limit (10 tickets) exceeded.",
@@ -75,7 +95,8 @@ export function useAppCore() {
       Paused: "Contract is paused.",
       NoEligibleTokens: "No eligible NFTs to claim this week.",
       CapExceeded: "Token cap would be exceeded.",
-      NotFullyConfigured: "Contract metadata is not fully configured (owner must finish batch setup).",
+      NotFullyConfigured:
+        "Contract metadata is not fully configured (owner must finish batch setup).",
       BiggiTokenNotSet: "BIGGI token is not configured yet.",
     };
     return map[name] || reason;
@@ -163,26 +184,37 @@ export function useAppCore() {
       alert("Redeem failed: " + prettyError(err));
       console.error("redeemTicket", err);
     }
-  }, [wallet.walletAddress, isRedeeming, vrfPending, fetchMyTickets, prettyError]);
+  }, [
+    wallet.walletAddress,
+    isRedeeming,
+    vrfPending,
+    fetchMyTickets,
+    prettyError,
+  ]);
 
-  const claimRewards = React.useCallback(async (tokenIds) => {
-    if (!wallet.walletAddress) return alert("Please connect MetaMask first.");
-    try {
-      const brl = await getReadOnlyLiquidityContract();
-      const tx = await brl.claim(tokenIds);
-      await tx.wait();
-    } catch (err) {
-      alert("Claim failed: " + prettyError(err));
-      console.error("claimRewards", err);
-    }
-  }, [wallet.walletAddress, prettyError]);
+  const claimRewards = React.useCallback(
+    async (tokenIds) => {
+      if (!wallet.walletAddress) return alert("Please connect MetaMask first.");
+      try {
+        const brl = await getReadOnlyLiquidityContract();
+        const tx = await brl.claim(tokenIds);
+        await tx.wait();
+      } catch (err) {
+        alert("Claim failed: " + prettyError(err));
+        console.error("claimRewards", err);
+      }
+    },
+    [wallet.walletAddress, prettyError],
+  );
 
   // helpers to refresh external/sideloaded data (caller should invoke)
   const refreshAll = React.useCallback(async () => {
     try {
       await stats.fetchStats();
       await stats.fetchRewards(wallet.walletAddress, myNFTs);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+    }
   }, [stats, wallet.walletAddress, myNFTs]);
 
   // small effect: keep contractRef in sync with wallet attach
@@ -192,16 +224,26 @@ export function useAppCore() {
 
   return {
     // state
-    myNFTs, setMyNFTs,
-    lastMinted, setLastMinted,
-    dynamicTraitsById, setDynamicTraitsById,
-    vrfPending, setVrfPending,
-    isRedeeming, setIsRedeeming,
-    redeemMsg, setRedeemMsg,
-    pendingTicketId, setPendingTicketId,
-    topFirstId, setTopFirstId,
-    epochStartTs, setEpochStartTs,
-    userLastClaimTs, setUserLastClaimTs,
+    myNFTs,
+    setMyNFTs,
+    lastMinted,
+    setLastMinted,
+    dynamicTraitsById,
+    setDynamicTraitsById,
+    vrfPending,
+    setVrfPending,
+    isRedeeming,
+    setIsRedeeming,
+    redeemMsg,
+    setRedeemMsg,
+    pendingTicketId,
+    setPendingTicketId,
+    topFirstId,
+    setTopFirstId,
+    epochStartTs,
+    setEpochStartTs,
+    userLastClaimTs,
+    setUserLastClaimTs,
 
     // wallet
     wallet,

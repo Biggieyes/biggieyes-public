@@ -24,7 +24,11 @@ export default function HeaderControls({
       {showWalletRow && (
         <div className="wallet-row" style={{ padding: 8 }}>
           <button className="metamask-btn-top" onClick={connectMetaMask}>
-            <img src="/images/metamask-fox.svg" alt="MetaMask" className="fox-icon" />
+            <img
+              src="/images/metamask-fox.svg"
+              alt="MetaMask"
+              className="fox-icon"
+            />
             {walletAddress ? (
               <span style={{ marginLeft: 8 }}>
                 Connected: <Address address={walletAddress} />
@@ -36,7 +40,11 @@ export default function HeaderControls({
 
           {!walletAddress && (
             <button className="wc-btn-top" onClick={connectWalletConnect}>
-              <img src="/images/walletconnect.svg" alt="WalletConnect" className="fox-icon" />
+              <img
+                src="/images/walletconnect.svg"
+                alt="WalletConnect"
+                className="fox-icon"
+              />
               <span style={{ marginLeft: 8 }}>Connect Wallet (WC)</span>
             </button>
           )}

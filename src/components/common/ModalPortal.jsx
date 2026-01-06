@@ -15,7 +15,11 @@ function ensureModalHost() {
   return host;
 }
 
-export default function ModalPortal({ children, className, lockScroll = true }) {
+export default function ModalPortal({
+  children,
+  className,
+  lockScroll = true,
+}) {
   const containerRef = React.useRef(null);
   const previousOverflow = React.useRef("");
   const previousPaddingRight = React.useRef("");
@@ -41,7 +45,8 @@ export default function ModalPortal({ children, className, lockScroll = true }) 
 
     if (lockScroll && typeof document !== "undefined") {
       const body = document.body;
-      const scrollbarW = window.innerWidth - document.documentElement.clientWidth;
+      const scrollbarW =
+        window.innerWidth - document.documentElement.clientWidth;
       previousOverflow.current = body.style.overflow;
       previousPaddingRight.current = body.style.paddingRight;
       previousPosition.current = body.style.position;
@@ -74,7 +79,8 @@ export default function ModalPortal({ children, className, lockScroll = true }) 
         body.style.width = previousWidth.current;
         window.scrollTo(0, previousScrollY.current);
       }
-      if (host && container && container.parentNode === host) host.removeChild(container);
+      if (host && container && container.parentNode === host)
+        host.removeChild(container);
     };
   }, [className, lockScroll]);
 

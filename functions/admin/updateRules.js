@@ -94,9 +94,3 @@ export default async function handler(req, res) {
   Object.entries(result.headers).forEach(([k, v]) => res.setHeader(k, v));
   res.end(result.body);
 }
-
-export const handler = async (event) => {
-  const body = event?.body ? JSON.parse(event.body) : {};
-  const result = await handleRequest({ method: event?.httpMethod, body });
-  return { statusCode: result.status, headers: result.headers, body: result.body };
-};

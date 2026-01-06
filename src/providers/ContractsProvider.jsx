@@ -98,7 +98,9 @@ export function ContractsProvider({ children }) {
       }
       // some roFactory may accept provider; pass it if possible
       try {
-        return typeof roFactory === "function" ? roFactory(effectiveROProvider()) : roFactory;
+        return typeof roFactory === "function"
+          ? roFactory(effectiveROProvider())
+          : roFactory;
       } catch {
         return roFactory();
       }
@@ -115,7 +117,9 @@ export function ContractsProvider({ children }) {
           return getReadOnlyContract();
         }
       },
-      mainRW: rwOrRo(getContract, () => getReadOnlyContract(effectiveROProvider())),
+      mainRW: rwOrRo(getContract, () =>
+        getReadOnlyContract(effectiveROProvider()),
+      ),
 
       liqRO: () => {
         try {
@@ -143,7 +147,9 @@ export function ContractsProvider({ children }) {
           return getReadOnlyMain2();
         }
       },
-      main2Write: rwOrRo(getMain2, () => getReadOnlyMain2(effectiveROProvider())),
+      main2Write: rwOrRo(getMain2, () =>
+        getReadOnlyMain2(effectiveROProvider()),
+      ),
 
       vrfRead: () => {
         try {
@@ -169,7 +175,9 @@ export function ContractsProvider({ children }) {
           return getDistributorRO();
         }
       },
-      distributorWrite: rwOrRo(getDistributor, () => getDistributorRO(effectiveROProvider())),
+      distributorWrite: rwOrRo(getDistributor, () =>
+        getDistributorRO(effectiveROProvider()),
+      ),
 
       reserveRead: () => {
         try {
@@ -178,7 +186,9 @@ export function ContractsProvider({ children }) {
           return getReserveRO();
         }
       },
-      reserveWrite: rwOrRo(getReserve, () => getReserveRO(effectiveROProvider())),
+      reserveWrite: rwOrRo(getReserve, () =>
+        getReserveRO(effectiveROProvider()),
+      ),
 
       treasuryRead: () => {
         try {
@@ -187,7 +197,9 @@ export function ContractsProvider({ children }) {
           return getTreasuryRO();
         }
       },
-      treasuryWrite: rwOrRo(getTreasury, () => getTreasuryRO(effectiveROProvider())),
+      treasuryWrite: rwOrRo(getTreasury, () =>
+        getTreasuryRO(effectiveROProvider()),
+      ),
 
       buybackRead: () => {
         try {
@@ -196,7 +208,9 @@ export function ContractsProvider({ children }) {
           return getBuybackRO();
         }
       },
-      buybackWrite: rwOrRo(getBuyback, () => getBuybackRO(effectiveROProvider())),
+      buybackWrite: rwOrRo(getBuyback, () =>
+        getBuybackRO(effectiveROProvider()),
+      ),
 
       policyRead: () => {
         try {
@@ -214,7 +228,9 @@ export function ContractsProvider({ children }) {
           return getTokenRewardsRO();
         }
       },
-      tokenRewardsWrite: rwOrRo(getTokenRewards, () => getTokenRewardsRO(effectiveROProvider())),
+      tokenRewardsWrite: rwOrRo(getTokenRewards, () =>
+        getTokenRewardsRO(effectiveROProvider()),
+      ),
 
       collectionRewardsRead: () => {
         try {
@@ -223,9 +239,8 @@ export function ContractsProvider({ children }) {
           return getCollectionRewardsRO();
         }
       },
-      collectionRewardsWrite: rwOrRo(
-        getCollectionRewards,
-        () => getCollectionRewardsRO(effectiveROProvider())
+      collectionRewardsWrite: rwOrRo(getCollectionRewards, () =>
+        getCollectionRewardsRO(effectiveROProvider()),
       ),
 
       dripDistributorRead: () => {
@@ -235,7 +250,9 @@ export function ContractsProvider({ children }) {
           return getDripDistributorRO();
         }
       },
-      dripDistributorWrite: rwOrRo(getDripDistributor, () => getDripDistributorRO(effectiveROProvider())),
+      dripDistributorWrite: rwOrRo(getDripDistributor, () =>
+        getDripDistributorRO(effectiveROProvider()),
+      ),
 
       dripLMRead: () => {
         try {
@@ -253,7 +270,9 @@ export function ContractsProvider({ children }) {
           return getDripKeeperRO();
         }
       },
-      dripKeeperWrite: rwOrRo(getDripKeeper, () => getDripKeeperRO(effectiveROProvider())),
+      dripKeeperWrite: rwOrRo(getDripKeeper, () =>
+        getDripKeeperRO(effectiveROProvider()),
+      ),
 
       factoryRead: () => {
         try {
@@ -362,7 +381,7 @@ export function ContractsProvider({ children }) {
       // expose effectiveROProvider in case someone needs the concrete provider
       _effectiveROProvider: effectiveROProvider,
     }),
-    [signer, effectiveROProvider]
+    [signer, effectiveROProvider],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
@@ -370,6 +389,7 @@ export function ContractsProvider({ children }) {
 
 export function useContracts() {
   const context = React.useContext(Ctx);
-  if (!context) throw new Error("useContracts must be used inside <ContractsProvider>");
+  if (!context)
+    throw new Error("useContracts must be used inside <ContractsProvider>");
   return context;
 }

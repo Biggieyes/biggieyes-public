@@ -32,7 +32,13 @@ function pickRevertData(err) {
 }
 
 export function decodeTokenomicsFullStatus(data) {
-  if (!data || typeof data !== "string" || !data.startsWith("0x") || data.length <= 2) return null;
+  if (
+    !data ||
+    typeof data !== "string" ||
+    !data.startsWith("0x") ||
+    data.length <= 2
+  )
+    return null;
   const coder = ethers.utils.defaultAbiCoder;
   try {
     return coder.decode(FULL_STATUS_TYPES_V2, data);
@@ -52,7 +58,9 @@ export function decodeTokenomicsFullStatus(data) {
  */
 export async function getFullStatusSafe(reader) {
   if (!reader || typeof reader.getFullStatus !== "function") {
-    throw new Error("Tokenomics reader is not initialized or missing getFullStatus()");
+    throw new Error(
+      "Tokenomics reader is not initialized or missing getFullStatus()",
+    );
   }
   try {
     return await reader.getFullStatus();
@@ -63,4 +71,3 @@ export async function getFullStatusSafe(reader) {
     throw err;
   }
 }
-

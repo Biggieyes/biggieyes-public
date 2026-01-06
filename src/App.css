@@ -274,8 +274,7 @@ body,
   padding: 0;
   box-sizing: border-box;
   font-family: "Press Start 2P", VT323, monospace;
-  background: #171717 url(/images/bg-main2.png) center center / cover
-    no-repeat;
+  background: #171717 url(/images/bg-main2.png) center center / cover no-repeat;
   animation: bgBreath 9s ease-in-out infinite alternate;
   overflow-x: hidden;
   touch-action: manipulation;
@@ -1699,12 +1698,11 @@ canvas {
     left: 50% !important;
   }
   .show-blocks-btn,
-.show-bgstats-btn,
-.show-rewards-btn {
-  width: 100% !important;
-  max-width: 360px !important;
-}
-
+  .show-bgstats-btn,
+  .show-rewards-btn {
+    width: 100% !important;
+    max-width: 360px !important;
+  }
 }
 @media (max-width: 480px) {
   body,
@@ -3703,7 +3701,11 @@ canvas {
   border: 1px solid transparent !important;
   border-radius: 999px;
   padding: 10px 18px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.2));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(0, 0, 0, 0.2)
+  );
   color: #d7dde9;
   font-size: 0.8rem;
   font-weight: 700;
@@ -3720,10 +3722,16 @@ canvas {
 .collection-grid__tab:hover {
   color: #ffe800;
   border-color: var(--panel-border-strong) !important;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 232, 0, 0.2);
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.32),
+    0 0 0 1px rgba(255, 232, 0, 0.2);
 }
 .collection-grid__tab.is-active {
-  background: linear-gradient(145deg, rgba(255, 232, 0, 0.22), rgba(255, 232, 0, 0.08));
+  background: linear-gradient(
+    145deg,
+    rgba(255, 232, 0, 0.22),
+    rgba(255, 232, 0, 0.08)
+  );
   color: #ffe800;
   border-color: var(--panel-border-strong) !important;
   box-shadow:
@@ -3736,15 +3744,25 @@ canvas {
 }
 .collection-grid__tab--future {
   color: #ffe800;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.2));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(0, 0, 0, 0.2)
+  );
   border-color: rgba(255, 232, 0, 0.22) !important;
   box-shadow: none;
 }
 .collection-grid__tab--future:hover {
   color: #ffe800;
   border-color: var(--panel-border-strong) !important;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.2));
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 232, 0, 0.2);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(0, 0, 0, 0.2)
+  );
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.32),
+    0 0 0 1px rgba(255, 232, 0, 0.2);
 }
 .collection-grid__info-toggle {
   padding: 10px 16px;
@@ -3908,10 +3926,9 @@ canvas {
 }
 .collection-grid__table tbody tr {
   display: grid;
-  grid-template-columns: minmax(200px, 1.1fr) minmax(160px, 0.9fr) minmax(
-      220px,
-      1fr
-    ) minmax(200px, 1fr);
+  grid-template-columns:
+    minmax(200px, 1.1fr) minmax(160px, 0.9fr) minmax(220px, 1fr)
+    minmax(200px, 1fr);
   gap: 10px;
   align-items: center;
   padding: 14px 16px;
@@ -6051,8 +6068,16 @@ canvas {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(120% 90% at 12% 10%, rgba(255, 232, 0, 0.2), transparent 58%),
-    radial-gradient(110% 80% at 86% 32%, rgba(95, 219, 255, 0.16), transparent 60%);
+    radial-gradient(
+      120% 90% at 12% 10%,
+      rgba(255, 232, 0, 0.2),
+      transparent 58%
+    ),
+    radial-gradient(
+      110% 80% at 86% 32%,
+      rgba(95, 219, 255, 0.16),
+      transparent 60%
+    );
   opacity: 0.55;
   pointer-events: none;
 }

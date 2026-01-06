@@ -62,7 +62,8 @@ export default function ModeratorPanel({
       <div className="moderator-center__card">
         <h3>Referral odkaz</h3>
         <p className="muted">
-          Share your link. A user must connect their wallet for the referral to be recorded.
+          Share your link. A user must connect their wallet for the referral to
+          be recorded.
         </p>
         <div className="moderator-center__field">
           <label>Code (optional)</label>
@@ -98,7 +99,10 @@ export default function ModeratorPanel({
       <div className="moderator-center__card">
         <h3>Pokyny</h3>
         <ul className="moderator-center__list">
-          <li>Referrals are stored only on the first visit with a connected wallet.</li>
+          <li>
+            Referrals are stored only on the first visit with a connected
+            wallet.
+          </li>
           <li>The same address is counted only once across all slots.</li>
           <li>Ticket purchases update after the on-chain event is captured.</li>
         </ul>

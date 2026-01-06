@@ -1,12 +1,13 @@
-import { utils } from "ethers";
+import { ethers } from "ethers";
 
 const DECIMALS = 18;
 const PLACEHOLDER = "--";
 
 function _formatAmount(raw, decimals = DECIMALS) {
-  if (raw === undefined || raw === null) return { display: PLACEHOLDER, numeric: null };
+  if (raw === undefined || raw === null)
+    return { display: PLACEHOLDER, numeric: null };
   try {
-    const formatted = utils.formatUnits(raw, decimals);
+    const formatted = ethers.utils.formatUnits(raw, decimals);
     const numeric = Number(formatted);
     const display = Number.isFinite(numeric)
       ? numeric.toLocaleString("en-US", { maximumFractionDigits: 2 })
@@ -63,9 +64,18 @@ export function mapDripSnapshotToUI(raw) {
       : null;
 
   const canSellNow =
-    !distributorRaw.paused && (capRemainingNumeric > 0 || availableNumeric > 0 || availablePercent > 0);
-  const statusLabel = distributorRaw.paused ? "Paused" : canSellNow ? "Active" : "Waiting";
-  const statusTone = distributorRaw.paused ? "paused" : canSellNow ? "active" : "warning";
+    !distributorRaw.paused &&
+    (capRemainingNumeric > 0 || availableNumeric > 0 || availablePercent > 0);
+  const statusLabel = distributorRaw.paused
+    ? "Paused"
+    : canSellNow
+      ? "Active"
+      : "Waiting";
+  const statusTone = distributorRaw.paused
+    ? "paused"
+    : canSellNow
+      ? "active"
+      : "warning";
 
   return {
     ts,
@@ -109,8 +119,14 @@ export function mapDripSnapshotToUI(raw) {
       biggiBalanceNumeric: lmBiggiBalance.numeric,
     },
     derived: {
-      availablePercent: availablePercent != null ? `${availablePercent.toFixed(1)}%` : PLACEHOLDER,
-      capRemainingPercent: capRemainingPercent != null ? `${capRemainingPercent.toFixed(1)}%` : PLACEHOLDER,
+      availablePercent:
+        availablePercent != null
+          ? `${availablePercent.toFixed(1)}%`
+          : PLACEHOLDER,
+      capRemainingPercent:
+        capRemainingPercent != null
+          ? `${capRemainingPercent.toFixed(1)}%`
+          : PLACEHOLDER,
       canSellNow,
       statusLabel,
       statusTone,
@@ -143,5 +159,8 @@ export function mapDripHistoryToChartPoints(history = [], accessor) {
       const value = accessor(entry);
       return { label: entry?.tsLabel, value };
     })
-    .filter((point) => typeof point.value === "number" && Number.isFinite(point.value));
+    .filter(
+      (point) =>
+        typeof point.value === "number" && Number.isFinite(point.value),
+    );
 }

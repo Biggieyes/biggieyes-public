@@ -25,7 +25,7 @@ import {
   getBiggiTokenReaderRO,
   getBiggiTokenomicsReaderRO,
 } from "./utils/contract";
-import './styles/biggi-token.skin.css';
+import "./styles/biggi-token.skin.css";
 import { BiggiToken as ABI_TOKEN } from "./config/abi/index.js";
 import RewardsPanel from "./components/panels/RewardsPanel.jsx";
 import LiveStats from "./components/LiveStats";
@@ -42,7 +42,11 @@ import UserPanel from "./components/user/UserPanel";
 import AdminPanel from "./components/admin/AdminPanel";
 import * as WC from "./wallet/wc";
 import useTransparencyData from "./hooks/useTransparencyData";
-import { mergeAttrs, getCachedPriceAttrs, setCachedPriceAttrs } from "./utils/metadata";
+import {
+  mergeAttrs,
+  getCachedPriceAttrs,
+  setCachedPriceAttrs,
+} from "./utils/metadata";
 
 const pickInjectedProvider = () => {
   if (typeof window === "undefined") return null;
@@ -55,21 +59,39 @@ const pickInjectedProvider = () => {
   return ethereum;
 };
 
-
 /* ========= LAZY LOADED HEAVY PANELS ========= */
-const ProjectInfoModal = React.lazy(() => import("./components/INFO/ProjectInfoModal"));
-const RedeemOverlay = React.lazy(() => import("./components/redeem/RedeemOverlay"));
+const ProjectInfoModal = React.lazy(
+  () => import("./components/INFO/ProjectInfoModal"),
+);
+const RedeemOverlay = React.lazy(
+  () => import("./components/redeem/RedeemOverlay"),
+);
 const BiggiToken = React.lazy(() => import("./components/TOKEN/BiggiToken"));
-const CollectionBlocksGrid = React.lazy(() => import("./components/CollectionBlocksGrid"));
-const CommunityCenterPanel = React.lazy(() => import("./components/panels/CommunityCenterPanel")); // novĂ˝ panel
+const CollectionBlocksGrid = React.lazy(
+  () => import("./components/CollectionBlocksGrid"),
+);
+const CommunityCenterPanel = React.lazy(
+  () => import("./components/panels/CommunityCenterPanel"),
+); // novĂ˝ panel
 
 /* ======================================================================== */
 /* ============================== CONSTANTS ================================ */
 /* ======================================================================== */
 
-const BACKGROUND_NAMES = ["ORANGE","BLACK","WHITE","BROWN","BLUE","GREEN","VIOLET","RED","PINK","RAINBOW"];
-const BACKGROUND_CODES = ["O","B","W","BR","BL","G","V","R","P","RB"];
-const BACKGROUND_BONUSES = [5,10,15,20,25,30,35,40,45,50];
+const BACKGROUND_NAMES = [
+  "ORANGE",
+  "BLACK",
+  "WHITE",
+  "BROWN",
+  "BLUE",
+  "GREEN",
+  "VIOLET",
+  "RED",
+  "PINK",
+  "RAINBOW",
+];
+const BACKGROUND_CODES = ["O", "B", "W", "BR", "BL", "G", "V", "R", "P", "RB"];
+const BACKGROUND_BONUSES = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50];
 
 const DEPLOY_BLOCK = Number(ADDR?.DEPLOY_BLOCK) || null;
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -89,7 +111,8 @@ function loadWalletCache(addr) {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object") return null;
-    if (parsed.ts && Date.now() - Number(parsed.ts) > WALLET_CACHE_TTL) return null;
+    if (parsed.ts && Date.now() - Number(parsed.ts) > WALLET_CACHE_TTL)
+      return null;
     return Array.isArray(parsed.items) ? parsed.items : null;
   } catch {
     return null;
@@ -114,7 +137,13 @@ async function getSafeDeployBlock(provider) {
   return Math.max(0, latest - 49_999);
 }
 
-async function queryLogsBatched(contract, filter, fromBlock, toBlock, step = LOGS_BATCH) {
+async function queryLogsBatched(
+  contract,
+  filter,
+  fromBlock,
+  toBlock,
+  step = LOGS_BATCH,
+) {
   const out = [];
   let start = fromBlock;
   let batch = step;
@@ -267,12 +296,14 @@ function resolveImageUrlCached(imageField, metadataUri) {
 async function mapLimit(items, limit, mapper) {
   const ret = [];
   let i = 0;
-  const workers = new Array(Math.min(limit, items.length)).fill(0).map(async () => {
-    while (i < items.length) {
-      const cur = i++;
-      ret[cur] = await mapper(items[cur], cur);
-    }
-  });
+  const workers = new Array(Math.min(limit, items.length))
+    .fill(0)
+    .map(async () => {
+      while (i < items.length) {
+        const cur = i++;
+        ret[cur] = await mapper(items[cur], cur);
+      }
+    });
   await Promise.all(workers);
   return ret;
 }
@@ -331,12 +362,28 @@ function useIsMobile(breakpoint = 700) {
 /* ======================================================================== */
 
 const ICONS = [
-  { src: "/images/rewards.png", alt: "REWARDS", modalText: MODAL_TEXTS.rewards || "" },
-  { src: "/images/collection2.png", alt: "COLLECTION", modalText: MODAL_TEXTS.collection },
+  {
+    src: "/images/rewards.png",
+    alt: "REWARDS",
+    modalText: MODAL_TEXTS.rewards || "",
+  },
+  {
+    src: "/images/collection2.png",
+    alt: "COLLECTION",
+    modalText: MODAL_TEXTS.collection,
+  },
   { src: "/images/vrf-mint.png", alt: "VRF MINT", modalText: MODAL_TEXTS.mint },
-  { src: "/images/chance-rules.png", alt: "BIGGI ECOSYSTEM", modalText: MODAL_TEXTS.chance },
+  {
+    src: "/images/chance-rules.png",
+    alt: "BIGGI ECOSYSTEM",
+    modalText: MODAL_TEXTS.chance,
+  },
   { src: "/images/community-aboutUs.png", alt: "USERS", modalText: "" },
-  { src: "/images/expansion.png", alt: "COMMUNITY CENTER", modalText: MODAL_TEXTS.communityCenter || MODAL_TEXTS.expansion },
+  {
+    src: "/images/expansion.png",
+    alt: "COMMUNITY CENTER",
+    modalText: MODAL_TEXTS.communityCenter || MODAL_TEXTS.expansion,
+  },
 ];
 
 // Ä‘Ĺşâ€ťÂµ WalletConnect helper
@@ -357,12 +404,37 @@ const connectWithWalletConnect = async () => {
 /* ======================================================================== */
 
 const ABI_RESERVE = [
-  { "anonymous": false, "inputs": [
-      { "indexed": false, "internalType": "bytes32", "name": "bucket", "type": "bytes32" },
-      { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" },
-      { "indexed": false, "internalType": "uint256", "name": "waitingBal", "type": "uint256" },
-      { "indexed": false, "internalType": "uint256", "name": "refillBal", "type": "uint256" }
-    ], "name": "BiggiNotified", "type": "event" },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "bytes32",
+        name: "bucket",
+        type: "bytes32",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "waitingBal",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "refillBal",
+        type: "uint256",
+      },
+    ],
+    name: "BiggiNotified",
+    type: "event",
+  },
   /* ... zkrĂˇceno pro pĹ™ehlednost v tomto bloku, ale v reĂˇlnĂ©m souboru mÄ›j ABI kompletnĂ­ jako dĹ™Ă­v ... */
 ];
 
@@ -381,25 +453,33 @@ const readersRef = { current: {} };
 function getCachedReaderInstance(kind = "main") {
   try {
     if (kind === "main" && typeof getBiggiMainReaderRO === "function") {
-      if (!readersRef.current.BiggiMainReader) readersRef.current.BiggiMainReader = getBiggiMainReaderRO();
+      if (!readersRef.current.BiggiMainReader)
+        readersRef.current.BiggiMainReader = getBiggiMainReaderRO();
       return readersRef.current.BiggiMainReader;
     }
     if (kind === "rewards" && typeof getBiggiRewardsReaderRO === "function") {
-      if (!readersRef.current.BiggiRewardsReader) readersRef.current.BiggiRewardsReader = getBiggiRewardsReaderRO();
+      if (!readersRef.current.BiggiRewardsReader)
+        readersRef.current.BiggiRewardsReader = getBiggiRewardsReaderRO();
       return readersRef.current.BiggiRewardsReader;
     }
     if (kind === "token" && typeof getBiggiTokenReaderRO === "function") {
-      if (!readersRef.current.BiggiTokenReader) readersRef.current.BiggiTokenReader = getBiggiTokenReaderRO();
+      if (!readersRef.current.BiggiTokenReader)
+        readersRef.current.BiggiTokenReader = getBiggiTokenReaderRO();
       return readersRef.current.BiggiTokenReader;
     }
-    if (kind === "tokenomics" && typeof getBiggiTokenomicsReaderRO === "function") {
-      if (!readersRef.current.BiggiTokenomicsReader) readersRef.current.BiggiTokenomicsReader = getBiggiTokenomicsReaderRO();
+    if (
+      kind === "tokenomics" &&
+      typeof getBiggiTokenomicsReaderRO === "function"
+    ) {
+      if (!readersRef.current.BiggiTokenomicsReader)
+        readersRef.current.BiggiTokenomicsReader = getBiggiTokenomicsReaderRO();
       return readersRef.current.BiggiTokenomicsReader;
     }
   } catch (e) {
     // ignore
   }
-  if (!readersRef.current.GenericReader) readersRef.current.GenericReader = getReaderRO();
+  if (!readersRef.current.GenericReader)
+    readersRef.current.GenericReader = getReaderRO();
   return readersRef.current.GenericReader;
 }
 
@@ -416,9 +496,13 @@ function App() {
   const [maxSupply] = React.useState(550);
   const [ticketMinted, setTicketMinted] = React.useState(0);
   const [maxTickets] = React.useState(550);
-  const [blockMintCounts, setBlockMintCounts] = React.useState(new Array(10).fill(0));
+  const [blockMintCounts, setBlockMintCounts] = React.useState(
+    new Array(10).fill(0),
+  );
   const [blockPrices, setBlockPrices] = React.useState(new Array(10).fill(0));
-  const [backgroundMintCounts, setBackgroundMintCounts] = React.useState(new Array(10).fill(0));
+  const [backgroundMintCounts, setBackgroundMintCounts] = React.useState(
+    new Array(10).fill(0),
+  );
 
   const [myNFTs, setMyNFTs] = React.useState([]);
   const [galleryLoading, setGalleryLoading] = React.useState(false);
@@ -436,13 +520,32 @@ function App() {
   const [myClaimable, setMyClaimable] = React.useState(null);
   const [mintVolumeMatic, setMintVolumeMatic] = React.useState(null);
 
-  const [biggiData, setBiggiData] = React.useState({ token: {}, rewards: {}, router: {}, liquidity: {}, policy: {}, buyback: {} });
+  const [biggiData, setBiggiData] = React.useState({
+    token: {},
+    rewards: {},
+    router: {},
+    liquidity: {},
+    policy: {},
+    buyback: {},
+  });
 
   const [vrfUIData, setVrfUIData] = React.useState({
     network: "EVM",
     subscription: { id: "", linkBalance: "", consumers: [] },
-    params: { keyHash: "", confirmations: 3, numWords: 1, callbackGasLimit: 300000 },
-    last: { requestId: "", status: "idle", requestedAt: "", txHash: "", blockNumber: undefined, randomWords: [] },
+    params: {
+      keyHash: "",
+      confirmations: 3,
+      numWords: 1,
+      callbackGasLimit: 300000,
+    },
+    last: {
+      requestId: "",
+      status: "idle",
+      requestedAt: "",
+      txHash: "",
+      blockNumber: undefined,
+      randomWords: [],
+    },
     history: [],
   });
 
@@ -469,7 +572,11 @@ function App() {
   const [userLastClaimTs, setUserLastClaimTs] = React.useState(null);
 
   const isMobile = useIsMobile(700);
-  const { data: transparencyData, loading: transparencyLoading, refreshTransparency } = useTransparencyData({ enabled: true });
+  const {
+    data: transparencyData,
+    loading: transparencyLoading,
+    refreshTransparency,
+  } = useTransparencyData({ enabled: true });
 
   const formatEthNum = (bnOrNum) => {
     if (bnOrNum == null) return null;
@@ -527,7 +634,12 @@ function App() {
       if (!pol) return;
       const { ethers } = await import("ethers");
 
-      let splits = { reserveBps: null, buybackBps: null, collRewardsBps: null, treasuryBps: null };
+      let splits = {
+        reserveBps: null,
+        buybackBps: null,
+        collRewardsBps: null,
+        treasuryBps: null,
+      };
       try {
         if (typeof pol.getDistributorSplits === "function") {
           const s = await pol.getDistributorSplits();
@@ -574,22 +686,26 @@ function App() {
         }
       } catch {}
       try {
-        const [swapSlip, lpSlip, deadline, cooldown, dailyCap] = await Promise.all([
-          pol.swapSlippageBps?.(),
-          pol.lpSlippageBps?.(),
-          pol.txDeadlineSec?.(),
-          pol.minBuybackInterval?.(),
-          pol.maxDailyBuybackNative?.(),
-        ]);
+        const [swapSlip, lpSlip, deadline, cooldown, dailyCap] =
+          await Promise.all([
+            pol.swapSlippageBps?.(),
+            pol.lpSlippageBps?.(),
+            pol.txDeadlineSec?.(),
+            pol.minBuybackInterval?.(),
+            pol.maxDailyBuybackNative?.(),
+          ]);
         if (swapSlip != null) guards.swapSlippageBps = Number(swapSlip);
         if (lpSlip != null) guards.lpSlippageBps = Number(lpSlip);
         if (deadline != null) guards.txDeadlineSec = Number(deadline);
         if (cooldown != null) guards.minBuybackInterval = Number(cooldown);
-        if (dailyCap != null) guards.maxDailyBuybackNative = ethers.utils.formatEther(dailyCap);
+        if (dailyCap != null)
+          guards.maxDailyBuybackNative = ethers.utils.formatEther(dailyCap);
       } catch {}
 
       let buybacksPaused = null;
-      try { buybacksPaused = !!(await pol.buybacksPaused()); } catch {}
+      try {
+        buybacksPaused = !!(await pol.buybacksPaused());
+      } catch {}
 
       setBiggiData((prev) => ({
         ...prev,
@@ -650,28 +766,67 @@ function App() {
         }
       }
     }
-    throw new Error(`No matching method found (${names.join(" | ")}) on provided contracts`);
+    throw new Error(
+      `No matching method found (${names.join(" | ")}) on provided contracts`,
+    );
   };
 
   const setVRFAllOrPartial = async (vrf) => {
     const targets = [getContract];
-    const combinedNames = ["setVRFParams","setVrfParams","configureVRF","configureVrf","setChainlinkVRF"];
+    const combinedNames = [
+      "setVRFParams",
+      "setVrfParams",
+      "configureVRF",
+      "configureVrf",
+      "setChainlinkVRF",
+    ];
     const argsCombo = [
-      [vrf.keyHash, vrf.confirmations, vrf.callbackGasLimit, vrf.numWords, vrf.coordinator, vrf.subscriptionId],
-      [vrf.keyHash, vrf.confirmations, vrf.numWords, vrf.callbackGasLimit, vrf.coordinator, vrf.subscriptionId],
+      [
+        vrf.keyHash,
+        vrf.confirmations,
+        vrf.callbackGasLimit,
+        vrf.numWords,
+        vrf.coordinator,
+        vrf.subscriptionId,
+      ],
+      [
+        vrf.keyHash,
+        vrf.confirmations,
+        vrf.numWords,
+        vrf.callbackGasLimit,
+        vrf.coordinator,
+        vrf.subscriptionId,
+      ],
     ];
     for (const a of argsCombo) {
-      try { await writeFirst(targets, combinedNames, ...a); return; } catch {}
+      try {
+        await writeFirst(targets, combinedNames, ...a);
+        return;
+      } catch {}
     }
     const c = await getContract();
-    const trySet = async (name, ...a) => { if (typeof c[name] === "function") await writeTx(c[name].bind(c), ...a); };
+    const trySet = async (name, ...a) => {
+      if (typeof c[name] === "function") await writeTx(c[name].bind(c), ...a);
+    };
     await ensureAmoy();
-    try { await trySet("setKeyHash", vrf.keyHash); } catch {}
-    try { await trySet("setRequestConfirmations", vrf.confirmations); } catch {}
-    try { await trySet("setCallbackGasLimit", vrf.callbackGasLimit); } catch {}
-    try { await trySet("setNumWords", vrf.numWords); } catch {}
-    try { await trySet("setCoordinator", vrf.coordinator); } catch {}
-    try { await trySet("setSubscriptionId", vrf.subscriptionId); } catch {}
+    try {
+      await trySet("setKeyHash", vrf.keyHash);
+    } catch {}
+    try {
+      await trySet("setRequestConfirmations", vrf.confirmations);
+    } catch {}
+    try {
+      await trySet("setCallbackGasLimit", vrf.callbackGasLimit);
+    } catch {}
+    try {
+      await trySet("setNumWords", vrf.numWords);
+    } catch {}
+    try {
+      await trySet("setCoordinator", vrf.coordinator);
+    } catch {}
+    try {
+      await trySet("setSubscriptionId", vrf.subscriptionId);
+    } catch {}
   };
 
   const getNftIndexForTokenId = React.useCallback(async (contract, tokenId) => {
@@ -681,7 +836,12 @@ function App() {
     try {
       const latest = await contract.provider.getBlockNumber();
       const from = await getSafeDeployBlock(contract.provider);
-      const logs = await queryLogsBatched(contract, contract.filters.NFTMinted(), from, latest);
+      const logs = await queryLogsBatched(
+        contract,
+        contract.filters.NFTMinted(),
+        from,
+        latest,
+      );
       for (let i = logs.length - 1; i >= 0; i--) {
         const l = logs[i];
         const tid = l.args?.tokenId || l.args?.[1];
@@ -705,11 +865,19 @@ function App() {
   /* -------------------------------------------------------------------- */
   const resolveTicketPriceWei = React.useCallback(async () => {
     const c = contractRef.current || getReadOnlyContract();
-    const candidates = ["getTicketPrice", "ticketPrice", "getTicketPriceWei", "ticketPriceWei"];
+    const candidates = [
+      "getTicketPrice",
+      "ticketPrice",
+      "getTicketPriceWei",
+      "ticketPriceWei",
+    ];
     for (const n of candidates) {
       const f = c[n];
       if (typeof f === "function") {
-        try { const v = await f(); if (v != null) return v; } catch {}
+        try {
+          const v = await f();
+          if (v != null) return v;
+        } catch {}
       }
     }
 
@@ -742,14 +910,21 @@ function App() {
 
         try {
           // prefer tokenomics reader first, fallback to main/generic
-          const tokenomicsReader = getCachedReaderInstance("tokenomics") || getCachedReaderInstance("main") || getCachedReaderInstance("generic");
-          const [tp, bp, fp] = await tokenomicsReader.getMintDataByTokenId(ethers.BigNumber.from(String(tokenId)));
+          const tokenomicsReader =
+            getCachedReaderInstance("tokenomics") ||
+            getCachedReaderInstance("main") ||
+            getCachedReaderInstance("generic");
+          const [tp, bp, fp] = await tokenomicsReader.getMintDataByTokenId(
+            ethers.BigNumber.from(String(tokenId)),
+          );
           const ticket = formatEthNum(tp);
           const blockP = formatEthNum(bp);
           const finalP = formatEthNum(fp);
 
           const pushOrReplace = (trait_type, value) => {
-            const i = attrs.findIndex((a) => String(a?.trait_type) === trait_type);
+            const i = attrs.findIndex(
+              (a) => String(a?.trait_type) === trait_type,
+            );
             const v = value != null ? `${value.toFixed(4)} POL` : "\u2014";
             if (i === -1) attrs.push({ trait_type, value: v });
             else attrs[i] = { ...attrs[i], value: v };
@@ -767,14 +942,16 @@ function App() {
         return meta;
       }
     },
-    []
+    [],
   );
 
   const scheduleFetchStats = React.useCallback((delay = 500) => {
     if (statsTimer.current) return;
     statsTimer.current = setTimeout(async () => {
       statsTimer.current = null;
-      try { await fetchStats(); } catch {}
+      try {
+        await fetchStats();
+      } catch {}
     }, delay);
   }, []);
 
@@ -782,13 +959,16 @@ function App() {
     if (rewardsTimer.current) return;
     rewardsTimer.current = setTimeout(async () => {
       rewardsTimer.current = null;
-      try { await fetchRewards(); } catch {}
+      try {
+        await fetchRewards();
+      } catch {}
     }, delay);
   }, []);
 
   const prettyError = React.useCallback((err) => {
     const name = err?.errorName || "";
-    const reason = err?.reason || err?.data?.message || err?.message || "Unknown error";
+    const reason =
+      err?.reason || err?.data?.message || err?.message || "Unknown error";
     const map = {
       InsufficientPayment: "Sent value is lower than the ticket price.",
       MaxPerWallet: "Per-wallet limit (10 tickets) exceeded.",
@@ -801,30 +981,42 @@ function App() {
       Paused: "Contract is paused.",
       NoEligibleTokens: "No eligible NFTs to claim this week.",
       CapExceeded: "Token cap would be exceeded.",
-      NotFullyConfigured: "Contract metadata is not fully configured (owner must finish batch setup).",
+      NotFullyConfigured:
+        "Contract metadata is not fully configured (owner must finish batch setup).",
       BiggiTokenNotSet: "BIGGI token is not configured yet.",
     };
     return map[name] || reason;
   }, []);
 
-  const callFirst = React.useCallback(async (contract, candidates, args = []) => {
-    for (const fn of candidates) {
-      const callable = contract[fn];
-      if (typeof callable === "function") {
-        try {
-          const res = await callable(...args);
-          return res;
-        } catch {}
+  const callFirst = React.useCallback(
+    async (contract, candidates, args = []) => {
+      for (const fn of candidates) {
+        const callable = contract[fn];
+        if (typeof callable === "function") {
+          try {
+            const res = await callable(...args);
+            return res;
+          } catch {}
+        }
       }
-    }
-    return null;
-  }, []);
+      return null;
+    },
+    [],
+  );
 
   const fetchRewards = React.useCallback(async () => {
     try {
       const main = contractRef.current || getReadOnlyContract();
 
-      const volumeCandidates = ["totalMintVolume","mintVolume","getMintVolume","totalRevenue","totalRevenueMatic","accMintValue","mintedValue"];
+      const volumeCandidates = [
+        "totalMintVolume",
+        "mintVolume",
+        "getMintVolume",
+        "totalRevenue",
+        "totalRevenueMatic",
+        "accMintValue",
+        "mintedValue",
+      ];
       let volWei = await callFirst(main, volumeCandidates);
       if (volWei) {
         const vol = Number(ethers.utils.formatEther(volWei));
@@ -836,13 +1028,23 @@ function App() {
       let weeklyWei = null;
       try {
         const brl = await getReadOnlyLiquidityContract();
-        const weeklyPoolFns = ["weeklyPool","currentWeekPool","getWeeklyPool","weekPool","poolForCurrentWeek","rewardPool","currentRewardPool"];
+        const weeklyPoolFns = [
+          "weeklyPool",
+          "currentWeekPool",
+          "getWeeklyPool",
+          "weekPool",
+          "poolForCurrentWeek",
+          "rewardPool",
+          "currentRewardPool",
+        ];
         weeklyWei = await callFirst(brl, weeklyPoolFns);
       } catch {}
 
       if (weeklyWei != null) {
         try {
-          const isPositive = ethers.BigNumber.isBigNumber(weeklyWei) ? weeklyWei.gt(0) : Number(weeklyWei) > 0;
+          const isPositive = ethers.BigNumber.isBigNumber(weeklyWei)
+            ? weeklyWei.gt(0)
+            : Number(weeklyWei) > 0;
           if (isPositive) {
             setRewardPool(Number(ethers.utils.formatEther(weeklyWei)));
           } else if (volWei) {
@@ -851,37 +1053,48 @@ function App() {
             setRewardPool(0);
           }
         } catch {
-          if (volWei) setRewardPool(Number(ethers.utils.formatEther(volWei)) * 0.22);
+          if (volWei)
+            setRewardPool(Number(ethers.utils.formatEther(volWei)) * 0.22);
           else setRewardPool(0);
         }
       } else {
-        if (volWei) setRewardPool(Number(ethers.utils.formatEther(volWei)) * 0.22);
+        if (volWei)
+          setRewardPool(Number(ethers.utils.formatEther(volWei)) * 0.22);
         else setRewardPool(0);
       }
 
       if (walletAddress) {
         const brl = await getReadOnlyLiquidityContract();
 
-        let tokenIds = myNFTs.filter((x) => !x.isTicket).map((x) => ethers.BigNumber.from(x.tokenId));
+        let tokenIds = myNFTs
+          .filter((x) => !x.isTicket)
+          .map((x) => ethers.BigNumber.from(x.tokenId));
 
         if (!tokenIds.length) {
           const contract = contractRef.current || getReadOnlyContract();
           const latest = await contract.provider.getBlockNumber();
           const FROM = await getSafeDeployBlock(contract.provider);
           const toFilter = contract.filters.Transfer(null, walletAddress, null);
-          const fromFilter = contract.filters.Transfer(walletAddress, null, null);
+          const fromFilter = contract.filters.Transfer(
+            walletAddress,
+            null,
+            null,
+          );
           const [toLogs, fromLogs] = await Promise.all([
             queryLogsBatched(contract, toFilter, FROM, latest),
             queryLogsBatched(contract, fromFilter, FROM, latest),
           ]);
           const all = [...toLogs, ...fromLogs].sort((a, b) => {
-            if (a.blockNumber !== b.blockNumber) return a.blockNumber - b.blockNumber;
+            if (a.blockNumber !== b.blockNumber)
+              return a.blockNumber - b.blockNumber;
             return a.logIndex - b.logIndex;
           });
           const held = new Set();
           const me = String(walletAddress || "").toLowerCase();
           for (const l of all) {
-            const from = String(l.args?.from ?? l.args?.[0] ?? "").toLowerCase();
+            const from = String(
+              l.args?.from ?? l.args?.[0] ?? "",
+            ).toLowerCase();
             const to = String(l.args?.to ?? l.args?.[1] ?? "").toLowerCase();
             const tid = (l.args?.tokenId ?? l.args?.[2])?.toString?.() || "";
             if (!tid) continue;
@@ -893,7 +1106,10 @@ function App() {
           const cRO = contract;
           for (const tid of arr) {
             try {
-              const isT = typeof cRO?.isTicket === "function" ? await cRO.isTicket(tid) : false;
+              const isT =
+                typeof cRO?.isTicket === "function"
+                  ? await cRO.isTicket(tid)
+                  : false;
               if (!isT) nonTickets.push(ethers.BigNumber.from(tid));
             } catch {
               nonTickets.push(ethers.BigNumber.from(tid));
@@ -945,7 +1161,9 @@ function App() {
         setTicketPrice(Number(ethers.utils.formatEther(ticketPriceWei)));
         setTicketMinted(Number(ticketMinted_));
         setBiggiMinted(Number(biggiMinted_));
-        setBlockPrices(currentBlockPrices.map((x) => Number(ethers.utils.formatEther(x))));
+        setBlockPrices(
+          currentBlockPrices.map((x) => Number(ethers.utils.formatEther(x))),
+        );
         setBlockMintCounts(blocksMinted.map((x) => Number(x)));
         setBackgroundMintCounts(bgsMinted.map((x) => Number(x)));
         return;
@@ -959,19 +1177,37 @@ function App() {
     try {
       const main = contractRef.current || getReadOnlyContract();
       // ticket price
-      const priceCandidates = ["getTicketPrice", "ticketPrice", "getTicketPriceWei", "ticketPriceWei"];
+      const priceCandidates = [
+        "getTicketPrice",
+        "ticketPrice",
+        "getTicketPriceWei",
+        "ticketPriceWei",
+      ];
       let priceWei = null;
       for (const fn of priceCandidates) {
         const f = main?.[fn];
         if (typeof f === "function") {
-          try { const v = await f(); if (v != null) { priceWei = v; break; } } catch {}
+          try {
+            const v = await f();
+            if (v != null) {
+              priceWei = v;
+              break;
+            }
+          } catch {}
         }
       }
-      if (priceWei != null) setTicketPrice(Number(ethers.utils.formatEther(priceWei)));
+      if (priceWei != null)
+        setTicketPrice(Number(ethers.utils.formatEther(priceWei)));
 
       // minted counters
-      try { const tm = await main.ticketMinted(); setTicketMinted(Number(tm?.toString?.() || tm || 0)); } catch {}
-      try { const bm = await main.biggiMinted(); setBiggiMinted(Number(bm?.toString?.() || bm || 0)); } catch {}
+      try {
+        const tm = await main.ticketMinted();
+        setTicketMinted(Number(tm?.toString?.() || tm || 0));
+      } catch {}
+      try {
+        const bm = await main.biggiMinted();
+        setBiggiMinted(Number(bm?.toString?.() || bm || 0));
+      } catch {}
 
       // block prices and counts
       const prices = [];
@@ -981,18 +1217,24 @@ function App() {
         try {
           const p = await main.getCurrentBlockPrice(i);
           prices.push(Number(ethers.utils.formatEther(p)));
-        } catch { prices.push(0); }
+        } catch {
+          prices.push(0);
+        }
         try {
           const c = await main.getBlockMintCount(i);
           blkCounts.push(Number(c?.toString?.() || c || 0));
-        } catch { blkCounts.push(0); }
+        } catch {
+          blkCounts.push(0);
+        }
       }
       // background counts are stored in a fixed-size public array -> index 0..9
       for (let j = 0; j < 10; j++) {
         try {
           const c = await main.backgroundMintCounts(j);
           bgCounts.push(Number(c?.toString?.() || c || 0));
-        } catch { bgCounts.push(0); }
+        } catch {
+          bgCounts.push(0);
+        }
       }
       setBlockPrices(prices);
       setBlockMintCounts(blkCounts);
@@ -1001,12 +1243,15 @@ function App() {
       console.error("fetchStats(fallback main)", e2);
     }
   }, []);
-/* pokraÄŤovĂˇnĂ­ souboru... */
+  /* pokraÄŤovĂˇnĂ­ souboru... */
 
   const fetchBackgroundMintCounts = React.useCallback(async () => {
     try {
       // prefer rewards reader
-      const reader = getCachedReaderInstance("rewards") || getCachedReaderInstance("main") || getCachedReaderInstance("generic");
+      const reader =
+        getCachedReaderInstance("rewards") ||
+        getCachedReaderInstance("main") ||
+        getCachedReaderInstance("generic");
       if (typeof reader.getAllBackgroundMintCounts === "function") {
         const counts = await reader.getAllBackgroundMintCounts();
         setBackgroundMintCounts(counts.map((x) => Number(x)));
@@ -1050,50 +1295,59 @@ function App() {
     const onlyTickets = [];
     for (const tid of tokenIds) {
       try {
-        const isT = typeof contract?.isTicket === "function" ? await contract.isTicket(tid) : false;
+        const isT =
+          typeof contract?.isTicket === "function"
+            ? await contract.isTicket(tid)
+            : false;
         if (isT) onlyTickets.push(ethers.BigNumber.from(tid));
       } catch {}
     }
     return onlyTickets;
   }, []);
 
-  const fetchMyTickets = React.useCallback(async (addr) => {
-    try {
-      const contract = contractRef.current || getReadOnlyContract();
-
-      let ids = [];
+  const fetchMyTickets = React.useCallback(
+    async (addr) => {
       try {
-        if (typeof contract.findTicket === "function") {
-          ids = await contract.findTicket(addr);
-        } else {
+        const contract = contractRef.current || getReadOnlyContract();
+
+        let ids = [];
+        try {
+          if (typeof contract.findTicket === "function") {
+            ids = await contract.findTicket(addr);
+          } else {
+            ids = await findTicketsViaLogs(contract, addr);
+          }
+        } catch {
           ids = await findTicketsViaLogs(contract, addr);
         }
-      } catch {
-        ids = await findTicketsViaLogs(contract, addr);
+
+        const metas = await mapLimit(ids, 4, async (idBN) => {
+          const id = idBN.toString();
+          let meta = {
+            name: `Ticket #${id}`,
+            description: "Redeem this ticket to mint a BiggiEyes NFT.",
+          };
+          let image = "/images/Biggi.png";
+          try {
+            const uri = await getTokenUriCached(contract, idBN);
+            const j = await readJsonFromURICached(uri);
+            if (j) {
+              meta = j;
+              const imgUrl = j?.image || j?.image_url;
+              image = resolveImageUrlCached(imgUrl, uri) || image;
+            }
+          } catch {}
+          return { tokenId: id, image, meta, isTicket: true };
+        });
+
+        return metas;
+      } catch (e) {
+        console.error("fetchMyTickets", e);
+        return [];
       }
-
-      const metas = await mapLimit(ids, 4, async (idBN) => {
-        const id = idBN.toString();
-        let meta = { name: `Ticket #${id}`, description: "Redeem this ticket to mint a BiggiEyes NFT." };
-        let image = "/images/Biggi.png";
-        try {
-          const uri = await getTokenUriCached(contract, idBN);
-          const j = await readJsonFromURICached(uri);
-          if (j) {
-            meta = j;
-            const imgUrl = j?.image || j?.image_url;
-            image = resolveImageUrlCached(imgUrl, uri) || image;
-          }
-        } catch {}
-        return { tokenId: id, image, meta, isTicket: true };
-      });
-
-      return metas;
-    } catch (e) {
-      console.error("fetchMyTickets", e);
-      return [];
-    }
-  }, [findTicketsViaLogs]);
+    },
+    [findTicketsViaLogs],
+  );
 
   const fetchOwnedNFTsViaOwnerScan = React.useCallback(
     async (addr) => {
@@ -1113,30 +1367,38 @@ function App() {
         } catch {}
         if (!totalMinted || totalMinted <= 0) return [];
 
-          const indices = Array.from({ length: totalMinted }, (_, idx) => idx + 1);
-          const owned = await mapLimit(indices, 2, async (tokenId) => {
-            try {
-              const owner = await contract.ownerOf(tokenId);
-              if (!owner || owner.toLowerCase() !== lower) return null;
+        const indices = Array.from(
+          { length: totalMinted },
+          (_, idx) => idx + 1,
+        );
+        const owned = await mapLimit(indices, 2, async (tokenId) => {
+          try {
+            const owner = await contract.ownerOf(tokenId);
+            if (!owner || owner.toLowerCase() !== lower) return null;
 
-              let isTicket = false;
-            try { isTicket = typeof contract.isTicket === "function" ? await contract.isTicket(tokenId) : false; } catch {}
+            let isTicket = false;
+            try {
+              isTicket =
+                typeof contract.isTicket === "function"
+                  ? await contract.isTicket(tokenId)
+                  : false;
+            } catch {}
             if (isTicket) return null;
 
-              let meta = {};
-              let image = "/images/Biggi.png";
-              try {
-                const uri = await getTokenUriCached(contract, tokenId);
-                const j = await readJsonFromURICached(uri);
-                const cached = getCachedPriceAttrs(tokenId);
-                const base = j || {};
-                base.attributes = mergeAttrs(base.attributes, cached);
-                meta = await enrichMetaWithPrices(contract, tokenId, base);
-                const imgUrl = j?.image || j?.image_url;
-                image = resolveImageUrlCached(imgUrl, uri) || image;
-              } catch {}
+            let meta = {};
+            let image = "/images/Biggi.png";
+            try {
+              const uri = await getTokenUriCached(contract, tokenId);
+              const j = await readJsonFromURICached(uri);
+              const cached = getCachedPriceAttrs(tokenId);
+              const base = j || {};
+              base.attributes = mergeAttrs(base.attributes, cached);
+              meta = await enrichMetaWithPrices(contract, tokenId, base);
+              const imgUrl = j?.image || j?.image_url;
+              image = resolveImageUrlCached(imgUrl, uri) || image;
+            } catch {}
 
-              return { tokenId: String(tokenId), image, meta, isTicket: false };
+            return { tokenId: String(tokenId), image, meta, isTicket: false };
           } catch {
             return null;
           }
@@ -1150,7 +1412,7 @@ function App() {
         return [];
       }
     },
-    [enrichMetaWithPrices]
+    [enrichMetaWithPrices],
   );
 
   const fetchOwnedNFTsViaTransfers = React.useCallback(
@@ -1168,7 +1430,8 @@ function App() {
         ]);
 
         const all = [...toLogs, ...fromLogs].sort((a, b) => {
-          if (a.blockNumber !== b.blockNumber) return a.blockNumber - b.blockNumber;
+          if (a.blockNumber !== b.blockNumber)
+            return a.blockNumber - b.blockNumber;
           return a.logIndex - b.logIndex;
         });
 
@@ -1187,7 +1450,10 @@ function App() {
         const metas = await mapLimit(tokenIds, 4, async (tid) => {
           let isT = false;
           try {
-            isT = typeof contract?.isTicket === "function" ? await contract.isTicket(tid) : false;
+            isT =
+              typeof contract?.isTicket === "function"
+                ? await contract.isTicket(tid)
+                : false;
           } catch {}
           if (isT) return null;
 
@@ -1231,7 +1497,7 @@ function App() {
         return fetchOwnedNFTsViaOwnerScan(addr);
       }
     },
-    [enrichMetaWithPrices, fetchOwnedNFTsViaOwnerScan]
+    [enrichMetaWithPrices, fetchOwnedNFTsViaOwnerScan],
   );
 
   const mergeWithTopFirst = React.useCallback(
@@ -1239,7 +1505,9 @@ function App() {
       return setMyNFTs((prev) => {
         const pending = prev.find((x) => x.isPending);
         if (vrfPending && pending) {
-          const dedup = finalList.filter((x) => !x.isPending && x.tokenId !== pending.tokenId);
+          const dedup = finalList.filter(
+            (x) => !x.isPending && x.tokenId !== pending.tokenId,
+          );
           return [pending, ...dedup];
         }
         if (topFirstId) {
@@ -1250,27 +1518,29 @@ function App() {
         return finalList;
       });
     },
-    [vrfPending, topFirstId]
+    [vrfPending, topFirstId],
   );
 
-  const upsertResolvedNFT = React.useCallback(
-    (card) => {
-      if (!card || !card.tokenId) return;
-      setMyNFTs((prev) => {
-        const withoutPending = prev.filter((x) => !x.isPending);
-        const withoutSame = withoutPending.filter((x) => x.tokenId !== card.tokenId);
-        return [card, ...withoutSame];
-      });
-      setTopFirstId(card.tokenId);
-      setPendingTicketId(null);
-    },
-    []
-  );
+  const upsertResolvedNFT = React.useCallback((card) => {
+    if (!card || !card.tokenId) return;
+    setMyNFTs((prev) => {
+      const withoutPending = prev.filter((x) => !x.isPending);
+      const withoutSame = withoutPending.filter(
+        (x) => x.tokenId !== card.tokenId,
+      );
+      return [card, ...withoutSame];
+    });
+    setTopFirstId(card.tokenId);
+    setPendingTicketId(null);
+  }, []);
 
   const fetchWalletAssets = React.useCallback(
     async (addr) => {
       if (!addr) return [];
-      if (walletFetchRef.current.inFlight && walletFetchRef.current.addr === addr) {
+      if (
+        walletFetchRef.current.inFlight &&
+        walletFetchRef.current.addr === addr
+      ) {
         return walletFetchRef.current.inFlight;
       }
 
@@ -1279,7 +1549,7 @@ function App() {
         mergeWithTopFirst(cached);
       }
 
-      const showSpinner = !(cached?.length);
+      const showSpinner = !cached?.length;
       const exec = (async () => {
         if (showSpinner) setGalleryLoading(true);
         try {
@@ -1305,7 +1575,7 @@ function App() {
         }
       }
     },
-    [fetchMyTickets, fetchOwnedNFTsViaTransfers, mergeWithTopFirst]
+    [fetchMyTickets, fetchOwnedNFTsViaTransfers, mergeWithTopFirst],
   );
 
   const resolveLatestMintToUser = React.useCallback(
@@ -1314,31 +1584,48 @@ function App() {
       try {
         const latest = await contract.provider.getBlockNumber();
         const safeFrom = await getSafeDeployBlock(contract.provider);
-        const hintFrom = redeemStartBlock ? Math.max(redeemStartBlock - 2000, 0) : 0;
+        const hintFrom = redeemStartBlock
+          ? Math.max(redeemStartBlock - 2000, 0)
+          : 0;
         const from = Math.max(safeFrom, hintFrom || 0, latest - 120_000);
-        const logs = await queryLogsBatched(contract, contract.filters.Transfer(null, addr, null), from, latest);
+        const logs = await queryLogsBatched(
+          contract,
+          contract.filters.Transfer(null, addr, null),
+          from,
+          latest,
+        );
         if (!logs?.length) return null;
 
         for (let i = logs.length - 1; i >= 0; i -= 1) {
-          const tid = logs[i].args?.tokenId?.toString?.() || logs[i].args?.[2]?.toString?.();
+          const tid =
+            logs[i].args?.tokenId?.toString?.() ||
+            logs[i].args?.[2]?.toString?.();
           if (!tid) continue;
           let isT = false;
-          try { isT = await contract.isTicket(tid); } catch {}
+          try {
+            isT = await contract.isTicket(tid);
+          } catch {}
           if (isT) continue;
 
           const uri = await getTokenUriCached(contract, tid);
           const raw = await readJsonFromURICached(uri);
           const meta = await enrichMetaWithPrices(contract, tid, raw || {});
           const imageUrl = raw?.image || raw?.image_url;
-          const image = resolveImageUrlCached(imageUrl, uri) || "/images/Biggi.png";
-          return { tokenId: String(tid), image, meta: meta || {}, isTicket: false };
+          const image =
+            resolveImageUrlCached(imageUrl, uri) || "/images/Biggi.png";
+          return {
+            tokenId: String(tid),
+            image,
+            meta: meta || {},
+            isTicket: false,
+          };
         }
       } catch (e) {
         console.warn("resolveLatestMintToUser failed", e);
       }
       return null;
     },
-    [redeemStartBlock, enrichMetaWithPrices]
+    [redeemStartBlock, enrichMetaWithPrices],
   );
 
   const fetchLastMinted = React.useCallback(async () => {
@@ -1346,12 +1633,20 @@ function App() {
       const contract = contractRef.current || getReadOnlyContract();
       const total = Number(await contract.biggiMinted());
       if (total === 0) {
-        setLastMinted({ tokenId: "-", image: "/images/Biggi.png", blockName: "-", backgroundName: "-" });
+        setLastMinted({
+          tokenId: "-",
+          image: "/images/Biggi.png",
+          blockName: "-",
+          backgroundName: "-",
+        });
         return;
       }
       const latest = await contract.provider.getBlockNumber();
       const filter = contract.filters.NFTMinted();
-      const from = Math.max(await getSafeDeployBlock(contract.provider), latest - 60_000);
+      const from = Math.max(
+        await getSafeDeployBlock(contract.provider),
+        latest - 60_000,
+      );
       const logs = await queryLogsBatched(contract, filter, from, latest);
       const last = logs[logs.length - 1];
       if (!last) return;
@@ -1359,23 +1654,37 @@ function App() {
       const tokenId = last.args.tokenId.toString();
       const uri = await getTokenUriCached(contract, tokenId);
       const meta = await readJsonFromURICached(uri);
-      let image = resolveImageUrlCached(meta?.image || meta?.image_url, uri) || "/images/Biggi.png";
+      let image =
+        resolveImageUrlCached(meta?.image || meta?.image_url, uri) ||
+        "/images/Biggi.png";
 
       let blockName = "-";
       let backgroundName = "-";
       if (meta?.attributes) {
         const blockAttr =
-          meta.attributes.find((a) => ["Eye Color", "Eyes", "Block/Eye Color"].includes(a.trait_type)) ||
-          meta.attributes.find((a) => a.trait_type === "Block" || a.trait_type === "Block ID");
+          meta.attributes.find((a) =>
+            ["Eye Color", "Eyes", "Block/Eye Color"].includes(a.trait_type),
+          ) ||
+          meta.attributes.find(
+            (a) => a.trait_type === "Block" || a.trait_type === "Block ID",
+          );
         if (blockAttr) blockName = blockAttr.value;
-        const bgAttr = meta.attributes.find((a) => ["Background", "Background Color"].includes(a.trait_type));
-        if (bgAttr) backgroundName = canonBackgroundName(bgAttr.value) || bgAttr.value;
+        const bgAttr = meta.attributes.find((a) =>
+          ["Background", "Background Color"].includes(a.trait_type),
+        );
+        if (bgAttr)
+          backgroundName = canonBackgroundName(bgAttr.value) || bgAttr.value;
       }
 
       setLastMinted({ tokenId, image, blockName, backgroundName });
     } catch (e) {
       console.error("fetchLastMinted", e);
-      setLastMinted({ tokenId: "-", image: "/images/Biggi.png", blockName: "-", backgroundName: "-" });
+      setLastMinted({
+        tokenId: "-",
+        image: "/images/Biggi.png",
+        blockName: "-",
+        backgroundName: "-",
+      });
     }
   }, []);
 
@@ -1392,7 +1701,10 @@ function App() {
         const contract = contractRef.current || getReadOnlyContract();
         contractRef.current = contract;
 
-        const fmt = (n) => (typeof n === "number" && !Number.isNaN(n) ? `${n.toFixed(4)} POL` : "â€¦");
+        const fmt = (n) =>
+          typeof n === "number" && !Number.isNaN(n)
+            ? `${n.toFixed(4)} POL`
+            : "â€¦";
 
         let meta = nft.meta;
         if (!meta) {
@@ -1403,7 +1715,9 @@ function App() {
         }
         const attrs = Array.isArray(meta?.attributes) ? meta.attributes : [];
         const getAttr = (names) =>
-          attrs.find((a) => names.some((n) => String(a?.trait_type || "").toLowerCase() === n));
+          attrs.find((a) =>
+            names.some((n) => String(a?.trait_type || "").toLowerCase() === n),
+          );
 
         let blockId = null;
         const blockIdAttr = getAttr(["block id", "block"]);
@@ -1430,10 +1744,19 @@ function App() {
         let mintBlockNumber = null;
         try {
           const tokenIdBN = ethers.BigNumber.from(tokenId);
-          const mintFilter = contract.filters.Transfer(ZERO_ADDRESS, null, tokenIdBN);
+          const mintFilter = contract.filters.Transfer(
+            ZERO_ADDRESS,
+            null,
+            tokenIdBN,
+          );
           const latestBlock = await contract.provider.getBlockNumber();
           const FROM = await getSafeDeployBlock(contract.provider);
-          const mintLogs = await queryLogsBatched(contract, mintFilter, FROM, latestBlock);
+          const mintLogs = await queryLogsBatched(
+            contract,
+            mintFilter,
+            FROM,
+            latestBlock,
+          );
           if (mintLogs && mintLogs.length) {
             mintBlockNumber = mintLogs[0].blockNumber;
           }
@@ -1445,15 +1768,24 @@ function App() {
 
         if (mintBlockNumber != null) {
           try {
-            const tokenomicsReader = getCachedReaderInstance("tokenomics") || getCachedReaderInstance("main") || getCachedReaderInstance("generic");
+            const tokenomicsReader =
+              getCachedReaderInstance("tokenomics") ||
+              getCachedReaderInstance("main") ||
+              getCachedReaderInstance("generic");
             // Try read-from-reader first (block-tagged calls may not be available on readers; fallback to contract)
-            if (tokenomicsReader && typeof tokenomicsReader.getMintDataByTokenId === "function") {
+            if (
+              tokenomicsReader &&
+              typeof tokenomicsReader.getMintDataByTokenId === "function"
+            ) {
               try {
-                const [tp, bp, fp] = await tokenomicsReader.getMintDataByTokenId(ethers.BigNumber.from(tokenId));
+                const [tp, bp, fp] =
+                  await tokenomicsReader.getMintDataByTokenId(
+                    ethers.BigNumber.from(tokenId),
+                  );
                 mintTicket = formatEthNum(tp);
                 mintBlock = formatEthNum(bp);
                 if (mintBlock != null) {
-                  mintFinal = (mintBlock * (1 + (bonusPct || 0) / 100));
+                  mintFinal = mintBlock * (1 + (bonusPct || 0) / 100);
                 }
               } catch {}
             }
@@ -1461,13 +1793,17 @@ function App() {
           // Fallback to contract historical reads if available
           try {
             if (mintTicket == null) {
-              const tpPast = await contract.getTicketPrice({ blockTag: mintBlockNumber });
+              const tpPast = await contract.getTicketPrice({
+                blockTag: mintBlockNumber,
+              });
               mintTicket = Number(ethers.utils.formatEther(tpPast));
             }
           } catch {}
           try {
             if (mintBlock == null) {
-              const bpPast = await contract.getCurrentBlockPrice(blockId, { blockTag: mintBlockNumber });
+              const bpPast = await contract.getCurrentBlockPrice(blockId, {
+                blockTag: mintBlockNumber,
+              });
               mintBlock = Number(ethers.utils.formatEther(bpPast));
             }
           } catch {}
@@ -1481,7 +1817,10 @@ function App() {
           [tokenId]: {
             mintTicket: fmt(mintTicket),
             mintBlock: fmt(mintBlock),
-            mintFinal: mintFinal != null ? `${mintFinal.toFixed(4)} POL (${bonusPct}% bonus)` : "â€¦",
+            mintFinal:
+              mintFinal != null
+                ? `${mintFinal.toFixed(4)} POL (${bonusPct}% bonus)`
+                : "â€¦",
             ticketPrice: undefined,
             blockPrice: undefined,
             finalPrice: undefined,
@@ -1491,75 +1830,81 @@ function App() {
         console.error("fetchDynamicTraitsFor error", e);
       }
     },
-    [dynamicTraitsById]
+    [dynamicTraitsById],
   );
 
   /* ========== VRF helpers (PĹESUNUTO NAHOĹE PRO TDZ) ========== */
   // buildVRFHistory, resolvePendingFromHistoryOrOwnership, checkVrfResolution, refreshVRFPanel
   // (Tyto funkce byly pĹ™esunuty nad connectMetaMask aby se pĹ™edeĹˇlo TDZ.)
 
-  const buildVRFHistory = React.useCallback(async (c, address) => {
-    const latest = await c.provider.getBlockNumber();
-    const safeFrom = await getSafeDeployBlock(c.provider);
-    const hintFrom = redeemStartBlock ? Math.max(redeemStartBlock - 2000, 0) : 0;
-    const from = Math.max(safeFrom, hintFrom || 0, latest - 120_000);
+  const buildVRFHistory = React.useCallback(
+    async (c, address) => {
+      const latest = await c.provider.getBlockNumber();
+      const safeFrom = await getSafeDeployBlock(c.provider);
+      const hintFrom = redeemStartBlock
+        ? Math.max(redeemStartBlock - 2000, 0)
+        : 0;
+      const from = Math.max(safeFrom, hintFrom || 0, latest - 120_000);
 
-    const reqLogs = await queryLogsBatched(
-      c,
-      c.filters.VRFRequested(address),
-      from,
-      latest
-    );
+      const reqLogs = await queryLogsBatched(
+        c,
+        c.filters.VRFRequested(address),
+        from,
+        latest,
+      );
 
-    const fulfillLogsRaw = await queryLogsBatched(
-      c,
-      c.filters.VRFFulfillStarted(),
-      from,
-      latest
-    );
-    const fulfillLogs = fulfillLogsRaw.filter((l) => {
-      const m = (l.args?.minter || l.args?.[1] || "").toLowerCase?.() || "";
-      return m === address.toLowerCase();
-    });
-
-    const fulfillByReq = new Map();
-    for (const l of fulfillLogs) {
-      const rid = (l.args?.requestId || l.args?.[0])?.toString?.() || "";
-      const rw = (l.args?.randomWord || l.args?.[2])?.toString?.() || "";
-      fulfillByReq.set(rid, {
-        requestId: rid,
-        tx: l.transactionHash,
-        blockNumber: l.blockNumber,
-        randomWords: rw ? [rw] : [],
+      const fulfillLogsRaw = await queryLogsBatched(
+        c,
+        c.filters.VRFFulfillStarted(),
+        from,
+        latest,
+      );
+      const fulfillLogs = fulfillLogsRaw.filter((l) => {
+        const m = (l.args?.minter || l.args?.[1] || "").toLowerCase?.() || "";
+        return m === address.toLowerCase();
       });
-    }
 
-    const rows = [];
-    for (const rl of reqLogs) {
-      const rid = (rl.args?.requestId || rl.args?.[1])?.toString?.() || "";
-      const f = fulfillByReq.get(rid);
+      const fulfillByReq = new Map();
+      for (const l of fulfillLogs) {
+        const rid = (l.args?.requestId || l.args?.[0])?.toString?.() || "";
+        const rw = (l.args?.randomWord || l.args?.[2])?.toString?.() || "";
+        fulfillByReq.set(rid, {
+          requestId: rid,
+          tx: l.transactionHash,
+          blockNumber: l.blockNumber,
+          randomWords: rw ? [rw] : [],
+        });
+      }
 
-      let time = "";
-      try {
-        const block = await c.provider.getBlock(rl.blockNumber);
-        if (block?.timestamp) time = new Date(block.timestamp * 1000).toLocaleString();
-      } catch {}
+      const rows = [];
+      for (const rl of reqLogs) {
+        const rid = (rl.args?.requestId || rl.args?.[1])?.toString?.() || "";
+        const f = fulfillByReq.get(rid);
 
-      rows.push({
-        time,
-        requestId: rid,
-        status: f ? "fulfilled" : "pending",
-        confirmations: undefined,
-        words: f?.randomWords?.length || 0,
-        tx: f?.tx || "",
-        blockNumber: f?.blockNumber || rl.blockNumber,
-        randomWords: f?.randomWords || [],
-      });
-    }
+        let time = "";
+        try {
+          const block = await c.provider.getBlock(rl.blockNumber);
+          if (block?.timestamp)
+            time = new Date(block.timestamp * 1000).toLocaleString();
+        } catch {}
 
-    rows.sort((a, b) => a.blockNumber - b.blockNumber);
-    return rows.slice(-25).reverse();
-  }, [redeemStartBlock]);
+        rows.push({
+          time,
+          requestId: rid,
+          status: f ? "fulfilled" : "pending",
+          confirmations: undefined,
+          words: f?.randomWords?.length || 0,
+          tx: f?.tx || "",
+          blockNumber: f?.blockNumber || rl.blockNumber,
+          randomWords: f?.randomWords || [],
+        });
+      }
+
+      rows.sort((a, b) => a.blockNumber - b.blockNumber);
+      return rows.slice(-25).reverse();
+    },
+    [redeemStartBlock],
+  );
 
   const resolvePendingFromHistoryOrOwnership = React.useCallback(
     async (c, user) => {
@@ -1568,9 +1913,16 @@ function App() {
       try {
         const latest = await c.provider.getBlockNumber();
         const safeFrom = await getSafeDeployBlock(c.provider);
-        const hintFrom = redeemStartBlock ? Math.max(redeemStartBlock - 2000, 0) : 0;
+        const hintFrom = redeemStartBlock
+          ? Math.max(redeemStartBlock - 2000, 0)
+          : 0;
         const from = Math.max(safeFrom, hintFrom || 0);
-        const toLogs = await queryLogsBatched(c, c.filters.Transfer(null, user, null), from, latest);
+        const toLogs = await queryLogsBatched(
+          c,
+          c.filters.Transfer(null, user, null),
+          from,
+          latest,
+        );
         for (const l of toLogs.slice(-40).reverse()) {
           const tid = l.args?.tokenId?.toString?.();
           if (!tid) continue;
@@ -1592,7 +1944,7 @@ function App() {
         return false;
       }
     },
-    [buildVRFHistory, redeemStartBlock]
+    [buildVRFHistory, redeemStartBlock],
   );
 
   const checkVrfResolution = React.useCallback(async () => {
@@ -1606,9 +1958,14 @@ function App() {
       } catch {
         return;
       }
-      const isZero = rid && typeof rid.isZero === "function" ? rid.isZero() : String(rid || "0") === "0";
+      const isZero =
+        rid && typeof rid.isZero === "function"
+          ? rid.isZero()
+          : String(rid || "0") === "0";
 
-      const inferredFulfilled = isZero ? true : await resolvePendingFromHistoryOrOwnership(c, walletAddress);
+      const inferredFulfilled = isZero
+        ? true
+        : await resolvePendingFromHistoryOrOwnership(c, walletAddress);
 
       if (inferredFulfilled) {
         const card = await resolveLatestMintToUser(c, walletAddress);
@@ -1666,12 +2023,21 @@ function App() {
         subId = sub?.toString?.() || "";
       } catch {}
 
-      let last = { requestId: "", status: "idle", requestedAt: "", txHash: "", blockNumber: undefined, randomWords: [] };
+      let last = {
+        requestId: "",
+        status: "idle",
+        requestedAt: "",
+        txHash: "",
+        blockNumber: undefined,
+        randomWords: [],
+      };
       let history = [];
 
       if (walletAddress) {
         try {
-          const pendingReqIdBN = await c.pendingMintRequest(walletAddress).catch(() => ethers.BigNumber.from(0));
+          const pendingReqIdBN = await c
+            .pendingMintRequest(walletAddress)
+            .catch(() => ethers.BigNumber.from(0));
           const ridStr = pendingReqIdBN?.toString?.() || "0";
 
           history = await buildVRFHistory(c, walletAddress);
@@ -1712,7 +2078,9 @@ function App() {
       }
 
       setVrfUIData({
-        network: net?.name ? `${net.name} (${net.chainId})` : `chainId ${net.chainId}`,
+        network: net?.name
+          ? `${net.name} (${net.chainId})`
+          : `chainId ${net.chainId}`,
         chainId: Number(net?.chainId),
         userAddress: walletAddress || "",
         subscription: { id: subId, linkBalance: "", consumers: [] },
@@ -1729,7 +2097,9 @@ function App() {
   /* Zbytek funkcĂ­ UI: connect, attach listeners, txs, mint/redeem atd.   */
   /* -------------------------------------------------------------------- */
 
-  const onVRFRequest = React.useCallback(() => { redeemTicket(); }, [redeemTicket]);
+  const onVRFRequest = React.useCallback(() => {
+    redeemTicket();
+  }, [redeemTicket]);
 
   const onVRFRefresh = React.useCallback(async () => {
     await fetchStats();
@@ -1737,10 +2107,21 @@ function App() {
     if (walletAddress) await fetchWalletAssets(walletAddress);
     await refreshVRFPanel();
     await checkVrfResolution();
-  }, [fetchStats, fetchRewards, fetchWalletAssets, walletAddress, refreshVRFPanel, checkVrfResolution]);
+  }, [
+    fetchStats,
+    fetchRewards,
+    fetchWalletAssets,
+    walletAddress,
+    refreshVRFPanel,
+    checkVrfResolution,
+  ]);
 
-  const onVRFCancelPending = React.useCallback(() => { alert("Cancel pending is not available in this UI."); }, []);
-  const onVRFUpdateParams = React.useCallback(() => { alert("Updating VRF params is owner-only and not wired in this UI."); }, []);
+  const onVRFCancelPending = React.useCallback(() => {
+    alert("Cancel pending is not available in this UI.");
+  }, []);
+  const onVRFUpdateParams = React.useCallback(() => {
+    alert("Updating VRF params is owner-only and not wired in this UI.");
+  }, []);
 
   const onVrfOpenExplorer = React.useCallback(async (hashOrId) => {
     try {
@@ -1768,23 +2149,48 @@ function App() {
     try {
       const brl = await getReadOnlyLiquidityContract();
 
-      const epochRaw = await callFirst(brl, ["epochStart","weekEpochStart","firstWeekStart","startEpoch","rewardsEpochStart"]);
-      const epochNum = epochRaw != null ? Number(epochRaw.toString ? epochRaw.toString() : epochRaw) : null;
-      setEpochStartTs(Number.isFinite(epochNum) && epochNum > 0 ? epochNum : null);
+      const epochRaw = await callFirst(brl, [
+        "epochStart",
+        "weekEpochStart",
+        "firstWeekStart",
+        "startEpoch",
+        "rewardsEpochStart",
+      ]);
+      const epochNum =
+        epochRaw != null
+          ? Number(epochRaw.toString ? epochRaw.toString() : epochRaw)
+          : null;
+      setEpochStartTs(
+        Number.isFinite(epochNum) && epochNum > 0 ? epochNum : null,
+      );
 
       let lastRaw = null;
       if (walletAddress) {
-        lastRaw = await callFirst(brl, ["lastClaim","lastClaimedAt","userLastClaim","claimedAt"], [walletAddress]);
+        lastRaw = await callFirst(
+          brl,
+          ["lastClaim", "lastClaimedAt", "userLastClaim", "claimedAt"],
+          [walletAddress],
+        );
         if (!lastRaw) {
-          const next = await callFirst(brl, ["nextClaimAt","userNextClaimAt"], [walletAddress]);
+          const next = await callFirst(
+            brl,
+            ["nextClaimAt", "userNextClaimAt"],
+            [walletAddress],
+          );
           if (next) {
-            const n = Number(next.toString ? next.toString() : next) - 7 * 24 * 60 * 60;
+            const n =
+              Number(next.toString ? next.toString() : next) - 7 * 24 * 60 * 60;
             lastRaw = n > 0 ? n : null;
           }
         }
       }
-      const lastNum = lastRaw != null ? Number(lastRaw.toString ? lastRaw.toString() : lastRaw) : null;
-      setUserLastClaimTs(Number.isFinite(lastNum) && lastNum > 0 ? lastNum : null);
+      const lastNum =
+        lastRaw != null
+          ? Number(lastRaw.toString ? lastRaw.toString() : lastRaw)
+          : null;
+      setUserLastClaimTs(
+        Number.isFinite(lastNum) && lastNum > 0 ? lastNum : null,
+      );
     } catch (e) {
       console.error("fetchCountdownMeta", e);
       setEpochStartTs(null);
@@ -1804,21 +2210,45 @@ function App() {
         const meta = await callFirst(brl, ["tokenMeta"]);
         if (Array.isArray(meta) && meta[1]) tokenSymbol = meta[1];
         else {
-          const tAddr = await callFirst(brl, ["tokenAddress","biggi","getToken","getBIGGI"]);
+          const tAddr = await callFirst(brl, [
+            "tokenAddress",
+            "biggi",
+            "getToken",
+            "getBIGGI",
+          ]);
           if (tAddr) {
             const erc20 = new ethers.Contract(tAddr, ERC20_MINI, provider);
-            tokenSymbol = (await erc20.symbol().catch(() => tokenSymbol)) || tokenSymbol;
+            tokenSymbol =
+              (await erc20.symbol().catch(() => tokenSymbol)) || tokenSymbol;
           }
         }
       } catch {}
 
       const nativeSymbol = "POL";
-      const policy = (await callFirst(main, ["policy","policyAddress"])) || "\u2014";
-      const treasury = (await callFirst(brl, ["treasury","treasuryAddress","getTreasury"])) || (await callFirst(main, ["treasury","treasuryAddress"])) || "\u2014";
-      const reserve = (await callFirst(main, ["reserve","reserveAddress"])) || "\u2014";
+      const policy =
+        (await callFirst(main, ["policy", "policyAddress"])) || "\u2014";
+      const treasury =
+        (await callFirst(brl, [
+          "treasury",
+          "treasuryAddress",
+          "getTreasury",
+        ])) ||
+        (await callFirst(main, ["treasury", "treasuryAddress"])) ||
+        "\u2014";
+      const reserve =
+        (await callFirst(main, ["reserve", "reserveAddress"])) || "\u2014";
       const liquidity = brl.address || "\u2014";
 
-      return { nativeSymbol, tokenSymbol, policy, treasury, reserve, liquidity, network: net?.name || "unknown", chainId: String(net?.chainId ?? "") };
+      return {
+        nativeSymbol,
+        tokenSymbol,
+        policy,
+        treasury,
+        reserve,
+        liquidity,
+        network: net?.name || "unknown",
+        chainId: String(net?.chainId ?? ""),
+      };
     } catch (e) {
       console.error("fetchLiveStatus", e);
       return {};
@@ -1890,7 +2320,13 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [fetchLastMinted, fetchStats, fetchRewards, refreshVRFPanel, fetchCountdownMeta]);
+  }, [
+    fetchLastMinted,
+    fetchStats,
+    fetchRewards,
+    refreshVRFPanel,
+    fetchCountdownMeta,
+  ]);
 
   React.useEffect(() => {
     return () => {
@@ -1904,13 +2340,25 @@ function App() {
   const navAlt = navOpen ? ICONS[openNavIdx].alt : "";
   const isInfoOpen = navOpen && navAlt === "INFO";
 
-  const hideExtras = navOpen && (navAlt === "COLLECTION" || navAlt === "VRF MINT" || navAlt === "BIGGI ECOSYSTEM" || navAlt === "USERS" || navAlt === "COMMUNITY CENTER");
+  const hideExtras =
+    navOpen &&
+    (navAlt === "COLLECTION" ||
+      navAlt === "VRF MINT" ||
+      navAlt === "BIGGI ECOSYSTEM" ||
+      navAlt === "USERS" ||
+      navAlt === "COMMUNITY CENTER");
 
   const goNextPanel = React.useCallback(() => {
-    setOpenNavIdx((idx) => { if (idx === null) return 0; return (idx + 1) % ICONS.length; });
+    setOpenNavIdx((idx) => {
+      if (idx === null) return 0;
+      return (idx + 1) % ICONS.length;
+    });
   }, []);
   const goPrevPanel = React.useCallback(() => {
-    setOpenNavIdx((idx) => { if (idx === null) return ICONS.length - 1; return (idx - 1 + ICONS.length) % ICONS.length; });
+    setOpenNavIdx((idx) => {
+      if (idx === null) return ICONS.length - 1;
+      return (idx - 1 + ICONS.length) % ICONS.length;
+    });
   }, []);
 
   const adminSnapshot = {
@@ -1995,7 +2443,15 @@ function App() {
       alert("Connection rejected.");
       console.error("connectMetaMask", err);
     }
-  }, [fetchStats, fetchRewards, fetchWalletAssets, fetchLastMinted, refreshVRFPanel, attachEventListeners, checkVrfResolution]);
+  }, [
+    fetchStats,
+    fetchRewards,
+    fetchWalletAssets,
+    fetchLastMinted,
+    refreshVRFPanel,
+    attachEventListeners,
+    checkVrfResolution,
+  ]);
 
   const connectWalletConnect = React.useCallback(async () => {
     try {
@@ -2018,7 +2474,15 @@ function App() {
       console.error("connectWalletConnect", err);
       alert(err?.message || "WalletConnect failed");
     }
-  }, [fetchStats, fetchRewards, fetchWalletAssets, fetchLastMinted, refreshVRFPanel, attachEventListeners, checkVrfResolution]);
+  }, [
+    fetchStats,
+    fetchRewards,
+    fetchWalletAssets,
+    fetchLastMinted,
+    refreshVRFPanel,
+    attachEventListeners,
+    checkVrfResolution,
+  ]);
 
   const attachEventListeners = React.useCallback(
     (addr) => {
@@ -2049,12 +2513,19 @@ function App() {
               try {
                 const uri = await getTokenUriCached(contract, tid);
                 const raw = await readJsonFromURICached(uri);
-                const meta = await enrichMetaWithPrices(contract, tid, raw || {});
+                const meta = await enrichMetaWithPrices(
+                  contract,
+                  tid,
+                  raw || {},
+                );
                 const imageUrl = raw?.image || raw?.image_url;
-                const image = resolveImageUrlCached(imageUrl, uri) || "/images/Biggi.png";
+                const image =
+                  resolveImageUrlCached(imageUrl, uri) || "/images/Biggi.png";
 
                 let isT = false;
-                try { isT = await contract.isTicket(tid); } catch {}
+                try {
+                  isT = await contract.isTicket(tid);
+                } catch {}
 
                 if (!isT) {
                   setVrfPending(false);
@@ -2066,8 +2537,15 @@ function App() {
 
                   setMyNFTs((prev) => {
                     const withoutPending = prev.filter((x) => !x.isPending);
-                    const withoutSame = withoutPending.filter((x) => x.tokenId !== tid);
-                    const card = { tokenId: tid, image, meta: meta || {}, isTicket: false };
+                    const withoutSame = withoutPending.filter(
+                      (x) => x.tokenId !== tid,
+                    );
+                    const card = {
+                      tokenId: tid,
+                      image,
+                      meta: meta || {},
+                      isTicket: false,
+                    };
                     return [card, ...withoutSame];
                   });
                   setTopFirstId(tid);
@@ -2075,11 +2553,16 @@ function App() {
 
                   setTimeout(() => {
                     (async () => {
-                      try { await fetchWalletAssets(addr); } catch {}
+                      try {
+                        await fetchWalletAssets(addr);
+                      } catch {}
                     })();
                   }, 1500);
                 } else {
-                  setMyNFTs((prev) => [{ tokenId: tid, image, meta: meta || {}, isTicket: true }, ...prev]);
+                  setMyNFTs((prev) => [
+                    { tokenId: tid, image, meta: meta || {}, isTicket: true },
+                    ...prev,
+                  ]);
                 }
               } catch {}
             }
@@ -2127,9 +2610,18 @@ function App() {
 
         const prev = unsubRef.current;
         unsubRef.current = () => {
-          try { contract.off("Transfer", onTransfer); } catch {}
-          try { window.ethereum?.removeListener?.("accountsChanged", onAccountsChanged); } catch {}
-          try { window.ethereum?.removeListener?.("chainChanged", onChainChanged); } catch {}
+          try {
+            contract.off("Transfer", onTransfer);
+          } catch {}
+          try {
+            window.ethereum?.removeListener?.(
+              "accountsChanged",
+              onAccountsChanged,
+            );
+          } catch {}
+          try {
+            window.ethereum?.removeListener?.("chainChanged", onChainChanged);
+          } catch {}
           prev?.();
         };
       } catch (e) {
@@ -2147,7 +2639,7 @@ function App() {
       walletAddress,
       enrichMetaWithPrices,
       refreshVRFPanel,
-    ]
+    ],
   );
 
   const preflightRedeemCheck = React.useCallback(async (contract) => {
@@ -2156,8 +2648,13 @@ function App() {
         const unset = await contract.findUnsetIndices();
         const missing = Array.from(unset || []);
         if (missing.length > 0) {
-          const sample = missing.slice(0, 10).map((x) => x.toString()).join(", ");
-          const e = new Error(`NotFullyConfigured: ${missing.length} unset NFT indices (sample: ${sample}).`);
+          const sample = missing
+            .slice(0, 10)
+            .map((x) => x.toString())
+            .join(", ");
+          const e = new Error(
+            `NotFullyConfigured: ${missing.length} unset NFT indices (sample: ${sample}).`,
+          );
           e.errorName = "NotFullyConfigured";
           throw e;
         }
@@ -2169,8 +2666,12 @@ function App() {
             const b = Number(info?.background || info?.[0] || 0);
             const bl = Number(info?.blockIdx || info?.[1] || 0);
             const m = Number(info?.mainId || info?.[2] || 0);
-            if (!(b >= 1 && b <= 10 && bl >= 1 && bl <= 10 && m >= 1 && m <= 10)) {
-              const e = new Error(`NotFullyConfigured: index ${i} invalid (background=${b}, blockIdx=${bl}, mainId=${m}).`);
+            if (
+              !(b >= 1 && b <= 10 && bl >= 1 && bl <= 10 && m >= 1 && m <= 10)
+            ) {
+              const e = new Error(
+                `NotFullyConfigured: index ${i} invalid (background=${b}, blockIdx=${bl}, mainId=${m}).`,
+              );
               e.errorName = "NotFullyConfigured";
               throw e;
             }
@@ -2215,180 +2716,195 @@ function App() {
       alert("Mint failed: " + prettyError(err));
       console.error("mintTicket", err);
     }
-  }, [walletAddress, fetchStats, fetchRewards, fetchWalletAssets, prettyError, resolveTicketPriceWei, refreshVRFPanel]);
+  }, [
+    walletAddress,
+    fetchStats,
+    fetchRewards,
+    fetchWalletAssets,
+    prettyError,
+    resolveTicketPriceWei,
+    refreshVRFPanel,
+  ]);
 
-  const redeemTicket = React.useCallback(
-    async () => {
-      if (!walletAddress) return alert("Please connect MetaMask first.");
-      if (isRedeeming || vrfPending) return;
+  const redeemTicket = React.useCallback(async () => {
+    if (!walletAddress) return alert("Please connect MetaMask first.");
+    if (isRedeeming || vrfPending) return;
+    try {
+      await ensureAmoy();
+
+      const contract = contractRef.current || getContract();
+      const net = await contract.provider.getNetwork();
+      if (Number(net?.chainId) !== 80002) await ensureAmoy();
+
+      if (typeof contract.paused === "function" && (await contract.paused())) {
+        return alert("Redeem is paused.");
+      }
+
+      setIsRedeeming(true);
+      setRedeemMsg("Submitting redeem transactionâ€¦");
+
+      let tickets = [];
       try {
-        await ensureAmoy();
-
-        const contract = contractRef.current || getContract();
-        const net = await contract.provider.getNetwork();
-        if (Number(net?.chainId) !== 80002) await ensureAmoy();
-
-        if (typeof contract.paused === "function" && (await contract.paused())) {
-          return alert("Redeem is paused.");
-        }
-
-        setIsRedeeming(true);
-        setRedeemMsg("Submitting redeem transactionâ€¦");
-
-        let tickets = [];
-        try {
-          if (typeof contract.findTicket === "function") {
-            tickets = await contract.findTicket(walletAddress);
-          } else {
-            tickets = await findTicketsViaLogs(contract, walletAddress);
-          }
-        } catch {
+        if (typeof contract.findTicket === "function") {
+          tickets = await contract.findTicket(walletAddress);
+        } else {
           tickets = await findTicketsViaLogs(contract, walletAddress);
         }
+      } catch {
+        tickets = await findTicketsViaLogs(contract, walletAddress);
+      }
 
-        if (!tickets.length) {
-          setIsRedeeming(false);
-          setRedeemMsg("");
-          return alert("You don't have any ticket to redeem.");
-        }
-
-        const startBlock = await contract.provider.getBlockNumber();
-        setRedeemStartBlock(startBlock);
-        setRedeemStartedAt(Date.now());
-
-        const ticketIdBN = tickets[0];
-        const ticketIdStr = ticketIdBN.toString();
-
-        await preflightRedeemCheck(contract);
-
-        // pouĹľĂ­vĂˇme estimateGas
-        await contract.estimateGas.redeemTicketAndMintNFT(ticketIdBN);
-        setRedeemMsg("Please confirm in your walletâ€¦");
-        const tx = await contract.redeemTicketAndMintNFT(ticketIdBN);
-        setRedeemMsg("Waiting for transaction confirmationâ€¦");
-        await tx.wait();
-
-        const placeholder = {
-          tokenId: ticketIdStr,
-          image: "/images/Biggi.png",
-          meta: { name: `Ticket #${ticketIdStr} â€” VRF pending`, description: "Your NFT is being selected via Chainlink VRF." },
-          isTicket: true,
-          isPlaceholder: true,
-          isPending: true,
-        };
-
-        setPendingTicketId(ticketIdStr);
-        setVrfPending(true);
-        setRedeemMsg("Redeem confirmed. Waiting for VRF revealâ€¦");
-        setTopFirstId(ticketIdStr);
-
-        const [ticketsNow, nftsNow] = await Promise.all([
-          fetchMyTickets(walletAddress),
-          fetchOwnedNFTsViaTransfers(walletAddress),
-        ]);
-        const byId = new Map();
-        for (const t of ticketsNow) byId.set(t.tokenId, t);
-        for (const n of nftsNow) byId.set(n.tokenId, n);
-        const baseAssets = Array.from(byId.values());
-        setMyNFTs([placeholder, ...baseAssets]);
-
-        await fetchRewards();
-        await fetchStats();
-        refreshVRFPanel();
-
-        setTimeout(() => {
-          (async () => { try { await fetchWalletAssets(walletAddress); } catch {} })();
-        }, 2000);
-      } catch (err) {
+      if (!tickets.length) {
         setIsRedeeming(false);
-        setVrfPending(false);
         setRedeemMsg("");
-        setPendingTicketId(null);
-        setRedeemStartBlock(null);
-        setRedeemStartedAt(null);
-        alert("Redeem failed: " + prettyError(err));
-        console.error("redeemTicket", err);
+        return alert("You don't have any ticket to redeem.");
       }
-    },
-    [
-      walletAddress,
-      fetchRewards,
-      fetchStats,
-      fetchMyTickets,
-      fetchOwnedNFTsViaTransfers,
-      prettyError,
-      isRedeeming,
-      vrfPending,
-      preflightRedeemCheck,
-      findTicketsViaLogs,
-      fetchWalletAssets,
-      refreshVRFPanel,
-    ]
-  );
 
-  const claimRewards = React.useCallback(
-    async () => {
-      if (!walletAddress) return alert("Please connect MetaMask first.");
-      try {
-        await ensureAmoy();
+      const startBlock = await contract.provider.getBlockNumber();
+      setRedeemStartBlock(startBlock);
+      setRedeemStartedAt(Date.now());
 
-        let tokenIds = myNFTs.filter((x) => !x.isTicket).map((x) => ethers.BigNumber.from(x.tokenId));
+      const ticketIdBN = tickets[0];
+      const ticketIdStr = ticketIdBN.toString();
 
-        if (!tokenIds.length) {
-          const contract = contractRef.current || getReadOnlyContract();
-          const latest = await contract.provider.getBlockNumber();
-          const FROM = await getSafeDeployBlock(contract.provider);
-          const toFilter = contract.filters.Transfer(null, walletAddress, null);
-          const fromFilter = contract.filters.Transfer(walletAddress, null, null);
-          const [toLogs, fromLogs] = await Promise.all([
-            queryLogsBatched(contract, toFilter, FROM, latest),
-            queryLogsBatched(contract, fromFilter, FROM, latest),
-          ]);
-          const all = [...toLogs, ...fromLogs].sort((a, b) => {
-            if (a.blockNumber !== b.blockNumber) return a.blockNumber - b.blockNumber;
-            return a.logIndex - b.logIndex;
-          });
-          const held = new Set();
-          const me = String(walletAddress || "").toLowerCase();
-          for (const l of all) {
-            const from = String(l.args?.from ?? l.args?.[0] ?? "").toLowerCase();
-            const to = String(l.args?.to ?? l.args?.[1] ?? "").toLowerCase();
-            const tid = (l.args?.tokenId ?? l.args?.[2])?.toString?.() || "";
-            if (!tid) continue;
-            if (to === me) held.add(tid);
-            if (from === me) held.delete(tid);
-          }
-          const arr = Array.from(held);
-          const nonTickets = [];
-          for (const tid of arr) {
-            try {
-              const isT = typeof contract?.isTicket === "function" ? await contract.isTicket(tid) : false;
-              if (!isT) nonTickets.push(ethers.BigNumber.from(tid));
-            } catch {
-              nonTickets.push(ethers.BigNumber.from(tid));
-            }
-          }
-          tokenIds = nonTickets;
+      await preflightRedeemCheck(contract);
+
+      // pouĹľĂ­vĂˇme estimateGas
+      await contract.estimateGas.redeemTicketAndMintNFT(ticketIdBN);
+      setRedeemMsg("Please confirm in your walletâ€¦");
+      const tx = await contract.redeemTicketAndMintNFT(ticketIdBN);
+      setRedeemMsg("Waiting for transaction confirmationâ€¦");
+      await tx.wait();
+
+      const placeholder = {
+        tokenId: ticketIdStr,
+        image: "/images/Biggi.png",
+        meta: {
+          name: `Ticket #${ticketIdStr} â€” VRF pending`,
+          description: "Your NFT is being selected via Chainlink VRF.",
+        },
+        isTicket: true,
+        isPlaceholder: true,
+        isPending: true,
+      };
+
+      setPendingTicketId(ticketIdStr);
+      setVrfPending(true);
+      setRedeemMsg("Redeem confirmed. Waiting for VRF revealâ€¦");
+      setTopFirstId(ticketIdStr);
+
+      const [ticketsNow, nftsNow] = await Promise.all([
+        fetchMyTickets(walletAddress),
+        fetchOwnedNFTsViaTransfers(walletAddress),
+      ]);
+      const byId = new Map();
+      for (const t of ticketsNow) byId.set(t.tokenId, t);
+      for (const n of nftsNow) byId.set(n.tokenId, n);
+      const baseAssets = Array.from(byId.values());
+      setMyNFTs([placeholder, ...baseAssets]);
+
+      await fetchRewards();
+      await fetchStats();
+      refreshVRFPanel();
+
+      setTimeout(() => {
+        (async () => {
+          try {
+            await fetchWalletAssets(walletAddress);
+          } catch {}
+        })();
+      }, 2000);
+    } catch (err) {
+      setIsRedeeming(false);
+      setVrfPending(false);
+      setRedeemMsg("");
+      setPendingTicketId(null);
+      setRedeemStartBlock(null);
+      setRedeemStartedAt(null);
+      alert("Redeem failed: " + prettyError(err));
+      console.error("redeemTicket", err);
+    }
+  }, [
+    walletAddress,
+    fetchRewards,
+    fetchStats,
+    fetchMyTickets,
+    fetchOwnedNFTsViaTransfers,
+    prettyError,
+    isRedeeming,
+    vrfPending,
+    preflightRedeemCheck,
+    findTicketsViaLogs,
+    fetchWalletAssets,
+    refreshVRFPanel,
+  ]);
+
+  const claimRewards = React.useCallback(async () => {
+    if (!walletAddress) return alert("Please connect MetaMask first.");
+    try {
+      await ensureAmoy();
+
+      let tokenIds = myNFTs
+        .filter((x) => !x.isTicket)
+        .map((x) => ethers.BigNumber.from(x.tokenId));
+
+      if (!tokenIds.length) {
+        const contract = contractRef.current || getReadOnlyContract();
+        const latest = await contract.provider.getBlockNumber();
+        const FROM = await getSafeDeployBlock(contract.provider);
+        const toFilter = contract.filters.Transfer(null, walletAddress, null);
+        const fromFilter = contract.filters.Transfer(walletAddress, null, null);
+        const [toLogs, fromLogs] = await Promise.all([
+          queryLogsBatched(contract, toFilter, FROM, latest),
+          queryLogsBatched(contract, fromFilter, FROM, latest),
+        ]);
+        const all = [...toLogs, ...fromLogs].sort((a, b) => {
+          if (a.blockNumber !== b.blockNumber)
+            return a.blockNumber - b.blockNumber;
+          return a.logIndex - b.logIndex;
+        });
+        const held = new Set();
+        const me = String(walletAddress || "").toLowerCase();
+        for (const l of all) {
+          const from = String(l.args?.from ?? l.args?.[0] ?? "").toLowerCase();
+          const to = String(l.args?.to ?? l.args?.[1] ?? "").toLowerCase();
+          const tid = (l.args?.tokenId ?? l.args?.[2])?.toString?.() || "";
+          if (!tid) continue;
+          if (to === me) held.add(tid);
+          if (from === me) held.delete(tid);
         }
-
-        if (!tokenIds.length) {
-          return alert("No eligible NFTs to claim this week.");
+        const arr = Array.from(held);
+        const nonTickets = [];
+        for (const tid of arr) {
+          try {
+            const isT =
+              typeof contract?.isTicket === "function"
+                ? await contract.isTicket(tid)
+                : false;
+            if (!isT) nonTickets.push(ethers.BigNumber.from(tid));
+          } catch {
+            nonTickets.push(ethers.BigNumber.from(tid));
+          }
         }
-
-        const brl = await getLiquidityContract();
-        const tx = await brl.claim(tokenIds);
-        await tx.wait();
-
-        await fetchRewards();
-        await fetchStats();
-        alert("Rewards claimed.");
-      } catch (err) {
-        alert("Claim failed: " + prettyError(err));
-        console.error("claimRewards", err);
+        tokenIds = nonTickets;
       }
-    },
-    [walletAddress, myNFTs, fetchRewards, fetchStats, prettyError]
-  );
+
+      if (!tokenIds.length) {
+        return alert("No eligible NFTs to claim this week.");
+      }
+
+      const brl = await getLiquidityContract();
+      const tx = await brl.claim(tokenIds);
+      await tx.wait();
+
+      await fetchRewards();
+      await fetchStats();
+      alert("Rewards claimed.");
+    } catch (err) {
+      alert("Claim failed: " + prettyError(err));
+      console.error("claimRewards", err);
+    }
+  }, [walletAddress, myNFTs, fetchRewards, fetchStats, prettyError]);
 
   const parseIdsCsv = (csv) =>
     String(csv || "")
@@ -2396,7 +2912,11 @@ function App() {
       .map((s) => s.trim())
       .filter(Boolean)
       .map((s) => {
-        try { return ethers.BigNumber.from(s); } catch { return null; }
+        try {
+          return ethers.BigNumber.from(s);
+        } catch {
+          return null;
+        }
       })
       .filter(Boolean);
 
@@ -2439,7 +2959,8 @@ function App() {
         dexRecipientAddr = dex || null;
         tokenRewardsAddr = rwd || null;
         rewardsOperator = oper || null;
-        distributed = typeof dist === 'boolean' ? dist : (dist != null ? !!dist : null);
+        distributed =
+          typeof dist === "boolean" ? dist : dist != null ? !!dist : null;
       } catch {}
 
       setBiggiData((prev) => ({
@@ -2449,7 +2970,8 @@ function App() {
           name: meta?.[0],
           symbol: meta?.[1],
           decimals: meta?.[2],
-          rewardsRemainingCap: capLeft != null ? ethers.utils.formatEther(capLeft) : "\u2014",
+          rewardsRemainingCap:
+            capLeft != null ? ethers.utils.formatEther(capLeft) : "\u2014",
           totalSupply: totalSupply ?? "\u2014",
           cap: cap ?? null,
           remainingMintable: remainingMintable ?? null,
@@ -2476,7 +2998,8 @@ function App() {
         Promise.resolve(parseIdsCsv(tokenIdsCsv)),
       ]);
 
-      let previewUnits = "\u2014", previewAmount = "\u2014";
+      let previewUnits = "\u2014",
+        previewAmount = "\u2014";
       try {
         if (ids.length) {
           const [u, a] = await brl.claimablePreview(ids);
@@ -2489,7 +3012,12 @@ function App() {
       try {
         if (ids.length) {
           const [cNow, w, b] = await brl.claimStatus(ids);
-          stat = { tokenIds: ids.map((x) => x.toString()), claimableNow: cNow, weights: w, blockIdxs: b };
+          stat = {
+            tokenIds: ids.map((x) => x.toString()),
+            claimableNow: cNow,
+            weights: w,
+            blockIdxs: b,
+          };
         }
       } catch {}
 
@@ -2498,7 +3026,9 @@ function App() {
         rewards: {
           unitReward: unit,
           currentWeek: week != null ? Number(week) : "\u2014",
-          blockWeights: Array.isArray(weights) ? Array.from(weights) : undefined,
+          blockWeights: Array.isArray(weights)
+            ? Array.from(weights)
+            : undefined,
           claimPreview: { units: previewUnits, amount: previewAmount },
           claimStatus: stat,
         },
@@ -2511,12 +3041,21 @@ function App() {
   const onRefreshRouterInfo = React.useCallback(async () => {
     try {
       const brl = await getReadOnlyLiquidityContract();
-      const [ri, path] = await Promise.all([brl.routerInfo(), brl.getSwapPath()]);
+      const [ri, path] = await Promise.all([
+        brl.routerInfo(),
+        brl.getSwapPath(),
+      ]);
       setBiggiData((prev) => ({
         ...prev,
-        router: { routerAddress: ri?.[0], wrappedNative: ri?.[1], swapPath: Array.isArray(path) ? path : [] },
+        router: {
+          routerAddress: ri?.[0],
+          wrappedNative: ri?.[1],
+          swapPath: Array.isArray(path) ? path : [],
+        },
       }));
-      try { await onRefreshPolicy(); } catch {}
+      try {
+        await onRefreshPolicy();
+      } catch {}
     } catch (e) {
       console.error("onRefreshRouterInfo", e);
     }
@@ -2545,7 +3084,16 @@ function App() {
   const onRefreshBuybackInfo = React.useCallback(async () => {
     try {
       const b = await getBuybackRO();
-      const [router, wrappedNative, policy, treasury, lastAt, slip, deadline, cooldown] = await Promise.all([
+      const [
+        router,
+        wrappedNative,
+        policy,
+        treasury,
+        lastAt,
+        slip,
+        deadline,
+        cooldown,
+      ] = await Promise.all([
         b.router().catch(() => null),
         b.wrappedNative().catch(() => null),
         b.policy().catch(() => null),
@@ -2579,13 +3127,21 @@ function App() {
       const provider = main.provider;
 
       // ZĂ­skĂˇnĂ­ adresy reserve z main contractu
-      const reserveAddress = await callFirst(main, ["reserve", "reserveAddress", "getReserve"]);
+      const reserveAddress = await callFirst(main, [
+        "reserve",
+        "reserveAddress",
+        "getReserve",
+      ]);
       if (!reserveAddress || reserveAddress === ZERO_ADDRESS) {
         return {};
       }
 
       // NaÄŤtenĂ­ ABI_RESERVE
-      const reserveContract = new ethers.Contract(reserveAddress, ABI_RESERVE, provider);
+      const reserveContract = new ethers.Contract(
+        reserveAddress,
+        ABI_RESERVE,
+        provider,
+      );
 
       // ParalelnĂ­ naÄŤĂ­tĂˇnĂ­ vĹˇech dat
       const [
@@ -2594,24 +3150,25 @@ function App() {
         waitingBiggi,
         dexRefillBiggi,
         biggiBalance,
-        maticBalance
+        maticBalance,
       ] = await Promise.all([
         reserveContract.liquidityManager().catch(() => "\u2014"),
         reserveContract.totalMaticReceived().catch(() => "0"),
         reserveContract.waitingBiggi().catch(() => "0"),
         reserveContract.dexRefillBiggi().catch(() => "0"),
         reserveContract.biggiBalance().catch(() => "0"),
-        reserveContract.maticBalance().catch(() => "0")
+        reserveContract.maticBalance().catch(() => "0"),
       ]);
 
       return {
         reserveAddress,
-        liquidityManager: liquidityManager !== ZERO_ADDRESS ? liquidityManager : "\u2014",
+        liquidityManager:
+          liquidityManager !== ZERO_ADDRESS ? liquidityManager : "\u2014",
         totalMaticReceived: ethers.utils.formatEther(totalMaticReceived),
         waitingBiggi: ethers.utils.formatEther(waitingBiggi),
         dexRefillBiggi: ethers.utils.formatEther(dexRefillBiggi),
         biggiBalance: ethers.utils.formatEther(biggiBalance),
-        maticBalance: ethers.utils.formatEther(maticBalance)
+        maticBalance: ethers.utils.formatEther(maticBalance),
       };
     } catch (e) {
       console.error("fetchReserveInfo", e);
@@ -2625,9 +3182,18 @@ function App() {
       const provider = brl.provider;
 
       const treasuryAddr =
-        (await callFirst(brl, ["treasury","treasuryAddress","getTreasury"])) || null;
+        (await callFirst(brl, [
+          "treasury",
+          "treasuryAddress",
+          "getTreasury",
+        ])) || null;
 
-      const tokenAddr = await callFirst(brl, ["tokenAddress","biggi","getToken","getBIGGI"]);
+      const tokenAddr = await callFirst(brl, [
+        "tokenAddress",
+        "biggi",
+        "getToken",
+        "getBIGGI",
+      ]);
       let tokenBalance = "\u2014";
       try {
         if (treasuryAddr && tokenAddr) {
@@ -2650,14 +3216,24 @@ function App() {
 
       let lastRefillAt = "\u2014";
       try {
-        const ts = await callFirst(brl, ["lastRefillAt","treasuryLastRefillAt"]);
+        const ts = await callFirst(brl, [
+          "lastRefillAt",
+          "treasuryLastRefillAt",
+        ]);
         if (ts) {
           const n = Number(ts.toString?.() || ts);
-          if (Number.isFinite(n) && n > 0) lastRefillAt = new Date(n * 1000).toLocaleString();
+          if (Number.isFinite(n) && n > 0)
+            lastRefillAt = new Date(n * 1000).toLocaleString();
         }
       } catch {}
 
-      return { treasuryAddress: treasuryAddr || "\u2014", nativeBalance, tokenBalance, lastRefillAt, notes: "On-chain snapshot (read-only)." };
+      return {
+        treasuryAddress: treasuryAddr || "\u2014",
+        nativeBalance,
+        tokenBalance,
+        lastRefillAt,
+        notes: "On-chain snapshot (read-only).",
+      };
     } catch (e) {
       console.error("fetchTreasuryInfo", e);
       return {};
@@ -2666,15 +3242,24 @@ function App() {
 
   const explorerBaseFor = (chainId) => {
     switch (Number(chainId)) {
-      case 1: return "https://etherscan.io";
-      case 5: return "https://goerli.etherscan.io";
-      case 10: return "https://optimistic.etherscan.io";
-      case 137: return "https://polygonscan.com";
-      case 80001: return "https://mumbai.polygonscan.com";
-      case 80002: return "https://amoy.polygonscan.com";
-      case 8453: return "https://basescan.org";
-      case 42161: return "https://arbiscan.io";
-      default: return "";
+      case 1:
+        return "https://etherscan.io";
+      case 5:
+        return "https://goerli.etherscan.io";
+      case 10:
+        return "https://optimistic.etherscan.io";
+      case 137:
+        return "https://polygonscan.com";
+      case 80001:
+        return "https://mumbai.polygonscan.com";
+      case 80002:
+        return "https://amoy.polygonscan.com";
+      case 8453:
+        return "https://basescan.org";
+      case 42161:
+        return "https://arbiscan.io";
+      default:
+        return "";
     }
   };
 
@@ -2697,7 +3282,11 @@ function App() {
       <header style={{ width: "100%", zIndex: 1000, position: "relative" }}>
         <div className="wallet-row" style={{ padding: 8 }}>
           <button className="metamask-btn-top" onClick={connectMetaMask}>
-            <img src="/images/metamask-fox.svg" alt="MetaMask" className="fox-icon" />
+            <img
+              src="/images/metamask-fox.svg"
+              alt="MetaMask"
+              className="fox-icon"
+            />
             {walletAddress ? (
               <span style={{ marginLeft: 8 }}>
                 Connected: <Address address={walletAddress} />
@@ -2709,7 +3298,11 @@ function App() {
 
           {!walletAddress && (
             <button className="wc-btn-top" onClick={connectWalletConnect}>
-              <img src="/images/walletconnect.svg" alt="WalletConnect" className="fox-icon" />
+              <img
+                src="/images/walletconnect.svg"
+                alt="WalletConnect"
+                className="fox-icon"
+              />
               <span style={{ marginLeft: 8 }}>Connect Wallet (WC)</span>
             </button>
           )}
@@ -2717,7 +3310,9 @@ function App() {
 
         <TopBar
           onMint={mintTicket}
-          onRedeem={() => { if (!isRedeeming && !vrfPending) redeemTicket(); }}
+          onRedeem={() => {
+            if (!isRedeeming && !vrfPending) redeemTicket();
+          }}
           onClaim={claimRewards}
           isRedeeming={isRedeeming}
           vrfPending={vrfPending}
@@ -2728,7 +3323,10 @@ function App() {
       </header>
 
       <main>
-        <div className="widget-center-wrapper" style={isMobile ? { paddingTop: 8 } : undefined}>
+        <div
+          className="widget-center-wrapper"
+          style={isMobile ? { paddingTop: 8 } : undefined}
+        >
           <LiveStats
             walletAddress={walletAddress}
             lastImage={lastMinted.image}
@@ -2760,7 +3358,13 @@ function App() {
         </div>
 
         {isAdmin ? (
-          <div style={{ display: "flex", justifyContent: "flex-end", margin: "6px 12px 0" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              margin: "6px 12px 0",
+            }}
+          >
             <button
               onClick={openAdmin}
               style={{
@@ -2782,7 +3386,13 @@ function App() {
 
         {!hideExtras && (
           <div className="gallery-section">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               <h2 style={{ color: "#fff", margin: 0 }}>My NFTs</h2>
               <button
                 type="button"
@@ -2823,42 +3433,63 @@ function App() {
                   boxShadow: "0 6px 18px rgba(0,0,0,.35)",
                 }}
               >
-                <table className="nft-attributes-table" style={{ width: "100%", fontSize: 14, color: "#e9f2ff" }}>
+                <table
+                  className="nft-attributes-table"
+                  style={{ width: "100%", fontSize: 14, color: "#e9f2ff" }}
+                >
                   <tbody>
                     <tr>
-                      <td style={{ opacity: 0.8, padding: "6px 8px" }}>Image zoom</td>
+                      <td style={{ opacity: 0.8, padding: "6px 8px" }}>
+                        Image zoom
+                      </td>
                       <td style={{ padding: "6px 8px" }}>
-                        Click the thumbnail inside the card - a local zoom opens with the X button.
+                        Click the thumbnail inside the card - a local zoom opens
+                        with the X button.
                       </td>
                     </tr>
                     <tr>
-                      <td style={{ opacity: 0.8, padding: "6px 8px" }}>Details</td>
+                      <td style={{ opacity: 0.8, padding: "6px 8px" }}>
+                        Details
+                      </td>
                       <td style={{ padding: "6px 8px" }}>
-                        The "Details" button expands the metadata: Mint-time values and Attributes.
+                        The "Details" button expands the metadata: Mint-time
+                        values and Attributes.
                       </td>
                     </tr>
                     <tr>
-                      <td style={{ opacity: 0.8, padding: "6px 8px" }}>Mint-time values</td>
+                      <td style={{ opacity: 0.8, padding: "6px 8px" }}>
+                        Mint-time values
+                      </td>
                       <td style={{ padding: "6px 8px" }}>
-                        Prefer the values from metadata. When they are missing, they are recalculated from on-chain data as a fallback.
+                        Prefer the values from metadata. When they are missing,
+                        they are recalculated from on-chain data as a fallback.
                       </td>
                     </tr>
                     <tr>
-                      <td style={{ opacity: 0.8, padding: "6px 8px" }}>Ticket vs. NFT</td>
+                      <td style={{ opacity: 0.8, padding: "6px 8px" }}>
+                        Ticket vs. NFT
+                      </td>
                       <td style={{ padding: "6px 8px" }}>
-                        A ticket is an entry pass. After "Redeem" the final NFT is revealed via VRF.
+                        A ticket is an entry pass. After "Redeem" the final NFT
+                        is revealed via VRF.
                       </td>
                     </tr>
                     <tr>
-                      <td style={{ opacity: 0.8, padding: "6px 8px" }}>VRF pending</td>
+                      <td style={{ opacity: 0.8, padding: "6px 8px" }}>
+                        VRF pending
+                      </td>
                       <td style={{ padding: "6px 8px" }}>
-                        After the transaction is confirmed you may briefly see a pending state; the NFT appears automatically.
+                        After the transaction is confirmed you may briefly see a
+                        pending state; the NFT appears automatically.
                       </td>
                     </tr>
                     <tr>
-                      <td style={{ opacity: 0.8, padding: "6px 8px" }}>IPFS images</td>
+                      <td style={{ opacity: 0.8, padding: "6px 8px" }}>
+                        IPFS images
+                      </td>
                       <td style={{ padding: "6px 8px" }}>
-                        Images load from IPFS; the first view may take a bit longer.
+                        Images load from IPFS; the first view may take a bit
+                        longer.
                       </td>
                     </tr>
                   </tbody>
@@ -2880,7 +3511,9 @@ function App() {
 
             {galleryLoading && <Loader text="Loading..." />}
             {!galleryLoading && myNFTs.length === 0 && (
-              <div style={{ color: "#aaa" }}>You don't own any NFTs or tickets.</div>
+              <div style={{ color: "#aaa" }}>
+                You don't own any NFTs or tickets.
+              </div>
             )}
 
             <Gallery
@@ -2896,8 +3529,16 @@ function App() {
             />
 
             {vrfPending && (
-              <div style={{ marginTop: 10, color: "#ffe800", textAlign: "center", fontWeight: 700 }}>
-                VRF pending â€“ your NFT will appear automatically once revealed.
+              <div
+                style={{
+                  marginTop: 10,
+                  color: "#ffe800",
+                  textAlign: "center",
+                  fontWeight: 700,
+                }}
+              >
+                VRF pending â€“ your NFT will appear automatically once
+                revealed.
               </div>
             )}
           </div>
@@ -2912,23 +3553,46 @@ function App() {
           refresh: async () => {
             await fetchStats();
             await fetchRewards();
-            try { await onRefreshRouterInfo(); } catch {}
-            try { await onRefreshLiquidityPreview(); } catch {}
-            try { await onRefreshPolicy(); } catch {}
+            try {
+              await onRefreshRouterInfo();
+            } catch {}
+            try {
+              await onRefreshLiquidityPreview();
+            } catch {}
+            try {
+              await onRefreshPolicy();
+            } catch {}
           },
           setPaused: async (flag) => {
-            await writeFirst([getContract], ["setPaused", "pauseMinting", "setPause"], !!flag);
+            await writeFirst(
+              [getContract],
+              ["setPaused", "pauseMinting", "setPause"],
+              !!flag,
+            );
           },
           setBaseURI: async (uri) => {
             if (!uri) throw new Error("BaseURI is empty");
-            await writeFirst([getContract], ["setBaseURI", "setBaseUri", "setTokenURIBase"], uri);
+            await writeFirst(
+              [getContract],
+              ["setBaseURI", "setBaseUri", "setTokenURIBase"],
+              uri,
+            );
           },
           setTicketPrice: async (priceNum) => {
-            await writeFirst([getContract], ["setTicketPrice", "updateTicketPrice"], parseEth(priceNum));
+            await writeFirst(
+              [getContract],
+              ["setTicketPrice", "updateTicketPrice"],
+              parseEth(priceNum),
+            );
           },
           setBlockBasePrice: async (idx, priceNum) => {
             const p = parseEth(priceNum);
-            await writeFirst([getContract], ["setBlockBasePrice", "updateBlockBasePrice", "setBlockPrice"], idx, p);
+            await writeFirst(
+              [getContract],
+              ["setBlockBasePrice", "updateBlockBasePrice", "setBlockPrice"],
+              idx,
+              p,
+            );
           },
           setVRFParams: async (vrf) => {
             await setVRFAllOrPartial(vrf);
@@ -2938,7 +3602,7 @@ function App() {
             await writeFirst(
               [getContract, getLiquidityContract],
               ["setTreasury", "updateTreasury", "setTreasuryAddress"],
-              addr
+              addr,
             );
           },
           setLiquiditySink: async (addr) => {
@@ -2946,7 +3610,7 @@ function App() {
             await writeFirst(
               [getLiquidityContract, getContract],
               ["setLiquiditySink", "updateLiquiditySink", "setSinkAddress"],
-              addr
+              addr,
             );
           },
           setTokenAddress: async (addr) => {
@@ -2954,7 +3618,7 @@ function App() {
             await writeFirst(
               [getLiquidityContract, getContract],
               ["setTokenAddress", "setBIGGI", "updateTokenAddress"],
-              addr
+              addr,
             );
           },
           setRouter: async (addr) => {
@@ -2962,23 +3626,26 @@ function App() {
             await writeFirst(
               [getLiquidityContract, getContract],
               ["setRouter", "setDexRouter", "updateRouter"],
-              addr
+              addr,
             );
           },
           withdrawNative: async () => {
             await writeFirst(
               [getContract, getLiquidityContract],
-              ["withdrawNative", "withdrawETH", "withdrawMatic"]
+              ["withdrawNative", "withdrawETH", "withdrawMatic"],
             );
           },
           withdrawToken: async () => {
             await writeFirst(
               [getLiquidityContract, getContract],
-              ["withdrawToken", "withdrawBIGGI", "withdrawERC20"]
+              ["withdrawToken", "withdrawBIGGI", "withdrawERC20"],
             );
           },
           sweepDust: async () => {
-            await writeFirst([getLiquidityContract, getContract], ["sweepDust", "sweep", "sweepTokens"]);
+            await writeFirst(
+              [getLiquidityContract, getContract],
+              ["sweepDust", "sweep", "sweepTokens"],
+            );
           },
           nft_setMainContract: async (addr) => {
             if (!addr) throw new Error("Main contract address is empty");
@@ -2999,23 +3666,37 @@ function App() {
             if (!tokenUri) throw new Error("Token URI is empty");
             await ensureAmoy();
             const c = getNFTRewards();
-            const preview = await c.callStatic.createManualReward(winner, tokenUri);
+            const preview = await c.callStatic.createManualReward(
+              winner,
+              tokenUri,
+            );
             const tx = await c.createManualReward(winner, tokenUri);
             await tx.wait();
-            return { eventId: preview?.[0]?.toString?.() ?? preview?.eventId?.toString?.(), rewardId: preview?.[1]?.toString?.() ?? preview?.rewardId?.toString?.() };
+            return {
+              eventId:
+                preview?.[0]?.toString?.() ?? preview?.eventId?.toString?.(),
+              rewardId:
+                preview?.[1]?.toString?.() ?? preview?.rewardId?.toString?.(),
+            };
           },
           nft_createMysteryEvent: async (tokenUris, eligible) => {
-            if (!Array.isArray(tokenUris) || !tokenUris.length) throw new Error("Token URIs are required");
-            if (!Array.isArray(eligible) || !eligible.length) throw new Error("Eligible addresses are required");
+            if (!Array.isArray(tokenUris) || !tokenUris.length)
+              throw new Error("Token URIs are required");
+            if (!Array.isArray(eligible) || !eligible.length)
+              throw new Error("Eligible addresses are required");
             await ensureAmoy();
             const c = getNFTRewards();
-            const eventId = await c.callStatic.createMysteryEvent(tokenUris, eligible);
+            const eventId = await c.callStatic.createMysteryEvent(
+              tokenUris,
+              eligible,
+            );
             const tx = await c.createMysteryEvent(tokenUris, eligible);
             await tx.wait();
             return { eventId: eventId?.toString?.() ?? String(eventId) };
           },
           nft_requestMysteryRandom: async (eventId) => {
-            if (eventId == null || eventId === "") throw new Error("Event ID is empty");
+            if (eventId == null || eventId === "")
+              throw new Error("Event ID is empty");
             await ensureAmoy();
             const c = getNFTRewards();
             const reqId = await c.callStatic.requestMysteryRandom(eventId);
@@ -3088,18 +3769,27 @@ function App() {
             : undefined
         }
       >
-        {navOpen && !isInfoOpen && (
-          ICONS[openNavIdx].alt === "REWARDS" ? (
+        {navOpen &&
+          !isInfoOpen &&
+          (ICONS[openNavIdx].alt === "REWARDS" ? (
             <RewardsPanel
               compact={isMobile}
               walletAddress={walletAddress}
-              provider={(function(){
+              provider={(function () {
                 try {
-                  if (walletAddress && typeof window !== "undefined" && window.ethereum) {
+                  if (
+                    walletAddress &&
+                    typeof window !== "undefined" &&
+                    window.ethereum
+                  ) {
                     return getSignerProvider();
                   }
                 } catch {}
-                try { return getROProvider(); } catch { return null; }
+                try {
+                  return getROProvider();
+                } catch {
+                  return null;
+                }
               })()}
             />
           ) : ICONS[openNavIdx].alt === "COLLECTION" ? (
@@ -3145,23 +3835,46 @@ function App() {
                   }
                 }}
                 onBootstrapLiquidity={async ({ tokenAmountWei, nativeEth }) => {
-                  const amountBN = ethers.BigNumber.from(String(tokenAmountWei || "0"));
-                  const overrides = { value: ethers.utils.parseEther(String(nativeEth || "0")) };
-                  await writeFirst([getLiquidityContract], ["bootstrapLiquidity"], amountBN, overrides);
+                  const amountBN = ethers.BigNumber.from(
+                    String(tokenAmountWei || "0"),
+                  );
+                  const overrides = {
+                    value: ethers.utils.parseEther(String(nativeEth || "0")),
+                  };
+                  await writeFirst(
+                    [getLiquidityContract],
+                    ["bootstrapLiquidity"],
+                    amountBN,
+                    overrides,
+                  );
                   await onRefreshLiquidityPreview();
                 }}
                 onAddLiquidityFromBalance={async () => {
-                  await writeFirst([getLiquidityContract], ["addLiquidityFromBalance"]);
-                  await onRefreshLiquidityPreview();
-                }}
-                onBuybackAndSendToTreasury={async ({ minOutWei, nativeEth }) => {
-                  const minOutBN = ethers.BigNumber.from(String(minOutWei || "0"));
-                  const overrides = { value: ethers.utils.parseEther(String(nativeEth || "0")) };
                   await writeFirst(
                     [getLiquidityContract],
-                    ["buyBiggiAndSendToTreasury", "buybackAllToTreasury", "buybackToTreasury"],
+                    ["addLiquidityFromBalance"],
+                  );
+                  await onRefreshLiquidityPreview();
+                }}
+                onBuybackAndSendToTreasury={async ({
+                  minOutWei,
+                  nativeEth,
+                }) => {
+                  const minOutBN = ethers.BigNumber.from(
+                    String(minOutWei || "0"),
+                  );
+                  const overrides = {
+                    value: ethers.utils.parseEther(String(nativeEth || "0")),
+                  };
+                  await writeFirst(
+                    [getLiquidityContract],
+                    [
+                      "buyBiggiAndSendToTreasury",
+                      "buybackAllToTreasury",
+                      "buybackToTreasury",
+                    ],
                     minOutBN,
-                    overrides
+                    overrides,
                   );
                   await onRefreshRouterInfo();
                   await onRefreshBuybackInfo();
@@ -3207,11 +3920,15 @@ function App() {
               />
             </React.Suspense>
           ) : (
-            <InfoPanel compact={isMobile} data={transparencyData} loading={transparencyLoading} onRefresh={refreshTransparency}>
+            <InfoPanel
+              compact={isMobile}
+              data={transparencyData}
+              loading={transparencyLoading}
+              onRefresh={refreshTransparency}
+            >
               {ICONS[openNavIdx].modalText}
             </InfoPanel>
-          )
-        )}
+          ))}
       </FullscreenPanel>
     </div>
   );

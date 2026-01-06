@@ -30,7 +30,10 @@ export default function Address({
   const full = address?.trim() || "";
   if (!full) return null;
 
-  const short = React.useMemo(() => formatAddress(full, start, end), [full, start, end]);
+  const short = React.useMemo(
+    () => formatAddress(full, start, end),
+    [full, start, end],
+  );
   const [copied, setCopied] = React.useState(false);
   const timerRef = React.useRef(null);
 
@@ -39,7 +42,8 @@ export default function Address({
       if (!copy) return;
       e.stopPropagation();
       try {
-        if (!navigator?.clipboard?.writeText) throw new Error("Clipboard unavailable");
+        if (!navigator?.clipboard?.writeText)
+          throw new Error("Clipboard unavailable");
         await navigator.clipboard.writeText(full);
         setCopied(true);
         onCopy?.(full);
@@ -47,7 +51,7 @@ export default function Address({
         timerRef.current = setTimeout(() => setCopied(false), 1000);
       } catch {}
     },
-    [copy, full, onCopy]
+    [copy, full, onCopy],
   );
 
   React.useEffect(() => {
@@ -65,7 +69,11 @@ export default function Address({
   return (
     <Tag
       className={className}
-      style={{ ...baseStyle, cursor: copy ? "pointer" : "inherit", userSelect: "text" }}
+      style={{
+        ...baseStyle,
+        cursor: copy ? "pointer" : "inherit",
+        userSelect: "text",
+      }}
       title={title ?? full}
       aria-label={isAddr ? `Address ${full}` : full}
       role={copy ? "button" : undefined}

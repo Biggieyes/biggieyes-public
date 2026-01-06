@@ -8,7 +8,8 @@ import { ContractsContext } from "../providers/ContractsProvider";
  */
 export function useContracts() {
   const ctx = React.useContext(ContractsContext);
-  if (!ctx) throw new Error("useContracts must be used inside <ContractsProvider>");
+  if (!ctx)
+    throw new Error("useContracts must be used inside <ContractsProvider>");
   return ctx;
 }
 

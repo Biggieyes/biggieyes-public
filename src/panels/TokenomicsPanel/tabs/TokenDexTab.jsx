@@ -1,4 +1,7 @@
 import * as React from "react";
+import { ethers } from "ethers";
+import { ADDR } from "../../../utils/contract";
+import { BiggiLpPriceFeed as ABI_LP_PRICE_FEED } from "../../../config/abi/index.js";
 import LineChart from "../charts/LineChart";
 import StatusBadge from "../components/StatusBadge";
 import ValueRow from "../components/ValueRow";
@@ -12,14 +15,48 @@ import "./TokenDexTab.css";
 
 const TokenDexTab = ({ snapshot, history = [], isLoading, error }) => {
   const priceSeries = mapHistoryToPricePoints(history);
+
+  // --- LP price feed (live) ---
+  const [lpPrice, setLpPrice] = React.useState(null);
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const provider =
+          window && window.ethereum
+            ? new ethers.providers.Web3Provider(window.ethereum)
+            : ethers.getDefaultProvider();
+        const feedAddr = ADDR.LP_PRICE_FEED;
+        if (feedAddr) {
+          const feed = new ethers.Contract(
+            feedAddr,
+            ABI_LP_PRICE_FEED,
+            provider,
+          );
+          const round = await feed.latestRoundData().catch(() => null);
+          const dec = await feed.decimals().catch(() => 18);
+          if (!alive) return;
+          if (round && round.answer != null) {
+            const price = Number(ethers.utils.formatUnits(round.answer, dec));
+            if (Number.isFinite(price)) setLpPrice(price);
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
   const reserveSeries = mapHistoryToReservePoints(history);
   const lpSeries = mapHistoryToLpPoints(history);
 
   const statusMessage = error
     ? "Unable to load token/DEX snapshot."
     : !snapshot && isLoading
-    ? "Loading token/DEX metrics..."
-    : null;
+      ? "Loading token/DEX metrics..."
+      : null;
 
   const tokenRows = [
     {
@@ -50,7 +87,11 @@ const TokenDexTab = ({ snapshot, history = [], isLoading, error }) => {
       value: snapshot?.token?.balances?.liquidityVault ?? "N/A",
       hint: "Liquidity vault",
     },
-    { label: "Treasury balance", value: snapshot?.token?.balances?.treasury ?? "N/A", hint: "Treasury" },
+    {
+      label: "Treasury balance",
+      value: snapshot?.token?.balances?.treasury ?? "N/A",
+      hint: "Treasury",
+    },
   ];
 
   const addressRows = [
@@ -140,83 +181,89 @@ const TokenDexTab = ({ snapshot, history = [], isLoading, error }) => {
           <p className="token-dex-tab__eyebrow">Token / DEX</p>
           <h3>BIGGI market snapshot</h3>
         </div>
-        <span className="token-dex-tab__timestamp">Updated {snapshot?.tsLabel ?? "N/A"}</span>
+        <span className="token-dex-tab__timestamp">
+          Updated {snapshot?.tsLabel ?? "N/A"}
+        </span>
       </header>
 
       <TokenDexFlow snapshot={snapshot} history={history} />
 
-    <div className="token-dex-tab__charts">
-      <article className="token-dex-tab__chart">
-        <header>
-          <h5>Price trend</h5>
-          <p>Native per BIGGI (pair)</p>
-        </header>
-        <LineChart points={priceSeries} />
-      </article>
-      <article className="token-dex-tab__chart">
-        <header>
-          <h5>Native reserve</h5>
-          <p>WETH / POL reserve levels</p>
-        </header>
-        <LineChart points={reserveSeries} />
-      </article>
-      <article className="token-dex-tab__chart">
-        <header>
-          <h5>LP supply trend</h5>
-          <p>LP tokens minted</p>
-        </header>
-        <LineChart points={lpSeries} />
-      </article>
-    </div>
+      <div className="token-dex-tab__charts">
+        <article className="token-dex-tab__chart">
+          <header>
+            <h5>Price trend</h5>
+            <p>Native per BIGGI (pair)</p>
+          </header>
+          <LineChart points={priceSeries} />
+        </article>
+        <article className="token-dex-tab__chart">
+          <header>
+            <h5>Native reserve</h5>
+            <p>WETH / POL reserve levels</p>
+          </header>
+          <LineChart points={reserveSeries} />
+        </article>
+        <article className="token-dex-tab__chart">
+          <header>
+            <h5>LP supply trend</h5>
+            <p>LP tokens minted</p>
+          </header>
+          <LineChart points={lpSeries} />
+        </article>
+      </div>
 
-    <div className="token-dex-tab__grid">
-      <section className="token-dex-card token-dex-card--dex">
-        <div className="token-dex-card__title">
-          <div>
-            <h4>DEX & liquidity</h4>
-            <p>BIGGI / WETH pool</p>
+      <div className="token-dex-tab__grid">
+        <section className="token-dex-card token-dex-card--dex">
+          <div style={{ marginBottom: 8, fontWeight: 600, color: "#4ad2ff" }}>
+            LP token price: {lpPrice != null ? `${lpPrice} POL` : "--"}
           </div>
-          <StatusBadge
-            status={snapshot?.dex?.derived?.marketHealth ?? "Unknown"}
-            tone={snapshot?.dex?.derived?.marketHealthTone}
-          />
-        </div>
-        <div className="token-dex-card__rows">
-          {dexRows.map((row) => (
-            <ValueRow key={row.label} {...row} />
-          ))}
-        </div>
-        <div className="token-dex-card__addresses">
-          {dexAddressRows.map((row) => (
-            <ValueRow key={row.label} {...row} />
-          ))}
-        </div>
-      </section>
+          <div className="token-dex-card__title">
+            <div>
+              <h4>DEX & liquidity</h4>
+              <p>BIGGI / WETH pool</p>
+            </div>
+            <StatusBadge
+              status={snapshot?.dex?.derived?.marketHealth ?? "Unknown"}
+              tone={snapshot?.dex?.derived?.marketHealthTone}
+            />
+          </div>
+          <div className="token-dex-card__rows">
+            {dexRows.map((row) => (
+              <ValueRow key={row.label} {...row} />
+            ))}
+          </div>
+          <div className="token-dex-card__addresses">
+            {dexAddressRows.map((row) => (
+              <ValueRow key={row.label} {...row} />
+            ))}
+          </div>
+        </section>
 
-      <section className="token-dex-card token-dex-card--token">
-        <div className="token-dex-card__title">
-          <h4>BIGGI token overview</h4>
-        </div>
-        <div className="token-dex-card__rows">
-          {tokenRows.map((row) => (
-            <ValueRow key={row.label} {...row} />
-          ))}
-        </div>
-        <div className="token-dex-card__balances">
-          {balanceRows.map((row) => (
-            <ValueRow key={row.label} {...row} />
-          ))}
-        </div>
-        <div className="token-dex-card__addresses">
-          {addressRows.map((row) => (
-            <ValueRow key={row.label} {...row} />
-          ))}
-        </div>
-      </section>
-    </div>
+        <section className="token-dex-card token-dex-card--token">
+          <div className="token-dex-card__title">
+            <h4>BIGGI token overview</h4>
+          </div>
+          <div className="token-dex-card__rows">
+            {tokenRows.map((row) => (
+              <ValueRow key={row.label} {...row} />
+            ))}
+          </div>
+          <div className="token-dex-card__balances">
+            {balanceRows.map((row) => (
+              <ValueRow key={row.label} {...row} />
+            ))}
+          </div>
+          <div className="token-dex-card__addresses">
+            {addressRows.map((row) => (
+              <ValueRow key={row.label} {...row} />
+            ))}
+          </div>
+        </section>
+      </div>
 
-      {statusMessage && <div className="token-dex-tab__status">{statusMessage}</div>}
-
+      {statusMessage && (
+        <div className="token-dex-tab__status">{statusMessage}</div>
+      )}
     </div>
   );
 };

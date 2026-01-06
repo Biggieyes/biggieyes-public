@@ -31,8 +31,12 @@ export default function ActionButtons({
   const runOnce = (handler, isDisabled) => () => {
     if (isDisabled || lockRef.current) return;
     lockRef.current = true;
-    try { handler?.(); } finally {
-      setTimeout(() => { lockRef.current = false; }, 800);
+    try {
+      handler?.();
+    } finally {
+      setTimeout(() => {
+        lockRef.current = false;
+      }, 800);
     }
   };
 
@@ -47,7 +51,8 @@ export default function ActionButtons({
     backgroundSize: "cover",
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
-    transition: "border-color .18s ease, box-shadow .18s ease, transform .12s ease",
+    transition:
+      "border-color .18s ease, box-shadow .18s ease, transform .12s ease",
     flex: "0 0 auto",
     margin: 5,
     position: "relative",
@@ -139,58 +144,86 @@ export default function ActionButtons({
   };
 
   return (
-    <div style={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      marginTop: 30,
-    }}>
-      <div style={{
+    <div
+      style={{
         display: "flex",
-        gap: 10,
-        justifyContent: "center",
-        flexWrap: "wrap",
-      }}>
-        {buttonWrapper("/images/mint.png", "Mint Ticket", runOnce(onMint, actionDisabled), {
-          isDisabled: actionDisabled,
-          variant: "mint",
-          borderColor: "#26f7d1",
-          glow: "rgba(38, 247, 209, 0.55)",
-        })}
-        {buttonWrapper("/images/claim.png", "Claim Rewards", runOnce(onClaim, actionDisabled), {
-          isDisabled: actionDisabled,
-          variant: "mint",
-          borderColor: "#26f7d1",
-          glow: "rgba(38, 247, 209, 0.55)",
-        })}
+        flexDirection: "column",
+        alignItems: "center",
+        marginTop: 30,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+          justifyContent: "center",
+          flexWrap: "wrap",
+        }}
+      >
+        {buttonWrapper(
+          "/images/mint.png",
+          "Mint Ticket",
+          runOnce(onMint, actionDisabled),
+          {
+            isDisabled: actionDisabled,
+            variant: "mint",
+            borderColor: "#26f7d1",
+            glow: "rgba(38, 247, 209, 0.55)",
+          },
+        )}
+        {buttonWrapper(
+          "/images/claim.png",
+          "Claim Rewards",
+          runOnce(onClaim, actionDisabled),
+          {
+            isDisabled: actionDisabled,
+            variant: "mint",
+            borderColor: "#26f7d1",
+            glow: "rgba(38, 247, 209, 0.55)",
+          },
+        )}
       </div>
-      <div style={{
-        display: "flex",
-        gap: 10,
-        marginTop: 10,
-        justifyContent: "center",
-        flexWrap: "wrap",
-      }}>
-        {buttonWrapper("/images/redeem-button.png", "Redeem Ticket", runOnce(onRedeem, redeemDisabled), {
-          isDisabled: redeemDisabled,
-          variant: "mint",
-          borderColor: "#26f7d1",
-          glow: "rgba(38, 247, 209, 0.55)",
-        })}
-        {buttonWrapper("/images/icons/info.png", "Project Info", () => setInfoOpen(true), {
-          borderColor: "#ffe800",
-          glow: "rgba(255, 232, 0, 0.6)",
-        })}
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+          marginTop: 10,
+          justifyContent: "center",
+          flexWrap: "wrap",
+        }}
+      >
+        {buttonWrapper(
+          "/images/redeem-button.png",
+          "Redeem Ticket",
+          runOnce(onRedeem, redeemDisabled),
+          {
+            isDisabled: redeemDisabled,
+            variant: "mint",
+            borderColor: "#26f7d1",
+            glow: "rgba(38, 247, 209, 0.55)",
+          },
+        )}
+        {buttonWrapper(
+          "/images/icons/info.png",
+          "Project Info",
+          () => setInfoOpen(true),
+          {
+            borderColor: "#ffe800",
+            glow: "rgba(255, 232, 0, 0.6)",
+          },
+        )}
       </div>
 
       {(performing || errorText) && (
-        <div style={{
-          marginTop: 10,
-          textAlign: "center",
-          fontSize: 12,
-          color: "#ffd54f",
-          maxWidth: 320,
-        }}>
+        <div
+          style={{
+            marginTop: 10,
+            textAlign: "center",
+            fontSize: 12,
+            color: "#ffd54f",
+            maxWidth: 320,
+          }}
+        >
           {performing && <div>Processing transaction...</div>}
           {errorText && (
             <div role="alert" style={{ color: "#ff7b7b" }}>
@@ -202,10 +235,7 @@ export default function ActionButtons({
 
       {infoOpen && (
         <React.Suspense fallback={null}>
-          <ProjectInfoModal
-            open
-            onClose={() => setInfoOpen(false)}
-          />
+          <ProjectInfoModal open onClose={() => setInfoOpen(false)} />
         </React.Suspense>
       )}
     </div>

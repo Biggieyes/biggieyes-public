@@ -49,7 +49,11 @@ export default function MerkleTool({ entries = [] }) {
         />
       </div>
       <div className="moderator-center__actions">
-        <button type="button" className="biggi-btn biggi-btn--ghost" onClick={buildFromManual}>
+        <button
+          type="button"
+          className="biggi-btn biggi-btn--ghost"
+          onClick={buildFromManual}
+        >
           Generovat z JSON
         </button>
         {result && (

@@ -8,9 +8,18 @@ import BuybackStabilityChart from "../../../components/TOKEN/BuybackStabilityCha
 import { mapDripSnapshotToFlowRows } from "../../../services/tokenomics/drip.mappers";
 import "./DripTab.css";
 
-const DripTab = ({ snapshot, availableSeries, capSeries, nativeSeries, stabilitySeries, isLoading, error }) => {
+const DripTab = ({
+  snapshot,
+  availableSeries,
+  capSeries,
+  nativeSeries,
+  stabilitySeries,
+  isLoading,
+  error,
+}) => {
   const flows = mapDripSnapshotToFlowRows(snapshot);
-  const statusLabel = snapshot?.derived?.statusLabel ?? (isLoading ? "Loading" : "Waiting");
+  const statusLabel =
+    snapshot?.derived?.statusLabel ?? (isLoading ? "Loading" : "Waiting");
   const statusTone = snapshot?.derived?.statusTone ?? "default";
   const sampleCount = (snapshot && availableSeries?.length) || 0;
 
@@ -87,7 +96,11 @@ const DripTab = ({ snapshot, availableSeries, capSeries, nativeSeries, stability
         ))}
       </div>
 
-      {error ? <div className="drip-tab__alert">{error.message || "Unable to refresh drip data."}</div> : null}
+      {error ? (
+        <div className="drip-tab__alert">
+          {error.message || "Unable to refresh drip data."}
+        </div>
+      ) : null}
 
       <div className="drip-tab__split">
         <div className="drip-tab__column">
@@ -108,7 +121,10 @@ const DripTab = ({ snapshot, availableSeries, capSeries, nativeSeries, stability
               value={snapshot?.distributor?.treasuryShort ?? "--"}
               hint={snapshot?.distributor?.treasury ?? "--"}
             />
-            <ValueRow label="Paused" value={snapshot?.distributor?.paused ? "Yes" : "No"} />
+            <ValueRow
+              label="Paused"
+              value={snapshot?.distributor?.paused ? "Yes" : "No"}
+            />
           </div>
           <DripFlow flows={flows} />
         </div>
@@ -132,7 +148,11 @@ const DripTab = ({ snapshot, availableSeries, capSeries, nativeSeries, stability
             />
             <ValueRow
               label="Deadline"
-              value={snapshot?.dripLM?.txDeadlineSec ? `${snapshot?.dripLM?.txDeadlineSec} s` : "--"}
+              value={
+                snapshot?.dripLM?.txDeadlineSec
+                  ? `${snapshot?.dripLM?.txDeadlineSec} s`
+                  : "--"
+              }
             />
             <ValueRow
               label="DripLM native"
@@ -142,18 +162,21 @@ const DripTab = ({ snapshot, availableSeries, capSeries, nativeSeries, stability
           </div>
           <div className="drip-tab__panel">
             <h3>Flow history</h3>
-            <p className="drip-tab__history-note">Trends are shown in the charts below.</p>
+            <p className="drip-tab__history-note">
+              Trends are shown in the charts below.
+            </p>
           </div>
           {stabilitySeries?.length ? (
             <div className="drip-tab__panel">
               <h3>Stabilization rail</h3>
-              <p className="drip-tab__history-note">Drip → Buyback Agent → Treasury</p>
+              <p className="drip-tab__history-note">
+                Drip → Buyback Agent → Treasury
+              </p>
               <BuybackStabilityChart data={stabilitySeries} height={220} />
             </div>
           ) : null}
         </div>
       </div>
-
     </section>
   );
 };

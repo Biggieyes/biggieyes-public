@@ -89,7 +89,7 @@ export default function useLiquidityManager() {
             owner: owner || null,
           };
         },
-        { force: options?.force === true }
+        { force: options?.force === true },
       );
 
       setData(snapshot);

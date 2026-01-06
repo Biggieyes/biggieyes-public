@@ -3,13 +3,13 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 
 const FOCUSABLE = [
-  'a[href]',
-  'button:not([disabled])',
-  'textarea:not([disabled])',
-  'input:not([disabled])',
-  'select:not([disabled])',
-  '[tabindex]:not([tabindex="-1"])'
-].join(',');
+  "a[href]",
+  "button:not([disabled])",
+  "textarea:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
 
 export default function FullscreenPanel({
   open,
@@ -50,26 +50,43 @@ export default function FullscreenPanel({
 
   // === phone-friendly tweaks (no other changes) ===
   const [isPhone, setIsPhone] = React.useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(max-width: 700px)").matches : false
+    typeof window !== "undefined"
+      ? window.matchMedia("(max-width: 700px)").matches
+      : false,
   );
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     const mq = window.matchMedia("(max-width: 700px)");
     const onChange = (e) => setIsPhone(e.matches);
-    try { mq.addEventListener("change", onChange); } catch { mq.addListener(onChange); }
+    try {
+      mq.addEventListener("change", onChange);
+    } catch {
+      mq.addListener(onChange);
+    }
     return () => {
-      try { mq.removeEventListener("change", onChange); } catch { mq.removeListener(onChange); }
+      try {
+        mq.removeEventListener("change", onChange);
+      } catch {
+        mq.removeListener(onChange);
+      }
     };
   }, []);
 
   // --- Popover anchor near the info button ---
   const popRef = React.useRef(null);
-  const [popPos, setPopPos] = React.useState({ top: 0, left: 0, origin: "top right", ready: false });
+  const [popPos, setPopPos] = React.useState({
+    top: 0,
+    left: 0,
+    origin: "top right",
+    ready: false,
+  });
 
   // Remember last pointer position as a fallback anchor
   const lastPointerRef = React.useRef({ x: 0, y: 0 });
   React.useEffect(() => {
-    const onPtr = (e) => { lastPointerRef.current = { x: e.clientX, y: e.clientY }; };
+    const onPtr = (e) => {
+      lastPointerRef.current = { x: e.clientX, y: e.clientY };
+    };
     window.addEventListener("pointerdown", onPtr, true);
     return () => window.removeEventListener("pointerdown", onPtr, true);
   }, []);
@@ -96,35 +113,43 @@ export default function FullscreenPanel({
     document.body.style.paddingRight = prevPaddingRightRef.current;
   }, [preventScroll, isPopover]);
 
-  const onKeyDown = React.useCallback((e) => {
-    if (closeOnEsc && e.key === "Escape") {
-      e.stopPropagation();
-      onClose?.();
-      return;
-    }
-    if (trapFocus && e.key === "Tab") {
-      const root = rootRef.current || document.body;
-      const nodes = root.querySelectorAll ? root.querySelectorAll(FOCUSABLE) : document.querySelectorAll(FOCUSABLE);
-      const list = Array.from(nodes);
-      if (list.length === 0) { e.preventDefault(); return; }
-
-      const first = list[0];
-      const last = list[list.length - 1];
-      const active = document.activeElement;
-
-      if (e.shiftKey) {
-        if (active === first || !root.contains(active)) {
+  const onKeyDown = React.useCallback(
+    (e) => {
+      if (closeOnEsc && e.key === "Escape") {
+        e.stopPropagation();
+        onClose?.();
+        return;
+      }
+      if (trapFocus && e.key === "Tab") {
+        const root = rootRef.current || document.body;
+        const nodes = root.querySelectorAll
+          ? root.querySelectorAll(FOCUSABLE)
+          : document.querySelectorAll(FOCUSABLE);
+        const list = Array.from(nodes);
+        if (list.length === 0) {
           e.preventDefault();
-          last.focus();
+          return;
         }
-      } else {
-        if (active === last) {
-          e.preventDefault();
-          first.focus();
+
+        const first = list[0];
+        const last = list[list.length - 1];
+        const active = document.activeElement;
+
+        if (e.shiftKey) {
+          if (active === first || !root.contains(active)) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (active === last) {
+            e.preventDefault();
+            first.focus();
+          }
         }
       }
-    }
-  }, [closeOnEsc, trapFocus, onClose]);
+    },
+    [closeOnEsc, trapFocus, onClose],
+  );
 
   // Position the popover under the info button and clamp to the viewport
   const placePopover = React.useCallback(() => {
@@ -137,20 +162,22 @@ export default function FullscreenPanel({
         ? document.activeElement
         : null;
 
-    const a = anchorEl ? anchorEl.getBoundingClientRect() : {
-      top: lastPointerRef.current.y,
-      bottom: lastPointerRef.current.y,
-      left: lastPointerRef.current.x,
-      right: lastPointerRef.current.x,
-      width: 0,
-      height: 0,
-    };
+    const a = anchorEl
+      ? anchorEl.getBoundingClientRect()
+      : {
+          top: lastPointerRef.current.y,
+          bottom: lastPointerRef.current.y,
+          left: lastPointerRef.current.x,
+          right: lastPointerRef.current.x,
+          width: 0,
+          height: 0,
+        };
 
     const r = el.getBoundingClientRect();
 
     // Always place BELOW the button (requested)
-    let top = a.bottom + 10;          // below the anchor
-    let origin = "top right";         // grow from top when opening
+    let top = a.bottom + 10; // below the anchor
+    let origin = "top right"; // grow from top when opening
 
     // Horizontal: align right edges by default
     let left = (a.right || a.left) - r.width;
@@ -161,10 +188,15 @@ export default function FullscreenPanel({
     if (left < 8) left = 8;
 
     const maxTop = window.innerHeight - r.height - 8;
-    if (top > maxTop) top = maxTop;   // still "below", just clamped
+    if (top > maxTop) top = maxTop; // still "below", just clamped
     if (top < 8) top = 8;
 
-    setPopPos({ top: Math.round(top), left: Math.round(left), origin, ready: true });
+    setPopPos({
+      top: Math.round(top),
+      left: Math.round(left),
+      origin,
+      ready: true,
+    });
   }, [isPopover, open]);
 
   React.useEffect(() => {
@@ -180,7 +212,10 @@ export default function FullscreenPanel({
       if (!root) return;
       if (ev.target === root) ev.preventDefault();
     };
-    document.addEventListener("touchmove", preventTouchScroll, { passive: false, capture: true });
+    document.addEventListener("touchmove", preventTouchScroll, {
+      passive: false,
+      capture: true,
+    });
 
     if (!isPopover && rootRef.current) {
       rootRef.current.style.overscrollBehavior = "contain";
@@ -191,7 +226,9 @@ export default function FullscreenPanel({
         initialFocusRef.current.focus();
       } else if (trapFocus && (rootRef.current || popRef.current)) {
         const scope = rootRef.current || popRef.current;
-        const firstFocusable = scope.querySelector ? scope.querySelector(FOCUSABLE) : null;
+        const firstFocusable = scope.querySelector
+          ? scope.querySelector(FOCUSABLE)
+          : null;
         if (firstFocusable) firstFocusable.focus();
         else scope.focus?.();
       }
@@ -206,7 +243,9 @@ export default function FullscreenPanel({
 
     return () => {
       document.removeEventListener("keydown", onKeyDown, true);
-      document.removeEventListener("touchmove", preventTouchScroll, { capture: true });
+      document.removeEventListener("touchmove", preventTouchScroll, {
+        capture: true,
+      });
       clearTimeout(focusTimer);
       clearTimeout(placeTimer);
       if (isPopover) {
@@ -233,21 +272,26 @@ export default function FullscreenPanel({
 
   // Arrow button (fullscreen only)
   const ArrowBtn = ({ label, onClick, title }) => {
-    const baseShadow = "0 8px 20px rgba(0,0,0,.45), inset 0 0 18px rgba(93,220,255,.12)";
+    const baseShadow =
+      "0 8px 20px rgba(0,0,0,.45), inset 0 0 18px rgba(93,220,255,.12)";
     const hoverShadow = `${headerGlowShadow}, inset 0 0 18px rgba(93,220,255,.12)`;
 
     return (
       <button
         type="button"
         aria-label={title}
-        onClick={(e) => { e.stopPropagation(); onClick?.(); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick?.();
+        }}
         style={{
           width: isPhone ? 36 : 44,
           height: isPhone ? 36 : 44,
           minWidth: isPhone ? 36 : 44,
           minHeight: isPhone ? 36 : 44,
           borderRadius: 10,
-          background: "linear-gradient(180deg, rgba(12,20,26,.85), rgba(8,12,18,.85))",
+          background:
+            "linear-gradient(180deg, rgba(12,20,26,.85), rgba(8,12,18,.85))",
           border: "1px solid rgba(93,220,255,.45)",
           color: C.c,
           fontWeight: 900,
@@ -312,7 +356,8 @@ export default function FullscreenPanel({
             border: `2px solid ${C.c}`,
             background: "rgba(26,26,26,.96)",
             backdropFilter: "blur(6px) saturate(120%)",
-            boxShadow: "0 16px 32px rgba(0,0,0,.55), 0 0 18px rgba(93,220,255,.28)",
+            boxShadow:
+              "0 16px 32px rgba(0,0,0,.55), 0 0 18px rgba(93,220,255,.28)",
             padding: 10,
             transformOrigin: popPos.origin,
             animation: "fsPop .18s ease-out both",
@@ -337,10 +382,15 @@ export default function FullscreenPanel({
               borderBottom: "1px solid rgba(93,220,255,.35)",
             }}
           >
-            <strong id={titleId} style={{ color: C.c, letterSpacing: 0.4 }}>{title}</strong>
+            <strong id={titleId} style={{ color: C.c, letterSpacing: 0.4 }}>
+              {title}
+            </strong>
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); onClose?.(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose?.();
+              }}
               aria-label="Close"
               title="Close"
               style={{
@@ -348,7 +398,8 @@ export default function FullscreenPanel({
                 height: isPhone ? 30 : 32,
                 borderRadius: 8,
                 border: `1px solid ${C.line}`,
-                background: "linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.18))",
+                background:
+                  "linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.18))",
                 color: C.c,
                 fontWeight: 900,
                 fontSize: isPhone ? 14 : 16,
@@ -364,32 +415,52 @@ export default function FullscreenPanel({
             </button>
           </div>
 
-          <div style={{ padding: 6, overflowY: "auto", maxHeight: "calc(70vh - 46px)" }}>
+          <div
+            style={{
+              padding: 6,
+              overflowY: "auto",
+              maxHeight: "calc(70vh - 46px)",
+            }}
+          >
             <React.Suspense fallback={<div>Loading...</div>}>
               {children}
             </React.Suspense>
 
             <div style={{ marginTop: 8 }}>
-              <table className="nft-info-table" aria-label="NFT cards quick help">
+              <table
+                className="nft-info-table"
+                aria-label="NFT cards quick help"
+              >
                 <tbody>
                   <tr>
                     <td>"i" button</td>
-                    <td>Opens this quick reference panel. Click outside the overlay or press Escape to close it.</td>
+                    <td>
+                      Opens this quick reference panel. Click outside the
+                      overlay or press Escape to close it.
+                    </td>
                   </tr>
                   <tr>
                     <td>Add to MetaMask</td>
                     <td>
-                      Uses <code>wallet_watchAsset</code> to add the selected NFT to MetaMask. After a successful import the button hides on this device. Clearing site data, switching devices, or changing the MetaMask account may show it again.
+                      Uses <code>wallet_watchAsset</code> to add the selected
+                      NFT to MetaMask. After a successful import the button
+                      hides on this device. Clearing site data, switching
+                      devices, or changing the MetaMask account may show it
+                      again.
                     </td>
                   </tr>
                   <tr>
                     <td>Keyboard shortcuts</td>
-                    <td>Use the Left and Right arrow keys to move between panels and Escape to close.</td>
+                    <td>
+                      Use the Left and Right arrow keys to move between panels
+                      and Escape to close.
+                    </td>
                   </tr>
                 </tbody>
               </table>
               <div className="nft-info-note">
-                These helpers keep the card layout compact while leaving room for wallet actions.
+                These helpers keep the card layout compact while leaving room
+                for wallet actions.
               </div>
             </div>
           </div>
@@ -412,11 +483,11 @@ export default function FullscreenPanel({
       role="dialog"
       aria-modal="true"
       aria-label={ariaLabel}
-        aria-labelledby={ariaLabelledby || (title ? titleId : undefined)}
+      aria-labelledby={ariaLabelledby || (title ? titleId : undefined)}
       onMouseDown={(e) => {
         if (!closeOnOverlay) return;
         if (e.target === rootRef.current) onClose?.();
-        }}
+      }}
       tabIndex={-1}
       style={{
         position: "fixed",
@@ -430,7 +501,7 @@ export default function FullscreenPanel({
         height: "100svh",
         zIndex: 9999,
         overflow: "hidden",
-        }}
+      }}
     >
       <div
         className="fullscreen-panel__topbar"
@@ -444,7 +515,8 @@ export default function FullscreenPanel({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          boxShadow: "inset 0 0 18px rgba(93,220,255,.12), 0 10px 26px rgba(0,0,0,.45)",
+          boxShadow:
+            "inset 0 0 18px rgba(93,220,255,.12), 0 10px 26px rgba(0,0,0,.45)",
           color: C.text,
           width: "100%",
           boxSizing: "border-box",
@@ -452,7 +524,15 @@ export default function FullscreenPanel({
           backdropFilter: "blur(6px)",
         }}
       >
-        <h2 id={titleId} style={{ margin: 0, letterSpacing: 0.5, color: C.c, fontSize: isPhone ? 16 : 18 }}>
+        <h2
+          id={titleId}
+          style={{
+            margin: 0,
+            letterSpacing: 0.5,
+            color: C.c,
+            fontSize: isPhone ? 16 : 18,
+          }}
+        >
           {title}
         </h2>
 
@@ -472,7 +552,10 @@ export default function FullscreenPanel({
           <button
             type="button"
             className="fullscreen-panel__close"
-            onClick={(e) => { e.stopPropagation(); onClose?.(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose?.();
+            }}
             aria-label="Close"
             title="Close"
             style={{
@@ -480,7 +563,8 @@ export default function FullscreenPanel({
               height: isPhone ? 36 : 44,
               borderRadius: 10,
               border: `1px solid ${C.line}`,
-              background: "linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.18))",
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.18))",
               color: C.c,
               fontWeight: 900,
               fontSize: isPhone ? 16 : 18,

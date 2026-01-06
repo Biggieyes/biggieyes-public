@@ -34,7 +34,11 @@ export default function useDripDistributor() {
         async () => {
           const raw = await svc.getAllStats();
           const fmt = (bn) => {
-            try { return ethers.utils.formatUnits(bn || 0, 18); } catch { return "0"; }
+            try {
+              return ethers.utils.formatUnits(bn || 0, 18);
+            } catch {
+              return "0";
+            }
           };
 
           return {
@@ -51,7 +55,7 @@ export default function useDripDistributor() {
             paused: Boolean(raw.paused),
           };
         },
-        { force: options?.force === true }
+        { force: options?.force === true },
       );
       setData(snapshot);
     } catch (e) {
@@ -62,7 +66,9 @@ export default function useDripDistributor() {
     }
   }, []);
 
-  React.useEffect(() => { refresh(); }, [refresh]);
+  React.useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   return { data, loading, error, refresh };
 }

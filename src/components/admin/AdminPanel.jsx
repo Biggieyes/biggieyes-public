@@ -6,7 +6,9 @@ import { getROProvider } from "../../utils/contract";
 import communityCenterAbi from "../../utils/abi/BiggiCommunityCenter.js";
 import { supabase } from "../../services/chatClient";
 
-const COMMUNITY_CENTER_ABI = Array.isArray(communityCenterAbi) ? communityCenterAbi : [];
+const COMMUNITY_CENTER_ABI = Array.isArray(communityCenterAbi)
+  ? communityCenterAbi
+  : [];
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const CHAT_API_BASE = import.meta.env.VITE_CHAT_API_BASE || "";
@@ -14,11 +16,13 @@ const CHAT_API_BASE = import.meta.env.VITE_CHAT_API_BASE || "";
 function buildChatApiUrl(path) {
   const safePath = (() => {
     if (!path) return "";
-    if (path.startsWith("/admin/")) return `/admin-${path.slice("/admin/".length)}`;
+    if (path.startsWith("/admin/"))
+      return `/admin-${path.slice("/admin/".length)}`;
     return path;
   })();
   if (!CHAT_API_BASE) return `/api${safePath}`;
-  if (CHAT_API_BASE.includes("/.netlify/functions")) return `${CHAT_API_BASE}${safePath}`;
+  if (CHAT_API_BASE.includes("/.netlify/functions"))
+    return `${CHAT_API_BASE}${safePath}`;
   return `${CHAT_API_BASE}/api${safePath}`;
 }
 
@@ -52,7 +56,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
   const [baseURI, setBaseURI] = React.useState("");
   const [pauseFlag, setPauseFlag] = React.useState(false);
   const [ticketPrice, setTicketPrice] = React.useState("");
-  const [blockIdx, setBlockIdx] = React.useState("");            // 0..9
+  const [blockIdx, setBlockIdx] = React.useState(""); // 0..9
   const [blockBasePrice, setBlockBasePrice] = React.useState(""); // number
   const [vrf, setVRF] = React.useState({
     keyHash: data?.vrf?.keyHash || "",
@@ -63,28 +67,34 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
     subscriptionId: data?.vrf?.subscriptionId || "",
   });
   const [treasury, setTreasury] = React.useState(data?.treasury || "");
-  const [liquiditySink, setLiquiditySink] = React.useState(data?.liquiditySink || "");
-  const [tokenAddress, setTokenAddress] = React.useState(data?.token?.address || "");
-  const [routerAddress, setRouterAddress] = React.useState(data?.dex?.router || "");
+  const [liquiditySink, setLiquiditySink] = React.useState(
+    data?.liquiditySink || "",
+  );
+  const [tokenAddress, setTokenAddress] = React.useState(
+    data?.token?.address || "",
+  );
+  const [routerAddress, setRouterAddress] = React.useState(
+    data?.dex?.router || "",
+  );
 
   // ===== NEW: Liquidity controls =====
   const [liqRecipient, setLiqRecipient] = React.useState("");
   const [lpUseBps, setLpUseBps] = React.useState("");
-  const [txDeadline, setTxDeadline] = React.useState("");         // seconds
-  const [swapSlip, setSwapSlip] = React.useState("");             // bps
-  const [lpSlip, setLpSlip] = React.useState("");                 // bps
-  const [swapPath, setSwapPath] = React.useState("");             // "WNATIVE,token,...,BIGGI"
-  const [minOut, setMinOut] = React.useState("");                 // BIGGI minOut (raw or human, action handles parse)
-  const [nativeAmt, setNativeAmt] = React.useState("");           // ETH/POL amount (for buybackToTreasury)
-  const [biggiAmt, setBiggiAmt] = React.useState("");             // BIGGI amount for addLiquidityFromBalances
-  const [bootToken, setBootToken] = React.useState("");           // token amount for bootstrap
-  const [bootEth, setBootEth] = React.useState("");               // native amount for bootstrap
-  const [routeBiggiAmt, setRouteBiggiAmt] = React.useState("");   // route to treasury amount
+  const [txDeadline, setTxDeadline] = React.useState(""); // seconds
+  const [swapSlip, setSwapSlip] = React.useState(""); // bps
+  const [lpSlip, setLpSlip] = React.useState(""); // bps
+  const [swapPath, setSwapPath] = React.useState(""); // "WNATIVE,token,...,BIGGI"
+  const [minOut, setMinOut] = React.useState(""); // BIGGI minOut (raw or human, action handles parse)
+  const [nativeAmt, setNativeAmt] = React.useState(""); // ETH/POL amount (for buybackToTreasury)
+  const [biggiAmt, setBiggiAmt] = React.useState(""); // BIGGI amount for addLiquidityFromBalances
+  const [bootToken, setBootToken] = React.useState(""); // token amount for bootstrap
+  const [bootEth, setBootEth] = React.useState(""); // native amount for bootstrap
+  const [routeBiggiAmt, setRouteBiggiAmt] = React.useState(""); // route to treasury amount
 
   // ===== NEW: Policy controls =====
   // Splits
   const [alphaBuyback, setAlphaBuyback] = React.useState(""); // bps
-  const [betaBurn, setBetaBurn] = React.useState("");         // bps
+  const [betaBurn, setBetaBurn] = React.useState(""); // bps
   const [gammaStaking, setGammaStaking] = React.useState(""); // bps
   // Guards
   const [gSwapSlip, setGSwapSlip] = React.useState("");
@@ -134,7 +144,10 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
   const [chatMessageId, setChatMessageId] = React.useState("");
   const [chatNewContent, setChatNewContent] = React.useState("");
   const [chatAction, setChatAction] = React.useState("soft-delete");
-  const [healthData, setHealthData] = React.useState({ rpc: null, contracts: [] });
+  const [healthData, setHealthData] = React.useState({
+    rpc: null,
+    contracts: [],
+  });
   const [healthLoading, setHealthLoading] = React.useState(false);
   const [healthError, setHealthError] = React.useState("");
 
@@ -164,22 +177,38 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
     }
   };
 
-  const communityAddress = React.useMemo(() => resolveCommunityCenterAddress(), []);
-  const communityAvailable = Boolean(communityAddress && COMMUNITY_CENTER_ABI.length);
+  const communityAddress = React.useMemo(
+    () => resolveCommunityCenterAddress(),
+    [],
+  );
+  const communityAvailable = Boolean(
+    communityAddress && COMMUNITY_CENTER_ABI.length,
+  );
 
   const getCommunityContract = React.useCallback(
     async (rw = false) => {
-      if (!communityAddress) throw new Error("Community Center address not configured");
-      if (!COMMUNITY_CENTER_ABI.length) throw new Error("Community Center ABI missing");
+      if (!communityAddress)
+        throw new Error("Community Center address not configured");
+      if (!COMMUNITY_CENTER_ABI.length)
+        throw new Error("Community Center ABI missing");
 
       if (rw) {
         if (typeof window === "undefined" || !window.ethereum) {
           throw new Error("Wallet provider not found");
         }
-        await window.ethereum.request?.({ method: "eth_requestAccounts" }).catch(() => {});
-        const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+        await window.ethereum
+          .request?.({ method: "eth_requestAccounts" })
+          .catch(() => {});
+        const provider = new ethers.providers.Web3Provider(
+          window.ethereum,
+          "any",
+        );
         const signer = provider.getSigner();
-        return new ethers.Contract(communityAddress, COMMUNITY_CENTER_ABI, signer);
+        return new ethers.Contract(
+          communityAddress,
+          COMMUNITY_CENTER_ABI,
+          signer,
+        );
       }
 
       let provider = null;
@@ -190,9 +219,13 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
         provider = new ethers.providers.Web3Provider(window.ethereum, "any");
       }
       if (!provider) throw new Error("Read provider unavailable");
-      return new ethers.Contract(communityAddress, COMMUNITY_CENTER_ABI, provider);
+      return new ethers.Contract(
+        communityAddress,
+        COMMUNITY_CENTER_ABI,
+        provider,
+      );
     },
-    [communityAddress]
+    [communityAddress],
   );
 
   const bnToString = (value) => {
@@ -244,12 +277,15 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       setEventStart(bnToString(ev?.start));
       setEventEnd(bnToString(ev?.end));
       setEventCapacity(bnToString(ev?.capacity));
-      setEventDeposit(ev?.depositWei ? ethers.utils.formatEther(ev.depositWei) : "");
+      setEventDeposit(
+        ev?.depositWei ? ethers.utils.formatEther(ev.depositWei) : "",
+      );
     });
 
   const createCommunityEvent = () =>
     run("community_createEvent", async () => {
-      if (!communityAvailable) throw new Error("Community Center contract not available");
+      if (!communityAvailable)
+        throw new Error("Community Center contract not available");
       const contract = await getCommunityContract(true);
       const trimmed = eventIpfs.trim();
       if (!trimmed) throw new Error("Event text / IPFS hash is required");
@@ -268,7 +304,8 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
 
   const updateCommunityEvent = () =>
     run("community_updateEvent", async () => {
-      if (!communityAvailable) throw new Error("Community Center contract not available");
+      if (!communityAvailable)
+        throw new Error("Community Center contract not available");
       const trimmed = eventIpfs.trim();
       if (!trimmed) throw new Error("Event text / IPFS hash is required");
       const id = parseUintField(eventId, "Event ID", true);
@@ -301,14 +338,16 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
   const applyNftMainContract = () =>
     run("nft_setMain", async () => {
       const addr = nftMainContract.trim();
-      if (!ethers.utils.isAddress(addr)) throw new Error("Main contract address is invalid");
+      if (!ethers.utils.isAddress(addr))
+        throw new Error("Main contract address is invalid");
       await actions.nft_setMainContract?.(addr);
     });
 
   const applyNftVrfRouter = () =>
     run("nft_setVrf", async () => {
       const addr = nftVrfRouter.trim();
-      if (!ethers.utils.isAddress(addr)) throw new Error("VRF router address is invalid");
+      if (!ethers.utils.isAddress(addr))
+        throw new Error("VRF router address is invalid");
       await actions.nft_setVrfRouter?.(addr);
     });
 
@@ -316,7 +355,8 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
     run("nft_manual", async () => {
       const winner = nftManualWinner.trim();
       const uri = nftManualUri.trim();
-      if (!ethers.utils.isAddress(winner)) throw new Error("Winner address is invalid");
+      if (!ethers.utils.isAddress(winner))
+        throw new Error("Winner address is invalid");
       if (!uri) throw new Error("Token URI is required");
       const res = await actions.nft_createManualReward?.(winner, uri);
       if (res?.eventId != null) setNftLastEventId(String(res.eventId));
@@ -328,7 +368,8 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       const uris = splitListInput(nftMysteryUris);
       const eligible = parseAddressListInput(nftMysteryEligible);
       if (!uris.length) throw new Error("At least one token URI is required");
-      if (!eligible.length) throw new Error("At least one eligible address is required");
+      if (!eligible.length)
+        throw new Error("At least one eligible address is required");
       const res = await actions.nft_createMysteryEvent?.(uris, eligible);
       if (res?.eventId != null) setNftLastEventId(String(res.eventId));
     });
@@ -346,10 +387,16 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
     setChatError("");
     try {
       const [rulesRes, msgsRes] = await Promise.all([
-        supabase.from("rules").select("text,updated_at").eq("id", 1).maybeSingle(),
+        supabase
+          .from("rules")
+          .select("text,updated_at")
+          .eq("id", 1)
+          .maybeSingle(),
         supabase
           .from("messages")
-          .select("id,author_address,author_name,content,created_at,edited_at,deleted")
+          .select(
+            "id,author_address,author_name,content,created_at,edited_at,deleted",
+          )
           .order("created_at", { ascending: false })
           .limit(60),
       ]);
@@ -374,14 +421,21 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       const id = Number(chatMessageId);
       const action = chatAction === "edit" ? "edit" : "soft-delete";
       const nextContent = action === "edit" ? chatNewContent.trim() : "";
-      if (!Number.isFinite(id) || id <= 0) throw new Error("Message ID is invalid");
-      if (action === "edit" && !nextContent) throw new Error("New content is required");
+      if (!Number.isFinite(id) || id <= 0)
+        throw new Error("Message ID is invalid");
+      if (action === "edit" && !nextContent)
+        throw new Error("New content is required");
       if (typeof window === "undefined" || !window.ethereum) {
         throw new Error("Wallet provider not found");
       }
 
-      await window.ethereum.request?.({ method: "eth_requestAccounts" }).catch(() => {});
-      const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+      await window.ethereum
+        .request?.({ method: "eth_requestAccounts" })
+        .catch(() => {});
+      const provider = new ethers.providers.Web3Provider(
+        window.ethereum,
+        "any",
+      );
       const signer = provider.getSigner();
       const address = await signer.getAddress();
       const payload = `${action}|${id}|${nextContent || ""}`;
@@ -413,8 +467,13 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
         throw new Error("Wallet provider not found");
       }
 
-      await window.ethereum.request?.({ method: "eth_requestAccounts" }).catch(() => {});
-      const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+      await window.ethereum
+        .request?.({ method: "eth_requestAccounts" })
+        .catch(() => {});
+      const provider = new ethers.providers.Web3Provider(
+        window.ethereum,
+        "any",
+      );
       const signer = provider.getSigner();
       const address = await signer.getAddress();
       const payload = `rules|${rulesText}`;
@@ -563,7 +622,10 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
           background: "linear-gradient(90deg, #FF5DA2, #9B7BFF, #27D9D2)",
         }}
       />
-      <table className="admin-kv-table" style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
+      <table
+        className="admin-kv-table"
+        style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}
+      >
         <thead>
           <tr>
             {["Key", "Value"].map((h, i, arr) => (
@@ -602,7 +664,9 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     : "linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.16))",
               }}
             >
-              <td style={{ padding: "10px 14px", color: C.dim, fontWeight: 800 }}>
+              <td
+                style={{ padding: "10px 14px", color: C.dim, fontWeight: 800 }}
+              >
                 {r.k}
               </td>
               <td
@@ -629,7 +693,10 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
           ))}
           {!items.length && (
             <tr>
-              <td colSpan={2} style={{ padding: 14, textAlign: "center", color: C.dim }}>
+              <td
+                colSpan={2}
+                style={{ padding: 14, textAlign: "center", color: C.dim }}
+              >
                 â€”
               </td>
             </tr>
@@ -645,7 +712,10 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
     </div>
   );
 
-  const on = (fn, ...args) => () => fn && fn(...args);
+  const on =
+    (fn, ...args) =>
+    () =>
+      fn && fn(...args);
 
   const formatChatTime = (value) => {
     if (!value) return "--";
@@ -666,33 +736,93 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       { key: "BIGGI TOKEN", label: "BIGGI TOKEN", address: ADDR.BIGGI },
       { key: "COLLECTION", label: "COLLECTION", address: ADDR.MAIN },
       { key: "COLLECTION2", label: "COLLECTION2", address: ADDR.MAIN2 },
-      { key: "COLLECTION_REWARDS", label: "COLLECTION_REWARDS", address: ADDR.COLLECTION_REWARDS },
-      { key: "COMMUNITY_CENTER", label: "COMMUNITY_CENTER", address: ADDR.COMMUNITY_CENTER },
+      {
+        key: "COLLECTION_REWARDS",
+        label: "COLLECTION_REWARDS",
+        address: ADDR.COLLECTION_REWARDS,
+      },
+      {
+        key: "COMMUNITY_CENTER",
+        label: "COMMUNITY_CENTER",
+        address: ADDR.COMMUNITY_CENTER,
+      },
       { key: "DISTRIBUTOR", label: "DISTRIBUTOR", address: ADDR.DISTRIBUTOR },
-      { key: "DRIP_DISTRIBUTOR", label: "DRIP_DISTRIBUTOR", address: ADDR.DRIP_DISTRIBUTOR },
-      { key: "DRIP_KEEPER_PROXY", label: "DRIP_KEEPER_PROXY", address: ADDR.DRIP_KEEPER_PROXY },
+      {
+        key: "DRIP_DISTRIBUTOR",
+        label: "DRIP_DISTRIBUTOR",
+        address: ADDR.DRIP_DISTRIBUTOR,
+      },
+      {
+        key: "DRIP_KEEPER_PROXY",
+        label: "DRIP_KEEPER_PROXY",
+        address: ADDR.DRIP_KEEPER_PROXY,
+      },
       { key: "DRIP_LM", label: "DRIP_LM", address: ADDR.DRIP_LM },
       { key: "FACTORY", label: "FACTORY", address: ADDR.FACTORY },
       { key: "KEEPER_ADDR", label: "KEEPER_ADDR", address: ADDR.KEEPER_ADDR },
-      { key: "KEEPER_PROXY", label: "KEEPER_PROXY", address: ADDR.KEEPER_PROXY },
-      { key: "LIQUIDITY_AUTOMATION", label: "LIQUIDITY_AUTOMATION", address: ADDR.LIQUIDITY_AUTOMATION },
-      { key: "LIQUIDITY_MANAGER", label: "LIQUIDITY_MANAGER", address: ADDR.LM },
-      { key: "LIQUIDITY_SETUP", label: "LIQUIDITY_SETUP", address: ADDR.LIQUIDITY_SETUP },
-      { key: "LIQUIDITY_VAULT", label: "LIQUIDITY_VAULT", address: ADDR.LIQUIDITY_VAULT },
-      { key: "MASTER_CONFIG", label: "MASTER_CONFIG", address: ADDR.MASTER_CONFIG },
-      { key: "BUYBACK_AGENT", label: "BUYBACK_AGENT", address: ADDR.BUYBACK_AGENT },
+      {
+        key: "KEEPER_PROXY",
+        label: "KEEPER_PROXY",
+        address: ADDR.KEEPER_PROXY,
+      },
+      {
+        key: "LIQUIDITY_AUTOMATION",
+        label: "LIQUIDITY_AUTOMATION",
+        address: ADDR.LIQUIDITY_AUTOMATION,
+      },
+      {
+        key: "LIQUIDITY_MANAGER",
+        label: "LIQUIDITY_MANAGER",
+        address: ADDR.LM,
+      },
+      {
+        key: "LIQUIDITY_SETUP",
+        label: "LIQUIDITY_SETUP",
+        address: ADDR.LIQUIDITY_SETUP,
+      },
+      {
+        key: "LIQUIDITY_VAULT",
+        label: "LIQUIDITY_VAULT",
+        address: ADDR.LIQUIDITY_VAULT,
+      },
+      {
+        key: "MASTER_CONFIG",
+        label: "MASTER_CONFIG",
+        address: ADDR.MASTER_CONFIG,
+      },
+      {
+        key: "BUYBACK_AGENT",
+        label: "BUYBACK_AGENT",
+        address: ADDR.BUYBACK_AGENT,
+      },
       { key: "NFT_REWARDS", label: "NFT_REWARDS", address: ADDR.NFT_REWARDS },
       { key: "PAIR", label: "PAIR", address: ADDR.PAIR },
       { key: "POLICY", label: "POLICY", address: ADDR.POLICY },
       { key: "RESERVE", label: "RESERVE", address: ADDR.RESERVE },
       { key: "ROUTER", label: "ROUTER", address: ADDR.ROUTER },
-      { key: "TOKENOMIK_READER", label: "TOKENOMIK_READER", address: ADDR.BIGGI_TOKENOMICS_READER },
-      { key: "TOKEN_REWARDS", label: "TOKEN_REWARDS", address: ADDR.TOKEN_REWARDS },
+      {
+        key: "TOKENOMIK_READER",
+        label: "TOKENOMIK_READER",
+        address: ADDR.BIGGI_TOKENOMICS_READER,
+      },
+      {
+        key: "TOKEN_REWARDS",
+        label: "TOKEN_REWARDS",
+        address: ADDR.TOKEN_REWARDS,
+      },
       { key: "TREASURY", label: "TREASURY", address: ADDR.TREASURY },
-      { key: "UPKEEP_PROXY", label: "UPKEEP_PROXY", address: ADDR.UPKEEP_PROXY },
+      {
+        key: "UPKEEP_PROXY",
+        label: "UPKEEP_PROXY",
+        address: ADDR.UPKEEP_PROXY,
+      },
       { key: "WETH", label: "WETH", address: ADDR.WETH },
       { key: "COMPUTE", label: "COMPUTE", address: ADDR.COMPUTE },
-      { key: "BIGGIBUYBACKDRIPSETUP", label: "BIGGIBUYBACKDRIPSETUP", address: ADDR.BIGGIBUYBACKDRIPSETUP },
+      {
+        key: "BIGGIBUYBACKDRIPSETUP",
+        label: "BIGGIBUYBACKDRIPSETUP",
+        address: ADDR.BIGGIBUYBACKDRIPSETUP,
+      },
     ];
     const seen = new Set();
     return items.filter((item) => {
@@ -744,7 +874,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
           } catch (err) {
             return { ...target, status: "error", error: shortErr(err) };
           }
-        })
+        }),
       );
 
       setHealthData({
@@ -768,19 +898,46 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
   const healthTone = (status) => {
     switch (status) {
       case "ok":
-        return { label: "OK", color: "#2dd4bf", border: "rgba(45,212,191,.5)", bg: "rgba(45,212,191,.12)" };
+        return {
+          label: "OK",
+          color: "#2dd4bf",
+          border: "rgba(45,212,191,.5)",
+          bg: "rgba(45,212,191,.12)",
+        };
       case "no-code":
-        return { label: "NO CODE", color: "#ffd166", border: "rgba(255,209,102,.5)", bg: "rgba(255,209,102,.12)" };
+        return {
+          label: "NO CODE",
+          color: "#ffd166",
+          border: "rgba(255,209,102,.5)",
+          bg: "rgba(255,209,102,.12)",
+        };
       case "invalid":
-        return { label: "INVALID", color: "#ff9aa2", border: "rgba(255,154,162,.5)", bg: "rgba(255,154,162,.12)" };
+        return {
+          label: "INVALID",
+          color: "#ff9aa2",
+          border: "rgba(255,154,162,.5)",
+          bg: "rgba(255,154,162,.12)",
+        };
       case "error":
-        return { label: "ERROR", color: "#ff6b6b", border: "rgba(255,107,107,.5)", bg: "rgba(255,107,107,.12)" };
+        return {
+          label: "ERROR",
+          color: "#ff6b6b",
+          border: "rgba(255,107,107,.5)",
+          bg: "rgba(255,107,107,.12)",
+        };
       default:
-        return { label: "UNKNOWN", color: "#cbd5f5", border: "rgba(203,213,245,.5)", bg: "rgba(203,213,245,.12)" };
+        return {
+          label: "UNKNOWN",
+          color: "#cbd5f5",
+          border: "rgba(203,213,245,.5)",
+          bg: "rgba(203,213,245,.12)",
+        };
     }
   };
 
-  const healthContracts = Array.isArray(healthData?.contracts) ? healthData.contracts : [];
+  const healthContracts = Array.isArray(healthData?.contracts)
+    ? healthData.contracts
+    : [];
   const rpcSnapshot = healthData?.rpc || null;
 
   React.useEffect(() => {
@@ -800,7 +957,10 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
     const onKey = (e) => {
       if (e.key === "Escape") onClose?.();
       if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-        run("setVRFParams", () => actions.setVRFParams && actions.setVRFParams({ ...vrf }));
+        run(
+          "setVRFParams",
+          () => actions.setVRFParams && actions.setVRFParams({ ...vrf }),
+        );
       }
     };
     window.addEventListener("keydown", onKey);
@@ -855,7 +1015,9 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
               {pending.refresh ? "Refreshingâ€¦" : "Refresh"}
             </button>
           )}
-          <button style={smallBtn(false)} onClick={onClose} title="Esc">Close</button>
+          <button style={smallBtn(false)} onClick={onClose} title="Esc">
+            Close
+          </button>
         </div>
       </div>
 
@@ -879,7 +1041,14 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
           </div>
         )}
 
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap",
+            marginBottom: 14,
+          }}
+        >
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -899,564 +1068,629 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
               gap: 18,
             }}
           >
-          {/* LEFT: SNAPSHOT */}
-          <section style={card}>
-            <div style={{ ...header, borderBottom: `1px solid ${C.line}` }}>
-              <h3
-                style={{
-                  margin: 0,
-                  color: C.y,
-                  textShadow: "0 0 10px rgba(255,232,0,.35)",
-                }}
-              >
-                On-Chain Snapshot
-              </h3>
-            </div>
-            <div style={{ padding: 12 }}>
-              <KV
-                items={[
-                  { k: "Network", v: data?.networkLabel || "EVM" },
-                  {
-                    k: "Contract",
-                    v: short(data?.contractAddress),
-                    mono: true,
-                    copy: data?.contractAddress,
-                  },
-                  { k: "Paused", v: String(!!data?.paused).toUpperCase() },
-                  { k: "Total Supply", v: data?.totalSupply },
-                  { k: "Max Supply", v: data?.maxSupply },
-                  {
-                    k: "Ticket Price",
-                    v: data?.ticketPrice ? `${data.ticketPrice} POL` : "â€”",
-                  },
-                  {
-                    k: "Rewards Pool",
-                    v: data?.rewardsPool ? `${data.rewardsPool} POL` : "â€”",
-                  },
-                  {
-                    k: "Treasury",
-                    v: short(data?.treasury),
-                    mono: true,
-                    copy: data?.treasury,
-                  },
-                  {
-                    k: "Liquidity Sink",
-                    v: short(data?.liquiditySink),
-                    mono: true,
-                    copy: data?.liquiditySink,
-                  },
+            {/* LEFT: SNAPSHOT */}
+            <section style={card}>
+              <div style={{ ...header, borderBottom: `1px solid ${C.line}` }}>
+                <h3
+                  style={{
+                    margin: 0,
+                    color: C.y,
+                    textShadow: "0 0 10px rgba(255,232,0,.35)",
+                  }}
+                >
+                  On-Chain Snapshot
+                </h3>
+              </div>
+              <div style={{ padding: 12 }}>
+                <KV
+                  items={[
+                    { k: "Network", v: data?.networkLabel || "EVM" },
+                    {
+                      k: "Contract",
+                      v: short(data?.contractAddress),
+                      mono: true,
+                      copy: data?.contractAddress,
+                    },
+                    { k: "Paused", v: String(!!data?.paused).toUpperCase() },
+                    { k: "Total Supply", v: data?.totalSupply },
+                    { k: "Max Supply", v: data?.maxSupply },
+                    {
+                      k: "Ticket Price",
+                      v: data?.ticketPrice ? `${data.ticketPrice} POL` : "â€”",
+                    },
+                    {
+                      k: "Rewards Pool",
+                      v: data?.rewardsPool ? `${data.rewardsPool} POL` : "â€”",
+                    },
+                    {
+                      k: "Treasury",
+                      v: short(data?.treasury),
+                      mono: true,
+                      copy: data?.treasury,
+                    },
+                    {
+                      k: "Liquidity Sink",
+                      v: short(data?.liquiditySink),
+                      mono: true,
+                      copy: data?.liquiditySink,
+                    },
                     {
                       k: "Token (BIGGI)",
                       v: short(data?.token?.address),
                       mono: true,
                       copy: data?.token?.address,
                     },
-                  {
-                    k: "Router",
-                    v: short(data?.dex?.router),
-                    mono: true,
-                    copy: data?.dex?.router,
-                  },
-                  { k: "BaseURI", v: data?.baseURI, mono: true, copy: data?.baseURI },
-                  { k: "VRF KeyHash", v: data?.vrf?.keyHash, mono: true, copy: data?.vrf?.keyHash },
-                  { k: "VRF Conf.", v: data?.vrf?.confirmations },
-                  { k: "VRF NumWords", v: data?.vrf?.numWords },
-                  { k: "VRF GasLimit", v: data?.vrf?.callbackGasLimit },
-                  {
-                    k: "VRF Coordinator",
-                    v: short(data?.vrf?.coordinator),
-                    mono: true,
-                    copy: data?.vrf?.coordinator,
-                  },
-                  { k: "VRF SubID", v: data?.vrf?.subscriptionId, mono: true, copy: data?.vrf?.subscriptionId },
-                ]}
-              />
+                    {
+                      k: "Router",
+                      v: short(data?.dex?.router),
+                      mono: true,
+                      copy: data?.dex?.router,
+                    },
+                    {
+                      k: "BaseURI",
+                      v: data?.baseURI,
+                      mono: true,
+                      copy: data?.baseURI,
+                    },
+                    {
+                      k: "VRF KeyHash",
+                      v: data?.vrf?.keyHash,
+                      mono: true,
+                      copy: data?.vrf?.keyHash,
+                    },
+                    { k: "VRF Conf.", v: data?.vrf?.confirmations },
+                    { k: "VRF NumWords", v: data?.vrf?.numWords },
+                    { k: "VRF GasLimit", v: data?.vrf?.callbackGasLimit },
+                    {
+                      k: "VRF Coordinator",
+                      v: short(data?.vrf?.coordinator),
+                      mono: true,
+                      copy: data?.vrf?.coordinator,
+                    },
+                    {
+                      k: "VRF SubID",
+                      v: data?.vrf?.subscriptionId,
+                      mono: true,
+                      copy: data?.vrf?.subscriptionId,
+                    },
+                  ]}
+                />
 
-              {/* Blocks table â€“ styled like VRF/Biggi tables */}
-              {Array.isArray(data?.blocks) && data.blocks.length > 0 && (
-                <div style={{ marginTop: 12 }}>
-                  <div
-                    style={{
-                      color: C.y,
-                      fontWeight: 900,
-                      marginBottom: 8,
-                    }}
-                  >
-                    Blocks
-                  </div>
-
-                  <div
-                    style={{
-                      padding: 0,
-                      overflowX: "auto",
-                      borderRadius: 14,
-                      border: "1px solid rgba(255,255,255,.08)",
-                      boxShadow:
-                        "inset 0 0 0 1px rgba(255,255,255,.03), 0 10px 28px rgba(0,0,0,.45)",
-                      background:
-                        "linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.2))",
-                    }}
-                  >
+                {/* Blocks table â€“ styled like VRF/Biggi tables */}
+                {Array.isArray(data?.blocks) && data.blocks.length > 0 && (
+                  <div style={{ marginTop: 12 }}>
                     <div
                       style={{
-                        height: 2,
-                        background:
-                          "linear-gradient(90deg, #FF5DA2, #9B7BFF, #27D9D2)",
-                      }}
-                    />
-                    <table
-                      className="admin-blocks-table"
-                      style={{
-                        width: "100%",
-                        borderCollapse: "separate",
-                        borderSpacing: 0,
-                        minWidth: 560,
-                        fontSize: 14,
+                        color: C.y,
+                        fontWeight: 900,
+                        marginBottom: 8,
                       }}
                     >
-                      <thead>
-                        <tr style={{ color: C.text, textAlign: "left" }}>
-                          {["Idx", "Name", "Base", "Current", "Minted"].map(
-                            (h, i, arr) => (
-                              <th
-                                key={h}
-                                style={{
-                                  padding: "12px 14px",
-                                  borderBottom: `1px solid ${C.line}`,
-                                  position: "sticky",
-                                  top: 0,
-                                  zIndex: 1,
-                                  background:
-                                    "linear-gradient(180deg, rgba(255,232,0,.18), rgba(255,232,0,.10))",
-                                  backdropFilter: "blur(4px)",
-                                  color: C.y,
-                                  textShadow: "0 1px 0 rgba(0,0,0,.4)",
-                                  ...(i === 0 ? { borderTopLeftRadius: 14 } : {}),
-                                  ...(i === arr.length - 1 ? { borderTopRightRadius: 14 } : {}),
-                                }}
-                              >
-                                {h}
-                              </th>
-                            )
-                          )}
-                        </tr>
-                      </thead>
-                      <tbody style={{ color: C.text }}>
-                        {data.blocks.map((b, i) => (
-                          <tr
-                            key={i}
-                            style={{
-                              borderBottom: `1px solid ${C.line}`,
-                              background:
-                                i % 2 === 0
-                                  ? "linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.12))"
-                                  : "linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.16))",
-                            }}
-                          >
-                            <td style={{ padding: "10px 14px" }}>{i}</td>
-                            <td style={{ padding: "10px 14px" }}>{b.name}</td>
-                            <td style={{ padding: "10px 14px" }}>
-                              {num(b.basePrice)} POL
-                            </td>
-                            <td style={{ padding: "10px 14px" }}>
-                              {num(b.currentPrice)} POL
-                            </td>
-                            <td style={{ padding: "10px 14px" }}>
-                              {num(b.minted)}
-                            </td>
+                      Blocks
+                    </div>
+
+                    <div
+                      style={{
+                        padding: 0,
+                        overflowX: "auto",
+                        borderRadius: 14,
+                        border: "1px solid rgba(255,255,255,.08)",
+                        boxShadow:
+                          "inset 0 0 0 1px rgba(255,255,255,.03), 0 10px 28px rgba(0,0,0,.45)",
+                        background:
+                          "linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.2))",
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: 2,
+                          background:
+                            "linear-gradient(90deg, #FF5DA2, #9B7BFF, #27D9D2)",
+                        }}
+                      />
+                      <table
+                        className="admin-blocks-table"
+                        style={{
+                          width: "100%",
+                          borderCollapse: "separate",
+                          borderSpacing: 0,
+                          minWidth: 560,
+                          fontSize: 14,
+                        }}
+                      >
+                        <thead>
+                          <tr style={{ color: C.text, textAlign: "left" }}>
+                            {["Idx", "Name", "Base", "Current", "Minted"].map(
+                              (h, i, arr) => (
+                                <th
+                                  key={h}
+                                  style={{
+                                    padding: "12px 14px",
+                                    borderBottom: `1px solid ${C.line}`,
+                                    position: "sticky",
+                                    top: 0,
+                                    zIndex: 1,
+                                    background:
+                                      "linear-gradient(180deg, rgba(255,232,0,.18), rgba(255,232,0,.10))",
+                                    backdropFilter: "blur(4px)",
+                                    color: C.y,
+                                    textShadow: "0 1px 0 rgba(0,0,0,.4)",
+                                    ...(i === 0
+                                      ? { borderTopLeftRadius: 14 }
+                                      : {}),
+                                    ...(i === arr.length - 1
+                                      ? { borderTopRightRadius: 14 }
+                                      : {}),
+                                  }}
+                                >
+                                  {h}
+                                </th>
+                              ),
+                            )}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody style={{ color: C.text }}>
+                          {data.blocks.map((b, i) => (
+                            <tr
+                              key={i}
+                              style={{
+                                borderBottom: `1px solid ${C.line}`,
+                                background:
+                                  i % 2 === 0
+                                    ? "linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.12))"
+                                    : "linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.16))",
+                              }}
+                            >
+                              <td style={{ padding: "10px 14px" }}>{i}</td>
+                              <td style={{ padding: "10px 14px" }}>{b.name}</td>
+                              <td style={{ padding: "10px 14px" }}>
+                                {num(b.basePrice)} POL
+                              </td>
+                              <td style={{ padding: "10px 14px" }}>
+                                {num(b.currentPrice)} POL
+                              </td>
+                              <td style={{ padding: "10px 14px" }}>
+                                {num(b.minted)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <div
+                        style={{
+                          height: 2,
+                          background:
+                            "linear-gradient(90deg, #27D9D2, #9B7BFF, #FF5DA2)",
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* RIGHT: SETTERS */}
+            <section style={card}>
+              <div style={{ ...header, borderBottom: `1px solid ${C.line}` }}>
+                <h3
+                  style={{
+                    margin: 0,
+                    color: C.y,
+                    textShadow: "0 0 10px rgba(255,232,0,.35)",
+                  }}
+                >
+                  Setters
+                </h3>
+              </div>
+
+              <div style={{ padding: 12, display: "grid", gap: 16 }}>
+                {/* Pause/Unpause + BaseURI */}
+                <div style={sectionGrid}>
+                  <div>
+                    <div
+                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
+                    >
+                      Pause
+                    </div>
+                    <div
+                      style={{ display: "flex", gap: 8, alignItems: "center" }}
+                    >
+                      <label
+                        style={{
+                          display: "inline-flex",
+                          gap: 8,
+                          alignItems: "center",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={pauseFlag}
+                          onChange={(e) => setPauseFlag(e.target.checked)}
+                        />
+                        <span>Paused</span>
+                      </label>
+                      <button
+                        style={smallBtn(true)}
+                        disabled={!!pending.setPaused}
+                        onClick={() =>
+                          run(
+                            "setPaused",
+                            () =>
+                              actions.setPaused && actions.setPaused(pauseFlag),
+                          )
+                        }
+                      >
+                        {pending.setPaused ? "Settingâ€¦" : "Set"}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <div
+                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
+                    >
+                      BaseURI
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input
+                        value={baseURI}
+                        onChange={(e) => setBaseURI(e.target.value)}
+                        placeholder="ipfs://CID/"
+                        style={inputStyle()}
+                      />
+                      <button
+                        style={smallBtn(true)}
+                        disabled={!!pending.setBaseURI}
+                        onClick={() =>
+                          run(
+                            "setBaseURI",
+                            () =>
+                              actions.setBaseURI && actions.setBaseURI(baseURI),
+                          )
+                        }
+                      >
+                        {pending.setBaseURI ? "Settingâ€¦" : "Set"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ticket price + Block base price */}
+                <div style={sectionGrid}>
+                  <div>
+                    <div
+                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
+                    >
+                      Ticket Price (POL)
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input
+                        value={ticketPrice}
+                        onChange={(e) => setTicketPrice(e.target.value)}
+                        placeholder="e.g. 500"
+                        style={inputStyle()}
+                      />
+                      <button
+                        style={smallBtn(true)}
+                        disabled={!!pending.setTicketPrice}
+                        onClick={() =>
+                          run(
+                            "setTicketPrice",
+                            () =>
+                              actions.setTicketPrice &&
+                              actions.setTicketPrice(Number(ticketPrice)),
+                          )
+                        }
+                      >
+                        {pending.setTicketPrice ? "Settingâ€¦" : "Set"}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <div
+                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
+                    >
+                      Block Base Price
+                    </div>
                     <div
                       style={{
-                        height: 2,
-                        background:
-                          "linear-gradient(90deg, #27D9D2, #9B7BFF, #FF5DA2)",
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* RIGHT: SETTERS */}
-          <section style={card}>
-            <div style={{ ...header, borderBottom: `1px solid ${C.line}` }}>
-              <h3
-                style={{
-                  margin: 0,
-                  color: C.y,
-                  textShadow: "0 0 10px rgba(255,232,0,.35)",
-                }}
-              >
-                Setters
-              </h3>
-            </div>
-
-            <div style={{ padding: 12, display: "grid", gap: 16 }}>
-              {/* Pause/Unpause + BaseURI */}
-              <div style={sectionGrid}>
-                <div>
-                  <div
-                    style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
-                  >
-                    Pause
-                  </div>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <label
-                      style={{
-                        display: "inline-flex",
+                        display: "grid",
+                        gridTemplateColumns: "80px 1fr auto",
                         gap: 8,
-                        alignItems: "center",
                       }}
                     >
                       <input
-                        type="checkbox"
-                        checked={pauseFlag}
-                        onChange={(e) => setPauseFlag(e.target.checked)}
+                        value={blockIdx}
+                        onChange={(e) => setBlockIdx(e.target.value)}
+                        placeholder="idx"
+                        style={inputStyle()}
                       />
-                      <span>Paused</span>
-                    </label>
-                    <button
-                      style={smallBtn(true)}
-                      disabled={!!pending.setPaused}
-                      onClick={() =>
-                        run("setPaused", () => actions.setPaused && actions.setPaused(pauseFlag))
-                      }
-                    >
-                      {pending.setPaused ? "Settingâ€¦" : "Set"}
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <div
-                    style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
-                  >
-                    BaseURI
-                  </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <input
-                      value={baseURI}
-                      onChange={(e) => setBaseURI(e.target.value)}
-                      placeholder="ipfs://CID/"
-                      style={inputStyle()}
-                    />
-                    <button
-                      style={smallBtn(true)}
-                      disabled={!!pending.setBaseURI}
-                      onClick={() =>
-                        run("setBaseURI", () => actions.setBaseURI && actions.setBaseURI(baseURI))
-                      }
-                    >
-                      {pending.setBaseURI ? "Settingâ€¦" : "Set"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Ticket price + Block base price */}
-              <div style={sectionGrid}>
-                <div>
-                  <div
-                    style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
-                  >
-                    Ticket Price (POL)
-                  </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <input
-                      value={ticketPrice}
-                      onChange={(e) => setTicketPrice(e.target.value)}
-                      placeholder="e.g. 500"
-                      style={inputStyle()}
-                    />
-                    <button
-                      style={smallBtn(true)}
-                      disabled={!!pending.setTicketPrice}
-                      onClick={() =>
-                        run("setTicketPrice", () =>
-                          actions.setTicketPrice && actions.setTicketPrice(Number(ticketPrice))
-                        )
-                      }
-                    >
-                      {pending.setTicketPrice ? "Settingâ€¦" : "Set"}
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <div
-                    style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
-                  >
-                    Block Base Price
-                  </div>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "80px 1fr auto",
-                      gap: 8,
-                    }}
-                  >
-                    <input
-                      value={blockIdx}
-                      onChange={(e) => setBlockIdx(e.target.value)}
-                      placeholder="idx"
-                      style={inputStyle()}
-                    />
-                    <input
-                      value={blockBasePrice}
-                      onChange={(e) => setBlockBasePrice(e.target.value)}
-                      placeholder="price"
-                      style={inputStyle()}
-                    />
-                    <button
-                      style={smallBtn(true)}
-                      disabled={!!pending.setBlockBasePrice}
-                      onClick={() =>
-                        run("setBlockBasePrice", () =>
-                          actions.setBlockBasePrice &&
-                          actions.setBlockBasePrice(Number(blockIdx), Number(blockBasePrice))
-                        )
-                      }
-                    >
-                      {pending.setBlockBasePrice ? "Settingâ€¦" : "Set"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* VRF setup */}
-              <div style={{ borderTop: `1px dashed ${C.line}`, paddingTop: 12 }}>
-                <div
-                  style={{ color: C.dim, fontWeight: 900, marginBottom: 10 }}
-                >
-                  VRF (Ctrl+Enter = Apply)
-                </div>
-                <div style={{ display: "grid", gap: 8 }}>
-                  <Row k="KeyHash">
-                    <input
-                      value={vrf.keyHash}
-                      onChange={(e) =>
-                        setVRF({ ...vrf, keyHash: e.target.value })
-                      }
-                      style={inputStyle(true)}
-                    />
-                  </Row>
-                  <Row k="Confirmations">
-                    <input
-                      type="number"
-                      value={vrf.confirmations}
-                      onChange={(e) =>
-                        setVRF({
-                          ...vrf,
-                          confirmations: Number(e.target.value),
-                        })
-                      }
-                      style={inputStyle()}
-                    />
-                  </Row>
-                  <Row k="NumWords">
-                    <input
-                      type="number"
-                      value={vrf.numWords}
-                      onChange={(e) =>
-                        setVRF({ ...vrf, numWords: Number(e.target.value) })
-                      }
-                      style={inputStyle()}
-                    />
-                  </Row>
-                  <Row k="Callback Gas">
-                    <input
-                      type="number"
-                      value={vrf.callbackGasLimit}
-                      onChange={(e) =>
-                        setVRF({
-                          ...vrf,
-                          callbackGasLimit: Number(e.target.value),
-                        })
-                      }
-                      style={inputStyle()}
-                    />
-                  </Row>
-                  <Row k="Coordinator">
-                    <input
-                      value={vrf.coordinator}
-                      onChange={(e) =>
-                        setVRF({ ...vrf, coordinator: e.target.value })
-                      }
-                      style={inputStyle(true)}
-                    />
-                  </Row>
-                  <Row k="Subscription Id">
-                    <input
-                      value={vrf.subscriptionId}
-                      onChange={(e) =>
-                        setVRF({
-                          ...vrf,
-                          subscriptionId: e.target.value,
-                        })
-                      }
-                      style={inputStyle()}
-                    />
-                  </Row>
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <button
-                      style={smallBtn(true)}
-                      disabled={!!pending.setVRFParams}
-                      onClick={() =>
-                        run("setVRFParams", () =>
-                          actions.setVRFParams && actions.setVRFParams({ ...vrf })
-                        )
-                      }
-                      title="Apply VRF params"
-                    >
-                      {pending.setVRFParams ? "Applyingâ€¦" : "Apply VRF"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Addresses */}
-              <div style={{ borderTop: `1px dashed ${C.line}`, paddingTop: 12 }}>
-                <div
-                  style={{ color: C.dim, fontWeight: 900, marginBottom: 10 }}
-                >
-                  Addresses
-                </div>
-                <div style={{ display: "grid", gap: 8 }}>
-                  <Row k="Treasury">
-                    <div style={{ display: "flex", gap: 8 }}>
                       <input
-                        value={treasury}
-                        onChange={(e) => setTreasury(e.target.value)}
-                        style={inputStyle(true)}
+                        value={blockBasePrice}
+                        onChange={(e) => setBlockBasePrice(e.target.value)}
+                        placeholder="price"
+                        style={inputStyle()}
                       />
                       <button
                         style={smallBtn(true)}
-                        disabled={!!pending.setTreasury}
+                        disabled={!!pending.setBlockBasePrice}
                         onClick={() =>
-                          run("setTreasury", () =>
-                            actions.setTreasury && actions.setTreasury(treasury)
+                          run(
+                            "setBlockBasePrice",
+                            () =>
+                              actions.setBlockBasePrice &&
+                              actions.setBlockBasePrice(
+                                Number(blockIdx),
+                                Number(blockBasePrice),
+                              ),
                           )
                         }
                       >
-                        {pending.setTreasury ? "Savingâ€¦" : "Set"}
+                        {pending.setBlockBasePrice ? "Settingâ€¦" : "Set"}
                       </button>
                     </div>
-                  </Row>
-                  <Row k="Liquidity Sink">
-                    <div style={{ display: "flex", gap: 8 }}>
+                  </div>
+                </div>
+
+                {/* VRF setup */}
+                <div
+                  style={{ borderTop: `1px dashed ${C.line}`, paddingTop: 12 }}
+                >
+                  <div
+                    style={{ color: C.dim, fontWeight: 900, marginBottom: 10 }}
+                  >
+                    VRF (Ctrl+Enter = Apply)
+                  </div>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <Row k="KeyHash">
                       <input
-                        value={liquiditySink}
-                        onChange={(e) => setLiquiditySink(e.target.value)}
+                        value={vrf.keyHash}
+                        onChange={(e) =>
+                          setVRF({ ...vrf, keyHash: e.target.value })
+                        }
                         style={inputStyle(true)}
                       />
+                    </Row>
+                    <Row k="Confirmations">
+                      <input
+                        type="number"
+                        value={vrf.confirmations}
+                        onChange={(e) =>
+                          setVRF({
+                            ...vrf,
+                            confirmations: Number(e.target.value),
+                          })
+                        }
+                        style={inputStyle()}
+                      />
+                    </Row>
+                    <Row k="NumWords">
+                      <input
+                        type="number"
+                        value={vrf.numWords}
+                        onChange={(e) =>
+                          setVRF({ ...vrf, numWords: Number(e.target.value) })
+                        }
+                        style={inputStyle()}
+                      />
+                    </Row>
+                    <Row k="Callback Gas">
+                      <input
+                        type="number"
+                        value={vrf.callbackGasLimit}
+                        onChange={(e) =>
+                          setVRF({
+                            ...vrf,
+                            callbackGasLimit: Number(e.target.value),
+                          })
+                        }
+                        style={inputStyle()}
+                      />
+                    </Row>
+                    <Row k="Coordinator">
+                      <input
+                        value={vrf.coordinator}
+                        onChange={(e) =>
+                          setVRF({ ...vrf, coordinator: e.target.value })
+                        }
+                        style={inputStyle(true)}
+                      />
+                    </Row>
+                    <Row k="Subscription Id">
+                      <input
+                        value={vrf.subscriptionId}
+                        onChange={(e) =>
+                          setVRF({
+                            ...vrf,
+                            subscriptionId: e.target.value,
+                          })
+                        }
+                        style={inputStyle()}
+                      />
+                    </Row>
+                    <div
+                      style={{ display: "flex", justifyContent: "flex-end" }}
+                    >
                       <button
                         style={smallBtn(true)}
-                        disabled={!!pending.setLiquiditySink}
+                        disabled={!!pending.setVRFParams}
                         onClick={() =>
-                          run("setLiquiditySink", () =>
-                            actions.setLiquiditySink &&
-                            actions.setLiquiditySink(liquiditySink)
+                          run(
+                            "setVRFParams",
+                            () =>
+                              actions.setVRFParams &&
+                              actions.setVRFParams({ ...vrf }),
                           )
                         }
+                        title="Apply VRF params"
                       >
-                        {pending.setLiquiditySink ? "Savingâ€¦" : "Set"}
+                        {pending.setVRFParams ? "Applyingâ€¦" : "Apply VRF"}
                       </button>
                     </div>
-                  </Row>
+                  </div>
+                </div>
+
+                {/* Addresses */}
+                <div
+                  style={{ borderTop: `1px dashed ${C.line}`, paddingTop: 12 }}
+                >
+                  <div
+                    style={{ color: C.dim, fontWeight: 900, marginBottom: 10 }}
+                  >
+                    Addresses
+                  </div>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <Row k="Treasury">
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <input
+                          value={treasury}
+                          onChange={(e) => setTreasury(e.target.value)}
+                          style={inputStyle(true)}
+                        />
+                        <button
+                          style={smallBtn(true)}
+                          disabled={!!pending.setTreasury}
+                          onClick={() =>
+                            run(
+                              "setTreasury",
+                              () =>
+                                actions.setTreasury &&
+                                actions.setTreasury(treasury),
+                            )
+                          }
+                        >
+                          {pending.setTreasury ? "Savingâ€¦" : "Set"}
+                        </button>
+                      </div>
+                    </Row>
+                    <Row k="Liquidity Sink">
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <input
+                          value={liquiditySink}
+                          onChange={(e) => setLiquiditySink(e.target.value)}
+                          style={inputStyle(true)}
+                        />
+                        <button
+                          style={smallBtn(true)}
+                          disabled={!!pending.setLiquiditySink}
+                          onClick={() =>
+                            run(
+                              "setLiquiditySink",
+                              () =>
+                                actions.setLiquiditySink &&
+                                actions.setLiquiditySink(liquiditySink),
+                            )
+                          }
+                        >
+                          {pending.setLiquiditySink ? "Savingâ€¦" : "Set"}
+                        </button>
+                      </div>
+                    </Row>
                     <Row k="BIGGI ECOSYSTEM">
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <input
-                        value={tokenAddress}
-                        onChange={(e) => setTokenAddress(e.target.value)}
-                        style={inputStyle(true)}
-                      />
-                      <button
-                        style={smallBtn(true)}
-                        disabled={!!pending.setTokenAddress}
-                        onClick={() =>
-                          run("setTokenAddress", () =>
-                            actions.setTokenAddress &&
-                            actions.setTokenAddress(tokenAddress)
-                          )
-                        }
-                      >
-                        {pending.setTokenAddress ? "Savingâ€¦" : "Set"}
-                      </button>
-                    </div>
-                  </Row>
-                  <Row k="DEX Router">
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <input
-                        value={routerAddress}
-                        onChange={(e) => setRouterAddress(e.target.value)}
-                        style={inputStyle(true)}
-                      />
-                      <button
-                        style={smallBtn(true)}
-                        disabled={!!pending.setRouter}
-                        onClick={() =>
-                          run("setRouter", () =>
-                            actions.setRouter && actions.setRouter(routerAddress)
-                          )
-                        }
-                      >
-                        {pending.setRouter ? "Savingâ€¦" : "Set"}
-                      </button>
-                    </div>
-                  </Row>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <input
+                          value={tokenAddress}
+                          onChange={(e) => setTokenAddress(e.target.value)}
+                          style={inputStyle(true)}
+                        />
+                        <button
+                          style={smallBtn(true)}
+                          disabled={!!pending.setTokenAddress}
+                          onClick={() =>
+                            run(
+                              "setTokenAddress",
+                              () =>
+                                actions.setTokenAddress &&
+                                actions.setTokenAddress(tokenAddress),
+                            )
+                          }
+                        >
+                          {pending.setTokenAddress ? "Savingâ€¦" : "Set"}
+                        </button>
+                      </div>
+                    </Row>
+                    <Row k="DEX Router">
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <input
+                          value={routerAddress}
+                          onChange={(e) => setRouterAddress(e.target.value)}
+                          style={inputStyle(true)}
+                        />
+                        <button
+                          style={smallBtn(true)}
+                          disabled={!!pending.setRouter}
+                          onClick={() =>
+                            run(
+                              "setRouter",
+                              () =>
+                                actions.setRouter &&
+                                actions.setRouter(routerAddress),
+                            )
+                          }
+                        >
+                          {pending.setRouter ? "Savingâ€¦" : "Set"}
+                        </button>
+                      </div>
+                    </Row>
+                  </div>
                 </div>
-              </div>
 
-              {/* Finance ops */}
-              <div style={{ borderTop: `1px dashed ${C.line}`, paddingTop: 12 }}>
+                {/* Finance ops */}
                 <div
-                  style={{ color: C.dim, fontWeight: 900, marginBottom: 10 }}
+                  style={{ borderTop: `1px dashed ${C.line}`, paddingTop: 12 }}
                 >
-                  Finance
-                </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <button
-                    style={smallBtn(true)}
-                    disabled={!!pending.withdrawNative}
-                    onClick={() =>
-                      run("withdrawNative", () =>
-                        actions.withdrawNative && actions.withdrawNative()
-                      )
-                    }
+                  <div
+                    style={{ color: C.dim, fontWeight: 900, marginBottom: 10 }}
                   >
-                    {pending.withdrawNative ? "Withdrawingâ€¦" : "Withdraw Native"}
-                  </button>
-                  <button
-                    style={smallBtn(true)}
-                    disabled={!!pending.withdrawToken}
-                    onClick={() =>
-                      run("withdrawToken", () =>
-                        actions.withdrawToken && actions.withdrawToken()
-                      )
-                    }
-                  >
-                    {pending.withdrawToken ? "Withdrawingâ€¦" : "Withdraw BIGGI"}
-                  </button>
-                  <button
-                    style={smallBtn(true)}
-                    disabled={!!pending.sweepDust}
-                    onClick={() =>
-                      run("sweepDust", () =>
-                        actions.sweepDust && actions.sweepDust()
-                      )
-                    }
-                  >
-                    {pending.sweepDust ? "Sweepingâ€¦" : "Sweep Dust"}
-                  </button>
+                    Finance
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <button
+                      style={smallBtn(true)}
+                      disabled={!!pending.withdrawNative}
+                      onClick={() =>
+                        run(
+                          "withdrawNative",
+                          () =>
+                            actions.withdrawNative && actions.withdrawNative(),
+                        )
+                      }
+                    >
+                      {pending.withdrawNative
+                        ? "Withdrawingâ€¦"
+                        : "Withdraw Native"}
+                    </button>
+                    <button
+                      style={smallBtn(true)}
+                      disabled={!!pending.withdrawToken}
+                      onClick={() =>
+                        run(
+                          "withdrawToken",
+                          () =>
+                            actions.withdrawToken && actions.withdrawToken(),
+                        )
+                      }
+                    >
+                      {pending.withdrawToken
+                        ? "Withdrawingâ€¦"
+                        : "Withdraw BIGGI"}
+                    </button>
+                    <button
+                      style={smallBtn(true)}
+                      disabled={!!pending.sweepDust}
+                      onClick={() =>
+                        run(
+                          "sweepDust",
+                          () => actions.sweepDust && actions.sweepDust(),
+                        )
+                      }
+                    >
+                      {pending.sweepDust ? "Sweepingâ€¦" : "Sweep Dust"}
+                    </button>
+                  </div>
                 </div>
               </div>
-
-
-            </div>
-          </section>
-        </div>
+            </section>
+          </div>
         )}
 
         {activeTab === "liquidity" && (
@@ -1474,12 +1708,16 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                 </h3>
               </div>
               <div style={{ padding: 12, display: "grid", gap: 16 }}>
-                <div style={{ color: C.dim, fontWeight: 900, marginBottom: 10 }}>
+                <div
+                  style={{ color: C.dim, fontWeight: 900, marginBottom: 10 }}
+                >
                   Liquidity Settings
                 </div>
                 <div style={sectionGrid}>
                   <div>
-                    <div style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}>
+                    <div
+                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
+                    >
                       Liquidity Recipient
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
@@ -1493,9 +1731,11 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                         style={smallBtn(true)}
                         disabled={!!pending.liq_setRecipient}
                         onClick={() =>
-                          run("liq_setRecipient", () =>
-                            actions.liq_setLiquidityRecipient &&
-                            actions.liq_setLiquidityRecipient(liqRecipient)
+                          run(
+                            "liq_setRecipient",
+                            () =>
+                              actions.liq_setLiquidityRecipient &&
+                              actions.liq_setLiquidityRecipient(liqRecipient),
                           )
                         }
                       >
@@ -1505,7 +1745,9 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   </div>
 
                   <div>
-                    <div style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}>
+                    <div
+                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
+                    >
                       LP Use Balance (bps)
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
@@ -1519,9 +1761,11 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                         style={smallBtn(true)}
                         disabled={!!pending.liq_setLpUseBps}
                         onClick={() =>
-                          run("liq_setLpUseBps", () =>
-                            actions.liq_setLpUseBalanceBps &&
-                            actions.liq_setLpUseBalanceBps(Number(lpUseBps))
+                          run(
+                            "liq_setLpUseBps",
+                            () =>
+                              actions.liq_setLpUseBalanceBps &&
+                              actions.liq_setLpUseBalanceBps(Number(lpUseBps)),
                           )
                         }
                       >
@@ -1531,7 +1775,9 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   </div>
 
                   <div>
-                    <div style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}>
+                    <div
+                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
+                    >
                       Swap Slippage (bps)
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
@@ -1545,9 +1791,11 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                         style={smallBtn(true)}
                         disabled={!!pending.liq_setSwapSlip}
                         onClick={() =>
-                          run("liq_setSwapSlip", () =>
-                            actions.liq_setSwapSlippageBps &&
-                            actions.liq_setSwapSlippageBps(Number(swapSlip))
+                          run(
+                            "liq_setSwapSlip",
+                            () =>
+                              actions.liq_setSwapSlippageBps &&
+                              actions.liq_setSwapSlippageBps(Number(swapSlip)),
                           )
                         }
                       >
@@ -1557,7 +1805,9 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   </div>
 
                   <div>
-                    <div style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}>
+                    <div
+                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
+                    >
                       LP Add Slippage (bps)
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
@@ -1571,9 +1821,11 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                         style={smallBtn(true)}
                         disabled={!!pending.liq_setLpSlip}
                         onClick={() =>
-                          run("liq_setLpSlip", () =>
-                            actions.liq_setLpAddSlippageBps &&
-                            actions.liq_setLpAddSlippageBps(Number(lpSlip))
+                          run(
+                            "liq_setLpSlip",
+                            () =>
+                              actions.liq_setLpAddSlippageBps &&
+                              actions.liq_setLpAddSlippageBps(Number(lpSlip)),
                           )
                         }
                       >
@@ -1583,7 +1835,9 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   </div>
 
                   <div>
-                    <div style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}>
+                    <div
+                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
+                    >
                       Tx Deadline (sec)
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
@@ -1597,9 +1851,11 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                         style={smallBtn(true)}
                         disabled={!!pending.liq_setDeadline}
                         onClick={() =>
-                          run("liq_setDeadline", () =>
-                            actions.liq_setTxDeadline &&
-                            actions.liq_setTxDeadline(Number(txDeadline))
+                          run(
+                            "liq_setDeadline",
+                            () =>
+                              actions.liq_setTxDeadline &&
+                              actions.liq_setTxDeadline(Number(txDeadline)),
                           )
                         }
                       >
@@ -1609,7 +1865,9 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   </div>
 
                   <div style={{ gridColumn: "1 / -1" }}>
-                    <div style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}>
+                    <div
+                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
+                    >
                       Swap Path (comma separated)
                     </div>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -1628,7 +1886,10 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                               .split(",")
                               .map((s) => s.trim())
                               .filter(Boolean);
-                            return actions.liq_setSwapPath && actions.liq_setSwapPath(arr);
+                            return (
+                              actions.liq_setSwapPath &&
+                              actions.liq_setSwapPath(arr)
+                            );
                           })
                         }
                       >
@@ -1638,24 +1899,51 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                         style={smallBtn(false)}
                         disabled={!!pending.liq_clearSwapPath}
                         onClick={() =>
-                          run("liq_clearSwapPath", () =>
-                            actions.liq_clearSwapPath && actions.liq_clearSwapPath()
+                          run(
+                            "liq_clearSwapPath",
+                            () =>
+                              actions.liq_clearSwapPath &&
+                              actions.liq_clearSwapPath(),
                           )
                         }
                       >
-                        {pending.liq_clearSwapPath ? "Clearing..." : "Clear Path"}
+                        {pending.liq_clearSwapPath
+                          ? "Clearing..."
+                          : "Clear Path"}
                       </button>
                     </div>
                   </div>
                 </div>
 
-                <div style={{ color: C.dim, fontWeight: 900, margin: "14px 0 6px" }}>
+                <div
+                  style={{
+                    color: C.dim,
+                    fontWeight: 900,
+                    margin: "14px 0 6px",
+                  }}
+                >
                   Liquidity Actions
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 12,
+                  }}
+                >
                   <div>
-                    <div style={{ marginBottom: 6, color: C.dim, fontWeight: 800 }}>Buyback to Treasury</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 8 }}>
+                    <div
+                      style={{ marginBottom: 6, color: C.dim, fontWeight: 800 }}
+                    >
+                      Buyback to Treasury
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr auto",
+                        gap: 8,
+                      }}
+                    >
                       <input
                         value={nativeAmt}
                         onChange={(e) => setNativeAmt(e.target.value)}
@@ -1672,9 +1960,11 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                         style={smallBtn(true)}
                         disabled={!!pending.liq_buyback}
                         onClick={() =>
-                          run("liq_buyback", () =>
-                            actions.liq_buybackToTreasury &&
-                            actions.liq_buybackToTreasury(nativeAmt, minOut)
+                          run(
+                            "liq_buyback",
+                            () =>
+                              actions.liq_buybackToTreasury &&
+                              actions.liq_buybackToTreasury(nativeAmt, minOut),
                           )
                         }
                       >
@@ -1686,9 +1976,11 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                         style={smallBtn(true)}
                         disabled={!!pending.liq_buybackAll}
                         onClick={() =>
-                          run("liq_buybackAll", () =>
-                            actions.liq_buybackAllToTreasury &&
-                            actions.liq_buybackAllToTreasury(minOut)
+                          run(
+                            "liq_buybackAll",
+                            () =>
+                              actions.liq_buybackAllToTreasury &&
+                              actions.liq_buybackAllToTreasury(minOut),
                           )
                         }
                       >
@@ -1698,8 +1990,18 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   </div>
 
                   <div>
-                    <div style={{ marginBottom: 6, color: C.dim, fontWeight: 800 }}>Add Liquidity (from balances)</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 8 }}>
+                    <div
+                      style={{ marginBottom: 6, color: C.dim, fontWeight: 800 }}
+                    >
+                      Add Liquidity (from balances)
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr auto",
+                        gap: 8,
+                      }}
+                    >
                       <input
                         value={biggiAmt}
                         onChange={(e) => setBiggiAmt(e.target.value)}
@@ -1716,9 +2018,14 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                         style={smallBtn(true)}
                         disabled={!!pending.liq_addLp}
                         onClick={() =>
-                          run("liq_addLp", () =>
-                            actions.liq_addLiquidityFromBalances &&
-                            actions.liq_addLiquidityFromBalances(biggiAmt, nativeAmt)
+                          run(
+                            "liq_addLp",
+                            () =>
+                              actions.liq_addLiquidityFromBalances &&
+                              actions.liq_addLiquidityFromBalances(
+                                biggiAmt,
+                                nativeAmt,
+                              ),
                           )
                         }
                       >
@@ -1728,8 +2035,18 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   </div>
 
                   <div>
-                    <div style={{ marginBottom: 6, color: C.dim, fontWeight: 800 }}>Bootstrap Liquidity</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 8 }}>
+                    <div
+                      style={{ marginBottom: 6, color: C.dim, fontWeight: 800 }}
+                    >
+                      Bootstrap Liquidity
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr auto",
+                        gap: 8,
+                      }}
+                    >
                       <input
                         value={bootToken}
                         onChange={(e) => setBootToken(e.target.value)}
@@ -1746,20 +2063,37 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                         style={smallBtn(true)}
                         disabled={!!pending.liq_bootstrap}
                         onClick={() =>
-                          run("liq_bootstrap", () =>
-                            actions.liq_bootstrapLiquidity &&
-                            actions.liq_bootstrapLiquidity(bootToken, bootEth)
+                          run(
+                            "liq_bootstrap",
+                            () =>
+                              actions.liq_bootstrapLiquidity &&
+                              actions.liq_bootstrapLiquidity(
+                                bootToken,
+                                bootEth,
+                              ),
                           )
                         }
                       >
-                        {pending.liq_bootstrap ? "Bootstrapping..." : "Bootstrap"}
+                        {pending.liq_bootstrap
+                          ? "Bootstrapping..."
+                          : "Bootstrap"}
                       </button>
                     </div>
                   </div>
 
                   <div>
-                    <div style={{ marginBottom: 6, color: C.dim, fontWeight: 800 }}>Route BIGGI to Treasury</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
+                    <div
+                      style={{ marginBottom: 6, color: C.dim, fontWeight: 800 }}
+                    >
+                      Route BIGGI to Treasury
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr auto",
+                        gap: 8,
+                      }}
+                    >
                       <input
                         value={routeBiggiAmt}
                         onChange={(e) => setRouteBiggiAmt(e.target.value)}
@@ -1770,9 +2104,11 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                         style={smallBtn(true)}
                         disabled={!!pending.liq_route}
                         onClick={() =>
-                          run("liq_route", () =>
-                            actions.liq_routeBiggiToTreasury &&
-                            actions.liq_routeBiggiToTreasury(routeBiggiAmt)
+                          run(
+                            "liq_route",
+                            () =>
+                              actions.liq_routeBiggiToTreasury &&
+                              actions.liq_routeBiggiToTreasury(routeBiggiAmt),
                           )
                         }
                       >
@@ -1801,10 +2137,18 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                 </h3>
               </div>
               <div style={{ padding: 12, display: "grid", gap: 16 }}>
-                <div style={{ color: C.dim, fontWeight: 900, marginBottom: 10 }}>
+                <div
+                  style={{ color: C.dim, fontWeight: 900, marginBottom: 10 }}
+                >
                   Policy Splits
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr) auto", gap: 8 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3, 1fr) auto",
+                    gap: 8,
+                  }}
+                >
                   <input
                     value={alphaBuyback}
                     onChange={(e) => setAlphaBuyback(e.target.value)}
@@ -1827,13 +2171,15 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     style={smallBtn(true)}
                     disabled={!!pending.pol_setSplits}
                     onClick={() =>
-                      run("pol_setSplits", () =>
-                        actions.pol_setSplits &&
-                        actions.pol_setSplits(
-                          Number(alphaBuyback),
-                          Number(betaBurn),
-                          Number(gammaStaking)
-                        )
+                      run(
+                        "pol_setSplits",
+                        () =>
+                          actions.pol_setSplits &&
+                          actions.pol_setSplits(
+                            Number(alphaBuyback),
+                            Number(betaBurn),
+                            Number(gammaStaking),
+                          ),
                       )
                     }
                   >
@@ -1841,32 +2187,81 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   </button>
                 </div>
 
-                <div style={{ color: C.dim, fontWeight: 900, margin: "14px 0 10px" }}>
+                <div
+                  style={{
+                    color: C.dim,
+                    fontWeight: 900,
+                    margin: "14px 0 10px",
+                  }}
+                >
                   Policy Guards
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr) auto", gap: 8 }}>
-                  <input value={gSwapSlip} onChange={(e) => setGSwapSlip(e.target.value)} style={inputStyle()} placeholder="swapSlip bps" />
-                  <input value={gLpSlip} onChange={(e) => setGLpSlip(e.target.value)} style={inputStyle()} placeholder="lpSlip bps" />
-                  <input value={gDeadline} onChange={(e) => setGDeadline(e.target.value)} style={inputStyle()} placeholder="deadline s" />
-                  <input value={gCooldown} onChange={(e) => setGCooldown(e.target.value)} style={inputStyle()} placeholder="cooldown s" />
-                  <input value={gEpsBand} onChange={(e) => setGEpsBand(e.target.value)} style={inputStyle()} placeholder="epsBand bps" />
-                  <input value={gTwapWindow} onChange={(e) => setGTwapWindow(e.target.value)} style={inputStyle()} placeholder="twapWindow s" />
-                  <input value={gDailyCap} onChange={(e) => setGDailyCap(e.target.value)} style={inputStyle()} placeholder="dailyCap native" />
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(7, 1fr) auto",
+                    gap: 8,
+                  }}
+                >
+                  <input
+                    value={gSwapSlip}
+                    onChange={(e) => setGSwapSlip(e.target.value)}
+                    style={inputStyle()}
+                    placeholder="swapSlip bps"
+                  />
+                  <input
+                    value={gLpSlip}
+                    onChange={(e) => setGLpSlip(e.target.value)}
+                    style={inputStyle()}
+                    placeholder="lpSlip bps"
+                  />
+                  <input
+                    value={gDeadline}
+                    onChange={(e) => setGDeadline(e.target.value)}
+                    style={inputStyle()}
+                    placeholder="deadline s"
+                  />
+                  <input
+                    value={gCooldown}
+                    onChange={(e) => setGCooldown(e.target.value)}
+                    style={inputStyle()}
+                    placeholder="cooldown s"
+                  />
+                  <input
+                    value={gEpsBand}
+                    onChange={(e) => setGEpsBand(e.target.value)}
+                    style={inputStyle()}
+                    placeholder="epsBand bps"
+                  />
+                  <input
+                    value={gTwapWindow}
+                    onChange={(e) => setGTwapWindow(e.target.value)}
+                    style={inputStyle()}
+                    placeholder="twapWindow s"
+                  />
+                  <input
+                    value={gDailyCap}
+                    onChange={(e) => setGDailyCap(e.target.value)}
+                    style={inputStyle()}
+                    placeholder="dailyCap native"
+                  />
                   <button
                     style={smallBtn(true)}
                     disabled={!!pending.pol_setGuards}
                     onClick={() =>
-                      run("pol_setGuards", () =>
-                        actions.pol_setGuards &&
-                        actions.pol_setGuards({
-                          swapSlip: Number(gSwapSlip),
-                          lpSlip: Number(gLpSlip),
-                          deadlineSec: Number(gDeadline),
-                          cooldownSec: Number(gCooldown),
-                          epsBandBps: Number(gEpsBand),
-                          twapWindowSec: Number(gTwapWindow),
-                          dailyCapNative: gDailyCap,
-                        })
+                      run(
+                        "pol_setGuards",
+                        () =>
+                          actions.pol_setGuards &&
+                          actions.pol_setGuards({
+                            swapSlip: Number(gSwapSlip),
+                            lpSlip: Number(gLpSlip),
+                            deadlineSec: Number(gDeadline),
+                            cooldownSec: Number(gCooldown),
+                            epsBandBps: Number(gEpsBand),
+                            twapWindowSec: Number(gTwapWindow),
+                            dailyCapNative: gDailyCap,
+                          }),
                       )
                     }
                   >
@@ -1874,34 +2269,93 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   </button>
                 </div>
 
-                <div style={{ color: C.dim, fontWeight: 900, margin: "14px 0 10px" }}>
+                <div
+                  style={{
+                    color: C.dim,
+                    fontWeight: 900,
+                    margin: "14px 0 10px",
+                  }}
+                >
                   Policy Pauses
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr) auto", gap: 8, alignItems: "center" }}>
-                  <label style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                    <input type="checkbox" checked={pauseBuybacks} onChange={(e) => setPauseBuybacks(e.target.checked)} /> Buybacks
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(4, 1fr) auto",
+                    gap: 8,
+                    alignItems: "center",
+                  }}
+                >
+                  <label
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={pauseBuybacks}
+                      onChange={(e) => setPauseBuybacks(e.target.checked)}
+                    />{" "}
+                    Buybacks
                   </label>
-                  <label style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                    <input type="checkbox" checked={pauseRefills} onChange={(e) => setPauseRefills(e.target.checked)} /> Refills
+                  <label
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={pauseRefills}
+                      onChange={(e) => setPauseRefills(e.target.checked)}
+                    />{" "}
+                    Refills
                   </label>
-                  <label style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                    <input type="checkbox" checked={pauseLpAdds} onChange={(e) => setPauseLpAdds(e.target.checked)} /> LP Adds
+                  <label
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={pauseLpAdds}
+                      onChange={(e) => setPauseLpAdds(e.target.checked)}
+                    />{" "}
+                    LP Adds
                   </label>
-                  <label style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                    <input type="checkbox" checked={pauseEoc} onChange={(e) => setPauseEoc(e.target.checked)} /> End Of Collection
+                  <label
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={pauseEoc}
+                      onChange={(e) => setPauseEoc(e.target.checked)}
+                    />{" "}
+                    End Of Collection
                   </label>
                   <button
                     style={smallBtn(true)}
                     disabled={!!pending.pol_setPauses}
                     onClick={() =>
-                      run("pol_setPauses", () =>
-                        actions.pol_setPauses &&
-                        actions.pol_setPauses({
-                          buybacks: pauseBuybacks,
-                          refills: pauseRefills,
-                          lpAdds: pauseLpAdds,
-                          eoc: pauseEoc,
-                        })
+                      run(
+                        "pol_setPauses",
+                        () =>
+                          actions.pol_setPauses &&
+                          actions.pol_setPauses({
+                            buybacks: pauseBuybacks,
+                            refills: pauseRefills,
+                            lpAdds: pauseLpAdds,
+                            eoc: pauseEoc,
+                          }),
                       )
                     }
                   >
@@ -1909,21 +2363,52 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   </button>
                 </div>
 
-                <div style={{ color: C.dim, fontWeight: 900, margin: "14px 0 10px" }}>
+                <div
+                  style={{
+                    color: C.dim,
+                    fontWeight: 900,
+                    margin: "14px 0 10px",
+                  }}
+                >
                   Policy Operators & Daily
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1.4fr 0.6fr auto", gap: 8, alignItems: "center" }}>
-                  <input value={opAddress} onChange={(e) => setOpAddress(e.target.value)} style={inputStyle(true)} placeholder="Operator address" />
-                  <label style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                    <input type="checkbox" checked={opAllowed} onChange={(e) => setOpAllowed(e.target.checked)} /> Allowed
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1.4fr 0.6fr auto",
+                    gap: 8,
+                    alignItems: "center",
+                  }}
+                >
+                  <input
+                    value={opAddress}
+                    onChange={(e) => setOpAddress(e.target.value)}
+                    style={inputStyle(true)}
+                    placeholder="Operator address"
+                  />
+                  <label
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={opAllowed}
+                      onChange={(e) => setOpAllowed(e.target.checked)}
+                    />{" "}
+                    Allowed
                   </label>
                   <button
                     style={smallBtn(true)}
                     disabled={!!pending.pol_setOperator}
                     onClick={() =>
-                      run("pol_setOperator", () =>
-                        actions.pol_setOperator &&
-                        actions.pol_setOperator(opAddress, !!opAllowed)
+                      run(
+                        "pol_setOperator",
+                        () =>
+                          actions.pol_setOperator &&
+                          actions.pol_setOperator(opAddress, !!opAllowed),
                       )
                     }
                   >
@@ -1931,7 +2416,14 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   </button>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 8, marginTop: 8 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr auto auto",
+                    gap: 8,
+                    marginTop: 8,
+                  }}
+                >
                   <input
                     value={dailyConsumeAmt}
                     onChange={(e) => setDailyConsumeAmt(e.target.value)}
@@ -1942,9 +2434,11 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     style={smallBtn(false)}
                     disabled={!!pending.pol_consumeDaily}
                     onClick={() =>
-                      run("pol_consumeDaily", () =>
-                        actions.pol_consumeDaily &&
-                        actions.pol_consumeDaily(dailyConsumeAmt)
+                      run(
+                        "pol_consumeDaily",
+                        () =>
+                          actions.pol_consumeDaily &&
+                          actions.pol_consumeDaily(dailyConsumeAmt),
                       )
                     }
                   >
@@ -1954,8 +2448,11 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     style={smallBtn(true)}
                     disabled={!!pending.pol_resetDaily}
                     onClick={() =>
-                      run("pol_resetDaily", () =>
-                        actions.pol_resetDailyCounter && actions.pol_resetDailyCounter()
+                      run(
+                        "pol_resetDaily",
+                        () =>
+                          actions.pol_resetDailyCounter &&
+                          actions.pol_resetDailyCounter(),
                       )
                     }
                   >
@@ -1970,268 +2467,393 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
         {activeTab === "community" && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18 }}>
             <section style={{ ...card }}>
-            <div style={{ ...header, borderBottom: `1px solid ${C.line}` }}>
-              <h3
-                style={{
-                  margin: 0,
-                  color: C.y,
-                  textShadow: "0 0 10px rgba(255,232,0,.35)",
-                }}
-              >
-                Community Center Events
-              </h3>
-            </div>
-            <div style={{ padding: 12, display: "grid", gap: 12 }}>
-              <p style={{ margin: 0, color: C.dim }}>
-                Create or update on-chain event metadata - the fields map to the Community Center panel cards. Timestamps are unix seconds, deposit is in POL.
-              </p>
-              {!communityAvailable && (
-                <div
+              <div style={{ ...header, borderBottom: `1px solid ${C.line}` }}>
+                <h3
                   style={{
-                    padding: "10px 12px",
-                    borderRadius: 10,
-                    border: `1px solid ${C.line}`,
-                    background: "rgba(255, 88, 88, 0.14)",
-                    color: "#ffb3b3",
+                    margin: 0,
+                    color: C.y,
+                    textShadow: "0 0 10px rgba(255,232,0,.35)",
                   }}
                 >
-                  Community Center contract address or ABI is missing. Configure it in <code>utils/addresses.js</code> to enable editing.
-                </div>
-              )}
-              <div style={{ display: "grid", gridTemplateColumns: "minmax(160px, 1fr) auto", gap: 8 }}>
-                <input
-                  value={eventId}
-                  onChange={(e) => setEventId(e.target.value)}
-                  style={inputStyle()}
-                  placeholder="Event ID (for load/update)"
-                />
-                <button
-                  style={smallBtn(true)}
-                  disabled={
-                    !communityAvailable ||
-                    !!pending.community_loadEvent ||
-                    !String(eventId).trim()
-                  }
-                  onClick={() => communityAvailable && loadCommunityEvent()}
-                >
-                  {pending.community_loadEvent ? "Loading..." : "Load"}
-                </button>
+                  Community Center Events
+                </h3>
               </div>
+              <div style={{ padding: 12, display: "grid", gap: 12 }}>
+                <p style={{ margin: 0, color: C.dim }}>
+                  Create or update on-chain event metadata - the fields map to
+                  the Community Center panel cards. Timestamps are unix seconds,
+                  deposit is in POL.
+                </p>
+                {!communityAvailable && (
+                  <div
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      border: `1px solid ${C.line}`,
+                      background: "rgba(255, 88, 88, 0.14)",
+                      color: "#ffb3b3",
+                    }}
+                  >
+                    Community Center contract address or ABI is missing.
+                    Configure it in <code>utils/addresses.js</code> to enable
+                    editing.
+                  </div>
+                )}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "minmax(160px, 1fr) auto",
+                    gap: 8,
+                  }}
+                >
+                  <input
+                    value={eventId}
+                    onChange={(e) => setEventId(e.target.value)}
+                    style={inputStyle()}
+                    placeholder="Event ID (for load/update)"
+                  />
+                  <button
+                    style={smallBtn(true)}
+                    disabled={
+                      !communityAvailable ||
+                      !!pending.community_loadEvent ||
+                      !String(eventId).trim()
+                    }
+                    onClick={() => communityAvailable && loadCommunityEvent()}
+                  >
+                    {pending.community_loadEvent ? "Loading..." : "Load"}
+                  </button>
+                </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <span style={{ color: C.dim, fontWeight: 900 }}>Event text / IPFS hash</span>
-                <textarea
-                  value={eventIpfs}
-                  onChange={(e) => setEventIpfs(e.target.value)}
-                  placeholder="ipfs://... or descriptive text shown in Community Center"
-                  style={{ ...inputStyle(), minHeight: 96, resize: "vertical" }}
-                />
-              </div>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
+                  <span style={{ color: C.dim, fontWeight: 900 }}>
+                    Event text / IPFS hash
+                  </span>
+                  <textarea
+                    value={eventIpfs}
+                    onChange={(e) => setEventIpfs(e.target.value)}
+                    placeholder="ipfs://... or descriptive text shown in Community Center"
+                    style={{
+                      ...inputStyle(),
+                      minHeight: 96,
+                      resize: "vertical",
+                    }}
+                  />
+                </div>
 
-              <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ color: C.dim, fontWeight: 900 }}>Start (unix sec)</span>
-                  <input
-                    value={eventStart}
-                    onChange={(e) => setEventStart(e.target.value)}
-                    style={inputStyle()}
-                    placeholder="e.g. 1709505600"
-                  />
+                <div
+                  style={{
+                    display: "grid",
+                    gap: 12,
+                    gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+                  }}
+                >
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                  >
+                    <span style={{ color: C.dim, fontWeight: 900 }}>
+                      Start (unix sec)
+                    </span>
+                    <input
+                      value={eventStart}
+                      onChange={(e) => setEventStart(e.target.value)}
+                      style={inputStyle()}
+                      placeholder="e.g. 1709505600"
+                    />
+                  </div>
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                  >
+                    <span style={{ color: C.dim, fontWeight: 900 }}>
+                      End (unix sec)
+                    </span>
+                    <input
+                      value={eventEnd}
+                      onChange={(e) => setEventEnd(e.target.value)}
+                      style={inputStyle()}
+                      placeholder="e.g. 1709512800"
+                    />
+                  </div>
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                  >
+                    <span style={{ color: C.dim, fontWeight: 900 }}>
+                      Capacity
+                    </span>
+                    <input
+                      value={eventCapacity}
+                      onChange={(e) => setEventCapacity(e.target.value)}
+                      style={inputStyle()}
+                      placeholder="Max RSVPs"
+                    />
+                  </div>
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                  >
+                    <span style={{ color: C.dim, fontWeight: 900 }}>
+                      Deposit (POL)
+                    </span>
+                    <input
+                      value={eventDeposit}
+                      onChange={(e) => setEventDeposit(e.target.value)}
+                      style={inputStyle()}
+                      placeholder="e.g. 0.5"
+                    />
+                  </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ color: C.dim, fontWeight: 900 }}>End (unix sec)</span>
-                  <input
-                    value={eventEnd}
-                    onChange={(e) => setEventEnd(e.target.value)}
-                    style={inputStyle()}
-                    placeholder="e.g. 1709512800"
-                  />
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ color: C.dim, fontWeight: 900 }}>Capacity</span>
-                  <input
-                    value={eventCapacity}
-                    onChange={(e) => setEventCapacity(e.target.value)}
-                    style={inputStyle()}
-                    placeholder="Max RSVPs"
-                  />
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ color: C.dim, fontWeight: 900 }}>Deposit (POL)</span>
-                  <input
-                    value={eventDeposit}
-                    onChange={(e) => setEventDeposit(e.target.value)}
-                    style={inputStyle()}
-                    placeholder="e.g. 0.5"
-                  />
-                </div>
-              </div>
 
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                <button
-                  style={smallBtn(false)}
-                  onClick={clearCommunityEventForm}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    flexWrap: "wrap",
+                    justifyContent: "flex-end",
+                  }}
                 >
-                  Clear form
-                </button>
-                <button
-                  style={smallBtn(true)}
-                  disabled={
-                    !communityAvailable ||
-                    !!pending.community_updateEvent ||
-                    !String(eventId).trim()
-                  }
-                  onClick={() => communityAvailable && updateCommunityEvent()}
-                >
-                  {pending.community_updateEvent ? "Updating..." : "Update event"}
-                </button>
-                <button
-                  style={smallBtn(true)}
-                  disabled={
-                    !communityAvailable ||
-                    !!pending.community_createEvent ||
-                    !eventIpfs.trim()
-                  }
-                  onClick={() => communityAvailable && createCommunityEvent()}
-                >
-                  {pending.community_createEvent ? "Creating..." : "Create event"}
-                </button>
+                  <button
+                    style={smallBtn(false)}
+                    onClick={clearCommunityEventForm}
+                  >
+                    Clear form
+                  </button>
+                  <button
+                    style={smallBtn(true)}
+                    disabled={
+                      !communityAvailable ||
+                      !!pending.community_updateEvent ||
+                      !String(eventId).trim()
+                    }
+                    onClick={() => communityAvailable && updateCommunityEvent()}
+                  >
+                    {pending.community_updateEvent
+                      ? "Updating..."
+                      : "Update event"}
+                  </button>
+                  <button
+                    style={smallBtn(true)}
+                    disabled={
+                      !communityAvailable ||
+                      !!pending.community_createEvent ||
+                      !eventIpfs.trim()
+                    }
+                    onClick={() => communityAvailable && createCommunityEvent()}
+                  >
+                    {pending.community_createEvent
+                      ? "Creating..."
+                      : "Create event"}
+                  </button>
+                </div>
               </div>
-            </div>
-          </section>
-        </div>
+            </section>
+          </div>
         )}
 
         {activeTab === "nft" && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18 }}>
             <section style={{ ...card }}>
-            <div style={{ ...header, borderBottom: `1px solid ${C.line}` }}>
-              <h3
-                style={{
-                  margin: 0,
-                  color: C.y,
-                  textShadow: "0 0 10px rgba(255,232,0,.35)",
-                }}
-              >
-                NFT Rewards
-              </h3>
-            </div>
-            <div style={{ padding: 12, display: "grid", gap: 12 }}>
-              <p style={{ margin: 0, color: C.dim }}>
-                Manual rewards and mystery events only. Character rewards are handled by the main contract.
-              </p>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, alignItems: "center" }}>
-                <input
-                  value={nftMainContract}
-                  onChange={(e) => setNftMainContract(e.target.value)}
-                  style={inputStyle(true)}
-                  placeholder="Main contract address"
-                />
-                <button
-                  style={smallBtn(true)}
-                  disabled={!!pending.nft_setMain}
-                  onClick={applyNftMainContract}
+              <div style={{ ...header, borderBottom: `1px solid ${C.line}` }}>
+                <h3
+                  style={{
+                    margin: 0,
+                    color: C.y,
+                    textShadow: "0 0 10px rgba(255,232,0,.35)",
+                  }}
                 >
-                  {pending.nft_setMain ? "Saving..." : "Set main"}
-                </button>
+                  NFT Rewards
+                </h3>
               </div>
+              <div style={{ padding: 12, display: "grid", gap: 12 }}>
+                <p style={{ margin: 0, color: C.dim }}>
+                  Manual rewards and mystery events only. Character rewards are
+                  handled by the main contract.
+                </p>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, alignItems: "center" }}>
-                <input
-                  value={nftVrfRouter}
-                  onChange={(e) => setNftVrfRouter(e.target.value)}
-                  style={inputStyle(true)}
-                  placeholder="VRF router address"
-                />
-                <button
-                  style={smallBtn(true)}
-                  disabled={!!pending.nft_setVrf}
-                  onClick={applyNftVrfRouter}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr auto",
+                    gap: 8,
+                    alignItems: "center",
+                  }}
                 >
-                  {pending.nft_setVrf ? "Saving..." : "Set VRF"}
-                </button>
-              </div>
-
-              <div style={{ borderTop: `1px dashed ${C.line}`, paddingTop: 12, display: "grid", gap: 8 }}>
-                <div style={{ color: C.dim, fontWeight: 900 }}>Manual reward</div>
-                <input
-                  value={nftManualWinner}
-                  onChange={(e) => setNftManualWinner(e.target.value)}
-                  style={inputStyle(true)}
-                  placeholder="Winner address"
-                />
-                <input
-                  value={nftManualUri}
-                  onChange={(e) => setNftManualUri(e.target.value)}
-                  style={inputStyle()}
-                  placeholder="Token URI (ipfs://...)"
-                />
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  <button
-                    style={smallBtn(true)}
-                    disabled={!!pending.nft_manual}
-                    onClick={createNftManualReward}
-                  >
-                    {pending.nft_manual ? "Creating..." : "Create manual reward"}
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ borderTop: `1px dashed ${C.line}`, paddingTop: 12, display: "grid", gap: 8 }}>
-                <div style={{ color: C.dim, fontWeight: 900 }}>Mystery event</div>
-                <textarea
-                  value={nftMysteryUris}
-                  onChange={(e) => setNftMysteryUris(e.target.value)}
-                  placeholder="Token URIs (one per line or comma separated)"
-                  style={{ ...inputStyle(), minHeight: 88, resize: "vertical" }}
-                />
-                <textarea
-                  value={nftMysteryEligible}
-                  onChange={(e) => setNftMysteryEligible(e.target.value)}
-                  placeholder="Eligible addresses (one per line or comma separated)"
-                  style={{ ...inputStyle(true), minHeight: 88, resize: "vertical" }}
-                />
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  <button
-                    style={smallBtn(true)}
-                    disabled={!!pending.nft_mystery}
-                    onClick={createNftMysteryEvent}
-                  >
-                    {pending.nft_mystery ? "Creating..." : "Create mystery event"}
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ borderTop: `1px dashed ${C.line}`, paddingTop: 12, display: "grid", gap: 8 }}>
-                <div style={{ color: C.dim, fontWeight: 900 }}>Request mystery randomness</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, alignItems: "center" }}>
                   <input
-                    value={nftMysteryEventId}
-                    onChange={(e) => setNftMysteryEventId(e.target.value)}
-                    style={inputStyle()}
-                    placeholder="Event ID"
+                    value={nftMainContract}
+                    onChange={(e) => setNftMainContract(e.target.value)}
+                    style={inputStyle(true)}
+                    placeholder="Main contract address"
                   />
                   <button
                     style={smallBtn(true)}
-                    disabled={!!pending.nft_request}
-                    onClick={requestNftMysteryRandom}
+                    disabled={!!pending.nft_setMain}
+                    onClick={applyNftMainContract}
                   >
-                    {pending.nft_request ? "Requesting..." : "Request random"}
+                    {pending.nft_setMain ? "Saving..." : "Set main"}
                   </button>
                 </div>
-              </div>
 
-              {(nftLastEventId || nftLastRewardId || nftLastRequestId) && (
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", color: C.dim }}>
-                  {nftLastEventId && <span>Last event ID: {nftLastEventId}</span>}
-                  {nftLastRewardId && <span>Last reward ID: {nftLastRewardId}</span>}
-                  {nftLastRequestId && <span>Last request ID: {nftLastRequestId}</span>}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr auto",
+                    gap: 8,
+                    alignItems: "center",
+                  }}
+                >
+                  <input
+                    value={nftVrfRouter}
+                    onChange={(e) => setNftVrfRouter(e.target.value)}
+                    style={inputStyle(true)}
+                    placeholder="VRF router address"
+                  />
+                  <button
+                    style={smallBtn(true)}
+                    disabled={!!pending.nft_setVrf}
+                    onClick={applyNftVrfRouter}
+                  >
+                    {pending.nft_setVrf ? "Saving..." : "Set VRF"}
+                  </button>
                 </div>
-              )}
-            </div>
-          </section>
-        </div>
+
+                <div
+                  style={{
+                    borderTop: `1px dashed ${C.line}`,
+                    paddingTop: 12,
+                    display: "grid",
+                    gap: 8,
+                  }}
+                >
+                  <div style={{ color: C.dim, fontWeight: 900 }}>
+                    Manual reward
+                  </div>
+                  <input
+                    value={nftManualWinner}
+                    onChange={(e) => setNftManualWinner(e.target.value)}
+                    style={inputStyle(true)}
+                    placeholder="Winner address"
+                  />
+                  <input
+                    value={nftManualUri}
+                    onChange={(e) => setNftManualUri(e.target.value)}
+                    style={inputStyle()}
+                    placeholder="Token URI (ipfs://...)"
+                  />
+                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                    <button
+                      style={smallBtn(true)}
+                      disabled={!!pending.nft_manual}
+                      onClick={createNftManualReward}
+                    >
+                      {pending.nft_manual
+                        ? "Creating..."
+                        : "Create manual reward"}
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    borderTop: `1px dashed ${C.line}`,
+                    paddingTop: 12,
+                    display: "grid",
+                    gap: 8,
+                  }}
+                >
+                  <div style={{ color: C.dim, fontWeight: 900 }}>
+                    Mystery event
+                  </div>
+                  <textarea
+                    value={nftMysteryUris}
+                    onChange={(e) => setNftMysteryUris(e.target.value)}
+                    placeholder="Token URIs (one per line or comma separated)"
+                    style={{
+                      ...inputStyle(),
+                      minHeight: 88,
+                      resize: "vertical",
+                    }}
+                  />
+                  <textarea
+                    value={nftMysteryEligible}
+                    onChange={(e) => setNftMysteryEligible(e.target.value)}
+                    placeholder="Eligible addresses (one per line or comma separated)"
+                    style={{
+                      ...inputStyle(true),
+                      minHeight: 88,
+                      resize: "vertical",
+                    }}
+                  />
+                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                    <button
+                      style={smallBtn(true)}
+                      disabled={!!pending.nft_mystery}
+                      onClick={createNftMysteryEvent}
+                    >
+                      {pending.nft_mystery
+                        ? "Creating..."
+                        : "Create mystery event"}
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    borderTop: `1px dashed ${C.line}`,
+                    paddingTop: 12,
+                    display: "grid",
+                    gap: 8,
+                  }}
+                >
+                  <div style={{ color: C.dim, fontWeight: 900 }}>
+                    Request mystery randomness
+                  </div>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr auto",
+                      gap: 8,
+                      alignItems: "center",
+                    }}
+                  >
+                    <input
+                      value={nftMysteryEventId}
+                      onChange={(e) => setNftMysteryEventId(e.target.value)}
+                      style={inputStyle()}
+                      placeholder="Event ID"
+                    />
+                    <button
+                      style={smallBtn(true)}
+                      disabled={!!pending.nft_request}
+                      onClick={requestNftMysteryRandom}
+                    >
+                      {pending.nft_request ? "Requesting..." : "Request random"}
+                    </button>
+                  </div>
+                </div>
+
+                {(nftLastEventId || nftLastRewardId || nftLastRequestId) && (
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 10,
+                      flexWrap: "wrap",
+                      color: C.dim,
+                    }}
+                  >
+                    {nftLastEventId && (
+                      <span>Last event ID: {nftLastEventId}</span>
+                    )}
+                    {nftLastRewardId && (
+                      <span>Last reward ID: {nftLastRewardId}</span>
+                    )}
+                    {nftLastRequestId && (
+                      <span>Last request ID: {nftLastRequestId}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
         )}
 
         {activeTab === "chat" && (
@@ -2255,13 +2877,16 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                 </h3>
               </div>
               <div style={{ padding: 12, display: "grid", gap: 10 }}>
-                <div style={{ color: C.dim, fontWeight: 900 }}>Current rules</div>
+                <div style={{ color: C.dim, fontWeight: 900 }}>
+                  Current rules
+                </div>
                 <div
                   style={{
                     borderRadius: 10,
                     border: `1px solid ${C.line}`,
                     padding: "10px 12px",
-                    background: "linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.18))",
+                    background:
+                      "linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.18))",
                     color: C.text,
                     minHeight: 56,
                   }}
@@ -2274,7 +2899,14 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   placeholder="Update rules text"
                   style={{ ...inputStyle(), minHeight: 96, resize: "vertical" }}
                 />
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "space-between" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    flexWrap: "wrap",
+                    justifyContent: "space-between",
+                  }}
+                >
                   <button
                     style={smallBtn(false)}
                     disabled={chatLoading}
@@ -2319,7 +2951,13 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                 </h3>
               </div>
               <div style={{ padding: 12, display: "grid", gap: 10 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 8,
+                  }}
+                >
                   <input
                     value={chatMessageId}
                     onChange={(e) => setChatMessageId(e.target.value)}
@@ -2347,7 +2985,14 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   }}
                   disabled={chatAction !== "edit"}
                 />
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    flexWrap: "wrap",
+                    justifyContent: "flex-end",
+                  }}
+                >
                   <button
                     style={smallBtn(false)}
                     onClick={() => {
@@ -2394,7 +3039,14 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                 {!chatLoading && chatMessages.length === 0 && (
                   <div style={{ color: C.dim }}>No messages found.</div>
                 )}
-                <div style={{ display: "grid", gap: 10, maxHeight: 360, overflow: "auto" }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gap: 10,
+                    maxHeight: 360,
+                    overflow: "auto",
+                  }}
+                >
                   {chatMessages.map((msg) => (
                     <div
                       key={msg.id}
@@ -2402,22 +3054,33 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                         borderRadius: 12,
                         border: `1px solid ${C.line}`,
                         padding: "10px 12px",
-                        background: "linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.18))",
+                        background:
+                          "linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.18))",
                         display: "grid",
                         gap: 6,
                       }}
                     >
-                      <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          gap: 12,
+                        }}
+                      >
                         <div style={{ color: C.dim, fontWeight: 800 }}>
                           #{msg.id} {short(msg.author_address)}
                           {msg.author_name ? ` (${msg.author_name})` : ""}
                         </div>
-                        <div style={{ color: C.dim }}>{formatChatTime(msg.created_at)}</div>
+                        <div style={{ color: C.dim }}>
+                          {formatChatTime(msg.created_at)}
+                        </div>
                       </div>
                       <div style={{ color: msg.deleted ? "#ffb3b3" : C.text }}>
                         {msg.deleted ? "Message removed" : msg.content}
                       </div>
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <div
+                        style={{ display: "flex", gap: 8, flexWrap: "wrap" }}
+                      >
                         <button
                           style={smallBtn(false)}
                           onClick={() => pickChatMessage(msg, "soft-delete")}
@@ -2528,28 +3191,32 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   >
                     <thead>
                       <tr>
-                        {["Status", "Name", "Address", "Code / Error"].map((h, i, arr) => (
-                          <th
-                            key={h}
-                            style={{
-                              padding: "12px 14px",
-                              color: C.y,
-                              textAlign: "left",
-                              borderBottom: `1px solid ${C.line}`,
-                              position: "sticky",
-                              top: 0,
-                              zIndex: 1,
-                              background:
-                                "linear-gradient(180deg, rgba(255,232,0,.18), rgba(255,232,0,.10))",
-                              backdropFilter: "blur(4px)",
-                              textShadow: "0 1px 0 rgba(0,0,0,.4)",
-                              ...(i === 0 ? { borderTopLeftRadius: 12 } : {}),
-                              ...(i === arr.length - 1 ? { borderTopRightRadius: 12 } : {}),
-                            }}
-                          >
-                            {h}
-                          </th>
-                        ))}
+                        {["Status", "Name", "Address", "Code / Error"].map(
+                          (h, i, arr) => (
+                            <th
+                              key={h}
+                              style={{
+                                padding: "12px 14px",
+                                color: C.y,
+                                textAlign: "left",
+                                borderBottom: `1px solid ${C.line}`,
+                                position: "sticky",
+                                top: 0,
+                                zIndex: 1,
+                                background:
+                                  "linear-gradient(180deg, rgba(255,232,0,.18), rgba(255,232,0,.10))",
+                                backdropFilter: "blur(4px)",
+                                textShadow: "0 1px 0 rgba(0,0,0,.4)",
+                                ...(i === 0 ? { borderTopLeftRadius: 12 } : {}),
+                                ...(i === arr.length - 1
+                                  ? { borderTopRightRadius: 12 }
+                                  : {}),
+                              }}
+                            >
+                              {h}
+                            </th>
+                          ),
+                        )}
                       </tr>
                     </thead>
                     <tbody style={{ color: C.text }}>
@@ -2584,13 +3251,20 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                                 {tone.label}
                               </span>
                             </td>
-                            <td style={{ padding: "10px 14px", color: C.dim, fontWeight: 800 }}>
+                            <td
+                              style={{
+                                padding: "10px 14px",
+                                color: C.dim,
+                                fontWeight: 800,
+                              }}
+                            >
                               {row.label}
                             </td>
                             <td
                               style={{
                                 padding: "10px 14px",
-                                fontFamily: "ui-monospace, Menlo, Consolas, monospace",
+                                fontFamily:
+                                  "ui-monospace, Menlo, Consolas, monospace",
                               }}
                               title={row.address || ""}
                             >
@@ -2599,8 +3273,10 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                             <td
                               style={{
                                 padding: "10px 14px",
-                                fontFamily: "ui-monospace, Menlo, Consolas, monospace",
-                                color: row.status === "error" ? "#ffb3b3" : C.text,
+                                fontFamily:
+                                  "ui-monospace, Menlo, Consolas, monospace",
+                                color:
+                                  row.status === "error" ? "#ffb3b3" : C.text,
                               }}
                             >
                               {row.error || row.code || "--"}
@@ -2636,9 +3312,19 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     { k: "App", v: data.frontend.app },
                     { k: "React", v: data.frontend.react },
                     { k: "Network", v: data.frontend.network },
-                    { k: "Wallet", v: short(data.frontend.wallet), mono: true, copy: data.frontend.wallet },
+                    {
+                      k: "Wallet",
+                      v: short(data.frontend.wallet),
+                      mono: true,
+                      copy: data.frontend.wallet,
+                    },
                     { k: "Screen", v: data.frontend.screen },
-                    { k: "User Agent", v: data.frontend.userAgent, mono: true, copy: data.frontend.userAgent },
+                    {
+                      k: "User Agent",
+                      v: data.frontend.userAgent,
+                      mono: true,
+                      copy: data.frontend.userAgent,
+                    },
                     { k: "Last Refresh", v: data.frontend.lastRefreshAt },
                   ]}
                 />
@@ -2677,9 +3363,7 @@ function inputStyle(mono = false) {
     color: "#f2f2f2",
     outline: "none",
     boxShadow: "inset 0 0 12px rgba(255,232,0,.06)",
-    fontFamily: mono
-      ? "ui-monospace, Menlo, Consolas, monospace"
-      : "inherit",
+    fontFamily: mono ? "ui-monospace, Menlo, Consolas, monospace" : "inherit",
   };
 }
 
@@ -2696,7 +3380,8 @@ function num(v) {
 
 function shortErr(e) {
   const msg =
-    (e && (e.reason || e.message || e.data?.message || e.toString())) || "Error";
+    (e && (e.reason || e.message || e.data?.message || e.toString())) ||
+    "Error";
   return String(msg).replace(/\n/g, " ").slice(0, 160);
 }
 
@@ -2706,4 +3391,3 @@ function copyToClipboard(text) {
     navigator.clipboard?.writeText(text);
   } catch {}
 }
-

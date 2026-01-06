@@ -18,18 +18,27 @@ export default function useBuybackTreasuryHistory(snapshot) {
 
   const nativeSeries = React.useMemo(
     () =>
-      mapBuybackHistoryToChartPoints(history, (entry) => entry?.buyback?.totalNativeSpentNumeric ?? null),
-    [history]
+      mapBuybackHistoryToChartPoints(
+        history,
+        (entry) => entry?.buyback?.totalNativeSpentNumeric ?? null,
+      ),
+    [history],
   );
   const biggiSeries = React.useMemo(
     () =>
-      mapBuybackHistoryToChartPoints(history, (entry) => entry?.buyback?.totalBiggiAcquiredNumeric ?? null),
-    [history]
+      mapBuybackHistoryToChartPoints(
+        history,
+        (entry) => entry?.buyback?.totalBiggiAcquiredNumeric ?? null,
+      ),
+    [history],
   );
   const treasurySeries = React.useMemo(
     () =>
-      mapBuybackHistoryToChartPoints(history, (entry) => entry?.treasury?.biggiBalanceNumeric ?? null),
-    [history]
+      mapBuybackHistoryToChartPoints(
+        history,
+        (entry) => entry?.treasury?.biggiBalanceNumeric ?? null,
+      ),
+    [history],
   );
 
   return { history, nativeSeries, biggiSeries, treasurySeries };

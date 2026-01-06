@@ -5,9 +5,17 @@ import StatCard from "../components/StatCard";
 import { mapSnapshotToFlowRows } from "../../../services/tokenomics/liquidity.mappers";
 import "./LiquidityTab.css";
 
-const selectAccent = (segment, target) => (segment === target ? "primary" : undefined);
+const selectAccent = (segment, target) =>
+  segment === target ? "primary" : undefined;
 
-const LiquidityTab = ({ snapshot, history, chartPoints, isLoading, error, activeSegment }) => {
+const LiquidityTab = ({
+  snapshot,
+  history,
+  chartPoints,
+  isLoading,
+  error,
+  activeSegment,
+}) => {
   const cards = [
     {
       label: "Reserve POL",
@@ -33,8 +41,8 @@ const LiquidityTab = ({ snapshot, history, chartPoints, isLoading, error, active
   const statusMessage = error
     ? "Unable to load liquidity snapshot."
     : !snapshot && isLoading
-    ? "Loading liquidity data..."
-    : null;
+      ? "Loading liquidity data..."
+      : null;
 
   return (
     <div className="liquidity-tab">
@@ -44,7 +52,9 @@ const LiquidityTab = ({ snapshot, history, chartPoints, isLoading, error, active
         ))}
       </div>
 
-      {statusMessage && <div className="liquidity-tab__status">{statusMessage}</div>}
+      {statusMessage && (
+        <div className="liquidity-tab__status">{statusMessage}</div>
+      )}
 
       <div className="liquidity-tab__chart">
         <header>

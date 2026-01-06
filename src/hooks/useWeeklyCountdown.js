@@ -13,15 +13,20 @@ const DEFAULT_INFO = {
 };
 
 const normalizeSeconds = (value) =>
-  Number.isFinite(Number(value)) && Number(value) > 0 ? Number(value) : DEFAULT_WEEK_SECONDS;
+  Number.isFinite(Number(value)) && Number(value) > 0
+    ? Number(value)
+    : DEFAULT_WEEK_SECONDS;
 
 const computeDisplay = (info, tick, weekDuration) => {
   const remaining = Math.max(0, (info.remainingSeconds ?? 0) - tick);
-  const duration = Number.isFinite(Number(weekDuration)) && weekDuration > 0 ? Number(weekDuration) : DEFAULT_WEEK_SECONDS;
+  const duration =
+    Number.isFinite(Number(weekDuration)) && weekDuration > 0
+      ? Number(weekDuration)
+      : DEFAULT_WEEK_SECONDS;
   const percentComplete =
     duration > 0
       ? Math.min(100, Math.max(0, ((duration - remaining) / duration) * 100))
-      : info.percentComplete ?? 0;
+      : (info.percentComplete ?? 0);
   const claimable = info.claimable ?? remaining <= 0;
   return {
     ...info,
@@ -31,9 +36,15 @@ const computeDisplay = (info, tick, weekDuration) => {
   };
 };
 
-export default function useWeeklyCountdown({ epochStart = null, fetchChainNowTs = null, weekSeconds = DEFAULT_WEEK_SECONDS } = {}) {
+export default function useWeeklyCountdown({
+  epochStart = null,
+  fetchChainNowTs = null,
+  weekSeconds = DEFAULT_WEEK_SECONDS,
+} = {}) {
   const weekDuration = normalizeSeconds(weekSeconds);
-  const [weeklyInfo, setWeeklyInfo] = React.useState(() => ({ ...DEFAULT_INFO }));
+  const [weeklyInfo, setWeeklyInfo] = React.useState(() => ({
+    ...DEFAULT_INFO,
+  }));
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
   const [isClaiming, setIsClaiming] = React.useState(false);
@@ -51,19 +62,28 @@ export default function useWeeklyCountdown({ epochStart = null, fetchChainNowTs 
           return null;
         }
       })();
-      const block = provider ? await provider.getBlock("latest").catch(() => null) : null;
+      const block = provider
+        ? await provider.getBlock("latest").catch(() => null)
+        : null;
       const nowTs =
         block?.timestamp ??
-        (fetchChainNowTs ? await fetchChainNowTs().catch(() => Math.floor(Date.now() / 1000)) : null) ??
+        (fetchChainNowTs
+          ? await fetchChainNowTs().catch(() => Math.floor(Date.now() / 1000))
+          : null) ??
         Math.floor(Date.now() / 1000);
       const epochTs =
-        epochStart && Number.isFinite(Number(epochStart)) ? Math.floor(Number(epochStart)) : nowTs - (nowTs % weekDuration);
+        epochStart && Number.isFinite(Number(epochStart))
+          ? Math.floor(Number(epochStart))
+          : nowTs - (nowTs % weekDuration);
       const nextWeek = epochTs + weekDuration;
       const remainingSeconds = Math.max(0, nextWeek - nowTs);
       setWeeklyInfo((prev) => ({
         ...prev,
         remainingSeconds,
-        percentComplete: Math.min(100, Math.max(0, ((weekDuration - remainingSeconds) / weekDuration) * 100)),
+        percentComplete: Math.min(
+          100,
+          Math.max(0, ((weekDuration - remainingSeconds) / weekDuration) * 100),
+        ),
         blockNumber: block?.number ?? prev.blockNumber,
         lastSync: nowTs * 1000,
         status: remainingSeconds <= 0 ? "claimable" : "next",
@@ -77,9 +97,15 @@ export default function useWeeklyCountdown({ epochStart = null, fetchChainNowTs 
     }
   }, [epochStart, fetchChainNowTs, weekDuration]);
 
-  const displayed = React.useMemo(() => computeDisplay(weeklyInfo, tick, weekDuration), [weeklyInfo, tick, weekDuration]);
+  const displayed = React.useMemo(
+    () => computeDisplay(weeklyInfo, tick, weekDuration),
+    [weeklyInfo, tick, weekDuration],
+  );
 
-  const claimableNow = React.useMemo(() => displayed.claimable && !loading && !error, [displayed.claimable, loading, error]);
+  const claimableNow = React.useMemo(
+    () => displayed.claimable && !loading && !error,
+    [displayed.claimable, loading, error],
+  );
 
   const handleClaim = React.useCallback(async () => {
     if (!claimableNow || isClaiming) return;
@@ -105,7 +131,11 @@ export default function useWeeklyCountdown({ epochStart = null, fetchChainNowTs 
 
   React.useEffect(() => {
     const id = setInterval(() => {
-      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      if (
+        typeof document !== "undefined" &&
+        document.visibilityState === "hidden"
+      )
+        return;
       setTick((t) => t + 1);
     }, 1000);
     return () => clearInterval(id);
