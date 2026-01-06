@@ -2,7 +2,7 @@
 import * as React from "react";
 import { ethers } from "ethers";
 import { ADDR } from "../utils/addresses";
-import { ABI_LIQUIDITY_KEEPER } from "../utils/abi/index.js";
+import { LiquidityKeeper as ABI_LIQUIDITY_KEEPER } from "../config/abi/index.js";
 import { getReadOnlyContract, getSignerProvider } from "../utils/contract";
 import { getCached, invalidateCache } from "../utils/fetchCache";
 

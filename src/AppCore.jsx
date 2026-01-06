@@ -26,7 +26,7 @@ import {
   getBiggiTokenomicsReaderRO,
 } from "./utils/contract";
 import './styles/biggi-token.skin.css';
-import { ABI_TOKEN } from "./utils/abi/index.js";
+import { BiggiToken as ABI_TOKEN } from "./config/abi/index.js";
 import RewardsPanel from "./components/panels/RewardsPanel.jsx";
 import LiveStats from "./components/LiveStats";
 import Gallery from "./components/Gallery";

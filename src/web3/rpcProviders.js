@@ -4,14 +4,20 @@ import { AMOY, getRpcUrls as getConfiguredRpcUrls } from "../utils/rpcConfig";
 // Static provider avoids network autodetect calls that can fail due to CORS/rate limits.
 const { StaticJsonRpcProvider, FallbackProvider } = ethers.providers;
 
+
 function makeStaticProvider(url, chainId = AMOY.chainId) {
   return new StaticJsonRpcProvider({ url, chainId, name: AMOY.name }, chainId);
 }
 
+// Helper to create a provider with dynamic healthy endpoint selection
 export function createJsonRpcProvider(rpcUrl, chainId = AMOY.chainId) {
-  const url = rpcUrl || getConfiguredRpcUrls()[0];
-  if (!url) throw new Error("No RPC URL configured (set VITE_JSON_RPC_URL or VITE_AMOY_RPC_URL)");
-  return makeStaticProvider(url, chainId);
+  // Synchronous provider creation for compatibility with FallbackProvider
+  if (!rpcUrl) {
+    const urls = getConfiguredRpcUrls();
+    if (!urls.length) throw new Error("No RPC URL configured (set VITE_JSON_RPC_URL or VITE_AMOY_RPC_URL)");
+    rpcUrl = urls[0];
+  }
+  return makeStaticProvider(rpcUrl, chainId);
 }
 
 export function createFallbackProvider(urls, chainId = AMOY.chainId) {

@@ -7,7 +7,7 @@
 //   const stats = await svc.getAllStats();
 
 import { ethers } from "ethers";
-import TreasuryAbi from "../utils/abi/BiggiTreasury.json" assert { type: "json" };
+import { BiggiTreasury as TreasuryAbi } from "../config/abi/index.js";
 
 const ABI = TreasuryAbi;
 

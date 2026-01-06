@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { ABI_TOKEN } from "./abi/index.js";
+import { BiggiToken } from "../config/abi/index.js";
 import { ADDR } from "./addresses";
 import { getFullStatusSafe } from "./tokenomicsFullStatus.js";
 

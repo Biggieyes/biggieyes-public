@@ -1,3 +1,34 @@
+/**
+ * Dynamicky vybere nejzdravější RPC endpoint z dostupných.
+ * @returns {Promise<string|null>} Nejzdravější RPC URL nebo null
+ */
+export async function getHealthyRpcUrl() {
+  const urls = getRpcUrls();
+  const checks = await Promise.all(urls.map(async (url) => ({ url, ...(await checkRpcHealth(url)) })));
+  const healthy = checks.filter((c) => c.ok);
+  if (!healthy.length) return null;
+  // Prefer lowest latency
+  healthy.sort((a, b) => (a.latencyMs || 99999) - (b.latencyMs || 99999));
+  return healthy[0].url;
+}
+import { ethers } from "ethers";
+
+/**
+ * Zdravotní kontrola RPC endpointu: ověří dostupnost, block height a latenci.
+ * @param {string} url - RPC endpoint
+ * @returns {Promise<{ok: boolean, blockNumber?: number, latencyMs?: number, error?: string}>}
+ */
+export async function checkRpcHealth(url) {
+  const start = Date.now();
+  try {
+    const provider = new ethers.providers.StaticJsonRpcProvider(url);
+    const blockNumber = await provider.getBlockNumber();
+    const latencyMs = Date.now() - start;
+    return { ok: true, blockNumber, latencyMs };
+  } catch (error) {
+    return { ok: false, error: error?.message || String(error) };
+  }
+}
 const LOCAL_STORAGE_RPC_PREF_KEY = "biggi_last_amoy_rpc_v1";
 const BAD_RPC_SUBSTRINGS = ["tenderly", "drpc.org"];
 const BAD_CORS_RPCS = ["rpc-amoy.polygon.technology"];

@@ -1,0 +1,15 @@
+[
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "requestedMatic",
+				"type": "uint256"
+			}
+		],
+		"name": "executePairing",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
+]

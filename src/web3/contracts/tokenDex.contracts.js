@@ -1,9 +1,9 @@
 import { Contract } from "ethers";
-import BiggiToken from "../../config/abi/BiggiToken.json";
-import UniswapV2Router02 from "../../config/abi/UniswapV2Router02.json";
-import UniswapV2Factory from "../../config/abi/UniswapV2Factory.json";
-import UniswapV2Pair from "../../config/abi/UniswapV2Pair.json";
-import BiggiLpPriceFeed from "../../config/abi/BiggiLpPriceFeed.json";
+import BiggiToken from '../../config/abi/BiggiToken.json';
+import UniswapV2Router02 from '../../config/abi/UniswapV2Router02.json';
+import UniswapV2Factory from '../../config/abi/UniswapV2Factory.json';
+import UniswapV2Pair from '../../config/abi/UniswapV2Pair.json';
+import BiggiLpPriceFeed from '../../config/abi/BiggiLpPriceFeed.json';
 import defaultProvider from "../provider";
 import { getTokenDexAddresses } from "../../config/addresses";
 

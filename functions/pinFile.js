@@ -1,3 +1,15 @@
+/**
+ * SECURITY WARNING: Tento endpoint je určen výhradně pro server-side použití!
+ * Nikdy NEVYSTAVUJTE Pinata API klíče nebo JWT klientovi/frontendu.
+ * Funkce musí být volána pouze z důvěryhodného backendu nebo chráněného frontendu.
+ * Pokud endpoint zpřístupníte veřejně, riskujete zneužití a únik citlivých klíčů.
+ *
+ * Doporučení:
+ * - Ukládejte všechny Pinata a NFT.Storage klíče pouze do serverových environment proměnných (Netlify, CI/CD, atd.).
+ * - Nikdy je neumisťujte do veřejných .env nebo do kódu!
+ * - Zvažte omezení přístupu pomocí ALLOWED_ORIGIN nebo krátkodobého tokenu.
+ * - Pravidelně rotujte klíče a monitorujte zneužití.
+ */
 import Busboy from "busboy";
 import FormData from "form-data";
 import {

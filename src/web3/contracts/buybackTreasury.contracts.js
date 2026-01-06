@@ -1,7 +1,7 @@
 import { Contract } from "ethers";
-import BiggiBuybackAgent from "../../config/abi/BiggiBuybackAgent.json";
-import BiggiTreasury from "../../config/abi/BiggiTreasury.json";
-import BiggiToken from "../../config/abi/BiggiToken.json";
+import BiggiBuybackAgent from '../../config/abi/BiggiBuybackAgent.json';
+import BiggiTreasury from '../../config/abi/BiggiTreasury.json';
+import BiggiToken from '../../config/abi/BiggiToken.json';
 import { getBuybackAddresses } from "../../config/addresses";
 import defaultProvider from "../provider";
 

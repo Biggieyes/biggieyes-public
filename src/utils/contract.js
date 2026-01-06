@@ -4,20 +4,71 @@ import { ethers } from "ethers";
 import { ADDR } from "./addresses.js";
 import { AMOY, PUBLIC_AMOY_RPCS, getRpcUrls, setPreferredRpc } from "./rpcConfig.js";
 import {
-  ABI_MAIN, ABI_MAIN2, ABI_VRF,
-  ABI_TOKEN, ABI_DISTRIBUTOR, ABI_RESERVE, ABI_TREASURY, ABI_BUYBACK, ABI_POLICY,
-  ABI_TOKEN_REWARDS, ABI_COLLECTION_REWARDS, ABI_LIQUIDITY_VAULT,
-  ABI_FACTORY, ABI_ROUTER, ABI_PAIR,
-  ABI_LM, ABI_UPKEEP, ABI_READER,
-  ABI_BiggiMainReader, ABI_BiggiRewardsReader, ABI_BiggiTokenomicsReader, ABI_BiggiTokenReader,
-  // granular fallbacks (if present)
-  ABI_NFTRewardsReader, ABI_CollectionRewardsReader,
-  ABI_ReserveReader, ABI_LiquidityManagerReader,
-  ABI_COLLECTION_VRF, ABI_COLLECTION_PUBLIC,
-  // nové ABI (pokud jsi je přidal do indexu)
-  ABI_NFTREWARDS, ABI_DRIPLM, ABI_DRIP_DISTRIBUTOR,
-  ABI_LIQUIDITY_AUTOMATION, ABI_DRIP_KEEPER
-} from "./abi/index.js";
+  BiggiBuybackAgent,
+  BiggiBuyBackDripSetup,
+  BiggiCollectionReader,
+  BiggiCollectionRewards,
+  BiggiCommunityCenter,
+  BiggiCompute,
+  BiggiDistributor,
+  BiggiDripDistributor,
+  BiggiDripKeeper,
+  BiggiDripLM,
+  BiggiLiquidityManager,
+  BiggiLiquiditySetup,
+  BiggiLpPriceFeed,
+  BiggiMain,
+  BiggiMain2,
+  BiggiMasterTokenomicsConfig,
+  BiggiNFTRewards,
+  BiggiPolicy,
+  BiggiReserve,
+  BiggiReserveV4,
+  BiggiRewardsReader,
+  BiggiToken,
+  BiggiTokenomicReader,
+  BiggiTokenRewards,
+  BiggiTreasury,
+  BiggiUpkeeperProxy,
+  BiggiWeth9,
+  DripDistributor,
+  DripLM,
+  LiquidityAutomation,
+  LiquidityKeeper,
+  LiquidityVault,
+  UniswapV2Factory,
+  UniswapV2Pair,
+  UniswapV2Router02
+} from "../config/abi/index.js";
+
+const ABI_READER = BiggiCollectionReader;
+const ABI_COLLECTION_VRF = BiggiCollectionReader;
+const ABI_COLLECTION_PUBLIC = BiggiCollectionReader;
+const ABI_VRF = BiggiCollectionReader;
+const ABI_TOKEN = BiggiToken;
+const ABI_DISTRIBUTOR = BiggiDistributor;
+const ABI_RESERVE = BiggiReserveV4;
+const ABI_TREASURY = BiggiTreasury;
+const ABI_BUYBACK = BiggiBuybackAgent;
+const ABI_POLICY = BiggiPolicy;
+const ABI_LIQUIDITY_AUTOMATION = LiquidityAutomation;
+const ABI_TOKEN_REWARDS = BiggiTokenRewards;
+const ABI_COLLECTION_REWARDS = BiggiCollectionRewards;
+const ABI_DRIP_DISTRIBUTOR = BiggiDripDistributor;
+const ABI_DRIP_KEEPER = BiggiDripKeeper;
+const ABI_FACTORY = UniswapV2Factory;
+const ABI_ROUTER = UniswapV2Router02;
+const ABI_PAIR = UniswapV2Pair;
+const ABI_LM = BiggiLiquidityManager;
+const ABI_UPKEEP = BiggiUpkeeperProxy;
+const ABI_B = BiggiBuybackAgent;
+const ABI_C = BiggiBuybackAgent;
+const ABI_NFTR = BiggiNFTRewards;
+const ABI_R = BiggiBuyBackDripSetup;
+const ABI_L = BiggiCollectionReader;
+const ABI_NFTREWARDS = BiggiNFTRewards;
+const ABI_DRIPLM = BiggiDripLM;
+const ABI_LIQUIDITY_VAULT = LiquidityVault;
 
 const { StaticJsonRpcProvider, Web3Provider, FallbackProvider } = ethers.providers;
 const { parseEther: _parseEther, formatEther: _formatEther } = ethers.utils;
@@ -29,7 +80,10 @@ function _sameAddr(a, b) {
   return String(a).toLowerCase() === String(b).toLowerCase();
 }
 
+
 const MAIN_ADDR_ACTIVE = ADDR.COLLECTION_VRF || ADDR.MAIN;
+const ABI_MAIN = BiggiMain;
+const ABI_MAIN2 = BiggiMain2;
 const ABI_MAIN_ACTIVE =
   _sameAddr(MAIN_ADDR_ACTIVE, ADDR.MAIN2) || _sameAddr(MAIN_ADDR_ACTIVE, ADDR.COLLECTION_PUBLIC)
     ? ABI_MAIN2

@@ -1,7 +1,7 @@
 import { Contract } from "ethers";
 import DripDistributor from "../../config/abi/DripDistributor.json";
 import DripLM from "../../config/abi/DripLM.json";
-import BiggiToken from "../../utils/abi/BiggiToken.json" assert { type: "json" };
+import BiggiToken from '../../config/abi/BiggiToken.json';
 import { getDripAddresses } from "../../config/addresses";
 import defaultProvider from "../provider";
 

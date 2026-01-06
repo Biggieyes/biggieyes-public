@@ -17,7 +17,18 @@ import { createBuybackService, createDripDistributorService } from "../../servic
 import { getROProvider, getSignerProvider, ensureAmoy, ADDR, AMOY } from "../../utils/contract";
 import { getProvider } from "../../web3/provider";
 import TokenRewardsService from "../../services/tokenRewardsService";
-import { ABI_LM, ABI_RESERVE, ABI_PAIR, ABI_LIQUIDITY_VAULT, ABI_TOKEN, ABI_BUYBACK, ABI_POLICY, ABI_MASTER_CONFIG, ABI_DRIPLM, ABI_DRIP_DISTRIBUTOR, ABI_UPKEEP, ABI_ROUTER } from "../../utils/abi/index.js";
+import {
+  BiggiLiquidityManager as ABI_LM,
+  BiggiReserveV4 as ABI_RESERVE,
+  UniswapV2Pair as ABI_PAIR,
+  LiquidityVault as ABI_LIQUIDITY_VAULT,
+  BiggiToken as ABI_TOKEN,
+  BiggiBuybackAgent as ABI_BUYBACK,
+  BiggiPolicy as ABI_POLICY,
+  DripLM as ABI_DRIPLM,
+  DripDistributor as ABI_DRIP_DISTRIBUTOR,
+  // Pokud máš ABI_UPKEEP a ABI_ROUTER v config/abi, přidej je zde
+} from "../../config/abi/index.js";
 import TokenomicsPanel from "../../panels/TokenomicsPanel/TokenomicsPanel";
 import DistributorTokenTab from "../../panels/TokenomicsPanel/tabs/DistributorTokenTab";
 import DripTab from "../../panels/TokenomicsPanel/tabs/DripTab";
@@ -151,7 +162,6 @@ const NOOP = () => {};
 const automationKeeper = ADDR.KEEPER_ADDR || null;
 const DEFAULT_PAIRING_MATIC = "0.01";
 const DEFAULT_DRIP_NATIVE = "0.001";
-const masterConfigAbi = ABI_MASTER_CONFIG;
 
 // Formatting functions
 const fmtVal = (val, symbol = "", decimals = 2) => {
@@ -732,10 +742,6 @@ const BiggiTokenInner = ({
       const pair = new ethers.Contract(ADDR.PAIR, ABI_PAIR, provider);
       const token = new ethers.Contract(ADDR.BIGGI, ABI_TOKEN, provider);
 
-      let masterConfig = null;
-      if (Array.isArray(masterConfigAbi) && masterConfigAbi.length && ADDR.MASTER_CONFIG) {
-        masterConfig = new ethers.Contract(ADDR.MASTER_CONFIG, masterConfigAbi, provider);
-      }
 
       const [bbPolicyAddr, bbNativeRaw, lastBuybackAt, bbOwner, bbPaused, minIntervalSec, bbDripLm] = await Promise.all([
         buyback.policy().catch(() => ADDR.POLICY),
@@ -819,31 +825,6 @@ const BiggiTokenInner = ({
       if (availableTokens === 0) nextWarnings.push("DripDistributor has no available tokens");
       if (chainStatus.chainId && chainStatus.chainId !== AMOY.chainId) nextWarnings.push("Wallet is not connected to Amoy (80002)");
 
-      let masterBundle = null;
-      if (masterConfig) {
-        try {
-          const bundle = await masterConfig.pumpBundle();
-          const buybackAgent = bundle?.buybackAgent ?? bundle?._buybackAgent ?? bundle?.[0];
-          const dripLMAddr = bundle?.dripLM ?? bundle?._dripLM ?? bundle?.[1];
-          const dripDistributorAddr = bundle?.dripDistributor ?? bundle?._dripDistributor ?? bundle?.[2];
-          const policyAddr = bundle?.policy ?? bundle?._policy ?? bundle?.[3];
-          masterBundle = {
-            buybackAgent,
-            dripLM: dripLMAddr,
-            dripDistributor: dripDistributorAddr,
-            policy: policyAddr,
-          };
-          const mismatch = [
-            buybackAgent?.toLowerCase?.() !== ADDR.BUYBACK_AGENT.toLowerCase(),
-            dripLMAddr?.toLowerCase?.() !== ADDR.DRIP_LM.toLowerCase(),
-            dripDistributorAddr?.toLowerCase?.() !== ADDR.DRIP_DISTRIBUTOR.toLowerCase(),
-            policyAddr?.toLowerCase?.() !== ADDR.POLICY.toLowerCase(),
-          ].some(Boolean);
-          if (mismatch) nextWarnings.push("MasterConfig pump bundle does not match expected addresses");
-        } catch (err) {
-          // ignore but do not fail whole fetch
-        }
-      }
 
       setPumpView({
         policy: { address: bbPolicyAddr, paused: bbPaused, minIntervalSec: Number(minIntervalSec) },
@@ -877,7 +858,6 @@ const BiggiTokenInner = ({
         },
         pair: pairView,
         quote: quoteView,
-        masterBundle,
       });
       setPumpWarnings(nextWarnings);
     } catch (err) {

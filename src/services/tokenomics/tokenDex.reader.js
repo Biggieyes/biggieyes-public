@@ -1,7 +1,7 @@
 import { Contract, ethers } from "ethers";
 import { getProvider } from "../../web3/provider";
 import { getTokenDexContracts } from "../../web3/contracts/tokenDex.contracts";
-import UniswapV2Pair from "../../config/abi/UniswapV2Pair.json";
+import UniswapV2Pair from '../../config/abi/UniswapV2Pair.json';
 
 async function _callOptional(method, fallback = null) {
   if (typeof method !== "function") return fallback;

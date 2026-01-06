@@ -2,7 +2,7 @@
 
 import { getROProvider, ADDR, getReadOnlyContract } from "../utils/contract";
 // Import ABI from central index to avoid case/extension issues
-import { ABI_LIQUIDITY_VAULT } from "../utils/abi/index.js";
+import { LiquidityVault as ABI_LIQUIDITY_VAULT } from "../config/abi/index.js";
 
 /**
  * Interní helper – vezme RO provider a vrátí instance LiquidityVault kontraktu

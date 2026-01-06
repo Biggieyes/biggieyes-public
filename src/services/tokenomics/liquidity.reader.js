@@ -50,30 +50,45 @@ export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
   const signerOrProvider = provider || getProvider();
   const { reserve, manager, vault } = getLiquidityContracts(chainId, signerOrProvider);
 
-  const [
-    maticBalance,
-    biggiBalance,
-    totalMaticReceived,
-    waitingBiggi,
-    dexRefillBiggi,
-    routerAddress,
-    factoryAddress,
-    vaultAddress,
-  ] = await Promise.all([
-    reserve.maticBalance(),
-    reserve.biggiBalance(),
-    reserve.totalMaticReceived(),
-    reserve.waitingBiggi(),
-    reserve.dexRefillBiggi(),
-    manager.router(),
-    manager.factory(),
-    manager.liquidityVault(),
-  ]);
+  let maticBalance, biggiBalance, totalMaticReceived, waitingBiggi, dexRefillBiggi, routerAddress, factoryAddress, vaultAddress;
+  try {
+    [
+      maticBalance,
+      biggiBalance,
+      totalMaticReceived,
+      waitingBiggi,
+      dexRefillBiggi,
+      routerAddress,
+      factoryAddress,
+      vaultAddress,
+    ] = await Promise.all([
+      reserve.maticBalance(),
+      reserve.biggiBalance(),
+      reserve.totalMaticReceived(),
+      reserve.waitingBiggi(),
+      reserve.dexRefillBiggi(),
+      manager.router(),
+      manager.factory(),
+      manager.liquidityVault(),
+    ]);
+    console.log("[LiquiditySnapshot] manager.router:", routerAddress);
+    console.log("[LiquiditySnapshot] manager.factory:", factoryAddress);
+    console.log("[LiquiditySnapshot] manager.liquidityVault:", vaultAddress);
+  } catch (err) {
+    console.warn("[LiquiditySnapshot] Chyba při načítání adres/metod:", err);
+  }
 
-  const [vaultLiquidityManager, totalLpLocked] = await Promise.all([
-    _callOptional(vault.liquidityManager),
-    _readTotalLpLocked({ vault, signerOrProvider, chainId }),
-  ]);
+  let vaultLiquidityManager = null, totalLpLocked = null;
+  try {
+    [vaultLiquidityManager, totalLpLocked] = await Promise.all([
+      _callOptional(vault.liquidityManager),
+      _readTotalLpLocked({ vault, signerOrProvider, chainId }),
+    ]);
+    console.log("[LiquiditySnapshot] vault.liquidityManager:", vaultLiquidityManager);
+    console.log("[LiquiditySnapshot] vault.totalLpLocked:", totalLpLocked);
+  } catch (err) {
+    console.warn("[LiquiditySnapshot] Chyba při načítání vault hodnot:", err);
+  }
 
   return {
     ts: Date.now(),

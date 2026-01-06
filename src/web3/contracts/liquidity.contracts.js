@@ -1,7 +1,7 @@
 import { Contract } from "ethers";
-import BiggiReserveV4 from "../../config/abi/BiggiReserveV4.json";
-import BiggiLiquidityManager from "../../config/abi/BiggiLiquidityManager.json";
-import LiquidityVault from "../../config/abi/LiquidityVault.json";
+import BiggiReserveV4 from '../../config/abi/BiggiReserveV4.json';
+import BiggiLiquidityManager from '../../config/abi/BiggiLiquidityManager.json';
+import LiquidityVault from '../../config/abi/LiquidityVault.json';
 import { getLiquidityAddresses } from "../../config/addresses";
 import defaultProvider from "../provider";
 

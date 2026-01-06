@@ -23,7 +23,20 @@ dist-ssr
 *.sw?
 
 # Environment files (lokální/produkční) — ignoruj všechny .env, ale povol .env.example
-.env*
+.env
+.env.local
+.env.*
+.envrc
+.env.bak
+.env.backup
+.env.development
+.env.production
+.env.test
+.env.staging
+!*.env.example
+.env.local
+.env.development
+.env.production
 !.env.example
 
 # Local Netlify folder

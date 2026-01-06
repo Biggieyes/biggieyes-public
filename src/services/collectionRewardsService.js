@@ -2,7 +2,7 @@
 // Wrapper around BiggiCollectionRewards ABI with read helpers and claim entry points.
 
 import { ethers } from "ethers";
-import { ABI_COLLECTION_REWARDS } from "../utils/abi/index.js";
+import { BiggiCollectionRewards as ABI_COLLECTION_REWARDS } from "../config/abi/index.js";
 
 const ABI = Array.isArray(ABI_COLLECTION_REWARDS) ? ABI_COLLECTION_REWARDS : [];
 export const BLOCK_INDICES = Array.from({ length: 9 }, (_, idx) => idx + 1);

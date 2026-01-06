@@ -8,7 +8,7 @@
 // Neprovádím žádné změny v kontraktu (logiku jsem nikde nezasahoval).
 
 import { ethers } from "ethers";
-import BiggiTokenRewardsABI from "../utils/abi/BiggiTokenRewards.json" assert { type: "json" };
+import { BiggiTokenRewards as BiggiTokenRewardsABI } from "../config/abi/index.js";
 
 const ABI = Array.isArray(BiggiTokenRewardsABI) ? BiggiTokenRewardsABI : [];
 

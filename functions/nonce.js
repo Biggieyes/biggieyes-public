@@ -78,25 +78,29 @@ async function handleRequest({ method, query, body }) {
     // continue — not fatal
   }
 
-  // generate nonce and insert
+  // generate nonce and upsert (replace any unused nonce for this address)
   const nonce = crypto.randomBytes(16).toString("hex");
   try {
-    const { error } = await supabase.from("nonces").insert({
-      nonce,
-      address: normalized.toLowerCase(),
-      used: false,
-      created_at: new Date().toISOString(),
-    });
+    // upsert: pokud existuje nepoužitý nonce pro adresu, nahradí ho novým
+    const { error } = await supabase
+      .from("nonces")
+      .upsert({
+        nonce,
+        address: normalized.toLowerCase(),
+        used: false,
+        created_at: new Date().toISOString(),
+      }, { onConflict: ["address"], ignoreDuplicates: false });
     if (error) {
-      console.error("nonce insert error:", error);
-      return jsonResponse(500, { ok: false, error: "Nonce insert failed" });
+      console.error("nonce upsert error:", error);
+      return jsonResponse(500, { ok: false, error: "Nonce upsert failed" });
     }
   } catch (e) {
-    console.error("nonce insert unexpected:", e);
-    return jsonResponse(500, { ok: false, error: "Nonce insert failed" });
+    console.error("nonce upsert unexpected:", e);
+    return jsonResponse(500, { ok: false, error: "Nonce upsert failed" });
   }
 
-  return jsonResponse(200, { ok: true, nonce, expiresInMs: TTL_MS });
+  // Bezpečná odpověď — nikdy nevracej žádné tajné klíče
+  return jsonResponse(200, { nonce, expiresInMs: TTL_MS });
 }
 
 /* VERCEL (default export) */
