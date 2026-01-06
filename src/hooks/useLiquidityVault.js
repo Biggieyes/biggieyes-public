@@ -1,7 +1,7 @@
 // src/hooks/useLiquidityVault.js
 import * as React from "react";
 import { ethers } from "ethers";
-import { getROProvider, ABI_LIQUIDITY_VAULT_READER } from "../utils/contract";
+import { getROProvider, ABI_LIQUIDITY_VAULT_READER, getReadOnlyContract } from "../utils/contract";
 import { getCached } from "../utils/fetchCache";
 
 export default function useLiquidityVault() {

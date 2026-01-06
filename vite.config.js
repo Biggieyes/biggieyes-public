@@ -51,7 +51,7 @@ export default defineConfig({
         find: /use-sync-external-store\/with-selector\.js$/,
         replacement: path.resolve(__dirname, "src/shims/useSyncExternalStoreWithSelector.js"),
       },
-      { find: /^buffer$/, replacement: "buffer/" },
+      { find: /^buffer$/, replacement: "buffer" },
       { find: /^util$/, replacement: "util/" },
       { find: /^process$/, replacement: path.resolve(__dirname, "src/shims/process-shim.js") },
       { find: /^js-sha3$/, replacement: path.resolve(__dirname, "src/shims/js-sha3-default.js") },

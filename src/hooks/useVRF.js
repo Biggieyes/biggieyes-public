@@ -2,7 +2,7 @@
 import * as React from "react";
 // ...existing code...
 import { ethers } from "ethers";
-import { getROProvider, ABI_VRF_READER } from "../utils/contract";
+import { getROProvider, ABI_VRF_READER, getReadOnlyContract } from "../utils/contract";
 
 /**
  * useVRF poskytuje:

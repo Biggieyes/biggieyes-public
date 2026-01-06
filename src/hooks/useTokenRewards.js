@@ -2,7 +2,6 @@
 import * as React from "react";
 import { ethers } from "ethers";
 import { getROProvider, ABI_REWARDS_READER } from "../utils/contract";
-import { getCached } from "../utils/fetchCache";
 
 const DEFAULT_DATA = {
   address: "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
@@ -32,7 +31,7 @@ export default function useTokenRewards(providerOverride = null) {
   const [error, setError] = React.useState(null);
 
   const refresh = React.useCallback(
-    async (options = {}) => {
+    async () => {
       setLoading(true);
       setError(null);
       try {

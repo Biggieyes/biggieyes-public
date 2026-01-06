@@ -1,6 +1,7 @@
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import WalletConnectButton from '../components/WalletConnectButton.jsx';
+import WalletConnectButton from '../src/components/WalletConnectButton.jsx';
 
 describe('WalletConnectButton', () => {
   it('renders and triggers wallet connect', async () => {

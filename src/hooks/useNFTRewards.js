@@ -1,7 +1,6 @@
 // src/hooks/useNFTRewards.js
 import * as React from "react";
-import { ethers } from "ethers";
-import { getROProvider, ABI_REWARDS_READER } from "../utils/contract";
+import { getROProvider } from "../utils/contract";
 
 const DEFAULT_DATA = {
   totalMinted: 0,
@@ -14,7 +13,7 @@ export default function useNFTRewards(providerOverride = null) {
   const [error, setError] = React.useState(null);
 
   const refresh = React.useCallback(
-    async (options = {}) => {
+    async () => {
       setLoading(true);
       setError(null);
       try {
@@ -22,11 +21,11 @@ export default function useNFTRewards(providerOverride = null) {
         if (!provider) throw new Error("Read-only provider not available");
 
         // RewardsReader contract instance
-        const rewardsReader = new ethers.Contract(
-          "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
-          ABI_REWARDS_READER,
-          provider,
-        );
+        // const rewardsReader = new ethers.Contract(
+        //   "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
+        //   ABI_REWARDS_READER,
+        //   provider,
+        // );
 
         // Čtení NFT rewards (příklad: totalMinted lze získat z jiné metody pokud je v ABI)
         // Zde pouze placeholder, upravte podle skutečné metody v ABI

@@ -2,28 +2,10 @@
 import * as React from "react";
 import { ethers } from "ethers";
 import { ABI_REWARDS_READER, getROProvider } from "../utils/contract";
-import {
-  BLOCK_INDICES,
-  ORANGE_MAIN_IDS,
-} from "../services/collectionRewardsService";
-import { getCached } from "../utils/fetchCache";
+import { BLOCK_INDICES } from "../services/collectionRewardsService";
+// ...existing code...
 
-function toNumber(value) {
-  if (value == null) return 0;
-  try {
-    return Number(value?.toString?.() ?? value);
-  } catch {
-    return 0;
-  }
-}
-
-function toEther(value) {
-  try {
-    return ethers.utils.formatEther(value ?? 0);
-  } catch {
-    return "0";
-  }
-}
+// ...existing code...
 
 export function useCollectionRewards(walletAddress, providerOverride) {
   const [data, setData] = React.useState({
@@ -46,7 +28,7 @@ export function useCollectionRewards(walletAddress, providerOverride) {
   const [error, setError] = React.useState(null);
 
   const refresh = React.useCallback(
-    async (options = {}) => {
+    async () => {
       setLoading(true);
       setError(null);
       try {
@@ -83,7 +65,7 @@ export function useCollectionRewards(walletAddress, providerOverride) {
         setLoading(false);
       }
     },
-    [walletAddress, providerOverride],
+    [providerOverride],
   );
 
   React.useEffect(() => {

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1767684640900" clover="3.2.0">
-  <project timestamp="1767684640900" name="All files">
-    <metrics statements="14603" coveredstatements="0" conditionals="12828" coveredconditionals="0" methods="3415" coveredmethods="0" elements="30846" coveredelements="0" complexity="0" loc="14603" ncloc="14603" packages="41" files="277" classes="277"/>
+<coverage generated="1767686514647" clover="3.2.0">
+  <project timestamp="1767686514648" name="All files">
+    <metrics statements="14603" coveredstatements="10" conditionals="12828" coveredconditionals="25" methods="3415" coveredmethods="4" elements="30846" coveredelements="39" complexity="0" loc="14603" ncloc="14603" packages="42" files="278" classes="278"/>
     <package name="src">
       <metrics statements="2181" coveredstatements="0" conditionals="1558" coveredconditionals="0" methods="358" coveredmethods="0"/>
       <file name="App.jsx" path="C:\Users\biggi\OneDrive\Obrázky\Desktop\FRONTEND\BIGGINFTWEB\src\App.jsx">
@@ -2345,7 +2345,7 @@
       </file>
     </package>
     <package name="src.components">
-      <metrics statements="2153" coveredstatements="0" conditionals="2276" coveredconditionals="0" methods="515" coveredmethods="0"/>
+      <metrics statements="2153" coveredstatements="2" conditionals="2276" coveredconditionals="1" methods="515" coveredmethods="1"/>
       <file name="AdminDashboard.jsx" path="C:\Users\biggi\OneDrive\Obrázky\Desktop\FRONTEND\BIGGINFTWEB\src\components\AdminDashboard.jsx">
         <metrics statements="90" coveredstatements="0" conditionals="34" coveredconditionals="0" methods="16" coveredmethods="0"/>
         <line num="10" count="0" type="stmt"/>
@@ -4517,12 +4517,12 @@
         <line num="12" count="0" type="stmt"/>
       </file>
       <file name="WalletConnectButton.jsx" path="C:\Users\biggi\OneDrive\Obrázky\Desktop\FRONTEND\BIGGINFTWEB\src\components\WalletConnectButton.jsx">
-        <metrics statements="5" coveredstatements="0" conditionals="4" coveredconditionals="0" methods="2" coveredmethods="0"/>
-        <line num="4" count="0" type="stmt"/>
+        <metrics statements="5" coveredstatements="2" conditionals="4" coveredconditionals="1" methods="2" coveredmethods="1"/>
+        <line num="4" count="1" type="stmt"/>
         <line num="5" count="0" type="cond" truecount="0" falsecount="2"/>
         <line num="6" count="0" type="stmt"/>
         <line num="7" count="0" type="stmt"/>
-        <line num="15" count="0" type="stmt"/>
+        <line num="15" count="1" type="stmt"/>
       </file>
       <file name="WeeklyCountdown.jsx" path="C:\Users\biggi\OneDrive\Obrázky\Desktop\FRONTEND\BIGGINFTWEB\src\components\WeeklyCountdown.jsx">
         <metrics statements="28" coveredstatements="0" conditionals="35" coveredconditionals="0" methods="6" coveredmethods="0"/>
@@ -7796,17 +7796,17 @@
       </file>
     </package>
     <package name="src.components.redeem">
-      <metrics statements="122" coveredstatements="0" conditionals="162" coveredconditionals="0" methods="27" coveredmethods="0"/>
+      <metrics statements="122" coveredstatements="8" conditionals="162" coveredconditionals="24" methods="27" coveredmethods="3"/>
       <file name="RedeemFlow.jsx" path="C:\Users\biggi\OneDrive\Obrázky\Desktop\FRONTEND\BIGGINFTWEB\src\components\redeem\RedeemFlow.jsx">
-        <metrics statements="8" coveredstatements="0" conditionals="42" coveredconditionals="0" methods="5" coveredmethods="0"/>
-        <line num="17" count="0" type="stmt"/>
-        <line num="18" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="19" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="20" count="0" type="stmt"/>
-        <line num="23" count="0" type="stmt"/>
-        <line num="25" count="0" type="stmt"/>
-        <line num="28" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="30" count="0" type="stmt"/>
+        <metrics statements="8" coveredstatements="8" conditionals="42" coveredconditionals="24" methods="5" coveredmethods="3"/>
+        <line num="17" count="1" type="stmt"/>
+        <line num="18" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="19" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="20" count="1" type="stmt"/>
+        <line num="23" count="1" type="stmt"/>
+        <line num="25" count="1" type="stmt"/>
+        <line num="28" count="1" type="cond" truecount="2" falsecount="0"/>
+        <line num="30" count="1" type="stmt"/>
       </file>
       <file name="RedeemOverlay.jsx" path="C:\Users\biggi\OneDrive\Obrázky\Desktop\FRONTEND\BIGGINFTWEB\src\components\redeem\RedeemOverlay.jsx">
         <metrics statements="114" coveredstatements="0" conditionals="120" coveredconditionals="0" methods="22" coveredmethods="0"/>
@@ -11379,6 +11379,12 @@
       <file name="projectInfo.js" path="C:\Users\biggi\OneDrive\Obrázky\Desktop\FRONTEND\BIGGINFTWEB\src\locales\projectInfo.js">
         <metrics statements="1" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
         <line num="2" count="0" type="stmt"/>
+      </file>
+    </package>
+    <package name="src.pages.collection">
+      <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="rewards-info.jsx" path="C:\Users\biggi\OneDrive\Obrázky\Desktop\FRONTEND\BIGGINFTWEB\src\pages\collection\rewards-info.jsx">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
       </file>
     </package>
     <package name="src.panels.TokenomicsPanel">

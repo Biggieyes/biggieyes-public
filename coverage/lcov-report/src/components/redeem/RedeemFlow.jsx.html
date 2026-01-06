@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">80% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/10</span>
+                <span class='fraction'>8/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">57.14% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/42</span>
+                <span class='fraction'>24/42</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">60% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/5</span>
+                <span class='fraction'>3/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>8/8</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -188,20 +188,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -288,34 +288,34 @@ import "./RedeemFlow.css";
  * Presentational component for the redeem/reveal flow.
  * No internal logic — just triggers the provided callbacks.
  */
-export default function <span class="fstat-no" title="function not covered" >RedeemFlow(</span>{
-  isRedeeming = <span class="branch-0 cbranch-no" title="branch not covered" >false,</span>
-  vrfPending = <span class="branch-0 cbranch-no" title="branch not covered" >false,</span>
-  redeemMsg = <span class="branch-0 cbranch-no" title="branch not covered" >"",</span>
-  onRedeem = <span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >()</span> =&gt; {},</span>
-  onRefresh = <span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >()</span> =&gt; {},</span>
-  pendingTicketId = <span class="branch-0 cbranch-no" title="branch not covered" >null,</span>
+export default function RedeemFlow({
+  isRedeeming = false,
+  vrfPending = false,
+  redeemMsg = "",
+  onRedeem = <span class="fstat-no" title="function not covered" >()</span> =&gt; {},
+  onRefresh = <span class="fstat-no" title="function not covered" >()</span> =&gt; {},
+  pendingTicketId = null,
 }) {
   // Step index: 0 = Ready, 1 = Tx submitting/confirming, 2 = VRF pending
-  const stepIndex = <span class="cstat-no" title="statement not covered" >React.useMemo(<span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (vrfPending) <span class="cstat-no" title="statement not covered" >return 2;</span></span>
-<span class="cstat-no" title="statement not covered" >    if (isRedeeming) <span class="cstat-no" title="statement not covered" >return 1;</span></span>
-<span class="cstat-no" title="statement not covered" >    return 0;</span>
+  const stepIndex = React.useMemo(() =&gt; {
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (vrfPending) <span class="cstat-no" title="statement not covered" >return 2;</span>
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (isRedeeming) <span class="cstat-no" title="statement not covered" >return 1;</span>
+    return 0;
   }, [isRedeeming, vrfPending]);
 &nbsp;
-  const progressPct = <span class="cstat-no" title="statement not covered" >React.useMemo(<span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
+  const progressPct = React.useMemo(() =&gt; {
     // 3 steps (0..2) -&gt; 0%, 50%, 100%
-<span class="cstat-no" title="statement not covered" >    return Math.round((stepIndex / 2) * 100);</span>
+    return Math.round((stepIndex / 2) * 100);
   }, [stepIndex]);
 &nbsp;
-  const canRedeem = <span class="cstat-no" title="statement not covered" >!isRedeeming &amp;&amp; !vrfPending;</span>
+  const canRedeem = !isRedeeming &amp;&amp; !vrfPending;
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return (</span>
+  return (
     &lt;section className="redeem-card" aria-live="polite"&gt;
       &lt;header className="redeem-header"&gt;
         &lt;div className="redeem-title"&gt;Redeem &amp;amp; Reveal&lt;/div&gt;
         {pendingTicketId &amp;&amp; (
-          &lt;div className="redeem-badge" title="Ticket being redeemed"&gt;
+<span class="branch-1 cbranch-no" title="branch not covered" >          &lt;div className="redeem-badge" title="Ticket being redeemed"&gt;</span>
             Ticket #{pendingTicketId}
           &lt;/div&gt;
         )}
@@ -324,24 +324,24 @@ export default function <span class="fstat-no" title="function not covered" >Red
       {/* Step indicator */}
       &lt;ol className="redeem-steps"&gt;
         &lt;li
-          className={`step ${stepIndex &gt;= 0 ? "done" : ""} ${stepIndex === 0 ? "active" : ""}`}
+          className={`step ${stepIndex &gt;= 0 ? "done" : <span class="branch-1 cbranch-no" title="branch not covered" >""}</span> ${stepIndex === 0 ? "active" : <span class="branch-1 cbranch-no" title="branch not covered" >""}</span>`}
         &gt;
           &lt;span className="dot" /&gt;
           &lt;span className="label"&gt;Ready to Redeem&lt;/span&gt;
         &lt;/li&gt;
         &lt;li
-          className={`step ${stepIndex &gt;= 1 ? "done" : ""} ${stepIndex === 1 ? "active" : ""}`}
+          className={`step ${stepIndex &gt;= 1 ? <span class="branch-0 cbranch-no" title="branch not covered" >"done" </span>: ""} ${stepIndex === 1 ? <span class="branch-0 cbranch-no" title="branch not covered" >"active" </span>: ""}`}
         &gt;
           &lt;span className="dot"&gt;
-            {isRedeeming &amp;&amp; &lt;span className="spinner" /&gt;}
+            {isRedeeming &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >&lt;span className="spinner" /&gt;}</span>
           &lt;/span&gt;
           &lt;span className="label"&gt;Tx Confirmation&lt;/span&gt;
         &lt;/li&gt;
         &lt;li
-          className={`step ${stepIndex &gt;= 2 ? "done" : ""} ${stepIndex === 2 ? "active" : ""}`}
+          className={`step ${stepIndex &gt;= 2 ? <span class="branch-0 cbranch-no" title="branch not covered" >"done" </span>: ""} ${stepIndex === 2 ? <span class="branch-0 cbranch-no" title="branch not covered" >"active" </span>: ""}`}
         &gt;
           &lt;span className="dot"&gt;
-            {vrfPending &amp;&amp; &lt;span className="spinner" /&gt;}
+            {vrfPending &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >&lt;span className="spinner" /&gt;}</span>
           &lt;/span&gt;
           &lt;span className="label"&gt;VRF Pending&lt;/span&gt;
         &lt;/li&gt;
@@ -359,24 +359,24 @@ export default function <span class="fstat-no" title="function not covered" >Red
       &lt;/div&gt;
 &nbsp;
       {/* Message line */}
-      {!!redeemMsg &amp;&amp; &lt;div className="redeem-msg"&gt;{redeemMsg}&lt;/div&gt;}
+      {!!redeemMsg &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >&lt;div className="redeem-msg"&gt;{redeemMsg}&lt;/div&gt;}</span>
 &nbsp;
       {/* CTA buttons */}
       &lt;div className="redeem-actions"&gt;
         &lt;button
-          className={`redeem-cta ${!canRedeem ? "disabled" : ""}`}
-          onClick={canRedeem ? onRedeem : undefined}
+          className={`redeem-cta ${!canRedeem ? <span class="branch-0 cbranch-no" title="branch not covered" >"disabled" </span>: ""}`}
+          onClick={canRedeem ? onRedeem : <span class="branch-1 cbranch-no" title="branch not covered" >undefined}</span>
           disabled={!canRedeem}
         &gt;
           {canRedeem
             ? "Redeem Ticket"
-            : isRedeeming
+            : <span class="branch-1 cbranch-no" title="branch not covered" >isRedeeming</span>
               ? "Submitting..."
               : "Waiting for VRF..."}
         &lt;/button&gt;
 &nbsp;
         {vrfPending &amp;&amp; (
-          &lt;button className="redeem-refresh" onClick={onRefresh}&gt;
+<span class="branch-1 cbranch-no" title="branch not covered" >          &lt;button className="redeem-refresh" onClick={onRefresh}&gt;</span>
             Refresh reveal
           &lt;/button&gt;
         )}
@@ -397,7 +397,7 @@ export default function <span class="fstat-no" title="function not covered" >Red
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-01-06T07:30:39.511Z
+                at 2026-01-06T08:01:52.967Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

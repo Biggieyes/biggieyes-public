@@ -2,7 +2,7 @@
 import "./polyfills/module.js";
 import * as React from "react";
 import { render } from "preact/compat";
-import { Buffer } from "buffer/";
+import { Buffer } from "buffer";
 import "./index.css";
 import App from "./App.jsx";
 import { Web3Provider } from "./providers/Web3Provider.jsx";
