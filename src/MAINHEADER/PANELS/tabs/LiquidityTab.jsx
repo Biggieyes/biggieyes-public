@@ -1,6 +1,6 @@
 import * as React from "react";
 import LineChart from "../charts/LineChart";
-import LiquidityFlow from "../flow/LiquidityFlow";
+import LiquidityFlow from "../★☆ECOSYSTEM☆★/★FLOW★/LiquidityFlow";
 import StatCard from "../components/StatCard";
 import { mapSnapshotToFlowRows } from "../../../services/tokenomics/liquidity.mappers";
 import "./LiquidityTab.css";
@@ -75,3 +75,4 @@ const LiquidityTab = ({
 };
 
 export default LiquidityTab;
+

@@ -105,3 +105,4 @@ export function rewardImageFor(type, idx) {
     `/images/rewards/${String(type ?? "")}/${String(idx ?? "")}.png`,
   );
 }
+

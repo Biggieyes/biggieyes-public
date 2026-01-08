@@ -2,3 +2,4 @@
 export default function useLmSnapshot() {
   // ...implementace LM snapshot
 }
+

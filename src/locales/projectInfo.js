@@ -137,3 +137,4 @@ BIGGI is our rewards token. In the app you’ll see the **token address**, **nam
 You clearly see **how the swap flows**, **exactly how much is used**, and **what you receive** (LP tokens). Everything is **previewed upfront**, and if anything changes in the background (router, percentages, safety actions), the app explains it clearly.
 `,
 };
+

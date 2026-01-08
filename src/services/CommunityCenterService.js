@@ -7,7 +7,7 @@
 // - bnToString helper + formatSummary
 // Neprovádím žádné změny v kontraktu.
 
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { getROProvider, ADDR } from "../utils/contract";
 
 const ABI = [
@@ -131,7 +131,7 @@ export default class CommunityCenterService {
     if (!finalProvider) throw new Error("Provider required");
     this.address = address;
     this.provider = finalProvider;
-    this.contract = new ethers.Contract(address, ABI, finalProvider);
+    this.contract = new Contract(address, ABI, finalProvider);
     this._onBlockHandler = null;
     this._signerConnected = false;
   }
@@ -349,3 +349,4 @@ export default class CommunityCenterService {
     };
   }
 }
+

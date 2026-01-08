@@ -4,3 +4,4 @@ const ReactDOMClient = ReactDOMNamespace.default || ReactDOMNamespace;
 
 export default ReactDOMClient;
 export const { createRoot, hydrateRoot } = ReactDOMClient;
+

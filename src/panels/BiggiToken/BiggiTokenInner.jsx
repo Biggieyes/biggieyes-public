@@ -1,7 +1,7 @@
 // BIGGI ecosystem panel - premium layout, safe fallbacks, live snapshot wiring
 
 import * as React from "react";
-import "../../components/panels/RewardsPanel.css";
+import "../../MAINHEADER/PANELS/★☆REWARDS☆★/RewardsPanel.css";
 import "../../styles/biggi-token.skin.css";
 import styles from "./styles/BiggiToken.module.css";
 import LiquidityVaultChart from "../../components/TOKEN/LiquidityVaultChart.jsx";
@@ -31,11 +31,11 @@ import {
   DripDistributor as ABI_DRIP_DISTRIBUTOR,
   // Pokud máš ABI_UPKEEP a ABI_ROUTER v config/abi, přidej je zde
 } from "../../config/abi/index.js";
-import TokenomicsPanel from "../../panels/TokenomicsPanel/TokenomicsPanel";
-import DistributorTokenTab from "../../panels/TokenomicsPanel/tabs/DistributorTokenTab";
-import DripTab from "../../panels/TokenomicsPanel/tabs/DripTab";
-import BuybackTreasuryTab from "../../panels/TokenomicsPanel/tabs/BuybackTreasuryTab";
-import { ethers } from "ethers";
+import TokenomicsPanel from "../../MAINHEADER/PANELS/TokenomicsPanel.jsx";
+import DistributorTokenTab from "../../MAINHEADER/PANELS/tabs/DistributorTokenTab.jsx";
+import DripTab from "../../MAINHEADER/PANELS/tabs/DripTab.jsx";
+import BuybackTreasuryTab from "../../MAINHEADER/PANELS/tabs/BuybackTreasuryTab.jsx";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import useDripSnapshot from "../../hooks/tokenomics/useDripSnapshot";
 import useDripHistory from "../../hooks/tokenomics/useDripHistory";
 import useBuybackTreasurySnapshot from "../../hooks/tokenomics/useBuybackTreasurySnapshot";
@@ -62,12 +62,8 @@ import useDripKeeper from "../../hooks/useDripKeeper";
 import useDistributor from "../../hooks/useDistributor";
 
 // Modularized component imports
-import Card from "./components/Card";
-import Line from "./components/Line";
-import AddressLine from "./components/AddressLine";
-import HeroStat from "./components/HeroStat";
-import SectionHeader from "./components/SectionHeader";
-import Button from "./components/Button";
+import BlockCard from "../../components/CollectionBlocksGrid.BlockCard.jsx";
+import HeroStat from "./HeroStats.jsx";
 
 import {
   withTimeout,
@@ -162,3 +158,4 @@ function BiggiTokenInner(props) {
 }
 
 export default BiggiTokenInner;
+

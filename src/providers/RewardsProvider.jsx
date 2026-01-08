@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { useContracts } from "./ContractsProvider";
 
 const Ctx = React.createContext(null);
@@ -35,7 +35,7 @@ export function RewardsProvider({ children }) {
           }
         }
         setMintVolumeMatic(
-          volWei ? Number(ethers.utils.formatEther(volWei)) : null,
+          volWei ? Number(formatEther(volWei)) : null,
         );
 
         // weekly pool
@@ -61,9 +61,9 @@ export function RewardsProvider({ children }) {
           }
         } catch {}
         if (weeklyWei != null) {
-          setRewardPool(Number(ethers.utils.formatEther(weeklyWei)));
+          setRewardPool(Number(formatEther(weeklyWei)));
         } else if (volWei) {
-          setRewardPool(Number(ethers.utils.formatEther(volWei)) * 0.22);
+          setRewardPool(Number(formatEther(volWei)) * 0.22);
         } else {
           setRewardPool(0);
         }
@@ -109,3 +109,4 @@ export function useRewards() {
   if (!v) throw new Error("useRewards must be used inside <RewardsProvider>");
   return v;
 }
+

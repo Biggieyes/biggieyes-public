@@ -1,7 +1,7 @@
 // src/services/collectionRewardsService.js
 // Wrapper around BiggiCollectionRewards ABI with read helpers and claim entry points.
 
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { BiggiCollectionRewards as ABI_COLLECTION_REWARDS } from "../config/abi/index.js";
 
 const ABI = Array.isArray(ABI_COLLECTION_REWARDS) ? ABI_COLLECTION_REWARDS : [];
@@ -14,7 +14,7 @@ export default class CollectionRewardsService {
     if (!provider) throw new Error("Provider required");
     this.address = address;
     this.provider = provider;
-    this.contract = new ethers.Contract(address, ABI, provider);
+    this.contract = new Contract(address, ABI, provider);
     this._signerConnected = false;
   }
 
@@ -177,3 +177,4 @@ export default class CollectionRewardsService {
     return Number.isFinite(candidate) ? candidate : 0;
   }
 }
+

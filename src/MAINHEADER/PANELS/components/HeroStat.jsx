@@ -6,3 +6,4 @@ const HeroStat = ({ label, value }) => (
   </div>
 );
 export default HeroStat;
+

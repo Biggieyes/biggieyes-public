@@ -41,3 +41,4 @@ const StatCard = ({ label, value, hint, accent, tone }) => {
 };
 
 export default StatCard;
+

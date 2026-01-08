@@ -3,7 +3,7 @@ import {
   resolveTicketPriceWeiFromHub,
   ensureAmoy,
 } from "../../utils/contract";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 
 function pickMintName(c) {
   const prefer = [
@@ -50,11 +50,11 @@ export async function mintAuto(qty = 1) {
   const isPayable = fragment?.stateMutability === "payable";
 
   // price per item
-  const unitWeiBN = ethers.BigNumber.from(await resolveTicketPriceWeiFromHub());
+  const unitWeiBN = BigInt(await resolveTicketPriceWeiFromHub());
   // total
   const totalValue = isPayable
-    ? unitWeiBN.mul(ethers.BigNumber.from(qty))
-    : ethers.constants.Zero;
+    ? unitWeiBN.mul(BigInt(qty))
+    : 0n;
 
   // gas estimate
   let gas;
@@ -91,3 +91,4 @@ export async function mintAutoAndWait(qty = 1) {
   const tx = await mintAuto(qty);
   return await tx.wait();
 }
+

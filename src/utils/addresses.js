@@ -310,3 +310,4 @@ export const ADDRESSES = {
 //   - BiggiRewardsReader (monolit)  -> rozděleno na COLLECTION_REWARDS_READER, NFT_REWARDS_READER, TOKEN_REWARDS_READER, RESERVE_READER
 //   - BiggiMainReader              -> MAIN_READER
 //   - BiggiTokenomicsReader        -> nahrazeno RESERVE_READER / LM_READER / BUYBACK_READER podle toho co voláš
+

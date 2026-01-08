@@ -1,5 +1,4 @@
 // src/constants/blocks.js
-import BLOCK_IMAGES from "../utils/blocksimages";
 
 export const DEFAULT_BLOCKS = [
   "ORANGE",
@@ -113,3 +112,4 @@ export const FALLBACK_BTN_STYLE = {
 
 // ✅ EXPORTUJEME BLOCK_IMAGES
 export { BLOCK_IMAGES };
+

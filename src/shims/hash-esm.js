@@ -4,3 +4,4 @@ const require = createRequire(import.meta.url);
 const hash = require("hash.js");
 export { hash };
 export default hash;
+

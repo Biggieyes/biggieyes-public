@@ -2,7 +2,7 @@
 // Merkle helpers for Moderator Center (client-side utility).
 import { MerkleTree } from "merkletreejs";
 import keccak256 from "keccak256";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 
 export const buildLeaf = (slotId, walletAddress, amountWei) => {
   const packed = ethers.utils.solidityPack(
@@ -33,3 +33,4 @@ export const buildProofs = (entries = []) => {
   }));
   return { root: tree.getHexRoot(), proofs };
 };
+

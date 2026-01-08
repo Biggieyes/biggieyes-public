@@ -1,7 +1,7 @@
 import * as React from "react";
 import "./InfoButton.css";
 
-const ProjectInfoModal = React.lazy(() => import("../components/INFO/ProjectInfoModal"));
+const ProjectInfoModal = React.lazy(() => import("../ACTIONBUTTONS/INFO/ProjectInfoModal.jsx"));
 
 export default function ActionButtons({
   onMint,
@@ -241,3 +241,4 @@ export default function ActionButtons({
     </div>
   );
 }
+

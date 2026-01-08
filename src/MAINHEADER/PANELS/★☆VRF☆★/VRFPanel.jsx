@@ -1,5 +1,5 @@
 import * as React from "react";
-import "../panels/RewardsPanel.css";
+import "../★☆REWARDS☆★/RewardsPanel.css";
 import "./VRFPanel.css";
 import { useVRF } from "../../../hooks/useVRF";
 
@@ -732,3 +732,4 @@ export default function VRFPanel({
     </section>
   );
 }
+

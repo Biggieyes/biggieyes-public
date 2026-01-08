@@ -1,6 +1,6 @@
 // src/hooks/useLiquidityVault.js
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { getROProvider, ABI_LIQUIDITY_VAULT_READER, getReadOnlyContract } from "../utils/contract";
 import { getCached } from "../utils/fetchCache";
 
@@ -18,7 +18,7 @@ export default function useLiquidityVault() {
     setError(null);
     try {
       // Nový LiquidityVaultReader contract instance
-      const contract = new ethers.Contract(
+      const contract = new Contract(
         "0xaCbc930541E08c7dF9E4d3597173b5D781FD161b",
         ABI_LIQUIDITY_VAULT_READER,
         getROProvider(),
@@ -82,3 +82,4 @@ export default function useLiquidityVault() {
 
   return { data, loading, error, refresh, getLpBalance, isWhitelistedPair };
 }
+

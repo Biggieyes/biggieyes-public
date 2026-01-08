@@ -3,3 +3,4 @@
 import { supabase, supabaseReady } from "../supabaseClient";
 
 export { supabase, supabaseReady };
+

@@ -19,3 +19,4 @@ export * from "recharts";
 
 // Default bundle
 export default Recharts;
+

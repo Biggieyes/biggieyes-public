@@ -1,11 +1,11 @@
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { ADDR } from "../../../utils/contract.js";
 import { BiggiLpPriceFeed as ABI_LP_PRICE_FEED } from "../../../config/abi/index.js";
 import LineChart from "../charts/LineChart";
 import StatusBadge from "../components/StatusBadge";
 import ValueRow from "../components/ValueRow";
-import TokenDexFlow from "../flow/TokenDexFlow";
+import TokenDexFlow from "../★☆ECOSYSTEM☆★/★FLOW★/TokenDexFlow";
 import {
   mapHistoryToPricePoints,
   mapHistoryToReservePoints,
@@ -24,11 +24,11 @@ const TokenDexTab = ({ snapshot, history = [], isLoading, error }) => {
       try {
         const provider =
           window && window.ethereum
-            ? new ethers.providers.Web3Provider(window.ethereum)
+            ? new BrowserProvider(window.ethereum)
             : ethers.getDefaultProvider();
         const feedAddr = ADDR.LP_PRICE_FEED;
         if (feedAddr) {
-          const feed = new ethers.Contract(
+          const feed = new Contract(
             feedAddr,
             ABI_LP_PRICE_FEED,
             provider,
@@ -269,3 +269,4 @@ const TokenDexTab = ({ snapshot, history = [], isLoading, error }) => {
 };
 
 export default TokenDexTab;
+

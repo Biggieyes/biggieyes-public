@@ -1,6 +1,6 @@
 // src/hooks/useBiggiTokenomicsReader.js
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { getBiggiTokenomicsReaderRO } from "../utils/contract";
 import { getFullStatusSafe } from "../utils/tokenomicsFullStatus.js";
 import { canPoll, getPollInterval } from "../utils/polling";
@@ -9,7 +9,7 @@ const POLL_INTERVAL_MS = getPollInterval(20_000, "VITE_TOKENOMICS_POLL_MS");
 
 function toEther(bn) {
   try {
-    return ethers.utils.formatEther(bn || 0);
+    return formatEther(bn || 0);
   } catch {
     return "0";
   }
@@ -113,3 +113,4 @@ export default function useBiggiTokenomicsReader() {
     },
   };
 }
+

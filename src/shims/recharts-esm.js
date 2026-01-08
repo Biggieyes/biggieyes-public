@@ -16,3 +16,4 @@ export const ComposedChart = Recharts.ComposedChart;
 
 export * from "recharts/es6/index.js";
 export default Recharts;
+

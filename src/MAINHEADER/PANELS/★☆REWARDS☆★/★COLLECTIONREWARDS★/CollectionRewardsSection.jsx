@@ -399,3 +399,4 @@ function CollectionRewardsSection({
 }
 
 export default CollectionRewardsSection;
+

@@ -1,5 +1,5 @@
 // api/message.js
-import { ethers } from "ethers";
+import { verifyMessage } from "ethers";
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -43,7 +43,7 @@ export default async function handler(req, res) {
     const payload = `${nonce}|${content}|${timestamp}`;
     let recovered;
     try {
-      recovered = ethers.utils.verifyMessage(payload, signature);
+      recovered = verifyMessage(payload, signature);
     } catch {
       return res.status(400).json({ error: "invalid signature" });
     }
@@ -77,3 +77,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "unexpected" });
   }
 }
+

@@ -1,5 +1,5 @@
 import * as React from "react";
-import ValueRow from "../components/ValueRow";
+import ValueRow from "../../components/ValueRow";
 import "./TokenDexFlow.css";
 
 const _formatDelta = (value) => {
@@ -86,3 +86,4 @@ const TokenDexFlow = ({ snapshot, history = [] }) => {
 };
 
 export default TokenDexFlow;
+

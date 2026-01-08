@@ -1,10 +1,10 @@
 // src/components/RewardsBlockSummary.jsx
 import * as React from "react";
-import { ethers } from "ethers";
+import { parseEther, Contract, formatEther } from "ethers";
 import { ADDR, getROProvider, getTokenRewardsRO } from "../../../utils/contract";
 
 const DEFAULT_WEIGHTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // index = blockIdx (1..10)
-const DEFAULT_UNIT_REWARD = ethers.utils.parseEther("1"); // 1 BIGGI (wei)
+const DEFAULT_UNIT_REWARD = parseEther("1"); // 1 BIGGI (wei)
 
 const FALLBACK_ABI = [
   "function getBlockWeights() view returns (uint8[11])",
@@ -41,7 +41,7 @@ export default function RewardsBlockSummary({
           contract = getTokenRewardsRO(provider);
         } catch {
           if (!ADDR?.TOKEN_REWARDS) return;
-          contract = new ethers.Contract(
+          contract = new Contract(
             ADDR.TOKEN_REWARDS,
             FALLBACK_ABI,
             provider,
@@ -55,7 +55,7 @@ export default function RewardsBlockSummary({
         // convert uint8[11] to JS number array
         const wnums = Array.from(w).map((n) => Number(n));
         setOnChainWeights(wnums);
-        setUnitRewardWei(ethers.BigNumber.from(u));
+        setUnitRewardWei(BigInt(u));
       } catch (err) {
         // pokud cokoliv selže, nech fallback (props.weights)
         console.warn("RewardsBlockSummary: on-chain load failed:", err);
@@ -119,8 +119,8 @@ export default function RewardsBlockSummary({
       const weight = Number(effectiveWeights[blkIdx] ?? blkIdx);
       const units = cnt * weight;
       // biggi amount (string) = units * unitRewardWei (in wei) => formatEther
-      const biggiWei = ethers.BigNumber.from(unitRewardWei).mul(units);
-      const biggi = Number(ethers.utils.formatEther(biggiWei)); // number for display
+      const biggiWei = BigInt(unitRewardWei) * BigInt(units);
+      const biggi = Number(formatEther(biggiWei)); // number for display
       return {
         name: blockNames[i] || `Block ${blkIdx}`,
         count: cnt,
@@ -291,4 +291,5 @@ const tdStyle = {
   fontSize: "0.95em",
   fontWeight: 600,
 };
+
 

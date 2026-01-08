@@ -21,3 +21,4 @@ const DestinationsTable = ({ title, items = [] }) => (
 );
 
 export default DestinationsTable;
+

@@ -393,3 +393,4 @@ export function useContracts() {
     throw new Error("useContracts must be used inside <ContractsProvider>");
   return context;
 }
+

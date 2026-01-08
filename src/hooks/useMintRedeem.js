@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { getFrontendSnapshotLiteActive } from "../utils/contract";
 
 export function useMintRedeem(params) {
@@ -47,7 +47,7 @@ export function useMintRedeem(params) {
       if (typeof f === "function") {
         try {
           const v = await f();
-          if (v != null) return ethers.BigNumber.from(v);
+          if (v != null) return BigInt(v);
         } catch (err) {
           console.debug("resolveTicketPriceWei candidate failed", n, err);
         }
@@ -57,7 +57,7 @@ export function useMintRedeem(params) {
     const snap = await getFrontendSnapshotLiteActive(reader);
     const wei = Array.isArray(snap) ? snap[0] : snap?.ticketPriceWei;
     if (wei == null) throw new Error("Ticket price unavailable");
-    return ethers.BigNumber.from(wei);
+    return BigInt(wei);
   }, [contractRef, getReadOnlyContract, getReaderRO]);
 
   const mintTicket = React.useCallback(async () => {
@@ -86,7 +86,7 @@ export function useMintRedeem(params) {
       try {
         if (typeof contract.distributor === "function") {
           const dist = await contract.distributor().catch(() => "");
-          if (!dist || dist === ethers.constants.AddressZero) {
+          if (!dist || dist === ZeroAddress) {
             return alert(
               "Distributor není nastavený na kontraktu. Mint nebude fungovat.",
             );
@@ -102,7 +102,7 @@ export function useMintRedeem(params) {
         console.debug("mintTicket distributor preflight failed", err);
       }
 
-      const price = ethers.BigNumber.from(await resolveTicketPriceWei());
+      const price = BigInt(await resolveTicketPriceWei());
       if (!price || price.lte(0)) {
         return alert("Mint price unavailable or zero; try again later.");
       }
@@ -198,7 +198,7 @@ export function useMintRedeem(params) {
       let tickets = [];
       try {
         const ticketMetas = await fetchMyTickets(walletAddress);
-        tickets = ticketMetas.map((t) => ethers.BigNumber.from(t.tokenId));
+        tickets = ticketMetas.map((t) => BigInt(t.tokenId));
       } catch (err) {
         console.debug("redeemTicket fetchMyTickets failed", err);
       }
@@ -357,3 +357,4 @@ export function useMintRedeem(params) {
     onVRFUpdateParams,
   };
 }
+

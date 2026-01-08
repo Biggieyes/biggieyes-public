@@ -1,6 +1,6 @@
 // src/utils/multicall.js
 // Lightweight multicall helper using the standard Multicall2 aggregate interface.
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { ADDR } from "./addresses";
 
 const MULTICALL_ABI = [
@@ -62,7 +62,7 @@ export async function multicallAggregate(
     return results;
   }
 
-  const mc = new ethers.Contract(addr, MULTICALL_ABI, provider);
+  const mc = new Contract(addr, MULTICALL_ABI, provider);
   const callInput = calls.map((c) => ({
     target: c.target,
     callData: c.iface.encodeFunctionData(c.method, c.params || []),
@@ -74,3 +74,4 @@ export async function multicallAggregate(
 }
 
 export default { multicallAggregate };
+

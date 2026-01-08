@@ -23,3 +23,4 @@ export const ICONS = [
   { src: users, alt: "USERS", modalText: "Users and Holders" },
   { src: expansion, alt: "COMMUNITY CENTER", modalText: "Community Center" },
 ];
+

@@ -76,3 +76,4 @@ export default function WeeklySummaryBuilder({ onEntries }) {
     </section>
   );
 }
+

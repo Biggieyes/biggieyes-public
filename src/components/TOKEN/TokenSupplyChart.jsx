@@ -60,3 +60,4 @@ export default function TokenSupplyChart({ data, height = 260 }) {
     </div>
   );
 }
+

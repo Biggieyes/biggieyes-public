@@ -134,7 +134,7 @@ export default defineConfig({
     assetsInlineLimit: 0,
     minify: "esbuild",
     modulePreload: { polyfill: true },
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 3000,
     rollupOptions: {
       onwarn(warning, warn) {
         const isPureAnnotation =

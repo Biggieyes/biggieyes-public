@@ -6,3 +6,4 @@ const StatusBadge = ({ status = "Unknown", tone = "default" }) => (
 );
 
 export default StatusBadge;
+

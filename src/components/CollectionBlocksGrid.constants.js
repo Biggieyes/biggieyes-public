@@ -96,3 +96,4 @@ export const FUTURE_COLLECTIONS = [
   // Add future collections here as needed
   // Format: { id, name, description, status, items, mintPrice, progress }
 ];
+

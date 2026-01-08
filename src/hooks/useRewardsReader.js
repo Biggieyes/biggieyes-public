@@ -277,3 +277,4 @@ export default function useRewardsReader(walletAddress) {
     getRewardTokenInfo,
   };
 }
+

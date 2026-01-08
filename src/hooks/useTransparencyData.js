@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { ADDR } from "../utils/addresses";
 import {
   getROProvider,
@@ -23,7 +23,7 @@ const WEEKLY_POOL_FNS = [
 
 function fmtEth(bn) {
   try {
-    return Number(ethers.utils.formatEther(bn)).toFixed(4);
+    return Number(formatEther(bn)).toFixed(4);
   } catch {
     return null;
   }
@@ -152,3 +152,4 @@ export function useTransparencyData({ enabled = true } = {}) {
 }
 
 export default useTransparencyData;
+

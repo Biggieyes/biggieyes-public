@@ -20,3 +20,4 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     storageKey: "biggi_mod_center",
   },
 });
+

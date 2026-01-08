@@ -1,7 +1,7 @@
 // src/components/LiveChatPanel.jsx
 // Live chat UI backed by Supabase realtime and a serverless signature-verified API.
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { supabase } from "../services/chatClient";
 import "./LiveChatPanel.css";
 
@@ -152,7 +152,7 @@ function LiveChatPanel({ walletAddress = "" }) {
 
     setSending(true);
     try {
-      const provider = new ethers.providers.Web3Provider(
+      const provider = new BrowserProvider(
         window.ethereum,
         "any",
       );
@@ -299,3 +299,4 @@ function LiveChatPanel({ walletAddress = "" }) {
 }
 
 export default LiveChatPanel;
+

@@ -357,7 +357,7 @@ export async function refreshLiquidityPreview({
 }) {
   const brl = await getReadOnlyLiquidityContract();
   const res = await brl.liquidityPreview();
-  const f = (v) => (v != null ? ethers.utils.formatEther(v) : "0");
+  const f = (v) => (v != null ? formatEther(v) : "0");
   setBiggiData((prev) => ({
     ...prev,
     liquidity: {
@@ -406,7 +406,7 @@ export async function refreshBuybackInfo({
   let biggiBalFmt = null;
   try {
     const wei = await b.provider.getBalance(b.address);
-    nativeBalFmt = ethers.utils.formatEther(wei);
+    nativeBalFmt = formatEther(wei);
   } catch {
     // ignore balance fetch failure
   }
@@ -414,9 +414,9 @@ export async function refreshBuybackInfo({
     const brl = await getReadOnlyLiquidityContract();
     const tokenAddr = await brl.tokenAddress().catch(() => null);
     if (tokenAddr) {
-      const erc = new ethers.Contract(tokenAddr, ERC20_MINI, b.provider);
+      const erc = new Contract(tokenAddr, ERC20_MINI, b.provider);
       const bal = await erc.balanceOf(b.address);
-      biggiBalFmt = ethers.utils.formatEther(bal);
+      biggiBalFmt = formatEther(bal);
     }
   } catch {
     // ignore token balance failure
@@ -461,7 +461,7 @@ export async function fetchReserveInfo({
     return {};
   }
 
-  const reserveContract = new ethers.Contract(
+  const reserveContract = new Contract(
     reserveAddress,
     ABI_RESERVE,
     provider,
@@ -487,11 +487,11 @@ export async function fetchReserveInfo({
     reserveAddress,
     liquidityManager:
       liquidityManager !== ZERO_ADDRESS ? liquidityManager : "\u2014",
-    totalMaticReceived: ethers.utils.formatEther(totalMaticReceived),
-    waitingBiggi: ethers.utils.formatEther(waitingBiggi),
-    dexRefillBiggi: ethers.utils.formatEther(dexRefillBiggi),
-    biggiBalance: ethers.utils.formatEther(biggiBalance),
-    maticBalance: ethers.utils.formatEther(maticBalance),
+    totalMaticReceived: formatEther(totalMaticReceived),
+    waitingBiggi: formatEther(waitingBiggi),
+    dexRefillBiggi: formatEther(dexRefillBiggi),
+    biggiBalance: formatEther(biggiBalance),
+    maticBalance: formatEther(maticBalance),
   };
 
   setBiggiData((prev) => ({
@@ -553,9 +553,9 @@ export async function fetchTreasuryInfo({
   ) {
     try {
       if (tokenAddr) {
-        const erc20 = new ethers.Contract(tokenAddr, ERC20_MINI, provider);
+        const erc20 = new Contract(tokenAddr, ERC20_MINI, provider);
         const bal = await erc20.balanceOf(treasuryAddr);
-        tokenBalance = ethers.utils.formatEther(bal);
+        tokenBalance = formatEther(bal);
       }
     } catch {
       // ignore token balance fallback
@@ -563,7 +563,7 @@ export async function fetchTreasuryInfo({
 
     try {
       const wei = await provider.getBalance(treasuryAddr);
-      nativeBalance = ethers.utils.formatEther(wei);
+      nativeBalance = formatEther(wei);
     } catch {
       // ignore native balance fallback
     }
@@ -621,7 +621,7 @@ export async function refreshRewards({
     if (ids.length) {
       const [u, a] = await brl.claimablePreview(ids);
       previewUnits = u.toString();
-      previewAmount = `${ethers.utils.formatEther(a)} BIGGI`;
+      previewAmount = `${formatEther(a)} BIGGI`;
     }
   } catch {
     // ignore preview fetch
@@ -653,3 +653,4 @@ export async function refreshRewards({
     },
   }));
 }
+

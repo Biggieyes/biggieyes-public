@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ethers } from "ethers";
+import { parseEther } from "ethers";
 import Loader from "../../components/common/Loader.jsx";
 
 // Keeps a faulty panel error from freezing the whole nav; also surfaces the error message
@@ -60,16 +60,16 @@ class PanelErrorBoundary extends React.Component {
   }
 }
 
-const RewardsPanel = React.lazy(() => import("./RewardsPanel.jsx"));
-const InfoPanel = React.lazy(() => import("./InfoPanel.jsx"));
-const VRFPanel = React.lazy(() => import("../VRF/VRFPanel"));
-const UserPanel = React.lazy(() => import("../user/UserPanel"));
+const RewardsPanel = React.lazy(() => import("./★☆REWARDS☆★/RewardsPanel.jsx"));
+const InfoPanel = React.lazy(() => import("../INFO/InfoPanel.jsx"));
+const VRFPanel = React.lazy(() => import("./★☆VRF☆★/VRFPanel.jsx"));
+const UserPanel = React.lazy(() => import("./★☆USERPANEL☆★/UserPanel.jsx"));
 const BiggiToken = React.lazy(() => import("../../components/TOKEN/BiggiToken.jsx"));
 const CollectionBlocksGrid = React.lazy(
   () => import("../../components/CollectionBlocksGrid.jsx"),
 );
 const CommunityCenterPanel = React.lazy(
-  () => import("./CommunityCenterPanel.jsx"),
+  () => import("./★☆COMMUNITYCENTER☆★/CommunityCenterPanel.jsx"),
 );
 
 export default function NavPanelSwitch({
@@ -204,11 +204,11 @@ export default function NavPanelSwitch({
                 }
               }}
               onBootstrapLiquidity={async ({ tokenAmountWei, nativeEth }) => {
-                const amountBN = ethers.BigNumber.from(
+                const amountBN = BigInt(
                   String(tokenAmountWei || "0"),
                 );
                 const overrides = {
-                  value: ethers.utils.parseEther(String(nativeEth || "0")),
+                  value: parseEther(String(nativeEth || "0")),
                 };
                 await writeFirst(
                   [getLiquidityContract],
@@ -226,11 +226,11 @@ export default function NavPanelSwitch({
                 await onRefreshLiquidityPreview();
               }}
               onBuybackAndSendToTreasury={async ({ minOutWei, nativeEth }) => {
-                const minOutBN = ethers.BigNumber.from(
+                const minOutBN = BigInt(
                   String(minOutWei || "0"),
                 );
                 const overrides = {
-                  value: ethers.utils.parseEther(String(nativeEth || "0")),
+                  value: parseEther(String(nativeEth || "0")),
                 };
                 await writeFirst(
                   [getLiquidityContract],
@@ -297,3 +297,4 @@ export default function NavPanelSwitch({
     </React.Suspense>
   );
 }
+

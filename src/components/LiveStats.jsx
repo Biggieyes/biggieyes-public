@@ -1,6 +1,6 @@
-﻿// src/components/LiveStats.jsx
+// src/components/LiveStats.jsx
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import {
   getTokenRewardsRO,
   getDistributorRO,
@@ -38,7 +38,7 @@ const _formatUnits = (val, dec) => {
     try {
       const bn = ethers.BigNumber.isBigNumber(val)
         ? val
-        : ethers.BigNumber.from(val);
+        : BigInt(val);
       return ethers.utils.formatUnits(bn, dec);
     } catch {
       return "0";
@@ -47,13 +47,13 @@ const _formatUnits = (val, dec) => {
 };
 const _formatEther = (val) => {
   try {
-    return ethers.utils.formatEther(val);
+    return formatEther(val);
   } catch {
     try {
       const bn = ethers.BigNumber.isBigNumber(val)
         ? val
-        : ethers.BigNumber.from(val);
-      return ethers.utils.formatEther(bn);
+        : BigInt(val);
+      return formatEther(bn);
     } catch {
       if (typeof val === "bigint") return (Number(val) / 1e18).toString();
       return "0";
@@ -62,7 +62,7 @@ const _formatEther = (val) => {
 };
 const _bn = (v) => {
   try {
-    return ethers.BigNumber.from(v);
+    return BigInt(v);
   } catch {
     try {
       return BigInt(v);
@@ -120,7 +120,7 @@ function LiveStats({
         const prov = getROProvider();
         const feedAddr = ADDR.LP_PRICE_FEED;
         if (feedAddr) {
-          const feed = new ethers.Contract(feedAddr, BiggiLpPriceFeed, prov);
+          const feed = new Contract(feedAddr, BiggiLpPriceFeed, prov);
           const round = await feed.latestRoundData().catch(() => null);
           const dec = await feed.decimals().catch(() => 18);
           if (!alive) return;
@@ -138,7 +138,7 @@ function LiveStats({
     };
   }, []);
 
-  // Zobrazení LP ceny v UI (příklad, uprav dle skutečného layoutu):
+  // Zobrazen� LP ceny v UI (p��klad, uprav dle skute�n�ho layoutu):
   // <div>LP token price: {lpPrice != null ? lpPrice + ' POL' : '--'}</div>
   const [showBlocks, setShowBlocks] = React.useState(false);
   const [showBgStats, setShowBgStats] = React.useState(false);
@@ -302,7 +302,7 @@ function LiveStats({
     return null;
   }, [mintVolumeMatic, sharePercent, rewardPool, poolFromContract]);
 
-  // Read token rewards metadata (weights, unitReward, token meta) â€” robust, contract-only changes
+  // Read token rewards metadata (weights, unitReward, token meta) — robust, contract-only changes
   React.useEffect(() => {
     let alive = true;
     (async () => {
@@ -348,7 +348,7 @@ function LiveStats({
         if (sym && typeof sym === "string") setTokenSymbol(sym);
         if (Number.isFinite(Number(dec))) setTokenDecimals(Number(dec));
       } catch (e) {
-        // silent fallback â€” not critical
+        // silent fallback — not critical
         console.warn("LiveStats: failed reading token rewards metadata", e);
       }
     })();
@@ -560,27 +560,27 @@ function LiveStats({
       ] = await Promise.all([
         typeof r.totalReceived === "function"
           ? r.totalReceived()
-          : Promise.resolve(ethers.constants.Zero),
+          : Promise.resolve(0n),
         typeof r.receivedByCollection === "function"
           ? r.receivedByCollection(ADDR.MAIN)
-          : Promise.resolve(ethers.constants.Zero),
+          : Promise.resolve(0n),
         typeof r.reserve === "function"
           ? r.reserve()
-          : Promise.resolve(ADDR.RESERVE || ethers.constants.AddressZero),
+          : Promise.resolve(ADDR.RESERVE || ZeroAddress),
         typeof r.collectionRewards === "function"
           ? r.collectionRewards()
           : Promise.resolve(
-              ADDR.COLLECTION_REWARDS || ethers.constants.AddressZero,
+              ADDR.COLLECTION_REWARDS || ZeroAddress,
             ),
         typeof r.buybackAgent === "function"
           ? r.buybackAgent()
-          : Promise.resolve(ADDR.BUYBACK_AGENT || ethers.constants.AddressZero),
+          : Promise.resolve(ADDR.BUYBACK_AGENT || ZeroAddress),
         typeof r.treasury === "function"
           ? r.treasury()
-          : Promise.resolve(ADDR.TREASURY || ethers.constants.AddressZero),
+          : Promise.resolve(ADDR.TREASURY || ZeroAddress),
         typeof r.communityCenter === "function"
           ? r.communityCenter()
-          : Promise.resolve(ethers.constants.AddressZero),
+          : Promise.resolve(ZeroAddress),
       ]);
 
       const targets = [
@@ -605,9 +605,9 @@ function LiveStats({
         targets.map((t) => {
           if (t.key === "community")
             return Promise.resolve(
-              communityPoolBalance ?? ethers.constants.Zero,
+              communityPoolBalance ?? 0n,
             );
-          return prov.getBalance(t.addr).catch(() => ethers.constants.Zero);
+          return prov.getBalance(t.addr).catch(() => 0n);
         }),
       );
 
@@ -618,7 +618,7 @@ function LiveStats({
 
       const distBal = await prov
         .getBalance(ADDR.DISTRIBUTOR)
-        .catch(() => ethers.constants.Zero);
+        .catch(() => 0n);
 
       setPools({
         distributor: ADDR.DISTRIBUTOR,
@@ -674,7 +674,7 @@ function LiveStats({
             "function decimals() view returns (uint8)",
             "function symbol() view returns (string)",
           ];
-          const token = new ethers.Contract(tokenAddr, erc20Abi, prov);
+          const token = new Contract(tokenAddr, erc20Abi, prov);
 
           const [supBn, dec, sym] = await Promise.all([
             token.totalSupply().catch(() => null),
@@ -704,7 +704,7 @@ function LiveStats({
             "function latestRoundData() view returns (uint80 roundId,int256 answer,uint256 startedAt,uint256 updatedAt,uint80 answeredInRound)",
             "function decimals() view returns (uint8)",
           ];
-          const oracle = new ethers.Contract(priceOracleAddr, oracleAbi, prov);
+          const oracle = new Contract(priceOracleAddr, oracleAbi, prov);
           const [round, dec] = await Promise.all([
             oracle.latestRoundData().catch(() => null),
             oracle.decimals().catch(() => 8),
@@ -771,14 +771,14 @@ function LiveStats({
 
         const balances = await Promise.all(
           lockedAddrs.map((addr) =>
-            token.balanceOf(addr).catch(() => ethers.constants.Zero),
+            token.balanceOf(addr).catch(() => 0n),
           ),
         );
         if (!alive) return;
 
         const locked = balances.reduce((sum, bn) => {
           const n = Number(
-            _formatUnits(bn ?? ethers.constants.Zero, decimalsForLocked),
+            _formatUnits(bn ?? 0n, decimalsForLocked),
           );
           return sum + (Number.isFinite(n) ? n : 0);
         }, 0);
@@ -826,7 +826,7 @@ function LiveStats({
               "function decimals() view returns (uint8)",
               "function symbol() view returns (string)",
             ];
-            const erc = new ethers.Contract(addr, abi, getROProvider());
+            const erc = new Contract(addr, abi, getROProvider());
             const [dec, sym] = await Promise.all([
               erc.decimals().catch(() => 18),
               erc.symbol().catch(() => ""),
@@ -1057,13 +1057,13 @@ function LiveStats({
     }
 
     setClaimBusy(true);
-    setClaimMsg("Preparing transactionâ€¦");
+    setClaimMsg("Preparing transaction…");
     try {
       // ensure account
       const accounts = await eth.request({ method: "eth_requestAccounts" });
       if (!accounts || !accounts.length) throw new Error("No accounts");
 
-      const provider = new ethers.providers.Web3Provider(eth, "any");
+      const provider = new BrowserProvider(eth, "any");
       const signer = provider.getSigner();
 
       const rewardsAddr =
@@ -1073,7 +1073,7 @@ function LiveStats({
         null;
       if (!rewardsAddr) throw new Error("Rewards contract address missing");
 
-      const rewards = new ethers.Contract(
+      const rewards = new Contract(
         rewardsAddr,
         TOKEN_REWARDS_MIN_ABI,
         signer,
@@ -1095,7 +1095,7 @@ function LiveStats({
         gas = undefined;
       }
 
-      setClaimMsg("Sending transactionâ€¦");
+      setClaimMsg("Sending transaction…");
       const tx = await rewards.claim(tokenIds, gas ? { gasLimit: gas } : {});
       setClaimMsg(`Pending: ${tx.hash || ""}`);
 
@@ -2193,3 +2193,4 @@ function LiveStats({
 }
 
 export default LiveStats;
+

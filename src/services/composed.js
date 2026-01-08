@@ -7,7 +7,7 @@ import liquidityManagerService from "./liquidityManagerService";
 import liquidityVaultService from "./liquidityVaultService";
 import { ADDR } from "../utils/addresses";
 import { getTokenRO, getROProvider, fromWei } from "../utils/contract";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 
 /**
  * Get aggregated stats for Reserve → LM → LiquidityVault chain.
@@ -95,9 +95,9 @@ export async function getBiggiBalancesAcrossReserveLmLv(provider = null) {
   }
 
   const [reserveRaw, lmRaw, lvRaw] = await Promise.all([
-    token.balanceOf(reserveAddr).catch(() => ethers.constants.Zero),
-    token.balanceOf(lmAddr).catch(() => ethers.constants.Zero),
-    token.balanceOf(lvAddr).catch(() => ethers.constants.Zero),
+    token.balanceOf(reserveAddr).catch(() => 0n),
+    token.balanceOf(lmAddr).catch(() => 0n),
+    token.balanceOf(lvAddr).catch(() => 0n),
   ]);
 
   return {
@@ -111,3 +111,4 @@ export async function getBiggiBalancesAcrossReserveLmLv(provider = null) {
     },
   };
 }
+

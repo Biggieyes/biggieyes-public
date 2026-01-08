@@ -1,8 +1,8 @@
 import * as React from "react";
 
 const ZoomModal = React.lazy(() => import("../gallery/ZoomModal"));
-const RedeemOverlay = React.lazy(() => import("../redeem/RedeemOverlay"));
-const ProjectInfoModal = React.lazy(() => import("../INFO/ProjectInfoModal"));
+const RedeemOverlay = React.lazy(() => import("../../ACTIONBUTTONS/REDEEMTICKET/RedeemOverlay.jsx"));
+const ProjectInfoModal = React.lazy(() => import("../../ACTIONBUTTONS/INFO/ProjectInfoModal.jsx"));
 
 export default function ModalsLayer({
   zoomImg,
@@ -56,3 +56,4 @@ export default function ModalsLayer({
     </>
   );
 }
+

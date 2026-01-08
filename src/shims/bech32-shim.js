@@ -5,3 +5,4 @@ const bech32 = bech32Module.bech32 || bech32Module;
 
 export { bech32 };
 export default bech32;
+

@@ -67,3 +67,4 @@ export default function BuybackStabilityChart({ data, height = 280 }) {
     </div>
   );
 }
+

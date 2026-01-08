@@ -1,7 +1,7 @@
-﻿import * as React from "react";
+import * as React from "react";
 import "./App.css";
 import { MODAL_TEXTS } from "./constants/texts";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { ADDR } from "./utils/addresses";
 
 //: utils/contract.js
@@ -72,7 +72,7 @@ const CollectionBlocksGrid = React.lazy(
 );
 const CommunityCenterPanel = React.lazy(
   () => import("./components/panels/CommunityCenterPanel"),
-); // novĂ˝ panel
+); // nový panel
 
 /* ======================================================================== */
 /* ============================== CONSTANTS ================================ */
@@ -163,7 +163,7 @@ async function queryLogsBatched(
   return out;
 }
 
-/* Ä‘Ĺşâ€ťÄ… MINI ERC20 ABI pro Ă„Ĺ¤tenÄ‚Â­ */
+/* đź”ą MINI ERC20 ABI pro ÄŤtenĂ­ */
 const ERC20_MINI = [
   "function balanceOf(address owner) view returns (uint256)",
   "function symbol() view returns (string)",
@@ -386,7 +386,7 @@ const ICONS = [
   },
 ];
 
-// Ä‘Ĺşâ€ťÂµ WalletConnect helper
+// đź”µ WalletConnect helper
 const connectWithWalletConnect = async () => {
   try {
     if (WC && typeof WC.connectWithWalletConnect === "function") {
@@ -435,7 +435,7 @@ const ABI_RESERVE = [
     name: "BiggiNotified",
     type: "event",
   },
-  /* ... zkrĂˇceno pro pĹ™ehlednost v tomto bloku, ale v reĂˇlnĂ©m souboru mÄ›j ABI kompletnĂ­ jako dĹ™Ă­v ... */
+  /* ... zkráceno pro přehlednost v tomto bloku, ale v reálném souboru měj ABI kompletní jako dřív ... */
 ];
 
 /* ======================================================================== */
@@ -448,7 +448,7 @@ const readersRef = { current: {} };
 /**
  * getCachedReaderInstance(kind)
  * kind: "main" | "rewards" | "tokenomics" | "generic"
- * returns a read-only ethers.Contract instance (from utils/contract helpers) or fallback getReaderRO()
+ * returns a read-only Contract instance (from utils/contract helpers) or fallback getReaderRO()
  */
 function getCachedReaderInstance(kind = "main") {
   try {
@@ -582,7 +582,7 @@ function App() {
     if (bnOrNum == null) return null;
     try {
       if (ethers.BigNumber.isBigNumber(bnOrNum)) {
-        return Number(ethers.utils.formatEther(bnOrNum));
+        return Number(formatEther(bnOrNum));
       }
       return Number(bnOrNum);
     } catch {
@@ -681,7 +681,7 @@ function App() {
             guards.lpSlippageBps = Number(g[1]);
             guards.txDeadlineSec = Number(g[2]);
             guards.minBuybackInterval = Number(g[3]);
-            guards.maxDailyBuybackNative = ethers.utils.formatEther(g[4]);
+            guards.maxDailyBuybackNative = formatEther(g[4]);
           }
         }
       } catch {}
@@ -699,7 +699,7 @@ function App() {
         if (deadline != null) guards.txDeadlineSec = Number(deadline);
         if (cooldown != null) guards.minBuybackInterval = Number(cooldown);
         if (dailyCap != null)
-          guards.maxDailyBuybackNative = ethers.utils.formatEther(dailyCap);
+          guards.maxDailyBuybackNative = formatEther(dailyCap);
       } catch {}
 
       let buybacksPaused = null;
@@ -736,13 +736,13 @@ function App() {
   const parseEth = (n) => {
     const num = Number(n);
     if (!Number.isFinite(num) || num < 0) throw new Error("Invalid number");
-    return ethers.utils.parseEther(String(num));
+    return parseEther(String(num));
   };
 
   const writeTx = async (fn, ...args) => {
     const c = await getContract();
     const name = fn.name;
-    // pouĹľĂ­vĂˇme estimateGas mĂ­sto callStatic
+    // používáme estimateGas místo callStatic
     if (name && c.estimateGas?.[name]) {
       await c.estimateGas[name](...args);
     }
@@ -861,7 +861,7 @@ function App() {
   }, []);
 
   /* -------------------------------------------------------------------- */
-  /* Ticket price resolver: tolerantnĂ­ nĂˇzvy + fallback na specialized Readers */
+  /* Ticket price resolver: tolerantní názvy + fallback na specialized Readers */
   /* -------------------------------------------------------------------- */
   const resolveTicketPriceWei = React.useCallback(async () => {
     const c = contractRef.current || getReadOnlyContract();
@@ -881,7 +881,7 @@ function App() {
       }
     }
 
-    // preferovanĂ© readery: main -> tokenomics -> rewards -> generic
+    // preferované readery: main -> tokenomics -> rewards -> generic
     const readerKinds = ["main", "tokenomics", "rewards", "generic"];
     for (const k of readerKinds) {
       const reader = getCachedReaderInstance(k);
@@ -915,7 +915,7 @@ function App() {
             getCachedReaderInstance("main") ||
             getCachedReaderInstance("generic");
           const [tp, bp, fp] = await tokenomicsReader.getMintDataByTokenId(
-            ethers.BigNumber.from(String(tokenId)),
+            BigInt(String(tokenId)),
           );
           const ticket = formatEthNum(tp);
           const blockP = formatEthNum(bp);
@@ -1019,7 +1019,7 @@ function App() {
       ];
       let volWei = await callFirst(main, volumeCandidates);
       if (volWei) {
-        const vol = Number(ethers.utils.formatEther(volWei));
+        const vol = Number(formatEther(volWei));
         setMintVolumeMatic(vol);
       } else {
         setMintVolumeMatic(null);
@@ -1043,23 +1043,23 @@ function App() {
       if (weeklyWei != null) {
         try {
           const isPositive = ethers.BigNumber.isBigNumber(weeklyWei)
-            ? weeklyWei.gt(0)
+            ? weeklyWei > 0n
             : Number(weeklyWei) > 0;
           if (isPositive) {
-            setRewardPool(Number(ethers.utils.formatEther(weeklyWei)));
+            setRewardPool(Number(formatEther(weeklyWei)));
           } else if (volWei) {
-            setRewardPool(Number(ethers.utils.formatEther(volWei)) * 0.22);
+            setRewardPool(Number(formatEther(volWei)) * 0.22);
           } else {
             setRewardPool(0);
           }
         } catch {
           if (volWei)
-            setRewardPool(Number(ethers.utils.formatEther(volWei)) * 0.22);
+            setRewardPool(Number(formatEther(volWei)) * 0.22);
           else setRewardPool(0);
         }
       } else {
         if (volWei)
-          setRewardPool(Number(ethers.utils.formatEther(volWei)) * 0.22);
+          setRewardPool(Number(formatEther(volWei)) * 0.22);
         else setRewardPool(0);
       }
 
@@ -1068,7 +1068,7 @@ function App() {
 
         let tokenIds = myNFTs
           .filter((x) => !x.isTicket)
-          .map((x) => ethers.BigNumber.from(x.tokenId));
+          .map((x) => BigInt(x.tokenId));
 
         if (!tokenIds.length) {
           const contract = contractRef.current || getReadOnlyContract();
@@ -1110,9 +1110,9 @@ function App() {
                 typeof cRO?.isTicket === "function"
                   ? await cRO.isTicket(tid)
                   : false;
-              if (!isT) nonTickets.push(ethers.BigNumber.from(tid));
+              if (!isT) nonTickets.push(BigInt(tid));
             } catch {
-              nonTickets.push(ethers.BigNumber.from(tid));
+              nonTickets.push(BigInt(tid));
             }
           }
           tokenIds = nonTickets;
@@ -1121,7 +1121,7 @@ function App() {
         if (tokenIds.length) {
           try {
             const [, amount] = await brl.claimablePreview(tokenIds);
-            setMyClaimable(Number(ethers.utils.formatEther(amount)));
+            setMyClaimable(Number(formatEther(amount)));
           } catch {
             setMyClaimable(0);
           }
@@ -1134,7 +1134,7 @@ function App() {
     }
   }, [walletAddress, myNFTs, callFirst]);
 
-  /* ---------- Stats pĹ™es specialized Readers (preferovanĂ©) ---------- */
+  /* ---------- Stats přes specialized Readers (preferované) ---------- */
   const fetchStats = React.useCallback(async () => {
     try {
       // try specialized readers in priority
@@ -1158,11 +1158,11 @@ function App() {
           bgsMinted,
         ] = snap;
 
-        setTicketPrice(Number(ethers.utils.formatEther(ticketPriceWei)));
+        setTicketPrice(Number(formatEther(ticketPriceWei)));
         setTicketMinted(Number(ticketMinted_));
         setBiggiMinted(Number(biggiMinted_));
         setBlockPrices(
-          currentBlockPrices.map((x) => Number(ethers.utils.formatEther(x))),
+          currentBlockPrices.map((x) => Number(formatEther(x))),
         );
         setBlockMintCounts(blocksMinted.map((x) => Number(x)));
         setBackgroundMintCounts(bgsMinted.map((x) => Number(x)));
@@ -1197,7 +1197,7 @@ function App() {
         }
       }
       if (priceWei != null)
-        setTicketPrice(Number(ethers.utils.formatEther(priceWei)));
+        setTicketPrice(Number(formatEther(priceWei)));
 
       // minted counters
       try {
@@ -1216,7 +1216,7 @@ function App() {
       for (let i = 1; i <= 10; i++) {
         try {
           const p = await main.getCurrentBlockPrice(i);
-          prices.push(Number(ethers.utils.formatEther(p)));
+          prices.push(Number(formatEther(p)));
         } catch {
           prices.push(0);
         }
@@ -1243,7 +1243,7 @@ function App() {
       console.error("fetchStats(fallback main)", e2);
     }
   }, []);
-  /* pokraÄŤovĂˇnĂ­ souboru... */
+  /* pokračování souboru... */
 
   const fetchBackgroundMintCounts = React.useCallback(async () => {
     try {
@@ -1299,7 +1299,7 @@ function App() {
           typeof contract?.isTicket === "function"
             ? await contract.isTicket(tid)
             : false;
-        if (isT) onlyTickets.push(ethers.BigNumber.from(tid));
+        if (isT) onlyTickets.push(BigInt(tid));
       } catch {}
     }
     return onlyTickets;
@@ -1704,7 +1704,7 @@ function App() {
         const fmt = (n) =>
           typeof n === "number" && !Number.isNaN(n)
             ? `${n.toFixed(4)} POL`
-            : "â€¦";
+            : "…";
 
         let meta = nft.meta;
         if (!meta) {
@@ -1743,7 +1743,7 @@ function App() {
 
         let mintBlockNumber = null;
         try {
-          const tokenIdBN = ethers.BigNumber.from(tokenId);
+          const tokenIdBN = BigInt(tokenId);
           const mintFilter = contract.filters.Transfer(
             ZERO_ADDRESS,
             null,
@@ -1780,7 +1780,7 @@ function App() {
               try {
                 const [tp, bp, fp] =
                   await tokenomicsReader.getMintDataByTokenId(
-                    ethers.BigNumber.from(tokenId),
+                    BigInt(tokenId),
                   );
                 mintTicket = formatEthNum(tp);
                 mintBlock = formatEthNum(bp);
@@ -1796,7 +1796,7 @@ function App() {
               const tpPast = await contract.getTicketPrice({
                 blockTag: mintBlockNumber,
               });
-              mintTicket = Number(ethers.utils.formatEther(tpPast));
+              mintTicket = Number(formatEther(tpPast));
             }
           } catch {}
           try {
@@ -1804,7 +1804,7 @@ function App() {
               const bpPast = await contract.getCurrentBlockPrice(blockId, {
                 blockTag: mintBlockNumber,
               });
-              mintBlock = Number(ethers.utils.formatEther(bpPast));
+              mintBlock = Number(formatEther(bpPast));
             }
           } catch {}
           if (mintBlock != null && mintFinal == null) {
@@ -1820,7 +1820,7 @@ function App() {
             mintFinal:
               mintFinal != null
                 ? `${mintFinal.toFixed(4)} POL (${bonusPct}% bonus)`
-                : "â€¦",
+                : "…",
             ticketPrice: undefined,
             blockPrice: undefined,
             finalPrice: undefined,
@@ -1833,9 +1833,9 @@ function App() {
     [dynamicTraitsById],
   );
 
-  /* ========== VRF helpers (PĹESUNUTO NAHOĹE PRO TDZ) ========== */
+  /* ========== VRF helpers (PŘESUNUTO NAHOŘE PRO TDZ) ========== */
   // buildVRFHistory, resolvePendingFromHistoryOrOwnership, checkVrfResolution, refreshVRFPanel
-  // (Tyto funkce byly pĹ™esunuty nad connectMetaMask aby se pĹ™edeĹˇlo TDZ.)
+  // (Tyto funkce byly přesunuty nad connectMetaMask aby se předešlo TDZ.)
 
   const buildVRFHistory = React.useCallback(
     async (c, address) => {
@@ -1960,7 +1960,7 @@ function App() {
       }
       const isZero =
         rid && typeof rid.isZero === "function"
-          ? rid.isZero()
+          ? rid === 0n
           : String(rid || "0") === "0";
 
       const inferredFulfilled = isZero
@@ -2037,7 +2037,7 @@ function App() {
         try {
           const pendingReqIdBN = await c
             .pendingMintRequest(walletAddress)
-            .catch(() => ethers.BigNumber.from(0));
+            .catch(() => BigInt(0));
           const ridStr = pendingReqIdBN?.toString?.() || "0";
 
           history = await buildVRFHistory(c, walletAddress);
@@ -2094,7 +2094,7 @@ function App() {
   }, [walletAddress, buildVRFHistory]);
 
   /* -------------------------------------------------------------------- */
-  /* Zbytek funkcĂ­ UI: connect, attach listeners, txs, mint/redeem atd.   */
+  /* Zbytek funkcí UI: connect, attach listeners, txs, mint/redeem atd.   */
   /* -------------------------------------------------------------------- */
 
   const onVRFRequest = React.useCallback(() => {
@@ -2217,7 +2217,7 @@ function App() {
             "getBIGGI",
           ]);
           if (tAddr) {
-            const erc20 = new ethers.Contract(tAddr, ERC20_MINI, provider);
+            const erc20 = new Contract(tAddr, ERC20_MINI, provider);
             tokenSymbol =
               (await erc20.symbol().catch(() => tokenSymbol)) || tokenSymbol;
           }
@@ -2422,7 +2422,7 @@ function App() {
       const addr = accounts?.[0];
       if (!addr) throw new Error("No account returned from wallet.");
 
-      const injectedProvider = new ethers.providers.Web3Provider(eth, "any");
+      const injectedProvider = new BrowserProvider(eth, "any");
       const net = await injectedProvider.getNetwork().catch(() => null);
       if (Number(net?.chainId) !== 80002) {
         await ensureAmoy();
@@ -2505,7 +2505,7 @@ function App() {
 
             if (fromL === me && toL === zeroL) {
               setVrfPending(true);
-              setRedeemMsg("Redeem confirmed. Waiting for VRF revealâ€¦");
+              setRedeemMsg("Redeem confirmed. Waiting for VRF reveal…");
               setRedeemStartedAt((prev) => prev || Date.now());
             }
 
@@ -2699,10 +2699,10 @@ function App() {
         return alert("Mint is paused.");
       }
 
-      // NovÄ› pouĹľĂ­vĂˇme resolver s fallbackem na Readers
+      // Nově používáme resolver s fallbackem na Readers
       const price = await resolveTicketPriceWei();
 
-      // pouĹľĂ­vĂˇme estimateGas
+      // používáme estimateGas
       await contract.estimateGas.mintTicket({ value: price });
       const tx = await contract.mintTicket({ value: price });
       await tx.wait();
@@ -2741,7 +2741,7 @@ function App() {
       }
 
       setIsRedeeming(true);
-      setRedeemMsg("Submitting redeem transactionâ€¦");
+      setRedeemMsg("Submitting redeem transaction…");
 
       let tickets = [];
       try {
@@ -2769,18 +2769,18 @@ function App() {
 
       await preflightRedeemCheck(contract);
 
-      // pouĹľĂ­vĂˇme estimateGas
+      // používáme estimateGas
       await contract.estimateGas.redeemTicketAndMintNFT(ticketIdBN);
-      setRedeemMsg("Please confirm in your walletâ€¦");
+      setRedeemMsg("Please confirm in your wallet…");
       const tx = await contract.redeemTicketAndMintNFT(ticketIdBN);
-      setRedeemMsg("Waiting for transaction confirmationâ€¦");
+      setRedeemMsg("Waiting for transaction confirmation…");
       await tx.wait();
 
       const placeholder = {
         tokenId: ticketIdStr,
         image: "/images/Biggi.png",
         meta: {
-          name: `Ticket #${ticketIdStr} â€” VRF pending`,
+          name: `Ticket #${ticketIdStr} — VRF pending`,
           description: "Your NFT is being selected via Chainlink VRF.",
         },
         isTicket: true,
@@ -2790,7 +2790,7 @@ function App() {
 
       setPendingTicketId(ticketIdStr);
       setVrfPending(true);
-      setRedeemMsg("Redeem confirmed. Waiting for VRF revealâ€¦");
+      setRedeemMsg("Redeem confirmed. Waiting for VRF reveal…");
       setTopFirstId(ticketIdStr);
 
       const [ticketsNow, nftsNow] = await Promise.all([
@@ -2846,7 +2846,7 @@ function App() {
 
       let tokenIds = myNFTs
         .filter((x) => !x.isTicket)
-        .map((x) => ethers.BigNumber.from(x.tokenId));
+        .map((x) => BigInt(x.tokenId));
 
       if (!tokenIds.length) {
         const contract = contractRef.current || getReadOnlyContract();
@@ -2881,9 +2881,9 @@ function App() {
               typeof contract?.isTicket === "function"
                 ? await contract.isTicket(tid)
                 : false;
-            if (!isT) nonTickets.push(ethers.BigNumber.from(tid));
+            if (!isT) nonTickets.push(BigInt(tid));
           } catch {
-            nonTickets.push(ethers.BigNumber.from(tid));
+            nonTickets.push(BigInt(tid));
           }
         }
         tokenIds = nonTickets;
@@ -2913,7 +2913,7 @@ function App() {
       .filter(Boolean)
       .map((s) => {
         try {
-          return ethers.BigNumber.from(s);
+          return BigInt(s);
         } catch {
           return null;
         }
@@ -2931,7 +2931,7 @@ function App() {
       ]);
 
       // Query BiggiToken contract directly for richer metadata
-      const biggi = new ethers.Contract(tokenAddr, ABI_TOKEN, brl.provider);
+      const biggi = new Contract(tokenAddr, ABI_TOKEN, brl.provider);
 
       let totalSupply = null;
       let cap = null;
@@ -2952,9 +2952,9 @@ function App() {
           biggi.rewardsOperator?.().catch?.(() => null),
           biggi.distributed?.().catch?.(() => null),
         ]);
-        if (ts) totalSupply = ethers.utils.formatEther(ts);
-        if (_cap) cap = ethers.utils.formatEther(_cap);
-        if (rem) remainingMintable = ethers.utils.formatEther(rem);
+        if (ts) totalSupply = formatEther(ts);
+        if (_cap) cap = formatEther(_cap);
+        if (rem) remainingMintable = formatEther(rem);
         reserveAddr = res || null;
         dexRecipientAddr = dex || null;
         tokenRewardsAddr = rwd || null;
@@ -2971,7 +2971,7 @@ function App() {
           symbol: meta?.[1],
           decimals: meta?.[2],
           rewardsRemainingCap:
-            capLeft != null ? ethers.utils.formatEther(capLeft) : "\u2014",
+            capLeft != null ? formatEther(capLeft) : "\u2014",
           totalSupply: totalSupply ?? "\u2014",
           cap: cap ?? null,
           remainingMintable: remainingMintable ?? null,
@@ -3004,7 +3004,7 @@ function App() {
         if (ids.length) {
           const [u, a] = await brl.claimablePreview(ids);
           previewUnits = u.toString();
-          previewAmount = `${ethers.utils.formatEther(a)} BIGGI`;
+          previewAmount = `${formatEther(a)} BIGGI`;
         }
       } catch {}
 
@@ -3065,7 +3065,7 @@ function App() {
     try {
       const brl = await getReadOnlyLiquidityContract();
       const res = await brl.liquidityPreview();
-      const f = (v) => (v != null ? ethers.utils.formatEther(v) : "0");
+      const f = (v) => (v != null ? formatEther(v) : "0");
       setBiggiData((prev) => ({
         ...prev,
         liquidity: {
@@ -3126,7 +3126,7 @@ function App() {
       const main = contractRef.current || getReadOnlyContract();
       const provider = main.provider;
 
-      // ZĂ­skĂˇnĂ­ adresy reserve z main contractu
+      // Získání adresy reserve z main contractu
       const reserveAddress = await callFirst(main, [
         "reserve",
         "reserveAddress",
@@ -3136,14 +3136,14 @@ function App() {
         return {};
       }
 
-      // NaÄŤtenĂ­ ABI_RESERVE
-      const reserveContract = new ethers.Contract(
+      // Načtení ABI_RESERVE
+      const reserveContract = new Contract(
         reserveAddress,
         ABI_RESERVE,
         provider,
       );
 
-      // ParalelnĂ­ naÄŤĂ­tĂˇnĂ­ vĹˇech dat
+      // Paralelní načítání všech dat
       const [
         liquidityManager,
         totalMaticReceived,
@@ -3164,11 +3164,11 @@ function App() {
         reserveAddress,
         liquidityManager:
           liquidityManager !== ZERO_ADDRESS ? liquidityManager : "\u2014",
-        totalMaticReceived: ethers.utils.formatEther(totalMaticReceived),
-        waitingBiggi: ethers.utils.formatEther(waitingBiggi),
-        dexRefillBiggi: ethers.utils.formatEther(dexRefillBiggi),
-        biggiBalance: ethers.utils.formatEther(biggiBalance),
-        maticBalance: ethers.utils.formatEther(maticBalance),
+        totalMaticReceived: formatEther(totalMaticReceived),
+        waitingBiggi: formatEther(waitingBiggi),
+        dexRefillBiggi: formatEther(dexRefillBiggi),
+        biggiBalance: formatEther(biggiBalance),
+        maticBalance: formatEther(maticBalance),
       };
     } catch (e) {
       console.error("fetchReserveInfo", e);
@@ -3197,12 +3197,12 @@ function App() {
       let tokenBalance = "\u2014";
       try {
         if (treasuryAddr && tokenAddr) {
-          const erc20 = new ethers.Contract(tokenAddr, ERC20_MINI, provider);
+          const erc20 = new Contract(tokenAddr, ERC20_MINI, provider);
           const [bal, sym] = await Promise.all([
             erc20.balanceOf(treasuryAddr),
             erc20.symbol().catch(() => "BIGGI"),
           ]);
-          tokenBalance = `${ethers.utils.formatEther(bal)} ${sym}`;
+          tokenBalance = `${formatEther(bal)} ${sym}`;
         }
       } catch {}
 
@@ -3210,7 +3210,7 @@ function App() {
       try {
         if (treasuryAddr) {
           const wei = await provider.getBalance(treasuryAddr);
-          nativeBalance = `${ethers.utils.formatEther(wei)} POL`;
+          nativeBalance = `${formatEther(wei)} POL`;
         }
       } catch {}
 
@@ -3537,7 +3537,7 @@ function App() {
                   fontWeight: 700,
                 }}
               >
-                VRF pending â€“ your NFT will appear automatically once
+                VRF pending – your NFT will appear automatically once
                 revealed.
               </div>
             )}
@@ -3835,11 +3835,11 @@ function App() {
                   }
                 }}
                 onBootstrapLiquidity={async ({ tokenAmountWei, nativeEth }) => {
-                  const amountBN = ethers.BigNumber.from(
+                  const amountBN = BigInt(
                     String(tokenAmountWei || "0"),
                   );
                   const overrides = {
-                    value: ethers.utils.parseEther(String(nativeEth || "0")),
+                    value: parseEther(String(nativeEth || "0")),
                   };
                   await writeFirst(
                     [getLiquidityContract],
@@ -3860,11 +3860,11 @@ function App() {
                   minOutWei,
                   nativeEth,
                 }) => {
-                  const minOutBN = ethers.BigNumber.from(
+                  const minOutBN = BigInt(
                     String(minOutWei || "0"),
                   );
                   const overrides = {
-                    value: ethers.utils.parseEther(String(nativeEth || "0")),
+                    value: parseEther(String(nativeEth || "0")),
                   };
                   await writeFirst(
                     [getLiquidityContract],
@@ -3935,3 +3935,4 @@ function App() {
 }
 
 export default App;
+

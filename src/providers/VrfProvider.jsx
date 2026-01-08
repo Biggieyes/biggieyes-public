@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { useContracts } from "./ContractsProvider";
 
 const Ctx = React.createContext(null);
@@ -140,10 +140,10 @@ export function VrfProvider({ children }) {
         const c = await mainRO();
         const rid = await c
           .pendingMintRequest(userAddr)
-          .catch(() => ethers.BigNumber.from(0));
+          .catch(() => BigInt(0));
         const isZero =
           rid && typeof rid.isZero === "function"
-            ? rid.isZero()
+            ? rid === 0n
             : String(rid || "0") === "0";
         if (isZero) {
           setVrfPending(false);
@@ -181,3 +181,4 @@ export function useVrf() {
   if (!v) throw new Error("useVrf must be used inside <VrfProvider>");
   return v;
 }
+

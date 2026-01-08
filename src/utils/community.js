@@ -35,7 +35,7 @@ export async function fetchCommunityCenterStats() {
       communityPoolBalancePromise,
     ]);
 
-    const fmt = (v) => (v != null ? ethers.utils.formatEther(v) : undefined);
+    const fmt = (v) => (v != null ? formatEther(v) : undefined);
     return {
       communityCenterAddr: communityCenterAddr || undefined,
       pendingCommunity: fmt(pendingCommunity),
@@ -45,3 +45,4 @@ export async function fetchCommunityCenterStats() {
     return {};
   }
 }
+

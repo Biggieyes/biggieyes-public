@@ -21,7 +21,7 @@ export default function useNFTRewards(providerOverride = null) {
         if (!provider) throw new Error("Read-only provider not available");
 
         // RewardsReader contract instance
-        // const rewardsReader = new ethers.Contract(
+        // const rewardsReader = new Contract(
         //   "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
         //   ABI_REWARDS_READER,
         //   provider,
@@ -49,3 +49,4 @@ export default function useNFTRewards(providerOverride = null) {
 
   return { data, loading, error, refresh };
 }
+

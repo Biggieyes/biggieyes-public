@@ -140,3 +140,4 @@ export function useWallet({ onConnected } = {}) {
     ZERO_ADDRESS,
   };
 }
+

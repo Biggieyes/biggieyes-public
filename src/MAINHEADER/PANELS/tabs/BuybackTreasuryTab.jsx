@@ -3,7 +3,7 @@ import StatCard from "../components/StatCard";
 import ValueRow from "../components/ValueRow";
 import LineChart from "../charts/LineChart";
 import StatusBadge from "../components/StatusBadge";
-import BuybackFlow from "../flow/BuybackFlow";
+import BuybackFlow from "../★☆ECOSYSTEM☆★/★FLOW★/BuybackFlow.jsx";
 import { mapBuybackSnapshotToFlowRows } from "../../../services/tokenomics/buybackTreasury.mappers";
 import { explorerBaseFor } from "../../../utils/explorer";
 import "./BuybackTreasuryTab.css";
@@ -173,3 +173,4 @@ const BuybackTreasuryTab = ({
 };
 
 export default BuybackTreasuryTab;
+

@@ -92,3 +92,4 @@ const InfoPanel = React.memo(
 InfoPanel.displayName = "InfoPanel";
 
 export default InfoPanel;
+

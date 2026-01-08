@@ -14,3 +14,4 @@ export function isMemo() {
 export function isValidElementType(type) {
   return typeof type === "string" || typeof type === "function";
 }
+

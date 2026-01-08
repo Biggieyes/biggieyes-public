@@ -80,3 +80,4 @@ export default function MerkleTool({ entries = [] }) {
     </section>
   );
 }
+

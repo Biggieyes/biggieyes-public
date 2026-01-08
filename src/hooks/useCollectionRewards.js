@@ -1,6 +1,6 @@
 // src/hooks/useCollectionRewards.js
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { ABI_REWARDS_READER, getROProvider } from "../utils/contract";
 import { BLOCK_INDICES } from "../services/collectionRewardsService";
 // ...existing code...
@@ -36,7 +36,7 @@ export function useCollectionRewards(walletAddress, providerOverride) {
         if (!provider) throw new Error("Read-only provider not available");
 
         // RewardsReader contract instance
-        const rewardsReader = new ethers.Contract(
+        const rewardsReader = new Contract(
           "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
           ABI_REWARDS_READER,
           provider,
@@ -74,3 +74,4 @@ export function useCollectionRewards(walletAddress, providerOverride) {
 
   return { data, loading, error, refresh };
 }
+

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { getReadOnlyMain as getReadOnlyContract } from "../utils/contract";
 import { ADDR } from "../utils/addresses";
 import {
@@ -94,7 +94,7 @@ export function useWalletAssets(params) {
           typeof contract?.isTicket === "function"
             ? await contract.isTicket(tid)
             : false;
-        if (isT) onlyTickets.push(ethers.BigNumber.from(tid));
+        if (isT) onlyTickets.push(BigInt(tid));
       } catch (err) {
         console.debug("findTicketsViaLogs isTicket check failed", err);
       }
@@ -774,7 +774,7 @@ export function useWalletAssets(params) {
 
         let mintBlockNumber = null;
         try {
-          const tokenIdBN = ethers.BigNumber.from(tokenId);
+          const tokenIdBN = BigInt(tokenId);
           const mintFilter = contract.filters.Transfer(
             "0x0000000000000000000000000000000000000000",
             null,
@@ -804,7 +804,7 @@ export function useWalletAssets(params) {
             const tpPast = await contract.getTicketPrice({
               blockTag: mintBlockNumber,
             });
-            mintTicket = Number(ethers.utils.formatEther(tpPast));
+            mintTicket = Number(formatEther(tpPast));
           } catch (err) {
             console.debug("fetchDynamicTraitsFor ticket price failed", err);
           }
@@ -813,7 +813,7 @@ export function useWalletAssets(params) {
             const bpPast = await contract.getCurrentBlockPrice(blockId, {
               blockTag: mintBlockNumber,
             });
-            mintBlock = Number(ethers.utils.formatEther(bpPast));
+            mintBlock = Number(formatEther(bpPast));
           } catch (err) {
             console.debug("fetchDynamicTraitsFor block price failed", err);
           }
@@ -872,3 +872,4 @@ export function useWalletAssets(params) {
     fetchDynamicTraitsFor,
   };
 }
+

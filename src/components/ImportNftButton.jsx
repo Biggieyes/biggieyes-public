@@ -2,3 +2,4 @@
 export default function ImportNftButton() {
   return null;
 }
+

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import TokenRewardsService from "../../../services/tokenRewardsService";
 import CollectionRewardsService from "../../../services/collectionRewardsService";
 import useTokenRewards from "../../../hooks/useTokenRewards";
@@ -10,13 +10,13 @@ import { getROProvider, ABI_REWARDS_READER } from "../../../utils/contract";
 // Helper to get RewardsReader contract instance
 function getRewardsReaderContract(provider, address) {
   if (!provider || !address) return null;
-  return new ethers.Contract(address, ABI_REWARDS_READER, provider);
+  return new Contract(address, ABI_REWARDS_READER, provider);
 }
 import CollectionRewardsSection from "./★COLLECTIONREWARDS★/CollectionRewardsSection";
 import NftRewardsTab from "./★NFTREWARDS★/tabs/NftRewardsTab";
 import useWeeklyCountdown from "../../../hooks/useWeeklyCountdown";
 import "./RewardsPanel.css";
-import "../../styles/biggi-token.skin.css";
+import "../../../styles/biggi-token.skin.css";
 
 const TAB_ORDER = [
   { id: "token", label: "Token rewards" },
@@ -214,7 +214,7 @@ function RewardsPanel({
       .filter((token) => token && token.tokenId && !token.isTicket)
       .map((token) => {
         try {
-          return ethers.BigNumber.from(String(token.tokenId));
+          return BigInt(String(token.tokenId));
         } catch {
           return null;
         }
@@ -473,7 +473,7 @@ function RewardsPanel({
         return Number.isFinite(parsed) ? parsed : null;
       }
       try {
-        return ethers.BigNumber.from(value).toNumber();
+        return BigInt(value).toNumber();
       } catch {
         return null;
       }
@@ -878,3 +878,4 @@ function RewardsPanel({
 }
 
 export default RewardsPanel;
+

@@ -1,6 +1,5 @@
 // src/components/common/ModalTopbar.jsx
 import * as React from "react";
-import * as PropTypes from "prop-types";
 
 const ModalTopbar = React.memo(
   React.forwardRef(function ModalTopbar(
@@ -293,25 +292,5 @@ const ModalTopbar = React.memo(
   }),
 );
 
-ModalTopbar.propTypes = {
-  title: PropTypes.node.isRequired,
-  subtitle: PropTypes.node,
-  onPrev: PropTypes.func,
-  onNext: PropTypes.func,
-  onClose: PropTypes.func,
-  prevLabel: PropTypes.string,
-  nextLabel: PropTypes.string,
-  closeLabel: PropTypes.string,
-  className: PropTypes.string,
-  style: PropTypes.object,
-  leftSlot: PropTypes.node,
-  rightSlot: PropTypes.node,
-  raiseWalletModal: PropTypes.bool,
-  walletModalTop: PropTypes.string,
-  walletModalZ: PropTypes.number,
-  prevIcon: PropTypes.node,
-  nextIcon: PropTypes.node,
-  closeIcon: PropTypes.node,
-};
-
 export default ModalTopbar;
+

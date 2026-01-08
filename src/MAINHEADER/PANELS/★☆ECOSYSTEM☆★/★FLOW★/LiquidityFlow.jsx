@@ -1,5 +1,5 @@
 import * as React from "react";
-import ValueRow from "../components/ValueRow";
+import ValueRow from "../../components/ValueRow";
 import "./LiquidityFlow.css";
 
 const LiquidityFlow = ({ flows = [], activeSegment }) => (
@@ -33,3 +33,4 @@ const LiquidityFlow = ({ flows = [], activeSegment }) => (
 );
 
 export default LiquidityFlow;
+

@@ -4,3 +4,4 @@ const require = createRequire(import.meta.url);
 const BN = require("bn.js");
 export { BN };
 export default BN;
+

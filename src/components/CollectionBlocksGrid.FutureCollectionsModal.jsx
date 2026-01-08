@@ -169,3 +169,4 @@ const FutureCollectionsModal = React.memo(
 FutureCollectionsModal.displayName = "FutureCollectionsModal";
 
 export default FutureCollectionsModal;
+

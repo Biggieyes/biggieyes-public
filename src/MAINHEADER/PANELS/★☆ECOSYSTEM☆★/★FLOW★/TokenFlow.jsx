@@ -1,5 +1,5 @@
 import * as React from "react";
-import ValueRow from "../components/ValueRow";
+import ValueRow from "../../components/ValueRow";
 import "./TokenFlow.css";
 
 const TokenFlow = ({ flows = [] }) => (
@@ -22,3 +22,4 @@ const TokenFlow = ({ flows = [] }) => (
 );
 
 export default TokenFlow;
+

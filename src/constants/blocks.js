@@ -4,3 +4,4 @@ export const DEFAULT_BLOCKS = [];
 export const BTN_STYLES = {};
 export const FALLBACK_BTN_STYLE = {};
 export const BASE_PRICES = {};
+

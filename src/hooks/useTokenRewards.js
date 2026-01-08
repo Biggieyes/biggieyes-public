@@ -1,6 +1,6 @@
 // src/hooks/useTokenRewards.js
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { getROProvider, ABI_REWARDS_READER } from "../utils/contract";
 
 const DEFAULT_DATA = {
@@ -39,7 +39,7 @@ export default function useTokenRewards(providerOverride = null) {
         if (!provider) throw new Error("Read-only provider not available");
 
         // RewardsReader contract instance
-        const rewardsReader = new ethers.Contract(
+        const rewardsReader = new Contract(
           "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
           ABI_REWARDS_READER,
           provider,
@@ -74,3 +74,4 @@ export default function useTokenRewards(providerOverride = null) {
 
   return { data, loading, error, refresh };
 }
+

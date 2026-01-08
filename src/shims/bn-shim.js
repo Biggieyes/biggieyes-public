@@ -9,3 +9,4 @@ const BN = bnLib.default ?? bnLib;
 
 export default BN;
 export { BN };
+

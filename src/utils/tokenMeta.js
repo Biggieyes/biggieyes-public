@@ -37,7 +37,7 @@ export async function refreshTokenMeta({
     "getRemainingCap",
   ]);
 
-  const biggi = new ethers.Contract(tokenAddr, ABI_TOKEN, brl.provider);
+  const biggi = new Contract(tokenAddr, ABI_TOKEN, brl.provider);
 
   let totalSupply = null;
   let cap = null;
@@ -58,9 +58,9 @@ export async function refreshTokenMeta({
       biggi.rewardsOperator?.().catch?.(() => null),
       biggi.distributed?.().catch?.(() => null),
     ]);
-    if (ts) totalSupply = ethers.utils.formatEther(ts);
-    if (_cap) cap = ethers.utils.formatEther(_cap);
-    if (rem) remainingMintable = ethers.utils.formatEther(rem);
+    if (ts) totalSupply = formatEther(ts);
+    if (_cap) cap = formatEther(_cap);
+    if (rem) remainingMintable = formatEther(rem);
     reserveAddr = res || null;
     dexRecipientAddr = dex || null;
     tokenRewardsAddr = rwd || null;
@@ -79,7 +79,7 @@ export async function refreshTokenMeta({
       symbol: meta?.[1] ?? prev.token?.symbol,
       decimals: meta?.[2] ?? prev.token?.decimals,
       rewardsRemainingCap:
-        capLeft != null ? ethers.utils.formatEther(capLeft) : "\u2014",
+        capLeft != null ? formatEther(capLeft) : "\u2014",
       totalSupply: totalSupply ?? "\u2014",
       cap: cap ?? null,
       remainingMintable: remainingMintable ?? null,
@@ -93,7 +93,7 @@ export async function refreshTokenMeta({
 
   const reader = getBiggiTokenomicsReaderRO();
   const [core, dist, buy, res, drip, tr] = await getFullStatusSafe(reader);
-  const fmt = (v) => (v != null ? ethers.utils.formatEther(v) : null);
+  const fmt = (v) => (v != null ? formatEther(v) : null);
   const communitySnapshot = await fetchCommunityCenterStats();
 
   setBiggiData((prev) => ({
@@ -234,3 +234,4 @@ export async function refreshTokenMeta({
     },
   }));
 }
+

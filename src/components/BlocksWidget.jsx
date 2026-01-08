@@ -291,3 +291,4 @@ const BlocksWidget = ({ blockNames, blockMintCounts, blockPrices, onBack }) => {
 };
 
 export default BlocksWidget;
+

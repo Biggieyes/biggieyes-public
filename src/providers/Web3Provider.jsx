@@ -1,7 +1,7 @@
 /* @refresh reload */
 // src/providers/Web3Provider.jsx
 import * as React from "react";
-import * as ethers from "ethers";
+import { BrowserProvider } from "ethers";
 import { AMOY, ensureAmoy, syncAmoyRpcIfNeeded } from "../utils/contract";
 
 const Ctx = React.createContext(null);
@@ -36,7 +36,7 @@ export function Web3Provider({ children }) {
       return;
     }
     try {
-      const nextProvider = new ethers.providers.Web3Provider(injected, "any");
+      const nextProvider = new BrowserProvider(injected);
       const nextSigner = nextProvider.getSigner();
       const addr = await nextSigner.getAddress().catch(() => "");
       const net = await nextProvider.getNetwork().catch(() => ({}));
@@ -166,3 +166,4 @@ export function useWeb3() {
   if (!v) throw new Error("useWeb3 must be used inside <Web3Provider>");
   return v;
 }
+

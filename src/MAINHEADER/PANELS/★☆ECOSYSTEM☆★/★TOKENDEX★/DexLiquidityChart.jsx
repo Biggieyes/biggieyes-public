@@ -36,3 +36,4 @@ export default function DexLiquidityChart({ data, height = 320 }) {
     </div>
   );
 }
+

@@ -205,3 +205,4 @@ We believe in a community-first approach, where transparency builds trust, and t
 If you’re ready to mix luck with strategy — welcome to BiggiEyes.
   `,
 };
+

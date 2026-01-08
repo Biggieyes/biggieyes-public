@@ -177,3 +177,4 @@ export default {
   DEFAULT_CHAIN_ID,
   ADDR,
 };
+

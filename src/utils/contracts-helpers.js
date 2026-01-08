@@ -18,3 +18,4 @@ export function getRO(contractRef, getReadOnlyContract) {
   if (typeof getReadOnlyContract === "function") return getReadOnlyContract();
   return null;
 }
+

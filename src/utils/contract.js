@@ -7,8 +7,7 @@ const ABI_MULTI_COLLECTION_DISTRIBUTOR = BiggiMultiCollectionDistributor;
 // Ethers v5 compatible helpers and contract factories
 import { JsonRpcProvider, FallbackProvider } from "@ethersproject/providers";
 // import * as ethers from "ethers";
-import { BrowserProvider, Contract, BigNumber, constants } from "ethers";
-import { ethers } from "ethers";
+import { BrowserProvider, Contract, parseEther, formatEther, ZeroAddress, arrayify } from "ethers";
 import { ADDR } from "./addresses.js";
 import {
   AMOY,
@@ -557,29 +556,29 @@ export async function getFrontendSnapshotLiteActive(readerOverride) {
   // Fallback: build snapshot directly from main contract to avoid reader reverts.
   const main = getReadOnlyMain();
   const safeBn = (v) =>
-    v && BigNumber.isBigNumber(v) ? v : BigNumber.from(v || 0);
+    typeof v === "bigint" ? v : BigInt(v || 0);
   const [ticketPriceWei, ticketMinted_, biggiMinted_] = await Promise.all([
     main
       .getTicketPrice?.()
-      .catch(() => main.ticketPrice?.().catch(() => constants.Zero)),
-    main.ticketMinted?.().catch(() => constants.Zero),
-    main.biggiMinted?.().catch(() => constants.Zero),
+      .catch(() => main.ticketPrice?.().catch(() => 0n)),
+    main.ticketMinted?.().catch(() => 0n),
+    main.biggiMinted?.().catch(() => 0n),
   ]);
 
   const blockPricePromises = [];
   const blockMintPromises = [];
   for (let i = 1; i <= 10; i += 1) {
     blockPricePromises.push(
-      main.getCurrentBlockPrice?.(i).catch(() => constants.Zero),
+      main.getCurrentBlockPrice?.(i).catch(() => 0n),
     );
     blockMintPromises.push(
-      main.getBlockMintCount?.(i).catch(() => constants.Zero),
+      main.getBlockMintCount?.(i).catch(() => 0n),
     );
   }
   const bgMintPromises = [];
   for (let j = 0; j < 10; j += 1) {
     bgMintPromises.push(
-      main.backgroundMintCounts?.(j).catch(() => constants.Zero),
+      main.backgroundMintCounts?.(j).catch(() => 0n),
     );
   }
 
@@ -588,7 +587,7 @@ export async function getFrontendSnapshotLiteActive(readerOverride) {
   );
   const blocksMinted = (await Promise.all(blockMintPromises)).map(safeBn);
   const bgsMinted = (await Promise.all(bgMintPromises)).map(safeBn);
-  const charactersMinted = BigNumber.from(0);
+  const charactersMinted = BigInt(0);
 
   return [
     safeBn(ticketPriceWei),
@@ -774,8 +773,8 @@ export const getDripLM = () => {
 /* Reader aliases already added above; if you need more reader aliases add here */
 
 /* ---------------- Helpers ---------------- */
-export const toWei = (n) => ethers.parseEther(String(n));
-export const fromWei = (bn) => Number(ethers.formatEther(bn));
+export const toWei = (n) => parseEther(String(n));
+export const fromWei = (bn) => Number(formatEther(bn));
 
 /* -------- Compat for older code -------- */
 function _looksLikeProvider(value) {
@@ -959,7 +958,7 @@ function _attachHelpers(target, signerMode = false) {
       const addr = ADDR.BUYBACK_AGENT;
       const bal = await prov
         .getBalance(addr)
-        .catch(() => constants.Zero);
+        .catch(() => 0n);
       return [bal, 0, 0, 0, 0];
     };
   }
@@ -1002,7 +1001,7 @@ export async function resolveTicketPriceWeiFromHub() {
     if (typeof f === "function") {
       try {
         const v = await f();
-        if (v != null) return BigNumber.from(v);
+        if (v != null) return BigInt(v);
       } catch {
         // try next candidate
       }
@@ -1012,9 +1011,10 @@ export async function resolveTicketPriceWeiFromHub() {
   try {
     const snap = await getFrontendSnapshotLiteActive(reader);
     const wei = Array.isArray(snap) ? snap[0] : snap?.ticketPriceWei;
-    if (wei != null) return BigNumber.from(wei);
+    if (wei != null) return BigInt(wei);
   } catch {
     // ignore reader failure, will throw below
   }
   throw new Error("Ticket price unavailable");
 }
+

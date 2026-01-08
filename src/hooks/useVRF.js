@@ -1,7 +1,7 @@
 // useVRF.js
 import * as React from "react";
 // ...existing code...
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { getROProvider, ABI_VRF_READER, getReadOnlyContract } from "../utils/contract";
 
 /**
@@ -39,7 +39,7 @@ export function useVRF() {
 
   // Helper: získej instanci VRFReader contractu
   function getVRFReaderContract(provider) {
-    return new ethers.Contract(
+    return new Contract(
       "0x96dD4cB12d5BDa5014BCA2291FBF857662d0B263",
       ABI_VRF_READER,
       provider || getROProvider(),
@@ -145,7 +145,7 @@ export function useVRF() {
           try {
             const pendingReqIdBN = await c
               .pendingMintRequest(walletAddress)
-              .catch(() => ethers.BigNumber.from(0));
+              .catch(() => BigInt(0));
             const ridStr = pendingReqIdBN?.toString?.() || "0";
             history = await buildVRFHistory(c, walletAddress);
 
@@ -212,10 +212,10 @@ export function useVRF() {
         const c = getReadOnlyContract();
         const rid = await c
           .pendingMintRequest(walletAddress)
-          .catch(() => ethers.BigNumber.from(0));
+          .catch(() => BigInt(0));
         const isZero =
           rid && typeof rid.isZero === "function"
-            ? rid.isZero()
+            ? rid === 0n
             : String(rid || "0") === "0";
         let inferredFulfilled = isZero ? true : false;
         if (!isZero) {
@@ -233,3 +233,4 @@ export function useVRF() {
 
   return { buildVRFHistory, refreshVRFPanel, checkVrfResolution };
 }
+

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import {
   parseEth,
   writeFirst,
@@ -185,7 +185,7 @@ export function useAdminActions({
       },
       liq_buybackToTreasury: async (nativeAmount, minOut) => {
         const overrides = nativeAmount ? { value: parseEth(nativeAmount) } : {};
-        const minOutWei = minOut ? parseEth(minOut) : ethers.constants.Zero;
+        const minOutWei = minOut ? parseEth(minOut) : 0n;
         await writeFirst(
           [getLiquidityContract],
           [
@@ -200,7 +200,7 @@ export function useAdminActions({
         await onRefreshBuybackInfo();
       },
       liq_buybackAllToTreasury: async (minOut) => {
-        const minOutWei = minOut ? parseEth(minOut) : ethers.constants.Zero;
+        const minOutWei = minOut ? parseEth(minOut) : 0n;
         await writeFirst(
           [getLiquidityContract],
           [
@@ -217,7 +217,7 @@ export function useAdminActions({
         const overrides = nativeAmount ? { value: parseEth(nativeAmount) } : {};
         const tokenWei = biggiAmount
           ? parseEth(biggiAmount)
-          : ethers.constants.Zero;
+          : 0n;
         await writeFirst(
           [getLiquidityContract],
           [
@@ -267,7 +267,7 @@ export function useAdminActions({
       pol_setGuards: async (g) => {
         const dailyWei = g.dailyCapNative
           ? parseEth(g.dailyCapNative)
-          : ethers.constants.Zero;
+          : 0n;
         const args = [
           Number(g.swapSlip),
           Number(g.lpSlip),
@@ -339,3 +339,4 @@ export function useAdminActions({
     ],
   );
 }
+

@@ -4,3 +4,4 @@ if (
 ) {
   globalThis.module = { hot: undefined };
 }
+

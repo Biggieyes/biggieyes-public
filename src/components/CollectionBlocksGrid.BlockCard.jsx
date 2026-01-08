@@ -94,3 +94,4 @@ const BlockCard = React.memo(
 BlockCard.displayName = "BlockCard";
 
 export default BlockCard;
+

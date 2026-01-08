@@ -189,3 +189,4 @@ function IconRowBase({ icons = [], onIconClick, className = "", style }) {
 }
 
 export default React.memo(IconRowBase);
+

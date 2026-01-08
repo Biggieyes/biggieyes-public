@@ -64,3 +64,4 @@ export function mergeGalleryLists(baseItems = [], incomingItems = []) {
 
   return out;
 }
+

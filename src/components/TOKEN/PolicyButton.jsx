@@ -8,3 +8,4 @@ const PolicyButton = ({ children = "Policy", ...props }) => (
 );
 
 export default PolicyButton;
+

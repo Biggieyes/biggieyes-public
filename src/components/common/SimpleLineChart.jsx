@@ -205,3 +205,4 @@ const SimpleLineChart = ({
 };
 
 export default SimpleLineChart;
+

@@ -56,7 +56,7 @@ export async function refreshPolicy({ getPolicyRO, setBiggiData }) {
         guards.lpSlippageBps = Number(g[1]);
         guards.txDeadlineSec = Number(g[2]);
         guards.minBuybackInterval = Number(g[3]);
-        guards.maxDailyBuybackNative = ethers.utils.formatEther(g[4]);
+        guards.maxDailyBuybackNative = formatEther(g[4]);
       }
     }
   } catch {
@@ -75,7 +75,7 @@ export async function refreshPolicy({ getPolicyRO, setBiggiData }) {
     if (deadline != null) guards.txDeadlineSec = Number(deadline);
     if (cooldown != null) guards.minBuybackInterval = Number(cooldown);
     if (dailyCap != null)
-      guards.maxDailyBuybackNative = ethers.utils.formatEther(dailyCap);
+      guards.maxDailyBuybackNative = formatEther(dailyCap);
   } catch {
     // ignore guard fetch fallback
   }
@@ -109,3 +109,4 @@ export async function refreshPolicy({ getPolicyRO, setBiggiData }) {
     },
   }));
 }
+

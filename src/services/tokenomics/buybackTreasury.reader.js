@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { ZeroAddress } from "ethers";
 import { getBuybackTreasuryContracts } from "../../web3/contracts/buybackTreasury.contracts";
 import { getProvider } from "../../web3/provider";
 
@@ -52,40 +52,40 @@ export async function fetchBuybackTreasurySnapshot({ chainId, provider } = {}) {
     _callOptional(() => buyback.autoBuybackEnabled(), false),
     _callOptional(
       () => buyback.fallbackMinIntervalSec(),
-      ethers.constants.Zero,
+      0n,
     ),
     _callOptional(
       () => buyback.fallbackSwapSlippageBps(),
-      ethers.constants.Zero,
+      0n,
     ),
-    _callOptional(() => buyback.fallbackTxDeadlineSec(), ethers.constants.Zero),
-    _callOptional(() => buyback.lastBuybackAt(), ethers.constants.Zero),
-    _callOptional(() => buyback.nativeBalance(), ethers.constants.Zero),
-    _callOptional(() => buyback.biggiBalance(), ethers.constants.Zero),
-    _callOptional(() => buyback.totalNativeReceived(), ethers.constants.Zero),
-    _callOptional(() => buyback.totalNativeSpent(), ethers.constants.Zero),
-    _callOptional(() => buyback.totalBiggiAcquired(), ethers.constants.Zero),
+    _callOptional(() => buyback.fallbackTxDeadlineSec(), 0n),
+    _callOptional(() => buyback.lastBuybackAt(), 0n),
+    _callOptional(() => buyback.nativeBalance(), 0n),
+    _callOptional(() => buyback.biggiBalance(), 0n),
+    _callOptional(() => buyback.totalNativeReceived(), 0n),
+    _callOptional(() => buyback.totalNativeSpent(), 0n),
+    _callOptional(() => buyback.totalBiggiAcquired(), 0n),
     _callOptional(() => buyback.paused(), false),
-    _callOptional(() => treasury.biggiBalance(), ethers.constants.Zero),
-    _callOptional(() => treasury.maticBalance(), ethers.constants.Zero),
-    _callOptional(() => treasury.totalBiggiReceived(), ethers.constants.Zero),
+    _callOptional(() => treasury.biggiBalance(), 0n),
+    _callOptional(() => treasury.maticBalance(), 0n),
+    _callOptional(() => treasury.totalBiggiReceived(), 0n),
     _callOptional(
       () => treasury.totalBiggiReceivedFromBuyback(),
-      ethers.constants.Zero,
+      0n,
     ),
-    _callOptional(() => treasury.totalMaticReceived(), ethers.constants.Zero),
+    _callOptional(() => treasury.totalMaticReceived(), 0n),
     _callOptional(
       () => treasury.totalMaticReceivedFromDistributor(),
-      ethers.constants.Zero,
+      0n,
     ),
     _callOptional(
       () => token.balanceOf(addrs.buybackAgent),
-      ethers.constants.Zero,
+      0n,
     ),
-    _callOptional(() => token.balanceOf(addrs.treasury), ethers.constants.Zero),
+    _callOptional(() => token.balanceOf(addrs.treasury), 0n),
     signerOrProvider
       .getBalance(addrs.buybackAgent)
-      .catch(() => ethers.constants.Zero),
+      .catch(() => 0n),
   ]);
 
   return {
@@ -127,3 +127,4 @@ export async function fetchBuybackTreasurySnapshot({ chainId, provider } = {}) {
     providerAddrs: addrs,
   };
 }
+

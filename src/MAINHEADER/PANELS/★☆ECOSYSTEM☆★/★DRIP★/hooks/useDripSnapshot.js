@@ -55,3 +55,4 @@ export default function useDripSnapshot({
 
   return { snapshot, loading, error };
 }
+

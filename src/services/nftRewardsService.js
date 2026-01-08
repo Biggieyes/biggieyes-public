@@ -7,7 +7,7 @@
 // - connectWithSigner() připravené pro write operace
 // NEZměnil jsem žádnou logiku kontraktu.
 
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 
 const ABI = [
   {
@@ -194,7 +194,7 @@ export default class NFTRewardsService {
     if (!provider) throw new Error("Provider required");
     this.address = address;
     this.provider = provider;
-    this.contract = new ethers.Contract(address, ABI, provider);
+    this.contract = new Contract(address, ABI, provider);
     this._onBlockHandler = null;
     this._signerConnected = false;
   }
@@ -500,3 +500,4 @@ export default class NFTRewardsService {
     };
   }
 }
+

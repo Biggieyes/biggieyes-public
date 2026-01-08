@@ -1,6 +1,5 @@
 // src/components/LoadingOverlay.jsx
 import * as React from "react";
-import * as PropTypes from "prop-types";
 import "./LoadingOverlay.css";
 
 /**
@@ -73,11 +72,5 @@ export default function LoadingOverlay({
   );
 }
 
-LoadingOverlay.propTypes = {
-  open: PropTypes.bool,
-  percent: PropTypes.number,
-  message: PropTypes.string,
-  title: PropTypes.string,
-  showPercent: PropTypes.bool,
-  onClose: PropTypes.func,
-};
+
+

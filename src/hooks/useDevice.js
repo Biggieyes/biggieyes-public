@@ -26,3 +26,4 @@ export default function useIsMobile(breakpoint = 700) {
   }, [breakpoint]);
   return isMobile;
 }
+

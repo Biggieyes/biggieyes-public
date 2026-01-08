@@ -1,12 +1,12 @@
 // src/services/TreasuryService.js
 // Ethers v5 service wrapper for Treasury contract (read-only helpers)
 // Usage:
-//   const provider = new ethers.providers.Web3Provider(window.ethereum);
+//   const provider = new BrowserProvider(window.ethereum);
 //   const svc = new TreasuryService(CONTRACT_ADDRESS, provider);
 //   await svc.init();
 //   const stats = await svc.getAllStats();
 
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { BiggiTreasury as TreasuryAbi } from "../config/abi/index.js";
 
 const ABI = TreasuryAbi;
@@ -21,7 +21,7 @@ export default class TreasuryService {
     if (!provider) throw new Error("Provider required");
     this.address = address;
     this.provider = provider;
-    this.contract = new ethers.Contract(address, ABI, provider);
+    this.contract = new Contract(address, ABI, provider);
     this._onBlockHandler = null;
   }
 
@@ -163,3 +163,4 @@ export default class TreasuryService {
     };
   }
 }
+

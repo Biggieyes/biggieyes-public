@@ -171,3 +171,4 @@ export function getRpcUrls() {
   fallback.push(...PUBLIC_AMOY_RPCS);
   return rankRpcUrls(filterOutBadRpcs(fallback));
 }
+

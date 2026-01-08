@@ -1,4 +1,4 @@
-import { Contract, ethers } from "ethers";
+import { Contract, ZeroAddress } from "ethers";
 import { getProvider } from "../../web3/provider";
 import { getTokenDexContracts } from "../../web3/contracts/tokenDex.contracts";
 import UniswapV2Pair from "../../config/abi/UniswapV2Pair.json";
@@ -47,7 +47,7 @@ export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
     );
     if (
       remotePairAddress &&
-      remotePairAddress !== ethers.constants.AddressZero
+      remotePairAddress !== ZeroAddress
     ) {
       resolvedPairAddress = remotePairAddress;
       pairContract = new Contract(
@@ -178,3 +178,4 @@ export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
     addresses: addrs,
   };
 }
+

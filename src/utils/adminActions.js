@@ -1,10 +1,10 @@
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { ensureAmoy, getMain as getContract } from "./contract";
 
 export const parseEth = (n) => {
   const num = Number(n);
   if (!Number.isFinite(num) || num < 0) throw new Error("Invalid number");
-  return ethers.utils.parseEther(String(num));
+  return parseEther(String(num));
 };
 
 export const writeTx = async (fn, ...args) => {
@@ -112,3 +112,4 @@ export const setVRFAllOrPartial = async (vrf) => {
     // ignore final param
   }
 };
+

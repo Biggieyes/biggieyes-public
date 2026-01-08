@@ -1,6 +1,6 @@
 // src/hooks/useDistributor.js
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { getMultiCollectionDistributorRO } from "../utils/contract";
 import { getCached } from "../utils/fetchCache";
 
@@ -63,8 +63,8 @@ export default function useDistributor() {
             treasury,
             communityCenter,
           ] = await Promise.all([
-            safeCall("totalReceived", [], ethers.constants.Zero),
-            safeCall("totalPending", [], ethers.constants.Zero),
+            safeCall("totalReceived", [], 0n),
+            safeCall("totalPending", [], 0n),
             safeCall("reserve", [], null),
             safeCall("collectionRewards", [], null),
             safeCall("buybackAgent", [], null),
@@ -73,10 +73,10 @@ export default function useDistributor() {
           ]);
 
           const pendingFor = async (addr) => {
-            if (!addr || addr === ZERO) return ethers.constants.Zero;
+            if (!addr || addr === ZERO) return 0n;
             const v = await safeCall("pendingOf", [addr], null);
             if (v != null) return v;
-            return safeCall("pending", [addr], ethers.constants.Zero);
+            return safeCall("pending", [addr], 0n);
           };
 
           const [
@@ -95,7 +95,7 @@ export default function useDistributor() {
 
           const fmt = (v) => {
             try {
-              return ethers.utils.formatEther(v);
+              return formatEther(v);
             } catch {
               return "0";
             }
@@ -139,3 +139,4 @@ export default function useDistributor() {
 
   return { data, loading, error, refresh: fetchDistributorInfo };
 }
+

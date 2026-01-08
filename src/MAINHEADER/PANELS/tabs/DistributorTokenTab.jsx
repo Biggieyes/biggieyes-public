@@ -3,7 +3,7 @@ import "../TokenomicsPanel.css";
 import StatCard from "../components/StatCard";
 import DestinationsTable from "../components/DestinationsTable";
 import LineChart from "../charts/LineChart";
-import TokenFlow from "../flow/TokenFlow";
+import TokenFlow from "../★☆ECOSYSTEM☆★/★FLOW★/TokenFlow.jsx";
 import useDistributorHistory from "../../../hooks/tokenomics/useDistributorHistory";
 import { ADDR } from "../../../utils/addresses";
 import { explorerBaseFor } from "../../../utils/explorer";
@@ -286,3 +286,4 @@ const DistributorTokenTab = ({
 };
 
 export default DistributorTokenTab;
+

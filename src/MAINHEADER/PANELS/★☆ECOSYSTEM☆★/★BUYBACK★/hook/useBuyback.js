@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { createBuybackService } from "../services/factories";
 import { getCached } from "../utils/fetchCache";
 
@@ -7,7 +7,7 @@ import { getCached } from "../utils/fetchCache";
  * Hook pro čtení dat z Buyback Agentu (native+BIGGI zůstatky, statistiky nákupů, stav pause).
  */
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { createBuybackService } from "../services/factories";
 import { getCached } from "../utils/fetchCache";
 

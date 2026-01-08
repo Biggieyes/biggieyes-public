@@ -1,7 +1,7 @@
 /* @refresh reload */
 // src/context/StatsProvider.jsx
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { useContracts } from "./ContractsProvider";
 import {
   resolveTicketPriceWeiFromHub,
@@ -37,7 +37,7 @@ export function StatsProvider({ children }) {
         try {
           // Primary path through Reader
           const snap = await getFrontendSnapshotLiteActive(reader);
-          const ticketPriceWei = snap?.[0] ?? ethers.constants.Zero;
+          const ticketPriceWei = snap?.[0] ?? 0n;
           const ticketMintedBN = snap?.[1] ?? 0;
           const biggiMintedBN = snap?.[2] ?? 0;
           const blockPricesWeiArr = snap?.[3] ?? [];
@@ -46,12 +46,12 @@ export function StatsProvider({ children }) {
           const charactersMintedBN = snap?.[6] ?? 0;
 
           setData({
-            ticketPrice: Number(ethers.utils.formatEther(ticketPriceWei)),
+            ticketPrice: Number(formatEther(ticketPriceWei)),
             biggiMinted: Number(biggiMintedBN),
             ticketMinted: Number(ticketMintedBN),
             blockMintCounts: Array.from(blocksMintedArr).map((x) => Number(x)),
             blockPrices: Array.from(blockPricesWeiArr).map((x) =>
-              Number(ethers.utils.formatEther(x)),
+              Number(formatEther(x)),
             ),
             bgsMinted: Array.from(bgsMintedArr).map((x) => Number(x)),
             charactersMinted: Number(charactersMintedBN),
@@ -71,7 +71,7 @@ export function StatsProvider({ children }) {
           resolveTicketPriceWeiFromHub().catch(async () => {
             if (typeof main.ticketPrice === "function")
               return main.ticketPrice();
-            return ethers.constants.Zero;
+            return 0n;
           }),
           typeof main.biggiMinted === "function"
             ? main.biggiMinted().catch(() => 0)
@@ -87,9 +87,9 @@ export function StatsProvider({ children }) {
           idxs.map(async (i) => {
             const f = main.getCurrentBlockPrice || main.getCurrentBlockPriceWei;
             if (typeof f === "function") return f(i);
-            return ethers.constants.Zero;
+            return 0n;
           }),
-        ).catch(() => Array(10).fill(ethers.constants.Zero)),
+        ).catch(() => Array(10).fill(0n)),
         Promise.all(
           idxs.map(async (i) => {
             const f = main.blockMintCounts || main.getBlockMintCount;
@@ -106,12 +106,12 @@ export function StatsProvider({ children }) {
       ]);
 
       setData({
-        ticketPrice: Number(ethers.utils.formatEther(ticketPriceWei)),
+        ticketPrice: Number(formatEther(ticketPriceWei)),
         biggiMinted: Number(biggiMintedBN),
         ticketMinted: Number(ticketMintedBN),
         blockMintCounts: blocksMinted.map((x) => Number(x)),
         blockPrices: blockPricesWei.map((x) =>
-          Number(ethers.utils.formatEther(x)),
+          Number(formatEther(x)),
         ),
         bgsMinted: Array(10).fill(0),
         charactersMinted: 0,
@@ -133,3 +133,4 @@ export function useStats() {
   if (!v) throw new Error("useStats must be used inside <StatsProvider>");
   return v;
 }
+

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import {
   getContract,
   getReadOnlyContract,
@@ -198,7 +198,7 @@ export function useNFTs({
       await ensureAmoy();
       const ids = myNFTs
         .filter((x) => !x.isTicket)
-        .map((x) => ethers.BigNumber.from(x.tokenId));
+        .map((x) => BigInt(x.tokenId));
       if (!ids.length) return alert("No eligible NFTs to claim.");
 
       const brl = getLiquidityContract();
@@ -247,7 +247,7 @@ export function useNFTs({
       const me = walletAddress.toLowerCase();
       const fromL = (from || "").toLowerCase();
       const toL = (to || "").toLowerCase();
-      const zeroL = ethers.constants.AddressZero.toLowerCase();
+      const zeroL = ZeroAddress.toLowerCase();
 
       if (toL === me && fromL !== zeroL) {
         await fetchWalletAssets(walletAddress);
@@ -287,3 +287,4 @@ export function useNFTs({
     setRedeemMsg,
   };
 }
+

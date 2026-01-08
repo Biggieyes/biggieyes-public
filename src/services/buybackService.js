@@ -2,7 +2,7 @@
 // Ethers v5 service wrapper for BuybackAgent-like contract (read-only helpers)
 // Neprovádím žádné změny v kontraktu.
 
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { multicallAggregate } from "../utils/multicall";
 
 const ABI = [
@@ -161,7 +161,7 @@ export default class BuybackService {
     if (!provider) throw new Error("Provider required");
     this.address = address;
     this.provider = provider;
-    this.contract = new ethers.Contract(address, ABI, provider);
+    this.contract = new Contract(address, ABI, provider);
     this._onBlockHandler = null;
     this._signerConnected = false;
   }
@@ -476,3 +476,4 @@ export default class BuybackService {
     };
   }
 }
+

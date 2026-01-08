@@ -4,3 +4,4 @@ import * as BNModule from "bn.js";
 const BN = BNModule && BNModule.default ? BNModule.default : BNModule;
 export default BN;
 export * from "bn.js";
+

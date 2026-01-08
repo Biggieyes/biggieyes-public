@@ -1,6 +1,6 @@
 // src/components/NftCard.jsx
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import "./NftCard.css";
 import ImportNftButton from "./ImportNftButton";
 import { useContracts } from "../providers/ContractsProvider";
@@ -25,7 +25,7 @@ const normaliseAttributes = (meta) => {
 
 const fmtEtherNum = (v) => {
   try {
-    return Number(ethers.utils.formatEther(v));
+    return Number(formatEther(v));
   } catch {
     try {
       const bi = typeof v === "bigint" ? v : BigInt(v ?? 0);
@@ -486,3 +486,4 @@ export default function NftCard({
     </article>
   );
 }
+

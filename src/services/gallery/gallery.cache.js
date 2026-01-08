@@ -43,3 +43,4 @@ export function saveGalleryCache(addr, items, contractAddr) {
     // ignore
   }
 }
+

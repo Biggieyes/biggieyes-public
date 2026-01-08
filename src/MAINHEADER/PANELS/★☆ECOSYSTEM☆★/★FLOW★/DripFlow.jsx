@@ -1,5 +1,5 @@
 import * as React from "react";
-import ValueRow from "../components/ValueRow";
+import ValueRow from "../../components/ValueRow";
 import "./DripFlow.css";
 
 const DripFlow = ({ flows = [] }) => (
@@ -19,3 +19,4 @@ const DripFlow = ({ flows = [] }) => (
 );
 
 export default DripFlow;
+

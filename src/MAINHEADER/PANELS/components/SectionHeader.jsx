@@ -7,3 +7,4 @@ const SectionHeader = ({ label, accent = "#ffe800" }) => (
   </div>
 );
 export default SectionHeader;
+

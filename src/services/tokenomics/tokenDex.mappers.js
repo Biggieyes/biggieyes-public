@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { formatUnits } from "ethers";
 
 const DEFAULT_DECIMALS = 18;
 const PLACEHOLDER = "N/A";
@@ -6,8 +6,8 @@ const PLACEHOLDER = "N/A";
 function _formatAmount(raw, decimals = DEFAULT_DECIMALS, options = {}) {
   if (raw == null) return { display: PLACEHOLDER, numeric: null };
   try {
-    const bn = ethers.BigNumber.isBigNumber(raw) ? raw : ethers.BigNumber.from(raw);
-    const formatted = ethers.utils.formatUnits(bn, decimals);
+    const bn = typeof raw === 'bigint' ? raw : BigInt(raw);
+    const formatted = formatUnits(bn, decimals);
     const numeric = Number(formatted);
     const display = Number.isFinite(numeric)
       ? numeric.toLocaleString("en-US", {
@@ -343,3 +343,4 @@ export function mapHistoryToReservePoints(history = []) {
 export function mapHistoryToLpPoints(history = []) {
   return _mapHistory(history, (entry) => entry?.dex?.pair?.totalSupplyNumeric);
 }
+

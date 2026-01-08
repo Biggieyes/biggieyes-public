@@ -134,3 +134,4 @@ export function installWalletModalFix({ top = "2vh", zIndex = 10000 } = {}) {
     clearInterval(intId);
   };
 }
+

@@ -244,3 +244,4 @@ export default function Modal({
 
   return ReactDOM.createPortal(content, document.body);
 }
+

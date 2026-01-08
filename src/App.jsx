@@ -1,7 +1,7 @@
-﻿import * as React from "react";
+import * as React from "react";
 import "./App.css";
 import { MODAL_TEXTS } from "./constants/texts";
-// --- Přidané importy pro napojení dosud nepoužívaných souborů ---
+// --- P�idan� importy pro napojen� dosud nepou��van�ch soubor� ---
 import messageHandler from "./api/message";
 import nonceHandler from "./api/nonce";
 import AdminDashboard from "./components/AdminDashboard.jsx";
@@ -9,8 +9,8 @@ import IconButton from "./components/common/IconButton.jsx";
 import ModalTopbar from "./components/common/ModalTopbar.jsx";
 import ExpansionPanel from "./components/expansion/ExpansionPanel.jsx";
 import PinUploader from "./components/PinUploader.jsx";
-import RedeemFlow from "./components/redeem/RedeemFlow.jsx";
-import RewardsBlockSummary from "./components/rewards/RewardsBlockSummary.jsx";
+import RedeemFlow from "./ACTIONBUTTONS/REDEEMTICKET/RedeemFlow.jsx";
+import RewardsBlockSummary from "./MAINHEADER/PANELS/??REWARDS??/RewardsBlockSummary.jsx";
 import BiggiButton from "./components/TOKEN/BiggiButton.jsx";
 import BuybackDripButton from "./components/TOKEN/BuybackDripButton.jsx";
 import BuybackStabilityChart from "./components/TOKEN/BuybackStabilityChart.jsx";
@@ -25,19 +25,18 @@ import TokenSupplyChart from "./components/TOKEN/TokenSupplyChart.jsx";
 import ADDR from "./config/addresses.js";
 import * as BLOCK_CONST from "./constants/block.js";
 import BLOCK_IMAGES from "./constants/blockImages.js";
-import BLOCKSIMAGES from "./constants/blocksimages.js";
-import * as UI_CONST from "./constants/ui.js";
-import * as DeviceHooks from "./Device.js";
-import WalletButton from "./components/header/WalletButton.jsx";
+import * as UI_CONST from "./UI/ui.js";
+import * as DeviceHooks from "./UI/Device.js";
+import WalletButton from "./MAINHEADER/WalletButton.jsx";
 import LoadingOverlay from "./components/LoadingOverlay.jsx";
-// Dummy použití API handlerů (simulace volání, aby byly použity)
+// Dummy pou�it� API handler� (simulace vol�n�, aby byly pou�ity)
 if (typeof window !== "undefined") {
   // Simulace requestu pro message
   messageHandler({ method: "POST", body: { address: "0x", content: "test", signature: "x", nonce: "y", timestamp: Date.now() } }, { status: () => ({ json: () => {} }), json: () => {} });
   // Simulace requestu pro nonce
   nonceHandler({ method: "GET", query: { address: "0x" } }, { status: () => ({ json: () => {} }), json: () => {} });
 }
-// import { ethers } from "ethers";
+// import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { BigNumber } from "@ethersproject/bignumber";
 import { Contract } from "@ethersproject/contracts";
 import { formatUnits, parseUnits } from "@ethersproject/units";
@@ -74,7 +73,6 @@ import { formatEthNum } from "./utils/format";
 import { resolveImageUrl, readJsonFromURI } from "./utils/ipfs";
 import { callFirst, getRO as getROHelper } from "./utils/contracts-helpers";
 import { fetchCommunityCenterStats as fetchCommunityCenterStatsRO } from "./utils/community";
-import useIsMobile from "./hooks/useIsMobile";
 import NavPanelSwitch from "./MAINHEADER/PANELS/NavPanelSwitch.jsx";
 import { useNavHotkeys } from "./hooks/useNavHotkeys";
 import { useGlobalShortcuts } from "./hooks/useGlobalShortcuts";
@@ -139,7 +137,7 @@ const pickInjectedProvider = () => {
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-/* 🔹 MINI ERC20 ABI pro čtení */
+/* ?? MINI ERC20 ABI pro �ten� */
 /* ======================================================================== */
 /* ============================== SMALL UTILS ============================== */
 /* ======================================================================== */
@@ -148,40 +146,7 @@ const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 /* ================================= UI ==================================== */
 /* ======================================================================== */
 
-const ICONS = [
-  {
-    src: "/images/icons/rewards.png",
-    alt: "REWARDS",
-    modalText: MODAL_TEXTS.rewards || "",
-  },
-  {
-    src: "/images/icons/collection.png",
-    alt: "COLLECTION",
-    modalText: MODAL_TEXTS.collection,
-  },
-  {
-    src: "/images/icons/mint.png",
-    alt: "VRF MINT",
-    modalText: MODAL_TEXTS.mint,
-  },
-  {
-    src: "/images/icons/token.png",
-    alt: "BIGGI ECOSYSTEM",
-    modalText: MODAL_TEXTS.chance,
-  },
-  {
-    src: "/images/icons/users.png",
-    alt: "USERS",
-    modalText: MODAL_TEXTS.community || "",
-  },
-  {
-    src: "/images/icons/expansion.png",
-    alt: "COMMUNITY CENTER",
-    modalText: MODAL_TEXTS.communityCenter || MODAL_TEXTS.expansion,
-  },
-];
-
-// 🔵 WalletConnect helper
+// ?? WalletConnect helper
 const connectWithWalletConnect = async () => {
   try {
     const mod = await import("./wallet/wc");
@@ -196,15 +161,15 @@ const connectWithWalletConnect = async () => {
 };
 
 function App() {
-  // Přístup ke všem contract factory přes context
+  // P��stup ke v�em contract factory p�es context
   const contracts = useContracts();
-  // DEMO: použití contract factory z contextu
+  // DEMO: pou�it� contract factory z contextu
   React.useEffect(() => {
-    // Příklad volání BiggiMainReader a BiggiTokenomicsReader
+    // P��klad vol�n� BiggiMainReader a BiggiTokenomicsReader
     try {
       const mainReader = contracts.biggiMainReaderRead?.();
       const tokenomicsReader = contracts.biggiTokenomicsReaderRead?.();
-      // Můžeš zde volat metody na těchto instancích, např. mainReader.něco()
+      // M��e� zde volat metody na t�chto instanc�ch, nap�. mainReader.n�co()
       // console.log("mainReader", mainReader);
       // console.log("tokenomicsReader", tokenomicsReader);
     } catch (e) {
@@ -329,7 +294,7 @@ function App() {
   const [epochStartTs, setEpochStartTs] = React.useState(null);
   const [userLastClaimTs, setUserLastClaimTs] = React.useState(null);
 
-  const isMobile = useIsMobile(700);
+  const isMobile = DeviceHooks.useIsMobile(700);
   const { data: distributorData, refresh: fetchDistributorInfo } =
     useDistributor();
   const {
@@ -439,7 +404,7 @@ function App() {
         try {
           const reader = getReaderRO();
           const [tp, bp, fp] = await reader.getMintDataByTokenId(
-            ethers.BigNumber.from(String(tokenId)),
+            BigInt(String(tokenId)),
           );
           const ticket = formatEthNum(tp);
           const blockP = formatEthNum(bp);
@@ -495,7 +460,7 @@ function App() {
     enrichMetaWithPrices,
   });
 
-  /* ---------- Stats přes Reader ---------- */
+  /* ---------- Stats p�es Reader ---------- */
 
   const fetchBackgroundMintCounts = React.useCallback(async () => {
     try {
@@ -572,7 +537,7 @@ function App() {
 
       let tokenIds = myNFTs
         .filter((x) => !x.isTicket)
-        .map((x) => ethers.BigNumber.from(x.tokenId));
+        .map((x) => BigInt(x.tokenId));
 
       if (!tokenIds.length) {
         const contract = contractRef.current || getReadOnlyContract();
@@ -607,9 +572,9 @@ function App() {
               typeof contract?.isTicket === "function"
                 ? await contract.isTicket(tid)
                 : false;
-            if (!isT) nonTickets.push(ethers.BigNumber.from(tid));
+            if (!isT) nonTickets.push(BigInt(tid));
           } catch {
-            nonTickets.push(ethers.BigNumber.from(tid));
+            nonTickets.push(BigInt(tid));
           }
         }
         tokenIds = nonTickets;
@@ -845,7 +810,7 @@ function App() {
       const addr = accounts?.[0];
       if (!addr) throw new Error("No account returned from wallet.");
 
-      const injectedProvider = new ethers.providers.Web3Provider(eth, "any");
+      const injectedProvider = new BrowserProvider(eth, "any");
       const net = await injectedProvider.getNetwork().catch(() => null);
       if (Number(net?.chainId) !== 80002) {
         await ensureAmoy();
@@ -1019,7 +984,7 @@ function App() {
             "getBIGGI",
           ]);
           if (tAddr) {
-            const erc20 = new ethers.Contract(tAddr, ERC20_MINI, provider);
+            const erc20 = new Contract(tAddr, ERC20_MINI, provider);
             tokenSymbol =
               (await erc20.symbol().catch(() => tokenSymbol)) || tokenSymbol;
           }
@@ -1060,7 +1025,7 @@ function App() {
   // Effects moved to AppCore
 
   const navOpen = openNavIdx !== null;
-  const navAlt = navOpen ? ICONS[openNavIdx].alt : "";
+  const navAlt = navOpen ? UI_CONST.ICONS[openNavIdx].alt : "";
   const isInfoOpen = navOpen && navAlt === "INFO";
   const isCollectionOpen = navOpen && navAlt === "COLLECTION";
   const isRewardsOpen = navOpen && navAlt === "REWARDS";
@@ -1080,13 +1045,13 @@ function App() {
   const goNextPanel = React.useCallback(() => {
     setOpenNavIdx((idx) => {
       if (idx === null) return 0;
-      return (idx + 1) % ICONS.length;
+      return (idx + 1) % UI_CONST.ICONS.length;
     });
   }, []);
   const goPrevPanel = React.useCallback(() => {
     setOpenNavIdx((idx) => {
-      if (idx === null) return ICONS.length - 1;
-      return (idx - 1 + ICONS.length) % ICONS.length;
+      if (idx === null) return UI_CONST.ICONS.length - 1;
+      return (idx - 1 + UI_CONST.ICONS.length) % UI_CONST.ICONS.length;
     });
   }, []);
 
@@ -1189,7 +1154,7 @@ function App() {
         claimRewards={claimRewards}
         actionPerforming={actionPerforming}
         actionError={actionError}
-        icons={ICONS}
+        icons={UI_CONST.ICONS}
         setOpenNavIdx={setOpenNavIdx}
         isMobile={isMobile}
         lastMinted={lastMinted}
@@ -1247,7 +1212,7 @@ function App() {
       <React.Suspense fallback={null}>
         <FullscreenPanel
           open={navOpen && !isInfoOpen}
-          title={navOpen ? ICONS[openNavIdx].alt : ""}
+          title={navOpen ? UI_CONST.ICONS[openNavIdx].alt : ""}
           onClose={() => setOpenNavIdx(null)}
           onPrev={goPrevPanel}
           onNext={goNextPanel}
@@ -1280,7 +1245,7 @@ function App() {
           {navOpen && !isInfoOpen && (
             <NavPanelSwitch
               activeAlt={navAlt}
-              modalText={ICONS[openNavIdx].modalText}
+              modalText={UI_CONST.ICONS[openNavIdx].modalText}
               transparencyData={transparencyData}
               transparencyLoading={transparencyLoading}
               refreshTransparency={refreshTransparency}
@@ -1337,48 +1302,48 @@ function App() {
           actions={adminActions}
         />
       </React.Suspense>
-      {/* --- Přidaný AdminDashboard, aby byl napojený --- */}
+      {/* --- P�idan� AdminDashboard, aby byl napojen� --- */}
       <div style={{ display: "none" }}>
-        {/* Napojení všech dříve nepoužívaných komponent */}
+        {/* Napojen� v�ech d��ve nepou��van�ch komponent */}
         <AdminDashboard />
-        <IconButton src="/images/icons/token.png" alt="Test Icon" onClick={() => {}} />
+        <IconButton src="/images/UI_CONST.ICONS/token.png" alt="Test Icon" onClick={() => {}} />
         <ModalTopbar title="Test Modal" onClose={() => {}} />
         <ExpansionPanel />
         <WalletButton walletAddress="0x1234567890abcdef" onConnect={() => {}} onConnectWC={() => {}} />
         <LoadingOverlay open={false} />
-        {/* Další napojení dalších 5 komponent */}
+        {/* Dal�� napojen� dal��ch 5 komponent */}
         <PinUploader onDone={() => {}} />
         <RedeemFlow />
         <RewardsBlockSummary />
         <BiggiButton>Test BiggiButton</BiggiButton>
         <BuybackDripButton>Test BuybackDripButton</BuybackDripButton>
-        {/* Další napojení dalších 5 komponent */}
+        {/* Dal�� napojen� dal��ch 5 komponent */}
         <BuybackStabilityChart />
         <DexLiquidityChart />
         <FlowButton>Test FlowButton</FlowButton>
         <LiquidityVaultChart />
         <LMReserveTokenDexButton>Test LMReserveTokenDexButton</LMReserveTokenDexButton>
-        {/* Další napojení dalších 5 komponent */}
+        {/* Dal�� napojen� dal��ch 5 komponent */}
         <PolicyButton>Test PolicyButton</PolicyButton>
-        {/* Simulace použití RechartsCompat */}
+        {/* Simulace pou�it� RechartsCompat */}
         <div style={{ display: "none" }}>{RechartsCompat.AreaChart ? "" : null}</div>
         <SimpleLineChart data={[]} series={[]} />
         <TokenSupplyChart />
-        {/* Simulace použití adresáře ADDR */}
+        {/* Simulace pou�it� adres��e ADDR */}
         <div style={{ display: "none" }}>
-          {/* Simulace použití constants/block.js */}
+          {/* Simulace pou�it� constants/block.js */}
           {BLOCK_CONST.DEFAULT_BLOCKS?.length}
-          {/* Simulace použití constants/blockImages.js */}
+          {/* Simulace pou�it� constants/blockImages.js */}
           {Array.isArray(BLOCK_IMAGES.ORANGE) ? BLOCK_IMAGES.ORANGE[0] : null}
-          {/* Simulace použití constants/blocksimages.js */}
+          {/* Simulace pou�it� constants/blocksimages.js */}
           {BLOCKSIMAGES ? "blocksimages loaded" : null}
-          {/* Simulace použití constants/ui.js */}
-          {UI_CONST.ICONS?.[0]?.alt}
-          {/* Simulace použití Device.js hooků */}
+          {/* Simulace pou�it� constants/ui.js */}
+          {UI_CONST.UI_CONST.ICONS?.[0]?.alt}
+          {/* Simulace pou�it� Device.js hook� */}
           {typeof DeviceHooks.useIsMobile === "function" ? "Device ok" : null}
         </div>
       </div>
-      {/* Importy pro další komponenty */}
+      {/* Importy pro dal�� komponenty */}
       {/* eslint-disable-next-line */}
       {/* @ts-ignore */}
       import PinUploader from "./components/PinUploader.jsx";
@@ -1391,3 +1356,5 @@ function App() {
 }
 
 export default App;
+
+

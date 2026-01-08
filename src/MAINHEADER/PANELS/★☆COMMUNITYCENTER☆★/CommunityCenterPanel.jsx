@@ -1,12 +1,12 @@
 // src/components/panels/CommunityCenterPanel.jsx
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { getROProvider, ADDR } from "../../../utils/contract.js";
-import "./RewardsPanel.css";
-import "../../styles/biggi-token.skin.css";
+import "../★☆REWARDS☆★/RewardsPanel.css";
+import "../../../styles/biggi-token.skin.css";
 import communityCenterAbi from "../../../utils/abi/BiggiCommunityCenter.js";
 import FullscreenPanel from "../../../components/common/FullscreenPanel.jsx";
-import ModeratorCenterPanel from "./ModeratorCenterPanel";
+import ModeratorCenterPanel from "./★MODERATORCENTER★/ModeratorCenterPanel.jsx";
 
 const COMMUNITY_CENTER_ABI = Array.isArray(communityCenterAbi)
   ? communityCenterAbi
@@ -56,7 +56,7 @@ function resolveCommunityCenterAddress() {
 function bnToNumber(value) {
   if (value == null) return 0;
   try {
-    return Number(ethers.BigNumber.from(value).toString());
+    return Number(BigInt(value).toString());
   } catch {
     const num = Number(value);
     return Number.isFinite(num) ? num : 0;
@@ -73,7 +73,7 @@ function formatVotes(value) {
 
 function formatDeposit(value) {
   try {
-    const numeric = Number(ethers.utils.formatEther(value ?? 0));
+    const numeric = Number(formatEther(value ?? 0));
     if (!Number.isFinite(numeric)) return "--";
     if (numeric === 0) return "0 POL";
     if (numeric >= 1) return `${numeric.toFixed(2)} POL`;
@@ -85,7 +85,7 @@ function formatDeposit(value) {
 
 function formatNative(value) {
   try {
-    const numeric = Number(ethers.utils.formatEther(value ?? 0));
+    const numeric = Number(formatEther(value ?? 0));
     if (!Number.isFinite(numeric)) return "--";
     if (numeric === 0) return "0 POL";
     if (numeric >= 1) return `${numeric.toFixed(2)} POL`;
@@ -358,7 +358,7 @@ export default function CommunityCenterPanel({
           return;
         }
 
-        const contract = new ethers.Contract(
+        const contract = new Contract(
           resolvedAddress,
           COMMUNITY_CENTER_ABI,
           provider,
@@ -376,13 +376,13 @@ export default function CommunityCenterPanel({
             contract,
             "proposalCount",
             [],
-            ethers.BigNumber.from(0),
+            BigInt(0),
           ),
           safeContractCall(
             contract,
             "eventCount",
             [],
-            ethers.BigNumber.from(0),
+            BigInt(0),
           ),
           safeContractCall(contract, "quorumPercent", [], null),
           safeContractCall(contract, "proposalThreshold", [], null),
@@ -860,3 +860,4 @@ export default function CommunityCenterPanel({
     </>
   );
 }
+

@@ -17,3 +17,4 @@ export function useNavHotkeys(navOpen, goNextPanel, goPrevPanel) {
     }
   }, [navOpen, goNextPanel, goPrevPanel]);
 }
+

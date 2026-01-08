@@ -5,3 +5,4 @@ const Scrypt =
   ScryptModule && ScryptModule.default ? ScryptModule.default : ScryptModule;
 export default Scrypt;
 export * from "scrypt-js";
+

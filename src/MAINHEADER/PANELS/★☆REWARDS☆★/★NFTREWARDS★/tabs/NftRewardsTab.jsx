@@ -26,3 +26,4 @@ function NftRewardsTab({
 }
 
 export default NftRewardsTab;
+

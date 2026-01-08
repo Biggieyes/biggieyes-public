@@ -1,5 +1,5 @@
 // src/wallet/wc.js
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { EthereumProvider } from "@walletconnect/ethereum-provider";
 import { AMOY, PUBLIC_AMOY_RPCS, getPrimaryRpcUrl } from "../utils/contract";
 
@@ -66,7 +66,7 @@ export async function connectWithWalletConnect() {
   // Open QR and establish session
   await wc.connect();
 
-  const ethersProvider = new ethers.providers.Web3Provider(wc, "any");
+  const ethersProvider = new BrowserProvider(wc, "any");
   ethersProvider.pollingInterval = 4000;
 
   const signer = ethersProvider.getSigner();
@@ -199,3 +199,4 @@ export async function getLogsBatched(
   }
   return logs;
 }
+

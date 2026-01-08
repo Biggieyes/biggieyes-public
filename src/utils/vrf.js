@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { getReadOnlyMain as getReadOnlyContract } from "./contract";
 import { explorerBaseFor } from "./explorer";
 import { getSafeDeployBlock, queryLogsBatched } from "./shared";
@@ -152,7 +152,7 @@ export async function refreshVRFPanel(
       try {
         const pendingReqIdBN = await c
           .pendingMintRequest(walletAddress)
-          .catch(() => ethers.BigNumber.from(0));
+          .catch(() => BigInt(0));
         const ridStr = pendingReqIdBN?.toString?.() || "0";
 
         history = await buildHistory(c, walletAddress);
@@ -235,7 +235,7 @@ export async function checkVrfResolution({
     }
     const isZero =
       rid && typeof rid.isZero === "function"
-        ? rid.isZero()
+        ? rid === 0n
         : String(rid || "0") === "0";
 
     const inferredFulfilled = isZero
@@ -277,3 +277,4 @@ export function openVrfExplorer(
     }
   })();
 }
+

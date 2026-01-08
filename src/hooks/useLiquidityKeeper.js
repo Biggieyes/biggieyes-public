@@ -1,6 +1,6 @@
 // src/hooks/useLiquidityKeeper.js
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { ADDR } from "../utils/addresses";
 import { LiquidityKeeper as ABI_LIQUIDITY_KEEPER } from "../config/abi/index.js";
 import { getReadOnlyContract, getSignerProvider } from "../utils/contract";
@@ -52,7 +52,7 @@ export default function useLiquidityKeeper() {
             "LiquidityKeeper address not configured (KEEPER_PROXY)",
           );
         const provider = getSignerProvider();
-        const contract = new ethers.Contract(
+        const contract = new Contract(
           addr,
           ABI_LIQUIDITY_KEEPER,
           provider.getSigner(),
@@ -80,3 +80,4 @@ export default function useLiquidityKeeper() {
 
   return { data, loading, performing, error, refresh, executePairing };
 }
+

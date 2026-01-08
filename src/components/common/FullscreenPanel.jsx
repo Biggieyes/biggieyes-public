@@ -629,3 +629,4 @@ export default function FullscreenPanel({
   if (typeof document === "undefined") return null;
   return ReactDOM.createPortal(content, document.body);
 }
+

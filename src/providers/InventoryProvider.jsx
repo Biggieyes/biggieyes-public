@@ -1,6 +1,6 @@
 // src/context/InventoryProvider.jsx
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { useContracts } from "./ContractsProvider";
 import { readJsonFromURI, resolveImageUrl } from "../services/ipfs";
 import { mergeAttrs, getCachedPriceAttrs } from "../services/prices";
@@ -170,3 +170,4 @@ export function InventoryProvider({ children }) {
 export const useInventory = () => {
   return React.useContext(Ctx);
 };
+

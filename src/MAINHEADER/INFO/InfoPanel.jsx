@@ -329,3 +329,4 @@ function DefaultContent({ compact }) {
     </div>
   );
 }
+

@@ -18,7 +18,7 @@ import { getBiggiBalancesAcrossReserveLmLv } from "../../services/composed";
 import { BiggiLpPriceFeed as ABI_LP_PRICE_FEED } from "../../config/abi/index.js";
 import { createBuybackService, createDripDistributorService } from "../../services/factories";
 import { getROProvider, getSignerProvider, ensureAmoy, ADDR, AMOY } from "../../utils/contract";
-// import { ethers } from "ethers"; // odstraněno duplicitně
+// import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers"; // odstraněno duplicitně
 import BiggiBuybackReader from "../../config/abi/BiggiBuybackReader.json";
 import BiggiDripReader from "../../config/abi/BiggiDripReader.json";
   // --- On-chain buyback and drip balances via their readers ---
@@ -30,12 +30,12 @@ import BiggiDripReader from "../../config/abi/BiggiDripReader.json";
       setOnchainBuyback((prev) => ({ ...prev, loading: true, error: null }));
       try {
         const provider = getROProvider();
-        const reader = new ethers.Contract(ADDR.BUYBACK_READER, ABI_BUYBACK_READER, provider);
+        const reader = new Contract(ADDR.BUYBACK_READER, ABI_BUYBACK_READER, provider);
         const summary = await reader.simpleSummary();
         if (cancelled) return;
         setOnchainBuyback({
-          biggi: Number(ethers.utils.formatUnits(summary.biggiHeld, 18)),
-          matic: Number(ethers.utils.formatEther(summary.maticHeld)),
+          biggi: Number(formatUnits(summary.biggiHeld, 18)),
+          matic: Number(formatEther(summary.maticHeld)),
           loading: false,
           error: null,
         });
@@ -48,12 +48,12 @@ import BiggiDripReader from "../../config/abi/BiggiDripReader.json";
       setOnchainDrip((prev) => ({ ...prev, loading: true, error: null }));
       try {
         const provider = getROProvider();
-        const reader = new ethers.Contract(ADDR.DRIP_READER, ABI_DRIP_READER, provider);
+        const reader = new Contract(ADDR.DRIP_READER, ABI_DRIP_READER, provider);
         const summary = await reader.simpleSummary();
         if (cancelled) return;
         setOnchainDrip({
-          biggi: Number(ethers.utils.formatUnits(summary.biggiHeld, 18)),
-          matic: Number(ethers.utils.formatEther(summary.maticHeld)),
+          biggi: Number(formatUnits(summary.biggiHeld, 18)),
+          matic: Number(formatEther(summary.maticHeld)),
           loading: false,
           error: null,
         });
@@ -83,7 +83,7 @@ import TokenomicsPanel from "../../panels/TokenomicsPanel/TokenomicsPanel";
 import DistributorTokenTab from "../../panels/TokenomicsPanel/tabs/DistributorTokenTab";
 import DripTab from "../../panels/TokenomicsPanel/tabs/DripTab";
 import BuybackTreasuryTab from "../../panels/TokenomicsPanel/tabs/BuybackTreasuryTab";
-import { ethers } from "ethers";
+import { formatUnits, formatEther, parseUnits } from "ethers";
 import useDripSnapshot from "../../hooks/tokenomics/useDripSnapshot";
 import useDripHistory from "../../hooks/tokenomics/useDripHistory";
 import useBuybackTreasurySnapshot from "../../hooks/tokenomics/useBuybackTreasurySnapshot";
@@ -361,12 +361,12 @@ const BiggiTokenInner = ({
         const provider = getROProvider();
         const feedAddr = ADDR.LP_PRICE_FEED;
         if (feedAddr) {
-          const feed = new ethers.Contract(feedAddr, ABI_LP_PRICE_FEED, provider);
+          const feed = new Contract(feedAddr, ABI_LP_PRICE_FEED, provider);
           const round = await feed.latestRoundData().catch(() => null);
           const dec = await feed.decimals().catch(() => 18);
           if (!alive) return;
           if (round && round.answer != null) {
-            const price = Number(ethers.utils.formatUnits(round.answer, dec));
+            const price = Number(formatUnits(round.answer, dec));
             if (Number.isFinite(price)) setLpPrice(price);
           }
         }
@@ -384,12 +384,12 @@ const BiggiTokenInner = ({
       setOnchainTreasury((prev) => ({ ...prev, loading: true, error: null }));
       try {
         const provider = getROProvider();
-        const reader = new ethers.Contract(ADDR.TREASURY_READER, ABI_TREASURY_READER, provider);
+        const reader = new Contract(ADDR.TREASURY_READER, ABI_TREASURY_READER, provider);
         const summary = await reader.simpleSummary();
         if (cancelled) return;
         setOnchainTreasury({
-          biggi: Number(ethers.utils.formatUnits(summary.biggiHeld, 18)),
-          matic: Number(ethers.utils.formatEther(summary.maticHeld)),
+          biggi: Number(formatUnits(summary.biggiHeld, 18)),
+          matic: Number(formatEther(summary.maticHeld)),
           loading: false,
           error: null,
         });
@@ -536,10 +536,10 @@ const BiggiTokenInner = ({
       try {
         const provider = getROSafe();
         if (!provider) return;
-        const token = new ethers.Contract(ADDR.BIGGI, ABI_TOKEN, provider);
+        const token = new Contract(ADDR.BIGGI, ABI_TOKEN, provider);
         const bal = await withTimeout(() => token.balanceOf(ADDR.DRIP_DISTRIBUTOR), 8000, "dripDistributor.balanceOf");
         if (cancelled || bal == null) return;
-        setDripDistributorBiggi(Number(ethers.utils.formatUnits(bal, 18)));
+        setDripDistributorBiggi(Number(formatUnits(bal, 18)));
       } catch {
         // ignore
       }
@@ -761,10 +761,10 @@ const BiggiTokenInner = ({
         setChainStatus((prev) => ({ ...prev, chainId: prev.chainId ?? null }));
       }
 
-      const lmContract = new ethers.Contract(ADDR.LM, ABI_LM, provider);
-      const reserveContract = new ethers.Contract(ADDR.RESERVE, ABI_RESERVE, provider);
-      const pairContract = new ethers.Contract(ADDR.PAIR, ABI_PAIR, provider);
-      const tokenContract = new ethers.Contract(ADDR.BIGGI, ABI_TOKEN, provider);
+      const lmContract = new Contract(ADDR.LM, ABI_LM, provider);
+      const reserveContract = new Contract(ADDR.RESERVE, ABI_RESERVE, provider);
+      const pairContract = new Contract(ADDR.PAIR, ABI_PAIR, provider);
+      const tokenContract = new Contract(ADDR.BIGGI, ABI_TOKEN, provider);
 
       const [owner, keeper, tokenPct, slippageBps, txDeadlineSec, liquidityVaultAddr, reserveAddr, routerAddr, factoryAddr] = await Promise.all([
         lmContract.owner(),
@@ -780,19 +780,19 @@ const BiggiTokenInner = ({
 
       const [lpDecimals, lpBalanceRaw, reserveMaticRaw, reserveBiggiRaw, dexRefillBiggiRaw, nativeReserveBalanceRaw, pairWhitelisted] = await Promise.all([
         pairContract.decimals().catch(() => 18),
-        pairContract.balanceOf(liquidityVaultAddr).catch(() => ethers.constants.Zero),
-        reserveContract.maticBalance().catch(() => ethers.constants.Zero),
-        reserveContract.biggiBalance().catch(() => ethers.constants.Zero),
-        reserveContract.dexRefillBiggi().catch(() => ethers.constants.Zero),
-        provider.getBalance(reserveAddr).catch(() => ethers.constants.Zero),
-        new ethers.Contract(liquidityVaultAddr, ABI_LIQUIDITY_VAULT, provider).whitelistedPairs(ADDR.PAIR).catch(() => false),
+        pairContract.balanceOf(liquidityVaultAddr).catch(() => 0n),
+        reserveContract.maticBalance().catch(() => 0n),
+        reserveContract.biggiBalance().catch(() => 0n),
+        reserveContract.dexRefillBiggi().catch(() => 0n),
+        provider.getBalance(reserveAddr).catch(() => 0n),
+        new Contract(liquidityVaultAddr, ABI_LIQUIDITY_VAULT, provider).whitelistedPairs(ADDR.PAIR).catch(() => false),
       ]);
 
-      const lpBalance = Number(ethers.utils.formatUnits(lpBalanceRaw, lpDecimals));
-      const reserveMatic = Number(ethers.utils.formatEther(reserveMaticRaw));
-      const reserveBiggi = Number(ethers.utils.formatUnits(reserveBiggiRaw, 18));
-      const dexRefillBiggi = Number(ethers.utils.formatUnits(dexRefillBiggiRaw, 18));
-      const nativeBalance = Number(ethers.utils.formatEther(nativeReserveBalanceRaw));
+      const lpBalance = Number(formatUnits(lpBalanceRaw, lpDecimals));
+      const reserveMatic = Number(formatEther(reserveMaticRaw));
+      const reserveBiggi = Number(formatUnits(reserveBiggiRaw, 18));
+      const dexRefillBiggi = Number(formatUnits(dexRefillBiggiRaw, 18));
+      const nativeBalance = Number(formatEther(nativeReserveBalanceRaw));
 
       if (keeper && ADDR.KEEPER_ADDR && keeper.toLowerCase() !== ADDR.KEEPER_ADDR.toLowerCase()) {
         nextWarnings.push("Keeper address differs from the Automation/Keeper contract");
@@ -840,18 +840,18 @@ const BiggiTokenInner = ({
     try {
       const provider = getROSafe();
       if (!provider) throw new Error("Read-only provider neni k dispozici");
-      const buyback = new ethers.Contract(ADDR.BUYBACK_AGENT, ABI_BUYBACK, provider);
-      const policy = new ethers.Contract(ADDR.POLICY, ABI_POLICY, provider);
-      const dripLM = new ethers.Contract(ADDR.DRIP_LM, ABI_DRIPLM, provider);
-      const distributor = new ethers.Contract(ADDR.DRIP_DISTRIBUTOR, ABI_DRIP_DISTRIBUTOR, provider);
-      const routerContract = new ethers.Contract(ADDR.ROUTER, ABI_ROUTER, provider);
-      const pair = new ethers.Contract(ADDR.PAIR, ABI_PAIR, provider);
-      const token = new ethers.Contract(ADDR.BIGGI, ABI_TOKEN, provider);
+      const buyback = new Contract(ADDR.BUYBACK_AGENT, ABI_BUYBACK, provider);
+      const policy = new Contract(ADDR.POLICY, ABI_POLICY, provider);
+      const dripLM = new Contract(ADDR.DRIP_LM, ABI_DRIPLM, provider);
+      const distributor = new Contract(ADDR.DRIP_DISTRIBUTOR, ABI_DRIP_DISTRIBUTOR, provider);
+      const routerContract = new Contract(ADDR.ROUTER, ABI_ROUTER, provider);
+      const pair = new Contract(ADDR.PAIR, ABI_PAIR, provider);
+      const token = new Contract(ADDR.BIGGI, ABI_TOKEN, provider);
 
 
       const [bbPolicyAddr, bbNativeRaw, lastBuybackAt, bbOwner, bbPaused, minIntervalSec, bbDripLm] = await Promise.all([
         buyback.policy().catch(() => ADDR.POLICY),
-        buyback.nativeBalance().catch(() => ethers.constants.Zero),
+        buyback.nativeBalance().catch(() => 0n),
         buyback.lastBuybackAt().catch(() => 0),
         buyback.owner().catch(() => null),
         policy.buybacksPaused().catch(() => false),
@@ -870,13 +870,13 @@ const BiggiTokenInner = ({
       ]);
 
       const [tokensPerMintRaw, availableTokensRaw, totalTopUpRaw, treasuryAddr, totalNotifiedRaw, pendingForBuybackRaw, distributorBiggiRaw] = await Promise.all([
-        distributor.tokensPerMint().catch(() => ethers.constants.Zero),
-        distributor.getAvailable ? distributor.getAvailable().catch(() => distributor.availableTokens().catch(() => ethers.constants.Zero)) : distributor.availableTokens().catch(() => ethers.constants.Zero),
-        distributor.totalTopUp().catch(() => ethers.constants.Zero),
+        distributor.tokensPerMint().catch(() => 0n),
+        distributor.getAvailable ? distributor.getAvailable().catch(() => distributor.availableTokens().catch(() => 0n)) : distributor.availableTokens().catch(() => 0n),
+        distributor.totalTopUp().catch(() => 0n),
         distributor.treasury().catch(() => null),
-        distributor.totalNotified ? distributor.totalNotified().catch(() => ethers.constants.Zero) : ethers.constants.Zero,
-        distributor.pending ? distributor.pending(ADDR.BUYBACK_AGENT).catch(() => ethers.constants.Zero) : ethers.constants.Zero,
-        token.balanceOf(ADDR.DRIP_DISTRIBUTOR).catch(() => ethers.constants.Zero),
+        distributor.totalNotified ? distributor.totalNotified().catch(() => 0n) : 0n,
+        distributor.pending ? distributor.pending(ADDR.BUYBACK_AGENT).catch(() => 0n) : 0n,
+        token.balanceOf(ADDR.DRIP_DISTRIBUTOR).catch(() => 0n),
       ]);
 
       const [pairToken0, pairToken1, reservesTuple, quoteTuple, pairTotalSupplyRaw, pairDecimals] = await Promise.all([
@@ -884,26 +884,26 @@ const BiggiTokenInner = ({
         pair.token1().catch(() => ADDR.WETH),
         pair.getReserves().catch(() => null),
         routerContract
-          .getAmountsOut(ethers.utils.parseUnits("0.01", 18), [ADDR.WETH, ADDR.BIGGI])
+          .getAmountsOut(parseUnits("0.01", 18), [ADDR.WETH, ADDR.BIGGI])
           .catch(() => null),
-        pair.totalSupply().catch(() => ethers.constants.Zero),
+        pair.totalSupply().catch(() => 0n),
         pair.decimals().catch(() => 18),
       ]);
 
-      const nativeBalance = Number(ethers.utils.formatEther(bbNativeRaw));
-      const availableTokens = Number(ethers.utils.formatUnits(availableTokensRaw, 18));
-      const totalTopUp = Number(ethers.utils.formatUnits(totalTopUpRaw, 18));
-      const tokensPerMint = Number(ethers.utils.formatUnits(tokensPerMintRaw, 18));
-      const totalNotified = Number(ethers.utils.formatUnits(totalNotifiedRaw, 18));
-      const pendingForBuyback = Number(ethers.utils.formatUnits(pendingForBuybackRaw, 18));
-      const distributorBiggi = Number(ethers.utils.formatUnits(distributorBiggiRaw, 18));
+      const nativeBalance = Number(formatEther(bbNativeRaw));
+      const availableTokens = Number(formatUnits(availableTokensRaw, 18));
+      const totalTopUp = Number(formatUnits(totalTopUpRaw, 18));
+      const tokensPerMint = Number(formatUnits(tokensPerMintRaw, 18));
+      const totalNotified = Number(formatUnits(totalNotifiedRaw, 18));
+      const pendingForBuyback = Number(formatUnits(pendingForBuybackRaw, 18));
+      const distributorBiggi = Number(formatUnits(distributorBiggiRaw, 18));
       setDripDistributorBiggi(distributorBiggi);
 
       let pairView = null;
       if (reservesTuple && pairToken0 && pairToken1) {
         const [r0, r1] = reservesTuple;
-        const r0n = Number(ethers.utils.formatUnits(r0, 18));
-        const r1n = Number(ethers.utils.formatUnits(r1, 18));
+        const r0n = Number(formatUnits(r0, 18));
+        const r1n = Number(formatUnits(r1, 18));
         const token0lc = pairToken0.toLowerCase();
         const token1lc = pairToken1.toLowerCase();
         const biggiIs0 = token0lc === ADDR.BIGGI.toLowerCase();
@@ -914,7 +914,7 @@ const BiggiTokenInner = ({
           token1: pairToken1,
           biggiReserve,
           nativeReserve,
-          lpTotalSupply: Number(ethers.utils.formatUnits(pairTotalSupplyRaw, pairDecimals)),
+          lpTotalSupply: Number(formatUnits(pairTotalSupplyRaw, pairDecimals)),
         };
       }
 
@@ -922,7 +922,7 @@ const BiggiTokenInner = ({
       if (quoteTuple && Array.isArray(quoteTuple) && quoteTuple.length === 2) {
         quoteView = {
           amountIn: 0.01,
-          amountOut: Number(ethers.utils.formatUnits(quoteTuple[1], 18)),
+          amountOut: Number(formatUnits(quoteTuple[1], 18)),
         };
       }
 
@@ -1001,10 +1001,10 @@ const BiggiTokenInner = ({
       const svc = createBuybackService(undefined, provider);
       const raw = await svc.getAllStats();
       setSvcBuyback({
-        native: ethers.utils.formatUnits(raw?.nativeBalance || 0, 18),
-        biggi: ethers.utils.formatUnits(raw?.biggiBalance || 0, 18),
-        totalNativeSpent: ethers.utils.formatUnits(raw?.totalNativeSpent || 0, 18),
-        totalBiggiAcquired: ethers.utils.formatUnits(raw?.totalBiggiAcquired || 0, 18),
+        native: formatUnits(raw?.nativeBalance || 0, 18),
+        biggi: formatUnits(raw?.biggiBalance || 0, 18),
+        totalNativeSpent: formatUnits(raw?.totalNativeSpent || 0, 18),
+        totalBiggiAcquired: formatUnits(raw?.totalBiggiAcquired || 0, 18),
       });
     } catch {
       // ignore
@@ -1014,9 +1014,9 @@ const BiggiTokenInner = ({
       const svc = createDripDistributorService(undefined, provider);
       const raw = await svc.getAllStats();
       setSvcDrip({
-        available: ethers.utils.formatUnits(raw?.availableTokens || 0, 18),
-        totalNotified: ethers.utils.formatUnits(raw?.totalNotified || 0, 18),
-        totalClaimed: ethers.utils.formatUnits(raw?.totalClaimed || 0, 18),
+        available: formatUnits(raw?.availableTokens || 0, 18),
+        totalNotified: formatUnits(raw?.totalNotified || 0, 18),
+        totalClaimed: formatUnits(raw?.totalClaimed || 0, 18),
       });
     } catch {
       // ignore
@@ -1104,7 +1104,7 @@ const BiggiTokenInner = ({
       await ensureAmoy();
       const signerProvider = getSignerProvider();
       const signer = signerProvider.getSigner();
-      const lm = new ethers.Contract(ADDR.LM, ABI_LM, signer);
+      const lm = new Contract(ADDR.LM, ABI_LM, signer);
       await lm.executePairing(DEFAULT_PAIRING_MATIC);
     } catch (err) {
       console.warn("executePairing failed", err);
@@ -1120,7 +1120,7 @@ const BiggiTokenInner = ({
       await ensureAmoy();
       const signerProvider = getSignerProvider();
       const signer = signerProvider.getSigner();
-      const upkeep = new ethers.Contract(ADDR.UPKEEP_PROXY, ABI_UPKEEP, signer);
+      const upkeep = new Contract(ADDR.UPKEEP_PROXY, ABI_UPKEEP, signer);
       await upkeep.performUpkeep("0x");
     } catch (err) {
       console.warn("performUpkeep failed", err);
@@ -1136,7 +1136,7 @@ const BiggiTokenInner = ({
       await ensureAmoy();
       const signerProvider = getSignerProvider();
       const signer = signerProvider.getSigner();
-      const dripLM = new ethers.Contract(ADDR.DRIP_LM, ABI_DRIPLM, signer);
+      const dripLM = new Contract(ADDR.DRIP_LM, ABI_DRIPLM, signer);
       await dripLM.dripOnBuy(DEFAULT_DRIP_NATIVE);
     } catch (err) {
       console.warn("dripOnBuy failed", err);
@@ -1152,7 +1152,7 @@ const BiggiTokenInner = ({
       await ensureAmoy();
       const signerProvider = getSignerProvider();
       const signer = signerProvider.getSigner();
-      const distributor = new ethers.Contract(ADDR.DRIP_DISTRIBUTOR, ABI_DRIP_DISTRIBUTOR, signer);
+      const distributor = new Contract(ADDR.DRIP_DISTRIBUTOR, ABI_DRIP_DISTRIBUTOR, signer);
       await distributor.syncAvailableToBalance();
     } catch (err) {
       console.warn("syncAvailableToBalance failed", err);
@@ -1168,7 +1168,7 @@ const BiggiTokenInner = ({
       await ensureAmoy();
       const signerProvider = getSignerProvider();
       const signer = signerProvider.getSigner();
-      const distributor = new ethers.Contract(ADDR.DRIP_DISTRIBUTOR, ABI_DRIP_DISTRIBUTOR, signer);
+      const distributor = new Contract(ADDR.DRIP_DISTRIBUTOR, ABI_DRIP_DISTRIBUTOR, signer);
       await distributor.retryPending(ADDR.BUYBACK_AGENT);
     } catch (err) {
       console.warn("retryPending failed", err);
@@ -1188,7 +1188,7 @@ const BiggiTokenInner = ({
       await ensureAmoy();
       const signerProvider = getSignerProvider();
       const signer = signerProvider.getSigner();
-      const buyback = new ethers.Contract(ADDR.BUYBACK_AGENT, ABI_BUYBACK, signer);
+      const buyback = new Contract(ADDR.BUYBACK_AGENT, ABI_BUYBACK, signer);
       if (typeof buyback.buybackAllToTreasury === "function") {
         await buyback.buybackAllToTreasury(0);
       } else {
@@ -1745,3 +1745,5 @@ const BiggiToken = (props) => {
 };
 
 export default BiggiToken;
+
+

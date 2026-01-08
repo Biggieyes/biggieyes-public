@@ -35,3 +35,4 @@ class EcosystemErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+

@@ -136,3 +136,4 @@ const LineChart = ({ points = [], width = 320, height = 150 }) => {
 };
 
 export default LineChart;
+

@@ -21,7 +21,7 @@ import {
 } from "../utils/images";
 import { useContracts } from "../providers/ContractsProvider";
 import { ensureAmoy } from "../utils/contract";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 
 // Import constants a utilities
 import {
@@ -53,7 +53,7 @@ import Collection2Panel from "./CollectionBlocksGrid.Collection2Panel";
 import FutureCollectionsModal from "./CollectionBlocksGrid.FutureCollectionsModal";
 import ModalPortal from "./common/ModalPortal";
 
-const ExpansionPanelLazy = React.lazy(() => import("./panels/ExpansionPanel"));
+const ExpansionPanelLazy = React.lazy(() => import("./expansion/ExpansionPanel.jsx"));
 const NOOP = () => {};
 
 const resolveButtonStyle = (name) => {
@@ -142,7 +142,7 @@ function CollectionBlocksGrid({
     let cancelled = false;
 
     const fmtPrice = (wei) =>
-      safeSyncCall(() => Number(ethers.utils.formatEther(wei)), null);
+      safeSyncCall(() => Number(formatEther(wei)), null);
 
     const load = async () => {
       try {
@@ -870,3 +870,4 @@ function CollectionBlocksGrid({
 }
 
 export default CollectionBlocksGrid;
+

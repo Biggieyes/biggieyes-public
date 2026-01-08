@@ -3,7 +3,7 @@ import "./Gallery.css";
 import NftCard from "./NftCard";
 import { useContracts } from "../providers/ContractsProvider";
 import { useWeb3 } from "../providers/Web3Provider";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { ADDR } from "../utils/addresses.js";
 import {
   readJsonFromURI,
@@ -92,7 +92,7 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
       if (typeof reader.getUserRewardTokenIds === "function") {
         const res = await reader.getUserRewardTokenIds(address);
         if (Array.isArray(res) && res.length)
-          return res.map((id) => ethers.BigNumber.from(id));
+          return res.map((id) => BigInt(id));
       }
     } catch (e) {
       console.warn("reader.getUserRewardTokenIds failed, falling back", e);
@@ -101,7 +101,7 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
       if (typeof reader.getUserTokenIds === "function") {
         const res = await reader.getUserTokenIds(address);
         if (Array.isArray(res) && res.length)
-          return res.map((id) => ethers.BigNumber.from(id));
+          return res.map((id) => BigInt(id));
       }
     } catch (e) {
       console.warn("reader.getUserTokenIds failed, falling back", e);
@@ -110,7 +110,7 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
       if (typeof reader.tokensOfOwner === "function") {
         const res = await reader.tokensOfOwner(address);
         if (Array.isArray(res) && res.length)
-          return res.map((id) => ethers.BigNumber.from(id));
+          return res.map((id) => BigInt(id));
       }
     } catch (e) {
       console.warn("reader.tokensOfOwner failed, falling back", e);
@@ -122,7 +122,7 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
     if (typeof mainContract.tokensOfOwner === "function") {
       const ids = await mainContract.tokensOfOwner(address);
       return Array.isArray(ids)
-        ? ids.map((id) => ethers.BigNumber.from(id))
+        ? ids.map((id) => BigInt(id))
         : [];
     }
   } catch (e) {
@@ -173,7 +173,7 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
       if (to === lower) owned.add(tokenId);
       if (from === lower) owned.delete(tokenId);
     }
-    return Array.from(owned).map((id) => ethers.BigNumber.from(id));
+    return Array.from(owned).map((id) => BigInt(id));
   } catch (err) {
     console.error("resolveHeldTokenIds failed", err);
     // při problému s providerem: bezpečný fallback
@@ -335,9 +335,9 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
                 const blockWei = res?.[1] ?? 0;
                 const finalWei = res?.[2] ?? 0;
                 mint = {
-                  ticketPrice: Number(ethers.utils.formatEther(ticketWei)),
-                  blockPrice: Number(ethers.utils.formatEther(blockWei)),
-                  finalPrice: Number(ethers.utils.formatEther(finalWei)),
+                  ticketPrice: Number(formatEther(ticketWei)),
+                  blockPrice: Number(formatEther(blockWei)),
+                  finalPrice: Number(formatEther(finalWei)),
                 };
               } else if (typeof reader.getMintData === "function") {
                 // getMintData(index) může někdy přijít s indexem tokenId; pokusíme se bez crashu
@@ -347,9 +347,9 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
                   const blockWei = res?.[1] ?? 0;
                   const finalWei = res?.[2] ?? 0;
                   mint = {
-                    ticketPrice: Number(ethers.utils.formatEther(ticketWei)),
-                    blockPrice: Number(ethers.utils.formatEther(blockWei)),
-                    finalPrice: Number(ethers.utils.formatEther(finalWei)),
+                    ticketPrice: Number(formatEther(ticketWei)),
+                    blockPrice: Number(formatEther(blockWei)),
+                    finalPrice: Number(formatEther(finalWei)),
                   };
                 }
               }
@@ -747,3 +747,4 @@ export default function Gallery({
     </section>
   );
 }
+

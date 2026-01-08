@@ -1,6 +1,6 @@
 // src/services/DripDistributorService.js
 // Ethers v5 service wrapper for DripDistributor-like contract
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { multicallAggregate } from "../utils/multicall";
 
 /**
@@ -10,7 +10,7 @@ import { multicallAggregate } from "../utils/multicall";
  * - obsahuje helpery: batch getters, subscribeOnBlock (simple polling via provider block event)
  *
  * Použití (quick):
- *  const provider = new ethers.providers.Web3Provider(window.ethereum);
+ *  const provider = new BrowserProvider(window.ethereum);
  *  const svc = new DripDistributorService(CONTRACT_ADDRESS, provider);
  *  await svc.init(); // nepovinné, ale ověří připojení
  *  const cap = await svc.CAP();
@@ -146,7 +146,7 @@ export default class DripDistributorService {
     if (!provider) throw new Error("Provider required");
     this.address = address;
     this.provider = provider;
-    this.contract = new ethers.Contract(address, ABI, provider);
+    this.contract = new Contract(address, ABI, provider);
     this._onBlockHandler = null;
   }
 
@@ -376,3 +376,4 @@ export default class DripDistributorService {
     return ethers.utils.formatUnits(bn, decimals);
   }
 }
+

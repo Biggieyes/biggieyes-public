@@ -51,3 +51,4 @@ export default async function handler(req, res) {
     return respond(res, 500, { ok: false, error: "db error" });
   }
 }
+

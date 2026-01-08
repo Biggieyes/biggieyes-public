@@ -1,6 +1,6 @@
 // src/components/panels/ModeratorCenterPanel.jsx
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import WalletConnectButton from "../../../../components/WalletConnectButton";
 import ModeratorLogin from "../../../../components/ModeratorLogin";
 import ModeratorPanel from "../../../../components/ModeratorPanel";
@@ -92,7 +92,7 @@ export default function ModeratorCenterPanel({
     await window.ethereum
       .request?.({ method: "eth_requestAccounts" })
       .catch(() => {});
-    const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+    const provider = new BrowserProvider(window.ethereum, "any");
     const signer = provider.getSigner();
     return signer.signMessage(payload);
   };
@@ -289,3 +289,4 @@ export default function ModeratorCenterPanel({
     </section>
   );
 }
+

@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { formatUnits } from "ethers";
 
 const PLACEHOLDER = "N/A";
 const DECIMALS = 18;
@@ -7,8 +7,8 @@ function _formatAmount(raw, decimals = DECIMALS) {
   if (raw === undefined || raw === null)
     return { display: PLACEHOLDER, numeric: null };
   try {
-    const formatted = ethers.utils.formatUnits(
-      ethers.BigNumber.isBigNumber(raw) ? raw : ethers.BigNumber.from(raw),
+    const formatted = formatUnits(
+      typeof raw === 'bigint' ? raw : BigInt(raw),
       decimals,
     );
     const numeric = Number(formatted);
@@ -155,3 +155,4 @@ export function mapHistoryToChartPoints(history = []) {
       (entry) => typeof entry.value === "number" && isFinite(entry.value),
     );
 }
+

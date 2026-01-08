@@ -43,3 +43,4 @@ export default function useDripHistory(snapshot) {
 
   return { history, availableSeries, capSeries, nativeSeries };
 }
+

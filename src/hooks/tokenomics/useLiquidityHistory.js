@@ -23,3 +23,4 @@ export default function useLiquidityHistory(snapshot) {
 
   return { history, chartPoints };
 }
+

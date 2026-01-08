@@ -1,6 +1,6 @@
 // src/components/panels/ExpansionPanel.jsx
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import {
   getROProvider,
   getSignerProvider,
@@ -319,7 +319,7 @@ export default function ExpansionPanel({ compact = false }) {
       try {
         const prov = getROProvider();
         setProvider(prov);
-        const dist = new ethers.Contract(
+        const dist = new Contract(
           DISTRIBUTOR_ADDRESS,
           DISTRIBUTOR_ABI,
           prov,
@@ -355,7 +355,7 @@ export default function ExpansionPanel({ compact = false }) {
       try {
         prov = getSignerProvider();
       } catch {
-        prov = new ethers.providers.Web3Provider(window.ethereum, "any");
+        prov = new BrowserProvider(window.ethereum, "any");
       }
       await prov.send("eth_requestAccounts", []);
       const signerInstance = prov.getSigner();
@@ -375,16 +375,16 @@ export default function ExpansionPanel({ compact = false }) {
     setLoading(true);
     try {
       const total = await contract.totalReceived();
-      setTotalReceived(ethers.utils.formatEther(total || 0));
+      setTotalReceived(formatEther(total || 0));
 
       if (account) {
         const [colShare, whitelisted] = await Promise.all([
           contract
             .receivedByCollection(account)
-            .catch(() => ethers.BigNumber.from(0)),
+            .catch(() => BigInt(0)),
           contract.isCollection(account).catch(() => false),
         ]);
-        setReceivedForAddr(ethers.utils.formatEther(colShare || 0));
+        setReceivedForAddr(formatEther(colShare || 0));
         setIsWhitelisted(Boolean(whitelisted));
       } else {
         setReceivedForAddr("0");
@@ -466,28 +466,28 @@ export default function ExpansionPanel({ compact = false }) {
         ]);
         setPoolsBalances({
           reserve: balances[0]
-            ? Number(ethers.utils.formatEther(balances[0]))
+            ? Number(formatEther(balances[0]))
             : null,
           collectionRewards: balances[1]
-            ? Number(ethers.utils.formatEther(balances[1]))
+            ? Number(formatEther(balances[1]))
             : null,
           buybackAgent: balances[2]
-            ? Number(ethers.utils.formatEther(balances[2]))
+            ? Number(formatEther(balances[2]))
             : null,
           treasury: balances[3]
-            ? Number(ethers.utils.formatEther(balances[3]))
+            ? Number(formatEther(balances[3]))
             : null,
           dripDistributor: balances[4]
-            ? Number(ethers.utils.formatEther(balances[4]))
+            ? Number(formatEther(balances[4]))
             : null,
           dripLm: balances[5]
-            ? Number(ethers.utils.formatEther(balances[5]))
+            ? Number(formatEther(balances[5]))
             : null,
           liquidityManager: balances[6]
-            ? Number(ethers.utils.formatEther(balances[6]))
+            ? Number(formatEther(balances[6]))
             : null,
           liquidityVault: balances[7]
-            ? Number(ethers.utils.formatEther(balances[7]))
+            ? Number(formatEther(balances[7]))
             : null,
         });
       } catch (err) {
@@ -504,7 +504,7 @@ export default function ExpansionPanel({ compact = false }) {
         ]);
         setMain2Stats({
           minted: mintedRaw ? Number(mintedRaw.toString()) : null,
-          ticketPrice: ticketRaw ? ethers.utils.formatEther(ticketRaw) : null,
+          ticketPrice: ticketRaw ? formatEther(ticketRaw) : null,
         });
       } catch (err) {
         console.debug("MAIN2 fetch", err);
@@ -526,7 +526,7 @@ export default function ExpansionPanel({ compact = false }) {
           tx: entry.transactionHash,
           block: entry.blockNumber,
           collection: String(entry.args?.collection ?? entry.args?.[0] ?? ""),
-          amount: ethers.utils.formatEther(
+          amount: formatEther(
             entry.args?.amount ?? entry.args?.[1] ?? 0,
           ),
         }));
@@ -551,7 +551,7 @@ export default function ExpansionPanel({ compact = false }) {
         tx: ev.transactionHash,
         block: ev.blockNumber,
         collection: String(collection),
-        amount: ethers.utils.formatEther(amount),
+        amount: formatEther(amount),
       };
       setEvents((prev) => [item, ...prev].slice(0, 12));
       loadOnChain();
@@ -973,3 +973,4 @@ export default function ExpansionPanel({ compact = false }) {
     </section>
   );
 }
+

@@ -3,7 +3,7 @@ import StatCard from "../components/StatCard";
 import ValueRow from "../components/ValueRow";
 import LineChart from "../charts/LineChart";
 import StatusBadge from "../components/StatusBadge";
-import DripFlow from "../flow/DripFlow";
+import DripFlow from "../★☆ECOSYSTEM☆★/★FLOW★/DripFlow.jsx";
 import BuybackStabilityChart from "../../../components/TOKEN/BuybackStabilityChart";
 import { mapDripSnapshotToFlowRows } from "../../../services/tokenomics/drip.mappers";
 import "./DripTab.css";
@@ -182,3 +182,4 @@ const DripTab = ({
 };
 
 export default DripTab;
+

@@ -7,3 +7,4 @@ const Button = ({ variant = "ghost", children, ...props }) => (
   </BiggiButton>
 );
 export default Button;
+

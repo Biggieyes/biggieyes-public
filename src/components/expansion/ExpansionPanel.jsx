@@ -1,6 +1,6 @@
 // src/components/panels/ExpansionPanel.jsx
 import * as React from "react";
-import { ethers } from "ethers";
+import { BrowserProvider, formatUnits } from "ethers";
 import {
   ADDR,
   getROProvider,
@@ -310,12 +310,12 @@ export default function ExpansionPanel() {
         // preferuj injektovaný provider pokud je, jinak centrální read-only provider
         const prov =
           typeof window !== "undefined" && window.ethereum
-            ? new ethers.providers.Web3Provider(window.ethereum, "any")
+            ? new BrowserProvider(window.ethereum, "any")
             : getROProvider();
         setProvider(prov);
         // nastav contract proti read-only provider (ne defaultProvider)
         setContract(
-          new ethers.Contract(DISTRIBUTOR_ADDRESS, DISTRIBUTOR_ABI, prov),
+          new Contract(DISTRIBUTOR_ADDRESS, DISTRIBUTOR_ABI, prov),
         );
       } catch (e) {
         console.error(e);
@@ -331,7 +331,7 @@ export default function ExpansionPanel() {
         setStatus("No injected wallet");
         return;
       }
-      const prov = new ethers.providers.Web3Provider(window.ethereum, "any");
+      const prov = new BrowserProvider(window.ethereum, "any");
       await prov.send("eth_requestAccounts", []);
       const s = prov.getSigner();
       const addr = await s.getAddress();
@@ -339,7 +339,7 @@ export default function ExpansionPanel() {
       setSigner(s);
       setAccount(addr);
       // použij signer pro contract, aby read/write a events byly konzistentní
-      setContract(new ethers.Contract(DISTRIBUTOR_ADDRESS, DISTRIBUTOR_ABI, s));
+      setContract(new Contract(DISTRIBUTOR_ADDRESS, DISTRIBUTOR_ABI, s));
       setStatus("");
     } catch (e) {
       console.error(e);
@@ -352,10 +352,10 @@ export default function ExpansionPanel() {
     setLoading(true);
     try {
       const tot = await contract.totalReceived();
-      setTotalReceived(ethers.utils.formatEther(tot || 0));
+      setTotalReceived(formatEther(tot || 0));
       if (account) {
         const rec = await contract.receivedByCollection(account);
-        setReceivedForAddr(ethers.utils.formatEther(rec || 0));
+        setReceivedForAddr(formatEther(rec || 0));
         const wh = await contract.isCollection(account);
         setIsWhitelisted(Boolean(wh));
       } else {
@@ -379,12 +379,12 @@ export default function ExpansionPanel() {
           const amt =
             e.args && e.args.amount
               ? e.args.amount
-              : e.args[1] || ethers.BigNumber.from(0);
+              : e.args[1] || BigInt(0);
           return {
             tx: e.transactionHash,
             block: e.blockNumber,
             collection: String(col),
-            amount: ethers.utils.formatEther(amt),
+            amount: formatEther(amt),
           };
         });
       setEvents(mapped);
@@ -408,7 +408,7 @@ export default function ExpansionPanel() {
         tx: ev.transactionHash,
         block: ev.blockNumber,
         collection: String(collection),
-        amount: ethers.utils.formatEther(amount),
+        amount: formatEther(amount),
       };
       setEvents((prev) => [item, ...prev].slice(0, 12));
       loadOnChain();
@@ -923,3 +923,4 @@ export default function ExpansionPanel() {
     </div>
   );
 }
+

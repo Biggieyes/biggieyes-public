@@ -46,3 +46,4 @@ export default function useDistributorHistory(distributorData) {
 
   return { history, points };
 }
+

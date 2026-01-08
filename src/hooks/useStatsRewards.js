@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther } from "ethers";
 import {
   ADDR,
   getReaderRO,
@@ -35,11 +35,11 @@ export function useStatsRewards({
         bgsMinted,
       ] = await getFrontendSnapshotLiteActive(reader);
 
-      setTicketPrice(Number(ethers.utils.formatEther(ticketPriceWei)));
+      setTicketPrice(Number(formatEther(ticketPriceWei)));
       setTicketMinted(Number(ticketMinted_));
       setBiggiMinted(Number(biggiMinted_));
       setBlockPrices(
-        currentBlockPrices.map((x) => Number(ethers.utils.formatEther(x))),
+        currentBlockPrices.map((x) => Number(formatEther(x))),
       );
       setBlockMintCounts(blocksMinted.map((x) => Number(x)));
       setBackgroundMintCounts(bgsMinted.map((x) => Number(x)));
@@ -69,7 +69,7 @@ export function useStatsRewards({
           }
         }
         if (priceWei != null)
-          setTicketPrice(Number(ethers.utils.formatEther(priceWei)));
+          setTicketPrice(Number(formatEther(priceWei)));
 
         try {
           const tm = await main.ticketMinted();
@@ -90,7 +90,7 @@ export function useStatsRewards({
         for (let i = 1; i <= 10; i++) {
           try {
             const p = await main.getCurrentBlockPrice(i);
-            prices.push(Number(ethers.utils.formatEther(p)));
+            prices.push(Number(formatEther(p)));
           } catch {
             prices.push(0);
           }
@@ -140,7 +140,7 @@ export function useStatsRewards({
       ];
       let volWei = await callFirst(main, volumeCandidates);
       if (volWei) {
-        const vol = Number(ethers.utils.formatEther(volWei));
+        const vol = Number(formatEther(volWei));
         setMintVolumeMatic(vol);
       } else {
         setMintVolumeMatic(null);
@@ -165,24 +165,24 @@ export function useStatsRewards({
 
       if (weeklyWei != null) {
         try {
-          const isPositive = ethers.BigNumber.isBigNumber(weeklyWei)
-            ? weeklyWei.gt(0)
+          const isPositive = typeof weeklyWei === 'bigint'
+            ? weeklyWei > 0n
             : Number(weeklyWei) > 0;
           if (isPositive) {
-            setRewardPool(Number(ethers.utils.formatEther(weeklyWei)));
+            setRewardPool(Number(formatEther(weeklyWei)));
           } else if (volWei) {
-            setRewardPool(Number(ethers.utils.formatEther(volWei)) * 0.22);
+            setRewardPool(Number(formatEther(volWei)) * 0.22);
           } else {
             setRewardPool(0);
           }
         } catch {
           if (volWei)
-            setRewardPool(Number(ethers.utils.formatEther(volWei)) * 0.22);
+            setRewardPool(Number(formatEther(volWei)) * 0.22);
           else setRewardPool(0);
         }
       } else {
         if (volWei)
-          setRewardPool(Number(ethers.utils.formatEther(volWei)) * 0.22);
+          setRewardPool(Number(formatEther(volWei)) * 0.22);
         else setRewardPool(0);
       }
 
@@ -191,7 +191,7 @@ export function useStatsRewards({
 
         let tokenIds = myNFTs
           .filter((x) => !x.isTicket)
-          .map((x) => ethers.BigNumber.from(x.tokenId));
+          .map((x) => BigInt(x.tokenId));
 
         if (!tokenIds.length) {
           const contract = getReadOnlyContract();
@@ -236,9 +236,9 @@ export function useStatsRewards({
                 typeof contract?.isTicket === "function"
                   ? await contract.isTicket(tid)
                   : false;
-              if (!isT) nonTickets.push(ethers.BigNumber.from(tid));
+              if (!isT) nonTickets.push(BigInt(tid));
             } catch {
-              nonTickets.push(ethers.BigNumber.from(tid));
+              nonTickets.push(BigInt(tid));
             }
           }
           tokenIds = nonTickets;
@@ -247,7 +247,7 @@ export function useStatsRewards({
         if (tokenIds.length) {
           try {
             const [, amount] = await brl.claimablePreview(tokenIds);
-            setMyClaimable(Number(ethers.utils.formatEther(amount)));
+            setMyClaimable(Number(formatEther(amount)));
           } catch {
             setMyClaimable(0);
           }
@@ -268,3 +268,4 @@ export function useStatsRewards({
 
   return { fetchStats, fetchRewards };
 }
+

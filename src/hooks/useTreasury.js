@@ -1,6 +1,6 @@
 // src/hooks/useTreasury.js
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { getCached } from "../utils/fetchCache";
 import { getTreasuryRO } from "../utils/contract"; // přizpůsob podle projektu
 
@@ -49,7 +49,7 @@ export default function useTreasury() {
           if (treasuryAddr && provider) {
             try {
               const wei = await provider.getBalance(treasuryAddr);
-              nativeBalance = ethers.utils.formatEther(wei);
+              nativeBalance = formatEther(wei);
             } catch (err) {
               console.debug("fetchTreasuryInfo balance failed", err);
             }
@@ -57,7 +57,7 @@ export default function useTreasury() {
 
           if (tokenAddr && treasuryAddr && provider) {
             try {
-              const erc20 = new ethers.Contract(
+              const erc20 = new Contract(
                 tokenAddr,
                 [
                   "function balanceOf(address) view returns (uint256)",
@@ -69,7 +69,7 @@ export default function useTreasury() {
                 erc20.balanceOf(treasuryAddr),
                 erc20.symbol().catch(() => "BIGGI"),
               ]);
-              tokenBalance = `${ethers.utils.formatEther(bal)} ${sym}`;
+              tokenBalance = `${formatEther(bal)} ${sym}`;
             } catch (err) {
               console.debug("fetchTreasuryInfo token balance failed", err);
             }
@@ -113,3 +113,4 @@ export default function useTreasury() {
 
   return { data, loading, error, refresh: fetchTreasuryInfo };
 }
+

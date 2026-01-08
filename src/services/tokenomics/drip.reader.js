@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { ZeroAddress } from "ethers";
 import { getDripContracts } from "../../web3/contracts/drip.contracts";
 import { getProvider } from "../../web3/provider";
 
@@ -36,35 +36,35 @@ export async function fetchDripSnapshot({ chainId, provider } = {}) {
     biggiLm,
     nativeBalance,
   ] = await Promise.all([
-    _callOptional(() => dripDistributor.CAP(), ethers.constants.Zero),
+    _callOptional(() => dripDistributor.CAP(), 0n),
     _callOptional(
       () => dripDistributor.availableTokens(),
-      ethers.constants.Zero,
+      0n,
     ),
-    _callOptional(() => dripDistributor.capRemaining(), ethers.constants.Zero),
-    _callOptional(() => dripDistributor.tokensPerMint(), ethers.constants.Zero),
-    _callOptional(() => dripDistributor.getAvailable(), ethers.constants.Zero),
+    _callOptional(() => dripDistributor.capRemaining(), 0n),
+    _callOptional(() => dripDistributor.tokensPerMint(), 0n),
+    _callOptional(() => dripDistributor.getAvailable(), 0n),
     _callOptional(
       () => dripDistributor.getTotalClaimed(),
-      ethers.constants.Zero,
+      0n,
     ),
     _callOptional(
       () => dripDistributor.getTotalNotified(),
-      ethers.constants.Zero,
+      0n,
     ),
-    _callOptional(() => dripDistributor.getTotalTopUp(), ethers.constants.Zero),
+    _callOptional(() => dripDistributor.getTotalTopUp(), 0n),
     _callOptional(() => dripDistributor.paused(), false),
     _callOptional(() => dripLM.sellPct(), 0),
-    _callOptional(() => dripLM.slippageBps(), ethers.constants.Zero),
-    _callOptional(() => dripLM.txDeadlineSec(), ethers.constants.Zero),
+    _callOptional(() => dripLM.slippageBps(), 0n),
+    _callOptional(() => dripLM.txDeadlineSec(), 0n),
     _callOptional(
       () => token.balanceOf(addrs.dripDistributor),
-      ethers.constants.Zero,
+      0n,
     ),
-    _callOptional(() => token.balanceOf(addrs.dripLM), ethers.constants.Zero),
+    _callOptional(() => token.balanceOf(addrs.dripLM), 0n),
     _callOptional(
       () => signerOrProvider.getBalance(addrs.dripLM),
-      ethers.constants.Zero,
+      0n,
     ),
   ]);
 
@@ -98,3 +98,4 @@ export async function fetchDripSnapshot({ chainId, provider } = {}) {
     },
   };
 }
+

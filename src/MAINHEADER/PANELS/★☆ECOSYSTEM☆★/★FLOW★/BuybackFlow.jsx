@@ -1,5 +1,5 @@
 import * as React from "react";
-import ValueRow from "../components/ValueRow";
+
 import "./BuybackFlow.css";
 
 const BuybackFlow = ({ flows = [] }) => (
@@ -10,10 +10,11 @@ const BuybackFlow = ({ flows = [] }) => (
     </header>
     <div className="buyback-flow__rows">
       {flows.map((flow) => (
-        <ValueRow key={flow.label} {...flow} />
+        <div key={flow.label} className="buyback-flow-row">{flow.label}: {flow.value}</div>
       ))}
     </div>
   </section>
 );
 
 export default BuybackFlow;
+

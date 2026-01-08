@@ -1,6 +1,6 @@
 // RewardsWidget.jsx — shared width with Backgrounds (maxWidth 678, minWidth 558) + mobile adjustments
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { getROProvider, ADDR, getRewardsRO } from "../utils/contract";
 import { canPoll, getPollInterval } from "../utils/polling";
 import "./RewardsWidget.css";
@@ -81,7 +81,7 @@ const RewardsWidget = ({
           const bal = await r.provider.getBalance(addr);
           if (!mounted) return;
           setPoolWei(bal.toString());
-          setOnChainPoolMatic(Number(ethers.utils.formatEther(bal)));
+          setOnChainPoolMatic(Number(formatEther(bal)));
           return;
         } catch {
           // fallback: via provider + ADDR
@@ -93,7 +93,7 @@ const RewardsWidget = ({
           if (!mounted) return;
           setRewardsAddr(ADDR.COLLECTION_REWARDS);
           setPoolWei(bal.toString());
-          setOnChainPoolMatic(Number(ethers.utils.formatEther(bal)));
+          setOnChainPoolMatic(Number(formatEther(bal)));
         } catch {
           // leave null and use fallback below
         }
@@ -757,3 +757,4 @@ const RewardsWidget = ({
 };
 
 export default RewardsWidget;
+

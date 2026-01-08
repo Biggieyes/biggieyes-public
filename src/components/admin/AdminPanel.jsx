@@ -1,6 +1,6 @@
-﻿// src/components/admin/AdminPanel.jsx
+// src/components/admin/AdminPanel.jsx
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { ADDR } from "../../utils/addresses.js";
 import { getROProvider } from "../../utils/contract";
 import communityCenterAbi from "../../utils/abi/BiggiCommunityCenter.js";
@@ -151,7 +151,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
   const [healthLoading, setHealthLoading] = React.useState(false);
   const [healthError, setHealthError] = React.useState("");
 
-  // pending stavy pro tlaÄŤĂ­tka + status info
+  // pending stavy pro tlačítka + status info
   const [pending, setPending] = React.useState({});
   const [statusMsg, setStatusMsg] = React.useState("");
 
@@ -162,17 +162,17 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       setPending((p) => ({ ...p, [key]: true }));
       setStatusMsg("");
       await fn();
-      setStatusMsg("âś… Done");
+      setStatusMsg("✅ Done");
       // auto-refresh, pokud existuje akce refresh
       if (actions.refresh) {
         await actions.refresh();
-        setStatusMsg("âś… Done & refreshed");
+        setStatusMsg("✅ Done & refreshed");
       }
     } catch (e) {
-      setStatusMsg(`âťŚ ${shortErr(e)}`);
+      setStatusMsg(`❌ ${shortErr(e)}`);
     } finally {
       setPending((p) => ({ ...p, [key]: false }));
-      // smazat hlĂˇĹˇku po chvĂ­li
+      // smazat hlášku po chvíli
       setTimeout(() => setStatusMsg(""), 3500);
     }
   };
@@ -199,12 +199,12 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
         await window.ethereum
           .request?.({ method: "eth_requestAccounts" })
           .catch(() => {});
-        const provider = new ethers.providers.Web3Provider(
+        const provider = new BrowserProvider(
           window.ethereum,
           "any",
         );
         const signer = provider.getSigner();
-        return new ethers.Contract(
+        return new Contract(
           communityAddress,
           COMMUNITY_CENTER_ABI,
           signer,
@@ -216,10 +216,10 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
         provider = getROProvider();
       } catch {}
       if (!provider && typeof window !== "undefined" && window.ethereum) {
-        provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+        provider = new BrowserProvider(window.ethereum, "any");
       }
       if (!provider) throw new Error("Read provider unavailable");
-      return new ethers.Contract(
+      return new Contract(
         communityAddress,
         COMMUNITY_CENTER_ABI,
         provider,
@@ -231,7 +231,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
   const bnToString = (value) => {
     if (value == null) return "";
     try {
-      return ethers.BigNumber.from(value).toString();
+      return BigInt(value).toString();
     } catch {
       return String(value ?? "");
     }
@@ -251,13 +251,13 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
 
   const parseDepositField = (value) => {
     if (value === "" || value == null) {
-      return ethers.BigNumber.from(0);
+      return BigInt(0);
     }
     const num = Number(value);
     if (!Number.isFinite(num) || num < 0) {
       throw new Error("Deposit must be a non-negative number");
     }
-    return ethers.utils.parseEther(String(value));
+    return parseEther(String(value));
   };
 
   const clearCommunityEventForm = () => {
@@ -278,7 +278,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       setEventEnd(bnToString(ev?.end));
       setEventCapacity(bnToString(ev?.capacity));
       setEventDeposit(
-        ev?.depositWei ? ethers.utils.formatEther(ev.depositWei) : "",
+        ev?.depositWei ? formatEther(ev.depositWei) : "",
       );
     });
 
@@ -432,7 +432,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       await window.ethereum
         .request?.({ method: "eth_requestAccounts" })
         .catch(() => {});
-      const provider = new ethers.providers.Web3Provider(
+      const provider = new BrowserProvider(
         window.ethereum,
         "any",
       );
@@ -470,7 +470,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       await window.ethereum
         .request?.({ method: "eth_requestAccounts" })
         .catch(() => {});
-      const provider = new ethers.providers.Web3Provider(
+      const provider = new BrowserProvider(
         window.ethereum,
         "any",
       );
@@ -677,9 +677,9 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   gap: 8,
                   alignItems: "center",
                 }}
-                title={String(r.v ?? "â€”")}
+                title={String(r.v ?? "—")}
               >
-                <span>{r.v ?? "â€”"}</span>
+                <span>{r.v ?? "—"}</span>
                 {r.copy && (
                   <button
                     style={smallBtn(false)}
@@ -697,7 +697,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                 colSpan={2}
                 style={{ padding: 14, textAlign: "center", color: C.dim }}
               >
-                â€”
+                —
               </td>
             </tr>
           )}
@@ -842,7 +842,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
         provider = getROProvider();
       } catch {}
       if (!provider && typeof window !== "undefined" && window.ethereum) {
-        provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+        provider = new BrowserProvider(window.ethereum, "any");
       }
       if (!provider) throw new Error("Read provider unavailable");
 
@@ -869,7 +869,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
             return {
               ...target,
               status: ok ? "ok" : "no-code",
-              code: ok ? `${code.slice(0, 10)}â€¦` : "0x",
+              code: ok ? `${code.slice(0, 10)}…` : "0x",
             };
           } catch (err) {
             return { ...target, status: "error", error: shortErr(err) };
@@ -1012,7 +1012,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
               onClick={() => run("refresh", actions.refresh)}
               title="Reload on-chain snapshot"
             >
-              {pending.refresh ? "Refreshingâ€¦" : "Refresh"}
+              {pending.refresh ? "Refreshing…" : "Refresh"}
             </button>
           )}
           <button style={smallBtn(false)} onClick={onClose} title="Esc">
@@ -1096,11 +1096,11 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     { k: "Max Supply", v: data?.maxSupply },
                     {
                       k: "Ticket Price",
-                      v: data?.ticketPrice ? `${data.ticketPrice} POL` : "â€”",
+                      v: data?.ticketPrice ? `${data.ticketPrice} POL` : "—",
                     },
                     {
                       k: "Rewards Pool",
-                      v: data?.rewardsPool ? `${data.rewardsPool} POL` : "â€”",
+                      v: data?.rewardsPool ? `${data.rewardsPool} POL` : "—",
                     },
                     {
                       k: "Treasury",
@@ -1156,7 +1156,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   ]}
                 />
 
-                {/* Blocks table â€“ styled like VRF/Biggi tables */}
+                {/* Blocks table – styled like VRF/Biggi tables */}
                 {Array.isArray(data?.blocks) && data.blocks.length > 0 && (
                   <div style={{ marginTop: 12 }}>
                     <div
@@ -1320,7 +1320,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                           )
                         }
                       >
-                        {pending.setPaused ? "Settingâ€¦" : "Set"}
+                        {pending.setPaused ? "Setting…" : "Set"}
                       </button>
                     </div>
                   </div>
@@ -1348,7 +1348,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                           )
                         }
                       >
-                        {pending.setBaseURI ? "Settingâ€¦" : "Set"}
+                        {pending.setBaseURI ? "Setting…" : "Set"}
                       </button>
                     </div>
                   </div>
@@ -1381,7 +1381,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                           )
                         }
                       >
-                        {pending.setTicketPrice ? "Settingâ€¦" : "Set"}
+                        {pending.setTicketPrice ? "Setting…" : "Set"}
                       </button>
                     </div>
                   </div>
@@ -1425,7 +1425,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                           )
                         }
                       >
-                        {pending.setBlockBasePrice ? "Settingâ€¦" : "Set"}
+                        {pending.setBlockBasePrice ? "Setting…" : "Set"}
                       </button>
                     </div>
                   </div>
@@ -1523,7 +1523,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                         }
                         title="Apply VRF params"
                       >
-                        {pending.setVRFParams ? "Applyingâ€¦" : "Apply VRF"}
+                        {pending.setVRFParams ? "Applying…" : "Apply VRF"}
                       </button>
                     </div>
                   </div>
@@ -1558,7 +1558,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                             )
                           }
                         >
-                          {pending.setTreasury ? "Savingâ€¦" : "Set"}
+                          {pending.setTreasury ? "Saving…" : "Set"}
                         </button>
                       </div>
                     </Row>
@@ -1581,7 +1581,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                             )
                           }
                         >
-                          {pending.setLiquiditySink ? "Savingâ€¦" : "Set"}
+                          {pending.setLiquiditySink ? "Saving…" : "Set"}
                         </button>
                       </div>
                     </Row>
@@ -1604,7 +1604,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                             )
                           }
                         >
-                          {pending.setTokenAddress ? "Savingâ€¦" : "Set"}
+                          {pending.setTokenAddress ? "Saving…" : "Set"}
                         </button>
                       </div>
                     </Row>
@@ -1627,7 +1627,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                             )
                           }
                         >
-                          {pending.setRouter ? "Savingâ€¦" : "Set"}
+                          {pending.setRouter ? "Saving…" : "Set"}
                         </button>
                       </div>
                     </Row>
@@ -1656,7 +1656,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                       }
                     >
                       {pending.withdrawNative
-                        ? "Withdrawingâ€¦"
+                        ? "Withdrawing…"
                         : "Withdraw Native"}
                     </button>
                     <button
@@ -1671,7 +1671,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                       }
                     >
                       {pending.withdrawToken
-                        ? "Withdrawingâ€¦"
+                        ? "Withdrawing…"
                         : "Withdraw BIGGI"}
                     </button>
                     <button
@@ -1684,7 +1684,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                         )
                       }
                     >
-                      {pending.sweepDust ? "Sweepingâ€¦" : "Sweep Dust"}
+                      {pending.sweepDust ? "Sweeping…" : "Sweep Dust"}
                     </button>
                   </div>
                 </div>
@@ -3369,13 +3369,13 @@ function inputStyle(mono = false) {
 
 function short(v) {
   return typeof v === "string" && v.length > 12
-    ? v.slice(0, 6) + "â€¦" + v.slice(-4)
-    : v || "â€”";
+    ? v.slice(0, 6) + "…" + v.slice(-4)
+    : v || "—";
 }
 
 function num(v) {
   const n = Number(v);
-  return Number.isFinite(n) ? n : "â€”";
+  return Number.isFinite(n) ? n : "—";
 }
 
 function shortErr(e) {
@@ -3391,3 +3391,4 @@ function copyToClipboard(text) {
     navigator.clipboard?.writeText(text);
   } catch {}
 }
+

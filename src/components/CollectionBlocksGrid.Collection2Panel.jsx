@@ -298,3 +298,4 @@ const Collection2Panel = React.memo(
 Collection2Panel.displayName = "Collection2Panel";
 
 export default Collection2Panel;
+

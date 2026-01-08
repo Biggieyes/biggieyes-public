@@ -17,7 +17,7 @@ import { getBiggiBalancesAcrossReserveLmLv } from "../../services/composed.js";
 import { BiggiLpPriceFeed as ABI_LP_PRICE_FEED } from "../../config/abi/index.js";
 import { createBuybackService, createDripDistributorService } from "../../services/factories.js";
 import { getROProvider, getSignerProvider, ensureAmoy, ADDR, AMOY } from "../../utils/contract.js";
-// import { ethers } from "ethers"; // odstraněno duplicitně
+// import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers"; // odstraněno duplicitně
 import BiggiBuybackReader from "../../config/abi/BiggiBuybackReader.json";
 import BiggiDripReader from "../../config/abi/BiggiDripReader.json";
   // --- On-chain buyback and drip balances via their readers ---
@@ -29,12 +29,12 @@ import BiggiDripReader from "../../config/abi/BiggiDripReader.json";
       setOnchainBuyback((prev) => ({ ...prev, loading: true, error: null }));
       try {
         const provider = getROProvider();
-        const reader = new ethers.Contract(ADDR.BUYBACK_READER, ABI_BUYBACK_READER, provider);
+        const reader = new Contract(ADDR.BUYBACK_READER, ABI_BUYBACK_READER, provider);
         const summary = await reader.simpleSummary();
         if (cancelled) return;
         setOnchainBuyback({
           biggi: Number(ethers.utils.formatUnits(summary.biggiHeld, 18)),
-          matic: Number(ethers.utils.formatEther(summary.maticHeld)),
+          matic: Number(formatEther(summary.maticHeld)),
           loading: false,
           error: null,
         });
@@ -47,12 +47,12 @@ import BiggiDripReader from "../../config/abi/BiggiDripReader.json";
       setOnchainDrip((prev) => ({ ...prev, loading: true, error: null }));
       try {
         const provider = getROProvider();
-        const reader = new ethers.Contract(ADDR.DRIP_READER, ABI_DRIP_READER, provider);
+        const reader = new Contract(ADDR.DRIP_READER, ABI_DRIP_READER, provider);
         const summary = await reader.simpleSummary();
         if (cancelled) return;
         setOnchainDrip({
           biggi: Number(ethers.utils.formatUnits(summary.biggiHeld, 18)),
-          matic: Number(ethers.utils.formatEther(summary.maticHeld)),
+          matic: Number(formatEther(summary.maticHeld)),
           loading: false,
           error: null,
         });
@@ -78,3 +78,4 @@ import {
     DripDistributor as ABI_DRIP_DISTRIBUTOR,
     // Pokud máš ABI_UPKEEP a ABI_ROUTER v config/abi, přidej je zde
   };
+

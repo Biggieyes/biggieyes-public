@@ -1,6 +1,6 @@
 // src/utils/eth.js
 // Shared ethers helpers for Moderator Center.
-import { ethers } from "ethers";
+import { getAddress, formatUnits, parseUnits } from "ethers";
 import moderatorsRewardsAbi from "../abis/ModeratorsRewards.json";
 import {
   getSharedFallbackProvider,
@@ -31,7 +31,7 @@ export const isOwner = (address) => {
 export const normalizeAddress = (address) => {
   if (!address) return "";
   try {
-    return ethers.utils.getAddress(address);
+    return getAddress(address);
   } catch {
     return String(address);
   }
@@ -45,7 +45,7 @@ export const getReadOnlyProvider = () => {
   }
   if (CHAIN_RPC_URL) return createJsonRpcProvider(CHAIN_RPC_URL);
   if (typeof window !== "undefined" && window.ethereum) {
-    return new ethers.providers.Web3Provider(window.ethereum, "any");
+    return new BrowserProvider(window.ethereum, "any");
   }
   return null;
 };
@@ -55,7 +55,7 @@ export const getSignerProvider = async () => {
   await window.ethereum
     .request?.({ method: "eth_requestAccounts" })
     .catch(() => {});
-  return new ethers.providers.Web3Provider(window.ethereum, "any");
+  return new BrowserProvider(window.ethereum, "any");
 };
 
 export const getModeratorsRewardsContract = async ({ signer = false } = {}) => {
@@ -65,19 +65,20 @@ export const getModeratorsRewardsContract = async ({ signer = false } = {}) => {
   const provider = signer ? await getSignerProvider() : getReadOnlyProvider();
   if (!provider) throw new Error("Provider is not available.");
   const target = signer ? provider.getSigner() : provider;
-  return new ethers.Contract(contractAddress, moderatorsRewardsAbi, target);
+  return new Contract(contractAddress, moderatorsRewardsAbi, target);
 };
 
 export const formatWei = (value, decimals = 18) => {
   if (value == null) return "--";
   try {
-    return ethers.utils.formatUnits(value, decimals);
+    return formatUnits(value, decimals);
   } catch {
     return "--";
   }
 };
 
 export const parseWei = (value, decimals = 18) => {
-  if (value == null || value === "") return ethers.constants.Zero;
-  return ethers.utils.parseUnits(String(value), decimals);
+  if (value == null || value === "") return 0n;
+  return parseUnits(String(value), decimals);
 };
+

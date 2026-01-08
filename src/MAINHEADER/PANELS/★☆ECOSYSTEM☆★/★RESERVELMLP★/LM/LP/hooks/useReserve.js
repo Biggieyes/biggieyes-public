@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { getReserveRO } from "../utils/contract";
 import { getCached } from "../utils/fetchCache";
 
@@ -33,7 +33,7 @@ export default function useReserve() {
         async () => {
           const fmt = (v) => {
             try {
-              return ethers.utils.formatEther(v);
+              return formatEther(v);
             } catch {
               return "0";
             }
@@ -48,11 +48,11 @@ export default function useReserve() {
             maticBalance,
           ] = await Promise.all([
             contract.liquidityManager?.().catch(() => null),
-            contract.totalMaticReceived?.().catch(() => ethers.constants.Zero),
-            contract.waitingBiggi?.().catch(() => ethers.constants.Zero),
-            contract.dexRefillBiggi?.().catch(() => ethers.constants.Zero),
-            contract.biggiBalance?.().catch(() => ethers.constants.Zero),
-            contract.maticBalance?.().catch(() => ethers.constants.Zero),
+            contract.totalMaticReceived?.().catch(() => 0n),
+            contract.waitingBiggi?.().catch(() => 0n),
+            contract.dexRefillBiggi?.().catch(() => 0n),
+            contract.biggiBalance?.().catch(() => 0n),
+            contract.maticBalance?.().catch(() => 0n),
           ]);
 
           return {
@@ -83,3 +83,4 @@ export default function useReserve() {
 
   return { data, loading, error, refresh: fetchReserveInfo };
 }
+

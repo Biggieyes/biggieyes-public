@@ -1,6 +1,6 @@
 // src/hooks/usePolicy.js
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { getPolicyRO } from "../utils/contract";
 import { getCached } from "../utils/fetchCache";
 
@@ -43,7 +43,7 @@ export default function usePolicy() {
         async () => {
           const fmt = (v) => {
             try {
-              return ethers.utils.formatEther(v);
+              return formatEther(v);
             } catch {
               return "0";
             }
@@ -118,3 +118,4 @@ export default function usePolicy() {
 
   return { data, loading, error, refresh: fetchPolicy };
 }
+

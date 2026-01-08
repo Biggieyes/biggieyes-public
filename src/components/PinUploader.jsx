@@ -1,4 +1,4 @@
-﻿import * as React from "react";
+import * as React from "react";
 
 const DEFAULT_MAX_SIZE = 5 * 1024 * 1024;
 const DEFAULT_ALLOWED = [
@@ -179,3 +179,4 @@ export default function PinUploader({
     </div>
   );
 }
+

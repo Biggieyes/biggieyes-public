@@ -31,3 +31,4 @@ export default function LiquidityVaultChart({ data, height = 260 }) {
     </div>
   );
 }
+

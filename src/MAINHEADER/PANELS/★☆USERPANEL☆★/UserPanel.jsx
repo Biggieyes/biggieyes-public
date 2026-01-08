@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ethers } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import "./UserPanel.css";
 import { useWeb3 } from "../../../providers/Web3Provider";
 import { useContracts } from "../../../providers/ContractsProvider";
@@ -77,7 +77,7 @@ function useItemsKey(items = []) {
 async function resolveHeldTokenIds({ address, items, mainContract }) {
   const explicitIds = (items || [])
     .filter((item) => item && !item.isTicket)
-    .map((item) => ethers.BigNumber.from(item.tokenId));
+    .map((item) => BigInt(item.tokenId));
   if (explicitIds.length || !address || !mainContract) {
     return explicitIds;
   }
@@ -116,9 +116,9 @@ async function resolveHeldTokenIds({ address, items, mainContract }) {
         typeof mainContract.isTicket === "function"
           ? await mainContract.isTicket(tokenId)
           : false;
-      if (!isTicket) output.push(ethers.BigNumber.from(tokenId));
+      if (!isTicket) output.push(BigInt(tokenId));
     } catch {
-      output.push(ethers.BigNumber.from(tokenId));
+      output.push(BigInt(tokenId));
     }
   }
   return output;
@@ -161,7 +161,7 @@ function useUserPanelData({
         const snapshot = await getFrontendSnapshotLiteActive(reader);
         nextState.ticketPriceWei = snapshot?.[0] ?? null;
         nextState.ticketPrice = snapshot?.[0]
-          ? Number(ethers.utils.formatEther(snapshot[0]))
+          ? Number(formatEther(snapshot[0]))
           : null;
         nextState.ticketsMinted =
           snapshot?.[1] != null ? Number(snapshot[1]) : null;
@@ -182,7 +182,7 @@ function useUserPanelData({
           "rewardPool",
         ]);
         if (reward) {
-          nextState.rewardPool = Number(ethers.utils.formatEther(reward));
+          nextState.rewardPool = Number(formatEther(reward));
         }
       }
     } catch (err) {
@@ -201,7 +201,7 @@ function useUserPanelData({
         const liquidity = contracts.liqRO?.();
         if (liquidity && heldIds.length) {
           const [, amount] = await liquidity.claimablePreview(heldIds);
-          nextState.claimable = Number(ethers.utils.formatEther(amount));
+          nextState.claimable = Number(formatEther(amount));
         } else if (heldIds.length === 0) {
           nextState.claimable = 0;
         }
@@ -213,7 +213,7 @@ function useUserPanelData({
         const token = contracts.tokenRead?.();
         if (token) {
           const balance = await token.balanceOf(address);
-          nextState.biggiBalance = Number(ethers.utils.formatEther(balance));
+          nextState.biggiBalance = Number(formatEther(balance));
         }
       } catch (err) {
         console.error("UserPanel: token balance failed", err);
@@ -222,7 +222,7 @@ function useUserPanelData({
       try {
         if (provider) {
           const nativeBal = await provider.getBalance(address);
-          nextState.nativeBalance = Number(ethers.utils.formatEther(nativeBal));
+          nextState.nativeBalance = Number(formatEther(nativeBal));
         }
       } catch (err) {
         console.error("UserPanel: native balance failed", err);
@@ -341,7 +341,7 @@ export default function UserPanel({
     () =>
       items
         .filter((item) => item && !item.isTicket)
-        .map((item) => ethers.BigNumber.from(item.tokenId)),
+        .map((item) => BigInt(item.tokenId)),
     [items],
   );
 
@@ -950,3 +950,4 @@ export default function UserPanel({
     </section>
   );
 }
+

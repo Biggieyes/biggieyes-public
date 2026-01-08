@@ -96,3 +96,4 @@ export function setCachedPriceAttrs(tokenId, attrs) {
     // ignore cache write errors
   }
 }
+

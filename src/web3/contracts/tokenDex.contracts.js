@@ -61,3 +61,4 @@ export function getTokenDexContracts(chainId, provider) {
 export default {
   getTokenDexContracts,
 };
+
