@@ -13,8 +13,7 @@ export async function getHealthyRpcUrl() {
   healthy.sort((a, b) => (a.latencyMs || 99999) - (b.latencyMs || 99999));
   return healthy[0].url;
 }
-import { ethers } from "ethers";
-
+import { StaticJsonRpcProvider } from "@ethersproject/providers";
 /**
  * Zdravotní kontrola RPC endpointu: ověří dostupnost, block height a latenci.
  * @param {string} url - RPC endpoint

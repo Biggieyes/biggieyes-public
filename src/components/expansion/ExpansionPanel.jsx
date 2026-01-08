@@ -477,7 +477,7 @@ export default function ExpansionPanel() {
           <div style={styles.titleGroup}>
             <div style={styles.logoBadge}>BG</div>
             <div>
-              <h1 style={styles.h1}>Expansion -> Distributor</h1>
+              <h1 style={styles.h1}>{"Expansion -> Distributor"}</h1>
               <p style={styles.subtitle}>
                 User dashboard — overview of the mint-share flow and your
                 collection status
@@ -825,7 +825,7 @@ export default function ExpansionPanel() {
                         ...styles.progressFill,
                         width: `${collection.progress}%`,
                       }}
-                    />
+                    ></div>
                   </div>
                   <div
                     style={{

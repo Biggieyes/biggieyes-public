@@ -1,4 +1,5 @@
-import { ethers } from "ethers";
+import { Contract } from "@ethersproject/contracts";
+import { keccak256, arrayify, hexlify, isAddress } from "ethers";
 
 export async function refreshPolicy({ getPolicyRO, setBiggiData }) {
   const pol = await getPolicyRO();

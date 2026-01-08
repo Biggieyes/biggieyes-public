@@ -1,6 +1,6 @@
 // src/components/common/ModalTopbar.jsx
 import * as React from "react";
-import PropTypes from "prop-types";
+import * as PropTypes from "prop-types";
 
 const ModalTopbar = React.memo(
   React.forwardRef(function ModalTopbar(

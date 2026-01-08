@@ -1,4 +1,5 @@
-import { ethers } from "ethers";
+import { Contract } from "@ethersproject/contracts";
+import { keccak256, arrayify, hexlify, isAddress } from "ethers";
 import TreasuryService from "../services/treasuryService";
 import { parseIdsCsv } from "./ids";
 

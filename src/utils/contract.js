@@ -5,6 +5,9 @@ const ABI_LIQUIDITY_VAULT = LiquidityVault;
 const ABI_MULTI_COLLECTION_DISTRIBUTOR = BiggiMultiCollectionDistributor;
 // src/utils/contract.js
 // Ethers v5 compatible helpers and contract factories
+import { JsonRpcProvider, FallbackProvider } from "@ethersproject/providers";
+// import * as ethers from "ethers";
+import { BrowserProvider, Contract, BigNumber, constants } from "ethers";
 import { ethers } from "ethers";
 import { ADDR } from "./addresses.js";
 import {
@@ -92,9 +95,6 @@ const ABI_PAIR = UniswapV2Pair;
 const ABI_LM = BiggiLiquidityManager;
 const ABI_UPKEEP = BiggiUpkeeperProxy;
 
-const { StaticJsonRpcProvider, Web3Provider, FallbackProvider } =
-  ethers.providers;
-const { parseEther: _parseEther, formatEther: _formatEther } = ethers.utils;
 
 const LOCAL_STORAGE_RPC_SYNC_KEY = "biggi_amoy_rpc_synced_v1";
 
@@ -167,9 +167,9 @@ export function getPrimaryRpcUrl() {
 
 function _mkRpcProvider(url) {
   // Plain provider is more tolerant of flaky RPCs than batch in some gateways.
-  return new StaticJsonRpcProvider(
-    { url, chainId: AMOY.chainId, name: AMOY.name },
-    AMOY.chainId,
+  return new JsonRpcProvider(
+    url,
+    AMOY.chainId
   );
 }
 
@@ -222,7 +222,7 @@ export function getROProvider() {
     window.ethereum
   ) {
     try {
-      _roProvider = new Web3Provider(window.ethereum, "any");
+      _roProvider = new BrowserProvider(window.ethereum);
       return _applyPollingInterval(_roProvider);
     } catch (err) {
       console.warn(
@@ -269,7 +269,7 @@ export function getSignerProvider() {
   if (typeof window === "undefined" || !window.ethereum) {
     throw new Error("Injected provider not available");
   }
-  return new Web3Provider(window.ethereum, "any");
+  return new BrowserProvider(window.ethereum);
 }
 
 function _hasRequest(provider) {
@@ -381,7 +381,7 @@ const _mkRO = (addr, abi, providerOverride) => {
     console.warn(
       `Creating read-only contract for ${addr} with empty ABI — calls will fail.`,
     );
-  return new ethers.Contract(addr, resolvedAbi, p);
+  return new Contract(addr, resolvedAbi, p);
 };
 
 const _mkRW = (addr, abi, signerProvider) => {
@@ -392,7 +392,7 @@ const _mkRW = (addr, abi, signerProvider) => {
     console.warn(
       `Creating write contract for ${addr} with empty ABI — calls will fail.`,
     );
-  return new ethers.Contract(addr, resolvedAbi, prov.getSigner());
+  return new Contract(addr, resolvedAbi, prov.getSigner());
 };
 
 /* ---------------- Exports (contract factories) ---------------- */
@@ -557,29 +557,29 @@ export async function getFrontendSnapshotLiteActive(readerOverride) {
   // Fallback: build snapshot directly from main contract to avoid reader reverts.
   const main = getReadOnlyMain();
   const safeBn = (v) =>
-    v && ethers.BigNumber.isBigNumber(v) ? v : ethers.BigNumber.from(v || 0);
+    v && BigNumber.isBigNumber(v) ? v : BigNumber.from(v || 0);
   const [ticketPriceWei, ticketMinted_, biggiMinted_] = await Promise.all([
     main
       .getTicketPrice?.()
-      .catch(() => main.ticketPrice?.().catch(() => ethers.constants.Zero)),
-    main.ticketMinted?.().catch(() => ethers.constants.Zero),
-    main.biggiMinted?.().catch(() => ethers.constants.Zero),
+      .catch(() => main.ticketPrice?.().catch(() => constants.Zero)),
+    main.ticketMinted?.().catch(() => constants.Zero),
+    main.biggiMinted?.().catch(() => constants.Zero),
   ]);
 
   const blockPricePromises = [];
   const blockMintPromises = [];
   for (let i = 1; i <= 10; i += 1) {
     blockPricePromises.push(
-      main.getCurrentBlockPrice?.(i).catch(() => ethers.constants.Zero),
+      main.getCurrentBlockPrice?.(i).catch(() => constants.Zero),
     );
     blockMintPromises.push(
-      main.getBlockMintCount?.(i).catch(() => ethers.constants.Zero),
+      main.getBlockMintCount?.(i).catch(() => constants.Zero),
     );
   }
   const bgMintPromises = [];
   for (let j = 0; j < 10; j += 1) {
     bgMintPromises.push(
-      main.backgroundMintCounts?.(j).catch(() => ethers.constants.Zero),
+      main.backgroundMintCounts?.(j).catch(() => constants.Zero),
     );
   }
 
@@ -588,7 +588,7 @@ export async function getFrontendSnapshotLiteActive(readerOverride) {
   );
   const blocksMinted = (await Promise.all(blockMintPromises)).map(safeBn);
   const bgsMinted = (await Promise.all(bgMintPromises)).map(safeBn);
-  const charactersMinted = ethers.BigNumber.from(0);
+  const charactersMinted = BigNumber.from(0);
 
   return [
     safeBn(ticketPriceWei),
@@ -774,8 +774,8 @@ export const getDripLM = () => {
 /* Reader aliases already added above; if you need more reader aliases add here */
 
 /* ---------------- Helpers ---------------- */
-export const toWei = (n) => _parseEther(String(n));
-export const fromWei = (bn) => Number(_formatEther(bn));
+export const toWei = (n) => ethers.parseEther(String(n));
+export const fromWei = (bn) => Number(ethers.formatEther(bn));
 
 /* -------- Compat for older code -------- */
 function _looksLikeProvider(value) {
@@ -959,7 +959,7 @@ function _attachHelpers(target, signerMode = false) {
       const addr = ADDR.BUYBACK_AGENT;
       const bal = await prov
         .getBalance(addr)
-        .catch(() => ethers.constants.Zero);
+        .catch(() => constants.Zero);
       return [bal, 0, 0, 0, 0];
     };
   }
@@ -1002,7 +1002,7 @@ export async function resolveTicketPriceWeiFromHub() {
     if (typeof f === "function") {
       try {
         const v = await f();
-        if (v != null) return ethers.BigNumber.from(v);
+        if (v != null) return BigNumber.from(v);
       } catch {
         // try next candidate
       }
@@ -1012,7 +1012,7 @@ export async function resolveTicketPriceWeiFromHub() {
   try {
     const snap = await getFrontendSnapshotLiteActive(reader);
     const wei = Array.isArray(snap) ? snap[0] : snap?.ticketPriceWei;
-    if (wei != null) return ethers.BigNumber.from(wei);
+    if (wei != null) return BigNumber.from(wei);
   } catch {
     // ignore reader failure, will throw below
   }

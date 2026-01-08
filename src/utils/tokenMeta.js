@@ -1,4 +1,5 @@
-import { ethers } from "ethers";
+import { Contract } from "@ethersproject/contracts";
+import { keccak256, arrayify, hexlify, isAddress } from "ethers";
 import { BiggiToken as ABI_TOKEN } from "../config/abi/index.js";
 import { ADDR } from "./addresses";
 import { getFullStatusSafe } from "./tokenomicsFullStatus.js";

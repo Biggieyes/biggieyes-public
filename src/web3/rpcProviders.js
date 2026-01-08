@@ -1,8 +1,6 @@
-import { ethers } from "ethers";
+// import { ethers } from "ethers";
+import { JsonRpcProvider, FallbackProvider, Web3Provider, StaticJsonRpcProvider } from "@ethersproject/providers";
 import { AMOY, getRpcUrls as getConfiguredRpcUrls } from "../utils/rpcConfig";
-
-// Static provider avoids network autodetect calls that can fail due to CORS/rate limits.
-const { StaticJsonRpcProvider, FallbackProvider } = ethers.providers;
 
 function makeStaticProvider(url, chainId = AMOY.chainId) {
   return new StaticJsonRpcProvider({ url, chainId, name: AMOY.name }, chainId);
