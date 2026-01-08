@@ -113,12 +113,12 @@ export function mapRawSnapshotToUI(raw) {
     tokenRaw.balances?.treasury,
     tokenDecimals,
   );
-  const dripBalance = _formatAmount(
-    tokenRaw.balances?.dripDistributor,
+  const DRIPBalance = _formatAmount(
+    tokenRaw.balances?.DRIPDistributor,
     tokenDecimals,
   );
-  const rewardsBalance = _formatAmount(
-    tokenRaw.balances?.tokenRewards,
+  const REWARDSBalance = _formatAmount(
+    tokenRaw.balances?.tokenREWARDS,
     tokenDecimals,
   );
 
@@ -239,10 +239,10 @@ export function mapRawSnapshotToUI(raw) {
       addresses: {
         reserve: tokenRaw.reserveAddress,
         reserveShort: _shortAddress(tokenRaw.reserveAddress),
-        dripDistributor: tokenRaw.dripDistributorAddress,
-        dripDistributorShort: _shortAddress(tokenRaw.dripDistributorAddress),
-        tokenRewards: tokenRaw.tokenRewardsAddress,
-        tokenRewardsShort: _shortAddress(tokenRaw.tokenRewardsAddress),
+        DRIPDistributor: tokenRaw.DRIPDistributorAddress,
+        DRIPDistributorShort: _shortAddress(tokenRaw.DRIPDistributorAddress),
+        tokenREWARDS: tokenRaw.tokenREWARDSAddress,
+        tokenREWARDSShort: _shortAddress(tokenRaw.tokenREWARDSAddress),
       },
       balances: {
         reserve: reserveBalance.display,
@@ -251,10 +251,10 @@ export function mapRawSnapshotToUI(raw) {
         liquidityVaultNumeric: vaultBalance.numeric,
         treasury: treasuryBalance.display,
         treasuryNumeric: treasuryBalance.numeric,
-        dripDistributor: dripBalance.display,
-        dripDistributorNumeric: dripBalance.numeric,
-        tokenRewards: rewardsBalance.display,
-        tokenRewardsNumeric: rewardsBalance.numeric,
+        DRIPDistributor: DRIPBalance.display,
+        DRIPDistributorNumeric: DRIPBalance.numeric,
+        tokenREWARDS: REWARDSBalance.display,
+        tokenREWARDSNumeric: REWARDSBalance.numeric,
       },
     },
     dex: {
@@ -343,4 +343,6 @@ export function mapHistoryToReservePoints(history = []) {
 export function mapHistoryToLpPoints(history = []) {
   return _mapHistory(history, (entry) => entry?.dex?.pair?.totalSupplyNumeric);
 }
+
+
 

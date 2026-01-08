@@ -72,7 +72,7 @@ export const ADDR = {
   UPKEEP_PROXY: "0x3DEFF461B1ef4Df6df416017a3DA43b7E4f08ca8",
   COMMUNITY_CENTER: "0x3462BC1561c3209848FC77e47cc1fF28d4a61b80",
 
-  // NFT / rewards
+  // NFT / REWARDS
   NFT_REWARDS: "0x5952FB309cbC8919a554702A1Fb937F2e8943F39",
 
   // Misc config
@@ -92,7 +92,7 @@ export const ADDR = {
   RESERVE_READER: "",
   BUYBACK_READER: "",
   LM_READER: "",
-  // NOTE: MAIN_READER should point to the snapshot-capable CollectionReader (same as legacy READER).
+  // NOTE: MAIN_READER should point to the snapshot-capable COLLECTIONReader (same as legacy READER).
   MAIN_READER: "0x71aa3a65DD92b0f09D96A283Ccfc906cb5b33d88",
   BIGGI_TOKENOMICS_READER: "0xC044eBBc9E1303f1C12a5C47e1137C3EFC57F92a",
 
@@ -105,14 +105,14 @@ export const ADDR = {
 
    Exportuji je jako aliasy, aby existující kód dál fungoval.
 */
-ADDR.CommunityCenter = ADDR.COMMUNITY_CENTER;
+ADDR.COMMUNITYCENTER = ADDR.COMMUNITY_CENTER;
 ADDR.COMMUNITY = ADDR.COMMUNITY_CENTER;
 ADDR.LM_VAULT = ADDR.LIQUIDITY_VAULT;
 ADDR.LM_VAULT = ADDR.LIQUIDITY_VAULT;
 ADDR.LIQUIDITY_MANAGER = ADDR.LM;
 ADDR.NFT_REWARDS_CONTRACT = ADDR.NFT_REWARDS;
 ADDR.MASTER = ADDR.MASTER_CONFIG;
-ADDR.BiggiRewardsReader = ADDR.BIGGI_REWARDS_READER;
+ADDR.BiggiREWARDSReader = ADDR.BIGGI_REWARDS_READER;
 
 // Allow environment overrides (e.g., VITE_BIGGI=0x..., VITE_RESERVE=0x...)
 const OVERRIDABLE_KEYS = [
@@ -133,7 +133,7 @@ const OVERRIDABLE_KEYS = [
   "POLICY",
   "COMMUNITY_CENTER",
 
-  // rewards / drip
+  // REWARDS / DRIP
   "COLLECTION_REWARDS",
   "TOKEN_REWARDS",
   "NFT_REWARDS",
@@ -180,15 +180,15 @@ for (const key of OVERRIDABLE_KEYS) {
   if (override) ADDR[key] = override;
 }
 
-// Legacy env support: VITE_ADDR_BiggiRewardsReader -> map into the canonical reader slots.
-const legacyBiggiRewardsReader = _envAddr("BiggiRewardsReader", null);
-if (legacyBiggiRewardsReader) {
-  ADDR.BIGGI_REWARDS_READER = legacyBiggiRewardsReader;
-  ADDR.COLLECTION_REWARDS_READER = legacyBiggiRewardsReader;
-  ADDR.BiggiRewardsReader = legacyBiggiRewardsReader;
+// Legacy env support: VITE_ADDR_BiggiREWARDSReader -> map into the canonical reader slots.
+const legacyBiggiREWARDSReader = _envAddr("BiggiREWARDSReader", null);
+if (legacyBiggiREWARDSReader) {
+  ADDR.BIGGI_REWARDS_READER = legacyBiggiREWARDSReader;
+  ADDR.COLLECTION_REWARDS_READER = legacyBiggiREWARDSReader;
+  ADDR.BiggiREWARDSReader = legacyBiggiREWARDSReader;
 }
 
-// Canonicalize: main points to VRF collection, main2 points to public collection.
+// Canonicalize: main points to VRF COLLECTION, main2 points to public COLLECTION.
 if (ADDR.COLLECTION_VRF && !_sameAddr(ADDR.MAIN, ADDR.COLLECTION_VRF)) {
   ADDR.MAIN = ADDR.COLLECTION_VRF;
 }
@@ -241,12 +241,12 @@ const ALLOWED_ADDRS = {
   BIGGI_TOKENOMICS_READER: "0xC044eBBc9E1303f1C12a5C47e1137C3EFC57F92a",
 
   // legacy aliases
-  CommunityCenter: "0x3462BC1561c3209848FC77e47cc1fF28d4a61b80",
+  COMMUNITYCENTER: "0x3462BC1561c3209848FC77e47cc1fF28d4a61b80",
   COMMUNITY: "0x3462BC1561c3209848FC77e47cc1fF28d4a61b80",
   LM_VAULT: "0xc51e6D0f94f5F9feC82DD83D18Eb822925C16eD5",
   NFT_REWARDS_CONTRACT: "0x5952FB309cbC8919a554702A1Fb937F2e8943F39",
   MASTER: "",
-  BiggiRewardsReader: "",
+  BiggiREWARDSReader: "",
 };
 
 const KEEP_KEYS = new Set(["DEPLOY_BLOCK"]);
@@ -304,10 +304,17 @@ export const ADDRESSES = {
   BIGGI_PRICE_ORACLE: ADDR.BIGGI_PRICE_ORACLE,
 };
 
-// back-compat: if some code imports ADDR.BiggiMainReader / BiggiRewardsReader etc. — ty jsme odstranili.
-// Pokud máš někde v kódu reference na ADDR.BiggiMainReader / ADDR.BiggiRewardsReader nebo
+// back-compat: if some code imports ADDR.BiggiMainReader / BiggiREWARDSReader etc. — ty jsme odstranili.
+// Pokud máš někde v kódu reference na ADDR.BiggiMainReader / ADDR.BiggiREWARDSReader nebo
 // ADDR.BiggiTokenomicsReader, nahraď je prosím těmito novými klíči:
-//   - BiggiRewardsReader (monolit)  -> rozděleno na COLLECTION_REWARDS_READER, NFT_REWARDS_READER, TOKEN_REWARDS_READER, RESERVE_READER
+//   - BiggiREWARDSReader (monolit)  -> rozděleno na COLLECTION_REWARDS_READER, NFT_REWARDS_READER, TOKEN_REWARDS_READER, RESERVE_READER
 //   - BiggiMainReader              -> MAIN_READER
 //   - BiggiTokenomicsReader        -> nahrazeno RESERVE_READER / LM_READER / BUYBACK_READER podle toho co voláš
+
+
+
+
+
+
+
 

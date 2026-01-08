@@ -1,4 +1,5 @@
 import React from 'react';
-const FlowTab = () => <div>FlowTab</div>;
-export default FlowTab;
+const FLOWTab = () => <div>FLOWTab</div>;
+export default FLOWTab;
+
 

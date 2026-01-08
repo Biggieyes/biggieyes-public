@@ -2,20 +2,20 @@ import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayi
 
 const FULL_STATUS_TYPES_V2 = [
   "tuple(address token,address weth,address router,address pair,address token0,address token1,uint112 reserveNative,uint112 reserveBiggi,uint256 lpTotalSupply,uint256 biggiPerNative,uint256 nativePerBiggi)",
-  "tuple(address distributor,uint256 totalReceived,uint256 pendingBuyback,address collectionRewards,address reserve,address buybackAgent,address treasury,address communityCenter)",
-  "tuple(address buybackAgent,uint256 nativeBalance,uint256 biggiBalance,uint256 totalNativeReceived,uint256 totalNativeSpent,uint256 totalBiggiAcquired,bool autoBuybackEnabled,bool paused,uint256 lastBuybackAt,address router,address wrappedNative,address treasury)",
+  "tuple(address distributor,uint256 totalReceived,uint256 pendingBUYBACK,address COLLECTIONREWARDS,address reserve,address BUYBACKAgent,address treasury,address COMMUNITYCENTER)",
+  "tuple(address BUYBACKAgent,uint256 nativeBalance,uint256 biggiBalance,uint256 totalNativeReceived,uint256 totalNativeSpent,uint256 totalBiggiAcquired,bool autoBUYBACKEnabled,bool paused,uint256 lastBUYBACKAt,address router,address wrappedNative,address treasury)",
   "tuple(address reserve,uint256 maticBalance,uint256 waitingBiggi,uint256 dexRefillBiggi,address keeper,bool pairWhitelisted,uint256 lpBalanceInVault,address liquidityManager,address liquidityVault)",
-  "tuple(address dripDistributor,uint256 totalTopUp,uint256 totalClaimed,uint256 totalNotified,uint256 availableTokens,uint256 tokensPerMint,address dripLM)",
-  "tuple(address tokenRewards,uint256 rewardsCap,uint256 rewardsMinted,uint256 balance,uint256 unitReward,uint8[11] blockWeights,address token)",
+  "tuple(address DRIPDistributor,uint256 totalTopUp,uint256 totalClaimed,uint256 totalNotified,uint256 availableTokens,uint256 tokensPerMint,address DRIPLM)",
+  "tuple(address tokenREWARDS,uint256 REWARDSCap,uint256 REWARDSMinted,uint256 balance,uint256 unitReward,uint8[11] blockWeights,address token)",
 ];
 
 const FULL_STATUS_TYPES_V1 = [
   "tuple(address token,address weth,address router,address pair,uint112 reserveNative,uint112 reserveBiggi,uint256 lpTotalSupply,uint256 biggiPerNative,uint256 nativePerBiggi)",
-  "tuple(address distributor,uint256 totalReceived,uint256 pendingBuyback,address collectionRewards,address reserve,address buybackAgent,address treasury,address communityCenter)",
-  "tuple(address buybackAgent,uint256 nativeBalance,uint256 biggiBalance,uint256 totalNativeReceived,uint256 totalNativeSpent,uint256 totalBiggiAcquired,bool autoBuybackEnabled,bool paused,uint256 lastBuybackAt,address router,address wrappedNative,address treasury)",
+  "tuple(address distributor,uint256 totalReceived,uint256 pendingBUYBACK,address COLLECTIONREWARDS,address reserve,address BUYBACKAgent,address treasury,address COMMUNITYCENTER)",
+  "tuple(address BUYBACKAgent,uint256 nativeBalance,uint256 biggiBalance,uint256 totalNativeReceived,uint256 totalNativeSpent,uint256 totalBiggiAcquired,bool autoBUYBACKEnabled,bool paused,uint256 lastBUYBACKAt,address router,address wrappedNative,address treasury)",
   "tuple(address reserve,uint256 maticBalance,uint256 waitingBiggi,uint256 dexRefillBiggi,address keeper,bool pairWhitelisted,uint256 lpBalanceInVault,address liquidityManager,address liquidityVault)",
-  "tuple(address dripDistributor,uint256 totalTopUp,uint256 totalClaimed,uint256 totalNotified,uint256 availableTokens,uint256 tokensPerMint,address dripLM)",
-  "tuple(address tokenRewards,uint256 rewardsCap,uint256 rewardsMinted,uint256 balance,uint256 unitReward,uint8[11] blockWeights,address token)",
+  "tuple(address DRIPDistributor,uint256 totalTopUp,uint256 totalClaimed,uint256 totalNotified,uint256 availableTokens,uint256 tokensPerMint,address DRIPLM)",
+  "tuple(address tokenREWARDS,uint256 REWARDSCap,uint256 REWARDSMinted,uint256 balance,uint256 unitReward,uint8[11] blockWeights,address token)",
 ];
 
 function pickRevertData(err) {
@@ -71,4 +71,9 @@ export async function getFullStatusSafe(reader) {
     throw err;
   }
 }
+
+
+
+
+
 

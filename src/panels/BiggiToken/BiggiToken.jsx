@@ -1,39 +1,39 @@
 
 Řekl/a jsi:
-// BIGGI ecosystem panel - premium layout, safe fallbacks, live snapshot wiring
+// BIGGI ECOSYSTEM panel - premium layout, safe fallbacks, live snapshot wiring
 
 import * as React from "react";
-import "../panels/RewardsPanel.css";
+import "../panels/REWARDSPanel.css";
 import "../../styles/biggi-token.skin.css";
 import styles from "./BiggiToken.module.css";
 import LiquidityVaultChart from "./LiquidityVaultChart";
 import TokenSupplyChart from "./TokenSupplyChart";
 import DexLiquidityChart from "./DexLiquidityChart";
 import BiggiButton from "./BiggiButton";
-import FlowButton from "./FlowButton";
-import BuybackDripButton from "./BuybackDripButton";
+import FLOWButton from "./FLOWButton";
+import BUYBACKDRIPButton from "./BUYBACKDRIPButton";
 import LMReserveTokenDexButton from "./LMReserveTokenDexButton";
-import PolicyButton from "./PolicyButton";
+import POLICYButton from "./POLICYButton";
 import { getBiggiBalancesAcrossReserveLmLv } from "../../services/composed";
 import { BiggiLpPriceFeed as ABI_LP_PRICE_FEED } from "../../config/abi/index.js";
-import { createBuybackService, createDripDistributorService } from "../../services/factories";
+import { createBUYBACKService, createDRIPDistributorService } from "../../services/factories";
 import { getROProvider, getSignerProvider, ensureAmoy, ADDR, AMOY } from "../../utils/contract";
 // import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers"; // odstraněno duplicitně
-import BiggiBuybackReader from "../../config/abi/BiggiBuybackReader.json";
-import BiggiDripReader from "../../config/abi/BiggiDripReader.json";
-  // --- On-chain buyback and drip balances via their readers ---
-  const [onchainBuyback, setOnchainBuyback] = React.useState({ biggi: null, matic: null, loading: false, error: null });
-  const [onchainDrip, setOnchainDrip] = React.useState({ biggi: null, matic: null, loading: false, error: null });
+import BiggiBUYBACKReader from "../../config/abi/BiggiBUYBACKReader.json";
+import BiggiDRIPReader from "../../config/abi/BiggiDRIPReader.json";
+  // --- On-chain BUYBACK and DRIP balances via their readers ---
+  const [onchainBUYBACK, setOnchainBUYBACK] = React.useState({ biggi: null, matic: null, loading: false, error: null });
+  const [onchainDRIP, setOnchainDRIP] = React.useState({ biggi: null, matic: null, loading: false, error: null });
   React.useEffect(() => {
     let cancelled = false;
-    async function fetchBuybackOnchain() {
-      setOnchainBuyback((prev) => ({ ...prev, loading: true, error: null }));
+    async function fetchBUYBACKOnchain() {
+      setOnchainBUYBACK((prev) => ({ ...prev, loading: true, error: null }));
       try {
         const provider = getROProvider();
         const reader = new Contract(ADDR.BUYBACK_READER, ABI_BUYBACK_READER, provider);
         const summary = await reader.simpleSummary();
         if (cancelled) return;
-        setOnchainBuyback({
+        setOnchainBUYBACK({
           biggi: Number(formatUnits(summary.biggiHeld, 18)),
           matic: Number(formatEther(summary.maticHeld)),
           loading: false,
@@ -41,17 +41,17 @@ import BiggiDripReader from "../../config/abi/BiggiDripReader.json";
         });
       } catch (err) {
         if (cancelled) return;
-        setOnchainBuyback((prev) => ({ ...prev, loading: false, error: err?.message || String(err) }));
+        setOnchainBUYBACK((prev) => ({ ...prev, loading: false, error: err?.message || String(err) }));
       }
     }
-    async function fetchDripOnchain() {
-      setOnchainDrip((prev) => ({ ...prev, loading: true, error: null }));
+    async function fetchDRIPOnchain() {
+      setOnchainDRIP((prev) => ({ ...prev, loading: true, error: null }));
       try {
         const provider = getROProvider();
         const reader = new Contract(ADDR.DRIP_READER, ABI_DRIP_READER, provider);
         const summary = await reader.simpleSummary();
         if (cancelled) return;
-        setOnchainDrip({
+        setOnchainDRIP({
           biggi: Number(formatUnits(summary.biggiHeld, 18)),
           matic: Number(formatEther(summary.maticHeld)),
           loading: false,
@@ -59,57 +59,57 @@ import BiggiDripReader from "../../config/abi/BiggiDripReader.json";
         });
       } catch (err) {
         if (cancelled) return;
-        setOnchainDrip((prev) => ({ ...prev, loading: false, error: err?.message || String(err) }));
+        setOnchainDRIP((prev) => ({ ...prev, loading: false, error: err?.message || String(err) }));
       }
     }
-    fetchBuybackOnchain();
-    fetchDripOnchain();
+    fetchBUYBACKOnchain();
+    fetchDRIPOnchain();
     return () => { cancelled = true; };
   }, []);
 import { getProvider } from "../../web3/provider";
-import TokenRewardsService from "../../services/tokenRewardsService";
+import TokenREWARDSService from "../../services/tokenREWARDSService";
 import {
   BiggiLiquidityManager as ABI_LM,
   UniswapV2Pair as ABI_PAIR,
   LiquidityVault as ABI_LIQUIDITY_VAULT,
   BiggiToken as ABI_TOKEN,
-  BiggiBuybackAgent as ABI_BUYBACK,
-  BiggiPolicy as ABI_POLICY,
-  DripLM as ABI_DRIPLM,
-  DripDistributor as ABI_DRIP_DISTRIBUTOR,
+  BiggiBUYBACKAgent as ABI_BUYBACK,
+  BiggiPOLICY as ABI_POLICY,
+  DRIPLM as ABI_DRIPLM,
+  DRIPDistributor as ABI_DRIP_DISTRIBUTOR,
   // Pokud máš ABI_UPKEEP a ABI_ROUTER v config/abi, přidej je zde
 } from "../../config/abi/index.js";
 import TokenomicsPanel from "../../panels/TokenomicsPanel/TokenomicsPanel";
 import DistributorTokenTab from "../../panels/TokenomicsPanel/tabs/DistributorTokenTab";
-import DripTab from "../../panels/TokenomicsPanel/tabs/DripTab";
-import BuybackTreasuryTab from "../../panels/TokenomicsPanel/tabs/BuybackTreasuryTab";
+import DRIPTab from "../../panels/TokenomicsPanel/tabs/DRIPTab";
+import BUYBACKTreasuryTab from "../../panels/TokenomicsPanel/tabs/BUYBACKTreasuryTab";
 import { formatUnits, formatEther, parseUnits } from "ethers";
-import useDripSnapshot from "../../hooks/tokenomics/useDripSnapshot";
-import useDripHistory from "../../hooks/tokenomics/useDripHistory";
-import useBuybackTreasurySnapshot from "../../hooks/tokenomics/useBuybackTreasurySnapshot";
-import useBuybackTreasuryHistory from "../../hooks/tokenomics/useBuybackTreasuryHistory";
-import useLiquiditySnapshot from "../../hooks/tokenomics/useLiquiditySnapshot";
-import useLiquidityHistory from "../../hooks/tokenomics/useLiquidityHistory";
-import useTokenDexSnapshot from "../../hooks/tokenomics/useTokenDexSnapshot";
-import useTokenDexHistory from "../../hooks/tokenomics/useTokenDexHistory";
-import useBuybackStabilityHistory from "../../hooks/tokenomics/useBuybackStabilityHistory";
-import useBiggiToken from "../../hooks/useBiggiToken";
-import useBiggiTokenomicsReader from "../../hooks/useBiggiTokenomicsReader";
-import useBuyback from "../../hooks/useBuyback";
-import useReserve from "../../hooks/useReserve";
-import useTreasury from "../../hooks/useTreasury";
-import usePolicy from "../../hooks/usePolicy";
-import useDripDistributor from "../../hooks/useDripDistributor";
-import useDripLM from "../../hooks/useDripLM";
-import useLiquidityManager from "../../hooks/useLiquidityManager";
-import useLiquidityVault from "../../hooks/useLiquidityVault";
-import useLiquidityAutomation from "../../hooks/useLiquidityAutomation";
-import useBuybackKeeper from "../../hooks/useBuybackKeeper";
-import useLiquidityKeeper from "../../hooks/useLiquidityKeeper";
-import useDripKeeper from "../../hooks/useDripKeeper";
-import useDistributor from "../../hooks/useDistributor";
+import useDRIPSnapshot from "../../HOOKS/tokenomics/useDRIPSnapshot";
+import useDRIPHistory from "../../HOOKS/tokenomics/useDRIPHistory";
+import useBUYBACKTreasurySnapshot from "../../HOOKS/tokenomics/useBUYBACKTreasurySnapshot";
+import useBUYBACKTreasuryHistory from "../../HOOKS/tokenomics/useBUYBACKTreasuryHistory";
+import useLiquiditySnapshot from "../../HOOKS/tokenomics/useLiquiditySnapshot";
+import useLiquidityHistory from "../../HOOKS/tokenomics/useLiquidityHistory";
+import useTokenDexSnapshot from "../../HOOKS/tokenomics/useTokenDexSnapshot";
+import useTokenDexHistory from "../../HOOKS/tokenomics/useTokenDexHistory";
+import useBUYBACKStabilityHistory from "../../HOOKS/tokenomics/useBUYBACKStabilityHistory";
+import useBiggiToken from "../../HOOKS/useBiggiToken";
+import useBiggiTokenomicsReader from "../../HOOKS/useBiggiTokenomicsReader";
+import useBUYBACK from "../../HOOKS/useBUYBACK";
+import useReserve from "../../HOOKS/useReserve";
+import useTreasury from "../../HOOKS/useTreasury";
+import usePOLICY from "../../HOOKS/usePOLICY";
+import useDRIPDistributor from "../../HOOKS/useDRIPDistributor";
+import useDRIPLM from "../../HOOKS/useDRIPLM";
+import useLiquidityManager from "../../HOOKS/useLiquidityManager";
+import useLiquidityVault from "../../HOOKS/useLiquidityVault";
+import useLiquidityAutomation from "../../HOOKS/useLiquidityAutomation";
+import useBUYBACKKeeper from "../../HOOKS/useBUYBACKKeeper";
+import useLiquidityKeeper from "../../HOOKS/useLiquidityKeeper";
+import useDRIPKeeper from "../../HOOKS/useDRIPKeeper";
+import useDistributor from "../../HOOKS/useDistributor";
 
-class EcosystemErrorBoundary extends React.Component {
+class ECOSYSTEMErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -126,15 +126,15 @@ class EcosystemErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <section className="rewards-grid biggi-skin" style={{ padding: "24px" }}>
-          <div className="rewards-grid__surface biggi-token-surface">
-            <header className="rewards-grid__header biggi-header panel-header panel-header--ecosystem">
-              <div className="rewards-grid__headline">
-                <h2 className="rewards-grid__title">BIGGI ECOSYSTEM</h2>
-                <p className="rewards-grid__subtitle">Panel spadl na chybe. Zkuste refresh nebo overit RPC.</p>
+        <section className="REWARDS-grid biggi-skin" style={{ padding: "24px" }}>
+          <div className="REWARDS-grid__surface biggi-token-surface">
+            <header className="REWARDS-grid__header biggi-header panel-header panel-header--ECOSYSTEM">
+              <div className="REWARDS-grid__headline">
+                <h2 className="REWARDS-grid__title">BIGGI ECOSYSTEM</h2>
+                <p className="REWARDS-grid__subtitle">Panel spadl na chybe. Zkuste refresh nebo overit RPC.</p>
               </div>
             </header>
-            <div className="flow-panel-box" style={{ color: "#f2c94c" }}>
+            <div className="FLOW-panel-box" style={{ color: "#f2c94c" }}>
               <p>Detail: {this.state.error?.message || String(this.state.error)}</p>
               <button className="tab-button" onClick={() => window.location.reload()}>Reload stranky</button>
             </div>
@@ -305,9 +305,9 @@ const HeroStat = ({ label, value, tone = "default" }) => (
 );
 
 const SectionHeader = ({ label, accent = "#ffe800" }) => (
-  <div className="rewards-grid__section-header" style={{ "--section-accent": accent }}>
-    <span className="rewards-grid__section-title">{label}</span>
-    <span className="rewards-grid__section-line" />
+  <div className="REWARDS-grid__section-header" style={{ "--section-accent": accent }}>
+    <span className="REWARDS-grid__section-title">{label}</span>
+    <span className="REWARDS-grid__section-line" />
   </div>
 );
 
@@ -318,9 +318,9 @@ const Button = ({ variant = "ghost", children, ...props }) => (
 );
 
 const Card = ({ title, subtitle, tone = "c", action, children }) => (
-  <article className={rewards-grid__card biggi-card biggi-card--${tone}}>
+  <article className={REWARDS-grid__card biggi-card biggi-card--${tone}}>
     <div className="biggi-card__glow" aria-hidden />
-    <div className="rewards-grid__card-header biggi-card__header">
+    <div className="REWARDS-grid__card-header biggi-card__header">
       <div className="biggi-card__heading">
         <h3>{title}</h3>
         {subtitle ? <p>{subtitle}</p> : null}
@@ -336,13 +336,13 @@ const BiggiTokenInner = ({
   distributorData,
   walletAddress = "",
   onRefreshTokenMeta,
-  onRefreshRewards,
+  onRefreshREWARDS,
   onPreviewClaim,
   onCheckClaimStatus,
   onRefreshRouterInfo,
   onRefreshLiquidityPreview,
-  onRefreshBuybackInfo,
-  onRefreshPolicy,
+  onRefreshBUYBACKInfo,
+  onRefreshPOLICY,
   fetchTreasuryInfo,
   fetchReserveInfo,
   fetchDistributorInfo,
@@ -350,7 +350,7 @@ const BiggiTokenInner = ({
   onReserveTopUp,
   onBootstrapLiquidity,
   onAddLiquidityFromBalance,
-  onBuybackAndSendToTreasury,
+  onBUYBACKAndSendToTreasury,
 }) => {
   // --- LP price feed (live) ---
   const [lpPrice, setLpPrice] = React.useState(null);
@@ -403,18 +403,18 @@ const BiggiTokenInner = ({
   }, []);
   const { data: tokenHook } = useBiggiToken(walletAddress);
   const { status: tokenomicsStatus } = useBiggiTokenomicsReader();
-  const { data: buybackHook } = useBuyback();
+  const { data: BUYBACKHook } = useBUYBACK();
   const { data: reserveHook } = useReserve();
   const { data: treasuryHook } = useTreasury();
-  const { data: policyHook } = usePolicy();
-  const { data: dripDistributorHook } = useDripDistributor();
-  const { data: dripLMHook } = useDripLM();
+  const { data: POLICYHook } = usePOLICY();
+  const { data: DRIPDistributorHook } = useDRIPDistributor();
+  const { data: DRIPLMHook } = useDRIPLM();
   const { data: liquidityManagerHook } = useLiquidityManager();
   const { data: liquidityVaultHook } = useLiquidityVault();
   const { data: liquidityAutomationHook } = useLiquidityAutomation();
-  const { data: buybackKeeperHook } = useBuybackKeeper();
+  const { data: BUYBACKKeeperHook } = useBUYBACKKeeper();
   const { data: liquidityKeeperHook } = useLiquidityKeeper();
-  const { data: dripKeeperHook } = useDripKeeper(walletAddress);
+  const { data: DRIPKeeperHook } = useDRIPKeeper(walletAddress);
   const { data: distributorHook } = useDistributor();
 
   const tokBase = data?.token || data?.tok || {};
@@ -422,7 +422,7 @@ const BiggiTokenInner = ({
 
   const distBase = data?.distributor || data?.dist || {};
   const dist = distributorHook?.address ? { ...distBase, ...distributorHook } : distBase;
-  if (!dist.pendingBuyback && dist.pendingBuybackAgent) dist.pendingBuyback = dist.pendingBuybackAgent;
+  if (!dist.pendingBUYBACK && dist.pendingBUYBACKAgent) dist.pendingBUYBACK = dist.pendingBUYBACKAgent;
 
   const distributorSnapshot = distributorData || dist;
 
@@ -441,24 +441,24 @@ const BiggiTokenInner = ({
   const treasuryBase = data?.treasury || {};
   const treasury = treasuryHook?.treasuryAddress ? { ...treasuryBase, ...treasuryHook } : treasuryBase;
 
-  const buybackBase = data?.buyback || {};
-  const buyback = buybackHook?.address ? { ...buybackBase, ...buybackHook } : buybackBase;
-  if (!buyback.buybackAgent && buyback.address) buyback.buybackAgent = buyback.address;
-  if (!buyback.dripLm && buyback.dripLM) buyback.dripLm = buyback.dripLM;
-  if (!buyback.dripLm && dripLMHook?.address) buyback.dripLm = dripLMHook.address;
-  if (buybackKeeperHook?.upkeepNeeded != null) buyback.upkeepNeeded = buybackKeeperHook.upkeepNeeded;
-  if (!buyback.upkeepAddress && buybackKeeperHook?.address) buyback.upkeepAddress = buybackKeeperHook.address;
+  const BUYBACKBase = data?.BUYBACK || {};
+  const BUYBACK = BUYBACKHook?.address ? { ...BUYBACKBase, ...BUYBACKHook } : BUYBACKBase;
+  if (!BUYBACK.BUYBACKAgent && BUYBACK.address) BUYBACK.BUYBACKAgent = BUYBACK.address;
+  if (!BUYBACK.DRIPLm && BUYBACK.DRIPLM) BUYBACK.DRIPLm = BUYBACK.DRIPLM;
+  if (!BUYBACK.DRIPLm && DRIPLMHook?.address) BUYBACK.DRIPLm = DRIPLMHook.address;
+  if (BUYBACKKeeperHook?.upkeepNeeded != null) BUYBACK.upkeepNeeded = BUYBACKKeeperHook.upkeepNeeded;
+  if (!BUYBACK.upkeepAddress && BUYBACKKeeperHook?.address) BUYBACK.upkeepAddress = BUYBACKKeeperHook.address;
 
-  const dripBase = data?.drip || {};
-  const drip = dripDistributorHook?.address ? { ...dripBase, ...dripDistributorHook } : dripBase;
-  if (!drip.dripDistributor && drip.address) drip.dripDistributor = drip.address;
-  if (!drip.dripLm && dripLMHook?.address) drip.dripLm = dripLMHook.address;
-  if (!drip.dripLM && dripLMHook?.address) drip.dripLM = dripLMHook.address;
-  if (!drip.dripLm && dripKeeperHook?.dripLM) drip.dripLm = dripKeeperHook.dripLM;
+  const DRIPBase = data?.DRIP || {};
+  const DRIP = DRIPDistributorHook?.address ? { ...DRIPBase, ...DRIPDistributorHook } : DRIPBase;
+  if (!DRIP.DRIPDistributor && DRIP.address) DRIP.DRIPDistributor = DRIP.address;
+  if (!DRIP.DRIPLm && DRIPLMHook?.address) DRIP.DRIPLm = DRIPLMHook.address;
+  if (!DRIP.DRIPLM && DRIPLMHook?.address) DRIP.DRIPLM = DRIPLMHook.address;
+  if (!DRIP.DRIPLm && DRIPKeeperHook?.DRIPLM) DRIP.DRIPLm = DRIPKeeperHook.DRIPLM;
 
-  const policyBase = data?.policy || {};
-  const policyHasSignal = Object.values(policyHook || {}).some((val) => val && val !== 0 && val !== "0");
-  const policy = policyHasSignal ? { ...policyBase, ...policyHook } : policyBase;
+  const POLICYBase = data?.POLICY || {};
+  const POLICYHasSignal = Object.values(POLICYHook || {}).some((val) => val && val !== 0 && val !== "0");
+  const POLICY = POLICYHasSignal ? { ...POLICYBase, ...POLICYHook } : POLICYBase;
 
   const liquidityBase = data?.liquidity || {};
   const derived = tokenomicsStatus?.derived || {};
@@ -483,8 +483,8 @@ const BiggiTokenInner = ({
   };
 
   const [lmLoading, setLmLoading] = React.useState(false);
-  const [svcBuyback, setSvcBuyback] = React.useState(null);
-  const [svcDrip, setSvcDrip] = React.useState(null);
+  const [svcBUYBACK, setSvcBUYBACK] = React.useState(null);
+  const [svcDRIP, setSvcDRIP] = React.useState(null);
   const [lmView, setLmView] = React.useState(null);
   const [lmChainBalances, setLmChainBalances] = React.useState(null);
   const [chainStatus, setChainStatus] = React.useState({ chainId: null, account: null });
@@ -493,87 +493,87 @@ const BiggiTokenInner = ({
   const [pairingPending, setPairingPending] = React.useState(false);
   const [pumpLoading, setPumpLoading] = React.useState(false);
   const [upkeepPending, setUpkeepPending] = React.useState(false);
-  const [dripPending, setDripPending] = React.useState(false);
-  const [dripDistributorBiggi, setDripDistributorBiggi] = React.useState(null);
+  const [DRIPPending, setDRIPPending] = React.useState(false);
+  const [DRIPDistributorBiggi, setDRIPDistributorBiggi] = React.useState(null);
   const [syncPending, setSyncPending] = React.useState(false);
   const [retryPending, setRetryPending] = React.useState(false);
-  const [buybackAllPending, setBuybackAllPending] = React.useState(false);
+  const [BUYBACKAllPending, setBUYBACKAllPending] = React.useState(false);
   const [tabBusy, setTabBusy] = React.useState(false);
-  const [pumpView, setPumpView] = React.useState({ policy: null, buyback: null, drip: null, masterBundle: null, pair: null, quote: null });
-  const [tab, setTab] = React.useState('flow');
+  const [pumpView, setPumpView] = React.useState({ POLICY: null, BUYBACK: null, DRIP: null, masterBundle: null, pair: null, quote: null });
+  const [tab, setTab] = React.useState('FLOW');
   const [fetchedTabs, setFetchedTabs] = React.useState({});
   const [trStats, setTrStats] = React.useState(null);
   const [trLoading, setTrLoading] = React.useState(false);
   const [trClaimPending, setTrClaimPending] = React.useState(false);
   const [trTokenIdsInput, setTrTokenIdsInput] = React.useState("");
-  const isFlowTab = tab === "flow";
-  const isDripTab = tab === "drip";
-  const isBuybackTab = tab === "buyback";
+  const isFLOWTab = tab === "FLOW";
+  const isDRIPTab = tab === "DRIP";
+  const isBUYBACKTab = tab === "BUYBACK";
   const isReserveTab = tab === "reserve";
   const isDexTab = tab === "dex";
-  const needsTokenDexSnapshot = isFlowTab || isDexTab;
-  const needsDripSnapshot = isDripTab || isBuybackTab;
+  const needsTokenDexSnapshot = isFLOWTab || isDexTab;
+  const needsDRIPSnapshot = isDRIPTab || isBUYBACKTab;
 
   const userRole = React.useMemo(() => {
     const accountLc = (chainStatus.account || "").toLowerCase();
     if (accountLc && automationKeeper && accountLc === automationKeeper) return "keeper";
-    const buybackOwner = pumpView.buyback?.owner?.toLowerCase?.();
+    const BUYBACKOwner = pumpView.BUYBACK?.owner?.toLowerCase?.();
     const lmOwner = lmView?.owner?.toLowerCase?.();
-    const buybackAgent = pumpView.buyback?.address?.toLowerCase?.();
+    const BUYBACKAgent = pumpView.BUYBACK?.address?.toLowerCase?.();
     if (accountLc && lmOwner && accountLc === lmOwner) return "owner";
-    if (accountLc && buybackOwner && accountLc === buybackOwner) return "owner";
-    if (accountLc && buybackAgent && accountLc === buybackAgent) return "buyback-agent";
+    if (accountLc && BUYBACKOwner && accountLc === BUYBACKOwner) return "owner";
+    if (accountLc && BUYBACKAgent && accountLc === BUYBACKAgent) return "BUYBACK-agent";
     if (chainStatus.account) return "manual";
     return "guest";
-  }, [chainStatus.account, pumpView.buyback, lmView]);
+  }, [chainStatus.account, pumpView.BUYBACK, lmView]);
   React.useEffect(() => {
     // IMPORTANT: do not do any RPC work on panel open.
-    // This value is only needed for the Drip tab, so fetch lazily.
-    if (!isDripTab) return;
+    // This value is only needed for the DRIP tab, so fetch lazily.
+    if (!isDRIPTab) return;
 
     let cancelled = false;
-    const fetchDripDistributorBiggi = async () => {
+    const fetchDRIPDistributorBiggi = async () => {
       try {
         const provider = getROSafe();
         if (!provider) return;
         const token = new Contract(ADDR.BIGGI, ABI_TOKEN, provider);
-        const bal = await withTimeout(() => token.balanceOf(ADDR.DRIP_DISTRIBUTOR), 8000, "dripDistributor.balanceOf");
+        const bal = await withTimeout(() => token.balanceOf(ADDR.DRIP_DISTRIBUTOR), 8000, "DRIPDistributor.balanceOf");
         if (cancelled || bal == null) return;
-        setDripDistributorBiggi(Number(formatUnits(bal, 18)));
+        setDRIPDistributorBiggi(Number(formatUnits(bal, 18)));
       } catch {
         // ignore
       }
     };
-    fetchDripDistributorBiggi();
+    fetchDRIPDistributorBiggi();
     return () => {
       cancelled = true;
     };
-  }, [isDripTab]);
-  const dripLmAddress =
-    buyback?.dripLm ||
-    buyback?.dripLM ||
-    drip?.dripLm ||
-    drip?.dripLM ||
-    dripLMHook?.address ||
-    dist?.dripLm;
-  const dripDistributorAddress =
-    drip?.dripDistributor || dripDistributorHook?.address || dist?.distributor;
-  const buybackAgentAddress = buyback?.buybackAgent || buyback?.address || dist?.buybackAgent;
+  }, [isDRIPTab]);
+  const DRIPLmAddress =
+    BUYBACK?.DRIPLm ||
+    BUYBACK?.DRIPLM ||
+    DRIP?.DRIPLm ||
+    DRIP?.DRIPLM ||
+    DRIPLMHook?.address ||
+    dist?.DRIPLm;
+  const DRIPDistributorAddress =
+    DRIP?.DRIPDistributor || DRIPDistributorHook?.address || dist?.distributor;
+  const BUYBACKAgentAddress = BUYBACK?.BUYBACKAgent || BUYBACK?.address || dist?.BUYBACKAgent;
   const treasuryAddressRaw =
     treasury?.treasuryAddress ||
     treasury?.address ||
-    buyback?.treasury ||
-    pumpView?.drip?.distributor?.treasury ||
+    BUYBACK?.treasury ||
+    pumpView?.DRIP?.distributor?.treasury ||
     dist?.treasury ||
     ADDR.TREASURY;
   const treasuryAddress = isAddress(treasuryAddressRaw) ? treasuryAddressRaw : null;
   // Prefer on-chain value if available
   const treasuryNativeValue = onchainTreasury.matic != null ? fmtVal(onchainTreasury.matic, "POL") : fmtVal(treasury.nativeBalance, "POL");
   const treasuryBiggiValue = onchainTreasury.biggi != null ? fmtVal(onchainTreasury.biggi, "BIGGI") : fmtVal(treasury.tokenBalance, "BIGGI");
-  const buybackNativeValue = onchainBuyback.matic != null ? fmtVal(onchainBuyback.matic, "POL") : fmtVal(buyback.nativeBalance, "POL");
-  const buybackBiggiValue = onchainBuyback.biggi != null ? fmtVal(onchainBuyback.biggi, "BIGGI") : fmtVal(buyback.biggiBalance, "BIGGI");
-  const dripNativeValue = onchainDrip.matic != null ? fmtVal(onchainDrip.matic, "POL") : "--";
-  const dripBiggiValue = onchainDrip.biggi != null ? fmtVal(onchainDrip.biggi, "BIGGI") : "--";
+  const BUYBACKNativeValue = onchainBUYBACK.matic != null ? fmtVal(onchainBUYBACK.matic, "POL") : fmtVal(BUYBACK.nativeBalance, "POL");
+  const BUYBACKBiggiValue = onchainBUYBACK.biggi != null ? fmtVal(onchainBUYBACK.biggi, "BIGGI") : fmtVal(BUYBACK.biggiBalance, "BIGGI");
+  const DRIPNativeValue = onchainDRIP.matic != null ? fmtVal(onchainDRIP.matic, "POL") : "--";
+  const DRIPBiggiValue = onchainDRIP.biggi != null ? fmtVal(onchainDRIP.biggi, "BIGGI") : "--";
   const treasuryNativeDisplay = treasuryAddress ? (
     <span className="biggi-line-value__inline">
       <span>{treasuryNativeValue}</span>
@@ -588,11 +588,11 @@ const BiggiTokenInner = ({
   );
 
   const splits = {
-    reserve: policy?.deltaReserveBps ?? 3000,
-    buyback: policy?.alphaBuybackBps ?? 2000,
-    coll: policy?.gammaStakingBps ?? 3000,
-    treasury: policy?.treasuryBps ?? 1000,
-    community: policy?.communityBps ?? 1000,
+    reserve: POLICY?.deltaReserveBps ?? 3000,
+    BUYBACK: POLICY?.alphaBUYBACKBps ?? 2000,
+    coll: POLICY?.gammaStakingBps ?? 3000,
+    treasury: POLICY?.treasuryBps ?? 1000,
+    community: POLICY?.communityBps ?? 1000,
   };
   const pct = (bps) => (bps != null ? ${(Number(bps) / 100).toFixed(1)} % : "--");
   const lmTokenPct =
@@ -630,19 +630,19 @@ const BiggiTokenInner = ({
     ],
     [lmView?.lpBalance, reserve?.lpBalanceInVault, reserve?.maticBalance, tok?.remainingMintable, tok?.totalSupply, treasuryNativeValue, lpPrice]
   );
-  const dripDistributorBiggiValue =
-    dripDistributorBiggi ??
-    pumpView?.drip?.distributor?.biggiBalance ??
-    drip?.distributor?.biggiBalance ??
+  const DRIPDistributorBiggiValue =
+    DRIPDistributorBiggi ??
+    pumpView?.DRIP?.distributor?.biggiBalance ??
+    DRIP?.distributor?.biggiBalance ??
     null;
-  const multiCollectionDistributor = dist?.collectionRewards || ADDR.COLLECTION_REWARDS || dist?.distributor;
+  const multiCOLLECTIONDistributor = dist?.COLLECTIONREWARDS || ADDR.COLLECTION_REWARDS || dist?.distributor;
 
-  const { snapshot: dripSnapshot, loading: dripLoading, error: dripError } = useDripSnapshot({ enabled: needsDripSnapshot });
-  const { availableSeries: dripAvailableSeries, capSeries: dripCapSeries, nativeSeries: dripNativeSeries } =
-    useDripHistory(dripSnapshot);
-  const { snapshot: buybackSnapshot, loading: buybackLoading, error: buybackError } = useBuybackTreasurySnapshot({ enabled: isBuybackTab });
-  const { nativeSeries: buybackNativeSeries, biggiSeries: buybackBiggiSeries, treasurySeries: buybackTreasurySeries } =
-    useBuybackTreasuryHistory(buybackSnapshot);
+  const { snapshot: DRIPSnapshot, loading: DRIPLoading, error: DRIPError } = useDRIPSnapshot({ enabled: needsDRIPSnapshot });
+  const { availableSeries: DRIPAvailableSeries, capSeries: DRIPCapSeries, nativeSeries: DRIPNativeSeries } =
+    useDRIPHistory(DRIPSnapshot);
+  const { snapshot: BUYBACKSnapshot, loading: BUYBACKLoading, error: BUYBACKError } = useBUYBACKTreasurySnapshot({ enabled: isBUYBACKTab });
+  const { nativeSeries: BUYBACKNativeSeries, biggiSeries: BUYBACKBiggiSeries, treasurySeries: BUYBACKTreasurySeries } =
+    useBUYBACKTreasuryHistory(BUYBACKSnapshot);
   const { snapshot: liquiditySnapshot } = useLiquiditySnapshot({ enabled: isReserveTab });
   const { history: liquiditySnapshots } = useLiquidityHistory(liquiditySnapshot);
   const { snapshot: tokenDexSnapshot } = useTokenDexSnapshot({ enabled: needsTokenDexSnapshot });
@@ -737,12 +737,12 @@ const BiggiTokenInner = ({
     ];
   }, [tokenDexHistory, liquidity?.reserveNative, liquidity?.reserveBiggi, liquidity?.biggiPerNative]);
 
-  const buybackStabilityHistory = useBuybackStabilityHistory({ buybackSnapshot, dripSnapshot });
-  const dripAvailableValue =
-    dripSnapshot?.distributor?.availableTokens ??
-    data?.rewards?.dripAvailable ??
-    drip?.availableTokens ??
-    tokenomicsStatus?.derived?.dripAvailable;
+  const BUYBACKStabilityHistory = useBUYBACKStabilityHistory({ BUYBACKSnapshot, DRIPSnapshot });
+  const DRIPAvailableValue =
+    DRIPSnapshot?.distributor?.availableTokens ??
+    data?.REWARDS?.DRIPAvailable ??
+    DRIP?.availableTokens ??
+    tokenomicsStatus?.derived?.DRIPAvailable;
 
   const fetchLmReserveVaultSnapshot = React.useCallback(async () => {
     setLmLoading(true);
@@ -840,36 +840,36 @@ const BiggiTokenInner = ({
     try {
       const provider = getROSafe();
       if (!provider) throw new Error("Read-only provider neni k dispozici");
-      const buyback = new Contract(ADDR.BUYBACK_AGENT, ABI_BUYBACK, provider);
-      const policy = new Contract(ADDR.POLICY, ABI_POLICY, provider);
-      const dripLM = new Contract(ADDR.DRIP_LM, ABI_DRIPLM, provider);
+      const BUYBACK = new Contract(ADDR.BUYBACK_AGENT, ABI_BUYBACK, provider);
+      const POLICY = new Contract(ADDR.POLICY, ABI_POLICY, provider);
+      const DRIPLM = new Contract(ADDR.DRIP_LM, ABI_DRIPLM, provider);
       const distributor = new Contract(ADDR.DRIP_DISTRIBUTOR, ABI_DRIP_DISTRIBUTOR, provider);
       const routerContract = new Contract(ADDR.ROUTER, ABI_ROUTER, provider);
       const pair = new Contract(ADDR.PAIR, ABI_PAIR, provider);
       const token = new Contract(ADDR.BIGGI, ABI_TOKEN, provider);
 
 
-      const [bbPolicyAddr, bbNativeRaw, lastBuybackAt, bbOwner, bbPaused, minIntervalSec, bbDripLm] = await Promise.all([
-        buyback.policy().catch(() => ADDR.POLICY),
-        buyback.nativeBalance().catch(() => 0n),
-        buyback.lastBuybackAt().catch(() => 0),
-        buyback.owner().catch(() => null),
-        policy.buybacksPaused().catch(() => false),
-        policy.minBuybackInterval().catch(() => 0),
-        buyback.dripLM().catch(() => ADDR.DRIP_LM),
+      const [bbPOLICYAddr, bbNativeRaw, lastBUYBACKAt, bbOwner, bbPaused, minIntervalSec, bbDRIPLm] = await Promise.all([
+        BUYBACK.POLICY().catch(() => ADDR.POLICY),
+        BUYBACK.nativeBalance().catch(() => 0n),
+        BUYBACK.lastBUYBACKAt().catch(() => 0),
+        BUYBACK.owner().catch(() => null),
+        POLICY.BUYBACKsPaused().catch(() => false),
+        POLICY.minBUYBACKInterval().catch(() => 0),
+        BUYBACK.DRIPLM().catch(() => ADDR.DRIP_LM),
       ]);
 
-      const [dripRouter, dripReserve, dripDistributorAddr, dripBuybackAgent, sellPct, dripSlip, dripDeadline] = await Promise.all([
-        dripLM.router().catch(() => ADDR.ROUTER),
-        dripLM.reserve().catch(() => ADDR.RESERVE),
-        dripLM.dripDistributor().catch(() => ADDR.DRIP_DISTRIBUTOR),
-        dripLM.buybackAgent().catch(() => ADDR.BUYBACK_AGENT),
-        dripLM.sellPct().catch(() => 0),
-        dripLM.slippageBps().catch(() => 0),
-        dripLM.txDeadlineSec().catch(() => 0),
+      const [DRIPRouter, DRIPReserve, DRIPDistributorAddr, DRIPBUYBACKAgent, sellPct, DRIPSlip, DRIPDeadline] = await Promise.all([
+        DRIPLM.router().catch(() => ADDR.ROUTER),
+        DRIPLM.reserve().catch(() => ADDR.RESERVE),
+        DRIPLM.DRIPDistributor().catch(() => ADDR.DRIP_DISTRIBUTOR),
+        DRIPLM.BUYBACKAgent().catch(() => ADDR.BUYBACK_AGENT),
+        DRIPLM.sellPct().catch(() => 0),
+        DRIPLM.slippageBps().catch(() => 0),
+        DRIPLM.txDeadlineSec().catch(() => 0),
       ]);
 
-      const [tokensPerMintRaw, availableTokensRaw, totalTopUpRaw, treasuryAddr, totalNotifiedRaw, pendingForBuybackRaw, distributorBiggiRaw] = await Promise.all([
+      const [tokensPerMintRaw, availableTokensRaw, totalTopUpRaw, treasuryAddr, totalNotifiedRaw, pendingForBUYBACKRaw, distributorBiggiRaw] = await Promise.all([
         distributor.tokensPerMint().catch(() => 0n),
         distributor.getAvailable ? distributor.getAvailable().catch(() => distributor.availableTokens().catch(() => 0n)) : distributor.availableTokens().catch(() => 0n),
         distributor.totalTopUp().catch(() => 0n),
@@ -895,9 +895,9 @@ const BiggiTokenInner = ({
       const totalTopUp = Number(formatUnits(totalTopUpRaw, 18));
       const tokensPerMint = Number(formatUnits(tokensPerMintRaw, 18));
       const totalNotified = Number(formatUnits(totalNotifiedRaw, 18));
-      const pendingForBuyback = Number(formatUnits(pendingForBuybackRaw, 18));
+      const pendingForBUYBACK = Number(formatUnits(pendingForBUYBACKRaw, 18));
       const distributorBiggi = Number(formatUnits(distributorBiggiRaw, 18));
-      setDripDistributorBiggi(distributorBiggi);
+      setDRIPDistributorBiggi(distributorBiggi);
 
       let pairView = null;
       if (reservesTuple && pairToken0 && pairToken1) {
@@ -926,38 +926,38 @@ const BiggiTokenInner = ({
         };
       }
 
-      if (bbPaused) nextWarnings.push("Buybacks paused v policy");
-      if (nativeBalance < 0.001) nextWarnings.push("BuybackAgent has low native balance (<0.001)");
-      if (availableTokens === 0) nextWarnings.push("DripDistributor has no available tokens");
+      if (bbPaused) nextWarnings.push("BUYBACKs paused v POLICY");
+      if (nativeBalance < 0.001) nextWarnings.push("BUYBACKAgent has low native balance (<0.001)");
+      if (availableTokens === 0) nextWarnings.push("DRIPDistributor has no available tokens");
       if (chainStatus.chainId && chainStatus.chainId !== AMOY.chainId) nextWarnings.push("Wallet is not connected to Amoy (80002)");
 
 
       setPumpView({
-        policy: { address: bbPolicyAddr, paused: bbPaused, minIntervalSec: Number(minIntervalSec) },
-        buyback: {
+        POLICY: { address: bbPOLICYAddr, paused: bbPaused, minIntervalSec: Number(minIntervalSec) },
+        BUYBACK: {
           address: ADDR.BUYBACK_AGENT,
-          policy: bbPolicyAddr,
+          POLICY: bbPOLICYAddr,
           nativeBalance,
-          lastBuybackAt: Number(lastBuybackAt),
+          lastBUYBACKAt: Number(lastBUYBACKAt),
           owner: bbOwner,
-          dripLM: bbDripLm,
+          DRIPLM: bbDRIPLm,
         },
-        drip: {
+        DRIP: {
           address: ADDR.DRIP_LM,
-          router: dripRouter,
-          reserve: dripReserve,
-          dripDistributor: dripDistributorAddr,
-          buybackAgent: dripBuybackAgent,
+          router: DRIPRouter,
+          reserve: DRIPReserve,
+          DRIPDistributor: DRIPDistributorAddr,
+          BUYBACKAgent: DRIPBUYBACKAgent,
           sellPct: Number(sellPct),
-          slippageBps: Number(dripSlip),
-          txDeadlineSec: Number(dripDeadline),
+          slippageBps: Number(DRIPSlip),
+          txDeadlineSec: Number(DRIPDeadline),
           distributor: {
-            address: dripDistributorAddr,
+            address: DRIPDistributorAddr,
             availableTokens,
             totalTopUp,
             tokensPerMint,
             totalNotified,
-            pendingForBuyback,
+            pendingForBUYBACK,
             biggiBalance: distributorBiggi,
             treasury: treasuryAddr,
           },
@@ -968,7 +968,7 @@ const BiggiTokenInner = ({
       setPumpWarnings(nextWarnings);
     } catch (err) {
       console.warn("fetchPumpSnapshot failed", err);
-      setPumpWarnings(["Failed to load Buyback/Drip data"]);
+      setPumpWarnings(["Failed to load BUYBACK/DRIP data"]);
     } finally {
       setPumpLoading(false);
     }
@@ -991,16 +991,16 @@ const BiggiTokenInner = ({
     }
   }, [fetchLmReserveVaultSnapshot, fetchPumpSnapshot, fetchReserveInfo, onRefreshLiquidityPreview]);
 
-  const prefetchBuybackDripServices = React.useCallback(async () => {
+  const prefetchBUYBACKDRIPServices = React.useCallback(async () => {
     const provider = getROSafe();
     if (!provider) {
       console.warn("Prefetch: chybi read-only provider");
       return;
     }
     try {
-      const svc = createBuybackService(undefined, provider);
+      const svc = createBUYBACKService(undefined, provider);
       const raw = await svc.getAllStats();
-      setSvcBuyback({
+      setSvcBUYBACK({
         native: formatUnits(raw?.nativeBalance || 0, 18),
         biggi: formatUnits(raw?.biggiBalance || 0, 18),
         totalNativeSpent: formatUnits(raw?.totalNativeSpent || 0, 18),
@@ -1011,9 +1011,9 @@ const BiggiTokenInner = ({
     }
 
     try {
-      const svc = createDripDistributorService(undefined, provider);
+      const svc = createDRIPDistributorService(undefined, provider);
       const raw = await svc.getAllStats();
-      setSvcDrip({
+      setSvcDRIP({
         available: formatUnits(raw?.availableTokens || 0, 18),
         totalNotified: formatUnits(raw?.totalNotified || 0, 18),
         totalClaimed: formatUnits(raw?.totalClaimed || 0, 18),
@@ -1025,9 +1025,9 @@ const BiggiTokenInner = ({
     try {
       const provider = getROSafe();
       if (!provider) throw new Error("Read-only provider neni k dispozici");
-      const trSvc = new TokenRewardsService(ADDR.TOKEN_REWARDS, provider);
+      const trSvc = new TokenREWARDSService(ADDR.TOKEN_REWARDS, provider);
       const rawTr = await trSvc.getAllStats();
-      const formatted = await TokenRewardsService.formatUsingTokenMeta(rawTr);
+      const formatted = await TokenREWARDSService.formatUsingTokenMeta(rawTr);
       setTrStats(formatted);
     } catch {
       // ignore
@@ -1043,26 +1043,26 @@ const BiggiTokenInner = ({
         const jobs = [];
 
         switch (tabKey) {
-          case "flow":
+          case "FLOW":
             jobs.push(withTimeout(onRefreshTokenMeta, 8000, "onRefreshTokenMeta"));
             jobs.push(withTimeout(fetchTreasuryInfo, 8000, "fetchTreasuryInfo"));
             jobs.push(withTimeout(fetchReserveInfo, 8000, "fetchReserveInfo"));
             jobs.push(withTimeout(fetchDistributorInfo, 8000, "fetchDistributorInfo"));
             break;
-          case "buyback":
-            jobs.push(withTimeout(onRefreshBuybackInfo, 12000, "onRefreshBuybackInfo"));
+          case "BUYBACK":
+            jobs.push(withTimeout(onRefreshBUYBACKInfo, 12000, "onRefreshBUYBACKInfo"));
             jobs.push(withTimeout(fetchPumpSnapshot, 12000, "fetchPumpSnapshot"));
-            jobs.push(withTimeout(prefetchBuybackDripServices, 12000, "prefetchBuybackDripServices"));
+            jobs.push(withTimeout(prefetchBUYBACKDRIPServices, 12000, "prefetchBUYBACKDRIPServices"));
             break;
-          case "drip":
+          case "DRIP":
             jobs.push(withTimeout(fetchPumpSnapshot, 12000, "fetchPumpSnapshot"));
-            jobs.push(withTimeout(prefetchBuybackDripServices, 12000, "prefetchBuybackDripServices"));
+            jobs.push(withTimeout(prefetchBUYBACKDRIPServices, 12000, "prefetchBUYBACKDRIPServices"));
             break;
           case "reserve":
             jobs.push(withTimeout(handleLiquiditySuite, 12000, "handleLiquiditySuite"));
             break;
-          case "policy":
-            jobs.push(withTimeout(onRefreshPolicy, 8000, "onRefreshPolicy"));
+          case "POLICY":
+            jobs.push(withTimeout(onRefreshPOLICY, 8000, "onRefreshPOLICY"));
             break;
           case "dex":
             jobs.push(withTimeout(onRefreshRouterInfo, 8000, "onRefreshRouterInfo"));
@@ -1086,12 +1086,12 @@ const BiggiTokenInner = ({
     [
       fetchPumpSnapshot,
       handleLiquiditySuite,
-      onRefreshBuybackInfo,
+      onRefreshBUYBACKInfo,
       onRefreshLiquidityPreview,
-      onRefreshPolicy,
+      onRefreshPOLICY,
       onRefreshRouterInfo,
       onRefreshTokenMeta,
-      prefetchBuybackDripServices,
+      prefetchBUYBACKDRIPServices,
       fetchDistributorInfo,
       fetchReserveInfo,
       fetchTreasuryInfo,
@@ -1114,7 +1114,7 @@ const BiggiTokenInner = ({
     }
   };
 
-  const runManualBuybackUpkeep = async () => {
+  const runManualBUYBACKUpkeep = async () => {
     setUpkeepPending(true);
     try {
       await ensureAmoy();
@@ -1130,18 +1130,18 @@ const BiggiTokenInner = ({
     }
   };
 
-  const runManualDrip = async () => {
-    setDripPending(true);
+  const runManualDRIP = async () => {
+    setDRIPPending(true);
     try {
       await ensureAmoy();
       const signerProvider = getSignerProvider();
       const signer = signerProvider.getSigner();
-      const dripLM = new Contract(ADDR.DRIP_LM, ABI_DRIPLM, signer);
-      await dripLM.dripOnBuy(DEFAULT_DRIP_NATIVE);
+      const DRIPLM = new Contract(ADDR.DRIP_LM, ABI_DRIPLM, signer);
+      await DRIPLM.DRIPOnBuy(DEFAULT_DRIP_NATIVE);
     } catch (err) {
-      console.warn("dripOnBuy failed", err);
+      console.warn("DRIPOnBuy failed", err);
     } finally {
-      setDripPending(false);
+      setDRIPPending(false);
       fetchPumpSnapshot();
     }
   };
@@ -1178,26 +1178,26 @@ const BiggiTokenInner = ({
     }
   };
 
-  const runBuybackAll = async () => {
+  const runBUYBACKAll = async () => {
     const ok = typeof window !== "undefined"
-      ? window.confirm("Run buybackAllToTreasury? Make sure you have enough gas.")
+      ? window.confirm("Run BUYBACKAllToTreasury? Make sure you have enough gas.")
       : true;
     if (!ok) return;
-    setBuybackAllPending(true);
+    setBUYBACKAllPending(true);
     try {
       await ensureAmoy();
       const signerProvider = getSignerProvider();
       const signer = signerProvider.getSigner();
-      const buyback = new Contract(ADDR.BUYBACK_AGENT, ABI_BUYBACK, signer);
-      if (typeof buyback.buybackAllToTreasury === "function") {
-        await buyback.buybackAllToTreasury(0);
+      const BUYBACK = new Contract(ADDR.BUYBACK_AGENT, ABI_BUYBACK, signer);
+      if (typeof BUYBACK.BUYBACKAllToTreasury === "function") {
+        await BUYBACK.BUYBACKAllToTreasury(0);
       } else {
-      throw new Error("buybackAllToTreasury is missing from ABI");
+      throw new Error("BUYBACKAllToTreasury is missing from ABI");
       }
     } catch (err) {
-      console.warn("buybackAllToTreasury failed", err);
+      console.warn("BUYBACKAllToTreasury failed", err);
     } finally {
-      setBuybackAllPending(false);
+      setBUYBACKAllPending(false);
       fetchPumpSnapshot();
     }
   };
@@ -1206,11 +1206,11 @@ const BiggiTokenInner = ({
 
   // Auto-fetch disabled to prevent freezing - user must click Refresh
   React.useEffect(() => {
-    if (tab === "flow" && !fetchedTabs.flow) markFetched("flow");
-    if (tab === "buyback" && !fetchedTabs.buyback) markFetched("buyback");
+    if (tab === "FLOW" && !fetchedTabs.FLOW) markFetched("FLOW");
+    if (tab === "BUYBACK" && !fetchedTabs.BUYBACK) markFetched("BUYBACK");
     if (tab === "reserve" && !fetchedTabs.reserve) markFetched("reserve");
-    if (tab === "drip" && !fetchedTabs.drip) markFetched("drip");
-    if (tab === "policy" && !fetchedTabs.policy) markFetched("policy");
+    if (tab === "DRIP" && !fetchedTabs.DRIP) markFetched("DRIP");
+    if (tab === "POLICY" && !fetchedTabs.POLICY) markFetched("POLICY");
     if (tab === "dex" && !fetchedTabs.dex) markFetched("dex");
   }, [tab, fetchedTabs, markFetched]);
 
@@ -1219,12 +1219,12 @@ const BiggiTokenInner = ({
     try {
       const provider = getROSafe();
       if (!provider) throw new Error("Read-only provider neni k dispozici");
-      const trSvc = new TokenRewardsService(ADDR.TOKEN_REWARDS, provider);
+      const trSvc = new TokenREWARDSService(ADDR.TOKEN_REWARDS, provider);
       const rawTr = await trSvc.getAllStats();
-      const formatted = await TokenRewardsService.formatUsingTokenMeta(rawTr);
+      const formatted = await TokenREWARDSService.formatUsingTokenMeta(rawTr);
       setTrStats(formatted);
     } catch (e) {
-      console.warn('TokenRewards refresh failed', e);
+      console.warn('TokenREWARDS refresh failed', e);
     } finally {
       setTrLoading(false);
     }
@@ -1239,7 +1239,7 @@ const BiggiTokenInner = ({
       const signer = signerProvider.getSigner();
       const provider = getROSafe();
       if (!provider) throw new Error("Read-only provider neni k dispozici");
-      const trSvc = new TokenRewardsService(ADDR.TOKEN_REWARDS, provider);
+      const trSvc = new TokenREWARDSService(ADDR.TOKEN_REWARDS, provider);
       trSvc.connectWithSigner(signer);
       const ids = trTokenIdsInput.split(',').map((s) => s.trim()).filter(Boolean).map((s) => Number(s));
       const receipt = await trSvc.claim(ids);
@@ -1255,28 +1255,28 @@ const BiggiTokenInner = ({
   };
 
   const tabs = [
-    { key: "flow", label: "Flows" },
-    { key: "buyback", label: "Buyback" },
-    { key: "drip", label: "Drip" },
+    { key: "FLOW", label: "FLOWs" },
+    { key: "BUYBACK", label: "BUYBACK" },
+    { key: "DRIP", label: "DRIP" },
     { key: "reserve", label: "LM / Reserve / Vault" },
-    { key: "policy", label: "Policy" },
+    { key: "POLICY", label: "POLICY" },
     { key: "dex", label: "Token & DEX" },
   ];
 
   return (
-    <section className={${styles.ecosystem} rewards-grid biggi-skin${compact ? " is-compact" : ""}}>
-      <div className="rewards-grid__surface biggi-token-surface">
-        <header className="rewards-grid__header biggi-header panel-header panel-header--ecosystem">
-          <div className="rewards-grid__headline">
-            <h2 className="rewards-grid__title">BIGGI ECOSYSTEM</h2>
-            <p className="rewards-grid__subtitle">
-              Premium overview: mint -&gt; distributor -&gt; buyback / reserve / treasury.
+    <section className={${styles.ECOSYSTEM} REWARDS-grid biggi-skin${compact ? " is-compact" : ""}}>
+      <div className="REWARDS-grid__surface biggi-token-surface">
+        <header className="REWARDS-grid__header biggi-header panel-header panel-header--ECOSYSTEM">
+          <div className="REWARDS-grid__headline">
+            <h2 className="REWARDS-grid__title">BIGGI ECOSYSTEM</h2>
+            <p className="REWARDS-grid__subtitle">
+              Premium overview: mint -&gt; distributor -&gt; BUYBACK / reserve / treasury.
             </p>
           </div>
         </header>
 
         <SectionHeader label="Live snapshot" accent="#ffe800" />
-        <div className="rewards-grid__hero" aria-label="Token summary">
+        <div className="REWARDS-grid__hero" aria-label="Token summary">
           {heroStats.map((stat, idx) => (
             <HeroStat key={idx} {...stat} />
           ))}
@@ -1297,21 +1297,21 @@ const BiggiTokenInner = ({
 
         {tab === "reserve" && <TokenomicsPanel />}
 
-        <div className="rewards-grid__cards">
-          {tab === "flow" && (
+        <div className="REWARDS-grid__cards">
+          {tab === "FLOW" && (
             <>
             <Card
-              title="Token flows"
-              subtitle="Mint -&gt; Distributor -&gt; Reserve / Buyback / Treasury / Community"
+              title="Token FLOWs"
+              subtitle="Mint -&gt; Distributor -&gt; Reserve / BUYBACK / Treasury / Community"
               tone="y"
             >
-              <div className="flow-panel-grid flow-panel-grid--unified">
+              <div className="FLOW-panel-grid FLOW-panel-grid--unified">
                 {/* Full-width chart */}
-                <div className="flow-chart-full">
-                  <div className="flow-panel-box">
-                    <div className="flow-panel-box__header">
+                <div className="FLOW-chart-full">
+                  <div className="FLOW-panel-box">
+                    <div className="FLOW-panel-box__header">
                       <div>
-                        <strong>Biggi Ecosystem</strong>
+                        <strong>Biggi ECOSYSTEM</strong>
                         <p>Minted vs. Mintable left</p>
                       </div>
                       <div className="token-pill">{fmtVal(tok?.totalSupply, "BIGGI", 0)} supply</div>
@@ -1320,19 +1320,19 @@ const BiggiTokenInner = ({
                   </div>
                 </div>
                 {/* Two boxes side by side */}
-                <div className="flow-panel-left">
-                  <div className="flow-panel-box">
-                    <div className="flow-panel-box__header">
+                <div className="FLOW-panel-left">
+                  <div className="FLOW-panel-box">
+                    <div className="FLOW-panel-box__header">
                       <div>
-                        <strong>Flow summary</strong>
-                        <p>Mint → Distributor → Reserve / Buyback / Treasury</p>
+                        <strong>FLOW summary</strong>
+                        <p>Mint → Distributor → Reserve / BUYBACK / Treasury</p>
                       </div>
                     </div>
-                    <div className="flow-panel-box__rows">
+                    <div className="FLOW-panel-box__rows">
                       <Line label="Mint -> Distributor" tone="native" value={fmtVal(dist?.totalReceived, "POL")} />
-                      <Line label="Flow to Reserve" tone="native" value={fmtVal(reserve?.totalMaticReceived, "POL")} />
-                      <Line label="Flow to Buyback" tone="native" value={fmtVal(dist?.pendingBuyback, "POL")} />
-                      <Line label="Flow to Treasury" tone="native" value={treasuryNativeValue} />
+                      <Line label="FLOW to Reserve" tone="native" value={fmtVal(reserve?.totalMaticReceived, "POL")} />
+                      <Line label="FLOW to BUYBACK" tone="native" value={fmtVal(dist?.pendingBUYBACK, "POL")} />
+                      <Line label="FLOW to Treasury" tone="native" value={treasuryNativeValue} />
                       <Line label="Community pool" tone="native" value={fmtVal(dist?.communityPoolBalance, "POL")} />
                       <AddressLine
                         label="Reserve contract"
@@ -1340,20 +1340,20 @@ const BiggiTokenInner = ({
                         href={explorerLink(reserve?.reserveAddress || ADDR.RESERVE)}
                       />
                       <AddressLine
-                        label="Multi-collection distributor"
-                        address={multiCollectionDistributor}
-                        href={explorerLink(multiCollectionDistributor)}
+                        label="Multi-COLLECTION distributor"
+                        address={multiCOLLECTIONDistributor}
+                        href={explorerLink(multiCOLLECTIONDistributor)}
                       />
                     </div>
                   </div>
-                  <div className="flow-panel-box">
-                    <div className="flow-panel-box__header">
+                  <div className="FLOW-panel-box">
+                    <div className="FLOW-panel-box__header">
                       <div>
-                        <strong>Token contract & hooks</strong>
+                        <strong>Token contract & HOOKS</strong>
                         <p>Addresses with explorer links</p>
                       </div>
                     </div>
-                    <div className="flow-panel-box__rows">
+                    <div className="FLOW-panel-box__rows">
                       {[{
                         label: "BIGGI token",
                         address: tokenDexSnapshot?.token?.address || ADDR.BIGGI,
@@ -1361,11 +1361,11 @@ const BiggiTokenInner = ({
                         label: "Reserve hook",
                         address: tokenDexSnapshot?.token?.addresses?.reserve || ADDR.RESERVE,
                       }, {
-                        label: "DripDistributor hook",
-                        address: tokenDexSnapshot?.token?.addresses?.dripDistributor || ADDR.DRIP_DISTRIBUTOR,
+                        label: "DRIPDistributor hook",
+                        address: tokenDexSnapshot?.token?.addresses?.DRIPDistributor || ADDR.DRIP_DISTRIBUTOR,
                       }, {
-                        label: "TokenRewards hook",
-                        address: tokenDexSnapshot?.token?.addresses?.tokenRewards || ADDR.TOKEN_REWARDS,
+                        label: "TokenREWARDS hook",
+                        address: tokenDexSnapshot?.token?.addresses?.tokenREWARDS || ADDR.TOKEN_REWARDS,
                       }, {
                         label: "Treasury",
                         address: ADDR.TREASURY,
@@ -1383,49 +1383,49 @@ const BiggiTokenInner = ({
                     </div>
                   </div>
                 </div>
-                <div className="flow-panel-right">
-                  <div className="flow-panel-box">
-                    <div className="flow-panel-box__header">
+                <div className="FLOW-panel-right">
+                  <div className="FLOW-panel-box">
+                    <div className="FLOW-panel-box__header">
                       <div>
-                        <strong>Flow status</strong>
+                        <strong>FLOW status</strong>
                         <p>Liquidity splits & activity</p>
                       </div>
-                      <FlowButton disabled={tabBusy} onClick={() => refreshTab("flow")}>
-                        Refresh flow
-                      </FlowButton>
+                      <FLOWButton disabled={tabBusy} onClick={() => refreshTab("FLOW")}>
+                        Refresh FLOW
+                      </FLOWButton>
                     </div>
-                    <div className="flow-panel-box__rows">
-                      <div className="flow-split-grid">
-                        <span className="flow-split-label">Default split</span>
-                        <span className="flow-split-item">CR <strong>{pct(splits.coll)}</strong></span>
-                        <span className="flow-split-item">Reserve <strong>{pct(splits.reserve)}</strong></span>
-                        <span className="flow-split-item">Buyback <strong>{pct(splits.buyback)}</strong></span>
-                        <span className="flow-split-item">Treasury <strong>{pct(splits.treasury)}</strong></span>
-                        <span className="flow-split-item">Community <strong>{pct(splits.community)}</strong></span>
+                    <div className="FLOW-panel-box__rows">
+                      <div className="FLOW-split-grid">
+                        <span className="FLOW-split-label">Default split</span>
+                        <span className="FLOW-split-item">CR <strong>{pct(splits.coll)}</strong></span>
+                        <span className="FLOW-split-item">Reserve <strong>{pct(splits.reserve)}</strong></span>
+                        <span className="FLOW-split-item">BUYBACK <strong>{pct(splits.BUYBACK)}</strong></span>
+                        <span className="FLOW-split-item">Treasury <strong>{pct(splits.treasury)}</strong></span>
+                        <span className="FLOW-split-item">Community <strong>{pct(splits.community)}</strong></span>
                       </div>
-                      <div className="flow-big-value-row">
-                        <span className="flow-big-label">Treasury BIGGI</span>
-                        <span className="flow-big-value tone-token">{treasuryBiggiValue}</span>
+                      <div className="FLOW-big-value-row">
+                        <span className="FLOW-big-label">Treasury BIGGI</span>
+                        <span className="FLOW-big-value tone-token">{treasuryBiggiValue}</span>
                       </div>
-                      <Line label="Pending CR/NFT" tone="token" value={fmtVal(dist?.pendingCollectionRewards, "BIGGI")} />
-                      <div className="flow-big-value-row">
-                        <span className="flow-big-label">Flow status</span>
-                        <span className="flow-big-value" style={{ color: dist?.paused ? '#ff6b6b' : '#4ade80' }}>{dist?.paused ? "Paused" : "Active"}</span>
+                      <Line label="Pending CR/NFT" tone="token" value={fmtVal(dist?.pendingCOLLECTIONREWARDS, "BIGGI")} />
+                      <div className="FLOW-big-value-row">
+                        <span className="FLOW-big-label">FLOW status</span>
+                        <span className="FLOW-big-value" style={{ color: dist?.paused ? '#ff6b6b' : '#4ade80' }}>{dist?.paused ? "Paused" : "Active"}</span>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              {/* Token Rewards section was removed per request */}
+              {/* Token REWARDS section was removed per request */}
             </Card>
-            {isFlowTab && (
-              <div className="flow-panel">
+            {isFLOWTab && (
+              <div className="FLOW-panel">
                 <DistributorTokenTab
                   distributorData={distributorSnapshot}
                   tokenSnapshot={tokenDexSnapshot}
-                  buybackSnapshot={buybackSnapshot}
-                  buybackFallback={buyback?.biggiBalance}
-                  dripAvailable={dripAvailableValue}
+                  BUYBACKSnapshot={BUYBACKSnapshot}
+                  BUYBACKFallback={BUYBACK?.biggiBalance}
+                  DRIPAvailable={DRIPAvailableValue}
                   tokenTotalSupply={tok?.totalSupply}
                 />
               </div>
@@ -1433,62 +1433,62 @@ const BiggiTokenInner = ({
             </>
           )}
 
-          {tab === "buyback" && (
-            <div className="buyback-two-col">
+          {tab === "BUYBACK" && (
+            <div className="BUYBACK-two-col">
               <Card
-                title="Buyback Agent"
+                title="BUYBACK Agent"
                 subtitle="20% from distributor, swaps native->BIGGI, tops up Treasury"
                 tone="c"
                 action={
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <BuybackDripButton disabled={tabBusy} onClick={() => refreshTab("buyback")}>
+                    <BUYBACKDRIPButton disabled={tabBusy} onClick={() => refreshTab("BUYBACK")}>
                       Refresh
-                    </BuybackDripButton>
+                    </BUYBACKDRIPButton>
                   </div>
                 }
               >
-                <div className="biggi-contract-grid biggi-contract-grid--buyback">
+                <div className="biggi-contract-grid biggi-contract-grid--BUYBACK">
                   <div className="biggi-contract-box">
-                    <Line label="Auto buyback" value={buyback.autoBuybackEnabled ? "On" : "Off"} />
-                    <Line label="Paused" value={buyback.paused ? "Yes" : "No"} />
+                    <Line label="Auto BUYBACK" value={BUYBACK.autoBUYBACKEnabled ? "On" : "Off"} />
+                    <Line label="Paused" value={BUYBACK.paused ? "Yes" : "No"} />
                     <Line
                       label="Upkeep needed"
-                      value={buyback.upkeepNeeded != null ? (buyback.upkeepNeeded ? "Yes" : "No") : "--"}
+                      value={BUYBACK.upkeepNeeded != null ? (BUYBACK.upkeepNeeded ? "Yes" : "No") : "--"}
                     />
-                    <Line label="Native balance" tone="native" value={buybackNativeValue} />
-                    <Line label="BIGGI balance" tone="token" value={buybackBiggiValue} />
+                    <Line label="Native balance" tone="native" value={BUYBACKNativeValue} />
+                    <Line label="BIGGI balance" tone="token" value={BUYBACKBiggiValue} />
                     <Line
                       label="(svc) Native / BIGGI"
-                      value={svcBuyback ? ${fmtVal(svcBuyback.native, "POL")} / ${fmtVal(svcBuyback.biggi, "BIGGI")} : "--"}
+                      value={svcBUYBACK ? ${fmtVal(svcBUYBACK.native, "POL")} / ${fmtVal(svcBUYBACK.biggi, "BIGGI")} : "--"}
                     />
-                    <Line label="Total BIGGI bought" tone="token" value={fmtVal(buyback.totalBiggiAcquired, "BIGGI")} />
-                    <Line label="Total native spent" tone="native" value={fmtVal(buyback.totalNativeSpent, "POL")} />
+                    <Line label="Total BIGGI bought" tone="token" value={fmtVal(BUYBACK.totalBiggiAcquired, "BIGGI")} />
+                    <Line label="Total native spent" tone="native" value={fmtVal(BUYBACK.totalNativeSpent, "POL")} />
                     <Line
                       label="(svc) Total bought / spent"
-                      value={svcBuyback ? ${fmtVal(svcBuyback.totalBiggiAcquired, "BIGGI")} / ${fmtVal(svcBuyback.totalNativeSpent, "POL")} : "--"}
+                      value={svcBUYBACK ? ${fmtVal(svcBUYBACK.totalBiggiAcquired, "BIGGI")} / ${fmtVal(svcBUYBACK.totalNativeSpent, "POL")} : "--"}
                     />
-                    <Line label="Last buyback" value={fmtDate(buyback.lastBuybackAt)} />
+                    <Line label="Last BUYBACK" value={fmtDate(BUYBACK.lastBUYBACKAt)} />
                   </div>
                   <div className="biggi-contract-box">
                     <Line label="Treasury native" tone="native" value={treasuryNativeDisplay} />
                     <Line label="Treasury BIGGI" tone="token" value={treasuryBiggiValue} />
                     <Line label="Reserve native" tone="native" value={fmtVal(reserve.maticBalance, "POL")} />
                     <Line label="Reserve BIGGI" tone="token" value={fmtVal(reserve.biggiBalance, "BIGGI")} />
-                    <Line label="Distributor pending BB" tone="native" value={fmtVal(dist.pendingBuyback, "POL")} />
-                    <Line label="Distributor pending rewards" tone="token" value={fmtVal(dist.pendingCollectionRewards, "BIGGI")} />
-                    <Line label="Native from multi-collection" tone="native" value={fmtVal(dist.totalReceived, "POL")} />
+                    <Line label="Distributor pending BB" tone="native" value={fmtVal(dist.pendingBUYBACK, "POL")} />
+                    <Line label="Distributor pending REWARDS" tone="token" value={fmtVal(dist.pendingCOLLECTIONREWARDS, "BIGGI")} />
+                    <Line label="Native from multi-COLLECTION" tone="native" value={fmtVal(dist.totalReceived, "POL")} />
                   </div>
                 </div>
               </Card>
-              {isBuybackTab && (
-                <div className="flow-panel buyback-two-col__right">
-                  <BuybackTreasuryTab
-                    snapshot={buybackSnapshot}
-                    nativeSeries={buybackNativeSeries}
-                    biggiSeries={buybackBiggiSeries}
-                    treasurySeries={buybackTreasurySeries}
-                    isLoading={buybackLoading}
-                    error={buybackError}
+              {isBUYBACKTab && (
+                <div className="FLOW-panel BUYBACK-two-col__right">
+                  <BUYBACKTreasuryTab
+                    snapshot={BUYBACKSnapshot}
+                    nativeSeries={BUYBACKNativeSeries}
+                    biggiSeries={BUYBACKBiggiSeries}
+                    treasurySeries={BUYBACKTreasurySeries}
+                    isLoading={BUYBACKLoading}
+                    error={BUYBACKError}
                   />
                 </div>
               )}
@@ -1600,44 +1600,44 @@ const BiggiTokenInner = ({
             </Card>
           </>
         )}
-        {tab === "drip" && (
+        {tab === "DRIP" && (
           <>
             <div style={{marginBottom: 12}}>
-              <Line label="Drip native (on-chain)" tone="native" value={dripNativeValue} />
-              <Line label="Drip BIGGI (on-chain)" tone="token" value={dripBiggiValue} />
+              <Line label="DRIP native (on-chain)" tone="native" value={DRIPNativeValue} />
+              <Line label="DRIP BIGGI (on-chain)" tone="token" value={DRIPBiggiValue} />
             </div>
-            <DripTab
-              snapshot={dripSnapshot}
-              availableSeries={dripAvailableSeries}
-              capSeries={dripCapSeries}
-              nativeSeries={dripNativeSeries}
-              stabilitySeries={buybackStabilityHistory}
-              isLoading={dripLoading}
-              error={dripError}
+            <DRIPTab
+              snapshot={DRIPSnapshot}
+              availableSeries={DRIPAvailableSeries}
+              capSeries={DRIPCapSeries}
+              nativeSeries={DRIPNativeSeries}
+              stabilitySeries={BUYBACKStabilityHistory}
+              isLoading={DRIPLoading}
+              error={DRIPError}
             />
           </>
         )}
 
-        {tab === "policy" && (
+        {tab === "POLICY" && (
             <Card
-              title="Policy & distribution guards"
-              subtitle="Slippage / deadline / intervals / buyback guards"
+              title="POLICY & distribution guards"
+              subtitle="Slippage / deadline / intervals / BUYBACK guards"
               tone="y"
-              action={<PolicyButton onClick={onRefreshPolicy} />}
+              action={<POLICYButton onClick={onRefreshPOLICY} />}
             >
               <div className="biggi-contract-grid">
                 <div className="biggi-contract-box">
-                  <Line label="Swap slippage" value={policy.swapSlippageBps != null ? ${policy.swapSlippageBps} bps : "200 bps"} />
-                  <Line label="LP slippage" value={policy.lpSlippageBps != null ? ${policy.lpSlippageBps} bps : "200 bps"} />
-                  <Line label="Tx deadline" value={policy.txDeadlineSec != null ? ${policy.txDeadlineSec} s : "600 s"} />
-                  <Line label="Buyback cooldown" value={policy.minBuybackInterval != null ? ${policy.minBuybackInterval} s : "300 s"} />
-                  <Line label="Daily BB cap" value={policy.maxDailyBuybackNative ?? "0 (no cap)"} />
-                  <Line label="Buybacks paused" value={policy.buybacksPaused ? "Yes" : "No"} />
+                  <Line label="Swap slippage" value={POLICY.swapSlippageBps != null ? ${POLICY.swapSlippageBps} bps : "200 bps"} />
+                  <Line label="LP slippage" value={POLICY.lpSlippageBps != null ? ${POLICY.lpSlippageBps} bps : "200 bps"} />
+                  <Line label="Tx deadline" value={POLICY.txDeadlineSec != null ? ${POLICY.txDeadlineSec} s : "600 s"} />
+                  <Line label="BUYBACK cooldown" value={POLICY.minBUYBACKInterval != null ? ${POLICY.minBUYBACKInterval} s : "300 s"} />
+                  <Line label="Daily BB cap" value={POLICY.maxDailyBUYBACKNative ?? "0 (no cap)"} />
+                  <Line label="BUYBACKs paused" value={POLICY.BUYBACKsPaused ? "Yes" : "No"} />
                 </div>
                 <div className="biggi-contract-box">
                   <Line label="Reserve %" value={pct(splits.reserve)} />
-                  <Line label="Buyback %" value={pct(splits.buyback)} />
-                  <Line label="CollectionRewards %" value={pct(splits.coll)} />
+                  <Line label="BUYBACK %" value={pct(splits.BUYBACK)} />
+                  <Line label="COLLECTIONREWARDS %" value={pct(splits.coll)} />
                   <Line label="Treasury %" value={pct(splits.treasury)} />
                   <Line label="Community %" value={pct(splits.community)} />
                 </div>
@@ -1698,13 +1698,13 @@ const BiggiTokenInner = ({
 const BiggiToken = (props) => {
   const [liveEnabled, setLiveEnabled] = React.useState(() => {
     if (typeof window === "undefined") return false;
-    return window.sessionStorage.getItem("biggi_ecosystem_live") === "1";
+    return window.sessionStorage.getItem("biggi_ECOSYSTEM_live") === "1";
   });
 
   const enableLive = () => {
     setLiveEnabled(true);
     try {
-      window.sessionStorage.setItem("biggi_ecosystem_live", "1");
+      window.sessionStorage.setItem("biggi_ECOSYSTEM_live", "1");
     } catch {
       // ignore storage errors
     }
@@ -1712,17 +1712,17 @@ const BiggiToken = (props) => {
 
   if (!liveEnabled) {
     return (
-      <section className="rewards-grid biggi-skin" style={{ padding: "24px" }}>
-        <div className="rewards-grid__surface biggi-token-surface">
-          <header className="rewards-grid__header biggi-header panel-header panel-header--ecosystem">
-            <div className="rewards-grid__headline">
-              <h2 className="rewards-grid__title">BIGGI ECOSYSTEM</h2>
-              <p className="rewards-grid__subtitle">
+      <section className="REWARDS-grid biggi-skin" style={{ padding: "24px" }}>
+        <div className="REWARDS-grid__surface biggi-token-surface">
+          <header className="REWARDS-grid__header biggi-header panel-header panel-header--ECOSYSTEM">
+            <div className="REWARDS-grid__headline">
+              <h2 className="REWARDS-grid__title">BIGGI ECOSYSTEM</h2>
+              <p className="REWARDS-grid__subtitle">
                 Panel je v safe modu. Klikni pro nacteni live dat.
               </p>
             </div>
           </header>
-          <div className="flow-panel-box" style={{ marginTop: 16 }}>
+          <div className="FLOW-panel-box" style={{ marginTop: 16 }}>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
               <BiggiButton variant="c" onClick={enableLive}>
                 Nacist live data
@@ -1738,12 +1738,20 @@ const BiggiToken = (props) => {
   }
 
   return (
-    <EcosystemErrorBoundary>
+    <ECOSYSTEMErrorBoundary>
       <BiggiTokenInner {...props} />
-    </EcosystemErrorBoundary>
+    </ECOSYSTEMErrorBoundary>
   );
 };
 
 export default BiggiToken;
+
+
+
+
+
+
+
+
 
 

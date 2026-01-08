@@ -1,5 +1,5 @@
-// src/services/TokenRewardsService.js
-// Ethers v5 service wrapper for BiggiTokenRewards-like contract
+// src/services/TokenREWARDSService.js
+// Ethers v5 service wrapper for BiggiTokenREWARDS-like contract
 // - read getters
 // - claim (write) methods with gas estimate + buffer
 // - batch getAllStats()
@@ -8,11 +8,11 @@
 // Neprovádím žádné změny v kontraktu (logiku jsem nikde nezasahoval).
 
 import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
-import { BiggiTokenRewards as BiggiTokenRewardsABI } from "../config/abi/index.js";
+import { BiggiTokenREWARDS as BiggiTokenREWARDSABI } from "../config/abi/index.js";
 
-const ABI = Array.isArray(BiggiTokenRewardsABI) ? BiggiTokenRewardsABI : [];
+const ABI = Array.isArray(BiggiTokenREWARDSABI) ? BiggiTokenREWARDSABI : [];
 
-export default class TokenRewardsService {
+export default class TokenREWARDSService {
   /**
    * @param {string} address - contract address
    * @param {ethers.providers.Provider} provider - ethers v5 provider
@@ -35,7 +35,7 @@ export default class TokenRewardsService {
       await this.unitReward();
       return true;
     } catch (e) {
-      console.error("TokenRewardsService.init failed:", e);
+      console.error("TokenREWARDSService.init failed:", e);
       throw e;
     }
   }
@@ -49,8 +49,8 @@ export default class TokenRewardsService {
   }
 
   // --------- View getters (ABI) ---------
-  async allowedCollections(addr) {
-    return await this.contract.allowedCollections(addr);
+  async allowedCOLLECTIONs(addr) {
+    return await this.contract.allowedCOLLECTIONs(addr);
   } // bool
   async blockWeight() {
     return await this.contract.blockWeight();
@@ -58,8 +58,8 @@ export default class TokenRewardsService {
   async claimablePreview(tokenIds) {
     return await this.contract.claimablePreview(tokenIds);
   } // (units, amount)
-  async claimablePreviewFor(collections, tokenIds) {
-    return await this.contract.claimablePreviewFor(collections, tokenIds);
+  async claimablePreviewFor(COLLECTIONs, tokenIds) {
+    return await this.contract.claimablePreviewFor(COLLECTIONs, tokenIds);
   } // (units, amount)
   async currentWeek() {
     return await this.contract.currentWeek();
@@ -70,8 +70,8 @@ export default class TokenRewardsService {
   async getBlockWeights() {
     return await this.contract.getBlockWeights();
   } // uint8[11]
-  async isAllowedCollection(coll) {
-    return await this.contract.isAllowedCollection(coll);
+  async isAllowedCOLLECTION(coll) {
+    return await this.contract.isAllowedCOLLECTION(coll);
   } // bool
   async lastRecordedWeek() {
     return await this.contract.lastRecordedWeek();
@@ -91,8 +91,8 @@ export default class TokenRewardsService {
   async nextClaimWeekFor(tokenId) {
     return await this.contract.nextClaimWeekFor(tokenId);
   } // uint64
-  async nextClaimWeekForCollection(collection, tokenId) {
-    return await this.contract.nextClaimWeekForCollection(collection, tokenId);
+  async nextClaimWeekForCOLLECTION(COLLECTION, tokenId) {
+    return await this.contract.nextClaimWeekForCOLLECTION(COLLECTION, tokenId);
   } // uint64
   async owner() {
     return await this.contract.owner();
@@ -103,20 +103,20 @@ export default class TokenRewardsService {
   async remainingCap() {
     return await this.contract.remainingCap();
   } // BigNumber
-  async rewardsCap() {
-    return await this.contract.rewardsCap();
+  async REWARDSCap() {
+    return await this.contract.REWARDSCap();
   }
-  async rewardsMinted() {
-    return await this.contract.rewardsMinted();
+  async REWARDSMinted() {
+    return await this.contract.REWARDSMinted();
   }
-  async rewardsStats() {
-    return await this.contract.rewardsStats();
+  async REWARDSStats() {
+    return await this.contract.REWARDSStats();
   } // (minted, cap_)
   async tokenAddress() {
     return await this.contract.tokenAddress();
   } // address
-  async tokenLastClaimWeek(collection, tokenId) {
-    return await this.contract.tokenLastClaimWeek(collection, tokenId);
+  async tokenLastClaimWeek(COLLECTION, tokenId) {
+    return await this.contract.tokenLastClaimWeek(COLLECTION, tokenId);
   } // uint64 mapping
   async tokenMeta() {
     return await this.contract.tokenMeta();
@@ -174,14 +174,14 @@ export default class TokenRewardsService {
   }
 
   /**
-   * claimWithCollections(collections, tokenIds) - multi-collection claim
-   * @param {Array<string>} collections - pole adres kolekcí (1:1 k tokenIds nebo podle kontraktu)
+   * claimWithCOLLECTIONs(COLLECTIONs, tokenIds) - multi-COLLECTION claim
+   * @param {Array<string>} COLLECTIONs - pole adres kolekcí (1:1 k tokenIds nebo podle kontraktu)
    * @param {Array<number|string>} tokenIds
    */
-  async claimWithCollections(collections, tokenIds, overrides = {}) {
+  async claimWithCOLLECTIONs(COLLECTIONs, tokenIds, overrides = {}) {
     return await this._sendTx(
-      "claimWithCollections",
-      [collections, tokenIds],
+      "claimWithCOLLECTIONs",
+      [COLLECTIONs, tokenIds],
       overrides,
     );
   }
@@ -190,8 +190,8 @@ export default class TokenRewardsService {
   async getAllStats() {
     const calls = [
       this.unitReward(),
-      this.rewardsMinted(),
-      this.rewardsCap(),
+      this.REWARDSMinted(),
+      this.REWARDSCap(),
       this.remainingCap(),
       this.totalDistributed(),
       this.distributedThisWeek(),
@@ -208,8 +208,8 @@ export default class TokenRewardsService {
     ];
     const [
       unitReward,
-      rewardsMinted,
-      rewardsCap,
+      REWARDSMinted,
+      REWARDSCap,
       remainingCap,
       totalDistributed,
       distributedThisWeek,
@@ -227,8 +227,8 @@ export default class TokenRewardsService {
 
     return {
       unitReward,
-      rewardsMinted,
-      rewardsCap,
+      REWARDSMinted,
+      REWARDSCap,
       remainingCap,
       totalDistributed,
       distributedThisWeek,
@@ -253,7 +253,7 @@ export default class TokenRewardsService {
         const stats = await this.getAllStats();
         callback(blockNumber, stats);
       } catch (e) {
-        console.error("TokenRewardsService subscribeOnBlock error", e);
+        console.error("TokenREWARDSService subscribeOnBlock error", e);
       }
     };
     this.provider.on("block", this._onBlockHandler);
@@ -278,21 +278,21 @@ export default class TokenRewardsService {
     // očekává objekt s tokenMeta polem (name_,symbol_,decimals_)
     const decimals = statsObj?.tokenMeta?.decimals_ ?? 18;
     return {
-      unitReward: TokenRewardsService.bnToString(statsObj.unitReward, decimals),
-      rewardsMinted: TokenRewardsService.bnToString(
-        statsObj.rewardsMinted,
+      unitReward: TokenREWARDSService.bnToString(statsObj.unitReward, decimals),
+      REWARDSMinted: TokenREWARDSService.bnToString(
+        statsObj.REWARDSMinted,
         decimals,
       ),
-      rewardsCap: TokenRewardsService.bnToString(statsObj.rewardsCap, decimals),
-      remainingCap: TokenRewardsService.bnToString(
+      REWARDSCap: TokenREWARDSService.bnToString(statsObj.REWARDSCap, decimals),
+      remainingCap: TokenREWARDSService.bnToString(
         statsObj.remainingCap,
         decimals,
       ),
-      totalDistributed: TokenRewardsService.bnToString(
+      totalDistributed: TokenREWARDSService.bnToString(
         statsObj.totalDistributed,
         decimals,
       ),
-      distributedThisWeek: TokenRewardsService.bnToString(
+      distributedThisWeek: TokenREWARDSService.bnToString(
         statsObj.distributedThisWeek,
         decimals,
       ),
@@ -300,7 +300,7 @@ export default class TokenRewardsService {
       currentWeek: statsObj.currentWeek?.toString?.() ?? statsObj.currentWeek,
       lastRecordedWeek:
         statsObj.lastRecordedWeek?.toString?.() ?? statsObj.lastRecordedWeek,
-      lastWeekDistributed: TokenRewardsService.bnToString(
+      lastWeekDistributed: TokenREWARDSService.bnToString(
         statsObj.lastWeekDistributed,
         decimals,
       ),
@@ -314,4 +314,6 @@ export default class TokenRewardsService {
     };
   }
 }
+
+
 

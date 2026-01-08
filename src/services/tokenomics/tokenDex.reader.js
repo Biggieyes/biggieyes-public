@@ -87,9 +87,9 @@ export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
     cap,
     remainingMintable,
     reserveAddress,
-    dripDistributorAddress,
-    tokenRewardsAddress,
-    rewardsOperator,
+    DRIPDistributorAddress,
+    tokenREWARDSAddress,
+    REWARDSOperator,
   ] = await Promise.all([
     _callOptional(() => token.name(), null),
     _callOptional(() => token.symbol(), null),
@@ -97,17 +97,17 @@ export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
     _callOptional(() => token.CAP(), null),
     _callOptional(() => token.remainingMintable(), null),
     _callOptional(() => token.reserveAddr(), null),
-    _callOptional(() => token.dripDistributorAddr(), null),
-    _callOptional(() => token.tokenRewardsAddr(), null),
-    _callOptional(() => token.rewardsOperator(), null),
+    _callOptional(() => token.DRIPDistributorAddr(), null),
+    _callOptional(() => token.tokenREWARDSAddr(), null),
+    _callOptional(() => token.REWARDSOperator(), null),
   ]);
 
   const [
     reserveBalance,
     vaultBalance,
     treasuryBalance,
-    dripDistributorBalance,
-    rewardsBalance,
+    DRIPDistributorBalance,
+    REWARDSBalance,
   ] = await Promise.all([
     addrs.reserve
       ? _callOptional(() => token.balanceOf(addrs.reserve), null)
@@ -118,11 +118,11 @@ export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
     addrs.treasury
       ? _callOptional(() => token.balanceOf(addrs.treasury), null)
       : null,
-    dripDistributorAddress
-      ? _callOptional(() => token.balanceOf(dripDistributorAddress), null)
+    DRIPDistributorAddress
+      ? _callOptional(() => token.balanceOf(DRIPDistributorAddress), null)
       : null,
-    tokenRewardsAddress
-      ? _callOptional(() => token.balanceOf(tokenRewardsAddress), null)
+    tokenREWARDSAddress
+      ? _callOptional(() => token.balanceOf(tokenREWARDSAddress), null)
       : null,
   ]);
 
@@ -137,15 +137,15 @@ export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
       cap,
       remainingMintable,
       reserveAddress,
-      dripDistributorAddress,
-      tokenRewardsAddress,
-      rewardsOperator,
+      DRIPDistributorAddress,
+      tokenREWARDSAddress,
+      REWARDSOperator,
       balances: {
         reserve: reserveBalance,
         liquidityVault: vaultBalance,
         treasury: treasuryBalance,
-        dripDistributor: dripDistributorBalance,
-        tokenRewards: rewardsBalance,
+        DRIPDistributor: DRIPDistributorBalance,
+        tokenREWARDS: REWARDSBalance,
       },
     },
     dex: {
@@ -178,4 +178,6 @@ export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
     addresses: addrs,
   };
 }
+
+
 

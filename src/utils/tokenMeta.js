@@ -8,7 +8,7 @@ export async function refreshTokenMeta({
   getReadOnlyLiquidityContract,
   callFirst,
   getBiggiTokenomicsReaderRO,
-  fetchCommunityCenterStats,
+  fetchCOMMUNITYCENTERStats,
   setBiggiData,
 }) {
   const brl = await getReadOnlyLiquidityContract();
@@ -44,8 +44,8 @@ export async function refreshTokenMeta({
   let remainingMintable = null;
   let reserveAddr = null;
   let dexRecipientAddr = null;
-  let tokenRewardsAddr = null;
-  let rewardsOperator = null;
+  let tokenREWARDSAddr = null;
+  let REWARDSOperator = null;
   let distributed = null;
   try {
     const [ts, _cap, rem, res, dex, rwd, oper, dist] = await Promise.all([
@@ -54,8 +54,8 @@ export async function refreshTokenMeta({
       biggi.remainingMintable?.().catch?.(() => null),
       biggi.reserveAddr?.().catch?.(() => null),
       biggi.dexRecipientAddr?.().catch?.(() => null),
-      biggi.tokenRewardsAddr?.().catch?.(() => null),
-      biggi.rewardsOperator?.().catch?.(() => null),
+      biggi.tokenREWARDSAddr?.().catch?.(() => null),
+      biggi.REWARDSOperator?.().catch?.(() => null),
       biggi.distributed?.().catch?.(() => null),
     ]);
     if (ts) totalSupply = formatEther(ts);
@@ -63,8 +63,8 @@ export async function refreshTokenMeta({
     if (rem) remainingMintable = formatEther(rem);
     reserveAddr = res || null;
     dexRecipientAddr = dex || null;
-    tokenRewardsAddr = rwd || null;
-    rewardsOperator = oper || null;
+    tokenREWARDSAddr = rwd || null;
+    REWARDSOperator = oper || null;
     distributed =
       typeof dist === "boolean" ? dist : dist != null ? !!dist : null;
   } catch {
@@ -78,23 +78,23 @@ export async function refreshTokenMeta({
       name: meta?.[0] ?? prev.token?.name,
       symbol: meta?.[1] ?? prev.token?.symbol,
       decimals: meta?.[2] ?? prev.token?.decimals,
-      rewardsRemainingCap:
+      REWARDSRemainingCap:
         capLeft != null ? formatEther(capLeft) : "\u2014",
       totalSupply: totalSupply ?? "\u2014",
       cap: cap ?? null,
       remainingMintable: remainingMintable ?? null,
       reserveAddr,
       dexRecipientAddr,
-      tokenRewardsAddr,
-      rewardsOperator,
+      tokenREWARDSAddr,
+      REWARDSOperator,
       distributed,
     },
   }));
 
   const reader = getBiggiTokenomicsReaderRO();
-  const [core, dist, buy, res, drip, tr] = await getFullStatusSafe(reader);
+  const [core, dist, buy, res, DRIP, tr] = await getFullStatusSafe(reader);
   const fmt = (v) => (v != null ? formatEther(v) : null);
-  const communitySnapshot = await fetchCommunityCenterStats();
+  const communitySnapshot = await fetchCOMMUNITYCENTERStats();
 
   setBiggiData((prev) => ({
     ...prev,
@@ -109,12 +109,12 @@ export async function refreshTokenMeta({
       reserveAddr: dist?.reserve || prev.token.reserveAddr || reserveAddr,
       treasuryAddr: dist?.treasury || prev.token.treasuryAddr,
       distributorAddr: dist?.distributor || prev.token.distributorAddr,
-      collectionRewardsAddr:
-        dist?.collectionRewards || prev.token.collectionRewardsAddr,
-      communityCenterAddr:
-        dist?.communityCenter || prev.token.communityCenterAddr,
-      tokenRewardsAddr:
-        tr?.tokenRewards || prev.token.tokenRewardsAddr || tokenRewardsAddr,
+      COLLECTIONREWARDSAddr:
+        dist?.COLLECTIONREWARDS || prev.token.COLLECTIONREWARDSAddr,
+      COMMUNITYCENTERAddr:
+        dist?.COMMUNITYCENTER || prev.token.COMMUNITYCENTERAddr,
+      tokenREWARDSAddr:
+        tr?.tokenREWARDS || prev.token.tokenREWARDSAddr || tokenREWARDSAddr,
     },
     router: {
       ...prev.router,
@@ -139,15 +139,15 @@ export async function refreshTokenMeta({
       address: dist?.distributor || prev.distributor?.address,
       totalReceived:
         fmt(dist?.totalReceived) ?? prev.distributor?.totalReceived,
-      pendingBuyback:
-        fmt(dist?.pendingBuyback) ?? prev.distributor?.pendingBuyback,
-      collectionRewards:
-        dist?.collectionRewards || prev.distributor?.collectionRewards,
+      pendingBUYBACK:
+        fmt(dist?.pendingBUYBACK) ?? prev.distributor?.pendingBUYBACK,
+      COLLECTIONREWARDS:
+        dist?.COLLECTIONREWARDS || prev.distributor?.COLLECTIONREWARDS,
       reserve: dist?.reserve || prev.distributor?.reserve,
-      buybackAgent: dist?.buybackAgent || prev.distributor?.buybackAgent,
+      BUYBACKAgent: dist?.BUYBACKAgent || prev.distributor?.BUYBACKAgent,
       treasury: dist?.treasury || prev.distributor?.treasury,
-      communityCenter:
-        dist?.communityCenter || prev.distributor?.communityCenter,
+      COMMUNITYCENTER:
+        dist?.COMMUNITYCENTER || prev.distributor?.COMMUNITYCENTER,
       pendingCommunity:
         communitySnapshot?.pendingCommunity ??
         prev.distributor?.pendingCommunity,
@@ -155,28 +155,28 @@ export async function refreshTokenMeta({
         communitySnapshot?.communityPoolBalance ??
         prev.distributor?.communityPoolBalance,
     },
-    buyback: {
-      ...prev.buyback,
-      buybackAgent:
-        buy?.buybackAgent || dist?.buybackAgent || prev.buyback?.buybackAgent,
-      nativeBalance: fmt(buy?.nativeBalance) ?? prev.buyback?.nativeBalance,
-      biggiBalance: fmt(buy?.biggiBalance) ?? prev.buyback?.biggiBalance,
+    BUYBACK: {
+      ...prev.BUYBACK,
+      BUYBACKAgent:
+        buy?.BUYBACKAgent || dist?.BUYBACKAgent || prev.BUYBACK?.BUYBACKAgent,
+      nativeBalance: fmt(buy?.nativeBalance) ?? prev.BUYBACK?.nativeBalance,
+      biggiBalance: fmt(buy?.biggiBalance) ?? prev.BUYBACK?.biggiBalance,
       totalNativeReceived:
-        fmt(buy?.totalNativeReceived) ?? prev.buyback?.totalNativeReceived,
+        fmt(buy?.totalNativeReceived) ?? prev.BUYBACK?.totalNativeReceived,
       totalNativeSpent:
-        fmt(buy?.totalNativeSpent) ?? prev.buyback?.totalNativeSpent,
+        fmt(buy?.totalNativeSpent) ?? prev.BUYBACK?.totalNativeSpent,
       totalBiggiAcquired:
-        fmt(buy?.totalBiggiAcquired) ?? prev.buyback?.totalBiggiAcquired,
-      autoBuybackEnabled:
-        buy?.autoBuybackEnabled ?? prev.buyback?.autoBuybackEnabled,
-      paused: buy?.paused ?? prev.buyback?.paused,
-      lastBuybackAt: Number(
-        buy?.lastBuybackAt || prev.buyback?.lastBuybackAt || 0,
+        fmt(buy?.totalBiggiAcquired) ?? prev.BUYBACK?.totalBiggiAcquired,
+      autoBUYBACKEnabled:
+        buy?.autoBUYBACKEnabled ?? prev.BUYBACK?.autoBUYBACKEnabled,
+      paused: buy?.paused ?? prev.BUYBACK?.paused,
+      lastBUYBACKAt: Number(
+        buy?.lastBUYBACKAt || prev.BUYBACK?.lastBUYBACKAt || 0,
       ),
       router: buy?.router || core?.router || prev.router.routerAddress,
       wrappedNative:
         buy?.wrappedNative || core?.weth || prev.router.wrappedNative,
-      treasury: buy?.treasury || dist?.treasury || prev.buyback?.treasury,
+      treasury: buy?.treasury || dist?.treasury || prev.BUYBACK?.treasury,
     },
     reserve: {
       ...prev.reserve,
@@ -194,44 +194,49 @@ export async function refreshTokenMeta({
         fmt(res?.lpBalanceInVault) ?? prev.reserve?.lpBalanceInVault,
       pairWhitelisted: res?.pairWhitelisted ?? prev.reserve?.pairWhitelisted,
     },
-    rewards: {
-      ...prev.rewards,
+    REWARDS: {
+      ...prev.REWARDS,
       unitReward:
-        tr?.unitReward != null ? fmt(tr.unitReward) : prev.rewards.unitReward,
-      rewardsCap:
-        tr?.rewardsCap != null ? fmt(tr.rewardsCap) : prev.rewards.rewardsCap,
-      rewardsMinted:
-        tr?.rewardsMinted != null
-          ? fmt(tr.rewardsMinted)
-          : prev.rewards.rewardsMinted,
-      balance: tr?.balance != null ? fmt(tr.balance) : prev.rewards.balance,
+        tr?.unitReward != null ? fmt(tr.unitReward) : prev.REWARDS.unitReward,
+      REWARDSCap:
+        tr?.REWARDSCap != null ? fmt(tr.REWARDSCap) : prev.REWARDS.REWARDSCap,
+      REWARDSMinted:
+        tr?.REWARDSMinted != null
+          ? fmt(tr.REWARDSMinted)
+          : prev.REWARDS.REWARDSMinted,
+      balance: tr?.balance != null ? fmt(tr.balance) : prev.REWARDS.balance,
       blockWeights: Array.isArray(tr?.blockWeights)
         ? Array.from(tr.blockWeights, (x) => Number(x))
-        : prev.rewards.blockWeights,
-      dripAvailable:
-        drip?.availableTokens != null
-          ? fmt(drip.availableTokens)
-          : prev.rewards.dripAvailable,
-      dripTotalClaimed:
-        drip?.totalClaimed != null
-          ? fmt(drip.totalClaimed)
-          : prev.rewards.dripTotalClaimed,
-      dripTotalNotified:
-        drip?.totalNotified != null
-          ? fmt(drip.totalNotified)
-          : prev.rewards.dripTotalNotified,
-      dripTokensPerMint:
-        drip?.tokensPerMint != null
-          ? fmt(drip.tokensPerMint)
-          : prev.rewards.dripTokensPerMint,
-      dripDistributor: drip?.dripDistributor || prev.rewards.dripDistributor,
-      dripLm: drip?.dripLM || drip?.dripLm || prev.rewards.dripLm,
-      dripTotalTopUp:
-        drip?.totalTopUp != null
-          ? fmt(drip.totalTopUp)
-          : prev.rewards.dripTotalTopUp,
-      tokenRewardsToken: tr?.token || prev.rewards.tokenRewardsToken,
+        : prev.REWARDS.blockWeights,
+      DRIPAvailable:
+        DRIP?.availableTokens != null
+          ? fmt(DRIP.availableTokens)
+          : prev.REWARDS.DRIPAvailable,
+      DRIPTotalClaimed:
+        DRIP?.totalClaimed != null
+          ? fmt(DRIP.totalClaimed)
+          : prev.REWARDS.DRIPTotalClaimed,
+      DRIPTotalNotified:
+        DRIP?.totalNotified != null
+          ? fmt(DRIP.totalNotified)
+          : prev.REWARDS.DRIPTotalNotified,
+      DRIPTokensPerMint:
+        DRIP?.tokensPerMint != null
+          ? fmt(DRIP.tokensPerMint)
+          : prev.REWARDS.DRIPTokensPerMint,
+      DRIPDistributor: DRIP?.DRIPDistributor || prev.REWARDS.DRIPDistributor,
+      DRIPLm: DRIP?.DRIPLM || DRIP?.DRIPLm || prev.REWARDS.DRIPLm,
+      DRIPTotalTopUp:
+        DRIP?.totalTopUp != null
+          ? fmt(DRIP.totalTopUp)
+          : prev.REWARDS.DRIPTotalTopUp,
+      tokenREWARDSToken: tr?.token || prev.REWARDS.tokenREWARDSToken,
     },
   }));
 }
+
+
+
+
+
 

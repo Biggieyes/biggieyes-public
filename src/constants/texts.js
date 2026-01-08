@@ -4,8 +4,8 @@ export const MODAL_TEXTS = {
 The Ultimate NFT Investment & Gaming Experience
 🤔 What is BiggiEyes Lottery?
 
-BiggiEyes isn’t just another NFT collection — it’s a blockchain-powered lottery meets collectible art with real value growth.
-Every NFT mint is your ticket to win big, join a transparent lottery, and be part of an ecosystem where luck meets strategy — and the community builds value together.
+BiggiEyes isn’t just another NFT COLLECTION — it’s a blockchain-powered lottery meets collectible art with real value growth.
+Every NFT mint is your ticket to win big, join a transparent lottery, and be part of an ECOSYSTEM where luck meets strategy — and the community builds value together.
 
 💎 Key Features That Change the Game
 🔥 True Scarcity – Only 550 NFTs
@@ -89,15 +89,15 @@ Massive upside for early & lucky minters.
 
 100% transparent — no rigging, no admin control.
 
-Bonus mechanics increase value as collection sells out.
+Bonus mechanics increase value as COLLECTION sells out.
 
 BiggiEyes is not just an NFT drop — it’s a lottery, a collectible, and an investment all in one.
 🎟️ Are you ready to mint your luck?
 Your BiggiEyes NFT could be the next prize gem on the market!
   `,
-  collection: `
-View the entire BiggiEyes NFT collection! 
-Browse through all 550 unique pixel-art characters. Each NFT belongs to a specific color block with visible rarity, and the total collection consists of different backgrounds, eye colors, and variant types. You can view metadata and traits on the chain and on IPFS. Some NFTs are more common, others are extremely rare – see if you can find the rarest ones!
+  COLLECTION: `
+View the entire BiggiEyes NFT COLLECTION! 
+Browse through all 550 unique pixel-art characters. Each NFT belongs to a specific color block with visible rarity, and the total COLLECTION consists of different backgrounds, eye colors, and variant types. You can view metadata and traits on the chain and on IPFS. Some NFTs are more common, others are extremely rare – see if you can find the rarest ones!
   `,
   mint: `
 🎲 VRF Mint — The Only Truly Transparent and Unmanipulable Randomness
@@ -127,10 +127,10 @@ No hidden tricks, no rules being rewritten — just true, verifiable randomness.
 By participating in BiggiEyes, you know you’re investing in a project with zero room for manipulation.
 Fairness and transparency mean a real chance to get a unique and valuable NFT, without doubts or hidden agendas.
 
-🚀 BiggiEyes isn’t just another NFT collection — it’s a revolution in honesty, trust, and transparency in digital collecting.
+🚀 BiggiEyes isn’t just another NFT COLLECTION — it’s a revolution in honesty, trust, and transparency in digital collecting.
   `,
   chance: `
-Win Chances & Rewards - BiggiEyes Style
+Win Chances & REWARDS - BiggiEyes Style
 
 Tickets & Trading
 Entry tickets can be freely sold and traded on secondary markets like OpenSea. Each wallet can hold up to 10 tickets. Dynamic ticket price growth starts at 500 POL and increases by 0.33% after every mint. Everything stays on-chain and transparent.
@@ -149,21 +149,21 @@ One-time bonuses per background are applied automatically at mint.
 
 Eyes determine NFT rarity and cannot be chosen manually.
 
-Rewards You Can Win
+REWARDS You Can Win
 Orange Reward - ~$2,000 for the first 3 winners in the Orange block.
 Block Reward - ~$5,000 for the first 3 users who complete a full block.
 Rainbow Reward - ~$10,000 for one lucky Rainbow NFT holder.
-Special Bonuses - rare backgrounds raise rarity and FOMO as the collection sells out.
+Special Bonuses - rare backgrounds raise rarity and FOMO as the COLLECTION sells out.
 Golden Tickets - Free Mints! 55 NFTs hide a special Golden Ticket (free mint for the next BiggiEyes generation).
 
 Claim Button & Reward Pool
-If a user meets the reward conditions (e.g., completing a block or a special combination), the Claim Reward button instantly grants the prize. Rewards are drawn from a reward pool that keeps 22% of each mint.
+If a user meets the reward conditions (e.g., completing a block or a special combination), the Claim Reward button instantly grants the prize. REWARDS are drawn from a reward pool that keeps 22% of each mint.
 
-Three Collections - One Growing Economy
-BiggiEyes is built as three consecutive collections. Each new collection starts where the previous one left off, so ticket prices and block values continue to rise across generations.
+Three COLLECTIONs - One Growing Economy
+BiggiEyes is built as three consecutive COLLECTIONs. Each new COLLECTION starts where the previous one left off, so ticket prices and block values continue to rise across generations.
 
 Live Tracking
-Want to see what is hot right now? Check the Live Stats Widget for real-time prices, claimed rewards, and rarity bonuses.
+Want to see what is hot right now? Check the Live Stats Widget for real-time prices, claimed REWARDS, and rarity bonuses.
 
 Summary
 Your NFT background is more than decoration - it is a permanent booster for your eye color block. Mint smart, look for random bonuses, and if luck strikes, hit the jackpot.
@@ -172,7 +172,7 @@ Your NFT background is more than decoration - it is a permanent booster for your
 Community
 
 🎉 The BiggiEyes Family – More Than Just NFT Holders
-BiggiEyes isn’t just a collection — it’s a tribe of dreamers, collectors, and risk-takers united by one thing: the thrill of turning luck into value.
+BiggiEyes isn’t just a COLLECTION — it’s a tribe of dreamers, collectors, and risk-takers united by one thing: the thrill of turning luck into value.
 Our community thrives on sharing wins, spotting rare mints, and hyping each other up when someone hits a jackpot NFT.
 
 💬 Active Discord & Twitter – Discuss strategies, share memes, and celebrate big wins.
@@ -199,10 +199,14 @@ What makes us different:
 
 🛠 Fair Randomization – Chainlink VRF decides every mint, making outcomes provably fair and untouchable.
 
-🚀 Long-Term Vision – BiggiEyes isn’t just one collection. We’ve planned three full generations, each continuing where the last one’s prices and rarity left off.
+🚀 Long-Term Vision – BiggiEyes isn’t just one COLLECTION. We’ve planned three full generations, each continuing where the last one’s prices and rarity left off.
 
 We believe in a community-first approach, where transparency builds trust, and trust builds value.
 If you’re ready to mix luck with strategy — welcome to BiggiEyes.
   `,
 };
+
+
+
+
 

@@ -4,7 +4,7 @@ import { useContracts } from "./ContractsProvider";
 
 const Ctx = React.createContext(null);
 
-export function RewardsProvider({ children }) {
+export function REWARDSProvider({ children }) {
   const { mainRO, liqRO, liqRW } = useContracts();
   const [rewardPool, setRewardPool] = React.useState(null);
   const [myClaimable, setMyClaimable] = React.useState(null);
@@ -80,7 +80,7 @@ export function RewardsProvider({ children }) {
           }
         }
       } catch (e) {
-        console.error("RewardsProvider.refresh", e);
+        console.error("REWARDSProvider.refresh", e);
       }
     },
     [mainRO, liqRO],
@@ -104,9 +104,10 @@ export function RewardsProvider({ children }) {
   );
 }
 
-export function useRewards() {
+export function useREWARDS() {
   const v = React.useContext(Ctx);
-  if (!v) throw new Error("useRewards must be used inside <RewardsProvider>");
+  if (!v) throw new Error("useREWARDS must be used inside <REWARDSProvider>");
   return v;
 }
+
 

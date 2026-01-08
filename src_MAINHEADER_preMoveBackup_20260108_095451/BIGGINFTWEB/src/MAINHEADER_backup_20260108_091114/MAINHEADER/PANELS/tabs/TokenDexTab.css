@@ -1,0 +1,146 @@
+.token-dex-tab {
+  background: #05070f;
+  border-radius: 20px;
+  border: 1px solid #1b1f2b;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.token-dex-tab__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.token-dex-tab__eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.7rem;
+  color: #7b88a8;
+  margin: 0;
+}
+
+.token-dex-tab__timestamp {
+  font-size: 0.85rem;
+  color: #7c8499;
+}
+
+.token-dex-tab__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  align-items: stretch;
+}
+
+.token-dex-card {
+  border-radius: 16px;
+  border: 1px solid #1b1f2c;
+  background: #060c18;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 260px;
+  height: 100%;
+}
+
+.token-dex-card__title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.token-dex-card__title h4 {
+  margin: 0;
+}
+
+.token-dex-card__title p {
+  margin: 4px 0 0;
+  color: #7c8499;
+  font-size: 0.85rem;
+}
+
+.token-dex-card__rows,
+.token-dex-card__balances,
+.token-dex-card__addresses {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.token-dex-card__balances {
+  border-top: 1px solid #151a25;
+  padding-top: 10px;
+}
+
+.token-dex-card__addresses {
+  border-top: 1px solid #151a25;
+  padding-top: 10px;
+  color: #7c84a1;
+  font-size: 0.85rem;
+}
+
+.token-dex-tab__status {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px dashed #4ad2ff;
+  color: #dbe9ff;
+  font-size: 0.95rem;
+  background: rgba(74, 210, 255, 0.05);
+}
+
+.token-dex-tab__charts {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  align-items: stretch;
+}
+
+.token-dex-tab__chart {
+  border: 1px solid #1c222f;
+  border-radius: 14px;
+  padding: 12px 14px 10px;
+  background: #06090d;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+}
+
+.token-dex-tab__chart header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.token-dex-tab__chart h5 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.token-dex-tab__chart p {
+  margin: 0;
+  color: #7d859b;
+  font-size: 0.75rem;
+}
+
+@media (max-width: 720px) {
+  .token-dex-tab__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .token-dex-tab__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .token-dex-tab__charts {
+    grid-template-columns: 1fr;
+  }
+}

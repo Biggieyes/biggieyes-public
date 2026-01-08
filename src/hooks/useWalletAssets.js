@@ -51,7 +51,7 @@ export function useWalletAssets(params) {
     setGalleryNotice,
     setLastMinted,
     setDynamicTraitsById,
-    vrfPending,
+    VRFPending,
     topFirstId,
     pendingTicketId,
     redeemStartBlock,
@@ -336,7 +336,7 @@ export function useWalletAssets(params) {
   const orderWithTopFirst = React.useCallback(
     (finalList, prev) => {
       const pending = prev.find((x) => x.isPending);
-      if (vrfPending && pending) {
+      if (VRFPending && pending) {
         const dedup = finalList.filter(
           (x) => !x.isPending && x.tokenId !== pending.tokenId,
         );
@@ -349,7 +349,7 @@ export function useWalletAssets(params) {
       }
       return finalList;
     },
-    [vrfPending, topFirstId],
+    [VRFPending, topFirstId],
   );
 
   const mergeWithTopFirst = React.useCallback(
@@ -872,4 +872,5 @@ export function useWalletAssets(params) {
     fetchDynamicTraitsFor,
   };
 }
+
 

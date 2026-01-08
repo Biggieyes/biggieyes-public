@@ -50,8 +50,8 @@ const getBlockColor = (name) => {
     padding: "6px 4px",
     textAlign: "center",
     whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
+    overFLOW: "hidden",
+    textOverFLOW: "ellipsis",
     transition: "all 0.3s ease",
     minWidth: "80px",
   };
@@ -62,8 +62,8 @@ const cellBase = {
   padding: "6px 4px",
   fontWeight: 700,
   whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
+  overFLOW: "hidden",
+  textOverFLOW: "ellipsis",
   textShadow: "0 1px 3px rgba(0,0,0,0.6)",
   borderBottom: "1px solid rgba(255,232,0,0.2)",
 };
@@ -291,4 +291,5 @@ const BlocksWidget = ({ blockNames, blockMintCounts, blockPrices, onBack }) => {
 };
 
 export default BlocksWidget;
+
 

@@ -4,7 +4,7 @@ import { BrowserProvider, formatUnits } from "ethers";
 import {
   ADDR,
   getROProvider,
-  getMultiCollectionDistributorRO,
+  getMultiCOLLECTIONDistributorRO,
 } from "../../utils/contract";
 
 /* ====== CONFIG - nastav adresu distributor kontraktu ===== */
@@ -12,8 +12,8 @@ const DISTRIBUTOR_ADDRESS = ADDR.MULTI_COLLECTION_DISTRIBUTOR;
 /* ======================================================= */
 
 /* Minimal ABI (read-only + events) */
-import BiggiMultiCollectionDistributor from "../../config/abi/BiggiMultiCollectionDistributor.json";
-const DISTRIBUTOR_ABI = BiggiMultiCollectionDistributor;
+import BiggiMultiCOLLECTIONDistributor from "../../config/abi/BiggiMultiCOLLECTIONDistributor.json";
+const DISTRIBUTOR_ABI = BiggiMultiCOLLECTIONDistributor;
 
 const THEME = {
   bgStart: "#07070a",
@@ -113,7 +113,7 @@ const styles = {
   eventsCard: {
     marginTop: 14,
     borderRadius: 12,
-    overflow: "hidden",
+    overFLOW: "hidden",
     border: `1px solid rgba(255,255,255,0.03)`,
     background:
       "linear-gradient(180deg, rgba(255,255,255,0.012), rgba(0,0,0,0.16))",
@@ -126,7 +126,7 @@ const styles = {
     borderBottom: "1px solid rgba(255,255,255,0.02)",
     background: THEME.accentSoft,
   },
-  eventsList: { maxHeight: 320, overflowY: "auto", padding: 12 },
+  eventsList: { maxHeight: 320, overFLOWY: "auto", padding: 12 },
 
   // right panel
   rightPanel: {
@@ -193,7 +193,7 @@ const styles = {
     boxShadow:
       "0 40px 100px rgba(0,0,0,0.8), 0 0 60px rgba(255,232,0,0.05) inset",
     maxHeight: "90vh",
-    overflowY: "auto",
+    overFLOWY: "auto",
   },
   placeholderGrid: {
     display: "grid",
@@ -215,7 +215,7 @@ const styles = {
     justifyContent: "space-between",
     transition: "all 0.3s ease",
     position: "relative",
-    overflow: "hidden",
+    overFLOW: "hidden",
   },
   placeThumb: {
     width: 120,
@@ -232,7 +232,7 @@ const styles = {
     boxShadow: "0 8px 25px rgba(0,0,0,0.3)",
     border: "1px solid rgba(255,232,0,0.1)",
   },
-  collectionBadge: {
+  COLLECTIONBadge: {
     position: "absolute",
     top: 16,
     right: 16,
@@ -263,7 +263,7 @@ const styles = {
     height: 6,
     background: "rgba(255,255,255,0.05)",
     borderRadius: 10,
-    overflow: "hidden",
+    overFLOW: "hidden",
     margin: "8px 0",
   },
   progressFill: {
@@ -354,9 +354,9 @@ export default function ExpansionPanel() {
       const tot = await contract.totalReceived();
       setTotalReceived(formatEther(tot || 0));
       if (account) {
-        const rec = await contract.receivedByCollection(account);
+        const rec = await contract.receivedByCOLLECTION(account);
         setReceivedForAddr(formatEther(rec || 0));
-        const wh = await contract.isCollection(account);
+        const wh = await contract.isCOLLECTION(account);
         setIsWhitelisted(Boolean(wh));
       } else {
         setReceivedForAddr("0");
@@ -375,7 +375,7 @@ export default function ExpansionPanel() {
         .reverse()
         .map((e) => {
           const col =
-            e.args && e.args.collection ? e.args.collection : e.args[0] || null;
+            e.args && e.args.COLLECTION ? e.args.COLLECTION : e.args[0] || null;
           const amt =
             e.args && e.args.amount
               ? e.args.amount
@@ -383,7 +383,7 @@ export default function ExpansionPanel() {
           return {
             tx: e.transactionHash,
             block: e.blockNumber,
-            collection: String(col),
+            COLLECTION: String(col),
             amount: formatEther(amt),
           };
         });
@@ -403,11 +403,11 @@ export default function ExpansionPanel() {
 
   React.useEffect(() => {
     if (!contract || !contract.on) return;
-    const handler = (collection, amount, ev) => {
+    const handler = (COLLECTION, amount, ev) => {
       const item = {
         tx: ev.transactionHash,
         block: ev.blockNumber,
-        collection: String(collection),
+        COLLECTION: String(COLLECTION),
         amount: formatEther(amount),
       };
       setEvents((prev) => [item, ...prev].slice(0, 12));
@@ -439,8 +439,8 @@ export default function ExpansionPanel() {
     window.open(url, "_blank");
   }, [provider]);
 
-  // Mock data for future collections
-  const futureCollections = [
+  // Mock data for future COLLECTIONs
+  const futureCOLLECTIONs = [
     {
       id: 1,
       name: "Cyber Samurai",
@@ -457,7 +457,7 @@ export default function ExpansionPanel() {
       progress: 30,
       items: "3,333",
       mintPrice: "0.05 ETH",
-      description: "Vibrant neon-themed abstract art collection",
+      description: "Vibrant neon-themed abstract art COLLECTION",
     },
     {
       id: 3,
@@ -479,8 +479,8 @@ export default function ExpansionPanel() {
             <div>
               <h1 style={styles.h1}>{"Expansion -> Distributor"}</h1>
               <p style={styles.subtitle}>
-                User dashboard — overview of the mint-share flow and your
-                collection status
+                User dashboard — overview of the mint-share FLOW and your
+                COLLECTION status
               </p>
             </div>
           </div>
@@ -490,7 +490,7 @@ export default function ExpansionPanel() {
               onClick={() => setFutureOpen(true)}
               style={styles.primaryBtn}
             >
-              FutureCollection
+              FutureCOLLECTION
             </button>
             <button onClick={openExplorer} style={styles.explorerBtn}>
               Open explorer
@@ -519,7 +519,7 @@ export default function ExpansionPanel() {
 
             <div style={{ flex: 1, minWidth: 220 }}>
               <div style={styles.statCard}>
-                <div style={styles.statLabel}>Your collection received</div>
+                <div style={styles.statLabel}>Your COLLECTION received</div>
                 <div
                   style={{ fontSize: 20, fontWeight: 900, color: THEME.cyan }}
                 >
@@ -576,10 +576,10 @@ export default function ExpansionPanel() {
                 </div>
                 <div style={styles.infoText}>
                   The Distributor receives the mint-share (part of every mint)
-                  from whitelisted collections and routes it into reserves,
-                  rewards, buyback, and the treasury. In this user panel you can
+                  from whitelisted COLLECTIONs and routes it into reserves,
+                  REWARDS, BUYBACK, and the treasury. In this user panel you can
                   see how much was received in total, how much was credited to
-                  your collection, and the most recent mint-share events.
+                  your COLLECTION, and the most recent mint-share events.
                 </div>
               </div>
               <div style={{ minWidth: 160 }}>
@@ -631,7 +631,7 @@ export default function ExpansionPanel() {
                   >
                     <thead>
                       <tr style={{ color: THEME.dim, textAlign: "left" }}>
-                        <th style={{ padding: "8px 6px" }}>Collection</th>
+                        <th style={{ padding: "8px 6px" }}>COLLECTION</th>
                         <th style={{ padding: "8px 6px", textAlign: "right" }}>
                           Amount
                         </th>
@@ -649,7 +649,7 @@ export default function ExpansionPanel() {
                           }}
                         >
                           <td style={{ padding: "10px 6px", color: "#e9f9ff" }}>
-                            {shortAddr(ev.collection)}
+                            {shortAddr(ev.COLLECTION)}
                           </td>
                           <td
                             style={{
@@ -698,7 +698,7 @@ export default function ExpansionPanel() {
                 <div style={{ marginTop: 8, color: THEME.dim }}>
                   <div style={{ fontSize: 12, marginBottom: 6 }}>Tip</div>
                   <div style={{ fontSize: 13 }}>
-                    If you manage a collection and want to be whitelisted,
+                    If you manage a COLLECTION and want to be whitelisted,
                     contact the project team. This panel is informational only.
                   </div>
                 </div>
@@ -739,7 +739,7 @@ export default function ExpansionPanel() {
         </div>
       </div>
 
-      {/* FutureCollection modal with enhanced placeholders */}
+      {/* FutureCOLLECTION modal with enhanced placeholders */}
       {futureOpen && (
         <div style={styles.modalOverlay} onClick={() => setFutureOpen(false)}>
           <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
@@ -761,13 +761,13 @@ export default function ExpansionPanel() {
                     marginBottom: 8,
                   }}
                 >
-                  Future Collections
+                  Future COLLECTIONs
                 </div>
                 <div
                   style={{ color: THEME.dim, fontSize: 15, lineHeight: 1.5 }}
                 >
-                  Discover upcoming NFT collections in our ecosystem. Each
-                  collection brings unique artwork and utility to the platform.
+                  Discover upcoming NFT COLLECTIONs in our ECOSYSTEM. Each
+                  COLLECTION brings unique artwork and utility to the platform.
                 </div>
               </div>
               <div>
@@ -785,12 +785,12 @@ export default function ExpansionPanel() {
             </div>
 
             <div style={styles.placeholderGrid}>
-              {futureCollections.map((collection) => (
-                <div key={collection.id} style={styles.placeCard}>
-                  <div style={styles.collectionBadge}>{collection.status}</div>
+              {futureCOLLECTIONs.map((COLLECTION) => (
+                <div key={COLLECTION.id} style={styles.placeCard}>
+                  <div style={styles.COLLECTIONBadge}>{COLLECTION.status}</div>
 
                   <div style={styles.placeThumb}>
-                    {collection.name
+                    {COLLECTION.name
                       .split(" ")
                       .map((word) => word[0])
                       .join("")}
@@ -805,7 +805,7 @@ export default function ExpansionPanel() {
                         marginBottom: 6,
                       }}
                     >
-                      {collection.name}
+                      {COLLECTION.name}
                     </div>
                     <div
                       style={{
@@ -815,7 +815,7 @@ export default function ExpansionPanel() {
                         marginBottom: 12,
                       }}
                     >
-                      {collection.description}
+                      {COLLECTION.description}
                     </div>
                   </div>
 
@@ -823,7 +823,7 @@ export default function ExpansionPanel() {
                     <div
                       style={{
                         ...styles.progressFill,
-                        width: `${collection.progress}%`,
+                        width: `${COLLECTION.progress}%`,
                       }}
                     ></div>
                   </div>
@@ -836,7 +836,7 @@ export default function ExpansionPanel() {
                       textAlign: "center",
                     }}
                   >
-                    Launch Progress: {collection.progress}%
+                    Launch Progress: {COLLECTION.progress}%
                   </div>
 
                   <div style={styles.statsRow}>
@@ -847,7 +847,7 @@ export default function ExpansionPanel() {
                       <div
                         style={{ color: "#fff", fontWeight: 700, marginTop: 4 }}
                       >
-                        {collection.items}
+                        {COLLECTION.items}
                       </div>
                     </div>
                     <div style={styles.statMini}>
@@ -861,7 +861,7 @@ export default function ExpansionPanel() {
                           marginTop: 4,
                         }}
                       >
-                        {collection.mintPrice}
+                        {COLLECTION.mintPrice}
                       </div>
                     </div>
                   </div>
@@ -908,13 +908,13 @@ export default function ExpansionPanel() {
               <div
                 style={{ color: THEME.gold, fontWeight: 700, marginBottom: 8 }}
               >
-                About Future Collections
+                About Future COLLECTIONs
               </div>
               <div style={{ color: THEME.dim, fontSize: 13, lineHeight: 1.6 }}>
-                These collections are currently in development and will be
+                These COLLECTIONs are currently in development and will be
                 integrated with the Distributor system upon launch. Each
-                collection undergoes a thorough review process to ensure quality
-                and compatibility with our ecosystem.
+                COLLECTION undergoes a thorough review process to ensure quality
+                and compatibility with our ECOSYSTEM.
               </div>
             </div>
           </div>
@@ -923,4 +923,9 @@ export default function ExpansionPanel() {
     </div>
   );
 }
+
+
+
+
+
 

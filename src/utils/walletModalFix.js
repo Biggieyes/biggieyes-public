@@ -51,7 +51,7 @@ function applyStyles(root, { top, z }) {
         `calc(100svh - (${top} + env(safe-area-inset-top)))`,
         "important",
       );
-      el.style.setProperty("overflow", "auto", "important");
+      el.style.setProperty("overFLOW", "auto", "important");
       el.style.setProperty("margin-top", "0", "important");
       el.style.setProperty("overscroll-behavior", "contain", "important");
     });
@@ -134,4 +134,5 @@ export function installWalletModalFix({ top = "2vh", zIndex = 10000 } = {}) {
     clearInterval(intId);
   };
 }
+
 

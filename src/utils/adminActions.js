@@ -41,31 +41,31 @@ export const writeFirst = async (targets, names, ...args) => {
   );
 };
 
-export const setVRFAllOrPartial = async (vrf) => {
+export const setVRFAllOrPartial = async (VRF) => {
   const targets = [getContract];
   const combinedNames = [
     "setVRFParams",
-    "setVrfParams",
+    "setVRFParams",
     "configureVRF",
-    "configureVrf",
+    "configureVRF",
     "setChainlinkVRF",
   ];
   const argsCombo = [
     [
-      vrf.keyHash,
-      vrf.confirmations,
-      vrf.callbackGasLimit,
-      vrf.numWords,
-      vrf.coordinator,
-      vrf.subscriptionId,
+      VRF.keyHash,
+      VRF.confirmations,
+      VRF.callbackGasLimit,
+      VRF.numWords,
+      VRF.coordinator,
+      VRF.subscriptionId,
     ],
     [
-      vrf.keyHash,
-      vrf.confirmations,
-      vrf.numWords,
-      vrf.callbackGasLimit,
-      vrf.coordinator,
-      vrf.subscriptionId,
+      VRF.keyHash,
+      VRF.confirmations,
+      VRF.numWords,
+      VRF.callbackGasLimit,
+      VRF.coordinator,
+      VRF.subscriptionId,
     ],
   ];
   for (const a of argsCombo) {
@@ -82,34 +82,35 @@ export const setVRFAllOrPartial = async (vrf) => {
   };
   await ensureAmoy();
   try {
-    await trySet("setKeyHash", vrf.keyHash);
+    await trySet("setKeyHash", VRF.keyHash);
   } catch {
     // ignore, try next param
   }
   try {
-    await trySet("setRequestConfirmations", vrf.confirmations);
+    await trySet("setRequestConfirmations", VRF.confirmations);
   } catch {
     // ignore, try next param
   }
   try {
-    await trySet("setCallbackGasLimit", vrf.callbackGasLimit);
+    await trySet("setCallbackGasLimit", VRF.callbackGasLimit);
   } catch {
     // ignore, try next param
   }
   try {
-    await trySet("setNumWords", vrf.numWords);
+    await trySet("setNumWords", VRF.numWords);
   } catch {
     // ignore, try next param
   }
   try {
-    await trySet("setCoordinator", vrf.coordinator);
+    await trySet("setCoordinator", VRF.coordinator);
   } catch {
     // ignore, try next param
   }
   try {
-    await trySet("setSubscriptionId", vrf.subscriptionId);
+    await trySet("setSubscriptionId", VRF.subscriptionId);
   } catch {
     // ignore final param
   }
 };
+
 

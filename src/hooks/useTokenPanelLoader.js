@@ -5,7 +5,7 @@ export function useTokenPanelLoader({
   onRefreshTokenMeta,
   onRefreshRouterInfo,
   onRefreshLiquidityPreview,
-  onRefreshBuybackInfo,
+  onRefreshBUYBACKInfo,
   fetchReserveInfo,
   fetchTreasuryInfo,
 }) {
@@ -20,7 +20,7 @@ export function useTokenPanelLoader({
         const tasks = [
           onRefreshRouterInfo,
           onRefreshLiquidityPreview,
-          onRefreshBuybackInfo,
+          onRefreshBUYBACKInfo,
           fetchReserveInfo,
           fetchTreasuryInfo,
         ];
@@ -47,9 +47,10 @@ export function useTokenPanelLoader({
     onRefreshTokenMeta,
     onRefreshRouterInfo,
     onRefreshLiquidityPreview,
-    onRefreshBuybackInfo,
+    onRefreshBUYBACKInfo,
     fetchReserveInfo,
     fetchTreasuryInfo,
   ]);
 }
+
 

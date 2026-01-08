@@ -2,31 +2,31 @@ import { Contract } from "@ethersproject/contracts";
 import { keccak256, arrayify, hexlify, isAddress } from "ethers";
 import { getDistributorRO } from "./contract";
 
-export async function fetchCommunityCenterStats() {
+export async function fetchCOMMUNITYCENTERStats() {
   try {
     const distributor = await getDistributorRO();
     if (!distributor) return {};
 
-    const communityCenterAddr =
-      (typeof distributor.communityCenter === "function"
-        ? await distributor.communityCenter().catch(() => null)
+    const COMMUNITYCENTERAddr =
+      (typeof distributor.COMMUNITYCENTER === "function"
+        ? await distributor.COMMUNITYCENTER().catch(() => null)
         : null) || null;
 
     const pendingCommunityPromise =
       typeof distributor.pendingCommunity === "function"
         ? distributor.pendingCommunity().catch(() => null)
-        : typeof distributor.pendingOf === "function" && communityCenterAddr
-          ? distributor.pendingOf(communityCenterAddr).catch(() => null)
-          : typeof distributor.pending === "function" && communityCenterAddr
-            ? distributor.pending(communityCenterAddr).catch(() => null)
+        : typeof distributor.pendingOf === "function" && COMMUNITYCENTERAddr
+          ? distributor.pendingOf(COMMUNITYCENTERAddr).catch(() => null)
+          : typeof distributor.pending === "function" && COMMUNITYCENTERAddr
+            ? distributor.pending(COMMUNITYCENTERAddr).catch(() => null)
             : Promise.resolve(null);
 
     const communityPoolBalancePromise =
       typeof distributor.communityBalance === "function"
         ? distributor.communityBalance().catch(() => null)
-        : communityCenterAddr && distributor.provider
+        : COMMUNITYCENTERAddr && distributor.provider
           ? distributor.provider
-              .getBalance(communityCenterAddr)
+              .getBalance(COMMUNITYCENTERAddr)
               .catch(() => null)
           : Promise.resolve(null);
 
@@ -37,7 +37,7 @@ export async function fetchCommunityCenterStats() {
 
     const fmt = (v) => (v != null ? formatEther(v) : undefined);
     return {
-      communityCenterAddr: communityCenterAddr || undefined,
+      COMMUNITYCENTERAddr: COMMUNITYCENTERAddr || undefined,
       pendingCommunity: fmt(pendingCommunity),
       communityPoolBalance: fmt(communityPoolBalance),
     };
@@ -45,4 +45,5 @@ export async function fetchCommunityCenterStats() {
     return {};
   }
 }
+
 

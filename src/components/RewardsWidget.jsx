@@ -1,9 +1,9 @@
-// RewardsWidget.jsx — shared width with Backgrounds (maxWidth 678, minWidth 558) + mobile adjustments
+// REWARDSWidget.jsx — shared width with Backgrounds (maxWidth 678, minWidth 558) + mobile adjustments
 import * as React from "react";
 import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
-import { getROProvider, ADDR, getRewardsRO } from "../utils/contract";
+import { getROProvider, ADDR, getREWARDSRO } from "../utils/contract";
 import { canPoll, getPollInterval } from "../utils/polling";
-import "./RewardsWidget.css";
+import "./REWARDSWidget.css";
 import "./InfoTables.css";
 
 const cellStyle = {
@@ -12,8 +12,8 @@ const cellStyle = {
   padding: "8px 10px",
   fontWeight: 700,
   whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
+  overFLOW: "hidden",
+  textOverFLOW: "ellipsis",
   borderBottom: "1px solid rgba(255,232,0,0.2)",
 };
 const claimedStyle = {
@@ -22,8 +22,8 @@ const claimedStyle = {
   padding: "8px 6px",
   fontWeight: 800,
   whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
+  overFLOW: "hidden",
+  textOverFLOW: "ellipsis",
   borderBottom: "1px solid rgba(255,232,0,0.2)",
   textShadow: "0 0 5px #ff6b6b55",
 };
@@ -33,8 +33,8 @@ const maxStyle = {
   padding: "8px 6px",
   fontWeight: 800,
   whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
+  overFLOW: "hidden",
+  textOverFLOW: "ellipsis",
   borderBottom: "1px solid rgba(255,232,0,0.2)",
   textShadow: "0 0 5px #ffffff33",
 };
@@ -44,15 +44,15 @@ const priceStyle = {
   padding: "8px 6px",
   fontWeight: 800,
   whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
+  overFLOW: "hidden",
+  textOverFLOW: "ellipsis",
   borderBottom: "1px solid rgba(255,232,0,0.2)",
   textShadow: "0 0 5px #5ddcff55",
 };
 
-const RewardsWidget = ({
-  rewardsData = {},
-  rewardsPool = 0,
+const REWARDSWidget = ({
+  REWARDSData = {},
+  REWARDSPool = 0,
   myClaimable = null,
   onBack,
   mintVolumeMatic = null,
@@ -63,7 +63,7 @@ const RewardsWidget = ({
   // === On-chain pool with failover ===
   const [onChainPoolMatic, setOnChainPoolMatic] = React.useState(null);
   const [poolWei, setPoolWei] = React.useState("0");
-  const [rewardsAddr, setRewardsAddr] = React.useState("");
+  const [REWARDSAddr, setREWARDSAddr] = React.useState("");
   const poolInFlightRef = React.useRef(false);
 
   React.useEffect(() => {
@@ -75,9 +75,9 @@ const RewardsWidget = ({
       try {
         // primary path: via contract (validate address + provider)
         try {
-          const r = getRewardsRO();
+          const r = getREWARDSRO();
           const addr = r.address;
-          setRewardsAddr(addr);
+          setREWARDSAddr(addr);
           const bal = await r.provider.getBalance(addr);
           if (!mounted) return;
           setPoolWei(bal.toString());
@@ -91,7 +91,7 @@ const RewardsWidget = ({
           const provider = getROProvider();
           const bal = await provider.getBalance(ADDR.COLLECTION_REWARDS);
           if (!mounted) return;
-          setRewardsAddr(ADDR.COLLECTION_REWARDS);
+          setREWARDSAddr(ADDR.COLLECTION_REWARDS);
           setPoolWei(bal.toString());
           setOnChainPoolMatic(Number(formatEther(bal)));
         } catch {
@@ -141,7 +141,7 @@ const RewardsWidget = ({
   const goTo = React.useCallback((anchorId) => {
     if (typeof window === "undefined") return;
     const clean = String(anchorId || "").replace(/^#/, "");
-    const targetHash = clean ? `#/rewards#${clean}` : "#/rewards";
+    const targetHash = clean ? `#/REWARDS#${clean}` : "#/REWARDS";
 
     const scrollToElement = () => {
       if (!clean || typeof document === "undefined") return;
@@ -161,23 +161,23 @@ const RewardsWidget = ({
 
   // map claimed counts
   const orangeClaimed =
-    Number(rewardsData.orange ?? rewardsData.orangeBlock ?? 0) || 0;
+    Number(REWARDSData.orange ?? REWARDSData.orangeBlock ?? 0) || 0;
   const blockWinnersClaimed =
-    Number(rewardsData.blockWinners ?? rewardsData.blocksRewards ?? 0) || 0;
+    Number(REWARDSData.blockWinners ?? REWARDSData.blocksREWARDS ?? 0) || 0;
   const rainbowClaimed =
-    typeof rewardsData.rainbow === "boolean"
-      ? rewardsData.rainbow
+    typeof REWARDSData.rainbow === "boolean"
+      ? REWARDSData.rainbow
         ? 1
         : 0
-      : Number(rewardsData.rainbowRewards ?? 0) || 0;
+      : Number(REWARDSData.rainbowREWARDS ?? 0) || 0;
   const charactersClaimed =
     Number(
-      rewardsData.charactersMinted ?? rewardsData.specialCharacterNFT ?? 0,
+      REWARDSData.charactersMinted ?? REWARDSData.specialCharacterNFT ?? 0,
     ) || 0;
   const specialRainbowNFTClaimed =
-    Number(rewardsData.specialRainbowNFT ?? 0) || 0;
+    Number(REWARDSData.specialRainbowNFT ?? 0) || 0;
 
-  const rewards = React.useMemo(
+  const REWARDS = React.useMemo(
     () => [
       {
         name: "CHARACTER NFT",
@@ -240,8 +240,8 @@ const RewardsWidget = ({
       ? onChainPoolMatic
       : computedFromVolume != null && Number.isFinite(computedFromVolume)
         ? computedFromVolume
-        : Number.isFinite(Number(rewardsPool))
-          ? Number(rewardsPool)
+        : Number.isFinite(Number(REWARDSPool))
+          ? Number(REWARDSPool)
           : 0;
 
   const poolStr = Number.isFinite(poolValue)
@@ -252,14 +252,14 @@ const RewardsWidget = ({
 
   const poolLabel =
     onChainPoolMatic != null
-      ? "Rewards Pool (on-chain)"
+      ? "REWARDS Pool (on-chain)"
       : computedFromVolume != null
-        ? `Rewards Pool (${shareNum}% of mints)`
-        : "Rewards Pool";
+        ? `REWARDS Pool (${shareNum}% of mints)`
+        : "REWARDS Pool";
 
   return (
     <div
-      className="rewards-widget"
+      className="REWARDS-widget"
       style={{
         position: "relative",
         display: "flex",
@@ -268,7 +268,7 @@ const RewardsWidget = ({
       }}
     >
       <style>{`
-        .rw-th { position: relative; overflow: hidden; cursor: default; transition: transform .18s ease, box-shadow .18s ease, text-shadow .18s ease; }
+        .rw-th { position: relative; overFLOW: hidden; cursor: default; transition: transform .18s ease, box-shadow .18s ease, text-shadow .18s ease; }
         .rw-th:hover { transform: translateY(-1px); box-shadow: inset 0 -1px 0 rgba(255,232,0,.55); text-shadow: 0 0 12px rgba(255,232,0,.55); }
         .rw-th::after { content: ""; position: absolute; left: -30%; bottom: 0; height: 2px; width: 60%; background: linear-gradient(90deg, transparent, #ffe800, transparent); opacity: 0; transform: translateX(-120%); }
         .rw-th:hover::after { opacity: 1; animation: rw-sweep 0.9s ease-out forwards; }
@@ -365,7 +365,7 @@ const RewardsWidget = ({
             {poolLabel}
           </span>
           <span
-            title={`${poolWei} wei${rewardsAddr ? ` @ ${rewardsAddr}` : ""}`}
+            title={`${poolWei} wei${REWARDSAddr ? ` @ ${REWARDSAddr}` : ""}`}
             style={{ color: "#5ddcff", fontWeight: 900, fontSize: "1.3em" }}
           >
             {poolStr} POL
@@ -390,12 +390,12 @@ const RewardsWidget = ({
         </div>
       </div>
 
-      {/* Rewards table */}
+      {/* REWARDS table */}
       <div
         className="rw-table-wrapper"
         style={{
-          overflowX: isPhone ? "auto" : "visible",
-          WebkitOverflowScrolling: "touch",
+          overFLOWX: isPhone ? "auto" : "visible",
+          WebkitOverFLOWScrolling: "touch",
         }}
       >
         <table className="rw-head">
@@ -509,7 +509,7 @@ const RewardsWidget = ({
         }}
       >
         <button
-          onClick={() => goTo("orange-block-rewards")}
+          onClick={() => goTo("orange-block-REWARDS")}
           style={{
             padding: "8px 16px",
             borderRadius: "6px",
@@ -527,7 +527,7 @@ const RewardsWidget = ({
           ORANGE
         </button>
         <button
-          onClick={() => goTo("block-rewards")}
+          onClick={() => goTo("block-REWARDS")}
           style={{
             padding: "8px 16px",
             borderRadius: "6px",
@@ -545,7 +545,7 @@ const RewardsWidget = ({
           BLOCKS
         </button>
         <button
-          onClick={() => goTo("rainbow-rewards")}
+          onClick={() => goTo("rainbow-REWARDS")}
           style={{
             padding: "8px 16px",
             borderRadius: "6px",
@@ -617,7 +617,7 @@ const RewardsWidget = ({
               borderRadius: 14,
               boxShadow: "0 12px 30px rgba(0,0,0,0.55)",
               border: "1px solid rgba(255,255,255,0.12)",
-              overflow: "hidden",
+              overFLOW: "hidden",
               display: "flex",
               flexDirection: "column",
             }}
@@ -636,14 +636,14 @@ const RewardsWidget = ({
                 borderBottom: "1px solid rgba(255,255,255,0.1)",
               }}
             >
-              Rewards Info
+              REWARDS Info
             </div>
 
-            <div style={{ padding: 12, overflowY: "auto" }}>
+            <div style={{ padding: 12, overFLOWY: "auto" }}>
               <style>{`
                   .rw-info-table { width: 100%; border-collapse: separate; border-spacing: 0;
                     background: #0f1116;
-                    border: 1px solid rgba(255,255,255,.12); border-radius: 12px; overflow: hidden;
+                    border: 1px solid rgba(255,255,255,.12); border-radius: 12px; overFLOW: hidden;
                     font-size: 13px; }
                   .rw-info-table thead th { position: sticky; top: 0; padding: 10px 12px; text-align: left;
                     color: #e9edf6; background: #151823;
@@ -675,7 +675,7 @@ const RewardsWidget = ({
                         : computedFromVolume != null
                           ? ` — ${shareNum}% of total mints.`
                           : " — current pool size."}
-                      {rewardsAddr ? ` @ ${rewardsAddr}` : ""}
+                      {REWARDSAddr ? ` @ ${REWARDSAddr}` : ""}
                     </td>
                   </tr>
                   <tr>
@@ -706,14 +706,14 @@ const RewardsWidget = ({
                   <tr>
                     <td className="rw-k">Claimed</td>
                     <td className="rw-v">
-                      How many rewards of that type have already been
+                      How many REWARDS of that type have already been
                       distributed.
                     </td>
                   </tr>
                   <tr>
                     <td className="rw-k">Max</td>
                     <td className="rw-v">
-                      Maximum number of rewards available for that category.
+                      Maximum number of REWARDS available for that category.
                     </td>
                   </tr>
                   <tr>
@@ -756,5 +756,8 @@ const RewardsWidget = ({
   );
 };
 
-export default RewardsWidget;
+export default REWARDSWidget;
+
+
+
 

@@ -1,0 +1,162 @@
+.info-btn {
+  margin-left: 86px;
+  padding: 9px 24px;
+  border-radius: 18px;
+  border: 2px solid #ffe800;
+  background: #040406;
+  color: #ffe800;
+  font-weight: 900;
+  font-size: 19px;
+  letter-spacing: 0.04em;
+  box-shadow:
+    0 6px 20px rgba(255, 232, 0, 0.18),
+    0 0 0 2px rgba(255, 232, 0, 0.18) inset,
+    0 1px 0 rgba(255, 232, 0, 0.35) inset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  transition:
+    background 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.13s;
+  outline: none;
+  overflow: hidden;
+}
+
+.info-btn::before {
+  content: "";
+  position: absolute;
+  left: 10%;
+  top: 8%;
+  width: 80%;
+  height: 30%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 232, 0, 0.28) 0%,
+    rgba(255, 232, 0, 0.05) 100%
+  );
+  border-radius: 50%;
+  opacity: 0.36;
+  pointer-events: none;
+  filter: blur(1.4px);
+  z-index: 1;
+}
+
+.info-btn:hover,
+.info-btn:focus {
+  background: #08080d;
+  color: #ffe800;
+  box-shadow:
+    0 10px 30px rgba(255, 232, 0, 0.28),
+    0 0 0 2px rgba(255, 232, 0, 0.22) inset,
+    0 1.5px 0 rgba(255, 232, 0, 0.45) inset;
+  border-color: #fff06a;
+}
+
+.info-btn:active {
+  background: #030304;
+  color: #ffe800;
+  box-shadow:
+    0 4px 16px rgba(255, 232, 0, 0.24),
+    0 0 0 2px rgba(255, 232, 0, 0.3) inset;
+}
+
+.info-btn:disabled,
+.info-btn[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: grayscale(30%);
+}
+
+.action-buttons__wrapper {
+  position: relative;
+  isolation: isolate;
+}
+
+.action-buttons__wrapper button {
+  position: relative;
+  z-index: 1;
+}
+
+.action-buttons__wrapper::before,
+.action-buttons__wrapper::after {
+  content: "";
+  position: absolute;
+  inset: -12px;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.24s ease;
+  z-index: -1;
+}
+
+.action-buttons__wrapper:focus-within::before,
+.action-buttons__wrapper:focus-within::after,
+.action-buttons__wrapper:hover::before,
+.action-buttons__wrapper:hover::after {
+  opacity: 1;
+}
+
+.action-buttons__wrapper--mint::before {
+  opacity: 0.7;
+  inset: -14px;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(32, 255, 210, 0.6) 0%,
+    rgba(32, 255, 210, 0.15) 52%,
+    rgba(32, 255, 210, 0) 82%
+  );
+  filter: blur(17px);
+  animation: mintMinimalPulse 5.2s ease-in-out infinite;
+}
+
+.action-buttons__wrapper--mint::after {
+  inset: -4px;
+  border-radius: inherit;
+  border: 1px solid rgba(145, 255, 234, 0.5);
+  box-shadow:
+    0 0 16px rgba(32, 255, 210, 0.28),
+    0 0 36px rgba(32, 255, 210, 0.18);
+  opacity: 0.78;
+  transition:
+    opacity 0.24s ease,
+    box-shadow 0.24s ease;
+}
+
+.action-buttons__wrapper--mint button img {
+  filter: drop-shadow(0 4px 12px rgba(32, 255, 210, 0.28));
+  transition:
+    filter 0.24s ease,
+    transform 0.18s ease;
+}
+
+.action-buttons__wrapper--mint:hover button img,
+.action-buttons__wrapper--mint:focus-within button img {
+  filter: drop-shadow(0 8px 20px rgba(32, 255, 210, 0.48));
+  transform: translateY(-2px);
+}
+
+.action-buttons__wrapper--mint:hover::after,
+.action-buttons__wrapper--mint:focus-within::after {
+  opacity: 1;
+  box-shadow:
+    0 0 26px rgba(32, 255, 210, 0.4),
+    0 0 48px rgba(32, 255, 210, 0.28);
+}
+
+@keyframes mintMinimalPulse {
+  0%,
+  100% {
+    opacity: 0.52;
+    filter: blur(12px);
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.88;
+    filter: blur(18px);
+    transform: scale(1.02);
+  }
+}

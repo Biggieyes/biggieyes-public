@@ -1,25 +1,25 @@
 import { Contract } from "ethers";
-import BiggiBuybackAgent from "../../config/abi/BiggiBuybackAgent.json";
+import BiggiBUYBACKAgent from "../../config/abi/BiggiBUYBACKAgent.json";
 import BiggiTreasury from "../../config/abi/BiggiTreasury.json";
 import BiggiToken from "../../config/abi/BiggiToken.json";
-import { getBuybackAddresses } from "../../config/addresses";
+import { getBUYBACKAddresses } from "../../config/addresses";
 import defaultProvider from "../provider";
 
-export function getBuybackTreasuryContracts(chainId, provider) {
+export function getBUYBACKTreasuryContracts(chainId, provider) {
   const signerOrProvider = provider || defaultProvider;
   const {
-    buybackAgent,
+    BUYBACKAgent,
     treasury,
     biggiToken,
     router,
     reserve,
-    dripDistributor,
-    tokenRewards,
-  } = getBuybackAddresses(chainId);
+    DRIPDistributor,
+    tokenREWARDS,
+  } = getBUYBACKAddresses(chainId);
 
-  const buybackContract = new Contract(
-    buybackAgent,
-    BiggiBuybackAgent,
+  const BUYBACKContract = new Contract(
+    BUYBACKAgent,
+    BiggiBUYBACKAgent,
     signerOrProvider,
   );
   const treasuryContract = new Contract(
@@ -30,18 +30,21 @@ export function getBuybackTreasuryContracts(chainId, provider) {
   const tokenContract = new Contract(biggiToken, BiggiToken, signerOrProvider);
 
   return {
-    buyback: buybackContract,
+    BUYBACK: BUYBACKContract,
     treasury: treasuryContract,
     token: tokenContract,
     addrs: {
-      buybackAgent,
+      BUYBACKAgent,
       treasury,
       biggiToken,
       router,
       reserve,
-      dripDistributor,
-      tokenRewards,
+      DRIPDistributor,
+      tokenREWARDS,
     },
   };
 }
+
+
+
 

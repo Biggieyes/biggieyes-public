@@ -1,14 +1,14 @@
 // src/services/factories.js
 // Small factory / re-export layer for existing service modules.
-// Purpose: provide a single import point for service instances used by hooks and composed helpers.
+// Purpose: provide a single import point for service instances used by HOOKS and composed helpers.
 
 import reserveService from "./reserveService";
 import liquidityManagerService from "./liquidityManagerService";
 import liquidityVaultService from "./liquidityVaultService";
-import BuybackService from "./buybackService";
-import DripDistributorService from "./dripDistributorService";
-import DripLMService from "./dripLMService";
-import TokenRewardsService from "./tokenRewardsService";
+import BUYBACKService from "./BUYBACKService";
+import DRIPDistributorService from "./DRIPDistributorService";
+import DRIPLMService from "./DRIPLMService";
+import TokenREWARDSService from "./tokenREWARDSService";
 import { getROProvider } from "../utils/contract";
 import { ADDR } from "../utils/addresses";
 
@@ -26,57 +26,61 @@ export function getLiquidityVaultService() {
 }
 
 // Class-based services: provide factory that instantiates with a read-only provider
-export function createBuybackService(
+export function createBUYBACKService(
   address = ADDR.BUYBACK_AGENT,
   provider = getROProvider(),
 ) {
-  return new BuybackService(address, provider);
+  return new BUYBACKService(address, provider);
 }
 
-export function createDripDistributorService(
+export function createDRIPDistributorService(
   address = ADDR.DRIP_DISTRIBUTOR,
   provider = getROProvider(),
 ) {
-  return new DripDistributorService(address, provider);
+  return new DRIPDistributorService(address, provider);
 }
 
-export function createDripLMService(
+export function createDRIPLMService(
   address = ADDR.DRIP_LM,
   provider = getROProvider(),
 ) {
-  return new DripLMService(address, provider);
+  return new DRIPLMService(address, provider);
 }
 
-export function createTokenRewardsService(
+export function createTokenREWARDSService(
   address = ADDR.TOKEN_REWARDS,
   provider = getROProvider(),
 ) {
-  return new TokenRewardsService(address, provider);
+  return new TokenREWARDSService(address, provider);
 }
 
 // Backwards-compatible default getters (return simple modules / factories)
-export function getBuybackService() {
-  return createBuybackService();
+export function getBUYBACKService() {
+  return createBUYBACKService();
 }
 
-export function getDripDistributorService() {
-  return createDripDistributorService();
+export function getDRIPDistributorService() {
+  return createDRIPDistributorService();
 }
 
-export function getDripLMService() {
-  return createDripLMService();
+export function getDRIPLMService() {
+  return createDRIPLMService();
 }
 
 export default {
   getReserveService,
   getLmService,
   getLiquidityVaultService,
-  getBuybackService,
-  getDripDistributorService,
-  getDripLMService,
-  createBuybackService,
-  createDripDistributorService,
-  createDripLMService,
-  createTokenRewardsService,
+  getBUYBACKService,
+  getDRIPDistributorService,
+  getDRIPLMService,
+  createBUYBACKService,
+  createDRIPDistributorService,
+  createDRIPLMService,
+  createTokenREWARDSService,
 };
+
+
+
+
 

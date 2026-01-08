@@ -40,9 +40,9 @@ export function useGlobalShortcuts({
             el instanceof HTMLElement ? window.getComputedStyle(el) : null;
           const canScroll =
             style &&
-            (style.overflowY === "auto" ||
-              style.overflowY === "scroll" ||
-              style.overflowY === "overlay") &&
+            (style.overFLOWY === "auto" ||
+              style.overFLOWY === "scroll" ||
+              style.overFLOWY === "overlay") &&
             el.scrollHeight - el.clientHeight > 4;
           if (canScroll) return el;
           el = el.parentElement || null;
@@ -119,4 +119,5 @@ export function useGlobalShortcuts({
     setCardsHelpOpen,
   ]);
 }
+
 

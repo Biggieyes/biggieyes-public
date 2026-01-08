@@ -1,9 +1,9 @@
 import * as React from "react";
-import { mapBuybackHistoryToChartPoints } from "../../services/tokenomics/buybackTreasury.mappers";
+import { mapBUYBACKHistoryToChartPoints } from "../../services/tokenomics/BUYBACKTreasury.mappers";
 
 const HISTORY_LIMIT = 24;
 
-export default function useBuybackTreasuryHistory(snapshot) {
+export default function useBUYBACKTreasuryHistory(snapshot) {
   const [history, setHistory] = React.useState([]);
 
   React.useEffect(() => {
@@ -18,23 +18,23 @@ export default function useBuybackTreasuryHistory(snapshot) {
 
   const nativeSeries = React.useMemo(
     () =>
-      mapBuybackHistoryToChartPoints(
+      mapBUYBACKHistoryToChartPoints(
         history,
-        (entry) => entry?.buyback?.totalNativeSpentNumeric ?? null,
+        (entry) => entry?.BUYBACK?.totalNativeSpentNumeric ?? null,
       ),
     [history],
   );
   const biggiSeries = React.useMemo(
     () =>
-      mapBuybackHistoryToChartPoints(
+      mapBUYBACKHistoryToChartPoints(
         history,
-        (entry) => entry?.buyback?.totalBiggiAcquiredNumeric ?? null,
+        (entry) => entry?.BUYBACK?.totalBiggiAcquiredNumeric ?? null,
       ),
     [history],
   );
   const treasurySeries = React.useMemo(
     () =>
-      mapBuybackHistoryToChartPoints(
+      mapBUYBACKHistoryToChartPoints(
         history,
         (entry) => entry?.treasury?.biggiBalanceNumeric ?? null,
       ),
@@ -43,4 +43,5 @@ export default function useBuybackTreasuryHistory(snapshot) {
 
   return { history, nativeSeries, biggiSeries, treasurySeries };
 }
+
 

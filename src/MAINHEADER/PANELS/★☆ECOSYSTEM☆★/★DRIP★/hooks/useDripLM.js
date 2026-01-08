@@ -1,16 +1,16 @@
 import * as React from "react";
-import { createDripLMService } from "../services/factories";
+import { createDRIPLMService } from "../services/factories";
 import { getCached } from "../utils/fetchCache";
 
 /**
- * Hook pro Drip Liquidity Manager (prodeje do buybacku / drip distribuci).
+ * Hook pro DRIP Liquidity Manager (prodeje do BUYBACKu / DRIP distribuci).
  */
-export default function useDripLM() {
+export default function useDRIPLM() {
   const [data, setData] = React.useState({
     address: null,
     biggiToken: null,
-    buybackAgent: null,
-    dripDistributor: null,
+    BUYBACKAgent: null,
+    DRIPDistributor: null,
     reserve: null,
     router: null,
     sellPct: null,
@@ -24,8 +24,8 @@ export default function useDripLM() {
     setLoading(true);
     setError(null);
     try {
-      const svc = createDripLMService();
-      const cacheKey = `dripLM:${svc.address || "unknown"}`;
+      const svc = createDRIPLMService();
+      const cacheKey = `DRIPLM:${svc.address || "unknown"}`;
       const snapshot = await getCached(
         cacheKey,
         async () => {
@@ -33,8 +33,8 @@ export default function useDripLM() {
           return {
             address: svc.address,
             biggiToken: raw.BIGGI || null,
-            buybackAgent: raw.buybackAgent || null,
-            dripDistributor: raw.dripDistributor || null,
+            BUYBACKAgent: raw.BUYBACKAgent || null,
+            DRIPDistributor: raw.DRIPDistributor || null,
             reserve: raw.reserve || null,
             router: raw.router || null,
             sellPct: raw.sellPct?.toString?.() ?? raw.sellPct ?? null,
@@ -48,7 +48,7 @@ export default function useDripLM() {
       );
       setData(snapshot);
     } catch (e) {
-      console.error("useDripLM.refresh", e);
+      console.error("useDRIPLM.refresh", e);
       setError(e);
     } finally {
       setLoading(false);
@@ -61,4 +61,6 @@ export default function useDripLM() {
 
   return { data, loading, error, refresh };
 }
+
+
 

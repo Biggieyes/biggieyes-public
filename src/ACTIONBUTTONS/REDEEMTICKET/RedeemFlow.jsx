@@ -1,13 +1,13 @@
 import * as React from "react";
-import "./RedeemFlow.css";
+import "./RedeemFLOW.css";
 
 /**
- * Presentational component for the redeem/reveal flow.
+ * Presentational component for the redeem/reveal FLOW.
  * No internal logic — just triggers the provided callbacks.
  */
-export default function RedeemFlow({
+export default function RedeemFLOW({
   isRedeeming = false,
-  vrfPending = false,
+  VRFPending = false,
   redeemMsg = "",
   onRedeem = () => {},
   onRefresh = () => {},
@@ -15,17 +15,17 @@ export default function RedeemFlow({
 }) {
   // Step index: 0 = Ready, 1 = Tx submitting/confirming, 2 = VRF pending
   const stepIndex = React.useMemo(() => {
-    if (vrfPending) return 2;
+    if (VRFPending) return 2;
     if (isRedeeming) return 1;
     return 0;
-  }, [isRedeeming, vrfPending]);
+  }, [isRedeeming, VRFPending]);
 
   const progressPct = React.useMemo(() => {
     // 3 steps (0..2) -> 0%, 50%, 100%
     return Math.round((stepIndex / 2) * 100);
   }, [stepIndex]);
 
-  const canRedeem = !isRedeeming && !vrfPending;
+  const canRedeem = !isRedeeming && !VRFPending;
 
   return (
     <section className="redeem-card" aria-live="polite">
@@ -58,7 +58,7 @@ export default function RedeemFlow({
           className={`step ${stepIndex >= 2 ? "done" : ""} ${stepIndex === 2 ? "active" : ""}`}
         >
           <span className="dot">
-            {vrfPending && <span className="spinner" />}
+            {VRFPending && <span className="spinner" />}
           </span>
           <span className="label">VRF Pending</span>
         </li>
@@ -92,7 +92,7 @@ export default function RedeemFlow({
               : "Waiting for VRF..."}
         </button>
 
-        {vrfPending && (
+        {VRFPending && (
           <button className="redeem-refresh" onClick={onRefresh}>
             Refresh reveal
           </button>
@@ -107,4 +107,6 @@ export default function RedeemFlow({
     </section>
   );
 }
+
+
 

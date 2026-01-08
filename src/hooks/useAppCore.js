@@ -9,7 +9,7 @@ import {
 } from "../utils/contract";
 import { useWallet } from "./useWallet";
 import { useGallery } from "./useGallery";
-import { useStatsRewards } from "./useStatsRewards";
+import { useStatsREWARDS } from "./useStatsREWARDS";
 import { useVRF } from "./useVRF";
 import { useUtils } from "./useUtils";
 import { useIPFS } from "./useIPFS";
@@ -26,7 +26,7 @@ export function useAppCore() {
     backgroundName: "-",
   });
   const [dynamicTraitsById, setDynamicTraitsById] = React.useState({});
-  const [vrfPending, setVrfPending] = React.useState(false);
+  const [VRFPending, setVRFPending] = React.useState(false);
   const [isRedeeming, setIsRedeeming] = React.useState(false);
   const [redeemMsg, setRedeemMsg] = React.useState("");
   const [pendingTicketId, setPendingTicketId] = React.useState(null);
@@ -37,7 +37,7 @@ export function useAppCore() {
   // refs
   const contractRef = React.useRef(null);
 
-  // hooks
+  // HOOKS
   const wallet = useWallet({
     onConnected: async () => {
       // on connect - minimal orchestrace (fetchers mohou být použity volajícím)
@@ -46,8 +46,8 @@ export function useAppCore() {
   });
   const { fetchMyTickets, fetchOwnedNFTsViaTransfers, queryLogsBatched } =
     useGallery();
-  const stats = useStatsRewards();
-  const vrf = useVRF();
+  const stats = useStatsREWARDS();
+  const VRF = useVRF();
   const utils = useUtils();
   const ipfs = useIPFS();
   const admin = useAdminActions();
@@ -126,7 +126,7 @@ export function useAppCore() {
 
   const redeemTicket = React.useCallback(async () => {
     if (!wallet.walletAddress) return alert("Please connect MetaMask first.");
-    if (isRedeeming || vrfPending) return;
+    if (isRedeeming || VRFPending) return;
     try {
       await ensureAmoy();
       const contract = contractRef.current || getContract();
@@ -171,14 +171,14 @@ export function useAppCore() {
       await tx.wait();
 
       setPendingTicketId(ticketIdStr);
-      setVrfPending(true);
+      setVRFPending(true);
       setRedeemMsg("Redeem confirmed. Waiting for VRF reveal…");
       setTopFirstId(ticketIdStr);
 
-      // caller should call fetchWalletAssets and refreshStats/rewards
+      // caller should call fetchWalletAssets and refreshStats/REWARDS
     } catch (err) {
       setIsRedeeming(false);
-      setVrfPending(false);
+      setVRFPending(false);
       setRedeemMsg("");
       setPendingTicketId(null);
       alert("Redeem failed: " + prettyError(err));
@@ -187,12 +187,12 @@ export function useAppCore() {
   }, [
     wallet.walletAddress,
     isRedeeming,
-    vrfPending,
+    VRFPending,
     fetchMyTickets,
     prettyError,
   ]);
 
-  const claimRewards = React.useCallback(
+  const claimREWARDS = React.useCallback(
     async (tokenIds) => {
       if (!wallet.walletAddress) return alert("Please connect MetaMask first.");
       try {
@@ -201,7 +201,7 @@ export function useAppCore() {
         await tx.wait();
       } catch (err) {
         alert("Claim failed: " + prettyError(err));
-        console.error("claimRewards", err);
+        console.error("claimREWARDS", err);
       }
     },
     [wallet.walletAddress, prettyError],
@@ -211,7 +211,7 @@ export function useAppCore() {
   const refreshAll = React.useCallback(async () => {
     try {
       await stats.fetchStats();
-      await stats.fetchRewards(wallet.walletAddress, myNFTs);
+      await stats.fetchREWARDS(wallet.walletAddress, myNFTs);
     } catch (e) {
       console.error(e);
     }
@@ -230,8 +230,8 @@ export function useAppCore() {
     setLastMinted,
     dynamicTraitsById,
     setDynamicTraitsById,
-    vrfPending,
-    setVrfPending,
+    VRFPending,
+    setVRFPending,
     isRedeeming,
     setIsRedeeming,
     redeemMsg,
@@ -248,9 +248,9 @@ export function useAppCore() {
     // wallet
     wallet,
 
-    // hooks access
+    // HOOKS access
     stats,
-    vrf,
+    VRF,
     gallery: { fetchMyTickets, fetchOwnedNFTsViaTransfers, queryLogsBatched },
     ipfs,
     utils,
@@ -259,8 +259,11 @@ export function useAppCore() {
     // actions
     mintTicket,
     redeemTicket,
-    claimRewards,
+    claimREWARDS,
     refreshAll,
   };
 }
+
+
+
 

@@ -1,15 +1,15 @@
 import * as React from "react";
-import { useTokenPanelLoader } from "../hooks/useTokenPanelLoader";
-import { useContractListeners } from "../hooks/useContractListeners";
+import { useTokenPanelLoader } from "../HOOKS/useTokenPanelLoader";
+import { useContractListeners } from "../HOOKS/useContractListeners";
 
 export default function AppCore({
   walletAddress,
-  vrfPending,
+  VRFPending,
   fetchStats,
-  fetchRewards,
+  fetchREWARDS,
   fetchWalletAssets,
   refreshVRFPanel,
-  checkVrfResolution,
+  checkVRFResolution,
   fetchLastMinted,
   fetchCountdownMeta,
   unsubRef,
@@ -17,7 +17,7 @@ export default function AppCore({
   onRefreshTokenMeta,
   onRefreshRouterInfo,
   onRefreshLiquidityPreview,
-  onRefreshBuybackInfo,
+  onRefreshBUYBACKInfo,
   fetchReserveInfo,
   fetchTreasuryInfo,
   ZERO_ADDRESS,
@@ -26,7 +26,7 @@ export default function AppCore({
   setWalletAddress,
   setMyNFTs,
   setDynamicTraitsById,
-  setVrfPending,
+  setVRFPending,
   setIsRedeeming,
   setRedeemMsg,
   setTopFirstId,
@@ -43,13 +43,13 @@ export default function AppCore({
     onRefreshTokenMeta,
     onRefreshRouterInfo,
     onRefreshLiquidityPreview,
-    onRefreshBuybackInfo,
+    onRefreshBUYBACKInfo,
     fetchReserveInfo,
     fetchTreasuryInfo,
   });
 
   const statsTimerRef = React.useRef(null);
-  const rewardsTimerRef = React.useRef(null);
+  const REWARDSTimerRef = React.useRef(null);
 
   const scheduleFetchStats = React.useCallback(
     (delay = 500) => {
@@ -64,17 +64,17 @@ export default function AppCore({
     [fetchStats],
   );
 
-  const scheduleFetchRewards = React.useCallback(
+  const scheduleFetchREWARDS = React.useCallback(
     (delay = 500) => {
-      if (rewardsTimerRef.current) return;
-      rewardsTimerRef.current = setTimeout(async () => {
-        rewardsTimerRef.current = null;
+      if (REWARDSTimerRef.current) return;
+      REWARDSTimerRef.current = setTimeout(async () => {
+        REWARDSTimerRef.current = null;
         try {
-          await fetchRewards();
+          await fetchREWARDS();
         } catch {}
       }, delay);
     },
-    [fetchRewards],
+    [fetchREWARDS],
   );
 
   const attachEventListeners = useContractListeners({
@@ -84,7 +84,7 @@ export default function AppCore({
     setWalletAddress,
     setMyNFTs,
     setDynamicTraitsById,
-    setVrfPending,
+    setVRFPending,
     setIsRedeeming,
     setRedeemMsg,
     setTopFirstId,
@@ -92,12 +92,12 @@ export default function AppCore({
     setRedeemStartBlock,
     setRedeemStartedAt,
     fetchStats,
-    fetchRewards,
+    fetchREWARDS,
     fetchWalletAssets,
     fetchLastMinted,
     refreshVRFPanel,
     scheduleFetchStats,
-    scheduleFetchRewards,
+    scheduleFetchREWARDS,
     enrichMetaWithPrices,
     readJsonFromURI,
     resolveImageUrl,
@@ -112,7 +112,7 @@ export default function AppCore({
       try {
         await fetchStats();
         if (cancelled) return;
-        await fetchRewards();
+        await fetchREWARDS();
         if (cancelled) return;
         await fetchLastMinted();
         if (cancelled) return;
@@ -126,7 +126,7 @@ export default function AppCore({
     };
   }, [
     fetchStats,
-    fetchRewards,
+    fetchREWARDS,
     fetchLastMinted,
     refreshVRFPanel,
     fetchCountdownMeta,
@@ -134,7 +134,7 @@ export default function AppCore({
 
   // VRF pending polling
   React.useEffect(() => {
-    if (!vrfPending || !walletAddress) return;
+    if (!VRFPending || !walletAddress) return;
     let cancelled = false;
     let timer = null;
     let pollCount = 0;
@@ -144,9 +144,9 @@ export default function AppCore({
       pollCount += 1;
       try {
         await fetchStats();
-        await fetchRewards();
+        await fetchREWARDS();
         await refreshVRFPanel();
-        await checkVrfResolution();
+        await checkVRFResolution();
         if (pollCount % 5 === 0) {
           await fetchWalletAssets(walletAddress);
         }
@@ -166,13 +166,13 @@ export default function AppCore({
       if (timer) clearTimeout(timer);
     };
   }, [
-    vrfPending,
+    VRFPending,
     walletAddress,
     fetchStats,
-    fetchRewards,
+    fetchREWARDS,
     fetchWalletAssets,
     refreshVRFPanel,
-    checkVrfResolution,
+    checkVRFResolution,
     redeemStartedAt,
   ]);
 
@@ -195,11 +195,15 @@ export default function AppCore({
   React.useEffect(() => {
     return () => {
       if (statsTimerRef?.current) clearTimeout(statsTimerRef.current);
-      if (rewardsTimerRef?.current) clearTimeout(rewardsTimerRef.current);
+      if (REWARDSTimerRef?.current) clearTimeout(REWARDSTimerRef.current);
       unsubRef?.current?.();
     };
-  }, [statsTimerRef, rewardsTimerRef, unsubRef]);
+  }, [statsTimerRef, REWARDSTimerRef, unsubRef]);
 
   return null;
 }
+
+
+
+
 

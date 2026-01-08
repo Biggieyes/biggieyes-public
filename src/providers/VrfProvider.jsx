@@ -5,7 +5,7 @@ import { useContracts } from "./ContractsProvider";
 const Ctx = React.createContext(null);
 const DEPLOY_BLOCK = 26412543;
 
-export function VrfProvider({ children }) {
+export function VRFProvider({ children }) {
   const { mainRO, mainRW } = useContracts();
 
   const [params, setParams] = React.useState({
@@ -22,7 +22,7 @@ export function VrfProvider({ children }) {
     txHash: "",
   });
   const [history, setHistory] = React.useState([]);
-  const [vrfPending, setVrfPending] = React.useState(false);
+  const [VRFPending, setVRFPending] = React.useState(false);
   const [isRedeeming, setIsRedeeming] = React.useState(false);
   const [redeemMsg, setRedeemMsg] = React.useState("");
 
@@ -90,7 +90,7 @@ export function VrfProvider({ children }) {
           setHistory(rows.slice(-25).reverse());
         }
       } catch (e) {
-        console.error("VrfProvider.refresh", e);
+        console.error("VRFProvider.refresh", e);
       }
     },
     [mainRO],
@@ -121,11 +121,11 @@ export function VrfProvider({ children }) {
         setRedeemMsg("Waiting for confirmation...");
         await tx.wait();
 
-        setVrfPending(true);
+        setVRFPending(true);
         setRedeemMsg("VRF pending...");
       } catch (e) {
         setIsRedeeming(false);
-        setVrfPending(false);
+        setVRFPending(false);
         setRedeemMsg("");
         throw e;
       }
@@ -146,7 +146,7 @@ export function VrfProvider({ children }) {
             ? rid === 0n
             : String(rid || "0") === "0";
         if (isZero) {
-          setVrfPending(false);
+          setVRFPending(false);
           setIsRedeeming(false);
           setRedeemMsg("Reveal complete!");
           setTimeout(() => setRedeemMsg(""), 3000);
@@ -163,7 +163,7 @@ export function VrfProvider({ children }) {
         subscriptionId,
         last,
         history,
-        vrfPending,
+        VRFPending,
         isRedeeming,
         redeemMsg,
         refresh,
@@ -176,9 +176,10 @@ export function VrfProvider({ children }) {
   );
 }
 
-export function useVrf() {
+export function useVRF() {
   const v = React.useContext(Ctx);
-  if (!v) throw new Error("useVrf must be used inside <VrfProvider>");
+  if (!v) throw new Error("useVRF must be used inside <VRFProvider>");
   return v;
 }
+
 

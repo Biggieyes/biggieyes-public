@@ -75,7 +75,7 @@ export default function NftCard({
   onZoom,
   fallbackContractAddress = null,
 }) {
-  // hooks must be called deterministically; keep outside conditionals
+  // HOOKS must be called deterministically; keep outside conditionals
   let contracts = null;
   try {
     contracts = useContracts();
@@ -486,4 +486,5 @@ export default function NftCard({
     </article>
   );
 }
+
 

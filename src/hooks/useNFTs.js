@@ -17,11 +17,11 @@ export function useNFTs({
   ensureAmoy,
   prettyError,
   fetchStats,
-  fetchRewards,
+  fetchREWARDS,
 }) {
   const [myNFTs, setMyNFTs] = React.useState([]);
   const [isRedeeming, setIsRedeeming] = React.useState(false);
-  const [vrfPending, setVrfPending] = React.useState(false);
+  const [VRFPending, setVRFPending] = React.useState(false);
   const [redeemMsg, setRedeemMsg] = React.useState("");
   const [pendingTicketId, setPendingTicketId] = React.useState(null);
   const [lastMinted, setLastMinted] = React.useState({});
@@ -110,7 +110,7 @@ export function useNFTs({
 
       await fetchWalletAssets(walletAddress);
       await fetchStats();
-      await fetchRewards();
+      await fetchREWARDS();
       alert("Ticket minted.");
     } catch (err) {
       setError(err);
@@ -123,7 +123,7 @@ export function useNFTs({
     walletAddress,
     fetchWalletAssets,
     fetchStats,
-    fetchRewards,
+    fetchREWARDS,
     ensureAmoy,
     prettyError,
   ]);
@@ -131,7 +131,7 @@ export function useNFTs({
   /* ------------------- REDEEM TICKET ------------------- */
   const redeemTicket = React.useCallback(async () => {
     if (!walletAddress) return alert("Please connect MetaMask first.");
-    if (isRedeeming || vrfPending) return;
+    if (isRedeeming || VRFPending) return;
     setPerforming(true);
     setError(null);
     try {
@@ -161,16 +161,16 @@ export function useNFTs({
       await tx.wait();
 
       setPendingTicketId(ticketId.toString());
-      setVrfPending(true);
+      setVRFPending(true);
       setRedeemMsg("Redeem confirmed. Waiting for VRF reveal…");
 
       await fetchWalletAssets(walletAddress);
-      await fetchRewards();
+      await fetchREWARDS();
       await fetchStats();
     } catch (err) {
       setError(err);
       setIsRedeeming(false);
-      setVrfPending(false);
+      setVRFPending(false);
       setRedeemMsg("");
       alert("Redeem failed: " + prettyError(err));
       console.error("redeemTicket", err);
@@ -180,17 +180,17 @@ export function useNFTs({
   }, [
     walletAddress,
     isRedeeming,
-    vrfPending,
+    VRFPending,
     fetchWalletAssets,
     fetchStats,
-    fetchRewards,
+    fetchREWARDS,
     ensureAmoy,
     findTicketsViaLogs,
     prettyError,
   ]);
 
   /* ------------------- CLAIM REWARDS ------------------- */
-  const claimRewards = React.useCallback(async () => {
+  const claimREWARDS = React.useCallback(async () => {
     if (!walletAddress) return alert("Please connect MetaMask first.");
     setPerforming(true);
     setError(null);
@@ -205,20 +205,20 @@ export function useNFTs({
       const tx = await brl.claim(ids);
       await tx.wait();
 
-      await fetchRewards();
+      await fetchREWARDS();
       await fetchStats();
-      alert("Rewards claimed.");
+      alert("REWARDS claimed.");
     } catch (err) {
       setError(err);
       alert("Claim failed: " + prettyError(err));
-      console.error("claimRewards", err);
+      console.error("claimREWARDS", err);
     } finally {
       setPerforming(false);
     }
   }, [
     walletAddress,
     myNFTs,
-    fetchRewards,
+    fetchREWARDS,
     fetchStats,
     ensureAmoy,
     prettyError,
@@ -271,20 +271,22 @@ export function useNFTs({
     myNFTs,
     lastMinted,
     isRedeeming,
-    vrfPending,
+    VRFPending,
     redeemMsg,
     pendingTicketId,
     performing,
     error,
     mintTicket,
     redeemTicket,
-    claimRewards,
+    claimREWARDS,
     fetchWalletAssets,
     fetchLastMinted,
     setMyNFTs,
-    setVrfPending,
+    setVRFPending,
     setIsRedeeming,
     setRedeemMsg,
   };
 }
+
+
 

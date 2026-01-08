@@ -9,16 +9,16 @@ import IconButton from "./components/common/IconButton.jsx";
 import ModalTopbar from "./components/common/ModalTopbar.jsx";
 import ExpansionPanel from "./components/expansion/ExpansionPanel.jsx";
 import PinUploader from "./components/PinUploader.jsx";
-import RedeemFlow from "./ACTIONBUTTONS/REDEEMTICKET/RedeemFlow.jsx";
-import RewardsBlockSummary from "./MAINHEADER/PANELS/??REWARDS??/RewardsBlockSummary.jsx";
+import RedeemFLOW from "./ACTIONBUTTONS/REDEEMTICKET/RedeemFLOW.jsx";
+import REWARDSBlockSummary from "./MAINHEADER/PANELS/??REWARDS??/REWARDSBlockSummary.jsx";
 import BiggiButton from "./components/TOKEN/BiggiButton.jsx";
-import BuybackDripButton from "./components/TOKEN/BuybackDripButton.jsx";
-import BuybackStabilityChart from "./components/TOKEN/BuybackStabilityChart.jsx";
+import BUYBACKDRIPButton from "./components/TOKEN/BUYBACKDRIPButton.jsx";
+import BUYBACKStabilityChart from "./components/TOKEN/BUYBACKStabilityChart.jsx";
 import DexLiquidityChart from "./components/TOKEN/DexLiquidityChart.jsx";
-import FlowButton from "./components/TOKEN/FlowButton.jsx";
+import FLOWButton from "./components/TOKEN/FLOWButton.jsx";
 import LiquidityVaultChart from "./components/TOKEN/LiquidityVaultChart.jsx";
 import LMReserveTokenDexButton from "./components/TOKEN/LMReserveTokenDexButton.jsx";
-import PolicyButton from "./components/TOKEN/PolicyButton.jsx";
+import POLICYButton from "./components/TOKEN/POLICYButton.jsx";
 import * as RechartsCompat from "./components/TOKEN/recharts-compat.js";
 import SimpleLineChart from "./components/TOKEN/SimpleLineChart.jsx";
 import TokenSupplyChart from "./components/TOKEN/TokenSupplyChart.jsx";
@@ -26,7 +26,7 @@ import ADDR from "./config/addresses.js";
 import * as BLOCK_CONST from "./constants/block.js";
 import BLOCK_IMAGES from "./constants/blockImages.js";
 import * as UI_CONST from "./UI/ui.js";
-import * as DeviceHooks from "./UI/Device.js";
+import * as DeviceHOOKS from "./UI/Device.js";
 import WalletButton from "./MAINHEADER/WalletButton.jsx";
 import LoadingOverlay from "./components/LoadingOverlay.jsx";
 // Dummy pou�it� API handler� (simulace vol�n�, aby byly pou�ity)
@@ -55,9 +55,9 @@ import {
   getReaderRO,
   getROProvider,
   getSignerProvider,
-  getPolicyRO,
-  getPolicy,
-  getBuybackRO,
+  getPOLICYRO,
+  getPOLICY,
+  getBUYBACKRO,
   getDistributorRO,
   resetROProvider,
   getReserve,
@@ -72,14 +72,14 @@ import { prettyError } from "./utils/errors";
 import { formatEthNum } from "./utils/format";
 import { resolveImageUrl, readJsonFromURI } from "./utils/ipfs";
 import { callFirst, getRO as getROHelper } from "./utils/contracts-helpers";
-import { fetchCommunityCenterStats as fetchCommunityCenterStatsRO } from "./utils/community";
+import { fetchCOMMUNITYCENTERStats as fetchCOMMUNITYCENTERStatsRO } from "./utils/community";
 import NavPanelSwitch from "./MAINHEADER/PANELS/NavPanelSwitch.jsx";
-import { useNavHotkeys } from "./hooks/useNavHotkeys";
-import { useGlobalShortcuts } from "./hooks/useGlobalShortcuts";
-import { useStatsRewards } from "./hooks/useStatsRewards";
-import { useAdminActions } from "./hooks/useAdminActions";
-import useDistributor from "./hooks/useDistributor";
-import useTransparencyData from "./hooks/useTransparencyData";
+import { useNavHotkeys } from "./HOOKS/useNavHotkeys";
+import { useGlobalShortcuts } from "./HOOKS/useGlobalShortcuts";
+import { useStatsREWARDS } from "./HOOKS/useStatsREWARDS";
+import { useAdminActions } from "./HOOKS/useAdminActions";
+import useDistributor from "./HOOKS/useDistributor";
+import useTransparencyData from "./HOOKS/useTransparencyData";
 import AppCore from "./app/AppCore";
 import {
   BACKGROUND_NAMES,
@@ -96,22 +96,22 @@ import {
   buildVRFHistory as buildVRFHistoryUtil,
   resolvePendingFromHistoryOrOwnership as resolvePendingFromHistoryOrOwnershipUtil,
   refreshVRFPanel as refreshVRFPanelUtil,
-  checkVrfResolution as checkVrfResolutionUtil,
-  openVrfExplorer,
-} from "./utils/vrf";
-import { useWalletAssets } from "./hooks/useWalletAssets";
-import { useMintRedeem } from "./hooks/useMintRedeem";
+  checkVRFResolution as checkVRFResolutionUtil,
+  openVRFExplorer,
+} from "./utils/VRF";
+import { useWalletAssets } from "./HOOKS/useWalletAssets";
+import { useMintRedeem } from "./HOOKS/useMintRedeem";
 import { parseEth, writeFirst, setVRFAllOrPartial } from "./utils/adminActions";
 import {
   refreshRouterInfo,
   refreshLiquidityPreview,
-  refreshBuybackInfo,
+  refreshBUYBACKInfo,
   fetchReserveInfo as fetchReserveInfoUtil,
   fetchTreasuryInfo as fetchTreasuryInfoUtil,
-  refreshRewards,
+  refreshREWARDS,
 } from "./utils/tokenRefreshers";
 import { refreshTokenMeta } from "./utils/tokenMeta";
-import { refreshPolicy } from "./utils/policy";
+import { refreshPOLICY } from "./utils/POLICY";
 
 /* ========= LAZY LOADED HEAVY PANELS ========= */
 const FullscreenPanel = React.lazy(
@@ -236,13 +236,13 @@ function App() {
 
   const [biggiData, setBiggiData] = React.useState({
     token: {},
-    rewards: {},
+    REWARDS: {},
     router: {},
     liquidity: {},
-    policy: {},
-    buyback: {},
+    POLICY: {},
+    BUYBACK: {},
   });
-  const [vrfUIData, setVrfUIData] = React.useState({
+  const [VRFUIData, setVRFUIData] = React.useState({
     network: "EVM",
     subscription: { id: "", linkBalance: "", consumers: [] },
     params: {
@@ -262,7 +262,7 @@ function App() {
     history: [],
   });
 
-  const [vrfPending, setVrfPending] = React.useState(false);
+  const [VRFPending, setVRFPending] = React.useState(false);
   const [isRedeeming, setIsRedeeming] = React.useState(false);
   const [claimPerforming, setClaimPerforming] = React.useState(false);
   const [claimError, setClaimError] = React.useState(null);
@@ -294,7 +294,7 @@ function App() {
   const [epochStartTs, setEpochStartTs] = React.useState(null);
   const [userLastClaimTs, setUserLastClaimTs] = React.useState(null);
 
-  const isMobile = DeviceHooks.useIsMobile(700);
+  const isMobile = DeviceHOOKS.useIsMobile(700);
   const { data: distributorData, refresh: fetchDistributorInfo } =
     useDistributor();
   const {
@@ -342,13 +342,13 @@ function App() {
     setAdminOpen(true);
   }, [isAdmin]);
 
-  const onRefreshPolicy = React.useCallback(async () => {
+  const onRefreshPOLICY = React.useCallback(async () => {
     try {
-      await refreshPolicy({ getPolicyRO, setBiggiData });
+      await refreshPOLICY({ getPOLICYRO, setBiggiData });
     } catch (e) {
-      console.error("onRefreshPolicy", e);
+      console.error("onRefreshPOLICY", e);
     }
-  }, [getPolicyRO]);
+  }, [getPOLICYRO]);
   const getNftIndexForTokenId = React.useCallback(async (contract, tokenId) => {
     const key = String(tokenId);
     const cached = mintIdxCacheRef.current.get(key);
@@ -380,7 +380,7 @@ function App() {
     }
   }, []);
 
-  const { fetchStats, fetchRewards } = useStatsRewards({
+  const { fetchStats, fetchREWARDS } = useStatsREWARDS({
     setTicketPrice,
     setTicketMinted,
     setBiggiMinted,
@@ -447,14 +447,14 @@ function App() {
     setGalleryNotice,
     setLastMinted,
     setDynamicTraitsById,
-    vrfPending,
+    VRFPending,
     topFirstId,
     pendingTicketId,
     redeemStartBlock,
     redeemStartedAt,
     setTopFirstId,
     setPendingTicketId,
-    setVrfPending,
+    setVRFPending,
     setIsRedeeming,
     setRedeemMsg,
     enrichMetaWithPrices,
@@ -528,7 +528,7 @@ function App() {
     }
   }, []);
 
-  const claimRewards = React.useCallback(async () => {
+  const claimREWARDS = React.useCallback(async () => {
     if (!walletAddress) return alert("Please connect MetaMask first.");
     setClaimPerforming(true);
     setClaimError(null);
@@ -588,20 +588,20 @@ function App() {
       const tx = await brl.claim(tokenIds);
       await tx.wait();
 
-      await fetchRewards();
+      await fetchREWARDS();
       await fetchStats();
-      alert("Rewards claimed.");
+      alert("REWARDS claimed.");
     } catch (err) {
       setClaimError(err);
       alert("Claim failed: " + prettyError(err));
-      console.error("claimRewards", err);
+      console.error("claimREWARDS", err);
     } finally {
       setClaimPerforming(false);
     }
-  }, [walletAddress, myNFTs, fetchRewards, fetchStats, prettyError]);
+  }, [walletAddress, myNFTs, fetchREWARDS, fetchStats, prettyError]);
 
-  const fetchCommunityCenterStats = React.useCallback(
-    fetchCommunityCenterStatsRO,
+  const fetchCOMMUNITYCENTERStats = React.useCallback(
+    fetchCOMMUNITYCENTERStatsRO,
     [],
   );
 
@@ -612,7 +612,7 @@ function App() {
           getReadOnlyLiquidityContract,
           callFirst,
           getBiggiTokenomicsReaderRO,
-          fetchCommunityCenterStats,
+          fetchCOMMUNITYCENTERStats,
           setBiggiData,
         }),
       );
@@ -623,7 +623,7 @@ function App() {
     getReadOnlyLiquidityContract,
     callFirst,
     getBiggiTokenomicsReaderRO,
-    fetchCommunityCenterStats,
+    fetchCOMMUNITYCENTERStats,
     withRetry,
   ]);
 
@@ -631,18 +631,18 @@ function App() {
     onRefreshTokenMetaRef.current = onRefreshTokenMeta;
   }, [onRefreshTokenMeta]);
 
-  const onRefreshRewards = React.useCallback(
+  const onRefreshREWARDS = React.useCallback(
     async (tokenIdsCsv = "") => {
       try {
         await withRetry(() =>
-          refreshRewards({
+          refreshREWARDS({
             getReadOnlyLiquidityContract,
             setBiggiData,
             tokenIdsCsv,
           }),
         );
       } catch (e) {
-        console.error("onRefreshRewards", e);
+        console.error("onRefreshREWARDS", e);
       }
     },
     [getReadOnlyLiquidityContract, withRetry],
@@ -653,14 +653,14 @@ function App() {
       await withRetry(() =>
         refreshRouterInfo({
           getReadOnlyLiquidityContract,
-          onRefreshPolicy,
+          onRefreshPOLICY,
           setBiggiData,
         }),
       );
     } catch (e) {
       console.error("onRefreshRouterInfo", e);
     }
-  }, [getReadOnlyLiquidityContract, onRefreshPolicy, withRetry]);
+  }, [getReadOnlyLiquidityContract, onRefreshPOLICY, withRetry]);
 
   const onRefreshLiquidityPreview = React.useCallback(async () => {
     try {
@@ -672,18 +672,18 @@ function App() {
     }
   }, [getReadOnlyLiquidityContract, withRetry]);
 
-  const onRefreshBuybackInfo = React.useCallback(async () => {
+  const onRefreshBUYBACKInfo = React.useCallback(async () => {
     try {
       await withRetry(() =>
-        refreshBuybackInfo({
-          getBuybackRO,
+        refreshBUYBACKInfo({
+          getBUYBACKRO,
           getReadOnlyLiquidityContract,
           ERC20_MINI,
           setBiggiData,
         }),
       );
     } catch (e) {
-      console.error("onRefreshBuybackInfo", e);
+      console.error("onRefreshBUYBACKInfo", e);
     }
   }, [withRetry]);
 
@@ -719,16 +719,16 @@ function App() {
   const adminActions = useAdminActions({
     getContract,
     getLiquidityContract,
-    getPolicy,
+    getPOLICY,
     ensureAmoy,
     fetchStats,
-    fetchRewards,
+    fetchREWARDS,
     onRefreshRouterInfo,
     onRefreshLiquidityPreview,
-    onRefreshPolicy,
-    onRefreshRewards,
+    onRefreshPOLICY,
+    onRefreshREWARDS,
     onRefreshTokenMeta,
-    onRefreshBuybackInfo,
+    onRefreshBUYBACKInfo,
     fetchTreasuryInfo,
     fetchReserveInfo,
   });
@@ -741,19 +741,19 @@ function App() {
   );
 
   const refreshVRFPanel = React.useCallback(() => {
-    return refreshVRFPanelUtil(walletAddress, setVrfUIData, buildVRFHistory);
+    return refreshVRFPanelUtil(walletAddress, setVRFUIData, buildVRFHistory);
   }, [walletAddress, buildVRFHistory]);
 
-  const checkVrfResolution = React.useCallback(() => {
-    return checkVrfResolutionUtil({
+  const checkVRFResolution = React.useCallback(() => {
+    return checkVRFResolutionUtil({
       walletAddress,
       contractRef,
       fetchWalletAssets,
       fetchStats,
-      fetchRewards,
+      fetchREWARDS,
       resolvePendingFromHistoryOrOwnershipFn:
         resolvePendingFromHistoryOrOwnership,
-      setVrfPending,
+      setVRFPending,
       setIsRedeeming,
       setRedeemMsg,
       refreshVRFPanelFn: refreshVRFPanel,
@@ -764,7 +764,7 @@ function App() {
     contractRef,
     fetchWalletAssets,
     fetchStats,
-    fetchRewards,
+    fetchREWARDS,
     resolvePendingFromHistoryOrOwnership,
     refreshVRFPanel,
     setRedeemStartedAt,
@@ -774,11 +774,11 @@ function App() {
     (addr) => {
       const tasks = [
         fetchStats(),
-        fetchRewards(),
+        fetchREWARDS(),
         fetchWalletAssets(addr),
         fetchLastMinted(),
         refreshVRFPanel(),
-        checkVrfResolution(),
+        checkVRFResolution(),
       ];
       Promise.allSettled(tasks).then((results) => {
         results.forEach((res) => {
@@ -790,11 +790,11 @@ function App() {
     },
     [
       fetchStats,
-      fetchRewards,
+      fetchREWARDS,
       fetchWalletAssets,
       fetchLastMinted,
       refreshVRFPanel,
-      checkVrfResolution,
+      checkVRFResolution,
     ],
   );
 
@@ -872,32 +872,32 @@ function App() {
     ensureAmoy,
     getReaderRO,
     fetchStats,
-    fetchRewards,
+    fetchREWARDS,
     fetchWalletAssets,
     onRefreshTokenMetaRef,
     refreshVRFPanel,
-    checkVrfResolution,
+    checkVRFResolution,
     fetchMyTickets,
     fetchOwnedNFTsViaTransfers,
     preflightRedeemCheck,
     prettyError,
     setMyNFTs,
     isRedeeming,
-    vrfPending,
+    VRFPending,
     setIsRedeeming,
     setRedeemMsg,
     setRedeemStartBlock,
     setRedeemStartedAt,
     setPendingTicketId,
-    setVrfPending,
+    setVRFPending,
     setTopFirstId,
   });
 
   const actionPerforming = mintRedeemPerforming || claimPerforming;
   const actionError = claimError || mintRedeemError;
 
-  const onVrfOpenExplorer = React.useCallback(
-    (hashOrId) => openVrfExplorer(hashOrId, getReadOnlyContract),
+  const onVRFOpenExplorer = React.useCallback(
+    (hashOrId) => openVRFExplorer(hashOrId, getReadOnlyContract),
     [],
   );
 
@@ -921,7 +921,7 @@ function App() {
         "weekEpochStart",
         "firstWeekStart",
         "startEpoch",
-        "rewardsEpochStart",
+        "REWARDSEpochStart",
       ]);
       const epochNum =
         epochRaw != null
@@ -992,8 +992,8 @@ function App() {
       } catch {}
 
       const nativeSymbol = "POL";
-      const policy =
-        (await callFirst(main, ["policy", "policyAddress"])) || "\u2014";
+      const POLICY =
+        (await callFirst(main, ["POLICY", "POLICYAddress"])) || "\u2014";
       const treasury =
         (await callFirst(brl, [
           "treasury",
@@ -1009,7 +1009,7 @@ function App() {
       return {
         nativeSymbol,
         tokenSymbol,
-        policy,
+        POLICY,
         treasury,
         reserve,
         liquidity,
@@ -1027,12 +1027,12 @@ function App() {
   const navOpen = openNavIdx !== null;
   const navAlt = navOpen ? UI_CONST.ICONS[openNavIdx].alt : "";
   const isInfoOpen = navOpen && navAlt === "INFO";
-  const isCollectionOpen = navOpen && navAlt === "COLLECTION";
-  const isRewardsOpen = navOpen && navAlt === "REWARDS";
+  const isCOLLECTIONOpen = navOpen && navAlt === "COLLECTION";
+  const isREWARDSOpen = navOpen && navAlt === "REWARDS";
   const isTokenPanelOpen = navOpen && navAlt === "BIGGI ECOSYSTEM";
-  const isUserPanelOpen = navOpen && navAlt === "USERS";
+  const isUSERPANELOpen = navOpen && navAlt === "USERS";
   const isVRFPanelOpen = navOpen && navAlt === "VRF MINT";
-  const isCommunityCenterOpen = navOpen && navAlt === "COMMUNITY CENTER";
+  const isCOMMUNITYCENTEROpen = navOpen && navAlt === "COMMUNITY CENTER";
 
   const hideExtras =
     navOpen &&
@@ -1064,25 +1064,25 @@ function App() {
   }, [navOpen]);
 
   const adminSnapshot = {
-    networkLabel: vrfUIData?.network || "EVM",
+    networkLabel: VRFUIData?.network || "EVM",
     contractAddress: contractRef.current?.address,
     paused: null,
     totalSupply: biggiMinted,
     maxSupply,
     ticketPrice,
-    rewardsPool: rewardPool,
+    REWARDSPool: rewardPool,
     treasury: undefined,
     liquiditySink: undefined,
     token: { address: biggiData?.token?.address },
     dex: { router: biggiData?.router?.routerAddress },
     baseURI: undefined,
-    vrf: {
-      keyHash: vrfUIData?.params?.keyHash,
-      confirmations: vrfUIData?.params?.confirmations,
-      numWords: vrfUIData?.params?.numWords,
-      callbackGasLimit: vrfUIData?.params?.callbackGasLimit,
+    VRF: {
+      keyHash: VRFUIData?.params?.keyHash,
+      confirmations: VRFUIData?.params?.confirmations,
+      numWords: VRFUIData?.params?.numWords,
+      callbackGasLimit: VRFUIData?.params?.callbackGasLimit,
       coordinator: undefined,
-      subscriptionId: vrfUIData?.subscription?.id,
+      subscriptionId: VRFUIData?.subscription?.id,
     },
     blocks: BACKGROUND_NAMES.map((name, i) => ({
       name,
@@ -1096,7 +1096,7 @@ function App() {
   const frontendInfo = {
     app: "BiggiEyes Frontend",
     react: React.version,
-    network: vrfUIData?.network || "unknown",
+    network: VRFUIData?.network || "unknown",
     wallet: walletAddress || "-",
     minted: biggiMinted,
     ticketsMinted: ticketMinted,
@@ -1109,12 +1109,12 @@ function App() {
     <div className="full-bg">
       <AppCore
         walletAddress={walletAddress}
-        vrfPending={vrfPending}
+        VRFPending={VRFPending}
         fetchStats={fetchStats}
-        fetchRewards={fetchRewards}
+        fetchREWARDS={fetchREWARDS}
         fetchWalletAssets={fetchWalletAssets}
         refreshVRFPanel={refreshVRFPanel}
-        checkVrfResolution={checkVrfResolution}
+        checkVRFResolution={checkVRFResolution}
         fetchLastMinted={fetchLastMinted}
         fetchCountdownMeta={fetchCountdownMeta}
         unsubRef={unsubRef}
@@ -1122,7 +1122,7 @@ function App() {
         onRefreshTokenMeta={onRefreshTokenMeta}
         onRefreshRouterInfo={onRefreshRouterInfo}
         onRefreshLiquidityPreview={onRefreshLiquidityPreview}
-        onRefreshBuybackInfo={onRefreshBuybackInfo}
+        onRefreshBUYBACKInfo={onRefreshBUYBACKInfo}
         fetchReserveInfo={fetchReserveInfo}
         fetchTreasuryInfo={fetchTreasuryInfo}
         ZERO_ADDRESS={ZERO_ADDRESS}
@@ -1131,7 +1131,7 @@ function App() {
         setWalletAddress={setWalletAddress}
         setMyNFTs={setMyNFTs}
         setDynamicTraitsById={setDynamicTraitsById}
-        setVrfPending={setVrfPending}
+        setVRFPending={setVRFPending}
         setIsRedeeming={setIsRedeeming}
         setRedeemMsg={setRedeemMsg}
         setTopFirstId={setTopFirstId}
@@ -1148,10 +1148,10 @@ function App() {
         connectMetaMask={connectMetaMask}
         connectWalletConnect={connectWalletConnect}
         isRedeeming={isRedeeming}
-        vrfPending={vrfPending}
+        VRFPending={VRFPending}
         mintTicket={mintTicket}
         redeemTicket={redeemTicket}
-        claimRewards={claimRewards}
+        claimREWARDS={claimREWARDS}
         actionPerforming={actionPerforming}
         actionError={actionError}
         icons={UI_CONST.ICONS}
@@ -1187,7 +1187,7 @@ function App() {
         setZoomImg={setZoomImg}
         redeemMsg={redeemMsg}
         fetchStats={fetchStats}
-        fetchRewards={fetchRewards}
+        fetchREWARDS={fetchREWARDS}
         fetchWalletAssets={fetchWalletAssets}
       />
 
@@ -1195,12 +1195,12 @@ function App() {
         zoomImg={zoomImg}
         setZoomImg={setZoomImg}
         isRedeeming={isRedeeming}
-        vrfPending={vrfPending}
+        VRFPending={VRFPending}
         redeemMsg={redeemMsg}
         pendingTicketId={pendingTicketId}
         fetchWalletAssets={fetchWalletAssets}
         fetchStats={fetchStats}
-        fetchRewards={fetchRewards}
+        fetchREWARDS={fetchREWARDS}
         walletAddress={walletAddress}
         isInfoOpen={isInfoOpen}
         setOpenNavIdx={setOpenNavIdx}
@@ -1218,7 +1218,7 @@ function App() {
           onNext={goNextPanel}
           compact={isMobile}
           containerStyle={
-            isRewardsOpen
+            isREWARDSOpen
               ? {
                   width: "100%",
                   maxWidth: "100%",
@@ -1230,11 +1230,11 @@ function App() {
                   border: "none",
                   boxShadow: "none",
                 }
-              : isCollectionOpen ||
+              : isCOLLECTIONOpen ||
                   isTokenPanelOpen ||
-                  isUserPanelOpen ||
+                  isUSERPANELOpen ||
                   isVRFPanelOpen ||
-                  isCommunityCenterOpen
+                  isCOMMUNITYCENTEROpen
                 ? {
                     width: isMobile ? "min(100vw, 96vw)" : "min(1700px, 96vw)",
                     maxHeight: "100%",
@@ -1256,23 +1256,23 @@ function App() {
               myNFTs={myNFTs}
               myClaimable={myClaimable}
               rewardPool={rewardPool}
-              claimRewards={claimRewards}
+              claimREWARDS={claimREWARDS}
               blockNames={BACKGROUND_NAMES}
               blockPrices={blockPrices}
               blockMintCounts={blockMintCounts}
-              vrfUIData={vrfUIData}
+              VRFUIData={VRFUIData}
               onVRFRequest={onVRFRequest}
               onVRFRefresh={onVRFRefresh}
               onVRFCancelPending={onVRFCancelPending}
               onVRFUpdateParams={onVRFUpdateParams}
-              onVrfOpenExplorer={onVrfOpenExplorer}
+              onVRFOpenExplorer={onVRFOpenExplorer}
               biggiData={biggiData}
               onRefreshTokenMeta={onRefreshTokenMeta}
-              onRefreshRewards={onRefreshRewards}
+              onRefreshREWARDS={onRefreshREWARDS}
               onRefreshRouterInfo={onRefreshRouterInfo}
               onRefreshLiquidityPreview={onRefreshLiquidityPreview}
-              onRefreshBuybackInfo={onRefreshBuybackInfo}
-              onRefreshPolicy={onRefreshPolicy}
+              onRefreshBUYBACKInfo={onRefreshBUYBACKInfo}
+              onRefreshPOLICY={onRefreshPOLICY}
               fetchTreasuryInfo={fetchTreasuryInfo}
               fetchReserveInfo={fetchReserveInfo}
               fetchDistributorInfo={fetchDistributorInfo}
@@ -1313,18 +1313,18 @@ function App() {
         <LoadingOverlay open={false} />
         {/* Dal�� napojen� dal��ch 5 komponent */}
         <PinUploader onDone={() => {}} />
-        <RedeemFlow />
-        <RewardsBlockSummary />
+        <RedeemFLOW />
+        <REWARDSBlockSummary />
         <BiggiButton>Test BiggiButton</BiggiButton>
-        <BuybackDripButton>Test BuybackDripButton</BuybackDripButton>
+        <BUYBACKDRIPButton>Test BUYBACKDRIPButton</BUYBACKDRIPButton>
         {/* Dal�� napojen� dal��ch 5 komponent */}
-        <BuybackStabilityChart />
+        <BUYBACKStabilityChart />
         <DexLiquidityChart />
-        <FlowButton>Test FlowButton</FlowButton>
+        <FLOWButton>Test FLOWButton</FLOWButton>
         <LiquidityVaultChart />
         <LMReserveTokenDexButton>Test LMReserveTokenDexButton</LMReserveTokenDexButton>
         {/* Dal�� napojen� dal��ch 5 komponent */}
-        <PolicyButton>Test PolicyButton</PolicyButton>
+        <POLICYButton>Test POLICYButton</POLICYButton>
         {/* Simulace pou�it� RechartsCompat */}
         <div style={{ display: "none" }}>{RechartsCompat.AreaChart ? "" : null}</div>
         <SimpleLineChart data={[]} series={[]} />
@@ -1340,21 +1340,32 @@ function App() {
           {/* Simulace pou�it� constants/ui.js */}
           {UI_CONST.UI_CONST.ICONS?.[0]?.alt}
           {/* Simulace pou�it� Device.js hook� */}
-          {typeof DeviceHooks.useIsMobile === "function" ? "Device ok" : null}
+          {typeof DeviceHOOKS.useIsMobile === "function" ? "Device ok" : null}
         </div>
       </div>
       {/* Importy pro dal�� komponenty */}
       {/* eslint-disable-next-line */}
       {/* @ts-ignore */}
       import PinUploader from "./components/PinUploader.jsx";
-      import RedeemFlow from "./components/redeem/RedeemFlow.jsx";
-      import RewardsBlockSummary from "./components/rewards/RewardsBlockSummary.jsx";
+      import RedeemFLOW from "./components/redeem/RedeemFLOW.jsx";
+      import REWARDSBlockSummary from "./components/REWARDS/REWARDSBlockSummary.jsx";
       import BiggiButton from "./components/TOKEN/BiggiButton.jsx";
-      import BuybackDripButton from "./components/TOKEN/BuybackDripButton.jsx";
+      import BUYBACKDRIPButton from "./components/TOKEN/BUYBACKDRIPButton.jsx";
     </div>
   );
 }
 
 export default App;
+
+
+
+
+
+
+
+
+
+
+
 
 

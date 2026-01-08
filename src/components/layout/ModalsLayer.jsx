@@ -8,12 +8,12 @@ export default function ModalsLayer({
   zoomImg,
   setZoomImg,
   isRedeeming,
-  vrfPending,
+  VRFPending,
   redeemMsg,
   pendingTicketId,
   fetchWalletAssets,
   fetchStats,
-  fetchRewards,
+  fetchREWARDS,
   walletAddress,
   isInfoOpen,
   setOpenNavIdx,
@@ -29,15 +29,15 @@ export default function ModalsLayer({
 
       <React.Suspense fallback={null}>
         <RedeemOverlay
-          open={isRedeeming || vrfPending}
+          open={isRedeeming || VRFPending}
           isRedeeming={isRedeeming}
-          vrfPending={vrfPending}
+          VRFPending={VRFPending}
           redeemMsg={redeemMsg}
           pendingTicketId={pendingTicketId}
           onRefresh={() => {
             fetchWalletAssets(walletAddress);
             fetchStats();
-            fetchRewards();
+            fetchREWARDS();
           }}
           compact={isMobile}
         />
@@ -56,4 +56,6 @@ export default function ModalsLayer({
     </>
   );
 }
+
+
 

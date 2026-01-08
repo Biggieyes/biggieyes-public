@@ -1,8 +1,8 @@
-// src/services/NFTRewardsService.js
-// Ethers v5 service wrapper for NFTRewards (viewer + claim wrapper)
+// src/services/NFTREWARDSService.js
+// Ethers v5 service wrapper for NFTREWARDS (viewer + claim wrapper)
 // - read getters mapují ABI
 // - claim(rewardId) (write) s gas estimate + buffer + wait(1)
-// - batch helpers: getAllStats(), fetchEventsDetailed(), fetchRewardsRange(), fetchUserAssignedRewards()
+// - batch helpers: getAllStats(), fetchEventsDetailed(), fetchREWARDSRange(), fetchUserAssignedREWARDS()
 // - subscribeOnBlock / unsubscribeOnBlock()
 // - connectWithSigner() připravené pro write operace
 // NEZměnil jsem žádnou logiku kontraktu.
@@ -97,11 +97,11 @@ const ABI = [
     outputs: [
       { internalType: "uint8", name: "kind", type: "uint8" },
       { internalType: "address", name: "creator", type: "address" },
-      { internalType: "uint256", name: "rewardStartId", type: "uint256" },
+      { internalType: "uint256", name: "REWARDStartId", type: "uint256" },
       { internalType: "uint256", name: "rewardCount", type: "uint256" },
       { internalType: "bool", name: "randomnessRequested", type: "bool" },
       { internalType: "bool", name: "finished", type: "bool" },
-      { internalType: "uint256", name: "vrfRequestId", type: "uint256" },
+      { internalType: "uint256", name: "VRFRequestId", type: "uint256" },
     ],
     stateMutability: "view",
     type: "function",
@@ -139,14 +139,14 @@ const ABI = [
   },
   {
     inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    name: "vrfRequestToEvent",
+    name: "VRFRequestToEvent",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     stateMutability: "view",
     type: "function",
   },
   {
     inputs: [],
-    name: "vrfRouter",
+    name: "VRFRouter",
     outputs: [{ internalType: "address", name: "", type: "address" }],
     stateMutability: "view",
     type: "function",
@@ -184,7 +184,7 @@ const ABI = [
   },
 ];
 
-export default class NFTRewardsService {
+export default class NFTREWARDSService {
   /**
    * @param {string} address - contract address
    * @param {ethers.providers.Provider} provider - ethers v5 provider
@@ -206,7 +206,7 @@ export default class NFTRewardsService {
       await this.name();
       return true;
     } catch (e) {
-      console.error("NFTRewardsService.init failed:", e);
+      console.error("NFTREWARDSService.init failed:", e);
       throw e;
     }
   }
@@ -239,7 +239,7 @@ export default class NFTRewardsService {
     return await this.contract.supportsInterface(interfaceId);
   }
 
-  // rewards state
+  // REWARDS state
   async assignedTo(rewardId) {
     return await this.contract.assignedTo(rewardId);
   }
@@ -270,12 +270,12 @@ export default class NFTRewardsService {
     return await this.contract.nextRewardId();
   }
 
-  // vrf / helpers
-  async vrfRequestToEvent(reqId) {
-    return await this.contract.vrfRequestToEvent(reqId);
+  // VRF / helpers
+  async VRFRequestToEvent(reqId) {
+    return await this.contract.VRFRequestToEvent(reqId);
   }
-  async vrfRouter() {
-    return await this.contract.vrfRouter();
+  async VRFRouter() {
+    return await this.contract.VRFRouter();
   }
   async mainContract() {
     return await this.contract.mainContract();
@@ -338,7 +338,7 @@ export default class NFTRewardsService {
       this.symbol(),
       this.nextEventId(),
       this.nextRewardId(),
-      this.vrfRouter(),
+      this.VRFRouter(),
       this.mainContract(),
       this.owner(),
     ];
@@ -347,7 +347,7 @@ export default class NFTRewardsService {
       symbol,
       nextEventId,
       nextRewardId,
-      vrfRouter,
+      VRFRouter,
       mainContract,
       owner,
     ] = await Promise.all(calls);
@@ -356,7 +356,7 @@ export default class NFTRewardsService {
       symbol,
       nextEventId,
       nextRewardId,
-      vrfRouter,
+      VRFRouter,
       mainContract,
       owner,
     };
@@ -392,11 +392,11 @@ export default class NFTRewardsService {
         eventId: id,
         kind: evt.kind,
         creator: evt.creator,
-        rewardStartId: evt.rewardStartId,
+        REWARDStartId: evt.REWARDStartId,
         rewardCount: evt.rewardCount,
         randomnessRequested: evt.randomnessRequested,
         finished: evt.finished,
-        vrfRequestId: evt.vrfRequestId,
+        VRFRequestId: evt.VRFRequestId,
         eligibleCount,
         eligible,
       };
@@ -406,11 +406,11 @@ export default class NFTRewardsService {
   }
 
   /**
-   * fetchRewardsRange(startId, endId)
+   * fetchREWARDSRange(startId, endId)
    * - načte rewardInfo pro rozsah (startId <= id < endId)
    * - užitečné pro stránkování/renderer
    */
-  async fetchRewardsRange(startId, endId) {
+  async fetchREWARDSRange(startId, endId) {
     if (endId <= startId) return [];
     const ids = [];
     for (let i = startId; i < endId; i++) ids.push(i);
@@ -425,11 +425,11 @@ export default class NFTRewardsService {
   }
 
   /**
-   * fetchUserAssignedRewards(userAddr, limit = 500)
+   * fetchUserAssignedREWARDS(userAddr, limit = 500)
    * - iteruje rewardId od 0 do nextRewardId (max limit) a sbírá ty, které jsou assigned == userAddr
    * - WARNING: je to on-chain scan; pro větší rozsahy použij backend indexer nebo event logy
    */
-  async fetchUserAssignedRewards(userAddr, { limit = 1000 } = {}) {
+  async fetchUserAssignedREWARDS(userAddr, { limit = 1000 } = {}) {
     const nextBn = await this.nextRewardId();
     const next = Number(nextBn?.toString?.() ?? nextBn) || 0;
     const max = Math.min(next, limit);
@@ -453,7 +453,7 @@ export default class NFTRewardsService {
         const stats = await this.getAllStats();
         callback(blockNumber, stats);
       } catch (e) {
-        console.error("NFTRewardsService subscribeOnBlock error", e);
+        console.error("NFTREWARDSService subscribeOnBlock error", e);
       }
     };
     this.provider.on("block", this._onBlockHandler);
@@ -490,14 +490,16 @@ export default class NFTRewardsService {
       eventId: evt.eventId,
       kind: evt.kind,
       creator: evt.creator,
-      rewardStartId: evt.rewardStartId,
+      REWARDStartId: evt.REWARDStartId,
       rewardCount: evt.rewardCount,
       randomnessRequested: evt.randomnessRequested,
       finished: evt.finished,
-      vrfRequestId: evt.vrfRequestId,
+      VRFRequestId: evt.VRFRequestId,
       eligibleCount: evt.eligibleCount,
       eligible: evt.eligible,
     };
   }
 }
+
+
 

@@ -4,7 +4,7 @@ const ADDR = {
   RESERVE: "0xbF694e346D69acCEb578eA7C52642C521178e385",
   LM: "0x57F2Dc49f2fd1d5B1308e409aFfD9d423c0EA1AE", // LiquidityManager
   LIQUIDITY_VAULT: "0xc51e6D0f94f5F9feC82DD83D18Eb822925C16eD5",
-  // Drip
+  // DRIP
   DRIP_DISTRIBUTOR: "0x2564b32eE85d2DFe3c234f79BBCaA94704e91FAE",
   DRIP_LM: "0xf1A1f9C8fB64b8E14BbB35b6a41E139C7980db52",
   // Tokeny
@@ -17,26 +17,26 @@ const ADDR = {
   PAIR: "0x59133d46598D178be59f2c6E1eFF222FFAf92229",
   // Oracles, Feed
   BIGGI_PRICE_ORACLE: "0xac84a91d9732c4fF74Cab4c40b37a2F0aaEE7088", // není v seznamu, doplňte pokud existuje
-  // Treasury, Rewards
+  // Treasury, REWARDS
   TREASURY: "0xA1C5b749EDb98B5000DCaf30d4244AbB099BCEFb",
   TOKEN_REWARDS: "0xbFAE50A44b1C6559750e1EBCb03B878C1828945D",
-  // Buyback
+  // BUYBACK
   BUYBACK_AGENT: "0xCF3D72254b913e7a1311Be3Ec11a21Bd298e2728",
   // Další adresy z vašeho seznamu (přidejte podle potřeby do logiky projektu):
   COLLECTION: "0x304C08cdC4511649D97469E0F7A1f71270BC91E6",
   COLLECTION2: "0x1703EA074C72F550ecacb955ECE1aac1c5100Be5",
   m1: "0x304C08cdC4511649D97469E0F7A1f71270BC91E6", // BiggiMain
   m2: "0x1703EA074C72F550ecacb955ECE1aac1c5100Be5", // BiggiMain2
-  dripd: "0x2564b32eE85d2DFe3c234f79BBCaA94704e91FAE", // DripDistributor
-  dripLm: "0xf1A1f9C8fB64b8E14BbB35b6a41E139C7980db52", // DripLM
+  DRIPd: "0x2564b32eE85d2DFe3c234f79BBCaA94704e91FAE", // DRIPDistributor
+  DRIPLm: "0xf1A1f9C8fB64b8E14BbB35b6a41E139C7980db52", // DRIPLM
   reserve: "0xbF694e346D69acCEb578eA7C52642C521178e385", // BiggiReserve
   BiggiMain: "0x304C08cdC4511649D97469E0F7A1f71270BC91E6",
   BiggiMain2: "0x1703EA074C72F550ecacb955ECE1aac1c5100Be5",
   BiggiMasterTokenomicsConfig: "", // doplnit správnou adresu
   BiggiReserve: "0xbF694e346D69acCEb578eA7C52642C521178e385",
-  BiggiRewardsReader: "", // doplnit správnou adresu
-  DripDistributor: "0x2564b32eE85d2DFe3c234f79BBCaA94704e91FAE",
-  DripLM: "0xf1A1f9C8fB64b8E14BbB35b6a41E139C7980db52",
+  BiggiREWARDSReader: "", // doplnit správnou adresu
+  DRIPDistributor: "0x2564b32eE85d2DFe3c234f79BBCaA94704e91FAE",
+  DRIPLM: "0xf1A1f9C8fB64b8E14BbB35b6a41E139C7980db52",
   LiquidityKeeper: "", // doplnit správnou adresu
   COLLECTION_REWARDS: "0xaD59A214a629daa6c0b91951A7967b233Ae7d8b8",
   COMMUNITY_CENTER: "0x3462BC1561c3209848FC77e47cc1fF28d4a61b80",
@@ -75,10 +75,10 @@ const CHAIN_ADDRESSES = {
   80001: _baseAddresses(),
 };
 
-function _dripAddresses() {
+function _DRIPAddresses() {
   return {
-    dripDistributor: ADDR.DRIP_DISTRIBUTOR,
-    dripLM: ADDR.DRIP_LM,
+    DRIPDistributor: ADDR.DRIP_DISTRIBUTOR,
+    DRIPLM: ADDR.DRIP_LM,
     biggiToken: ADDR.BIGGI_TOKEN || ADDR.BIGGI,
     router: ADDR.ROUTER,
     reserve: ADDR.RESERVE,
@@ -87,27 +87,27 @@ function _dripAddresses() {
 }
 
 const DRIP_CHAIN_ADDRESSES = {
-  80002: _dripAddresses(),
-  137: _dripAddresses(),
-  80001: _dripAddresses(),
+  80002: _DRIPAddresses(),
+  137: _DRIPAddresses(),
+  80001: _DRIPAddresses(),
 };
 
-function _buybackAddresses() {
+function _BUYBACKAddresses() {
   return {
-    buybackAgent: ADDR.BUYBACK_AGENT,
+    BUYBACKAgent: ADDR.BUYBACK_AGENT,
     treasury: ADDR.TREASURY,
     biggiToken: ADDR.BIGGI_TOKEN || ADDR.BIGGI,
     router: ADDR.ROUTER,
     reserve: ADDR.RESERVE,
-    dripDistributor: ADDR.DRIP_DISTRIBUTOR,
-    tokenRewards: ADDR.TOKEN_REWARDS,
+    DRIPDistributor: ADDR.DRIP_DISTRIBUTOR,
+    tokenREWARDS: ADDR.TOKEN_REWARDS,
   };
 }
 
 const BUYBACK_CHAIN_ADDRESSES = {
-  80002: _buybackAddresses(),
-  137: _buybackAddresses(),
-  80001: _buybackAddresses(),
+  80002: _BUYBACKAddresses(),
+  137: _BUYBACKAddresses(),
+  80001: _BUYBACKAddresses(),
 };
 
 export function getLiquidityAddresses(chainId) {
@@ -115,14 +115,14 @@ export function getLiquidityAddresses(chainId) {
   return CHAIN_ADDRESSES[resolvedId] || CHAIN_ADDRESSES[DEFAULT_CHAIN_ID];
 }
 
-export function getDripAddresses(chainId) {
+export function getDRIPAddresses(chainId) {
   const resolvedId = Number(chainId) || DEFAULT_CHAIN_ID;
   return (
     DRIP_CHAIN_ADDRESSES[resolvedId] || DRIP_CHAIN_ADDRESSES[DEFAULT_CHAIN_ID]
   );
 }
 
-export function getBuybackAddresses(chainId) {
+export function getBUYBACKAddresses(chainId) {
   const resolvedId = Number(chainId) || DEFAULT_CHAIN_ID;
   return (
     BUYBACK_CHAIN_ADDRESSES[resolvedId] ||
@@ -171,10 +171,15 @@ export default {
   BUYBACK_CHAIN_ADDRESSES,
   TOKEN_DEX_CHAIN_ADDRESSES,
   getLiquidityAddresses,
-  getDripAddresses,
-  getBuybackAddresses,
+  getDRIPAddresses,
+  getBUYBACKAddresses,
   getTokenDexAddresses,
   DEFAULT_CHAIN_ID,
   ADDR,
 };
+
+
+
+
+
 

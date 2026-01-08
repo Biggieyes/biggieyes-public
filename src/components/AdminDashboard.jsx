@@ -1,7 +1,7 @@
 // src/components/AdminDashboard.jsx
 import * as React from "react";
 import {
-  getModeratorsRewardsContract,
+  getModeratorsREWARDSContract,
   getConfig,
   isOwner,
   parseWei,
@@ -40,7 +40,7 @@ export default function AdminDashboard({ walletAddress, onTx }) {
   const loadSlots = async () => {
     try {
       setStatus("Loading slots...");
-      const contract = await getModeratorsRewardsContract({ signer: false });
+      const contract = await getModeratorsREWARDSContract({ signer: false });
       const rows = [];
       for (let i = 0; i < 10; i += 1) {
         let addr = "";
@@ -65,7 +65,7 @@ export default function AdminDashboard({ walletAddress, onTx }) {
   const handleSetSlot = async () => {
     try {
       setPending(true);
-      const contract = await getModeratorsRewardsContract({ signer: true });
+      const contract = await getModeratorsREWARDSContract({ signer: true });
       const tx = await callFirst(
         contract,
         ["setSlotAddress", "setSlotWallet", "setSlot"],
@@ -93,7 +93,7 @@ export default function AdminDashboard({ walletAddress, onTx }) {
   const handleRevokeSlot = async () => {
     try {
       setPending(true);
-      const contract = await getModeratorsRewardsContract({ signer: true });
+      const contract = await getModeratorsREWARDSContract({ signer: true });
       const tx = await callFirst(
         contract,
         ["revokeSlot"],
@@ -122,7 +122,7 @@ export default function AdminDashboard({ walletAddress, onTx }) {
     try {
       setPending(true);
       const totalWei = parseWei(totalAmount || "0");
-      const contract = await getModeratorsRewardsContract({ signer: true });
+      const contract = await getModeratorsREWARDSContract({ signer: true });
       const tx = await callFirst(
         contract,
         ["distributeWeek"],
@@ -152,7 +152,7 @@ export default function AdminDashboard({ walletAddress, onTx }) {
     try {
       setPending(true);
       const valueWei = parseWei(fundAmount || "0");
-      const contract = await getModeratorsRewardsContract({ signer: true });
+      const contract = await getModeratorsREWARDSContract({ signer: true });
       const tx = await callFirst(contract, ["fund"], [], { value: valueWei });
       onTx?.({
         status: "pending",
@@ -193,12 +193,12 @@ export default function AdminDashboard({ walletAddress, onTx }) {
 
       {!cfg.contractAddress && (
         <div className="moderator-center__error">
-          ModeratorsRewards contract address is missing.
+          ModeratorsREWARDS contract address is missing.
         </div>
       )}
       {!cfg.abiReady && (
         <div className="moderator-center__error">
-          ABI is missing in <code>src/abis/ModeratorsRewards.json</code>.
+          ABI is missing in <code>src/abis/ModeratorsREWARDS.json</code>.
         </div>
       )}
 
@@ -338,4 +338,5 @@ export default function AdminDashboard({ walletAddress, onTx }) {
     </section>
   );
 }
+
 

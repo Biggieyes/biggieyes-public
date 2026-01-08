@@ -1,5 +1,5 @@
 import { ZeroAddress } from "ethers";
-import { getBuybackTreasuryContracts } from "../../web3/contracts/buybackTreasury.contracts";
+import { getBUYBACKTreasuryContracts } from "../../web3/contracts/BUYBACKTreasury.contracts";
 import { getProvider } from "../../web3/provider";
 
 async function _callOptional(fn, fallback = null) {
@@ -7,14 +7,14 @@ async function _callOptional(fn, fallback = null) {
   try {
     return await fn();
   } catch (error) {
-    console.warn("Buyback snapshot call failed", fn?.name, error);
+    console.warn("BUYBACK snapshot call failed", fn?.name, error);
     return fallback;
   }
 }
 
-export async function fetchBuybackTreasurySnapshot({ chainId, provider } = {}) {
+export async function fetchBUYBACKTreasurySnapshot({ chainId, provider } = {}) {
   const signerOrProvider = provider || getProvider();
-  const { buyback, treasury, token, addrs } = getBuybackTreasuryContracts(
+  const { BUYBACK, treasury, token, addrs } = getBUYBACKTreasuryContracts(
     chainId,
     signerOrProvider,
   );
@@ -22,13 +22,13 @@ export async function fetchBuybackTreasurySnapshot({ chainId, provider } = {}) {
   const [
     routerAddress,
     wrappedNative,
-    dripLM,
-    policyAddress,
-    autoBuybackEnabled,
+    DRIPLM,
+    POLICYAddress,
+    autoBUYBACKEnabled,
     fallbackMinIntervalSec,
     fallbackSwapSlippageBps,
     fallbackTxDeadlineSec,
-    lastBuyback,
+    lastBUYBACK,
     nativeBalance,
     biggiBalance,
     totalNativeReceived,
@@ -38,39 +38,39 @@ export async function fetchBuybackTreasurySnapshot({ chainId, provider } = {}) {
     treasuryBiggiBalance,
     treasuryMaticBalance,
     treasuryTotalBiggiReceived,
-    treasuryTotalBiggiFromBuyback,
+    treasuryTotalBiggiFromBUYBACK,
     treasuryTotalMaticReceived,
     treasuryTotalMaticFromDistributor,
-    buybackTokenBalance,
+    BUYBACKTokenBalance,
     treasuryTokenBalance,
     chainNativeBalance,
   ] = await Promise.all([
-    _callOptional(() => buyback.router()),
-    _callOptional(() => buyback.wrappedNative()),
-    _callOptional(() => buyback.dripLM()),
-    _callOptional(() => buyback.policy()),
-    _callOptional(() => buyback.autoBuybackEnabled(), false),
+    _callOptional(() => BUYBACK.router()),
+    _callOptional(() => BUYBACK.wrappedNative()),
+    _callOptional(() => BUYBACK.DRIPLM()),
+    _callOptional(() => BUYBACK.POLICY()),
+    _callOptional(() => BUYBACK.autoBUYBACKEnabled(), false),
     _callOptional(
-      () => buyback.fallbackMinIntervalSec(),
+      () => BUYBACK.fallbackMinIntervalSec(),
       0n,
     ),
     _callOptional(
-      () => buyback.fallbackSwapSlippageBps(),
+      () => BUYBACK.fallbackSwapSlippageBps(),
       0n,
     ),
-    _callOptional(() => buyback.fallbackTxDeadlineSec(), 0n),
-    _callOptional(() => buyback.lastBuybackAt(), 0n),
-    _callOptional(() => buyback.nativeBalance(), 0n),
-    _callOptional(() => buyback.biggiBalance(), 0n),
-    _callOptional(() => buyback.totalNativeReceived(), 0n),
-    _callOptional(() => buyback.totalNativeSpent(), 0n),
-    _callOptional(() => buyback.totalBiggiAcquired(), 0n),
-    _callOptional(() => buyback.paused(), false),
+    _callOptional(() => BUYBACK.fallbackTxDeadlineSec(), 0n),
+    _callOptional(() => BUYBACK.lastBUYBACKAt(), 0n),
+    _callOptional(() => BUYBACK.nativeBalance(), 0n),
+    _callOptional(() => BUYBACK.biggiBalance(), 0n),
+    _callOptional(() => BUYBACK.totalNativeReceived(), 0n),
+    _callOptional(() => BUYBACK.totalNativeSpent(), 0n),
+    _callOptional(() => BUYBACK.totalBiggiAcquired(), 0n),
+    _callOptional(() => BUYBACK.paused(), false),
     _callOptional(() => treasury.biggiBalance(), 0n),
     _callOptional(() => treasury.maticBalance(), 0n),
     _callOptional(() => treasury.totalBiggiReceived(), 0n),
     _callOptional(
-      () => treasury.totalBiggiReceivedFromBuyback(),
+      () => treasury.totalBiggiReceivedFromBUYBACK(),
       0n,
     ),
     _callOptional(() => treasury.totalMaticReceived(), 0n),
@@ -79,35 +79,35 @@ export async function fetchBuybackTreasurySnapshot({ chainId, provider } = {}) {
       0n,
     ),
     _callOptional(
-      () => token.balanceOf(addrs.buybackAgent),
+      () => token.balanceOf(addrs.BUYBACKAgent),
       0n,
     ),
     _callOptional(() => token.balanceOf(addrs.treasury), 0n),
     signerOrProvider
-      .getBalance(addrs.buybackAgent)
+      .getBalance(addrs.BUYBACKAgent)
       .catch(() => 0n),
   ]);
 
   return {
     ts: Date.now(),
-    buyback: {
-      address: buyback.address,
+    BUYBACK: {
+      address: BUYBACK.address,
       router: routerAddress,
       wrappedNative,
-      dripLM,
-      policy: policyAddress,
-      autoBuybackEnabled,
+      DRIPLM,
+      POLICY: POLICYAddress,
+      autoBUYBACKEnabled,
       fallbackMinIntervalSec,
       fallbackSwapSlippageBps,
       fallbackTxDeadlineSec,
-      lastBuyback,
+      lastBUYBACK,
       nativeBalance,
       biggiBalance,
       totalNativeReceived,
       totalNativeSpent,
       totalBiggiAcquired,
       paused,
-      tokenBalance: buybackTokenBalance,
+      tokenBalance: BUYBACKTokenBalance,
       nativeOnChain: chainNativeBalance,
     },
     treasury: {
@@ -115,16 +115,20 @@ export async function fetchBuybackTreasurySnapshot({ chainId, provider } = {}) {
       biggiBalance: treasuryBiggiBalance,
       maticBalance: treasuryMaticBalance,
       totalBiggiReceived: treasuryTotalBiggiReceived,
-      totalBiggiReceivedFromBuyback: treasuryTotalBiggiFromBuyback,
+      totalBiggiReceivedFromBUYBACK: treasuryTotalBiggiFromBUYBACK,
       totalMaticReceived: treasuryTotalMaticReceived,
       totalMaticReceivedFromDistributor: treasuryTotalMaticFromDistributor,
       tokenBalance: treasuryTokenBalance,
-      buybackAgent: addrs.buybackAgent,
-      tokenRewards: addrs.tokenRewards,
-      dripDistributor: addrs.dripDistributor,
+      BUYBACKAgent: addrs.BUYBACKAgent,
+      tokenREWARDS: addrs.tokenREWARDS,
+      DRIPDistributor: addrs.DRIPDistributor,
       reserve: addrs.reserve,
     },
     providerAddrs: addrs,
   };
 }
+
+
+
+
 

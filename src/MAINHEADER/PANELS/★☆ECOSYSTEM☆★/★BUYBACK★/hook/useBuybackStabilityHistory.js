@@ -10,31 +10,31 @@ const fmtLabel = (ts) =>
     minute: "2-digit",
   });
 
-export default function useBuybackStabilityHistory({
-  buybackSnapshot,
-  dripSnapshot,
+export default function useBUYBACKStabilityHistory({
+  BUYBACKSnapshot,
+  DRIPSnapshot,
 } = {}) {
   const [history, setHistory] = React.useState([]);
 
   React.useEffect(() => {
-    const bbTs = buybackSnapshot?.ts ?? 0;
-    const dripTs = dripSnapshot?.ts ?? 0;
-    const ts = Math.max(bbTs, dripTs);
+    const bbTs = BUYBACKSnapshot?.ts ?? 0;
+    const DRIPTs = DRIPSnapshot?.ts ?? 0;
+    const ts = Math.max(bbTs, DRIPTs);
     if (!ts) return;
 
     const point = {
       ts,
-      time: buybackSnapshot?.tsLabel || dripSnapshot?.tsLabel || fmtLabel(ts),
-      dripDistributor: dripSnapshot?.distributor?.tokenBalanceNumeric ?? null,
-      dripLm: dripSnapshot?.dripLM?.biggiBalanceNumeric ?? null,
-      buybackAgent: buybackSnapshot?.buyback?.biggiBalanceNumeric ?? null,
-      treasury: buybackSnapshot?.treasury?.biggiBalanceNumeric ?? null,
+      time: BUYBACKSnapshot?.tsLabel || DRIPSnapshot?.tsLabel || fmtLabel(ts),
+      DRIPDistributor: DRIPSnapshot?.distributor?.tokenBalanceNumeric ?? null,
+      DRIPLm: DRIPSnapshot?.DRIPLM?.biggiBalanceNumeric ?? null,
+      BUYBACKAgent: BUYBACKSnapshot?.BUYBACK?.biggiBalanceNumeric ?? null,
+      treasury: BUYBACKSnapshot?.treasury?.biggiBalanceNumeric ?? null,
     };
 
     const hasValue = [
-      point.dripDistributor,
-      point.dripLm,
-      point.buybackAgent,
+      point.DRIPDistributor,
+      point.DRIPLm,
+      point.BUYBACKAgent,
       point.treasury,
     ].some((val) => typeof val === "number" && Number.isFinite(val));
     if (!hasValue) return;
@@ -45,8 +45,10 @@ export default function useBuybackStabilityHistory({
       const updated = [...prev, point];
       return updated.slice(-HISTORY_LIMIT);
     });
-  }, [buybackSnapshot, dripSnapshot]);
+  }, [BUYBACKSnapshot, DRIPSnapshot]);
 
   return history;
 }
+
+
 

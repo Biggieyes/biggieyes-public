@@ -99,10 +99,11 @@ export function getBlockImages(block) {
   return files;
 }
 
-/** Rewards */
+/** REWARDS */
 export function rewardImageFor(type, idx) {
   return addBase(
-    `/images/rewards/${String(type ?? "")}/${String(idx ?? "")}.png`,
+    `/images/REWARDS/${String(type ?? "")}/${String(idx ?? "")}.png`,
   );
 }
+
 

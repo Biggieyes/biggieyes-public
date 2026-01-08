@@ -20,14 +20,14 @@ import {
   getReserve,
   getTreasuryRO,
   getTreasury,
-  getBuybackRO,
-  getBuyback,
-  getPolicyRO,
-  getPolicy,
-  getTokenRewardsRO,
-  getTokenRewards,
-  getCollectionRewardsRO,
-  getCollectionRewards,
+  getBUYBACKRO,
+  getBUYBACK,
+  getPOLICYRO,
+  getPOLICY,
+  getTokenREWARDSRO,
+  getTokenREWARDS,
+  getCOLLECTIONREWARDSRO,
+  getCOLLECTIONREWARDS,
   getFactoryRO,
   getRouter,
   getRouterRO,
@@ -37,17 +37,17 @@ import {
   getUpkeepRO,
   getUpkeep,
   getReaderRO,
-  getCollectionPublicRO,
-  getCollectionVRFRO,
-  getDripDistributorRO,
-  getDripDistributor,
-  getDripLMRO,
-  getDripLM,
-  getDripKeeperRO,
-  getDripKeeper,
+  getCOLLECTIONPublicRO,
+  getCOLLECTIONVRFRO,
+  getDRIPDistributorRO,
+  getDRIPDistributor,
+  getDRIPLMRO,
+  getDRIPLM,
+  getDRIPKeeperRO,
+  getDRIPKeeper,
   // additional read-only readers (ensure exports exist in utils/contract.js)
   getBiggiMainReaderRO,
-  getBiggiRewardsReaderRO,
+  getBiggiREWARDSReaderRO,
   getBiggiTokenReaderRO,
   getBiggiTokenomicsReaderRO,
   // read-only provider helper
@@ -151,7 +151,7 @@ export function ContractsProvider({ children }) {
         getReadOnlyMain2(effectiveROProvider()),
       ),
 
-      vrfRead: () => {
+      VRFRead: () => {
         try {
           return getVRFRO(effectiveROProvider());
         } catch {
@@ -201,77 +201,77 @@ export function ContractsProvider({ children }) {
         getTreasuryRO(effectiveROProvider()),
       ),
 
-      buybackRead: () => {
+      BUYBACKRead: () => {
         try {
-          return getBuybackRO(effectiveROProvider());
+          return getBUYBACKRO(effectiveROProvider());
         } catch {
-          return getBuybackRO();
+          return getBUYBACKRO();
         }
       },
-      buybackWrite: rwOrRo(getBuyback, () =>
-        getBuybackRO(effectiveROProvider()),
+      BUYBACKWrite: rwOrRo(getBUYBACK, () =>
+        getBUYBACKRO(effectiveROProvider()),
       ),
 
-      policyRead: () => {
+      POLICYRead: () => {
         try {
-          return getPolicyRO(effectiveROProvider());
+          return getPOLICYRO(effectiveROProvider());
         } catch {
-          return getPolicyRO();
+          return getPOLICYRO();
         }
       },
-      policyWrite: rwOrRo(getPolicy, () => getPolicyRO(effectiveROProvider())),
+      POLICYWrite: rwOrRo(getPOLICY, () => getPOLICYRO(effectiveROProvider())),
 
-      tokenRewardsRead: () => {
+      tokenREWARDSRead: () => {
         try {
-          return getTokenRewardsRO(effectiveROProvider());
+          return getTokenREWARDSRO(effectiveROProvider());
         } catch {
-          return getTokenRewardsRO();
+          return getTokenREWARDSRO();
         }
       },
-      tokenRewardsWrite: rwOrRo(getTokenRewards, () =>
-        getTokenRewardsRO(effectiveROProvider()),
+      tokenREWARDSWrite: rwOrRo(getTokenREWARDS, () =>
+        getTokenREWARDSRO(effectiveROProvider()),
       ),
 
-      collectionRewardsRead: () => {
+      COLLECTIONREWARDSRead: () => {
         try {
-          return getCollectionRewardsRO(effectiveROProvider());
+          return getCOLLECTIONREWARDSRO(effectiveROProvider());
         } catch {
-          return getCollectionRewardsRO();
+          return getCOLLECTIONREWARDSRO();
         }
       },
-      collectionRewardsWrite: rwOrRo(getCollectionRewards, () =>
-        getCollectionRewardsRO(effectiveROProvider()),
+      COLLECTIONREWARDSWrite: rwOrRo(getCOLLECTIONREWARDS, () =>
+        getCOLLECTIONREWARDSRO(effectiveROProvider()),
       ),
 
-      dripDistributorRead: () => {
+      DRIPDistributorRead: () => {
         try {
-          return getDripDistributorRO(effectiveROProvider());
+          return getDRIPDistributorRO(effectiveROProvider());
         } catch {
-          return getDripDistributorRO();
+          return getDRIPDistributorRO();
         }
       },
-      dripDistributorWrite: rwOrRo(getDripDistributor, () =>
-        getDripDistributorRO(effectiveROProvider()),
+      DRIPDistributorWrite: rwOrRo(getDRIPDistributor, () =>
+        getDRIPDistributorRO(effectiveROProvider()),
       ),
 
-      dripLMRead: () => {
+      DRIPLMRead: () => {
         try {
-          return getDripLMRO(effectiveROProvider());
+          return getDRIPLMRO(effectiveROProvider());
         } catch {
-          return getDripLMRO();
+          return getDRIPLMRO();
         }
       },
-      dripLMWrite: rwOrRo(getDripLM, () => getDripLMRO(effectiveROProvider())),
+      DRIPLMWrite: rwOrRo(getDRIPLM, () => getDRIPLMRO(effectiveROProvider())),
 
-      dripKeeperRead: () => {
+      DRIPKeeperRead: () => {
         try {
-          return getDripKeeperRO(effectiveROProvider());
+          return getDRIPKeeperRO(effectiveROProvider());
         } catch {
-          return getDripKeeperRO();
+          return getDRIPKeeperRO();
         }
       },
-      dripKeeperWrite: rwOrRo(getDripKeeper, () =>
-        getDripKeeperRO(effectiveROProvider()),
+      DRIPKeeperWrite: rwOrRo(getDRIPKeeper, () =>
+        getDRIPKeeperRO(effectiveROProvider()),
       ),
 
       factoryRead: () => {
@@ -308,18 +308,18 @@ export function ContractsProvider({ children }) {
       },
       lmWrite: rwOrRo(getLMRaw, () => getLMRawRO(effectiveROProvider())),
 
-      collectionPublicRead: () => {
+      COLLECTIONPublicRead: () => {
         try {
-          return getCollectionPublicRO(effectiveROProvider());
+          return getCOLLECTIONPublicRO(effectiveROProvider());
         } catch {
-          return getCollectionPublicRO();
+          return getCOLLECTIONPublicRO();
         }
       },
-      collectionVrfRead: () => {
+      COLLECTIONVRFRead: () => {
         try {
-          return getCollectionVRFRO(effectiveROProvider());
+          return getCOLLECTIONVRFRO(effectiveROProvider());
         } catch {
-          return getCollectionVRFRO();
+          return getCOLLECTIONVRFRO();
         }
       },
 
@@ -350,10 +350,10 @@ export function ContractsProvider({ children }) {
         return getReaderRO(effectiveROProvider());
       },
 
-      biggiRewardsReaderRead: () => {
+      biggiREWARDSReaderRead: () => {
         try {
-          if (typeof getBiggiRewardsReaderRO === "function")
-            return getBiggiRewardsReaderRO(effectiveROProvider());
+          if (typeof getBiggiREWARDSReaderRO === "function")
+            return getBiggiREWARDSReaderRO(effectiveROProvider());
         } catch {}
         return getReaderRO(effectiveROProvider());
       },
@@ -393,4 +393,10 @@ export function useContracts() {
     throw new Error("useContracts must be used inside <ContractsProvider>");
   return context;
 }
+
+
+
+
+
+
 

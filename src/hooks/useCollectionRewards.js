@@ -1,13 +1,13 @@
-// src/hooks/useCollectionRewards.js
+// src/HOOKS/useCOLLECTIONREWARDS.js
 import * as React from "react";
 import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { ABI_REWARDS_READER, getROProvider } from "../utils/contract";
-import { BLOCK_INDICES } from "../services/collectionRewardsService";
+import { BLOCK_INDICES } from "../services/COLLECTIONREWARDSService";
 // ...existing code...
 
 // ...existing code...
 
-export function useCollectionRewards(walletAddress, providerOverride) {
+export function useCOLLECTIONREWARDS(walletAddress, providerOverride) {
   const [data, setData] = React.useState({
     address: "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
     blockReward: "0",
@@ -35,19 +35,19 @@ export function useCollectionRewards(walletAddress, providerOverride) {
         const provider = providerOverride || getROProvider();
         if (!provider) throw new Error("Read-only provider not available");
 
-        // RewardsReader contract instance
-        const rewardsReader = new Contract(
+        // REWARDSReader contract instance
+        const REWARDSReader = new Contract(
           "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
           ABI_REWARDS_READER,
           provider,
         );
 
         // Čtení globálního snapshotu (viz ABI)
-        const global = await rewardsReader.globalSnapshot();
+        const global = await REWARDSReader.globalSnapshot();
 
         // Načtení odměn pro všechny bloky
         const blockPaid = await Promise.all(
-          BLOCK_INDICES.map((idx) => rewardsReader.blockPaid(idx)),
+          BLOCK_INDICES.map((idx) => REWARDSReader.blockPaid(idx)),
         );
 
         setData((prev) => ({
@@ -59,7 +59,7 @@ export function useCollectionRewards(walletAddress, providerOverride) {
           // ...další pole podle potřeby
         }));
       } catch (e) {
-        console.error("useCollectionRewards.refresh", e);
+        console.error("useCOLLECTIONREWARDS.refresh", e);
         setError(e);
       } finally {
         setLoading(false);
@@ -74,4 +74,7 @@ export function useCollectionRewards(walletAddress, providerOverride) {
 
   return { data, loading, error, refresh };
 }
+
+
+
 

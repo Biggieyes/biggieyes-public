@@ -1,68 +1,68 @@
-// BIGGI ecosystem panel - premium layout, safe fallbacks, live snapshot wiring
+// BIGGI ECOSYSTEM panel - premium layout, safe fallbacks, live snapshot wiring
 
 import * as React from "react";
-import "../../MAINHEADER/PANELS/★☆REWARDS☆★/RewardsPanel.css";
+import "../../MAINHEADER/PANELS/REWARDS/REWARDSPanel.css";
 import "../../styles/biggi-token.skin.css";
 import styles from "./styles/BiggiToken.module.css";
 import LiquidityVaultChart from "../../components/TOKEN/LiquidityVaultChart.jsx";
 import TokenSupplyChart from "../../components/TOKEN/TokenSupplyChart.jsx";
 import DexLiquidityChart from "../../components/TOKEN/DexLiquidityChart.jsx";
 import BiggiButton from "../../components/TOKEN/BiggiButton.jsx";
-import FlowButton from "../../components/TOKEN/FlowButton.jsx";
-import BuybackDripButton from "../../components/TOKEN/BuybackDripButton.jsx";
+import FLOWButton from "../../components/TOKEN/FLOWButton.jsx";
+import BUYBACKDRIPButton from "../../components/TOKEN/BUYBACKDRIPButton.jsx";
 import LMReserveTokenDexButton from "../../components/TOKEN/LMReserveTokenDexButton.jsx";
-import PolicyButton from "../../components/TOKEN/PolicyButton.jsx";
+import POLICYButton from "../../components/TOKEN/POLICYButton.jsx";
 import { getBiggiBalancesAcrossReserveLmLv } from "../../services/composed";
 import { BiggiLpPriceFeed as ABI_LP_PRICE_FEED } from "../../config/abi/index.js";
-import { createBuybackService, createDripDistributorService } from "../../services/factories";
+import { createBUYBACKService, createDRIPDistributorService } from "../../services/factories";
 import { getROProvider, getSignerProvider, ensureAmoy, ADDR, AMOY } from "../../utils/contract";
-import BiggiBuybackReader from "../../config/abi/BiggiBuybackReader.json";
-import BiggiDripReader from "../../config/abi/BiggiDripReader.json";
+import BiggiBUYBACKReader from "../../config/abi/BiggiBUYBACKReader.json";
+import BiggiDRIPReader from "../../config/abi/BiggiDRIPReader.json";
 import { getProvider } from "../../web3/provider";
-import TokenRewardsService from "../../services/tokenRewardsService";
+import TokenREWARDSService from "../../services/tokenREWARDSService";
 import {
   BiggiLiquidityManager as ABI_LM,
   UniswapV2Pair as ABI_PAIR,
   LiquidityVault as ABI_LIQUIDITY_VAULT,
   BiggiToken as ABI_TOKEN,
-  BiggiBuybackAgent as ABI_BUYBACK,
-  BiggiPolicy as ABI_POLICY,
-  DripLM as ABI_DRIPLM,
-  DripDistributor as ABI_DRIP_DISTRIBUTOR,
+  BiggiBUYBACKAgent as ABI_BUYBACK,
+  BiggiPOLICY as ABI_POLICY,
+  DRIPLM as ABI_DRIPLM,
+  DRIPDistributor as ABI_DRIP_DISTRIBUTOR,
   // Pokud máš ABI_UPKEEP a ABI_ROUTER v config/abi, přidej je zde
 } from "../../config/abi/index.js";
 import TokenomicsPanel from "../../MAINHEADER/PANELS/TokenomicsPanel.jsx";
 import DistributorTokenTab from "../../MAINHEADER/PANELS/tabs/DistributorTokenTab.jsx";
-import DripTab from "../../MAINHEADER/PANELS/tabs/DripTab.jsx";
-import BuybackTreasuryTab from "../../MAINHEADER/PANELS/tabs/BuybackTreasuryTab.jsx";
+import DRIPTab from "../../MAINHEADER/PANELS/tabs/DRIPTab.jsx";
+import BUYBACKTreasuryTab from "../../MAINHEADER/PANELS/tabs/BUYBACKTreasuryTab.jsx";
 import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
-import useDripSnapshot from "../../hooks/tokenomics/useDripSnapshot";
-import useDripHistory from "../../hooks/tokenomics/useDripHistory";
-import useBuybackTreasurySnapshot from "../../hooks/tokenomics/useBuybackTreasurySnapshot";
-import useBuybackTreasuryHistory from "../../hooks/tokenomics/useBuybackTreasuryHistory";
-import useLiquiditySnapshot from "../../hooks/tokenomics/useLiquiditySnapshot";
-import useLiquidityHistory from "../../hooks/tokenomics/useLiquidityHistory";
-import useTokenDexSnapshot from "../../hooks/tokenomics/useTokenDexSnapshot.js";
-import useTokenDexHistory from "../../hooks/tokenomics/useTokenDexHistory.js";
-import useBuybackStabilityHistory from "../../hooks/tokenomics/useBuybackStabilityHistory.js";
-import useBiggiToken from "../../hooks/useBiggiToken";
-import useBiggiTokenomicsReader from "../../hooks/useBiggiTokenomicsReader";
-import useBuyback from "../../hooks/useBuyback";
-import useReserve from "../../hooks/useReserve";
-import useTreasury from "../../hooks/useTreasury";
-import usePolicy from "../../hooks/usePolicy";
-import useDripDistributor from "../../hooks/useDripDistributor";
-import useDripLM from "../../hooks/useDripLM";
-import useLiquidityManager from "../../hooks/useLiquidityManager";
-import useLiquidityVault from "../../hooks/useLiquidityVault";
-import useLiquidityAutomation from "../../hooks/useLiquidityAutomation";
-import useBuybackKeeper from "../../hooks/useBuybackKeeper";
-import useLiquidityKeeper from "../../hooks/useLiquidityKeeper";
-import useDripKeeper from "../../hooks/useDripKeeper";
-import useDistributor from "../../hooks/useDistributor";
+import useDRIPSnapshot from "../../HOOKS/tokenomics/useDRIPSnapshot";
+import useDRIPHistory from "../../HOOKS/tokenomics/useDRIPHistory";
+import useBUYBACKTreasurySnapshot from "../../HOOKS/tokenomics/useBUYBACKTreasurySnapshot";
+import useBUYBACKTreasuryHistory from "../../HOOKS/tokenomics/useBUYBACKTreasuryHistory";
+import useLiquiditySnapshot from "../../HOOKS/tokenomics/useLiquiditySnapshot";
+import useLiquidityHistory from "../../HOOKS/tokenomics/useLiquidityHistory";
+import useTokenDexSnapshot from "../../HOOKS/tokenomics/useTokenDexSnapshot.js";
+import useTokenDexHistory from "../../HOOKS/tokenomics/useTokenDexHistory.js";
+import useBUYBACKStabilityHistory from "../../HOOKS/tokenomics/useBUYBACKStabilityHistory.js";
+import useBiggiToken from "../../HOOKS/useBiggiToken";
+import useBiggiTokenomicsReader from "../../HOOKS/useBiggiTokenomicsReader";
+import useBUYBACK from "../../HOOKS/useBUYBACK";
+import useReserve from "../../HOOKS/useReserve";
+import useTreasury from "../../HOOKS/useTreasury";
+import usePOLICY from "../../HOOKS/usePOLICY";
+import useDRIPDistributor from "../../HOOKS/useDRIPDistributor";
+import useDRIPLM from "../../HOOKS/useDRIPLM";
+import useLiquidityManager from "../../HOOKS/useLiquidityManager";
+import useLiquidityVault from "../../HOOKS/useLiquidityVault";
+import useLiquidityAutomation from "../../HOOKS/useLiquidityAutomation";
+import useBUYBACKKeeper from "../../HOOKS/useBUYBACKKeeper";
+import useLiquidityKeeper from "../../HOOKS/useLiquidityKeeper";
+import useDRIPKeeper from "../../HOOKS/useDRIPKeeper";
+import useDistributor from "../../HOOKS/useDistributor";
 
 // Modularized component imports
-import BlockCard from "../../components/CollectionBlocksGrid.BlockCard.jsx";
+import BlockCard from "../../components/COLLECTIONBlocksGrid.BlockCard.jsx";
 import HeroStat from "./HeroStats.jsx";
 
 import {
@@ -94,7 +94,7 @@ import {
 // Kompletní přenos logiky, hooků, stavů a JSX z původního BiggiToken.jsx
 
 // Error boundary pro panel (přesunuto z původního souboru)
-class EcosystemErrorBoundary extends React.Component {
+class ECOSYSTEMErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -108,15 +108,15 @@ class EcosystemErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <section className="rewards-grid biggi-skin" style={{ padding: "24px" }}>
-          <div className="rewards-grid__surface biggi-token-surface">
-            <header className="rewards-grid__header biggi-header panel-header panel-header--ecosystem">
-              <div className="rewards-grid__headline">
-                <h2 className="rewards-grid__title">BIGGI ECOSYSTEM</h2>
-                <p className="rewards-grid__subtitle">Panel spadl na chybě. Zkuste refresh nebo ověřit RPC.</p>
+        <section className="REWARDS-grid biggi-skin" style={{ padding: "24px" }}>
+          <div className="REWARDS-grid__surface biggi-token-surface">
+            <header className="REWARDS-grid__header biggi-header panel-header panel-header--ECOSYSTEM">
+              <div className="REWARDS-grid__headline">
+                <h2 className="REWARDS-grid__title">BIGGI ECOSYSTEM</h2>
+                <p className="REWARDS-grid__subtitle">Panel spadl na chybě. Zkuste refresh nebo ověřit RPC.</p>
               </div>
             </header>
-            <div className="flow-panel-box" style={{ color: "#f2c94c" }}>
+            <div className="FLOW-panel-box" style={{ color: "#f2c94c" }}>
               <p>Detail: {this.state.error?.message || String(this.state.error)}</p>
               <button className="tab-button" onClick={() => window.location.reload()}>Reload stránky</button>
             </div>
@@ -151,11 +151,19 @@ function BiggiTokenInner(props) {
 
   // Pokud potřebujete, vložte zde skutečný návratový kód:
   return (
-    <section className={styles.ecosystem + " rewards-grid biggi-skin" + (props.compact ? " is-compact" : "") }>
+    <section className={styles.ECOSYSTEM + " REWARDS-grid biggi-skin" + (props.compact ? " is-compact" : "") }>
       {/* ...veškerý JSX, logika, UI, stav atd. z původního BiggiToken.jsx... */}
     </section>
   );
 }
 
 export default BiggiTokenInner;
+
+
+
+
+
+
+
+
 

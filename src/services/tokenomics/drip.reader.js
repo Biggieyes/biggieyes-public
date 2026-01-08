@@ -1,5 +1,5 @@
 import { ZeroAddress } from "ethers";
-import { getDripContracts } from "../../web3/contracts/drip.contracts";
+import { getDRIPContracts } from "../../web3/contracts/DRIP.contracts";
 import { getProvider } from "../../web3/provider";
 
 async function _callOptional(fn, fallback = null) {
@@ -7,14 +7,14 @@ async function _callOptional(fn, fallback = null) {
   try {
     return await fn();
   } catch (error) {
-    console.warn("Drip snapshot call failed", fn?.name, error);
+    console.warn("DRIP snapshot call failed", fn?.name, error);
     return fallback;
   }
 }
 
-export async function fetchDripSnapshot({ chainId, provider } = {}) {
+export async function fetchDRIPSnapshot({ chainId, provider } = {}) {
   const signerOrProvider = provider || getProvider();
-  const { dripDistributor, dripLM, token, addrs } = getDripContracts(
+  const { DRIPDistributor, DRIPLM, token, addrs } = getDRIPContracts(
     chainId,
     signerOrProvider,
   );
@@ -36,34 +36,34 @@ export async function fetchDripSnapshot({ chainId, provider } = {}) {
     biggiLm,
     nativeBalance,
   ] = await Promise.all([
-    _callOptional(() => dripDistributor.CAP(), 0n),
+    _callOptional(() => DRIPDistributor.CAP(), 0n),
     _callOptional(
-      () => dripDistributor.availableTokens(),
+      () => DRIPDistributor.availableTokens(),
       0n,
     ),
-    _callOptional(() => dripDistributor.capRemaining(), 0n),
-    _callOptional(() => dripDistributor.tokensPerMint(), 0n),
-    _callOptional(() => dripDistributor.getAvailable(), 0n),
+    _callOptional(() => DRIPDistributor.capRemaining(), 0n),
+    _callOptional(() => DRIPDistributor.tokensPerMint(), 0n),
+    _callOptional(() => DRIPDistributor.getAvailable(), 0n),
     _callOptional(
-      () => dripDistributor.getTotalClaimed(),
+      () => DRIPDistributor.getTotalClaimed(),
       0n,
     ),
     _callOptional(
-      () => dripDistributor.getTotalNotified(),
+      () => DRIPDistributor.getTotalNotified(),
       0n,
     ),
-    _callOptional(() => dripDistributor.getTotalTopUp(), 0n),
-    _callOptional(() => dripDistributor.paused(), false),
-    _callOptional(() => dripLM.sellPct(), 0),
-    _callOptional(() => dripLM.slippageBps(), 0n),
-    _callOptional(() => dripLM.txDeadlineSec(), 0n),
+    _callOptional(() => DRIPDistributor.getTotalTopUp(), 0n),
+    _callOptional(() => DRIPDistributor.paused(), false),
+    _callOptional(() => DRIPLM.sellPct(), 0),
+    _callOptional(() => DRIPLM.slippageBps(), 0n),
+    _callOptional(() => DRIPLM.txDeadlineSec(), 0n),
     _callOptional(
-      () => token.balanceOf(addrs.dripDistributor),
+      () => token.balanceOf(addrs.DRIPDistributor),
       0n,
     ),
-    _callOptional(() => token.balanceOf(addrs.dripLM), 0n),
+    _callOptional(() => token.balanceOf(addrs.DRIPLM), 0n),
     _callOptional(
-      () => signerOrProvider.getBalance(addrs.dripLM),
+      () => signerOrProvider.getBalance(addrs.DRIPLM),
       0n,
     ),
   ]);
@@ -71,7 +71,7 @@ export async function fetchDripSnapshot({ chainId, provider } = {}) {
   return {
     ts: Date.now(),
     distributor: {
-      address: dripDistributor.address,
+      address: DRIPDistributor.address,
       cap,
       availableTokens,
       capRemaining,
@@ -82,11 +82,11 @@ export async function fetchDripSnapshot({ chainId, provider } = {}) {
       totalTopUp,
       getAvailable,
       tokenBalance: biggiDistributor,
-      dripLM: addrs.dripLM,
+      DRIPLM: addrs.DRIPLM,
       treasury: addrs.treasury,
     },
-    dripLM: {
-      address: dripLM.address,
+    DRIPLM: {
+      address: DRIPLM.address,
       sellPct,
       slippageBps,
       txDeadlineSec,
@@ -94,8 +94,9 @@ export async function fetchDripSnapshot({ chainId, provider } = {}) {
       reserve: addrs.reserve,
       biggiBalance: biggiLm,
       nativeBalance,
-      distributor: addrs.dripDistributor,
+      distributor: addrs.DRIPDistributor,
     },
   };
 }
+
 

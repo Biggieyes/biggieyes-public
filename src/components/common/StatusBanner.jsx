@@ -5,26 +5,26 @@ import RefreshButton from "./RefreshButton";
 /**
  * @param {{
  *  isRedeeming?: boolean,
- *  vrfPending?: boolean,
+ *  VRFPending?: boolean,
  *  redeemMsg?: string,
  *  onRefresh?: () => void
  * }} props
  */
 export default function StatusBanner({
   isRedeeming = false,
-  vrfPending = false,
+  VRFPending = false,
   redeemMsg = "",
   onRefresh = () => {},
 }) {
-  const show = isRedeeming || vrfPending || !!redeemMsg;
+  const show = isRedeeming || VRFPending || !!redeemMsg;
 
   const msg = React.useMemo(() => {
     if (redeemMsg) return redeemMsg;
-    if (isRedeeming && !vrfPending)
+    if (isRedeeming && !VRFPending)
       return "Sending and confirming the transaction...";
-    if (vrfPending) return "Waiting for the VRF reveal...";
+    if (VRFPending) return "Waiting for the VRF reveal...";
     return "";
-  }, [redeemMsg, isRedeeming, vrfPending]);
+  }, [redeemMsg, isRedeeming, VRFPending]);
 
   const [locked, setLocked] = React.useState(false);
   const lockRef = React.useRef(false);
@@ -84,7 +84,7 @@ export default function StatusBanner({
         transform: show ? "translateY(0)" : "translateY(-10px)",
       }}
     >
-      {(isRedeeming || vrfPending) && (
+      {(isRedeeming || VRFPending) && (
         <span
           aria-hidden="true"
           className="spinner"
@@ -103,7 +103,7 @@ export default function StatusBanner({
 
       <span>{msg}</span>
 
-      {vrfPending && (
+      {VRFPending && (
         <span style={{ display: "inline-flex", alignItems: "center" }}>
           <RefreshButton onClick={handleRefresh} disabled={locked} />
         </span>
@@ -121,4 +121,5 @@ export default function StatusBanner({
     </div>
   );
 }
+
 

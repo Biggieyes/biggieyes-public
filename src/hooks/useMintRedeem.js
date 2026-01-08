@@ -11,24 +11,24 @@ export function useMintRedeem(params) {
     ensureAmoy,
     getReaderRO,
     fetchStats,
-    fetchRewards,
+    fetchREWARDS,
     fetchWalletAssets,
     onRefreshTokenMetaRef,
     refreshVRFPanel,
-    checkVrfResolution,
+    checkVRFResolution,
     fetchMyTickets,
     fetchOwnedNFTsViaTransfers,
     preflightRedeemCheck,
     prettyError,
     setMyNFTs,
     isRedeeming,
-    vrfPending,
+    VRFPending,
     setIsRedeeming,
     setRedeemMsg,
     setRedeemStartBlock,
     setRedeemStartedAt,
     setPendingTicketId,
-    setVrfPending,
+    setVRFPending,
     setTopFirstId,
   } = params;
   const [performing, setPerforming] = React.useState(false);
@@ -74,7 +74,7 @@ export function useMintRedeem(params) {
       if (typeof contract.mintTicket !== "function") {
         if (typeof contract.mintPublic === "function") {
           alert(
-            "Tento kontrakt je public (main2). Mint lístků není podporovaný. Použij Collection 2 panel.",
+            "Tento kontrakt je public (main2). Mint lístků není podporovaný. Použij COLLECTION 2 panel.",
           );
         } else {
           alert("Mint není na tomto kontraktu dostupný.");
@@ -139,7 +139,7 @@ export function useMintRedeem(params) {
 
       await fetchWalletAssets(walletAddress);
       await fetchStats();
-      await fetchRewards();
+      await fetchREWARDS();
       if (onRefreshTokenMetaRef.current) await onRefreshTokenMetaRef.current();
       alert("Ticket minted.");
       refreshVRFPanel();
@@ -160,7 +160,7 @@ export function useMintRedeem(params) {
   }, [
     walletAddress,
     fetchStats,
-    fetchRewards,
+    fetchREWARDS,
     fetchWalletAssets,
     onRefreshTokenMetaRef,
     ensureAmoy,
@@ -173,7 +173,7 @@ export function useMintRedeem(params) {
 
   const redeemTicket = React.useCallback(async () => {
     if (!walletAddress) return alert("Please connect MetaMask first.");
-    if (isRedeeming || vrfPending) return;
+    if (isRedeeming || VRFPending) return;
     setPerforming(true);
     setError(null);
     try {
@@ -183,7 +183,7 @@ export function useMintRedeem(params) {
 
       if (typeof contract.redeemTicketAndMintNFT !== "function") {
         alert(
-          "Redeem není na public kolekci dostupný. Použij Collection 2 panel.",
+          "Redeem není na public kolekci dostupný. Použij COLLECTION 2 panel.",
         );
         return;
       }
@@ -246,7 +246,7 @@ export function useMintRedeem(params) {
       };
 
       setPendingTicketId(ticketIdStr);
-      setVrfPending(true);
+      setVRFPending(true);
       setRedeemMsg("Redeem confirmed. Waiting for VRF reveal...");
       setTopFirstId(ticketIdStr);
 
@@ -264,14 +264,14 @@ export function useMintRedeem(params) {
       const baseAssets = Array.from(byId.values());
       setMyNFTs([placeholder, ...baseAssets]);
 
-      await fetchRewards();
+      await fetchREWARDS();
       await fetchStats();
       refreshVRFPanel();
 
       setTimeout(() => {
         (async () => {
           try {
-            await checkVrfResolution();
+            await checkVRFResolution();
             await fetchWalletAssets(walletAddress);
           } catch (err) {
             console.debug("VRF follow-up refresh failed", err);
@@ -281,7 +281,7 @@ export function useMintRedeem(params) {
     } catch (err) {
       setError(err);
       setIsRedeeming(false);
-      setVrfPending(false);
+      setVRFPending(false);
       setRedeemMsg("");
       setPendingTicketId(null);
       if (typeof setRedeemStartedAt === "function") {
@@ -294,7 +294,7 @@ export function useMintRedeem(params) {
     }
   }, [
     walletAddress,
-    fetchRewards,
+    fetchREWARDS,
     fetchStats,
     fetchMyTickets,
     fetchOwnedNFTsViaTransfers,
@@ -302,19 +302,19 @@ export function useMintRedeem(params) {
     preflightRedeemCheck,
     fetchWalletAssets,
     refreshVRFPanel,
-    checkVrfResolution,
+    checkVRFResolution,
     contractRef,
     getContract,
     ensureAmoy,
     setMyNFTs,
     isRedeeming,
-    vrfPending,
+    VRFPending,
     setIsRedeeming,
     setRedeemMsg,
     setRedeemStartBlock,
     setRedeemStartedAt,
     setPendingTicketId,
-    setVrfPending,
+    setVRFPending,
     setTopFirstId,
   ]);
 
@@ -324,17 +324,17 @@ export function useMintRedeem(params) {
 
   const onVRFRefresh = React.useCallback(async () => {
     await fetchStats();
-    await fetchRewards();
+    await fetchREWARDS();
     if (walletAddress) await fetchWalletAssets(walletAddress);
     await refreshVRFPanel();
-    await checkVrfResolution();
+    await checkVRFResolution();
   }, [
     fetchStats,
-    fetchRewards,
+    fetchREWARDS,
     fetchWalletAssets,
     walletAddress,
     refreshVRFPanel,
-    checkVrfResolution,
+    checkVRFResolution,
   ]);
 
   const onVRFCancelPending = React.useCallback(() => {
@@ -357,4 +357,7 @@ export function useMintRedeem(params) {
     onVRFUpdateParams,
   };
 }
+
+
+
 

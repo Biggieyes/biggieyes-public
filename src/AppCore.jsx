@@ -15,19 +15,19 @@ import {
   getReaderRO,
   getROProvider,
   getSignerProvider,
-  getPolicyRO,
-  getBuybackRO,
+  getPOLICYRO,
+  getBUYBACKRO,
   getReserve,
-  getNFTRewards,
+  getNFTREWARDS,
   // explicit reader factories
   getBiggiMainReaderRO,
-  getBiggiRewardsReaderRO,
+  getBiggiREWARDSReaderRO,
   getBiggiTokenReaderRO,
   getBiggiTokenomicsReaderRO,
 } from "./utils/contract";
 import "./styles/biggi-token.skin.css";
 import { BiggiToken as ABI_TOKEN } from "./config/abi/index.js";
-import RewardsPanel from "./components/panels/RewardsPanel.jsx";
+import REWARDSPanel from "./components/panels/REWARDSPanel.jsx";
 import LiveStats from "./components/LiveStats";
 import Gallery from "./components/Gallery";
 import FullscreenPanel from "./components/common/FullscreenPanel";
@@ -38,10 +38,10 @@ import StatusBanner from "./components/common/StatusBanner";
 import ZoomModal from "./components/gallery/ZoomModal";
 import InfoPanel from "./components/panels/InfoPanel";
 import VRFPanel from "./components/VRF/VRFPanel";
-import UserPanel from "./components/user/UserPanel";
+import USERPANEL from "./components/user/USERPANEL";
 import AdminPanel from "./components/admin/AdminPanel";
 import * as WC from "./wallet/wc";
-import useTransparencyData from "./hooks/useTransparencyData";
+import useTransparencyData from "./HOOKS/useTransparencyData";
 import {
   mergeAttrs,
   getCachedPriceAttrs,
@@ -67,11 +67,11 @@ const RedeemOverlay = React.lazy(
   () => import("./components/redeem/RedeemOverlay"),
 );
 const BiggiToken = React.lazy(() => import("./components/TOKEN/BiggiToken"));
-const CollectionBlocksGrid = React.lazy(
-  () => import("./components/CollectionBlocksGrid"),
+const COLLECTIONBlocksGrid = React.lazy(
+  () => import("./components/COLLECTIONBlocksGrid"),
 );
-const CommunityCenterPanel = React.lazy(
-  () => import("./components/panels/CommunityCenterPanel"),
+const COMMUNITYCENTERPanel = React.lazy(
+  () => import("./components/panels/COMMUNITYCENTERPanel"),
 ); // nový panel
 
 /* ======================================================================== */
@@ -363,16 +363,16 @@ function useIsMobile(breakpoint = 700) {
 
 const ICONS = [
   {
-    src: "/images/rewards.png",
+    src: "/images/REWARDS.png",
     alt: "REWARDS",
-    modalText: MODAL_TEXTS.rewards || "",
+    modalText: MODAL_TEXTS.REWARDS || "",
   },
   {
-    src: "/images/collection2.png",
+    src: "/images/COLLECTION2.png",
     alt: "COLLECTION",
-    modalText: MODAL_TEXTS.collection,
+    modalText: MODAL_TEXTS.COLLECTION,
   },
-  { src: "/images/vrf-mint.png", alt: "VRF MINT", modalText: MODAL_TEXTS.mint },
+  { src: "/images/VRF-mint.png", alt: "VRF MINT", modalText: MODAL_TEXTS.mint },
   {
     src: "/images/chance-rules.png",
     alt: "BIGGI ECOSYSTEM",
@@ -382,7 +382,7 @@ const ICONS = [
   {
     src: "/images/expansion.png",
     alt: "COMMUNITY CENTER",
-    modalText: MODAL_TEXTS.communityCenter || MODAL_TEXTS.expansion,
+    modalText: MODAL_TEXTS.COMMUNITYCENTER || MODAL_TEXTS.expansion,
   },
 ];
 
@@ -447,7 +447,7 @@ const readersRef = { current: {} };
 
 /**
  * getCachedReaderInstance(kind)
- * kind: "main" | "rewards" | "tokenomics" | "generic"
+ * kind: "main" | "REWARDS" | "tokenomics" | "generic"
  * returns a read-only Contract instance (from utils/contract helpers) or fallback getReaderRO()
  */
 function getCachedReaderInstance(kind = "main") {
@@ -457,10 +457,10 @@ function getCachedReaderInstance(kind = "main") {
         readersRef.current.BiggiMainReader = getBiggiMainReaderRO();
       return readersRef.current.BiggiMainReader;
     }
-    if (kind === "rewards" && typeof getBiggiRewardsReaderRO === "function") {
-      if (!readersRef.current.BiggiRewardsReader)
-        readersRef.current.BiggiRewardsReader = getBiggiRewardsReaderRO();
-      return readersRef.current.BiggiRewardsReader;
+    if (kind === "REWARDS" && typeof getBiggiREWARDSReaderRO === "function") {
+      if (!readersRef.current.BiggiREWARDSReader)
+        readersRef.current.BiggiREWARDSReader = getBiggiREWARDSReaderRO();
+      return readersRef.current.BiggiREWARDSReader;
     }
     if (kind === "token" && typeof getBiggiTokenReaderRO === "function") {
       if (!readersRef.current.BiggiTokenReader)
@@ -522,14 +522,14 @@ function App() {
 
   const [biggiData, setBiggiData] = React.useState({
     token: {},
-    rewards: {},
+    REWARDS: {},
     router: {},
     liquidity: {},
-    policy: {},
-    buyback: {},
+    POLICY: {},
+    BUYBACK: {},
   });
 
-  const [vrfUIData, setVrfUIData] = React.useState({
+  const [VRFUIData, setVRFUIData] = React.useState({
     network: "EVM",
     subscription: { id: "", linkBalance: "", consumers: [] },
     params: {
@@ -549,7 +549,7 @@ function App() {
     history: [],
   });
 
-  const [vrfPending, setVrfPending] = React.useState(false);
+  const [VRFPending, setVRFPending] = React.useState(false);
   const [isRedeeming, setIsRedeeming] = React.useState(false);
   const [redeemMsg, setRedeemMsg] = React.useState("");
   const [redeemStartBlock, setRedeemStartBlock] = React.useState(null);
@@ -562,7 +562,7 @@ function App() {
   const [cardsHelpOpen, setCardsHelpOpen] = React.useState(false);
 
   const statsTimer = React.useRef(null);
-  const rewardsTimer = React.useRef(null);
+  const REWARDSTimer = React.useRef(null);
   const contractRef = React.useRef(null);
   const unsubRef = React.useRef(() => {});
   const mintIdxCacheRef = React.useRef(new Map());
@@ -628,16 +628,16 @@ function App() {
     setAdminOpen(true);
   }, [isAdmin]);
 
-  const onRefreshPolicy = React.useCallback(async () => {
+  const onRefreshPOLICY = React.useCallback(async () => {
     try {
-      const pol = await getPolicyRO();
+      const pol = await getPOLICYRO();
       if (!pol) return;
       const { ethers } = await import("ethers");
 
       let splits = {
         reserveBps: null,
-        buybackBps: null,
-        collRewardsBps: null,
+        BUYBACKBps: null,
+        collREWARDSBps: null,
         treasuryBps: null,
       };
       try {
@@ -646,8 +646,8 @@ function App() {
           if (s && s.length === 4) {
             splits = {
               reserveBps: Number(s[0]),
-              buybackBps: Number(s[1]),
-              collRewardsBps: Number(s[2]),
+              BUYBACKBps: Number(s[1]),
+              collREWARDSBps: Number(s[2]),
               treasuryBps: Number(s[3]),
             };
           }
@@ -656,13 +656,13 @@ function App() {
       try {
         const [resB, buyB, collB, treB] = await Promise.all([
           pol.distributorReserveBps?.(),
-          pol.distributorBuybackBps?.(),
-          pol.distributorCollectionRewardsBps?.(),
+          pol.distributorBUYBACKBps?.(),
+          pol.distributorCOLLECTIONREWARDSBps?.(),
           pol.distributorTreasuryBps?.(),
         ]);
         if (resB != null) splits.reserveBps = Number(resB);
-        if (buyB != null) splits.buybackBps = Number(buyB);
-        if (collB != null) splits.collRewardsBps = Number(collB);
+        if (buyB != null) splits.BUYBACKBps = Number(buyB);
+        if (collB != null) splits.collREWARDSBps = Number(collB);
         if (treB != null) splits.treasuryBps = Number(treB);
       } catch {}
 
@@ -670,8 +670,8 @@ function App() {
         swapSlippageBps: null,
         lpSlippageBps: null,
         txDeadlineSec: null,
-        minBuybackInterval: null,
-        maxDailyBuybackNative: null,
+        minBUYBACKInterval: null,
+        maxDailyBUYBACKNative: null,
       };
       try {
         if (typeof pol.getGuards === "function") {
@@ -680,8 +680,8 @@ function App() {
             guards.swapSlippageBps = Number(g[0]);
             guards.lpSlippageBps = Number(g[1]);
             guards.txDeadlineSec = Number(g[2]);
-            guards.minBuybackInterval = Number(g[3]);
-            guards.maxDailyBuybackNative = formatEther(g[4]);
+            guards.minBUYBACKInterval = Number(g[3]);
+            guards.maxDailyBUYBACKNative = formatEther(g[4]);
           }
         }
       } catch {}
@@ -691,45 +691,45 @@ function App() {
             pol.swapSlippageBps?.(),
             pol.lpSlippageBps?.(),
             pol.txDeadlineSec?.(),
-            pol.minBuybackInterval?.(),
-            pol.maxDailyBuybackNative?.(),
+            pol.minBUYBACKInterval?.(),
+            pol.maxDailyBUYBACKNative?.(),
           ]);
         if (swapSlip != null) guards.swapSlippageBps = Number(swapSlip);
         if (lpSlip != null) guards.lpSlippageBps = Number(lpSlip);
         if (deadline != null) guards.txDeadlineSec = Number(deadline);
-        if (cooldown != null) guards.minBuybackInterval = Number(cooldown);
+        if (cooldown != null) guards.minBUYBACKInterval = Number(cooldown);
         if (dailyCap != null)
-          guards.maxDailyBuybackNative = formatEther(dailyCap);
+          guards.maxDailyBUYBACKNative = formatEther(dailyCap);
       } catch {}
 
-      let buybacksPaused = null;
+      let BUYBACKsPaused = null;
       try {
-        buybacksPaused = !!(await pol.buybacksPaused());
+        BUYBACKsPaused = !!(await pol.BUYBACKsPaused());
       } catch {}
 
       setBiggiData((prev) => ({
         ...prev,
-        policy: {
-          alphaBuybackBps: splits.buybackBps ?? null,
+        POLICY: {
+          alphaBUYBACKBps: splits.BUYBACKBps ?? null,
           betaBurnBps: null,
-          gammaStakingBps: splits.collRewardsBps ?? null,
+          gammaStakingBps: splits.collREWARDSBps ?? null,
           deltaReserveBps: splits.reserveBps ?? null,
           swapSlippageBps: guards.swapSlippageBps,
           lpSlippageBps: guards.lpSlippageBps,
           txDeadlineSec: guards.txDeadlineSec,
-          minBuybackInterval: guards.minBuybackInterval,
+          minBUYBACKInterval: guards.minBUYBACKInterval,
           epsilonPriceBandBps: null,
           twapLookbackSec: null,
-          maxDailyBuybackNative: guards.maxDailyBuybackNative,
-          buybacksPaused,
+          maxDailyBUYBACKNative: guards.maxDailyBUYBACKNative,
+          BUYBACKsPaused,
           refillsPaused: null,
           lpAddsPaused: null,
-          endOfCollectionPaused: null,
+          endOfCOLLECTIONPaused: null,
           operators: [],
         },
       }));
     } catch (e) {
-      console.error("onRefreshPolicy", e);
+      console.error("onRefreshPOLICY", e);
     }
   }, []);
   /* ------------------- WRITE HELPERS for AdminPanel ------------------- */
@@ -771,31 +771,31 @@ function App() {
     );
   };
 
-  const setVRFAllOrPartial = async (vrf) => {
+  const setVRFAllOrPartial = async (VRF) => {
     const targets = [getContract];
     const combinedNames = [
       "setVRFParams",
-      "setVrfParams",
+      "setVRFParams",
       "configureVRF",
-      "configureVrf",
+      "configureVRF",
       "setChainlinkVRF",
     ];
     const argsCombo = [
       [
-        vrf.keyHash,
-        vrf.confirmations,
-        vrf.callbackGasLimit,
-        vrf.numWords,
-        vrf.coordinator,
-        vrf.subscriptionId,
+        VRF.keyHash,
+        VRF.confirmations,
+        VRF.callbackGasLimit,
+        VRF.numWords,
+        VRF.coordinator,
+        VRF.subscriptionId,
       ],
       [
-        vrf.keyHash,
-        vrf.confirmations,
-        vrf.numWords,
-        vrf.callbackGasLimit,
-        vrf.coordinator,
-        vrf.subscriptionId,
+        VRF.keyHash,
+        VRF.confirmations,
+        VRF.numWords,
+        VRF.callbackGasLimit,
+        VRF.coordinator,
+        VRF.subscriptionId,
       ],
     ];
     for (const a of argsCombo) {
@@ -810,22 +810,22 @@ function App() {
     };
     await ensureAmoy();
     try {
-      await trySet("setKeyHash", vrf.keyHash);
+      await trySet("setKeyHash", VRF.keyHash);
     } catch {}
     try {
-      await trySet("setRequestConfirmations", vrf.confirmations);
+      await trySet("setRequestConfirmations", VRF.confirmations);
     } catch {}
     try {
-      await trySet("setCallbackGasLimit", vrf.callbackGasLimit);
+      await trySet("setCallbackGasLimit", VRF.callbackGasLimit);
     } catch {}
     try {
-      await trySet("setNumWords", vrf.numWords);
+      await trySet("setNumWords", VRF.numWords);
     } catch {}
     try {
-      await trySet("setCoordinator", vrf.coordinator);
+      await trySet("setCoordinator", VRF.coordinator);
     } catch {}
     try {
-      await trySet("setSubscriptionId", vrf.subscriptionId);
+      await trySet("setSubscriptionId", VRF.subscriptionId);
     } catch {}
   };
 
@@ -881,8 +881,8 @@ function App() {
       }
     }
 
-    // preferované readery: main -> tokenomics -> rewards -> generic
-    const readerKinds = ["main", "tokenomics", "rewards", "generic"];
+    // preferované readery: main -> tokenomics -> REWARDS -> generic
+    const readerKinds = ["main", "tokenomics", "REWARDS", "generic"];
     for (const k of readerKinds) {
       const reader = getCachedReaderInstance(k);
       if (!reader) continue;
@@ -955,12 +955,12 @@ function App() {
     }, delay);
   }, []);
 
-  const scheduleFetchRewards = React.useCallback((delay = 500) => {
-    if (rewardsTimer.current) return;
-    rewardsTimer.current = setTimeout(async () => {
-      rewardsTimer.current = null;
+  const scheduleFetchREWARDS = React.useCallback((delay = 500) => {
+    if (REWARDSTimer.current) return;
+    REWARDSTimer.current = setTimeout(async () => {
+      REWARDSTimer.current = null;
       try {
-        await fetchRewards();
+        await fetchREWARDS();
       } catch {}
     }, delay);
   }, []);
@@ -1004,7 +1004,7 @@ function App() {
     [],
   );
 
-  const fetchRewards = React.useCallback(async () => {
+  const fetchREWARDS = React.useCallback(async () => {
     try {
       const main = contractRef.current || getReadOnlyContract();
 
@@ -1130,7 +1130,7 @@ function App() {
         }
       }
     } catch (e) {
-      console.error("fetchRewards", e);
+      console.error("fetchREWARDS", e);
     }
   }, [walletAddress, myNFTs, callFirst]);
 
@@ -1138,7 +1138,7 @@ function App() {
   const fetchStats = React.useCallback(async () => {
     try {
       // try specialized readers in priority
-      const readerKinds = ["main", "tokenomics", "rewards", "generic"];
+      const readerKinds = ["main", "tokenomics", "REWARDS", "generic"];
       let snap = null;
       for (const k of readerKinds) {
         try {
@@ -1247,9 +1247,9 @@ function App() {
 
   const fetchBackgroundMintCounts = React.useCallback(async () => {
     try {
-      // prefer rewards reader
+      // prefer REWARDS reader
       const reader =
-        getCachedReaderInstance("rewards") ||
+        getCachedReaderInstance("REWARDS") ||
         getCachedReaderInstance("main") ||
         getCachedReaderInstance("generic");
       if (typeof reader.getAllBackgroundMintCounts === "function") {
@@ -1504,7 +1504,7 @@ function App() {
     (finalList) => {
       return setMyNFTs((prev) => {
         const pending = prev.find((x) => x.isPending);
-        if (vrfPending && pending) {
+        if (VRFPending && pending) {
           const dedup = finalList.filter(
             (x) => !x.isPending && x.tokenId !== pending.tokenId,
           );
@@ -1518,7 +1518,7 @@ function App() {
         return finalList;
       });
     },
-    [vrfPending, topFirstId],
+    [VRFPending, topFirstId],
   );
 
   const upsertResolvedNFT = React.useCallback((card) => {
@@ -1834,7 +1834,7 @@ function App() {
   );
 
   /* ========== VRF helpers (PŘESUNUTO NAHOŘE PRO TDZ) ========== */
-  // buildVRFHistory, resolvePendingFromHistoryOrOwnership, checkVrfResolution, refreshVRFPanel
+  // buildVRFHistory, resolvePendingFromHistoryOrOwnership, checkVRFResolution, refreshVRFPanel
   // (Tyto funkce byly přesunuty nad connectMetaMask aby se předešlo TDZ.)
 
   const buildVRFHistory = React.useCallback(
@@ -1947,7 +1947,7 @@ function App() {
     [buildVRFHistory, redeemStartBlock],
   );
 
-  const checkVrfResolution = React.useCallback(async () => {
+  const checkVRFResolution = React.useCallback(async () => {
     try {
       if (!walletAddress) return;
       const c = contractRef.current || getReadOnlyContract();
@@ -1973,8 +1973,8 @@ function App() {
           upsertResolvedNFT(card);
         }
         await fetchStats();
-        await fetchRewards();
-        setVrfPending(false);
+        await fetchREWARDS();
+        setVRFPending(false);
         setIsRedeeming(false);
         setRedeemMsg("Reveal complete!");
         setRedeemStartBlock(null);
@@ -1993,7 +1993,7 @@ function App() {
     walletAddress,
     fetchWalletAssets,
     fetchStats,
-    fetchRewards,
+    fetchREWARDS,
     resolvePendingFromHistoryOrOwnership,
     resolveLatestMintToUser,
     upsertResolvedNFT,
@@ -2077,7 +2077,7 @@ function App() {
         }
       }
 
-      setVrfUIData({
+      setVRFUIData({
         network: net?.name
           ? `${net.name} (${net.chainId})`
           : `chainId ${net.chainId}`,
@@ -2103,17 +2103,17 @@ function App() {
 
   const onVRFRefresh = React.useCallback(async () => {
     await fetchStats();
-    await fetchRewards();
+    await fetchREWARDS();
     if (walletAddress) await fetchWalletAssets(walletAddress);
     await refreshVRFPanel();
-    await checkVrfResolution();
+    await checkVRFResolution();
   }, [
     fetchStats,
-    fetchRewards,
+    fetchREWARDS,
     fetchWalletAssets,
     walletAddress,
     refreshVRFPanel,
-    checkVrfResolution,
+    checkVRFResolution,
   ]);
 
   const onVRFCancelPending = React.useCallback(() => {
@@ -2123,7 +2123,7 @@ function App() {
     alert("Updating VRF params is owner-only and not wired in this UI.");
   }, []);
 
-  const onVrfOpenExplorer = React.useCallback(async (hashOrId) => {
+  const onVRFOpenExplorer = React.useCallback(async (hashOrId) => {
     try {
       const c = contractRef.current || getReadOnlyContract();
       const net = await c.provider.getNetwork();
@@ -2154,7 +2154,7 @@ function App() {
         "weekEpochStart",
         "firstWeekStart",
         "startEpoch",
-        "rewardsEpochStart",
+        "REWARDSEpochStart",
       ]);
       const epochNum =
         epochRaw != null
@@ -2225,8 +2225,8 @@ function App() {
       } catch {}
 
       const nativeSymbol = "POL";
-      const policy =
-        (await callFirst(main, ["policy", "policyAddress"])) || "\u2014";
+      const POLICY =
+        (await callFirst(main, ["POLICY", "POLICYAddress"])) || "\u2014";
       const treasury =
         (await callFirst(brl, [
           "treasury",
@@ -2242,7 +2242,7 @@ function App() {
       return {
         nativeSymbol,
         tokenSymbol,
-        policy,
+        POLICY,
         treasury,
         reserve,
         liquidity,
@@ -2256,7 +2256,7 @@ function App() {
   }, [callFirst]);
 
   React.useEffect(() => {
-    if (!vrfPending || !walletAddress) return;
+    if (!VRFPending || !walletAddress) return;
     let cancelled = false;
     let timer = null;
     let pollCount = 0;
@@ -2266,9 +2266,9 @@ function App() {
       pollCount += 1;
       try {
         await fetchStats();
-        await fetchRewards();
+        await fetchREWARDS();
         await refreshVRFPanel();
-        await checkVrfResolution();
+        await checkVRFResolution();
         if (pollCount % 5 === 0) {
           await fetchWalletAssets(walletAddress);
         }
@@ -2288,13 +2288,13 @@ function App() {
       if (timer) clearTimeout(timer);
     };
   }, [
-    vrfPending,
+    VRFPending,
     walletAddress,
     fetchStats,
-    fetchRewards,
+    fetchREWARDS,
     fetchWalletAssets,
     refreshVRFPanel,
-    checkVrfResolution,
+    checkVRFResolution,
     redeemStartedAt,
   ]);
 
@@ -2308,7 +2308,7 @@ function App() {
       try {
         await fetchStats();
         if (cancelled) return;
-        await fetchRewards();
+        await fetchREWARDS();
         if (cancelled) return;
         await fetchLastMinted();
         if (cancelled) return;
@@ -2323,7 +2323,7 @@ function App() {
   }, [
     fetchLastMinted,
     fetchStats,
-    fetchRewards,
+    fetchREWARDS,
     refreshVRFPanel,
     fetchCountdownMeta,
   ]);
@@ -2331,7 +2331,7 @@ function App() {
   React.useEffect(() => {
     return () => {
       if (statsTimer.current) clearTimeout(statsTimer.current);
-      if (rewardsTimer.current) clearTimeout(rewardsTimer.current);
+      if (REWARDSTimer.current) clearTimeout(REWARDSTimer.current);
       unsubRef.current();
     };
   }, []);
@@ -2362,25 +2362,25 @@ function App() {
   }, []);
 
   const adminSnapshot = {
-    networkLabel: vrfUIData?.network || "EVM",
+    networkLabel: VRFUIData?.network || "EVM",
     contractAddress: contractRef.current?.address,
     paused: null,
     totalSupply: biggiMinted,
     maxSupply,
     ticketPrice,
-    rewardsPool: rewardPool,
+    REWARDSPool: rewardPool,
     treasury: undefined,
     liquiditySink: undefined,
     token: { address: biggiData?.token?.address },
     dex: { router: biggiData?.router?.routerAddress },
     baseURI: undefined,
-    vrf: {
-      keyHash: vrfUIData?.params?.keyHash,
-      confirmations: vrfUIData?.params?.confirmations,
-      numWords: vrfUIData?.params?.numWords,
-      callbackGasLimit: vrfUIData?.params?.callbackGasLimit,
+    VRF: {
+      keyHash: VRFUIData?.params?.keyHash,
+      confirmations: VRFUIData?.params?.confirmations,
+      numWords: VRFUIData?.params?.numWords,
+      callbackGasLimit: VRFUIData?.params?.callbackGasLimit,
       coordinator: undefined,
-      subscriptionId: vrfUIData?.subscription?.id,
+      subscriptionId: VRFUIData?.subscription?.id,
     },
     blocks: BACKGROUND_NAMES.map((name, i) => ({
       name,
@@ -2394,7 +2394,7 @@ function App() {
   const frontendInfo = {
     app: "BiggiEyes Frontend",
     react: React.version,
-    network: vrfUIData?.network || "unknown",
+    network: VRFUIData?.network || "unknown",
     wallet: walletAddress || "-",
     minted: biggiMinted,
     ticketsMinted: ticketMinted,
@@ -2405,7 +2405,7 @@ function App() {
 
   /* --- specialized reader instances for panels/widgets --- */
   const mainReader = getCachedReaderInstance("main");
-  const rewardsReader = getCachedReaderInstance("rewards");
+  const REWARDSReader = getCachedReaderInstance("REWARDS");
   const tokenomicsReader = getCachedReaderInstance("tokenomics");
 
   /* ------------------ CONNECT / WALLET / EVENTS ------------------ */
@@ -2432,25 +2432,25 @@ function App() {
 
       contractRef.current = getContract();
       await fetchStats();
-      await fetchRewards();
+      await fetchREWARDS();
       await fetchWalletAssets(addr);
       await fetchLastMinted();
       await refreshVRFPanel();
 
       attachEventListeners(addr);
-      await checkVrfResolution();
+      await checkVRFResolution();
     } catch (err) {
       alert("Connection rejected.");
       console.error("connectMetaMask", err);
     }
   }, [
     fetchStats,
-    fetchRewards,
+    fetchREWARDS,
     fetchWalletAssets,
     fetchLastMinted,
     refreshVRFPanel,
     attachEventListeners,
-    checkVrfResolution,
+    checkVRFResolution,
   ]);
 
   const connectWalletConnect = React.useCallback(async () => {
@@ -2463,25 +2463,25 @@ function App() {
 
       contractRef.current = getContract();
       await fetchStats();
-      await fetchRewards();
+      await fetchREWARDS();
       await fetchWalletAssets(addr);
       await fetchLastMinted();
       await refreshVRFPanel();
 
       attachEventListeners(addr);
-      await checkVrfResolution();
+      await checkVRFResolution();
     } catch (err) {
       console.error("connectWalletConnect", err);
       alert(err?.message || "WalletConnect failed");
     }
   }, [
     fetchStats,
-    fetchRewards,
+    fetchREWARDS,
     fetchWalletAssets,
     fetchLastMinted,
     refreshVRFPanel,
     attachEventListeners,
-    checkVrfResolution,
+    checkVRFResolution,
   ]);
 
   const attachEventListeners = React.useCallback(
@@ -2500,11 +2500,11 @@ function App() {
             const tid = tokenId.toString();
 
             scheduleFetchStats(800);
-            scheduleFetchRewards(800);
+            scheduleFetchREWARDS(800);
             refreshVRFPanel();
 
             if (fromL === me && toL === zeroL) {
-              setVrfPending(true);
+              setVRFPending(true);
               setRedeemMsg("Redeem confirmed. Waiting for VRF reveal…");
               setRedeemStartedAt((prev) => prev || Date.now());
             }
@@ -2528,7 +2528,7 @@ function App() {
                 } catch {}
 
                 if (!isT) {
-                  setVrfPending(false);
+                  setVRFPending(false);
                   setIsRedeeming(false);
                   setRedeemMsg("Reveal complete!");
                   setRedeemStartBlock(null);
@@ -2582,7 +2582,7 @@ function App() {
           setWalletAddress(a);
           setMyNFTs([]);
           setDynamicTraitsById({});
-          setVrfPending(false);
+          setVRFPending(false);
           setIsRedeeming(false);
           setRedeemMsg("");
           setTopFirstId(null);
@@ -2590,7 +2590,7 @@ function App() {
           setRedeemStartBlock(null);
           if (a) {
             await fetchStats();
-            await fetchRewards();
+            await fetchREWARDS();
             await fetchWalletAssets(a);
             await fetchLastMinted();
             await refreshVRFPanel();
@@ -2599,7 +2599,7 @@ function App() {
 
         const onChainChanged = async () => {
           await fetchStats();
-          await fetchRewards();
+          await fetchREWARDS();
           if (walletAddress) await fetchWalletAssets(walletAddress);
           setDynamicTraitsById({});
           await refreshVRFPanel();
@@ -2633,9 +2633,9 @@ function App() {
       fetchStats,
       fetchWalletAssets,
       fetchLastMinted,
-      fetchRewards,
+      fetchREWARDS,
       scheduleFetchStats,
-      scheduleFetchRewards,
+      scheduleFetchREWARDS,
       walletAddress,
       enrichMetaWithPrices,
       refreshVRFPanel,
@@ -2709,7 +2709,7 @@ function App() {
 
       await fetchWalletAssets(walletAddress);
       await fetchStats();
-      await fetchRewards();
+      await fetchREWARDS();
       alert("Ticket minted.");
       refreshVRFPanel();
     } catch (err) {
@@ -2719,7 +2719,7 @@ function App() {
   }, [
     walletAddress,
     fetchStats,
-    fetchRewards,
+    fetchREWARDS,
     fetchWalletAssets,
     prettyError,
     resolveTicketPriceWei,
@@ -2728,7 +2728,7 @@ function App() {
 
   const redeemTicket = React.useCallback(async () => {
     if (!walletAddress) return alert("Please connect MetaMask first.");
-    if (isRedeeming || vrfPending) return;
+    if (isRedeeming || VRFPending) return;
     try {
       await ensureAmoy();
 
@@ -2789,7 +2789,7 @@ function App() {
       };
 
       setPendingTicketId(ticketIdStr);
-      setVrfPending(true);
+      setVRFPending(true);
       setRedeemMsg("Redeem confirmed. Waiting for VRF reveal…");
       setTopFirstId(ticketIdStr);
 
@@ -2803,7 +2803,7 @@ function App() {
       const baseAssets = Array.from(byId.values());
       setMyNFTs([placeholder, ...baseAssets]);
 
-      await fetchRewards();
+      await fetchREWARDS();
       await fetchStats();
       refreshVRFPanel();
 
@@ -2816,7 +2816,7 @@ function App() {
       }, 2000);
     } catch (err) {
       setIsRedeeming(false);
-      setVrfPending(false);
+      setVRFPending(false);
       setRedeemMsg("");
       setPendingTicketId(null);
       setRedeemStartBlock(null);
@@ -2826,20 +2826,20 @@ function App() {
     }
   }, [
     walletAddress,
-    fetchRewards,
+    fetchREWARDS,
     fetchStats,
     fetchMyTickets,
     fetchOwnedNFTsViaTransfers,
     prettyError,
     isRedeeming,
-    vrfPending,
+    VRFPending,
     preflightRedeemCheck,
     findTicketsViaLogs,
     fetchWalletAssets,
     refreshVRFPanel,
   ]);
 
-  const claimRewards = React.useCallback(async () => {
+  const claimREWARDS = React.useCallback(async () => {
     if (!walletAddress) return alert("Please connect MetaMask first.");
     try {
       await ensureAmoy();
@@ -2897,14 +2897,14 @@ function App() {
       const tx = await brl.claim(tokenIds);
       await tx.wait();
 
-      await fetchRewards();
+      await fetchREWARDS();
       await fetchStats();
-      alert("Rewards claimed.");
+      alert("REWARDS claimed.");
     } catch (err) {
       alert("Claim failed: " + prettyError(err));
-      console.error("claimRewards", err);
+      console.error("claimREWARDS", err);
     }
-  }, [walletAddress, myNFTs, fetchRewards, fetchStats, prettyError]);
+  }, [walletAddress, myNFTs, fetchREWARDS, fetchStats, prettyError]);
 
   const parseIdsCsv = (csv) =>
     String(csv || "")
@@ -2938,8 +2938,8 @@ function App() {
       let remainingMintable = null;
       let reserveAddr = null;
       let dexRecipientAddr = null;
-      let tokenRewardsAddr = null;
-      let rewardsOperator = null;
+      let tokenREWARDSAddr = null;
+      let REWARDSOperator = null;
       let distributed = null;
       try {
         const [ts, _cap, rem, res, dex, rwd, oper, dist] = await Promise.all([
@@ -2948,8 +2948,8 @@ function App() {
           biggi.remainingMintable?.().catch?.(() => null),
           biggi.reserveAddr?.().catch?.(() => null),
           biggi.dexRecipientAddr?.().catch?.(() => null),
-          biggi.tokenRewardsAddr?.().catch?.(() => null),
-          biggi.rewardsOperator?.().catch?.(() => null),
+          biggi.tokenREWARDSAddr?.().catch?.(() => null),
+          biggi.REWARDSOperator?.().catch?.(() => null),
           biggi.distributed?.().catch?.(() => null),
         ]);
         if (ts) totalSupply = formatEther(ts);
@@ -2957,8 +2957,8 @@ function App() {
         if (rem) remainingMintable = formatEther(rem);
         reserveAddr = res || null;
         dexRecipientAddr = dex || null;
-        tokenRewardsAddr = rwd || null;
-        rewardsOperator = oper || null;
+        tokenREWARDSAddr = rwd || null;
+        REWARDSOperator = oper || null;
         distributed =
           typeof dist === "boolean" ? dist : dist != null ? !!dist : null;
       } catch {}
@@ -2970,15 +2970,15 @@ function App() {
           name: meta?.[0],
           symbol: meta?.[1],
           decimals: meta?.[2],
-          rewardsRemainingCap:
+          REWARDSRemainingCap:
             capLeft != null ? formatEther(capLeft) : "\u2014",
           totalSupply: totalSupply ?? "\u2014",
           cap: cap ?? null,
           remainingMintable: remainingMintable ?? null,
           reserveAddr,
           dexRecipientAddr,
-          tokenRewardsAddr,
-          rewardsOperator,
+          tokenREWARDSAddr,
+          REWARDSOperator,
           distributed,
         },
       }));
@@ -2987,7 +2987,7 @@ function App() {
     }
   }, []);
 
-  const onRefreshRewards = React.useCallback(async (tokenIdsCsv = "") => {
+  const onRefreshREWARDS = React.useCallback(async (tokenIdsCsv = "") => {
     try {
       const brl = await getReadOnlyLiquidityContract();
 
@@ -3023,7 +3023,7 @@ function App() {
 
       setBiggiData((prev) => ({
         ...prev,
-        rewards: {
+        REWARDS: {
           unitReward: unit,
           currentWeek: week != null ? Number(week) : "\u2014",
           blockWeights: Array.isArray(weights)
@@ -3034,7 +3034,7 @@ function App() {
         },
       }));
     } catch (e) {
-      console.error("onRefreshRewards", e);
+      console.error("onRefreshREWARDS", e);
     }
   }, []);
 
@@ -3054,12 +3054,12 @@ function App() {
         },
       }));
       try {
-        await onRefreshPolicy();
+        await onRefreshPOLICY();
       } catch {}
     } catch (e) {
       console.error("onRefreshRouterInfo", e);
     }
-  }, [onRefreshPolicy]);
+  }, [onRefreshPOLICY]);
 
   const onRefreshLiquidityPreview = React.useCallback(async () => {
     try {
@@ -3081,13 +3081,13 @@ function App() {
     }
   }, []);
 
-  const onRefreshBuybackInfo = React.useCallback(async () => {
+  const onRefreshBUYBACKInfo = React.useCallback(async () => {
     try {
-      const b = await getBuybackRO();
+      const b = await getBUYBACKRO();
       const [
         router,
         wrappedNative,
-        policy,
+        POLICY,
         treasury,
         lastAt,
         slip,
@@ -3096,28 +3096,28 @@ function App() {
       ] = await Promise.all([
         b.router().catch(() => null),
         b.wrappedNative().catch(() => null),
-        b.policy().catch(() => null),
+        b.POLICY().catch(() => null),
         b.treasury().catch(() => null),
-        b.lastBuybackAt().catch(() => 0),
+        b.lastBUYBACKAt().catch(() => 0),
         b.fallbackSwapSlippageBps?.().catch?.(() => null),
         b.fallbackTxDeadlineSec?.().catch?.(() => null),
         b.fallbackMinIntervalSec?.().catch?.(() => null),
       ]);
       setBiggiData((prev) => ({
         ...prev,
-        buyback: {
+        BUYBACK: {
           router: router || prev?.router?.routerAddress || null,
           wrappedNative: wrappedNative || prev?.router?.wrappedNative || null,
-          policy: policy || null,
+          POLICY: POLICY || null,
           treasury: treasury || null,
-          lastBuybackAt: Number(lastAt || 0),
+          lastBUYBACKAt: Number(lastAt || 0),
           fallbackSlipBps: slip != null ? Number(slip) : null,
           fallbackDeadlineSec: deadline != null ? Number(deadline) : null,
           fallbackCooldownSec: cooldown != null ? Number(cooldown) : null,
         },
       }));
     } catch (e) {
-      console.error("onRefreshBuybackInfo", e);
+      console.error("onRefreshBUYBACKInfo", e);
     }
   }, []);
 
@@ -3268,8 +3268,8 @@ function App() {
   return (
     <div className="full-bg">
       <style>{`
-        .rewards-table { min-height: 520px !important; }
-        .rewards-info table { min-height: 420px; }
+        .REWARDS-table { min-height: 520px !important; }
+        .REWARDS-info table { min-height: 420px; }
         .wallet-row { display:flex; gap:10px; align-items:center; }
         .metamask-btn-top, .wc-btn-top {
           display:inline-flex; align-items:center; border:2px solid #ffe800; background:#08ffe6;
@@ -3311,11 +3311,11 @@ function App() {
         <TopBar
           onMint={mintTicket}
           onRedeem={() => {
-            if (!isRedeeming && !vrfPending) redeemTicket();
+            if (!isRedeeming && !VRFPending) redeemTicket();
           }}
-          onClaim={claimRewards}
+          onClaim={claimREWARDS}
           isRedeeming={isRedeeming}
-          vrfPending={vrfPending}
+          VRFPending={VRFPending}
           icons={ICONS}
           onIconClick={(idx) => setOpenNavIdx(idx)}
           isMobile={isMobile}
@@ -3499,11 +3499,11 @@ function App() {
 
             <StatusBanner
               isRedeeming={isRedeeming}
-              vrfPending={vrfPending}
+              VRFPending={VRFPending}
               redeemMsg={redeemMsg}
               onRefresh={async () => {
                 await fetchStats();
-                await fetchRewards();
+                await fetchREWARDS();
                 await fetchWalletAssets(walletAddress);
               }}
               compact={isMobile}
@@ -3528,7 +3528,7 @@ function App() {
               compact={isMobile}
             />
 
-            {vrfPending && (
+            {VRFPending && (
               <div
                 style={{
                   marginTop: 10,
@@ -3552,7 +3552,7 @@ function App() {
         actions={{
           refresh: async () => {
             await fetchStats();
-            await fetchRewards();
+            await fetchREWARDS();
             try {
               await onRefreshRouterInfo();
             } catch {}
@@ -3560,7 +3560,7 @@ function App() {
               await onRefreshLiquidityPreview();
             } catch {}
             try {
-              await onRefreshPolicy();
+              await onRefreshPOLICY();
             } catch {}
           },
           setPaused: async (flag) => {
@@ -3594,8 +3594,8 @@ function App() {
               p,
             );
           },
-          setVRFParams: async (vrf) => {
-            await setVRFAllOrPartial(vrf);
+          setVRFParams: async (VRF) => {
+            await setVRFAllOrPartial(VRF);
           },
           setTreasury: async (addr) => {
             if (!addr) throw new Error("Treasury is empty");
@@ -3650,22 +3650,22 @@ function App() {
           nft_setMainContract: async (addr) => {
             if (!addr) throw new Error("Main contract address is empty");
             await ensureAmoy();
-            const c = getNFTRewards();
+            const c = getNFTREWARDS();
             const tx = await c.setMainContract(addr);
             await tx.wait();
           },
-          nft_setVrfRouter: async (addr) => {
+          nft_setVRFRouter: async (addr) => {
             if (!addr) throw new Error("VRF router address is empty");
             await ensureAmoy();
-            const c = getNFTRewards();
-            const tx = await c.setVrfRouter(addr);
+            const c = getNFTREWARDS();
+            const tx = await c.setVRFRouter(addr);
             await tx.wait();
           },
           nft_createManualReward: async (winner, tokenUri) => {
             if (!winner) throw new Error("Winner address is empty");
             if (!tokenUri) throw new Error("Token URI is empty");
             await ensureAmoy();
-            const c = getNFTRewards();
+            const c = getNFTREWARDS();
             const preview = await c.callStatic.createManualReward(
               winner,
               tokenUri,
@@ -3685,7 +3685,7 @@ function App() {
             if (!Array.isArray(eligible) || !eligible.length)
               throw new Error("Eligible addresses are required");
             await ensureAmoy();
-            const c = getNFTRewards();
+            const c = getNFTREWARDS();
             const eventId = await c.callStatic.createMysteryEvent(
               tokenUris,
               eligible,
@@ -3698,7 +3698,7 @@ function App() {
             if (eventId == null || eventId === "")
               throw new Error("Event ID is empty");
             await ensureAmoy();
-            const c = getNFTRewards();
+            const c = getNFTREWARDS();
             const reqId = await c.callStatic.requestMysteryRandom(eventId);
             const tx = await c.requestMysteryRandom(eventId);
             await tx.wait();
@@ -3711,15 +3711,15 @@ function App() {
 
       <React.Suspense fallback={null}>
         <RedeemOverlay
-          open={isRedeeming || vrfPending}
+          open={isRedeeming || VRFPending}
           isRedeeming={isRedeeming}
-          vrfPending={vrfPending}
+          VRFPending={VRFPending}
           redeemMsg={redeemMsg}
           pendingTicketId={pendingTicketId}
           onRefresh={() => {
             fetchWalletAssets(walletAddress);
             fetchStats();
-            fetchRewards();
+            fetchREWARDS();
           }}
           compact={isMobile}
         />
@@ -3772,7 +3772,7 @@ function App() {
         {navOpen &&
           !isInfoOpen &&
           (ICONS[openNavIdx].alt === "REWARDS" ? (
-            <RewardsPanel
+            <REWARDSPanel
               compact={isMobile}
               walletAddress={walletAddress}
               provider={(function () {
@@ -3793,8 +3793,8 @@ function App() {
               })()}
             />
           ) : ICONS[openNavIdx].alt === "COLLECTION" ? (
-            <React.Suspense fallback={<div>Loading Collection...</div>}>
-              <CollectionBlocksGrid
+            <React.Suspense fallback={<div>Loading COLLECTION...</div>}>
+              <COLLECTIONBlocksGrid
                 blockNames={BACKGROUND_NAMES}
                 blockPrices={blockPrices}
                 blockMintCounts={blockMintCounts}
@@ -3803,12 +3803,12 @@ function App() {
             </React.Suspense>
           ) : ICONS[openNavIdx].alt === "VRF MINT" ? (
             <VRFPanel
-              data={vrfUIData}
+              data={VRFUIData}
               onRequestRandomness={onVRFRequest}
               onRefresh={onVRFRefresh}
               onCancelPending={onVRFCancelPending}
               onUpdateParams={onVRFUpdateParams}
-              onOpenExplorer={onVrfOpenExplorer}
+              onOpenExplorer={onVRFOpenExplorer}
               compact={isMobile}
             />
           ) : ICONS[openNavIdx].alt === "BIGGI ECOSYSTEM" ? (
@@ -3816,13 +3816,13 @@ function App() {
               <BiggiToken
                 data={biggiData}
                 onRefreshTokenMeta={onRefreshTokenMeta}
-                onRefreshRewards={onRefreshRewards}
-                onPreviewClaim={onRefreshRewards}
-                onCheckClaimStatus={onRefreshRewards}
+                onRefreshREWARDS={onRefreshREWARDS}
+                onPreviewClaim={onRefreshREWARDS}
+                onCheckClaimStatus={onRefreshREWARDS}
                 onRefreshRouterInfo={onRefreshRouterInfo}
                 onRefreshLiquidityPreview={onRefreshLiquidityPreview}
-                onRefreshBuybackInfo={onRefreshBuybackInfo}
-                onRefreshPolicy={onRefreshPolicy}
+                onRefreshBUYBACKInfo={onRefreshBUYBACKInfo}
+                onRefreshPOLICY={onRefreshPOLICY}
                 fetchTreasuryInfo={fetchTreasuryInfo}
                 fetchReserveInfo={fetchReserveInfo}
                 compact={isMobile}
@@ -3856,7 +3856,7 @@ function App() {
                   );
                   await onRefreshLiquidityPreview();
                 }}
-                onBuybackAndSendToTreasury={async ({
+                onBUYBACKAndSendToTreasury={async ({
                   minOutWei,
                   nativeEth,
                 }) => {
@@ -3870,21 +3870,21 @@ function App() {
                     [getLiquidityContract],
                     [
                       "buyBiggiAndSendToTreasury",
-                      "buybackAllToTreasury",
-                      "buybackToTreasury",
+                      "BUYBACKAllToTreasury",
+                      "BUYBACKToTreasury",
                     ],
                     minOutBN,
                     overrides,
                   );
                   await onRefreshRouterInfo();
-                  await onRefreshBuybackInfo();
+                  await onRefreshBUYBACKInfo();
                 }}
                 // pass tokenomics reader for enriched tokenomics reads
                 reader={tokenomicsReader}
               />
             </React.Suspense>
           ) : ICONS[openNavIdx].alt === "USERS" ? (
-            <UserPanel
+            <USERPANEL
               address={walletAddress}
               onConnect={connectMetaMask}
               ticketPrice={ticketPrice}
@@ -3895,8 +3895,8 @@ function App() {
               rewardPool={rewardPool}
               mintVolumeMatic={mintVolumeMatic}
               sharePercent={
-                biggiData?.policy?.gammaStakingBps != null
-                  ? Number(biggiData.policy.gammaStakingBps) / 100
+                biggiData?.POLICY?.gammaStakingBps != null
+                  ? Number(biggiData.POLICY.gammaStakingBps) / 100
                   : null
               }
               tokenPrice={biggiData?.token?.price ?? null}
@@ -3907,12 +3907,12 @@ function App() {
               }
               items={myNFTs}
               onMint={mintTicket}
-              onClaim={claimRewards}
+              onClaim={claimREWARDS}
               compact={isMobile}
             />
           ) : ICONS[openNavIdx].alt === "COMMUNITY CENTER" ? (
             <React.Suspense fallback={<div>Loading Community Center...</div>}>
-              <CommunityCenterPanel
+              <COMMUNITYCENTERPanel
                 compact={isMobile}
                 walletAddress={walletAddress}
                 onConnectMetaMask={connectMetaMask}
@@ -3935,4 +3935,13 @@ function App() {
 }
 
 export default App;
+
+
+
+
+
+
+
+
+
 

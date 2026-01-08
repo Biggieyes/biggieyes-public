@@ -1,14 +1,14 @@
 import { Contract } from "@ethersproject/contracts";
 import { keccak256, arrayify, hexlify, isAddress } from "ethers";
 
-export async function refreshPolicy({ getPolicyRO, setBiggiData }) {
-  const pol = await getPolicyRO();
+export async function refreshPOLICY({ getPOLICYRO, setBiggiData }) {
+  const pol = await getPOLICYRO();
   if (!pol) return;
 
   let splits = {
     reserveBps: null,
-    buybackBps: null,
-    collRewardsBps: null,
+    BUYBACKBps: null,
+    collREWARDSBps: null,
     treasuryBps: null,
   };
   try {
@@ -17,8 +17,8 @@ export async function refreshPolicy({ getPolicyRO, setBiggiData }) {
       if (s && s.length === 4) {
         splits = {
           reserveBps: Number(s[0]),
-          buybackBps: Number(s[1]),
-          collRewardsBps: Number(s[2]),
+          BUYBACKBps: Number(s[1]),
+          collREWARDSBps: Number(s[2]),
           treasuryBps: Number(s[3]),
         };
       }
@@ -29,13 +29,13 @@ export async function refreshPolicy({ getPolicyRO, setBiggiData }) {
   try {
     const [resB, buyB, collB, treB] = await Promise.all([
       pol.distributorReserveBps?.(),
-      pol.distributorBuybackBps?.(),
-      pol.distributorCollectionRewardsBps?.(),
+      pol.distributorBUYBACKBps?.(),
+      pol.distributorCOLLECTIONREWARDSBps?.(),
       pol.distributorTreasuryBps?.(),
     ]);
     if (resB != null) splits.reserveBps = Number(resB);
-    if (buyB != null) splits.buybackBps = Number(buyB);
-    if (collB != null) splits.collRewardsBps = Number(collB);
+    if (buyB != null) splits.BUYBACKBps = Number(buyB);
+    if (collB != null) splits.collREWARDSBps = Number(collB);
     if (treB != null) splits.treasuryBps = Number(treB);
   } catch {
     // ignore guards fetch fallback
@@ -45,8 +45,8 @@ export async function refreshPolicy({ getPolicyRO, setBiggiData }) {
     swapSlippageBps: null,
     lpSlippageBps: null,
     txDeadlineSec: null,
-    minBuybackInterval: null,
-    maxDailyBuybackNative: null,
+    minBUYBACKInterval: null,
+    maxDailyBUYBACKNative: null,
   };
   try {
     if (typeof pol.getGuards === "function") {
@@ -55,8 +55,8 @@ export async function refreshPolicy({ getPolicyRO, setBiggiData }) {
         guards.swapSlippageBps = Number(g[0]);
         guards.lpSlippageBps = Number(g[1]);
         guards.txDeadlineSec = Number(g[2]);
-        guards.minBuybackInterval = Number(g[3]);
-        guards.maxDailyBuybackNative = formatEther(g[4]);
+        guards.minBUYBACKInterval = Number(g[3]);
+        guards.maxDailyBUYBACKNative = formatEther(g[4]);
       }
     }
   } catch {
@@ -67,46 +67,50 @@ export async function refreshPolicy({ getPolicyRO, setBiggiData }) {
       pol.swapSlippageBps?.(),
       pol.lpSlippageBps?.(),
       pol.txDeadlineSec?.(),
-      pol.minBuybackInterval?.(),
-      pol.maxDailyBuybackNative?.(),
+      pol.minBUYBACKInterval?.(),
+      pol.maxDailyBUYBACKNative?.(),
     ]);
     if (swapSlip != null) guards.swapSlippageBps = Number(swapSlip);
     if (lpSlip != null) guards.lpSlippageBps = Number(lpSlip);
     if (deadline != null) guards.txDeadlineSec = Number(deadline);
-    if (cooldown != null) guards.minBuybackInterval = Number(cooldown);
+    if (cooldown != null) guards.minBUYBACKInterval = Number(cooldown);
     if (dailyCap != null)
-      guards.maxDailyBuybackNative = formatEther(dailyCap);
+      guards.maxDailyBUYBACKNative = formatEther(dailyCap);
   } catch {
     // ignore guard fetch fallback
   }
 
-  let buybacksPaused = null;
+  let BUYBACKsPaused = null;
   try {
-    buybacksPaused = !!(await pol.buybacksPaused());
+    BUYBACKsPaused = !!(await pol.BUYBACKsPaused());
   } catch {
     // ignore pause fetch
   }
 
   setBiggiData((prev) => ({
     ...prev,
-    policy: {
-      alphaBuybackBps: splits.buybackBps ?? null,
+    POLICY: {
+      alphaBUYBACKBps: splits.BUYBACKBps ?? null,
       betaBurnBps: null,
-      gammaStakingBps: splits.collRewardsBps ?? null,
+      gammaStakingBps: splits.collREWARDSBps ?? null,
       deltaReserveBps: splits.reserveBps ?? null,
       swapSlippageBps: guards.swapSlippageBps,
       lpSlippageBps: guards.lpSlippageBps,
       txDeadlineSec: guards.txDeadlineSec,
-      minBuybackInterval: guards.minBuybackInterval,
+      minBUYBACKInterval: guards.minBUYBACKInterval,
       epsilonPriceBandBps: null,
       twapLookbackSec: null,
-      maxDailyBuybackNative: guards.maxDailyBuybackNative,
-      buybacksPaused,
+      maxDailyBUYBACKNative: guards.maxDailyBUYBACKNative,
+      BUYBACKsPaused,
       refillsPaused: null,
       lpAddsPaused: null,
-      endOfCollectionPaused: null,
+      endOfCOLLECTIONPaused: null,
       operators: [],
     },
   }));
 }
+
+
+
+
 

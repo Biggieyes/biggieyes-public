@@ -5,7 +5,7 @@ import {
   getROProvider,
   getReaderRO,
   getReadOnlyLiquidityContract,
-  getPolicyRO,
+  getPOLICYRO,
   getFrontendSnapshotLiteActive,
 } from "../utils/contract";
 import { callFirst } from "../utils/contracts-helpers";
@@ -69,8 +69,8 @@ export function useTransparencyData({ enabled = true } = {}) {
             }
 
             let snapshot = null;
-            let rewards = null;
-            let policy = null;
+            let REWARDS = null;
+            let POLICY = null;
 
             try {
               const reader = getReaderRO();
@@ -91,43 +91,43 @@ export function useTransparencyData({ enabled = true } = {}) {
               const lm = await getReadOnlyLiquidityContract();
               const poolWei = await callFirst(lm, WEEKLY_POOL_FNS);
               const prov = provider;
-              const [treasuryBal, buybackBal, reserveBal] = await Promise.all([
+              const [treasuryBal, BUYBACKBal, reserveBal] = await Promise.all([
                 prov.getBalance(ADDR.TREASURY).catch(() => null),
                 prov.getBalance(ADDR.BUYBACK_AGENT).catch(() => null),
                 prov.getBalance(ADDR.RESERVE).catch(() => null),
               ]);
-              rewards = {
+              REWARDS = {
                 rewardPoolEth: poolWei ? fmtEth(poolWei) : null,
                 treasuryEth: fmtEth(treasuryBal),
-                buybackEth: fmtEth(buybackBal),
+                BUYBACKEth: fmtEth(BUYBACKBal),
                 reserveEth: fmtEth(reserveBal),
               };
             } catch (err) {
-              rewards = { error: err?.message || String(err) };
+              REWARDS = { error: err?.message || String(err) };
             }
 
             try {
-              const policyRO = getPolicyRO();
-              const gamma = policyRO?.gammaStakingBps
-                ? await policyRO.gammaStakingBps()
+              const POLICYRO = getPOLICYRO();
+              const gamma = POLICYRO?.gammaStakingBps
+                ? await POLICYRO.gammaStakingBps()
                 : null;
-              policy = { gammaBps: gamma != null ? Number(gamma) : null };
+              POLICY = { gammaBps: gamma != null ? Number(gamma) : null };
             } catch (err) {
-              policy = { error: err?.message || String(err) };
+              POLICY = { error: err?.message || String(err) };
             }
 
             return {
               rpc: { url: rpcUrl, latencyMs, error: rpcError },
               snapshot,
-              rewards,
-              policy,
+              REWARDS,
+              POLICY,
               addresses: {
                 main: ADDR.MAIN,
                 reader: ADDR.READER || ADDR.MAIN_READER,
-                rewards: ADDR.NFT_REWARDS,
+                REWARDS: ADDR.NFT_REWARDS,
                 tokenomicsReader: ADDR.BIGGI_TOKENOMICS_READER,
                 treasury: ADDR.TREASURY,
-                buyback: ADDR.BUYBACK_AGENT,
+                BUYBACK: ADDR.BUYBACK_AGENT,
                 reserve: ADDR.RESERVE,
               },
             };
@@ -152,4 +152,7 @@ export function useTransparencyData({ enabled = true } = {}) {
 }
 
 export default useTransparencyData;
+
+
+
 

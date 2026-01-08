@@ -579,7 +579,7 @@ export default function Gallery({
     <section className="gallery">
       <header className="gallery__header">
         <div>
-          <h2 className="gallery__title">My Biggi Collection</h2>
+          <h2 className="gallery__title">My Biggi COLLECTION</h2>
           <p className="gallery__subtitle">
             Browse every Biggi token linked to your wallet. Sort, filter, and
             inspect detailed metadata pulled directly from the smart contracts.
@@ -663,14 +663,14 @@ export default function Gallery({
           </div>
         )}
         {isConnected && fetching && !renderedItems.length && (
-          <div className="gallery__placeholder">Loading collection...</div>
+          <div className="gallery__placeholder">Loading COLLECTION...</div>
         )}
         {isConnected && !fetching && renderedItems.length === 0 && (
           <div className="gallery__placeholder">
             <h3>No NFTs detected</h3>
             <p>
               Mint a Biggi NFT or connect a different wallet to see your
-              collection here.
+              COLLECTION here.
             </p>
           </div>
         )}
@@ -747,4 +747,5 @@ export default function Gallery({
     </section>
   );
 }
+
 

@@ -8,7 +8,7 @@ export function useContractListeners({
   setWalletAddress,
   setMyNFTs,
   setDynamicTraitsById,
-  setVrfPending,
+  setVRFPending,
   setIsRedeeming,
   setRedeemMsg,
   setTopFirstId,
@@ -16,12 +16,12 @@ export function useContractListeners({
   setRedeemStartBlock,
   setRedeemStartedAt,
   fetchStats,
-  fetchRewards,
+  fetchREWARDS,
   fetchWalletAssets,
   fetchLastMinted,
   refreshVRFPanel,
   scheduleFetchStats,
-  scheduleFetchRewards,
+  scheduleFetchREWARDS,
   enrichMetaWithPrices,
   readJsonFromURI,
   resolveImageUrl,
@@ -44,11 +44,11 @@ export function useContractListeners({
             const tid = tokenId.toString();
 
             scheduleFetchStats(800);
-            scheduleFetchRewards(800);
+            scheduleFetchREWARDS(800);
             refreshVRFPanel();
 
             if (fromL === me && toL === zeroL) {
-              setVrfPending(true);
+              setVRFPending(true);
               setRedeemMsg("Redeem confirmed. Waiting for VRF reveal...");
               if (typeof setRedeemStartedAt === "function") {
                 setRedeemStartedAt((prev) => prev || Date.now());
@@ -77,7 +77,7 @@ export function useContractListeners({
               }
 
               if (!isT) {
-                setVrfPending(false);
+                setVRFPending(false);
                 setIsRedeeming(false);
                 setRedeemMsg("Reveal complete!");
                 if (typeof setRedeemStartedAt === "function") {
@@ -138,7 +138,7 @@ export function useContractListeners({
             resetROProvider();
             setMyNFTs([]);
             setDynamicTraitsById({});
-            setVrfPending(false);
+            setVRFPending(false);
             setIsRedeeming(false);
             setRedeemMsg("");
             setTopFirstId(null);
@@ -149,7 +149,7 @@ export function useContractListeners({
             }
             if (a) {
               await fetchStats();
-              await fetchRewards();
+              await fetchREWARDS();
               await fetchWalletAssets(a);
               await fetchLastMinted();
               await refreshVRFPanel();
@@ -163,7 +163,7 @@ export function useContractListeners({
           try {
             resetROProvider();
             await fetchStats();
-            await fetchRewards();
+            await fetchREWARDS();
             if (walletAddress) await fetchWalletAssets(walletAddress);
             setDynamicTraitsById({});
             if (typeof setRedeemStartedAt === "function") {
@@ -204,7 +204,7 @@ export function useContractListeners({
       setWalletAddress,
       setMyNFTs,
       setDynamicTraitsById,
-      setVrfPending,
+      setVRFPending,
       setIsRedeeming,
       setRedeemMsg,
       setTopFirstId,
@@ -212,12 +212,12 @@ export function useContractListeners({
       setRedeemStartBlock,
       setRedeemStartedAt,
       fetchStats,
-      fetchRewards,
+      fetchREWARDS,
       fetchWalletAssets,
       fetchLastMinted,
       refreshVRFPanel,
       scheduleFetchStats,
-      scheduleFetchRewards,
+      scheduleFetchREWARDS,
       enrichMetaWithPrices,
       readJsonFromURI,
       resolveImageUrl,
@@ -226,4 +226,6 @@ export function useContractListeners({
     ],
   );
 }
+
+
 

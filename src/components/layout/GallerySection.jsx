@@ -82,11 +82,11 @@ export default function GallerySection({
   setTopFirstId,
   fetchDynamicTraitsFor,
   setZoomImg,
-  vrfPending,
+  VRFPending,
   isRedeeming,
   redeemMsg,
   fetchStats,
-  fetchRewards,
+  fetchREWARDS,
   fetchWalletAssets,
   walletAddress,
   isMobile,
@@ -95,9 +95,9 @@ export default function GallerySection({
 
   React.useEffect(() => {
     if (!walletAddress) return;
-    if (vrfPending || isRedeeming) return;
+    if (VRFPending || isRedeeming) return;
     fetchWalletAssets(walletAddress);
-  }, [walletAddress, vrfPending, isRedeeming, fetchWalletAssets]);
+  }, [walletAddress, VRFPending, isRedeeming, fetchWalletAssets]);
 
   return (
     <div className="gallery-section">
@@ -139,11 +139,11 @@ export default function GallerySection({
 
       <NFTStatusBlock
         isRedeeming={isRedeeming}
-        vrfPending={vrfPending}
+        VRFPending={VRFPending}
         redeemMsg={redeemMsg}
         isMobile={isMobile}
         fetchStats={fetchStats}
-        fetchRewards={fetchRewards}
+        fetchREWARDS={fetchREWARDS}
         fetchWalletAssets={fetchWalletAssets}
         walletAddress={walletAddress}
         galleryLoading={galleryLoading}
@@ -169,7 +169,7 @@ export default function GallerySection({
         />
       </React.Suspense>
 
-      {vrfPending && (
+      {VRFPending && (
         <div
           style={{
             marginTop: 10,
@@ -184,4 +184,6 @@ export default function GallerySection({
     </div>
   );
 }
+
+
 

@@ -1,6 +1,6 @@
-// src/hooks/useRewardsReader.js
+// src/HOOKS/useREWARDSReader.js
 import * as React from "react";
-import { getBiggiRewardsReaderRO } from "../utils/contract"; // wrapper z utils/contract
+import { getBiggiREWARDSReaderRO } from "../utils/contract"; // wrapper z utils/contract
 import { canPoll, getPollInterval } from "../utils/polling";
 
 const POLL_INTERVAL_MS = getPollInterval(20_000, "VITE_REWARDS_READER_POLL_MS");
@@ -20,11 +20,11 @@ function bnToNumber(bn) {
   }
 }
 
-export default function useRewardsReader(walletAddress) {
+export default function useREWARDSReader(walletAddress) {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
 
-  const [collectionInfo, setCollectionInfo] = React.useState(null);
+  const [COLLECTIONInfo, setCOLLECTIONInfo] = React.useState(null);
   const [orangeMainIds, setOrangeMainIds] = React.useState([]);
   const [blockWins, setBlockWins] = React.useState([]);
   const [hubStatus, setHubStatus] = React.useState(null);
@@ -42,9 +42,9 @@ export default function useRewardsReader(walletAddress) {
   React.useEffect(() => {
     mountedRef.current = true;
     try {
-      readerRef.current = getBiggiRewardsReaderRO();
+      readerRef.current = getBiggiREWARDSReaderRO();
     } catch (e) {
-      console.warn("Inicializace rewards readeru selhala:", e?.message || e);
+      console.warn("Inicializace REWARDS readeru selhala:", e?.message || e);
       readerRef.current = null;
       setError(e);
     }
@@ -74,42 +74,42 @@ export default function useRewardsReader(walletAddress) {
       try {
         const reader = readerRef.current;
 
-        // RewardsHub-style reader (aggregate/probe helpers)
-        if (typeof reader?.getTokenRewardsStatus === "function") {
+        // REWARDSHub-style reader (aggregate/probe helpers)
+        if (typeof reader?.getTokenREWARDSStatus === "function") {
           const [
-            tokenRewardsStatus,
-            tokenRewardsAddr,
-            collectionRewardsAddr,
-            communityRewardsAddr,
-            nftRewardsAddr,
-            collectionDistributorAddr,
+            tokenREWARDSStatus,
+            tokenREWARDSAddr,
+            COLLECTIONREWARDSAddr,
+            communityREWARDSAddr,
+            nftREWARDSAddr,
+            COLLECTIONDistributorAddr,
           ] = await Promise.all([
-            reader.getTokenRewardsStatus(),
-            typeof reader.tokenRewards === "function"
-              ? reader.tokenRewards()
+            reader.getTokenREWARDSStatus(),
+            typeof reader.tokenREWARDS === "function"
+              ? reader.tokenREWARDS()
               : Promise.resolve(null),
-            typeof reader.collectionRewards === "function"
-              ? reader.collectionRewards()
+            typeof reader.COLLECTIONREWARDS === "function"
+              ? reader.COLLECTIONREWARDS()
               : Promise.resolve(null),
-            typeof reader.communityRewards === "function"
-              ? reader.communityRewards()
+            typeof reader.communityREWARDS === "function"
+              ? reader.communityREWARDS()
               : Promise.resolve(null),
-            typeof reader.nftRewards === "function"
-              ? reader.nftRewards()
+            typeof reader.nftREWARDS === "function"
+              ? reader.nftREWARDS()
               : Promise.resolve(null),
-            typeof reader.collectionDistributor === "function"
-              ? reader.collectionDistributor()
+            typeof reader.COLLECTIONDistributor === "function"
+              ? reader.COLLECTIONDistributor()
               : Promise.resolve(null),
           ]);
 
           const [
-            collectionTotalPending,
+            COLLECTIONTotalPending,
             communityTotalPending,
             communityPendingForUser,
           ] = await Promise.all([
-            collectionRewardsAddr &&
-            typeof reader.getCollectionTotalPending === "function"
-              ? reader.getCollectionTotalPending(collectionRewardsAddr)
+            COLLECTIONREWARDSAddr &&
+            typeof reader.getCOLLECTIONTotalPending === "function"
+              ? reader.getCOLLECTIONTotalPending(COLLECTIONREWARDSAddr)
               : Promise.resolve(null),
             typeof reader.getCommunityTotalPending === "function"
               ? reader.getCommunityTotalPending()
@@ -121,32 +121,32 @@ export default function useRewardsReader(walletAddress) {
 
           if (!cancelled && mountedRef.current) {
             setHubStatus({
-              tokenRewardsStatus,
-              tokenRewardsAddr,
-              collectionRewardsAddr,
-              communityRewardsAddr,
-              nftRewardsAddr,
-              collectionDistributorAddr,
-              collectionTotalPending,
+              tokenREWARDSStatus,
+              tokenREWARDSAddr,
+              COLLECTIONREWARDSAddr,
+              communityREWARDSAddr,
+              nftREWARDSAddr,
+              COLLECTIONDistributorAddr,
+              COLLECTIONTotalPending,
               communityTotalPending,
               communityPendingForUser,
             });
             // legacy outputs not supported by this reader
-            setCollectionInfo(null);
+            setCOLLECTIONInfo(null);
             setOrangeMainIds([]);
             setBlockWins([]);
           }
           return;
         }
 
-        if (!reader?.collectionRewardsInfo)
+        if (!reader?.COLLECTIONREWARDSInfo)
           throw new Error(
-            "Rewards reader ABI mismatch (missing collectionRewardsInfo/getTokenRewardsStatus)",
+            "REWARDS reader ABI mismatch (missing COLLECTIONREWARDSInfo/getTokenREWARDSStatus)",
           );
         if (!cancelled && mountedRef.current) setHubStatus(null);
 
-        // collectionRewardsInfo()
-        const coll = await readerRef.current.collectionRewardsInfo();
+        // COLLECTIONREWARDSInfo()
+        const coll = await readerRef.current.COLLECTIONREWARDSInfo();
         // coll might be object or array
         const info = {
           orangeRewardAmt: bnToNumber(coll?.orangeRewardAmt ?? coll?.[0]),
@@ -156,13 +156,13 @@ export default function useRewardsReader(walletAddress) {
           remainingBlock: bnToNumber(coll?.remainingBlock ?? coll?.[4]),
           rainbowClaimed: Boolean(coll?.rainbowClaimed ?? coll?.[5]),
         };
-        if (!cancelled && mountedRef.current) setCollectionInfo(info);
+        if (!cancelled && mountedRef.current) setCOLLECTIONInfo(info);
 
-        // userCollectionLists(address)
+        // userCOLLECTIONLists(address)
         if (walletAddress) {
           try {
             const u =
-              await readerRef.current.userCollectionLists(walletAddress);
+              await readerRef.current.userCOLLECTIONLists(walletAddress);
             const orange = ((u?.orangeMainIds ?? u?.[0]) || []).map((bn) =>
               bnToNumber(bn),
             );
@@ -175,7 +175,7 @@ export default function useRewardsReader(walletAddress) {
             }
           } catch (e) {
             // pokud volání selže, nastavíme prázdné hodnoty
-            console.warn("userCollectionLists failed:", e?.message || e);
+            console.warn("userCOLLECTIONLists failed:", e?.message || e);
             if (!cancelled && mountedRef.current) {
               setOrangeMainIds([]);
               setBlockWins([]);
@@ -188,7 +188,7 @@ export default function useRewardsReader(walletAddress) {
           }
         }
       } catch (e) {
-        console.error("loadAll rewardsReader error", e);
+        console.error("loadAll REWARDSReader error", e);
         if (!cancelled && mountedRef.current) setError(e);
       } finally {
         inFlightRef.current = false;
@@ -247,7 +247,7 @@ export default function useRewardsReader(walletAddress) {
 
   async function getRewardTokenInfo(tokenId) {
     if (!readerRef.current)
-      throw new Error("Rewards reader is not initialized");
+      throw new Error("REWARDS reader is not initialized");
     if (typeof readerRef.current.getRewardTokenInfo !== "function")
       throw new Error("getRewardTokenInfo is not supported by this reader");
     let cancelled = false;
@@ -266,7 +266,7 @@ export default function useRewardsReader(walletAddress) {
   return {
     loading,
     error,
-    collectionInfo,
+    COLLECTIONInfo,
     orangeMainIds,
     blockWins,
     hubStatus,
@@ -277,4 +277,7 @@ export default function useRewardsReader(walletAddress) {
     getRewardTokenInfo,
   };
 }
+
+
+
 

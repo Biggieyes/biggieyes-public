@@ -1,5 +1,5 @@
-// src/services/CommunityCenterService.js
-// Ethers v5 service wrapper for BiggiCommunityCenter events + pool
+// src/services/COMMUNITYCENTERService.js
+// Ethers v5 service wrapper for BiggiCOMMUNITYCENTER events + pool
 // - read getters (mapují ABI)
 // - claim(eventId) write (estimateGas + buffer + wait(1))
 // - batch helpers: getAllStats(), fetchEventsDetailed()
@@ -120,7 +120,7 @@ const ABI = [
   },
 ];
 
-export default class CommunityCenterService {
+export default class COMMUNITYCENTERService {
   /**
    * @param {string} address - contract address
    * @param {ethers.providers.Provider} provider - ethers v5 provider
@@ -136,24 +136,24 @@ export default class CommunityCenterService {
     this._signerConnected = false;
   }
 
-  /** Resolve default CommunityCenter address from ADDR hints */
+  /** Resolve default COMMUNITYCENTER address from ADDR hints */
   static resolveDefaultAddress() {
     return (
       ADDR?.COMMUNITY_CENTER ||
-      ADDR?.CommunityCenter ||
+      ADDR?.COMMUNITYCENTER ||
       ADDR?.BIGGI_COMMUNITY_CENTER ||
-      ADDR?.BiggiCommunityCenter ||
+      ADDR?.BiggiCOMMUNITYCENTER ||
       null
     );
   }
 
   /** Factory helper using default provider/address */
   static create(address, provider) {
-    const addr = address || CommunityCenterService.resolveDefaultAddress();
+    const addr = address || COMMUNITYCENTERService.resolveDefaultAddress();
     const prov = provider || getROProvider();
     if (!addr) throw new Error("Community Center address is not configured");
     if (!prov) throw new Error("Read-only provider unavailable");
-    return new CommunityCenterService(addr, prov);
+    return new COMMUNITYCENTERService(addr, prov);
   }
 
   /** Volitelný init sanity check */
@@ -163,7 +163,7 @@ export default class CommunityCenterService {
       await this.nextEventId();
       return true;
     } catch (e) {
-      console.error("CommunityCenterService.init failed:", e);
+      console.error("COMMUNITYCENTERService.init failed:", e);
       throw e;
     }
   }
@@ -311,7 +311,7 @@ export default class CommunityCenterService {
         callback(blockNumber, stats);
       } catch (e) {
         console.error(
-          "CommunityCenterService subscribeOnBlock handler error",
+          "COMMUNITYCENTERService subscribeOnBlock handler error",
           e,
         );
       }
@@ -343,10 +343,11 @@ export default class CommunityCenterService {
       eventsCount: Array.isArray(stats.eventsList)
         ? stats.eventsList.length
         : 0,
-      poolBalance: CommunityCenterService.bnToString(stats.poolBalance, 18),
+      poolBalance: COMMUNITYCENTERService.bnToString(stats.poolBalance, 18),
       owner: stats.owner,
       paused: stats.paused,
     };
   }
 }
+
 

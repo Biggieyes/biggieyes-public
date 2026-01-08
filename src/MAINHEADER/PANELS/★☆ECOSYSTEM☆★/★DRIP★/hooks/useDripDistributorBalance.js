@@ -1,5 +1,6 @@
-// Hook: useDripDistributorBalance
-export default function useDripDistributorBalance() {
-  // ...čtení zůstatku drip distributoru
+// Hook: useDRIPDistributorBalance
+export default function useDRIPDistributorBalance() {
+  // ...čtení zůstatku DRIP distributoru
 }
+
 

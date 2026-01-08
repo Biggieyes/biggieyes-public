@@ -58,8 +58,8 @@ export default class TreasuryService {
   async totalBiggiReceived() {
     return await this.contract.totalBiggiReceived();
   }
-  async totalBiggiReceivedFromBuyback() {
-    return await this.contract.totalBiggiReceivedFromBuyback();
+  async totalBiggiReceivedFromBUYBACK() {
+    return await this.contract.totalBiggiReceivedFromBUYBACK();
   }
   async totalMaticReceived() {
     return await this.contract.totalMaticReceived();
@@ -78,7 +78,7 @@ export default class TreasuryService {
       this.biggiBalance(),
       this.maticBalance(),
       this.totalBiggiReceived(),
-      this.totalBiggiReceivedFromBuyback(),
+      this.totalBiggiReceivedFromBUYBACK(),
       this.totalMaticReceived(),
       this.totalMaticReceivedFromDistributor(),
     ];
@@ -87,7 +87,7 @@ export default class TreasuryService {
       biggiBalance,
       maticBalance,
       totalBiggiReceived,
-      totalBiggiReceivedFromBuyback,
+      totalBiggiReceivedFromBUYBACK,
       totalMaticReceived,
       totalMaticReceivedFromDistributor,
     ] = await Promise.all(calls);
@@ -97,7 +97,7 @@ export default class TreasuryService {
       biggiBalance,
       maticBalance,
       totalBiggiReceived,
-      totalBiggiReceivedFromBuyback,
+      totalBiggiReceivedFromBUYBACK,
       totalMaticReceived,
       totalMaticReceivedFromDistributor,
     };
@@ -148,8 +148,8 @@ export default class TreasuryService {
         stats.totalBiggiReceived,
         18,
       ),
-      totalBiggiReceivedFromBuyback: TreasuryService.bnToString(
-        stats.totalBiggiReceivedFromBuyback,
+      totalBiggiReceivedFromBUYBACK: TreasuryService.bnToString(
+        stats.totalBiggiReceivedFromBUYBACK,
         18,
       ),
       totalMaticReceived: TreasuryService.bnToString(
@@ -163,4 +163,5 @@ export default class TreasuryService {
     };
   }
 }
+
 

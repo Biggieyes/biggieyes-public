@@ -4,11 +4,11 @@ import Loader from "../common/Loader";
 
 export default function NFTStatusBlock({
   isRedeeming,
-  vrfPending,
+  VRFPending,
   redeemMsg,
   isMobile,
   fetchStats,
-  fetchRewards,
+  fetchREWARDS,
   fetchWalletAssets,
   walletAddress,
   galleryLoading,
@@ -18,11 +18,11 @@ export default function NFTStatusBlock({
     <>
       <StatusBanner
         isRedeeming={isRedeeming}
-        vrfPending={vrfPending}
+        VRFPending={VRFPending}
         redeemMsg={redeemMsg}
         onRefresh={async () => {
           await fetchStats();
-          await fetchRewards();
+          await fetchREWARDS();
           await fetchWalletAssets(walletAddress);
         }}
         compact={isMobile}
@@ -35,4 +35,6 @@ export default function NFTStatusBlock({
     </>
   );
 }
+
+
 

@@ -1,5 +1,5 @@
-// src/services/BuybackService.js
-// Ethers v5 service wrapper for BuybackAgent-like contract (read-only helpers)
+// src/services/BUYBACKService.js
+// Ethers v5 service wrapper for BUYBACKAgent-like contract (read-only helpers)
 // Neprovádím žádné změny v kontraktu.
 
 import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
@@ -15,7 +15,7 @@ const ABI = [
   },
   {
     inputs: [],
-    name: "autoBuybackEnabled",
+    name: "autoBUYBACKEnabled",
     outputs: [{ internalType: "bool", name: "", type: "bool" }],
     stateMutability: "view",
     type: "function",
@@ -65,17 +65,17 @@ const ABI = [
   },
   {
     inputs: [],
-    name: "policy",
+    name: "POLICY",
     outputs: [
-      { internalType: "contract IBiggiPolicy", name: "", type: "address" },
+      { internalType: "contract IBiggiPOLICY", name: "", type: "address" },
     ],
     stateMutability: "view",
     type: "function",
   },
   {
     inputs: [],
-    name: "dripLM",
-    outputs: [{ internalType: "contract IDripLM", name: "", type: "address" }],
+    name: "DRIPLM",
+    outputs: [{ internalType: "contract IDRIPLM", name: "", type: "address" }],
     stateMutability: "view",
     type: "function",
   },
@@ -102,7 +102,7 @@ const ABI = [
   },
   {
     inputs: [],
-    name: "lastBuybackAt",
+    name: "lastBUYBACKAt",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     stateMutability: "view",
     type: "function",
@@ -151,7 +151,7 @@ const ABI = [
   },
 ];
 
-export default class BuybackService {
+export default class BUYBACKService {
   /**
    * @param {string} address - contract address
    * @param {ethers.providers.Provider} provider - ethers v5 provider
@@ -173,7 +173,7 @@ export default class BuybackService {
       await this.BIGGI();
       return true;
     } catch (e) {
-      console.error("BuybackService.init failed:", e);
+      console.error("BUYBACKService.init failed:", e);
       throw e;
     }
   }
@@ -190,8 +190,8 @@ export default class BuybackService {
   async BIGGI() {
     return await this.contract.BIGGI();
   } // address (IERC20)
-  async autoBuybackEnabled() {
-    return await this.contract.autoBuybackEnabled();
+  async autoBUYBACKEnabled() {
+    return await this.contract.autoBUYBACKEnabled();
   } // bool
   async biggiBalance() {
     return await this.contract.biggiBalance();
@@ -208,11 +208,11 @@ export default class BuybackService {
   async treasury() {
     return await this.contract.treasury();
   } // address
-  async policy() {
-    return await this.contract.policy();
+  async POLICY() {
+    return await this.contract.POLICY();
   } // address
-  async dripLM() {
-    return await this.contract.dripLM();
+  async DRIPLM() {
+    return await this.contract.DRIPLM();
   } // address
   async fallbackMinIntervalSec() {
     return await this.contract.fallbackMinIntervalSec();
@@ -223,8 +223,8 @@ export default class BuybackService {
   async fallbackTxDeadlineSec() {
     return await this.contract.fallbackTxDeadlineSec();
   } // BigNumber
-  async lastBuybackAt() {
-    return await this.contract.lastBuybackAt();
+  async lastBUYBACKAt() {
+    return await this.contract.lastBUYBACKAt();
   } // BigNumber (timestamp)
   async pathCustom() {
     return await this.contract.pathCustom();
@@ -255,18 +255,18 @@ export default class BuybackService {
       const iface = new ethers.utils.Interface(ABI);
       const methods = [
         "BIGGI",
-        "autoBuybackEnabled",
+        "autoBUYBACKEnabled",
         "biggiBalance",
         "nativeBalance",
         "router",
         "wrappedNative",
         "treasury",
-        "policy",
-        "dripLM",
+        "POLICY",
+        "DRIPLM",
         "fallbackMinIntervalSec",
         "fallbackSwapSlippageBps",
         "fallbackTxDeadlineSec",
-        "lastBuybackAt",
+        "lastBUYBACKAt",
         "pathCustom",
         "totalBiggiAcquired",
         "totalNativeReceived",
@@ -288,18 +288,18 @@ export default class BuybackService {
         );
         const [
           BIGGI,
-          autoBuybackEnabled,
+          autoBUYBACKEnabled,
           biggiBalance,
           nativeBalance,
           router,
           wrappedNative,
           treasury,
-          policy,
-          dripLM,
+          POLICY,
+          DRIPLM,
           fallbackMinIntervalSec,
           fallbackSwapSlippageBps,
           fallbackTxDeadlineSec,
-          lastBuybackAt,
+          lastBUYBACKAt,
           pathCustom,
           totalBiggiAcquired,
           totalNativeReceived,
@@ -309,18 +309,18 @@ export default class BuybackService {
         ] = vals;
         return {
           BIGGI,
-          autoBuybackEnabled,
+          autoBUYBACKEnabled,
           biggiBalance,
           nativeBalance,
           router,
           wrappedNative,
           treasury,
-          policy,
-          dripLM,
+          POLICY,
+          DRIPLM,
           fallbackMinIntervalSec,
           fallbackSwapSlippageBps,
           fallbackTxDeadlineSec,
-          lastBuybackAt,
+          lastBUYBACKAt,
           pathCustom,
           totalBiggiAcquired,
           totalNativeReceived,
@@ -331,7 +331,7 @@ export default class BuybackService {
       }
     } catch (e) {
       console.warn(
-        "BuybackService multicall failed, falling back to Promise.all",
+        "BUYBACKService multicall failed, falling back to Promise.all",
         e?.message || e,
       );
     }
@@ -339,18 +339,18 @@ export default class BuybackService {
     // fallback: original parallel calls
     const calls = [
       this.BIGGI(),
-      this.autoBuybackEnabled(),
+      this.autoBUYBACKEnabled(),
       this.biggiBalance(),
       this.nativeBalance(),
       this.router(),
       this.wrappedNative(),
       this.treasury(),
-      this.policy(),
-      this.dripLM(),
+      this.POLICY(),
+      this.DRIPLM(),
       this.fallbackMinIntervalSec(),
       this.fallbackSwapSlippageBps(),
       this.fallbackTxDeadlineSec(),
-      this.lastBuybackAt(),
+      this.lastBUYBACKAt(),
       this.pathCustom(),
       this.totalBiggiAcquired(),
       this.totalNativeReceived(),
@@ -361,18 +361,18 @@ export default class BuybackService {
 
     const [
       BIGGI,
-      autoBuybackEnabled,
+      autoBUYBACKEnabled,
       biggiBalance,
       nativeBalance,
       router,
       wrappedNative,
       treasury,
-      policy,
-      dripLM,
+      POLICY,
+      DRIPLM,
       fallbackMinIntervalSec,
       fallbackSwapSlippageBps,
       fallbackTxDeadlineSec,
-      lastBuybackAt,
+      lastBUYBACKAt,
       pathCustom,
       totalBiggiAcquired,
       totalNativeReceived,
@@ -383,18 +383,18 @@ export default class BuybackService {
 
     return {
       BIGGI,
-      autoBuybackEnabled,
+      autoBUYBACKEnabled,
       biggiBalance,
       nativeBalance,
       router,
       wrappedNative,
       treasury,
-      policy,
-      dripLM,
+      POLICY,
+      DRIPLM,
       fallbackMinIntervalSec,
       fallbackSwapSlippageBps,
       fallbackTxDeadlineSec,
-      lastBuybackAt,
+      lastBUYBACKAt,
       pathCustom,
       totalBiggiAcquired,
       totalNativeReceived,
@@ -415,7 +415,7 @@ export default class BuybackService {
         const stats = await this.getAllStats();
         callback(blockNumber, stats);
       } catch (e) {
-        console.error("BuybackService subscribeOnBlock handler error", e);
+        console.error("BUYBACKService subscribeOnBlock handler error", e);
       }
     };
     this.provider.on("block", this._onBlockHandler);
@@ -443,31 +443,31 @@ export default class BuybackService {
     const decimals = 18;
     return {
       biggiToken: stats.BIGGI,
-      autoBuybackEnabled: stats.autoBuybackEnabled,
-      biggiBalance: BuybackService.bnToString(stats.biggiBalance, decimals),
-      nativeBalanceEth: BuybackService.bnToString(
+      autoBUYBACKEnabled: stats.autoBUYBACKEnabled,
+      biggiBalance: BUYBACKService.bnToString(stats.biggiBalance, decimals),
+      nativeBalanceEth: BUYBACKService.bnToString(
         stats.nativeBalance,
         decimals,
       ),
       router: stats.router,
       wrappedNative: stats.wrappedNative,
       treasury: stats.treasury,
-      policy: stats.policy,
-      dripLM: stats.dripLM,
+      POLICY: stats.POLICY,
+      DRIPLM: stats.DRIPLM,
       fallbackMinIntervalSec: stats.fallbackMinIntervalSec?.toString?.(),
       fallbackSwapSlippageBps: stats.fallbackSwapSlippageBps?.toString?.(),
       fallbackTxDeadlineSec: stats.fallbackTxDeadlineSec?.toString?.(),
-      lastBuybackAt: stats.lastBuybackAt?.toString?.(),
+      lastBUYBACKAt: stats.lastBUYBACKAt?.toString?.(),
       pathCustom: stats.pathCustom,
-      totalBiggiAcquired: BuybackService.bnToString(
+      totalBiggiAcquired: BUYBACKService.bnToString(
         stats.totalBiggiAcquired,
         decimals,
       ),
-      totalNativeReceived: BuybackService.bnToString(
+      totalNativeReceived: BUYBACKService.bnToString(
         stats.totalNativeReceived,
         decimals,
       ),
-      totalNativeSpent: BuybackService.bnToString(
+      totalNativeSpent: BUYBACKService.bnToString(
         stats.totalNativeSpent,
         decimals,
       ),
@@ -476,4 +476,7 @@ export default class BuybackService {
     };
   }
 }
+
+
+
 

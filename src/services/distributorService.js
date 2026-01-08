@@ -6,19 +6,19 @@ import { fromWei, getDistributorRO } from "../utils/contract";
  * ZÁKLADNÍ ADRESY / DRÁHY TOKŮ
  */
 
-export async function getBuybackAgentAddress() {
+export async function getBUYBACKAgentAddress() {
   const c = await getDistributorRO();
-  return await c.buybackAgent();
+  return await c.BUYBACKAgent();
 }
 
-export async function getCollectionRewardsAddress() {
+export async function getCOLLECTIONREWARDSAddress() {
   const c = await getDistributorRO();
-  return await c.collectionRewards();
+  return await c.COLLECTIONREWARDS();
 }
 
-export async function getCommunityCenterAddress() {
+export async function getCOMMUNITYCENTERAddress() {
   const c = await getDistributorRO();
-  return await c.communityCenter();
+  return await c.COMMUNITYCENTER();
 }
 
 export async function getReserveAddress() {
@@ -35,9 +35,9 @@ export async function getTreasuryAddress() {
  * MULTI-COLLECTION MAPOVÁNÍ
  */
 
-export async function isCollectionRegistered(collectionAddr) {
+export async function isCOLLECTIONRegistered(COLLECTIONAddr) {
   const c = await getDistributorRO();
-  return await c.collections(collectionAddr);
+  return await c.COLLECTIONs(COLLECTIONAddr);
 }
 
 /**
@@ -68,13 +68,13 @@ export async function getTotalPendingEth() {
  * PER-COLLECTION / PER-RECIPIENT STAV
  */
 
-export async function getReceivedByCollectionRaw(collectionAddr) {
+export async function getReceivedByCOLLECTIONRaw(COLLECTIONAddr) {
   const c = await getDistributorRO();
-  return await c.receivedByCollection(collectionAddr);
+  return await c.receivedByCOLLECTION(COLLECTIONAddr);
 }
 
-export async function getReceivedByCollectionEth(collectionAddr) {
-  const raw = await getReceivedByCollectionRaw(collectionAddr);
+export async function getReceivedByCOLLECTIONEth(COLLECTIONAddr) {
+  const raw = await getReceivedByCOLLECTIONRaw(COLLECTIONAddr);
   return fromWei(raw);
 }
 
@@ -117,18 +117,18 @@ export async function getDistributorOwner() {
  */
 
 const distributorService = {
-  getBuybackAgentAddress,
-  getCollectionRewardsAddress,
-  getCommunityCenterAddress,
+  getBUYBACKAgentAddress,
+  getCOLLECTIONREWARDSAddress,
+  getCOMMUNITYCENTERAddress,
   getReserveAddress,
   getTreasuryAddress,
-  isCollectionRegistered,
+  isCOLLECTIONRegistered,
   getTotalReceivedRaw,
   getTotalReceivedEth,
   getTotalPendingRaw,
   getTotalPendingEth,
-  getReceivedByCollectionRaw,
-  getReceivedByCollectionEth,
+  getReceivedByCOLLECTIONRaw,
+  getReceivedByCOLLECTIONEth,
   getPendingMapRaw,
   getPendingMapEth,
   getPendingOfRaw,
@@ -138,4 +138,8 @@ const distributorService = {
 };
 
 export default distributorService;
+
+
+
+
 

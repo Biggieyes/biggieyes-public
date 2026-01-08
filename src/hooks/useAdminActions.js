@@ -9,15 +9,15 @@ import {
 export function useAdminActions({
   getContract,
   getLiquidityContract,
-  getPolicy,
+  getPOLICY,
   fetchStats,
-  fetchRewards,
+  fetchREWARDS,
   onRefreshRouterInfo,
   onRefreshLiquidityPreview,
-  onRefreshPolicy,
-  onRefreshRewards,
+  onRefreshPOLICY,
+  onRefreshREWARDS,
   onRefreshTokenMeta,
-  onRefreshBuybackInfo,
+  onRefreshBUYBACKInfo,
   fetchTreasuryInfo,
   fetchReserveInfo,
 }) {
@@ -25,7 +25,7 @@ export function useAdminActions({
     () => ({
       refresh: async () => {
         await fetchStats();
-        await fetchRewards();
+        await fetchREWARDS();
         try {
           await onRefreshRouterInfo();
         } catch (err) {
@@ -37,9 +37,9 @@ export function useAdminActions({
           console.debug("onRefreshLiquidityPreview failed", err);
         }
         try {
-          await onRefreshPolicy();
+          await onRefreshPOLICY();
         } catch (err) {
-          console.debug("onRefreshPolicy failed", err);
+          console.debug("onRefreshPOLICY failed", err);
         }
       },
       setPaused: async (flag) => {
@@ -73,8 +73,8 @@ export function useAdminActions({
           p,
         );
       },
-      setVRFParams: async (vrf) => {
-        await setVRFAllOrPartial(vrf);
+      setVRFParams: async (VRF) => {
+        await setVRFAllOrPartial(VRF);
       },
       setTreasury: async (addr) => {
         if (!addr) throw new Error("Treasury is empty");
@@ -183,35 +183,35 @@ export function useAdminActions({
           [],
         );
       },
-      liq_buybackToTreasury: async (nativeAmount, minOut) => {
+      liq_BUYBACKToTreasury: async (nativeAmount, minOut) => {
         const overrides = nativeAmount ? { value: parseEth(nativeAmount) } : {};
         const minOutWei = minOut ? parseEth(minOut) : 0n;
         await writeFirst(
           [getLiquidityContract],
           [
-            "buybackToTreasury",
+            "BUYBACKToTreasury",
             "buyBiggiAndSendToTreasury",
-            "buybackAllToTreasury",
+            "BUYBACKAllToTreasury",
           ],
           minOutWei,
           overrides,
         );
         await onRefreshRouterInfo();
-        await onRefreshBuybackInfo();
+        await onRefreshBUYBACKInfo();
       },
-      liq_buybackAllToTreasury: async (minOut) => {
+      liq_BUYBACKAllToTreasury: async (minOut) => {
         const minOutWei = minOut ? parseEth(minOut) : 0n;
         await writeFirst(
           [getLiquidityContract],
           [
-            "buybackAllToTreasury",
+            "BUYBACKAllToTreasury",
             "buyBiggiAndSendToTreasury",
-            "buybackToTreasury",
+            "BUYBACKToTreasury",
           ],
           minOutWei,
         );
         await onRefreshRouterInfo();
-        await onRefreshBuybackInfo();
+        await onRefreshBUYBACKInfo();
       },
       liq_addLiquidityFromBalances: async (biggiAmount, nativeAmount) => {
         const overrides = nativeAmount ? { value: parseEth(nativeAmount) } : {};
@@ -254,11 +254,11 @@ export function useAdminActions({
         );
       },
 
-      /* --- Policy tokenomics setters --- */
+      /* --- POLICY tokenomics setters --- */
       pol_setSplits: async (alphaBps, betaBps, gammaBps) => {
         await writeFirst(
-          [getPolicy],
-          ["setSplits", "setSplitBps", "setPolicySplits", "setAllocations"],
+          [getPOLICY],
+          ["setSplits", "setSplitBps", "setPOLICYSplits", "setAllocations"],
           Number(alphaBps),
           Number(betaBps),
           Number(gammaBps),
@@ -278,16 +278,16 @@ export function useAdminActions({
           dailyWei,
         ];
         await writeFirst(
-          [getPolicy],
+          [getPOLICY],
           ["setGuards", "configureGuards", "setLimits"],
           ...args,
         );
       },
-      pol_setPauses: async ({ buybacks, refills, lpAdds, eoc }) => {
+      pol_setPauses: async ({ BUYBACKs, refills, lpAdds, eoc }) => {
         await writeFirst(
-          [getPolicy],
+          [getPOLICY],
           ["setPauses", "setPauseFlags", "setPaused"],
-          !!buybacks,
+          !!BUYBACKs,
           !!refills,
           !!lpAdds,
           !!eoc,
@@ -296,7 +296,7 @@ export function useAdminActions({
       pol_setOperator: async (addr, allowed) => {
         if (!addr) throw new Error("Operator address is empty");
         await writeFirst(
-          [getPolicy],
+          [getPOLICY],
           ["setOperator", "setOperatorAllowed", "setOperatorPermission"],
           addr,
           !!allowed,
@@ -305,38 +305,42 @@ export function useAdminActions({
       pol_consumeDaily: async (amtNative) => {
         const wei = parseEth(amtNative || 0);
         await writeFirst(
-          [getPolicy],
+          [getPOLICY],
           ["consumeDaily", "consumeDailyAllowance", "consumeDailyCap"],
           wei,
         );
       },
       pol_resetDailyCounter: async () => {
         await writeFirst(
-          [getPolicy],
+          [getPOLICY],
           ["resetDaily", "resetDailyCounter", "resetDailyCap"],
         );
       },
 
       fetchTreasuryInfo,
       fetchReserveInfo,
-      onRefreshRewards,
+      onRefreshREWARDS,
       onRefreshTokenMeta,
     }),
     [
       getContract,
       getLiquidityContract,
-      getPolicy,
+      getPOLICY,
       fetchStats,
-      fetchRewards,
+      fetchREWARDS,
       onRefreshRouterInfo,
       onRefreshLiquidityPreview,
-      onRefreshPolicy,
-      onRefreshRewards,
+      onRefreshPOLICY,
+      onRefreshREWARDS,
       onRefreshTokenMeta,
-      onRefreshBuybackInfo,
+      onRefreshBUYBACKInfo,
       fetchTreasuryInfo,
       fetchReserveInfo,
     ],
   );
 }
+
+
+
+
 

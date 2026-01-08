@@ -1,4 +1,4 @@
-// src/hooks/useNFTRewards.js
+// src/HOOKS/useNFTREWARDS.js
 import * as React from "react";
 import { getROProvider } from "../utils/contract";
 
@@ -7,7 +7,7 @@ const DEFAULT_DATA = {
   contractAddress: "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
 };
 
-export default function useNFTRewards(providerOverride = null) {
+export default function useNFTREWARDS(providerOverride = null) {
   const [data, setData] = React.useState(DEFAULT_DATA);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
@@ -20,21 +20,21 @@ export default function useNFTRewards(providerOverride = null) {
         const provider = providerOverride || getROProvider();
         if (!provider) throw new Error("Read-only provider not available");
 
-        // RewardsReader contract instance
-        // const rewardsReader = new Contract(
+        // REWARDSReader contract instance
+        // const REWARDSReader = new Contract(
         //   "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
         //   ABI_REWARDS_READER,
         //   provider,
         // );
 
-        // Čtení NFT rewards (příklad: totalMinted lze získat z jiné metody pokud je v ABI)
+        // Čtení NFT REWARDS (příklad: totalMinted lze získat z jiné metody pokud je v ABI)
         // Zde pouze placeholder, upravte podle skutečné metody v ABI
-        // const nftStats = await rewardsReader.nftRewardsStats();
+        // const nftStats = await REWARDSReader.nftREWARDSStats();
         // setData((prev) => ({ ...prev, totalMinted: nftStats.totalMinted }));
 
         setData((prev) => ({ ...prev }));
       } catch (e) {
-        console.error("useNFTRewards.refresh", e);
+        console.error("useNFTREWARDS.refresh", e);
         setError(e);
       } finally {
         setLoading(false);
@@ -49,4 +49,6 @@ export default function useNFTRewards(providerOverride = null) {
 
   return { data, loading, error, refresh };
 }
+
+
 

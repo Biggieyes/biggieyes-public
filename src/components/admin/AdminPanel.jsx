@@ -3,11 +3,11 @@ import * as React from "react";
 import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { ADDR } from "../../utils/addresses.js";
 import { getROProvider } from "../../utils/contract";
-import communityCenterAbi from "../../utils/abi/BiggiCommunityCenter.js";
+import COMMUNITYCENTERAbi from "../../utils/abi/BiggiCOMMUNITYCENTER.js";
 import { supabase } from "../../services/chatClient";
 
-const COMMUNITY_CENTER_ABI = Array.isArray(communityCenterAbi)
-  ? communityCenterAbi
+const COMMUNITY_CENTER_ABI = Array.isArray(COMMUNITYCENTERAbi)
+  ? COMMUNITYCENTERAbi
   : [];
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -26,10 +26,10 @@ function buildChatApiUrl(path) {
   return `${CHAT_API_BASE}/api${safePath}`;
 }
 
-function resolveCommunityCenterAddress() {
+function resolveCOMMUNITYCENTERAddress() {
   const candidates = [
     ADDR?.COMMUNITY_CENTER,
-    ADDR?.CommunityCenter,
+    ADDR?.COMMUNITYCENTER,
     ADDR?.COMMUNITY,
   ];
   for (const candidate of candidates) {
@@ -58,13 +58,13 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
   const [ticketPrice, setTicketPrice] = React.useState("");
   const [blockIdx, setBlockIdx] = React.useState(""); // 0..9
   const [blockBasePrice, setBlockBasePrice] = React.useState(""); // number
-  const [vrf, setVRF] = React.useState({
-    keyHash: data?.vrf?.keyHash || "",
-    confirmations: data?.vrf?.confirmations ?? 3,
-    numWords: data?.vrf?.numWords ?? 1,
-    callbackGasLimit: data?.vrf?.callbackGasLimit ?? 300000,
-    coordinator: data?.vrf?.coordinator || "",
-    subscriptionId: data?.vrf?.subscriptionId || "",
+  const [VRF, setVRF] = React.useState({
+    keyHash: data?.VRF?.keyHash || "",
+    confirmations: data?.VRF?.confirmations ?? 3,
+    numWords: data?.VRF?.numWords ?? 1,
+    callbackGasLimit: data?.VRF?.callbackGasLimit ?? 300000,
+    coordinator: data?.VRF?.coordinator || "",
+    subscriptionId: data?.VRF?.subscriptionId || "",
   });
   const [treasury, setTreasury] = React.useState(data?.treasury || "");
   const [liquiditySink, setLiquiditySink] = React.useState(
@@ -85,15 +85,15 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
   const [lpSlip, setLpSlip] = React.useState(""); // bps
   const [swapPath, setSwapPath] = React.useState(""); // "WNATIVE,token,...,BIGGI"
   const [minOut, setMinOut] = React.useState(""); // BIGGI minOut (raw or human, action handles parse)
-  const [nativeAmt, setNativeAmt] = React.useState(""); // ETH/POL amount (for buybackToTreasury)
+  const [nativeAmt, setNativeAmt] = React.useState(""); // ETH/POL amount (for BUYBACKToTreasury)
   const [biggiAmt, setBiggiAmt] = React.useState(""); // BIGGI amount for addLiquidityFromBalances
   const [bootToken, setBootToken] = React.useState(""); // token amount for bootstrap
   const [bootEth, setBootEth] = React.useState(""); // native amount for bootstrap
   const [routeBiggiAmt, setRouteBiggiAmt] = React.useState(""); // route to treasury amount
 
-  // ===== NEW: Policy controls =====
+  // ===== NEW: POLICY controls =====
   // Splits
-  const [alphaBuyback, setAlphaBuyback] = React.useState(""); // bps
+  const [alphaBUYBACK, setAlphaBUYBACK] = React.useState(""); // bps
   const [betaBurn, setBetaBurn] = React.useState(""); // bps
   const [gammaStaking, setGammaStaking] = React.useState(""); // bps
   // Guards
@@ -105,7 +105,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
   const [gTwapWindow, setGTwapWindow] = React.useState("");
   const [gDailyCap, setGDailyCap] = React.useState("");
   // Pauses
-  const [pauseBuybacks, setPauseBuybacks] = React.useState(false);
+  const [pauseBUYBACKs, setPauseBUYBACKs] = React.useState(false);
   const [pauseRefills, setPauseRefills] = React.useState(false);
   const [pauseLpAdds, setPauseLpAdds] = React.useState(false);
   const [pauseEoc, setPauseEoc] = React.useState(false);
@@ -123,9 +123,9 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
   const [eventCapacity, setEventCapacity] = React.useState("");
   const [eventDeposit, setEventDeposit] = React.useState("");
 
-  // NFT Rewards admin (manual + mystery)
+  // NFT REWARDS admin (manual + mystery)
   const [nftMainContract, setNftMainContract] = React.useState("");
-  const [nftVrfRouter, setNftVrfRouter] = React.useState("");
+  const [nftVRFRouter, setNftVRFRouter] = React.useState("");
   const [nftManualWinner, setNftManualWinner] = React.useState("");
   const [nftManualUri, setNftManualUri] = React.useState("");
   const [nftMysteryUris, setNftMysteryUris] = React.useState("");
@@ -178,7 +178,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
   };
 
   const communityAddress = React.useMemo(
-    () => resolveCommunityCenterAddress(),
+    () => resolveCOMMUNITYCENTERAddress(),
     [],
   );
   const communityAvailable = Boolean(
@@ -343,12 +343,12 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       await actions.nft_setMainContract?.(addr);
     });
 
-  const applyNftVrfRouter = () =>
-    run("nft_setVrf", async () => {
-      const addr = nftVrfRouter.trim();
+  const applyNftVRFRouter = () =>
+    run("nft_setVRF", async () => {
+      const addr = nftVRFRouter.trim();
       if (!ethers.utils.isAddress(addr))
         throw new Error("VRF router address is invalid");
-      await actions.nft_setVrfRouter?.(addr);
+      await actions.nft_setVRFRouter?.(addr);
     });
 
   const createNftManualReward = () =>
@@ -528,7 +528,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
   };
 
   const scroller = {
-    overflow: "auto",
+    overFLOW: "auto",
     minHeight: 0,
   };
 
@@ -539,7 +539,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
     borderRadius: 16,
     boxShadow:
       "0 18px 42px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.02)",
-    overflow: "hidden",
+    overFLOW: "hidden",
   };
 
   const header = {
@@ -609,7 +609,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       style={{
         border: "1px solid rgba(255,255,255,.08)",
         borderRadius: 14,
-        overflow: "hidden",
+        overFLOW: "hidden",
         boxShadow:
           "inset 0 0 0 1px rgba(255,255,255,.03), 0 10px 28px rgba(0,0,0,.45)",
         background:
@@ -959,20 +959,20 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
         run(
           "setVRFParams",
-          () => actions.setVRFParams && actions.setVRFParams({ ...vrf }),
+          () => actions.setVRFParams && actions.setVRFParams({ ...VRF }),
         );
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, vrf, actions, onClose]);
+  }, [open, VRF, actions, onClose]);
 
   const tabs = [
     { id: "core", label: "Core" },
     { id: "liquidity", label: "Liquidity" },
-    { id: "policy", label: "Policy" },
+    { id: "POLICY", label: "POLICY" },
     { id: "community", label: "Community" },
-    { id: "nft", label: "NFT Rewards" },
+    { id: "nft", label: "NFT REWARDS" },
     { id: "chat", label: "Live Chat" },
     { id: "health", label: "Health" },
     { id: "frontend", label: "Frontend" },
@@ -1099,8 +1099,8 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                       v: data?.ticketPrice ? `${data.ticketPrice} POL` : "—",
                     },
                     {
-                      k: "Rewards Pool",
-                      v: data?.rewardsPool ? `${data.rewardsPool} POL` : "—",
+                      k: "REWARDS Pool",
+                      v: data?.REWARDSPool ? `${data.REWARDSPool} POL` : "—",
                     },
                     {
                       k: "Treasury",
@@ -1134,24 +1134,24 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     },
                     {
                       k: "VRF KeyHash",
-                      v: data?.vrf?.keyHash,
+                      v: data?.VRF?.keyHash,
                       mono: true,
-                      copy: data?.vrf?.keyHash,
+                      copy: data?.VRF?.keyHash,
                     },
-                    { k: "VRF Conf.", v: data?.vrf?.confirmations },
-                    { k: "VRF NumWords", v: data?.vrf?.numWords },
-                    { k: "VRF GasLimit", v: data?.vrf?.callbackGasLimit },
+                    { k: "VRF Conf.", v: data?.VRF?.confirmations },
+                    { k: "VRF NumWords", v: data?.VRF?.numWords },
+                    { k: "VRF GasLimit", v: data?.VRF?.callbackGasLimit },
                     {
                       k: "VRF Coordinator",
-                      v: short(data?.vrf?.coordinator),
+                      v: short(data?.VRF?.coordinator),
                       mono: true,
-                      copy: data?.vrf?.coordinator,
+                      copy: data?.VRF?.coordinator,
                     },
                     {
                       k: "VRF SubID",
-                      v: data?.vrf?.subscriptionId,
+                      v: data?.VRF?.subscriptionId,
                       mono: true,
-                      copy: data?.vrf?.subscriptionId,
+                      copy: data?.VRF?.subscriptionId,
                     },
                   ]}
                 />
@@ -1172,7 +1172,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     <div
                       style={{
                         padding: 0,
-                        overflowX: "auto",
+                        overFLOWX: "auto",
                         borderRadius: 14,
                         border: "1px solid rgba(255,255,255,.08)",
                         boxShadow:
@@ -1443,9 +1443,9 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   <div style={{ display: "grid", gap: 8 }}>
                     <Row k="KeyHash">
                       <input
-                        value={vrf.keyHash}
+                        value={VRF.keyHash}
                         onChange={(e) =>
-                          setVRF({ ...vrf, keyHash: e.target.value })
+                          setVRF({ ...VRF, keyHash: e.target.value })
                         }
                         style={inputStyle(true)}
                       />
@@ -1453,10 +1453,10 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     <Row k="Confirmations">
                       <input
                         type="number"
-                        value={vrf.confirmations}
+                        value={VRF.confirmations}
                         onChange={(e) =>
                           setVRF({
-                            ...vrf,
+                            ...VRF,
                             confirmations: Number(e.target.value),
                           })
                         }
@@ -1466,9 +1466,9 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     <Row k="NumWords">
                       <input
                         type="number"
-                        value={vrf.numWords}
+                        value={VRF.numWords}
                         onChange={(e) =>
-                          setVRF({ ...vrf, numWords: Number(e.target.value) })
+                          setVRF({ ...VRF, numWords: Number(e.target.value) })
                         }
                         style={inputStyle()}
                       />
@@ -1476,10 +1476,10 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     <Row k="Callback Gas">
                       <input
                         type="number"
-                        value={vrf.callbackGasLimit}
+                        value={VRF.callbackGasLimit}
                         onChange={(e) =>
                           setVRF({
-                            ...vrf,
+                            ...VRF,
                             callbackGasLimit: Number(e.target.value),
                           })
                         }
@@ -1488,19 +1488,19 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     </Row>
                     <Row k="Coordinator">
                       <input
-                        value={vrf.coordinator}
+                        value={VRF.coordinator}
                         onChange={(e) =>
-                          setVRF({ ...vrf, coordinator: e.target.value })
+                          setVRF({ ...VRF, coordinator: e.target.value })
                         }
                         style={inputStyle(true)}
                       />
                     </Row>
                     <Row k="Subscription Id">
                       <input
-                        value={vrf.subscriptionId}
+                        value={VRF.subscriptionId}
                         onChange={(e) =>
                           setVRF({
-                            ...vrf,
+                            ...VRF,
                             subscriptionId: e.target.value,
                           })
                         }
@@ -1518,7 +1518,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                             "setVRFParams",
                             () =>
                               actions.setVRFParams &&
-                              actions.setVRFParams({ ...vrf }),
+                              actions.setVRFParams({ ...VRF }),
                           )
                         }
                         title="Apply VRF params"
@@ -1935,7 +1935,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     <div
                       style={{ marginBottom: 6, color: C.dim, fontWeight: 800 }}
                     >
-                      Buyback to Treasury
+                      BUYBACK to Treasury
                     </div>
                     <div
                       style={{
@@ -1958,33 +1958,33 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                       />
                       <button
                         style={smallBtn(true)}
-                        disabled={!!pending.liq_buyback}
+                        disabled={!!pending.liq_BUYBACK}
                         onClick={() =>
                           run(
-                            "liq_buyback",
+                            "liq_BUYBACK",
                             () =>
-                              actions.liq_buybackToTreasury &&
-                              actions.liq_buybackToTreasury(nativeAmt, minOut),
+                              actions.liq_BUYBACKToTreasury &&
+                              actions.liq_BUYBACKToTreasury(nativeAmt, minOut),
                           )
                         }
                       >
-                        {pending.liq_buyback ? "Buying..." : "Buyback"}
+                        {pending.liq_BUYBACK ? "Buying..." : "BUYBACK"}
                       </button>
                     </div>
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                       <button
                         style={smallBtn(true)}
-                        disabled={!!pending.liq_buybackAll}
+                        disabled={!!pending.liq_BUYBACKAll}
                         onClick={() =>
                           run(
-                            "liq_buybackAll",
+                            "liq_BUYBACKAll",
                             () =>
-                              actions.liq_buybackAllToTreasury &&
-                              actions.liq_buybackAllToTreasury(minOut),
+                              actions.liq_BUYBACKAllToTreasury &&
+                              actions.liq_BUYBACKAllToTreasury(minOut),
                           )
                         }
                       >
-                        {pending.liq_buybackAll ? "Buying..." : "Buyback ALL"}
+                        {pending.liq_BUYBACKAll ? "Buying..." : "BUYBACK ALL"}
                       </button>
                     </div>
                   </div>
@@ -2122,7 +2122,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
           </div>
         )}
 
-        {activeTab === "policy" && (
+        {activeTab === "POLICY" && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18 }}>
             <section style={{ ...card }}>
               <div style={{ ...header, borderBottom: `1px solid ${C.line}` }}>
@@ -2133,14 +2133,14 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     textShadow: "0 0 10px rgba(255,232,0,.35)",
                   }}
                 >
-                  Policy Controls
+                  POLICY Controls
                 </h3>
               </div>
               <div style={{ padding: 12, display: "grid", gap: 16 }}>
                 <div
                   style={{ color: C.dim, fontWeight: 900, marginBottom: 10 }}
                 >
-                  Policy Splits
+                  POLICY Splits
                 </div>
                 <div
                   style={{
@@ -2150,10 +2150,10 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   }}
                 >
                   <input
-                    value={alphaBuyback}
-                    onChange={(e) => setAlphaBuyback(e.target.value)}
+                    value={alphaBUYBACK}
+                    onChange={(e) => setAlphaBUYBACK(e.target.value)}
                     style={inputStyle()}
-                    placeholder="alphaBuyback bps"
+                    placeholder="alphaBUYBACK bps"
                   />
                   <input
                     value={betaBurn}
@@ -2176,7 +2176,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                         () =>
                           actions.pol_setSplits &&
                           actions.pol_setSplits(
-                            Number(alphaBuyback),
+                            Number(alphaBUYBACK),
                             Number(betaBurn),
                             Number(gammaStaking),
                           ),
@@ -2194,7 +2194,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     margin: "14px 0 10px",
                   }}
                 >
-                  Policy Guards
+                  POLICY Guards
                 </div>
                 <div
                   style={{
@@ -2276,7 +2276,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     margin: "14px 0 10px",
                   }}
                 >
-                  Policy Pauses
+                  POLICY Pauses
                 </div>
                 <div
                   style={{
@@ -2295,10 +2295,10 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   >
                     <input
                       type="checkbox"
-                      checked={pauseBuybacks}
-                      onChange={(e) => setPauseBuybacks(e.target.checked)}
+                      checked={pauseBUYBACKs}
+                      onChange={(e) => setPauseBUYBACKs(e.target.checked)}
                     />{" "}
-                    Buybacks
+                    BUYBACKs
                   </label>
                   <label
                     style={{
@@ -2340,7 +2340,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                       checked={pauseEoc}
                       onChange={(e) => setPauseEoc(e.target.checked)}
                     />{" "}
-                    End Of Collection
+                    End Of COLLECTION
                   </label>
                   <button
                     style={smallBtn(true)}
@@ -2351,7 +2351,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                         () =>
                           actions.pol_setPauses &&
                           actions.pol_setPauses({
-                            buybacks: pauseBuybacks,
+                            BUYBACKs: pauseBUYBACKs,
                             refills: pauseRefills,
                             lpAdds: pauseLpAdds,
                             eoc: pauseEoc,
@@ -2370,7 +2370,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     margin: "14px 0 10px",
                   }}
                 >
-                  Policy Operators & Daily
+                  POLICY Operators & Daily
                 </div>
                 <div
                   style={{
@@ -2661,12 +2661,12 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     textShadow: "0 0 10px rgba(255,232,0,.35)",
                   }}
                 >
-                  NFT Rewards
+                  NFT REWARDS
                 </h3>
               </div>
               <div style={{ padding: 12, display: "grid", gap: 12 }}>
                 <p style={{ margin: 0, color: C.dim }}>
-                  Manual rewards and mystery events only. Character rewards are
+                  Manual REWARDS and mystery events only. Character REWARDS are
                   handled by the main contract.
                 </p>
 
@@ -2702,17 +2702,17 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   }}
                 >
                   <input
-                    value={nftVrfRouter}
-                    onChange={(e) => setNftVrfRouter(e.target.value)}
+                    value={nftVRFRouter}
+                    onChange={(e) => setNftVRFRouter(e.target.value)}
                     style={inputStyle(true)}
                     placeholder="VRF router address"
                   />
                   <button
                     style={smallBtn(true)}
-                    disabled={!!pending.nft_setVrf}
-                    onClick={applyNftVrfRouter}
+                    disabled={!!pending.nft_setVRF}
+                    onClick={applyNftVRFRouter}
                   >
-                    {pending.nft_setVrf ? "Saving..." : "Set VRF"}
+                    {pending.nft_setVRF ? "Saving..." : "Set VRF"}
                   </button>
                 </div>
 
@@ -3044,7 +3044,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     display: "grid",
                     gap: 10,
                     maxHeight: 360,
-                    overflow: "auto",
+                    overFLOW: "auto",
                   }}
                 >
                   {chatMessages.map((msg) => (
@@ -3391,4 +3391,13 @@ function copyToClipboard(text) {
     navigator.clipboard?.writeText(text);
   } catch {}
 }
+
+
+
+
+
+
+
+
+
 

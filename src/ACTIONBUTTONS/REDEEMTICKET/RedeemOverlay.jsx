@@ -4,7 +4,7 @@ import * as React from "react";
 export default function RedeemOverlay({
   open,
   isRedeeming,
-  vrfPending,
+  VRFPending,
   redeemMsg,
   pendingTicketId,
   onRefresh,
@@ -14,7 +14,7 @@ export default function RedeemOverlay({
   const rafIdRef = React.useRef(0);
   const resizeObserverRef = React.useRef(null);
   const intersectionObserverRef = React.useRef(null);
-  const vrfPollRef = React.useRef(null);
+  const VRFPollRef = React.useRef(null);
 
   const [anchorPos, setAnchorPos] = React.useState(null);
 
@@ -182,35 +182,35 @@ export default function RedeemOverlay({
   // Auto-refresh while VRF is pending (light polling)
   React.useEffect(() => {
     if (!open) return;
-    if (vrfPending) {
-      if (!vrfPollRef.current) {
-        vrfPollRef.current = setInterval(() => {
+    if (VRFPending) {
+      if (!VRFPollRef.current) {
+        VRFPollRef.current = setInterval(() => {
           try {
             onRefresh?.();
           } catch {}
         }, 6500);
       }
     } else {
-      if (vrfPollRef.current) {
-        clearInterval(vrfPollRef.current);
-        vrfPollRef.current = null;
+      if (VRFPollRef.current) {
+        clearInterval(VRFPollRef.current);
+        VRFPollRef.current = null;
       }
     }
     return () => {
-      if (vrfPollRef.current) {
-        clearInterval(vrfPollRef.current);
-        vrfPollRef.current = null;
+      if (VRFPollRef.current) {
+        clearInterval(VRFPollRef.current);
+        VRFPollRef.current = null;
       }
     };
-  }, [open, vrfPending, onRefresh]);
+  }, [open, VRFPending, onRefresh]);
 
   if (!open) return null;
 
-  const phase = vrfPending ? "vrf" : isRedeeming ? "tx" : "idle";
+  const phase = VRFPending ? "VRF" : isRedeeming ? "tx" : "idle";
   const title =
     phase === "tx"
       ? "Redeeming Your NFT"
-      : phase === "vrf"
+      : phase === "VRF"
         ? "Generating Your NFT"
         : "Working...";
   const note =
@@ -254,7 +254,7 @@ export default function RedeemOverlay({
           <div style={S.header}>
             <div style={S.iconContainer}>
               <img
-                src="/images/vrf-mint.png"
+                src="/images/VRF-mint.png"
                 alt=""
                 style={S.icon}
                 loading="React.lazy"
@@ -322,7 +322,7 @@ export default function RedeemOverlay({
               step={1}
               label="Wallet confirmation"
               active={phase === "tx"}
-              done={phase === "vrf"}
+              done={phase === "VRF"}
               even={false}
             />
 
@@ -331,7 +331,7 @@ export default function RedeemOverlay({
               step={2}
               label="On-chain transaction (ticket burn)"
               active={phase === "tx"}
-              done={phase === "vrf"}
+              done={phase === "VRF"}
               even
             />
 
@@ -339,7 +339,7 @@ export default function RedeemOverlay({
             <Row
               step={3}
               label="Chainlink VRF & metadata generation"
-              active={phase === "vrf"}
+              active={phase === "VRF"}
               done={false}
               even={false}
             />
@@ -350,7 +350,7 @@ export default function RedeemOverlay({
             {note}
           </div>
 
-          {phase === "vrf" && (
+          {phase === "VRF" && (
             <button style={S.refreshBtn} onClick={onRefresh}>
               Check Status
               <span style={S.refreshIcon}>⟳</span>
@@ -463,7 +463,7 @@ const styles = {
     fontFamily: "'Inter', sans-serif",
     pointerEvents: "auto",
     position: "relative",
-    overflow: "hidden",
+    overFLOW: "hidden",
     willChange: "transform",
   },
   arrowUp: {
@@ -536,7 +536,7 @@ const styles = {
     height: "8px",
     background: "rgba(255,255,255,0.1)",
     borderRadius: "10px",
-    overflow: "hidden",
+    overFLOW: "hidden",
     marginBottom: "8px",
   },
   progressBar: {
@@ -560,7 +560,7 @@ const styles = {
     position: "relative",
     border: "1px solid rgba(8,255,230,0.15)",
     borderRadius: "16px",
-    overflow: "hidden",
+    overFLOW: "hidden",
     background:
       "linear-gradient(145deg, rgba(13,20,38,0.9) 0%, rgba(9,13,26,0.85) 100%)",
     marginTop: "24px",
@@ -772,4 +772,6 @@ const styles = {
     lineHeight: 1.4,
   },
 };
+
+
 

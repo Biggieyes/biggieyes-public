@@ -1,6 +1,6 @@
 import info from "/images/icons/info.png";
-import rewards from "/images/icons/rewards.png";
-import collection from "/images/icons/collection.png";
+import REWARDS from "/images/icons/REWARDS.png";
+import COLLECTION from "/images/icons/COLLECTION.png";
 import mint from "/images/icons/mint.png";
 import token from "/images/icons/token.png";
 import users from "/images/icons/users.png";
@@ -12,15 +12,19 @@ import expansion from "/images/icons/expansion.png";
  */
 export const ICONS = [
   { src: info, alt: "INFO", modalText: "Information and Overview" },
-  { src: rewards, alt: "REWARDS", modalText: "Rewards and Staking" },
-  { src: collection, alt: "COLLECTION", modalText: "NFT Collection" },
+  { src: REWARDS, alt: "REWARDS", modalText: "REWARDS and Staking" },
+  { src: COLLECTION, alt: "COLLECTION", modalText: "NFT COLLECTION" },
   { src: mint, alt: "VRF MINT", modalText: "Mint NFTs and VRF" },
   {
     src: token,
     alt: "BIGGI ECOSYSTEM",
-    modalText: "Ecosystem Data and Liquidity",
+    modalText: "ECOSYSTEM Data and Liquidity",
   },
   { src: users, alt: "USERS", modalText: "Users and Holders" },
   { src: expansion, alt: "COMMUNITY CENTER", modalText: "Community Center" },
 ];
+
+
+
+
 

@@ -16,7 +16,7 @@ function _formatAmount(raw, decimals = DECIMALS) {
       : formatted;
     return { display, numeric: Number.isFinite(numeric) ? numeric : null };
   } catch (error) {
-    console.warn("Buyback mapper format failed", error);
+    console.warn("BUYBACK mapper format failed", error);
     return { display: PLACEHOLDER, numeric: null };
   }
 }
@@ -36,7 +36,7 @@ function _exploreHref(address) {
   return `${EXPLORER_BASE}/address/${address}`;
 }
 
-export function mapBuybackSnapshotToUI(raw) {
+export function mapBUYBACKSnapshotToUI(raw) {
   if (!raw) return null;
   const ts = raw.ts ?? Date.now();
   const tsLabel = new Date(ts).toLocaleString("en-US", {
@@ -46,30 +46,30 @@ export function mapBuybackSnapshotToUI(raw) {
     minute: "2-digit",
   });
 
-  const buybackRaw = raw.buyback || {};
+  const BUYBACKRaw = raw.BUYBACK || {};
   const treasuryRaw = raw.treasury || {};
 
-  const nativeBalance = _formatAmount(buybackRaw.nativeBalance);
-  const biggiBalance = _formatAmount(buybackRaw.biggiBalance);
-  const totalNativeSpent = _formatAmount(buybackRaw.totalNativeSpent);
-  const totalNativeReceived = _formatAmount(buybackRaw.totalNativeReceived);
-  const totalBiggiAcquired = _formatAmount(buybackRaw.totalBiggiAcquired);
-  const tokenBalance = _formatAmount(buybackRaw.tokenBalance);
+  const nativeBalance = _formatAmount(BUYBACKRaw.nativeBalance);
+  const biggiBalance = _formatAmount(BUYBACKRaw.biggiBalance);
+  const totalNativeSpent = _formatAmount(BUYBACKRaw.totalNativeSpent);
+  const totalNativeReceived = _formatAmount(BUYBACKRaw.totalNativeReceived);
+  const totalBiggiAcquired = _formatAmount(BUYBACKRaw.totalBiggiAcquired);
+  const tokenBalance = _formatAmount(BUYBACKRaw.tokenBalance);
 
   const treasuryBiggi = _formatAmount(treasuryRaw.biggiBalance);
   const treasuryMatic = _formatAmount(treasuryRaw.maticBalance);
   const treasuryTokenBalance = _formatAmount(treasuryRaw.tokenBalance);
   const treasuryTotalReceived = _formatAmount(
-    treasuryRaw.totalBiggiReceived || treasuryRaw.totalBiggiReceivedFromBuyback,
+    treasuryRaw.totalBiggiReceived || treasuryRaw.totalBiggiReceivedFromBUYBACK,
   );
   const treasuryMaticReceived = _formatAmount(treasuryRaw.totalMaticReceived);
   const treasuryMaticFromDistributor = _formatAmount(
     treasuryRaw.totalMaticReceivedFromDistributor,
   );
 
-  const lastBuybackTs = Number(buybackRaw.lastBuyback || 0);
-  const lastBuybackLabel = lastBuybackTs
-    ? new Date(lastBuybackTs * 1000).toLocaleString("en-US", {
+  const lastBUYBACKTs = Number(BUYBACKRaw.lastBUYBACK || 0);
+  const lastBUYBACKLabel = lastBUYBACKTs
+    ? new Date(lastBUYBACKTs * 1000).toLocaleString("en-US", {
         month: "short",
         day: "numeric",
         hour: "2-digit",
@@ -77,40 +77,40 @@ export function mapBuybackSnapshotToUI(raw) {
       })
     : "N/A";
 
-  const avgBuybackSize =
+  const avgBUYBACKSize =
     totalNativeSpent.numeric != null &&
     totalBiggiAcquired.numeric != null &&
     totalBiggiAcquired.numeric > 0
       ? totalNativeSpent.numeric / totalBiggiAcquired.numeric
       : null;
 
-  const statusLabel = buybackRaw.paused
+  const statusLabel = BUYBACKRaw.paused
     ? "Paused"
-    : buybackRaw.autoBuybackEnabled
+    : BUYBACKRaw.autoBUYBACKEnabled
       ? "Auto"
       : "Manual";
-  const statusTone = buybackRaw.paused
+  const statusTone = BUYBACKRaw.paused
     ? "paused"
-    : buybackRaw.autoBuybackEnabled
+    : BUYBACKRaw.autoBUYBACKEnabled
       ? "active"
       : "warning";
 
   return {
     ts,
     tsLabel,
-    buyback: {
-      address: buybackRaw.address,
-      shortAddress: _shortAddress(buybackRaw.address),
-      router: buybackRaw.router,
-      routerShort: _shortAddress(buybackRaw.router),
-      wrappedNative: buybackRaw.wrappedNative,
-      dripLM: buybackRaw.dripLM,
-      policy: buybackRaw.policy,
-      autoBuybackEnabled: buybackRaw.autoBuybackEnabled,
-      fallbackMinIntervalSec: buybackRaw.fallbackMinIntervalSec,
-      fallbackSwapSlippageBps: buybackRaw.fallbackSwapSlippageBps,
-      fallbackTxDeadlineSec: buybackRaw.fallbackTxDeadlineSec,
-      lastBuybackLabel,
+    BUYBACK: {
+      address: BUYBACKRaw.address,
+      shortAddress: _shortAddress(BUYBACKRaw.address),
+      router: BUYBACKRaw.router,
+      routerShort: _shortAddress(BUYBACKRaw.router),
+      wrappedNative: BUYBACKRaw.wrappedNative,
+      DRIPLM: BUYBACKRaw.DRIPLM,
+      POLICY: BUYBACKRaw.POLICY,
+      autoBUYBACKEnabled: BUYBACKRaw.autoBUYBACKEnabled,
+      fallbackMinIntervalSec: BUYBACKRaw.fallbackMinIntervalSec,
+      fallbackSwapSlippageBps: BUYBACKRaw.fallbackSwapSlippageBps,
+      fallbackTxDeadlineSec: BUYBACKRaw.fallbackTxDeadlineSec,
+      lastBUYBACKLabel,
       nativeBalance: nativeBalance.display,
       nativeBalanceNumeric: nativeBalance.numeric,
       biggiBalance: biggiBalance.display,
@@ -120,11 +120,11 @@ export function mapBuybackSnapshotToUI(raw) {
       totalNativeReceived: totalNativeReceived.display,
       totalBiggiAcquired: totalBiggiAcquired.display,
       totalBiggiAcquiredNumeric: totalBiggiAcquired.numeric,
-      paused: !!buybackRaw.paused,
+      paused: !!BUYBACKRaw.paused,
       tokenBalance: tokenBalance.display,
       tokenBalanceNumeric: tokenBalance.numeric,
-      nativeOnChain: buybackRaw.nativeOnChain
-        ? Number(utils.formatEther(buybackRaw.nativeOnChain))
+      nativeOnChain: BUYBACKRaw.nativeOnChain
+        ? Number(utils.formatEther(BUYBACKRaw.nativeOnChain))
         : null,
     },
     treasury: {
@@ -138,34 +138,34 @@ export function mapBuybackSnapshotToUI(raw) {
       totalMaticReceived: treasuryMaticReceived.display,
       totalMaticFromDistributor: treasuryMaticFromDistributor.display,
       tokenBalance: treasuryTokenBalance.display,
-      buybackAgent: treasuryRaw.buybackAgent,
+      BUYBACKAgent: treasuryRaw.BUYBACKAgent,
       reserve: treasuryRaw.reserve,
-      dripDistributor: treasuryRaw.dripDistributor,
-      tokenRewards: treasuryRaw.tokenRewards,
+      DRIPDistributor: treasuryRaw.DRIPDistributor,
+      tokenREWARDS: treasuryRaw.tokenREWARDS,
     },
     derived: {
       statusLabel,
       statusTone,
-      avgBuybackSize:
-        avgBuybackSize != null ? avgBuybackSize.toFixed(4) : PLACEHOLDER,
+      avgBUYBACKSize:
+        avgBUYBACKSize != null ? avgBUYBACKSize.toFixed(4) : PLACEHOLDER,
     },
   };
 }
 
-export function mapBuybackSnapshotToFlowRows(snapshot) {
+export function mapBUYBACKSnapshotToFLOWRows(snapshot) {
   if (!snapshot) return [];
-  const treasuryTokenRewards = snapshot?.treasury?.tokenRewards;
+  const treasuryTokenREWARDS = snapshot?.treasury?.tokenREWARDS;
   return [
     {
-      label: "Native spent (buyback)",
-      value: snapshot.buyback.totalNativeSpent,
-      hint: snapshot.buyback.routerShort,
-      segment: "buyback",
+      label: "Native spent (BUYBACK)",
+      value: snapshot.BUYBACK.totalNativeSpent,
+      hint: snapshot.BUYBACK.routerShort,
+      segment: "BUYBACK",
     },
     {
       label: "BIGGI acquired",
-      value: snapshot.buyback.totalBiggiAcquired,
-      segment: "buyback",
+      value: snapshot.BUYBACK.totalBiggiAcquired,
+      segment: "BUYBACK",
     },
     {
       label: "Treasury BIGGI balance",
@@ -176,14 +176,14 @@ export function mapBuybackSnapshotToFlowRows(snapshot) {
     {
       label: "Treasury native balance",
       value: snapshot.treasury.maticBalance,
-      hint: _shortAddress(treasuryTokenRewards),
-      href: _exploreHref(treasuryTokenRewards),
+      hint: _shortAddress(treasuryTokenREWARDS),
+      href: _exploreHref(treasuryTokenREWARDS),
       segment: "treasury",
     },
   ];
 }
 
-export function mapBuybackHistoryToChartPoints(history = [], accessor) {
+export function mapBUYBACKHistoryToChartPoints(history = [], accessor) {
   if (!accessor) return [];
   return history
     .map((entry) => {
@@ -195,4 +195,9 @@ export function mapBuybackHistoryToChartPoints(history = [], accessor) {
         typeof point.value === "number" && Number.isFinite(point.value),
     );
 }
+
+
+
+
+
 

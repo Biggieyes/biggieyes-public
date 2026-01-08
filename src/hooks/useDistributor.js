@@ -1,7 +1,7 @@
-// src/hooks/useDistributor.js
+// src/HOOKS/useDistributor.js
 import * as React from "react";
 import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
-import { getMultiCollectionDistributorRO } from "../utils/contract";
+import { getMultiCOLLECTIONDistributorRO } from "../utils/contract";
 import { getCached } from "../utils/fetchCache";
 
 /**
@@ -18,15 +18,15 @@ export default function useDistributor() {
     operator: null,
     distributionCount: 0,
     reserve: null,
-    collectionRewards: null,
-    buybackAgent: null,
+    COLLECTIONREWARDS: null,
+    BUYBACKAgent: null,
     treasury: null,
-    communityCenter: null,
+    COMMUNITYCENTER: null,
     pendingReserve: "0",
-    pendingCollectionRewards: "0",
-    pendingBuybackAgent: "0",
+    pendingCOLLECTIONREWARDS: "0",
+    pendingBUYBACKAgent: "0",
     pendingTreasury: "0",
-    pendingCommunityCenter: "0",
+    pendingCOMMUNITYCENTER: "0",
   });
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
@@ -35,7 +35,7 @@ export default function useDistributor() {
     setLoading(true);
     setError(null);
     try {
-      const contract = getMultiCollectionDistributorRO();
+      const contract = getMultiCOLLECTIONDistributorRO();
       if (!contract) throw new Error("Distributor contract not found");
       const cacheKey = `distributor:${contract.address || "unknown"}`;
 
@@ -58,18 +58,18 @@ export default function useDistributor() {
             totalReceivedRaw,
             totalPendingRaw,
             reserve,
-            collectionRewards,
-            buybackAgent,
+            COLLECTIONREWARDS,
+            BUYBACKAgent,
             treasury,
-            communityCenter,
+            COMMUNITYCENTER,
           ] = await Promise.all([
             safeCall("totalReceived", [], 0n),
             safeCall("totalPending", [], 0n),
             safeCall("reserve", [], null),
-            safeCall("collectionRewards", [], null),
-            safeCall("buybackAgent", [], null),
+            safeCall("COLLECTIONREWARDS", [], null),
+            safeCall("BUYBACKAgent", [], null),
             safeCall("treasury", [], null),
-            safeCall("communityCenter", [], null),
+            safeCall("COMMUNITYCENTER", [], null),
           ]);
 
           const pendingFor = async (addr) => {
@@ -81,16 +81,16 @@ export default function useDistributor() {
 
           const [
             pendingReserveRaw,
-            pendingCollectionRewardsRaw,
-            pendingBuybackRaw,
+            pendingCOLLECTIONREWARDSRaw,
+            pendingBUYBACKRaw,
             pendingTreasuryRaw,
             pendingCommunityRaw,
           ] = await Promise.all([
             pendingFor(reserve),
-            pendingFor(collectionRewards),
-            pendingFor(buybackAgent),
+            pendingFor(COLLECTIONREWARDS),
+            pendingFor(BUYBACKAgent),
             pendingFor(treasury),
-            pendingFor(communityCenter),
+            pendingFor(COMMUNITYCENTER),
           ]);
 
           const fmt = (v) => {
@@ -110,15 +110,15 @@ export default function useDistributor() {
             operator: null,
             distributionCount: 0,
             reserve,
-            collectionRewards,
-            buybackAgent,
+            COLLECTIONREWARDS,
+            BUYBACKAgent,
             treasury,
-            communityCenter,
+            COMMUNITYCENTER,
             pendingReserve: fmt(pendingReserveRaw),
-            pendingCollectionRewards: fmt(pendingCollectionRewardsRaw),
-            pendingBuybackAgent: fmt(pendingBuybackRaw),
+            pendingCOLLECTIONREWARDS: fmt(pendingCOLLECTIONREWARDSRaw),
+            pendingBUYBACKAgent: fmt(pendingBUYBACKRaw),
             pendingTreasury: fmt(pendingTreasuryRaw),
-            pendingCommunityCenter: fmt(pendingCommunityRaw),
+            pendingCOMMUNITYCENTER: fmt(pendingCommunityRaw),
           };
         },
         { force: options?.force === true },
@@ -139,4 +139,9 @@ export default function useDistributor() {
 
   return { data, loading, error, refresh: fetchDistributorInfo };
 }
+
+
+
+
+
 

@@ -1,5 +1,5 @@
-// src/services/DripLMService.js
-// Ethers v5 service wrapper for DripLM (read-only helpers + signer-ready)
+// src/services/DRIPLMService.js
+// Ethers v5 service wrapper for DRIPLM (read-only helpers + signer-ready)
 // Neprovádím žádné změny v kontraktu.
 
 import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
@@ -15,16 +15,16 @@ const ABI = [
   },
   {
     inputs: [],
-    name: "buybackAgent",
+    name: "BUYBACKAgent",
     outputs: [{ internalType: "address", name: "", type: "address" }],
     stateMutability: "view",
     type: "function",
   },
   {
     inputs: [],
-    name: "dripDistributor",
+    name: "DRIPDistributor",
     outputs: [
-      { internalType: "contract IDripDistributor", name: "", type: "address" },
+      { internalType: "contract IDRIPDistributor", name: "", type: "address" },
     ],
     stateMutability: "view",
     type: "function",
@@ -72,9 +72,9 @@ const ABI = [
   },
 ];
 
-export default class DripLMService {
+export default class DRIPLMService {
   /**
-   * @param {string} address - DripLM contract address
+   * @param {string} address - DRIPLM contract address
    * @param {ethers.providers.Provider} provider - ethers v5 provider (read-only)
    */
   constructor(address, provider) {
@@ -95,7 +95,7 @@ export default class DripLMService {
       await this.BIGGI();
       return true;
     } catch (e) {
-      console.error("DripLMService.init failed:", e);
+      console.error("DRIPLMService.init failed:", e);
       throw e;
     }
   }
@@ -112,11 +112,11 @@ export default class DripLMService {
   async BIGGI() {
     return await this.contract.BIGGI();
   } // address
-  async buybackAgent() {
-    return await this.contract.buybackAgent();
+  async BUYBACKAgent() {
+    return await this.contract.BUYBACKAgent();
   } // address
-  async dripDistributor() {
-    return await this.contract.dripDistributor();
+  async DRIPDistributor() {
+    return await this.contract.DRIPDistributor();
   } // address
   async reserve() {
     return await this.contract.reserve();
@@ -143,8 +143,8 @@ export default class DripLMService {
       const iface = new ethers.utils.Interface(ABI);
       const methods = [
         "BIGGI",
-        "buybackAgent",
-        "dripDistributor",
+        "BUYBACKAgent",
+        "DRIPDistributor",
         "reserve",
         "router",
         "sellPct",
@@ -165,8 +165,8 @@ export default class DripLMService {
         );
         const [
           BIGGI,
-          buybackAgent,
-          dripDistributor,
+          BUYBACKAgent,
+          DRIPDistributor,
           reserve,
           router,
           sellPct,
@@ -175,8 +175,8 @@ export default class DripLMService {
         ] = vals;
         return {
           BIGGI,
-          buybackAgent,
-          dripDistributor,
+          BUYBACKAgent,
+          DRIPDistributor,
           reserve,
           router,
           sellPct,
@@ -186,15 +186,15 @@ export default class DripLMService {
       }
     } catch (e) {
       console.warn(
-        "DripLMService multicall failed, falling back",
+        "DRIPLMService multicall failed, falling back",
         e?.message || e,
       );
     }
 
     const calls = [
       this.BIGGI(),
-      this.buybackAgent(),
-      this.dripDistributor(),
+      this.BUYBACKAgent(),
+      this.DRIPDistributor(),
       this.reserve(),
       this.router(),
       this.sellPct(),
@@ -204,8 +204,8 @@ export default class DripLMService {
 
     const [
       BIGGI,
-      buybackAgent,
-      dripDistributor,
+      BUYBACKAgent,
+      DRIPDistributor,
       reserve,
       router,
       sellPct,
@@ -215,8 +215,8 @@ export default class DripLMService {
 
     return {
       BIGGI,
-      buybackAgent,
-      dripDistributor,
+      BUYBACKAgent,
+      DRIPDistributor,
       reserve,
       router,
       sellPct,
@@ -236,7 +236,7 @@ export default class DripLMService {
         const stats = await this.getAllStats();
         callback(blockNumber, stats);
       } catch (e) {
-        console.error("DripLMService subscribeOnBlock handler error", e);
+        console.error("DRIPLMService subscribeOnBlock handler error", e);
       }
     };
     this.provider.on("block", this._onBlockHandler);
@@ -264,8 +264,8 @@ export default class DripLMService {
   static formatSummary(stats) {
     return {
       biggiToken: stats.BIGGI,
-      buybackAgent: stats.buybackAgent,
-      dripDistributor: stats.dripDistributor,
+      BUYBACKAgent: stats.BUYBACKAgent,
+      DRIPDistributor: stats.DRIPDistributor,
       reserve: stats.reserve,
       router: stats.router,
       sellPct: stats.sellPct?.toString?.() ?? stats.sellPct,
@@ -274,4 +274,6 @@ export default class DripLMService {
     };
   }
 }
+
+
 

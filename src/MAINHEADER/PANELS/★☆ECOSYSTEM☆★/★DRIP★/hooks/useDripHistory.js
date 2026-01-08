@@ -1,9 +1,9 @@
 import * as React from "react";
-import { mapDripHistoryToChartPoints } from "../../services/tokenomics/drip.mappers";
+import { mapDRIPHistoryToChartPoints } from "../../services/tokenomics/DRIP.mappers";
 
 const HISTORY_LIMIT = 20;
 
-export default function useDripHistory(snapshot) {
+export default function useDRIPHistory(snapshot) {
   const [history, setHistory] = React.useState([]);
 
   React.useEffect(() => {
@@ -18,7 +18,7 @@ export default function useDripHistory(snapshot) {
 
   const availableSeries = React.useMemo(
     () =>
-      mapDripHistoryToChartPoints(
+      mapDRIPHistoryToChartPoints(
         history,
         (entry) => entry?.distributor?.availableNumeric ?? null,
       ),
@@ -26,7 +26,7 @@ export default function useDripHistory(snapshot) {
   );
   const capSeries = React.useMemo(
     () =>
-      mapDripHistoryToChartPoints(
+      mapDRIPHistoryToChartPoints(
         history,
         (entry) => entry?.distributor?.capRemainingNumeric ?? null,
       ),
@@ -34,13 +34,14 @@ export default function useDripHistory(snapshot) {
   );
   const nativeSeries = React.useMemo(
     () =>
-      mapDripHistoryToChartPoints(
+      mapDRIPHistoryToChartPoints(
         history,
-        (entry) => entry?.dripLM?.nativeBalanceNumeric ?? null,
+        (entry) => entry?.DRIPLM?.nativeBalanceNumeric ?? null,
       ),
     [history],
   );
 
   return { history, availableSeries, capSeries, nativeSeries };
 }
+
 

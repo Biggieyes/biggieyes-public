@@ -1,8 +1,8 @@
 // Správné aliasy pro používané ABI (ponecháme pouze aliasy, importy jsou již výše)
-const ABI_NFTREWARDS = BiggiNFTRewards;
-const ABI_DRIPLM = BiggiDripLM;
+const ABI_NFTREWARDS = BiggiNFTREWARDS;
+const ABI_DRIPLM = BiggiDRIPLM;
 const ABI_LIQUIDITY_VAULT = LiquidityVault;
-const ABI_MULTI_COLLECTION_DISTRIBUTOR = BiggiMultiCollectionDistributor;
+const ABI_MULTI_COLLECTION_DISTRIBUTOR = BiggiMultiCOLLECTIONDistributor;
 // src/utils/contract.js
 // Ethers v5 compatible helpers and contract factories
 import { JsonRpcProvider, FallbackProvider } from "@ethersproject/providers";
@@ -16,27 +16,27 @@ import {
   setPreferredRpc,
 } from "./rpcConfig.js";
 import {
-  BiggiBuybackAgent,
-  BiggiCollectionReader,
-  BiggiCollectionRewards,
+  BiggiBUYBACKAgent,
+  BiggiCOLLECTIONReader,
+  BiggiCOLLECTIONREWARDS,
   BiggiDistributor,
-  BiggiDripDistributor,
-  BiggiDripKeeper,
-  BiggiDripLM,
+  BiggiDRIPDistributor,
+  BiggiDRIPKeeper,
+  BiggiDRIPLM,
   BiggiLiquidityManager,
-  BiggiNFTRewards,
-  BiggiPolicy,
+  BiggiNFTREWARDS,
+  BiggiPOLICY,
   BiggiReserve,
   // BiggiReserveV4, // odstraněno, soubor neexistuje
-  BiggiRewardsReader,
+  BiggiREWARDSReader,
   BiggiVRFReader,
-  // BiggiBuybackReader, // removed unused
-  // BiggiDripReader, // removed unused
+  // BiggiBUYBACKReader, // removed unused
+  // BiggiDRIPReader, // removed unused
   BiggiLiquidityVaultReader,
-  BiggiMultiCollectionDistributor,
+  BiggiMultiCOLLECTIONDistributor,
   BiggiToken,
   BiggiTokenomicReader,
-  BiggiTokenRewards,
+  BiggiTokenREWARDS,
   BiggiTreasury,
   BiggiUpkeeperProxy,
   LiquidityAutomation,
@@ -51,43 +51,43 @@ import {
 // Map missing ABIs to available ones or fallback
 const ABI_BiggiMainReader = BiggiMain; // fallback, real BiggiMainReader.json missing
 const ABI_BiggiMain2 = BiggiMain2;
-const ABI_NFTRewardsReader = BiggiNFTRewards; // fallback
-const ABI_BiggiRewardsReader = BiggiRewardsReader;
+const ABI_NFTREWARDSReader = BiggiNFTREWARDS; // fallback
+const ABI_BiggiREWARDSReader = BiggiREWARDSReader;
 const ABI_BiggiTokenomicsReader = BiggiTokenomicReader;
 const ABI_ReserveReader = BiggiReserve;
 const ABI_LiquidityManagerReader = BiggiLiquidityManager;
 const ABI_BiggiTokenReader = BiggiToken;
-const ABI_CollectionRewardsReader = BiggiCollectionRewards;
+const ABI_COLLECTIONREWARDSReader = BiggiCOLLECTIONREWARDS;
 // Nové aliasy pro nové readery
-export const ABI_REWARDS_READER = BiggiRewardsReader;
+export const ABI_REWARDS_READER = BiggiREWARDSReader;
 export const ABI_VRF_READER = BiggiVRFReader;
 export const ABI_LIQUIDITY_VAULT_READER = BiggiLiquidityVaultReader;
 
-// Factory for MultiCollectionDistributor (read-only)
-export const getMultiCollectionDistributorRO = (provider) =>
+// Factory for MultiCOLLECTIONDistributor (read-only)
+export const getMultiCOLLECTIONDistributorRO = (provider) =>
   _mkRO(
     ADDR.MULTI_COLLECTION_DISTRIBUTOR,
     ABI_MULTI_COLLECTION_DISTRIBUTOR,
     provider,
   );
-// Factory for MultiCollectionDistributor (read-write)
-export const getMultiCollectionDistributor = () =>
+// Factory for MultiCOLLECTIONDistributor (read-write)
+export const getMultiCOLLECTIONDistributor = () =>
   _mkRW(ADDR.MULTI_COLLECTION_DISTRIBUTOR, ABI_MULTI_COLLECTION_DISTRIBUTOR);
-const ABI_READER = BiggiCollectionReader;
-const ABI_COLLECTION_VRF = BiggiCollectionReader;
-const ABI_COLLECTION_PUBLIC = BiggiCollectionReader;
-const ABI_VRF = BiggiCollectionReader;
+const ABI_READER = BiggiCOLLECTIONReader;
+const ABI_COLLECTION_VRF = BiggiCOLLECTIONReader;
+const ABI_COLLECTION_PUBLIC = BiggiCOLLECTIONReader;
+const ABI_VRF = BiggiCOLLECTIONReader;
 const ABI_TOKEN = BiggiToken;
 const ABI_DISTRIBUTOR = BiggiDistributor;
 const ABI_RESERVE = BiggiReserve;
 const ABI_TREASURY = BiggiTreasury;
-const ABI_BUYBACK = BiggiBuybackAgent;
-const ABI_POLICY = BiggiPolicy;
+const ABI_BUYBACK = BiggiBUYBACKAgent;
+const ABI_POLICY = BiggiPOLICY;
 const ABI_LIQUIDITY_AUTOMATION = LiquidityAutomation;
-const ABI_TOKEN_REWARDS = BiggiTokenRewards;
-const ABI_COLLECTION_REWARDS = BiggiCollectionRewards;
-const ABI_DRIP_DISTRIBUTOR = BiggiDripDistributor;
-const ABI_DRIP_KEEPER = BiggiDripKeeper;
+const ABI_TOKEN_REWARDS = BiggiTokenREWARDS;
+const ABI_COLLECTION_REWARDS = BiggiCOLLECTIONREWARDS;
+const ABI_DRIP_DISTRIBUTOR = BiggiDRIPDistributor;
+const ABI_DRIP_KEEPER = BiggiDRIPKeeper;
 const ABI_FACTORY = UniswapV2Factory;
 const ABI_ROUTER = UniswapV2Router02;
 const ABI_PAIR = UniswapV2Pair;
@@ -404,13 +404,13 @@ export const getMain = () => _mkRW(MAIN_ADDR_ACTIVE, ABI_MAIN_ACTIVE);
 export const getReadOnlyMain2 = (provider) =>
   _mkRO(ADDR.MAIN2, ABI_BiggiMain2, provider);
 export const getMain2 = () => _mkRW(ADDR.MAIN2, ABI_BiggiMain2);
-export const getCollectionVRFRO = (provider) =>
+export const getCOLLECTIONVRFRO = (provider) =>
   _mkRO(ADDR.COLLECTION_VRF || ADDR.MAIN, ABI_COLLECTION_VRF, provider);
-export const getCollectionVRF = () =>
+export const getCOLLECTIONVRF = () =>
   _mkRW(ADDR.COLLECTION_VRF || ADDR.MAIN, ABI_COLLECTION_VRF);
-export const getCollectionPublicRO = (provider) =>
+export const getCOLLECTIONPublicRO = (provider) =>
   _mkRO(ADDR.COLLECTION_PUBLIC || ADDR.MAIN2, ABI_COLLECTION_PUBLIC, provider);
-export const getCollectionPublic = () =>
+export const getCOLLECTIONPublic = () =>
   _mkRW(ADDR.COLLECTION_PUBLIC || ADDR.MAIN2, ABI_COLLECTION_PUBLIC);
 
 export const getVRFRO = (provider) => {
@@ -436,54 +436,54 @@ export const getTreasuryRO = (provider) =>
   _mkRO(ADDR.TREASURY, ABI_TREASURY, provider);
 export const getTreasury = () => _mkRW(ADDR.TREASURY, ABI_TREASURY);
 
-export const getBuybackRO = (provider) =>
+export const getBUYBACKRO = (provider) =>
   _mkRO(ADDR.BUYBACK_AGENT, ABI_BUYBACK, provider);
-export const getBuyback = () => _mkRW(ADDR.BUYBACK_AGENT, ABI_BUYBACK);
+export const getBUYBACK = () => _mkRW(ADDR.BUYBACK_AGENT, ABI_BUYBACK);
 
-export const getPolicyRO = (provider) =>
+export const getPOLICYRO = (provider) =>
   _mkRO(ADDR.POLICY, ABI_POLICY, provider);
-export const getPolicy = () => _mkRW(ADDR.POLICY, ABI_POLICY);
+export const getPOLICY = () => _mkRW(ADDR.POLICY, ABI_POLICY);
 
 export const getLiquidityAutomationRO = (provider) =>
   _mkRO(ADDR.LIQUIDITY_AUTOMATION, ABI_LIQUIDITY_AUTOMATION, provider);
 export const getLiquidityAutomation = () =>
   _mkRW(ADDR.LIQUIDITY_AUTOMATION, ABI_LIQUIDITY_AUTOMATION);
 
-export const getTokenRewardsRO = (provider) =>
+export const getTokenREWARDSRO = (provider) =>
   _mkRO(ADDR.TOKEN_REWARDS, ABI_TOKEN_REWARDS, provider);
-export const getTokenRewards = () =>
+export const getTokenREWARDS = () =>
   _mkRW(ADDR.TOKEN_REWARDS, ABI_TOKEN_REWARDS);
 
-export const getCollectionRewardsRO = (provider) =>
+export const getCOLLECTIONREWARDSRO = (provider) =>
   _mkRO(ADDR.COLLECTION_REWARDS, ABI_COLLECTION_REWARDS, provider);
-export const getCollectionRewards = () =>
+export const getCOLLECTIONREWARDS = () =>
   _mkRW(ADDR.COLLECTION_REWARDS, ABI_COLLECTION_REWARDS);
 
-export const getDripDistributorRO = (provider) =>
+export const getDRIPDistributorRO = (provider) =>
   _mkRO(ADDR.DRIP_DISTRIBUTOR, ABI_DRIP_DISTRIBUTOR, provider);
-export const getDripDistributor = () =>
+export const getDRIPDistributor = () =>
   _mkRW(ADDR.DRIP_DISTRIBUTOR, ABI_DRIP_DISTRIBUTOR);
 
-export const getDripKeeperRO = (provider) => {
+export const getDRIPKeeperRO = (provider) => {
   const addr = ADDR.DRIP_KEEPER_PROXY ?? ADDR.DRIP_KEEPER ?? null;
   if (!addr)
     throw new Error(
-      "DripKeeper address not configured in ADDR (expected DRIP_KEEPER_PROXY)",
+      "DRIPKeeper address not configured in ADDR (expected DRIP_KEEPER_PROXY)",
     );
   return _mkRO(addr, ABI_DRIP_KEEPER, provider);
 };
-export const getDripKeeper = () => {
+export const getDRIPKeeper = () => {
   const addr = ADDR.DRIP_KEEPER_PROXY ?? ADDR.DRIP_KEEPER ?? null;
   if (!addr)
     throw new Error(
-      "DripKeeper address not configured in ADDR (expected DRIP_KEEPER_PROXY)",
+      "DRIPKeeper address not configured in ADDR (expected DRIP_KEEPER_PROXY)",
     );
   return _mkRW(addr, ABI_DRIP_KEEPER);
 };
 
 // legacy aliases
-export const getRewardsRO = getCollectionRewardsRO;
-export const getRewards = getCollectionRewards;
+export const getREWARDSRO = getCOLLECTIONREWARDSRO;
+export const getREWARDS = getCOLLECTIONREWARDS;
 
 export const getFactoryRO = (provider) =>
   _mkRO(ADDR.FACTORY, ABI_FACTORY, provider);
@@ -622,8 +622,8 @@ export const getBiggiMainReader = () => {
   return _mkRW(addr, abi);
 };
 
-// BiggiRewardsReader
-export const getBiggiRewardsReaderRO = (provider) => {
+// BiggiREWARDSReader
+export const getBiggiREWARDSReaderRO = (provider) => {
   const addr =
     ADDR.BIGGI_REWARDS_READER ??
     ADDR.COLLECTION_REWARDS_READER ??
@@ -631,14 +631,14 @@ export const getBiggiRewardsReaderRO = (provider) => {
     null;
   if (!addr)
     throw new Error(
-      "BiggiRewardsReader address not configured in ADDR (expected *_REWARDS_READER)",
+      "BiggiREWARDSReader address not configured in ADDR (expected *_REWARDS_READER)",
     );
-  const abi = ABI_BiggiRewardsReader.length
-    ? ABI_BiggiRewardsReader
-    : ABI_CollectionRewardsReader || ABI_NFTRewardsReader || ABI_READER;
+  const abi = ABI_BiggiREWARDSReader.length
+    ? ABI_BiggiREWARDSReader
+    : ABI_COLLECTIONREWARDSReader || ABI_NFTREWARDSReader || ABI_READER;
   return _mkRO(addr, abi, provider);
 };
-export const getBiggiRewardsReader = () => {
+export const getBiggiREWARDSReader = () => {
   const addr =
     ADDR.BIGGI_REWARDS_READER ??
     ADDR.COLLECTION_REWARDS_READER ??
@@ -646,11 +646,11 @@ export const getBiggiRewardsReader = () => {
     null;
   if (!addr)
     throw new Error(
-      "BiggiRewardsReader address not configured in ADDR (expected *_REWARDS_READER)",
+      "BiggiREWARDSReader address not configured in ADDR (expected *_REWARDS_READER)",
     );
-  const abi = ABI_BiggiRewardsReader.length
-    ? ABI_BiggiRewardsReader
-    : ABI_CollectionRewardsReader || ABI_NFTRewardsReader || ABI_READER;
+  const abi = ABI_BiggiREWARDSReader.length
+    ? ABI_BiggiREWARDSReader
+    : ABI_COLLECTIONREWARDSReader || ABI_NFTREWARDSReader || ABI_READER;
   return _mkRW(addr, abi);
 };
 
@@ -706,49 +706,49 @@ export const getBiggiTokenomicsReader = () => {
 
 /* ---------------- New explicit factories for newly added contracts ---------------- */
 
-/* NFTRewards (viewer + claim) */
-export const getNFTRewardsRO = (provider) => {
+/* NFTREWARDS (viewer + claim) */
+export const getNFTREWARDSRO = (provider) => {
   const addr =
     ADDR.NFT_REWARDS ??
-    ADDR.NFTRewards ??
+    ADDR.NFTREWARDS ??
     ADDR.NFT_REWARDS_CONTRACT ??
     ADDR.NFT_REWARDS_READER ??
     null;
   if (!addr)
     throw new Error(
-      "NFTRewards address not configured in ADDR (expected NFT_REWARDS)",
+      "NFTREWARDS address not configured in ADDR (expected NFT_REWARDS)",
     );
   const abi =
     Array.isArray(ABI_NFTREWARDS) && ABI_NFTREWARDS.length
       ? ABI_NFTREWARDS
-      : ABI_NFTRewardsReader || ABI_READER;
+      : ABI_NFTREWARDSReader || ABI_READER;
   return _mkRO(addr, abi, provider);
 };
-export const getNFTRewards = () => {
+export const getNFTREWARDS = () => {
   const addr =
     ADDR.NFT_REWARDS ??
-    ADDR.NFTRewards ??
+    ADDR.NFTREWARDS ??
     ADDR.NFT_REWARDS_CONTRACT ??
     ADDR.NFT_REWARDS_READER ??
     null;
   if (!addr)
     throw new Error(
-      "NFTRewards address not configured in ADDR (expected NFT_REWARDS)",
+      "NFTREWARDS address not configured in ADDR (expected NFT_REWARDS)",
     );
   const abi =
     Array.isArray(ABI_NFTREWARDS) && ABI_NFTREWARDS.length
       ? ABI_NFTREWARDS
-      : ABI_NFTRewardsReader || ABI_READER;
+      : ABI_NFTREWARDSReader || ABI_READER;
   return _mkRW(addr, abi);
 };
 
-/* Drip Liquidity Manager */
-export const getDripLMRO = (provider) => {
+/* DRIP Liquidity Manager */
+export const getDRIPLMRO = (provider) => {
   const addr =
     ADDR.DRIP_LM ?? ADDR.DRIPLM ?? ADDR.DRIP_LIQUIDITY_MANAGER ?? null;
   if (!addr)
     throw new Error(
-      "DripLM address not configured in ADDR (expected DRIP_LM / DRIPLM)",
+      "DRIPLM address not configured in ADDR (expected DRIP_LM / DRIPLM)",
     );
   const abi =
     Array.isArray(ABI_DRIPLM) && ABI_DRIPLM.length
@@ -756,12 +756,12 @@ export const getDripLMRO = (provider) => {
       : ABI_LM || ABI_READER;
   return _mkRO(addr, abi, provider);
 };
-export const getDripLM = () => {
+export const getDRIPLM = () => {
   const addr =
     ADDR.DRIP_LM ?? ADDR.DRIPLM ?? ADDR.DRIP_LIQUIDITY_MANAGER ?? null;
   if (!addr)
     throw new Error(
-      "DripLM address not configured in ADDR (expected DRIP_LM / DRIPLM)",
+      "DRIPLM address not configured in ADDR (expected DRIP_LM / DRIPLM)",
     );
   const abi =
     Array.isArray(ABI_DRIPLM) && ABI_DRIPLM.length
@@ -844,35 +844,35 @@ export function getReadOnlyContract(
     main2: { addr: () => ADDR.MAIN2, abi: ABI_MAIN2 },
     token: { addr: () => ADDR.BIGGI, abi: ABI_TOKEN },
     biggi: { addr: () => ADDR.BIGGI, abi: ABI_TOKEN },
-    vrf: { addr: () => ADDR.VRF_ROUTER, abi: ABI_VRF },
+    VRF: { addr: () => ADDR.VRF_ROUTER, abi: ABI_VRF },
     distributor: { addr: () => ADDR.DISTRIBUTOR, abi: ABI_DISTRIBUTOR },
     reserve: { addr: () => ADDR.RESERVE, abi: ABI_RESERVE },
     treasury: { addr: () => ADDR.TREASURY, abi: ABI_TREASURY },
-    buyback: { addr: () => ADDR.BUYBACK_AGENT, abi: ABI_BUYBACK },
-    buybackagent: { addr: () => ADDR.BUYBACK_AGENT, abi: ABI_BUYBACK },
-    policy: { addr: () => ADDR.POLICY, abi: ABI_POLICY },
+    BUYBACK: { addr: () => ADDR.BUYBACK_AGENT, abi: ABI_BUYBACK },
+    BUYBACKagent: { addr: () => ADDR.BUYBACK_AGENT, abi: ABI_BUYBACK },
+    POLICY: { addr: () => ADDR.POLICY, abi: ABI_POLICY },
     liquidityautomation: {
       addr: () => ADDR.LIQUIDITY_AUTOMATION,
       abi: ABI_LIQUIDITY_AUTOMATION,
     },
-    dripdistributor: {
+    DRIPdistributor: {
       addr: () => ADDR.DRIP_DISTRIBUTOR,
       abi: ABI_DRIP_DISTRIBUTOR,
     },
-    driplm: {
+    DRIPlm: {
       addr: () => ADDR.DRIP_LM ?? ADDR.DRIPLM ?? ADDR.DRIP_LIQUIDITY_MANAGER,
       abi: ABI_DRIPLM,
     },
-    dripkeeper: {
+    DRIPkeeper: {
       addr: () => ADDR.DRIP_KEEPER_PROXY ?? ADDR.DRIP_KEEPER,
       abi: ABI_DRIP_KEEPER,
     },
-    tokenrewards: { addr: () => ADDR.TOKEN_REWARDS, abi: ABI_TOKEN_REWARDS },
-    collectionrewards: {
+    tokenREWARDS: { addr: () => ADDR.TOKEN_REWARDS, abi: ABI_TOKEN_REWARDS },
+    COLLECTIONREWARDS: {
       addr: () => ADDR.COLLECTION_REWARDS,
       abi: ABI_COLLECTION_REWARDS,
     },
-    nftrewards: {
+    nftREWARDS: {
       addr: () => ADDR.NFT_REWARDS,
       abi:
         Array.isArray(ABI_NFTREWARDS) && ABI_NFTREWARDS.length
@@ -901,13 +901,13 @@ export function getReadOnlyContract(
       addr: () => ADDR.BIGGI_TOKENOMICS_READER,
       abi: ABI_BiggiTokenomicsReader || ABI_READER,
     },
-    biggirewardsreader: {
+    biggiREWARDSreader: {
       addr: () => ADDR.BIGGI_REWARDS_READER || ADDR.COLLECTION_REWARDS_READER,
-      abi: ABI_BiggiRewardsReader || ABI_READER,
+      abi: ABI_BiggiREWARDSReader || ABI_READER,
     },
-    rewardsreader: {
+    REWARDSreader: {
       addr: () => ADDR.BIGGI_REWARDS_READER || ADDR.COLLECTION_REWARDS_READER,
-      abi: ABI_BiggiRewardsReader || ABI_READER,
+      abi: ABI_BiggiREWARDSReader || ABI_READER,
     },
   };
 
@@ -967,16 +967,16 @@ function _attachHelpers(target, signerMode = false) {
 
 export function getLMRO() {
   const merged = _mergeTargets(
-    getTokenRewardsRO(),
-    getBuybackRO(),
+    getTokenREWARDSRO(),
+    getBUYBACKRO(),
     getLMRawRO(),
   );
   return _attachHelpers(merged, false);
 }
 export async function getLM() {
   const merged = _mergeTargets(
-    await getTokenRewards(),
-    await getBuyback(),
+    await getTokenREWARDS(),
+    await getBUYBACK(),
     await getLMRaw(),
   );
   return _attachHelpers(merged, true);
@@ -1017,4 +1017,10 @@ export async function resolveTicketPriceWeiFromHub() {
   }
   throw new Error("Ticket price unavailable");
 }
+
+
+
+
+
+
 

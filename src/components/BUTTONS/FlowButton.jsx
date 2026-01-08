@@ -1,11 +1,12 @@
 import * as React from "react";
 import BiggiButton from "./BiggiButton";
 
-const FlowButton = ({ children = "Flow", ...props }) => (
+const FLOWButton = ({ children = "FLOW", ...props }) => (
   <BiggiButton variant="accent" {...props}>
     {children}
   </BiggiButton>
 );
 
-export default FlowButton;
+export default FLOWButton;
+
 

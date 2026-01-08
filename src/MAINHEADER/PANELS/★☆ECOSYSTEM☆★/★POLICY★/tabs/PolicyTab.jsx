@@ -1,4 +1,5 @@
 import React from 'react';
-const PolicyTab = () => <div>PolicyTab</div>;
-export default PolicyTab;
+const POLICYTab = () => <div>POLICYTab</div>;
+export default POLICYTab;
+
 

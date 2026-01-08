@@ -1,10 +1,10 @@
-// src/utils/abi/vrfRouter.js
+// src/utils/abi/VRFRouter.js
 export const ABI_VRF = [
   {
     inputs: [
       {
         internalType: "address",
-        name: "vrfCoordinator_",
+        name: "VRFCoordinator_",
         type: "address",
       },
       {
@@ -187,7 +187,7 @@ export const ABI_VRF = [
         type: "uint32",
       },
     ],
-    name: "VrfParamsUpdated",
+    name: "VRFParamsUpdated",
     type: "event",
   },
   {
@@ -409,7 +409,7 @@ export const ABI_VRF = [
         type: "uint32",
       },
     ],
-    name: "setVrfParams",
+    name: "setVRFParams",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -441,4 +441,5 @@ export const ABI_VRF = [
     type: "function",
   },
 ];
+
 

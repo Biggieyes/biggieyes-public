@@ -1,23 +1,23 @@
-// src/hooks/useHashRouting.ts
+// src/HOOKS/useHashRouting.ts
 import * as React from "react";
 
 /**
  * Tracks whether we are on a given path and current anchor, working with both
  * BrowserRouter and HashRouter (/#/…).
  *
- * @param rewardsPath e.g. "/collection/rewards-info"
+ * @param REWARDSPath e.g. "/COLLECTION/REWARDS-info"
  */
 export default function useHashRouting(
-  rewardsPath: string = "/collection/rewards-info",
+  REWARDSPath: string = "/COLLECTION/REWARDS-info",
 ) {
-  const normTarget = rewardsPath.toLowerCase().replace(/\/+$/, ""); // strip trailing slash
+  const normTarget = REWARDSPath.toLowerCase().replace(/\/+$/, ""); // strip trailing slash
 
   const parse = React.useCallback((): {
-    onRewards: boolean;
+    onREWARDS: boolean;
     anchor: string | null;
   } => {
     if (typeof window === "undefined") {
-      return { onRewards: false, anchor: null };
+      return { onREWARDS: false, anchor: null };
     }
 
     const href = window.location.href;
@@ -28,24 +28,24 @@ export default function useHashRouting(
     const hashFull = window.location.hash || "";
 
     if (usesHashRouter) {
-      // after "#": "/collection/rewards-info[#anchor|?q=..#anchor]"
+      // after "#": "/COLLECTION/REWARDS-info[#anchor|?q=..#anchor]"
       const afterHash = hashFull.slice(1); // drop leading '#'
       const lower = afterHash.toLowerCase();
 
       // support optional query part before #anchor
       const pathOnly = lower.split("#", 1)[0].split("?", 1)[0];
-      const onRewards = pathOnly.startsWith(normTarget);
+      const onREWARDS = pathOnly.startsWith(normTarget);
 
       // anchor is the part after the LAST '#', if any
       const hashPos = afterHash.lastIndexOf("#");
       const anchor = hashPos >= 0 ? "#" + afterHash.slice(hashPos + 1) : null;
 
-      return { onRewards, anchor };
+      return { onREWARDS, anchor };
     } else {
       // BrowserRouter
-      const onRewards = pathnameLower.endsWith(normTarget);
+      const onREWARDS = pathnameLower.endsWith(normTarget);
       const anchor = hashFull || null;
-      return { onRewards, anchor };
+      return { onREWARDS, anchor };
     }
   }, [normTarget]);
 
@@ -80,16 +80,19 @@ export default function useHashRouting(
 
   // auto-scroll on first mount if already on target path
   React.useEffect(() => {
-    if (state.onRewards && state.anchor) scrollToAnchor(state.anchor);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (state.onREWARDS && state.anchor) scrollToAnchor(state.anchor);
+    // eslint-disable-next-line react-HOOKS/exhaustive-deps
   }, []); // run once
 
   return React.useMemo(
     () => ({
-      onRewards: state.onRewards,
+      onREWARDS: state.onREWARDS,
       anchor: state.anchor,
       scrollToAnchor,
     }),
-    [state.onRewards, state.anchor, scrollToAnchor],
+    [state.onREWARDS, state.anchor, scrollToAnchor],
   );
 }
+
+
+

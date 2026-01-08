@@ -115,7 +115,7 @@ export function mapSnapshotToStatCards(snapshot) {
   ];
 }
 
-export function mapSnapshotToFlowRows(snapshot) {
+export function mapSnapshotToFLOWRows(snapshot) {
   if (!snapshot) return [];
   return [
     {
@@ -155,4 +155,5 @@ export function mapHistoryToChartPoints(history = []) {
       (entry) => typeof entry.value === "number" && isFinite(entry.value),
     );
 }
+
 

@@ -104,9 +104,10 @@ export function getBlockImages(block?: unknown): string[] {
   return files;
 }
 
-/** Rewards (ponecháno podle použití v komponentě) */
+/** REWARDS (ponecháno podle použití v komponentě) */
 export function rewardImageFor(type?: unknown, idx?: unknown): string {
   return addBase(
-    `/images/rewards/${String(type ?? "")}/${String(idx ?? "")}.png`,
+    `/images/REWARDS/${String(type ?? "")}/${String(idx ?? "")}.png`,
   );
 }
+

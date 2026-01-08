@@ -1,8 +1,8 @@
 // src/components/INFO/ProjectInfoModal.jsx
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import "../../components/CollectionBlocksGrid.css";
-import "../../MAINHEADER/PANELS/★☆REWARDS☆★/RewardsPanel.css";
+import "../../components/COLLECTIONBlocksGrid.css";
+import "../../MAINHEADER/PANELS/REWARDS/REWARDSPanel.css";
 import "../../styles/biggi-token.skin.css";
 
 const SECTIONS = [
@@ -12,7 +12,7 @@ const SECTIONS = [
   { id: "trading", label: "Trading & User Experience", icon: "🧭" },
   { id: "roadmap", label: "Roadmap, Community & Legal", icon: "🗺️" },
   { id: "faq", label: "FAQ", icon: "❓" },
-  { id: "token", label: "BIGGI ECOSYSTEM & Weekly Rewards", icon: "🎁" },
+  { id: "token", label: "BIGGI ECOSYSTEM & Weekly REWARDS", icon: "🎁" },
   { id: "liquidity", label: "Liquidity, Router & LP Controls", icon: "🌊" },
   { id: "videos", label: "Video Manual", icon: "🎬" },
 ];
@@ -33,7 +33,7 @@ const gradientBackdrop = "#0a0b10";
 const SidebarButton = ({ active, icon, children, ...props }) => (
   <button
     {...props}
-    className={`rewards-grid__tab${active ? " is-active" : ""}`}
+    className={`REWARDS-grid__tab${active ? " is-active" : ""}`}
     style={{
       display: "inline-flex",
       alignItems: "center",
@@ -45,8 +45,8 @@ const SidebarButton = ({ active, icon, children, ...props }) => (
     <span aria-hidden>{icon}</span>
     <span
       style={{
-        overflow: "hidden",
-        textOverflow: "ellipsis",
+        overFLOW: "hidden",
+        textOverFLOW: "ellipsis",
         whiteSpace: "nowrap",
       }}
     >
@@ -56,9 +56,9 @@ const SidebarButton = ({ active, icon, children, ...props }) => (
 );
 
 const Card = ({ tone = "v", title, children }) => (
-  <article className={`rewards-grid__card biggi-card biggi-card--${tone}`}>
+  <article className={`REWARDS-grid__card biggi-card biggi-card--${tone}`}>
     <div className="biggi-card__glow" aria-hidden />
-    <div className="rewards-grid__card-header biggi-card__header">
+    <div className="REWARDS-grid__card-header biggi-card__header">
       <div className="biggi-card__heading">
         <h3>{title}</h3>
       </div>
@@ -197,7 +197,7 @@ const ProjectInfoModal = ({
         display: "flex",
         flexDirection: isMobile ? "row" : "column",
         gap: 8,
-        overflowX: isMobile ? "auto" : "visible",
+        overFLOWX: isMobile ? "auto" : "visible",
       }}
     >
       {sections.map((section) => (
@@ -232,7 +232,7 @@ const ProjectInfoModal = ({
       title={sections.find((entry) => entry.id === active)?.label ?? ""}
     >
       <div
-        className="rewards-info"
+        className="REWARDS-info"
         style={{ display: "grid", gap: 16, lineHeight: 1.7 }}
       >
         {active === "overview" && (
@@ -348,7 +348,7 @@ const ProjectInfoModal = ({
               <li>Moderated community space with verified addresses.</li>
               <li>Crypto/NFT risks apply; nothing is financial advice.</li>
               <li>
-                Using the app implies acceptance of Terms & Privacy Policy.
+                Using the app implies acceptance of Terms & Privacy POLICY.
               </li>
             </ul>
           </>
@@ -369,12 +369,12 @@ const ProjectInfoModal = ({
             <Heading>Token overview</Heading>
             <ul style={{ marginLeft: 18 }}>
               <li>
-                BIGGI is the rewards token; the app shows address, meta and
+                BIGGI is the REWARDS token; the app shows address, meta and
                 remaining emission.
               </li>
             </ul>
 
-            <Heading>Weekly rewards</Heading>
+            <Heading>Weekly REWARDS</Heading>
             <ul style={{ marginLeft: 18 }}>
               <li>
                 Each NFT can claim once per week based on block weight (1–10).
@@ -397,7 +397,7 @@ const ProjectInfoModal = ({
               </li>
             </ul>
 
-            <Heading>LP workflow</Heading>
+            <Heading>LP workFLOW</Heading>
             <ul style={{ marginLeft: 18 }}>
               <li>
                 <code>bootstrapLiquidity</code> creates the pool and mints LP
@@ -428,7 +428,7 @@ const ProjectInfoModal = ({
               >
                 <VideoPill index={1} tone={COLORS.y} />
                 <div>
-                  <strong>Mint / Redeem:</strong> buying tickets, redeem flow
+                  <strong>Mint / Redeem:</strong> buying tickets, redeem FLOW
                   and VRF fulfillment.
                 </div>
               </div>
@@ -483,7 +483,7 @@ const ProjectInfoModal = ({
                 <VideoPill index={4} tone={COLORS.c} />
                 <div>
                   <strong>Liquidity:</strong> router, pair,
-                  bootstrap/add-liquidity and LP token flow.
+                  bootstrap/add-liquidity and LP token FLOW.
                 </div>
               </div>
 
@@ -501,7 +501,7 @@ const ProjectInfoModal = ({
                 <VideoPill index={5} tone={COLORS.g} />
                 <div>
                   <strong>Users:</strong> wallet connection, NFT import, gallery
-                  and rewards claim.
+                  and REWARDS claim.
                 </div>
               </div>
             </div>
@@ -595,7 +595,7 @@ const ProjectInfoModal = ({
             <div
               style={{
                 borderRadius: 12,
-                overflow: "hidden",
+                overFLOW: "hidden",
                 background: "#161920",
                 border: `1px solid ${COLORS.line}`,
                 display: "grid",
@@ -605,7 +605,7 @@ const ProjectInfoModal = ({
             >
               <img
                 src="/schema-biggi.png"
-                alt="Project schema – end-to-end flow from mint to tokenomics"
+                alt="Project schema – end-to-end FLOW from mint to tokenomics"
                 style={{ width: "100%", height: "100%", objectFit: "contain" }}
               />
             </div>
@@ -636,7 +636,7 @@ const ProjectInfoModal = ({
         borderRadius: isMobile ? 12 : 18,
         border: `1px solid ${COLORS.line}`,
         height: isMobile ? "100%" : "90vh",
-        overflow: "hidden",
+        overFLOW: "hidden",
         display: "flex",
         flexDirection: "column",
         color: COLORS.text,
@@ -647,7 +647,7 @@ const ProjectInfoModal = ({
         border: "none",
         width: "100%",
         height: "100%",
-        overflowY: "auto",
+        overFLOWY: "auto",
         display: "flex",
         flexDirection: "column",
         color: COLORS.text,
@@ -662,9 +662,9 @@ const ProjectInfoModal = ({
       style={containerStyle}
     >
       <style>{`
-        .rewards-table, .rewards-table * { transition: none !important; }
-        .rewards-table:hover { background: #12141a !important; border-color: inherit !important; box-shadow: none !important; }
-        .rewards-table:hover *, .rewards-table *:hover { background: transparent !important; color: inherit !important; box-shadow: none !important; filter: none !important; transform: none !important; }
+        .REWARDS-table, .REWARDS-table * { transition: none !important; }
+        .REWARDS-table:hover { background: #12141a !important; border-color: inherit !important; box-shadow: none !important; }
+        .REWARDS-table:hover *, .REWARDS-table *:hover { background: transparent !important; color: inherit !important; box-shadow: none !important; filter: none !important; transform: none !important; }
       `}</style>
       {Body}
     </div>
@@ -690,7 +690,7 @@ const ProjectInfoModal = ({
         justifyContent: "center",
         padding: isMobile ? "16px 12px" : 0,
         background: "rgba(0, 0, 0, 0.75)",
-        overflowY: isMobile ? "auto" : undefined,
+        overFLOWY: isMobile ? "auto" : undefined,
       }}
     >
       {Container}
@@ -706,4 +706,10 @@ const ProjectInfoModal = ({
 };
 
 export default ProjectInfoModal;
+
+
+
+
+
+
 

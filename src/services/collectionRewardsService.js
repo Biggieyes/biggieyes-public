@@ -1,14 +1,14 @@
-// src/services/collectionRewardsService.js
-// Wrapper around BiggiCollectionRewards ABI with read helpers and claim entry points.
+// src/services/COLLECTIONREWARDSService.js
+// Wrapper around BiggiCOLLECTIONREWARDS ABI with read helpers and claim entry points.
 
 import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
-import { BiggiCollectionRewards as ABI_COLLECTION_REWARDS } from "../config/abi/index.js";
+import { BiggiCOLLECTIONREWARDS as ABI_COLLECTION_REWARDS } from "../config/abi/index.js";
 
 const ABI = Array.isArray(ABI_COLLECTION_REWARDS) ? ABI_COLLECTION_REWARDS : [];
 export const BLOCK_INDICES = Array.from({ length: 9 }, (_, idx) => idx + 1);
 export const ORANGE_MAIN_IDS = Array.from({ length: 10 }, (_, idx) => idx + 1);
 
-export default class CollectionRewardsService {
+export default class COLLECTIONREWARDSService {
   constructor(address, provider) {
     if (!address) throw new Error("Contract address required");
     if (!provider) throw new Error("Provider required");
@@ -100,7 +100,7 @@ export default class CollectionRewardsService {
       );
     } catch (err) {
       console.debug(
-        "CollectionRewardsService estimateGas failed",
+        "COLLECTIONREWARDSService estimateGas failed",
         methodName,
         err,
       );
@@ -155,9 +155,9 @@ export default class CollectionRewardsService {
 
     return {
       blockReward,
-      blockWinnersCount: CollectionRewardsService.toNumber(blockWinnersCount),
+      blockWinnersCount: COLLECTIONREWARDSService.toNumber(blockWinnersCount),
       orangeReward,
-      orangeWinnersCount: CollectionRewardsService.toNumber(orangeWinnersCount),
+      orangeWinnersCount: COLLECTIONREWARDSService.toNumber(orangeWinnersCount),
       rainbowReward,
       rainbowClaimed: Boolean(rainbowClaimed),
       distributor,
@@ -177,4 +177,6 @@ export default class CollectionRewardsService {
     return Number.isFinite(candidate) ? candidate : 0;
   }
 }
+
+
 

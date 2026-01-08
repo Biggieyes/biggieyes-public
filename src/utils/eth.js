@@ -1,7 +1,7 @@
 // src/utils/eth.js
 // Shared ethers helpers for Moderator Center.
 import { getAddress, formatUnits, parseUnits } from "ethers";
-import moderatorsRewardsAbi from "../abis/ModeratorsRewards.json";
+import moderatorsREWARDSAbi from "../abis/ModeratorsREWARDS.json";
 import {
   getSharedFallbackProvider,
   createJsonRpcProvider,
@@ -20,7 +20,7 @@ export const getConfig = () => ({
   chainRpc: CHAIN_RPC_URL,
   ownerAddress: OWNER_ADDRESS,
   abiReady:
-    Array.isArray(moderatorsRewardsAbi) && moderatorsRewardsAbi.length > 0,
+    Array.isArray(moderatorsREWARDSAbi) && moderatorsREWARDSAbi.length > 0,
 });
 
 export const isOwner = (address) => {
@@ -58,14 +58,14 @@ export const getSignerProvider = async () => {
   return new BrowserProvider(window.ethereum, "any");
 };
 
-export const getModeratorsRewardsContract = async ({ signer = false } = {}) => {
+export const getModeratorsREWARDSContract = async ({ signer = false } = {}) => {
   const { contractAddress, abiReady } = getConfig();
   if (!contractAddress) throw new Error("Contract address is missing.");
-  if (!abiReady) throw new Error("ModeratorsRewards ABI is missing.");
+  if (!abiReady) throw new Error("ModeratorsREWARDS ABI is missing.");
   const provider = signer ? await getSignerProvider() : getReadOnlyProvider();
   if (!provider) throw new Error("Provider is not available.");
   const target = signer ? provider.getSigner() : provider;
-  return new Contract(contractAddress, moderatorsRewardsAbi, target);
+  return new Contract(contractAddress, moderatorsREWARDSAbi, target);
 };
 
 export const formatWei = (value, decimals = 18) => {
@@ -81,4 +81,5 @@ export const parseWei = (value, decimals = 18) => {
   if (value == null || value === "") return 0n;
   return parseUnits(String(value), decimals);
 };
+
 

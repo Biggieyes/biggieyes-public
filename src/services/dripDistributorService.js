@@ -1,17 +1,17 @@
-// src/services/DripDistributorService.js
-// Ethers v5 service wrapper for DripDistributor-like contract
+// src/services/DRIPDistributorService.js
+// Ethers v5 service wrapper for DRIPDistributor-like contract
 import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { multicallAggregate } from "../utils/multicall";
 
 /**
- * DripDistributorService
+ * DRIPDistributorService
  * - čte read-only hodnoty z kontraktu
  * - umožňuje připojit signer pro případné write operace později
  * - obsahuje helpery: batch getters, subscribeOnBlock (simple polling via provider block event)
  *
  * Použití (quick):
  *  const provider = new BrowserProvider(window.ethereum);
- *  const svc = new DripDistributorService(CONTRACT_ADDRESS, provider);
+ *  const svc = new DRIPDistributorService(CONTRACT_ADDRESS, provider);
  *  await svc.init(); // nepovinné, ale ověří připojení
  *  const cap = await svc.CAP();
  *
@@ -108,7 +108,7 @@ const ABI = [
   },
   {
     inputs: [],
-    name: "dripLM",
+    name: "DRIPLM",
     outputs: [{ internalType: "address", name: "", type: "address" }],
     stateMutability: "view",
     type: "function",
@@ -122,7 +122,7 @@ const ABI = [
   },
   {
     inputs: [{ internalType: "address", name: "a", type: "address" }],
-    name: "isCollection",
+    name: "isCOLLECTION",
     outputs: [{ internalType: "bool", name: "", type: "bool" }],
     stateMutability: "view",
     type: "function",
@@ -136,7 +136,7 @@ const ABI = [
   },
 ];
 
-export default class DripDistributorService {
+export default class DRIPDistributorService {
   /**
    * @param {string} address - kontraktová adresa
    * @param {ethers.providers.Provider} provider - ethers v5 provider (read-only)
@@ -158,7 +158,7 @@ export default class DripDistributorService {
       await this.CAP();
       return true;
     } catch (e) {
-      console.error("DripDistributorService.init failed:", e);
+      console.error("DRIPDistributorService.init failed:", e);
       throw e;
     }
   }
@@ -207,14 +207,14 @@ export default class DripDistributorService {
   async totalTopUp() {
     return await this.contract.totalTopUp();
   }
-  async dripLM() {
-    return await this.contract.dripLM();
+  async DRIPLM() {
+    return await this.contract.DRIPLM();
   }
   async treasury() {
     return await this.contract.treasury();
   }
-  async isCollection(addr) {
-    return await this.contract.isCollection(addr);
+  async isCOLLECTION(addr) {
+    return await this.contract.isCOLLECTION(addr);
   }
   async paused() {
     return await this.contract.paused();
@@ -239,7 +239,7 @@ export default class DripDistributorService {
         "totalClaimed",
         "totalNotified",
         "totalTopUp",
-        "dripLM",
+        "DRIPLM",
         "treasury",
         "paused",
       ];
@@ -267,7 +267,7 @@ export default class DripDistributorService {
           totalClaimed,
           totalNotified,
           totalTopUp,
-          dripLM,
+          DRIPLM,
           treasury,
           paused,
         ] = vals;
@@ -283,14 +283,14 @@ export default class DripDistributorService {
           totalClaimed,
           totalNotified,
           totalTopUp,
-          dripLM,
+          DRIPLM,
           treasury,
           paused,
         };
       }
     } catch (e) {
       console.warn(
-        "DripDistributorService multicall failed, falling back",
+        "DRIPDistributorService multicall failed, falling back",
         e?.message || e,
       );
     }
@@ -307,7 +307,7 @@ export default class DripDistributorService {
       this.totalClaimed(),
       this.totalNotified(),
       this.totalTopUp(),
-      this.dripLM(),
+      this.DRIPLM(),
       this.treasury(),
       this.paused(),
     ];
@@ -323,7 +323,7 @@ export default class DripDistributorService {
       totalClaimed,
       totalNotified,
       totalTopUp,
-      dripLM,
+      DRIPLM,
       treasury,
       paused,
     ] = await Promise.all(calls);
@@ -339,7 +339,7 @@ export default class DripDistributorService {
       totalClaimed,
       totalNotified,
       totalTopUp,
-      dripLM,
+      DRIPLM,
       treasury,
       paused,
     };
@@ -376,4 +376,6 @@ export default class DripDistributorService {
     return ethers.utils.formatUnits(bn, decimals);
   }
 }
+
+
 

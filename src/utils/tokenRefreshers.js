@@ -331,7 +331,7 @@ export const ABI_RESERVE = [
 
 export async function refreshRouterInfo({
   getReadOnlyLiquidityContract,
-  onRefreshPolicy,
+  onRefreshPOLICY,
   setBiggiData,
 }) {
   const brl = await getReadOnlyLiquidityContract();
@@ -345,9 +345,9 @@ export async function refreshRouterInfo({
     },
   }));
   try {
-    await onRefreshPolicy();
+    await onRefreshPOLICY();
   } catch {
-    // ignore policy refresh failure
+    // ignore POLICY refresh failure
   }
 }
 
@@ -371,17 +371,17 @@ export async function refreshLiquidityPreview({
   }));
 }
 
-export async function refreshBuybackInfo({
-  getBuybackRO,
+export async function refreshBUYBACKInfo({
+  getBUYBACKRO,
   getReadOnlyLiquidityContract,
   ERC20_MINI,
   setBiggiData,
 }) {
-  const b = await getBuybackRO();
+  const b = await getBUYBACKRO();
   const [
     router,
     wrappedNative,
-    policy,
+    POLICY,
     treasury,
     lastAt,
     slip,
@@ -392,14 +392,14 @@ export async function refreshBuybackInfo({
   ] = await Promise.all([
     b.router().catch(() => null),
     b.wrappedNative().catch(() => null),
-    b.policy().catch(() => null),
+    b.POLICY().catch(() => null),
     b.treasury().catch(() => null),
-    b.lastBuybackAt().catch(() => 0),
+    b.lastBUYBACKAt().catch(() => 0),
     b.fallbackSwapSlippageBps?.().catch?.(() => null),
     b.fallbackTxDeadlineSec?.().catch?.(() => null),
     b.fallbackMinIntervalSec?.().catch?.(() => null),
-    b.autoBuybackEnabled?.().catch?.(() => null),
-    b.buybacksPaused?.().catch?.(() => null),
+    b.autoBUYBACKEnabled?.().catch?.(() => null),
+    b.BUYBACKsPaused?.().catch?.(() => null),
   ]);
 
   let nativeBalFmt = null;
@@ -424,20 +424,20 @@ export async function refreshBuybackInfo({
 
   setBiggiData((prev) => ({
     ...prev,
-    buyback: {
+    BUYBACK: {
       router: router || prev?.router?.routerAddress || null,
       wrappedNative: wrappedNative || prev?.router?.wrappedNative || null,
-      policy: policy || null,
+      POLICY: POLICY || null,
       treasury: treasury || null,
-      lastBuybackAt: Number(lastAt || 0),
+      lastBUYBACKAt: Number(lastAt || 0),
       fallbackSlipBps: slip != null ? Number(slip) : null,
       fallbackDeadlineSec: deadline != null ? Number(deadline) : null,
       fallbackCooldownSec: cooldown != null ? Number(cooldown) : null,
-      autoBuybackEnabled:
-        autoEnabled != null ? !!autoEnabled : prev?.buyback?.autoBuybackEnabled,
-      paused: pausedFlag != null ? !!pausedFlag : prev?.buyback?.paused,
-      nativeBalance: nativeBalFmt ?? prev?.buyback?.nativeBalance,
-      biggiBalance: biggiBalFmt ?? prev?.buyback?.biggiBalance,
+      autoBUYBACKEnabled:
+        autoEnabled != null ? !!autoEnabled : prev?.BUYBACK?.autoBUYBACKEnabled,
+      paused: pausedFlag != null ? !!pausedFlag : prev?.BUYBACK?.paused,
+      nativeBalance: nativeBalFmt ?? prev?.BUYBACK?.nativeBalance,
+      biggiBalance: biggiBalFmt ?? prev?.BUYBACK?.biggiBalance,
     },
   }));
 }
@@ -524,7 +524,7 @@ export async function fetchTreasuryInfo({
   let tokenBalance = "\u2014";
   let nativeBalance = "\u2014";
   let totalBiggiReceived = "\u2014";
-  let totalBiggiReceivedFromBuyback = "\u2014";
+  let totalBiggiReceivedFromBUYBACK = "\u2014";
   let totalMaticReceived = "\u2014";
   let totalMaticReceivedFromDistributor = "\u2014";
   let biggiToken = tokenAddr || "\u2014";
@@ -537,7 +537,7 @@ export async function fetchTreasuryInfo({
       tokenBalance = summary.biggiBalance;
       nativeBalance = summary.maticBalanceEth;
       totalBiggiReceived = summary.totalBiggiReceived;
-      totalBiggiReceivedFromBuyback = summary.totalBiggiReceivedFromBuyback;
+      totalBiggiReceivedFromBUYBACK = summary.totalBiggiReceivedFromBUYBACK;
       totalMaticReceived = summary.totalMaticReceived;
       totalMaticReceivedFromDistributor =
         summary.totalMaticReceivedFromDistributor;
@@ -587,7 +587,7 @@ export async function fetchTreasuryInfo({
     tokenBalance,
     biggiToken,
     totalBiggiReceived,
-    totalBiggiReceivedFromBuyback,
+    totalBiggiReceivedFromBUYBACK,
     totalMaticReceived,
     totalMaticReceivedFromDistributor,
     lastRefillAt,
@@ -601,7 +601,7 @@ export async function fetchTreasuryInfo({
   return payload;
 }
 
-export async function refreshRewards({
+export async function refreshREWARDS({
   getReadOnlyLiquidityContract,
   setBiggiData,
   tokenIdsCsv = "",
@@ -644,7 +644,7 @@ export async function refreshRewards({
 
   setBiggiData((prev) => ({
     ...prev,
-    rewards: {
+    REWARDS: {
       unitReward: unit,
       currentWeek: week != null ? Number(week) : "\u2014",
       blockWeights: Array.isArray(weights) ? Array.from(weights) : undefined,
@@ -653,4 +653,7 @@ export async function refreshRewards({
     },
   }));
 }
+
+
+
 

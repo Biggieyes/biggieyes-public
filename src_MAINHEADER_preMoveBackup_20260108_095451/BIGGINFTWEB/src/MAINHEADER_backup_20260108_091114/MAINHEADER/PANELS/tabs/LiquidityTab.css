@@ -1,0 +1,70 @@
+.liquidity-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.liquidity-tab__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  align-items: stretch;
+}
+
+.liquidity-tab__status {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px dashed #2b3241;
+  color: #8391a9;
+  font-size: 0.9rem;
+  background: #070b15;
+}
+
+.liquidity-tab__chart {
+  border-radius: 18px;
+  border: 1px solid #1f2736;
+  padding: 18px;
+  background: #0a0f1a;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.liquidity-tab__chart header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.liquidity-tab__chart header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.liquidity-tab__chart header p {
+  margin: 4px 0 0;
+  color: #8da3c5;
+  font-size: 0.9rem;
+}
+
+.liquidity-tab__chart-meta {
+  font-size: 0.8rem;
+  color: #6c7791;
+}
+
+@media (max-width: 900px) {
+  .liquidity-tab__cards {
+    grid-template-columns: 1fr;
+  }
+
+  .liquidity-tab__chart {
+    padding: 14px;
+  }
+
+  .liquidity-tab__chart header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}

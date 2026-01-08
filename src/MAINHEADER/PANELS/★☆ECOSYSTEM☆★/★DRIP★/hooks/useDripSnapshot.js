@@ -1,11 +1,11 @@
 import * as React from "react";
-import { fetchDripSnapshot } from "../../services/tokenomics/drip.reader";
-import { mapDripSnapshotToUI } from "../../services/tokenomics/drip.mappers";
+import { fetchDRIPSnapshot } from "../../services/tokenomics/DRIP.reader";
+import { mapDRIPSnapshotToUI } from "../../services/tokenomics/DRIP.mappers";
 import { canPoll, getPollInterval } from "../../utils/polling";
 
 const DEFAULT_POLL_INTERVAL = getPollInterval(15_000, "VITE_DRIP_POLL_MS");
 
-export default function useDripSnapshot({
+export default function useDRIPSnapshot({
   chainId,
   provider,
   pollingInterval = DEFAULT_POLL_INTERVAL,
@@ -31,9 +31,9 @@ export default function useDripSnapshot({
       inFlightRef.current = true;
       setLoading(true);
       try {
-        const raw = await fetchDripSnapshot({ chainId, provider });
+        const raw = await fetchDRIPSnapshot({ chainId, provider });
         if (!cancelled) {
-          setSnapshot(mapDripSnapshotToUI(raw));
+          setSnapshot(mapDRIPSnapshotToUI(raw));
           setError(null);
         }
       } catch (err) {
@@ -55,4 +55,5 @@ export default function useDripSnapshot({
 
   return { snapshot, loading, error };
 }
+
 

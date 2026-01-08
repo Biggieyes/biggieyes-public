@@ -7,7 +7,7 @@ import "./index.css";
 import App from "./App.jsx";
 import { Web3Provider } from "./providers/Web3Provider.jsx";
 import { ContractsProvider } from "./providers/ContractsProvider.jsx";
-import { RewardsProvider } from "./providers/RewardsProvider.jsx";
+import { REWARDSProvider } from "./providers/REWARDSProvider.jsx";
 
 // Restore global Buffer so WalletConnect/ethers helpers depending on it keep working in-browser.
 if (
@@ -199,13 +199,14 @@ render(
     <Bootstrap>
       <Web3Provider>
         <ContractsProvider>
-          <RewardsProvider>
+          <REWARDSProvider>
             <App />
-          </RewardsProvider>
+          </REWARDSProvider>
         </ContractsProvider>
       </Web3Provider>
     </Bootstrap>
   </React.StrictMode>,
   rootEl,
 );
+
 

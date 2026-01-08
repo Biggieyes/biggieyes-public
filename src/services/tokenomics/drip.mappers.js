@@ -14,7 +14,7 @@ function _formatAmount(raw, decimals = DECIMALS) {
       : formatted;
     return { display, numeric: Number.isFinite(numeric) ? numeric : null };
   } catch (error) {
-    console.warn("Drip mapper formatter failed", error);
+    console.warn("DRIP mapper formatter failed", error);
     return { display: PLACEHOLDER, numeric: null };
   }
 }
@@ -25,7 +25,7 @@ function _shortAddress(address = "") {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-export function mapDripSnapshotToUI(raw) {
+export function mapDRIPSnapshotToUI(raw) {
   if (!raw) return null;
   const ts = raw.ts ?? Date.now();
   const tsLabel = new Date(ts).toLocaleString("en-US", {
@@ -36,7 +36,7 @@ export function mapDripSnapshotToUI(raw) {
   });
 
   const distributorRaw = raw.distributor || {};
-  const dripLMRaw = raw.dripLM || {};
+  const DRIPLMRaw = raw.DRIPLM || {};
 
   const cap = _formatAmount(distributorRaw.cap);
   const available = _formatAmount(distributorRaw.availableTokens);
@@ -47,8 +47,8 @@ export function mapDripSnapshotToUI(raw) {
   const totalTopUp = _formatAmount(distributorRaw.totalTopUp);
   const biggiBalance = _formatAmount(distributorRaw.tokenBalance);
 
-  const nativeBalance = _formatAmount(dripLMRaw.nativeBalance);
-  const lmBiggiBalance = _formatAmount(dripLMRaw.biggiBalance);
+  const nativeBalance = _formatAmount(DRIPLMRaw.nativeBalance);
+  const lmBiggiBalance = _formatAmount(DRIPLMRaw.biggiBalance);
 
   const capNumeric = cap.numeric ?? null;
   const availableNumeric = available.numeric ?? null;
@@ -96,23 +96,23 @@ export function mapDripSnapshotToUI(raw) {
       totalClaimed: totalClaimed.display,
       totalNotified: totalNotified.display,
       totalTopUp: totalTopUp.display,
-      dripLM: distributorRaw.dripLM,
-      dripLMShort: _shortAddress(distributorRaw.dripLM),
+      DRIPLM: distributorRaw.DRIPLM,
+      DRIPLMShort: _shortAddress(distributorRaw.DRIPLM),
       treasury: distributorRaw.treasury,
       treasuryShort: _shortAddress(distributorRaw.treasury),
       tokenBalance: biggiBalance.display,
       tokenBalanceNumeric: biggiBalance.numeric,
     },
-    dripLM: {
-      address: dripLMRaw.address,
-      shortAddress: _shortAddress(dripLMRaw.address),
-      sellPct: dripLMRaw.sellPct ?? null,
-      slippageBps: dripLMRaw.slippageBps ?? null,
-      txDeadlineSec: dripLMRaw.txDeadlineSec ?? null,
-      router: dripLMRaw.router,
-      routerShort: _shortAddress(dripLMRaw.router),
-      reserve: dripLMRaw.reserve,
-      reserveShort: _shortAddress(dripLMRaw.reserve),
+    DRIPLM: {
+      address: DRIPLMRaw.address,
+      shortAddress: _shortAddress(DRIPLMRaw.address),
+      sellPct: DRIPLMRaw.sellPct ?? null,
+      slippageBps: DRIPLMRaw.slippageBps ?? null,
+      txDeadlineSec: DRIPLMRaw.txDeadlineSec ?? null,
+      router: DRIPLMRaw.router,
+      routerShort: _shortAddress(DRIPLMRaw.router),
+      reserve: DRIPLMRaw.reserve,
+      reserveShort: _shortAddress(DRIPLMRaw.reserve),
       nativeBalance: nativeBalance.display,
       nativeBalanceNumeric: nativeBalance.numeric,
       biggiBalance: lmBiggiBalance.display,
@@ -134,25 +134,25 @@ export function mapDripSnapshotToUI(raw) {
   };
 }
 
-export function mapDripSnapshotToFlowRows(snapshot) {
+export function mapDRIPSnapshotToFLOWRows(snapshot) {
   if (!snapshot) return [];
   return [
     {
-      label: "DripDistributor → DripLM (BIGGI)",
+      label: "DRIPDistributor → DRIPLM (BIGGI)",
       value: snapshot.distributor.tokenBalance,
-      hint: snapshot.distributor.dripLMShort,
+      hint: snapshot.distributor.DRIPLMShort,
       segment: "distributor",
     },
     {
-      label: "DripLM → Reserve (native)",
-      value: snapshot.dripLM.nativeBalance,
-      hint: snapshot.dripLM.reserveShort,
-      segment: "dripLM",
+      label: "DRIPLM → Reserve (native)",
+      value: snapshot.DRIPLM.nativeBalance,
+      hint: snapshot.DRIPLM.reserveShort,
+      segment: "DRIPLM",
     },
   ];
 }
 
-export function mapDripHistoryToChartPoints(history = [], accessor) {
+export function mapDRIPHistoryToChartPoints(history = [], accessor) {
   if (!accessor) return [];
   return history
     .map((entry) => {
@@ -164,4 +164,6 @@ export function mapDripHistoryToChartPoints(history = [], accessor) {
         typeof point.value === "number" && Number.isFinite(point.value),
     );
 }
+
+
 

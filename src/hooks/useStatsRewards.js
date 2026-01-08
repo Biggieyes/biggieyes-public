@@ -10,7 +10,7 @@ import {
 import { getSafeDeployBlock, queryLogsBatched } from "../utils/shared";
 import { callFirst } from "../utils/contracts-helpers";
 
-export function useStatsRewards({
+export function useStatsREWARDS({
   setTicketPrice,
   setTicketMinted,
   setBiggiMinted,
@@ -125,7 +125,7 @@ export function useStatsRewards({
     setBackgroundMintCounts,
   ]);
 
-  const fetchRewards = React.useCallback(async () => {
+  const fetchREWARDS = React.useCallback(async () => {
     try {
       const main = getReadOnlyContract();
 
@@ -160,7 +160,7 @@ export function useStatsRewards({
         ];
         weeklyWei = await callFirst(brl, weeklyPoolFns);
       } catch (err) {
-        console.debug("fetchRewards weekly pool lookup failed", err);
+        console.debug("fetchREWARDS weekly pool lookup failed", err);
       }
 
       if (weeklyWei != null) {
@@ -256,7 +256,7 @@ export function useStatsRewards({
         }
       }
     } catch (e) {
-      console.error("fetchRewards", e);
+      console.error("fetchREWARDS", e);
     }
   }, [
     walletAddress,
@@ -266,6 +266,7 @@ export function useStatsRewards({
     setMyClaimable,
   ]);
 
-  return { fetchStats, fetchRewards };
+  return { fetchStats, fetchREWARDS };
 }
+
 

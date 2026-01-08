@@ -110,7 +110,7 @@ export async function resolvePendingFromHistoryOrOwnership(contract, user) {
 
 export async function refreshVRFPanel(
   walletAddress,
-  setVrfUIData,
+  setVRFUIData,
   buildHistory,
 ) {
   try {
@@ -194,7 +194,7 @@ export async function refreshVRFPanel(
       }
     }
 
-    setVrfUIData({
+    setVRFUIData({
       network: net?.name
         ? `${net.name} (${net.chainId})`
         : `chainId ${net.chainId}`,
@@ -210,14 +210,14 @@ export async function refreshVRFPanel(
   }
 }
 
-export async function checkVrfResolution({
+export async function checkVRFResolution({
   walletAddress,
   contractRef,
   fetchWalletAssets,
   fetchStats,
-  fetchRewards,
+  fetchREWARDS,
   resolvePendingFromHistoryOrOwnershipFn,
-  setVrfPending,
+  setVRFPending,
   setIsRedeeming,
   setRedeemMsg,
   refreshVRFPanelFn,
@@ -245,9 +245,9 @@ export async function checkVrfResolution({
     if (inferredFulfilled) {
       await fetchWalletAssets(walletAddress);
       await fetchStats();
-      await fetchRewards();
+      await fetchREWARDS();
       if (typeof refreshVRFPanelFn === "function") await refreshVRFPanelFn();
-      setVrfPending(false);
+      setVRFPending(false);
       setIsRedeeming(false);
       setRedeemMsg("Reveal complete!");
       if (typeof setRedeemStartedAt === "function") {
@@ -260,7 +260,7 @@ export async function checkVrfResolution({
   }
 }
 
-export function openVrfExplorer(
+export function openVRFExplorer(
   hashOrId,
   getReadOnlyContractFn = getReadOnlyContract,
 ) {
@@ -277,4 +277,6 @@ export function openVrfExplorer(
     }
   })();
 }
+
+
 

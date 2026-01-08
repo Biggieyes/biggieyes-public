@@ -1,4 +1,5 @@
 import React from 'react';
-const BuybackTab = () => <div>BuybackTab</div>;
-export default BuybackTab;
+const BUYBACKTab = () => <div>BUYBACKTab</div>;
+export default BUYBACKTab;
+
 

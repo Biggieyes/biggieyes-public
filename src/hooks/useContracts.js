@@ -1,4 +1,4 @@
-// src/hooks/useContract.js
+// src/HOOKS/useContract.js
 import * as React from "react";
 import { ContractsContext } from "../providers/ContractsProvider";
 
@@ -14,4 +14,5 @@ export function useContracts() {
 }
 
 export default useContracts;
+
 

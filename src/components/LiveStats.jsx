@@ -2,7 +2,7 @@
 import * as React from "react";
 import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import {
-  getTokenRewardsRO,
+  getTokenREWARDSRO,
   getDistributorRO,
   getROProvider,
   getPairRO,
@@ -10,13 +10,13 @@ import {
   getTokenRO,
   ADDR,
 } from "../utils/contract";
-import CommunityCenterService from "../services/CommunityCenterService";
+import COMMUNITYCENTERService from "../services/COMMUNITYCENTERService";
 import BlocksWidget from "./BlocksWidget";
 import BackgroundsWidget from "./BackgroundsWidget";
-import RewardsWidget from "./RewardsWidget";
+import REWARDSWidget from "./REWARDSWidget";
 import ModalPortal from "./common/ModalPortal";
 import WeeklyCountdown from "./WeeklyCountdown";
-import useWeeklyCountdown from "../hooks/useWeeklyCountdown";
+import useWeeklyCountdown from "../HOOKS/useWeeklyCountdown";
 import LiveChatPanel from "./LiveChatPanel";
 import "./LiveStatsPools.css";
 
@@ -142,7 +142,7 @@ function LiveStats({
   // <div>LP token price: {lpPrice != null ? lpPrice + ' POL' : '--'}</div>
   const [showBlocks, setShowBlocks] = React.useState(false);
   const [showBgStats, setShowBgStats] = React.useState(false);
-  const [showRewards, setShowRewards] = React.useState(false);
+  const [showREWARDS, setShowREWARDS] = React.useState(false);
   const [weeklyOpen, setWeeklyOpen] = React.useState(false);
   const weeklyBtnRef = React.useRef(null);
 
@@ -224,7 +224,7 @@ function LiveStats({
   const resetAll = React.useCallback(() => {
     setShowBlocks(false);
     setShowBgStats(false);
-    setShowRewards(false);
+    setShowREWARDS(false);
   }, []);
 
   const openBlocks = React.useCallback(() => {
@@ -237,9 +237,9 @@ function LiveStats({
     setShowBgStats(true);
   }, [resetAll]);
 
-  const openRewards = React.useCallback(() => {
+  const openREWARDS = React.useCallback(() => {
     resetAll();
-    setShowRewards(true);
+    setShowREWARDS(true);
   }, [resetAll]);
 
   React.useEffect(() => {
@@ -247,7 +247,7 @@ function LiveStats({
     const handleEscapeBack = (event) => {
       if (event.key !== "Escape") return;
       let handled = false;
-      if (showBlocks || showBgStats || showRewards) {
+      if (showBlocks || showBgStats || showREWARDS) {
         resetAll();
         handled = true;
       } else if (weeklyOpen) {
@@ -270,7 +270,7 @@ function LiveStats({
   }, [
     showBlocks,
     showBgStats,
-    showRewards,
+    showREWARDS,
     weeklyOpen,
     poolsOpen,
     chatOpen,
@@ -286,7 +286,7 @@ function LiveStats({
     [weeklyDisplayed, weeklyLoading, weeklyError],
   );
 
-  const computedRewardsPool = React.useMemo(() => {
+  const computedREWARDSPool = React.useMemo(() => {
     if (typeof rewardPool === "number" && !Number.isNaN(rewardPool))
       return rewardPool;
     if (typeof poolFromContract === "number" && !Number.isNaN(poolFromContract))
@@ -302,14 +302,14 @@ function LiveStats({
     return null;
   }, [mintVolumeMatic, sharePercent, rewardPool, poolFromContract]);
 
-  // Read token rewards metadata (weights, unitReward, token meta) — robust, contract-only changes
+  // Read token REWARDS metadata (weights, unitReward, token meta) — robust, contract-only changes
   React.useEffect(() => {
     let alive = true;
     (async () => {
       try {
         let r = null;
         try {
-          r = getTokenRewardsRO();
+          r = getTokenREWARDSRO();
         } catch {
           r = null;
         }
@@ -349,7 +349,7 @@ function LiveStats({
         if (Number.isFinite(Number(dec))) setTokenDecimals(Number(dec));
       } catch (e) {
         // silent fallback — not critical
-        console.warn("LiveStats: failed reading token rewards metadata", e);
+        console.warn("LiveStats: failed reading token REWARDS metadata", e);
       }
     })();
     return () => {
@@ -367,7 +367,7 @@ function LiveStats({
     return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   }, [weightsFromContract]);
 
-  // Try to fetch a weekly rewards pool from the liquidity/readers (contract-focused)
+  // Try to fetch a weekly REWARDS pool from the liquidity/readers (contract-focused)
   React.useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -553,50 +553,50 @@ function LiveStats({
         totalReceived,
         receivedForMain,
         reserveAddr,
-        collRewardsAddr,
-        buybackAddr,
+        collREWARDSAddr,
+        BUYBACKAddr,
         treasuryAddr,
-        communityCenterAddr,
+        COMMUNITYCENTERAddr,
       ] = await Promise.all([
         typeof r.totalReceived === "function"
           ? r.totalReceived()
           : Promise.resolve(0n),
-        typeof r.receivedByCollection === "function"
-          ? r.receivedByCollection(ADDR.MAIN)
+        typeof r.receivedByCOLLECTION === "function"
+          ? r.receivedByCOLLECTION(ADDR.MAIN)
           : Promise.resolve(0n),
         typeof r.reserve === "function"
           ? r.reserve()
           : Promise.resolve(ADDR.RESERVE || ZeroAddress),
-        typeof r.collectionRewards === "function"
-          ? r.collectionRewards()
+        typeof r.COLLECTIONREWARDS === "function"
+          ? r.COLLECTIONREWARDS()
           : Promise.resolve(
               ADDR.COLLECTION_REWARDS || ZeroAddress,
             ),
-        typeof r.buybackAgent === "function"
-          ? r.buybackAgent()
+        typeof r.BUYBACKAgent === "function"
+          ? r.BUYBACKAgent()
           : Promise.resolve(ADDR.BUYBACK_AGENT || ZeroAddress),
         typeof r.treasury === "function"
           ? r.treasury()
           : Promise.resolve(ADDR.TREASURY || ZeroAddress),
-        typeof r.communityCenter === "function"
-          ? r.communityCenter()
+        typeof r.COMMUNITYCENTER === "function"
+          ? r.COMMUNITYCENTER()
           : Promise.resolve(ZeroAddress),
       ]);
 
       const targets = [
         { key: "reserve", name: "Reserve", addr: reserveAddr },
-        { key: "rewards", name: "CollectionRewards", addr: collRewardsAddr },
-        { key: "buyback", name: "BuybackAgent", addr: buybackAddr },
+        { key: "REWARDS", name: "COLLECTIONREWARDS", addr: collREWARDSAddr },
+        { key: "BUYBACK", name: "BUYBACKAgent", addr: BUYBACKAddr },
         { key: "treasury", name: "Treasury", addr: treasuryAddr },
         {
           key: "community",
-          name: "CommunityCenter",
-          addr: communityCenterAddr,
+          name: "COMMUNITYCENTER",
+          addr: COMMUNITYCENTERAddr,
         },
       ];
 
-      const communityPoolBalance = communityCenterAddr
-        ? await new CommunityCenterService(communityCenterAddr, prov)
+      const communityPoolBalance = COMMUNITYCENTERAddr
+        ? await new COMMUNITYCENTERService(COMMUNITYCENTERAddr, prov)
             .poolBalance()
             .catch(() => null)
         : null;
@@ -920,7 +920,7 @@ function LiveStats({
     position: "relative",
     zIndex: 20,
     transform: isPhone ? "none" : "translate(-48px, -92px)",
-    overflow: "hidden",
+    overFLOW: "hidden",
     backgroundImage: 'url("/images/blocks-bg.png")',
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -1066,15 +1066,15 @@ function LiveStats({
       const provider = new BrowserProvider(eth, "any");
       const signer = provider.getSigner();
 
-      const rewardsAddr =
+      const REWARDSAddr =
         ADDR?.TOKEN_REWARDS ||
         ADDR?.BIGGI_TOKEN_REWARDS ||
         ADDR?.REWARDS ||
         null;
-      if (!rewardsAddr) throw new Error("Rewards contract address missing");
+      if (!REWARDSAddr) throw new Error("REWARDS contract address missing");
 
-      const rewards = new Contract(
-        rewardsAddr,
+      const REWARDS = new Contract(
+        REWARDSAddr,
         TOKEN_REWARDS_MIN_ABI,
         signer,
       );
@@ -1083,8 +1083,8 @@ function LiveStats({
       // gas estimate
       let gas;
       try {
-        const est = rewards.estimateGas?.claim
-          ? await rewards.estimateGas.claim(tokenIds)
+        const est = REWARDS.estimateGas?.claim
+          ? await REWARDS.estimateGas.claim(tokenIds)
           : null;
         gas = est
           ? ethers.BigNumber.isBigNumber(est)
@@ -1096,7 +1096,7 @@ function LiveStats({
       }
 
       setClaimMsg("Sending transaction…");
-      const tx = await rewards.claim(tokenIds, gas ? { gasLimit: gas } : {});
+      const tx = await REWARDS.claim(tokenIds, gas ? { gasLimit: gas } : {});
       setClaimMsg(`Pending: ${tx.hash || ""}`);
 
       const receipt = await (tx.wait
@@ -1142,7 +1142,7 @@ function LiveStats({
       alignItems: "center",
       pointerEvents: "auto",
       padding: 0,
-      overflow: "hidden",
+      overFLOW: "hidden",
       backgroundColor: "rgba(0,0,0,0.75)",
       backdropFilter: "blur(6px)",
     }),
@@ -1168,7 +1168,7 @@ function LiveStats({
       height: "100vh",
       maxWidth: "100vw",
       maxHeight: "100vh",
-      overflowY: "auto",
+      overFLOWY: "auto",
       borderRadius: 0,
       border: "2px solid #ffe800",
       boxShadow: "none",
@@ -1223,15 +1223,15 @@ function LiveStats({
     () => [
       { label: "BLOCKS", active: showBlocks, onClick: openBlocks },
       { label: "BACKGROUNDS", active: showBgStats, onClick: openBackgrounds },
-      { label: "REWARDS", active: showRewards, onClick: openRewards },
+      { label: "REWARDS", active: showREWARDS, onClick: openREWARDS },
     ],
     [
       showBlocks,
       openBlocks,
       showBgStats,
       openBackgrounds,
-      showRewards,
-      openRewards,
+      showREWARDS,
+      openREWARDS,
     ],
   );
 
@@ -1654,7 +1654,7 @@ function LiveStats({
     <div className="live-stats-widget-new" style={widgetStyle}>
       {topButtonsRow}
 
-      {!showBlocks && !showBgStats && !showRewards && (
+      {!showBlocks && !showBgStats && !showREWARDS && (
         <>
           {mainStats}
 
@@ -1894,10 +1894,10 @@ function LiveStats({
                                   : "-";
 
                               const prettyName =
-                                t.key === "rewards"
-                                  ? "Collections"
-                                  : t.key === "buyback"
-                                    ? "Buyback"
+                                t.key === "REWARDS"
+                                  ? "COLLECTIONs"
+                                  : t.key === "BUYBACK"
+                                    ? "BUYBACK"
                                     : t.name;
                               const keyLabel = (t.key || "")
                                 .replace(/_/g, " ")
@@ -2179,11 +2179,11 @@ function LiveStats({
         />
       )}
 
-      {showRewards && (
-        <RewardsWidget
+      {showREWARDS && (
+        <REWARDSWidget
           onBack={resetAll}
-          rewardsPool={
-            typeof computedRewardsPool === "number" ? computedRewardsPool : 0
+          REWARDSPool={
+            typeof computedREWARDSPool === "number" ? computedREWARDSPool : 0
           }
           myClaimable={typeof myClaimable === "number" ? myClaimable : null}
         />
@@ -2193,4 +2193,12 @@ function LiveStats({
 }
 
 export default LiveStats;
+
+
+
+
+
+
+
+
 
