@@ -128,7 +128,18 @@ video {
   z-index: 99999;
   overflow: hidden;
   isolation: isolate;
-  background: #040608;
+  background:
+    radial-gradient(
+      1200px 600px at 70% -10%,
+      rgba(255, 232, 0, 0.18),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 520px at -10% 110%,
+      rgba(93, 220, 255, 0.18),
+      transparent 60%
+    ),
+    linear-gradient(180deg, #05070c 0%, #0a0f18 100%);
   transition:
     opacity 0.28s ease,
     visibility 0.28s ease;
@@ -144,6 +155,8 @@ video {
   background-size: auto;
   background-attachment: fixed;
   pointer-events: none;
+  opacity: 0.22;
+  filter: brightness(0.6) saturate(0.85);
 }
 .loading-card {
   width: min(760px, 92vw);
@@ -151,17 +164,42 @@ video {
   padding: 26px;
   border-radius: 14px;
   text-align: center;
-  color: var(--text-color);
-  box-shadow: 0 8px 30px #02060c99;
-  background: linear-gradient(180deg, #121212eb, #1e1e1ee0);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  color: #f6f7fb;
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.65),
+    0 0 32px rgba(255, 232, 0, 0.16);
+  background: linear-gradient(
+    180deg,
+    rgba(12, 16, 24, 0.96),
+    rgba(8, 10, 16, 0.94)
+  );
+  border: 1px solid rgba(255, 232, 0, 0.2);
   display: flex;
   flex-direction: column;
   gap: 14px;
   align-items: center;
   position: relative;
   z-index: 1;
-  animation: loadingCardIn 220ms ease-out;
+  animation:
+    loadingCardIn 220ms ease-out,
+    loadingFloat 3.2s ease-in-out infinite;
+}
+.loading-card:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    120% 90% at 50% 0%,
+    rgba(255, 232, 0, 0.14),
+    transparent 60%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+.loading-card > * {
+  position: relative;
+  z-index: 1;
 }
 @keyframes loadingCardIn {
   from {
@@ -169,6 +207,14 @@ video {
   }
   to {
     opacity: 1;
+  }
+}
+@keyframes loadingFloat {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-6px);
   }
 }
 .loading-card h1 {
@@ -180,12 +226,12 @@ video {
 .progress-wrap {
   width: 100%;
   height: 12px;
-  background: #ffffff0a;
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 999px;
   overflow: hidden;
   margin-top: 6px;
   position: relative;
-  box-shadow: inset 0 1px #ffffff05;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.08);
 }
 .progress-bar {
   height: 100%;
@@ -200,15 +246,37 @@ video {
   box-shadow:
     0 6px 18px #00000059,
     inset 0 -2px 8px #ffffff05;
+  position: relative;
+  overflow: hidden;
   will-change: width;
+}
+.progress-bar:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: progressSheen 1.2s ease-in-out infinite;
+}
+@keyframes progressSheen {
+  to {
+    transform: translateX(100%);
+  }
 }
 .percent {
   font-size: 20px;
   font-weight: 700;
   margin-top: 6px;
+  color: #ffe800;
+  text-shadow: 0 0 12px rgba(255, 232, 0, 0.45);
 }
 .msg {
-  color: #ffffffc7;
+  color: #d7dbee;
   font-size: 13px;
   margin-top: 2px;
   max-width: 88%;
@@ -233,15 +301,36 @@ video {
 }
 @media (prefers-color-scheme: light) {
   .loading-overlay {
-    background: #040608;
+    background:
+      radial-gradient(
+        1200px 600px at 70% -10%,
+        rgba(255, 232, 0, 0.14),
+        transparent 60%
+      ),
+      radial-gradient(
+        900px 520px at -10% 110%,
+        rgba(93, 220, 255, 0.14),
+        transparent 60%
+      ),
+      linear-gradient(180deg, #05070c 0%, #0a0f18 100%);
   }
   .loading-card {
-    background: linear-gradient(180deg, #fff, #f8f9fb);
-    color: #102030;
-    border: 1px solid rgba(16, 32, 48, 0.04);
+    background: linear-gradient(180deg, #f8f9fd, #e9edf5);
+    color: #101827;
+    border: 1px solid rgba(16, 24, 40, 0.1);
+    box-shadow:
+      0 18px 40px rgba(0, 0, 0, 0.25),
+      0 0 24px rgba(255, 232, 0, 0.12);
   }
   .progress-wrap {
-    background: #1020300d;
+    background: rgba(16, 24, 40, 0.08);
+  }
+  .percent {
+    color: #b87900;
+    text-shadow: none;
+  }
+  .msg {
+    color: rgba(16, 24, 40, 0.7);
   }
 }
 .visually-hidden {

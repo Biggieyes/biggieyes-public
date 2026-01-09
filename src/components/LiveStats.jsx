@@ -1,6 +1,8 @@
 // src/components/LiveStats.jsx
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { Contract } from "ethers";
+import { formatEther, parseEther, arrayify } from "ethers/lib.esm/utils.js";
+import { AddressZero } from "@ethersproject/constants";
 import {
   getTokenREWARDSRO,
   getDistributorRO,
@@ -138,7 +140,7 @@ function LiveStats({
     };
   }, []);
 
-  // Zobrazení LP ceny v UI (pøíklad, uprav dle skuteèného layoutu):
+  // Zobrazenï¿½ LP ceny v UI (pï¿½ï¿½klad, uprav dle skuteï¿½nï¿½ho layoutu):
   // <div>LP token price: {lpPrice != null ? lpPrice + ' POL' : '--'}</div>
   const [showBlocks, setShowBlocks] = React.useState(false);
   const [showBgStats, setShowBgStats] = React.useState(false);
@@ -561,9 +563,11 @@ function LiveStats({
         typeof r.totalReceived === "function"
           ? r.totalReceived()
           : Promise.resolve(0n),
-        typeof r.receivedByCOLLECTION === "function"
-          ? r.receivedByCOLLECTION(ADDR.MAIN)
-          : Promise.resolve(0n),
+          typeof r.receivedByAddress === "function"
+            ? r.receivedByAddress(ADDR.MAIN)
+            : typeof r.receivedByCOLLECTION === "function"
+              ? r.receivedByCOLLECTION(ADDR.MAIN)
+              : Promise.resolve(0n),
         typeof r.reserve === "function"
           ? r.reserve()
           : Promise.resolve(ADDR.RESERVE || ZeroAddress),
@@ -572,9 +576,11 @@ function LiveStats({
           : Promise.resolve(
               ADDR.COLLECTION_REWARDS || ZeroAddress,
             ),
-        typeof r.BUYBACKAgent === "function"
-          ? r.BUYBACKAgent()
-          : Promise.resolve(ADDR.BUYBACK_AGENT || ZeroAddress),
+        typeof r.buybackAgent === "function"
+          ? r.buybackAgent()
+          : typeof r.BUYBACKAgent === "function"
+            ? r.BUYBACKAgent()
+            : Promise.resolve(ADDR.BUYBACK_AGENT || ZeroAddress),
         typeof r.treasury === "function"
           ? r.treasury()
           : Promise.resolve(ADDR.TREASURY || ZeroAddress),
@@ -2193,8 +2199,6 @@ function LiveStats({
 }
 
 export default LiveStats;
-
-
 
 
 

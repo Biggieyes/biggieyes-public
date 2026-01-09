@@ -1,4 +1,4 @@
-import { formatEther } from "ethers";
+import { formatEther } from "ethers/lib.esm/utils.js";
 
 export function formatEthNum(bnOrNum) {
   if (bnOrNum == null) return null;

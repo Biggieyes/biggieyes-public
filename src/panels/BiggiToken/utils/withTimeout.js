@@ -3,7 +3,7 @@ const withTimeout = (promiseOrFn, ms, label) => {
   return new Promise((resolve) => {
     // Safety timeout - will ALWAYS resolve
     const safetyTimer = setTimeout(() => {
-      console.warn([withTimeout] ${label || 'task'} force-resolved after ${ms}ms);
+      console.warn(`[withTimeout] ${label || 'task'} force-resolved after ${ms}ms`);
       resolve(null);
     }, ms);
 
@@ -23,7 +23,7 @@ const withTimeout = (promiseOrFn, ms, label) => {
     try {
       result = typeof promiseOrFn === 'function' ? promiseOrFn() : promiseOrFn;
     } catch (err) {
-      console.warn([withTimeout] ${label || 'task'} threw on call:, err?.message || err);
+      console.warn(`[withTimeout] ${label || 'task'} threw on call:`, err?.message || err);
       finish(null);
       return;
     }
@@ -38,10 +38,12 @@ const withTimeout = (promiseOrFn, ms, label) => {
     result.then(
       (val) => finish(val),
       (err) => {
-        console.warn([withTimeout] ${label || 'task'} rejected:, err?.message || err);
+        console.warn(`[withTimeout] ${label || 'task'} rejected:`, err?.message || err);
         finish(null);
       }
     );
   });
 };
+
+export default withTimeout;
 

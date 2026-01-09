@@ -1,4 +1,4 @@
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import * as ethers from "ethers";
 import { explorerBaseFor } from "../../utils/explorer";
 
 const DECIMALS = 18;
@@ -124,7 +124,7 @@ export function mapBUYBACKSnapshotToUI(raw) {
       tokenBalance: tokenBalance.display,
       tokenBalanceNumeric: tokenBalance.numeric,
       nativeOnChain: BUYBACKRaw.nativeOnChain
-        ? Number(utils.formatEther(BUYBACKRaw.nativeOnChain))
+        ? Number(ethers.utils.formatEther(BUYBACKRaw.nativeOnChain))
         : null,
     },
     treasury: {

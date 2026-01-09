@@ -1,10 +1,12 @@
 // src/HOOKS/useTokenREWARDS.js
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
-import { getROProvider, ABI_REWARDS_READER } from "../utils/contract";
+import { formatUnits } from "ethers/lib.esm/utils.js";
+import TokenREWARDSService from "../services/tokenRewardsService";
+import { getROProvider } from "../utils/contract";
+import { ADDR } from "../utils/addresses";
 
 const DEFAULT_DATA = {
-  address: "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
+  address: ADDR.TOKEN_REWARDS,
   unitReward: "0",
   REWARDSMinted: "0",
   REWARDSCap: "0",
@@ -38,25 +40,47 @@ export default function useTokenREWARDS(providerOverride = null) {
         const provider = providerOverride || getROProvider();
         if (!provider) throw new Error("Read-only provider not available");
 
-        // REWARDSReader contract instance
-        const REWARDSReader = new Contract(
-          "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
-          ABI_REWARDS_READER,
-          provider,
-        );
+        const address = ADDR.TOKEN_REWARDS;
+        if (!address) {
+          setData((prev) => ({ ...prev }));
+          return;
+        }
 
-        // Čtení globálního snapshotu (viz ABI)
-        const global = await REWARDSReader.globalSnapshot();
-        // Další data lze načíst podle potřeby
+        const svc = new TokenREWARDSService(address, provider);
+        const raw = await svc.getAllStats();
+        const meta = raw?.tokenMeta ?? null;
+        const decimals = Number(meta?.decimals_ ?? meta?.[2] ?? 18) || 18;
+        const fmt = (bn) => {
+          try {
+            return formatUnits(bn ?? 0, decimals);
+          } catch {
+            return "0";
+          }
+        };
 
         setData((prev) => ({
           ...prev,
-          address: "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
-          currentWeek: Number(global.weekNow),
-          REWARDSMinted: global.tokenREWARDSMinted?.toString?.() ?? "0",
-          REWARDSCap: global.tokenREWARDSCap?.toString?.() ?? "0",
-          totalDistributed: global.treasuryBiggi?.toString?.() ?? "0",
-          // ...další pole podle potřeby
+          address,
+          unitReward: fmt(raw.unitReward),
+          REWARDSMinted: fmt(raw.REWARDSMinted),
+          REWARDSCap: fmt(raw.REWARDSCap),
+          remainingCap: fmt(raw.remainingCap),
+          totalDistributed: fmt(raw.totalDistributed),
+          distributedThisWeek: fmt(raw.distributedThisWeek),
+          currentWeek: Number(raw.currentWeek ?? 0),
+          lastRecordedWeek: Number(raw.lastRecordedWeek ?? 0),
+          lastWeekDistributed: fmt(raw.lastWeekDistributed),
+          blockWeights: Array.isArray(raw.blockWeights)
+            ? raw.blockWeights.map((v) => Number(v?.toString?.() ?? v))
+            : [],
+          tokenMeta: meta,
+          tokenSymbol: meta?.symbol_ ?? meta?.[1] ?? prev.tokenSymbol,
+          tokenDecimals: decimals,
+          mainNFT: raw.mainNFT || null,
+          main2NFT: raw.main2NFT || null,
+          owner: raw.owner || null,
+          paused: Boolean(raw.paused),
+          treasure: raw.treasure || null,
         }));
       } catch (e) {
         console.error("useTokenREWARDS.refresh", e);
@@ -74,6 +98,3 @@ export default function useTokenREWARDS(providerOverride = null) {
 
   return { data, loading, error, refresh };
 }
-
-
-

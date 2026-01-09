@@ -1,5 +1,5 @@
 import * as React from "react";
-import { formatEther } from "ethers";
+import { formatEther } from "ethers/lib.esm/utils.js";
 import {
   ADDR,
   getReaderRO,

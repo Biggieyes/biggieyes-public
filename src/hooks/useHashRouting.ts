@@ -81,7 +81,7 @@ export default function useHashRouting(
   // auto-scroll on first mount if already on target path
   React.useEffect(() => {
     if (state.onREWARDS && state.anchor) scrollToAnchor(state.anchor);
-    // eslint-disable-next-line react-HOOKS/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once
 
   return React.useMemo(

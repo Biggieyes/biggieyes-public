@@ -1,5 +1,5 @@
 import { Contract } from "@ethersproject/contracts";
-import { keccak256, arrayify, hexlify, isAddress } from "ethers";
+import { formatEther } from "ethers/lib.esm/utils.js";
 import { BiggiToken as ABI_TOKEN } from "../config/abi/index.js";
 import { ADDR } from "./addresses";
 import { getFullStatusSafe } from "./tokenomicsFullStatus.js";
@@ -54,8 +54,8 @@ export async function refreshTokenMeta({
       biggi.remainingMintable?.().catch?.(() => null),
       biggi.reserveAddr?.().catch?.(() => null),
       biggi.dexRecipientAddr?.().catch?.(() => null),
-      biggi.tokenREWARDSAddr?.().catch?.(() => null),
-      biggi.REWARDSOperator?.().catch?.(() => null),
+      biggi.tokenRewardsAddr?.().catch?.(() => null),
+      biggi.rewardsOperator?.().catch?.(() => null),
       biggi.distributed?.().catch?.(() => null),
     ]);
     if (ts) totalSupply = formatEther(ts);

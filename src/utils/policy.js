@@ -1,5 +1,4 @@
-import { Contract } from "@ethersproject/contracts";
-import { keccak256, arrayify, hexlify, isAddress } from "ethers";
+import { formatEther } from "ethers/lib.esm/utils.js";
 
 export async function refreshPOLICY({ getPOLICYRO, setBiggiData }) {
   const pol = await getPOLICYRO();
@@ -67,7 +66,7 @@ export async function refreshPOLICY({ getPOLICYRO, setBiggiData }) {
       pol.swapSlippageBps?.(),
       pol.lpSlippageBps?.(),
       pol.txDeadlineSec?.(),
-      pol.minBUYBACKInterval?.(),
+      pol.minBuybackInterval?.(),
       pol.maxDailyBUYBACKNative?.(),
     ]);
     if (swapSlip != null) guards.swapSlippageBps = Number(swapSlip);
@@ -82,7 +81,7 @@ export async function refreshPOLICY({ getPOLICYRO, setBiggiData }) {
 
   let BUYBACKsPaused = null;
   try {
-    BUYBACKsPaused = !!(await pol.BUYBACKsPaused());
+    BUYBACKsPaused = !!(await pol.buybacksPaused());
   } catch {
     // ignore pause fetch
   }

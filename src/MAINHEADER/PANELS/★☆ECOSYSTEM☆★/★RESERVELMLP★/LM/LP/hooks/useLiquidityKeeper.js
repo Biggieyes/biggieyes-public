@@ -1,10 +1,10 @@
 // src/HOOKS/useLiquidityKeeper.js
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
-import { ADDR } from "../utils/addresses.js";
+import { Contract } from "ethers";
+import { ADDR } from "../utils/addresses";
 import { LiquidityKeeper as ABI_LIQUIDITY_KEEPER } from "../config/abi/index.js";
-import { getReadOnlyContract, getSignerProvider } from "../utils/contract.js";
-import { getCached, invalidateCache } from "../utils/fetchCache.js";
+import { getReadOnlyContract, getSignerProvider } from "../utils/contract";
+import { getCached, invalidateCache } from "../utils/fetchCache";
 
 export default function useLiquidityKeeper() {
   const [data, setData] = React.useState({
@@ -46,15 +46,37 @@ export default function useLiquidityKeeper() {
       setPerforming(true);
       setError(null);
       try {
-        // ...existing code...
+        const addr = ADDR.KEEPER_PROXY || null;
+        if (!addr)
+          throw new Error(
+            "LiquidityKeeper address not configured (KEEPER_PROXY)",
+          );
+        const provider = getSignerProvider();
+        const contract = new Contract(
+          addr,
+          ABI_LIQUIDITY_KEEPER,
+          provider.getSigner(),
+        );
+        const tx = await contract.executePairing(requestedMatic, overrides);
+        const receipt = await tx.wait(1);
+        const cacheKey = `liquidityKeeper:${addr}`;
+        invalidateCache(cacheKey);
+        await refresh({ force: true }).catch(() => {});
+        return receipt;
       } catch (e) {
+        console.error("useLiquidityKeeper.executePairing", e);
         setError(e);
+        throw e;
       } finally {
         setPerforming(false);
       }
     },
-    [],
+    [refresh],
   );
+
+  React.useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   return { data, loading, performing, error, refresh, executePairing };
 }

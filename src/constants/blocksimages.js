@@ -1,2 +1,4 @@
-// Auto-generated placeholder for src/constants/blocksimages.js
+import BLOCK_IMAGES from "./blockImages.js";
+
+export default BLOCK_IMAGES;
 

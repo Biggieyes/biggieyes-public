@@ -5,9 +5,14 @@ const ABI_LIQUIDITY_VAULT = LiquidityVault;
 const ABI_MULTI_COLLECTION_DISTRIBUTOR = BiggiMultiCOLLECTIONDistributor;
 // src/utils/contract.js
 // Ethers v5 compatible helpers and contract factories
-import { JsonRpcProvider, FallbackProvider } from "@ethersproject/providers";
+import {
+  JsonRpcProvider,
+  FallbackProvider,
+  Web3Provider,
+} from "@ethersproject/providers";
 // import * as ethers from "ethers";
-import { BrowserProvider, Contract, parseEther, formatEther, ZeroAddress, arrayify } from "ethers";
+import { Contract } from "ethers";
+import { parseEther, formatEther } from "ethers/lib.esm/utils.js";
 import { ADDR } from "./addresses.js";
 import {
   AMOY,
@@ -64,12 +69,11 @@ export const ABI_VRF_READER = BiggiVRFReader;
 export const ABI_LIQUIDITY_VAULT_READER = BiggiLiquidityVaultReader;
 
 // Factory for MultiCOLLECTIONDistributor (read-only)
-export const getMultiCOLLECTIONDistributorRO = (provider) =>
-  _mkRO(
-    ADDR.MULTI_COLLECTION_DISTRIBUTOR,
-    ABI_MULTI_COLLECTION_DISTRIBUTOR,
-    provider,
-  );
+export const getMultiCOLLECTIONDistributorRO = (provider) => {
+  const addr =
+    ADDR.MULTI_COLLECTION_DISTRIBUTOR_READER || ADDR.MULTI_COLLECTION_DISTRIBUTOR;
+  return _mkRO(addr, ABI_MULTI_COLLECTION_DISTRIBUTOR, provider);
+};
 // Factory for MultiCOLLECTIONDistributor (read-write)
 export const getMultiCOLLECTIONDistributor = () =>
   _mkRW(ADDR.MULTI_COLLECTION_DISTRIBUTOR, ABI_MULTI_COLLECTION_DISTRIBUTOR);
@@ -221,7 +225,7 @@ export function getROProvider() {
     window.ethereum
   ) {
     try {
-      _roProvider = new BrowserProvider(window.ethereum);
+      _roProvider = new Web3Provider(window.ethereum, "any");
       return _applyPollingInterval(_roProvider);
     } catch (err) {
       console.warn(
@@ -268,7 +272,7 @@ export function getSignerProvider() {
   if (typeof window === "undefined" || !window.ethereum) {
     throw new Error("Injected provider not available");
   }
-  return new BrowserProvider(window.ethereum);
+  return new Web3Provider(window.ethereum, "any");
 }
 
 function _hasRequest(provider) {
@@ -500,7 +504,7 @@ export const getUpkeepRO = (provider) =>
 export const getUpkeep = () => _mkRW(ADDR.UPKEEP_PROXY, ABI_UPKEEP);
 
 export const getReaderRO = (provider) => {
-  const addr = ADDR.READER ?? ADDR.MAIN_READER ?? null;
+  const addr = ADDR.READER || ADDR.MAIN_READER || null;
   if (!addr) {
     console.warn(
       "getReaderRO: reader address not configured; falling back to MAIN",
@@ -1017,9 +1021,6 @@ export async function resolveTicketPriceWeiFromHub() {
   }
   throw new Error("Ticket price unavailable");
 }
-
-
-
 
 
 

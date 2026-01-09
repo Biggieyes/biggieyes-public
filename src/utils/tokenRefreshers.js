@@ -1,5 +1,5 @@
 import { Contract } from "@ethersproject/contracts";
-import { keccak256, arrayify, hexlify, isAddress } from "ethers";
+import { formatEther } from "ethers/lib.esm/utils.js";
 import TreasuryService from "../services/treasuryService";
 import { parseIdsCsv } from "./ids";
 
@@ -392,14 +392,14 @@ export async function refreshBUYBACKInfo({
   ] = await Promise.all([
     b.router().catch(() => null),
     b.wrappedNative().catch(() => null),
-    b.POLICY().catch(() => null),
+    b.policy().catch(() => null),
     b.treasury().catch(() => null),
-    b.lastBUYBACKAt().catch(() => 0),
+    b.lastBuybackAt().catch(() => 0),
     b.fallbackSwapSlippageBps?.().catch?.(() => null),
     b.fallbackTxDeadlineSec?.().catch?.(() => null),
     b.fallbackMinIntervalSec?.().catch?.(() => null),
-    b.autoBUYBACKEnabled?.().catch?.(() => null),
-    b.BUYBACKsPaused?.().catch?.(() => null),
+    b.autoBuybackEnabled?.().catch?.(() => null),
+    b.paused?.().catch?.(() => null),
   ]);
 
   let nativeBalFmt = null;

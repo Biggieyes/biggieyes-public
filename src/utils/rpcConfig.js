@@ -1,3 +1,4 @@
+import { StaticJsonRpcProvider } from "@ethersproject/providers";
 /**
  * Dynamicky vybere nejzdravější RPC endpoint z dostupných.
  * @returns {Promise<string|null>} Nejzdravější RPC URL nebo null
@@ -13,7 +14,6 @@ export async function getHealthyRpcUrl() {
   healthy.sort((a, b) => (a.latencyMs || 99999) - (b.latencyMs || 99999));
   return healthy[0].url;
 }
-import { StaticJsonRpcProvider } from "@ethersproject/providers";
 /**
  * Zdravotní kontrola RPC endpointu: ověří dostupnost, block height a latenci.
  * @param {string} url - RPC endpoint
@@ -22,7 +22,7 @@ import { StaticJsonRpcProvider } from "@ethersproject/providers";
 export async function checkRpcHealth(url) {
   const start = Date.now();
   try {
-    const provider = new ethers.providers.StaticJsonRpcProvider(url);
+    const provider = new StaticJsonRpcProvider(url);
     const blockNumber = await provider.getBlockNumber();
     const latencyMs = Date.now() - start;
     return { ok: true, blockNumber, latencyMs };
@@ -49,6 +49,21 @@ function env(key) {
   return undefined;
 }
 
+function normalizeInfuraNetwork(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (!raw) return "polygon-amoy";
+  if (raw.includes("amoy")) return "polygon-amoy";
+  if (raw.includes("polygon")) return "polygon-mainnet";
+  return raw.replace(/\s+/g, "-");
+}
+
+function getInfuraRpcUrl() {
+  const projectId = env("VITE_INFURA_PROJECT_ID");
+  if (!projectId) return null;
+  const network = normalizeInfuraNetwork(env("VITE_INFURA_NETWORK"));
+  return `https://${network}.infura.io/v3/${projectId}`;
+}
+
 function splitCsv(value) {
   if (!value) return [];
   return String(value)
@@ -72,7 +87,10 @@ function uniq(values) {
 export const PUBLIC_AMOY_RPCS = [
   // Public endpoints that allow browser CORS; official RPC omitted because it blocks CORS.
   "https://polygon-amoy-bor.publicnode.com",
+  "https://polygon-amoy.publicnode.com",
 ];
+
+const INFURA_RPC_URL = getInfuraRpcUrl();
 
 const AMOY_RPC_CANDIDATES = uniq([
   env("VITE_JSON_RPC_URL"),
@@ -80,6 +98,7 @@ const AMOY_RPC_CANDIDATES = uniq([
   env("VITE_AMOY_RPC_URL"),
   ...splitCsv(env("VITE_ADDITIONAL_RPC_URLS")),
   ...PUBLIC_AMOY_RPCS,
+  INFURA_RPC_URL,
 ]);
 
 export const AMOY = {

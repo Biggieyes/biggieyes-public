@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/refs */
 import { useRef } from "react";
 import { useSyncExternalStore } from "preact/compat";
 

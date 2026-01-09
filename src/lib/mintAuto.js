@@ -4,7 +4,6 @@ import {
   resolveTicketPriceWeiFromHub,
   ensureAmoy,
 } from "../utils/contract";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 
 function pickMintName(c) {
   const prefer = [

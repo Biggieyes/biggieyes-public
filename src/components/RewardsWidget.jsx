@@ -1,6 +1,8 @@
 // REWARDSWidget.jsx — shared width with Backgrounds (maxWidth 678, minWidth 558) + mobile adjustments
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { Contract } from "ethers";
+import { formatEther, parseEther, arrayify } from "ethers/lib.esm/utils.js";
+import { AddressZero } from "@ethersproject/constants";
 import { getROProvider, ADDR, getREWARDSRO } from "../utils/contract";
 import { canPoll, getPollInterval } from "../utils/polling";
 import "./REWARDSWidget.css";
@@ -259,7 +261,7 @@ const REWARDSWidget = ({
 
   return (
     <div
-      className="REWARDS-widget"
+      className="rewards-widget"
       style={{
         position: "relative",
         display: "flex",

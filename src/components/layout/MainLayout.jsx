@@ -53,8 +53,8 @@ export default function MainLayout({
   return (
     <>
       <style>{`
-        .REWARDS-table { min-height: 520px !important; }
-        .REWARDS-info table { min-height: 420px; }
+        .rewards-table { min-height: 520px !important; }
+        .rewards-info table { min-height: 420px; }
         .wallet-row { display:flex; gap:10px; align-items:center; }
         .metamask-btn-top, .wc-btn-top {
           display:inline-flex; align-items:center; border:2px solid #ffe800; background:#08ffe6;

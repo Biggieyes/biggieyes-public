@@ -6,7 +6,7 @@
 //   await svc.init();
 //   const stats = await svc.getAllStats();
 
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import * as ethers from "ethers";
 import { BiggiTreasury as TreasuryAbi } from "../config/abi/index.js";
 
 const ABI = TreasuryAbi;
@@ -21,7 +21,7 @@ export default class TreasuryService {
     if (!provider) throw new Error("Provider required");
     this.address = address;
     this.provider = provider;
-    this.contract = new Contract(address, ABI, provider);
+    this.contract = new ethers.Contract(address, ABI, provider);
     this._onBlockHandler = null;
   }
 
@@ -59,7 +59,7 @@ export default class TreasuryService {
     return await this.contract.totalBiggiReceived();
   }
   async totalBiggiReceivedFromBUYBACK() {
-    return await this.contract.totalBiggiReceivedFromBUYBACK();
+    return await this.contract.totalBiggiReceivedFromBuyback();
   }
   async totalMaticReceived() {
     return await this.contract.totalMaticReceived();
@@ -163,5 +163,3 @@ export default class TreasuryService {
     };
   }
 }
-
-

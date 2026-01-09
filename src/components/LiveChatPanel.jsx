@@ -1,7 +1,9 @@
 // src/components/LiveChatPanel.jsx
 // Live chat UI backed by Supabase realtime and a serverless signature-verified API.
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { Contract } from "ethers";
+import { formatEther, parseEther, arrayify } from "ethers/lib.esm/utils.js";
+import { AddressZero } from "@ethersproject/constants";
 import { supabase } from "../services/chatClient";
 import "./LiveChatPanel.css";
 

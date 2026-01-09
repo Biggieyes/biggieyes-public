@@ -1,7 +1,7 @@
 // src/services/COLLECTIONREWARDSService.js
 // Wrapper around BiggiCOLLECTIONREWARDS ABI with read helpers and claim entry points.
 
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { Contract } from "ethers";
 import { BiggiCOLLECTIONREWARDS as ABI_COLLECTION_REWARDS } from "../config/abi/index.js";
 
 const ABI = Array.isArray(ABI_COLLECTION_REWARDS) ? ABI_COLLECTION_REWARDS : [];

@@ -1,4 +1,3 @@
-import { ZeroAddress } from "ethers";
 import { getDRIPContracts } from "../../web3/contracts/DRIP.contracts";
 import { getProvider } from "../../web3/provider";
 

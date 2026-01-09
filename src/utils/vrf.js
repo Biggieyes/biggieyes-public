@@ -1,4 +1,3 @@
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { getReadOnlyMain as getReadOnlyContract } from "./contract";
 import { explorerBaseFor } from "./explorer";
 import { getSafeDeployBlock, queryLogsBatched } from "./shared";
@@ -277,6 +276,5 @@ export function openVRFExplorer(
     }
   })();
 }
-
 
 

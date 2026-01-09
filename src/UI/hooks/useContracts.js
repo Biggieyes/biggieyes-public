@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ContractsContext } from "../providers/ContractsProvider";
+import { ContractsContext } from "../../providers/ContractsProvider";
 
 /**
  * Vrací všechny instance kontraktů z ContractsProvideru.

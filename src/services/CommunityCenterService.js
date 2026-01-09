@@ -7,7 +7,8 @@
 // - bnToString helper + formatSummary
 // Neprovádím žádné změny v kontraktu.
 
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { Contract } from "ethers";
+import { formatUnits } from "ethers/lib.esm/utils.js";
 import { getROProvider, ADDR } from "../utils/contract";
 
 const ABI = [
@@ -330,7 +331,7 @@ export default class COMMUNITYCENTERService {
   static bnToString(bn, decimals = 18) {
     if (!bn) return "0";
     try {
-      return ethers.utils.formatUnits(bn, decimals);
+      return formatUnits(bn, decimals);
     } catch {
       return bn.toString();
     }

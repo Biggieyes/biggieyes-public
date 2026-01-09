@@ -1,5 +1,5 @@
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { formatEther } from "ethers/lib.esm/utils.js";
 import { getReadOnlyMain as getReadOnlyContract } from "../utils/contract";
 import { ADDR } from "../utils/addresses";
 import {
@@ -872,5 +872,4 @@ export function useWalletAssets(params) {
     fetchDynamicTraitsFor,
   };
 }
-
 

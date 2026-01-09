@@ -28,7 +28,7 @@ const BlockCard = React.memo(
 
     return (
       <div
-        className={`COLLECTION-grid__card${isHovered ? " is-hovered" : ""}`}
+        className={`collection-grid__card${isHovered ? " is-hovered" : ""}`}
         role="button"
         tabIndex={0}
         onClick={() => onOpen(entry.name)}
@@ -41,11 +41,11 @@ const BlockCard = React.memo(
         }}
         aria-label={`Open ${entry.name} block preview`}
       >
-        <div className="COLLECTION-grid__card-header" style={entry.buttonStyle}>
+        <div className="collection-grid__card-header" style={entry.buttonStyle}>
           <span>{entry.name}</span>
         </div>
 
-        <div className="COLLECTION-grid__thumb">
+        <div className="collection-grid__thumb">
           <img
             src={entry.thumb}
             alt={`${entry.name} thumbnail`}
@@ -57,7 +57,7 @@ const BlockCard = React.memo(
           />
         </div>
 
-        <dl className="COLLECTION-grid__meta">
+        <dl className="collection-grid__meta">
           <div>
             <dt>Live price</dt>
             <dd>{formatPrice(entry.currentPrice)}</dd>
@@ -78,14 +78,14 @@ const BlockCard = React.memo(
 
         {entry.diff && (
           <div
-            className={`COLLECTION-grid__diff${entry.diff.positive ? " is-positive" : " is-negative"}`}
+            className={`collection-grid__diff${entry.diff.positive ? " is-positive" : " is-negative"}`}
           >
             {entry.diff.value}
             <span>{entry.diff.percent}</span>
           </div>
         )}
 
-        <span className="COLLECTION-grid__card-cta">{ctaLabel}</span>
+        <span className="collection-grid__card-cta">{ctaLabel}</span>
       </div>
     );
   },

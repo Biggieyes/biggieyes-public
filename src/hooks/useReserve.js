@@ -1,5 +1,5 @@
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { formatEther } from "ethers/lib.esm/utils.js";
 import { getReserveRO } from "../utils/contract";
 import { getCached } from "../utils/fetchCache";
 
@@ -83,4 +83,3 @@ export default function useReserve() {
 
   return { data, loading, error, refresh: fetchReserveInfo };
 }
-

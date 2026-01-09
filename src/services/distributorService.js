@@ -8,7 +8,7 @@ import { fromWei, getDistributorRO } from "../utils/contract";
 
 export async function getBUYBACKAgentAddress() {
   const c = await getDistributorRO();
-  return await c.BUYBACKAgent();
+  return await c.buybackAgent();
 }
 
 export async function getCOLLECTIONREWARDSAddress() {

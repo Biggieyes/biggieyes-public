@@ -7,7 +7,7 @@
 // - bnToString helper (use token decimals from tokenMeta if needed)
 // Neprovádím žádné změny v kontraktu (logiku jsem nikde nezasahoval).
 
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import * as ethers from "ethers";
 import { BiggiTokenREWARDS as BiggiTokenREWARDSABI } from "../config/abi/index.js";
 
 const ABI = Array.isArray(BiggiTokenREWARDSABI) ? BiggiTokenREWARDSABI : [];
@@ -22,7 +22,7 @@ export default class TokenREWARDSService {
     if (!provider) throw new Error("Provider required");
     this.address = address;
     this.provider = provider;
-    this.contract = new Contract(address, ABI, provider);
+    this.contract = new ethers.Contract(address, ABI, provider);
     this._onBlockHandler = null;
     this._signerConnected = false;
   }
@@ -104,13 +104,13 @@ export default class TokenREWARDSService {
     return await this.contract.remainingCap();
   } // BigNumber
   async REWARDSCap() {
-    return await this.contract.REWARDSCap();
+    return await this.contract.rewardsCap();
   }
   async REWARDSMinted() {
-    return await this.contract.REWARDSMinted();
+    return await this.contract.rewardsMinted();
   }
   async REWARDSStats() {
-    return await this.contract.REWARDSStats();
+    return await this.contract.rewardsStats();
   } // (minted, cap_)
   async tokenAddress() {
     return await this.contract.tokenAddress();

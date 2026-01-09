@@ -1,6 +1,6 @@
 // src/services/DRIPDistributorService.js
 // Ethers v5 service wrapper for DRIPDistributor-like contract
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import * as ethers from "ethers";
 import { multicallAggregate } from "../utils/multicall";
 
 /**
@@ -108,7 +108,7 @@ const ABI = [
   },
   {
     inputs: [],
-    name: "DRIPLM",
+    name: "dripLM",
     outputs: [{ internalType: "address", name: "", type: "address" }],
     stateMutability: "view",
     type: "function",
@@ -146,7 +146,7 @@ export default class DRIPDistributorService {
     if (!provider) throw new Error("Provider required");
     this.address = address;
     this.provider = provider;
-    this.contract = new Contract(address, ABI, provider);
+    this.contract = new ethers.Contract(address, ABI, provider);
     this._onBlockHandler = null;
   }
 
@@ -208,7 +208,7 @@ export default class DRIPDistributorService {
     return await this.contract.totalTopUp();
   }
   async DRIPLM() {
-    return await this.contract.DRIPLM();
+    return await this.contract.dripLM();
   }
   async treasury() {
     return await this.contract.treasury();
@@ -239,7 +239,7 @@ export default class DRIPDistributorService {
         "totalClaimed",
         "totalNotified",
         "totalTopUp",
-        "DRIPLM",
+        "dripLM",
         "treasury",
         "paused",
       ];

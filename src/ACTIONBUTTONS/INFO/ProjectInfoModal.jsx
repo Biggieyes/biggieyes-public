@@ -1,8 +1,8 @@
 // src/components/INFO/ProjectInfoModal.jsx
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import "../../components/COLLECTIONBlocksGrid.css";
-import "../../MAINHEADER/PANELS/REWARDS/REWARDSPanel.css";
+import "../../components/CollectionBlocksGrid.css";
+import "../../panels/Rewards/REWARDSPanel.css";
 import "../../styles/biggi-token.skin.css";
 
 const SECTIONS = [
@@ -33,7 +33,7 @@ const gradientBackdrop = "#0a0b10";
 const SidebarButton = ({ active, icon, children, ...props }) => (
   <button
     {...props}
-    className={`REWARDS-grid__tab${active ? " is-active" : ""}`}
+    className={`rewards-grid__tab${active ? " is-active" : ""}`}
     style={{
       display: "inline-flex",
       alignItems: "center",
@@ -56,9 +56,9 @@ const SidebarButton = ({ active, icon, children, ...props }) => (
 );
 
 const Card = ({ tone = "v", title, children }) => (
-  <article className={`REWARDS-grid__card biggi-card biggi-card--${tone}`}>
+  <article className={`rewards-grid__card biggi-card biggi-card--${tone}`}>
     <div className="biggi-card__glow" aria-hidden />
-    <div className="REWARDS-grid__card-header biggi-card__header">
+    <div className="rewards-grid__card-header biggi-card__header">
       <div className="biggi-card__heading">
         <h3>{title}</h3>
       </div>
@@ -232,7 +232,7 @@ const ProjectInfoModal = ({
       title={sections.find((entry) => entry.id === active)?.label ?? ""}
     >
       <div
-        className="REWARDS-info"
+        className="rewards-info"
         style={{ display: "grid", gap: 16, lineHeight: 1.7 }}
       >
         {active === "overview" && (
@@ -662,9 +662,9 @@ const ProjectInfoModal = ({
       style={containerStyle}
     >
       <style>{`
-        .REWARDS-table, .REWARDS-table * { transition: none !important; }
-        .REWARDS-table:hover { background: #12141a !important; border-color: inherit !important; box-shadow: none !important; }
-        .REWARDS-table:hover *, .REWARDS-table *:hover { background: transparent !important; color: inherit !important; box-shadow: none !important; filter: none !important; transform: none !important; }
+        .rewards-table, .rewards-table * { transition: none !important; }
+        .rewards-table:hover { background: #12141a !important; border-color: inherit !important; box-shadow: none !important; }
+        .rewards-table:hover *, .rewards-table *:hover { background: transparent !important; color: inherit !important; box-shadow: none !important; filter: none !important; transform: none !important; }
       `}</style>
       {Body}
     </div>
@@ -706,7 +706,6 @@ const ProjectInfoModal = ({
 };
 
 export default ProjectInfoModal;
-
 
 
 

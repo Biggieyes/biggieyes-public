@@ -1,12 +1,12 @@
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { ZeroAddress } from "ethers";
 import {
   getContract,
   getReadOnlyContract,
   getLiquidityContract,
-} from "../utils/contract";
-import { getLogsBatched } from "../wallet/wc";
-import { readJsonFromURI, resolveImageUrl } from "../services/ipfs";
+} from "../../utils/contract";
+import { getLogsBatched } from "../../wallet/wc";
+import { readJsonFromURI, resolveImageUrl } from "../../services/ipfs";
 
 /**
  * Hook pro správu NFT a ticketů (mint, redeem, claim, refresh)

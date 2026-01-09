@@ -1,6 +1,5 @@
-import info from "/images/icons/info.png";
-import REWARDS from "/images/icons/REWARDS.png";
-import COLLECTION from "/images/icons/COLLECTION.png";
+import REWARDS from "/images/icons/rewards.png";
+import COLLECTION from "/images/icons/collection.png";
 import mint from "/images/icons/mint.png";
 import token from "/images/icons/token.png";
 import users from "/images/icons/users.png";
@@ -11,7 +10,6 @@ import expansion from "/images/icons/expansion.png";
  * Order and alt names are important; they map to panel switching logic.
  */
 export const ICONS = [
-  { src: info, alt: "INFO", modalText: "Information and Overview" },
   { src: REWARDS, alt: "REWARDS", modalText: "REWARDS and Staking" },
   { src: COLLECTION, alt: "COLLECTION", modalText: "NFT COLLECTION" },
   { src: mint, alt: "VRF MINT", modalText: "Mint NFTs and VRF" },

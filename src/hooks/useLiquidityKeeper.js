@@ -1,6 +1,6 @@
 // src/HOOKS/useLiquidityKeeper.js
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { Contract } from "ethers";
 import { ADDR } from "../utils/addresses";
 import { LiquidityKeeper as ABI_LIQUIDITY_KEEPER } from "../config/abi/index.js";
 import { getReadOnlyContract, getSignerProvider } from "../utils/contract";

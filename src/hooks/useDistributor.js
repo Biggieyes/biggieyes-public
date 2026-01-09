@@ -1,6 +1,6 @@
 // src/HOOKS/useDistributor.js
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { formatEther } from "ethers/lib.esm/utils.js";
 import { getMultiCOLLECTIONDistributorRO } from "../utils/contract";
 import { getCached } from "../utils/fetchCache";
 
@@ -139,7 +139,6 @@ export default function useDistributor() {
 
   return { data, loading, error, refresh: fetchDistributorInfo };
 }
-
 
 
 

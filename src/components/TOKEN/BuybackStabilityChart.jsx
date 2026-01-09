@@ -51,7 +51,7 @@ export default function BUYBACKStabilityChart({ data, height = 280 }) {
   ];
 
   return (
-    <div className="BUYBACK-chart" style={{ minHeight: safeHeight }}>
+    <div className="buyback-chart" style={{ minHeight: safeHeight }}>
       <SimpleLineChart
         data={chartData}
         series={series}
@@ -59,7 +59,7 @@ export default function BUYBACKStabilityChart({ data, height = 280 }) {
         emptyLabel="No BUYBACK history yet."
       />
       {isSample ? (
-        <div className="BUYBACK-chart__hint">
+        <div className="buyback-chart__hint">
           Sample data shown - provide history for DRIP Distributor, DRIP LM,
           BUYBACK Agent, Treasury.
         </div>

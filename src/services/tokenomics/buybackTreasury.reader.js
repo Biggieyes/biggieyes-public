@@ -1,4 +1,3 @@
-import { ZeroAddress } from "ethers";
 import { getBUYBACKTreasuryContracts } from "../../web3/contracts/BUYBACKTreasury.contracts";
 import { getProvider } from "../../web3/provider";
 
@@ -47,9 +46,9 @@ export async function fetchBUYBACKTreasurySnapshot({ chainId, provider } = {}) {
   ] = await Promise.all([
     _callOptional(() => BUYBACK.router()),
     _callOptional(() => BUYBACK.wrappedNative()),
-    _callOptional(() => BUYBACK.DRIPLM()),
-    _callOptional(() => BUYBACK.POLICY()),
-    _callOptional(() => BUYBACK.autoBUYBACKEnabled(), false),
+    _callOptional(() => BUYBACK.dripLM()),
+    _callOptional(() => BUYBACK.policy()),
+    _callOptional(() => BUYBACK.autoBuybackEnabled(), false),
     _callOptional(
       () => BUYBACK.fallbackMinIntervalSec(),
       0n,
@@ -59,7 +58,7 @@ export async function fetchBUYBACKTreasurySnapshot({ chainId, provider } = {}) {
       0n,
     ),
     _callOptional(() => BUYBACK.fallbackTxDeadlineSec(), 0n),
-    _callOptional(() => BUYBACK.lastBUYBACKAt(), 0n),
+    _callOptional(() => BUYBACK.lastBuybackAt(), 0n),
     _callOptional(() => BUYBACK.nativeBalance(), 0n),
     _callOptional(() => BUYBACK.biggiBalance(), 0n),
     _callOptional(() => BUYBACK.totalNativeReceived(), 0n),
@@ -69,10 +68,7 @@ export async function fetchBUYBACKTreasurySnapshot({ chainId, provider } = {}) {
     _callOptional(() => treasury.biggiBalance(), 0n),
     _callOptional(() => treasury.maticBalance(), 0n),
     _callOptional(() => treasury.totalBiggiReceived(), 0n),
-    _callOptional(
-      () => treasury.totalBiggiReceivedFromBUYBACK(),
-      0n,
-    ),
+    _callOptional(() => treasury.totalBiggiReceivedFromBuyback(), 0n),
     _callOptional(() => treasury.totalMaticReceived(), 0n),
     _callOptional(
       () => treasury.totalMaticReceivedFromDistributor(),

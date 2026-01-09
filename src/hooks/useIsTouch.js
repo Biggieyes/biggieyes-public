@@ -1,6 +1,3 @@
-// Auto-generated placeholder for src/HOOKS/useIsTouch.js
-export default function useIsTouch() {
-  return false;
-}
+export { default } from "./useIsTouch.ts";
 
 

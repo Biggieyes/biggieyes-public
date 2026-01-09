@@ -1,4 +1,1 @@
-
-import BiggiTokenInner from './BiggiTokenInner.jsx';
-export default BiggiTokenInner;
-
+export { default } from "./EcosystemPanel.jsx";

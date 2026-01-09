@@ -1,6 +1,8 @@
 // src/components/NftCard.jsx
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { Contract } from "ethers";
+import { formatEther, parseEther, arrayify } from "ethers/lib.esm/utils.js";
+import { AddressZero } from "@ethersproject/constants";
 import "./NftCard.css";
 import ImportNftButton from "./ImportNftButton";
 import { useContracts } from "../providers/ContractsProvider";

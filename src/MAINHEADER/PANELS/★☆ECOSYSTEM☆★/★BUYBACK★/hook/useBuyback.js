@@ -1,13 +1,5 @@
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
-import { createBUYBACKService } from "../services/factories";
-import { getCached } from "../utils/fetchCache";
-
-/**
- * Hook pro čtení dat z BUYBACK Agentu (native+BIGGI zůstatky, statistiky nákupů, stav pause).
- */
-import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import * as ethers from "ethers";
 import { createBUYBACKService } from "../services/factories";
 import { getCached } from "../utils/fetchCache";
 
@@ -57,6 +49,7 @@ export default function useBUYBACK() {
               return null;
             }
           };
+
           return {
             address: svc.address,
             biggiBalance: fmt(raw.biggiBalance),
@@ -76,14 +69,20 @@ export default function useBUYBACK() {
       );
       setData(snapshot);
     } catch (e) {
+      console.error("useBUYBACK.refresh", e);
       setError(e);
     } finally {
       setLoading(false);
     }
   }, []);
 
+  React.useEffect(() => {
+    refresh();
+  }, [refresh]);
+
   return { data, loading, error, refresh };
 }
+
 
 
 

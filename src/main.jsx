@@ -78,23 +78,20 @@ function Bootstrap({ children }) {
   const [target, setTarget] = React.useState(1);
   const [message, setMessage] = React.useState("Initializing...");
 
-  // smoothing RAF loop: interpoluje percent směrem k target (bez refů)
+  // step percent toward target by 1% increments
   React.useEffect(() => {
-    let rafId = 0;
-    const tick = () => {
+    const intervalId = setInterval(() => {
       setPercent((cur) => {
-        const next = cur + (target - cur) * 0.12;
-        return Math.abs(next - target) < 0.25 ? target : next;
+        if (cur >= target) return cur;
+        return Math.min(cur + 1, target);
       });
-      rafId = requestAnimationFrame(tick);
-    };
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
+    }, 20);
+    return () => clearInterval(intervalId);
   }, [target]);
 
   // helper pro nastavení cíle (target)
   const setTargetClamped = (v) => {
-    const vv = Math.max(1, Math.min(100, Number(v || 0)));
+    const vv = Math.max(1, Math.min(100, Math.round(Number(v || 0))));
     setTarget((prev) => Math.max(prev, vv));
   };
 

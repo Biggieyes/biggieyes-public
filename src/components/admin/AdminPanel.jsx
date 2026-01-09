@@ -1,13 +1,15 @@
 // src/components/admin/AdminPanel.jsx
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { Contract } from "ethers";
+import { formatEther, parseEther, arrayify } from "ethers/lib.esm/utils.js";
+import { AddressZero } from "@ethersproject/constants";
 import { ADDR } from "../../utils/addresses.js";
 import { getROProvider } from "../../utils/contract";
-import COMMUNITYCENTERAbi from "../../utils/abi/BiggiCOMMUNITYCENTER.js";
+import { BiggiCOMMUNITYCENTER } from "../../config/abi/index.js";
 import { supabase } from "../../services/chatClient";
 
-const COMMUNITY_CENTER_ABI = Array.isArray(COMMUNITYCENTERAbi)
-  ? COMMUNITYCENTERAbi
+const COMMUNITY_CENTER_ABI = Array.isArray(BiggiCOMMUNITYCENTER)
+  ? BiggiCOMMUNITYCENTER
   : [];
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";

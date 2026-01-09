@@ -1,7 +1,7 @@
 ﻿// BIGGI ECOSYSTEM panel - premium layout, safe fallbacks, live snapshot wiring
 
 import * as React from "react";
-import "../../MAINHEADER/PANELS/REWARDS/REWARDSPanel.css";
+import "../../../panels/Rewards/REWARDSPanel.css";
 import "../../styles/biggi-token.skin.css";
 import styles from "./styles/BiggiToken.module.css";
 import LiquidityVaultChart from "../../components/TOKEN/LiquidityVaultChart.jsx";
@@ -31,10 +31,10 @@ import {
   DRIPDistributor as ABI_DRIP_DISTRIBUTOR,
   // Pokud mĂˇĹˇ ABI_UPKEEP a ABI_ROUTER v config/abi, pĹ™idej je zde
 } from "../../config/abi/index.js";
-import TokenomicsPanel from "../../MAINHEADER/PANELS/TokenomicsPanel.jsx";
-import DistributorTokenTab from "../../MAINHEADER/PANELS/tabs/DistributorTokenTab.jsx";
-import DRIPTab from "../../MAINHEADER/PANELS/tabs/DRIPTab.jsx";
-import BUYBACKTreasuryTab from "../../MAINHEADER/PANELS/tabs/BUYBACKTreasuryTab.jsx";
+import TokenomicsPanel from "../../../panels/Common/TokenomicsPanel.jsx";
+import DistributorTokenTab from "../../../panels/Common/DistributorTokenTab.jsx";
+import DRIPTab from "../../../panels/Common/DRIPTab.jsx";
+import BUYBACKTreasuryTab from "../../../panels/Common/BUYBACKTreasuryTab.jsx";
 import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import useDRIPSnapshot from "../../HOOKS/tokenomics/useDRIPSnapshot";
 import useDRIPHistory from "../../HOOKS/tokenomics/useDRIPHistory";

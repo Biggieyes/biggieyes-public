@@ -21,7 +21,9 @@ import {
 } from "../utils/images";
 import { useContracts } from "../providers/ContractsProvider";
 import { ensureAmoy } from "../utils/contract";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { Contract } from "ethers";
+import { formatEther, parseEther, arrayify } from "ethers/lib.esm/utils.js";
+import { AddressZero } from "@ethersproject/constants";
 
 // Import constants a utilities
 import {
@@ -620,16 +622,16 @@ function COLLECTIONBlocksGrid({
   );
 
   const renderExpansionPanel = () => (
-    <section className="COLLECTION-grid__panel">
-      <header className="COLLECTION-grid__panel-header">
+    <section className="collection-grid__panel">
+      <header className="collection-grid__panel-header">
         <h3>Expansion overview</h3>
         <p>Protocol telemetry moved into the COLLECTION hub.</p>
       </header>
 
-      <div className="COLLECTION-grid__expansion-loading">
+      <div className="collection-grid__expansion-loading">
         <React.Suspense
           fallback={
-            <div className="COLLECTION-grid__expansion-loading">
+            <div className="collection-grid__expansion-loading">
               Loading expansion data...
             </div>
           }
@@ -675,51 +677,51 @@ function COLLECTIONBlocksGrid({
         : renderCOLLECTIONOne();
 
   return (
-    <section className="COLLECTION-grid">
+    <section className="collection-grid">
       <div
-        className={`COLLECTION-grid__surface${isMobile ? " is-mobile" : ""}`}
+        className={`collection-grid__surface${isMobile ? " is-mobile" : ""}`}
       >
-        <header className="COLLECTION-grid__header panel-header panel-header--COLLECTION">
+        <header className="collection-grid__header panel-header panel-header--collection">
           <div>
-            <h2 className="COLLECTION-grid__title">Biggi COLLECTION</h2>
-            <p className="COLLECTION-grid__subtitle">
+            <h2 className="collection-grid__title">Biggi COLLECTION</h2>
+            <p className="collection-grid__subtitle">
               COLLECTIONs hub - live on-chain stats
             </p>
           </div>
 
-          <div className="COLLECTION-grid__header-actions COLLECTION-grid__header-actions-gap">
-            <div className="COLLECTION-grid__tabs">
+          <div className="collection-grid__header-actions collection-grid__header-actions-gap">
+            <div className="collection-grid__tabs">
               <button
                 type="button"
-                className={`COLLECTION-grid__tab${effectiveActive === "COLLECTION1" ? " is-active" : ""}`}
+                className={`collection-grid__tab${effectiveActive === "COLLECTION1" ? " is-active" : ""}`}
                 onClick={() => handleSwitchCOLLECTION("COLLECTION1")}
               >
                 COLLECTION 1
               </button>
               <button
                 type="button"
-                className={`COLLECTION-grid__tab${effectiveActive === "COLLECTION2" ? " is-active" : ""}`}
+                className={`collection-grid__tab${effectiveActive === "COLLECTION2" ? " is-active" : ""}`}
                 onClick={() => handleSwitchCOLLECTION("COLLECTION2")}
               >
                 COLLECTION 2
               </button>
               <button
                 type="button"
-                className={`COLLECTION-grid__tab${effectiveActive === "expansion" ? " is-active" : ""}`}
+                className={`collection-grid__tab${effectiveActive === "expansion" ? " is-active" : ""}`}
                 onClick={() => handleSwitchCOLLECTION("expansion")}
               >
                 Expansion
               </button>
               <button
                 type="button"
-                className="COLLECTION-grid__tab COLLECTION-grid__tab--future"
+                className="collection-grid__tab collection-grid__tab--future"
                 onClick={() => setFutureOpen(true)}
               >
                 Future COLLECTIONs
               </button>
               <button
                 type="button"
-                className={`COLLECTION-grid__info-toggle${infoOpen ? " is-active" : ""}`}
+                className={`collection-grid__info-toggle${infoOpen ? " is-active" : ""}`}
                 onClick={() => setInfoOpen((v) => !v)}
                 onMouseEnter={(e) => {
                   if (!isTouch && !infoOpen)
@@ -729,7 +731,7 @@ function COLLECTIONBlocksGrid({
                   e.currentTarget.classList.remove("is-hovered")
                 }
                 aria-expanded={infoOpen}
-                aria-controls="COLLECTION-info-panel"
+                aria-controls="collection-info-panel"
               >
                 Info
               </button>
@@ -749,18 +751,18 @@ function COLLECTIONBlocksGrid({
 
         {onchainUnavailable && (
           <div
-            className="COLLECTION-grid__onchain-warning"
+            className="collection-grid__onchain-warning"
             role="status"
             aria-live="polite"
           >
-            <div className="COLLECTION-grid__onchain-message">
+            <div className="collection-grid__onchain-message">
               On-chain data is unavailable. Switch MetaMask to{" "}
               <strong>Polygon Amoy</strong> or try again.
             </div>
-            <div className="COLLECTION-grid__onchain-actions">
+            <div className="collection-grid__onchain-actions">
               <button
                 type="button"
-                className="COLLECTION-grid__btn"
+                className="collection-grid__btn"
                 onClick={handleEnsureAmoy}
                 aria-label="Switch MetaMask to Polygon Amoy"
               >
@@ -768,7 +770,7 @@ function COLLECTIONBlocksGrid({
               </button>
               <button
                 type="button"
-                className="COLLECTION-grid__btn COLLECTION-grid__btn--ghost"
+                className="collection-grid__btn collection-grid__btn--ghost"
                 onClick={handleRetry}
                 aria-label="Retry loading on-chain data"
               >
@@ -787,8 +789,8 @@ function COLLECTIONBlocksGrid({
         )}
 
         {activePanel || (
-          <section className="COLLECTION-grid__panel">
-            <div className="COLLECTION-grid__panel-empty">
+          <section className="collection-grid__panel">
+            <div className="collection-grid__panel-empty">
               <p>
                 Unable to render the selected panel. If this persists, check
                 console for details.
@@ -801,20 +803,20 @@ function COLLECTIONBlocksGrid({
       {openBlock && (
         <ModalPortal lockScroll>
           <div
-            className="COLLECTION-grid__modal"
+            className="collection-grid__modal"
             role="dialog"
             aria-modal="true"
             aria-label={`${safeBlockFolder(openBlock)} block preview`}
           >
             <div
-              className="COLLECTION-grid__modal-content"
+              className="collection-grid__modal-content"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="COLLECTION-grid__modal-header">
+              <div className="collection-grid__modal-header">
                 <h3>{safeBlockFolder(openBlock)} block preview</h3>
                 <button
                   type="button"
-                  className="COLLECTION-grid__close-btn"
+                  className="collection-grid__close-btn"
                   onClick={closeModal}
                 >
                   Close
@@ -822,7 +824,7 @@ function COLLECTIONBlocksGrid({
               </div>
 
               <div
-                className="COLLECTION-grid__modal-grid"
+                className="collection-grid__modal-grid"
                 style={{ "--grid-rows": String(modalRows) }}
               >
                 {modalImages.length > 0 ? (
@@ -833,10 +835,10 @@ function COLLECTIONBlocksGrid({
                     return (
                       <div
                         key={`${file}-${index}`}
-                        className="COLLECTION-grid__modal-item"
+                        className="collection-grid__modal-item"
                       >
                         {isColumnStart && !isMobile && (
-                          <div className="COLLECTION-grid__badge">
+                          <div className="collection-grid__badge">
                             ID {safeBlockFolder(openBlock)} #{columnNumber}
                           </div>
                         )}
@@ -849,14 +851,14 @@ function COLLECTIONBlocksGrid({
                           decoding="async"
                           onError={handleImageError}
                         />
-                        <span className="COLLECTION-grid__modal-name">
+                        <span className="collection-grid__modal-name">
                           {file.replace(/\.\w+$/, "")}
                         </span>
                       </div>
                     );
                   })
                 ) : (
-                  <div className="COLLECTION-grid__modal-empty">
+                  <div className="collection-grid__modal-empty">
                     No images configured for this block.
                   </div>
                 )}

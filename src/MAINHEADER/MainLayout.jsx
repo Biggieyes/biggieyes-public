@@ -1,7 +1,7 @@
 import * as React from "react";
 import HeaderControls from "./HeaderControls";
-import GallerySection from "./GallerySection";
-import LiveStatsPanel from "./LiveStatsPanel";
+import GallerySection from "../components/layout/GallerySection";
+import LiveStatsPanel from "../components/layout/LiveStatsPanel";
 
 export default function MainLayout({
   walletAddress,

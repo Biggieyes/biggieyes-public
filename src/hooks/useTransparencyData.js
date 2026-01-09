@@ -1,5 +1,5 @@
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { formatEther } from "ethers/lib.esm/utils.js";
 import { ADDR } from "../utils/addresses";
 import {
   getROProvider,
@@ -152,7 +152,6 @@ export function useTransparencyData({ enabled = true } = {}) {
 }
 
 export default useTransparencyData;
-
 
 
 

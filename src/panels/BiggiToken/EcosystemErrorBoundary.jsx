@@ -16,15 +16,15 @@ class ECOSYSTEMErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <section className="REWARDS-grid biggi-skin" style={{ padding: "24px" }}>
-          <div className="REWARDS-grid__surface biggi-token-surface">
-            <header className="REWARDS-grid__header biggi-header panel-header panel-header--ECOSYSTEM">
-              <div className="REWARDS-grid__headline">
-                <h2 className="REWARDS-grid__title">BIGGI ECOSYSTEM</h2>
-                <p className="REWARDS-grid__subtitle">Panel spadl na chybe. Zkuste refresh nebo overit RPC.</p>
+        <section className="rewards-grid biggi-skin" style={{ padding: "24px" }}>
+          <div className="rewards-grid__surface biggi-token-surface">
+            <header className="rewards-grid__header biggi-header panel-header panel-header--ecosystem">
+              <div className="rewards-grid__headline">
+                <h2 className="rewards-grid__title">BIGGI ECOSYSTEM</h2>
+                <p className="rewards-grid__subtitle">Panel spadl na chybe. Zkuste refresh nebo overit RPC.</p>
               </div>
             </header>
-            <div className="FLOW-panel-box" style={{ color: "#f2c94c" }}>
+            <div className="flow-panel-box" style={{ color: "#f2c94c" }}>
               <p>Detail: {this.state.error?.message || String(this.state.error)}</p>
               <button className="tab-button" onClick={() => window.location.reload()}>Reload stranky</button>
             </div>

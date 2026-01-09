@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import inject from "@rollup/plugin-inject";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -12,6 +13,9 @@ const wcWindowMetadataEsm = path.resolve(__dirname, "node_modules/@walletconnect
 
 export default defineConfig({
   plugins: [
+    nodePolyfills({
+      protocolImports: true,
+    }),
     react(),
     inject({
       Buffer: ["buffer", "Buffer"],
@@ -139,12 +143,11 @@ export default defineConfig({
       onwarn(warning, warn) {
         const isPureAnnotation =
           typeof warning.message === "string" && warning.message.includes("/*#__PURE__*/");
-        if (
+        const isOxPureAnnotation =
           isPureAnnotation &&
           warning.id &&
-          /node_modules[\\/](?:@walletconnect|@reown)/.test(warning.id) &&
-          /[\\/]ox[\\/]_esm[\\/]/.test(warning.id)
-        ) {
+          /node_modules[\\/]ox[\\/]_esm[\\/]/.test(warning.id);
+        if (isOxPureAnnotation) {
           return;
         }
         warn(warning);

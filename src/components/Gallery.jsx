@@ -3,7 +3,9 @@ import "./Gallery.css";
 import NftCard from "./NftCard";
 import { useContracts } from "../providers/ContractsProvider";
 import { useWeb3 } from "../providers/Web3Provider";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { Contract } from "ethers";
+import { formatEther, parseEther, arrayify } from "ethers/lib.esm/utils.js";
+import { AddressZero } from "@ethersproject/constants";
 import { ADDR } from "../utils/addresses.js";
 import {
   readJsonFromURI,

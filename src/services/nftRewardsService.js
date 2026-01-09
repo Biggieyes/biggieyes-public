@@ -7,7 +7,7 @@
 // - connectWithSigner() připravené pro write operace
 // NEZměnil jsem žádnou logiku kontraktu.
 
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import * as ethers from "ethers";
 
 const ABI = [
   {
@@ -194,7 +194,7 @@ export default class NFTREWARDSService {
     if (!provider) throw new Error("Provider required");
     this.address = address;
     this.provider = provider;
-    this.contract = new Contract(address, ABI, provider);
+    this.contract = new ethers.Contract(address, ABI, provider);
     this._onBlockHandler = null;
     this._signerConnected = false;
   }

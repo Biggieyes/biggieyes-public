@@ -1,6 +1,6 @@
 // src/HOOKS/useBiggiTokenomicsReader.js
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { formatEther } from "ethers/lib.esm/utils.js";
 import { getBiggiTokenomicsReaderRO } from "../utils/contract";
 import { getFullStatusSafe } from "../utils/tokenomicsFullStatus.js";
 import { canPoll, getPollInterval } from "../utils/polling";

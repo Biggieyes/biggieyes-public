@@ -1,4 +1,4 @@
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import * as ethers from "ethers";
 
 const DECIMALS = 18;
 const PLACEHOLDER = "--";

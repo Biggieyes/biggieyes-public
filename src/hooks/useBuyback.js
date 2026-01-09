@@ -1,5 +1,7 @@
+
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { formatUnits } from "ethers/lib.esm/utils.js";
+
 import { createBUYBACKService } from "../services/factories";
 import { getCached } from "../utils/fetchCache";
 
@@ -36,7 +38,7 @@ export default function useBUYBACK() {
           const raw = await svc.getAllStats();
           const fmt = (bn) => {
             try {
-              return ethers.utils.formatUnits(bn || 0, 18);
+              return formatUnits(bn || 0, 18);
             } catch {
               return "0";
             }

@@ -27,18 +27,18 @@ import {
 } from "./utils/contract";
 import "./styles/biggi-token.skin.css";
 import { BiggiToken as ABI_TOKEN } from "./config/abi/index.js";
-import REWARDSPanel from "./components/panels/REWARDSPanel.jsx";
+import REWARDSPanel from "./panels/Rewards/REWARDSPanel.jsx";
 import LiveStats from "./components/LiveStats";
 import Gallery from "./components/Gallery";
 import FullscreenPanel from "./components/common/FullscreenPanel";
 import Loader from "./components/common/Loader";
 import Address from "./components/common/Address";
-import TopBar from "./components/header/TopBar";
+import TopBar from "./MAINHEADER/TopBar.jsx";
 import StatusBanner from "./components/common/StatusBanner";
 import ZoomModal from "./components/gallery/ZoomModal";
-import InfoPanel from "./components/panels/InfoPanel";
-import VRFPanel from "./components/VRF/VRFPanel";
-import USERPANEL from "./components/user/USERPANEL";
+import InfoPanel from "./panels/INFO/InfoPanel.jsx";
+import VRFPanel from "./panels/VRF/VRFPanel.jsx";
+import USERPANEL from "./panels/UserPanel/USERPANEL.jsx";
 import AdminPanel from "./components/admin/AdminPanel";
 import * as WC from "./wallet/wc";
 import useTransparencyData from "./HOOKS/useTransparencyData";
@@ -61,17 +61,17 @@ const pickInjectedProvider = () => {
 
 /* ========= LAZY LOADED HEAVY PANELS ========= */
 const ProjectInfoModal = React.lazy(
-  () => import("./components/INFO/ProjectInfoModal"),
+  () => import("./ACTIONBUTTONS/INFO/ProjectInfoModal.jsx"),
 );
 const RedeemOverlay = React.lazy(
-  () => import("./components/redeem/RedeemOverlay"),
+  () => import("./ACTIONBUTTONS/REDEEMTICKET/RedeemOverlay.jsx"),
 );
 const BiggiToken = React.lazy(() => import("./components/TOKEN/BiggiToken"));
 const COLLECTIONBlocksGrid = React.lazy(
   () => import("./components/COLLECTIONBlocksGrid"),
 );
 const COMMUNITYCENTERPanel = React.lazy(
-  () => import("./components/panels/COMMUNITYCENTERPanel"),
+  () => import("./panels/COMMUNITYCENTER/COMMUNITYCENTERPanel.jsx"),
 ); // nový panel
 
 /* ======================================================================== */
@@ -691,7 +691,7 @@ function App() {
             pol.swapSlippageBps?.(),
             pol.lpSlippageBps?.(),
             pol.txDeadlineSec?.(),
-            pol.minBUYBACKInterval?.(),
+            pol.minBuybackInterval?.(),
             pol.maxDailyBUYBACKNative?.(),
           ]);
         if (swapSlip != null) guards.swapSlippageBps = Number(swapSlip);
@@ -704,7 +704,7 @@ function App() {
 
       let BUYBACKsPaused = null;
       try {
-        BUYBACKsPaused = !!(await pol.BUYBACKsPaused());
+        BUYBACKsPaused = !!(await pol.buybacksPaused());
       } catch {}
 
       setBiggiData((prev) => ({
@@ -2948,8 +2948,8 @@ function App() {
           biggi.remainingMintable?.().catch?.(() => null),
           biggi.reserveAddr?.().catch?.(() => null),
           biggi.dexRecipientAddr?.().catch?.(() => null),
-          biggi.tokenREWARDSAddr?.().catch?.(() => null),
-          biggi.REWARDSOperator?.().catch?.(() => null),
+          biggi.tokenRewardsAddr?.().catch?.(() => null),
+          biggi.rewardsOperator?.().catch?.(() => null),
           biggi.distributed?.().catch?.(() => null),
         ]);
         if (ts) totalSupply = formatEther(ts);
@@ -3096,9 +3096,9 @@ function App() {
       ] = await Promise.all([
         b.router().catch(() => null),
         b.wrappedNative().catch(() => null),
-        b.POLICY().catch(() => null),
+        b.policy().catch(() => null),
         b.treasury().catch(() => null),
-        b.lastBUYBACKAt().catch(() => 0),
+        b.lastBuybackAt().catch(() => 0),
         b.fallbackSwapSlippageBps?.().catch?.(() => null),
         b.fallbackTxDeadlineSec?.().catch?.(() => null),
         b.fallbackMinIntervalSec?.().catch?.(() => null),
@@ -3268,8 +3268,8 @@ function App() {
   return (
     <div className="full-bg">
       <style>{`
-        .REWARDS-table { min-height: 520px !important; }
-        .REWARDS-info table { min-height: 420px; }
+        .rewards-table { min-height: 520px !important; }
+        .rewards-info table { min-height: 420px; }
         .wallet-row { display:flex; gap:10px; align-items:center; }
         .metamask-btn-top, .wc-btn-top {
           display:inline-flex; align-items:center; border:2px solid #ffe800; background:#08ffe6;
@@ -3935,12 +3935,6 @@ function App() {
 }
 
 export default App;
-
-
-
-
-
-
 
 
 

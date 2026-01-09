@@ -58,18 +58,39 @@ export default function useBUYBACKKeeper() {
       setPerforming(true);
       setError(null);
       try {
-        // ...existing code...
+        const contract = getUpkeep();
+        if (!contract) throw new Error("Upkeep contract not found");
+        const tx = await contract.performUpkeep(performData, overrides);
+        const receipt = await tx.wait(1);
+        const cacheKey = `BUYBACKKeeper:${contract.address || "unknown"}:0x`;
+        invalidateCache(cacheKey);
+        await refresh({ force: true }).catch(() => {});
+        return receipt;
       } catch (e) {
+        console.error("useBUYBACKKeeper.performUpkeep", e);
         setError(e);
+        throw e;
       } finally {
         setPerforming(false);
       }
     },
-    [],
+    [refresh],
   );
 
-  return { data, loading, performing, error, refresh, performUpkeep };
+  React.useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  return {
+    data,
+    loading,
+    performing,
+    error,
+    refresh,
+    checkUpkeep,
+    performUpkeep,
+  };
 }
-...
+
 
 

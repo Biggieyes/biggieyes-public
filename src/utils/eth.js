@@ -1,6 +1,8 @@
 // src/utils/eth.js
 // Shared ethers helpers for Moderator Center.
-import { getAddress, formatUnits, parseUnits } from "ethers";
+import { Contract } from "@ethersproject/contracts";
+import { Web3Provider } from "@ethersproject/providers";
+import { getAddress, formatUnits, parseUnits } from "ethers/lib.esm/utils.js";
 import moderatorsREWARDSAbi from "../abis/ModeratorsREWARDS.json";
 import {
   getSharedFallbackProvider,
@@ -45,7 +47,7 @@ export const getReadOnlyProvider = () => {
   }
   if (CHAIN_RPC_URL) return createJsonRpcProvider(CHAIN_RPC_URL);
   if (typeof window !== "undefined" && window.ethereum) {
-    return new BrowserProvider(window.ethereum, "any");
+    return new Web3Provider(window.ethereum, "any");
   }
   return null;
 };
@@ -55,7 +57,7 @@ export const getSignerProvider = async () => {
   await window.ethereum
     .request?.({ method: "eth_requestAccounts" })
     .catch(() => {});
-  return new BrowserProvider(window.ethereum, "any");
+  return new Web3Provider(window.ethereum, "any");
 };
 
 export const getModeratorsREWARDSContract = async ({ signer = false } = {}) => {
@@ -81,5 +83,4 @@ export const parseWei = (value, decimals = 18) => {
   if (value == null || value === "") return 0n;
   return parseUnits(String(value), decimals);
 };
-
 

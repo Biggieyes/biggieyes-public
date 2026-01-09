@@ -20,9 +20,24 @@ function bnToNumber(bn) {
   }
 }
 
-export default function useREWARDSReader(walletAddress) {
+function bnToString(bn) {
+  if (bn == null) return "0";
+  try {
+    return bn?.toString ? bn.toString() : String(bn);
+  } catch {
+    return "0";
+  }
+}
+
+export default function useREWARDSReader(walletAddress, tokenIds = []) {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
+
+  const [globalSnapshot, setGlobalSnapshot] = React.useState(null);
+  const [readerAddresses, setReaderAddresses] = React.useState(null);
+  const [collectionWins, setCollectionWins] = React.useState([]);
+  const [tokenClaimPreview, setTokenClaimPreview] = React.useState(null);
+  const [nftRewardsStatus, setNftRewardsStatus] = React.useState(null);
 
   const [COLLECTIONInfo, setCOLLECTIONInfo] = React.useState(null);
   const [orangeMainIds, setOrangeMainIds] = React.useState([]);
@@ -59,7 +74,10 @@ export default function useREWARDSReader(walletAddress) {
     setRewardTokenIds([]);
     setHasMorePages(true);
     loadingPageRef.current = false;
-  }, [walletAddress]);
+    setCollectionWins([]);
+    setTokenClaimPreview(null);
+    setNftRewardsStatus(null);
+  }, [walletAddress, tokenIds]);
 
   React.useEffect(() => {
     if (!readerRef.current) return;
@@ -73,6 +91,123 @@ export default function useREWARDSReader(walletAddress) {
       setError(null);
       try {
         const reader = readerRef.current;
+
+        // New RewardsReader ABI (globalSnapshot + helper getters)
+        if (typeof reader?.globalSnapshot === "function") {
+          const [
+            snapshot,
+            tokenRewardsAddr,
+            collectionRewardsAddr,
+            nftRewardsAddr,
+            treasuryAddr,
+            reserveAddr,
+          ] = await Promise.all([
+            reader.globalSnapshot(),
+            typeof reader.tokenRewards === "function"
+              ? reader.tokenRewards()
+              : Promise.resolve(null),
+            typeof reader.collectionRewards === "function"
+              ? reader.collectionRewards()
+              : Promise.resolve(null),
+            typeof reader.nftRewards === "function"
+              ? reader.nftRewards()
+              : Promise.resolve(null),
+            typeof reader.treasury === "function"
+              ? reader.treasury()
+              : Promise.resolve(null),
+            typeof reader.reserve === "function"
+              ? reader.reserve()
+              : Promise.resolve(null),
+          ]);
+
+          const normalizedSnapshot = {
+            weekNow: bnToNumber(snapshot?.weekNow ?? snapshot?.[0]),
+            tokenAddr: snapshot?.tokenAddr ?? snapshot?.[1] ?? null,
+            tokenRewardsMinted: bnToString(
+              snapshot?.tokenRewardsMinted ?? snapshot?.[2],
+            ),
+            tokenRewardsCap: bnToString(
+              snapshot?.tokenRewardsCap ?? snapshot?.[3],
+            ),
+            treasuryBiggi: bnToString(snapshot?.treasuryBiggi ?? snapshot?.[4]),
+            treasuryMatic: bnToString(snapshot?.treasuryMatic ?? snapshot?.[5]),
+            reserveBiggi: bnToString(snapshot?.reserveBiggi ?? snapshot?.[6]),
+            reserveMatic: bnToString(snapshot?.reserveMatic ?? snapshot?.[7]),
+            remainingOrange: bnToString(
+              snapshot?.remainingOrange ?? snapshot?.[8],
+            ),
+            remainingBlock: bnToString(snapshot?.remainingBlock ?? snapshot?.[9]),
+          };
+
+          if (!cancelled && mountedRef.current) {
+            setGlobalSnapshot(normalizedSnapshot);
+            setReaderAddresses({
+              tokenRewards: tokenRewardsAddr,
+              collectionRewards: collectionRewardsAddr,
+              nftRewards: nftRewardsAddr,
+              treasury: treasuryAddr,
+              reserve: reserveAddr,
+            });
+            setHubStatus(null);
+            setCOLLECTIONInfo(null);
+            setOrangeMainIds([]);
+            setBlockWins([]);
+          }
+
+          if (walletAddress && typeof reader.userCollectionWins === "function") {
+            try {
+              const wins = await reader.userCollectionWins(walletAddress);
+              const normalized = Array.isArray(wins)
+                ? wins.map((bn) => bnToNumber(bn))
+                : [];
+              if (!cancelled && mountedRef.current) {
+                setCollectionWins(normalized);
+              }
+            } catch (e) {
+              console.warn("userCollectionWins failed:", e?.message || e);
+              if (!cancelled && mountedRef.current) setCollectionWins([]);
+            }
+          }
+
+          if (
+            Array.isArray(tokenIds) &&
+            tokenIds.length &&
+            typeof reader.userTokenClaimPreview === "function"
+          ) {
+            try {
+              const preview = await reader.userTokenClaimPreview(tokenIds);
+              if (!cancelled && mountedRef.current) {
+                setTokenClaimPreview({
+                  units: bnToString(preview?.units ?? preview?.[0]),
+                  amount: bnToString(preview?.amount ?? preview?.[1]),
+                });
+              }
+            } catch (e) {
+              console.warn("userTokenClaimPreview failed:", e?.message || e);
+              if (!cancelled && mountedRef.current) setTokenClaimPreview(null);
+            }
+          }
+
+          if (
+            Array.isArray(tokenIds) &&
+            tokenIds.length &&
+            typeof reader.nftRewardsStatus === "function"
+          ) {
+            try {
+              const status = await reader.nftRewardsStatus(tokenIds);
+              const claimable = status?.claimableAmounts ?? status?.[0] ?? [];
+              const claimed = status?.claimedFlags ?? status?.[1] ?? [];
+              if (!cancelled && mountedRef.current) {
+                setNftRewardsStatus({ claimable, claimed });
+              }
+            } catch (e) {
+              console.warn("nftRewardsStatus failed:", e?.message || e);
+              if (!cancelled && mountedRef.current) setNftRewardsStatus(null);
+            }
+          }
+
+          return;
+        }
 
         // REWARDSHub-style reader (aggregate/probe helpers)
         if (typeof reader?.getTokenREWARDSStatus === "function") {
@@ -266,6 +401,11 @@ export default function useREWARDSReader(walletAddress) {
   return {
     loading,
     error,
+    globalSnapshot,
+    readerAddresses,
+    collectionWins,
+    tokenClaimPreview,
+    nftRewardsStatus,
     COLLECTIONInfo,
     orangeMainIds,
     blockWins,

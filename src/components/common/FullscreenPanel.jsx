@@ -37,7 +37,7 @@ export default function FullscreenPanel({
   const rootRef = React.useRef(null);
   const lastActiveRef = React.useRef(null);
   const titleId = React.useId();
-  const prevOverFLOWRef = React.useRef("");
+  const prevOverflowRef = React.useRef("");
   const prevPaddingRightRef = React.useRef("");
 
   const C = {
@@ -97,9 +97,9 @@ export default function FullscreenPanel({
   const lockScrollIfNeeded = React.useCallback(() => {
     if (!preventScroll || isPopover || typeof document === "undefined") return; // no scroll lock for popover
     const scrollbarW = window.innerWidth - document.documentElement.clientWidth;
-    prevOverFLOWRef.current = document.body.style.overFLOW;
+    prevOverflowRef.current = document.body.style.overflow;
     prevPaddingRightRef.current = document.body.style.paddingRight;
-    document.body.style.overFLOW = "hidden";
+    document.body.style.overflow = "hidden";
     if (scrollbarW > 0) {
       const cur = window.getComputedStyle(document.body).paddingRight || "0px";
       const curPx = parseFloat(cur) || 0;
@@ -109,7 +109,7 @@ export default function FullscreenPanel({
 
   const unlockScrollIfNeeded = React.useCallback(() => {
     if (!preventScroll || isPopover || typeof document === "undefined") return;
-    document.body.style.overFLOW = prevOverFLOWRef.current;
+    document.body.style.overflow = prevOverflowRef.current;
     document.body.style.paddingRight = prevPaddingRightRef.current;
   }, [preventScroll, isPopover]);
 
@@ -351,7 +351,7 @@ export default function FullscreenPanel({
             left: popPos.left,
             maxWidth: "min(92vw, 560px)",
             maxHeight: "70vh",
-            overFLOW: "hidden",
+            overflow: "hidden",
             borderRadius: 14,
             border: `2px solid ${C.c}`,
             background: "rgba(26,26,26,.96)",
@@ -418,7 +418,7 @@ export default function FullscreenPanel({
           <div
             style={{
               padding: 6,
-              overFLOWY: "auto",
+              overflowY: "auto",
               maxHeight: "calc(70vh - 46px)",
             }}
           >
@@ -500,7 +500,7 @@ export default function FullscreenPanel({
         gridTemplateRows: "auto 1fr",
         height: "100svh",
         zIndex: 9999,
-        overFLOW: "hidden",
+        overflow: "hidden",
       }}
     >
       <div
@@ -593,7 +593,7 @@ export default function FullscreenPanel({
         className="fullscreen-panel__content"
         onMouseDown={(e) => e.stopPropagation()}
         style={{
-          overFLOWY: "auto",
+          overflowY: "auto",
           minHeight: 0,
           padding: isPhone ? "10px" : "12px 12px",
           maxHeight: `calc(100svh - ${TOPBAR_EST}px)`,
@@ -605,7 +605,7 @@ export default function FullscreenPanel({
           style={{
             minHeight: 0,
             maxHeight: "100%",
-            overFLOW: "auto",
+            overflow: "auto",
             width: isPhone ? "min(1100px, 94vw)" : "min(1100px, 92vw)",
             background: "#141414",
             border: "1px solid #262626",

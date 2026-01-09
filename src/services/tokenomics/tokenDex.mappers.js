@@ -1,4 +1,4 @@
-import { formatUnits } from "ethers";
+import { formatUnits } from "ethers/lib.esm/utils.js";
 
 const DEFAULT_DECIMALS = 18;
 const PLACEHOLDER = "N/A";

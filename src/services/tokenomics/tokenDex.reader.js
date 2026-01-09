@@ -1,4 +1,6 @@
-import { Contract, ZeroAddress } from "ethers";
+import { Contract } from "ethers";
+import { AddressZero } from "@ethersproject/constants";
+import { parseUnits } from "ethers/lib.esm/utils.js";
 import { getProvider } from "../../web3/provider";
 import { getTokenDexContracts } from "../../web3/contracts/tokenDex.contracts";
 import UniswapV2Pair from "../../config/abi/UniswapV2Pair.json";
@@ -25,7 +27,7 @@ export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
   } = getTokenDexContracts(chainId, signerOrProvider);
 
   const decimals = (await _callOptional(() => token.decimals(), 18)) || 18;
-  const oneToken = ethers.utils.parseUnits("1", decimals);
+  const oneToken = parseUnits("1", decimals);
   const wethAddress =
     addrs.weth || (await _callOptional(() => router.WETH(), null));
   const routerFactory =
@@ -47,7 +49,7 @@ export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
     );
     if (
       remotePairAddress &&
-      remotePairAddress !== ZeroAddress
+      remotePairAddress !== AddressZero
     ) {
       resolvedPairAddress = remotePairAddress;
       pairContract = new Contract(
@@ -97,9 +99,9 @@ export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
     _callOptional(() => token.CAP(), null),
     _callOptional(() => token.remainingMintable(), null),
     _callOptional(() => token.reserveAddr(), null),
-    _callOptional(() => token.DRIPDistributorAddr(), null),
-    _callOptional(() => token.tokenREWARDSAddr(), null),
-    _callOptional(() => token.REWARDSOperator(), null),
+    _callOptional(() => token.dripDistributorAddr(), null),
+    _callOptional(() => token.tokenRewardsAddr(), null),
+    _callOptional(() => token.rewardsOperator(), null),
   ]);
 
   const [

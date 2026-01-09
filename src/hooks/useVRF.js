@@ -1,8 +1,13 @@
 // useVRF.js
 import * as React from "react";
 // ...existing code...
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
-import { getROProvider, ABI_VRF_READER, getReadOnlyContract } from "../utils/contract";
+import { Contract } from "ethers";
+import {
+  ADDR,
+  getROProvider,
+  ABI_VRF_READER,
+  getReadOnlyContract,
+} from "../utils/contract";
 
 /**
  * useVRF poskytuje:
@@ -39,8 +44,10 @@ export function useVRF() {
 
   // Helper: získej instanci VRFReader contractu
   function getVRFReaderContract(provider) {
+    const readerAddr =
+      ADDR.VRF_READER || "0x96dD4cB12d5BDa5014BCA2291FBF857662d0B263";
     return new Contract(
-      "0x96dD4cB12d5BDa5014BCA2291FBF857662d0B263",
+      readerAddr,
       ABI_VRF_READER,
       provider || getROProvider(),
     );

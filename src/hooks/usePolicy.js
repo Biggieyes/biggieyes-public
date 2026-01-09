@@ -1,6 +1,6 @@
 // src/HOOKS/usePOLICY.js
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { formatEther } from "ethers/lib.esm/utils.js";
 import { getPOLICYRO } from "../utils/contract";
 import { getCached } from "../utils/fetchCache";
 
@@ -73,11 +73,11 @@ export default function usePOLICY() {
             contract.swapSlippageBps?.().catch(() => 0),
             contract.lpSlippageBps?.().catch(() => 0),
             contract.txDeadlineSec?.().catch(() => 0),
-            contract.minBUYBACKInterval?.().catch(() => 0),
+            contract.minBuybackInterval?.().catch(() => 0),
             contract.epsilonPriceBandBps?.().catch(() => 0),
             contract.twapLookbackSec?.().catch(() => 0),
             contract.maxDailyBUYBACKNative?.().catch(() => 0),
-            contract.BUYBACKsPaused?.().catch(() => false),
+            contract.buybacksPaused?.().catch(() => false),
             contract.refillsPaused?.().catch(() => false),
             contract.lpAddsPaused?.().catch(() => false),
             contract.endOfCOLLECTIONPaused?.().catch(() => false),
@@ -118,8 +118,6 @@ export default function usePOLICY() {
 
   return { data, loading, error, refresh: fetchPOLICY };
 }
-
-
 
 
 

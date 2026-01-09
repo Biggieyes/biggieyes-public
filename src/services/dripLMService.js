@@ -2,7 +2,7 @@
 // Ethers v5 service wrapper for DRIPLM (read-only helpers + signer-ready)
 // Neprovádím žádné změny v kontraktu.
 
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import * as ethers from "ethers";
 import { multicallAggregate } from "../utils/multicall";
 
 const ABI = [
@@ -15,14 +15,14 @@ const ABI = [
   },
   {
     inputs: [],
-    name: "BUYBACKAgent",
+    name: "buybackAgent",
     outputs: [{ internalType: "address", name: "", type: "address" }],
     stateMutability: "view",
     type: "function",
   },
   {
     inputs: [],
-    name: "DRIPDistributor",
+    name: "dripDistributor",
     outputs: [
       { internalType: "contract IDRIPDistributor", name: "", type: "address" },
     ],
@@ -82,7 +82,7 @@ export default class DRIPLMService {
     if (!provider) throw new Error("Provider required");
     this.address = address;
     this.provider = provider;
-    this.contract = new Contract(address, ABI, provider);
+    this.contract = new ethers.Contract(address, ABI, provider);
     this._onBlockHandler = null;
     this._signerConnected = false;
   }
@@ -113,10 +113,10 @@ export default class DRIPLMService {
     return await this.contract.BIGGI();
   } // address
   async BUYBACKAgent() {
-    return await this.contract.BUYBACKAgent();
+    return await this.contract.buybackAgent();
   } // address
   async DRIPDistributor() {
-    return await this.contract.DRIPDistributor();
+    return await this.contract.dripDistributor();
   } // address
   async reserve() {
     return await this.contract.reserve();
@@ -143,8 +143,8 @@ export default class DRIPLMService {
       const iface = new ethers.utils.Interface(ABI);
       const methods = [
         "BIGGI",
-        "BUYBACKAgent",
-        "DRIPDistributor",
+        "buybackAgent",
+        "dripDistributor",
         "reserve",
         "router",
         "sellPct",

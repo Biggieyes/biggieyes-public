@@ -1,9 +1,9 @@
 ﻿// src/components/INFO/ProjectInfoModal.jsx
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import "../../components/COLLECTIONBlocksGrid.css";
-import "../../MAINHEADER/PANELS/REWARDS/REWARDSPanel.css";
-import "../../styles/biggi-token.skin.css";
+import "../components/CollectionBlocksGrid.css";
+import "../panels/Rewards/REWARDSPanel.css";
+import "../styles/biggi-token.skin.css";
 
 const SECTIONS = [
   { id: "overview", label: "Overview & How It Works", icon: "đź“" },
@@ -706,7 +706,6 @@ const ProjectInfoModal = ({
 };
 
 export default ProjectInfoModal;
-
 
 
 

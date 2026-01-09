@@ -1,6 +1,6 @@
 import * as React from "react";
-import Address from "../common/Address";
-import TopBar from "../../MAINHEADER/TopBar.jsx";
+import Address from "../components/common/Address";
+import TopBar from "./TopBar.jsx";
 
 export default function HeaderControls({
   walletAddress,

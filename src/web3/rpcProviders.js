@@ -1,5 +1,5 @@
 // import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
-import { JsonRpcProvider, FallbackProvider, Web3Provider, StaticJsonRpcProvider } from "@ethersproject/providers";
+import { FallbackProvider, StaticJsonRpcProvider } from "@ethersproject/providers";
 import { AMOY, getRpcUrls as getConfiguredRpcUrls } from "../utils/rpcConfig";
 
 function makeStaticProvider(url, chainId = AMOY.chainId) {

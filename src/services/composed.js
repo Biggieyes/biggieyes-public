@@ -7,7 +7,6 @@ import liquidityManagerService from "./liquidityManagerService";
 import liquidityVaultService from "./liquidityVaultService";
 import { ADDR } from "../utils/addresses";
 import { getTokenRO, getROProvider, fromWei } from "../utils/contract";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 
 /**
  * Get aggregated stats for Reserve → LM → LiquidityVault chain.

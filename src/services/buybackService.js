@@ -2,7 +2,7 @@
 // Ethers v5 service wrapper for BUYBACKAgent-like contract (read-only helpers)
 // Neprovádím žádné změny v kontraktu.
 
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import * as ethers from "ethers";
 import { multicallAggregate } from "../utils/multicall";
 
 const ABI = [
@@ -15,7 +15,7 @@ const ABI = [
   },
   {
     inputs: [],
-    name: "autoBUYBACKEnabled",
+    name: "autoBuybackEnabled",
     outputs: [{ internalType: "bool", name: "", type: "bool" }],
     stateMutability: "view",
     type: "function",
@@ -65,7 +65,7 @@ const ABI = [
   },
   {
     inputs: [],
-    name: "POLICY",
+    name: "policy",
     outputs: [
       { internalType: "contract IBiggiPOLICY", name: "", type: "address" },
     ],
@@ -74,7 +74,7 @@ const ABI = [
   },
   {
     inputs: [],
-    name: "DRIPLM",
+    name: "dripLM",
     outputs: [{ internalType: "contract IDRIPLM", name: "", type: "address" }],
     stateMutability: "view",
     type: "function",
@@ -102,7 +102,7 @@ const ABI = [
   },
   {
     inputs: [],
-    name: "lastBUYBACKAt",
+    name: "lastBuybackAt",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     stateMutability: "view",
     type: "function",
@@ -161,7 +161,7 @@ export default class BUYBACKService {
     if (!provider) throw new Error("Provider required");
     this.address = address;
     this.provider = provider;
-    this.contract = new Contract(address, ABI, provider);
+    this.contract = new ethers.Contract(address, ABI, provider);
     this._onBlockHandler = null;
     this._signerConnected = false;
   }
@@ -191,7 +191,7 @@ export default class BUYBACKService {
     return await this.contract.BIGGI();
   } // address (IERC20)
   async autoBUYBACKEnabled() {
-    return await this.contract.autoBUYBACKEnabled();
+    return await this.contract.autoBuybackEnabled();
   } // bool
   async biggiBalance() {
     return await this.contract.biggiBalance();
@@ -209,10 +209,10 @@ export default class BUYBACKService {
     return await this.contract.treasury();
   } // address
   async POLICY() {
-    return await this.contract.POLICY();
+    return await this.contract.policy();
   } // address
   async DRIPLM() {
-    return await this.contract.DRIPLM();
+    return await this.contract.dripLM();
   } // address
   async fallbackMinIntervalSec() {
     return await this.contract.fallbackMinIntervalSec();
@@ -224,7 +224,7 @@ export default class BUYBACKService {
     return await this.contract.fallbackTxDeadlineSec();
   } // BigNumber
   async lastBUYBACKAt() {
-    return await this.contract.lastBUYBACKAt();
+    return await this.contract.lastBuybackAt();
   } // BigNumber (timestamp)
   async pathCustom() {
     return await this.contract.pathCustom();
@@ -255,18 +255,18 @@ export default class BUYBACKService {
       const iface = new ethers.utils.Interface(ABI);
       const methods = [
         "BIGGI",
-        "autoBUYBACKEnabled",
+        "autoBuybackEnabled",
         "biggiBalance",
         "nativeBalance",
         "router",
         "wrappedNative",
         "treasury",
-        "POLICY",
-        "DRIPLM",
+        "policy",
+        "dripLM",
         "fallbackMinIntervalSec",
         "fallbackSwapSlippageBps",
         "fallbackTxDeadlineSec",
-        "lastBUYBACKAt",
+        "lastBuybackAt",
         "pathCustom",
         "totalBiggiAcquired",
         "totalNativeReceived",

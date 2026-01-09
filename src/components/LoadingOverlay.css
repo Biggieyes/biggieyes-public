@@ -45,3 +45,13 @@
   color: rgba(255, 255, 255, 0.75);
   font-size: 13px;
 }
+
+@media (prefers-color-scheme: light) {
+  .loading-card {
+    color: #111;
+  }
+
+  .msg {
+    color: rgba(17, 17, 17, 0.72);
+  }
+}

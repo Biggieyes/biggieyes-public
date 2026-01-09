@@ -1,5 +1,6 @@
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { Contract } from "ethers";
+import { formatEther } from "ethers/lib.esm/utils.js";
 import { getCached } from "../../../../../utils/fetchCache";
 import { getTreasuryRO } from "../../../../../utils/contract"; // přizpůsob podle projektu
 

@@ -1,15 +1,13 @@
 // src/HOOKS/useCOLLECTIONREWARDS.js
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
-import { ABI_REWARDS_READER, getROProvider } from "../utils/contract";
-import { BLOCK_INDICES } from "../services/COLLECTIONREWARDSService";
-// ...existing code...
-
-// ...existing code...
+import { formatUnits } from "ethers/lib.esm/utils.js";
+import COLLECTIONREWARDSService from "../services/collectionRewardsService";
+import { getROProvider } from "../utils/contract";
+import { ADDR } from "../utils/addresses";
 
 export function useCOLLECTIONREWARDS(walletAddress, providerOverride) {
   const [data, setData] = React.useState({
-    address: "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
+    address: ADDR.COLLECTION_REWARDS,
     blockReward: "0",
     blockWinnersCount: 0,
     blockPaid: [],
@@ -35,28 +33,38 @@ export function useCOLLECTIONREWARDS(walletAddress, providerOverride) {
         const provider = providerOverride || getROProvider();
         if (!provider) throw new Error("Read-only provider not available");
 
-        // REWARDSReader contract instance
-        const REWARDSReader = new Contract(
-          "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
-          ABI_REWARDS_READER,
-          provider,
-        );
+        const address = ADDR.COLLECTION_REWARDS;
+        if (!address) {
+          setData((prev) => ({ ...prev }));
+          return;
+        }
 
-        // Čtení globálního snapshotu (viz ABI)
-        const global = await REWARDSReader.globalSnapshot();
-
-        // Načtení odměn pro všechny bloky
-        const blockPaid = await Promise.all(
-          BLOCK_INDICES.map((idx) => REWARDSReader.blockPaid(idx)),
-        );
+        const svc = new COLLECTIONREWARDSService(address, provider);
+        const raw = await svc.getAllStats(walletAddress);
+        const fmt = (bn) => {
+          try {
+            return formatUnits(bn ?? 0, 18);
+          } catch {
+            return "0";
+          }
+        };
 
         setData((prev) => ({
           ...prev,
-          address: "0x2bb882F8657d13AEccA90bE6Bb62166d1572C5D4",
-          blockReward: global.remainingBlock?.toString?.() ?? "0",
-          orangeReward: global.remainingOrange?.toString?.() ?? "0",
-          blockPaid, // pole s odměnami pro každý blok
-          // ...další pole podle potřeby
+          address,
+          blockReward: fmt(raw.blockReward),
+          blockWinnersCount: Number(raw.blockWinnersCount ?? 0),
+          blockPaid: raw.blockPaid || [],
+          orangeReward: fmt(raw.orangeReward),
+          orangeWinnersCount: Number(raw.orangeWinnersCount ?? 0),
+          orangeMainIdPaid: raw.orangeMainIdPaid || [],
+          rainbowReward: fmt(raw.rainbowReward),
+          rainbowRewardClaimedGlobal: Boolean(raw.rainbowClaimed),
+          rainbowClaimed: Boolean(raw.rainbowClaimed),
+          claimedOrange: Boolean(raw.claimedOrange),
+          distributor: raw.distributor || null,
+          main: raw.main || null,
+          owner: raw.owner || null,
         }));
       } catch (e) {
         console.error("useCOLLECTIONREWARDS.refresh", e);
@@ -65,7 +73,7 @@ export function useCOLLECTIONREWARDS(walletAddress, providerOverride) {
         setLoading(false);
       }
     },
-    [providerOverride],
+    [providerOverride, walletAddress],
   );
 
   React.useEffect(() => {
@@ -75,6 +83,4 @@ export function useCOLLECTIONREWARDS(walletAddress, providerOverride) {
   return { data, loading, error, refresh };
 }
 
-
-
-
+export default useCOLLECTIONREWARDS;

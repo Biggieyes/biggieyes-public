@@ -1,7 +1,12 @@
 // src/HOOKS/useLiquidityVault.js
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
-import { getROProvider, ABI_LIQUIDITY_VAULT_READER, getReadOnlyContract } from "../utils/contract";
+import { Contract } from "ethers";
+import {
+  ADDR,
+  getROProvider,
+  ABI_LIQUIDITY_VAULT_READER,
+  getReadOnlyContract,
+} from "../utils/contract";
 import { getCached } from "../utils/fetchCache";
 
 export default function useLiquidityVault() {
@@ -18,8 +23,11 @@ export default function useLiquidityVault() {
     setError(null);
     try {
       // Nový LiquidityVaultReader contract instance
+      const readerAddr =
+        ADDR.LIQUIDITY_VAULT_READER ||
+        "0xaCbc930541E08c7dF9E4d3597173b5D781FD161b";
       const contract = new Contract(
-        "0xaCbc930541E08c7dF9E4d3597173b5D781FD161b",
+        readerAddr,
         ABI_LIQUIDITY_VAULT_READER,
         getROProvider(),
       );

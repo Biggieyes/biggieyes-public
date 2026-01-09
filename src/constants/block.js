@@ -111,5 +111,6 @@ export const FALLBACK_BTN_STYLE = {
 };
 
 // ✅ EXPORTUJEME BLOCK_IMAGES
+import BLOCK_IMAGES from "./blockImages";
 export { BLOCK_IMAGES };
 

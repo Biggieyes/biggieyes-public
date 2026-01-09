@@ -1,9 +1,9 @@
 // src/HOOKS/useBiggiTokenomicsReader.js
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
-import { getBiggiTokenomicsReaderRO } from "../utils/contract.js";
+import { formatEther } from "ethers/lib.esm/utils.js";
+import { getBiggiTokenomicsReaderRO } from "../utils/contract";
 import { getFullStatusSafe } from "../utils/tokenomicsFullStatus.js";
-import { canPoll, getPollInterval } from "../utils/polling.js";
+import { canPoll, getPollInterval } from "../utils/polling";
 
 const POLL_INTERVAL_MS = getPollInterval(20_000, "VITE_TOKENOMICS_POLL_MS");
 
@@ -58,11 +58,60 @@ export default function useBiggiTokenomicsReader() {
       reader.current = getBiggiTokenomicsReaderRO();
     } catch (e) {
       console.warn("Cannot create reader RO:", e.message || e);
+      reader.current = null;
+      setError(e);
     }
-    // ...existing code...
   }, []);
 
-  return { loading, error, status };
+  React.useEffect(() => {
+    if (!reader.current) return;
+    let cancelled = false;
+
+    async function loadAll() {
+      if (!reader.current || cancelled) return;
+      if (!canPoll() || inFlightRef.current) return;
+      inFlightRef.current = true;
+      setLoading(true);
+      setError(null);
+      try {
+        const snap = await getFullStatusSafe(reader.current);
+        if (!cancelled) {
+          setStatus(normalizeFullStatus(snap));
+        }
+      } catch (e) {
+        console.error("useBiggiTokenomicsReader loadAll failed", e);
+        if (!cancelled) setError(e);
+      } finally {
+        inFlightRef.current = false;
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadAll();
+    const t = setInterval(loadAll, POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, []);
+
+  return {
+    loading,
+    error,
+    status,
+    refresh: async () => {
+      if (!reader.current || inFlightRef.current) return;
+      inFlightRef.current = true;
+      try {
+        const snap = await getFullStatusSafe(reader.current);
+        setStatus(normalizeFullStatus(snap));
+      } catch (e) {
+        setError(e);
+      } finally {
+        inFlightRef.current = false;
+      }
+    },
+  };
 }
 
 

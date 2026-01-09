@@ -1,41 +1,33 @@
-import * as React from "react";
+﻿import * as React from "react";
 import "./App.css";
 import { MODAL_TEXTS } from "./constants/texts";
-// --- P�idan� importy pro napojen� dosud nepou��van�ch soubor� ---
-import messageHandler from "./api/message";
-import nonceHandler from "./api/nonce";
+// --- Pďż˝idanďż˝ importy pro napojenďż˝ dosud nepouďż˝ďż˝vanďż˝ch souborďż˝ ---
 import AdminDashboard from "./components/AdminDashboard.jsx";
 import IconButton from "./components/common/IconButton.jsx";
 import ModalTopbar from "./components/common/ModalTopbar.jsx";
 import ExpansionPanel from "./components/expansion/ExpansionPanel.jsx";
 import PinUploader from "./components/PinUploader.jsx";
-import RedeemFLOW from "./ACTIONBUTTONS/REDEEMTICKET/RedeemFLOW.jsx";
-import REWARDSBlockSummary from "./MAINHEADER/PANELS/??REWARDS??/REWARDSBlockSummary.jsx";
+import RedeemFLOW from "./ACTIONBUTTONS/REDEEMTICKET/RedeemFlow.jsx";
+import REWARDSBlockSummary from "./panels/Rewards/REWARDSBlockSummary.jsx";
 import BiggiButton from "./components/TOKEN/BiggiButton.jsx";
-import BUYBACKDRIPButton from "./components/TOKEN/BUYBACKDRIPButton.jsx";
-import BUYBACKStabilityChart from "./components/TOKEN/BUYBACKStabilityChart.jsx";
+import BUYBACKDRIPButton from "./components/TOKEN/BuybackDripButton.jsx";
+import BUYBACKStabilityChart from "./components/TOKEN/BuybackStabilityChart.jsx";
 import DexLiquidityChart from "./components/TOKEN/DexLiquidityChart.jsx";
-import FLOWButton from "./components/TOKEN/FLOWButton.jsx";
+import FLOWButton from "./components/TOKEN/FlowButton.jsx";
 import LiquidityVaultChart from "./components/TOKEN/LiquidityVaultChart.jsx";
 import LMReserveTokenDexButton from "./components/TOKEN/LMReserveTokenDexButton.jsx";
-import POLICYButton from "./components/TOKEN/POLICYButton.jsx";
+import POLICYButton from "./components/TOKEN/PolicyButton.jsx";
 import * as RechartsCompat from "./components/TOKEN/recharts-compat.js";
 import SimpleLineChart from "./components/TOKEN/SimpleLineChart.jsx";
 import TokenSupplyChart from "./components/TOKEN/TokenSupplyChart.jsx";
 import ADDR from "./config/addresses.js";
 import * as BLOCK_CONST from "./constants/block.js";
 import BLOCK_IMAGES from "./constants/blockImages.js";
+import BLOCKSIMAGES from "./constants/blocksimages.js";
 import * as UI_CONST from "./UI/ui.js";
 import * as DeviceHOOKS from "./UI/Device.js";
 import WalletButton from "./MAINHEADER/WalletButton.jsx";
 import LoadingOverlay from "./components/LoadingOverlay.jsx";
-// Dummy pou�it� API handler� (simulace vol�n�, aby byly pou�ity)
-if (typeof window !== "undefined") {
-  // Simulace requestu pro message
-  messageHandler({ method: "POST", body: { address: "0x", content: "test", signature: "x", nonce: "y", timestamp: Date.now() } }, { status: () => ({ json: () => {} }), json: () => {} });
-  // Simulace requestu pro nonce
-  nonceHandler({ method: "GET", query: { address: "0x" } }, { status: () => ({ json: () => {} }), json: () => {} });
-}
 // import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
 import { BigNumber } from "@ethersproject/bignumber";
 import { Contract } from "@ethersproject/contracts";
@@ -73,7 +65,7 @@ import { formatEthNum } from "./utils/format";
 import { resolveImageUrl, readJsonFromURI } from "./utils/ipfs";
 import { callFirst, getRO as getROHelper } from "./utils/contracts-helpers";
 import { fetchCOMMUNITYCENTERStats as fetchCOMMUNITYCENTERStatsRO } from "./utils/community";
-import NavPanelSwitch from "./MAINHEADER/PANELS/NavPanelSwitch.jsx";
+import NavPanelSwitch from "./panels/Common/NavPanelSwitch.jsx";
 import { useNavHotkeys } from "./HOOKS/useNavHotkeys";
 import { useGlobalShortcuts } from "./HOOKS/useGlobalShortcuts";
 import { useStatsREWARDS } from "./HOOKS/useStatsREWARDS";
@@ -120,13 +112,6 @@ const FullscreenPanel = React.lazy(
 const AdminPanel = React.lazy(() => import("./components/admin/AdminPanel"));
 
 const pickInjectedProvider = () => {
-  if (typeof window === "undefined") return null;
-  const { ethereum } = window;
-  if (!ethereum) return null;
-  if (Array.isArray(ethereum.providers) && ethereum.providers.length) {
-    const mm = ethereum.providers.find((prov) => prov && prov.isMetaMask);
-    return mm || ethereum.providers[0];
-  }
   return ethereum;
 };
 // Nav panel contents are React.lazy-loaded inside `NavPanelSwitch`.
@@ -137,7 +122,7 @@ const pickInjectedProvider = () => {
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-/* ?? MINI ERC20 ABI pro �ten� */
+/* ?? MINI ERC20 ABI pro ďż˝tenďż˝ */
 /* ======================================================================== */
 /* ============================== SMALL UTILS ============================== */
 /* ======================================================================== */
@@ -161,15 +146,15 @@ const connectWithWalletConnect = async () => {
 };
 
 function App() {
-  // P��stup ke v�em contract factory p�es context
+  // Pďż˝ďż˝stup ke vďż˝em contract factory pďż˝es context
   const contracts = useContracts();
-  // DEMO: pou�it� contract factory z contextu
+  // DEMO: pouďż˝itďż˝ contract factory z contextu
   React.useEffect(() => {
-    // P��klad vol�n� BiggiMainReader a BiggiTokenomicsReader
+    // Pďż˝ďż˝klad volďż˝nďż˝ BiggiMainReader a BiggiTokenomicsReader
     try {
       const mainReader = contracts.biggiMainReaderRead?.();
       const tokenomicsReader = contracts.biggiTokenomicsReaderRead?.();
-      // M��e� zde volat metody na t�chto instanc�ch, nap�. mainReader.n�co()
+      // Mďż˝ďż˝eďż˝ zde volat metody na tďż˝chto instancďż˝ch, napďż˝. mainReader.nďż˝co()
       // console.log("mainReader", mainReader);
       // console.log("tokenomicsReader", tokenomicsReader);
     } catch (e) {
@@ -460,7 +445,7 @@ function App() {
     enrichMetaWithPrices,
   });
 
-  /* ---------- Stats p�es Reader ---------- */
+  /* ---------- Stats pďż˝es Reader ---------- */
 
   const fetchBackgroundMintCounts = React.useCallback(async () => {
     try {
@@ -810,7 +795,7 @@ function App() {
       const addr = accounts?.[0];
       if (!addr) throw new Error("No account returned from wallet.");
 
-      const injectedProvider = new BrowserProvider(eth, "any");
+      const injectedProvider = getSignerProvider();
       const net = await injectedProvider.getNetwork().catch(() => null);
       if (Number(net?.chainId) !== 80002) {
         await ensureAmoy();
@@ -842,10 +827,8 @@ function App() {
       const { provider, signer } = await connectWithWalletConnect();
       const addr = await signer.getAddress();
       setWalletAddress(addr);
-      resetROProvider();
-
       if (typeof window !== "undefined") window.ethereum = provider;
-
+      resetROProvider();
       contractRef.current = getContract();
       runPostConnect(addr);
     } catch (err) {
@@ -1302,55 +1285,50 @@ function App() {
           actions={adminActions}
         />
       </React.Suspense>
-      {/* --- P�idan� AdminDashboard, aby byl napojen� --- */}
+      {/* --- Pďż˝idanďż˝ AdminDashboard, aby byl napojenďż˝ --- */}
       <div style={{ display: "none" }}>
-        {/* Napojen� v�ech d��ve nepou��van�ch komponent */}
+        {/* Napojenďż˝ vďż˝ech dďż˝ďż˝ve nepouďż˝ďż˝vanďż˝ch komponent */}
         <AdminDashboard />
         <IconButton src="/images/UI_CONST.ICONS/token.png" alt="Test Icon" onClick={() => {}} />
         <ModalTopbar title="Test Modal" onClose={() => {}} />
         <ExpansionPanel />
         <WalletButton walletAddress="0x1234567890abcdef" onConnect={() => {}} onConnectWC={() => {}} />
         <LoadingOverlay open={false} />
-        {/* Dal�� napojen� dal��ch 5 komponent */}
+        {/* Dalďż˝ďż˝ napojenďż˝ dalďż˝ďż˝ch 5 komponent */}
         <PinUploader onDone={() => {}} />
         <RedeemFLOW />
         <REWARDSBlockSummary />
         <BiggiButton>Test BiggiButton</BiggiButton>
         <BUYBACKDRIPButton>Test BUYBACKDRIPButton</BUYBACKDRIPButton>
-        {/* Dal�� napojen� dal��ch 5 komponent */}
+        {/* Dalďż˝ďż˝ napojenďż˝ dalďż˝ďż˝ch 5 komponent */}
         <BUYBACKStabilityChart />
         <DexLiquidityChart />
         <FLOWButton>Test FLOWButton</FLOWButton>
         <LiquidityVaultChart />
         <LMReserveTokenDexButton>Test LMReserveTokenDexButton</LMReserveTokenDexButton>
-        {/* Dal�� napojen� dal��ch 5 komponent */}
+        {/* Dalďż˝ďż˝ napojenďż˝ dalďż˝ďż˝ch 5 komponent */}
         <POLICYButton>Test POLICYButton</POLICYButton>
-        {/* Simulace pou�it� RechartsCompat */}
+        {/* Simulace pouďż˝itďż˝ RechartsCompat */}
         <div style={{ display: "none" }}>{RechartsCompat.AreaChart ? "" : null}</div>
         <SimpleLineChart data={[]} series={[]} />
         <TokenSupplyChart />
-        {/* Simulace pou�it� adres��e ADDR */}
+        {/* Simulace pouďż˝itďż˝ adresďż˝ďż˝e ADDR */}
         <div style={{ display: "none" }}>
-          {/* Simulace pou�it� constants/block.js */}
+          {/* Simulace pouďż˝itďż˝ constants/block.js */}
           {BLOCK_CONST.DEFAULT_BLOCKS?.length}
-          {/* Simulace pou�it� constants/blockImages.js */}
+          {/* Simulace pouďż˝itďż˝ constants/blockImages.js */}
           {Array.isArray(BLOCK_IMAGES.ORANGE) ? BLOCK_IMAGES.ORANGE[0] : null}
-          {/* Simulace pou�it� constants/blocksimages.js */}
+          {/* Simulace pouďż˝itďż˝ constants/blocksimages.js */}
           {BLOCKSIMAGES ? "blocksimages loaded" : null}
-          {/* Simulace pou�it� constants/ui.js */}
-          {UI_CONST.UI_CONST.ICONS?.[0]?.alt}
-          {/* Simulace pou�it� Device.js hook� */}
+          {/* Simulace pouďż˝itďż˝ constants/ui.js */}
+          {UI_CONST.ICONS?.[0]?.alt}
+          {/* Simulace pouďż˝itďż˝ Device.js hookďż˝ */}
           {typeof DeviceHOOKS.useIsMobile === "function" ? "Device ok" : null}
         </div>
       </div>
-      {/* Importy pro dal�� komponenty */}
+      {/* Importy pro dalďż˝ďż˝ komponenty */}
       {/* eslint-disable-next-line */}
       {/* @ts-ignore */}
-      import PinUploader from "./components/PinUploader.jsx";
-      import RedeemFLOW from "./components/redeem/RedeemFLOW.jsx";
-      import REWARDSBlockSummary from "./components/REWARDS/REWARDSBlockSummary.jsx";
-      import BiggiButton from "./components/TOKEN/BiggiButton.jsx";
-      import BUYBACKDRIPButton from "./components/TOKEN/BUYBACKDRIPButton.jsx";
     </div>
   );
 }

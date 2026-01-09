@@ -1,5 +1,5 @@
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { AddressZero } from "@ethersproject/constants";
 import { getFrontendSnapshotLiteActive } from "../utils/contract";
 
 export function useMintRedeem(params) {
@@ -86,7 +86,7 @@ export function useMintRedeem(params) {
       try {
         if (typeof contract.distributor === "function") {
           const dist = await contract.distributor().catch(() => "");
-          if (!dist || dist === ZeroAddress) {
+          if (!dist || dist === AddressZero) {
             return alert(
               "Distributor není nastavený na kontraktu. Mint nebude fungovat.",
             );
@@ -357,7 +357,5 @@ export function useMintRedeem(params) {
     onVRFUpdateParams,
   };
 }
-
-
 
 

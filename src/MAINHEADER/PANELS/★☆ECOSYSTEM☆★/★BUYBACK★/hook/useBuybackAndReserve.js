@@ -38,6 +38,8 @@ export default function useBUYBACKAndReserve() {
     BUYBACK: BUYBACK.data,
     DRIPDistributor: DRIPDistributor.data,
     DRIPLM: DRIPLM.data,
+
+    // pro stav UI
     loading:
       POLICY.loading ||
       reserve.loading ||
@@ -52,6 +54,7 @@ export default function useBUYBACKAndReserve() {
       BUYBACK.error ||
       DRIPDistributor.error ||
       DRIPLM.error,
+
     refreshAll,
     refreshPOLICY: POLICY.refresh,
     refreshReserve: reserve.refresh,
@@ -61,7 +64,7 @@ export default function useBUYBACKAndReserve() {
     refreshDRIPLM: DRIPLM.refresh,
   };
 }
-...
+
 
 
 

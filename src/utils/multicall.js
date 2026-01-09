@@ -1,6 +1,6 @@
 // src/utils/multicall.js
 // Lightweight multicall helper using the standard Multicall2 aggregate interface.
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { Contract } from "ethers";
 import { ADDR } from "./addresses";
 
 const MULTICALL_ABI = [

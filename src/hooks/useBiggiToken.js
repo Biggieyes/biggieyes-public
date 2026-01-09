@@ -1,6 +1,6 @@
 // src/HOOKS/useBiggiToken.js
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { formatUnits } from "ethers/lib.esm/utils.js";
 import { getTokenRO } from "../utils/contract";
 import { getCached } from "../utils/fetchCache";
 
@@ -86,9 +86,9 @@ export default function useBiggiToken(walletAddress = "") {
               contract.CAP?.().catch(() => 0n),
               contract.remainingMintable?.().catch(() => 0n),
               contract.reserveAddr?.().catch(() => null),
-              contract.tokenREWARDSAddr?.().catch(() => null),
-              contract.DRIPDistributorAddr?.().catch(() => null),
-              contract.REWARDSOperator?.().catch(() => null),
+              contract.tokenRewardsAddr?.().catch(() => null),
+              contract.dripDistributorAddr?.().catch(() => null),
+              contract.rewardsOperator?.().catch(() => null),
               contract.distributed?.().catch(() => false),
               contract.paused?.().catch(() => false),
               contract.owner?.().catch(() => null),
@@ -97,7 +97,7 @@ export default function useBiggiToken(walletAddress = "") {
             const finalDecimals = toNumber(decimalsRaw) || decimals || 18;
             const fmt = (v) => {
               try {
-                return ethers.utils.formatUnits(v ?? 0, finalDecimals);
+                return formatUnits(v ?? 0, finalDecimals);
               } catch {
                 return "0";
               }
@@ -151,7 +151,6 @@ export default function useBiggiToken(walletAddress = "") {
 
   return { data, loading, error, refresh };
 }
-
 
 
 
