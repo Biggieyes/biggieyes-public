@@ -11,7 +11,7 @@
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\"",
     "lint:fix": "eslint \"src/**/*.{js,jsx,ts,tsx}\" --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css}\"",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "node scripts/typecheck.mjs",
     "audit": "npm audit",
     "depcheck": "npx npm-check-updates -u && npm install",
     "test": "vitest run",

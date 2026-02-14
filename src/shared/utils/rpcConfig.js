@@ -120,6 +120,10 @@ const UNSTABLE_AMOY_RPC_HOSTS = [
   "polygon-amoy-bor.publicnode.com",
   "polygon-amoy.publicnode.com",
 ];
+const RATE_LIMITED_AMOY_RPC_HOSTS = [
+  // Public onfinality endpoint is frequently rate-limited in browser workloads.
+  "polygon-amoy.api.onfinality.io",
+];
 
 function env(key) {
   try {
@@ -173,7 +177,6 @@ function uniq(values) {
 
 export const PUBLIC_AMOY_RPCS = [
   // Keep this set conservative; optional providers can be added via env.
-  "https://polygon-amoy.api.onfinality.io/public",
   "https://polygon-amoy.drpc.org",
 ];
 
@@ -259,6 +262,8 @@ function rankRpcUrls(urls) {
 function filterOutBadRpcs(urls) {
   const allowTenderly = env("VITE_ALLOW_TENDERLY_RPC") === "1";
   const allowUnstablePublicRpcs = env("VITE_ALLOW_UNSTABLE_PUBLIC_RPCS") === "1";
+  const allowRateLimitedPublicRpcs =
+    env("VITE_ALLOW_RATE_LIMITED_PUBLIC_RPCS") === "1";
   const isBrowser = typeof window !== "undefined";
   return (urls || []).filter((u) => {
     if (!u) return false;
@@ -284,6 +289,12 @@ function filterOutBadRpcs(urls) {
     if (
       !allowUnstablePublicRpcs &&
       UNSTABLE_AMOY_RPC_HOSTS.some((x) => host === x)
+    ) {
+      return false;
+    }
+    if (
+      !allowRateLimitedPublicRpcs &&
+      RATE_LIMITED_AMOY_RPC_HOSTS.some((x) => host === x)
     ) {
       return false;
     }

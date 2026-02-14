@@ -5,7 +5,7 @@ import { mapDRIPSnapshotToUI } from "@/shared/services/tokenomics/drip.mappers";
 import usePollingSnapshot from "./_usePollingSnapshot";
 
 export default function useDRIPSnapshot(options = {}) {
-  const { intervalMs = 20000 } = options;
+  const { intervalMs = 20000, ...pollOptions } = options;
   const { chainId, provider } = useWeb3();
   const isInjected = Boolean(provider?.provider);
   const readProvider = isInjected ? undefined : provider;
@@ -19,5 +19,5 @@ export default function useDRIPSnapshot(options = {}) {
     return mapDRIPSnapshotToUI(raw) || raw;
   }, [chainId, readProvider]);
 
-  return usePollingSnapshot(fetcher, { intervalMs });
+  return usePollingSnapshot(fetcher, { intervalMs, ...pollOptions });
 }

@@ -2,6 +2,7 @@ import * as React from "react";
 import HeaderControls from "./HeaderControls";
 import GallerySection from "./GallerySection";
 import LiveStatsPanel from "./LiveStatsPanel";
+import StatusBanner from "@/shared/components/StatusBanner";
 
 export default function MainLayout({
   walletAddress,
@@ -46,6 +47,9 @@ export default function MainLayout({
   dynamicTraitsById,
   setZoomImg,
   fetchWalletAssets,
+  fetchStats,
+  fetchREWARDS,
+  redeemMsg,
 }) {
   return (
     <>
@@ -79,6 +83,16 @@ export default function MainLayout({
 
       <main className="dashboard-shell">
         <div className="dashboard-shell__inner">
+          <StatusBanner
+            isRedeeming={isRedeeming}
+            VRFPending={VRFPending}
+            redeemMsg={redeemMsg}
+            onRefresh={async () => {
+              await fetchStats?.();
+              await fetchREWARDS?.();
+              await fetchWalletAssets?.(walletAddress);
+            }}
+          />
           <LiveStatsPanel
             walletAddress={walletAddress}
             lastMinted={lastMinted}

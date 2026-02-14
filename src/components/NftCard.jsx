@@ -1,12 +1,78 @@
 // src/components/NftCard.jsx
 import * as React from "react";
 import { formatEther } from "ethers";
+import { DEFAULT_BLOCKS } from "@/shared/blocks";
+import { buildBlockImagePath } from "@/shared/utils/images";
 import "./NftCard.css";
 import ImportNftButton from "./ImportNftButton";
 import { useContracts } from "../providers/ContractsProvider";
 import { httpFromIpfs, readJsonFromURI, resolveImageUrl } from "../shared/services/ipfs";
 
 const PLACEHOLDER_IMG = "/images/Biggi.png";
+
+const BG_NAMES = [
+  "ORANGE",
+  "BLACK",
+  "WHITE",
+  "BROWN",
+  "BLUE",
+  "GREEN",
+  "VIOLET",
+  "RED",
+  "PINK",
+  "RAINBOW",
+];
+const BG_CODES = ["O", "B", "W", "BR", "BL", "G", "V", "R", "P", "RB"];
+
+const normalizeIndex = (val, max) => {
+  const n = Number(val);
+  if (!Number.isFinite(n)) return null;
+  if (n >= 1 && n <= max) return n - 1;
+  if (n >= 0 && n < max) return n;
+  return null;
+};
+
+const blockNameFromIdx = (val) => {
+  const idx = normalizeIndex(val, DEFAULT_BLOCKS.length);
+  return idx == null ? null : DEFAULT_BLOCKS[idx];
+};
+
+const bgCodeFromIdx = (val) => {
+  const idx = normalizeIndex(val, BG_CODES.length);
+  return idx == null ? null : BG_CODES[idx];
+};
+
+const bgNameFromIdx = (val) => {
+  const idx = normalizeIndex(val, BG_NAMES.length);
+  return idx == null ? null : BG_NAMES[idx];
+};
+
+const bgNameFromCode = (val) => {
+  if (!val) return null;
+  const code = String(val).toUpperCase();
+  const idx = BG_CODES.indexOf(code);
+  return idx === -1 ? null : BG_NAMES[idx];
+};
+
+const parseTokenUriParts = (uri) => {
+  if (!uri) return null;
+  const m = String(uri).match(/Biggi_(\d+)_([A-Z]+)_([A-Z]+)\.json/i);
+  if (!m) return null;
+  return {
+    mainId: m[1],
+    blockName: m[2].toUpperCase(),
+    bgCode: m[3].toUpperCase(),
+  };
+};
+
+const trimSlash = (val) => String(val || "").replace(/\/+$/, "");
+
+const buildBlockImageUrl = (baseUri, blockName, bgCode, mainId) => {
+  if (!blockName || !bgCode || !mainId) return null;
+  const fileName = `Biggi_${mainId}_${blockName}_${bgCode}.png`;
+  if (baseUri) return `${trimSlash(baseUri)}/${fileName}`;
+  return buildBlockImagePath(fileName);
+};
 
 /* ----- helpers ----- */
 const ipfsToHttp = (url) => {
@@ -113,6 +179,7 @@ export default function NftCard({
   const [loadingBlockNow, setLoadingBlockNow] = React.useState(false);
   const [detailsOpen, setDetailsOpen] = React.useState(false);
   const metadataRef = React.useRef(metadata);
+  const onchainFallbackRef = React.useRef(new Set());
 
   const contractAddress = React.useMemo(() => {
     if (nft?.contractAddress) return nft.contractAddress;
@@ -166,6 +233,118 @@ export default function NftCard({
 
   React.useEffect(() => {
     let cancelled = false;
+    const run = async () => {
+      if (!tokenId || nft?.isTicket || nft?.isPending) return;
+      if (onchainFallbackRef.current.has(tokenId)) return;
+
+      const needsImage = !image || image === PLACEHOLDER_IMG;
+      const attrs = Array.isArray(metadata?.attributes)
+        ? metadata.attributes
+        : [];
+      const needsAttrs = attrs.length === 0;
+      const name = metadata?.name || "";
+      const needsName =
+        !name ||
+        (name.startsWith("#") && name.length > 12) ||
+        /^\d{12,}$/.test(name);
+
+      if (!needsImage && !needsAttrs && !needsName) return;
+
+      const main = metadataContract || contracts?.mainRead?.();
+      if (!main) return;
+
+      let info = null;
+      if (typeof main.nftInfo === "function") {
+        info = await main.nftInfo(tokenId).catch(() => null);
+      }
+      if (!info) return;
+
+      const blockIdx = info?.blockIdx ?? info?.[2];
+      const background = info?.background ?? info?.[1];
+      const mainIdRaw = info?.mainId ?? info?.[3];
+      const mainId =
+        mainIdRaw != null && typeof mainIdRaw?.toString === "function"
+          ? mainIdRaw.toString()
+          : String(mainIdRaw ?? "");
+
+      const blockName = blockNameFromIdx(blockIdx);
+      const bgCode = bgCodeFromIdx(background);
+      const bgName = bgNameFromIdx(background);
+
+      let baseUri = null;
+      if (typeof main.blockBaseURIs === "function" && blockIdx != null) {
+        const candidates = [];
+        const n = Number(blockIdx);
+        if (Number.isFinite(n)) {
+          candidates.push(n);
+          if (n > 0) candidates.push(n - 1);
+          candidates.push(n + 1);
+        }
+        for (const idx of candidates) {
+          const v = await main.blockBaseURIs(idx).catch(() => null);
+          if (typeof v === "string" && v.trim()) {
+            baseUri = v.trim();
+            break;
+          }
+        }
+      }
+
+      if (!cancelled) {
+        if (needsImage && blockName && bgCode && mainId && mainId !== "0") {
+          const fallbackImage = buildBlockImageUrl(
+            baseUri,
+            blockName,
+            bgCode,
+            mainId,
+          );
+          if (fallbackImage) setImage(fallbackImage);
+        }
+
+        if (needsAttrs && (blockName || bgName)) {
+          const nextAttrs = [...attrs];
+          const upsert = (trait_type, value) => {
+            if (!value) return;
+            const idx = nextAttrs.findIndex(
+              (a) => String(a?.trait_type) === trait_type,
+            );
+            if (idx === -1) nextAttrs.push({ trait_type, value });
+            else nextAttrs[idx] = { ...nextAttrs[idx], value };
+          };
+          upsert("Block", blockName);
+          upsert("Background", bgName);
+          setMetadata((prev) => ({
+            ...(prev || {}),
+            attributes: nextAttrs,
+          }));
+        }
+
+        if (needsName && mainId && mainId !== "0") {
+          setMetadata((prev) => ({
+            ...(prev || {}),
+            name: `Biggi NFT #${mainId}`,
+          }));
+        }
+      }
+
+      onchainFallbackRef.current.add(tokenId);
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    tokenId,
+    image,
+    metadata,
+    metadataContract,
+    contracts,
+    nft?.isTicket,
+    nft?.isPending,
+  ]);
+
+  React.useEffect(() => {
+    let cancelled = false;
     const currentMeta = metadataRef.current;
     const fetchMetadata = async () => {
       if (!tokenId) return;
@@ -183,7 +362,25 @@ export default function NftCard({
         const uri = await main.tokenURI(tokenId);
         if (!uri) return;
         const json = await readJsonFromURI(uri);
-        if (!json) return;
+        if (!json) {
+          const parsed = parseTokenUriParts(uri);
+          if (parsed && !cancelled) {
+            const { mainId, blockName, bgCode } = parsed;
+            const bgName = bgNameFromCode(bgCode) || bgCode;
+            const fallbackMeta = {
+              name: `Biggi NFT #${mainId}`,
+              description: "Metadata is updating after redeem.",
+              attributes: [
+                blockName ? { trait_type: "Block", value: blockName } : null,
+                bgName ? { trait_type: "Background", value: bgName } : null,
+              ].filter(Boolean),
+            };
+            setMetadata((prev) => prev || fallbackMeta);
+            const fallbackImage = buildBlockImageUrl(null, blockName, bgCode, mainId);
+            if (fallbackImage) setImage(fallbackImage);
+          }
+          return;
+        }
         const ticketLike = !nft?.isTicket && looksLikeTicketMeta(json);
         const fixedMeta = ticketLike
           ? {
@@ -202,7 +399,9 @@ export default function NftCard({
           const img = ticketLike
             ? PLACEHOLDER_IMG
             : fixedMeta?.image || fixedMeta?.image_url;
-          if (!nft.image && img) {
+          const shouldUpdateImage =
+            !nft.image || nft.image === PLACEHOLDER_IMG;
+          if (shouldUpdateImage && img) {
             const resolved = await resolveImageUrl(img, uri).catch(() => null);
             setImage(resolved || ipfsToHttp(img));
           }

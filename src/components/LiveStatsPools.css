@@ -83,6 +83,146 @@
   border-bottom-right-radius: 14px;
 }
 
+.collection-stats-card .pools-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: center;
+}
+
+.collection-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.collection-stat-card {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 232, 0, 0.2);
+  background: linear-gradient(
+    135deg,
+    rgba(12, 14, 26, 0.95),
+    rgba(6, 8, 18, 0.9)
+  );
+  padding: 8px 10px;
+  display: grid;
+  gap: 6px;
+  box-shadow:
+    inset 0 0 12px rgba(255, 232, 0, 0.08),
+    0 10px 24px rgba(0, 0, 0, 0.45);
+}
+
+.collection-stat-label {
+  color: #9ee5ff;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.collection-stat-value {
+  color: #f6f7fb;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.collection-section-title {
+  color: #ffe800;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.collection-table-wrap {
+  overflow-x: auto;
+  padding: 4px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(6, 10, 20, 0.55);
+  max-height: min(280px, 42vh);
+  overflow: auto;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.collection-stats-table {
+  display: block;
+  table-layout: auto !important;
+  font-size: 0.74rem;
+  border-spacing: 0 4px;
+}
+
+.collection-stats-table thead th {
+  display: none;
+}
+
+.collection-stats-table td {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: 100% !important;
+  padding: 0 !important;
+  border-bottom: 0;
+  text-align: left !important;
+  white-space: normal !important;
+}
+
+.collection-stats-table td:first-child {
+  white-space: normal;
+}
+
+.collection-stats-table colgroup,
+.collection-stats-table thead {
+  display: none;
+}
+
+.collection-stats-table tbody {
+  display: grid;
+  gap: 10px;
+}
+
+.collection-stats-table tbody tr {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(8, 223, 255, 0.05)
+  );
+}
+
+.collection-stats-table tbody td::before {
+  content: attr(data-label);
+  color: #9ee5ff;
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .collection-stats-table {
+    font-size: 0.72rem;
+  }
+
+  .collection-stats-table thead th {
+    letter-spacing: 0.12em;
+  }
+}
+
 .token-dex-label {
   color: #9ee5ff;
   font-weight: 800;

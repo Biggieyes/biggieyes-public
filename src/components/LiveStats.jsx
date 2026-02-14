@@ -18,6 +18,7 @@ import {
   ADDR,
 } from "@/shared/utils/contract";
 import { fetchDistributorSnapshot } from "@/shared/services/tokenomics/distributor.reader";
+import { DEFAULT_BLOCKS, BASE_PRICES } from "@/shared/blocks";
 import ModalPortal from "./common/ModalPortal";
 import WeeklyCountdown from "./WeeklyCountdown";
 import useWeeklyCountdown from "../hooks/useWeeklyCountdown";
@@ -36,6 +37,8 @@ const TOKEN_REWARDS_MIN_ABI = [
   "function unitReward() view returns(uint256)",
   "function tokenMeta() view returns(string name_,string symbol_,uint8 decimals_)",
 ];
+
+const BACKGROUND_BONUSES = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50];
 
 // ===== ethers v5/v6 safe helpers =====
 const isBigNumber = (value) =>
@@ -239,6 +242,11 @@ function LiveStats({
   const effectiveBlockMintCounts = blocksMinted ?? blockMintCounts ?? [];
   const effectiveBackgroundMintCounts = bgsMinted ?? backgroundMintCounts ?? [];
   const safeBlockNames = Array.isArray(blockNames) ? blockNames : [];
+
+  const onlyTickets = React.useMemo(() => {
+    const arr = Array.isArray(items) ? items : [];
+    return arr.length > 0 && arr.every((it) => it?.isTicket);
+  }, [items]);
 
   const resetAll = React.useCallback(() => {
     setShowBlocks(false);
@@ -1292,7 +1300,7 @@ function LiveStats({
     () => [
       { label: "BLOCKS", active: showBlocks, onClick: openBlocks },
       { label: "BACKGROUNDS", active: showBgStats, onClick: openBackgrounds },
-      { label: "Token", active: showREWARDS, onClick: openREWARDS },
+      { label: "COLLECTION STATS", active: showREWARDS, onClick: openREWARDS },
     ],
     [
       showBlocks,
@@ -1313,7 +1321,7 @@ function LiveStats({
         alignItems: "center",
         gap: isPhone ? "6px" : "12px",
         marginBottom: isPhone ? "8px" : "10px",
-        marginTop: isPhone ? "4px" : "12px",
+        marginTop: isPhone ? "22px" : "30px",
         flexWrap: isPhone ? "wrap" : "nowrap",
         width: "100%",
       }}
@@ -1324,7 +1332,7 @@ function LiveStats({
           onClick={btn.onClick}
           style={{
             ...menuBtnBase,
-            background: "transparent",
+            background: "#000",
             color: "#ffe800",
             border: "2px solid #08ffe6",
             boxShadow: "0 0 14px rgba(255,232,0,0.25)",
@@ -1400,12 +1408,6 @@ function LiveStats({
     effectiveBlockPrices,
   ]);
 
-  const shortAddr = React.useCallback((addr) => {
-    if (!addr) return "--";
-    const s = String(addr);
-    return `${s.slice(0, 6)}...${s.slice(-4)}`;
-  }, []);
-
   const formatMaybe = React.useCallback((value, digits = 2) => {
     if (value == null || !Number.isFinite(Number(value))) return "--";
     const n = Number(value);
@@ -1415,174 +1417,100 @@ function LiveStats({
     });
   }, []);
 
-  const tokenAddress = ADDR.BIGGI || ADDR.BIGGI_TOKEN || "";
-  const pairAddress = ADDR.PAIR || "";
-  const routerAddress = ADDR.ROUTER || "";
-  const factoryAddress = ADDR.FACTORY || "";
-  const wethAddress = ADDR.WETH || "";
-  const priceOracleAddress = ADDR.BIGGI_PRICE_ORACLE || "";
-  const lpFeedAddress = ADDR.LP_PRICE_FEED || "";
-  const reserveAddress = ADDR.RESERVE || "";
-  const treasuryAddress = ADDR.TREASURY || "";
+  const formatSigned = React.useCallback((value, digits = 2) => {
+    if (value == null || !Number.isFinite(Number(value))) return "--";
+    const n = Number(value);
+    const sign = n > 0 ? "+" : n < 0 ? "-" : "";
+    const abs = Math.abs(n);
+    return (
+      sign +
+      abs.toLocaleString(undefined, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      })
+    );
+  }, []);
 
-  const tokenDexRows = React.useMemo(
-    () => [
-      { label: "Token symbol", value: tokenSymbol || "--" },
-      {
-        label: "Token decimals",
-        value: Number.isFinite(Number(tokenDecimals))
-          ? Number(tokenDecimals)
-          : "--",
-      },
-      {
-        label: "Token address",
-        value: tokenAddress ? (
-          <code title={tokenAddress}>{shortAddr(tokenAddress)}</code>
-        ) : (
-          "--"
-        ),
-      },
-      {
-        label: "Pair address",
-        value: pairAddress ? (
-          <code title={pairAddress}>{shortAddr(pairAddress)}</code>
-        ) : (
-          "--"
-        ),
-      },
-      {
-        label: "Router address",
-        value: routerAddress ? (
-          <code title={routerAddress}>{shortAddr(routerAddress)}</code>
-        ) : (
-          "--"
-        ),
-      },
-      {
-        label: "Factory address",
-        value: factoryAddress ? (
-          <code title={factoryAddress}>{shortAddr(factoryAddress)}</code>
-        ) : (
-          "--"
-        ),
-      },
-      {
-        label: "WETH address",
-        value: wethAddress ? (
-          <code title={wethAddress}>{shortAddr(wethAddress)}</code>
-        ) : (
-          "--"
-        ),
-      },
-      {
-        label: "Price oracle",
-        value: priceOracleAddress ? (
-          <code title={priceOracleAddress}>
-            {shortAddr(priceOracleAddress)}
-          </code>
-        ) : (
-          "--"
-        ),
-      },
-      {
-        label: "LP price feed",
-        value: lpFeedAddress ? (
-          <code title={lpFeedAddress}>{shortAddr(lpFeedAddress)}</code>
-        ) : (
-          "--"
-        ),
-      },
-      {
-        label: `DEX price (${priceQuoteSymbol})`,
-        value:
-          typeof biggiPrice === "number"
-            ? `${formatMaybe(
-                biggiPrice,
-                biggiPrice >= 1 ? 3 : 6,
-              )} ${priceQuoteSymbol}`
-            : "--",
-      },
-      {
-        label: "Final block price",
-        value:
-          typeof computedFinalPrice === "number"
-            ? `${formatMaybe(computedFinalPrice, 3)} ${priceQuoteSymbol}`
-            : "--",
-      },
-      {
-        label: "LP token price",
-        value:
-          typeof lpPrice === "number"
-            ? `${formatMaybe(lpPrice, lpPrice >= 1 ? 3 : 6)} ${priceQuoteSymbol}`
-            : "--",
-      },
-      {
-        label: "Total supply",
-        value:
-          typeof biggiSupply === "number"
-            ? `${biggiSupply.toLocaleString(undefined, {
-                maximumFractionDigits: 2,
-              })} ${tokenSymbol}`
-            : "--",
-      },
-      {
-        label: "Circulating supply",
-        value:
-          typeof circulatingSupply === "number"
-            ? `${circulatingSupply.toLocaleString(undefined, {
-                maximumFractionDigits: 2,
-              })} ${tokenSymbol}`
-            : "--",
-      },
-      {
-        label: "Market cap",
-        value:
-          typeof biggiMcap === "number"
-            ? `${biggiMcap.toLocaleString(undefined, {
-                maximumFractionDigits: 2,
-              })} ${priceQuoteSymbol}`
-            : "--",
-      },
-      {
-        label: "Reserve",
-        value: reserveAddress ? (
-          <code title={reserveAddress}>{shortAddr(reserveAddress)}</code>
-        ) : (
-          "--"
-        ),
-      },
-      {
-        label: "Treasury",
-        value: treasuryAddress ? (
-          <code title={treasuryAddress}>{shortAddr(treasuryAddress)}</code>
-        ) : (
-          "--"
-        ),
-      },
-    ],
-    [
-      tokenSymbol,
-      tokenDecimals,
-      tokenAddress,
-      pairAddress,
-      routerAddress,
-      factoryAddress,
-      wethAddress,
-      priceOracleAddress,
-      lpFeedAddress,
-      priceQuoteSymbol,
-      biggiPrice,
-      computedFinalPrice,
-      lpPrice,
-      biggiSupply,
-      circulatingSupply,
-      biggiMcap,
-      reserveAddress,
-      treasuryAddress,
-      shortAddr,
-      formatMaybe,
-    ],
+  const collectionBlockNames = React.useMemo(() => {
+    const names = Array.isArray(safeBlockNames) ? safeBlockNames : [];
+    return names.length ? names : DEFAULT_BLOCKS;
+  }, [safeBlockNames]);
+
+  const blockPriceStats = React.useMemo(() => {
+    const values = (effectiveBlockPrices || [])
+      .map((v) => Number(v))
+      .filter((n) => Number.isFinite(n));
+    if (!values.length) return { avg: null, min: null, max: null };
+    const sum = values.reduce((a, b) => a + b, 0);
+    const avg = sum / values.length;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    return { avg, min, max };
+  }, [effectiveBlockPrices]);
+
+  const totalBackgroundMinted = React.useMemo(
+    () =>
+      (effectiveBackgroundMintCounts || []).reduce(
+        (acc, v) => acc + (Number(v) || 0),
+        0,
+      ),
+    [effectiveBackgroundMintCounts],
   );
+
+  const totalBlockMinted = React.useMemo(
+    () =>
+      (effectiveBlockMintCounts || []).reduce(
+        (acc, v) => acc + (Number(v) || 0),
+        0,
+      ),
+    [effectiveBlockMintCounts],
+  );
+
+  const ownedNftCount = React.useMemo(() => {
+    const arr = Array.isArray(items) ? items : [];
+    return arr.filter((it) => it && !it.isTicket && !it.isPending).length;
+  }, [items]);
+
+  const collectionBlockRows = React.useMemo(() => {
+    return collectionBlockNames.map((name, idx) => {
+      const live = Number(effectiveBlockPrices?.[idx]);
+      const base = Number(BASE_PRICES?.[name] ?? idx + 1);
+      const minted = Number(effectiveBlockMintCounts?.[idx] ?? 0);
+      const liveValue = Number.isFinite(live) ? live : base;
+      const delta = Number.isFinite(liveValue) ? liveValue - base : 0;
+      return {
+        name,
+        minted,
+        base,
+        live: Number.isFinite(live) ? live : null,
+        delta,
+      };
+    });
+  }, [
+    collectionBlockNames,
+    effectiveBlockPrices,
+    effectiveBlockMintCounts,
+  ]);
+
+  const collectionBackgroundRows = React.useMemo(() => {
+    return collectionBlockNames.map((name, idx) => {
+      const minted = Number(effectiveBackgroundMintCounts?.[idx] ?? 0);
+      const base = Number(BASE_PRICES?.[name] ?? idx + 1);
+      const live = Number(effectiveBlockPrices?.[idx]);
+      const delta = Number.isFinite(live) ? live - base : 0;
+      return {
+        name,
+        minted,
+        bonus: BACKGROUND_BONUSES[idx] ?? 0,
+        delta,
+      };
+    });
+  }, [
+    collectionBlockNames,
+    effectiveBackgroundMintCounts,
+    effectiveBlockPrices,
+  ]);
+
 
   const userBlockCounts = React.useMemo(() => {
     const counts = new Array(10).fill(0);
@@ -1650,6 +1578,37 @@ function LiveStats({
 
   const mainStats = (
     <div className="live-stats-main-flex" style={statsMainFlex}>
+      {onlyTickets && (
+        <div
+          style={{
+            width: "100%",
+            marginBottom: 10,
+            padding: isPhone ? "10px 12px" : "12px 14px",
+            borderRadius: 10,
+            border: "1px solid rgba(255,232,0,0.35)",
+            background: "rgba(255,232,0,0.08)",
+            color: "#ffe800",
+            fontWeight: 700,
+            textAlign: "center",
+            fontSize: isPhone ? 11 : 12,
+            lineHeight: 1.45,
+            minHeight: isPhone ? 200 : 216,
+          }}
+        >
+          Top buttons: Collection (Blocks, Backgrounds, Collection Stats).
+          <div
+            aria-hidden="true"
+            style={{
+              height: 1,
+              background:
+                "linear-gradient(90deg, transparent, rgba(255,232,0,0.6), transparent)",
+              margin: "6px auto",
+              width: "70%",
+            }}
+          />
+          Bottom buttons: Token and tokenomics (weekly rewards, allocation, tools).
+        </div>
+      )}
       <div style={columnCenter}>
         <div
           className="image-table"
@@ -1881,7 +1840,7 @@ function LiveStats({
             }}
           >
             {typeof biggiMcap === "number"
-              ? `${biggiMcap.toLocaleString(undefined, { maximumFractionDigits: 2 })} POL`
+              ? `${biggiMcap.toLocaleString(undefined, { maximumFractionDigits: 0 })} POL`
               : "-"}
           </div>
         </div>
@@ -1911,7 +1870,7 @@ function LiveStats({
               onClick={handleToggleWeekly}
               style={{
                 ...actionBtnBase,
-                background: "transparent",
+                background: "#000",
                 color: "#ffe800",
                 border: "2px solid #08ffe6",
                 boxShadow: "0 0 14px rgba(8,223,255,0.25)",
@@ -1936,7 +1895,7 @@ function LiveStats({
               onClick={handlePoolsButtonClick}
               style={{
                 ...actionBtnBase,
-                background: "transparent",
+                background: "#000",
                 color: "#ffe800",
                 border: "2px solid #08ffe6",
                 boxShadow: "0 0 14px rgba(255,232,0,0.25)",
@@ -1961,7 +1920,7 @@ function LiveStats({
               onClick={handleChatButtonClick}
               style={{
                 ...actionBtnBase,
-                background: "transparent",
+                background: "#000",
                 color: "#ffe800",
                 border: "2px solid #08ffe6",
                 boxShadow: "0 0 14px rgba(255,232,0,0.25)",
@@ -2444,16 +2403,16 @@ function LiveStats({
 
       {showREWARDS && (
         <div
-          className="pools-card token-dex-card"
-            style={{
-              width: "min(720px, 92vw)",
-              margin: "0 auto",
-              borderColor: "rgba(255, 232, 0, 0.25)",
-            }}
-          >
+          className="pools-card collection-stats-card"
+          style={{
+            width: "min(780px, 92vw)",
+            margin: "0 auto",
+            borderColor: "rgba(255, 232, 0, 0.3)",
+          }}
+        >
           <div className="pools-card__header">
             <div style={{ color: "#ffe800", fontWeight: 900 }}>
-              TOKEN + DEX OVERVIEW
+              COLLECTION STATS
             </div>
             <button
               onClick={resetAll}
@@ -2471,19 +2430,173 @@ function LiveStats({
             </button>
           </div>
           <div className="pools-card__body">
-            <div className="token-dex-table-wrap">
-              <table className="pools-table token-dex-table">
+            <div className="collection-stats-grid">
+              {[
+                {
+                  label: "Total minted",
+                  value:
+                    typeof biggiMinted === "number" && Number.isFinite(biggiMinted)
+                      ? `${Math.round(biggiMinted)} / ${maxSupply}`
+                      : "--",
+                },
+                {
+                  label: "Tickets minted",
+                  value:
+                    typeof ticketMinted === "number" && Number.isFinite(ticketMinted)
+                      ? `${Math.round(ticketMinted)} / ${maxTickets}`
+                      : "--",
+                },
+                {
+                  label: "Ticket price",
+                  value:
+                    typeof ticketPrice === "number" && Number.isFinite(ticketPrice)
+                      ? `${formatMaybe(ticketPrice, 2)} ${priceQuoteSymbol}`
+                      : "--",
+                },
+                {
+                  label: "Reward pool",
+                  value:
+                    typeof computedREWARDSPool === "number" &&
+                    Number.isFinite(computedREWARDSPool)
+                      ? `${formatMaybe(computedREWARDSPool, 2)} ${priceQuoteSymbol}`
+                      : "--",
+                },
+                {
+                  label: "Mint volume",
+                  value:
+                    typeof mintVolumeMatic === "number" &&
+                    Number.isFinite(mintVolumeMatic)
+                      ? `${formatMaybe(mintVolumeMatic, 2)} ${priceQuoteSymbol}`
+                      : "--",
+                },
+                {
+                  label: "Avg block price",
+                  value:
+                    typeof blockPriceStats.avg === "number" &&
+                    Number.isFinite(blockPriceStats.avg)
+                      ? `${formatMaybe(blockPriceStats.avg, 2)} ${priceQuoteSymbol}`
+                      : "--",
+                },
+                {
+                  label: "Highest price",
+                  value:
+                    typeof blockPriceStats.max === "number" &&
+                    Number.isFinite(blockPriceStats.max)
+                      ? `${formatMaybe(blockPriceStats.max, 2)} ${priceQuoteSymbol}`
+                      : "--",
+                },
+                {
+                  label: "Lowest price",
+                  value:
+                    typeof blockPriceStats.min === "number" &&
+                    Number.isFinite(blockPriceStats.min)
+                      ? `${formatMaybe(blockPriceStats.min, 2)} ${priceQuoteSymbol}`
+                      : "--",
+                },
+                {
+                  label: "Blocks minted",
+                  value: Number.isFinite(totalBlockMinted)
+                    ? totalBlockMinted.toLocaleString()
+                    : "--",
+                },
+                {
+                  label: "BG minted",
+                  value: Number.isFinite(totalBackgroundMinted)
+                    ? totalBackgroundMinted.toLocaleString()
+                    : "--",
+                },
+                {
+                  label: "Owned NFTs",
+                  value: Number.isFinite(ownedNftCount)
+                    ? ownedNftCount.toLocaleString()
+                    : "--",
+                },
+                {
+                  label: "My weekly BIGGI",
+                  value: walletAddress
+                    ? unitsToTokenAmountStr(userTotalUnits)
+                    : "Connect wallet",
+                },
+              ].map((stat) => (
+                <div key={stat.label} className="collection-stat-card">
+                  <span className="collection-stat-label">{stat.label}</span>
+                  <span className="collection-stat-value">{stat.value}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="collection-section-title">Block prices</div>
+            <div className="collection-table-wrap">
+              <table className="pools-table collection-stats-table">
+                <colgroup>
+                  <col style={{ width: "30%" }} />
+                  <col style={{ width: "18%" }} />
+                  <col style={{ width: "16%" }} />
+                  <col style={{ width: "18%" }} />
+                  <col style={{ width: "18%" }} />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>Block</th>
+                    <th>Minted</th>
+                    <th>Base</th>
+                    <th>Live</th>
+                    <th>Δ</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {tokenDexRows.map((row) => (
-                    <tr key={row.label}>
-                      <td className="token-dex-label">{row.label}</td>
-                        <td
-                          className="token-dex-value"
-                          style={{
-                            textAlign: isPhone ? "left" : "right",
-                          }}
-                        >
-                        {row.value}
+                  {collectionBlockRows.map((row) => (
+                    <tr key={row.name}>
+                      <td
+                        data-label="Block"
+                        style={{ color: "#ffe800", fontWeight: 800 }}
+                      >
+                        {row.name}
+                      </td>
+                      <td data-label="Minted">{row.minted}</td>
+                      <td data-label="Base">{formatMaybe(row.base, 2)}</td>
+                      <td data-label="Live">
+                        {row.live != null
+                          ? formatMaybe(row.live, 2)
+                          : formatMaybe(row.base, 2)}
+                      </td>
+                      <td data-label="Δ">{formatSigned(row.delta, 2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="collection-section-title">Background bonuses</div>
+            <div className="collection-table-wrap">
+              <table className="pools-table collection-stats-table">
+                <colgroup>
+                  <col style={{ width: "36%" }} />
+                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "24%" }} />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>Background</th>
+                    <th>Minted</th>
+                    <th>Bonus</th>
+                    <th>Block Δ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {collectionBackgroundRows.map((row, idx) => (
+                    <tr key={`${row.name}-${idx}`}>
+                      <td
+                        data-label="Background"
+                        style={{ color: "#ffe800", fontWeight: 800 }}
+                      >
+                        {row.name}
+                      </td>
+                      <td data-label="Minted">{row.minted}</td>
+                      <td data-label="Bonus">{row.bonus}%</td>
+                      <td data-label="Block Δ">
+                        {formatSigned(row.delta, 2)}
                       </td>
                     </tr>
                   ))}

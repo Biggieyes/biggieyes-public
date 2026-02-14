@@ -4,7 +4,7 @@ import { fetchFlowSnapshot } from "@/shared/services/tokenomics/flow.reader";
 import usePollingSnapshot from "./_usePollingSnapshot";
 
 export default function useFlowSnapshot(options = {}) {
-  const { intervalMs = 15000 } = options;
+  const { intervalMs = 15000, ...pollOptions } = options;
   const { chainId, provider } = useWeb3();
   const isInjected = Boolean(provider?.provider);
   const readProvider = isInjected ? undefined : provider;
@@ -18,5 +18,5 @@ export default function useFlowSnapshot(options = {}) {
     [chainId, readProvider],
   );
 
-  return usePollingSnapshot(fetcher, { intervalMs });
+  return usePollingSnapshot(fetcher, { intervalMs, ...pollOptions });
 }

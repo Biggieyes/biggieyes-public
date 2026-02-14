@@ -96,10 +96,8 @@ function IconRowBase({ icons = [], onIconClick, className = "", style }) {
               padding: pad,
               borderRadius: 14,
               border: `2px solid ${navBorder}`,
-              backgroundImage: 'url("/images/blocks-bg2.png")',
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              backgroundRepeat: "no-repeat",
+              backgroundColor: "#000",
+              backgroundImage: "none",
               boxShadow: `${baseBoxShadow}, ${glowSoft}`,
               transition:
                 "border-color .18s ease, box-shadow .18s ease, transform .12s ease",
@@ -125,7 +123,7 @@ function IconRowBase({ icons = [], onIconClick, className = "", style }) {
               onClick={(e) => handleClick(idx, icon, e)}
               onKeyDown={(e) => handleKey(idx, icon, e)}
               style={{
-                background: "transparent",
+                background: "#000",
                 border: "none",
                 padding: 0,
                 margin: 0,

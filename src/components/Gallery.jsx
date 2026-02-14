@@ -12,6 +12,7 @@ import {
   loadWalletCache,
   saveWalletCache,
 } from "../shared/utils/shared";
+import { getArchiveProvider } from "../web3/provider";
 import {
   readJsonFromURI,
   resolveImageUrl,
@@ -23,6 +24,7 @@ const PAGE_SIZE_MOBILE = 6;
 
 // Smaller batch size to reduce RPC rejections on public endpoints.
 const LOGS_BATCH = 300;
+const PLACEHOLDER_IMAGE = "/images/Biggi.png";
 
 // paralelní limit pro tokenURI / metadata fetch (snižuje šanci na RPC timeouts)
 const METADATA_PARALLELISM = 10;
@@ -279,10 +281,56 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
     const toFilter = mainContract.filters.Transfer(null, address, null);
     const fromFilter = mainContract.filters.Transfer(address, null, null);
 
-    const [toLogs, fromLogs] = await Promise.all([
-      queryLogsBatched(mainContract, toFilter, fromBlock, latest, LOGS_BATCH),
-      queryLogsBatched(mainContract, fromFilter, fromBlock, latest, LOGS_BATCH),
-    ]);
+    let toLogs = [];
+    let fromLogs = [];
+    const logProvider = getArchiveProvider() || provider;
+    const direct = await (async () => {
+      try {
+        if (!logProvider || typeof logProvider.getLogs !== "function")
+          return null;
+        const address = toFilter?.address || contractAddr;
+        const [directTo, directFrom] = await Promise.all([
+          logProvider.getLogs({
+            address,
+            topics: toFilter?.topics,
+            fromBlock,
+            toBlock: latest,
+          }),
+          logProvider.getLogs({
+            address,
+            topics: fromFilter?.topics,
+            fromBlock,
+            toBlock: latest,
+          }),
+        ]);
+        return { toLogs: directTo, fromLogs: directFrom };
+      } catch {
+        return null;
+      }
+    })();
+    if (direct) {
+      ({ toLogs, fromLogs } = direct);
+    } else {
+      const opts = getArchiveProvider() ? { fullHistory: true } : undefined;
+      [toLogs, fromLogs] = await Promise.all([
+        queryLogsBatched(
+          mainContract,
+          toFilter,
+          fromBlock,
+          latest,
+          LOGS_BATCH,
+          opts,
+        ),
+        queryLogsBatched(
+          mainContract,
+          fromFilter,
+          fromBlock,
+          latest,
+          LOGS_BATCH,
+          opts,
+        ),
+      ]);
+    }
 
     const ordered = [...toLogs, ...fromLogs].sort((a, b) => {
       if (a.blockNumber !== b.blockNumber) return a.blockNumber - b.blockNumber;
@@ -474,6 +522,9 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
           if (isTicket && metaLooksNft) {
             isTicket = false;
           }
+          if (isTicket && uri && !uriLooksTicket) {
+            isTicket = false;
+          }
 
           if (!isTicket && (uriLooksTicket || metaLooksTicket)) {
             try {
@@ -611,6 +662,15 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
             }
           }
 
+          if (
+            !isTicket &&
+            (!image || image === "/images/Biggi.png") &&
+            uri &&
+            /\.json(\?.*)?$/i.test(String(uri))
+          ) {
+            image = String(uri).replace(/\.json(\?.*)?$/i, ".png$1");
+          }
+
           let mint = null;
           if (reader) {
             try {
@@ -707,7 +767,6 @@ export default function Gallery({
   const [fetching, setFetching] = React.useState(false);
   const [sortBy, setSortBy] = React.useState("default");
   const [filterRarity, setFilterRarity] = React.useState("all");
-  const [infoOpen, setInfoOpen] = React.useState(false);
   const [page, setPage] = React.useState(0);
   const [isMobile, setIsMobile] = React.useState(() =>
     typeof window !== "undefined"
@@ -720,10 +779,33 @@ export default function Gallery({
   const isConnected = Boolean(address);
 
   const providedItems = Array.isArray(itemsProp) ? itemsProp : [];
+  const providedHasNft = React.useMemo(
+    () =>
+      providedItems.some((item) => item && !item.isTicket && !item.isPending),
+    [providedItems],
+  );
+  const providedHasRichData = React.useMemo(
+    () =>
+      providedItems.some(
+        (item) =>
+          item &&
+          !item.isTicket &&
+          item.image &&
+          item.image !== PLACEHOLDER_IMAGE &&
+          item.meta &&
+          Object.keys(item.meta).length > 0,
+      ),
+    [providedItems],
+  );
+  const shouldPreferProvided =
+    providedItems.length > 0 && providedHasNft && providedHasRichData;
+
   const renderedItems = isConnected
-    ? providedItems.length
+    ? shouldPreferProvided
       ? providedItems
-      : hydratedItems
+      : hydratedItems.length
+        ? hydratedItems
+        : providedItems
     : [];
 
   const mainContractAddress = React.useMemo(() => {
@@ -758,7 +840,12 @@ export default function Gallery({
     let cancelled = false;
     const loadFromChain = async () => {
       if (useProvidedOnly) return;
-      if (!isConnected || providedItems.length || !address || !contracts)
+      if (
+        !isConnected ||
+        shouldPreferProvided ||
+        !address ||
+        !contracts
+      )
         return;
       setFetching(true);
       try {
@@ -822,7 +909,13 @@ export default function Gallery({
     return () => {
       cancelled = true;
     };
-  }, [isConnected, providedItems, address, contracts, useProvidedOnly]);
+  }, [
+    isConnected,
+    shouldPreferProvided,
+    address,
+    contracts,
+    useProvidedOnly,
+  ]);
 
   const pageSize = isMobile || compact ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP;
 
@@ -923,13 +1016,6 @@ export default function Gallery({
               <option value="common">Common</option>
             </select>
           </div>
-          <button
-            type="button"
-            className="gallery__info-btn"
-            onClick={() => setInfoOpen(true)}
-          >
-            Info
-          </button>
         </div>
       </header>
 
@@ -1026,36 +1112,6 @@ export default function Gallery({
         </footer>
       )}
 
-      {infoOpen && (
-        <div
-          className="gallery__dialog-backdrop"
-          onClick={() => setInfoOpen(false)}
-        >
-          <div className="gallery__dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="gallery__dialog-header">
-              <h3>Gallery Tips</h3>
-              <button type="button" onClick={() => setInfoOpen(false)}>
-                Close
-              </button>
-            </div>
-            <div className="gallery__dialog-body">
-              <ul>
-                <li>
-                  Sort by name, token ID, or rarity to reorganise your view.
-                </li>
-                <li>Filter rarities to focus on legendary or rare pieces.</li>
-                <li>
-                  Open any card to review mint-time prices and full metadata.
-                </li>
-                <li>
-                  The import button saves the NFT to MetaMask via{" "}
-                  <code>wallet_watchAsset</code>.
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 }

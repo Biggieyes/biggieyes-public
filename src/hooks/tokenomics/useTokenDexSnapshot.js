@@ -62,7 +62,7 @@ const resolvePairReserves = (pair, tokenAddress, wethAddress) => {
 };
 
 export default function useTokenDexSnapshot(options = {}) {
-  const { intervalMs = 20000 } = options;
+  const { intervalMs = 20000, ...pollOptions } = options;
   const { chainId, provider } = useWeb3();
   const isInjected = Boolean(provider?.provider);
   const readProvider = isInjected ? undefined : provider;
@@ -145,5 +145,5 @@ export default function useTokenDexSnapshot(options = {}) {
     };
   }, [chainId, readProvider]);
 
-  return usePollingSnapshot(fetcher, { intervalMs });
+  return usePollingSnapshot(fetcher, { intervalMs, ...pollOptions });
 }

@@ -70,6 +70,17 @@ export default function EcosystemPanel() {
   const [infoOpen, setInfoOpen] = React.useState(false);
   const [wiringOpen, setWiringOpen] = React.useState(false);
   const isLive = true;
+  const needsFlow = active === "flow" || active === "transparency" || wiringOpen;
+  const needsPolicy = active === "policy" || active === "transparency";
+  const needsDistributor =
+    active === "distributor" || active === "transparency" || wiringOpen;
+  const needsDistributorHistory =
+    active === "distributor" || active === "transparency";
+  const needsBuybackHistory = active === "buyback" || active === "transparency";
+  const needsDripHistory = active === "drip" || active === "transparency";
+  const needsLiquidityHistory =
+    active === "liquidity" || active === "transparency";
+  const needsDexHistory = active === "dex" || active === "transparency";
 
   const infoItems = React.useMemo(
     () => [
@@ -134,20 +145,39 @@ export default function EcosystemPanel() {
   );
 
   // --- snapshots (auto refresh) ---
-  const flow = useFlowSnapshot({ intervalMs: isLive ? 15_000 : 0 });
-  const policy = usePolicySnapshot({ intervalMs: isLive ? 20_000 : 0 });
+  const flow = useFlowSnapshot({
+    intervalMs: isLive && needsFlow ? 15_000 : 0,
+    immediate: needsFlow,
+  });
+  const policy = usePolicySnapshot({
+    intervalMs: isLive && needsPolicy ? 20_000 : 0,
+    immediate: needsPolicy,
+  });
   const buyback = useBUYBACKTreasurySnapshot({ intervalMs: isLive ? 20_000 : 0 });
   const drip = useDRIPSnapshot({ intervalMs: isLive ? 20_000 : 0 });
   const liquidity = useLiquiditySnapshot({ intervalMs: isLive ? 20_000 : 0 });
   const tokenDex = useTokenDexSnapshot({ intervalMs: isLive ? 20_000 : 0 });
-  const distributor = useDistributorSnapshot({ intervalMs: isLive ? 20_000 : 0 });
+  const distributor = useDistributorSnapshot({
+    intervalMs: isLive && needsDistributor ? 20_000 : 0,
+    immediate: needsDistributor,
+  });
 
   // --- histories (client-side buffers) ---
-  const buybackHistory = useBUYBACKTreasuryHistory(buyback.snapshot);
-  const dripHistory = useDRIPHistory(drip.snapshot);
-  const liquidityHistory = useLiquidityHistory(liquidity.snapshot);
-  const tokenDexHistory = useTokenDexHistory(tokenDex.snapshot);
-  const distributorHistory = useDistributorHistory(distributor.snapshot);
+  const buybackHistory = useBUYBACKTreasuryHistory(
+    needsBuybackHistory ? buyback.snapshot : null,
+  );
+  const dripHistory = useDRIPHistory(
+    needsDripHistory ? drip.snapshot : null,
+  );
+  const liquidityHistory = useLiquidityHistory(
+    needsLiquidityHistory ? liquidity.snapshot : null,
+  );
+  const tokenDexHistory = useTokenDexHistory(
+    needsDexHistory ? tokenDex.snapshot : null,
+  );
+  const distributorHistory = useDistributorHistory(
+    needsDistributorHistory ? distributor.snapshot : null,
+  );
 
   const chainStatus = React.useMemo(
     () => ({ chainId, account, role: account ? "Connected" : "Viewer" }),
@@ -155,20 +185,24 @@ export default function EcosystemPanel() {
   );
 
   const liquidityChart = React.useMemo(() => {
+    if (active !== "liquidity") return [];
     const pts = liquidityHistory?.chartPoints || [];
     return pts.map((p) => ({ time: p.time, liquidity: p.value }));
-  }, [liquidityHistory]);
+  }, [active, liquidityHistory]);
 
   const dexChart = React.useMemo(
-    () =>
-      _formatDexHistory(
+    () => {
+      if (active !== "dex") return [];
+      return _formatDexHistory(
         tokenDexHistory?.history || [],
         tokenDex.snapshot?.token?.decimals ?? 18,
-      ),
-    [tokenDexHistory, tokenDex.snapshot],
+      );
+    },
+    [active, tokenDexHistory, tokenDex.snapshot],
   );
 
   const dexLiquidity = React.useMemo(() => {
+    if (active !== "dex") return null;
     const p = tokenDex.snapshot?.dex?.pair;
     const r = p?.reserves;
     if (!r) return null;
@@ -181,9 +215,10 @@ export default function EcosystemPanel() {
       biggiPerNative: derived.priceTokenPerNative ?? null,
       pairAddress: p.address ?? tokenDex.snapshot?.dex?.pairAddress ?? null,
     };
-  }, [tokenDex.snapshot]);
+  }, [active, tokenDex.snapshot]);
 
   const pumpView = React.useMemo(() => {
+    if (active !== "dex") return null;
     const p = tokenDex.snapshot?.dex?.pair;
     if (!p) return null;
     return {
@@ -195,7 +230,7 @@ export default function EcosystemPanel() {
       },
       derived: tokenDex.snapshot?.derived,
     };
-  }, [tokenDex.snapshot]);
+  }, [active, tokenDex.snapshot]);
 
   const heroStats = React.useMemo(() => {
     const items = [];
@@ -258,6 +293,7 @@ export default function EcosystemPanel() {
   }, [tokenDex.snapshot, liquidity.snapshot, buyback.snapshot, drip.snapshot]);
 
   const tokenTotalSupply = React.useMemo(() => {
+    if (active !== "distributor") return null;
     const total = tokenDex.snapshot?.token?.totalSupply;
     if (total == null) return null;
     try {
@@ -266,7 +302,7 @@ export default function EcosystemPanel() {
     } catch {
       return total?.toString?.() ?? null;
     }
-  }, [tokenDex.snapshot]);
+  }, [active, tokenDex.snapshot]);
 
   const lastUpdatedLabel = React.useMemo(() => {
     const ts = Math.max(
@@ -295,6 +331,7 @@ export default function EcosystemPanel() {
   ]);
 
   const wiringGroups = React.useMemo(() => {
+    if (!wiringOpen) return [];
     const pickAddr = (...values) =>
       values.find((val) => typeof val === "string" && isAddress(val)) || null;
 
@@ -438,7 +475,14 @@ export default function EcosystemPanel() {
       { title: "Liquidity & DEX", rows: liquidityStack },
       { title: "Rewards & Community", rows: rewards },
     ];
-  }, [flow.snapshot, distributor.snapshot, liquidity.snapshot, buyback.snapshot, tokenDex.snapshot]);
+  }, [
+    wiringOpen,
+    flow.snapshot,
+    distributor.snapshot,
+    liquidity.snapshot,
+    buyback.snapshot,
+    tokenDex.snapshot,
+  ]);
 
   return (
     <EcosystemErrorBoundary>

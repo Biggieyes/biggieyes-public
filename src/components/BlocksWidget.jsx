@@ -84,6 +84,15 @@ const cellStyle = {
   textShadow: "0 0 5px #ffffff33",
 };
 
+const fmtPrice = (value) => {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "--";
+  return new Intl.NumberFormat("cs-CZ", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(n);
+};
+
 const BlocksWidget = ({ blockNames, blockMintCounts, blockPrices, onBack }) => {
   const [infoVisible, setInfoVisible] = React.useState(false);
   const [isPhone, setIsPhone] = React.useState(() =>
@@ -199,7 +208,12 @@ const BlocksWidget = ({ blockNames, blockMintCounts, blockPrices, onBack }) => {
                   {BASE_PRICES[i]}
                 </td>
                 <td style={priceStyle} data-label={headerTitles[5]}>
-                  {Math.round(Number(blockPrices[i]))} POL
+                  {fmtPrice(
+                    Number.isFinite(Number(blockPrices[i]))
+                      ? Number(blockPrices[i])
+                      : BASE_PRICES[i],
+                  )}{" "}
+                  POL
                 </td>
               </tr>
             ))}

@@ -25,6 +25,12 @@ const ENTRY_CANDIDATES = [
   'src/index.jsx',
   'src/main.tsx',
   'src/index.tsx',
+  'src/app/main.jsx',
+  'src/app/main.tsx',
+  'src/app/main.js',
+  'src/app/main.ts',
+  'src/app/index.jsx',
+  'src/app/index.tsx',
 ];
 
 const IGNORED_DIRS = [
@@ -75,6 +81,15 @@ function readConfigAliases() {
         aliases.push({ find, replacement });
       }
     }
+    // Match object-style aliases: alias: { '@': '/src', ... }
+    const aliasObjectMatch = txt.match(/alias:\s*\{([\s\S]*?)\}/);
+    if (aliasObjectMatch) {
+      for (const m of aliasObjectMatch[1].matchAll(/['"]?([^'"\s]+)['"]?\s*:\s*['"]([^'"]+)['"]/g)) {
+        const find = m[1].trim();
+        const replacement = m[2].trim();
+        if (find) aliases.push({ find, replacement });
+      }
+    }
   }
   for (const cfg of ['jsconfig.json', 'tsconfig.json']) {
     const cfgPath = path.join(ROOT, cfg);
@@ -99,31 +114,55 @@ function resolveImport(importPath, fromFile, aliases) {
   if (!importPath) return null;
   // Remove query/hash (e.g. ?v=123)
   importPath = importPath.replace(/[?#].*$/, '');
+  const isFile = (p) => {
+    try {
+      return fs.statSync(p).isFile();
+    } catch {
+      return false;
+    }
+  };
   // Try all possible extensions
   const tryExtensions = ['', '.js', '.jsx', '.ts', '.tsx', '/index.js', '/index.jsx', '/index.ts', '/index.tsx'];
   if (importPath.startsWith('.')) {
     // relative
     for (const ext of tryExtensions) {
       const abs = path.resolve(path.dirname(fromFile), importPath + ext);
-      if (fs.existsSync(abs)) return abs.replace(/\\/g, '/');
+      if (fs.existsSync(abs)) {
+        if (isFile(abs)) return abs.replace(/\\/g, '/');
+      }
     }
     return null;
   }
+  const resolveAliasBase = (replacement) => {
+    if (!replacement) return replacement;
+    if (replacement.startsWith('/')) {
+      return path.join(ROOT, replacement.slice(1));
+    }
+    return replacement;
+  };
   for (const alias of aliases) {
     if (typeof alias.find === 'string') {
       if (importPath.startsWith(alias.find)) {
+        const base = resolveAliasBase(alias.replacement);
         for (const ext of tryExtensions) {
-          const abs = path.resolve(ROOT, alias.replacement + importPath.slice(alias.find.length) + ext);
-          if (fs.existsSync(abs)) return abs.replace(/\\/g, '/');
+          const abs = path.resolve(
+            ROOT,
+            base + importPath.slice(alias.find.length) + ext,
+          );
+          if (fs.existsSync(abs)) {
+            if (isFile(abs)) return abs.replace(/\\/g, '/');
+          }
         }
       }
     } else if (alias.find instanceof RegExp) {
       if (alias.find.test(importPath)) {
         // Replace using regex
-        const replaced = importPath.replace(alias.find, alias.replacement);
+        const replaced = importPath.replace(alias.find, resolveAliasBase(alias.replacement));
         for (const ext of tryExtensions) {
           const abs = path.resolve(ROOT, replaced + ext);
-          if (fs.existsSync(abs)) return abs.replace(/\\/g, '/');
+          if (fs.existsSync(abs)) {
+            if (isFile(abs)) return abs.replace(/\\/g, '/');
+          }
         }
       }
     }
@@ -161,6 +200,27 @@ async function main() {
   let entrypoints = ENTRY_CANDIDATES
     .map(f => normalizePath(path.join(ROOT, f)))
     .filter(f => fs.existsSync(f));
+  // Also check index.html for module entry scripts
+  const indexHtml = path.join(ROOT, 'index.html');
+  if (fs.existsSync(indexHtml)) {
+    const html = fs.readFileSync(indexHtml, 'utf8');
+    const scriptRe = /<script[^>]+type=["']module["'][^>]*src=["']([^"']+)["'][^>]*>/g;
+    let m;
+    while ((m = scriptRe.exec(html))) {
+      const rawSrc = m[1].trim();
+      if (!rawSrc || /^https?:\/\//i.test(rawSrc)) continue;
+      const cleanSrc = rawSrc.replace(/[?#].*$/, '');
+      let abs = null;
+      if (cleanSrc.startsWith('/')) {
+        abs = path.resolve(ROOT, cleanSrc.slice(1));
+      } else if (cleanSrc.startsWith('./') || cleanSrc.startsWith('../')) {
+        abs = path.resolve(ROOT, cleanSrc);
+      } else if (cleanSrc.startsWith('src/')) {
+        abs = path.resolve(ROOT, cleanSrc);
+      }
+      if (abs && fs.existsSync(abs)) entrypoints.push(normalizePath(abs));
+    }
+  }
   // Also check vite.config.js for custom entry
   const viteConfig = path.join(ROOT, 'vite.config.js');
   if (fs.existsSync(viteConfig)) {
@@ -181,6 +241,10 @@ async function main() {
     const imports = [];
     // static imports
     for (const m of content.matchAll(/import\s+(?:[^'"()]+from\s+)?['"]([^'"]+)['"]/g)) {
+      imports.push(m[1]);
+    }
+    // re-exports (export ... from 'path')
+    for (const m of content.matchAll(/export\s+[^'"]*from\s+['"]([^'"]+)['"]/g)) {
       imports.push(m[1]);
     }
     // dynamic imports

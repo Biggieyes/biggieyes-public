@@ -79,9 +79,12 @@ export default function REWARDSBlockSummary({
           String(a?.trait_type || a?.traitType || "").toLowerCase(),
         ),
       );
-      if (blockIdAttr && !Number.isNaN(Number(blockIdAttr.value))) {
+      if (blockIdAttr && blockIdAttr.value != null) {
         const n = Number(blockIdAttr.value);
-        if (n >= 1 && n <= 10) return n;
+        if (!Number.isNaN(n) && n >= 1 && n <= 10) return n;
+        const name = String(blockIdAttr.value).trim().toUpperCase();
+        const i = blockNames.findIndex((n) => String(n).toUpperCase() === name);
+        if (i !== -1) return i + 1;
       }
       const eyeAttr = attrs.find((a) =>
         ["eye color", "eyes", "block/eye color"].includes(
@@ -292,7 +295,6 @@ const tdStyle = {
   fontSize: "0.95em",
   fontWeight: 600,
 };
-
 
 
 

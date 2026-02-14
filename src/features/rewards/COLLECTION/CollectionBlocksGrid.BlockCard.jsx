@@ -62,7 +62,9 @@ const BlockCard = React.memo(
             <dt title="Live on-chain price (updates via VRF + background influence).">
               Live price
             </dt>
-            <dd>{formatPrice(entry.currentPrice)}</dd>
+            <dd className="collection-grid__price-live">
+              {formatPrice(entry.currentPrice)}
+            </dd>
           </div>
           <div>
             <dt title="Start reference price (1-10 POL). Live price can move.">

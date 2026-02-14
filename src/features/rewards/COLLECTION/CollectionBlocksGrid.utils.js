@@ -26,7 +26,10 @@ export const parsePrice = (value) => {
  */
 export const formatPrice = (v) =>
   typeof v === "number" && Number.isFinite(v)
-    ? `${Math.round(v)} POL`
+    ? `${v.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })} POL`
     : FALLBACK_VALUE;
 
 /**
@@ -46,8 +49,20 @@ export const computeDiff = (currentPrice, basePrice) => {
   const delta = currentPrice - basePrice;
   const percent = basePrice === 0 ? 0 : (delta / basePrice) * 100;
   return {
-    value: `${delta >= 0 ? "+" : ""}${Math.round(delta)} POL`,
-    percent: `${delta >= 0 ? "+" : ""}${Math.round(percent)}%`,
+    value: `${delta >= 0 ? "+" : ""}${Math.abs(delta).toLocaleString(
+      undefined,
+      {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      },
+    )} POL`,
+    percent: `${delta >= 0 ? "+" : ""}${Math.abs(percent).toLocaleString(
+      undefined,
+      {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      },
+    )}%`,
     positive: delta >= 0,
   };
 };

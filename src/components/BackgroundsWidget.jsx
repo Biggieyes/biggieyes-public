@@ -111,13 +111,13 @@ const linkedBlockStyle = {
 
 const pretty = (upper) => upper.charAt(0) + upper.slice(1).toLowerCase();
 
-const fmt0 = (n) =>
+const fmt2 = (n) =>
   Number.isFinite(n)
     ? new Intl.NumberFormat("cs-CZ", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(Math.round(n))
-    : "0";
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(n)
+    : "0,00";
 
 const BackgroundsWidget = ({
   blockNames = [],
@@ -235,10 +235,14 @@ const BackgroundsWidget = ({
               const minted = Number(countByName[upper] ?? 0);
               const currentPrice = Number(priceByName[upper] ?? 0);
               const basePrice = Number(BLOCK_BASE_PRICES[upper] ?? 0);
-              const rawDiff = Number.isFinite(currentPrice - basePrice)
-                ? currentPrice - basePrice
+              const safeCurrent = Number.isFinite(currentPrice)
+                ? currentPrice
+                : basePrice;
+              const rawDiff = Number.isFinite(safeCurrent - basePrice)
+                ? safeCurrent - basePrice
                 : 0;
-              const priceDiff = minted > 0 ? fmt0(rawDiff) : "—";
+              const sign = rawDiff > 0 ? "+" : rawDiff < 0 ? "-" : "";
+              const priceDiff = `${sign}${fmt2(Math.abs(rawDiff))}`;
               const maxSupply = Number(
                 maxSupplyByName[upper] ?? BLOCK_MAX_SUPPLY[i] ?? 0,
               );
@@ -276,7 +280,7 @@ const BackgroundsWidget = ({
                     {maxSupply}
                   </td>
                   <td style={priceStyle} data-label={headerTitles[6]}>
-                    {minted > 0 ? `${priceDiff} POL` : "—"}
+                    {priceDiff} POL
                   </td>
                 </tr>
               );

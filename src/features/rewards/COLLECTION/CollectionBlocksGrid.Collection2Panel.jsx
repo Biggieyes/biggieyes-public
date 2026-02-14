@@ -1,6 +1,7 @@
 import * as React from "react";
 import { FALLBACK_VALUE } from "./COLLECTIONBlocksGrid.constants";
 import { formatPrice, formatCount } from "./COLLECTIONBlocksGrid.utils";
+import { BACKGROUND_BONUSES, BACKGROUND_NAMES } from "@/shared/utils/shared";
 
 const SectionHeader = ({ label, accent = "#ffe800" }) => (
   <div
@@ -30,6 +31,40 @@ const COLLECTION2Panel = React.memo(
     onBackgroundChange,
     onTokenIdChange,
   }) => {
+    const bgIndex = React.useMemo(() => {
+      const idx = Number(selectedBackground);
+      if (!Number.isFinite(idx)) return null;
+      const zero = idx - 1;
+      if (zero < 0 || zero >= BACKGROUND_BONUSES.length) return null;
+      return zero;
+    }, [selectedBackground]);
+
+    const bgBonusPct = React.useMemo(() => {
+      if (bgIndex == null) return null;
+      return BACKGROUND_BONUSES[bgIndex] ?? null;
+    }, [bgIndex]);
+
+    const bgName = React.useMemo(() => {
+      if (bgIndex == null) return null;
+      return BACKGROUND_NAMES[bgIndex] ?? null;
+    }, [bgIndex]);
+
+    const selectedBlockPrice = React.useMemo(() => {
+      const price = selectedEntry?.currentPrice;
+      return Number.isFinite(price) ? price : null;
+    }, [selectedEntry?.currentPrice]);
+
+    const backgroundBonusAmount = React.useMemo(() => {
+      if (selectedBlockPrice == null || bgBonusPct == null) return null;
+      return (selectedBlockPrice * bgBonusPct) / 100;
+    }, [selectedBlockPrice, bgBonusPct]);
+
+    const finalPrice = React.useMemo(() => {
+      if (selectedBlockPrice == null) return null;
+      if (backgroundBonusAmount == null) return selectedBlockPrice;
+      return selectedBlockPrice + backgroundBonusAmount;
+    }, [selectedBlockPrice, backgroundBonusAmount]);
+
     const mintedPct = React.useMemo(() => {
       if (!COLLECTIONTotals?.maxSupply) return null;
       return (COLLECTIONTotals.biggiMinted / COLLECTIONTotals.maxSupply) * 100;
@@ -165,7 +200,21 @@ const COLLECTION2Panel = React.memo(
               <dl className="collection-grid__key-values">
                 <div>
                   <dt>Block price</dt>
-                  <dd>{formatPrice(selectedEntry?.currentPrice)}</dd>
+                  <dd className="collection-grid__price-live">
+                    {formatPrice(selectedBlockPrice)}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Background bonus</dt>
+                  <dd>
+                    {bgBonusPct != null
+                      ? `${bgName ? `${bgName} ` : ""}+${bgBonusPct}%`
+                      : FALLBACK_VALUE}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Final price</dt>
+                  <dd>{formatPrice(finalPrice)}</dd>
                 </div>
                 <div>
                   <dt>Minted in block</dt>

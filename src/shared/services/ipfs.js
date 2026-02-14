@@ -46,6 +46,21 @@ function normalizeIpfsPath(p) {
     .replace(/^\/+/, ""); // remove leading slashes
 }
 
+function extractIpfsPathFromHttp(url) {
+  try {
+    const u = new URL(String(url));
+    const path = u.pathname || "";
+    const match = path.match(/\/(ipfs|ipns)\/([^?#]+)/i);
+    if (!match) return null;
+    return {
+      path: normalizeIpfsPath(match[2]),
+      isIpns: match[1].toLowerCase() === "ipns",
+    };
+  } catch {
+    return null;
+  }
+}
+
 function trimSlash(s) {
   return String(s).replace(/\/+$/, "");
 }
@@ -120,6 +135,12 @@ export function addIpfsGateway(fnOrBaseUrl) {
 
 export { GWS, PINATA_PRIMARY_GATEWAY };
 
+function buildGatewayUrl(gw, cidOrPath, isIpns = false) {
+  return typeof gw === "function"
+    ? gw(cidOrPath, isIpns)
+    : makeGateway(String(gw))(cidOrPath, isIpns);
+}
+
 /** Fetch with an AbortController-based timeout. */
 export async function fetchWithTimeout(
   url,
@@ -179,12 +200,13 @@ export async function resolveImageUrl(imageField, metadataUri, options = {}) {
       img.startsWith("/ipns/") ||
       img.startsWith("ipns/");
     const p = normalizeIpfsPath(img);
+    const fallbackUrl =
+      gateways && gateways.length
+        ? buildGatewayUrl(gateways[0], p, isIpns)
+        : makeGateway("https://ipfs.io")(p, isIpns);
     for (const gw of gateways) {
       try {
-        const url =
-          typeof gw === "function"
-            ? gw(p, isIpns)
-            : makeGateway(String(gw))(p, isIpns);
+        const url = buildGatewayUrl(gw, p, isIpns);
         const resp = await fetchWithTimeout(
           url,
           timeout,
@@ -197,11 +219,41 @@ export async function resolveImageUrl(imageField, metadataUri, options = {}) {
         // try next gateway
       }
     }
-    return null; // all gateways failed
+    // If all gateway fetches failed (often due to CORS), still return a usable URL.
+    return fallbackUrl;
   }
 
   // already absolute http(s)
-  if (/^https?:\/\//i.test(img)) return img;
+  if (/^https?:\/\//i.test(img)) {
+    const ipfsInfo = extractIpfsPathFromHttp(img);
+    if (ipfsInfo) {
+      const candidates = [img];
+      for (const gw of gateways) {
+        try {
+          candidates.push(buildGatewayUrl(gw, ipfsInfo.path, ipfsInfo.isIpns));
+        } catch {
+          // ignore gateway build errors
+        }
+      }
+      for (const url of candidates) {
+        try {
+          const resp = await fetchWithTimeout(
+            url,
+            timeout,
+            fetchImpl,
+            headersForUrl(url),
+          );
+          const ctype = resp?.headers?.get?.("content-type") || "";
+          if (resp?.ok && !ctype.includes("text/html")) return url;
+        } catch {
+          // try next candidate
+        }
+      }
+      // fallback to original URL if all fetches failed
+      return img;
+    }
+    return img;
+  }
 
   // relative path beside the metadata file
   const metaHttp = httpFromIpfs(metadataUri);
@@ -231,32 +283,47 @@ export async function readJsonFromURI(uri, options = {}) {
       u.startsWith("/ipfs/") ||
       u.startsWith("ipfs/");
 
+    const tryJson = async (url) => {
+      try {
+        const resp = await fetchWithTimeout(
+          url,
+          timeout,
+          fetchImpl,
+          headersForUrl(url),
+        );
+        if (!resp?.ok) return null;
+        const ctype = resp?.headers?.get?.("content-type") || "";
+        if (ctype.includes("text/html")) {
+          const txt = await resp.text().catch(() => "");
+          if (txt && txt.includes(LIMIT_TEXT)) return null;
+          return null;
+        }
+        return await resp.json();
+      } catch {
+        return null;
+      }
+    };
+
     if (isIpfs || isIpns) {
       const p = normalizeIpfsPath(u);
       for (const gw of gateways) {
-        try {
-          const url =
-            typeof gw === "function"
-              ? gw(p, isIpns)
-              : makeGateway(String(gw))(p, isIpns);
-          const resp = await fetchWithTimeout(
-            url,
-            timeout,
-            fetchImpl,
-            headersForUrl(url),
-          );
-          if (resp?.ok) {
-            const ctype = resp?.headers?.get?.("content-type") || "";
-            if (ctype.includes("text/html")) {
-              const txt = await resp.text().catch(() => "");
-              if (txt && txt.includes(LIMIT_TEXT)) continue;
-              continue;
-            }
-            return await resp.json();
-          }
-        } catch {
-          // try next gateway
-        }
+        const url = buildGatewayUrl(gw, p, isIpns);
+        const json = await tryJson(url);
+        if (json) return json;
+      }
+      return null;
+    }
+
+    const ipfsInfo = extractIpfsPathFromHttp(u);
+    if (ipfsInfo) {
+      // First try the original URL (may include gateway auth)
+      const direct = await tryJson(u);
+      if (direct) return direct;
+      // Fallback to other gateways if the original fails
+      for (const gw of gateways) {
+        const url = buildGatewayUrl(gw, ipfsInfo.path, ipfsInfo.isIpns);
+        const json = await tryJson(url);
+        if (json) return json;
       }
       return null;
     }

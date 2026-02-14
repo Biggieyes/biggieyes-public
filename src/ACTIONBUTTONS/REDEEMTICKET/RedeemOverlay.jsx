@@ -297,36 +297,14 @@ export default function RedeemOverlay({
             <div style={S.progressText}>{pct}% Complete</div>
           </div>
 
-          {/* ---- Table-like steps ---- */}
-          <div style={S.stepTable} role="table" aria-label="Redeem steps">
-            <div style={S.stepHeader} role="row">
-              <div
-                style={{ ...S.hCell, justifyContent: "center" }}
-                role="columnheader"
-              >
-                STEP
-              </div>
-              <div style={S.hCell} role="columnheader">
-                DETAIL
-              </div>
-              <div
-                style={{ ...S.hCell, justifyContent: "center" }}
-                role="columnheader"
-              >
-                STATUS
-              </div>
-            </div>
-
-            {/* 1) Wallet confirmation */}
+          {/* ---- Steps ---- */}
+          <div style={S.stepList} role="list" aria-label="Redeem steps">
             <Row
               step={1}
               label="Wallet confirmation"
               active={phase === "tx"}
               done={phase === "VRF"}
-              even={false}
             />
-
-            {/* 2) On-chain transaction (voucher/ticket burn on new contracts) */}
             <Row
               step={2}
               label="On-chain transaction (ticket burn)"
@@ -334,14 +312,11 @@ export default function RedeemOverlay({
               done={phase === "VRF"}
               even
             />
-
-            {/* 3) VRF & metadata generation (v2.5-ready) */}
             <Row
               step={3}
               label="Chainlink VRF & metadata generation"
               active={phase === "VRF"}
               done={false}
-              even={false}
             />
           </div>
 
@@ -399,20 +374,18 @@ const Row = React.memo(function Row({ step, active, done, label, even }) {
     ...(active && !done ? S.stepPillActive : {}),
   };
   const labelStyle = {
-    ...S.cellCenter,
-    ...(done ? S.cellCenterDone : {}),
-    ...(active && !done ? S.cellCenterActive : {}),
+    ...S.stepLabel,
+    ...(done ? S.stepLabelDone : {}),
+    ...(active && !done ? S.stepLabelActive : {}),
   };
 
   return (
-    <div style={rowStyle} role="row">
-      <div style={S.cellLeft} role="cell">
+    <div style={rowStyle} role="listitem">
+      <div style={S.stepLeft}>
         <span style={pillStyle}>{step}</span>
+        <div style={labelStyle}>{label}</div>
       </div>
-      <div style={labelStyle} role="cell">
-        {label}
-      </div>
-      <div style={S.cellRight} role="cell">
+      <div style={S.stepRight}>
         <span style={{ ...S.statusChip, ...chipStyle }}>
           {statusText}
           {active && (
@@ -555,87 +528,71 @@ const styles = {
     fontWeight: 500,
   },
 
-  /* ---- Table-like steps ---- */
-  stepTable: {
+  /* ---- Steps ---- */
+  stepList: {
     position: "relative",
     border: "1px solid rgba(8,255,230,0.15)",
     borderRadius: "16px",
     overFLOW: "hidden",
     background:
       "linear-gradient(145deg, rgba(13,20,38,0.9) 0%, rgba(9,13,26,0.85) 100%)",
-    marginTop: "24px",
-    marginBottom: "24px",
+    marginTop: "22px",
+    marginBottom: "22px",
     boxShadow:
-      "0 20px 45px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.04)",
-    backdropFilter: "blur(14px)",
-  },
-  stepHeader: {
-    display: "grid",
-    gridTemplateColumns: "70px 1fr 140px",
-    background:
-      "linear-gradient(90deg, rgba(8,255,230,0.14) 0%, rgba(8,255,230,0) 100%)",
-    borderBottom: "1px solid rgba(255,255,255,0.08)",
-  },
-  hCell: {
-    padding: "14px 20px",
-    display: "flex",
-    alignItems: "center",
-    fontWeight: 700,
-    color: "rgba(255,255,255,0.82)",
-    fontSize: "12px",
-    textTransform: "uppercase",
-    letterSpacing: "0.6px",
+      "0 16px 36px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.04)",
+    backdropFilter: "blur(12px)",
+    padding: "10px",
   },
   stepRow: {
-    display: "grid",
-    gridTemplateColumns: "70px 1fr 140px",
-    alignItems: "stretch",
-    minHeight: "64px",
-    borderBottom: "1px solid rgba(255,255,255,0.04)",
-    boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.015)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "16px",
+    minHeight: "56px",
+    padding: "12px 14px",
+    borderRadius: "12px",
+    border: "1px solid rgba(255,255,255,0.06)",
+    boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.01)",
     transition: "all 0.25s ease",
-    borderLeft: "4px solid transparent",
   },
   stepRowAlt: {
-    background: "rgba(255,255,255,0.015)",
+    background: "rgba(255,255,255,0.02)",
   },
   stepRowActive: {
     background:
-      "linear-gradient(90deg, rgba(8,255,230,0.18) 0%, rgba(8,255,230,0.03) 100%)",
-    boxShadow: "inset 0 0 0 1px rgba(8,255,230,0.25)",
-    borderLeft: "4px solid rgba(8,255,230,0.55)",
+      "linear-gradient(90deg, rgba(8,255,230,0.22) 0%, rgba(8,255,230,0.04) 100%)",
+    boxShadow: "inset 0 0 0 1px rgba(8,255,230,0.22)",
   },
   stepRowDone: {
     background:
       "linear-gradient(90deg, rgba(255,232,0,0.18) 0%, rgba(255,232,0,0.03) 100%)",
     boxShadow: "inset 0 0 0 1px rgba(255,232,0,0.22)",
-    borderLeft: "4px solid rgba(255,232,0,0.6)",
   },
-  cellLeft: {
+  stepLeft: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
-    padding: "16px 8px",
+    gap: "12px",
+    flex: "1 1 auto",
   },
-  cellCenter: {
-    padding: "16px 20px",
+  stepLabel: {
     fontSize: "14px",
-    fontWeight: 500,
-    color: "rgba(255,255,255,0.78)",
-    lineHeight: 1.5,
+    fontWeight: 600,
+    color: "rgba(255,255,255,0.8)",
+    lineHeight: 1.4,
     transition: "color 0.25s ease, text-shadow 0.25s ease",
   },
-  cellCenterActive: {
+  stepLabelActive: {
     color: "#08FFE6",
     textShadow: "0 0 12px rgba(8,255,230,0.35)",
   },
-  cellCenterDone: {
+  stepLabelDone: {
     color: "#FFE800",
   },
-  cellRight: {
+  stepRight: {
     display: "flex",
-    justifyContent: "center",
-    padding: "12px 12px",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    flexShrink: 0,
   },
   stepPill: {
     display: "inline-grid",

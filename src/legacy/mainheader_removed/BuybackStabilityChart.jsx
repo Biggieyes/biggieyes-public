@@ -1,6 +1,0 @@
-// Shim for legacy imports: legacy/mainheader_removed/BuybackStabilityChart.jsx
-// Source of truth: src/components/TOKEN/BuybackStabilityChart.jsx
-export { default } from "../../components/TOKEN/BuybackStabilityChart.jsx";
-
-
-

@@ -2005,6 +2005,12 @@
   color: #b8ffea;
 }
 
+.collection-grid__price-live {
+  color: #5ddcff;
+  font-weight: 900;
+  text-shadow: 0 0 10px rgba(93, 220, 255, 0.35);
+}
+
 .collection-grid__sparkline {
   width: 100%;
   height: 54px;

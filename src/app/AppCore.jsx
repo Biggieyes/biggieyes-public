@@ -20,6 +20,7 @@ import {
 import { ADDR } from "@/addresses.js";
 import { explorerBaseFor } from "@/config/chains.js";
 import { DEFAULT_BLOCKS, BASE_PRICES } from "@/shared/blocks";
+import { buildBlockImagePath } from "@/shared/utils/images";
 
 /**
  * utils/contract.js (ethers v6 kompat wrappery)
@@ -55,7 +56,8 @@ import {
   isFullHistoryEnabled,
 } from "@/shared/utils/shared";
 import { setVRFAllOrPartial } from "@/shared/utils/adminActions";
-import { getArchiveProvider } from "@/web3/provider";
+import { getArchiveProvider, resetSharedFallbackProvider } from "@/web3/provider";
+import { canPoll, getPollInterval, runWithLock } from "@/utils/polling";
 
 import "./styles/biggi-token.skin.css";
 
@@ -65,19 +67,9 @@ const DEFAULT_BLOCK_PRICES = DEFAULT_BLOCKS.map(
   (name) => BASE_PRICES[name] ?? 0,
 );
 
-import REWARDSPanel from "./panels/Rewards/REWARDSPanel.jsx";
-import VRFPanel from "./panels/VRF/VRFPanel.jsx";
-import InfoPanel from "./panels/INFO/InfoPanel.jsx";
-import USERPANEL from "./panels/UserPanel/USERPANEL.jsx";
-import COMMUNITYCENTERPanel from "../features/admin/COMMUNITYCENTERPanel.jsx";
-
 import MainLayout from "../components/layout/MainLayout";
 import FullscreenPanel from "./components/common/FullscreenPanel";
 import Loader from "./components/common/Loader";
-import ZoomModal from "./components/gallery/ZoomModal";
-import AdminPanel from "./components/admin/AdminPanel";
-
-import * as WC from "./wallet/wc";
 
 import {
   mergeAttrs,
@@ -88,20 +80,33 @@ import {
   readJsonFromURI as readJsonFromURIShared,
   resolveImageUrl as resolveImageUrlShared,
 } from "@/shared/services/ipfs";
+import {
+  loadGalleryCache,
+  saveGalleryCache,
+} from "@/shared/services/gallery/gallery.cache.js";
+import { mergeGalleryItem } from "@/shared/services/gallery/gallery.merge.js";
 
 /* ========= LAZY LOADED HEAVY PANELS ========= */
 const ProjectInfoModal = React.lazy(
   () => import("./ACTIONBUTTONS/INFO/ProjectInfoModal.jsx")
 );
-const RedeemOverlay = React.lazy(
-  () => import("./ACTIONBUTTONS/REDEEMTICKET/RedeemOverlay.jsx")
-);
 const EcosystemPanel = React.lazy(() => import("../features/tokenomics"));
 const COLLECTIONBlocksGrid = React.lazy(
   () => import("./components/COLLECTIONBlocksGrid")
 );
-// Community Center uses a lot of nested imports (admin tooling + CSS).
-// Import it eagerly to avoid lazy-load failures masking real errors.
+const REWARDSPanel = React.lazy(
+  () => import("./panels/Rewards/REWARDSPanel.jsx")
+);
+const VRFPanel = React.lazy(() => import("./panels/VRF/VRFPanel.jsx"));
+const InfoPanel = React.lazy(() => import("./panels/INFO/InfoPanel.jsx"));
+const USERPANEL = React.lazy(
+  () => import("./panels/UserPanel/USERPANEL.jsx")
+);
+const COMMUNITYCENTERPanel = React.lazy(
+  () => import("../features/admin/COMMUNITYCENTERPanel.jsx")
+);
+const AdminPanel = React.lazy(() => import("./components/admin/AdminPanel.jsx"));
+const ZoomModal = React.lazy(() => import("./components/gallery/ZoomModal.jsx"));
 
 /* ======================================================================== */
 /* ============================== CONSTANTS ================================ */
@@ -122,6 +127,117 @@ const BACKGROUND_NAMES = [
 const BACKGROUND_CODES = ["O", "B", "W", "BR", "BL", "G", "V", "R", "P", "RB"];
 const BACKGROUND_BONUSES = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50];
 
+const PLACEHOLDER_IMAGE = "/images/Biggi.png";
+const TICKET_IMAGE_BASE =
+  "https://biggieyes.mypinata.cloud/ipfs/bafybeigsbajmobtaivf7tvrj7l2mradsc2yaovr3ooy37wedukeexe3quq";
+const TICKET_IMAGE_FILE = "Biggi_RANDOM_MINT_TICKET.png";
+
+const BLOCK_IMAGE_BASES = {
+  ORANGE:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeihs2zmll4beazspdqf5cr4hufmcqlby2cdwkwjfd4kyhl2rp27ohq/",
+  BLACK:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeiexwu2aiocaw4jh4yihywdkabbp2u7v2vf7wydhqcgehcispvjhfy/",
+  WHITE:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeicqja4j6wmdm2jbomtloggwafe4kluokgp5qhdr2pkrgxju6tpyl4/",
+  BROWN:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeibbqjofkkvldzfmmi5tfzucrmbd56ba3i5pfivywqb7g25wa7677m/",
+  BLUE:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeieuk5o3mktitbutdzyymacz27me5zntkybk3zhndjvsfuqa6osj4m/",
+  GREEN:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeihgbvpuomieigi3eenho6fzbbtwpvw7lfqbpbriojenvutufn6opa/",
+  VIOLET:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeibs3xyn3wdsssxubow5wqh4vyg4dkumshqza6ppssiqqrbo4chq3a/",
+  RED:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeifuhvp33jihz2xzr45vwme2drg7uxe5sukabttx4eqqupdbfmmebi/",
+  PINK:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeihkz72p25huca3b463o7q7yp4xnv2l4lejyzckodolqij6m5ofw2a/",
+  RAINBOW:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeibda5h7lwnalrugm4fek63pqsndvm4nyesm3t77tuegziloqgna3i/",
+  SPECIAL:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeiapfll6xolsgvclyvy7cozyjxgrf4urbnkqjdcrxxnqn543e6qs7y/",
+};
+
+const trimSlash = (val) => String(val || "").replace(/\/+$/, "");
+const blockBaseUrl = (blockName) => {
+  const key = String(blockName || "").toUpperCase();
+  const base = BLOCK_IMAGE_BASES[key];
+  return base ? trimSlash(base) : null;
+};
+
+const ticketImageUrl = (baseOverride) => {
+  const base = trimSlash(baseOverride || TICKET_IMAGE_BASE);
+  if (!base) return PLACEHOLDER_IMAGE;
+  return `${base}/${TICKET_IMAGE_FILE}`;
+};
+
+const normalizeIndex = (val, max) => {
+  const n = Number(val);
+  if (!Number.isFinite(n)) return null;
+  if (n >= 1 && n <= max) return n - 1;
+  if (n >= 0 && n < max) return n;
+  return null;
+};
+
+const blockNameFromIdx = (val) => {
+  const idx = normalizeIndex(val, DEFAULT_BLOCKS.length);
+  return idx == null ? null : DEFAULT_BLOCKS[idx];
+};
+
+const bgCodeFromIdx = (val) => {
+  const idx = normalizeIndex(val, BACKGROUND_CODES.length);
+  return idx == null ? null : BACKGROUND_CODES[idx];
+};
+
+const bgNameFromIdx = (val) => {
+  const idx = normalizeIndex(val, BACKGROUND_NAMES.length);
+  return idx == null ? null : BACKGROUND_NAMES[idx];
+};
+
+const bgNameFromCode = (val) => {
+  if (!val) return null;
+  const code = String(val).toUpperCase();
+  const idx = BACKGROUND_CODES.indexOf(code);
+  return idx === -1 ? null : BACKGROUND_NAMES[idx];
+};
+
+const parseTokenUriParts = (uri) => {
+  if (!uri) return null;
+  const m = String(uri).match(/Biggi_(\d+)_([A-Z]+)_([A-Z]+)\.json/i);
+  if (!m) return null;
+  return {
+    mainId: m[1],
+    blockName: m[2].toUpperCase(),
+    bgCode: m[3].toUpperCase(),
+  };
+};
+
+const buildBlockImageUrl = (blockName, fileName, baseOverride) => {
+  const preferred = blockBaseUrl(blockName);
+  const base = trimSlash(preferred || baseOverride);
+  if (base && fileName) return `${base}/${String(fileName).replace(/^\/+/, "")}`;
+  return buildBlockImagePath(fileName);
+};
+
+const parseNftInfo = (info) => {
+  if (!info) return null;
+  const background = info?.background ?? info?.[1];
+  const blockIdx = info?.blockIdx ?? info?.[2];
+  const mainId = info?.mainId ?? info?.[3];
+  const blockName = blockNameFromIdx(blockIdx);
+  const bgCode = bgCodeFromIdx(background);
+  const bgName = bgNameFromIdx(background);
+  const id =
+    mainId != null && typeof mainId?.toString === "function"
+      ? mainId.toString()
+      : String(mainId ?? "");
+  return {
+    blockIdx,
+    blockName,
+    bgCode,
+    bgName,
+    mainId: id && id !== "0" ? id : null,
+  };
+};
 const DEPLOY_BLOCK = Number(ADDR?.DEPLOY_BLOCK) || null;
 const ZERO_ADDRESS = ZeroAddress;
 
@@ -129,7 +245,7 @@ const LOGS_BATCH = 2_000;
 const FULL_HISTORY = isFullHistoryEnabled();
 
 const WALLET_CACHE_TTL = 5 * 60 * 1000;
-const WALLET_CACHE_VERSION = "v2";
+const WALLET_CACHE_VERSION = "v4";
 
 function walletCacheKey(addr) {
   return `biggi_wallet_${WALLET_CACHE_VERSION}_${String(addr || "").toLowerCase()}`;
@@ -443,8 +559,14 @@ const pickInjectedProvider = () => {
 };
 
 const connectWithWalletConnect = async () => {
-  if (WC && typeof WC.connectWithWalletConnect === "function") {
-    return await WC.connectWithWalletConnect();
+  try {
+    const mod = await import("./wallet/wc.js");
+    if (mod && typeof mod.connectWithWalletConnect === "function") {
+      return await mod.connectWithWalletConnect();
+    }
+  } catch (err) {
+    console.error("WalletConnect load failed:", err);
+    throw err;
   }
   throw new Error("WalletConnect is not available in this version");
 };
@@ -699,6 +821,7 @@ export default function AppCore() {
 
   const statsTimer = React.useRef(null);
   const REWARDSTimer = React.useRef(null);
+  const statsPollRef = React.useRef(false);
 
   const contractRef = React.useRef(null);
   const unsubRef = React.useRef(() => {});
@@ -734,6 +857,25 @@ export default function AppCore() {
       }
     }
     return null;
+  }, []);
+
+  const recoverRpcConnectivity = React.useCallback(async (context = "rpc") => {
+    clearPreferredRpc();
+    try {
+      await ensurePreferredRpc();
+    } catch (err) {
+      console.warn(`${context}: ensurePreferredRpc failed`, err?.message || err);
+    }
+    try {
+      resetROProvider();
+    } catch {
+      // ignore provider reset failures
+    }
+    try {
+      resetSharedFallbackProvider();
+    } catch {
+      // ignore provider reset failures
+    }
   }, []);
 
   const prettyError = React.useCallback((err) => {
@@ -897,12 +1039,13 @@ export default function AppCore() {
             ? await silent(() => main.getCurrentBlockPrice(blockId))
             : null);
 
-        const mintedRaw =
-          info?.mintCount ??
-          info?.[3] ??
-          (blockMintCountReader
-            ? await silent(() => blockMintCountReader(blockId))
-            : null);
+        let mintedRaw = null;
+        if (blockMintCountReader) {
+          mintedRaw = await silent(() => blockMintCountReader(blockId));
+        }
+        if (mintedRaw == null) {
+          mintedRaw = info?.mintCount ?? info?.[3] ?? null;
+        }
 
         return {
           price: toNumEth(priceWei) ?? 0,
@@ -1035,6 +1178,26 @@ export default function AppCore() {
       }
     }
   }, [readMainBlockStats]);
+
+  React.useEffect(() => {
+    let mounted = true;
+    const poll = async () => {
+      if (!mounted || !canPoll()) return;
+      await runWithLock(statsPollRef, async () => {
+        await fetchStats();
+      });
+    };
+
+    poll();
+    const interval = setInterval(
+      poll,
+      getPollInterval(25_000, "VITE_STATS_POLL_MS"),
+    );
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [fetchStats]);
 
   /* ====================================================================== */
   /* ============================ REWARDS FETCH ============================= */
@@ -1316,6 +1479,33 @@ export default function AppCore() {
     const fromFilter = contract.filters.Transfer(addr, null, null);
 
     const scanLogs = async (fullHistory = false) => {
+      const logProvider = getArchiveProvider() || provider;
+      const direct = await (async () => {
+        try {
+          if (!logProvider || typeof logProvider.getLogs !== "function")
+            return null;
+          const address = toFilter?.address || contract?.target || contract?.address;
+          const [toLogs, fromLogs] = await Promise.all([
+            logProvider.getLogs({
+              address,
+              topics: toFilter?.topics,
+              fromBlock: FROM,
+              toBlock: latest,
+            }),
+            logProvider.getLogs({
+              address,
+              topics: fromFilter?.topics,
+              fromBlock: FROM,
+              toBlock: latest,
+            }),
+          ]);
+          return { toLogs, fromLogs };
+        } catch {
+          return null;
+        }
+      })();
+      if (direct) return direct;
+
       const opts = fullHistory ? { fullHistory: true } : undefined;
       const [toLogs, fromLogs] = await Promise.all([
         queryLogsBatched(contract, toFilter, FROM, latest, LOGS_BATCH, opts),
@@ -1426,10 +1616,10 @@ export default function AppCore() {
       const metas = await mapLimit(ticketIds, 4, async (idBN) => {
         const id = idBN.toString();
         let meta = {
-          name: `Ticket #${id}`,
-          description: "Redeem this ticket to mint a BiggiEyes NFT.",
+          name: "Biggi Mint Ticket",
+          description: `Redeem this ticket (#${id}) to mint a BiggiEyes NFT.`,
         };
-        let image = "/images/Biggi.png";
+        let image = PLACEHOLDER_IMAGE;
 
         try {
           const uri = await getTokenUriCached(contract, idBN);
@@ -1440,6 +1630,16 @@ export default function AppCore() {
             image = (await resolveImageUrlCached(imgUrl, uri)) || image;
           }
         } catch {}
+
+        if (!image || image === PLACEHOLDER_IMAGE) {
+          image = ticketImageUrl();
+        }
+        if (!meta?.name || /^\d{8,}$/.test(String(meta.name))) {
+          meta = {
+            ...(meta || {}),
+            name: "Biggi Mint Ticket",
+          };
+        }
 
         return {
           tokenId: id,
@@ -1632,6 +1832,34 @@ export default function AppCore() {
         const fromFilter = contract.filters.Transfer(addr, null, null);
 
         const scanLogs = async (fullHistory = false) => {
+          const logProvider = getArchiveProvider() || provider;
+          const direct = await (async () => {
+            try {
+              if (!logProvider || typeof logProvider.getLogs !== "function")
+                return null;
+              const address =
+                toFilter?.address || contract?.target || contract?.address;
+              const [toLogs, fromLogs] = await Promise.all([
+                logProvider.getLogs({
+                  address,
+                  topics: toFilter?.topics,
+                  fromBlock: FROM,
+                  toBlock: latest,
+                }),
+                logProvider.getLogs({
+                  address,
+                  topics: fromFilter?.topics,
+                  fromBlock: FROM,
+                  toBlock: latest,
+                }),
+              ]);
+              return { toLogs, fromLogs };
+            } catch {
+              return null;
+            }
+          })();
+          if (direct) return direct;
+
           const opts = fullHistory ? { fullHistory: true } : undefined;
           try {
             const [toLogs, fromLogs] = await Promise.all([
@@ -1825,6 +2053,70 @@ export default function AppCore() {
       }
 
       tokenIds = uniqIds(tokenIds);
+
+      if (tokenIds.length && typeof contract?.ownerOf === "function") {
+        const verified = await mapLimit(tokenIds, 8, async (id) => {
+          try {
+            const owner = await contract.ownerOf(id);
+            if (String(owner || "").toLowerCase() === me) return id;
+          } catch {
+            // ownerOf reverts for nonexistent/burned tokens
+          }
+          return null;
+        });
+        tokenIds = verified.filter(Boolean);
+      }
+
+      if (!tokenIds.length) {
+        const balAfter = await readBalance();
+        const hasBalanceAfter = hasPositiveBalance(balAfter);
+        if (hasBalanceAfter && typeof contract.ownerOf === "function") {
+          let upperBound = 0;
+          const upperFns = [
+            "ticketMinted",
+            "biggiMinted",
+            "tokenMinted",
+            "totalSupply",
+          ];
+          for (const fn of upperFns) {
+            if (typeof contract?.[fn] !== "function") continue;
+            try {
+              const raw = await contract[fn]();
+              const id = toTokenId(raw);
+              if (!id) continue;
+              upperBound = Math.max(upperBound, Number(id));
+            } catch {
+              // ignore getter errors
+            }
+          }
+          try {
+            const balNum = Number(
+              BigInt((balAfter)?.toString?.() || "0"),
+            );
+            if (!Number.isFinite(upperBound) || upperBound <= 0) {
+              upperBound = Math.max(50, balNum * 16);
+            }
+            upperBound = Math.max(upperBound, balNum);
+          } catch {
+            if (!Number.isFinite(upperBound) || upperBound <= 0) upperBound = 550;
+          }
+          upperBound = Math.max(1, Math.min(Math.trunc(upperBound), 2500));
+
+          const idsToProbe = Array.from({ length: upperBound }, (_, i) =>
+            String(i + 1),
+          );
+          const owned = new Set();
+          await mapLimit(idsToProbe, 16, async (id) => {
+            try {
+              const owner = await contract.ownerOf(id);
+              if (String(owner || "").toLowerCase() === me) owned.add(id);
+            } catch {
+              // token not minted or RPC rejected this id
+            }
+          });
+          tokenIds = Array.from(owned);
+        }
+      }
       if (!tokenIds.length) {
         saveWalletCache(addr, []);
         return [];
@@ -1838,6 +2130,19 @@ export default function AppCore() {
           }
         } catch {
           isT = false;
+        }
+
+        let info = null;
+        let infoMinted = null;
+        if (typeof contract?.nftInfo === "function") {
+          try {
+            info = await contract.nftInfo(tid);
+            const mintedFlag = info?.minted ?? info?.[0];
+            infoMinted = typeof mintedFlag === "boolean" ? mintedFlag : coerceBool(mintedFlag);
+          } catch {
+            info = null;
+            infoMinted = null;
+          }
         }
 
         let uri = null;
@@ -1855,6 +2160,8 @@ export default function AppCore() {
         let metaLooksNft = looksLikeNftMeta(j);
 
         if (isT && metaLooksNft) isT = false;
+        if (isT && uri && !uriLooksTicket) isT = false;
+        if (isT && infoMinted === true) isT = false;
 
         // Ticket -> NFT transition can lag a few blocks and often keeps the same tokenId.
         // Force refresh whenever metadata still looks like a ticket (or ticket flag is true).
@@ -1878,8 +2185,11 @@ export default function AppCore() {
         }
 
         const finalIsTicket = Boolean(isT && !metaLooksNft);
+        if (!finalIsTicket && infoMinted === false && !uri && !j) {
+          // Keep a placeholder entry instead of dropping owned NFTs when RPC metadata fails.
+        }
         let meta = {};
-        let image = "/images/Biggi.png";
+        let image = PLACEHOLDER_IMAGE;
         try {
           const cached = getCachedPriceAttrs(tid);
           const base =
@@ -1912,11 +2222,110 @@ export default function AppCore() {
 
           const imgUrl = j?.image || j?.image_url;
           image = (await resolveImageUrlCached(imgUrl, uri)) || image;
-          if (finalIsTicket || (metaLooksTicket && !metaLooksNft)) {
-            image = "/images/Biggi.png";
-          }
+          // For tickets, keep the resolved ticket image when available.
         } catch {
           // keep fallback
+        }
+
+        if (!finalIsTicket) {
+          let needsImageFallback = !image || image === PLACEHOLDER_IMAGE;
+          let needsAttrsFallback =
+            !meta ||
+            !Array.isArray(meta.attributes) ||
+            meta.attributes.length === 0;
+
+          if ((needsImageFallback || needsAttrsFallback) && uri) {
+            const parsed = parseTokenUriParts(uri);
+            if (parsed) {
+              const { mainId, blockName, bgCode } = parsed;
+              const bgName = bgNameFromCode(bgCode) || bgCode;
+              if (needsImageFallback && blockName && bgCode && mainId) {
+                const fileName = `Biggi_${mainId}_${blockName}_${bgCode}.png`;
+                const fallbackImage = buildBlockImageUrl(blockName, fileName);
+                if (fallbackImage) image = fallbackImage;
+              }
+              if (needsAttrsFallback && (blockName || bgName)) {
+                const attrs = mergeAttrs(meta?.attributes, [
+                  blockName
+                    ? { trait_type: "Block", value: blockName }
+                    : null,
+                  bgName
+                    ? { trait_type: "Background", value: bgName }
+                    : null,
+                ].filter(Boolean));
+                meta = { ...(meta || {}), attributes: attrs };
+              }
+              if (!meta?.name) {
+                meta = { ...(meta || {}), name: `Biggi NFT #${mainId}` };
+              }
+            }
+            needsImageFallback = !image || image === PLACEHOLDER_IMAGE;
+            needsAttrsFallback =
+              !meta ||
+              !Array.isArray(meta.attributes) ||
+              meta.attributes.length === 0;
+          }
+
+          if ((needsImageFallback || needsAttrsFallback) && info) {
+            try {
+              const parsed = parseNftInfo(info);
+              if (parsed) {
+                const { blockName, bgCode, bgName, mainId, blockIdx } = parsed;
+                let baseUri = null;
+                if (needsImageFallback && typeof contract?.blockBaseURIs === "function") {
+                  const candidates = [];
+                  const n = Number(blockIdx);
+                  if (Number.isFinite(n)) {
+                    candidates.push(n);
+                    if (n > 0) candidates.push(n - 1);
+                    candidates.push(n + 1);
+                  }
+                  for (const idx of candidates) {
+                    const v = await contract.blockBaseURIs(idx).catch(() => null);
+                    if (typeof v === "string" && v.trim()) {
+                      baseUri = v.trim();
+                      break;
+                    }
+                  }
+                }
+                if (
+                  needsImageFallback &&
+                  blockName &&
+                  bgCode &&
+                  mainId
+                ) {
+                  const fileName = `Biggi_${mainId}_${blockName}_${bgCode}.png`;
+                  const fallbackImage = buildBlockImageUrl(blockName, fileName, baseUri);
+                  if (fallbackImage) image = fallbackImage;
+                }
+                if (blockName || bgName) {
+                  const attrs = mergeAttrs(meta?.attributes, [
+                    blockName
+                      ? { trait_type: "Block", value: blockName }
+                      : null,
+                    bgName
+                      ? { trait_type: "Background", value: bgName }
+                      : null,
+                  ].filter(Boolean));
+                  meta = { ...(meta || {}), attributes: attrs };
+                }
+              }
+            } catch {
+              // ignore nftInfo fallback errors
+            }
+          }
+        }
+
+        if (finalIsTicket) {
+          if (!image || image === PLACEHOLDER_IMAGE) {
+            image = ticketImageUrl();
+          }
+          if (!meta?.name || /^\d{8,}$/.test(String(meta.name))) {
+            meta = {
+              ...(meta || {}),
+              name: "Biggi Mint Ticket",
+            };
+          }
         }
 
         return {
@@ -1969,10 +2378,20 @@ export default function AppCore() {
       return walletFetchRef.current.inFlight;
     }
 
-    const cached = loadWalletCache(addr);
-    if (cached?.length) mergeWithTopFirst(cached);
+    const contractForCache = contractRef.current || getReadOnlyContract();
+    const contractAddr =
+      contractForCache?.target || contractForCache?.address || null;
 
-    const showSpinner = !cached?.length;
+    const cached = loadWalletCache(addr);
+    const galleryCached = loadGalleryCache(addr, {
+      allowExpired: true,
+      contractAddr,
+    });
+    const seed =
+      cached?.length ? cached : galleryCached?.length ? galleryCached : null;
+    if (seed?.length) mergeWithTopFirst(seed);
+
+    const showSpinner = !seed?.length;
 
     const exec = (async () => {
       if (showSpinner) setGalleryLoading(true);
@@ -2017,10 +2436,26 @@ export default function AppCore() {
         for (const n of nfts) upsert(n);
 
         const final = Array.from(byId.values());
-        mergeWithTopFirst(final);
-        saveWalletCache(addr, final);
-        await refreshClaimable(addr, final);
-        return final;
+        const mergeWithCache = (fresh, cachedList) => {
+          if (!Array.isArray(cachedList) || !cachedList.length) return fresh;
+          const map = new Map(
+            cachedList
+              .map((item) => [String(item?.tokenId ?? ""), item])
+              .filter(([k]) => k),
+          );
+          return fresh.map((item) => {
+            const key = String(item?.tokenId ?? "");
+            const prev = key ? map.get(key) : null;
+            return prev ? mergeGalleryItem(prev, item) : item;
+          });
+        };
+
+        const merged = mergeWithCache(final, seed);
+        mergeWithTopFirst(merged);
+        saveWalletCache(addr, merged);
+        saveGalleryCache(addr, merged, contractAddr);
+        await refreshClaimable(addr, merged);
+        return merged;
       } finally {
         setGalleryLoading(false);
       }
@@ -2050,8 +2485,24 @@ export default function AppCore() {
       const contract = contractRef.current || getReadOnlyContract();
       const provider = getProviderFor(contract);
       if (!provider) throw new Error("Provider not available");
-      const total = Number(await contract.biggiMinted());
-      if (total === 0) {
+      let total = null;
+      try {
+        const totalRaw = await callFirst(contract, [
+          "biggiMinted",
+          "totalSupply",
+          "totalMinted",
+          "nftMinted",
+          "minted",
+        ]);
+        if (totalRaw != null) {
+          const totalStr =
+            typeof totalRaw?.toString === "function" ? totalRaw.toString() : totalRaw;
+          const totalNum = Number(totalStr);
+          if (Number.isFinite(totalNum)) total = totalNum;
+        }
+      } catch {}
+
+      if (total != null && total <= 0) {
         setLastMinted({
           tokenId: "-",
           image: "/images/Biggi.png",
@@ -2061,55 +2512,60 @@ export default function AppCore() {
         return;
       }
 
-      const latest = await provider.getBlockNumber();
-      const filter = contract.filters.NFTMinted();
-      const baseFrom = await getSafeDeployBlock(provider);
-      const latestNum = Number(latest ?? 0);
-      const safeLatest = Number.isFinite(latestNum) && latestNum >= 0 ? latestNum : 0;
-
-      let from = Number(baseFrom);
-      if (!Number.isFinite(from) || from < 0) {
-        from = Math.max(0, safeLatest - 60_000);
-      } else {
-        from = Math.max(0, Math.min(from, safeLatest));
-        from = Math.max(from, safeLatest - 60_000);
-      }
-      let to = safeLatest;
-      // Some RPC endpoints reject single-block ranges or edge ranges at tip.
-      if (from >= to && to > 0) {
-        from = Math.max(0, to - 1);
-      }
-
       let logs = [];
       try {
-        logs = await queryLogsBatched(contract, filter, from, to, LOGS_BATCH, {
-          preferArchive: false,
-        });
-      } catch (err) {
-        const msg = String(err?.message || "");
-        if (/invalid block range params/i.test(msg)) {
-          const fallbackTo = Math.max(0, safeLatest - 1);
-          const fallbackFrom = Math.max(0, fallbackTo - 8_000);
-          logs = await queryLogsBatched(
-            contract,
-            filter,
-            fallbackFrom,
-            fallbackTo,
-            LOGS_BATCH,
-            { preferArchive: false },
-          );
+        const latest = await provider.getBlockNumber();
+        const filter = contract.filters.NFTMinted();
+        const baseFrom = await getSafeDeployBlock(provider);
+        const latestNum = Number(latest ?? 0);
+        const safeLatest = Number.isFinite(latestNum) && latestNum >= 0 ? latestNum : 0;
+
+        let from = Number(baseFrom);
+        if (!Number.isFinite(from) || from < 0) {
+          from = Math.max(0, safeLatest - 60_000);
         } else {
-          throw err;
+          from = Math.max(0, Math.min(from, safeLatest));
+          from = Math.max(from, safeLatest - 60_000);
         }
+        let to = safeLatest;
+        // Some RPC endpoints reject single-block ranges or edge ranges at tip.
+        if (from >= to && to > 0) {
+          from = Math.max(0, to - 1);
+        }
+
+        try {
+          logs = await queryLogsBatched(contract, filter, from, to, LOGS_BATCH, {
+            preferArchive: false,
+          });
+        } catch (err) {
+          const msg = String(err?.message || "");
+          if (/invalid block range params/i.test(msg)) {
+            const fallbackTo = Math.max(0, safeLatest - 1);
+            const fallbackFrom = Math.max(0, fallbackTo - 8_000);
+            logs = await queryLogsBatched(
+              contract,
+              filter,
+              fallbackFrom,
+              fallbackTo,
+              LOGS_BATCH,
+              { preferArchive: false },
+            );
+          } else {
+            console.warn("fetchLastMinted: log query failed", err);
+          }
+        }
+      } catch (err) {
+        console.warn("fetchLastMinted: log scan skipped", err);
       }
       const last = logs[logs.length - 1];
-      if (!last) return;
-
-      const tokenIdArg = safeLogArg(last.args, "tokenId", 1);
-      const tokenId =
+      const tokenIdArg = last ? safeLogArg(last.args, "tokenId", 1) : null;
+      let tokenId =
         tokenIdArg != null && typeof tokenIdArg.toString === "function"
           ? tokenIdArg.toString()
           : "";
+      if ((!tokenId || tokenId === "0") && total != null && total > 0) {
+        tokenId = String(total);
+      }
       if (!tokenId || tokenId === "0") {
         setLastMinted({
           tokenId: "-",
@@ -2126,15 +2582,11 @@ export default function AppCore() {
       } catch (err) {
         const msg = String(err?.message || "");
         if (/NoToken/i.test(msg)) {
-          setLastMinted({
-            tokenId,
-            image: "/images/Biggi.png",
-            blockName: "-",
-            backgroundName: "-",
-          });
-          return;
+          uri = null;
+        } else {
+          console.warn("fetchLastMinted: tokenURI failed", err);
+          uri = null;
         }
-        throw err;
       }
       let meta = await readJsonFromURICached(uri);
       if (looksLikeTicketMeta(meta)) {
@@ -2155,10 +2607,8 @@ export default function AppCore() {
 
       let image =
         (await resolveImageUrlCached(meta?.image || meta?.image_url, uri)) ||
-        "/images/Biggi.png";
-      if (looksLikeTicketMeta(meta) && !looksLikeNftMeta(meta)) {
-        image = "/images/Biggi.png";
-      }
+        PLACEHOLDER_IMAGE;
+      // If metadata is still a ticket, keep the ticket image (if any) so LiveStats isn't blank.
 
       let blockName = "-";
       let backgroundName = "-";
@@ -2178,6 +2628,65 @@ export default function AppCore() {
       const bgAttr = findAttr(["background", "background color"]);
 
       if (bgAttr) backgroundName = canonBackgroundName(bgAttr.value) || bgAttr.value;
+
+      if (image === PLACEHOLDER_IMAGE || blockName === "-" || backgroundName === "-") {
+        const parsed = parseTokenUriParts(uri);
+        if (parsed) {
+          const { mainId, blockName: bName, bgCode } = parsed;
+          const bgName = bgNameFromCode(bgCode) || bgCode;
+          if (image === PLACEHOLDER_IMAGE && bName && bgCode && mainId) {
+            const fileName = `Biggi_${mainId}_${bName}_${bgCode}.png`;
+            const fallbackImage = buildBlockImageUrl(bName, fileName);
+            if (fallbackImage) image = fallbackImage;
+          }
+          if (blockName === "-" && bName) blockName = bName;
+          if (backgroundName === "-" && bgName) backgroundName = bgName;
+        }
+      }
+
+      if (
+        (image === PLACEHOLDER_IMAGE || blockName === "-" || backgroundName === "-") &&
+        typeof contract?.nftInfo === "function"
+      ) {
+        try {
+          const info = await contract.nftInfo(tokenId);
+          const parsed = parseNftInfo(info);
+          if (parsed) {
+            const { blockName: bName, bgCode, bgName, mainId, blockIdx } = parsed;
+            let baseUri = null;
+            if (image === PLACEHOLDER_IMAGE && typeof contract?.blockBaseURIs === "function") {
+              const candidates = [];
+              const n = Number(blockIdx);
+              if (Number.isFinite(n)) {
+                candidates.push(n);
+                if (n > 0) candidates.push(n - 1);
+                candidates.push(n + 1);
+              }
+              for (const idx of candidates) {
+                const v = await contract.blockBaseURIs(idx).catch(() => null);
+                if (typeof v === "string" && v.trim()) {
+                  baseUri = v.trim();
+                  break;
+                }
+              }
+            }
+            if (blockName === "-" && bName) blockName = bName;
+            if (backgroundName === "-" && bgName) backgroundName = bgName;
+            if (
+              image === PLACEHOLDER_IMAGE &&
+              bName &&
+              bgCode &&
+              mainId
+            ) {
+              const fileName = `Biggi_${mainId}_${bName}_${bgCode}.png`;
+              const fallbackImage = buildBlockImageUrl(bName, fileName, baseUri);
+              if (fallbackImage) image = fallbackImage;
+            }
+          }
+        } catch {
+          // ignore nftInfo fallback errors
+        }
+      }
 
       setLastMinted({ tokenId, image, blockName, backgroundName });
     } catch (e) {
@@ -2975,6 +3484,22 @@ export default function AppCore() {
       pollCount += 1;
       let stopPolling = false;
 
+      const finalizeVrf = async (message = "VRF fulfilled. NFT minted.") => {
+        stopPolling = true;
+        setVRFPending(false);
+        setRedeemMsg(message);
+        setRedeemStartedAt(null);
+        setPendingTicketId(null);
+        setTopFirstId(null);
+        clearWalletCache(walletAddress);
+        if (pendingTicketId) clearTokenCaches(pendingTicketId);
+        await fetchWalletAssets(walletAddress);
+        await fetchStats();
+        await fetchREWARDS();
+        await fetchLastMinted();
+        await refreshVRFPanel();
+      };
+
       try {
         await fetchStats();
         await fetchREWARDS();
@@ -3006,21 +3531,34 @@ export default function AppCore() {
         if (pendingReq != null) {
           const pendingStr = pendingReq?.toString?.() || "0";
           if (pendingStr === "0") {
-            stopPolling = true;
-            setVRFPending(false);
-            setRedeemMsg("VRF fulfilled. NFT minted.");
-            setRedeemStartedAt(null);
-            setPendingTicketId(null);
-            setTopFirstId(null);
-            clearWalletCache(walletAddress);
-            await fetchWalletAssets(walletAddress);
-            await fetchStats();
-            await fetchREWARDS();
-            await fetchLastMinted();
-            await refreshVRFPanel();
+            await finalizeVrf();
           }
         }
       } catch {}
+
+      // Fallback: if pending request cannot be read, but the ticket has already
+      // converted to a revealed NFT, stop the overlay.
+      if (!stopPolling && pendingTicketId) {
+        try {
+          const baseContract = contractRef.current || getReadOnlyContract();
+          if (typeof baseContract?.isTicket === "function") {
+            const isTicketNow = await baseContract.isTicket(pendingTicketId).catch(() => null);
+            if (isTicketNow === false) {
+              await finalizeVrf();
+            }
+          }
+          if (!stopPolling && typeof baseContract?.tokenURI === "function") {
+            const uri = await getTokenUriCached(baseContract, pendingTicketId, {
+              force: true,
+            }).catch(() => null);
+            if (uri && !/RANDOM_MINT_TICKET|MINT_TICKET|TICKET/i.test(String(uri))) {
+              await finalizeVrf();
+            }
+          }
+        } catch {
+          // ignore fallback errors
+        }
+      }
 
       const elapsed = redeemStartedAt ? Date.now() - redeemStartedAt : 0;
       let nextDelay = 8000;
@@ -3047,6 +3585,7 @@ export default function AppCore() {
     fetchLastMinted,
     refreshVRFPanel,
     redeemStartedAt,
+    pendingTicketId,
   ]);
 
   React.useEffect(() => {
@@ -3366,6 +3905,9 @@ export default function AppCore() {
         dynamicTraitsById={dynamicTraitsById}
         setZoomImg={setZoomImg}
         fetchWalletAssets={fetchWalletAssets}
+        fetchStats={fetchStats}
+        fetchREWARDS={fetchREWARDS}
+        redeemMsg={redeemMsg}
       />
 
       {navOpen ? (
@@ -3382,29 +3924,23 @@ export default function AppCore() {
 
       {/* ZOOM MODAL */}
       {zoomImg ? (
-        <ZoomModal image={zoomImg} onClose={() => setZoomImg(null)} />
+        <React.Suspense fallback={null}>
+          <ZoomModal image={zoomImg} onClose={() => setZoomImg(null)} />
+        </React.Suspense>
       ) : null}
 
-      {/* REDEEM OVERLAY */}
-      <React.Suspense fallback={null}>
-        <RedeemOverlay
-          open={isRedeeming || VRFPending}
-          isRedeeming={isRedeeming}
-          VRFPending={VRFPending}
-          redeemMsg={redeemMsg}
-          pendingTicketId={pendingTicketId}
-          onRefresh={refreshVRFPanel}
-        />
-      </React.Suspense>
+      {/* REDEEM OVERLAY REMOVED: status banner is shown on dashboard instead */}
 
       {/* ADMIN PANEL */}
       {adminOpen ? (
-        <AdminPanel
-          open={adminOpen}
-          onClose={() => setAdminOpen(false)}
-          data={adminData}
-          actions={adminActions}
-        />
+        <React.Suspense fallback={<Loader label="Loading Admin Panel..." />}>
+          <AdminPanel
+            open={adminOpen}
+            onClose={() => setAdminOpen(false)}
+            data={adminData}
+            actions={adminActions}
+          />
+        </React.Suspense>
       ) : null}
     </div>
   );

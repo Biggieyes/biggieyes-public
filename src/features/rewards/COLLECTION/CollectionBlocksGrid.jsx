@@ -142,11 +142,14 @@ function COLLECTIONBlocksGrid({
 
   React.useEffect(() => {
     let cancelled = false;
+    let inFlight = false;
 
     const fmtPrice = (wei) =>
       safeSyncCall(() => Number(formatEther(wei)), null);
 
     const load = async () => {
+      if (inFlight) return;
+      inFlight = true;
       try {
         if (!contracts) return;
         let coll = null;
@@ -312,12 +315,16 @@ function COLLECTIONBlocksGrid({
           setLiveMinted(Array(MAX_BLOCKS).fill(null));
           setCOLLECTIONMeta({});
         }
+      } finally {
+        inFlight = false;
       }
     };
 
     load();
+    const interval = setInterval(load, 20_000);
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, [contracts, reloadCounter]);
 
@@ -350,10 +357,13 @@ function COLLECTIONBlocksGrid({
       ? blockPricesProp.slice(0, MAX_BLOCKS)
       : [];
     while (fromProps.length < MAX_BLOCKS) fromProps.push(null);
-    // pokud props chybí, použij livePrices
-    return fromProps.map((v, i) =>
-      v == null ? (livePrices[i] ?? fallbackPrices[i]) : v,
-    );
+    const hasLive = Array.isArray(livePrices)
+      ? livePrices.some((v) => Number.isFinite(v))
+      : false;
+    return fromProps.map((v, i) => {
+      if (hasLive && Number.isFinite(livePrices?.[i])) return livePrices[i];
+      return v == null ? (fallbackPrices[i] ?? null) : v;
+    });
   }, [blockPricesProp, livePrices, fallbackPrices]);
 
   const normalizedMintCounts = React.useMemo(() => {
@@ -361,9 +371,13 @@ function COLLECTIONBlocksGrid({
       ? blockMintCountsProp.slice(0, MAX_BLOCKS)
       : [];
     while (fromProps.length < MAX_BLOCKS) fromProps.push(null);
-    return fromProps.map((v, i) =>
-      v == null ? (liveMinted[i] ?? fallbackMinted[i]) : v,
-    );
+    const hasLive = Array.isArray(liveMinted)
+      ? liveMinted.some((v) => Number.isFinite(v))
+      : false;
+    return fromProps.map((v, i) => {
+      if (hasLive && Number.isFinite(liveMinted?.[i])) return liveMinted[i];
+      return v == null ? (fallbackMinted[i] ?? null) : v;
+    });
   }, [blockMintCountsProp, liveMinted, fallbackMinted]);
 
   const blockEntries = React.useMemo(

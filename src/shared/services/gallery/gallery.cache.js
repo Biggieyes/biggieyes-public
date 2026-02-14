@@ -1,4 +1,4 @@
-const GALLERY_CACHE_VERSION = "v2";
+const GALLERY_CACHE_VERSION = "v4";
 const GALLERY_CACHE_TTL = 60 * 24 * 60 * 60 * 1000;
 
 export function galleryCacheKey(addr, contractAddr) {

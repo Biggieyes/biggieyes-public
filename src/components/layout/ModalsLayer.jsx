@@ -1,7 +1,6 @@
 import * as React from "react";
 
 const ZoomModal = React.lazy(() => import("../gallery/ZoomModal"));
-const RedeemOverlay = React.lazy(() => import("../../ACTIONBUTTONS/REDEEMTICKET/RedeemOverlay.jsx"));
 const ProjectInfoModal = React.lazy(() => import("../../ACTIONBUTTONS/INFO/ProjectInfoModal.jsx"));
 
 export default function ModalsLayer({
@@ -27,21 +26,7 @@ export default function ModalsLayer({
         <ZoomModal open={!!zoomImg} onClose={() => setZoomImg(null)} />
       </React.Suspense>
 
-      <React.Suspense fallback={null}>
-        <RedeemOverlay
-          open={isRedeeming || VRFPending}
-          isRedeeming={isRedeeming}
-          VRFPending={VRFPending}
-          redeemMsg={redeemMsg}
-          pendingTicketId={pendingTicketId}
-          onRefresh={() => {
-            fetchWalletAssets(walletAddress);
-            fetchStats();
-            fetchREWARDS();
-          }}
-          compact={isMobile}
-        />
-      </React.Suspense>
+      {/* Redeem overlay removed; status banner covers basic progress */}
 
       <React.Suspense fallback={null}>
         <ProjectInfoModal

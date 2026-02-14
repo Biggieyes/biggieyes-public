@@ -5,7 +5,7 @@ import { mapRawSnapshotToUI } from "@/shared/services/tokenomics/liquidity.mappe
 import usePollingSnapshot from "./_usePollingSnapshot";
 
 export default function useLiquiditySnapshot(options = {}) {
-  const { intervalMs = 20000 } = options;
+  const { intervalMs = 20000, ...pollOptions } = options;
   const { chainId, provider } = useWeb3();
   const isInjected = Boolean(provider?.provider);
   const readProvider = isInjected ? undefined : provider;
@@ -29,5 +29,5 @@ export default function useLiquiditySnapshot(options = {}) {
     };
   }, [chainId, readProvider]);
 
-  return usePollingSnapshot(fetcher, { intervalMs });
+  return usePollingSnapshot(fetcher, { intervalMs, ...pollOptions });
 }
