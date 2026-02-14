@@ -4,7 +4,7 @@ import "./COLLECTIONBlocksGrid.css";
 
 import useIsMobile from "../../../hooks/useIsMobile";
 import useIsTouch from "../../../hooks/useIsTouch";
-import { useStatsREWARDS } from "../../../hooks/useStatsREWARDS";
+import { useStatsREWARDS } from "../../../hooks/useStatsRewards";
 import {
   DEFAULT_BLOCKS,
   BASE_PRICES,

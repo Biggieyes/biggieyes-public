@@ -2,6 +2,19 @@ import axios from "axios";
 import Redis from "ioredis";
 
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
+const DEFAULT_PINATA_GATEWAY_BASE = "https://biggieyes.mypinata.cloud";
+
+function trimSlash(value) {
+  return String(value || "").replace(/\/+$/, "");
+}
+
+function getHeader(headers, key) {
+  if (!headers || !key) return "";
+  const matchKey = Object.keys(headers).find(
+    (k) => String(k).toLowerCase() === String(key).toLowerCase(),
+  );
+  return matchKey ? headers[matchKey] : "";
+}
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
@@ -109,4 +122,36 @@ export const buildPinataHeaders = () => {
 
 export const pinataRequest = async (url, data, headers) => {
   return axios.post(url, data, { headers, timeout: 120_000 });
+};
+
+export const getRequestClientId = (event) => {
+  const headers = event?.headers || {};
+  const fromHeader =
+    getHeader(headers, "x-forwarded-for") ||
+    getHeader(headers, "x-real-ip") ||
+    getHeader(headers, "cf-connecting-ip") ||
+    getHeader(headers, "origin") ||
+    "global";
+  return String(fromHeader).split(",")[0].trim() || "global";
+};
+
+export const buildPinataGatewayUrl = (cid) => {
+  const cleanCid = String(cid || "")
+    .trim()
+    .replace(/^ipfs:\/\//i, "")
+    .replace(/^\/?ipfs\//i, "");
+  if (!cleanCid) return "";
+  const gatewayBase = trimSlash(
+    process.env.PINATA_GATEWAY_BASE_URL ||
+      process.env.PINATA_GATEWAY_URL ||
+      DEFAULT_PINATA_GATEWAY_BASE,
+  );
+  return `${gatewayBase}/ipfs/${cleanCid}`;
+};
+
+export const isTrueEnv = (value) => {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes";
 };

@@ -50,25 +50,60 @@ function trimSlash(s) {
   return String(s).replace(/\/+$/, "");
 }
 
+function isTrue(value) {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes";
+}
+
 function makeGateway(baseUrl) {
   const base = trimSlash(baseUrl);
   return (cidOrPath, isIpns = false) =>
     `${base}/${isIpns ? "ipns" : "ipfs"}/${normalizeIpfsPath(cidOrPath)}`;
 }
 
-// Primary and fallback gateways
-let GWS = [
-  // Project Pinata dedicated gateway (fast + consistent for this collection).
-  makeGateway("https://biggieyes.mypinata.cloud"),
-  makeGateway("https://ipfs.io"),
-  makeGateway("https://cloudflare-ipfs.com"),
-  makeGateway("https://gateway.pinata.cloud"),
-  makeGateway("https://dweb.link"),
-  makeGateway("https://nftstorage.link"),
-  makeGateway("https://cf-ipfs.com"),
-  makeGateway("https://ipfs.filebase.io"),
-  makeGateway("https://gateway.lighthouse.storage"),
+const PINATA_PRIMARY_GATEWAY = trimSlash(
+  env("VITE_PINATA_GATEWAY_URL") ||
+    env("VITE_PINATA_GATEWAY_BASE_URL") ||
+    "https://biggieyes.mypinata.cloud",
+);
+const EXTRA_GATEWAY_URL = trimSlash(
+  env("VITE_IPFS_GATEWAY_URL") || env("VITE_IPFS_GATEWAY") || "",
+);
+const PINATA_ONLY = isTrue(env("VITE_IPFS_PINATA_ONLY"));
+
+const PUBLIC_FALLBACK_GATEWAYS = [
+  "https://ipfs.io",
+  "https://cloudflare-ipfs.com",
+  "https://dweb.link",
+  "https://nftstorage.link",
+  "https://cf-ipfs.com",
+  "https://ipfs.filebase.io",
+  "https://gateway.lighthouse.storage",
 ];
+
+const dedupeGatewayUrls = (urls) => {
+  const out = [];
+  const seen = new Set();
+  for (const raw of urls) {
+    const normalized = trimSlash(raw || "");
+    if (!normalized) continue;
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(normalized);
+  }
+  return out;
+};
+
+let gatewayUrls = dedupeGatewayUrls([
+  EXTRA_GATEWAY_URL,
+  PINATA_PRIMARY_GATEWAY,
+  "https://gateway.pinata.cloud",
+  ...(PINATA_ONLY ? [] : PUBLIC_FALLBACK_GATEWAYS),
+]);
+let GWS = gatewayUrls.map((url) => makeGateway(url));
 
 // Allow adding a custom gateway from outside
 export function addIpfsGateway(fnOrBaseUrl) {
@@ -77,11 +112,13 @@ export function addIpfsGateway(fnOrBaseUrl) {
     return;
   }
   if (typeof fnOrBaseUrl === "string" && fnOrBaseUrl.trim()) {
-    GWS.unshift(makeGateway(fnOrBaseUrl.trim()));
+    const normalized = trimSlash(fnOrBaseUrl.trim());
+    gatewayUrls = dedupeGatewayUrls([normalized, ...gatewayUrls]);
+    GWS = gatewayUrls.map((url) => makeGateway(url));
   }
 }
 
-export { GWS };
+export { GWS, PINATA_PRIMARY_GATEWAY };
 
 /** Fetch with an AbortController-based timeout. */
 export async function fetchWithTimeout(

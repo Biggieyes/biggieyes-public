@@ -115,34 +115,84 @@ export function useStatsREWARDS(options = {}) {
       applySetter(setTicketMinted, tm != null ? Number(tm) : null);
       applySetter(setBiggiMinted, bm != null ? Number(bm) : null);
 
-      const prices = [];
-      const minted = [];
-      for (let i = 1; i <= 10; i++) {
-        const info = await safeCall(() => main.blockInfos?.(i), null);
-        const blockPrice =
-          info?.currentPrice ??
-          info?.[2] ??
-          (await safeCall(() => main.getCurrentBlockPrice?.(i), null));
-        const blockMinted =
-          info?.mintCount ??
-          info?.[3] ??
-          (await safeCall(() => main.blockMintCounts?.(i), null)) ??
-          (await safeCall(() => main.getBlockMintCount?.(i), null));
-        prices.push(blockPrice != null ? toNumEth(blockPrice) : null);
-        minted.push(blockMinted != null ? Number(blockMinted) : null);
+      const blockMintCountReader =
+        typeof main.getBlockMintCount === "function"
+          ? (i) => main.getBlockMintCount(i)
+          : typeof main.blockMintCounts === "function"
+            ? (i) => main.blockMintCounts(i)
+            : null;
+
+      const indexProbes = [];
+      if (typeof main.getCurrentBlockPrice === "function") {
+        indexProbes.push((i) => main.getCurrentBlockPrice(i));
       }
+      if (typeof main.blockInfos === "function") {
+        indexProbes.push((i) => main.blockInfos(i));
+      }
+      if (blockMintCountReader) {
+        indexProbes.push((i) => blockMintCountReader(i));
+      }
+
+      let blockIndexBase = 1;
+      for (const probe of indexProbes) {
+        const probe0 = await safeCall(() => probe(0), null);
+        if (probe0 != null) {
+          blockIndexBase = 0;
+          break;
+        }
+      }
+
+      const blockRows = await Promise.all(
+        Array.from({ length: 10 }, async (_, i) => {
+          const blockId = i + blockIndexBase;
+          const info = await safeCall(() => main.blockInfos?.(blockId), null);
+          const blockPrice =
+            info?.currentPrice ??
+            info?.[2] ??
+            (await safeCall(() => main.getCurrentBlockPrice?.(blockId), null));
+          const blockMinted =
+            info?.mintCount ??
+            info?.[3] ??
+            (blockMintCountReader
+              ? await safeCall(() => blockMintCountReader(blockId), null)
+              : null);
+          return {
+            price: blockPrice != null ? toNumEth(blockPrice) : null,
+            minted: blockMinted != null ? Number(blockMinted) : null,
+          };
+        }),
+      );
+
+      const prices = blockRows.map((row) => row.price);
+      const minted = blockRows.map((row) => row.minted);
       applySetter(setBlockPrices, prices);
       applySetter(setBlockMintCounts, minted);
 
-      const bgCounts = [];
-      for (let j = 0; j < 10; j++) {
-        const count = await safeCall(
-          () => main.backgroundMintCounts?.(j),
-          null,
+      const bgReader =
+        typeof main.backgroundMintCounts === "function"
+          ? (i) => main.backgroundMintCounts(i)
+          : typeof main.getBackgroundMintCount === "function"
+            ? (i) => main.getBackgroundMintCount(i)
+            : null;
+
+      let bgCounts = Array(10).fill(null);
+      if (bgReader) {
+        let bgIndexBase = 0;
+        const bgProbe0 = await safeCall(() => bgReader(0), null);
+        if (bgProbe0 == null) {
+          const bgProbe1 = await safeCall(() => bgReader(1), null);
+          if (bgProbe1 != null) bgIndexBase = 1;
+        }
+        bgCounts = await Promise.all(
+          Array.from({ length: 10 }, (_, i) =>
+            safeCall(() => bgReader(i + bgIndexBase), null),
+          ),
         );
-        bgCounts.push(count != null ? Number(count) : null);
       }
-      applySetter(setBackgroundMintCounts, bgCounts);
+      const normalizedBgCounts = bgCounts.map((count) =>
+        count != null ? Number(count) : null,
+      );
+      applySetter(setBackgroundMintCounts, normalizedBgCounts);
 
       // Optional stats (not required for COLLECTION grid)
       applySetter(setRewardPool, null);
@@ -151,7 +201,7 @@ export function useStatsREWARDS(options = {}) {
         applySetter(setMyClaimable, null);
       }
 
-      return { prices, minted, bgCounts };
+      return { prices, minted, bgCounts: normalizedBgCounts };
     } catch (err) {
        
       console.warn("useStatsREWARDS fallback failed", err);

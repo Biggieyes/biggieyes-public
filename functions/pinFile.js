@@ -13,15 +13,21 @@
 import Busboy from "busboy";
 import FormData from "form-data";
 import {
+  buildPinataGatewayUrl,
   buildPinataHeaders,
   corsHeaders,
   createRateLimiter,
+  getRequestClientId,
+  isTrueEnv,
   jsonResponse,
   parseJsonBody,
   pinataRequest,
 } from "./_pinataUtils.js";
 
 const MAX_BYTES = 5 * 1024 * 1024;
+const ENABLE_NFT_STORAGE_BACKUP = isTrueEnv(
+  process.env.ENABLE_NFT_STORAGE_BACKUP || "false",
+);
 const ALLOWED_MIME = new Set([
   "image/png",
   "image/jpeg",
@@ -119,6 +125,7 @@ const toPinataForm = (buffer, { name, mime, metadata }) => {
 };
 
 const backupToNftStorage = async (buffer, { name, mime }) => {
+  if (!ENABLE_NFT_STORAGE_BACKUP) return null;
   const key = process.env.NFT_STORAGE_KEY || "";
   if (!key) return null;
   const headers = {
@@ -136,9 +143,10 @@ export async function handler(event) {
     return { statusCode: 200, headers: corsHeaders, body: "" };
   }
   if (method !== "POST") return jsonResponse(405, { success: false, error: "Method not allowed" });
-  // derive client id (prefer IP), pass to limiter so Redis can throttle per-client when available
-  const clientIp = (getHeader(event.headers, "x-forwarded-for") || getHeader(event.headers, "x-real-ip") || getHeader(event.headers, "origin") || "global").split(",")[0].trim();
-  if (!(await allowRequest(clientIp))) return jsonResponse(429, { success: false, error: "Rate limit exceeded" });
+  const clientId = getRequestClientId(event);
+  if (!(await allowRequest(clientId))) {
+    return jsonResponse(429, { success: false, error: "Rate limit exceeded" });
+  }
 
   let buffer = null;
   let name = "";
@@ -202,6 +210,7 @@ export async function handler(event) {
       success: true,
       cid,
       ipfsUrl: `ipfs://${cid}`,
+      gatewayUrl: buildPinataGatewayUrl(cid),
       raw: res?.data || {},
       backupCid: backupCid || undefined,
     });

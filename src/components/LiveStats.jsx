@@ -216,10 +216,25 @@ function LiveStats({
   const [lastFinalFromChain, setLastFinalFromChain] = React.useState(null);
   const [blockPricesFromChain, setBlockPricesFromChain] = React.useState(null);
 
-  const effectiveBlockPrices = React.useMemo(
-    () => blockPricesFromChain ?? currentBlockPrices ?? blockPrices ?? [],
-    [blockPricesFromChain, currentBlockPrices, blockPrices],
-  );
+  const effectiveBlockPrices = React.useMemo(() => {
+    const normalize = (arr) =>
+      Array.isArray(arr)
+        ? arr.map((v) => {
+            const n = Number(v);
+            return Number.isFinite(n) ? n : null;
+          })
+        : [];
+    const hasAnyValue = (arr) =>
+      Array.isArray(arr) &&
+      arr.some((v) => Number.isFinite(Number(v)));
+
+    // Prefer prices coming from MAIN/snapshot props.
+    // Liquidity-derived array is only a last-resort fallback.
+    if (hasAnyValue(currentBlockPrices)) return normalize(currentBlockPrices);
+    if (hasAnyValue(blockPrices)) return normalize(blockPrices);
+    if (hasAnyValue(blockPricesFromChain)) return normalize(blockPricesFromChain);
+    return [];
+  }, [blockPricesFromChain, currentBlockPrices, blockPrices]);
 
   const effectiveBlockMintCounts = blocksMinted ?? blockMintCounts ?? [];
   const effectiveBackgroundMintCounts = bgsMinted ?? backgroundMintCounts ?? [];

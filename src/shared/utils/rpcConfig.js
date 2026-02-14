@@ -114,6 +114,12 @@ export async function ensurePreferredRpc() {
 const LOCAL_STORAGE_RPC_PREF_KEY = "biggi_last_amoy_rpc_v1";
 const BAD_RPC_SUBSTRINGS = ["tenderly"];
 const BAD_CORS_RPCS = ["rpc-amoy.polygon.technology"];
+const UNSTABLE_AMOY_RPC_HOSTS = [
+  // These hosts have shown prolonged 503/empty-node responses for Amoy.
+  "polygon-amoy-bor-rpc.publicnode.com",
+  "polygon-amoy-bor.publicnode.com",
+  "polygon-amoy.publicnode.com",
+];
 
 function env(key) {
   try {
@@ -166,11 +172,9 @@ function uniq(values) {
 }
 
 export const PUBLIC_AMOY_RPCS = [
-  // Public endpoints that are generally browser-CORS friendly.
+  // Keep this set conservative; optional providers can be added via env.
   "https://polygon-amoy.api.onfinality.io/public",
   "https://polygon-amoy.drpc.org",
-  "https://polygon-amoy-bor.publicnode.com",
-  "https://polygon-amoy.publicnode.com",
 ];
 
 const INFURA_RPC_URL = getInfuraRpcUrl();
@@ -254,6 +258,7 @@ function rankRpcUrls(urls) {
 
 function filterOutBadRpcs(urls) {
   const allowTenderly = env("VITE_ALLOW_TENDERLY_RPC") === "1";
+  const allowUnstablePublicRpcs = env("VITE_ALLOW_UNSTABLE_PUBLIC_RPCS") === "1";
   const isBrowser = typeof window !== "undefined";
   return (urls || []).filter((u) => {
     if (!u) return false;
@@ -262,12 +267,29 @@ function filterOutBadRpcs(urls) {
     // that include whitespace inside the string (e.g. ".../v2/<key> extra").
     if (/\s/.test(raw)) return false;
     if (!/^https?:\/\//i.test(raw)) return false;
+    let parsed = null;
+    try {
+      parsed = new URL(raw);
+    } catch {
+      return false;
+    }
+    const host = String(parsed.hostname || "").toLowerCase();
+    const path = String(parsed.pathname || "").toLowerCase();
     const lower = raw.toLowerCase();
     const isBad = BAD_RPC_SUBSTRINGS.some((x) => lower.includes(x));
     if (isBad) {
       const isTenderly = lower.includes("tenderly");
       if (!(allowTenderly && isTenderly)) return false;
     }
+    if (
+      !allowUnstablePublicRpcs &&
+      UNSTABLE_AMOY_RPC_HOSTS.some((x) => host === x)
+    ) {
+      return false;
+    }
+    // Ankr requires an API key for stable access; plain /polygon_amoy endpoint
+    // returns Unauthorized and causes noisy fallback churn.
+    if (host === "rpc.ankr.com" && path === "/polygon_amoy") return false;
     if (isBrowser && BAD_CORS_RPCS.some((x) => lower.includes(x))) return false;
     return true;
   });

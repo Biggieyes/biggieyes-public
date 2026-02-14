@@ -1,7 +1,9 @@
 import {
+  buildPinataGatewayUrl,
   buildPinataHeaders,
   corsHeaders,
   createRateLimiter,
+  getRequestClientId,
   jsonResponse,
   parseJsonBody,
   pinataRequest,
@@ -15,7 +17,10 @@ export async function handler(event) {
     return { statusCode: 200, headers: corsHeaders, body: "" };
   }
   if (method !== "POST") return jsonResponse(405, { success: false, error: "Method not allowed" });
-  if (!allowRequest()) return jsonResponse(429, { success: false, error: "Rate limit exceeded" });
+  const clientId = getRequestClientId(event);
+  if (!(await allowRequest(clientId))) {
+    return jsonResponse(429, { success: false, error: "Rate limit exceeded" });
+  }
 
   const body = parseJsonBody(event);
   const metadata = body?.metadata;
@@ -40,6 +45,7 @@ export async function handler(event) {
       success: true,
       cid,
       ipfsUrl: `ipfs://${cid}`,
+      gatewayUrl: buildPinataGatewayUrl(cid),
       raw: res?.data || {},
     });
   } catch (err) {

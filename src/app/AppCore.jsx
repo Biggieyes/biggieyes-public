@@ -844,8 +844,111 @@ export default function AppCore() {
   /* ============================ STATS FETCH ============================== */
   /* ====================================================================== */
 
+  const readMainBlockStats = React.useCallback(async (main) => {
+    if (!main) return null;
+
+    const silent = async (fn) => {
+      try {
+        return await fn();
+      } catch {
+        return null;
+      }
+    };
+
+    const blockMintCountReader =
+      typeof main.getBlockMintCount === "function"
+        ? (i) => main.getBlockMintCount(i)
+        : typeof main.blockMintCounts === "function"
+          ? (i) => main.blockMintCounts(i)
+          : null;
+
+    const indexProbes = [];
+    if (typeof main.getCurrentBlockPrice === "function") {
+      indexProbes.push((i) => main.getCurrentBlockPrice(i));
+    }
+    if (typeof main.blockInfos === "function") {
+      indexProbes.push((i) => main.blockInfos(i));
+    }
+    if (blockMintCountReader) {
+      indexProbes.push((i) => blockMintCountReader(i));
+    }
+
+    let blockIndexBase = 1;
+    for (const probe of indexProbes) {
+      const probe0 = await silent(() => probe(0));
+      if (probe0 != null) {
+        blockIndexBase = 0;
+        break;
+      }
+    }
+
+    const blockRows = await Promise.all(
+      Array.from({ length: 10 }, async (_, i) => {
+        const blockId = i + blockIndexBase;
+        const info =
+          typeof main.blockInfos === "function"
+            ? await silent(() => main.blockInfos(blockId))
+            : null;
+
+        const priceWei =
+          info?.currentPrice ??
+          info?.[2] ??
+          (typeof main.getCurrentBlockPrice === "function"
+            ? await silent(() => main.getCurrentBlockPrice(blockId))
+            : null);
+
+        const mintedRaw =
+          info?.mintCount ??
+          info?.[3] ??
+          (blockMintCountReader
+            ? await silent(() => blockMintCountReader(blockId))
+            : null);
+
+        return {
+          price: toNumEth(priceWei) ?? 0,
+          minted: Number(mintedRaw ?? 0),
+        };
+      }),
+    );
+
+    const prices = blockRows.map((row) =>
+      Number.isFinite(row.price) ? row.price : 0,
+    );
+    const blkCounts = blockRows.map((row) =>
+      Number.isFinite(row.minted) ? row.minted : 0,
+    );
+
+    const bgReader =
+      typeof main.backgroundMintCounts === "function"
+        ? (i) => main.backgroundMintCounts(i)
+        : typeof main.getBackgroundMintCount === "function"
+          ? (i) => main.getBackgroundMintCount(i)
+          : null;
+
+    let bgCounts = new Array(10).fill(0);
+    if (bgReader) {
+      let bgIndexBase = 0;
+      const bgProbe0 = await silent(() => bgReader(0));
+      if (bgProbe0 == null) {
+        const bgProbe1 = await silent(() => bgReader(1));
+        if (bgProbe1 != null) bgIndexBase = 1;
+      }
+
+      const rawBgCounts = await Promise.all(
+        Array.from({ length: 10 }, (_, i) =>
+          silent(() => bgReader(i + bgIndexBase)),
+        ),
+      );
+      bgCounts = rawBgCounts.map((v) => Number(v ?? 0));
+    }
+
+    return { prices, blkCounts, bgCounts };
+  }, []);
+
   const fetchStats = React.useCallback(async () => {
-    // 1) Prefer readers snapshot
+    let snapshotUsed = false;
+
+    // 1) Prefer reader snapshot for scalar stats
     try {
       const readerKinds = ["main", "tokenomics", "REWARDS", "generic"];
       let snap = null;
@@ -873,31 +976,31 @@ export default function AppCore() {
         setTicketMinted(Number(ticketMinted_ ?? 0));
         setBiggiMinted(Number(biggiMinted_ ?? 0));
 
-        setBlockPrices(
-          (currentBlockPrices || []).map((x) => toNumEth(x) ?? 0)
-        );
+        setBlockPrices((currentBlockPrices || []).map((x) => toNumEth(x) ?? 0));
         setBlockMintCounts((blocksMinted || []).map((x) => Number(x ?? 0)));
         setBackgroundMintCounts((bgsMinted || []).map((x) => Number(x ?? 0)));
-        return;
+        snapshotUsed = true;
       }
     } catch (e) {
       console.warn("fetchStats(reader) failed", e);
     }
 
-    // 2) Fallback to main contract direct calls
+    // 2) Always refresh block/bG arrays from MAIN with index-base detection.
+    // This prevents stale/misaligned reader arrays from freezing dynamic prices.
     try {
       const main = contractRef.current || getReadOnlyContract();
 
-      const priceCandidates = [
-        "getTicketPrice",
-        "ticketPrice",
-        "getTicketPriceWei",
-        "ticketPriceWei",
-      ];
-      let priceWei = null;
-      for (const fn of priceCandidates) {
-        const f = main?.[fn];
-        if (typeof f === "function") {
+      if (!snapshotUsed) {
+        const priceCandidates = [
+          "getTicketPrice",
+          "ticketPrice",
+          "getTicketPriceWei",
+          "ticketPriceWei",
+        ];
+        let priceWei = null;
+        for (const fn of priceCandidates) {
+          const f = main?.[fn];
+          if (typeof f !== "function") continue;
           try {
             const v = await f();
             if (v != null) {
@@ -906,53 +1009,32 @@ export default function AppCore() {
             }
           } catch {}
         }
-      }
-      if (priceWei != null) setTicketPrice(toNumEth(priceWei));
+        if (priceWei != null) setTicketPrice(toNumEth(priceWei));
 
-      try {
-        const tm = await main.ticketMinted?.();
-        setTicketMinted(Number(tm ?? 0));
-      } catch {}
-      try {
-        const bm = await main.biggiMinted?.();
-        setBiggiMinted(Number(bm ?? 0));
-      } catch {}
-
-      const prices = [];
-      const blkCounts = [];
-      const bgCounts = [];
-
-      for (let i = 1; i <= 10; i++) {
         try {
-          const p = await main.getCurrentBlockPrice(i);
-          prices.push(toNumEth(p) ?? 0);
-        } catch {
-          prices.push(0);
-        }
+          const tm = await main.ticketMinted?.();
+          setTicketMinted(Number(tm ?? 0));
+        } catch {}
         try {
-          const c = await main.getBlockMintCount(i);
-          blkCounts.push(Number(c ?? 0));
-        } catch {
-          blkCounts.push(0);
-        }
+          const bm = await main.biggiMinted?.();
+          setBiggiMinted(Number(bm ?? 0));
+        } catch {}
       }
 
-      for (let j = 0; j < 10; j++) {
-        try {
-          const c = await main.backgroundMintCounts(j);
-          bgCounts.push(Number(c ?? 0));
-        } catch {
-          bgCounts.push(0);
-        }
+      const direct = await readMainBlockStats(main);
+      if (direct) {
+        setBlockPrices(direct.prices);
+        setBlockMintCounts(direct.blkCounts);
+        setBackgroundMintCounts(direct.bgCounts);
       }
-
-      setBlockPrices(prices);
-      setBlockMintCounts(blkCounts);
-      setBackgroundMintCounts(bgCounts);
     } catch (e) {
-      console.error("fetchStats(fallback main) failed", e);
+      if (!snapshotUsed) {
+        console.error("fetchStats(fallback main) failed", e);
+      } else {
+        console.debug("fetchStats(main overlay) failed", e);
+      }
     }
-  }, []);
+  }, [readMainBlockStats]);
 
   /* ====================================================================== */
   /* ============================ REWARDS FETCH ============================= */

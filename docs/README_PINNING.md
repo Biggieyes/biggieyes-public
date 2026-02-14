@@ -9,7 +9,9 @@ Set these in Netlify (Site settings -> Build & deploy -> Environment):
 - PINATA_API_KEY
 - PINATA_SECRET_API_KEY
 - PINATA_JWT (optional, preferred over API key/secret)
-- NFT_STORAGE_KEY (optional backup pinning)
+- PINATA_GATEWAY_BASE_URL (optional, default `https://biggieyes.mypinata.cloud`)
+- ENABLE_NFT_STORAGE_BACKUP (optional, default `false`)
+- NFT_STORAGE_KEY (optional; only used when `ENABLE_NFT_STORAGE_BACKUP=true`)
 
 Do NOT commit secrets to git.
 
@@ -22,7 +24,10 @@ PINATA_API_KEY=your_key
 PINATA_SECRET_API_KEY=your_secret
 # or use JWT instead
 # PINATA_JWT=your_jwt
+# optional dedicated gateway override
+# PINATA_GATEWAY_BASE_URL=https://biggieyes.mypinata.cloud
 # optional backup pin
+# ENABLE_NFT_STORAGE_BACKUP=true
 # NFT_STORAGE_KEY=your_nft_storage_key
 ```
 
@@ -62,12 +67,13 @@ ipfs://<metadataCid>
 
 ## Verify a CID
 
-- Pinata gateway: https://gateway.pinata.cloud/ipfs/<cid>
-- Any IPFS gateway should also work.
+- Dedicated Pinata gateway: `https://biggieyes.mypinata.cloud/ipfs/<cid>`
+- Fallback Pinata gateway: `https://gateway.pinata.cloud/ipfs/<cid>`
+- Any IPFS gateway can work as fallback in read paths.
 
 ## Troubleshooting
 
 - 401/403 from Pinata: check API key/JWT permissions.
 - 413 / "File too large": file exceeds 5 MB limit.
 - 429: rate limit exceeded (10 req/min per function instance).
-- Backup pin (nft.storage) failures are logged server-side and do not fail the primary Pinata pin.
+- Backup pin (nft.storage) is optional and disabled by default.

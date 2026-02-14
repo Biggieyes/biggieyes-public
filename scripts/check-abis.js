@@ -66,6 +66,15 @@ const IGNORE_METHODS = new Set([
   "substr",
 ]);
 
+// Runtime helpers injected in src/shared/utils/contract.js (_attachHelpers).
+// They are valid call targets on merged helper contracts, but not ABI methods.
+const RUNTIME_HELPER_METHODS = new Set([
+  "claimStatus",
+  "routerInfo",
+  "getSwapPath",
+  "liquidityPreview",
+]);
+
 const CONTRACT_FACTORY_RE =
   /^(get|create)[A-Z].*(Contract|Contracts|Reader|RO|RW)$/;
 const CONTRACT_FACTORY_HINTS =
@@ -444,6 +453,7 @@ function parseFile(filePath, abiByFile, allFunctions) {
       }
       const methodName = getPropertyName(callee);
       if (!methodName || IGNORE_METHODS.has(methodName)) return;
+      if (RUNTIME_HELPER_METHODS.has(methodName)) return;
 
       const base = getContractBaseForCalleeObject(
         callee.object,
@@ -479,6 +489,7 @@ function parseFile(filePath, abiByFile, allFunctions) {
       }
       const methodName = getPropertyName(callee);
       if (!methodName || IGNORE_METHODS.has(methodName)) return;
+      if (RUNTIME_HELPER_METHODS.has(methodName)) return;
 
       const base = getContractBaseForCalleeObject(
         callee.object,
