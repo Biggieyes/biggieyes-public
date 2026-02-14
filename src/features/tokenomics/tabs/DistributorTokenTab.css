@@ -1,0 +1,125 @@
+@import "../../Common/components/StatCard.css";
+
+.distributor-token-tab {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 232, 0, 0.2);
+  background: linear-gradient(160deg, rgba(12, 14, 22, 0.9), rgba(6, 8, 14, 0.98));
+  padding: 22px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+}
+
+.distributor-token-tab__header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  letter-spacing: 0.06em;
+}
+
+.distributor-token-tab__content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+
+.distributor-token-tab__column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.distributor-token-tab__meta {
+  border: 1px solid rgba(255, 232, 0, 0.18);
+  background: linear-gradient(160deg, rgba(16, 18, 26, 0.9), rgba(9, 11, 18, 0.98));
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.distributor-token-tab__meta-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: rgba(255, 232, 0, 0.82);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.distributor-token-tab__meta-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.distributor-token-tab__meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: rgba(212, 222, 238, 0.9);
+}
+
+.distributor-token-tab__meta-address {
+  font-family:
+    "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  color: #d6e4ff;
+}
+
+.distributor-token-tab__chart-wrap {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 232, 0, 0.18);
+  padding: 16px;
+  background: linear-gradient(160deg, rgba(16, 18, 26, 0.9), rgba(9, 11, 18, 0.98));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.32);
+}
+
+.distributor-token-tab__chart-wrap header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.distributor-token-tab__chart-wrap h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.distributor-token-tab__chart-wrap span {
+  font-size: 0.85rem;
+  color: #7e8ca9;
+}
+
+@media (max-width: 900px) {
+  .distributor-token-tab {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .distributor-token-tab__header h3 {
+    font-size: 1.1rem;
+  }
+
+  .distributor-token-tab__content {
+    grid-template-columns: 1fr;
+  }
+
+  .distributor-token-tab__chart-wrap {
+    padding: 12px;
+  }
+
+  .distributor-token-tab__chart-wrap header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}

@@ -1,0 +1,62 @@
+@import "../../Common/components/StatCard.css";
+
+.token-dex-tab {
+  border-radius: 18px;
+  border: 1px solid #111826;
+  background: #040a14;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.token-dex-tab__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.token-dex-tab__header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.token-dex-tab__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.token-dex-tab__charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.token-dex-tab__chart {
+  border-radius: 14px;
+  border: 1px solid #1a2234;
+  background: #050b16;
+  padding: 12px;
+}
+
+.token-dex-tab__chart h4 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+}
+
+.token-dex-tab--error {
+  border-color: #7f1d1d;
+  color: #fecaca;
+}
+
+@media (max-width: 900px) {
+  .token-dex-tab {
+    padding: 16px;
+  }
+  .token-dex-tab__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

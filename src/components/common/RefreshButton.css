@@ -1,0 +1,35 @@
+.refresh-button {
+  margin-left: 10px;
+  background-color: #08ffe6;
+  color: #111;
+  border: 2px solid #ffe800;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.refresh-button:hover {
+  background-color: #06d9c9;
+}
+
+.refresh-button:active {
+  transform: scale(0.97);
+  outline: none;
+}
+
+.refresh-button:focus-visible {
+  box-shadow:
+    0 0 0 2px rgba(255, 232, 0, 0.6),
+    0 0 0 4px rgba(8, 255, 230, 0.5);
+  outline: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .refresh-button {
+    color: #000;
+    border-color: #fff700;
+  }
+}
