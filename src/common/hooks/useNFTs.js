@@ -1,11 +1,12 @@
 import * as React from "react";
 import { ZeroAddress } from "ethers";
 import {
-  getContract,
   getReadOnlyContract,
   getLiquidityContract,
-} from "../../utils/contract";
-import { getLogsBatched } from "../../wallet/wc";
+  getMainRW,
+  getProviderForContract,
+} from "@/shared/utils/contract";
+import { queryLogsBatched, getSafeDeployBlock } from "@/shared/utils/shared";
 import { readJsonFromURI, resolveImageUrl } from "../../services/ipfs";
 
 /**
@@ -31,13 +32,15 @@ export function useNFTs({
 
   /* ------------------- pomocné funkce ------------------- */
   const findTicketsViaLogs = React.useCallback(async (contract, addr) => {
-    const FROM = 27105502; // deploy block
-    const latest = await contract.provider.getBlockNumber();
+    const provider = getProviderForContract(contract);
+    if (!provider) throw new Error("Provider not available");
+    const latest = await provider.getBlockNumber();
+    const FROM = await getSafeDeployBlock(provider);
     const toFilter = contract.filters.Transfer(null, addr, null);
     const fromFilter = contract.filters.Transfer(addr, null, null);
     const [toLogs, fromLogs] = await Promise.all([
-      getLogsBatched(contract.provider, toFilter, FROM, latest),
-      getLogsBatched(contract.provider, fromFilter, FROM, latest),
+      queryLogsBatched(contract, toFilter, FROM, latest),
+      queryLogsBatched(contract, fromFilter, FROM, latest),
     ]);
     const all = [...toLogs, ...fromLogs].sort((a, b) =>
       a.blockNumber !== b.blockNumber
@@ -74,7 +77,7 @@ export function useNFTs({
               if (json) {
                 meta = json;
                 const imgUrl = json.image || json.image_url;
-                image = resolveImageUrl(imgUrl, uri) || image;
+                image = (await resolveImageUrl(imgUrl, uri)) || image;
               }
             } catch (err) {
               console.debug("fetchWalletAssets tokenURI read failed", err);
@@ -97,14 +100,20 @@ export function useNFTs({
     setError(null);
     try {
       await ensureAmoy();
-      const contract = getContract();
-      const net = await contract.provider.getNetwork();
-      if (net.chainId !== 80002) await ensureAmoy();
+      const contract = await getMainRW();
+      const provider = getProviderForContract(contract);
+      if (!provider) throw new Error("Provider not available");
+      const net = await provider.getNetwork();
+      const chainId =
+        typeof net?.chainId === "bigint" ? Number(net.chainId) : net?.chainId;
+      if (chainId !== 80002) await ensureAmoy();
 
       if (await contract.paused()) return alert("Mint is paused.");
 
       const price = await contract.ticketPrice();
-      await contract.estimateGas.mintTicket({ value: price });
+      const estimateMint =
+        contract?.estimateGas?.mintTicket || contract?.mintTicket?.estimateGas;
+      if (estimateMint) await estimateMint({ value: price });
       const tx = await contract.mintTicket({ value: price });
       await tx.wait();
 
@@ -136,28 +145,54 @@ export function useNFTs({
     setError(null);
     try {
       await ensureAmoy();
-      const contract = getContract();
-      if (await contract.paused()) return alert("Redeem is paused.");
+      const contract = await getMainRW();
+      if (typeof contract.paused === "function" && (await contract.paused())) {
+        return alert("Redeem is paused.");
+      }
 
       setIsRedeeming(true);
       setRedeemMsg("Submitting redeem transaction…");
 
-      const tickets = await findTicketsViaLogs(contract, walletAddress);
+      let tickets = [];
+      try {
+        tickets = await findTicketsViaLogs(contract, walletAddress);
+      } catch {
+        tickets = [];
+      }
+      if (!Array.isArray(tickets)) {
+        tickets = tickets ? [tickets] : [];
+      }
       if (!tickets.length) {
         setIsRedeeming(false);
         setRedeemMsg("");
         return alert("You don't have any ticket to redeem.");
       }
 
-      const ticketId = tickets[0];
-      const price = await contract.ticketPrice();
+      const ticketId = (() => {
+        const raw = tickets[0];
+        if (raw == null) return null;
+        if (typeof raw === "bigint") return raw;
+        if (typeof raw === "number") return BigInt(raw);
+        if (typeof raw === "string") return BigInt(raw);
+        if (typeof raw?.toString === "function") return BigInt(raw.toString());
+        return null;
+      })();
+      if (ticketId == null) {
+        setIsRedeeming(false);
+        setRedeemMsg("");
+        return alert("Unable to read your ticket ID.");
+      }
 
-      await contract.estimateGas.redeemTicketAndMintNFT(ticketId);
-      setRedeemMsg("Please confirm in your wallet…");
-
-      const tx = await contract.redeemTicketAndMintNFT(ticketId, {
-        value: price,
-      });
+      const redeemFn = contract?.redeemTicketAndMintNFT;
+      if (typeof redeemFn !== "function") {
+        throw new Error("Redeem function not available on MAIN contract.");
+      }
+      const estimateRedeem =
+        contract?.estimateGas?.redeemTicketAndMintNFT || redeemFn?.estimateGas;
+      if (estimateRedeem) await estimateRedeem(ticketId);
+      if (redeemFn?.staticCall) await redeemFn.staticCall(ticketId);
+      setRedeemMsg("Please confirm in your wallet...");
+      const tx = await redeemFn(ticketId);
       await tx.wait();
 
       setPendingTicketId(ticketId.toString());
@@ -201,7 +236,7 @@ export function useNFTs({
         .map((x) => BigInt(x.tokenId));
       if (!ids.length) return alert("No eligible NFTs to claim.");
 
-      const brl = getLiquidityContract();
+      const brl = await getLiquidityContract();
       const tx = await brl.claim(ids);
       await tx.wait();
 
@@ -232,7 +267,8 @@ export function useNFTs({
       const lastId = Number(total.toString());
       const uri = await contract.tokenURI(lastId);
       const meta = await readJsonFromURI(uri);
-      const image = resolveImageUrl(meta?.image, uri);
+      const image =
+        (await resolveImageUrl(meta?.image, uri)) || "/images/Biggi.png";
       setLastMinted({ tokenId: lastId, image });
     } catch (e) {
       console.error("fetchLastMinted", e);
@@ -287,6 +323,3 @@ export function useNFTs({
     setRedeemMsg,
   };
 }
-
-
-
