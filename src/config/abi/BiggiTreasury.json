@@ -160,25 +160,6 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "totalReceived",
-        "type": "uint256"
-      }
-    ],
-    "name": "MaticFromDistributor",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
         "indexed": true,
         "internalType": "address",
         "name": "previousOwner",
@@ -192,6 +173,25 @@
       }
     ],
     "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "totalReceived",
+        "type": "uint256"
+      }
+    ],
+    "name": "PolFromDistributor",
     "type": "event"
   },
   {
@@ -290,7 +290,7 @@
   },
   {
     "inputs": [],
-    "name": "depositMaticFromDistributor",
+    "name": "depositPolFromDistributor",
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"
@@ -323,12 +323,12 @@
   },
   {
     "inputs": [],
-    "name": "maticBalance",
+    "name": "owner",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "address",
         "name": "",
-        "type": "uint256"
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -336,12 +336,12 @@
   },
   {
     "inputs": [],
-    "name": "owner",
+    "name": "polBalance",
     "outputs": [
       {
-        "internalType": "address",
+        "internalType": "uint256",
         "name": "",
-        "type": "address"
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -514,7 +514,7 @@
   },
   {
     "inputs": [],
-    "name": "totalMaticReceived",
+    "name": "totalPolReceived",
     "outputs": [
       {
         "internalType": "uint256",
@@ -527,7 +527,7 @@
   },
   {
     "inputs": [],
-    "name": "totalMaticReceivedFromDistributor",
+    "name": "totalPolReceivedFromDistributor",
     "outputs": [
       {
         "internalType": "uint256",

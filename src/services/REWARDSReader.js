@@ -1,6 +1,2 @@
-// Dummy REWARDSReader.js pro build kompatibilitu
-// Pokud potřebujete skutečnou implementaci, přesuňte logiku sem.
-
-export function getREWARDSReaderContract() {
-  throw new Error("getREWARDSReaderContract není implementován: src/services/REWARDSReader.js neexistuje");
-}
+export * from "../shared/services/REWARDSReader.js";
+export { default } from "../shared/services/REWARDSReader.js";

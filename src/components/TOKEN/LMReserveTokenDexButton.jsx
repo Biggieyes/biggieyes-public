@@ -1,5 +1,5 @@
 import * as React from "react";
-import BiggiButton from "./BiggiButton";
+import BiggiButton from "../../shared/components/BiggiButton";
 
 const LMReserveTokenDexButton = ({ children = "TOKEN/DEX", ...props }) => (
   <BiggiButton variant="v" {...props}>

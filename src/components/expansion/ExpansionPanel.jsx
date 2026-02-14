@@ -1,1 +1,1 @@
-export { default } from "../../panels/BiggiToken/expansion/ExpansionPanel.jsx";
+export { ExpansionPanel as default } from "../../features/tokenomics";

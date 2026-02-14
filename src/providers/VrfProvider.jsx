@@ -1,12 +1,18 @@
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress } from "ethers";
 import { useContracts } from "./ContractsProvider";
+import {
+  queryLogsBatched,
+  getSafeDeployBlock,
+  isFullHistoryEnabled,
+} from "../shared/utils/shared";
+import { getProviderForContract } from "../shared/utils/contract";
 
 const Ctx = React.createContext(null);
-const DEPLOY_BLOCK = 26412543;
+const FULL_HISTORY = isFullHistoryEnabled();
 
 export function VRFProvider({ children }) {
-  const { mainRO, mainRW } = useContracts();
+  const { mainRO, mainRW, biggiMainReaderRead, readerRead } = useContracts();
 
   const [params, setParams] = React.useState({
     keyHash: "",
@@ -25,6 +31,36 @@ export function VRFProvider({ children }) {
   const [VRFPending, setVRFPending] = React.useState(false);
   const [isRedeeming, setIsRedeeming] = React.useState(false);
   const [redeemMsg, setRedeemMsg] = React.useState("");
+
+  const findTicketsViaLogs = React.useCallback(async (contract, addr) => {
+    if (!contract || !addr) return [];
+    const provider = getProviderForContract(contract);
+    if (!provider || typeof provider.getBlockNumber !== "function")
+      throw new Error("Provider not available");
+    const latest = await provider.getBlockNumber();
+    const fromBlock = await getSafeDeployBlock(provider);
+    const toFilter = contract.filters.Transfer(null, addr, null);
+    const fromFilter = contract.filters.Transfer(addr, null, null);
+    const [toLogs, fromLogs] = await Promise.all([
+      queryLogsBatched(contract, toFilter, fromBlock, latest),
+      queryLogsBatched(contract, fromFilter, fromBlock, latest),
+    ]);
+    const ordered = [...toLogs, ...fromLogs].sort((a, b) => {
+      if (a.blockNumber !== b.blockNumber) return a.blockNumber - b.blockNumber;
+      return a.logIndex - b.logIndex;
+    });
+    const held = new Set();
+    const me = String(addr).toLowerCase();
+    for (const log of ordered) {
+      const from = String(log.args?.from ?? log.args?.[0] ?? "").toLowerCase();
+      const to = String(log.args?.to ?? log.args?.[1] ?? "").toLowerCase();
+      const tokenId = (log.args?.tokenId ?? log.args?.[2])?.toString?.() || "";
+      if (!tokenId) continue;
+      if (to === me) held.add(tokenId);
+      if (from === me) held.delete(tokenId);
+    }
+    return Array.from(held);
+  }, []);
 
   const refresh = React.useCallback(
     async (userAddr = "") => {
@@ -50,15 +86,24 @@ export function VRFProvider({ children }) {
 
         // history (simplified: only fulfilled/pending for the user)
         if (userAddr) {
-          const latest = await c.provider.getBlockNumber();
-          const reqLogs = await c.queryFilter(
+          const provider = getProviderForContract(c);
+          if (!provider || typeof provider.getBlockNumber !== "function")
+            throw new Error("Provider not available");
+          const latest = await provider.getBlockNumber();
+          const baseFrom = await getSafeDeployBlock(provider);
+          const from = FULL_HISTORY
+            ? baseFrom
+            : Math.max(baseFrom, latest - 120000);
+          const reqLogs = await queryLogsBatched(
+            c,
             c.filters.VRFRequested?.(userAddr) ?? c.filters.VRFRequested(),
-            Math.max(DEPLOY_BLOCK, latest - 120000),
+            from,
             latest,
           );
-          const fulfRaw = await c.queryFilter(
+          const fulfRaw = await queryLogsBatched(
+            c,
             c.filters.VRFFulfillStarted?.() ?? c.filters.VRFFulfillStarted(),
-            Math.max(DEPLOY_BLOCK, latest - 120000),
+            from,
             latest,
           );
           const fulf = fulfRaw.filter(
@@ -103,21 +148,64 @@ export function VRFProvider({ children }) {
         setIsRedeeming(true);
         setRedeemMsg("Submitting redeem...");
 
-        // find the first ticket
+        // find the first ticket (prefer reader, fallback to logs)
         let tickets = [];
         try {
-          tickets = await c.findTicket(userAddr);
+          const reader =
+            (typeof biggiMainReaderRead === "function"
+              ? biggiMainReaderRead()
+              : null) ||
+            (typeof readerRead === "function" ? readerRead() : null);
+          if (reader && typeof reader.findTicket === "function") {
+            tickets = await reader.findTicket(userAddr);
+          } else if (typeof c.findTicket === "function") {
+            tickets = await c.findTicket(userAddr);
+          }
         } catch {}
+
+        if (!tickets?.length) {
+          try {
+            tickets = await findTicketsViaLogs(c, userAddr);
+          } catch {
+            tickets = [];
+          }
+        }
+
         if (!tickets?.length) {
           setIsRedeeming(false);
           setRedeemMsg("");
           throw new Error("No ticket");
         }
 
-        const id = tickets[0];
-        await c.callStatic.redeemTicketAndMintNFT(id);
+        const id = (() => {
+          const raw = tickets[0];
+          if (raw == null) return null;
+          if (typeof raw === "bigint") return raw;
+          if (typeof raw === "number") return BigInt(raw);
+          if (typeof raw === "string") return BigInt(raw);
+          if (typeof raw?.toString === "function") return BigInt(raw.toString());
+          return null;
+        })();
+        if (id == null) {
+          setIsRedeeming(false);
+          setRedeemMsg("");
+          throw new Error("Unable to read ticket ID");
+        }
+
+        const redeemFn = c?.redeemTicketAndMintNFT;
+        if (typeof redeemFn !== "function") {
+          throw new Error("Redeem function not available on MAIN contract.");
+        }
+        const estimate =
+          c?.estimateGas?.redeemTicketAndMintNFT ||
+          redeemFn?.estimateGas ||
+          null;
+        if (estimate) await estimate(id);
+        if (redeemFn?.staticCall) await redeemFn.staticCall(id);
+        if (c?.callStatic?.redeemTicketAndMintNFT)
+          await c.callStatic.redeemTicketAndMintNFT(id);
         setRedeemMsg("Confirm in wallet...");
-        const tx = await c.redeemTicketAndMintNFT(id);
+        const tx = await redeemFn(id);
         setRedeemMsg("Waiting for confirmation...");
         await tx.wait();
 

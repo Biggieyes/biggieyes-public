@@ -3,10 +3,15 @@ import "./Gallery.css";
 import NftCard from "./NftCard";
 import { useContracts } from "../providers/ContractsProvider";
 import { useWeb3 } from "../providers/Web3Provider";
-import { Contract } from "ethers";
-import { formatEther, parseEther, arrayify } from "ethers/lib.esm/utils.js";
-import { AddressZero } from "@ethersproject/constants";
+import { formatEther } from "ethers";
 import { ADDR } from "../utils/addresses.js";
+import { getProviderForContract } from "../shared/utils/contract";
+import {
+  queryLogsBatched,
+  getSafeDeployBlock,
+  loadWalletCache,
+  saveWalletCache,
+} from "../shared/utils/shared";
 import {
   readJsonFromURI,
   resolveImageUrl,
@@ -16,11 +21,86 @@ import {
 const PAGE_SIZE_DESKTOP = 12;
 const PAGE_SIZE_MOBILE = 6;
 
-// max šířka batch okna pro RPC (bezpečně pod 50k)
-const LOGS_BATCH = 36_000;
+// Smaller batch size to reduce RPC rejections on public endpoints.
+const LOGS_BATCH = 300;
 
 // paralelní limit pro tokenURI / metadata fetch (snižuje šanci na RPC timeouts)
-const METADATA_PARALLELISM = 12;
+const METADATA_PARALLELISM = 10;
+const METADATA_PARALLELISM_MOBILE = 6;
+
+const tokenUriCache = new Map();
+const metadataCache = new Map();
+const imageCache = new Map();
+
+const SESSION_CACHE_VERSION = "v2";
+const makeSessionKey = (prefix, value) =>
+  `${prefix}:${SESSION_CACHE_VERSION}:${encodeURIComponent(
+    String(value || "")
+  )}`;
+
+const loadSessionJson = (key) => {
+  try {
+    if (typeof sessionStorage === "undefined") return null;
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
+const saveSessionJson = (key, value) => {
+  try {
+    if (typeof sessionStorage === "undefined") return;
+    sessionStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore quota / storage errors
+  }
+};
+
+const getParallelism = () => {
+  try {
+    if (typeof window !== "undefined") {
+      if (window.matchMedia("(max-width: 700px)").matches)
+        return METADATA_PARALLELISM_MOBILE;
+    }
+  } catch {
+    // ignore
+  }
+  return METADATA_PARALLELISM;
+};
+
+const looksLikeTicketMeta = (meta) => {
+  if (!meta) return false;
+  const name = String(meta?.name || "").toLowerCase();
+  const desc = String(meta?.description || "").toLowerCase();
+  return (
+    name.includes("ticket") ||
+    desc.includes("ticket") ||
+    desc.includes("redeem")
+  );
+};
+
+const looksLikeNftMeta = (meta) => {
+  if (!meta) return false;
+  const attrs = Array.isArray(meta?.attributes) ? meta.attributes : [];
+  return attrs.some((a) => {
+    const t = String(a?.trait_type || "").toLowerCase();
+    return t.includes("background") || t.includes("block") || t.includes("eye");
+  });
+};
+
+const normalizeBaseUri = (uri) => {
+  if (!uri) return null;
+  const s = String(uri).trim();
+  if (!s) return null;
+  return s.endsWith("/") ? s : `${s}/`;
+};
+
+const isTicketUri = (uri, base) => {
+  if (!uri || !base) return false;
+  return String(uri).startsWith(base);
+};
 
 function toIdString(item) {
   if (!item) return "";
@@ -29,54 +109,6 @@ function toIdString(item) {
   return "";
 }
 
-async function getSafeDeployBlock(provider) {
-  try {
-    if (ADDR?.DEPLOY_BLOCK && Number.isFinite(Number(ADDR.DEPLOY_BLOCK))) {
-      return Number(ADDR.DEPLOY_BLOCK);
-    }
-    if (!provider || typeof provider.getBlockNumber !== "function") return 0;
-    const latest = await provider.getBlockNumber().catch(() => null);
-    if (latest == null) {
-      console.warn(
-        "getSafeDeployBlock: provider.getBlockNumber failed, falling back to 0",
-      );
-      return 0;
-    }
-    return Math.max(0, latest - 49_999);
-  } catch (e) {
-    console.warn("getSafeDeployBlock: unexpected error", e);
-    return 0;
-  }
-}
-
-async function queryLogsBatched(
-  contract,
-  filter,
-  fromBlock,
-  toBlock,
-  step = LOGS_BATCH,
-) {
-  const out = [];
-  let start = fromBlock;
-  let batch = step;
-  while (start <= toBlock) {
-    const end = Math.min(start + batch - 1, toBlock);
-    try {
-      const part = await contract.queryFilter(filter, start, end);
-      if (part?.length) out.push(...part);
-      start = end + 1;
-      batch = step;
-    } catch (err) {
-      // snaha o degradaci batchu při chybách (provider může odmítnout velké intervaly)
-      console.warn(
-        `queryLogsBatched: batch ${batch} failed, reducing. err: ${err?.message || err}`,
-      );
-      if (batch <= 1) throw new Error("queryFilter failed even at batch=1");
-      batch = Math.max(1, Math.floor(batch / 2));
-    }
-  }
-  return out;
-}
 
 /**
  * Resolve token IDs owned by address with preference for reader methods.
@@ -86,6 +118,94 @@ async function queryLogsBatched(
  */
 async function resolveHeldTokenIds(mainContract, address, reader) {
   if (!mainContract || !address) return [];
+  const contractAddr = mainContract?.target || mainContract?.address || "";
+
+  const coerceBigIntId = (value) => {
+    try {
+      if (value == null) return null;
+      if (typeof value === "bigint") return value;
+      if (typeof value === "number") {
+        if (!Number.isFinite(value) || !Number.isInteger(value)) return null;
+        return BigInt(value);
+      }
+      if (typeof value === "string") {
+        const s = value.trim();
+        if (!s) return null;
+        if (/^\d+$/.test(s)) return BigInt(s);
+        return null;
+      }
+      if (typeof value === "object") {
+        // Some caches store full NFT objects; accept tokenId/id fields.
+        const maybe = value?.tokenId ?? value?.id ?? null;
+        if (maybe != null) return coerceBigIntId(maybe);
+      }
+      if (typeof value?.toString === "function") {
+        return coerceBigIntId(value.toString());
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  };
+  const cached = loadWalletCache(address, { allowExpired: true }, contractAddr);
+  const cachedIds =
+    Array.isArray(cached) && cached.length
+      ? cached.map(coerceBigIntId).filter((x) => x != null)
+      : null;
+  const saveIds = (ids) => {
+    try {
+      saveWalletCache(
+        address,
+        ids.map((id) => id.toString()),
+        contractAddr,
+      );
+    } catch {
+      // ignore cache errors
+    }
+    return ids;
+  };
+
+  const safeLogArg = (args, key, index) => {
+    if (!args) return undefined;
+    if (key) {
+      try {
+        const v = args[key];
+        if (v != null) return v;
+      } catch {
+        // ignore
+      }
+    }
+    if (typeof index === "number") {
+      try {
+        if (typeof args.length === "number" && args.length <= index)
+          return undefined;
+      } catch {
+        // ignore
+      }
+      try {
+        return args[index];
+      } catch {
+        // ignore out-of-range access
+      }
+    }
+    return undefined;
+  };
+
+  const topicToAddress = (topic) => {
+    if (!topic || typeof topic !== "string") return "";
+    const hex = topic.startsWith("0x") ? topic.slice(2) : topic;
+    if (hex.length < 40) return "";
+    return `0x${hex.slice(hex.length - 40)}`;
+  };
+
+  const topicToBigInt = (topic) => {
+    if (!topic || typeof topic !== "string") return null;
+    try {
+      return BigInt(topic);
+    } catch {
+      return null;
+    }
+  };
 
   // 1) pokud máme reader, zkusíme více reader-methods (preferované — rychlejší a méně RPC)
   if (reader) {
@@ -94,7 +214,7 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
       if (typeof reader.getUserRewardTokenIds === "function") {
         const res = await reader.getUserRewardTokenIds(address);
         if (Array.isArray(res) && res.length)
-          return res.map((id) => BigInt(id));
+          return saveIds(res.map(coerceBigIntId).filter((x) => x != null));
       }
     } catch (e) {
       console.warn("reader.getUserRewardTokenIds failed, falling back", e);
@@ -103,7 +223,7 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
       if (typeof reader.getUserTokenIds === "function") {
         const res = await reader.getUserTokenIds(address);
         if (Array.isArray(res) && res.length)
-          return res.map((id) => BigInt(id));
+          return saveIds(res.map(coerceBigIntId).filter((x) => x != null));
       }
     } catch (e) {
       console.warn("reader.getUserTokenIds failed, falling back", e);
@@ -112,7 +232,7 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
       if (typeof reader.tokensOfOwner === "function") {
         const res = await reader.tokensOfOwner(address);
         if (Array.isArray(res) && res.length)
-          return res.map((id) => BigInt(id));
+          return saveIds(res.map(coerceBigIntId).filter((x) => x != null));
       }
     } catch (e) {
       console.warn("reader.tokensOfOwner failed, falling back", e);
@@ -123,9 +243,11 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
   try {
     if (typeof mainContract.tokensOfOwner === "function") {
       const ids = await mainContract.tokensOfOwner(address);
-      return Array.isArray(ids)
-        ? ids.map((id) => BigInt(id))
+      const mapped = Array.isArray(ids)
+        ? ids.map((id) => coerceBigIntId(id)).filter((x) => x != null)
         : [];
+      if (mapped.length) return saveIds(mapped);
+      return mapped;
     }
   } catch (e) {
     console.warn(
@@ -136,9 +258,10 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
 
   // 3) Fallback přes logy (robustní, ale pomalejší)
   try {
-    const provider = mainContract.provider;
+    const provider = getProviderForContract(mainContract);
     if (!provider || typeof provider.getBlockNumber !== "function") {
       console.warn("resolveHeldTokenIds: mainContract.provider not available");
+      if (cachedIds && cachedIds.length) return cachedIds;
       return [];
     }
 
@@ -147,6 +270,7 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
       console.warn(
         "resolveHeldTokenIds: provider.getBlockNumber failed, aborting log scan",
       );
+      if (cachedIds && cachedIds.length) return cachedIds;
       return [];
     }
 
@@ -156,8 +280,8 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
     const fromFilter = mainContract.filters.Transfer(address, null, null);
 
     const [toLogs, fromLogs] = await Promise.all([
-      queryLogsBatched(mainContract, toFilter, fromBlock, latest),
-      queryLogsBatched(mainContract, fromFilter, fromBlock, latest),
+      queryLogsBatched(mainContract, toFilter, fromBlock, latest, LOGS_BATCH),
+      queryLogsBatched(mainContract, fromFilter, fromBlock, latest, LOGS_BATCH),
     ]);
 
     const ordered = [...toLogs, ...fromLogs].sort((a, b) => {
@@ -168,17 +292,38 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
     const owned = new Set();
     const lower = address.toLowerCase();
     for (const log of ordered) {
-      const from = String(log.args?.from ?? log.args?.[0] ?? "").toLowerCase();
-      const to = String(log.args?.to ?? log.args?.[1] ?? "").toLowerCase();
-      const tokenId = (log.args?.tokenId ?? log.args?.[2])?.toString?.() || "";
+      const args = log.args;
+      const topicFrom = topicToAddress(log?.topics?.[1]);
+      const topicTo = topicToAddress(log?.topics?.[2]);
+      const topicToken = topicToBigInt(log?.topics?.[3]);
+
+      const from = String(
+        (topicFrom || safeLogArg(args, "from", 0) || "") ?? "",
+      ).toLowerCase();
+      const to = String(
+        (topicTo || safeLogArg(args, "to", 1) || "") ?? "",
+      ).toLowerCase();
+
+      const tokenIdRaw = topicToken ?? safeLogArg(args, "tokenId", 2);
+      const tokenId = coerceBigIntId(tokenIdRaw);
       if (!tokenId) continue;
-      if (to === lower) owned.add(tokenId);
-      if (from === lower) owned.delete(tokenId);
+      const tokenIdStr = tokenId.toString();
+      if (to === lower) owned.add(tokenIdStr);
+      if (from === lower) owned.delete(tokenIdStr);
     }
-    return Array.from(owned).map((id) => BigInt(id));
+    const ids = Array.from(owned)
+      .map((id) => coerceBigIntId(id))
+      .filter((x) => x != null);
+    saveWalletCache(
+      address,
+      ids.map((id) => id.toString()),
+      contractAddr,
+    );
+    return ids;
   } catch (err) {
     console.error("resolveHeldTokenIds failed", err);
     // při problému s providerem: bezpečný fallback
+    if (cachedIds && cachedIds.length) return cachedIds;
     return [];
   }
 }
@@ -202,6 +347,7 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
   } catch {
     ticketBaseUri = null;
   }
+  const normalizedTicketBase = normalizeBaseUri(ticketBaseUri);
   const coerceToBool = (val) => {
     if (typeof val === "boolean") return val;
     if (typeof val?.toNumber === "function") {
@@ -211,6 +357,7 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
         return Boolean(val);
       }
     }
+    if (typeof val === "bigint") return val !== 0n;
     if (typeof val === "number") return Boolean(val);
     if (typeof val === "string") {
       const normalized = val.trim().toLowerCase();
@@ -223,8 +370,9 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
   };
   const results = [];
   // chunk tokenIds pro omezení paralelismu
-  for (let i = 0; i < tokenIds.length; i += METADATA_PARALLELISM) {
-    const chunk = tokenIds.slice(i, i + METADATA_PARALLELISM);
+  const parallelism = getParallelism();
+  for (let i = 0; i < tokenIds.length; i += parallelism) {
+    const chunk = tokenIds.slice(i, i + parallelism);
     // zpracovat chunk paralelně
     const chunkRes = await Promise.all(
       chunk.map(async (id) => {
@@ -234,26 +382,53 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
           // tokenURI může revertovat pro některé tokeny — ošetříme to try/catch
           let uri = null;
           let metaUriUsed = null;
-          try {
-            if (typeof mainContract.tokenURI === "function") {
-              uri = await mainContract.tokenURI(id).catch(() => null);
+          const uriCacheKey = makeSessionKey("biggi_token_uri", idStr);
+          uri = tokenUriCache.get(idStr) || loadSessionJson(uriCacheKey);
+          if (!uri) {
+            try {
+              if (typeof mainContract.tokenURI === "function") {
+                uri = await mainContract.tokenURI(id).catch(() => null);
+              }
+            } catch (e) {
+              uri = null;
             }
-          } catch (e) {
-            uri = null;
+            if (uri) {
+              tokenUriCache.set(idStr, uri);
+              saveSessionJson(uriCacheKey, uri);
+            }
           }
 
           let meta = null;
           let image = null;
           if (uri) {
-            meta = await readJsonFromURI(uri).catch(() => null);
+            const metaCacheKey = makeSessionKey("biggi_meta", uri);
+            meta = metadataCache.get(uri) || loadSessionJson(metaCacheKey);
+            if (!meta) {
+              meta = await readJsonFromURI(uri).catch(() => null);
+              if (meta) {
+                metadataCache.set(uri, meta);
+                saveSessionJson(metaCacheKey, meta);
+              }
+            }
             if (meta) {
               metaUriUsed = uri;
               const imgCandidate = meta.image || meta.image_url;
               if (imgCandidate) {
-                const resolved = await resolveImageUrl(imgCandidate, uri).catch(
-                  () => null,
-                );
-                image = resolved || httpFromIpfs(imgCandidate);
+                const imgCacheKey = makeSessionKey("biggi_img", imgCandidate);
+                image =
+                  imageCache.get(imgCandidate) ||
+                  loadSessionJson(imgCacheKey);
+                if (!image) {
+                  const resolved = await resolveImageUrl(
+                    imgCandidate,
+                    uri,
+                  ).catch(() => null);
+                  image = resolved || httpFromIpfs(imgCandidate);
+                  if (image) {
+                    imageCache.set(imgCandidate, image);
+                    saveSessionJson(imgCacheKey, image);
+                  }
+                }
               }
             }
           }
@@ -292,6 +467,96 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
             }
           }
 
+          const uriLooksTicket = isTicketUri(uri, normalizedTicketBase);
+          let metaLooksTicket = looksLikeTicketMeta(meta);
+          let metaLooksNft = looksLikeNftMeta(meta);
+
+          if (isTicket && metaLooksNft) {
+            isTicket = false;
+          }
+
+          if (!isTicket && (uriLooksTicket || metaLooksTicket)) {
+            try {
+              // force-refresh tokenURI after redeem (ticket -> NFT)
+              const freshUri = await mainContract.tokenURI(id).catch(() => null);
+              if (freshUri && freshUri !== uri) {
+                uri = freshUri;
+                tokenUriCache.set(idStr, uri);
+                saveSessionJson(uriCacheKey, uri);
+              }
+            } catch {
+              // ignore force-refresh failures
+            }
+
+            if (uri) {
+              const metaCacheKey = makeSessionKey("biggi_meta", uri);
+              meta = metadataCache.get(uri) || loadSessionJson(metaCacheKey);
+              if (!meta) {
+                meta = await readJsonFromURI(uri).catch(() => null);
+                if (meta) {
+                  metadataCache.set(uri, meta);
+                  saveSessionJson(metaCacheKey, meta);
+                }
+              }
+              if (meta) {
+                metaUriUsed = uri;
+                const imgCandidate = meta.image || meta.image_url;
+                if (imgCandidate) {
+                  const imgCacheKey = makeSessionKey(
+                    "biggi_img",
+                    imgCandidate,
+                  );
+                  image =
+                    imageCache.get(imgCandidate) ||
+                    loadSessionJson(imgCacheKey);
+                  if (!image) {
+                    const resolved = await resolveImageUrl(
+                      imgCandidate,
+                      uri,
+                    ).catch(() => null);
+                    image = resolved || httpFromIpfs(imgCandidate);
+                    if (image) {
+                      imageCache.set(imgCandidate, image);
+                      saveSessionJson(imgCacheKey, image);
+                    }
+                  }
+                }
+              }
+            }
+
+            metaLooksTicket = looksLikeTicketMeta(meta);
+            metaLooksNft = looksLikeNftMeta(meta);
+
+            if (!isTicket && metaLooksTicket && !metaLooksNft && uri) {
+              try {
+                const fresh = await readJsonFromURI(uri).catch(() => null);
+                if (fresh) {
+                  meta = fresh;
+                  metaUriUsed = uri;
+                  metadataCache.set(uri, fresh);
+                  saveSessionJson(makeSessionKey("biggi_meta", uri), fresh);
+                  metaLooksTicket = looksLikeTicketMeta(meta);
+                  metaLooksNft = looksLikeNftMeta(meta);
+                }
+              } catch {
+                // ignore force meta refresh errors
+              }
+            }
+          }
+
+          if (!isTicket && metaLooksTicket && !metaLooksNft) {
+            meta = {
+              ...(meta || {}),
+              name: `Biggi NFT #${idStr}`,
+              description: "Metadata is updating after redeem.",
+            };
+          } else if (!isTicket && !meta) {
+            meta = {
+              name: `Biggi NFT #${idStr}`,
+              description: "Metadata is updating after redeem.",
+            };
+          }
+
           if (isTicket && !meta && ticketBaseUri) {
             const normalizedBase = ticketBaseUri.endsWith("/")
               ? ticketBaseUri
@@ -325,6 +590,25 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
               name: `Ticket #${idStr}`,
               description: "Redeem this ticket to mint a Biggi NFT.",
             };
+          }
+
+          if (!isTicket) {
+            const finalTicket = looksLikeTicketMeta(meta);
+            const finalNft = looksLikeNftMeta(meta);
+            if (finalTicket && !finalNft) {
+              meta = {
+                ...(meta || {}),
+                name: `Biggi NFT #${idStr}`,
+                description: "Metadata is updating after redeem.",
+              };
+              image = "/images/Biggi.png";
+            } else if (!meta) {
+              meta = {
+                name: `Biggi NFT #${idStr}`,
+                description: "Metadata is updating after redeem.",
+              };
+              image = image || "/images/Biggi.png";
+            }
           }
 
           let mint = null;
@@ -370,6 +654,7 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
             image,
             mint,
             isTicket,
+            contractAddress: mainContract?.target || mainContract?.address || null,
           };
         } catch (err) {
           console.error("Gallery hydrate token failed", err);
@@ -380,6 +665,7 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
             image: "/images/Biggi.png",
             mint: null,
             isTicket: false,
+            contractAddress: mainContract?.target || mainContract?.address || null,
           };
         }
       }),
@@ -445,7 +731,7 @@ export default function Gallery({
     try {
       // contracts.mainRead returns a contract instance (or a function returning one)
       const maybe = contracts.mainRead?.();
-      return maybe?.address ?? ADDR?.MAIN ?? null;
+      return maybe?.target ?? maybe?.address ?? ADDR?.MAIN ?? null;
     } catch {
       return ADDR?.MAIN ?? null;
     }
@@ -478,32 +764,53 @@ export default function Gallery({
       try {
         // contracts may expose factory functions or actual instances
         const main = contracts.mainRead?.();
+        const main2 = contracts.main2Read?.();
         const reader = contracts.readerRead?.();
 
-        if (!main) {
-          console.warn("Gallery: main contract not available");
+        if (!main && !main2) {
+          console.warn("Gallery: main contracts not available");
           if (!cancelled) setHydratedItems([]);
           return;
         }
 
-        // ensure provider exists and is functional
-        const provider = main.provider;
-        if (!provider || typeof provider.getBlockNumber !== "function") {
-          console.warn("Gallery: provider not available on main contract");
-          if (!cancelled) setHydratedItems([]);
-          return;
+        const tokensOut = [];
+
+        if (main) {
+          const provider = getProviderForContract(main);
+          if (!provider || typeof provider.getBlockNumber !== "function") {
+            console.warn("Gallery: provider not available on MAIN contract");
+          } else {
+            const tokenIds = await resolveHeldTokenIds(main, address, reader);
+            if (tokenIds.length) {
+              const tokens = await hydrateTokens(main, reader, tokenIds);
+              tokensOut.push(...tokens);
+            }
+          }
         }
 
-        // Try to resolve held token ids — prefer reader if present
-        const tokenIds = await resolveHeldTokenIds(main, address, reader);
-        if (!tokenIds.length) {
-          if (!cancelled) setHydratedItems([]);
-          return;
+        if (main2) {
+          const provider = getProviderForContract(main2);
+          if (!provider || typeof provider.getBlockNumber !== "function") {
+            console.warn("Gallery: provider not available on MAIN2 contract");
+          } else {
+            const tokenIds2 = await resolveHeldTokenIds(main2, address, reader);
+            if (tokenIds2.length) {
+              const tokens2 = await hydrateTokens(main2, reader, tokenIds2);
+              tokensOut.push(...tokens2);
+            }
+          }
         }
 
-        // hydrate metadata in controlled parallelism, pass reader for mint info
-        const tokens = await hydrateTokens(main, reader, tokenIds);
-        if (!cancelled) setHydratedItems(tokens);
+        if (!cancelled) {
+          const seen = new Set();
+          const deduped = tokensOut.filter((t) => {
+            const key = `${String(t?.contractAddress || "").toLowerCase()}:${t?.tokenId}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+          setHydratedItems(deduped);
+        }
       } catch (err) {
         console.error("Gallery chain fetch failed", err);
         if (!cancelled) setHydratedItems([]);
@@ -676,12 +983,15 @@ export default function Gallery({
             </p>
           </div>
         )}
-        {pagedItems.map((item) => {
+        {pagedItems.map((item, index) => {
           const tokenId = toIdString(item);
           const dynamic = dynamicTraitsById[tokenId] || {};
+          const key =
+            tokenId ||
+            `${String(item?.contractAddress || mainContractAddress || "unknown")}:${index}`;
           return (
             <NftCard
-              key={tokenId || Math.random()}
+              key={key}
               nft={item}
               dynamicTraits={dynamic}
               onOpenDetails={onOpenDetails}
@@ -749,5 +1059,3 @@ export default function Gallery({
     </section>
   );
 }
-
-

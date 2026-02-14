@@ -26,6 +26,29 @@ export default function RedeemFLOW({
   }, [stepIndex]);
 
   const canRedeem = !isRedeeming && !VRFPending;
+  const flowRows = React.useMemo(() => {
+    const statusFor = (idx) => {
+      if (stepIndex === 0) {
+        return idx === 0
+          ? { text: "READY", tone: "ready" }
+          : { text: "PENDING", tone: "pending" };
+      }
+      if (stepIndex === 1) {
+        if (idx === 0) return { text: "DONE", tone: "done" };
+        if (idx === 1) return { text: "IN PROGRESS", tone: "active" };
+        return { text: "PENDING", tone: "pending" };
+      }
+      // stepIndex === 2 (VRF pending)
+      if (idx === 0 || idx === 1) return { text: "DONE", tone: "done" };
+      return { text: "IN PROGRESS", tone: "active" };
+    };
+
+    return [
+      { step: "1", label: "Ticket ready", ...statusFor(0) },
+      { step: "2", label: "Wallet confirm + redeem tx", ...statusFor(1) },
+      { step: "3", label: "Chainlink VRF pending", ...statusFor(2) },
+    ];
+  }, [stepIndex]);
 
   return (
     <section className="redeem-card" aria-live="polite">
@@ -73,6 +96,29 @@ export default function RedeemFLOW({
           <span style={{ left: "50%" }} />
           <span style={{ left: "100%" }} />
         </div>
+      </div>
+
+      <div className="redeem-flow-table-wrap" role="table" aria-label="Redeem flow table">
+        <table className="redeem-flow-table">
+          <thead>
+            <tr>
+              <th>Step</th>
+              <th>Action</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {flowRows.map((row) => (
+              <tr key={row.step}>
+                <td className="redeem-flow-step">{row.step}</td>
+                <td className="redeem-flow-label">{row.label}</td>
+                <td className="redeem-flow-status">
+                  <span className={`status-pill ${row.tone}`}>{row.text}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* Message line */}

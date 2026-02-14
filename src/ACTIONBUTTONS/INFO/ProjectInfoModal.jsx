@@ -30,7 +30,7 @@ const COLORS = {
 
 const gradientBackdrop = "#0a0b10";
 
-const SidebarButton = ({ active, icon, children, ...props }) => (
+const SidebarButton = ({ active, icon, children, style, labelStyle, ...props }) => (
   <button
     {...props}
     className={`rewards-grid__tab${active ? " is-active" : ""}`}
@@ -40,14 +40,19 @@ const SidebarButton = ({ active, icon, children, ...props }) => (
       gap: 8,
       width: "100%",
       justifyContent: "flex-start",
+      textAlign: "left",
+      ...style,
     }}
   >
     <span aria-hidden>{icon}</span>
     <span
       style={{
-        overFLOW: "hidden",
-        textOverFLOW: "ellipsis",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
         whiteSpace: "nowrap",
+        minWidth: 0, // required for ellipsis inside flex containers
+        flex: "1 1 auto",
+        ...labelStyle,
       }}
     >
       {children}
@@ -197,7 +202,7 @@ const ProjectInfoModal = ({
         display: "flex",
         flexDirection: isMobile ? "row" : "column",
         gap: 8,
-        overFLOWX: isMobile ? "auto" : "visible",
+        overflowX: isMobile ? "auto" : "visible",
       }}
     >
       {sections.map((section) => (
@@ -207,17 +212,11 @@ const ProjectInfoModal = ({
           icon={section.icon}
           onClick={() => setActive(section.id)}
           aria-pressed={active === section.id}
-          style={
+          style={isMobile ? { width: "auto", flex: "0 0 auto" } : undefined}
+          labelStyle={
             isMobile
-              ? {
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "8px 12px",
-                  flex: "0 0 auto",
-                  whiteSpace: "nowrap",
-                }
-              : undefined
+              ? { whiteSpace: "nowrap" }
+              : { whiteSpace: "normal", lineHeight: 1.25, wordBreak: "break-word" }
           }
         >
           {section.label}
@@ -413,7 +412,7 @@ const ProjectInfoModal = ({
 
         {active === "videos" && (
           <>
-            <Heading>Video manuals (placeholders)</Heading>
+            <Heading>Video manuals</Heading>
             <div style={{ display: "grid", gap: 12 }}>
               <div
                 style={{
@@ -581,7 +580,7 @@ const ProjectInfoModal = ({
           style={{
             display: isMobile ? "flex" : "grid",
             flexDirection: isMobile ? "column" : undefined,
-            gridTemplateColumns: isMobile ? undefined : "260px 1fr",
+            gridTemplateColumns: isMobile ? undefined : "320px 1fr",
             gap: 18,
             alignItems: "stretch",
           }}
@@ -595,7 +594,7 @@ const ProjectInfoModal = ({
             <div
               style={{
                 borderRadius: 12,
-                overFLOW: "hidden",
+                overflow: "hidden",
                 background: "#161920",
                 border: `1px solid ${COLORS.line}`,
                 display: "grid",
@@ -636,7 +635,7 @@ const ProjectInfoModal = ({
         borderRadius: isMobile ? 12 : 18,
         border: `1px solid ${COLORS.line}`,
         height: isMobile ? "100%" : "90vh",
-        overFLOW: "hidden",
+        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         color: COLORS.text,
@@ -647,7 +646,7 @@ const ProjectInfoModal = ({
         border: "none",
         width: "100%",
         height: "100%",
-        overFLOWY: "auto",
+        overflowY: "auto",
         display: "flex",
         flexDirection: "column",
         color: COLORS.text,
@@ -690,7 +689,7 @@ const ProjectInfoModal = ({
         justifyContent: "center",
         padding: isMobile ? "16px 12px" : 0,
         background: "rgba(0, 0, 0, 0.75)",
-        overFLOWY: isMobile ? "auto" : undefined,
+        overflowY: isMobile ? "auto" : undefined,
       }}
     >
       {Container}
@@ -706,9 +705,5 @@ const ProjectInfoModal = ({
 };
 
 export default ProjectInfoModal;
-
-
-
-
 
 

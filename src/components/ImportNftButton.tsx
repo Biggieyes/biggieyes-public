@@ -1,7 +1,7 @@
 // src/components/ImportNftButton.jsx
 import * as React from "react";
 import { ADDR } from "../utils/addresses.js";
-import { AMOY } from "../utils/contract.js";
+import { AMOY } from "@/shared/utils/contract";
 import { addNftToMetaMask } from "../lib/addNftToMetaMask";
 
 const STORE_KEY = "biggi_imported_nfts_simple_v1";

@@ -1,6 +1,11 @@
 import * as React from "react";
 import * as WC from "../../wallet/wc";
-import { ensureAmoy, getContract } from "../../utils/contract";
+import {
+  ensureAmoy,
+  getContract,
+  getInjectedProvider,
+  setInjectedProvider,
+} from "@/shared/utils/contract";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
@@ -33,7 +38,7 @@ export function useWallet({ onConnected } = {}) {
       return;
     }
     try {
-      if (eth && eth !== window.ethereum) window.ethereum = eth;
+      setInjectedProvider(eth);
       const accounts = await eth.request({ method: "eth_requestAccounts" });
       const addr = accounts?.[0];
       if (!addr) throw new Error("No account returned from wallet.");
@@ -46,7 +51,7 @@ export function useWallet({ onConnected } = {}) {
           ? Number.parseInt(chainHex, 16)
           : undefined;
       if (currentId !== 80002) {
-        await ensureAmoy();
+        await ensureAmoy(eth);
       }
 
       setWalletAddress(addr);
@@ -63,7 +68,7 @@ export function useWallet({ onConnected } = {}) {
       const { provider, signer } = await connectWithWalletConnect();
       const addr = await signer.getAddress();
       setWalletAddress(addr);
-      if (typeof window !== "undefined") window.ethereum = provider;
+      setInjectedProvider(provider);
       contractRef.current = getContract();
       if (typeof onConnected === "function") await onConnected(addr);
     } catch (err) {
@@ -103,8 +108,9 @@ export function useWallet({ onConnected } = {}) {
           await handlers.onChainChanged();
       };
 
-      window.ethereum?.on?.("accountsChanged", accountCb);
-      window.ethereum?.on?.("chainChanged", chainCb);
+      const injectedProvider = getInjectedProvider();
+      injectedProvider?.on?.("accountsChanged", accountCb);
+      injectedProvider?.on?.("chainChanged", chainCb);
 
       return () => {
         try {
@@ -113,12 +119,12 @@ export function useWallet({ onConnected } = {}) {
           console.debug("remove Transfer listener failed", err);
         }
         try {
-          window.ethereum?.removeListener?.("accountsChanged", accountCb);
+          injectedProvider?.removeListener?.("accountsChanged", accountCb);
         } catch (err) {
           console.debug("remove accountsChanged listener failed", err);
         }
         try {
-          window.ethereum?.removeListener?.("chainChanged", chainCb);
+          injectedProvider?.removeListener?.("chainChanged", chainCb);
         } catch (err) {
           console.debug("remove chainChanged listener failed", err);
         }
@@ -139,4 +145,3 @@ export function useWallet({ onConnected } = {}) {
     ZERO_ADDRESS,
   };
 }
-

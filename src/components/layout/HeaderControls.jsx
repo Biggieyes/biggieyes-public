@@ -1,6 +1,6 @@
 import * as React from "react";
 import Address from "../common/Address";
-import TopBar from "../../MAINHEADER/TopBar.jsx";
+import TopBar from "../../shared/components/header/TopBar";
 
 export default function HeaderControls({
   walletAddress,
@@ -20,7 +20,10 @@ export default function HeaderControls({
   const showWalletRow = !(isMobile && walletAddress);
 
   return (
-    <header style={{ width: "100%", zIndex: 1000, position: "relative" }}>
+    <header
+      className="dashboard-shell"
+      style={{ width: "100%", zIndex: 1000, position: "relative" }}
+    >
       {showWalletRow && (
         <div className="wallet-row" style={{ padding: 8 }}>
           <button className="metamask-btn-top" onClick={connectMetaMask}>
@@ -51,23 +54,22 @@ export default function HeaderControls({
         </div>
       )}
 
-      <TopBar
-        onMint={mintTicket}
-        onRedeem={() => {
-          if (!isRedeeming && !VRFPending) redeemTicket();
-        }}
-        onClaim={claimREWARDS}
-        isRedeeming={isRedeeming}
-        VRFPending={VRFPending}
-        actionPerforming={actionPerforming}
-        actionError={actionError}
-        icons={icons}
-        onIconClick={(idx) => setOpenNavIdx(idx)}
-        isMobile={isMobile}
-      />
+      <div className="dashboard-shell__inner">
+        <TopBar
+          onMint={mintTicket}
+          onRedeem={() => {
+            if (!isRedeeming && !VRFPending) redeemTicket();
+          }}
+          onClaim={claimREWARDS}
+          isRedeeming={isRedeeming}
+          VRFPending={VRFPending}
+          actionPerforming={actionPerforming}
+          actionError={actionError}
+          icons={icons}
+          onIconClick={(idx) => setOpenNavIdx(idx)}
+          isMobile={isMobile}
+        />
+      </div>
     </header>
   );
 }
-
-
-

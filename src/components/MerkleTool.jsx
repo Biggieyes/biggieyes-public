@@ -1,7 +1,7 @@
 // src/components/MerkleTool.jsx
 import * as React from "react";
 import copy from "clipboard-copy";
-import { buildProofs } from "../utils/merkle";
+import { buildProofs } from "../shared/utils/merkle";
 
 export default function MerkleTool({ entries = [] }) {
   const [manualJson, setManualJson] = React.useState("");

@@ -1,59 +1,23 @@
 import * as React from "react";
-import { fetchDRIPSnapshot } from "../../services/tokenomics/DRIP.reader";
-import { mapDRIPSnapshotToUI } from "../../services/tokenomics/DRIP.mappers";
-import { canPoll, getPollInterval } from "../../utils/polling";
+import { useWeb3 } from "@/providers/Web3Provider";
+import { fetchDRIPSnapshot } from "@/shared/services/tokenomics/drip.reader";
+import { mapDRIPSnapshotToUI } from "@/shared/services/tokenomics/drip.mappers";
+import usePollingSnapshot from "./_usePollingSnapshot";
 
-const DEFAULT_POLL_INTERVAL = getPollInterval(15_000, "VITE_DRIP_POLL_MS");
+export default function useDRIPSnapshot(options = {}) {
+  const { intervalMs = 20000 } = options;
+  const { chainId, provider } = useWeb3();
+  const isInjected = Boolean(provider?.provider);
+  const readProvider = isInjected ? undefined : provider;
 
-export default function useDRIPSnapshot({
-  chainId,
-  provider,
-  pollingInterval = DEFAULT_POLL_INTERVAL,
-  enabled = true,
-} = {}) {
-  const [snapshot, setSnapshot] = React.useState(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState(null);
-  const inFlightRef = React.useRef(false);
+  const fetcher = React.useCallback(async () => {
+    const raw = await fetchDRIPSnapshot({
+      chainId,
+      provider: readProvider,
+    });
+    if (!raw) return null;
+    return mapDRIPSnapshotToUI(raw) || raw;
+  }, [chainId, readProvider]);
 
-  React.useEffect(() => {
-    let cancelled = false;
-    if (!enabled) {
-      setLoading(false);
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    async function refresh() {
-      if (cancelled || inFlightRef.current) return;
-      if (!canPoll()) return;
-      inFlightRef.current = true;
-      setLoading(true);
-      try {
-        const raw = await fetchDRIPSnapshot({ chainId, provider });
-        if (!cancelled) {
-          setSnapshot(mapDRIPSnapshotToUI(raw));
-          setError(null);
-        }
-      } catch (err) {
-        if (!cancelled) setError(err);
-      } finally {
-        inFlightRef.current = false;
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    refresh();
-    const handle = setInterval(refresh, pollingInterval);
-
-    return () => {
-      cancelled = true;
-      clearInterval(handle);
-    };
-  }, [chainId, provider, pollingInterval, enabled]);
-
-  return { snapshot, loading, error };
+  return usePollingSnapshot(fetcher, { intervalMs });
 }
-
-

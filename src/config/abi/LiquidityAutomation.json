@@ -13,12 +13,12 @@
       },
       {
         "internalType": "uint256",
-        "name": "minMaticWei_",
+        "name": "minPolWei_",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "maxMaticWei_",
+        "name": "maxPolWei_",
         "type": "uint256"
       },
       {
@@ -94,13 +94,13 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "minMaticWei",
+        "name": "minPolWei",
         "type": "uint256"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "maxMaticWei",
+        "name": "maxPolWei",
         "type": "uint256"
       }
     ],
@@ -132,7 +132,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "requestedMatic",
+        "name": "requestedPol",
         "type": "uint256"
       },
       {
@@ -210,7 +210,7 @@
   },
   {
     "inputs": [],
-    "name": "maxMaticWei",
+    "name": "maxPolWei",
     "outputs": [
       {
         "internalType": "uint256",
@@ -236,7 +236,7 @@
   },
   {
     "inputs": [],
-    "name": "minMaticWei",
+    "name": "minPolWei",
     "outputs": [
       {
         "internalType": "uint256",

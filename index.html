@@ -40,7 +40,7 @@
       [data-defer], img[loading="lazy"] { content-visibility: auto; contain-intrinsic-size: 1px 300px; }
       :root { --vh: 1vh; }
       .full-bg { min-height: calc(var(--vh, 1vh) * 100); }
-      body { opacity: 0; transition: opacity 0.5s; }
+      body { opacity: 1; transition: opacity 0.5s; }
       body.loaded { opacity: 1; }
     </style>
   </head>
@@ -123,9 +123,23 @@
         window.addEventListener('resize', setVh);
 
         window.addEventListener('DOMContentLoaded', () => document.body.classList.add('loaded'));
+
+        // Consume preloaded images quickly to avoid unused-preload warnings.
+        const preloadImgs = [
+          "/images/bg-main2.png",
+          "/images/metamask-fox.svg",
+          "/images/walletconnect.svg",
+        ];
+        preloadImgs.forEach((src) => {
+          const img = new Image();
+          img.decoding = "async";
+          img.loading = "eager";
+          img.src = src;
+        });
       })();
     </script>
 
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="/src/app/preload.js"></script>
+    <script type="module" src="/src/app/main.jsx"></script>
   </body>
 </html>

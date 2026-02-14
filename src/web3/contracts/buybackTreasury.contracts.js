@@ -1,50 +1,46 @@
-import { Contract } from "ethers";
-import BiggiBUYBACKAgent from "../../config/abi/BiggiBUYBACKAgent.json";
-import BiggiTreasury from "../../config/abi/BiggiTreasury.json";
-import BiggiToken from "../../config/abi/BiggiToken.json";
+import { Contract, ZeroAddress } from "ethers";
+import {
+  BiggiBuybackAgent as ABI_BiggiBuybackAgent,
+  BiggiTreasury as ABI_BiggiTreasury,
+  BiggiToken as ABI_BiggiToken,
+} from "@/config/abi/index.js";
 import { getBUYBACKAddresses } from "../../config/addresses";
 import defaultProvider from "../provider";
 
 export function getBUYBACKTreasuryContracts(chainId, provider) {
   const signerOrProvider = provider || defaultProvider;
-  const {
-    BUYBACKAgent,
-    treasury,
-    biggiToken,
-    router,
-    reserve,
-    DRIPDistributor,
-    tokenREWARDS,
-  } = getBUYBACKAddresses(chainId);
+  const addrs = getBUYBACKAddresses(chainId);
 
-  const BUYBACKContract = new Contract(
-    BUYBACKAgent,
-    BiggiBUYBACKAgent,
+  const BUYBACKAddress =
+    addrs?.BUYBACKAgent || addrs?.BUYBACK || addrs?.buyback || ZeroAddress;
+  const treasuryAddress = addrs?.treasury || ZeroAddress;
+  const tokenAddress =
+    addrs?.biggiToken || addrs?.biggi || addrs?.BIGGI || ZeroAddress;
+
+  const BUYBACK = new Contract(
+    BUYBACKAddress,
+    ABI_BiggiBuybackAgent,
     signerOrProvider,
   );
-  const treasuryContract = new Contract(
-    treasury,
-    BiggiTreasury,
+  const treasury = new Contract(
+    treasuryAddress,
+    ABI_BiggiTreasury,
     signerOrProvider,
   );
-  const tokenContract = new Contract(biggiToken, BiggiToken, signerOrProvider);
+  const token = new Contract(
+    tokenAddress,
+    ABI_BiggiToken,
+    signerOrProvider,
+  );
 
   return {
-    BUYBACK: BUYBACKContract,
-    treasury: treasuryContract,
-    token: tokenContract,
-    addrs: {
-      BUYBACKAgent,
-      treasury,
-      biggiToken,
-      router,
-      reserve,
-      DRIPDistributor,
-      tokenREWARDS,
-    },
+    BUYBACK,
+    treasury,
+    token,
+    addrs,
   };
 }
 
-
-
-
+export default {
+  getBUYBACKTreasuryContracts,
+};

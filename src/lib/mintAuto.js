@@ -1,9 +1,9 @@
 // src/lib/mintAuto.js
 import {
-  getContract as getMainRW,
+  getMainRW,
   resolveTicketPriceWeiFromHub,
   ensureAmoy,
-} from "../utils/contract";
+} from "@/shared/utils/contract";
 
 function pickMintName(c) {
   const prefer = [
@@ -53,7 +53,7 @@ export async function mintAuto(qty = 1) {
   const unitWeiBN = BigInt(await resolveTicketPriceWeiFromHub());
   // total
   const totalValue = isPayable
-    ? unitWeiBN.mul(BigInt(qty))
+    ? unitWeiBN * BigInt(qty)
     : 0n;
 
   // gas estimate
@@ -70,12 +70,20 @@ export async function mintAuto(qty = 1) {
       console.debug("mintAuto gas estimate (with qty) failed", err);
     }
   }
+  const gasLimit =
+    gas != null
+      ? typeof gas === "bigint"
+        ? (gas * 12n) / 10n
+        : gas?._isBigNumber && typeof gas.mul === "function"
+          ? gas.mul(12).div(10)
+          : gas
+      : null;
   const overrides = isPayable
-    ? gas
-      ? { value: totalValue, gasLimit: gas.mul(12).div(10) }
+    ? gasLimit
+      ? { value: totalValue, gasLimit }
       : { value: totalValue }
-    : gas
-      ? { gasLimit: gas.mul(12).div(10) }
+    : gasLimit
+      ? { gasLimit }
       : {};
 
   try {
@@ -91,5 +99,4 @@ export async function mintAutoAndWait(qty = 1) {
   const tx = await mintAuto(qty);
   return await tx.wait();
 }
-
 

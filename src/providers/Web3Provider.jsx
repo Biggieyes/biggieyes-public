@@ -1,15 +1,22 @@
 /* @refresh reload */
 // src/providers/Web3Provider.jsx
 import * as React from "react";
+import { BrowserProvider } from "ethers";
 
-import { AMOY, ensureAmoy, syncAmoyRpcIfNeeded } from "../utils/contract";
+import {
+  AMOY,
+  ensureAmoy,
+  getInjectedProvider,
+  getROProvider,
+  setInjectedProvider,
+  syncAmoyRpcIfNeeded,
+} from "@/shared/utils/contract";
 
 const Ctx = React.createContext(null);
 
 /** Prefer the injected provider (MetaMask) when multiple are present. */
 function pickInjectedProvider() {
-  if (typeof window === "undefined") return null;
-  const eth = window.ethereum;
+  const eth = getInjectedProvider();
   if (!eth) return null;
   if (Array.isArray(eth.providers) && eth.providers.length) {
     const mm = eth.providers.find((p) => p && p.isMetaMask);
@@ -24,20 +31,29 @@ export function Web3Provider({ children }) {
   const [account, setAccount] = React.useState("");
   const [chainId, setChainId] = React.useState(undefined);
   const [isConnecting, setIsConnecting] = React.useState(false);
+  const [injectedVersion, setInjectedVersion] = React.useState(0);
 
   /** Refresh state from the current wallet and attach signer + provider. */
   const refresh = React.useCallback(async () => {
     const injected = pickInjectedProvider();
     if (!injected) {
-      setProvider(null);
-      setSigner(null);
-      setAccount("");
-      setChainId(undefined);
+      try {
+        const roProvider = getROProvider();
+        setProvider(roProvider);
+        setSigner(null);
+        setAccount("");
+        setChainId(AMOY.chainId);
+      } catch {
+        setProvider(null);
+        setSigner(null);
+        setAccount("");
+        setChainId(undefined);
+      }
       return;
     }
     try {
-      const nextProvider = new BrowserProvider(injected);
-      const nextSigner = nextProvider.getSigner();
+      const nextProvider = new BrowserProvider(injected, "any");
+      const nextSigner = await nextProvider.getSigner();
       const addr = await nextSigner.getAddress().catch(() => "");
       const net = await nextProvider.getNetwork().catch(() => ({}));
       const normalizedChainId =
@@ -63,7 +79,7 @@ export function Web3Provider({ children }) {
       const wantsAmoy = Number(targetId) === AMOY.chainId;
       try {
         if (wantsAmoy) {
-          await ensureAmoy();
+          await ensureAmoy(eth);
         } else {
           const hex = "0x" + Number(targetId).toString(16);
           await eth.request({
@@ -97,6 +113,7 @@ export function Web3Provider({ children }) {
     if (!eth) throw new Error("Wallet is not available");
     setIsConnecting(true);
     try {
+      setInjectedProvider(eth);
       await eth.request({ method: "eth_requestAccounts" });
       const chainHex = await eth
         .request({ method: "eth_chainId" })
@@ -122,11 +139,22 @@ export function Web3Provider({ children }) {
     setChainId(undefined);
   }, []);
 
+  React.useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const onInjectedChanged = () => setInjectedVersion((v) => v + 1);
+    window.addEventListener("biggi:injected-provider-changed", onInjectedChanged);
+    return () =>
+      window.removeEventListener(
+        "biggi:injected-provider-changed",
+        onInjectedChanged,
+      );
+  }, []);
+
   /** Initial load + listeners. */
   React.useEffect(() => {
     const eth = pickInjectedProvider();
-    if (!eth) return;
     refresh();
+    if (!eth) return;
 
     const onAccountsChanged = async (accs = []) => {
       if (!accs.length) {
@@ -145,7 +173,7 @@ export function Web3Provider({ children }) {
       eth.removeListener?.("accountsChanged", onAccountsChanged);
       eth.removeListener?.("chainChanged", onChainChanged);
     };
-  }, [refresh, disconnect]);
+  }, [refresh, disconnect, injectedVersion]);
 
   const value = {
     provider,
@@ -166,4 +194,3 @@ export function useWeb3() {
   if (!v) throw new Error("useWeb3 must be used inside <Web3Provider>");
   return v;
 }
-

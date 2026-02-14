@@ -6,10 +6,11 @@ import WalletConnectButton from '../src/components/WalletConnectButton.jsx';
 describe('WalletConnectButton', () => {
   it('renders and triggers wallet connect', async () => {
     render(<WalletConnectButton />);
-    const button = screen.getByRole('button');
+    const button = screen.getByRole('button', { name: /walletconnect/i });
     expect(button).toBeInTheDocument();
     // Simulate click (mock actual wallet logic in real test)
-    userEvent.click(button);
+    const user = userEvent.setup();
+    await user.click(button);
     // Add more assertions as needed for wallet connection state
   });
 });

@@ -7,7 +7,7 @@ const MOBILE_BREAKPOINT = 700;
 const ANIMATION_DURATION = 2.8;
 
 const BLOCK_MAX_SUPPLY = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10];
-const BASE_PRICES = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
+const BASE_PRICES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 const BLOCK_COLORS = {
   ORANGE: "#ff9000",
@@ -183,14 +183,22 @@ const BlocksWidget = ({ blockNames, blockMintCounts, blockPrices, onBack }) => {
                 onMouseEnter={handleRowHoverEnter}
                 onMouseLeave={(e) => handleRowHoverLeave(e, i)}
               >
-                <td style={getBlockColor(name)}>{name}</td>
-                <td style={mintedStyle}>{blockMintCounts[i]}</td>
-                <td style={cellStyle}>
+                <td style={getBlockColor(name)} data-label={headerTitles[0]}>
+                  {name}
+                </td>
+                <td style={mintedStyle} data-label={headerTitles[1]}>
+                  {blockMintCounts[i]}
+                </td>
+                <td style={cellStyle} data-label={headerTitles[2]}>
                   {LINKED_BG[name.toUpperCase()] || "-"}
                 </td>
-                <td style={cellStyle}>{BLOCK_MAX_SUPPLY[i]}</td>
-                <td style={cellStyle}>{BASE_PRICES[i]}</td>
-                <td style={priceStyle}>
+                <td style={cellStyle} data-label={headerTitles[3]}>
+                  {BLOCK_MAX_SUPPLY[i]}
+                </td>
+                <td style={cellStyle} data-label={headerTitles[4]}>
+                  {BASE_PRICES[i]}
+                </td>
+                <td style={priceStyle} data-label={headerTitles[5]}>
                   {Math.round(Number(blockPrices[i]))} POL
                 </td>
               </tr>

@@ -1,59 +1,41 @@
 import * as React from "react";
-import { fetchBUYBACKTreasurySnapshot } from "../../services/tokenomics/BUYBACKTreasury.reader";
-import { mapBUYBACKSnapshotToUI } from "../../services/tokenomics/BUYBACKTreasury.mappers";
-import { canPoll, getPollInterval } from "../../utils/polling";
+import { useWeb3 } from "@/providers/Web3Provider";
+import { fetchBUYBACKTreasurySnapshot } from "@/shared/services/tokenomics/buybackTreasury.reader";
+import { mapBUYBACKSnapshotToUI } from "@/shared/services/tokenomics/buybackTreasury.mappers";
+import usePollingSnapshot from "./_usePollingSnapshot";
 
-const DEFAULT_POLL_INTERVAL = getPollInterval(15_000, "VITE_BUYBACK_POLL_MS");
+export default function useBUYBACKTreasurySnapshot(options = {}) {
+  const { intervalMs = 20000 } = options;
+  const { chainId, provider } = useWeb3();
+  const isInjected = Boolean(provider?.provider);
+  const readProvider = isInjected ? undefined : provider;
 
-export default function useBUYBACKTreasurySnapshot({
-  chainId,
-  provider,
-  pollingInterval = DEFAULT_POLL_INTERVAL,
-  enabled = true,
-} = {}) {
-  const [snapshot, setSnapshot] = React.useState(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState(null);
-  const inFlightRef = React.useRef(false);
+  const fetcher = React.useCallback(async () => {
+    const raw = await fetchBUYBACKTreasurySnapshot({
+      chainId,
+      provider: readProvider,
+    });
+    if (!raw) return null;
 
-  React.useEffect(() => {
-    let cancelled = false;
-    if (!enabled) {
-      setLoading(false);
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    async function refresh() {
-      if (cancelled || inFlightRef.current) return;
-      if (!canPoll()) return;
-      inFlightRef.current = true;
-      setLoading(true);
-      try {
-        const raw = await fetchBUYBACKTreasurySnapshot({ chainId, provider });
-        if (!cancelled) {
-          setSnapshot(mapBUYBACKSnapshotToUI(raw));
-          setError(null);
-        }
-      } catch (err) {
-        if (!cancelled) setError(err);
-      } finally {
-        inFlightRef.current = false;
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    refresh();
-    const handle = setInterval(refresh, pollingInterval);
-
-    return () => {
-      cancelled = true;
-      clearInterval(handle);
+    const adjusted = {
+      ...raw,
+      BUYBACK: {
+        ...raw.BUYBACK,
+        router: raw.addresses?.router || raw.BUYBACK?.router,
+        lastBUYBACK:
+          raw.BUYBACK?.lastBUYBACK ??
+          (raw.BUYBACK?.lastBUYBACKLabel && raw.BUYBACK.lastBUYBACKLabel !== "--"
+            ? raw.BUYBACK.lastBUYBACKLabel
+            : null),
+      },
+      treasury: {
+        ...raw.treasury,
+        address: raw.treasury?.address || raw.addresses?.treasury,
+      },
     };
-  }, [chainId, provider, pollingInterval, enabled]);
 
-  return { snapshot, loading, error };
+    return mapBUYBACKSnapshotToUI(adjusted) || adjusted;
+  }, [chainId, readProvider]);
+
+  return usePollingSnapshot(fetcher, { intervalMs });
 }
-
-

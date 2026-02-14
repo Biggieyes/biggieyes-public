@@ -1,9 +1,7 @@
 // REWARDSWidget.jsx — shared width with Backgrounds (maxWidth 678, minWidth 558) + mobile adjustments
 import * as React from "react";
-import { Contract } from "ethers";
-import { formatEther, parseEther, arrayify } from "ethers/lib.esm/utils.js";
-import { AddressZero } from "@ethersproject/constants";
-import { getROProvider, ADDR, getREWARDSRO } from "../utils/contract";
+import { formatEther } from "ethers";
+import { getROProvider, ADDR, getREWARDSRO } from "@/shared/utils/contract";
 import { canPoll, getPollInterval } from "../utils/polling";
 import "./REWARDSWidget.css";
 import "./InfoTables.css";
@@ -485,13 +483,22 @@ const REWARDSWidget = ({
                             ? "0 0 8px #ff335555"
                             : "0 0 8px #5ddcff55",
                   }}
+                  data-label="Reward Type"
                 >
                   {r.name}
                 </td>
-                <td style={priceStyle}>{r.kind}</td>
-                <td style={claimedStyle}>{r.claimed}</td>
-                <td style={maxStyle}>{r.max}</td>
-                <td style={priceStyle}>{r.price}</td>
+                <td style={priceStyle} data-label="Kind">
+                  {r.kind}
+                </td>
+                <td style={claimedStyle} data-label="Claimed">
+                  {r.claimed}
+                </td>
+                <td style={maxStyle} data-label="Max">
+                  {r.max}
+                </td>
+                <td style={priceStyle} data-label="Payout">
+                  {r.price}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -759,7 +766,4 @@ const REWARDSWidget = ({
 };
 
 export default REWARDSWidget;
-
-
-
 

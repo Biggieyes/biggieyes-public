@@ -14,13 +14,13 @@ POZNÁMKA: Commit hash nebyl předán. Doporučuji uvést přesný commit SHA (p
   - Frontend: React + Vite aplikace v `src/`.
   - Backend (serverless): Netlify Functions v `functions/` (`nonce`, `message`, `pinFile`, `pinJson`, `admin/*`, `_pinataUtils.js`).
   - Off‑chain služby: Supabase (DB/auth), Pinata (IPFS pinning), nft.storage (fallback), PublicNode/Infura (RPC), WalletConnect (wallet auth).
-  - Smart contracts: frontend čte a zapisuje přes kontrakty definované v `src/utils/addresses.js` a ABI v `src/utils/abi`. (Audit kontraktů samotných vyžaduje repozitář se Solidity kódem; v tomto auditu kontroluji FE/ops + adresy/rozhraní a bezpečnost integrací.)
+  - Smart contracts: frontend čte a zapisuje přes kontrakty definované v `src/shared/utils/addresses.js` a ABI v `src/config/abi`. (Audit kontraktů samotných vyžaduje repozitář se Solidity kódem; v tomto auditu kontroluji FE/ops + adresy/rozhraní a bezpečnost integrací.)
 
 - Síť(y): Polygon Amoy (chainId 80002) primárně; RPC fallbacky podporují Infura/other providers.
 
 - Relevantní repozitáře / commity / nasazené adresy:
   - Tento repo: Biggieyes/a-gamified-on-chain-NFT-lottery-with-dynamic-pricing-and-integrated-DeFi-tokenomics (branch viz výše).
-  - Nasazené adresy (z `src/utils/addresses.js` / `ALLOWED_ADDRS`) — vybrané:
+  - Nasazené adresy (z `src/shared/utils/addresses.js` / `ALLOWED_ADDRS`) — vybrané:
     - MAIN / COLLECTION_VRF: 0x304C08cdC4511649D97469E0F7A1f71270BC91E6
     - MAIN2 / COLLECTION_PUBLIC: 0x1703EA074C72F550ecacb955ECE1aac1c5100Be5
     - VRF_ROUTER: 0x3a20072256B686C8B4E96886Df925f3d0934aAD0

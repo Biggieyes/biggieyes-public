@@ -1,6 +1,7 @@
 import * as React from "react";
-import StatusBanner from "../common/StatusBanner";
-import Loader from "../common/Loader";
+
+import StatusBanner from "@/shared/components/StatusBanner";
+import Loader from "@/shared/components/Loader";
 
 export default function NFTStatusBlock({
   isRedeeming,
@@ -35,6 +36,3 @@ export default function NFTStatusBlock({
     </>
   );
 }
-
-
-

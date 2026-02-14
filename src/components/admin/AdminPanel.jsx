@@ -1,15 +1,19 @@
 // src/components/admin/AdminPanel.jsx
 import * as React from "react";
-import { Contract } from "ethers";
-import { formatEther, parseEther, arrayify } from "ethers/lib.esm/utils.js";
-import { AddressZero } from "@ethersproject/constants";
+import {
+  BrowserProvider,
+  Contract,
+  formatEther,
+  parseEther,
+  isAddress,
+} from "ethers";
 import { ADDR } from "../../utils/addresses.js";
-import { getROProvider } from "../../utils/contract";
-import { BiggiCOMMUNITYCENTER } from "../../config/abi/index.js";
+import { getROProvider } from "@/shared/utils/contract";
+import { BiggiCommunityCenter } from "@/config/abi/index.js";
 import { supabase } from "../../services/chatClient";
 
-const COMMUNITY_CENTER_ABI = Array.isArray(BiggiCOMMUNITYCENTER)
-  ? BiggiCOMMUNITYCENTER
+const COMMUNITY_CENTER_ABI = Array.isArray(BiggiCommunityCenter)
+  ? BiggiCommunityCenter
   : [];
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -205,7 +209,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
           window.ethereum,
           "any",
         );
-        const signer = provider.getSigner();
+        const signer = await provider.getSigner();
         return new Contract(
           communityAddress,
           COMMUNITY_CENTER_ABI,
@@ -320,7 +324,13 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
         parseUintField(eventCapacity, "Capacity"),
         parseDepositField(eventDeposit),
       ];
-      const tx = await contract.updateEventMetadata(...args);
+      const updateFn = contract?.["updateEventMetadata"];
+      if (typeof updateFn !== "function") {
+        throw new Error(
+          "Update is not supported by the current Community Center contract",
+        );
+      }
+      const tx = await updateFn(...args);
       await tx.wait();
     });
 
@@ -332,7 +342,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
 
   const parseAddressListInput = (value) => {
     const items = splitListInput(value);
-    const bad = items.find((addr) => !ethers.utils.isAddress(addr));
+    const bad = items.find((addr) => !isAddress(addr));
     if (bad) throw new Error(`Invalid address: ${bad}`);
     return items;
   };
@@ -340,7 +350,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
   const applyNftMainContract = () =>
     run("nft_setMain", async () => {
       const addr = nftMainContract.trim();
-      if (!ethers.utils.isAddress(addr))
+      if (!isAddress(addr))
         throw new Error("Main contract address is invalid");
       await actions.nft_setMainContract?.(addr);
     });
@@ -348,7 +358,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
   const applyNftVRFRouter = () =>
     run("nft_setVRF", async () => {
       const addr = nftVRFRouter.trim();
-      if (!ethers.utils.isAddress(addr))
+      if (!isAddress(addr))
         throw new Error("VRF router address is invalid");
       await actions.nft_setVRFRouter?.(addr);
     });
@@ -357,7 +367,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
     run("nft_manual", async () => {
       const winner = nftManualWinner.trim();
       const uri = nftManualUri.trim();
-      if (!ethers.utils.isAddress(winner))
+      if (!isAddress(winner))
         throw new Error("Winner address is invalid");
       if (!uri) throw new Error("Token URI is required");
       const res = await actions.nft_createManualReward?.(winner, uri);
@@ -438,7 +448,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
         window.ethereum,
         "any",
       );
-      const signer = provider.getSigner();
+      const signer = await provider.getSigner();
       const address = await signer.getAddress();
       const payload = `${action}|${id}|${nextContent || ""}`;
       const signature = await signer.signMessage(payload);
@@ -476,7 +486,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
         window.ethereum,
         "any",
       );
-      const signer = provider.getSigner();
+      const signer = await provider.getSigner();
       const address = await signer.getAddress();
       const payload = `rules|${rulesText}`;
       const signature = await signer.signMessage(payload);
@@ -862,7 +872,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       const checks = await Promise.all(
         healthTargets.map(async (target) => {
           const addr = target.address;
-          if (!addr || !ethers.utils.isAddress(addr)) {
+          if (!addr || !isAddress(addr)) {
             return { ...target, status: "invalid" };
           }
           try {
@@ -2497,7 +2507,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     }}
                   >
                     Community Center contract address or ABI is missing.
-                    Configure it in <code>utils/addresses.js</code> to enable
+                    Configure it in <code>src/shared/utils/addresses.js</code> to enable
                     editing.
                   </div>
                 )}
@@ -3393,10 +3403,6 @@ function copyToClipboard(text) {
     navigator.clipboard?.writeText(text);
   } catch {}
 }
-
-
-
-
 
 
 

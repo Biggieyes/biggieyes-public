@@ -1,47 +1,66 @@
 import * as React from "react";
-import { mapBUYBACKHistoryToChartPoints } from "../../services/tokenomics/BUYBACKTreasury.mappers";
+import useHistoryBuffer from "./_useHistoryBuffer";
 
-const HISTORY_LIMIT = 24;
+const toNumberLoose = (value) => {
+  if (value == null) return null;
+  if (typeof value === "number")
+    return Number.isFinite(value) ? value : null;
+  if (typeof value === "bigint") return Number(value);
+  const cleaned = String(value).replace(/[^\d.-]/g, "");
+  if (!cleaned) return null;
+  const num = Number(cleaned);
+  return Number.isFinite(num) ? num : null;
+};
 
-export default function useBUYBACKTreasuryHistory(snapshot) {
-  const [history, setHistory] = React.useState([]);
+const buildSeries = (history, selector) =>
+  history
+    .map((entry) => ({
+      label: entry?.tsLabel || "",
+      value: toNumberLoose(selector(entry)),
+    }))
+    .filter((point) => Number.isFinite(point.value));
 
-  React.useEffect(() => {
-    if (!snapshot) return;
-    setHistory((previous) => {
-      const last = previous[previous.length - 1];
-      if (last && last.ts === snapshot.ts) return previous;
-      const updated = [...previous, snapshot];
-      return updated.slice(-HISTORY_LIMIT);
-    });
-  }, [snapshot]);
+export default function useBUYBACKTreasuryHistory(snapshot, options = {}) {
+  const { limit = 30 } = options;
+  const { history } = useHistoryBuffer(snapshot, { limit });
 
   const nativeSeries = React.useMemo(
     () =>
-      mapBUYBACKHistoryToChartPoints(
+      buildSeries(
         history,
-        (entry) => entry?.BUYBACK?.totalNativeSpentNumeric ?? null,
+        (entry) =>
+          entry?.BUYBACK?.totalNativeSpentNumeric ??
+          entry?.BUYBACK?.totalNativeSpent,
       ),
     [history],
   );
+
   const biggiSeries = React.useMemo(
     () =>
-      mapBUYBACKHistoryToChartPoints(
+      buildSeries(
         history,
-        (entry) => entry?.BUYBACK?.totalBiggiAcquiredNumeric ?? null,
+        (entry) =>
+          entry?.BUYBACK?.totalBiggiAcquiredNumeric ??
+          entry?.BUYBACK?.totalBiggiAcquired,
       ),
     [history],
   );
+
   const treasurySeries = React.useMemo(
     () =>
-      mapBUYBACKHistoryToChartPoints(
+      buildSeries(
         history,
-        (entry) => entry?.treasury?.biggiBalanceNumeric ?? null,
+        (entry) =>
+          entry?.treasury?.biggiBalanceNumeric ??
+          entry?.treasury?.biggiBalance,
       ),
     [history],
   );
 
-  return { history, nativeSeries, biggiSeries, treasurySeries };
+  return {
+    history,
+    nativeSeries,
+    biggiSeries,
+    treasurySeries,
+  };
 }
-
-

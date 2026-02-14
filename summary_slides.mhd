@@ -1,0 +1,48 @@
+# BiggiEyes Moderator Slides (.mhd)
+Date: 2026-02-07 | Network: Polygon Amoy (chainId 80002)
+
+SLIDE 1 ? What is BiggiEyes?
+- On-chain NFT system with VRF-based random assignment.
+- Dynamic pricing: tickets and block prices adjust live.
+- Full tokenomics loop: reserve, buyback, drip, liquidity.
+
+SLIDE 2 ? Core User Flow
+Ticket Mint -> Redeem -> Chainlink VRF -> NFT Minted
+- Ticket price grows +0.33% per mint.
+- NFT metadata stored on IPFS and shown in UI.
+
+SLIDE 3 ? Blocks & Rarity
+- 10 blocks: ORANGE -> RAINBOW.
+- Supply per block: 100 down to 10 (rarer later blocks).
+- Background bonuses 5%..50% and price boosts 2%..10%.
+
+SLIDE 4 ? Tokenomics Snapshot
+- 60% of mint -> Distributor, 40% -> Dev wallet.
+- Distributor split: 25% rewards, 35% reserve, 20% buyback, 10% treasury, 10% community.
+- Buyback -> Treasury -> 34% TokenRewards, 33% Reserve, 33% DripDistributor.
+
+SLIDE 5 ? Rewards
+- POL rewards: Orange (1000), Block (3000), Rainbow (10000).
+- BIGGI weekly rewards: block weights 10..100, unitReward = 1 BIGGI.
+- Character NFTs minted when a block completes.
+
+SLIDE 6 ? Transparency
+- Live dashboard reads on-chain data (MainReader, TokenomikReader, Reserve/Treasury Reader).
+- VRF requests are tracked on-chain.
+- IPFS gateways used for metadata reliability.
+
+SLIDE 7 ? Address Highlights
+- BiggiEyesMain: 0x3430f378032Cead7A82f38047e906C1E3cAFc703
+- BiggiToken: 0xD4D0fa17f2955Eb3fF8D03ea0cD7A2f0a06E6d0E
+- Distributor: 0xc8382527D0cb095fDa284547EA91eC352E7C75Cd
+- Reserve: 0xC700EA8E43259C832C2438D01F60C88752894B8f
+- BuybackAgent: 0x06fC8552119d8B46e8dd19C54c81b9E3bDEfa266
+
+SLIDE 8 ? Visuals
+- diagrams/user-flow.svg
+- diagrams/tokenomics-map.svg
+- diagrams/reserve-lm-vault.svg
+- diagrams/buyback-drip-loop.svg
+- diagrams/reward-system.svg
+
+END

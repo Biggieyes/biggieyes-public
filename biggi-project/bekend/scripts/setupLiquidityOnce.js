@@ -5,7 +5,7 @@
 // VOLITELNĚ: TRANSFER_FROM_RESERVE=true pokud chceš nejdříve volat BiggiToken.transferFromReserveTo
 // VOLITELNĚ: GAS_PRIORITY_GWEI, GAS_FEE_GWEI pro nastavení EIP-1559 (default 30/60)
 
-require("dotenv").config({ path: require("path").join(__dirname, ".env") });
+require("dotenv").config();
 const hre = require("hardhat");
 const { ethers } = hre;
 

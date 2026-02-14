@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import RedeemFlow from '../src/components/redeem/RedeemFlow.jsx';
+import RedeemFlow from '../src/ACTIONBUTTONS/REDEEMTICKET/RedeemFlow.jsx';
 
 describe('RedeemFlow', () => {
   it('renders and allows redeem', async () => {

@@ -1,7 +1,5 @@
 import * as React from "react";
-import { Contract } from "ethers";
-import { formatEther, parseEther, arrayify } from "ethers/lib.esm/utils.js";
-import { AddressZero } from "@ethersproject/constants";
+import { formatEther } from "ethers";
 import { useContracts } from "./ContractsProvider";
 
 const Ctx = React.createContext(null);
@@ -111,5 +109,3 @@ export function useREWARDS() {
   if (!v) throw new Error("useREWARDS must be used inside <REWARDSProvider>");
   return v;
 }
-
-

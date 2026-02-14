@@ -38,6 +38,71 @@
     0 0 16px rgba(0, 201, 199, 0.05);
 }
 
+
+.token-dex-card .pools-card__body {
+  max-height: min(420px, 62vh);
+  overflow: auto;
+}
+
+.token-dex-card .pools-table {
+  font-size: 0.84rem;
+}
+
+.token-dex-table-wrap {
+  overflow-x: auto;
+  padding: 2px;
+}
+
+.token-dex-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 6px;
+  table-layout: fixed;
+}
+
+.token-dex-table tr {
+  background: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(8, 223, 255, 0.05)
+  );
+}
+
+.token-dex-table td {
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.token-dex-table td:first-child {
+  border-top-left-radius: 14px;
+  border-bottom-left-radius: 14px;
+}
+
+.token-dex-table td:last-child {
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
+}
+
+.token-dex-label {
+  color: #9ee5ff;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.68rem;
+  width: 36%;
+  min-width: 110px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.token-dex-value {
+  color: #e9edf6;
+  font-weight: 700;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
 .pools-table {
   width: 100%;
   border-collapse: collapse;
@@ -78,8 +143,22 @@
     padding: 6px;
   }
 
+  .token-dex-card .pools-card__body {
+    max-height: min(320px, 58vh);
+  }
+
   .pools-table thead th {
     letter-spacing: 0.15em;
+  }
+
+  .token-dex-table {
+    border-spacing: 0 8px;
+  }
+
+  .token-dex-label {
+    letter-spacing: 0.05em;
+    font-size: 0.62rem;
+    min-width: 90px;
   }
 }
 

@@ -1,49 +1,39 @@
 import * as React from "react";
+import useHistoryBuffer from "./_useHistoryBuffer";
 
-const HISTORY_LIMIT = 18;
-
-const fmtLabel = (ts) =>
-  new Date(ts).toLocaleString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-const toNumber = (value) => {
+const toNumberLoose = (value) => {
   if (value == null) return null;
+  if (typeof value === "number")
+    return Number.isFinite(value) ? value : null;
+  if (typeof value === "bigint") return Number(value);
   const cleaned = String(value).replace(/[^\d.-]/g, "");
   if (!cleaned) return null;
   const num = Number(cleaned);
   return Number.isFinite(num) ? num : null;
 };
 
-export default function useDistributorHistory(distributorData) {
-  const [history, setHistory] = React.useState([]);
+const resolveTotal = (entry) =>
+  entry?.totalReceived ??
+  entry?.totalDistributed ??
+  entry?.totalReceivedPol ??
+  entry?.totalMaticReceived ??
+  entry?.totalNativeReceived ??
+  null;
 
-  React.useEffect(() => {
-    if (!distributorData) return;
-    const totalReceived = toNumber(
-      distributorData.totalReceived ?? distributorData.totalDistributed,
-    );
-    if (totalReceived == null) return;
-    const ts = Date.now();
-
-    setHistory((prev) => {
-      const last = prev[prev.length - 1];
-      if (last && last.total === totalReceived) return prev;
-      const updated = [...prev, { ts, total: totalReceived }];
-      return updated.slice(-HISTORY_LIMIT);
-    });
-  }, [distributorData]);
+export default function useDistributorHistory(snapshot, options = {}) {
+  const { limit = 30 } = options;
+  const { history } = useHistoryBuffer(snapshot, { limit });
 
   const points = React.useMemo(
     () =>
-      history.map((entry) => ({
-        label: fmtLabel(entry.ts),
-        value: entry.total,
-      })),
+      history
+        .map((entry) => ({
+          label: entry?.tsLabel || "",
+          value: toNumberLoose(resolveTotal(entry)),
+        }))
+        .filter((point) => Number.isFinite(point.value)),
     [history],
   );
 
   return { history, points };
 }
-

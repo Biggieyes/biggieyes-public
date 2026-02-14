@@ -35,16 +35,16 @@ const BACKGROUND_INCREASES = {
 };
 
 const BLOCK_BASE_PRICES = {
-  ORANGE: 100,
-  BLACK: 200,
-  WHITE: 300,
-  BROWN: 400,
-  BLUE: 500,
-  GREEN: 600,
-  VIOLET: 700,
-  RED: 800,
-  PINK: 900,
-  RAINBOW: 1000,
+  ORANGE: 1,
+  BLACK: 2,
+  WHITE: 3,
+  BROWN: 4,
+  BLUE: 5,
+  GREEN: 6,
+  VIOLET: 7,
+  RED: 8,
+  PINK: 9,
+  RAINBOW: 10,
 };
 
 const GROWTH_BY_BG_INDEX = [5, 2, 2, 3, 3, 4, 4, 5, 5, 10];
@@ -257,15 +257,25 @@ const BackgroundsWidget = ({
                   onMouseEnter={(e) => handleRowHoverEnter(e, i)}
                   onMouseLeave={(e) => handleRowHoverLeave(e, i)}
                 >
-                  <td style={getBlockColor(upper)}>{upper}</td>
-                  <td style={mintedStyle}>{minted}</td>
-                  <td style={linkedBlockStyle}>{pretty(upper)}</td>
-                  <td style={priceStyleWhite}>
+                  <td style={getBlockColor(upper)} data-label={headerTitles[0]}>
+                    {upper}
+                  </td>
+                  <td style={mintedStyle} data-label={headerTitles[1]}>
+                    {minted}
+                  </td>
+                  <td style={linkedBlockStyle} data-label={headerTitles[2]}>
+                    {pretty(upper)}
+                  </td>
+                  <td style={priceStyleWhite} data-label={headerTitles[3]}>
                     {BACKGROUND_INCREASES[upper] || "-"}
                   </td>
-                  <td style={priceStyleWhite}>{growthPct}</td>
-                  <td style={maxSupplyStyle}>{maxSupply}</td>
-                  <td style={priceStyle}>
+                  <td style={priceStyleWhite} data-label={headerTitles[4]}>
+                    {growthPct}
+                  </td>
+                  <td style={maxSupplyStyle} data-label={headerTitles[5]}>
+                    {maxSupply}
+                  </td>
+                  <td style={priceStyle} data-label={headerTitles[6]}>
                     {minted > 0 ? `${priceDiff} POL` : "—"}
                   </td>
                 </tr>

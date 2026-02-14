@@ -15,7 +15,7 @@ Tento dokument sumarizuje hloubkovou analýzu celého frontendu, klient→server
   - Integrace serverless: Netlify Functions v `functions/` a klientské `src/api/*` handlery.
   - Off‑chain služby: Supabase (nonces/messages), Pinata + nft.storage (pinning), RPC providers (PublicNode/Infura), WalletConnect.
 
-- Nasazené adresy a ABI: definované v `src/utils/addresses.js` a `src/utils/abi/index.js`. Pokud je potřeba audit kontraktů, dodat Solidity sources a compiler config.
+- Nasazené adresy a ABI: definované v `src/shared/utils/addresses.js` a `src/config/abi/index.js`. Pokud je potřeba audit kontraktů, dodat Solidity sources a compiler config.
 
 - Požadované testovací účty a env proměnné (bez hodnot):
   - Frontend (public): `VITE_SUPABASE_ANON_KEY`, `VITE_JSON_RPC_URL`, `VITE_WC_PROJECT_ID`, `VITE_AMOY_RPC_URL`.

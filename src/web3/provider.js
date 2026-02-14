@@ -1,7 +1,9 @@
-import { getROProvider } from "../utils/contract";
+import { getROProvider } from "@/shared/utils/contract";
 import {
   createFallbackProvider,
+  createArchiveProvider,
   createJsonRpcProvider,
+  getArchiveProvider,
   getRpcUrls,
   getSharedFallbackProvider,
   resetSharedFallbackProvider,
@@ -39,12 +41,13 @@ export async function getChainId() {
 }
 
 export {
+  createArchiveProvider,
   createFallbackProvider,
   createJsonRpcProvider,
+  getArchiveProvider,
   getRpcUrls,
   getSharedFallbackProvider,
   resetSharedFallbackProvider,
 };
 
 export default getProvider();
-

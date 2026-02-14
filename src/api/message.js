@@ -1,5 +1,5 @@
 // api/message.js
-import { verifyMessage } from "ethers/lib.esm/utils.js";
+import { verifyMessage } from "ethers";
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL;

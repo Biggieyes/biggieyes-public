@@ -1,58 +1,33 @@
 import * as React from "react";
-import { fetchLiquiditySnapshot } from "../../services/tokenomics/liquidity.reader";
-import { mapRawSnapshotToUI } from "../../services/tokenomics/liquidity.mappers";
-import { canPoll, getPollInterval } from "../../utils/polling";
+import { useWeb3 } from "@/providers/Web3Provider";
+import { fetchLiquiditySnapshot } from "@/shared/services/tokenomics/liquidity.reader";
+import { mapRawSnapshotToUI } from "@/shared/services/tokenomics/liquidity.mappers";
+import usePollingSnapshot from "./_usePollingSnapshot";
 
-const DEFAULT_POLL_INTERVAL = getPollInterval(12_000, "VITE_LIQUIDITY_POLL_MS");
+export default function useLiquiditySnapshot(options = {}) {
+  const { intervalMs = 20000 } = options;
+  const { chainId, provider } = useWeb3();
+  const isInjected = Boolean(provider?.provider);
+  const readProvider = isInjected ? undefined : provider;
 
-export default function useLiquiditySnapshot({
-  chainId,
-  provider,
-  pollingInterval = DEFAULT_POLL_INTERVAL,
-  enabled = true,
-} = {}) {
-  const [snapshot, setSnapshot] = React.useState(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState(null);
-  const inFlightRef = React.useRef(false);
-
-  React.useEffect(() => {
-    let cancelled = false;
-    if (!enabled) {
-      setLoading(false);
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    async function refresh() {
-      if (cancelled || inFlightRef.current) return;
-      if (!canPoll()) return;
-      inFlightRef.current = true;
-      setLoading(true);
-      try {
-        const raw = await fetchLiquiditySnapshot({ chainId, provider });
-        if (!cancelled) {
-          setSnapshot(mapRawSnapshotToUI(raw));
-          setError(null);
-        }
-      } catch (err) {
-        if (!cancelled) setError(err);
-      } finally {
-        inFlightRef.current = false;
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    refresh();
-    const handle = setInterval(refresh, pollingInterval);
-
-    return () => {
-      cancelled = true;
-      clearInterval(handle);
+  const fetcher = React.useCallback(async () => {
+    const raw = await fetchLiquiditySnapshot({
+      chainId,
+      provider: readProvider,
+    });
+    if (!raw) return null;
+    const ui = mapRawSnapshotToUI(raw);
+    if (!ui) return raw;
+    return {
+      ...ui,
+      treasury: raw.treasury ?? ui.treasury,
+      vault: {
+        ...ui.vault,
+        pairWhitelisted:
+          raw.vault?.pairWhitelisted ?? ui.vault?.pairWhitelisted,
+      },
     };
-  }, [chainId, provider, pollingInterval, enabled]);
+  }, [chainId, readProvider]);
 
-  return { snapshot, loading, error };
+  return usePollingSnapshot(fetcher, { intervalMs });
 }
-

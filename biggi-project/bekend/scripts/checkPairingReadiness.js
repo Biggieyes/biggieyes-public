@@ -18,7 +18,7 @@ const ABI_LM = [
 ];
 
 const ABI_RESERVE = [
-  "function maticBalance() view returns (uint256)",
+  "function polBalance() view returns (uint256)",
   "function dexRefillBiggi() view returns (uint256)",
   "function waitingBiggi() view returns (uint256)",
 ];
@@ -38,7 +38,7 @@ async function main() {
   const env = process.env;
   if (!env.LIQUIDITY_MANAGER) throw new Error("Chybí LIQUIDITY_MANAGER v .env");
   if (!env.BIGGI) throw new Error("Chybí BIGGI v .env");
-  const requested = env.REQUESTED_MATIC_WEI || "500000000000000000"; // default 0.5 MATIC
+  const requested = env.REQUESTED_POL_WEI || env.REQUESTED_NATIVE_WEI || "500000000000000000"; // default 0.5 POL
 
   const provider = hre.ethers.provider;
   const lm = new ethers.Contract(env.LIQUIDITY_MANAGER, ABI_LM, provider);
@@ -70,7 +70,7 @@ async function main() {
 
   console.log("LM:", env.LIQUIDITY_MANAGER);
   console.log("Router:", routerAddr, "Reserve:", reserveAddr, "Vault:", vaultAddr);
-  console.log("Requested MATIC (wei):", requested);
+  console.log("Requested POL (wei):", requested);
   console.log("Reserve native:", balReserveNative.toString(), "(", fmt(balReserveNative), ")");
   console.log("Reserve BIGGI:", balReserveBiggi.toString(), "(", fmt(balReserveBiggi), ")");
   console.log("LM native:", lmNative.toString(), "(", fmt(lmNative), ")");
@@ -78,7 +78,7 @@ async function main() {
   console.log("Reserve.dexRefillBiggi:", dexRefill.toString());
   console.log("Reserve.waitingBiggi:", waiting.toString());
   if (quote.length > 0) {
-    console.log("Quote getAmountsOut(MATIC->BIGGI):", quote.map((x) => x.toString()));
+    console.log("Quote getAmountsOut(POL->BIGGI):", quote.map((x) => x.toString()));
   } else {
     console.log("Quote getAmountsOut failed");
   }

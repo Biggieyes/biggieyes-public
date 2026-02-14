@@ -1,54 +1,56 @@
 import * as React from "react";
+import useHistoryBuffer from "./_useHistoryBuffer";
 
-const HISTORY_LIMIT = 24;
+const toNumberLoose = (value) => {
+  if (value == null) return null;
+  if (typeof value === "number")
+    return Number.isFinite(value) ? value : null;
+  if (typeof value === "bigint") return Number(value);
+  const cleaned = String(value).replace(/[^\d.-]/g, "");
+  if (!cleaned) return null;
+  const num = Number(cleaned);
+  return Number.isFinite(num) ? num : null;
+};
 
-const fmtLabel = (ts) =>
-  new Date(ts).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+const normalizeSnapshot = (input) => {
+  if (!input) return null;
+  const drip = input?.dripSnapshot || input?.drip || input;
+  const buyback = input?.buybackSnapshot || input?.buyback || input;
+  return {
+    ts: input?.ts ?? Date.now(),
+    tsLabel: input?.tsLabel,
+    DRIPDistributor: toNumberLoose(
+      drip?.distributor?.tokenBalanceNumeric ?? drip?.distributor?.tokenBalance,
+    ),
+    DRIPLm: toNumberLoose(
+      drip?.DRIPLM?.nativeBalanceNumeric ?? drip?.DRIPLM?.nativeBalance,
+    ),
+    BUYBACKAgent: toNumberLoose(
+      buyback?.BUYBACK?.nativeBalanceNumeric ??
+        buyback?.BUYBACK?.nativeBalance,
+    ),
+    treasury: toNumberLoose(
+      buyback?.treasury?.maticBalanceNumeric ?? buyback?.treasury?.maticBalance,
+    ),
+  };
+};
 
-export default function useBUYBACKStabilityHistory({
-  BUYBACKSnapshot,
-  DRIPSnapshot,
-} = {}) {
-  const [history, setHistory] = React.useState([]);
+export default function useBUYBACKStabilityHistory(input, options = {}) {
+  const { limit = 30 } = options;
+  const normalized = React.useMemo(() => normalizeSnapshot(input), [input]);
+  const { history } = useHistoryBuffer(normalized, { limit });
 
-  React.useEffect(() => {
-    const bbTs = BUYBACKSnapshot?.ts ?? 0;
-    const DRIPTs = DRIPSnapshot?.ts ?? 0;
-    const ts = Math.max(bbTs, DRIPTs);
-    if (!ts) return;
+  const data = React.useMemo(
+    () =>
+      history.map((entry) => ({
+        time: entry?.tsLabel || "",
+        DRIPDistributor: entry?.DRIPDistributor ?? null,
+        DRIPLm: entry?.DRIPLm ?? null,
+        BUYBACKAgent: entry?.BUYBACKAgent ?? null,
+        treasury: entry?.treasury ?? null,
+      })),
+    [history],
+  );
 
-    const point = {
-      ts,
-      time: BUYBACKSnapshot?.tsLabel || DRIPSnapshot?.tsLabel || fmtLabel(ts),
-      DRIPDistributor: DRIPSnapshot?.distributor?.tokenBalanceNumeric ?? null,
-      DRIPLm: DRIPSnapshot?.DRIPLM?.biggiBalanceNumeric ?? null,
-      BUYBACKAgent: BUYBACKSnapshot?.BUYBACK?.biggiBalanceNumeric ?? null,
-      treasury: BUYBACKSnapshot?.treasury?.biggiBalanceNumeric ?? null,
-    };
-
-    const hasValue = [
-      point.DRIPDistributor,
-      point.DRIPLm,
-      point.BUYBACKAgent,
-      point.treasury,
-    ].some((val) => typeof val === "number" && Number.isFinite(val));
-    if (!hasValue) return;
-
-    setHistory((prev) => {
-      const last = prev[prev.length - 1];
-      if (last && last.ts === point.ts) return prev;
-      const updated = [...prev, point];
-      return updated.slice(-HISTORY_LIMIT);
-    });
-  }, [BUYBACKSnapshot, DRIPSnapshot]);
-
-  return history;
+  return { history, data };
 }
-
-
-

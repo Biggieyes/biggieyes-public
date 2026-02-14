@@ -45,9 +45,6 @@ export default function MainLayout({
   fetchDynamicTraitsFor,
   dynamicTraitsById,
   setZoomImg,
-  redeemMsg,
-  fetchStats,
-  fetchREWARDS,
   fetchWalletAssets,
 }) {
   return (
@@ -80,76 +77,75 @@ export default function MainLayout({
         isMobile={isMobile}
       />
 
-      <main>
-        <LiveStatsPanel
-          walletAddress={walletAddress}
-          lastMinted={lastMinted}
-          biggiMinted={biggiMinted}
-          maxSupply={maxSupply}
-          ticketMinted={ticketMinted}
-          maxTickets={maxTickets}
-          ticketPrice={ticketPrice}
-          blockMintCounts={blockMintCounts}
-          BACKGROUND_NAMES={BACKGROUND_NAMES}
-          blockPrices={blockPrices}
-          backgroundMintCounts={backgroundMintCounts}
-          rewardPool={rewardPool}
-          myClaimable={myClaimable}
-          myNFTs={myNFTs}
-          mintVolumeMatic={mintVolumeMatic}
-          epochStartTs={epochStartTs}
-          userLastClaimTs={userLastClaimTs}
-          fetchChainNowTs={fetchChainNowTs}
-          isMobile={isMobile}
-        />
+      <main className="dashboard-shell">
+        <div className="dashboard-shell__inner">
+          <LiveStatsPanel
+            walletAddress={walletAddress}
+            lastMinted={lastMinted}
+            biggiMinted={biggiMinted}
+            maxSupply={maxSupply}
+            ticketMinted={ticketMinted}
+            maxTickets={maxTickets}
+            ticketPrice={ticketPrice}
+            blockMintCounts={blockMintCounts}
+            BACKGROUND_NAMES={BACKGROUND_NAMES}
+            blockPrices={blockPrices}
+            backgroundMintCounts={backgroundMintCounts}
+            rewardPool={rewardPool}
+            myClaimable={myClaimable}
+            myNFTs={myNFTs}
+            mintVolumeMatic={mintVolumeMatic}
+            epochStartTs={epochStartTs}
+            userLastClaimTs={userLastClaimTs}
+            fetchChainNowTs={fetchChainNowTs}
+            isMobile={isMobile}
+          />
 
-        {isAdmin ? (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              margin: "6px 12px 0",
-            }}
-          >
-            <button
-              onClick={onOpenAdmin}
+          {isAdmin ? (
+            <div
               style={{
-                background: "transparent",
-                border: "none",
-                color: "#cfd2db",
-                fontSize: 13,
-                textDecoration: "underline",
-                cursor: "pointer",
-                padding: 0,
-                lineHeight: 1,
+                display: "flex",
+                justifyContent: "flex-end",
+                margin: "6px 12px 0",
               }}
-              aria-label="Open admin menu"
             >
-              Admin
-            </button>
-          </div>
-        ) : null}
+              <button
+                onClick={onOpenAdmin}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#cfd2db",
+                  fontSize: 13,
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                  padding: 0,
+                  lineHeight: 1,
+                }}
+                aria-label="Open admin menu"
+              >
+                Admin
+              </button>
+            </div>
+          ) : null}
 
-        <GallerySection
-          cardsHelpOpen={cardsHelpOpen}
-          setCardsHelpOpen={setCardsHelpOpen}
-          hideExtras={hideExtras}
-          galleryLoading={galleryLoading}
-          galleryNotice={galleryNotice}
-          myNFTs={myNFTs}
-          dynamicTraitsById={dynamicTraitsById}
-          setTopFirstId={setTopFirstId}
-          fetchDynamicTraitsFor={fetchDynamicTraitsFor}
-          setZoomImg={setZoomImg}
-          VRFPending={VRFPending}
-          isRedeeming={isRedeeming}
-          redeemMsg={redeemMsg}
-          fetchStats={fetchStats}
-          fetchREWARDS={fetchREWARDS}
-          fetchWalletAssets={fetchWalletAssets}
-          walletAddress={walletAddress}
-          isMobile={isMobile}
-        />
+          <GallerySection
+            cardsHelpOpen={cardsHelpOpen}
+            setCardsHelpOpen={setCardsHelpOpen}
+            hideExtras={hideExtras}
+            galleryLoading={galleryLoading}
+            galleryNotice={galleryNotice}
+            myNFTs={myNFTs}
+            dynamicTraitsById={dynamicTraitsById}
+            setTopFirstId={setTopFirstId}
+            fetchDynamicTraitsFor={fetchDynamicTraitsFor}
+            setZoomImg={setZoomImg}
+            VRFPending={VRFPending}
+            isRedeeming={isRedeeming}
+            fetchWalletAssets={fetchWalletAssets}
+            walletAddress={walletAddress}
+            isMobile={isMobile}
+          />
+        </div>
       </main>
     </>
   );

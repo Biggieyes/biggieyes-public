@@ -175,3 +175,9 @@ Poznámky a následné kroky
 - Pokud chcete, mohu pokračovat implementací Redis limiter přímo v `functions/` (vyžaduje závislost `ioredis` a Netlify env `REDIS_URL`).
 
 Konec.
+
+---
+ABI audit tool (new)
+- Static ABI usage check lives in `scripts/check-abis.js`.
+- Run: `npm run check:abis` (details in `docs/abi-audit.md`).
+- Use after ABI/address updates or when you see "is not a function".

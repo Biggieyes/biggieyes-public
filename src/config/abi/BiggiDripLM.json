@@ -70,6 +70,11 @@
   },
   {
     "inputs": [],
+    "name": "ReentrancyGuardReentrantCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "RouterNotSet",
     "type": "error"
   },
@@ -225,11 +230,30 @@
       {
         "indexed": false,
         "internalType": "bool",
-        "name": "reserveSent",
+        "name": "sent",
         "type": "bool"
       }
     ],
     "name": "DripPartial",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "oldM",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newM",
+        "type": "address"
+      }
+    ],
+    "name": "ModeratorCenterSet",
     "type": "event"
   },
   {
@@ -313,6 +337,25 @@
     "inputs": [
       {
         "indexed": false,
+        "internalType": "uint16",
+        "name": "reserveBps",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "moderatorBps",
+        "type": "uint16"
+      }
+    ],
+    "name": "SharesSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
         "internalType": "uint256",
         "name": "oldBps",
         "type": "uint256"
@@ -325,6 +368,19 @@
       }
     ],
     "name": "SlippageSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newTokensPerMint",
+        "type": "uint256"
+      }
+    ],
+    "name": "TokensPerMintUpdated",
     "type": "event"
   },
   {
@@ -362,7 +418,7 @@
     "name": "dripDistributor",
     "outputs": [
       {
-        "internalType": "contract IDripDistributor",
+        "internalType": "contract IBiggiDripDistributor",
         "name": "",
         "type": "address"
       }
@@ -381,6 +437,32 @@
     "name": "dripOnBuy",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "moderatorCenter",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "moderatorShareBps",
+    "outputs": [
+      {
+        "internalType": "uint16",
+        "name": "",
+        "type": "uint16"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -459,6 +541,19 @@
   },
   {
     "inputs": [],
+    "name": "reserveShareBps",
+    "outputs": [
+      {
+        "internalType": "uint16",
+        "name": "",
+        "type": "uint16"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "router",
     "outputs": [
       {
@@ -513,6 +608,19 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "m",
+        "type": "address"
+      }
+    ],
+    "name": "setModeratorCenter",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "r",
         "type": "address"
       }
@@ -544,6 +652,24 @@
       }
     ],
     "name": "setSellPct",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint16",
+        "name": "reserveBps_",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "moderatorBps_",
+        "type": "uint16"
+      }
+    ],
+    "name": "setShares",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

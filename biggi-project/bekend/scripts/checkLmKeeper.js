@@ -1,7 +1,7 @@
 /**
  * Quick status for LM automation:
  *  - prints LM.keeper
- *  - prints reserve balances (maticBalance, dexRefillBiggi)
+ *  - prints reserve balances (polBalance, dexRefillBiggi)
  *
  * Env: LIQUIDITY_MANAGER, RESERVE
  */
@@ -22,17 +22,13 @@ async function main() {
   console.log("Signer:", signer.address);
 
   const lm = new hre.ethers.Contract(lmAddr, ["function keeper() view returns (address)"], signer);
-  const reserve = new hre.ethers.Contract(
-    reserveAddr,
-    [
-      "function maticBalance() view returns (uint256)",
-      "function dexRefillBiggi() view returns (uint256)"
-    ],
-    signer
-  );
+  const reserve = new hre.ethers.Contract(reserveAddr, [
+    "function polBalance() view returns (uint256)",
+    "function dexRefillBiggi() view returns (uint256)"
+  ], signer);
 
   console.log("LM keeper:", await lm.keeper());
-  console.log("Reserve maticBalance:", (await reserve.maticBalance()).toString());
+  console.log("Reserve polBalance:", (await reserve.polBalance()).toString());
   console.log("Reserve dexRefillBiggi:", (await reserve.dexRefillBiggi()).toString());
 }
 

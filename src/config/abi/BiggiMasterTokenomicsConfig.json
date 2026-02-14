@@ -36,28 +36,32 @@
     "anonymous": false,
     "inputs": [
       {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "collection1",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "collection2",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "rewardsReader",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "distributor",
+            "type": "address"
+          }
+        ],
         "indexed": false,
-        "internalType": "address",
-        "name": "mainCollection",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "publicCollection",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "rewardsReader",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "collectionDistributor",
-        "type": "address"
+        "internalType": "struct BiggiMasterTokenomicsConfig.CollectionsBundle",
+        "name": "bundle",
+        "type": "tuple"
       }
     ],
     "name": "CollectionsSet",
@@ -67,28 +71,32 @@
     "anonymous": false,
     "inputs": [
       {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "biggi",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "reserve",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "treasury",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "distributor",
+            "type": "address"
+          }
+        ],
         "indexed": false,
-        "internalType": "address",
-        "name": "biggiToken",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "reserve",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "treasury",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "distributor",
-        "type": "address"
+        "internalType": "struct BiggiMasterTokenomicsConfig.CoreBundle",
+        "name": "bundle",
+        "type": "tuple"
       }
     ],
     "name": "CoreSet",
@@ -98,34 +106,37 @@
     "anonymous": false,
     "inputs": [
       {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "liquidityManager",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "liquidityVault",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "router",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "factory",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "weth",
+            "type": "address"
+          }
+        ],
         "indexed": false,
-        "internalType": "address",
-        "name": "liquidityManager",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "liquidityVault",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "router",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "factory",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "weth9",
-        "type": "address"
+        "internalType": "struct BiggiMasterTokenomicsConfig.LiquidityBundle",
+        "name": "bundle",
+        "type": "tuple"
       }
     ],
     "name": "LiquiditySet",
@@ -154,28 +165,32 @@
     "anonymous": false,
     "inputs": [
       {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "buybackAgent",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "dripLM",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "dripDistributor",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "policy",
+            "type": "address"
+          }
+        ],
         "indexed": false,
-        "internalType": "address",
-        "name": "buybackAgent",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "dripLM",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "dripDistributor",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "policy",
-        "type": "address"
+        "internalType": "struct BiggiMasterTokenomicsConfig.PumpBundle",
+        "name": "bundle",
+        "type": "tuple"
       }
     ],
     "name": "PumpSet",
@@ -185,28 +200,32 @@
     "anonymous": false,
     "inputs": [
       {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "collectionRewards",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "tokenRewards",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "nftRewards",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "communityCenter",
+            "type": "address"
+          }
+        ],
         "indexed": false,
-        "internalType": "address",
-        "name": "collectionRewards",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "tokenRewards",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "nftRewards",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "communityCenter",
-        "type": "address"
+        "internalType": "struct BiggiMasterTokenomicsConfig.RewardsBundle",
+        "name": "bundle",
+        "type": "tuple"
       }
     ],
     "name": "RewardsSet",
@@ -214,50 +233,26 @@
   },
   {
     "inputs": [],
-    "name": "biggiToken",
+    "name": "collections",
     "outputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "collection1",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "buybackAgent",
-    "outputs": [
+      },
       {
         "internalType": "address",
-        "name": "",
+        "name": "collection2",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "collectionDistributor",
-    "outputs": [
+      },
       {
         "internalType": "address",
-        "name": "",
+        "name": "rewardsReader",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "collectionRewards",
-    "outputs": [
+      },
       {
         "internalType": "address",
-        "name": "",
+        "name": "distributor",
         "type": "address"
       }
     ],
@@ -270,22 +265,22 @@
     "outputs": [
       {
         "internalType": "address",
-        "name": "_mainCollection",
+        "name": "",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_publicCollection",
+        "name": "",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_rewardsReader",
+        "name": "",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_collectionDistributor",
+        "name": "",
         "type": "address"
       }
     ],
@@ -294,11 +289,26 @@
   },
   {
     "inputs": [],
-    "name": "communityCenter",
+    "name": "core",
     "outputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "biggi",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "reserve",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "treasury",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "distributor",
         "type": "address"
       }
     ],
@@ -311,34 +321,21 @@
     "outputs": [
       {
         "internalType": "address",
-        "name": "_biggiToken",
+        "name": "",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_reserve",
+        "name": "",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_treasury",
+        "name": "",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_distributor",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "distributor",
-    "outputs": [
-      {
-        "internalType": "address",
         "name": "",
         "type": "address"
       }
@@ -348,37 +345,31 @@
   },
   {
     "inputs": [],
-    "name": "dripDistributor",
+    "name": "liquidity",
     "outputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "liquidityManager",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "dripLM",
-    "outputs": [
+      },
       {
         "internalType": "address",
-        "name": "",
+        "name": "liquidityVault",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "factory",
-    "outputs": [
+      },
       {
         "internalType": "address",
-        "name": "",
+        "name": "router",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "factory",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "weth",
         "type": "address"
       }
     ],
@@ -391,76 +382,24 @@
     "outputs": [
       {
         "internalType": "address",
-        "name": "_liquidityManager",
+        "name": "",
         "type": "address"
       },
-      {
-        "internalType": "address",
-        "name": "_liquidityVault",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_router",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_factory",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_weth9",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "liquidityManager",
-    "outputs": [
       {
         "internalType": "address",
         "name": "",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "liquidityVault",
-    "outputs": [
+      },
       {
         "internalType": "address",
         "name": "",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "mainCollection",
-    "outputs": [
+      },
       {
         "internalType": "address",
         "name": "",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "nftRewards",
-    "outputs": [
+      },
       {
         "internalType": "address",
         "name": "",
@@ -485,24 +424,26 @@
   },
   {
     "inputs": [],
-    "name": "policy",
+    "name": "pump",
     "outputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "buybackAgent",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "publicCollection",
-    "outputs": [
+      },
       {
         "internalType": "address",
-        "name": "",
+        "name": "dripLM",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "dripDistributor",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "policy",
         "type": "address"
       }
     ],
@@ -515,22 +456,22 @@
     "outputs": [
       {
         "internalType": "address",
-        "name": "_buybackAgent",
+        "name": "",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_dripLM",
+        "name": "",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_dripDistributor",
+        "name": "",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_policy",
+        "name": "",
         "type": "address"
       }
     ],
@@ -546,11 +487,26 @@
   },
   {
     "inputs": [],
-    "name": "reserve",
+    "name": "rewards",
     "outputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "collectionRewards",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenRewards",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "nftRewards",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "communityCenter",
         "type": "address"
       }
     ],
@@ -563,45 +519,19 @@
     "outputs": [
       {
         "internalType": "address",
-        "name": "_collectionRewards",
+        "name": "",
         "type": "address"
       },
-      {
-        "internalType": "address",
-        "name": "_tokenRewards",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_nftRewards",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_communityCenter",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "rewardsReader",
-    "outputs": [
       {
         "internalType": "address",
         "name": "",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "router",
-    "outputs": [
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
       {
         "internalType": "address",
         "name": "",
@@ -615,22 +545,22 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_mainCollection",
+        "name": "collection1",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_publicCollection",
+        "name": "collection2",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_rewardsReader",
+        "name": "rewardsReader",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_collectionDistributor",
+        "name": "distributor",
         "type": "address"
       }
     ],
@@ -643,22 +573,22 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_biggiToken",
+        "name": "biggi",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_reserve",
+        "name": "reserve",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_treasury",
+        "name": "treasury",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_distributor",
+        "name": "distributor",
         "type": "address"
       }
     ],
@@ -671,27 +601,27 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_liquidityManager",
+        "name": "liquidityManager",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_liquidityVault",
+        "name": "liquidityVault",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_router",
+        "name": "router",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_factory",
+        "name": "factory",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_weth9",
+        "name": "weth",
         "type": "address"
       }
     ],
@@ -704,22 +634,22 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_buybackAgent",
+        "name": "buybackAgent",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_dripLM",
+        "name": "dripLM",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_dripDistributor",
+        "name": "dripDistributor",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_policy",
+        "name": "policy",
         "type": "address"
       }
     ],
@@ -732,41 +662,28 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_collectionRewards",
+        "name": "collectionRewards",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_tokenRewards",
+        "name": "tokenRewards",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_nftRewards",
+        "name": "nftRewards",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "_communityCenter",
+        "name": "communityCenter",
         "type": "address"
       }
     ],
     "name": "setRewards",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "tokenRewards",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -780,32 +697,6 @@
     "name": "transferOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "treasury",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "weth9",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   }
 ]

@@ -1,9 +1,16 @@
-// import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
-import { FallbackProvider, StaticJsonRpcProvider } from "@ethersproject/providers";
-import { AMOY, getRpcUrls as getConfiguredRpcUrls } from "../utils/rpcConfig";
+// import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress } from "ethers";
+import { FallbackProvider, JsonRpcProvider, Network } from "ethers";
+import {
+  AMOY,
+  getRpcUrls as getConfiguredRpcUrls,
+  getArchiveRpcUrls,
+} from "../shared/utils/rpcConfig.js";
 
 function makeStaticProvider(url, chainId = AMOY.chainId) {
-  return new StaticJsonRpcProvider({ url, chainId, name: AMOY.name }, chainId);
+  const network = Network.from({ chainId, name: AMOY.name });
+  // staticNetwork avoids repeated chainId detection on flaky/public RPCs
+  // ethers v6 expects a Network object for staticNetwork (not boolean)
+  return new JsonRpcProvider(url, network, { staticNetwork: network });
 }
 
 // Helper to create a provider with dynamic healthy endpoint selection
@@ -37,7 +44,7 @@ export function createFallbackProvider(urls, chainId = AMOY.chainId) {
   }));
 
   try {
-    return new FallbackProvider(configs, 1);
+    return new FallbackProvider(configs, chainId, { quorum: 1 });
   } catch (err) {
     console.warn(
       "FallbackProvider failed, using first RPC",
@@ -47,7 +54,31 @@ export function createFallbackProvider(urls, chainId = AMOY.chainId) {
   }
 }
 
+export function createArchiveProvider(urls, chainId = AMOY.chainId) {
+  const list = Array.isArray(urls) && urls.length ? urls : [];
+  if (!list.length) return null;
+  if (list.length === 1) return createJsonRpcProvider(list[0], chainId);
+
+  const configs = list.map((url, index) => ({
+    provider: makeStaticProvider(url, chainId),
+    priority: index + 1,
+    stallTimeout: 2500,
+    weight: 1,
+  }));
+
+  try {
+    return new FallbackProvider(configs, chainId, { quorum: 1 });
+  } catch (err) {
+    console.warn(
+      "Archive FallbackProvider failed, using first archive RPC",
+      err?.message || err,
+    );
+    return createJsonRpcProvider(list[0], chainId);
+  }
+}
+
 let _sharedFallback = null;
+let _sharedArchive = null;
 
 export function getSharedFallbackProvider({ forceRefresh = false } = {}) {
   if (!_sharedFallback || forceRefresh) {
@@ -58,6 +89,15 @@ export function getSharedFallbackProvider({ forceRefresh = false } = {}) {
 
 export function resetSharedFallbackProvider() {
   _sharedFallback = null;
+}
+
+export function getArchiveProvider({ forceRefresh = false } = {}) {
+  const urls = getArchiveRpcUrls();
+  if (!urls.length) return null;
+  if (!_sharedArchive || forceRefresh) {
+    _sharedArchive = createArchiveProvider(urls);
+  }
+  return _sharedArchive;
 }
 
 export function getRpcUrls() {

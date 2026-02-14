@@ -1,8 +1,13 @@
 // src/components/LiveStats.jsx
 import * as React from "react";
-import { Contract } from "ethers";
-import { formatEther, parseEther, arrayify } from "ethers/lib.esm/utils.js";
-import { AddressZero } from "@ethersproject/constants";
+import {
+  BrowserProvider,
+  Contract,
+  ZeroAddress,
+  formatEther,
+  formatUnits,
+} from "ethers";
+import { BiggiLpPriceFeed } from "@/config/abi/index.js";
 import {
   getTokenREWARDSRO,
   getDistributorRO,
@@ -11,18 +16,18 @@ import {
   getReadOnlyLiquidityContract,
   getTokenRO,
   ADDR,
-} from "../utils/contract";
-import COMMUNITYCENTERService from "../services/COMMUNITYCENTERService";
-import BlocksWidget from "./BlocksWidget";
-import BackgroundsWidget from "./BackgroundsWidget";
-import REWARDSWidget from "./REWARDSWidget";
+} from "@/shared/utils/contract";
+import { fetchDistributorSnapshot } from "@/shared/services/tokenomics/distributor.reader";
 import ModalPortal from "./common/ModalPortal";
 import WeeklyCountdown from "./WeeklyCountdown";
-import useWeeklyCountdown from "../HOOKS/useWeeklyCountdown";
-import LiveChatPanel from "./LiveChatPanel";
+import useWeeklyCountdown from "../hooks/useWeeklyCountdown";
 import "./LiveStatsPools.css";
 
 const OKLINK_BASE = "https://www.oklink.com/amoy/address/";
+
+const BlocksWidget = React.lazy(() => import("./BlocksWidget"));
+const BackgroundsWidget = React.lazy(() => import("./BackgroundsWidget"));
+const LiveChatPanel = React.lazy(() => import("./LiveChatPanel"));
 
 // ---- minimal ABI for write ops ----
 const TOKEN_REWARDS_MIN_ABI = [
@@ -33,18 +38,24 @@ const TOKEN_REWARDS_MIN_ABI = [
 ];
 
 // ===== ethers v5/v6 safe helpers =====
+const isBigNumber = (value) =>
+  Boolean(value && typeof value === "object" && value._isBigNumber);
+
+const toBigNumberish = (value) => {
+  if (value == null) return 0n;
+  if (typeof value === "bigint") return value;
+  if (typeof value === "number") return BigInt(Math.trunc(value));
+  if (typeof value === "string") return value;
+  if (isBigNumber(value)) return value.toString();
+  if (typeof value?.toString === "function") return value.toString();
+  return 0n;
+};
+
 const _formatUnits = (val, dec) => {
   try {
-    return ethers.utils.formatUnits(val, dec);
+    return formatUnits(toBigNumberish(val), dec);
   } catch {
-    try {
-      const bn = ethers.BigNumber.isBigNumber(val)
-        ? val
-        : BigInt(val);
-      return ethers.utils.formatUnits(bn, dec);
-    } catch {
-      return "0";
-    }
+    return "0";
   }
 };
 const _formatEther = (val) => {
@@ -52,10 +63,7 @@ const _formatEther = (val) => {
     return formatEther(val);
   } catch {
     try {
-      const bn = ethers.BigNumber.isBigNumber(val)
-        ? val
-        : BigInt(val);
-      return formatEther(bn);
+      return formatEther(toBigNumberish(val));
     } catch {
       if (typeof val === "bigint") return (Number(val) / 1e18).toString();
       return "0";
@@ -73,13 +81,7 @@ const _bn = (v) => {
     }
   }
 };
-const _mul = (a, b) => {
-  if (ethers.BigNumber.isBigNumber(a) || ethers.BigNumber.isBigNumber(b)) {
-    const BN = ethers.BigNumber;
-    return BN.from(a).mul(BN.from(b));
-  }
-  return _bn(a) * _bn(b);
-};
+const _mul = (a, b) => _bn(a) * _bn(b);
 
 function LiveStats({
   lastImage,
@@ -127,7 +129,7 @@ function LiveStats({
           const dec = await feed.decimals().catch(() => 18);
           if (!alive) return;
           if (round && round.answer != null) {
-            const price = Number(ethers.utils.formatUnits(round.answer, dec));
+            const price = Number(_formatUnits(round.answer, dec));
             if (Number.isFinite(price)) setLpPrice(price);
           }
         }
@@ -551,18 +553,37 @@ function LiveStats({
 
       if (!r || !prov) throw new Error("Distributor or provider not available");
 
-      const [
-        totalReceived,
-        receivedForMain,
-        reserveAddr,
-        collREWARDSAddr,
-        BUYBACKAddr,
-        treasuryAddr,
-        COMMUNITYCENTERAddr,
-      ] = await Promise.all([
-        typeof r.totalReceived === "function"
-          ? r.totalReceived()
-          : Promise.resolve(0n),
+        const resolveCollectionRewards = async () => {
+          if (typeof r.collectionRewards === "function")
+            return r.collectionRewards();
+          if (typeof r.COLLECTIONREWARDS === "function")
+            return r.COLLECTIONREWARDS();
+          return ADDR.COLLECTION_REWARDS || ZeroAddress;
+        };
+        const resolveCommunityCenter = async () => {
+          if (typeof r.communityCenter === "function")
+            return r.communityCenter();
+          if (typeof r.COMMUNITYCENTER === "function")
+            return r.COMMUNITYCENTER();
+          return (
+            ADDR.COMMUNITY_CENTER ||
+            ADDR.COMMUNITYCENTER ||
+            ZeroAddress
+          );
+        };
+
+        const [
+          totalReceived,
+          receivedForMain,
+          reserveAddr,
+          collREWARDSAddr,
+          BUYBACKAddr,
+          treasuryAddr,
+          COMMUNITYCENTERAddr,
+        ] = await Promise.all([
+          typeof r.totalReceived === "function"
+            ? r.totalReceived()
+            : Promise.resolve(0n),
           typeof r.receivedByAddress === "function"
             ? r.receivedByAddress(ADDR.MAIN)
             : typeof r.receivedByCOLLECTION === "function"
@@ -571,51 +592,57 @@ function LiveStats({
         typeof r.reserve === "function"
           ? r.reserve()
           : Promise.resolve(ADDR.RESERVE || ZeroAddress),
-        typeof r.COLLECTIONREWARDS === "function"
-          ? r.COLLECTIONREWARDS()
-          : Promise.resolve(
-              ADDR.COLLECTION_REWARDS || ZeroAddress,
-            ),
-        typeof r.buybackAgent === "function"
-          ? r.buybackAgent()
-          : typeof r.BUYBACKAgent === "function"
-            ? r.BUYBACKAgent()
-            : Promise.resolve(ADDR.BUYBACK_AGENT || ZeroAddress),
-        typeof r.treasury === "function"
-          ? r.treasury()
-          : Promise.resolve(ADDR.TREASURY || ZeroAddress),
-        typeof r.COMMUNITYCENTER === "function"
-          ? r.COMMUNITYCENTER()
-          : Promise.resolve(ZeroAddress),
-      ]);
+          resolveCollectionRewards(),
+          typeof r.buybackAgent === "function"
+            ? r.buybackAgent()
+            : typeof r.BUYBACKAgent === "function"
+              ? r.BUYBACKAgent()
+              : Promise.resolve(ADDR.BUYBACK_AGENT || ZeroAddress),
+          typeof r.treasury === "function"
+            ? r.treasury()
+            : Promise.resolve(ADDR.TREASURY || ZeroAddress),
+          resolveCommunityCenter(),
+        ]);
 
       const targets = [
         { key: "reserve", name: "Reserve", addr: reserveAddr },
-        { key: "REWARDS", name: "COLLECTIONREWARDS", addr: collREWARDSAddr },
-        { key: "BUYBACK", name: "BUYBACKAgent", addr: BUYBACKAddr },
+        { key: "BUYBACK", name: "Buyback Agent", addr: BUYBACKAddr },
         { key: "treasury", name: "Treasury", addr: treasuryAddr },
-        {
-          key: "community",
-          name: "COMMUNITYCENTER",
-          addr: COMMUNITYCENTERAddr,
-        },
+        { key: "community", name: "Community Center", addr: COMMUNITYCENTERAddr },
+        { key: "REWARDS", name: "Collection Rewards", addr: collREWARDSAddr },
       ];
 
-      const communityPoolBalance = COMMUNITYCENTERAddr
-        ? await new COMMUNITYCENTERService(COMMUNITYCENTERAddr, prov)
-            .poolBalance()
-            .catch(() => null)
-        : null;
+      let allocations = {};
+      try {
+        const distSnapshot = await fetchDistributorSnapshot({
+          provider: prov,
+        }).catch(() => null);
+        if (distSnapshot) {
+          allocations = {
+            reserve: distSnapshot.pendingReserve ?? null,
+            BUYBACK: distSnapshot.pendingBUYBACK ?? null,
+            treasury: distSnapshot.pendingTreasury ?? null,
+            community:
+              distSnapshot.pendingCOMMUNITYCENTER ??
+              distSnapshot.pendingCommunity ??
+              null,
+            REWARDS: distSnapshot.pendingCOLLECTIONREWARDS ?? null,
+          };
+        }
+      } catch {
+        allocations = {};
+      }
+
+        const communityNativeBalance = COMMUNITYCENTERAddr
+          ? await prov.getBalance(COMMUNITYCENTERAddr).catch(() => 0n)
+          : 0n;
 
       const balancesArr = await Promise.all(
         targets.map((t) => {
-          if (t.key === "community")
-            return Promise.resolve(
-              communityPoolBalance ?? 0n,
-            );
-          return prov.getBalance(t.addr).catch(() => 0n);
-        }),
-      );
+            if (t.key === "community") return Promise.resolve(communityNativeBalance);
+            return prov.getBalance(t.addr).catch(() => 0n);
+          }),
+        );
 
       const balances = {};
       targets.forEach((t, i) => {
@@ -632,6 +659,7 @@ function LiveStats({
         totalReceived,
         receivedForMain,
         targets,
+        allocations,
         balances,
       });
     } catch (e) {
@@ -849,6 +877,13 @@ function LiveStats({
         const [m0, m1] = await Promise.all([erc20Meta(t0), erc20Meta(t1)]);
         if (cancel) return;
 
+        const normalizeQuoteSymbol = (sym) => {
+          const s = String(sym || "").toUpperCase();
+          if (!s) return "POL";
+          if (["WETH", "WMATIC", "WPOL", "W-POL"].includes(s)) return "POL";
+          return sym;
+        };
+
         let price = null;
         if (addr0 === biggiAddr) {
           const base = Number(_formatUnits(r0, m0.decimals));
@@ -860,7 +895,7 @@ function LiveStats({
             quote > 0
           ) {
             price = quote / base;
-            if (m1.symbol) setPriceQuoteSymbol(m1.symbol);
+            if (m1.symbol) setPriceQuoteSymbol(normalizeQuoteSymbol(m1.symbol));
           }
         } else if (addr1 === biggiAddr) {
           const base = Number(_formatUnits(r1, m1.decimals));
@@ -872,12 +907,12 @@ function LiveStats({
             quote > 0
           ) {
             price = quote / base;
-            if (m0.symbol) setPriceQuoteSymbol(m0.symbol);
+            if (m0.symbol) setPriceQuoteSymbol(normalizeQuoteSymbol(m0.symbol));
           }
         }
 
         if (!cancel && Number.isFinite(price) && price > 0) {
-          setBiggiPrice((prev) => (prev == null ? price : prev));
+          setBiggiPrice(price);
         }
       } catch (e) {
         console.warn("LiveStats: failed reading DEX price", e);
@@ -925,8 +960,8 @@ function LiveStats({
     boxShadow: "0 12px 60px rgba(0,0,0,0.7), 0 0 18px #ffe800",
     position: "relative",
     zIndex: 20,
-    transform: isPhone ? "none" : "translate(-48px, -92px)",
-    overFLOW: "hidden",
+    transform: isPhone ? "none" : "translate(254px, -92px)",
+    overflow: "hidden",
     backgroundImage: 'url("/images/blocks-bg.png")',
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -1070,7 +1105,7 @@ function LiveStats({
       if (!accounts || !accounts.length) throw new Error("No accounts");
 
       const provider = new BrowserProvider(eth, "any");
-      const signer = provider.getSigner();
+      const signer = await provider.getSigner();
 
       const REWARDSAddr =
         ADDR?.TOKEN_REWARDS ||
@@ -1088,15 +1123,21 @@ function LiveStats({
 
       // gas estimate
       let gas;
-      try {
-        const est = REWARDS.estimateGas?.claim
-          ? await REWARDS.estimateGas.claim(tokenIds)
-          : null;
-        gas = est
-          ? ethers.BigNumber.isBigNumber(est)
-            ? est.mul(110).div(100)
-            : est
-          : undefined;
+        try {
+          const estimateClaim =
+            REWARDS.estimateGas?.claim || REWARDS.claim?.estimateGas;
+          const est = estimateClaim ? await estimateClaim(tokenIds) : null;
+          if (est != null) {
+            if (isBigNumber(est) && typeof est.mul === "function") {
+              gas = est.mul(110).div(100);
+          } else if (typeof est === "bigint") {
+            gas = (est * 110n) / 100n;
+          } else {
+            gas = est;
+          }
+        } else {
+          gas = undefined;
+        }
       } catch {
         gas = undefined;
       }
@@ -1134,6 +1175,13 @@ function LiveStats({
       minWidth: 180,
     }),
     [isPhone],
+  );
+
+  const menuBtnBase = React.useMemo(
+    () => ({
+      ...actionBtnBase,
+    }),
+    [actionBtnBase],
   );
 
   const modalOverlayStyle = React.useMemo(
@@ -1229,7 +1277,7 @@ function LiveStats({
     () => [
       { label: "BLOCKS", active: showBlocks, onClick: openBlocks },
       { label: "BACKGROUNDS", active: showBgStats, onClick: openBackgrounds },
-      { label: "REWARDS", active: showREWARDS, onClick: openREWARDS },
+      { label: "Token", active: showREWARDS, onClick: openREWARDS },
     ],
     [
       showBlocks,
@@ -1250,6 +1298,7 @@ function LiveStats({
         alignItems: "center",
         gap: isPhone ? "6px" : "12px",
         marginBottom: isPhone ? "8px" : "10px",
+        marginTop: isPhone ? "4px" : "12px",
         flexWrap: isPhone ? "wrap" : "nowrap",
         width: "100%",
       }}
@@ -1257,30 +1306,29 @@ function LiveStats({
       {menuButtons.map((btn) => (
         <button
           key={btn.label}
-          className={`live-menu-btn${btn.active ? " active" : ""}`}
           onClick={btn.onClick}
           style={{
-            padding: isPhone ? "10px 8px" : "8px 14px",
+            ...menuBtnBase,
+            background: "transparent",
+            color: "#ffe800",
+            border: "2px solid #08ffe6",
+            boxShadow: "0 0 14px rgba(255,232,0,0.25)",
+            transition: "transform 0.2s ease, box-shadow 0.2s ease",
+            willChange: "transform",
             ...(isPhone
               ? { flex: "1 1 0%", minWidth: 0, textAlign: "center" }
-              : { minWidth: 120 }),
-            fontWeight: 700,
-            borderRadius: 12,
-            border: btn.active ? "2px solid #08dfff" : "2px solid #555",
-            backgroundColor: btn.active ? "#2a2a4b" : "#111",
-            color: "#08dfff",
-            cursor: "pointer",
-            transition: "all 0.3s ease",
-            textShadow: "0 1px 3px rgba(0,0,0,0.8)",
+              : { minWidth: 180 }),
           }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.boxShadow = "0 0 12px #08dfff")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.boxShadow = btn.active
-              ? "0 0 12px #08dfff"
-              : "none")
-          }
+          onMouseEnter={(event) => {
+            event.currentTarget.style.transform = "translateY(-2px)";
+            event.currentTarget.style.boxShadow =
+              "0 0 20px rgba(255,232,0,0.4)";
+          }}
+          onMouseLeave={(event) => {
+            event.currentTarget.style.transform = "none";
+            event.currentTarget.style.boxShadow =
+              "0 0 14px rgba(255,232,0,0.25)";
+          }}
         >
           {btn.label}
         </button>
@@ -1337,17 +1385,189 @@ function LiveStats({
     effectiveBlockPrices,
   ]);
 
-  // If oracle/pair price is missing, fall back to computed final price so the widget always shows a value
-  React.useEffect(() => {
-    if (
-      biggiPrice == null &&
-      typeof computedFinalPrice === "number" &&
-      Number.isFinite(computedFinalPrice) &&
-      computedFinalPrice > 0
-    ) {
-      setBiggiPrice(computedFinalPrice);
-    }
-  }, [biggiPrice, computedFinalPrice]);
+  const shortAddr = React.useCallback((addr) => {
+    if (!addr) return "--";
+    const s = String(addr);
+    return `${s.slice(0, 6)}...${s.slice(-4)}`;
+  }, []);
+
+  const formatMaybe = React.useCallback((value, digits = 2) => {
+    if (value == null || !Number.isFinite(Number(value))) return "--";
+    const n = Number(value);
+    return n.toLocaleString(undefined, {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    });
+  }, []);
+
+  const tokenAddress = ADDR.BIGGI || ADDR.BIGGI_TOKEN || "";
+  const pairAddress = ADDR.PAIR || "";
+  const routerAddress = ADDR.ROUTER || "";
+  const factoryAddress = ADDR.FACTORY || "";
+  const wethAddress = ADDR.WETH || "";
+  const priceOracleAddress = ADDR.BIGGI_PRICE_ORACLE || "";
+  const lpFeedAddress = ADDR.LP_PRICE_FEED || "";
+  const reserveAddress = ADDR.RESERVE || "";
+  const treasuryAddress = ADDR.TREASURY || "";
+
+  const tokenDexRows = React.useMemo(
+    () => [
+      { label: "Token symbol", value: tokenSymbol || "--" },
+      {
+        label: "Token decimals",
+        value: Number.isFinite(Number(tokenDecimals))
+          ? Number(tokenDecimals)
+          : "--",
+      },
+      {
+        label: "Token address",
+        value: tokenAddress ? (
+          <code title={tokenAddress}>{shortAddr(tokenAddress)}</code>
+        ) : (
+          "--"
+        ),
+      },
+      {
+        label: "Pair address",
+        value: pairAddress ? (
+          <code title={pairAddress}>{shortAddr(pairAddress)}</code>
+        ) : (
+          "--"
+        ),
+      },
+      {
+        label: "Router address",
+        value: routerAddress ? (
+          <code title={routerAddress}>{shortAddr(routerAddress)}</code>
+        ) : (
+          "--"
+        ),
+      },
+      {
+        label: "Factory address",
+        value: factoryAddress ? (
+          <code title={factoryAddress}>{shortAddr(factoryAddress)}</code>
+        ) : (
+          "--"
+        ),
+      },
+      {
+        label: "WETH address",
+        value: wethAddress ? (
+          <code title={wethAddress}>{shortAddr(wethAddress)}</code>
+        ) : (
+          "--"
+        ),
+      },
+      {
+        label: "Price oracle",
+        value: priceOracleAddress ? (
+          <code title={priceOracleAddress}>
+            {shortAddr(priceOracleAddress)}
+          </code>
+        ) : (
+          "--"
+        ),
+      },
+      {
+        label: "LP price feed",
+        value: lpFeedAddress ? (
+          <code title={lpFeedAddress}>{shortAddr(lpFeedAddress)}</code>
+        ) : (
+          "--"
+        ),
+      },
+      {
+        label: `DEX price (${priceQuoteSymbol})`,
+        value:
+          typeof biggiPrice === "number"
+            ? `${formatMaybe(
+                biggiPrice,
+                biggiPrice >= 1 ? 3 : 6,
+              )} ${priceQuoteSymbol}`
+            : "--",
+      },
+      {
+        label: "Final block price",
+        value:
+          typeof computedFinalPrice === "number"
+            ? `${formatMaybe(computedFinalPrice, 3)} ${priceQuoteSymbol}`
+            : "--",
+      },
+      {
+        label: "LP token price",
+        value:
+          typeof lpPrice === "number"
+            ? `${formatMaybe(lpPrice, lpPrice >= 1 ? 3 : 6)} ${priceQuoteSymbol}`
+            : "--",
+      },
+      {
+        label: "Total supply",
+        value:
+          typeof biggiSupply === "number"
+            ? `${biggiSupply.toLocaleString(undefined, {
+                maximumFractionDigits: 2,
+              })} ${tokenSymbol}`
+            : "--",
+      },
+      {
+        label: "Circulating supply",
+        value:
+          typeof circulatingSupply === "number"
+            ? `${circulatingSupply.toLocaleString(undefined, {
+                maximumFractionDigits: 2,
+              })} ${tokenSymbol}`
+            : "--",
+      },
+      {
+        label: "Market cap",
+        value:
+          typeof biggiMcap === "number"
+            ? `${biggiMcap.toLocaleString(undefined, {
+                maximumFractionDigits: 2,
+              })} ${priceQuoteSymbol}`
+            : "--",
+      },
+      {
+        label: "Reserve",
+        value: reserveAddress ? (
+          <code title={reserveAddress}>{shortAddr(reserveAddress)}</code>
+        ) : (
+          "--"
+        ),
+      },
+      {
+        label: "Treasury",
+        value: treasuryAddress ? (
+          <code title={treasuryAddress}>{shortAddr(treasuryAddress)}</code>
+        ) : (
+          "--"
+        ),
+      },
+    ],
+    [
+      tokenSymbol,
+      tokenDecimals,
+      tokenAddress,
+      pairAddress,
+      routerAddress,
+      factoryAddress,
+      wethAddress,
+      priceOracleAddress,
+      lpFeedAddress,
+      priceQuoteSymbol,
+      biggiPrice,
+      computedFinalPrice,
+      lpPrice,
+      biggiSupply,
+      circulatingSupply,
+      biggiMcap,
+      reserveAddress,
+      treasuryAddress,
+      shortAddr,
+      formatMaybe,
+    ],
+  );
 
   const userBlockCounts = React.useMemo(() => {
     const counts = new Array(10).fill(0);
@@ -1395,9 +1615,7 @@ function LiveStats({
     try {
       if (!unitRewardWei || !Number.isFinite(units))
         return `${units} ${tokenSymbol}`;
-      const amountWei = ethers.BigNumber.isBigNumber(unitRewardWei)
-        ? _mul(unitRewardWei, units || 0)
-        : _mul(_bn(unitRewardWei), _bn(units || 0));
+      const amountWei = _mul(unitRewardWei, units || 0);
       const s = _formatUnits(amountWei, tokenDecimals);
       const n = Number(s);
       return `${Number.isFinite(n) ? n.toFixed(n >= 1 ? 3 : 6) : s} ${tokenSymbol}`;
@@ -1721,7 +1939,7 @@ function LiveStats({
                   "0 0 14px rgba(255,232,0,0.25)";
               }}
             >
-              POOLS
+              ALLOCATION
             </button>
 
             <button
@@ -1781,7 +1999,7 @@ function LiveStats({
               </div>
             </ModalPortal>
           )}
-          {/* POOLS MODAL */}
+          {/* ALLOCATION MODAL */}
           {poolsOpen && (
             <ModalPortal lockScroll={false}>
               <div style={modalOverlayStyle}>
@@ -1789,7 +2007,7 @@ function LiveStats({
                   <div style={fullscreenModalCardStyle}>
                     <div style={modalHeaderStyle}>
                       <div style={{ color: "#ffe800", fontWeight: 900 }}>
-                        POOLS
+                        ALLOCATION
                       </div>
                       <button
                         onClick={() => setPoolsOpen(false)}
@@ -1865,6 +2083,16 @@ function LiveStats({
                             "Loading..."
                           )}
                         </div>
+                        <div
+                          style={{
+                            marginTop: 6,
+                            color: "#9fb4c9",
+                            fontSize: 11,
+                          }}
+                        >
+                          Mint native split (5): Reserve, Buyback, Treasury,
+                          Community, Collection Rewards.
+                        </div>
                       </div>
                       <div className="pools-card__body">
                         <table className="pools-table" style={poolsTableStyle}>
@@ -1884,7 +2112,7 @@ function LiveStats({
                               <th
                                 style={{ ...thBase, borderTopRightRadius: 12 }}
                               >
-                                Balance
+                                Allocation
                               </th>
                             </tr>
                           </thead>
@@ -1898,12 +2126,20 @@ function LiveStats({
                                 t.key && pools?.balances?.[t.key] != null
                                   ? fmtPOL(pools.balances[t.key])
                                   : "-";
+                              const allocation =
+                                t.key && pools?.allocations?.[t.key] != null
+                                  ? fmtPOL(pools.allocations[t.key])
+                                  : null;
+                              const displayAllocation =
+                                allocation != null && allocation !== "-"
+                                  ? allocation
+                                  : bal;
 
                               const prettyName =
                                 t.key === "REWARDS"
-                                  ? "COLLECTIONs"
+                                  ? "COLLECTION REWARDS"
                                   : t.key === "BUYBACK"
-                                    ? "BUYBACK"
+                                    ? "BUYBACK AGENT"
                                     : t.name;
                               const keyLabel = (t.key || "")
                                 .replace(/_/g, " ")
@@ -2071,7 +2307,7 @@ function LiveStats({
                                           "0 8px 18px rgba(0,0,0,0.35)",
                                       }}
                                     >
-                                      <span>{bal}</span>
+                                      <span>{displayAllocation}</span>
                                       <span
                                         style={{
                                           fontSize: 11,
@@ -2157,7 +2393,9 @@ function LiveStats({
                       </button>
                     </div>
                     <div style={{ flex: 1, minHeight: 0 }}>
-                      <LiveChatPanel walletAddress={walletAddress} />
+                      <React.Suspense fallback={null}>
+                        <LiveChatPanel walletAddress={walletAddress} />
+                      </React.Suspense>
                     </div>
                   </div>
                 </div>
@@ -2168,41 +2406,80 @@ function LiveStats({
       )}
 
       {showBlocks && (
-        <BlocksWidget
-          blockNames={safeBlockNames}
-          blockMintCounts={effectiveBlockMintCounts}
-          blockPrices={effectiveBlockPrices}
-          onBack={resetAll}
-        />
+        <React.Suspense fallback={null}>
+          <BlocksWidget
+            blockNames={safeBlockNames}
+            blockMintCounts={effectiveBlockMintCounts}
+            blockPrices={effectiveBlockPrices}
+            onBack={resetAll}
+          />
+        </React.Suspense>
       )}
 
       {showBgStats && (
-        <BackgroundsWidget
-          blockNames={safeBlockNames}
-          backgroundMintCounts={effectiveBackgroundMintCounts}
-          blockPrices={effectiveBlockPrices}
-          onBack={resetAll}
-        />
+        <React.Suspense fallback={null}>
+          <BackgroundsWidget
+            blockNames={safeBlockNames}
+            backgroundMintCounts={effectiveBackgroundMintCounts}
+            blockPrices={effectiveBlockPrices}
+            onBack={resetAll}
+          />
+        </React.Suspense>
       )}
 
       {showREWARDS && (
-        <REWARDSWidget
-          onBack={resetAll}
-          REWARDSPool={
-            typeof computedREWARDSPool === "number" ? computedREWARDSPool : 0
-          }
-          myClaimable={typeof myClaimable === "number" ? myClaimable : null}
-        />
+        <div
+          className="pools-card token-dex-card"
+            style={{
+              width: "min(720px, 92vw)",
+              margin: "0 auto",
+              borderColor: "rgba(255, 232, 0, 0.25)",
+            }}
+          >
+          <div className="pools-card__header">
+            <div style={{ color: "#ffe800", fontWeight: 900 }}>
+              TOKEN + DEX OVERVIEW
+            </div>
+            <button
+              onClick={resetAll}
+              style={{
+                background: "transparent",
+                border: "1px solid #ffe800",
+                color: "#ffe800",
+                borderRadius: 10,
+                padding: "6px 12px",
+                cursor: "pointer",
+                fontWeight: 800,
+              }}
+            >
+              Back
+            </button>
+          </div>
+          <div className="pools-card__body">
+            <div className="token-dex-table-wrap">
+              <table className="pools-table token-dex-table">
+                <tbody>
+                  {tokenDexRows.map((row) => (
+                    <tr key={row.label}>
+                      <td className="token-dex-label">{row.label}</td>
+                        <td
+                          className="token-dex-value"
+                          style={{
+                            textAlign: isPhone ? "left" : "right",
+                          }}
+                        >
+                        {row.value}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
 export default LiveStats;
-
-
-
-
-
-
-

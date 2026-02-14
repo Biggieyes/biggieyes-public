@@ -193,12 +193,12 @@ export default function AdminDashboard({ walletAddress, onTx }) {
 
       {!cfg.contractAddress && (
         <div className="moderator-center__error">
-          ModeratorsREWARDS contract address is missing.
+          Moderator Center contract address is missing.
         </div>
       )}
       {!cfg.abiReady && (
         <div className="moderator-center__error">
-          ABI is missing in <code>src/abis/ModeratorsREWARDS.json</code>.
+          ABI is missing in <code>src/config/abi/ModeratorCenter.json</code>.
         </div>
       )}
 

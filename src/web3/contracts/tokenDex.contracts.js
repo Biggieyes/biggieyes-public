@@ -1,12 +1,13 @@
-import { Contract } from "ethers";
-import BiggiToken from "../../config/abi/BiggiToken.json";
-import UniswapV2Router02 from "../../config/abi/UniswapV2Router02.json";
-import UniswapV2Factory from "../../config/abi/UniswapV2Factory.json";
-import UniswapV2Pair from "../../config/abi/UniswapV2Pair.json";
-import BiggiLpPriceFeed from "../../config/abi/BiggiLpPriceFeed.json";
+import { Contract, ZeroAddress, isAddress } from "ethers";
+import {
+  BiggiToken as ABI_BiggiToken,
+  UniswapV2Router02 as ABI_UniswapV2Router02,
+  UniswapV2Factory as ABI_UniswapV2Factory,
+  UniswapV2Pair as ABI_UniswapV2Pair,
+  BiggiLpPriceFeed as ABI_BiggiLpPriceFeed,
+} from "@/config/abi/index.js";
 import defaultProvider from "../provider";
 import { getTokenDexAddresses } from "../../config/addresses";
-
 export function getTokenDexContracts(chainId, provider) {
   const signerOrProvider = provider || defaultProvider;
   const {
@@ -21,21 +22,24 @@ export function getTokenDexContracts(chainId, provider) {
     treasury,
   } = getTokenDexAddresses(chainId);
 
-  const tokenContract = new Contract(biggiToken, BiggiToken, signerOrProvider);
-  const routerContract = new Contract(
-    router,
-    UniswapV2Router02,
-    signerOrProvider,
-  );
+  const validAddr = (addr) =>
+    typeof addr === "string" && isAddress(addr) && addr !== ZeroAddress;
 
-  const factoryContract = factory
-    ? new Contract(factory, UniswapV2Factory, signerOrProvider)
+  const tokenContract = validAddr(biggiToken)
+    ? new Contract(biggiToken, ABI_BiggiToken, signerOrProvider)
     : null;
-  const pairContract = pairAddress
-    ? new Contract(pairAddress, UniswapV2Pair, signerOrProvider)
+  const routerContract = validAddr(router)
+    ? new Contract(router, ABI_UniswapV2Router02, signerOrProvider)
     : null;
-  const priceFeedContract = lpPriceFeed
-    ? new Contract(lpPriceFeed, BiggiLpPriceFeed, signerOrProvider)
+
+  const factoryContract = validAddr(factory)
+    ? new Contract(factory, ABI_UniswapV2Factory, signerOrProvider)
+    : null;
+  const pairContract = validAddr(pairAddress)
+    ? new Contract(pairAddress, ABI_UniswapV2Pair, signerOrProvider)
+    : null;
+  const priceFeedContract = validAddr(lpPriceFeed)
+    ? new Contract(lpPriceFeed, ABI_BiggiLpPriceFeed, signerOrProvider)
     : null;
 
   return {
@@ -61,4 +65,3 @@ export function getTokenDexContracts(chainId, provider) {
 export default {
   getTokenDexContracts,
 };
-

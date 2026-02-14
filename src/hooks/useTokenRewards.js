@@ -1,96 +1,113 @@
-// src/HOOKS/useTokenREWARDS.js
 import * as React from "react";
-import { formatUnits } from "ethers/lib.esm/utils.js";
-import TokenREWARDSService from "../services/tokenRewardsService";
-import { getROProvider } from "../utils/contract";
-import { ADDR } from "../utils/addresses";
+import { Contract } from "ethers";
+import { ADDR } from "@/shared/utils/addresses";
+import { getROProvider } from "@/shared/utils/contract";
+import { BiggiTokenRewards as BiggiTokenRewardsABI } from "@/config/abi/index.js";
 
-const DEFAULT_DATA = {
-  address: ADDR.TOKEN_REWARDS,
-  unitReward: "0",
-  REWARDSMinted: "0",
-  REWARDSCap: "0",
-  remainingCap: "0",
-  totalDistributed: "0",
-  distributedThisWeek: "0",
-  currentWeek: 0,
-  lastRecordedWeek: 0,
-  lastWeekDistributed: "0",
-  blockWeights: [],
-  tokenMeta: null,
-  tokenSymbol: "BIGGI",
-  tokenDecimals: 18,
-  mainNFT: null,
-  main2NFT: null,
-  owner: null,
-  paused: false,
-  treasure: null,
+const ABI = Array.isArray(BiggiTokenRewardsABI) ? BiggiTokenRewardsABI : [];
+
+const safeCall = async (fn, fallback = null) => {
+  if (typeof fn !== "function") return fallback;
+  try {
+    return await fn();
+  } catch {
+    return fallback;
+  }
 };
 
-export default function useTokenREWARDS(providerOverride = null) {
-  const [data, setData] = React.useState(DEFAULT_DATA);
+const normalizeTokenMeta = (meta) => {
+  if (!meta) return null;
+  if (Array.isArray(meta)) {
+    return {
+      name_: meta[0],
+      symbol_: meta[1],
+      decimals_: Number(meta[2] ?? 18),
+    };
+  }
+  return meta;
+};
+
+export default function useTokenRewards(providerOverride, addressOverride) {
+  const [data, setData] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
 
-  const refresh = React.useCallback(
-    async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const provider = providerOverride || getROProvider();
-        if (!provider) throw new Error("Read-only provider not available");
+  const provider = React.useMemo(() => {
+    if (providerOverride) return providerOverride;
+    try {
+      return getROProvider();
+    } catch {
+      return null;
+    }
+  }, [providerOverride]);
 
-        const address = ADDR.TOKEN_REWARDS;
-        if (!address) {
-          setData((prev) => ({ ...prev }));
-          return;
-        }
+  const address = addressOverride || ADDR.TOKEN_REWARDS;
 
-        const svc = new TokenREWARDSService(address, provider);
-        const raw = await svc.getAllStats();
-        const meta = raw?.tokenMeta ?? null;
-        const decimals = Number(meta?.decimals_ ?? meta?.[2] ?? 18) || 18;
-        const fmt = (bn) => {
-          try {
-            return formatUnits(bn ?? 0, decimals);
-          } catch {
-            return "0";
-          }
-        };
+  const refresh = React.useCallback(async () => {
+    if (!provider || !address || !ABI.length) {
+      setData(null);
+      return null;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const contract = new Contract(address, ABI, provider);
+      const [
+        unitReward,
+        rewardsMinted,
+        rewardsCap,
+        remainingCap,
+        totalDistributed,
+        distributedThisWeek,
+        currentWeek,
+        lastRecordedWeek,
+        lastWeekDistributed,
+        blockWeights,
+        tokenMetaRaw,
+      ] = await Promise.all([
+        safeCall(() => contract.unitReward?.(), null),
+        safeCall(() => contract.rewardsMinted?.(), null),
+        safeCall(() => contract.rewardsCap?.(), null),
+        safeCall(() => contract.remainingCap?.(), null),
+        safeCall(() => contract.totalDistributed?.(), null),
+        safeCall(() => contract.distributedThisWeek?.(), null),
+        safeCall(() => contract.currentWeek?.(), null),
+        safeCall(() => contract.lastRecordedWeek?.(), null),
+        safeCall(() => contract.lastWeekDistributed?.(), null),
+        safeCall(() => contract.getBlockWeights?.(), null),
+        safeCall(() => contract.tokenMeta?.(), null),
+      ]);
 
-        setData((prev) => ({
-          ...prev,
-          address,
-          unitReward: fmt(raw.unitReward),
-          REWARDSMinted: fmt(raw.REWARDSMinted),
-          REWARDSCap: fmt(raw.REWARDSCap),
-          remainingCap: fmt(raw.remainingCap),
-          totalDistributed: fmt(raw.totalDistributed),
-          distributedThisWeek: fmt(raw.distributedThisWeek),
-          currentWeek: Number(raw.currentWeek ?? 0),
-          lastRecordedWeek: Number(raw.lastRecordedWeek ?? 0),
-          lastWeekDistributed: fmt(raw.lastWeekDistributed),
-          blockWeights: Array.isArray(raw.blockWeights)
-            ? raw.blockWeights.map((v) => Number(v?.toString?.() ?? v))
-            : [],
-          tokenMeta: meta,
-          tokenSymbol: meta?.symbol_ ?? meta?.[1] ?? prev.tokenSymbol,
-          tokenDecimals: decimals,
-          mainNFT: raw.mainNFT || null,
-          main2NFT: raw.main2NFT || null,
-          owner: raw.owner || null,
-          paused: Boolean(raw.paused),
-          treasure: raw.treasure || null,
-        }));
-      } catch (e) {
-        console.error("useTokenREWARDS.refresh", e);
-        setError(e);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [providerOverride],
-  );
+      const tokenMeta = normalizeTokenMeta(tokenMetaRaw);
+      const tokenDecimals = tokenMeta?.decimals_ ?? tokenMeta?.decimals ?? 18;
+      const tokenSymbol = tokenMeta?.symbol_ ?? tokenMeta?.symbol ?? null;
+
+      const next = {
+        unitReward,
+        REWARDSMinted: rewardsMinted,
+        REWARDSCap: rewardsCap,
+        remainingCap,
+        totalDistributed,
+        distributedThisWeek,
+        currentWeek,
+        lastRecordedWeek,
+        lastWeekDistributed,
+        blockWeights,
+        tokenMeta,
+        tokenDecimals,
+        tokenSymbol,
+      };
+
+      setData(next);
+      return next;
+    } catch (err) {
+      setError(err);
+      setData(null);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [provider, address]);
 
   React.useEffect(() => {
     refresh();

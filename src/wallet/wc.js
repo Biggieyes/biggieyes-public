@@ -1,7 +1,7 @@
 // src/wallet/wc.js
-import { Web3Provider } from "@ethersproject/providers";
+import { BrowserProvider } from "ethers";
 import { EthereumProvider } from "@walletconnect/ethereum-provider";
-import { AMOY, PUBLIC_AMOY_RPCS, getPrimaryRpcUrl } from "../utils/contract";
+import { AMOY, PUBLIC_AMOY_RPCS, getPrimaryRpcUrl } from "@/shared/utils/contract";
 
 const WC_PROJECT_ID = import.meta.env.VITE_WC_PROJECT_ID;
 
@@ -66,10 +66,12 @@ export async function connectWithWalletConnect() {
   // Open QR and establish session
   await wc.connect();
 
-  const ethersProvider = new Web3Provider(wc, "any");
-  ethersProvider.pollingInterval = 4000;
+  const ethersProvider = new BrowserProvider(wc, "any");
+  if (typeof ethersProvider.pollingInterval === "number") {
+    ethersProvider.pollingInterval = 4000;
+  }
 
-  const signer = ethersProvider.getSigner();
+  const signer = await ethersProvider.getSigner();
 
   const chainId = await resolveChainId(wc);
   if (chainId && chainId !== AMOY.chainId) {

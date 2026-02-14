@@ -8,7 +8,7 @@ Tento dokument shrnuje architekturu, externí služby, požadované proměnné p
 **Hlavní složky (vybrané)**
 - `src/` – React app, komponenty, hooky, utils (web3, ipfs, services).
 - `functions/` – Netlify Functions (např. `nonce.js`, `pinFile`, `pinJson`, `message`, admin handlers).
-- `src/utils/addresses.js` – centrální seznam adres kontraktů a env override logika.
+- `src/shared/utils/addresses.js` – centrální seznam adres kontraktů a env override logika.
 - `src/utils/contract.js` – factory pro read/write kontrakty, `getReaderRO()` fallbacky a RPC logika.
 - `src/utils/rpcConfig.js` – konfigurace RPC endpointů a preference.
 - `src/utils/ipfs.js`, `src/components/PinUploader.jsx`, `docs/README_PINNING.md` – pinování na Pinata + fallbacky.
@@ -71,13 +71,13 @@ Hlavní běžné chyby a jak je řešit
   - Důvod: chybějící `SUPABASE_URL` nebo `SUPABASE_SERVICE_ROLE_KEY` v prostředí functions.
   - Řešení: nastavit tyto proměnné v Netlify Site settings → Build & deploy → Environment variables, nebo lokálně pro `netlify dev` v `.env`.
 - `getReaderRO: reader address not configured; falling back to MAIN` (console warn):
-  - Důvod: v `src/utils/addresses.js` je `ADDR.READER` nebo `ADDR.MAIN_READER` prázdné.
+  - Důvod: v `src/shared/utils/addresses.js` je `ADDR.READER` nebo `ADDR.MAIN_READER` prázdné.
   - Řešení: nastavit správnou adresu reader kontraktu v `ADDR` (přímo v souboru nebo pomocí env `VITE_READER` / `VITE_MAIN_READER`). Varování je informativní (kód použije `MAIN`), ale některé reader‑specific funkce mohou chybovat.
 - RPC historie oříznutá: pro deep historical queries použijte archive RPC poskytovatele.
 
 Důležité soubory pro troubleshooting
 - `functions/nonce.js` — Netlify function generující nonce (supabase insert). Pokud vrací 500, zkontrolovat error log v Netlify nebo v konzoli `netlify dev`.
-- `src/utils/contract.js` + `src/utils/addresses.js` — contract factories, reader fallbacky a adresy.
+- `src/utils/contract.js` + `src/shared/utils/addresses.js` — contract factories, reader fallbacky a adresy.
 - `src/components/PinUploader.jsx`, `functions/pinFile`, `functions/pinJson` a `docs/README_PINNING.md` — pinning flow.
 - `src/utils/rpcConfig.js` — výběr RPC endpointů a relevantní env klíče.
 
@@ -118,7 +118,7 @@ VITE_CHAT_API_BASE=https://biggieyes.com/.netlify/functions
 ```
 
 Kontakt a další pomoc
-- Pokud chceš, mohu: (A) vygenerovat root `README.md` s kratším env‑checklistem, (B) otestovat `nonce` funkci lokálně (potřebuji service role key) nebo (C) zapsat `ADDR.READER` do `src/utils/addresses.js` pokud poskytneš reader address.
+- Pokud chceš, mohu: (A) vygenerovat root `README.md` s kratším env‑checklistem, (B) otestovat `nonce` funkci lokálně (potřebuji service role key) nebo (C) zapsat `ADDR.READER` do `src/shared/utils/addresses.js` pokud poskytneš reader address.
 
 ---
 Vytvořeno: krátká projektová analýza; pokud chceš, doplním specifika (např. přesný seznam všech env proměnných s popisem, diagram závislostí nebo bezpečnostní postupy).

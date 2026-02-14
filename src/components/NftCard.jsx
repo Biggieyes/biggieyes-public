@@ -1,20 +1,17 @@
 // src/components/NftCard.jsx
 import * as React from "react";
-import { Contract } from "ethers";
-import { formatEther, parseEther, arrayify } from "ethers/lib.esm/utils.js";
-import { AddressZero } from "@ethersproject/constants";
+import { formatEther } from "ethers";
 import "./NftCard.css";
 import ImportNftButton from "./ImportNftButton";
 import { useContracts } from "../providers/ContractsProvider";
+import { httpFromIpfs, readJsonFromURI, resolveImageUrl } from "../shared/services/ipfs";
 
 const PLACEHOLDER_IMG = "/images/Biggi.png";
 
 /* ----- helpers ----- */
 const ipfsToHttp = (url) => {
   if (!url || typeof url !== "string") return url;
-  if (!url.startsWith("ipfs://")) return url;
-  const clean = url.replace(/^ipfs:\/\//, "").replace(/^ipfs\//, "");
-  return `https://ipfs.io/ipfs/${clean}`;
+  return httpFromIpfs(url);
 };
 
 const normaliseAttributes = (meta) => {
@@ -54,6 +51,17 @@ const parseMatic = (value) => {
   if (!m) return null;
   const n = Number(m[1]);
   return Number.isNaN(n) ? null : n;
+};
+
+const looksLikeTicketMeta = (meta) => {
+  if (!meta) return false;
+  const name = String(meta?.name || "").toLowerCase();
+  const desc = String(meta?.description || "").toLowerCase();
+  return (
+    name.includes("ticket") ||
+    desc.includes("ticket") ||
+    desc.includes("redeem")
+  );
 };
 
 /* optional color-to-blockId map as fallback if needed */
@@ -104,6 +112,7 @@ export default function NftCard({
   const [loadingMint, setLoadingMint] = React.useState(false);
   const [loadingBlockNow, setLoadingBlockNow] = React.useState(false);
   const [detailsOpen, setDetailsOpen] = React.useState(false);
+  const metadataRef = React.useRef(metadata);
 
   const contractAddress = React.useMemo(() => {
     if (nft?.contractAddress) return nft.contractAddress;
@@ -115,6 +124,34 @@ export default function NftCard({
     }
   }, [contracts, nft?.contractAddress, fallbackContractAddress]);
 
+  const metadataContract = React.useMemo(() => {
+    if (!contracts) return null;
+    let main = null;
+    let main2 = null;
+    try {
+      main = contracts?.mainRead?.();
+    } catch {
+      main = null;
+    }
+    try {
+      main2 = contracts?.main2Read?.();
+    } catch {
+      main2 = null;
+    }
+    const target = contractAddress
+      ? String(contractAddress).toLowerCase()
+      : "";
+    if (target) {
+      if (main && String(main.address || "").toLowerCase() === target)
+        return main;
+      if (main2 && String(main2.address || "").toLowerCase() === target)
+        return main2;
+    }
+    return main || main2 || null;
+  }, [contracts, contractAddress]);
+
+  const forcedRefreshRef = React.useRef(new Set());
+
   React.useEffect(() => {
     setMetadata(nft.meta || null);
   }, [nft.meta]);
@@ -124,36 +161,105 @@ export default function NftCard({
   }, [nft.image]);
 
   React.useEffect(() => {
+    metadataRef.current = metadata;
+  }, [metadata]);
+
+  React.useEffect(() => {
     let cancelled = false;
+    const currentMeta = metadataRef.current;
     const fetchMetadata = async () => {
       if (!tokenId) return;
+      if (nft?.isTicket || nft?.isPending) return;
+      const forceRefresh =
+        !nft?.isTicket &&
+        looksLikeTicketMeta(currentMeta) &&
+        tokenId &&
+        !forcedRefreshRef.current.has(tokenId);
       // always try to fetch on missing or incomplete metadata
-      const main = contracts?.mainRead?.();
+      const main = metadataContract || contracts?.mainRead?.();
       if (!main || typeof main.tokenURI !== "function") return;
       try {
         setLoadingMeta(true);
         const uri = await main.tokenURI(tokenId);
         if (!uri) return;
-        const response = await fetch(ipfsToHttp(uri));
-        if (!response.ok) return;
-        const json = await response.json();
+        const json = await readJsonFromURI(uri);
+        if (!json) return;
+        const ticketLike = !nft?.isTicket && looksLikeTicketMeta(json);
+        const fixedMeta = ticketLike
+          ? {
+              ...(json || {}),
+              name: `Biggi NFT #${tokenId}`,
+              description: "Metadata is updating after redeem.",
+            }
+          : json;
         if (!cancelled) {
-          setMetadata((prev) => prev || json);
-          const img = json.image || json.image_url;
-          if (!nft.image && img) setImage(ipfsToHttp(img));
+          setMetadata((prev) => {
+            if (forceRefresh) return fixedMeta;
+            if (!prev) return fixedMeta;
+            if (!nft?.isTicket && looksLikeTicketMeta(prev)) return fixedMeta;
+            return prev;
+          });
+          const img = ticketLike
+            ? PLACEHOLDER_IMG
+            : fixedMeta?.image || fixedMeta?.image_url;
+          if (!nft.image && img) {
+            const resolved = await resolveImageUrl(img, uri).catch(() => null);
+            setImage(resolved || ipfsToHttp(img));
+          }
         }
       } catch (err) {
+        const name = err?.errorName || "";
+        const msg = String(err?.message || "");
+        if (
+          name === "NoToken" ||
+          /not exist|nonexistent|NoToken/i.test(msg)
+        ) {
+          if (!cancelled) {
+            setMetadata({
+              name: tokenId ? `#${tokenId}` : "Biggi NFT",
+              description: "Metadata unavailable (token burned or not minted).",
+              image: PLACEHOLDER_IMG,
+            });
+            setImage(PLACEHOLDER_IMG);
+          }
+          return;
+        }
+        if (!cancelled && !nft?.isTicket && !currentMeta) {
+          setMetadata({
+            name: tokenId ? `Biggi NFT #${tokenId}` : "Biggi NFT",
+            description: "Metadata is updating after redeem.",
+            image: PLACEHOLDER_IMG,
+          });
+          setImage(PLACEHOLDER_IMG);
+        }
         console.error("NftCard metadata fetch failed", err);
       } finally {
         if (!cancelled) setLoadingMeta(false);
+        if (forceRefresh && tokenId) {
+          forcedRefreshRef.current.add(tokenId);
+        }
       }
     };
     // fetch even if some metadata exists, but avoid refetch loop
-    if (!metadata || !metadata.image) fetchMetadata();
+    const shouldFetch =
+      !currentMeta ||
+      !currentMeta.image ||
+      (!nft?.isTicket &&
+        looksLikeTicketMeta(currentMeta) &&
+        tokenId &&
+        !forcedRefreshRef.current.has(tokenId));
+    if (shouldFetch) fetchMetadata();
     return () => {
       cancelled = true;
     };
-  }, [contracts, metadata, nft.image, tokenId]);
+  }, [
+    contracts,
+    metadataContract,
+    nft.image,
+    tokenId,
+    nft?.isTicket,
+    nft?.isPending,
+  ]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -396,7 +502,8 @@ export default function NftCard({
         <img
           src={imageSrc}
           alt={title}
-          loading="React.lazy"
+          loading="lazy"
+          decoding="async"
           onClick={handleZoom}
           onError={() => {
             if (image !== PLACEHOLDER_IMG) setImage(PLACEHOLDER_IMG);
@@ -488,5 +595,3 @@ export default function NftCard({
     </article>
   );
 }
-
-

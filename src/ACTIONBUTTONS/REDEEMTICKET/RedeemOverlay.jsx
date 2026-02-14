@@ -254,7 +254,7 @@ export default function RedeemOverlay({
           <div style={S.header}>
             <div style={S.iconContainer}>
               <img
-                src="/images/VRF-mint.png"
+                src="/images/icons/mint.png"
                 alt=""
                 style={S.icon}
                 loading="React.lazy"
@@ -643,7 +643,9 @@ const styles = {
     width: "36px",
     height: "36px",
     borderRadius: "12px",
-    border: "1px solid rgba(255,255,255,0.18)",
+    borderWidth: "1px",
+    borderStyle: "solid",
+    borderColor: "rgba(255,255,255,0.18)",
     color: "rgba(255,255,255,0.8)",
     background:
       "linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%)",
@@ -677,7 +679,8 @@ const styles = {
     borderRadius: "999px",
     fontSize: "12px",
     fontWeight: 600,
-    border: "1px solid",
+    borderWidth: "1px",
+    borderStyle: "solid",
     transition: "all 0.3s ease",
     textTransform: "uppercase",
     letterSpacing: "0.4px",

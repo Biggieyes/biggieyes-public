@@ -29,7 +29,7 @@ async function main() {
     "function biggiBalance() view returns (uint256)",
   ];
   const resAbi = [
-    "function maticBalance() view returns (uint256)",
+    "function polBalance() view returns (uint256)",
     "function dexRefillBiggi() view returns (uint256)",
   ];
   const erc20Abi = [
@@ -50,8 +50,8 @@ async function main() {
     ba.nativeBalance(),
     ba.biggiBalance(),
   ]);
-  const [resMatic, resBiggi] = await Promise.all([
-    res.maticBalance(),
+  const [resPol, resBiggi] = await Promise.all([
+    res.polBalance(),
     res.dexRefillBiggi(),
   ]);
   const [balDd, balRes, balBa] = await Promise.all([
@@ -70,12 +70,12 @@ async function main() {
   console.log("  BIGGI balance :", fmt(balDd));
 
   console.log("BuybackAgent");
-  console.log("  nativeBalance :", fmtEth(bbNative), "MATIC");
+  console.log("  nativeBalance :", fmtEth(bbNative), "POL");
   console.log("  biggiBalance  :", fmt(bbBiggi));
   console.log("  BIGGI balance :", fmt(balBa));
 
   console.log("Reserve");
-  console.log("  maticBalance  :", fmtEth(resMatic), "MATIC");
+  console.log("  polBalance    :", fmtEth(resPol), "POL");
   console.log("  dexRefillBiggi:", fmt(resBiggi));
   console.log("  BIGGI balance :", fmt(balRes));
 }

@@ -1,12 +1,12 @@
 /* @refresh reload */
 // src/context/StatsProvider.jsx
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress } from "ethers";
 import { useContracts } from "./ContractsProvider";
 import {
   resolveTicketPriceWeiFromHub,
   getFrontendSnapshotLiteActive,
-} from "../utils/contract";
+} from "@/shared/utils/contract";
 
 const Ctx = React.createContext(null);
 

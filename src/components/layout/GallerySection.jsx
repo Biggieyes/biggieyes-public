@@ -1,6 +1,4 @@
 import * as React from "react";
-import NFTStatusBlock from "./NFTStatusBlock";
-
 const Gallery = React.lazy(() => import("../Gallery"));
 
 function GalleryHelp() {
@@ -84,9 +82,6 @@ export default function GallerySection({
   setZoomImg,
   VRFPending,
   isRedeeming,
-  redeemMsg,
-  fetchStats,
-  fetchREWARDS,
   fetchWalletAssets,
   walletAddress,
   isMobile,
@@ -95,7 +90,6 @@ export default function GallerySection({
 
   React.useEffect(() => {
     if (!walletAddress) return;
-    if (VRFPending || isRedeeming) return;
     fetchWalletAssets(walletAddress);
   }, [walletAddress, VRFPending, isRedeeming, fetchWalletAssets]);
 
@@ -137,21 +131,12 @@ export default function GallerySection({
 
       {cardsHelpOpen && <GalleryHelp />}
 
-      <NFTStatusBlock
-        isRedeeming={isRedeeming}
-        VRFPending={VRFPending}
-        redeemMsg={redeemMsg}
-        isMobile={isMobile}
-        fetchStats={fetchStats}
-        fetchREWARDS={fetchREWARDS}
-        fetchWalletAssets={fetchWalletAssets}
-        walletAddress={walletAddress}
-        galleryLoading={galleryLoading}
-        myNFTs={myNFTs}
-      />
-
       {galleryNotice ? (
         <div className="gallery__notice">{galleryNotice}</div>
+      ) : null}
+
+      {!galleryLoading && myNFTs.length === 0 ? (
+        <div style={{ color: "#aaa" }}>You don't own any NFTs or tickets.</div>
       ) : null}
 
       <React.Suspense fallback={null}>
@@ -165,22 +150,9 @@ export default function GallerySection({
           }}
           onZoom={(nft) => setZoomImg(nft.image)}
           compact={isMobile}
-          useProvidedOnly
         />
       </React.Suspense>
 
-      {VRFPending && (
-        <div
-          style={{
-            marginTop: 10,
-            color: "#ffe800",
-            textAlign: "center",
-            fontWeight: 700,
-          }}
-        >
-          VRF pending - your NFT will appear automatically once revealed.
-        </div>
-      )}
     </div>
   );
 }

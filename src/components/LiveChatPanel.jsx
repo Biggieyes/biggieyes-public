@@ -1,15 +1,13 @@
 // src/components/LiveChatPanel.jsx
 // Live chat UI backed by Supabase realtime and a serverless signature-verified API.
 import * as React from "react";
-import { Contract } from "ethers";
-import { formatEther, parseEther, arrayify } from "ethers/lib.esm/utils.js";
-import { AddressZero } from "@ethersproject/constants";
+import { BrowserProvider } from "ethers";
 import { supabase } from "../services/chatClient";
 import "./LiveChatPanel.css";
 
 const API_BASE = import.meta.env.VITE_CHAT_API_BASE || "";
 const MAX_LEN = 280;
-const BAD_WORDS = ["spam", "scam", "phish"]; // basic placeholder list for expansion
+const BAD_WORDS = ["spam", "scam", "phish"]; // basic default list for expansion
 
 const shortAddress = (addr) => {
   if (!addr) return "0x----";
@@ -158,7 +156,7 @@ function LiveChatPanel({ walletAddress = "" }) {
         window.ethereum,
         "any",
       );
-      const signer = provider.getSigner();
+      const signer = await provider.getSigner();
       const signerAddress = await signer.getAddress();
 
       const nonceRes = await fetch(buildApiUrl("/nonce"), {

@@ -1,7 +1,8 @@
 // Nasazení BiggiTokenomikReader
 // Spuštění: npx hardhat run scripts/deployTokenomikReader.js --network amoy
 
-require("dotenv").config({ path: "./scripts/.env" });
+// Načti root .env; pokud spouštíš jinde, doplň env proměnné ručně.
+require("dotenv").config();
 const hre = require("hardhat");
 
 function requireEnv(name) {

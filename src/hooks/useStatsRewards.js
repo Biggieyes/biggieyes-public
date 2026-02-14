@@ -1,120 +1,161 @@
 import * as React from "react";
-import { formatEther } from "ethers/lib.esm/utils.js";
+import { formatEther } from "ethers";
 import {
-  ADDR,
+  getReadOnlyMain,
   getReaderRO,
   getFrontendSnapshotLiteActive,
-  getReadOnlyMain as getReadOnlyContract,
-  getLMRO as getReadOnlyLiquidityContract,
-} from "../utils/contract";
-import { getSafeDeployBlock, queryLogsBatched } from "../utils/shared";
-import { callFirst } from "../utils/contracts-helpers";
+} from "@/shared/utils/contract";
 
-export function useStatsREWARDS({
-  setTicketPrice,
-  setTicketMinted,
-  setBiggiMinted,
-  setBlockPrices,
-  setBlockMintCounts,
-  setBackgroundMintCounts,
-  setRewardPool,
-  setMintVolumeMatic,
-  walletAddress,
-  myNFTs,
-  setMyClaimable,
-}) {
+const toNumEth = (value) => {
+  try {
+    if (value == null) return null;
+    if (typeof value === "bigint") return Number(formatEther(value));
+    if (typeof value === "number") return Number.isFinite(value) ? value : null;
+    if (typeof value === "string" && /^\d+$/.test(value))
+      return Number(formatEther(BigInt(value)));
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  } catch {
+    return null;
+  }
+};
+
+const safeCall = async (fn, fallback = null) => {
+  if (typeof fn !== "function") return fallback;
+  try {
+    return await fn();
+  } catch {
+    return fallback;
+  }
+};
+
+const applySetter = (fn, value) => {
+  if (typeof fn === "function") fn(value);
+};
+
+export function useStatsREWARDS(options = {}) {
+  const {
+    setTicketPrice,
+    setTicketMinted,
+    setBiggiMinted,
+    setBlockPrices,
+    setBlockMintCounts,
+    setBackgroundMintCounts,
+    setRewardPool,
+    setMintVolumeMatic,
+    walletAddress,
+    myNFTs,
+    setMyClaimable,
+  } = options;
+
   const fetchStats = React.useCallback(async () => {
+    // 1) Try reader snapshot
     try {
-      const reader = getReaderRO();
-      const [
-        ticketPriceWei,
-        ticketMinted_,
-        biggiMinted_,
-        currentBlockPrices,
-        blocksMinted,
-        bgsMinted,
-      ] = await getFrontendSnapshotLiteActive(reader);
+      const reader = getReaderRO?.();
+      const snap = reader
+        ? await getFrontendSnapshotLiteActive(reader)
+        : null;
+      if (snap) {
+        const [
+          ticketPriceWei,
+          ticketMinted,
+          biggiMinted,
+          currentBlockPrices,
+          blocksMinted,
+          bgsMinted,
+        ] = snap;
 
-      setTicketPrice(Number(formatEther(ticketPriceWei)));
-      setTicketMinted(Number(ticketMinted_));
-      setBiggiMinted(Number(biggiMinted_));
-      setBlockPrices(
-        currentBlockPrices.map((x) => Number(formatEther(x))),
-      );
-      setBlockMintCounts(blocksMinted.map((x) => Number(x)));
-      setBackgroundMintCounts(bgsMinted.map((x) => Number(x)));
-    } catch (err) {
-      console.error("fetchStats(reader)", err);
-      try {
-        const main = getReadOnlyContract();
-        const priceCandidates = [
-          "getTicketPrice",
-          "ticketPrice",
-          "getTicketPriceWei",
-          "ticketPriceWei",
-        ];
-        let priceWei = null;
-        for (const fn of priceCandidates) {
-          const f = main?.[fn];
-          if (typeof f === "function") {
-            try {
-              const v = await f();
-              if (v != null) {
-                priceWei = v;
-                break;
-              }
-            } catch (err) {
-              console.debug("fetchStats fallback price candidate failed", err);
-            }
-          }
+        applySetter(setTicketPrice, toNumEth(ticketPriceWei));
+        applySetter(
+          setTicketMinted,
+          ticketMinted != null ? Number(ticketMinted) : null,
+        );
+        applySetter(
+          setBiggiMinted,
+          biggiMinted != null ? Number(biggiMinted) : null,
+        );
+        if (Array.isArray(currentBlockPrices)) {
+          applySetter(
+            setBlockPrices,
+            currentBlockPrices.map((v) => toNumEth(v)),
+          );
         }
-        if (priceWei != null)
-          setTicketPrice(Number(formatEther(priceWei)));
-
-        try {
-          const tm = await main.ticketMinted();
-          setTicketMinted(Number(tm?.toString?.() || tm || 0));
-        } catch (err) {
-          console.debug("fetchStats fallback ticketMinted failed", err);
+        if (Array.isArray(blocksMinted)) {
+          applySetter(
+            setBlockMintCounts,
+            blocksMinted.map((v) => (v != null ? Number(v) : null)),
+          );
         }
-        try {
-          const bm = await main.biggiMinted();
-          setBiggiMinted(Number(bm?.toString?.() || bm || 0));
-        } catch (err) {
-          console.debug("fetchStats fallback biggiMinted failed", err);
+        if (Array.isArray(bgsMinted)) {
+          applySetter(
+            setBackgroundMintCounts,
+            bgsMinted.map((v) => (v != null ? Number(v) : null)),
+          );
         }
-
-        const prices = [];
-        const blkCounts = [];
-        const bgCounts = [];
-        for (let i = 1; i <= 10; i++) {
-          try {
-            const p = await main.getCurrentBlockPrice(i);
-            prices.push(Number(formatEther(p)));
-          } catch {
-            prices.push(0);
-          }
-          try {
-            const c = await main.getBlockMintCount(i);
-            blkCounts.push(Number(c?.toString?.() || c || 0));
-          } catch {
-            blkCounts.push(0);
-          }
-        }
-        for (let j = 0; j < 10; j++) {
-          try {
-            const c = await main.backgroundMintCounts(j);
-            bgCounts.push(Number(c?.toString?.() || c || 0));
-          } catch {
-            bgCounts.push(0);
-          }
-        }
-        setBlockPrices(prices);
-        setBlockMintCounts(blkCounts);
-        setBackgroundMintCounts(bgCounts);
-      } catch (e2) {
-        console.error("fetchStats(fallback main)", e2);
+        return snap;
       }
+    } catch (err) {
+      // reader snapshot failed, fall through to direct calls
+       
+      console.debug("useStatsREWARDS reader snapshot failed", err);
+    }
+
+    // 2) Fallback to direct contract calls
+    try {
+      const main = getReadOnlyMain();
+      if (!main) return null;
+
+      const priceWei = await safeCall(() =>
+        main.getTicketPrice?.().catch(() => main.ticketPrice?.()),
+      );
+      applySetter(setTicketPrice, toNumEth(priceWei));
+
+      const tm = await safeCall(() => main.ticketMinted?.(), null);
+      const bm = await safeCall(() => main.biggiMinted?.(), null);
+      applySetter(setTicketMinted, tm != null ? Number(tm) : null);
+      applySetter(setBiggiMinted, bm != null ? Number(bm) : null);
+
+      const prices = [];
+      const minted = [];
+      for (let i = 1; i <= 10; i++) {
+        const info = await safeCall(() => main.blockInfos?.(i), null);
+        const blockPrice =
+          info?.currentPrice ??
+          info?.[2] ??
+          (await safeCall(() => main.getCurrentBlockPrice?.(i), null));
+        const blockMinted =
+          info?.mintCount ??
+          info?.[3] ??
+          (await safeCall(() => main.blockMintCounts?.(i), null)) ??
+          (await safeCall(() => main.getBlockMintCount?.(i), null));
+        prices.push(blockPrice != null ? toNumEth(blockPrice) : null);
+        minted.push(blockMinted != null ? Number(blockMinted) : null);
+      }
+      applySetter(setBlockPrices, prices);
+      applySetter(setBlockMintCounts, minted);
+
+      const bgCounts = [];
+      for (let j = 0; j < 10; j++) {
+        const count = await safeCall(
+          () => main.backgroundMintCounts?.(j),
+          null,
+        );
+        bgCounts.push(count != null ? Number(count) : null);
+      }
+      applySetter(setBackgroundMintCounts, bgCounts);
+
+      // Optional stats (not required for COLLECTION grid)
+      applySetter(setRewardPool, null);
+      applySetter(setMintVolumeMatic, null);
+      if (walletAddress && Array.isArray(myNFTs) && setMyClaimable) {
+        applySetter(setMyClaimable, null);
+      }
+
+      return { prices, minted, bgCounts };
+    } catch (err) {
+       
+      console.warn("useStatsREWARDS fallback failed", err);
+      return null;
     }
   }, [
     setTicketPrice,
@@ -123,150 +164,12 @@ export function useStatsREWARDS({
     setBlockPrices,
     setBlockMintCounts,
     setBackgroundMintCounts,
-  ]);
-
-  const fetchREWARDS = React.useCallback(async () => {
-    try {
-      const main = getReadOnlyContract();
-
-      const volumeCandidates = [
-        "totalMintVolume",
-        "mintVolume",
-        "getMintVolume",
-        "totalRevenue",
-        "totalRevenueMatic",
-        "accMintValue",
-        "mintedValue",
-      ];
-      let volWei = await callFirst(main, volumeCandidates);
-      if (volWei) {
-        const vol = Number(formatEther(volWei));
-        setMintVolumeMatic(vol);
-      } else {
-        setMintVolumeMatic(null);
-      }
-
-      let weeklyWei = null;
-      try {
-        const brl = await getReadOnlyLiquidityContract();
-        const weeklyPoolFns = [
-          "weeklyPool",
-          "currentWeekPool",
-          "getWeeklyPool",
-          "weekPool",
-          "poolForCurrentWeek",
-          "rewardPool",
-          "currentRewardPool",
-        ];
-        weeklyWei = await callFirst(brl, weeklyPoolFns);
-      } catch (err) {
-        console.debug("fetchREWARDS weekly pool lookup failed", err);
-      }
-
-      if (weeklyWei != null) {
-        try {
-          const isPositive = typeof weeklyWei === 'bigint'
-            ? weeklyWei > 0n
-            : Number(weeklyWei) > 0;
-          if (isPositive) {
-            setRewardPool(Number(formatEther(weeklyWei)));
-          } else if (volWei) {
-            setRewardPool(Number(formatEther(volWei)) * 0.22);
-          } else {
-            setRewardPool(0);
-          }
-        } catch {
-          if (volWei)
-            setRewardPool(Number(formatEther(volWei)) * 0.22);
-          else setRewardPool(0);
-        }
-      } else {
-        if (volWei)
-          setRewardPool(Number(formatEther(volWei)) * 0.22);
-        else setRewardPool(0);
-      }
-
-      if (walletAddress) {
-        const brl = await getReadOnlyLiquidityContract();
-
-        let tokenIds = myNFTs
-          .filter((x) => !x.isTicket)
-          .map((x) => BigInt(x.tokenId));
-
-        if (!tokenIds.length) {
-          const contract = getReadOnlyContract();
-          const latest = await contract.provider.getBlockNumber();
-          const fallbackFrom = Number(ADDR?.DEPLOY_BLOCK);
-          const FROM =
-            Number.isFinite(fallbackFrom) && fallbackFrom > 0
-              ? fallbackFrom
-              : await getSafeDeployBlock(contract.provider);
-          const toFilter = contract.filters.Transfer(null, walletAddress, null);
-          const fromFilter = contract.filters.Transfer(
-            walletAddress,
-            null,
-            null,
-          );
-          const [toLogs, fromLogs] = await Promise.all([
-            queryLogsBatched(contract, toFilter, FROM, latest),
-            queryLogsBatched(contract, fromFilter, FROM, latest),
-          ]);
-          const all = [...toLogs, ...fromLogs].sort((a, b) => {
-            if (a.blockNumber !== b.blockNumber)
-              return a.blockNumber - b.blockNumber;
-            return a.logIndex - b.logIndex;
-          });
-          const held = new Set();
-          const me = String(walletAddress || "").toLowerCase();
-          for (const l of all) {
-            const from = String(
-              l.args?.from ?? l.args?.[0] ?? "",
-            ).toLowerCase();
-            const to = String(l.args?.to ?? l.args?.[1] ?? "").toLowerCase();
-            const tid = (l.args?.tokenId ?? l.args?.[2])?.toString?.() || "";
-            if (!tid) continue;
-            if (to === me) held.add(tid);
-            if (from === me) held.delete(tid);
-          }
-          const arr = Array.from(held);
-          const nonTickets = [];
-          for (const tid of arr) {
-            try {
-              const isT =
-                typeof contract?.isTicket === "function"
-                  ? await contract.isTicket(tid)
-                  : false;
-              if (!isT) nonTickets.push(BigInt(tid));
-            } catch {
-              nonTickets.push(BigInt(tid));
-            }
-          }
-          tokenIds = nonTickets;
-        }
-
-        if (tokenIds.length) {
-          try {
-            const [, amount] = await brl.claimablePreview(tokenIds);
-            setMyClaimable(Number(formatEther(amount)));
-          } catch {
-            setMyClaimable(0);
-          }
-        } else {
-          setMyClaimable(0);
-        }
-      }
-    } catch (e) {
-      console.error("fetchREWARDS", e);
-    }
-  }, [
+    setRewardPool,
+    setMintVolumeMatic,
     walletAddress,
     myNFTs,
-    setMintVolumeMatic,
-    setRewardPool,
     setMyClaimable,
   ]);
 
-  return { fetchStats, fetchREWARDS };
+  return { fetchStats };
 }
-
-

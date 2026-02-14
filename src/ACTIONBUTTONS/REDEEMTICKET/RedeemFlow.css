@@ -1,5 +1,6 @@
 .redeem-card {
-  width: min(980px, 95vw);
+  width: 100%;
+  max-width: 980px;
   margin: 18px auto 10px;
   padding: 18px 18px 16px;
   border: 3px solid #ffe800;
@@ -17,6 +18,7 @@
   box-shadow: 0 8px 38px rgba(0, 0, 0, 0.7);
   color: #fff;
   font-family: "VT323", "Press Start 2P", monospace;
+  box-sizing: border-box;
 }
 
 .redeem-header {
@@ -143,6 +145,76 @@
   transform: translateX(-1px);
 }
 
+.redeem-flow-table-wrap {
+  margin: 10px 0 8px;
+  overflow-x: auto;
+}
+
+.redeem-flow-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(8, 10, 18, 0.55);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.redeem-flow-table th,
+.redeem-flow-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+  font-size: 0.82rem;
+}
+
+.redeem-flow-table th {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  color: #ffe800;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.redeem-flow-step {
+  font-weight: 900;
+  width: 70px;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  border: 1px solid transparent;
+}
+
+.status-pill.ready {
+  color: #08ffe6;
+  border-color: rgba(8, 255, 230, 0.6);
+  background: rgba(8, 255, 230, 0.12);
+}
+
+.status-pill.active {
+  color: #ffe800;
+  border-color: rgba(255, 232, 0, 0.6);
+  background: rgba(255, 232, 0, 0.12);
+}
+
+.status-pill.done {
+  color: #6bee5b;
+  border-color: rgba(107, 238, 91, 0.6);
+  background: rgba(107, 238, 91, 0.12);
+}
+
+.status-pill.pending {
+  color: #cfd2db;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+}
+
 .redeem-msg {
   margin: 6px 0 10px;
   color: #5ddcff;
@@ -217,5 +289,10 @@
   }
   .step .label {
     font-size: 0.94rem;
+  }
+
+  .redeem-flow-table th,
+  .redeem-flow-table td {
+    font-size: 0.76rem;
   }
 }

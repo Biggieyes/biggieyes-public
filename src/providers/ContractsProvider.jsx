@@ -5,7 +5,6 @@ import { useWeb3 } from "../providers/Web3Provider";
 
 import {
   getReadOnlyContract,
-  getContract,
   // explicit contracts
   getReadOnlyMain,
   getMain,
@@ -52,7 +51,7 @@ import {
   getBiggiTokenomicsReaderRO,
   // read-only provider helper
   getROProvider,
-} from "../utils/contract";
+} from "@/shared/utils/contract";
 
 const Ctx = React.createContext(null);
 export const ContractsContext = Ctx;
@@ -69,26 +68,37 @@ export const ContractsContext = Ctx;
 export function ContractsProvider({ children }) {
   const { signer, provider: web3Provider } = useWeb3(); // expect { signer, provider }; fallback to getROProvider if provider is missing
 
-  // prefer web3Provider when available, otherwise internal RO provider; keep stable reference
+  // prefer internal RPC for reads to avoid wallet RPC pruning; opt-in to wallet reads via env
+  const preferWalletReads = React.useMemo(() => {
+    try {
+      if (typeof import.meta !== "undefined" && import.meta.env) {
+        return import.meta.env.VITE_USE_WALLET_FOR_READS === "true";
+      }
+    } catch {
+      // ignore env lookup errors
+    }
+    return false;
+  }, []);
+
   const effectiveROProvider = React.useCallback(() => {
     try {
-      if (web3Provider) return web3Provider;
+      if (preferWalletReads && web3Provider) return web3Provider;
     } catch {}
     try {
       return getROProvider();
     } catch {
-      return undefined;
+      return web3Provider || undefined;
     }
-  }, [web3Provider]);
+  }, [preferWalletReads, web3Provider]);
 
   // === sync resolver ===
   // Returns sync function: write contract if signer is present, otherwise read-only.
   const rwOrRo = (rwFactory, roFactory) => {
-    return () => {
+    return async () => {
       try {
         if (signer) {
           try {
-            return rwFactory();
+            return await rwFactory();
           } catch {
             // fallback to read-only
           }
@@ -117,9 +127,7 @@ export function ContractsProvider({ children }) {
           return getReadOnlyContract();
         }
       },
-      mainRW: rwOrRo(getContract, () =>
-        getReadOnlyContract(effectiveROProvider()),
-      ),
+      mainRW: rwOrRo(getMain, () => getReadOnlyContract(effectiveROProvider())),
 
       liqRO: () => {
         try {
@@ -393,8 +401,6 @@ export function useContracts() {
     throw new Error("useContracts must be used inside <ContractsProvider>");
   return context;
 }
-
-
 
 
 

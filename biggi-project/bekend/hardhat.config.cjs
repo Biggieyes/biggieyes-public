@@ -51,16 +51,16 @@ module.exports = {
 
       // Pokud používáš lokální kopie (tvoje cesta s UniswapV2forTEST), přidej i ji:
       // uprav cestu podle skutečné pozice souboru ve tvém projektu
-      "contracts/default_workspace (10)/contracts/BIGGIMAINTEST/UNISWAPV2forTEST/UniswapV2Router02.sol": {
+      "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/UniswapV2Router02.sol": {
         version: "0.8.24",
         settings: {},
       },
 
       // Pokud máš i factory/pair ve stejné složce, přidej je taky:
-      "contracts/default_workspace (10)/contracts/BIGGIMAINTEST/UNISWAPV2forTEST/UniswapV2Factory.sol": {
+      "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/UniswapV2Factory.sol": {
         version: "0.8.24",
       },
-      "contracts/default_workspace (10)/contracts/BIGGIMAINTEST/UNISWAPV2forTEST/UniswapV2Pair.sol": {
+      "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiUniswapV2Pair.sol": {
         version: "0.8.24",
       },
     },
@@ -68,7 +68,7 @@ module.exports = {
 
   paths: {
     // Oddělený deploy balíček (minimal) — obsahuje pouze kontrakty potřebné pro aktuální deployy.
-    sources: "./contracts/deployables",
+    sources: "./contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET",
     tests: "./test",
     cache: "./cache",
     artifacts: "./artifacts",

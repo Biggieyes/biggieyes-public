@@ -1,24 +1,37 @@
 // src/context/InventoryProvider.jsx
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress, arrayify } from "ethers";
+import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress } from "ethers";
 import { useContracts } from "./ContractsProvider";
 import { readJsonFromURI, resolveImageUrl } from "../services/ipfs";
 import { mergeAttrs, getCachedPriceAttrs } from "../services/prices";
+import {
+  queryLogsBatched,
+  getSafeDeployBlock,
+  isFullHistoryEnabled,
+} from "../shared/utils/shared";
+import { getProviderForContract } from "../shared/utils/contract";
 
 const Ctx = React.createContext(null);
-const DEPLOY_BLOCK = 27105502;
+const FULL_HISTORY = isFullHistoryEnabled();
 
 // Helper to collect held tokenIds from Transfer logs
 async function getHeldTokenIds(c, addr) {
   const addrLC = addr.toLowerCase();
-  const latest = await c.provider.getBlockNumber();
+  const provider = getProviderForContract(c);
+  if (!provider || typeof provider.getBlockNumber !== "function")
+    throw new Error("Provider not available");
+  const latest = await provider.getBlockNumber();
+  const baseFrom = await getSafeDeployBlock(provider);
+  const fromBlock = FULL_HISTORY
+    ? baseFrom
+    : Math.max(baseFrom, latest - 120_000);
 
   const toFilter = c.filters?.Transfer(null, addr, null);
   const fromFilter = c.filters?.Transfer(addr, null, null);
 
   const [toLogs, fromLogs] = await Promise.all([
-    c.queryFilter(toFilter, DEPLOY_BLOCK, latest),
-    c.queryFilter(fromFilter, DEPLOY_BLOCK, latest),
+    queryLogsBatched(c, toFilter, fromBlock, latest),
+    queryLogsBatched(c, fromFilter, fromBlock, latest),
   ]);
 
   const all = [...toLogs, ...fromLogs].sort((a, b) =>

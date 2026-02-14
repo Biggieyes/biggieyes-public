@@ -22,11 +22,6 @@
   },
   {
     "inputs": [],
-    "name": "DevPaymentFailed",
-    "type": "error"
-  },
-  {
-    "inputs": [],
     "name": "InvalidIndex",
     "type": "error"
   },
@@ -37,12 +32,27 @@
   },
   {
     "inputs": [],
+    "name": "NotEligible",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "NotEnoughBalance",
     "type": "error"
   },
   {
     "inputs": [],
     "name": "OnlyOwner",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "PaymentFailed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReentrancyGuardReentrantCall",
     "type": "error"
   },
   {
@@ -199,6 +209,88 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint16",
+        "name": "blockIdx",
+        "type": "uint16"
+      }
+    ],
+    "name": "canClaimBlock",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "ok",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint8",
+        "name": "reason",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "mainId",
+        "type": "uint256"
+      }
+    ],
+    "name": "canClaimOrange",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "ok",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint8",
+        "name": "reason",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "canClaimRainbow",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "ok",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint8",
+        "name": "reason",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint16",
         "name": "blockIdx",
         "type": "uint16"
@@ -227,25 +319,6 @@
     "name": "claimRainbowReward",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "claimedOrange",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -370,6 +443,80 @@
     "name": "receiveMintShare",
     "outputs": [],
     "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "rewardsSnapshot",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "owner_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "main_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "distributor_",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "contractBalance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "orangeReward_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "blockReward_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rainbowReward_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "orangeWinners",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "blockWinners",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bool",
+        "name": "rainbowClaimedGlobal",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "canRainbow",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint8",
+        "name": "canRainbowReason",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

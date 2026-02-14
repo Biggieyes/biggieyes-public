@@ -5,24 +5,25 @@
         "internalType": "address",
         "name": "mainContract",
         "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "main2Contract",
-        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
   },
   {
-    "inputs": [],
-    "name": "getAllBackgroundMintCounts",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "findTicket",
     "outputs": [
       {
-        "internalType": "uint16[10]",
-        "name": "counts",
-        "type": "uint16[10]"
+        "internalType": "uint256[]",
+        "name": "out",
+        "type": "uint256[]"
       }
     ],
     "stateMutability": "view",
@@ -30,7 +31,7 @@
   },
   {
     "inputs": [],
-    "name": "getAllBackgroundMintCountsMain2",
+    "name": "getAllBackgroundMintCounts",
     "outputs": [
       {
         "internalType": "uint16[10]",
@@ -56,19 +57,6 @@
   },
   {
     "inputs": [],
-    "name": "getAllBlockMintCountsMain2",
-    "outputs": [
-      {
-        "internalType": "uint16[10]",
-        "name": "counts",
-        "type": "uint16[10]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "getAllBlockPrices",
     "outputs": [
       {
@@ -81,66 +69,8 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "which",
-        "type": "address"
-      }
-    ],
-    "name": "getAllBlockPricesFor",
-    "outputs": [
-      {
-        "internalType": "uint256[10]",
-        "name": "prices",
-        "type": "uint256[10]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
-    "name": "getAllBlockPricesMain2",
-    "outputs": [
-      {
-        "internalType": "uint256[10]",
-        "name": "prices",
-        "type": "uint256[10]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getCharactersMintedCount",
-    "outputs": [
-      {
-        "internalType": "uint8",
-        "name": "charactersMinted",
-        "type": "uint8"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getCharactersMintedCountMain2",
-    "outputs": [
-      {
-        "internalType": "uint8",
-        "name": "charactersMinted",
-        "type": "uint8"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getFrontendSnapshotLite",
+    "name": "getFrontendSnapshot",
     "outputs": [
       {
         "internalType": "uint256",
@@ -174,99 +104,22 @@
       },
       {
         "internalType": "uint8",
-        "name": "charactersMinted",
+        "name": "orange_",
         "type": "uint8"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "which",
-        "type": "address"
-      }
-    ],
-    "name": "getFrontendSnapshotLiteFor",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "ticketPriceWei",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint16",
-        "name": "ticketMinted_",
-        "type": "uint16"
-      },
-      {
-        "internalType": "uint16",
-        "name": "biggiMinted_",
-        "type": "uint16"
-      },
-      {
-        "internalType": "uint256[10]",
-        "name": "currentBlockPrices",
-        "type": "uint256[10]"
-      },
-      {
-        "internalType": "uint16[10]",
-        "name": "blocksMinted",
-        "type": "uint16[10]"
-      },
-      {
-        "internalType": "uint16[10]",
-        "name": "bgsMinted",
-        "type": "uint16[10]"
       },
       {
         "internalType": "uint8",
-        "name": "charactersMinted",
+        "name": "blockWinners_",
         "type": "uint8"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getFrontendSnapshotLiteMain2",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "ticketPriceWei",
-        "type": "uint256"
       },
       {
-        "internalType": "uint16",
-        "name": "ticketMinted_",
-        "type": "uint16"
-      },
-      {
-        "internalType": "uint16",
-        "name": "biggiMinted_",
-        "type": "uint16"
-      },
-      {
-        "internalType": "uint256[10]",
-        "name": "currentBlockPrices",
-        "type": "uint256[10]"
-      },
-      {
-        "internalType": "uint16[10]",
-        "name": "blocksMinted",
-        "type": "uint16[10]"
-      },
-      {
-        "internalType": "uint16[10]",
-        "name": "bgsMinted",
-        "type": "uint16[10]"
+        "internalType": "bool",
+        "name": "rainbow_",
+        "type": "bool"
       },
       {
         "internalType": "uint8",
-        "name": "charactersMinted",
+        "name": "charactersMinted_",
         "type": "uint8"
       }
     ],
@@ -303,135 +156,28 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getMintDataByTokenIdMain2",
+    "inputs": [],
+    "name": "getRewardsCounters",
     "outputs": [
       {
-        "internalType": "uint256",
-        "name": "ticketPrice_",
-        "type": "uint256"
+        "internalType": "uint8",
+        "name": "orange",
+        "type": "uint8"
       },
       {
-        "internalType": "uint256",
-        "name": "blockPrice_",
-        "type": "uint256"
+        "internalType": "uint8",
+        "name": "blockWinners",
+        "type": "uint8"
       },
-      {
-        "internalType": "uint256",
-        "name": "finalPrice_",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "internalType": "uint16",
-        "name": "blk",
-        "type": "uint16"
-      },
-      {
-        "internalType": "uint256",
-        "name": "mainId",
-        "type": "uint256"
-      }
-    ],
-    "name": "hasAllBackgroundsForMainIdInBlock",
-    "outputs": [
       {
         "internalType": "bool",
-        "name": "",
+        "name": "rainbow",
         "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
       },
       {
-        "internalType": "uint16",
-        "name": "blk",
-        "type": "uint16"
-      },
-      {
-        "internalType": "uint256",
-        "name": "mainId",
-        "type": "uint256"
-      }
-    ],
-    "name": "hasAllBackgroundsForMainIdInBlockMain2",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "internalType": "uint16",
-        "name": "blk",
-        "type": "uint16"
-      }
-    ],
-    "name": "hasAllTenMainIdsInBlock",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "internalType": "uint16",
-        "name": "blk",
-        "type": "uint16"
-      }
-    ],
-    "name": "hasAllTenMainIdsInBlockMain2",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
+        "internalType": "uint8",
+        "name": "charactersMinted",
+        "type": "uint8"
       }
     ],
     "stateMutability": "view",
@@ -442,20 +188,7 @@
     "name": "main",
     "outputs": [
       {
-        "internalType": "contract IBiggiMainView",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "main2",
-    "outputs": [
-      {
-        "internalType": "contract IBiggiMainView",
+        "internalType": "contract IBiggiMainMinimal",
         "name": "",
         "type": "address"
       }
