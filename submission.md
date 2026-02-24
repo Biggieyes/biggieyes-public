@@ -9,8 +9,8 @@ Last updated: 2026-02-24
   - [ARCHITECTURE_DIAGRAM.md](./ARCHITECTURE_DIAGRAM.md)
 - 3-5 minute publicly viewable video showing workflow execution: `TODO`
   - Add URL here: `TODO`
-- Publicly accessible source code (public repo): `TODO`
-  - Add public repo URL here: `TODO`
+- Publicly accessible source code (public repo): `DONE`
+  - Public repo URL: `https://github.com/Biggieyes/biggieyes-public`
 - README links to all files that use Chainlink: `DONE`
   - [docs/chainlink-file-index.md](./docs/chainlink-file-index.md)
 - Follow sponsor-specific prize rules: `IN PROGRESS`
