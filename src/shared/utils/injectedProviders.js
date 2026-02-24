@@ -28,10 +28,8 @@ export const isLikelyMetaMaskSdkProvider = (provider) => {
   const info = providerInfoByRef.get(provider);
   const rdns = normalizeRdns(info?.rdns);
   if (rdns.includes("mmsdk") || rdns.includes("metamask-sdk")) return true;
-  const hasMetaMaskBridge =
-    provider._metamask &&
-    typeof provider._metamask.isUnlocked === "function";
-  if (hasMetaMaskBridge) return false;
+  // Avoid direct reads from `ethereum._metamask`:
+  // MetaMask logs a warning when that experimental field is accessed.
   return Boolean(
     provider.isMetaMask &&
       typeof provider.connect === "function" &&
@@ -47,8 +45,6 @@ const metaMaskScore = (provider) => {
   if (rdns === "io.metamask") score += 8;
   if (rdns.includes("metamask")) score += 4;
   if (rdns.includes("sdk")) score -= 6;
-  if (provider._metamask && typeof provider._metamask.isUnlocked === "function")
-    score += 6;
   if (typeof provider.isConnected === "function") score += 2;
   if (provider.providers) score -= 3;
   if (isLikelyMetaMaskSdkProvider(provider)) score -= 30;

@@ -3017,9 +3017,11 @@ export default function AppCore() {
           if (idStr && idStr !== "0") candidates.push(idStr);
         }
       }
-      if (!candidates.length && total != null && total > 0) {
+      const hasMintLogs = candidates.length > 0;
+      if (!hasMintLogs && total != null && total > 0) {
         candidates.push(String(total));
       }
+      const uniqueCandidates = [...new Set(candidates)];
 
       let ticketBaseUri = null;
       try {
@@ -3036,9 +3038,27 @@ export default function AppCore() {
       let seededUri = null;
       let seededMeta = null;
 
-      for (const idStr of candidates) {
+      for (const idStr of uniqueCandidates) {
         if (!idStr || idStr === "0") continue;
         if (pendingId && idStr === pendingId) continue;
+
+        if (hasMintLogs) {
+          // NFTMinted is authoritative for last minted token id.
+          // Prioritize event order to avoid dropping valid candidates due
+          // transient RPC/IPFS failures in auxiliary checks.
+          tokenId = idStr;
+          try {
+            const uriTry = await getTokenUriCached(contract, idStr).catch(() => null);
+            if (uriTry && !isTicketUri(uriTry, normalizedTicketBase)) {
+              seededUri = uriTry;
+              seededMeta = await readJsonFromURICached(uriTry).catch(() => null);
+            }
+          } catch {
+            // ignore prefetch errors; metadata is resolved later with fallbacks
+          }
+          break;
+        }
+
         let isTicket = null;
         if (typeof contract?.isTicket === "function") {
           isTicket = await contract.isTicket(idStr).catch(() => null);

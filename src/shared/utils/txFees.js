@@ -166,10 +166,16 @@ export async function buildFeeOverrides(provider, options = {}) {
     if (minTip) {
       const floor = baseFee != null ? baseFee + minTip : minTip;
       if (gasPrice == null || gasPrice < floor) gasPrice = floor;
+    } else if (gasPrice == null && baseFee != null) {
+      gasPrice = baseFee;
     }
-    if (gasPrice != null) return { gasPrice };
+    if (gasPrice != null) return { type: 0, gasPrice };
     // Avoid triggering eth_maxPriorityFeePerGas on injected providers.
-    if (isInjected) return {};
+    if (isInjected) {
+      const fallbackGasPrice =
+        minTip || parseUnits(String(DEFAULT_MIN_PRIORITY_FEE_GWEI), "gwei");
+      return { type: 0, gasPrice: fallbackGasPrice };
+    }
   }
 
   let feeData = null;
