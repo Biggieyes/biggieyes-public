@@ -48,7 +48,7 @@ See docs/deployment-checklist.md for full steps.
 
 ## Monitoring
 Sentry is optional. Set VITE_SENTRY_DSN (frontend) and SENTRY_DSN (functions).
-RPC health checks: node scripts/check-rpc-health.js
+RPC health checks: node scripts/check-rpc-health.mjs
 
 ## Docs
 - docs/system-spec.md
@@ -57,3 +57,19 @@ RPC health checks: node scripts/check-rpc-health.js
 - docs/README_PINNING.md
 - docs/abi-audit.md
 - docs/deployment-checklist.md
+
+## Chainlink and CRE
+- Chainlink file index (full linked list): docs/chainlink-file-index.md
+- CRE workflow definition: cre/workflows/biggieyes-vrf-postredeem.workflow.yaml
+- CRE simulation script (dry-run or CLI mode): scripts/cre/simulate-cre-workflow.mjs
+- CRE evidence outputs: evidence/cre-simulation/
+- CRE initialized project (CLI): biggieeyes/
+- Successful CLI simulation evidence: evidence/cre-simulation/cre-cli-success-latest.md
+
+Run a local CRE dry-run evidence snapshot:
+1. node scripts/cre/simulate-cre-workflow.mjs --dry-run
+2. Open the newest file in evidence/cre-simulation/
+
+## Submission
+- Submission checklist: submission.md
+- Sponsor prize checklist: docs/sponsor-prize-checklist.md
