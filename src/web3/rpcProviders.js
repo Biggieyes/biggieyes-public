@@ -6,11 +6,47 @@ import {
   getArchiveRpcUrls,
 } from "../shared/utils/rpcConfig.js";
 
+const BATCH_LIMITED_HOSTS = new Set([
+  "polygon-amoy.drpc.org",
+]);
+
+function env(key) {
+  try {
+    if (typeof import.meta !== "undefined" && import.meta.env)
+      return import.meta.env[key];
+  } catch {
+    // ignore env lookup errors
+  }
+  try {
+    if (typeof process !== "undefined" && process.env) return process.env[key];
+  } catch {
+    // ignore process env lookup errors
+  }
+  return undefined;
+}
+
+function resolveBatchMaxCount(url) {
+  const raw = env("VITE_RPC_BATCH_MAX_COUNT");
+  const fromEnv = Number(raw);
+  if (Number.isFinite(fromEnv) && fromEnv > 0) return Math.trunc(fromEnv);
+  if (!url) return undefined;
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    if (BATCH_LIMITED_HOSTS.has(host)) return 3;
+  } catch {
+    // ignore URL parsing failures
+  }
+  return undefined;
+}
+
 function makeStaticProvider(url, chainId = AMOY.chainId) {
   const network = Network.from({ chainId, name: AMOY.name });
   // staticNetwork avoids repeated chainId detection on flaky/public RPCs
   // ethers v6 expects a Network object for staticNetwork (not boolean)
-  return new JsonRpcProvider(url, network, { staticNetwork: network });
+  const batchMaxCount = resolveBatchMaxCount(url);
+  const options = { staticNetwork: network };
+  if (batchMaxCount) options.batchMaxCount = batchMaxCount;
+  return new JsonRpcProvider(url, network, options);
 }
 
 // Helper to create a provider with dynamic healthy endpoint selection

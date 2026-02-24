@@ -21,8 +21,8 @@ const buildSeries = (history, selector) =>
     .filter((point) => Number.isFinite(point.value));
 
 export default function useBUYBACKTreasuryHistory(snapshot, options = {}) {
-  const { limit = 30 } = options;
-  const { history } = useHistoryBuffer(snapshot, { limit });
+  const { limit = 30, minIntervalMs = 0 } = options;
+  const { history } = useHistoryBuffer(snapshot, { limit, minIntervalMs });
 
   const nativeSeries = React.useMemo(
     () =>

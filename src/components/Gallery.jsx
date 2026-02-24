@@ -5,7 +5,10 @@ import { useContracts } from "../providers/ContractsProvider";
 import { useWeb3 } from "../providers/Web3Provider";
 import { formatEther } from "ethers";
 import { ADDR } from "../utils/addresses.js";
+import { DEFAULT_BLOCKS, ROWS_BY_BLOCK } from "../shared/blocks";
 import { getProviderForContract } from "../shared/utils/contract";
+import { mergeGalleryItem } from "../shared/services/gallery/gallery.merge.js";
+import { coerceBool } from "../shared/utils/boolean";
 import {
   queryLogsBatched,
   getSafeDeployBlock,
@@ -39,6 +42,27 @@ const makeSessionKey = (prefix, value) =>
   `${prefix}:${SESSION_CACHE_VERSION}:${encodeURIComponent(
     String(value || "")
   )}`;
+
+const RARITY_TIERS = ["legendary", "epic", "rare", "uncommon", "common"];
+const RARITY_TIER_RANK = {
+  legendary: 1,
+  epic: 2,
+  rare: 3,
+  uncommon: 4,
+  common: 5,
+};
+const BLOCK_NAME_SET = new Set(DEFAULT_BLOCKS);
+const normalizeBlockName = (value) => {
+  if (!value) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const upper = raw.toUpperCase();
+  if (BLOCK_NAME_SET.has(upper)) return upper;
+  for (const name of DEFAULT_BLOCKS) {
+    if (upper.includes(name)) return name;
+  }
+  return null;
+};
 
 const loadSessionJson = (key) => {
   try {
@@ -104,11 +128,103 @@ const isTicketUri = (uri, base) => {
   return String(uri).startsWith(base);
 };
 
+const getAttributes = (meta) =>
+  Array.isArray(meta?.attributes) ? meta.attributes : [];
+
+const getAttrValue = (attrs, keys) => {
+  if (!attrs.length) return null;
+  const keySet = new Set(keys.map((k) => String(k).toLowerCase()));
+  const hit = attrs.find((attr) =>
+    keySet.has(String(attr?.trait_type ?? "").toLowerCase()),
+  );
+  return hit?.value ?? null;
+};
+
+const deriveRarityInfo = (item) => {
+  const meta = item?.meta || null;
+  const attrs = getAttributes(meta);
+
+  const explicitRarityRaw = getAttrValue(attrs, ["rarity", "tier"]);
+  const explicitRarity = explicitRarityRaw
+    ? String(explicitRarityRaw).toLowerCase()
+    : null;
+  const normalizedRarity = RARITY_TIERS.includes(explicitRarity)
+    ? explicitRarity
+    : null;
+
+  const blockValue = getAttrValue(attrs, [
+    "block/eye color",
+    "block",
+    "eye color",
+    "linked block",
+    "block color",
+  ]);
+  const blockName = normalizeBlockName(blockValue);
+  const blockRank =
+    blockName && ROWS_BY_BLOCK?.[blockName]
+      ? Number(ROWS_BY_BLOCK[blockName])
+      : null;
+
+  const rarity =
+    item?.rarity ??
+    normalizedRarity ??
+    (blockRank
+      ? blockRank <= 2
+        ? "legendary"
+        : blockRank <= 4
+          ? "epic"
+          : blockRank <= 6
+            ? "rare"
+            : blockRank <= 8
+              ? "uncommon"
+              : "common"
+      : null);
+
+  const rarityRank =
+    item?.rarityRank ??
+    blockRank ??
+    (rarity && RARITY_TIER_RANK[rarity] ? RARITY_TIER_RANK[rarity] : null);
+
+  return { rarity, rarityRank, blockName };
+};
+
+const isTicketLike = (item) => {
+  if (!item) return false;
+  if (item.isPending) return true;
+  if (item.isTicket) return true;
+  const meta = item?.meta;
+  if (looksLikeTicketMeta(meta) && !looksLikeNftMeta(meta)) return true;
+  return false;
+};
+
 function toIdString(item) {
   if (!item) return "";
   if (item.tokenId != null) return String(item.tokenId);
   if (item.id != null) return String(item.id);
   return "";
+}
+
+function toTokenIdBigInt(value) {
+  try {
+    if (value == null) return null;
+    if (typeof value === "bigint") return value;
+    if (typeof value === "number") {
+      if (!Number.isFinite(value)) return null;
+      return BigInt(Math.trunc(value));
+    }
+    if (typeof value === "string") {
+      const s = value.trim();
+      if (!s) return null;
+      if (/^\d+$/.test(s)) return BigInt(s);
+      return null;
+    }
+    if (typeof value?.toString === "function") {
+      return toTokenIdBigInt(value.toString());
+    }
+  } catch {
+    return null;
+  }
+  return null;
 }
 
 
@@ -290,18 +406,22 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
           return null;
         const address = toFilter?.address || contractAddr;
         const [directTo, directFrom] = await Promise.all([
-          logProvider.getLogs({
-            address,
-            topics: toFilter?.topics,
-            fromBlock,
-            toBlock: latest,
-          }),
-          logProvider.getLogs({
-            address,
-            topics: fromFilter?.topics,
-            fromBlock,
-            toBlock: latest,
-          }),
+          logProvider
+            .getLogs({
+              address,
+              topics: toFilter?.topics,
+              fromBlock,
+              toBlock: latest,
+            })
+            .catch(() => []),
+          logProvider
+            .getLogs({
+              address,
+              topics: fromFilter?.topics,
+              fromBlock,
+              toBlock: latest,
+            })
+            .catch(() => []),
         ]);
         return { toLogs: directTo, fromLogs: directFrom };
       } catch {
@@ -396,26 +516,6 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
     ticketBaseUri = null;
   }
   const normalizedTicketBase = normalizeBaseUri(ticketBaseUri);
-  const coerceToBool = (val) => {
-    if (typeof val === "boolean") return val;
-    if (typeof val?.toNumber === "function") {
-      try {
-        return Boolean(val.toNumber());
-      } catch {
-        return Boolean(val);
-      }
-    }
-    if (typeof val === "bigint") return val !== 0n;
-    if (typeof val === "number") return Boolean(val);
-    if (typeof val === "string") {
-      const normalized = val.trim().toLowerCase();
-      if (normalized === "true") return true;
-      if (normalized === "false") return false;
-      const num = Number(val);
-      return Number.isNaN(num) ? Boolean(val) : Boolean(num);
-    }
-    return Boolean(val);
-  };
   const results = [];
   // chunk tokenIds pro omezení paralelismu
   const parallelism = getParallelism();
@@ -494,7 +594,7 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
                 if (typeof reader[fn] === "function") {
                   const res = await reader[fn](id).catch(() => null);
                   if (res != null) {
-                    isTicket = coerceToBool(res);
+                    isTicket = coerceBool(res);
                   }
                   if (isTicket) break;
                 }
@@ -508,7 +608,7 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
             try {
               const res = await mainContract.isTicket(id).catch(() => null);
               if (res != null) {
-                isTicket = coerceToBool(res);
+                isTicket = coerceBool(res);
               }
             } catch {
               // ignore isTicket fallback errors
@@ -742,6 +842,7 @@ export default function Gallery({
   address: addressProp,
   items: itemsProp = [],
   dynamicTraitsById = {},
+  topFirstId = null,
   onOpenDetails,
   onZoom,
   compact = false,
@@ -768,6 +869,9 @@ export default function Gallery({
   const [sortBy, setSortBy] = React.useState("default");
   const [filterRarity, setFilterRarity] = React.useState("all");
   const [page, setPage] = React.useState(0);
+  const [highlightId, setHighlightId] = React.useState("");
+  const highlightTimerRef = React.useRef(null);
+  const topFirstResetRef = React.useRef("");
   const [isMobile, setIsMobile] = React.useState(() =>
     typeof window !== "undefined"
       ? window.matchMedia("(max-width: 768px)").matches
@@ -799,14 +903,39 @@ export default function Gallery({
   );
   const shouldPreferProvided =
     providedItems.length > 0 && providedHasNft && providedHasRichData;
+  const providedHasIncomplete = React.useMemo(
+    () =>
+      providedItems.some((item) => {
+        if (!item) return true;
+        if (!item.meta || Object.keys(item.meta).length === 0) return true;
+        if (!item.image || item.image === PLACEHOLDER_IMAGE) return true;
+        if (item.isPending) return true;
+        return false;
+      }),
+    [providedItems],
+  );
 
-  const renderedItems = isConnected
-    ? shouldPreferProvided
-      ? providedItems
-      : hydratedItems.length
-        ? hydratedItems
-        : providedItems
-    : [];
+  const mergedItems = React.useMemo(() => {
+    if (!providedItems.length && !hydratedItems.length) return [];
+    if (!providedItems.length) return hydratedItems;
+    if (!hydratedItems.length) return providedItems;
+
+    const map = new Map();
+    for (const item of providedItems) {
+      const key = toIdString(item);
+      if (!key) continue;
+      map.set(key, item);
+    }
+    for (const item of hydratedItems) {
+      const key = toIdString(item);
+      if (!key) continue;
+      const prev = map.get(key);
+      map.set(key, mergeGalleryItem(prev, item));
+    }
+    return Array.from(map.values());
+  }, [providedItems, hydratedItems]);
+
+  const renderedItems = isConnected ? mergedItems : [];
 
   const mainContractAddress = React.useMemo(() => {
     if (!contracts) return ADDR?.MAIN ?? null;
@@ -842,7 +971,7 @@ export default function Gallery({
       if (useProvidedOnly) return;
       if (
         !isConnected ||
-        shouldPreferProvided ||
+        (shouldPreferProvided && !providedHasIncomplete) ||
         !address ||
         !contracts
       )
@@ -912,6 +1041,7 @@ export default function Gallery({
   }, [
     isConnected,
     shouldPreferProvided,
+    providedHasIncomplete,
     address,
     contracts,
     useProvidedOnly,
@@ -919,37 +1049,131 @@ export default function Gallery({
 
   const pageSize = isMobile || compact ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP;
 
+  const ticketItems = React.useMemo(() => {
+    const list = renderedItems.filter(isTicketLike);
+    if (!list.length) return list;
+    const topId = topFirstId != null ? String(topFirstId) : "";
+    const sorted = [...list];
+    sorted.sort((a, b) => {
+      const aId = String(a?.tokenId ?? a?.id ?? "");
+      const bId = String(b?.tokenId ?? b?.id ?? "");
+      const aTop = topId && aId === topId;
+      const bTop = topId && bId === topId;
+      if (aTop && !bTop) return -1;
+      if (bTop && !aTop) return 1;
+      const aPending = Boolean(a?.isPending);
+      const bPending = Boolean(b?.isPending);
+      if (aPending !== bPending) return aPending ? -1 : 1;
+      const idA = toTokenIdBigInt(a?.tokenId ?? a?.id);
+      const idB = toTokenIdBigInt(b?.tokenId ?? b?.id);
+      if (idA == null && idB == null) return 0;
+      if (idA == null) return 1;
+      if (idB == null) return -1;
+      if (idA === idB) return 0;
+      return idA > idB ? -1 : 1;
+    });
+    return sorted;
+  }, [renderedItems, topFirstId]);
+
+  const nonTicketItemsSource = React.useMemo(
+    () => renderedItems.filter((item) => !isTicketLike(item)),
+    [renderedItems],
+  );
+
   const processedItems = React.useMemo(() => {
-    let list = renderedItems;
+    let list = nonTicketItemsSource;
     if (filterRarity !== "all") {
+      const target = String(filterRarity).toLowerCase();
       list = list.filter(
-        (item) =>
-          String(item?.rarity ?? "").toLowerCase() ===
-          String(filterRarity).toLowerCase(),
+        (item) => String(deriveRarityInfo(item)?.rarity ?? "").toLowerCase() === target,
       );
     }
     const sorted = [...list];
-    if (sortBy === "name") {
+    if (sortBy === "default") {
+      const topId = topFirstId != null ? String(topFirstId) : "";
+      sorted.sort((a, b) => {
+        const aId = String(a?.tokenId ?? a?.id ?? "");
+        const bId = String(b?.tokenId ?? b?.id ?? "");
+        const aTop = topId && aId === topId;
+        const bTop = topId && bId === topId;
+        if (aTop && !bTop) return -1;
+        if (bTop && !aTop) return 1;
+        const aPending = Boolean(a?.isPending);
+        const bPending = Boolean(b?.isPending);
+        if (aPending !== bPending) return aPending ? -1 : 1;
+        const idA = toTokenIdBigInt(a?.tokenId ?? a?.id);
+        const idB = toTokenIdBigInt(b?.tokenId ?? b?.id);
+        if (idA == null && idB == null) return 0;
+        if (idA == null) return 1;
+        if (idB == null) return -1;
+        if (idA === idB) return 0;
+        return idA > idB ? -1 : 1;
+      });
+    } else if (sortBy === "name") {
       sorted.sort((a, b) => {
         const nameA = a?.name || a?.meta?.name || `#${a?.tokenId ?? ""}`;
         const nameB = b?.name || b?.meta?.name || `#${b?.tokenId ?? ""}`;
         return nameA.localeCompare(nameB);
       });
     } else if (sortBy === "rarity") {
-      sorted.sort(
-        (a, b) =>
-          (a?.rarityRank ?? Number.MAX_SAFE_INTEGER) -
-          (b?.rarityRank ?? Number.MAX_SAFE_INTEGER),
-      );
+      sorted.sort((a, b) => {
+        const rankA = deriveRarityInfo(a)?.rarityRank ?? Number.MAX_SAFE_INTEGER;
+        const rankB = deriveRarityInfo(b)?.rarityRank ?? Number.MAX_SAFE_INTEGER;
+        if (rankA !== rankB) return rankA - rankB;
+        const idA = toTokenIdBigInt(a?.tokenId ?? a?.id);
+        const idB = toTokenIdBigInt(b?.tokenId ?? b?.id);
+        if (idA == null && idB == null) return 0;
+        if (idA == null) return 1;
+        if (idB == null) return -1;
+        if (idA === idB) return 0;
+        return idA > idB ? -1 : 1;
+      });
     } else if (sortBy === "token") {
-      sorted.sort((a, b) => Number(a?.tokenId ?? 0) - Number(b?.tokenId ?? 0));
+      sorted.sort((a, b) => {
+        const idA = toTokenIdBigInt(a?.tokenId ?? a?.id);
+        const idB = toTokenIdBigInt(b?.tokenId ?? b?.id);
+        if (idA == null && idB == null) return 0;
+        if (idA == null) return 1;
+        if (idB == null) return -1;
+        if (idA === idB) return 0;
+        return idA < idB ? -1 : 1;
+      });
     }
     return sorted;
-  }, [renderedItems, filterRarity, sortBy]);
+  }, [nonTicketItemsSource, filterRarity, sortBy, topFirstId]);
 
   React.useEffect(() => {
     setPage(0);
   }, [sortBy, filterRarity]);
+
+  React.useEffect(() => {
+    const id = topFirstId != null ? String(topFirstId) : "";
+    if (!id) return;
+    if (topFirstResetRef.current === id) return;
+    topFirstResetRef.current = id;
+    setPage(0);
+    setSortBy("default");
+  }, [topFirstId]);
+
+  React.useEffect(() => {
+    const id = topFirstId != null ? String(topFirstId) : "";
+    if (!id) return;
+    setHighlightId(id);
+    if (highlightTimerRef.current) {
+      clearTimeout(highlightTimerRef.current);
+      highlightTimerRef.current = null;
+    }
+    highlightTimerRef.current = setTimeout(() => {
+      setHighlightId((prev) => (prev === id ? "" : prev));
+      highlightTimerRef.current = null;
+    }, 5000);
+    return () => {
+      if (highlightTimerRef.current) {
+        clearTimeout(highlightTimerRef.current);
+        highlightTimerRef.current = null;
+      }
+    };
+  }, [topFirstId]);
 
   const totalPages = Math.max(1, Math.ceil(processedItems.length / pageSize));
 
@@ -970,12 +1194,43 @@ export default function Gallery({
 
   const rarityCounts = React.useMemo(() => {
     const counts = {};
-    renderedItems.forEach((item) => {
-      const rarity = item?.rarity ?? "unknown";
+    nonTicketItemsSource.forEach((item) => {
+      const rarity = deriveRarityInfo(item)?.rarity ?? "unknown";
       counts[rarity] = (counts[rarity] ?? 0) + 1;
     });
     return counts;
-  }, [renderedItems]);
+  }, [nonTicketItemsSource]);
+
+  const renderCard = (item, index) => {
+    const { rarity, rarityRank } = deriveRarityInfo(item);
+    const enriched =
+      (item?.rarity == null && rarity != null) ||
+      (item?.rarityRank == null && rarityRank != null)
+        ? {
+            ...item,
+            rarity: item?.rarity ?? rarity,
+            rarityRank: item?.rarityRank ?? rarityRank,
+          }
+        : item;
+    const tokenId = toIdString(item);
+    const dynamic = dynamicTraitsById[tokenId] || {};
+    const isHighlight =
+      highlightId && tokenId && String(tokenId) === String(highlightId);
+    const key =
+      tokenId ||
+      `${String(item?.contractAddress || mainContractAddress || "unknown")}:${index}`;
+    return (
+      <NftCard
+        key={key}
+        nft={enriched}
+        dynamicTraits={dynamic}
+        onOpenDetails={onOpenDetails}
+        onZoom={onZoom}
+        fallbackContractAddress={mainContractAddress}
+        highlight={Boolean(isHighlight)}
+      />
+    );
+  };
 
   return (
     <section className="gallery">
@@ -1050,6 +1305,12 @@ export default function Gallery({
         </div>
       </div>
 
+      {ticketItems.length > 0 && (
+        <div className="gallery__grid gallery__grid--tickets">
+          {ticketItems.map(renderCard)}
+        </div>
+      )}
+
       <div className={`gallery__grid${fetching ? " is-loading" : ""}`}>
         {!isConnected && (
           <div className="gallery__placeholder">
@@ -1069,23 +1330,7 @@ export default function Gallery({
             </p>
           </div>
         )}
-        {pagedItems.map((item, index) => {
-          const tokenId = toIdString(item);
-          const dynamic = dynamicTraitsById[tokenId] || {};
-          const key =
-            tokenId ||
-            `${String(item?.contractAddress || mainContractAddress || "unknown")}:${index}`;
-          return (
-            <NftCard
-              key={key}
-              nft={item}
-              dynamicTraits={dynamic}
-              onOpenDetails={onOpenDetails}
-              onZoom={onZoom}
-              fallbackContractAddress={mainContractAddress}
-            />
-          );
-        })}
+        {pagedItems.map(renderCard)}
       </div>
 
       {totalPages > 1 && (

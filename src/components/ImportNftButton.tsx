@@ -223,8 +223,8 @@ export default function ImportNftButton({
         if (typeof onImported === "function") onImported(String(tokenId));
         return;
       }
-
-      throw new Error("wallet_watchAsset rejected");
+      // User cancelled the request or wallet did not add the asset.
+      return;
     } catch (err) {
       console.error("MetaMask import failed", err);
       alert(

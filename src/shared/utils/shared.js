@@ -259,17 +259,31 @@ export async function queryLogsBatched(
       rateLimitStreak = 0;
     } catch (err) {
       const msg = String(err?.message || "");
+      const infoMsg = String(
+        err?.info?.error?.message ||
+          err?.info?.message ||
+          err?.info?.responseBody ||
+          "",
+      );
       const code = err?.code ?? err?.error?.code ?? null;
       const isPruned = code === -32701 || /history has been pruned/i.test(msg);
+      const isInvalidRange =
+        code === -32000 && /invalid block range/i.test(msg);
+      const isUnknownBlock =
+        code === 26 ||
+        /unknown block/i.test(msg) ||
+        /unknown block/i.test(infoMsg);
       const isRateLimit =
         code === -32005 || /too many requests/i.test(msg);
-      if (isPruned) {
+      if (isPruned || isInvalidRange || isUnknownBlock) {
         // If even archive hits pruning, disable full-history for this session.
         if (archiveProvider) forceRecentOnly = true;
         if (!prunedWarned) {
           prunedWarned = true;
           console.warn(
-            "RPC history pruned: falling back to recent blocks. Use an archive RPC for full history.",
+            isInvalidRange || isUnknownBlock
+              ? "RPC rejected log range: falling back to recent blocks. Use an archive RPC for full history."
+              : "RPC history pruned: falling back to recent blocks. Use an archive RPC for full history.",
           );
           if (FULL_HISTORY && !archiveProvider) {
             console.warn(

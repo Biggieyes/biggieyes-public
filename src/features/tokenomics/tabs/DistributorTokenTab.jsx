@@ -23,13 +23,14 @@ const formatMaybeAmount = (value, unit, digits = 2) => {
   return unit && raw.includes(unit) ? raw : `${raw} ${unit}`.trim();
 };
 
-export default function DistributorTokenTab({
+function DistributorTokenTab({
   distributorData,
   tokenSnapshot,
   BUYBACKSnapshot,
   BUYBACKFallback,
   DRIPAvailable,
   tokenTotalSupply,
+  historyOptions,
 }) {
   const dist = distributorData || {};
   const token = tokenSnapshot?.token || {};
@@ -37,7 +38,7 @@ export default function DistributorTokenTab({
     BUYBACKSnapshot?.BUYBACK?.totalBiggiAcquired ??
     BUYBACKFallback ??
     "--";
-  const { points } = useDistributorHistory(dist);
+  const { points } = useDistributorHistory(dist, historyOptions);
 
   const stats = [
     {
@@ -135,3 +136,5 @@ export default function DistributorTokenTab({
     </section>
   );
 }
+
+export default React.memo(DistributorTokenTab);

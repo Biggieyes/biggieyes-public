@@ -12,10 +12,15 @@ export default function HeaderControls({
   redeemTicket,
   claimREWARDS,
   actionPerforming,
+  actionStatusLabel,
   actionError,
   icons,
   setOpenNavIdx,
   isMobile,
+  infoGateActive = false,
+  onInfoGateComplete,
+  onInfoButtonRect,
+  forceInfoOpenTick = 0,
 }) {
   const showWalletRow = !(isMobile && walletAddress);
 
@@ -26,7 +31,11 @@ export default function HeaderControls({
     >
       {showWalletRow && (
         <div className="wallet-row" style={{ padding: 8 }}>
-          <button className="metamask-btn-top" onClick={connectMetaMask}>
+          <button
+            type="button"
+            className="metamask-btn-top"
+            onClick={connectMetaMask}
+          >
             <img
               src="/images/metamask-fox.svg"
               alt="MetaMask"
@@ -42,7 +51,11 @@ export default function HeaderControls({
           </button>
 
           {!walletAddress && (
-            <button className="wc-btn-top" onClick={connectWalletConnect}>
+            <button
+              type="button"
+              className="wc-btn-top"
+              onClick={connectWalletConnect}
+            >
               <img
                 src="/images/walletconnect.svg"
                 alt="WalletConnect"
@@ -64,10 +77,15 @@ export default function HeaderControls({
           isRedeeming={isRedeeming}
           VRFPending={VRFPending}
           actionPerforming={actionPerforming}
+          actionStatusLabel={actionStatusLabel}
           actionError={actionError}
           icons={icons}
           onIconClick={(idx) => setOpenNavIdx(idx)}
           isMobile={isMobile}
+          infoGateActive={infoGateActive}
+          onInfoGateComplete={onInfoGateComplete}
+          onInfoButtonRect={onInfoButtonRect}
+          forceInfoOpenTick={forceInfoOpenTick}
         />
       </div>
     </header>

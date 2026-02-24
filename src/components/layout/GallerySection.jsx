@@ -77,6 +77,7 @@ export default function GallerySection({
   galleryNotice,
   myNFTs,
   dynamicTraitsById,
+  topFirstId,
   setTopFirstId,
   fetchDynamicTraitsFor,
   setZoomImg,
@@ -94,7 +95,7 @@ export default function GallerySection({
   }, [walletAddress, VRFPending, isRedeeming, fetchWalletAssets]);
 
   return (
-    <div className="gallery-section">
+    <div className="gallery-section" id="gallery">
       <div
         style={{
           display: "flex",
@@ -144,8 +145,9 @@ export default function GallerySection({
           address={walletAddress}
           items={myNFTs}
           dynamicTraitsById={dynamicTraitsById}
+          topFirstId={topFirstId}
           onOpenDetails={(nft) => {
-            setTopFirstId((prev) => prev || (nft?.tokenId ?? null));
+            setTopFirstId(nft?.tokenId ?? null);
             fetchDynamicTraitsFor(nft);
           }}
           onZoom={(nft) => setZoomImg(nft.image)}

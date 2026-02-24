@@ -103,7 +103,7 @@ const ABI_PAIR = UniswapV2Pair;
 const ABI_LM = BiggiLiquidityManager;
 const ABI_UPKEEP = BiggiUpkeeperProxy;
 
-const LOCAL_STORAGE_RPC_SYNC_KEY = "biggi_amoy_rpc_synced_v1";
+const LOCAL_STORAGE_RPC_SYNC_KEY = "biggi_amoy_rpc_sync_fingerprint_v2";
 
 function _sameAddr(a, b) {
   if (!a || !b) return false;
@@ -335,10 +335,21 @@ function _hasRequest(provider) {
   return provider && typeof provider.request === "function";
 }
 
+function _getRpcSyncFingerprint() {
+  const urls = getRpcUrls();
+  const joined = Array.isArray(urls)
+    ? urls
+        .map((url) => String(url || "").trim())
+        .filter(Boolean)
+        .join("|")
+    : "";
+  return `${AMOY.chainId}:${joined}`;
+}
+
 function _markRpcSynced() {
   try {
     if (typeof window !== "undefined" && window.localStorage) {
-      window.localStorage.setItem(LOCAL_STORAGE_RPC_SYNC_KEY, "1");
+      window.localStorage.setItem(LOCAL_STORAGE_RPC_SYNC_KEY, _getRpcSyncFingerprint());
     }
   } catch {
     // ignore localStorage write failure
@@ -348,7 +359,10 @@ function _markRpcSynced() {
 function _hasSyncedRpc() {
   try {
     if (typeof window !== "undefined" && window.localStorage) {
-      return window.localStorage.getItem(LOCAL_STORAGE_RPC_SYNC_KEY) === "1";
+      return (
+        window.localStorage.getItem(LOCAL_STORAGE_RPC_SYNC_KEY) ===
+        _getRpcSyncFingerprint()
+      );
     }
   } catch {
     // ignore localStorage read failure
@@ -387,6 +401,14 @@ export async function ensureAmoy(externalProvider) {
   const provider = externalProvider || _getEffectiveInjectedProvider();
   if (!_hasRequest(provider))
     throw new Error("Ethereum provider not available");
+
+  // Best effort update of chain metadata (RPC URLs/explorer) before switching.
+  // This helps recover from stale or rate-limited RPC endpoints in existing wallets.
+  try {
+    await syncAmoyRpcIfNeeded(provider);
+  } catch {
+    // ignore sync failures; switch flow below still attempts to continue
+  }
 
   try {
     await provider.request({

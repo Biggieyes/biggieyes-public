@@ -5,7 +5,9 @@ import { getTokenDexAddresses } from "../../../config/addresses";
 import {
   BiggiLiquidityHelperReader as ABI_BiggiLiquidityHelperReader,
   BiggiReserveTreasuryReader as ABI_BiggiReserveTreasuryReader,
+  LiquidityKeeperProxy as ABI_LiquidityKeeperProxy,
 } from "@/config/abi/index.js";
+import { ADDR } from "@/shared/utils/addresses.js";
 
 const DEBUG = (() => {
   try {
@@ -75,6 +77,9 @@ export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
   let routerAddress = null;
   let factoryAddress = null;
   let vaultAddress = null;
+  let keeperAddress = null;
+  let upkeepNeeded = null;
+  let upkeepPerformData = null;
   let reservePol = null;
   let reserveBiggi = null;
   let waitingBiggi = null;
@@ -136,6 +141,39 @@ export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
         "[LiquiditySnapshot] Chyba p‘ti naŽ›ÆðtÆónÆð adres/metod:",
         err,
       );
+    }
+  }
+
+  if (!keeperAddress) {
+    try {
+      keeperAddress = await _callOptional(manager.keeper);
+    } catch (err) {
+      console.warn("[LiquiditySnapshot] manager.keeper failed", err);
+    }
+  }
+
+  if (!keeperAddress && ADDR.KEEPER_PROXY) {
+    keeperAddress = ADDR.KEEPER_PROXY;
+  }
+
+  const keeperAddressSafe =
+    typeof keeperAddress === "string" &&
+    /^0x[0-9a-fA-F]{40}$/.test(keeperAddress)
+      ? keeperAddress
+      : null;
+
+  if (keeperAddressSafe) {
+    try {
+      const keeper = new Contract(
+        keeperAddressSafe,
+        ABI_LiquidityKeeperProxy,
+        signerOrProvider,
+      );
+      const check = await keeper.checkUpkeep("0x");
+      upkeepNeeded = check?.upkeepNeeded ?? check?.[0] ?? null;
+      upkeepPerformData = check?.performData ?? check?.[1] ?? null;
+    } catch (err) {
+      console.warn("[LiquiditySnapshot] keeper.checkUpkeep failed", err);
     }
   }
 
@@ -204,6 +242,11 @@ export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
       routerAddress,
       factoryAddress,
       vaultAddress,
+    },
+    keeper: {
+      address: keeperAddressSafe,
+      upkeepNeeded,
+      performData: upkeepPerformData,
     },
     vault: {
       address: vault.address,

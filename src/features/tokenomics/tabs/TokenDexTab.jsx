@@ -6,7 +6,7 @@ import AddressLine from "../components/AddressLine.jsx";
 import { fmtVal } from "../utils/format.js";
 import styles from "../styles/BiggiToken.module.css";
 
-export default function TokenDexTab({
+function TokenDexTab({
   tabBusy,
   onRefresh,
   pumpView,
@@ -130,3 +130,5 @@ export default function TokenDexTab({
     </Card>
   );
 }
+
+export default React.memo(TokenDexTab);

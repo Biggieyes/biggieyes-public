@@ -213,49 +213,9 @@ const COLLECTION1Panel = React.memo(
             </div>
           </header>
 
-          <div className="collection-grid__table-wrapper">
-            <table className="collection-grid__table">
-              <thead>
-                <tr>
-                  <th>Metric</th>
-                  <th>Value</th>
-                  <th>Scale</th>
-                  <th>Detail</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td colSpan={4}>
-                    <div
-                      className="collection-grid__chart-list"
-                      aria-hidden="true"
-                    >
-                      {chartBars.map((bar) => (
-                        <div
-                          key={bar.label}
-                          className="collection-grid__chart-row"
-                        >
-                          <div className="collection-grid__chart-row-head">
-                            <span className="collection-grid__chart-row-label">
-                              {bar.label}
-                            </span>
-                            <span className="collection-grid__chart-row-value">
-                              {Number.isFinite(bar.value)
-                                ? Math.round(bar.value)
-                                : 0}
-                            </span>
-                          </div>
-                          <div className="collection-grid__chart-row-track">
-                            <div
-                              className="collection-grid__chart-row-fill"
-                              style={{ width: `${bar.pct}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
+          <div className="collection-grid__stats-shell">
+            <div className="collection-grid__stats-layout">
+              <div className="collection-grid__stats-grid">
                 {rows.map((row) => {
                   const value =
                     row.value != null
@@ -268,62 +228,76 @@ const COLLECTION1Panel = React.memo(
                           Math.max(0, (row.valueNum / maxValueForChart) * 100),
                         )
                       : 0;
+                  const isFeatured = row.label === "Blocks configured";
                   return (
-                    <tr key={row.label}>
-                      <td>
-                        <span className="collection-grid__metric-label">
-                          <span
-                            className="collection-grid__metric-dot"
-                            aria-hidden="true"
-                          />
+                    <article
+                      key={row.label}
+                      className={`collection-grid__stats-card${isFeatured ? " is-featured" : ""}`}
+                    >
+                      <div className="collection-grid__stats-card-head">
+                        <span className="collection-grid__stats-card-label">
                           {row.label}
                         </span>
-                      </td>
-                      <td>
-                        <span className="collection-grid__value-chip">
-                          <span className="collection-grid__value-number">
-                            {value}
-                          </span>
-                          {row.suffix && (
-                            <span className="collection-grid__value-unit">
-                              {row.suffix}
-                            </span>
-                          )}
+                        <span className="collection-grid__stats-card-value">
+                          {value}
                         </span>
-                      </td>
-                      <td>
-                        <div
-                          className="collection-grid__micro-chart"
-                          aria-hidden="true"
-                        >
-                          <div className="collection-grid__micro-chart-head">
-                            <span>0</span>
-                            <span>
-                              {maxValueForChart > 0
-                                ? `${Math.round(maxValueForChart)}`
-                                : "-"}
-                            </span>
-                          </div>
-                          <div className="collection-grid__micro-chart-track">
-                            <div
-                              className="collection-grid__micro-chart-fill"
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                        </div>
-                      </td>
-                      <td>
+                      </div>
+                      <div className="collection-grid__stats-card-foot">
                         <span
-                          className={`collection-grid__detail-pill${row.detail ? "" : " is-muted"}`}
+                          className={`collection-grid__stats-card-detail${row.detail ? "" : " is-muted"}`}
                         >
                           {row.detail || FALLBACK_VALUE}
                         </span>
-                      </td>
-                    </tr>
+                      </div>
+                      <div
+                        className="collection-grid__stats-card-meter"
+                        aria-hidden="true"
+                      >
+                        <span
+                          className="collection-grid__stats-card-meter-fill"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </article>
                   );
                 })}
-              </tbody>
-            </table>
+              </div>
+
+              <aside
+                className="collection-grid__stats-signal"
+                aria-hidden="true"
+              >
+                <div className="collection-grid__stats-signal-head">
+                  <span>Signal</span>
+                  <span>Scale</span>
+                </div>
+                <div className="collection-grid__stats-signal-list">
+                  {chartBars.map((bar) => (
+                    <div
+                      key={bar.label}
+                      className="collection-grid__stats-signal-row"
+                    >
+                      <div className="collection-grid__stats-signal-top">
+                        <span className="collection-grid__stats-signal-label">
+                          {bar.label}
+                        </span>
+                        <span className="collection-grid__stats-signal-value">
+                          {Number.isFinite(bar.value)
+                            ? Math.round(bar.value)
+                            : 0}
+                        </span>
+                      </div>
+                      <div className="collection-grid__stats-signal-track">
+                        <span
+                          className="collection-grid__stats-signal-fill"
+                          style={{ width: `${bar.pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </aside>
+            </div>
           </div>
         </section>
       </>

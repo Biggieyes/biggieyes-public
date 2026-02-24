@@ -21,8 +21,8 @@ const resolveTotal = (entry) =>
   null;
 
 export default function useDistributorHistory(snapshot, options = {}) {
-  const { limit = 30 } = options;
-  const { history } = useHistoryBuffer(snapshot, { limit });
+  const { limit = 30, minIntervalMs = 0 } = options;
+  const { history } = useHistoryBuffer(snapshot, { limit, minIntervalMs });
 
   const points = React.useMemo(
     () =>

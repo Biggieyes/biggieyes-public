@@ -11,18 +11,30 @@ import {
   setInjectedProvider,
   syncAmoyRpcIfNeeded,
 } from "@/shared/utils/contract";
+import {
+  getInjectedProviderCandidates,
+  isMetaMaskExtensionMissingError,
+  isLikelyMetaMaskSdkProvider,
+  startInjectedProviderDiscovery,
+} from "@/shared/utils/injectedProviders";
 
 const Ctx = React.createContext(null);
 
-/** Prefer the injected provider (MetaMask) when multiple are present. */
 function pickInjectedProvider() {
-  const eth = getInjectedProvider();
-  if (!eth) return null;
-  if (Array.isArray(eth.providers) && eth.providers.length) {
-    const mm = eth.providers.find((p) => p && p.isMetaMask);
-    return mm || eth.providers[0];
-  }
-  return eth;
+  const candidates = getInjectedProviderCandidates({
+    preferred: getInjectedProvider(),
+  });
+  if (!candidates.length) return null;
+  const mm = candidates.find(
+    (p) =>
+      p &&
+      p.isMetaMask &&
+      !p.isBraveWallet &&
+      !p.isCoinbaseWallet &&
+      !p.isRabby &&
+      !p.isTrust,
+  );
+  return mm || candidates[0];
 }
 
 export function Web3Provider({ children }) {
@@ -32,6 +44,10 @@ export function Web3Provider({ children }) {
   const [chainId, setChainId] = React.useState(undefined);
   const [isConnecting, setIsConnecting] = React.useState(false);
   const [injectedVersion, setInjectedVersion] = React.useState(0);
+
+  React.useEffect(() => {
+    startInjectedProviderDiscovery();
+  }, []);
 
   /** Refresh state from the current wallet and attach signer + provider. */
   const refresh = React.useCallback(async () => {
@@ -109,12 +125,75 @@ export function Web3Provider({ children }) {
 
   /** Primary connect for MetaMask/injected. */
   const connectMetaMask = React.useCallback(async () => {
-    const eth = pickInjectedProvider();
-    if (!eth) throw new Error("Wallet is not available");
+    const metaMaskCandidates = getInjectedProviderCandidates({
+      preferred: getInjectedProvider(),
+      metaMaskOnly: true,
+    });
+    const fallbackCandidates = getInjectedProviderCandidates({
+      preferred: getInjectedProvider(),
+      metaMaskOnly: false,
+    });
+    const candidates = [...metaMaskCandidates, ...fallbackCandidates].filter(
+      (p, i, list) =>
+        p &&
+        list.indexOf(p) === i &&
+        !isLikelyMetaMaskSdkProvider(p),
+    );
+    if (!candidates.length) throw new Error("Wallet is not available");
     setIsConnecting(true);
     try {
+      let eth = null;
+      for (const candidate of candidates) {
+        try {
+          const accounts = await candidate.request({ method: "eth_requestAccounts" });
+          if (Array.isArray(accounts) && accounts[0]) {
+            eth = candidate;
+            break;
+          }
+        } catch (candidateError) {
+          const code =
+            candidateError?.code ??
+            candidateError?.error?.code ??
+            candidateError?.data?.originalError?.code;
+          if (isMetaMaskExtensionMissingError(candidateError)) continue;
+          if (code === 4001 || code === "ACTION_REJECTED") throw candidateError;
+          if (code === -32002 || code === 4100) throw candidateError;
+        }
+      }
+      if (
+        !eth &&
+        window?.ethereum &&
+        typeof window.ethereum.request === "function" &&
+        !isLikelyMetaMaskSdkProvider(window.ethereum)
+      ) {
+        try {
+          const accounts = await window.ethereum.request({
+            method: "eth_requestAccounts",
+          });
+          if (Array.isArray(accounts) && accounts[0]) {
+            eth = window.ethereum;
+          }
+        } catch (rootError) {
+          const rootCode =
+            rootError?.code ??
+            rootError?.error?.code ??
+            rootError?.data?.originalError?.code;
+          if (rootCode === 4001 || rootCode === "ACTION_REJECTED") {
+            throw rootError;
+          }
+          if (rootCode === -32002 || rootCode === 4100) {
+            throw rootError;
+          }
+        }
+      }
+      if (!eth) throw new Error("MetaMask extension not found");
+
       setInjectedProvider(eth);
-      await eth.request({ method: "eth_requestAccounts" });
+      try {
+        await syncAmoyRpcIfNeeded(eth);
+      } catch {
+        // non-fatal: continue connect flow even if chain metadata update is skipped
+      }
       const chainHex = await eth
         .request({ method: "eth_chainId" })
         .catch(() => null);

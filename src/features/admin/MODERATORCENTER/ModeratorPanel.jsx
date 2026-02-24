@@ -1,11 +1,13 @@
 // src/features/admin/MODERATORCENTER/ModeratorPanel.jsx
 import * as React from "react";
 import copy from "clipboard-copy";
+import { formatWei } from "@/utils/eth";
 import "./MODERATORCENTERPanel.css";
 
 const shortAddr = (addr) => {
   if (!addr) return "--";
   const s = String(addr);
+  if (s.length <= 12) return s;
   return `${s.slice(0, 6)}...${s.slice(-4)}`;
 };
 
@@ -14,6 +16,14 @@ export default function ModeratorPanel({
   walletAddress,
   baseUrl,
   onRequestReset,
+  weekId,
+  onWeekChange,
+  onRefreshChain,
+  chainLoading,
+  chainError,
+  slotInfo,
+  weekStats,
+  globalUniquePerWeek,
   compact,
 }) {
   const [refCode, setRefCode] = React.useState("");
@@ -26,6 +36,31 @@ export default function ModeratorPanel({
     if (!slotId || slotId === "--") return "";
     return `${resolvedBaseUrl}?ref=slot${slotId}:${code}`;
   }, [resolvedBaseUrl, slotId, refCode]);
+
+  const payoutWallet =
+    slotInfo?.payout || stats?.payoutWallet || walletAddress || "";
+  const enabledLabel =
+    slotInfo?.enabled == null ? "--" : slotInfo.enabled ? "Yes" : "No";
+  const leaderLabel =
+    slotInfo?.isLeader == null ? "--" : slotInfo.isLeader ? "Yes" : "No";
+  const referralHash = slotInfo?.referralHash || "--";
+  const cumulativeSales =
+    slotInfo?.cumulativeSales != null
+      ? String(slotInfo.cumulativeSales)
+      : "--";
+  const passwordSet = (() => {
+    const hash = slotInfo?.passwordHash;
+    if (!hash) return "--";
+    const raw = String(hash);
+    if (/^0x0+$/.test(raw)) return "No";
+    return "Yes";
+  })();
+  const weekUnique =
+    weekStats?.uniqueRefs != null ? String(weekStats.uniqueRefs) : "--";
+  const weekTickets =
+    weekStats?.ticketSales != null ? String(weekStats.ticketSales) : "--";
+  const weekAllocated =
+    weekStats?.allocatedWei != null ? formatWei(weekStats.allocatedWei) : "--";
 
   return (
     <div className="moderator-center__stack">
@@ -51,7 +86,7 @@ export default function ModeratorPanel({
         </div>
         <div>
           <span className="muted">Payout wallet</span>
-          <strong>{shortAddr(stats?.payoutWallet || walletAddress)}</strong>
+          <strong>{shortAddr(payoutWallet)}</strong>
         </div>
         <div>
           <span className="muted">Strikes</span>
@@ -128,6 +163,84 @@ export default function ModeratorPanel({
         </div>
 
         <div className="moderator-center__stack">
+          <div className="moderator-center__card">
+            <h3>On-chain slot</h3>
+            <div className="moderator-center__stats">
+              <div>
+                <span className="muted">Enabled</span>
+                <strong>{enabledLabel}</strong>
+              </div>
+              <div>
+                <span className="muted">Leader</span>
+                <strong>{leaderLabel}</strong>
+              </div>
+              <div>
+                <span className="muted">Payout</span>
+                <strong>{shortAddr(payoutWallet)}</strong>
+              </div>
+              <div>
+                <span className="muted">Referral hash</span>
+                <strong className="mono">{shortAddr(referralHash)}</strong>
+              </div>
+              <div>
+                <span className="muted">Cumulative sales</span>
+                <strong>{cumulativeSales}</strong>
+              </div>
+              <div>
+                <span className="muted">Password set</span>
+                <strong>{passwordSet}</strong>
+              </div>
+            </div>
+
+            <div className="moderator-center__field">
+              <label>Week ID</label>
+              <input
+                type="text"
+                value={weekId || ""}
+                onChange={(e) => onWeekChange?.(e.target.value)}
+                placeholder="e.g. 2870"
+              />
+            </div>
+            <div className="moderator-center__actions">
+              <button
+                type="button"
+                className="biggi-btn biggi-btn--ghost"
+                disabled={chainLoading}
+                onClick={() => onRefreshChain?.()}
+              >
+                {chainLoading ? "Loading..." : "Refresh on-chain"}
+              </button>
+            </div>
+            {chainError ? (
+              <div className="moderator-center__error">{chainError}</div>
+            ) : null}
+
+            <div className="moderator-center__stats">
+              <div>
+                <span className="muted">Week unique</span>
+                <strong>{weekUnique}</strong>
+              </div>
+              <div>
+                <span className="muted">Week tickets</span>
+                <strong>{weekTickets}</strong>
+              </div>
+              <div>
+                <span className="muted">Week allocated (POL)</span>
+                <strong>{weekAllocated}</strong>
+              </div>
+              <div>
+                <span className="muted">Global unique mode</span>
+                <strong>
+                  {globalUniquePerWeek == null
+                    ? "--"
+                    : globalUniquePerWeek
+                      ? "On"
+                      : "Off"}
+                </strong>
+              </div>
+            </div>
+          </div>
+
           <div className="moderator-center__card">
             <h3>Guidelines</h3>
             <ul className="moderator-center__list">

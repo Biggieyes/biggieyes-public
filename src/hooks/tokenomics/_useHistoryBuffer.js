@@ -9,7 +9,7 @@ const defaultLabel = (ts) =>
   });
 
 export default function useHistoryBuffer(snapshot, options = {}) {
-  const { limit = 30, getKey, normalize } = options;
+  const { limit = 30, getKey, normalize, minIntervalMs = 0 } = options;
   const [history, setHistory] = React.useState([]);
 
   React.useEffect(() => {
@@ -27,10 +27,17 @@ export default function useHistoryBuffer(snapshot, options = {}) {
       const last = prev[prev.length - 1];
       const lastKey = typeof getKey === "function" ? getKey(last) : last?.ts;
       if (lastKey === keyValue) return prev;
+      if (
+        Number(minIntervalMs) > 0 &&
+        typeof last?.ts === "number" &&
+        ts - last.ts < Number(minIntervalMs)
+      ) {
+        return prev;
+      }
       const next = [...prev, normalized];
       return next.length > limit ? next.slice(-limit) : next;
     });
-  }, [snapshot, limit, getKey, normalize]);
+  }, [snapshot, limit, getKey, normalize, minIntervalMs]);
 
   return { history, setHistory };
 }

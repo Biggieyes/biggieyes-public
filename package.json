@@ -20,7 +20,8 @@
     "preview:host": "vite preview --host --port 4173",
     "smoke:runtime": "node scripts/smoke-runtime.mjs",
     "check:abis": "node scripts/check-abis.js",
-    "check:contracts": "node scripts/check-contracts.js"
+    "check:contracts": "node scripts/check-contracts.js",
+    "check:rpc": "node scripts/check-rpc-health.mjs"
   },
   "dependencies": {
     "@ethersproject/abi": "^5.0.9",
@@ -33,6 +34,8 @@
     "@noble/hashes": "^2.0.1",
     "@openzeppelin/contracts": "^5.4.0",
     "@rollup/plugin-inject": "^5.0.5",
+    "@sentry/node": "^7.120.4",
+    "@sentry/react": "^7.120.4",
     "@supabase/supabase-js": "^2.89.0",
     "@walletconnect/ethereum-provider": "^2.23.1",
     "@walletconnect/modal": "^2.7.0",

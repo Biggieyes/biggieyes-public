@@ -2,16 +2,22 @@
 // Owner-only rules update for live chat.
 import { createClient } from "@supabase/supabase-js";
 import { ethers } from "ethers";
+import { captureException, initSentry } from "../_sentry.js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const CHAT_OWNER_ADDRESS = (process.env.CHAT_OWNER_ADDRESS || "").toLowerCase();
 
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
+
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Methods": "POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type,Authorization",
+  Vary: "Origin",
 };
+
+initSentry();
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -75,14 +81,18 @@ async function handleRequest({ method, body }) {
     .upsert({ id: 1, text: rulesText, updated_by_address: owner, updated_at: now }, { onConflict: "id" });
 
   if (error) {
+    captureException(error, { stage: "rules_update" });
     return jsonResponse(500, { ok: false, error: "Rules update failed" });
   }
 
-  await supabase.from("moderation_log").insert({
+  const { error: logError } = await supabase.from("moderation_log").insert({
     action: "rules-update",
     message_id: null,
     by_address: owner,
   });
+  if (logError) {
+    captureException(logError, { stage: "moderation_log" });
+  }
 
   return jsonResponse(200, { ok: true });
 }

@@ -32,7 +32,7 @@ function formatNative(value) {
   }
 }
 
-export default function PolicyTab({ snapshot, loading, error }) {
+function PolicyTab({ snapshot, loading, error }) {
   const p = snapshot?.policy;
 
   const dailyCap = p?.maxDailyBuybackNative;
@@ -73,3 +73,5 @@ export default function PolicyTab({ snapshot, loading, error }) {
     </div>
   );
 }
+
+export default React.memo(PolicyTab);

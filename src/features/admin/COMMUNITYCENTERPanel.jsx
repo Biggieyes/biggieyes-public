@@ -246,6 +246,7 @@ export default function COMMUNITYCENTERPanel({
   onConnectWalletConnect,
   isAdmin = false,
   onOpenAdmin,
+  autoOpenInfo = false,
 }) {
   const [address, setAddress] = React.useState(() =>
     resolveCOMMUNITYCENTERAddress(),
@@ -254,6 +255,7 @@ export default function COMMUNITYCENTERPanel({
   const [error, setError] = React.useState(null);
   const [moderatorOpen, setModeratorOpen] = React.useState(false);
   const [infoOpen, setInfoOpen] = React.useState(false);
+  const autoInfoOpened = React.useRef(false);
   const [summary, setSummary] = React.useState({
     proposalCount: 0,
     eventCount: 0,
@@ -264,6 +266,13 @@ export default function COMMUNITYCENTERPanel({
   const [proposals, setProposals] = React.useState([]);
   const [events, setEvents] = React.useState([]);
   const [poolBalance, setPoolBalance] = React.useState(null);
+
+  React.useEffect(() => {
+    if (autoOpenInfo && !autoInfoOpened.current) {
+      setInfoOpen(true);
+      autoInfoOpened.current = true;
+    }
+  }, [autoOpenInfo]);
 
   const infoItems = React.useMemo(
     () => [

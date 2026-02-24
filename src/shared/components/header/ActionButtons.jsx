@@ -13,13 +13,54 @@ export default function ActionButtons({
   isRedeeming,
   VRFPending,
   performing = false,
+  performingLabel = "",
   actionError = null,
+  isMobile = false,
+  infoGateActive = false,
+  onInfoGateComplete,
+  onInfoButtonRect,
+  forceInfoOpenTick = 0,
 }) {
   const lockRef = React.useRef(false);
   const [infoOpen, setInfoOpen] = React.useState(false);
+  const infoButtonRef = React.useRef(null);
 
-  const redeemDisabled = Boolean(isRedeeming || VRFPending || performing);
-  const actionDisabled = Boolean(performing);
+  const gateActive = Boolean(infoGateActive);
+  const redeemDisabled = Boolean(isRedeeming || VRFPending || performing || gateActive);
+  const actionDisabled = Boolean(performing || gateActive);
+
+  React.useEffect(() => {
+    if (forceInfoOpenTick > 0) setInfoOpen(true);
+  }, [forceInfoOpenTick]);
+
+  const reportInfoRect = React.useCallback(() => {
+    if (!onInfoButtonRect || !infoButtonRef.current) return;
+    const rect = infoButtonRef.current.getBoundingClientRect();
+    onInfoButtonRect({
+      left: rect.left,
+      top: rect.top,
+      right: rect.right,
+      bottom: rect.bottom,
+      width: rect.width,
+      height: rect.height,
+    });
+  }, [onInfoButtonRect]);
+
+  React.useLayoutEffect(() => {
+    if (!gateActive) return;
+    reportInfoRect();
+  }, [gateActive, isMobile, reportInfoRect]);
+
+  React.useEffect(() => {
+    if (!gateActive) return;
+    const handler = () => reportInfoRect();
+    window.addEventListener("resize", handler);
+    window.addEventListener("scroll", handler, true);
+    return () => {
+      window.removeEventListener("resize", handler);
+      window.removeEventListener("scroll", handler, true);
+    };
+  }, [gateActive, reportInfoRect]);
 
   const errorText = React.useMemo(() => {
     if (!actionError) return "";
@@ -65,6 +106,9 @@ export default function ActionButtons({
       borderColor = "#1abc9c",
       glow = "rgba(26, 188, 156, 0.6)",
       variant,
+      wrapperClassName,
+      wrapperStyle,
+      wrapperRef,
     } = options;
 
     const hoverGlow = glow.replace(/([0-9]*\.?[0-9]+)\s*\)$/g, (_, alpha) => {
@@ -93,11 +137,15 @@ export default function ActionButtons({
 
     return (
       <div
-        className={`action-buttons__wrapper${variant ? ` action-buttons__wrapper--${variant}` : ""}`}
+        className={`action-buttons__wrapper${variant ? ` action-buttons__wrapper--${variant}` : ""}${
+          wrapperClassName ? ` ${wrapperClassName}` : ""
+        }`}
+        ref={wrapperRef}
         style={{
           ...baseWrapperStyle,
           border: `2px solid ${borderColor}`,
           boxShadow: `0 0 12px ${glow}`,
+          ...wrapperStyle,
           opacity: isDisabled ? 0.65 : 1,
           pointerEvents: isDisabled ? "none" : "auto",
         }}
@@ -143,23 +191,48 @@ export default function ActionButtons({
     );
   };
 
+  const stackAlign = isMobile ? "center" : "flex-start";
+  const stackWidth = isMobile ? "100%" : "auto";
+  const rowJustify = isMobile ? "center" : "space-between";
+  const rowWidth = isMobile ? "100%" : 240;
+  const rowMaxWidth = isMobile ? 320 : 240;
+  const headingAlign = isMobile ? "center" : "flex-start";
+  const headingTextAlign = isMobile ? "center" : "left";
+
   return (
     <div
       className="action-buttons-stack"
       style={{
         display: "flex",
         flexDirection: "column",
-        alignItems: "flex-start",
+        alignItems: stackAlign,
+        width: stackWidth,
         marginTop: 30,
       }}
     >
       <div
+        className="action-buttons-heading"
+        style={{
+          alignItems: headingAlign,
+          textAlign: headingTextAlign,
+        }}
+      >
+        <div className="action-buttons-heading__title">
+          BiggiEyes — On-Chain NFT Economy Protocol
+        </div>
+        <div className="action-buttons-heading__subtitle">
+          Mint NFTs, gain rarity, and watch the ecosystem create value for BIGGI
+          holders.
+        </div>
+      </div>
+      <div
         style={{
           display: "flex",
           gap: 10,
-          justifyContent: "space-between",
+          justifyContent: rowJustify,
           flexWrap: "nowrap",
-          width: 240,
+          width: rowWidth,
+          maxWidth: rowMaxWidth,
         }}
       >
         {buttonWrapper("/images/mint.png", "Mint Ticket", runOnce(onMint, actionDisabled), {
@@ -181,9 +254,10 @@ export default function ActionButtons({
           display: "flex",
           gap: 10,
           marginTop: 10,
-          justifyContent: "space-between",
+          justifyContent: rowJustify,
           flexWrap: "nowrap",
-          width: 240,
+          width: rowWidth,
+          maxWidth: rowMaxWidth,
         }}
       >
         {buttonWrapper(
@@ -199,7 +273,9 @@ export default function ActionButtons({
         )}
         {buttonWrapper("/images/icons/info.png", "Project Info", () => setInfoOpen(true), {
           borderColor: "#ffe800",
-          glow: "rgba(255, 232, 0, 0.6)",
+          glow: gateActive ? "rgba(255, 232, 0, 0.95)" : "rgba(255, 232, 0, 0.6)",
+          wrapperClassName: gateActive ? "info-gate-target" : undefined,
+          wrapperRef: infoButtonRef,
         })}
       </div>
 
@@ -213,7 +289,9 @@ export default function ActionButtons({
             maxWidth: 320,
           }}
         >
-          {performing && <div>Processing transaction...</div>}
+          {performing && (
+            <div>{performingLabel || "Processing transaction..."}</div>
+          )}
           {errorText && (
             <div role="alert" style={{ color: "#ff7b7b" }}>
               Last error: {errorText}
@@ -224,7 +302,13 @@ export default function ActionButtons({
 
       {infoOpen && (
         <React.Suspense fallback={null}>
-          <ProjectInfoModal open onClose={() => setInfoOpen(false)} />
+          <ProjectInfoModal
+            open
+            onClose={() => {
+              setInfoOpen(false);
+              if (gateActive) onInfoGateComplete?.();
+            }}
+          />
         </React.Suspense>
       )}
     </div>

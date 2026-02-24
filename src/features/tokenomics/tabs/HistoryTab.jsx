@@ -1,0 +1,138 @@
+import * as React from "react";
+import Card from "../components/Card.jsx";
+import styles from "../styles/BiggiToken.module.css";
+import { fmtVal } from "../utils/format.js";
+
+const toNumberLoose = (value) => {
+  if (value == null) return null;
+  if (typeof value === "number")
+    return Number.isFinite(value) ? value : null;
+  if (typeof value === "bigint") return Number(value);
+  const cleaned = String(value).replace(/[^\d.-]/g, "");
+  if (!cleaned) return null;
+  const num = Number(cleaned);
+  return Number.isFinite(num) ? num : null;
+};
+
+const fmt = (value, symbol, digits = 4) => {
+  const num = toNumberLoose(value);
+  return num == null ? "--" : fmtVal(num, symbol, digits);
+};
+
+const buildRows = (entries, mapFn, limit = 12) => {
+  if (!Array.isArray(entries) || entries.length === 0) return [];
+  const slice = entries.slice(-limit).reverse();
+  return slice.map(mapFn).filter(Boolean);
+};
+
+function HistoryTab({
+  buybackHistory = [],
+  dripHistory = [],
+  liquidityHistory = [],
+}) {
+  const buybackRows = React.useMemo(
+    () =>
+      buildRows(buybackHistory, (entry) => ({
+        label: entry?.tsLabel || "--",
+        a: fmt(
+          entry?.BUYBACK?.totalNativeSpentNumeric ??
+            entry?.BUYBACK?.totalNativeSpent,
+          "POL",
+        ),
+        b: fmt(
+          entry?.BUYBACK?.totalBiggiAcquiredNumeric ??
+            entry?.BUYBACK?.totalBiggiAcquired,
+          "BIGGI",
+        ),
+      })),
+    [buybackHistory],
+  );
+
+  const dripRows = React.useMemo(
+    () =>
+      buildRows(dripHistory, (entry) => ({
+        label: entry?.tsLabel || "--",
+        a: fmt(
+          entry?.distributor?.availableNumeric ??
+            entry?.distributor?.availableTokens,
+          "BIGGI",
+        ),
+        b: fmt(
+          entry?.DRIPLM?.nativeBalanceNumeric ??
+            entry?.DRIPLM?.nativeBalance,
+          "POL",
+        ),
+      })),
+    [dripHistory],
+  );
+
+  const liquidityRows = React.useMemo(
+    () =>
+      buildRows(liquidityHistory, (entry) => ({
+        label: entry?.tsLabel || "--",
+        a: fmt(
+          entry?.vault?.totalLpLockedNumeric ?? entry?.vault?.totalLpLocked,
+          "LP",
+          2,
+        ),
+        b: fmt(
+          entry?.reserve?.maticBalanceNumeric ?? entry?.reserve?.maticBalance,
+          "POL",
+        ),
+      })),
+    [liquidityHistory],
+  );
+
+  const renderRows = (rows, emptyLabel) =>
+    rows.length ? (
+      rows.map((row, idx) => (
+        <div key={`${row.label}-${idx}`} className={styles.ecoTableRow}>
+          <span className={styles.ecoTableLabel}>{row.label}</span>
+          <span className={styles.ecoTableValue}>
+            {row.a} · {row.b}
+          </span>
+        </div>
+      ))
+    ) : (
+      <div className={styles.ecoTableRow}>
+        <span className={styles.ecoTableLabel}>{emptyLabel}</span>
+        <span className={styles.ecoTableValue}>--</span>
+      </div>
+    );
+
+  return (
+    <div className={styles.ecoFlowGrid}>
+      <Card
+        title="BUYBACK HISTORY"
+        subtitle="Latest buyback operations (spent vs acquired)"
+      >
+        <div className={styles.ecoTable}>
+          <div className={styles.ecoTableHeader}>Recent buybacks</div>
+          {renderRows(buybackRows, "No buyback entries yet")}
+        </div>
+      </Card>
+
+      <Card
+        title="LM OPERATIONS"
+        subtitle="Liquidity manager snapshots (LP locked vs reserve)"
+      >
+        <div className={styles.ecoTable}>
+          <div className={styles.ecoTableHeader}>Recent LM updates</div>
+          {renderRows(liquidityRows, "No LM entries yet")}
+        </div>
+      </Card>
+
+      <Card
+        title="DRIP OPERATIONS"
+        subtitle="Drip distributor + LM balances"
+      >
+        <div className={styles.ecoTable}>
+          <div className={styles.ecoTableHeader}>Recent DRIP updates</div>
+          {renderRows(dripRows, "No DRIP entries yet")}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+export default React.memo(HistoryTab);

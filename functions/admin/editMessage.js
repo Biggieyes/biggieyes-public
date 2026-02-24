@@ -2,16 +2,22 @@
 // Owner-only moderation actions (edit or soft-delete).
 import { createClient } from "@supabase/supabase-js";
 import { ethers } from "ethers";
+import { captureException, initSentry } from "../_sentry.js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const CHAT_OWNER_ADDRESS = (process.env.CHAT_OWNER_ADDRESS || "").toLowerCase();
 
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
+
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Methods": "POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type,Authorization",
+  Vary: "Origin",
 };
+
+initSentry();
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -85,14 +91,18 @@ async function handleRequest({ method, body }) {
     .eq("id", messageId);
 
   if (error) {
+    captureException(error, { stage: "message_update" });
     return jsonResponse(500, { ok: false, error: "Update failed" });
   }
 
-  await supabase.from("moderation_log").insert({
+  const { error: logError } = await supabase.from("moderation_log").insert({
     action,
     message_id: messageId,
     by_address: owner,
   });
+  if (logError) {
+    captureException(logError, { stage: "moderation_log" });
+  }
 
   return jsonResponse(200, { ok: true });
 }

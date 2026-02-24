@@ -16,7 +16,13 @@ import {
   adminLogin,
   requestPasswordReset,
 } from "@/services/api";
-import { getConfig, isOwner } from "@/utils/eth";
+import {
+  getConfig,
+  isOwner,
+  getModeratorsREWARDSContract,
+  readSlotInfo,
+  readWeekStats,
+} from "@/utils/eth";
 import "./MODERATORCENTERPanel.css";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -36,6 +42,15 @@ export default function MODERATORCENTERPanel({
   const [moderatorStats, setModeratorStats] = React.useState({});
   const [referrals, setReferrals] = React.useState([]);
   const [weeklyEntries, setWeeklyEntries] = React.useState([]);
+  const [weekId, setWeekId] = React.useState(() => {
+    const now = Date.now();
+    return String(Math.floor(now / WEEK_MS));
+  });
+  const [chainSlotInfo, setChainSlotInfo] = React.useState(null);
+  const [chainWeekStats, setChainWeekStats] = React.useState(null);
+  const [globalUnique, setGlobalUnique] = React.useState(null);
+  const [chainLoading, setChainLoading] = React.useState(false);
+  const [chainError, setChainError] = React.useState("");
   const [txModal, setTxModal] = React.useState({
     open: false,
     status: "",
@@ -56,6 +71,10 @@ export default function MODERATORCENTERPanel({
     setAdminError("");
     setModeratorStats({});
     setReferrals([]);
+    setChainSlotInfo(null);
+    setChainWeekStats(null);
+    setGlobalUnique(null);
+    setChainError("");
   }, [walletAddress]);
 
   const loadModeratorData = React.useCallback(async (slotId) => {
@@ -143,12 +162,45 @@ export default function MODERATORCENTERPanel({
         strikes: session?.strikes,
       });
       await loadModeratorData(session?.slotId);
+      await loadChainStats(session?.slotId, weekId);
     } catch (err) {
       setModError(err?.message || "Login failed.");
     } finally {
       setModLoading(false);
     }
   };
+
+  const loadChainStats = React.useCallback(
+    async (slotId, week) => {
+      if (slotId == null || slotId === "") return;
+      setChainLoading(true);
+      setChainError("");
+      try {
+        const contract = await getModeratorsREWARDSContract({ signer: false });
+        const [slotInfo, weekStats, globalUniqueRes] = await Promise.all([
+          readSlotInfo(contract, slotId).catch(() => null),
+          readWeekStats(contract, week, slotId).catch(() => null),
+          contract.globalUniquePerWeek?.().catch(() => null),
+        ]);
+        setChainSlotInfo(slotInfo);
+        setChainWeekStats(weekStats);
+        if (typeof globalUniqueRes === "boolean") {
+          setGlobalUnique(globalUniqueRes);
+        }
+      } catch (err) {
+        setChainError("Failed to load on-chain stats.");
+      } finally {
+        setChainLoading(false);
+      }
+    },
+    [],
+  );
+
+  React.useEffect(() => {
+    if (moderatorSession?.slotId != null && weekId) {
+      loadChainStats(moderatorSession.slotId, weekId);
+    }
+  }, [moderatorSession?.slotId, weekId, loadChainStats]);
 
   const handleAdminLogin = async () => {
     setAdminError("");
@@ -193,7 +245,7 @@ export default function MODERATORCENTERPanel({
         <div>
           <h2>Moderator Center</h2>
           <p className="muted">
-            Ready to connect the ModeratorsREWARDS contract and Supabase.
+            On-chain Moderator Center + Supabase referral dashboard.
           </p>
         </div>
         <WalletConnectButton
@@ -255,6 +307,16 @@ export default function MODERATORCENTERPanel({
                 walletAddress={walletAddress}
                 baseUrl={baseUrl}
                 onRequestReset={handleRequestReset}
+                weekId={weekId}
+                onWeekChange={setWeekId}
+                onRefreshChain={() =>
+                  loadChainStats(moderatorSession?.slotId, weekId)
+                }
+                chainLoading={chainLoading}
+                chainError={chainError}
+                slotInfo={chainSlotInfo}
+                weekStats={chainWeekStats}
+                globalUniquePerWeek={globalUnique}
                 compact={compact}
               />
               <ReferralList items={referrals} />

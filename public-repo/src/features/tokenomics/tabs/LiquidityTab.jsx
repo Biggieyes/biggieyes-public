@@ -19,6 +19,7 @@ export default function LiquidityTab({
   lmSlippageBps,
   lmDeadlineSec,
   lmKeeperAddress,
+  lmUpkeepNeeded,
   lmAddress,
   lmVaultAddress,
   warnings,
@@ -124,6 +125,12 @@ export default function LiquidityTab({
               <span className={styles.ecoTableLabel}>Keeper</span>
               <span className={`${styles.ecoTableValue} ${styles.ecoAddrMono}`}>
                 {shortAddr(lmKeeperAddress)}
+              </span>
+            </div>
+            <div className={styles.ecoTableRow}>
+              <span className={styles.ecoTableLabel}>LM upkeep needed</span>
+              <span className={styles.ecoTableValue}>
+                {lmUpkeepNeeded == null ? "--" : lmUpkeepNeeded ? "Yes" : "No"}
               </span>
             </div>
             <div className={styles.ecoTableRow}>

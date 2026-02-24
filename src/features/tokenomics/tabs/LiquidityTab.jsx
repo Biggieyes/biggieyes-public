@@ -6,7 +6,7 @@ import Line from "../components/Line.jsx";
 import { fmtVal, fmtLp, shortAddr } from "../utils/format.js";
 import styles from "../styles/BiggiToken.module.css";
 
-export default function LiquidityTab({
+function LiquidityTab({
   tabBusy,
   onRefresh,
   liquidityHistory,
@@ -166,3 +166,5 @@ export default function LiquidityTab({
     </Card>
   );
 }
+
+export default React.memo(LiquidityTab);

@@ -21,6 +21,7 @@ import {
 } from "../../../utils/images";
 import { useContracts } from "../../../providers/ContractsProvider";
 import { ensureAmoy, getCOLLECTIONPublicRO, getROProvider } from "@/shared/utils/contract";
+import { coerceBool } from "@/shared/utils/boolean";
 import { formatEther } from "ethers";
 
 // Import constants a utilities
@@ -75,10 +76,12 @@ function COLLECTIONBlocksGrid({
   additionalText = "",
   activeCOLLECTION: activeCOLLECTIONProp = "COLLECTION1",
   onCOLLECTIONChange = () => {},
+  autoOpenInfo = false,
 }) {
   const [openBlock, setOpenBlock] = React.useState(null);
   const [hoveredBlock, setHoveredBlock] = React.useState(null);
   const [infoOpen, setInfoOpen] = React.useState(false);
+  const autoInfoOpened = React.useRef(false);
   const [futureOpen, setFutureOpen] = React.useState(false);
   const [selectedBlock, setSelectedBlock] = React.useState(1);
   const [selectedBackground, setSelectedBackground] = React.useState(1);
@@ -98,6 +101,13 @@ function COLLECTIONBlocksGrid({
 
   const isMobile = useIsMobile(MOBILE_BREAKPOINT);
   const isTouch = useIsTouch();
+
+  React.useEffect(() => {
+    if (autoOpenInfo && !autoInfoOpened.current) {
+      setInfoOpen(true);
+      autoInfoOpened.current = true;
+    }
+  }, [autoOpenInfo]);
 
   const [fallbackPrices, setFallbackPrices] = React.useState(
     Array(MAX_BLOCKS).fill(null),
@@ -167,7 +177,7 @@ function COLLECTIONBlocksGrid({
           maxTickets: await safeAsyncCall(() => coll.MAX_TICKETS?.()),
           ticketMinted: await safeAsyncCall(() => coll.ticketMinted?.()),
           biggiMinted: await safeAsyncCall(() => coll.biggiMinted?.()),
-          paused: pausedVal === true || pausedVal === 1,
+          paused: coerceBool(pausedVal),
         };
 
         meta.maxSupply = meta.maxSupply != null ? Number(meta.maxSupply) : null;
@@ -357,11 +367,16 @@ function COLLECTIONBlocksGrid({
       ? blockPricesProp.slice(0, MAX_BLOCKS)
       : [];
     while (fromProps.length < MAX_BLOCKS) fromProps.push(null);
+
+    const hasProps = fromProps.some((v) => Number.isFinite(v));
     const hasLive = Array.isArray(livePrices)
       ? livePrices.some((v) => Number.isFinite(v))
       : false;
+
     return fromProps.map((v, i) => {
-      if (hasLive && Number.isFinite(livePrices?.[i])) return livePrices[i];
+      if (Number.isFinite(v)) return v;
+      if (!hasProps && hasLive && Number.isFinite(livePrices?.[i]))
+        return livePrices[i];
       return v == null ? (fallbackPrices[i] ?? null) : v;
     });
   }, [blockPricesProp, livePrices, fallbackPrices]);
@@ -371,11 +386,16 @@ function COLLECTIONBlocksGrid({
       ? blockMintCountsProp.slice(0, MAX_BLOCKS)
       : [];
     while (fromProps.length < MAX_BLOCKS) fromProps.push(null);
+
+    const hasProps = fromProps.some((v) => Number.isFinite(v));
     const hasLive = Array.isArray(liveMinted)
       ? liveMinted.some((v) => Number.isFinite(v))
       : false;
+
     return fromProps.map((v, i) => {
-      if (hasLive && Number.isFinite(liveMinted?.[i])) return liveMinted[i];
+      if (Number.isFinite(v)) return v;
+      if (!hasProps && hasLive && Number.isFinite(liveMinted?.[i]))
+        return liveMinted[i];
       return v == null ? (fallbackMinted[i] ?? null) : v;
     });
   }, [blockMintCountsProp, liveMinted, fallbackMinted]);
@@ -939,3 +959,4 @@ function COLLECTIONBlocksGrid({
 }
 
 export default COLLECTIONBlocksGrid;
+

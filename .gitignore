@@ -39,5 +39,8 @@ dist-ssr
 .env.production
 !.env.example
 
+# Secrets (never commit)
+passwords.txt
+
 # Local Netlify folder
 .netlify

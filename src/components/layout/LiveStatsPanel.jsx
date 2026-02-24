@@ -26,6 +26,7 @@ export default function LiveStatsPanel({
   return (
     <div
       className="widget-center-wrapper"
+      id="live-stats"
       style={isMobile ? { paddingTop: 8 } : undefined}
     >
       <React.Suspense fallback={null}>

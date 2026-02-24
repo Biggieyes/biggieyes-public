@@ -108,6 +108,22 @@
   gap: 6px;
 }
 
+.moderator-center__field--inline {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  align-items: center;
+}
+
+.moderator-center__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.moderator-center__toggle input {
+  width: auto;
+}
+
 .moderator-center__field label {
   color: rgba(198, 207, 222, 0.9);
   font-weight: 700;
@@ -169,6 +185,14 @@
   gap: 8px;
   grid-template-columns: repeat(3, 1fr);
   align-items: center;
+}
+
+.moderator-center__table--wide .moderator-center__table-head,
+.moderator-center__table--wide .moderator-center__table-row {
+  grid-template-columns:
+    minmax(40px, 0.6fr)
+    minmax(120px, 1.2fr)
+    repeat(4, minmax(90px, 1fr));
 }
 
 .moderator-center__table-head {

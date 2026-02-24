@@ -3,7 +3,7 @@ import StatCard from "../../Common/components/StatCard.jsx";
 import LineChart from "../../Charts/charts/LineChart.jsx";
 import "./BUYBACKTreasuryTab.css";
 
-export default function BUYBACKTreasuryTab({
+function BUYBACKTreasuryTab({
   snapshot,
   nativeSeries = [],
   biggiSeries = [],
@@ -84,3 +84,5 @@ export default function BUYBACKTreasuryTab({
     </section>
   );
 }
+
+export default React.memo(BUYBACKTreasuryTab);

@@ -182,14 +182,18 @@ export const PUBLIC_AMOY_RPCS = [
 
 const INFURA_RPC_URL = getInfuraRpcUrl();
 
-const AMOY_RPC_CANDIDATES = uniq([
+const EXPLICIT_AMOY_RPCS = uniq([
   env("VITE_JSON_RPC_URL"),
   env("VITE_MOD_CHAIN_RPC"),
   env("VITE_AMOY_RPC_URL"),
   env("VITE_RPC_URL_AMOY"),
   ...splitCsv(env("VITE_ADDITIONAL_RPC_URLS")),
-  ...PUBLIC_AMOY_RPCS,
   INFURA_RPC_URL,
+]);
+
+const AMOY_RPC_CANDIDATES = uniq([
+  ...EXPLICIT_AMOY_RPCS,
+  ...PUBLIC_AMOY_RPCS,
 ]);
 
 const ARCHIVE_RPC_CANDIDATES = uniq([
@@ -312,8 +316,12 @@ export function getArchiveRpcUrls() {
 }
 
 export function getRpcUrls() {
-  const primaryList =
-    Array.isArray(AMOY.rpcUrls) && AMOY.rpcUrls.length ? AMOY.rpcUrls : [];
+  const explicit = filterOutBadRpcs(EXPLICIT_AMOY_RPCS);
+  const allowPublic =
+    explicit.length === 0 || env("VITE_ALLOW_PUBLIC_RPCS") === "1";
+  const primaryList = allowPublic
+    ? uniq([...explicit, ...PUBLIC_AMOY_RPCS])
+    : explicit;
   const filtered = filterOutBadRpcs(primaryList);
   if (!filtered.length && primaryList.length) {
     // preferred RPC was filtered out; clear stored preference to avoid stale picks
@@ -325,7 +333,7 @@ export function getRpcUrls() {
 
   const fallback = [];
   if (AMOY.rpcUrl) fallback.push(AMOY.rpcUrl);
-  fallback.push(...PUBLIC_AMOY_RPCS);
+  if (allowPublic) fallback.push(...PUBLIC_AMOY_RPCS);
   return rankRpcUrls(filterOutBadRpcs(fallback));
 }
 

@@ -13,8 +13,8 @@ const toNumberLoose = (value) => {
 };
 
 export default function useLiquidityHistory(snapshot, options = {}) {
-  const { limit = 30 } = options;
-  const { history } = useHistoryBuffer(snapshot, { limit });
+  const { limit = 30, minIntervalMs = 0 } = options;
+  const { history } = useHistoryBuffer(snapshot, { limit, minIntervalMs });
 
   const chartPoints = React.useMemo(
     () =>

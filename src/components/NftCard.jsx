@@ -150,6 +150,7 @@ export default function NftCard({
   onOpenDetails,
   onZoom,
   fallbackContractAddress = null,
+  highlight = false,
 }) {
   // HOOKS must be called deterministically; keep outside conditionals
   let contracts = null;
@@ -163,6 +164,11 @@ export default function NftCard({
 
   const [metadata, setMetadata] = React.useState(nft.meta || null);
   const [image, setImage] = React.useState(nft.image || null);
+  const [imageLoaded, setImageLoaded] = React.useState(false);
+  const [imageFailed, setImageFailed] = React.useState(false);
+  const [isOffline, setIsOffline] = React.useState(
+    typeof navigator !== "undefined" ? !navigator.onLine : false,
+  );
   const [mintData, setMintData] = React.useState(() => {
     if (nft?.mint) {
       return {
@@ -225,7 +231,27 @@ export default function NftCard({
 
   React.useEffect(() => {
     setImage(nft.image || null);
-  }, [nft.image]);
+    setImageLoaded(false);
+    setImageFailed(false);
+  }, [nft.image, tokenId]);
+
+  React.useEffect(() => {
+    if (imageFailed && image === PLACEHOLDER_IMG) return;
+    setImageLoaded(false);
+    setImageFailed(false);
+  }, [image]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleStatus = () => setIsOffline(!navigator.onLine);
+    window.addEventListener("online", handleStatus);
+    window.addEventListener("offline", handleStatus);
+    handleStatus();
+    return () => {
+      window.removeEventListener("online", handleStatus);
+      window.removeEventListener("offline", handleStatus);
+    };
+  }, []);
 
   React.useEffect(() => {
     metadataRef.current = metadata;
@@ -465,20 +491,59 @@ export default function NftCard({
     const fetchMintData = async () => {
       if (!tokenId) return;
       const reader = contracts?.readerRead?.();
-      if (!reader || typeof reader.getMintDataByTokenId !== "function") return;
+      const main = metadataContract || contracts?.mainRead?.();
       try {
         setLoadingMint(true);
-        const res = await reader.getMintDataByTokenId(tokenId);
-        if (!res) return;
-        const ticketWei = res?.[0] ?? 0;
-        const blockWei = res?.[1] ?? 0;
-        const finalWei = res?.[2] ?? 0;
+        let ticketPrice = null;
+        let blockPrice = null;
+        let finalPrice = null;
+
+        if (reader && typeof reader.getMintDataByTokenId === "function") {
+          const res = await reader.getMintDataByTokenId(tokenId).catch(() => null);
+          if (res) {
+            ticketPrice = fmtEtherNum(res?.[0] ?? 0);
+            blockPrice = fmtEtherNum(res?.[1] ?? 0);
+            finalPrice = fmtEtherNum(res?.[2] ?? 0);
+          }
+        }
+
+        // Fallback for deployments where the reader is missing/limited.
+        if (ticketPrice == null && main) {
+          const ticketCandidates = ["getTicketPrice", "ticketPrice"];
+          for (const fn of ticketCandidates) {
+            if (typeof main?.[fn] !== "function") continue;
+            try {
+              const v = await main[fn]();
+              if (v != null) {
+                ticketPrice = fmtEtherNum(v);
+                break;
+              }
+            } catch {
+              // try next candidate
+            }
+          }
+        }
+
+        if (blockPrice == null && main && typeof main.getCurrentBlockPriceByTokenId === "function") {
+          try {
+            const v = await main.getCurrentBlockPriceByTokenId(tokenId);
+            if (v != null) blockPrice = fmtEtherNum(v);
+          } catch {
+            // ignore block price fallback failures
+          }
+        }
+
+        if (finalPrice == null && blockPrice != null) {
+          finalPrice = blockPrice;
+        }
+
+        if (ticketPrice == null && blockPrice == null && finalPrice == null) return;
         if (!cancelled) {
-          setMintData({
-            ticketPrice: fmtEtherNum(ticketWei),
-            blockPrice: fmtEtherNum(blockWei),
-            finalPrice: fmtEtherNum(finalWei),
-          });
+          setMintData((prev) => ({
+            ticketPrice: ticketPrice ?? prev?.ticketPrice ?? null,
+            blockPrice: blockPrice ?? prev?.blockPrice ?? null,
+            finalPrice: finalPrice ?? prev?.finalPrice ?? null,
+          }));
         }
       } catch (err) {
         console.error("NftCard mint data fetch failed", err);
@@ -490,7 +555,7 @@ export default function NftCard({
     return () => {
       cancelled = true;
     };
-  }, [contracts, tokenId]);
+  }, [contracts, metadataContract, tokenId]);
 
   /* === Current block price (on-chain now) === */
   const blockIdFromTraits = React.useMemo(() => {
@@ -651,7 +716,7 @@ export default function NftCard({
     const dyn = Array.isArray(dynamicTraits?.attributes)
       ? dynamicTraits.attributes
       : [];
-    return [
+    const merged = [
       ...base,
       ...dyn
         .map((e) => ({
@@ -660,7 +725,18 @@ export default function NftCard({
         }))
         .filter((e) => e.trait_type),
     ];
-  }, [metadata, dynamicTraits]);
+    if (merged.length) return merged;
+    if (nft?.isTicket) {
+      return [
+        { trait_type: "Type", value: "Mint Ticket" },
+        {
+          trait_type: "Status",
+          value: nft?.isPending ? "VRF pending" : "Redeem to mint NFT",
+        },
+      ];
+    }
+    return merged;
+  }, [metadata, dynamicTraits, nft?.isTicket, nft?.isPending]);
 
   const visibleAttributes = React.useMemo(
     () => (detailsOpen ? attributes : attributes.slice(0, 4)),
@@ -672,6 +748,22 @@ export default function NftCard({
   const rarityLabel =
     nft?.rarityRank != null ? `Rank #${nft.rarityRank}` : null;
   const imageSrc = image ? ipfsToHttp(image) : PLACEHOLDER_IMG;
+  const imageIsIpfs = React.useMemo(() => {
+    const rawPrimary = String(image || "");
+    const rawSecondary = String(nft?.image || "");
+    const raw = `${rawPrimary} ${rawSecondary}`.toLowerCase();
+    return (
+      raw.includes("ipfs://") ||
+      raw.includes("/ipfs/") ||
+      raw.includes("ipns://") ||
+      raw.includes("/ipns/") ||
+      raw.includes("pinata") ||
+      raw.includes("mypinata") ||
+      raw.includes("ipfs")
+    );
+  }, [image, nft?.image]);
+  const showImageFallback =
+    imageIsIpfs && (imageFailed || (!imageLoaded && isOffline));
 
   const handleToggleDetails = () => {
     setDetailsOpen((prev) => !prev);
@@ -682,8 +774,12 @@ export default function NftCard({
     if (typeof onZoom === "function") onZoom({ ...nft, image: imageSrc });
   };
 
+  const cardClassName = `nft-card${
+    detailsOpen ? " nft-card--open" : ""
+  }${highlight ? " nft-card--highlight" : ""}`;
+
   return (
-    <article className={`nft-card${detailsOpen ? " nft-card--open" : ""}`}>
+    <article className={cardClassName}>
       <div className="nft-card__figure">
         <button type="button" className="nft-card__zoom" onClick={handleZoom}>
           Zoom
@@ -698,16 +794,25 @@ export default function NftCard({
             className="nft-card__import"
           />
         )}
-        <img
-          src={imageSrc}
-          alt={title}
-          loading="lazy"
-          decoding="async"
-          onClick={handleZoom}
-          onError={() => {
-            if (image !== PLACEHOLDER_IMG) setImage(PLACEHOLDER_IMG);
-          }}
-        />
+        <div className="nft-card__image-wrap">
+          <img
+            src={imageSrc}
+            alt={title}
+            loading="lazy"
+            decoding="async"
+            onClick={handleZoom}
+            onLoad={() => setImageLoaded(true)}
+            onError={() => {
+              setImageFailed(true);
+              if (image !== PLACEHOLDER_IMG) setImage(PLACEHOLDER_IMG);
+            }}
+          />
+          {showImageFallback && (
+            <div className="nft-card__image-fallback">
+              IPFS image offline
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="nft-card__body">
@@ -726,7 +831,7 @@ export default function NftCard({
               <strong>
                 {loadingMint
                   ? "..."
-                  : formatMatic(derivedMintData?.ticketPrice ?? 0)}
+                  : formatMatic(derivedMintData?.ticketPrice)}
               </strong>
             </div>
             <div title="Current block price">
@@ -734,7 +839,7 @@ export default function NftCard({
               <strong>
                 {loadingBlockNow
                   ? "..."
-                  : formatMatic(derivedMintData?.blockPriceNow ?? 0)}
+                  : formatMatic(derivedMintData?.blockPriceNow)}
               </strong>
             </div>
             <div>
@@ -742,7 +847,7 @@ export default function NftCard({
               <strong>
                 {loadingMint
                   ? "..."
-                  : formatMatic(derivedMintData?.finalPrice ?? 0)}
+                  : formatMatic(derivedMintData?.finalPrice)}
               </strong>
             </div>
           </div>

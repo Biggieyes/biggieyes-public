@@ -1,6 +1,8 @@
 import * as React from "react";
 import { formatEther } from "ethers";
 import { useContracts } from "./ContractsProvider";
+import { getProviderForContract } from "../shared/utils/contract";
+import { buildFeeOverrides } from "../shared/utils/txFees";
 
 const Ctx = React.createContext(null);
 
@@ -89,7 +91,9 @@ export function REWARDSProvider({ children }) {
   const claim = React.useCallback(
     async (tokenIdsBN) => {
       const lr = await liqRW();
-      const tx = await lr.claim(tokenIdsBN);
+      const provider = getProviderForContract(lr);
+      const feeOverrides = await buildFeeOverrides(provider);
+      const tx = await lr.claim(tokenIdsBN, { ...feeOverrides });
       await tx.wait();
     },
     [liqRW],

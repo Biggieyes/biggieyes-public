@@ -41,6 +41,7 @@ export function mapRawSnapshotToUI(raw) {
   const reserve = raw.reserve || {};
   const manager = raw.manager || {};
   const vault = raw.vault || {};
+  const keeper = raw.keeper || {};
 
   const reserveMatic = _formatAmount(reserve.maticBalance);
   const reserveBiggi = _formatAmount(reserve.biggiBalance);
@@ -78,6 +79,13 @@ export function mapRawSnapshotToUI(raw) {
       factoryShort: _shortAddress(manager.factoryAddress),
       vault: manager.vaultAddress,
       vaultShort: _shortAddress(manager.vaultAddress),
+    },
+    keeper: {
+      address: keeper.address,
+      shortAddress: _shortAddress(keeper.address),
+      upkeepNeeded:
+        typeof keeper.upkeepNeeded === "boolean" ? keeper.upkeepNeeded : null,
+      performData: keeper.performData ?? null,
     },
     vault: {
       address: vault.address,
@@ -155,5 +163,4 @@ export function mapHistoryToChartPoints(history = []) {
       (entry) => typeof entry.value === "number" && isFinite(entry.value),
     );
 }
-
 

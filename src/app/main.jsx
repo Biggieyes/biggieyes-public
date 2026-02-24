@@ -2,6 +2,7 @@
 import "../polyfills/module.js";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
+import * as Sentry from "@sentry/react";
 import "../index.css";
 import App from "./App.jsx";
 import { Web3Provider } from "./providers/Web3Provider.jsx";
@@ -9,6 +10,23 @@ import { ContractsProvider } from "./providers/ContractsProvider.jsx";
 import { REWARDSProvider } from "./providers/REWARDSProvider.jsx";
 import { VRFProvider } from "./providers/VrfProvider.jsx";
 import { ensurePreferredRpc } from "../shared/utils/rpcConfig.js";
+import LoadingOverlay from "@/components/LoadingOverlay.jsx";
+import { createPreloadManager } from "../shared/utils/preloadManager.js";
+
+const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN || "";
+if (SENTRY_DSN) {
+  const tracesSampleRate = Number(
+    import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE || 0,
+  );
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    environment: import.meta.env.MODE,
+    tracesSampleRate: Number.isFinite(tracesSampleRate)
+      ? tracesSampleRate
+      : 0,
+    enabled: true,
+  });
+}
 
 // Spusť fix jen v prohlížeči a po mountu
 if (typeof window !== "undefined") {
@@ -33,38 +51,7 @@ if (typeof window !== "undefined") {
   })();
 }
 
-/* -------------------------
-   Inline LoadingOverlay
-   ------------------------- */
-function LoadingOverlay({ percent = 0, message = "Loading..." }) {
-  React.useEffect(() => {
-    if (typeof document === "undefined") return undefined;
-    document.body.classList.add("loading-locked");
-    return () => {
-      document.body.classList.remove("loading-locked");
-    };
-  }, []);
-  return (
-    <div className="loading-overlay" role="status" aria-live="polite">
-      <div className="loading-overlay__bg" aria-hidden />
-      <div className="loading-card">
-        <h1>BiggiEyes</h1>
-        <div className="progress-wrap" aria-hidden>
-          <div
-            className="progress-bar"
-            style={{
-              width: `${Math.max(0, Math.min(100, Math.floor(percent)))}%`,
-            }}
-          />
-        </div>
-        <div className="percent" aria-hidden>
-          {Math.floor(percent)}%
-        </div>
-        <div className="msg">{message}</div>
-      </div>
-    </div>
-  );
-}
+// LoadingOverlay now lives in src/components/LoadingOverlay.jsx
 
 /* -------------------------
    Bootstrap component
@@ -74,28 +61,30 @@ function LoadingOverlay({ percent = 0, message = "Loading..." }) {
 */
 function Bootstrap({ children }) {
   const [ready, setReady] = React.useState(false);
-  const [percent, setPercent] = React.useState(1); // start at 1%
-  const [target, setTarget] = React.useState(1);
+  const [percent, setPercent] = React.useState(1);
   const [message, setMessage] = React.useState("Initializing...");
 
-  // step percent toward target by 1% increments
+  const managerRef = React.useRef(null);
+  if (!managerRef.current) {
+    managerRef.current = createPreloadManager({ smoothing: true });
+  }
+  const manager = managerRef.current;
+
   React.useEffect(() => {
-    const intervalId = setInterval(() => {
-      setPercent((cur) => {
-        if (cur >= target) return cur;
-        return Math.min(cur + 1, target);
-      });
-    }, 20);
-    return () => clearInterval(intervalId);
-  }, [target]);
+    const unsubscribe = manager.onUpdate(({ percent: p, message: msg }) => {
+      if (Number.isFinite(p)) setPercent(p);
+      if (msg) setMessage(msg);
+    });
+    return () => {
+      unsubscribe();
+      manager.stop();
+    };
+  }, [manager]);
 
-  // helper pro nastavení cíle (target)
-  const setTargetClamped = (v) => {
-    const vv = Math.max(1, Math.min(100, Math.round(Number(v || 0))));
-    setTarget((prev) => Math.max(prev, vv));
-  };
+  React.useEffect(() => {
+    if (ready) manager.stop();
+  }, [ready, manager]);
 
-  // hlavní orchestrator
   React.useEffect(() => {
     let cancelled = false;
     const MIN_DURATION = 2000; // minimal visual duration in ms (change if you want longer)
@@ -103,47 +92,56 @@ function Bootstrap({ children }) {
       try {
         const startTime = Date.now();
 
-        setMessage("Connecting resources...");
-        setTargetClamped(10);
+        const doneWindowLoad = manager.addTask(1);
+        const doneFonts = manager.addTask(1);
+        const doneDelay = manager.addTask(1);
+        const doneSnapshot = manager.addTask(1);
+        const doneFinalize = manager.addTask(1);
 
-        // wait for window load but with safety timeout
+        manager.setMessage("Connecting resources...");
+
         const waitForWindowLoad = new Promise((res) => {
-          if (document.readyState === "complete") return res();
-          const onLoad = () => {
-            window.removeEventListener("load", onLoad);
+          if (document.readyState === "complete") {
+            doneWindowLoad(1);
+            return res();
+          }
+          let resolved = false;
+          const finish = () => {
+            if (resolved) return;
+            resolved = true;
+            doneWindowLoad(1);
             res();
           };
+          const onLoad = () => {
+            window.removeEventListener("load", onLoad);
+            finish();
+          };
           window.addEventListener("load", onLoad);
-          setTimeout(res, 3000); // safety fallback
+          setTimeout(finish, 3000);
         });
 
-        setMessage("Loading fonts and UI...");
-        setTargetClamped(30);
+        manager.setMessage("Loading fonts and UI...");
 
-        // fonts
-        const fontsReady =
+        const fontsReady = (
           document.fonts && document.fonts.ready
             ? document.fonts.ready
-            : Promise.resolve();
+            : Promise.resolve()
+        ).then(() => doneFonts(1));
 
-        // small background buffer
-        const smallDelay = new Promise((res) => setTimeout(res, 500));
+        const smallDelay = new Promise((res) => setTimeout(res, 500)).then(() =>
+          doneDelay(1),
+        );
 
-        // wait for readiness signals
         await Promise.all([waitForWindowLoad, fontsReady, smallDelay]);
         if (cancelled) return;
 
-        setMessage("Loading the on-chain snapshot...");
-        setTargetClamped(60);
-
-        // allow some time for on-chain reads if any (non-blocking)
+        manager.setMessage("Loading the on-chain snapshot...");
         await new Promise((res) => setTimeout(res, 700));
+        doneSnapshot(1);
         if (cancelled) return;
 
-        setMessage("Finalizing...");
-        setTargetClamped(92);
+        manager.setMessage("Finalizing...");
 
-        // ensure minimum visual duration
         const elapsed = Date.now() - startTime;
         const remaining = Math.max(0, MIN_DURATION - elapsed);
         if (remaining > 0) {
@@ -151,17 +149,14 @@ function Bootstrap({ children }) {
         }
         if (cancelled) return;
 
-        // final approach to 100
-        setTargetClamped(100);
+        doneFinalize(1);
 
-        // wait briefly for smooth visual settling (max 800ms)
         await new Promise((res) => setTimeout(res, 420));
         if (cancelled) return;
 
-        if (cancelled) return;
-        setMessage("Done - loading the app");
+        manager.setMessage("Done - loading the app");
+        setPercent(100);
 
-        // tiny delay before mount to avoid flicker
         await new Promise((res) => setTimeout(res, 180));
         if (cancelled) return;
 
@@ -175,12 +170,14 @@ function Bootstrap({ children }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [manager]);
 
   return (
     <>
       {children}
-      {!ready && <LoadingOverlay percent={percent} message={message} />}
+      {!ready && (
+        <LoadingOverlay open={!ready} percent={percent} message={message} />
+      )}
     </>
   );
 }
@@ -192,21 +189,55 @@ const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("#root element not found");
 
 const root = createRoot(rootEl);
+const appTree = (
+  <Bootstrap>
+    <Web3Provider>
+      <ContractsProvider>
+        <VRFProvider>
+          <REWARDSProvider>
+            <App />
+          </REWARDSProvider>
+        </VRFProvider>
+      </ContractsProvider>
+    </Web3Provider>
+  </Bootstrap>
+);
+
+const appWithBoundary = SENTRY_DSN ? (
+  <Sentry.ErrorBoundary
+    fallback={
+      <div
+        style={{
+          margin: "12vh auto",
+          maxWidth: 520,
+          padding: 24,
+          borderRadius: 16,
+          background: "rgba(10,10,18,0.9)",
+          color: "#f6f7fb",
+          border: "1px solid rgba(255, 232, 0, 0.35)",
+          textAlign: "center",
+          fontFamily: "inherit",
+        }}
+      >
+        <h2 style={{ margin: "0 0 10px" }}>Something went wrong</h2>
+        <p style={{ margin: 0, opacity: 0.8 }}>
+          Please refresh the page. If the issue persists, contact support.
+        </p>
+      </div>
+    }
+  >
+    {appTree}
+  </Sentry.ErrorBoundary>
+) : (
+  appTree
+);
+
 root.render(
   <React.StrictMode>
-    <Bootstrap>
-      <Web3Provider>
-        <ContractsProvider>
-          <VRFProvider>
-            <REWARDSProvider>
-              <App />
-            </REWARDSProvider>
-          </VRFProvider>
-        </ContractsProvider>
-      </Web3Provider>
-    </Bootstrap>
+    {appWithBoundary}
   </React.StrictMode>,
 );
+
 
 
 

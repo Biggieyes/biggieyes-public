@@ -9,7 +9,7 @@ function _formatNumber(value) {
 const GRID_ROWS = 4;
 const GRID_COLS = 5;
 
-const LineChart = ({ points = [], width = 320, height = 150 }) => {
+const LineChart = ({ points = [], width = 320, height = 150, maxPoints = 48 }) => {
   const sanitized = points
     .map((point) => ({
       value:
@@ -24,9 +24,29 @@ const LineChart = ({ points = [], width = 320, height = 150 }) => {
     return <div className="line-chart__empty">No liquidity history yet.</div>;
   }
 
-  const values = sanitized.map((entry) => entry.value);
-  const max = Math.max(...values);
-  const min = Math.min(...values);
+  const limit = Number(maxPoints) || 0;
+  const reduced =
+    limit > 0 && sanitized.length > limit
+      ? (() => {
+          const step = Math.ceil(sanitized.length / limit);
+          const sampled = [];
+          for (let i = 0; i < sanitized.length; i += step) {
+            sampled.push(sanitized[i]);
+          }
+          const last = sanitized[sanitized.length - 1];
+          if (sampled[sampled.length - 1] !== last) sampled.push(last);
+          return sampled;
+        })()
+      : sanitized;
+
+  const values = reduced.map((entry) => entry.value);
+  let max = Math.max(...values);
+  let min = Math.min(...values);
+  if (max === min) {
+    const delta = Math.abs(max) * 0.05 || 1;
+    max += delta;
+    min -= delta;
+  }
   const range = max - min || 1;
   const padding = { top: 12, right: 12, bottom: 20, left: 20 };
   const plotWidth = Math.max(1, width - padding.left - padding.right);
@@ -36,19 +56,22 @@ const LineChart = ({ points = [], width = 320, height = 150 }) => {
   );
   const clipId = clipIdRef.current;
 
-  const coords = sanitized.map((entry, index) => {
+  const plotPoints =
+    reduced.length === 1 ? [reduced[0], reduced[0]] : reduced;
+
+  const coords = plotPoints.map((entry, index) => {
     const x =
       padding.left +
-      (sanitized.length === 1
+      (plotPoints.length === 1
         ? plotWidth / 2
-        : (plotWidth / (sanitized.length - 1)) * index);
+        : (plotWidth / (plotPoints.length - 1)) * index);
     const y =
       padding.top + plotHeight - ((entry.value - min) / range) * plotHeight;
     return { x, y };
   });
   const svgPoints = coords.map((pt) => `${pt.x},${pt.y}`).join(" ");
 
-  const latest = sanitized[sanitized.length - 1];
+  const latest = reduced[reduced.length - 1];
   const lastPoint = coords[coords.length - 1];
 
   return (
@@ -135,5 +158,5 @@ const LineChart = ({ points = [], width = 320, height = 150 }) => {
   );
 };
 
-export default LineChart;
+export default React.memo(LineChart);
 

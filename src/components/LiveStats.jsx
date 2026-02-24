@@ -15,6 +15,7 @@ import {
   getPairRO,
   getReadOnlyLiquidityContract,
   getTokenRO,
+  getInjectedProvider,
   ADDR,
 } from "@/shared/utils/contract";
 import { fetchDistributorSnapshot } from "@/shared/services/tokenomics/distributor.reader";
@@ -86,6 +87,26 @@ const _bn = (v) => {
 };
 const _mul = (a, b) => _bn(a) * _bn(b);
 
+const looksLikeTicketMeta = (meta) => {
+  if (!meta) return false;
+  const name = String(meta?.name || "").toLowerCase();
+  const desc = String(meta?.description || "").toLowerCase();
+  return (
+    name.includes("ticket") ||
+    desc.includes("ticket") ||
+    desc.includes("redeem")
+  );
+};
+
+const looksLikeNftMeta = (meta) => {
+  if (!meta) return false;
+  const attrs = Array.isArray(meta?.attributes) ? meta.attributes : [];
+  return attrs.some((a) => {
+    const t = String(a?.trait_type || "").toLowerCase();
+    return t.includes("background") || t.includes("block") || t.includes("eye");
+  });
+};
+
 function LiveStats({
   lastImage,
   lastNftId,
@@ -117,6 +138,50 @@ function LiveStats({
   // lpPrice,
   // setLpPrice,
 }) {
+  const [lastImageSrc, setLastImageSrc] = React.useState(
+    lastImage || "/images/Biggi.png",
+  );
+  const [lastImageLoaded, setLastImageLoaded] = React.useState(false);
+  const [lastImageFailed, setLastImageFailed] = React.useState(false);
+  const [isOffline, setIsOffline] = React.useState(
+    typeof navigator !== "undefined" ? !navigator.onLine : false,
+  );
+
+  React.useEffect(() => {
+    setLastImageSrc(lastImage || "/images/Biggi.png");
+    setLastImageLoaded(false);
+    setLastImageFailed(false);
+  }, [lastImage]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleStatus = () => setIsOffline(!navigator.onLine);
+    window.addEventListener("online", handleStatus);
+    window.addEventListener("offline", handleStatus);
+    handleStatus();
+    return () => {
+      window.removeEventListener("online", handleStatus);
+      window.removeEventListener("offline", handleStatus);
+    };
+  }, []);
+
+  const lastImageIsIpfs = React.useMemo(() => {
+    const raw = String(lastImage || "").toLowerCase();
+    return (
+      raw.includes("ipfs://") ||
+      raw.includes("/ipfs/") ||
+      raw.includes("ipns://") ||
+      raw.includes("/ipns/") ||
+      raw.includes("pinata") ||
+      raw.includes("mypinata") ||
+      raw.includes("ipfs")
+    );
+  }, [lastImage]);
+
+  const showLastImageFallback =
+    lastImageIsIpfs &&
+    (lastImageFailed || (!lastImageLoaded && isOffline));
+
   // LP price state
   const [lpPrice, setLpPrice] = React.useState(null);
   // Fetch LP price from on-chain feed
@@ -243,10 +308,32 @@ function LiveStats({
   const effectiveBackgroundMintCounts = bgsMinted ?? backgroundMintCounts ?? [];
   const safeBlockNames = Array.isArray(blockNames) ? blockNames : [];
 
-  const onlyTickets = React.useMemo(() => {
+  const normalizedItems = React.useMemo(() => {
     const arr = Array.isArray(items) ? items : [];
-    return arr.length > 0 && arr.every((it) => it?.isTicket);
+    if (!arr.length) return arr;
+    return arr.map((it) => {
+      if (!it) return it;
+      const meta = it?.meta;
+      const metaLooksTicket = looksLikeTicketMeta(meta);
+      const metaLooksNft = looksLikeNftMeta(meta);
+      let isTicket = it?.isTicket;
+      if (metaLooksNft) {
+        isTicket = false;
+      } else if ((isTicket == null) && metaLooksTicket && !metaLooksNft) {
+        isTicket = true;
+      } else if (isTicket != null) {
+        isTicket = Boolean(isTicket);
+      }
+      if (isTicket === it?.isTicket || it?.isTicket == null && isTicket == null)
+        return it;
+      return { ...it, isTicket };
+    });
   }, [items]);
+
+  const onlyTickets = React.useMemo(() => {
+    const arr = Array.isArray(normalizedItems) ? normalizedItems : [];
+    return arr.length > 0 && arr.every((it) => it?.isTicket);
+  }, [normalizedItems]);
 
   const resetAll = React.useCallback(() => {
     setShowBlocks(false);
@@ -676,6 +763,118 @@ function LiveStats({
         .getBalance(ADDR.DISTRIBUTOR)
         .catch(() => 0n);
 
+      // ===== token + LP balances =====
+      let tokenMeta = {
+        addr: ADDR.BIGGI || ADDR.BIGGI_TOKEN || null,
+        symbol: tokenSymbol || "BIGGI",
+        decimals: Number.isFinite(Number(tokenDecimals))
+          ? Number(tokenDecimals)
+          : 18,
+      };
+      let tokenBalances = [];
+      let lpStats = null;
+
+      const erc20Abi = [
+        "function balanceOf(address) view returns (uint256)",
+        "function decimals() view returns (uint8)",
+        "function symbol() view returns (string)",
+        "function totalSupply() view returns (uint256)",
+      ];
+
+      try {
+        if (tokenMeta.addr) {
+          const token = new Contract(tokenMeta.addr, erc20Abi, prov);
+          const [dec, sym] = await Promise.all([
+            token.decimals().catch(() => null),
+            token.symbol().catch(() => null),
+          ]);
+          if (Number.isFinite(Number(dec))) tokenMeta.decimals = Number(dec);
+          if (typeof sym === "string" && sym) tokenMeta.symbol = sym;
+
+          const tokenTargets = [
+            { key: "reserve", name: "Reserve", addr: ADDR.RESERVE },
+            { key: "treasury", name: "Treasury", addr: ADDR.TREASURY },
+            { key: "buyback", name: "Buyback Agent", addr: ADDR.BUYBACK_AGENT },
+            { key: "tokenRewards", name: "Token Rewards", addr: ADDR.TOKEN_REWARDS },
+            {
+              key: "collectionRewards",
+              name: "Collection Rewards",
+              addr: ADDR.COLLECTION_REWARDS,
+            },
+            { key: "nftRewards", name: "NFT Rewards", addr: ADDR.NFT_REWARDS },
+            {
+              key: "community",
+              name: "Community Center",
+              addr: ADDR.COMMUNITY_CENTER || ADDR.COMMUNITYCENTER,
+            },
+            {
+              key: "liquidityVault",
+              name: "Liquidity Vault",
+              addr: ADDR.LIQUIDITY_VAULT,
+            },
+            {
+              key: "liquidityManager",
+              name: "Liquidity Manager",
+              addr: ADDR.LM,
+            },
+            { key: "distributor", name: "Distributor", addr: ADDR.DISTRIBUTOR },
+          ];
+
+          const tokenBalanceArr = await Promise.all(
+            tokenTargets.map((t) =>
+              t.addr ? token.balanceOf(t.addr).catch(() => null) : null,
+            ),
+          );
+
+          tokenBalances = tokenTargets.map((t, i) => ({
+            ...t,
+            balance: tokenBalanceArr[i],
+          }));
+        }
+      } catch (err) {
+        console.warn("refreshPools: token balances failed", err);
+      }
+
+      try {
+        const lpAddr = ADDR.PAIR || null;
+        if (lpAddr) {
+          const lp = new Contract(lpAddr, erc20Abi, prov);
+          const [dec, sym, totalSupply] = await Promise.all([
+            lp.decimals().catch(() => null),
+            lp.symbol().catch(() => null),
+            lp.totalSupply().catch(() => null),
+          ]);
+          const lpDecimals = Number.isFinite(Number(dec)) ? Number(dec) : 18;
+          const lpSymbol = typeof sym === "string" && sym ? sym : "LP";
+          const lpHolders = [
+            {
+              key: "liquidityVault",
+              name: "Liquidity Vault",
+              addr: ADDR.LIQUIDITY_VAULT,
+            },
+            { key: "treasury", name: "Treasury", addr: ADDR.TREASURY },
+            { key: "reserve", name: "Reserve", addr: ADDR.RESERVE },
+          ];
+          const lpBalanceArr = await Promise.all(
+            lpHolders.map((t) =>
+              t.addr ? lp.balanceOf(t.addr).catch(() => null) : null,
+            ),
+          );
+          lpStats = {
+            addr: lpAddr,
+            symbol: lpSymbol,
+            decimals: lpDecimals,
+            totalSupply,
+            balances: lpHolders.map((t, i) => ({
+              ...t,
+              balance: lpBalanceArr[i],
+            })),
+          };
+        }
+      } catch (err) {
+        console.warn("refreshPools: LP stats failed", err);
+      }
+
       setPools({
         distributor: ADDR.DISTRIBUTOR,
         distributorBal: distBal,
@@ -684,12 +883,15 @@ function LiveStats({
         targets,
         allocations,
         balances,
+        tokenMeta,
+        tokenBalances,
+        lpStats,
       });
     } catch (e) {
       console.error("refreshPools error", e);
       setPools(null);
     }
-  }, []);
+  }, [tokenDecimals, tokenSymbol]);
 
   // BIGGI ECOSYSTEM METRICS (unchanged intent, contract reads robustified)
   const [biggiPrice, setBiggiPrice] = React.useState(null);
@@ -699,7 +901,7 @@ function LiveStats({
   const [circulatingSupply, setCirculatingSupply] = React.useState(null);
   const biggiMcap = React.useMemo(() => {
     const supplyForMarketCap =
-      typeof circulatingSupply === "number" ? circulatingSupply : biggiSupply;
+      typeof circulatingSupply === "number" ? circulatingSupply : null;
     if (
       typeof biggiPrice === "number" &&
       typeof supplyForMarketCap === "number"
@@ -707,7 +909,7 @@ function LiveStats({
       return biggiPrice * supplyForMarketCap;
     }
     return null;
-  }, [biggiPrice, biggiSupply, circulatingSupply]);
+  }, [biggiPrice, circulatingSupply]);
 
   React.useEffect(() => {
     let alive = true;
@@ -1096,7 +1298,8 @@ function LiveStats({
 
   const collectTokenIds = () => {
     const out = [];
-    for (const it of Array.isArray(items) ? items : []) {
+    for (const it of Array.isArray(normalizedItems) ? normalizedItems : []) {
+      if (it?.isTicket || it?.isPending) continue;
       const raw = it?.tokenId ?? it?.id;
       if (raw == null) continue;
       const s = String(raw);
@@ -1106,7 +1309,10 @@ function LiveStats({
     return out;
   };
 
-  const canClaim = React.useMemo(() => collectTokenIds().length > 0, [items]);
+  const canClaim = React.useMemo(
+    () => collectTokenIds().length > 0,
+    [normalizedItems],
+  );
 
   const handleClaim = async () => {
     if (claimBusy) return;
@@ -1114,7 +1320,7 @@ function LiveStats({
       alert("No token IDs to claim for.");
       return;
     }
-    const eth = typeof window !== "undefined" ? window.ethereum : null;
+    const eth = getInjectedProvider();
     if (!eth?.request) {
       alert("Injected wallet not detected.");
       return;
@@ -1359,54 +1565,27 @@ function LiveStats({
     </div>
   );
 
-  // computed final price: prefer on-chain lastFinalFromChain, then prop lastFinalPrice, then fallback to block price
-  const computedFinalPrice = React.useMemo(() => {
-    if (typeof lastFinalFromChain === "number" && lastFinalFromChain > 0) {
-      return Math.round(lastFinalFromChain);
-    }
-
-    const normalize = (val) => {
-      if (val == null) return null;
-      let n;
-      if (typeof val === "object") {
-        if (typeof val.toString === "function") {
-          const s = val.toString();
-          n = Number(s);
-        }
-      } else if (
-        typeof val === "string" ||
-        typeof val === "number" ||
-        typeof val === "bigint"
-      ) {
-        n = Number(val);
-      }
-      if (!Number.isFinite(n)) return null;
-      if (n > 1e12) n = n / 1e18;
-      return n;
-    };
-
-    const fromProp = normalize(lastFinalPrice);
-    if (typeof fromProp === "number" && fromProp > 0) {
-      return Math.round(fromProp);
-    }
-
+  // current block price for the last minted block (fallback to base if missing)
+  const currentBlockPrice = React.useMemo(() => {
     const idx =
       Array.isArray(safeBlockNames) && lastBlockName
         ? safeBlockNames.indexOf(String(lastBlockName).toUpperCase())
         : -1;
+    const live =
+      idx >= 0 ? Number(effectiveBlockPrices?.[idx]) : Number.NaN;
+    if (Number.isFinite(live)) return live;
+    const key =
+      idx >= 0
+        ? String(safeBlockNames[idx] || lastBlockName || "").toUpperCase()
+        : String(lastBlockName || "").toUpperCase();
     const base =
-      idx >= 0 && Number.isFinite(Number(effectiveBlockPrices?.[idx]))
-        ? Math.round(Number(effectiveBlockPrices[idx]))
-        : null;
-
-    return base;
-  }, [
-    lastFinalFromChain,
-    lastFinalPrice,
-    safeBlockNames,
-    lastBlockName,
-    effectiveBlockPrices,
-  ]);
+      typeof BASE_PRICES?.[key] === "number"
+        ? BASE_PRICES[key]
+        : idx >= 0
+          ? idx + 1
+          : null;
+    return Number.isFinite(Number(base)) ? Number(base) : null;
+  }, [safeBlockNames, lastBlockName, effectiveBlockPrices]);
 
   const formatMaybe = React.useCallback((value, digits = 2) => {
     if (value == null || !Number.isFinite(Number(value))) return "--";
@@ -1467,9 +1646,9 @@ function LiveStats({
   );
 
   const ownedNftCount = React.useMemo(() => {
-    const arr = Array.isArray(items) ? items : [];
+    const arr = Array.isArray(normalizedItems) ? normalizedItems : [];
     return arr.filter((it) => it && !it.isTicket && !it.isPending).length;
-  }, [items]);
+  }, [normalizedItems]);
 
   const collectionBlockRows = React.useMemo(() => {
     return collectionBlockNames.map((name, idx) => {
@@ -1514,7 +1693,7 @@ function LiveStats({
 
   const userBlockCounts = React.useMemo(() => {
     const counts = new Array(10).fill(0);
-    const arr = Array.isArray(items) ? items : [];
+    const arr = Array.isArray(normalizedItems) ? normalizedItems : [];
     for (const it of arr) {
       if (!it || it.isTicket) continue;
       const attrs = Array.isArray(it.meta?.attributes)
@@ -1543,7 +1722,7 @@ function LiveStats({
       if (idx >= 0 && idx < 10) counts[idx] += 1;
     }
     return counts;
-  }, [items, safeBlockNames]);
+  }, [normalizedItems, safeBlockNames]);
 
   const userUnitsByBlock = React.useMemo(
     () => userBlockCounts.map((c, i) => c * WEIGHTS[i]),
@@ -1576,6 +1755,39 @@ function LiveStats({
     }
   };
 
+  const fmtToken = (bn, dec = 18, digits = 4) => {
+    try {
+      const n = Number(_formatUnits(bn ?? 0n, dec));
+      if (!Number.isFinite(n)) return "-";
+      const fixed = n >= 1 ? digits : Math.min(digits + 2, 6);
+      return n.toFixed(fixed);
+    } catch {
+      return "-";
+    }
+  };
+
+  const shortAddr = (addr) => {
+    if (!addr) return "-";
+    const s = String(addr);
+    return `${s.slice(0, 6)}...${s.slice(-4)}`;
+  };
+
+  const resolvedTokenMeta = React.useMemo(() => {
+    const fallbackAddr =
+      (ADDR && (ADDR.BIGGI || ADDR.BIGGI_TOKEN || ADDR.TOKEN)) || null;
+    const source = pools?.tokenMeta || {};
+    const decimals = Number.isFinite(Number(source.decimals))
+      ? Number(source.decimals)
+      : Number.isFinite(Number(tokenDecimals))
+        ? Number(tokenDecimals)
+        : 18;
+    return {
+      addr: source.addr || fallbackAddr,
+      symbol: source.symbol || tokenSymbol || "TOKEN",
+      decimals,
+    };
+  }, [pools, tokenDecimals, tokenSymbol]);
+
   const mainStats = (
     <div className="live-stats-main-flex" style={statsMainFlex}>
       {onlyTickets && (
@@ -1606,7 +1818,7 @@ function LiveStats({
               width: "70%",
             }}
           />
-          Bottom buttons: Token and tokenomics (weekly rewards, allocation, tools).
+          Bottom buttons: Weekly rewards, tokenomics, live chat.
         </div>
       )}
       <div style={columnCenter}>
@@ -1630,10 +1842,11 @@ function LiveStats({
             boxShadow: "0 6px 20px rgba(0,0,0,0.6), 0 0 12px #ffe800",
             border: "1px solid rgba(255, 232, 0,0.5)",
             padding: isPhone ? "8px" : "10px",
+            position: "relative",
           }}
         >
           <img
-            src={lastImage}
+            src={lastImageSrc}
             alt="Last Minted NFT"
             style={{
               maxWidth: "100%",
@@ -1642,6 +1855,11 @@ function LiveStats({
               boxShadow: "0 4px 14px rgba(0,0,0,0.6)",
               transition: "all 0.3s ease",
               cursor: "pointer",
+            }}
+            onLoad={() => setLastImageLoaded(true)}
+            onError={() => {
+              setLastImageFailed(true);
+              setLastImageSrc("/images/Biggi.png");
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = "scale(1.05)";
@@ -1653,6 +1871,28 @@ function LiveStats({
               e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,0,0,0.6)";
             }}
           />
+          {showLastImageFallback && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                textAlign: "center",
+                padding: 10,
+                background: "rgba(6, 10, 20, 0.72)",
+                color: "#9adfff",
+                fontWeight: 700,
+                fontSize: 12,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                pointerEvents: "none",
+              }}
+            >
+              IPFS image offline
+            </div>
+          )}
         </div>
 
         <div
@@ -1716,7 +1956,9 @@ function LiveStats({
                 whiteSpace: "nowrap",
               }}
             >
-              {computedFinalPrice !== null ? `${computedFinalPrice} POL` : "-"}
+              {currentBlockPrice != null
+                ? `${formatMaybe(currentBlockPrice, 2)} POL`
+                : "-"}
             </span>
           </div>
         </div>
@@ -1813,13 +2055,13 @@ function LiveStats({
 
         <div style={ticketPriceTable}>
           <div className="widget-title" style={titleStyle}>
-            SUPPLY
+            TRADABLE SUPPLY
           </div>
           <div
             style={{ fontSize: boxFontSize, color: "#ffe800", fontWeight: 900 }}
           >
-            {typeof biggiSupply === "number"
-              ? biggiSupply.toLocaleString(undefined, {
+            {typeof circulatingSupply === "number"
+              ? circulatingSupply.toLocaleString(undefined, {
                   maximumFractionDigits: 2,
                 })
               : "-"}{" "}
@@ -1913,7 +2155,7 @@ function LiveStats({
                   "0 0 14px rgba(255,232,0,0.25)";
               }}
             >
-              ALLOCATION
+              TOKENOMICS
             </button>
 
             <button
@@ -1973,15 +2215,15 @@ function LiveStats({
               </div>
             </ModalPortal>
           )}
-          {/* ALLOCATION MODAL */}
+          {/* TOKENOMICS MODAL */}
           {poolsOpen && (
-            <ModalPortal lockScroll={false}>
+            <ModalPortal lockScroll={true}>
               <div style={modalOverlayStyle}>
                 <div style={fullscreenModalFrameStyle}>
-                  <div style={fullscreenModalCardStyle}>
+                  <div style={{ ...fullscreenModalCardStyle, padding: 0 }}>
                     <div style={modalHeaderStyle}>
                       <div style={{ color: "#ffe800", fontWeight: 900 }}>
-                        ALLOCATION
+                        TOKENOMICS
                       </div>
                       <button
                         onClick={() => setPoolsOpen(false)}
@@ -2002,336 +2244,301 @@ function LiveStats({
                     </div>
 
                     <div
-                      className="pools-card"
-                      style={{ marginTop: isPhone ? 8 : 12 }}
-                    >
-                      <div className="pools-card__header">
-                        <div style={{ color: "#cfefff", fontSize: 12 }}>
-                          Distributor:&nbsp;
-                          <a
-                            href={`${OKLINK_BASE}${pools?.distributor || ADDR.DISTRIBUTOR}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{
-                              color: "#ffe800",
-                              textDecoration: "underline",
-                            }}
-                          >
-                            {pools?.distributor || ADDR.DISTRIBUTOR}
-                          </a>
-                          {pools && (
-                            <>
-                              {" "}
-                              &nbsp;|&nbsp; Balance:{" "}
-                              <span
-                                style={{ color: "#5ddcff", fontWeight: 800 }}
-                              >
-                                {fmtPOL(pools.distributorBal)} POL
-                              </span>
-                            </>
-                          )}
-                        </div>
-                        <div
-                          style={{
-                            marginTop: 6,
-                            color: "#cfefff",
-                            fontSize: 12,
-                          }}
-                        >
-                          {pools ? (
-                            <>
-                              Total received:{" "}
-                              <span
-                                style={{ color: "#5ddcff", fontWeight: 800 }}
-                              >
-                                {fmtPOL(pools.totalReceived)} POL
-                              </span>
-                              &nbsp;|&nbsp; For MAIN:{" "}
-                              <span
-                                style={{ color: "#5ddcff", fontWeight: 800 }}
-                              >
-                                {fmtPOL(pools.receivedForMain)} POL
-                              </span>
-                            </>
-                          ) : (
-                            "Loading..."
-                          )}
-                        </div>
-                        <div
-                          style={{
-                            marginTop: 6,
-                            color: "#9fb4c9",
-                            fontSize: 11,
-                          }}
-                        >
-                          Mint native split (5): Reserve, Buyback, Treasury,
-                          Community, Collection Rewards.
-                        </div>
-                      </div>
-                      <div className="pools-card__body">
-                        <table className="pools-table" style={poolsTableStyle}>
-                          <colgroup>
-                            <col style={{ width: "26%" }} />
-                            <col style={{ width: "54%" }} />
-                            <col style={{ width: "20%" }} />
-                          </colgroup>
-                          <thead>
-                            <tr>
-                              <th
-                                style={{ ...thBase, borderTopLeftRadius: 12 }}
-                              >
-                                Pool
-                              </th>
-                              <th style={thBase}>Address</th>
-                              <th
-                                style={{ ...thBase, borderTopRightRadius: 12 }}
-                              >
-                                Allocation
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(pools?.targets || []).map((t, i) => {
-                              const rowBg =
-                                i % 2 === 0
-                                  ? "linear-gradient(120deg, rgba(255,232,0,0.08), rgba(8,223,255,0.08))"
-                                  : "linear-gradient(120deg, rgba(255,232,0,0.03), rgba(8,223,255,0.04))";
-                              const bal =
-                                t.key && pools?.balances?.[t.key] != null
-                                  ? fmtPOL(pools.balances[t.key])
-                                  : "-";
-                              const allocation =
-                                t.key && pools?.allocations?.[t.key] != null
-                                  ? fmtPOL(pools.allocations[t.key])
-                                  : null;
-                              const displayAllocation =
-                                allocation != null && allocation !== "-"
-                                  ? allocation
-                                  : bal;
-
-                              const prettyName =
-                                t.key === "REWARDS"
-                                  ? "COLLECTION REWARDS"
-                                  : t.key === "BUYBACK"
-                                    ? "BUYBACK AGENT"
-                                    : t.name;
-                              const keyLabel = (t.key || "")
-                                .replace(/_/g, " ")
-                                .toUpperCase();
-
-                              return (
-                                <tr key={t.key} style={{ background: rowBg }}>
-                                  <td
-                                    style={{
-                                      ...tdBase,
-                                      color: "#ffe800",
-                                      fontWeight: 900,
-                                      whiteSpace: "nowrap",
-                                      textAlign: "left",
-                                    }}
-                                  >
-                                    <div
-                                      style={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        gap: 6,
-                                      }}
-                                    >
-                                      <span>{prettyName}</span>
-                                      <span
-                                        style={{
-                                          display: "inline-flex",
-                                          alignItems: "center",
-                                          gap: 6,
-                                          fontSize: 11,
-                                          letterSpacing: 0.2,
-                                          textTransform: "uppercase",
-                                          color: "#0de6ff",
-                                          padding: "2px 8px",
-                                          borderRadius: 999,
-                                          border:
-                                            "1px solid rgba(13,230,255,0.35)",
-                                          background: "rgba(13,230,255,0.09)",
-                                          width: "fit-content",
-                                        }}
-                                      >
-                                        {keyLabel || "POOL"}
-                                      </span>
-                                    </div>
-                                  </td>
-                                  <td style={{ ...tdBase, textAlign: "left" }}>
-                                    <div
-                                      style={{
-                                        border:
-                                          "1px solid rgba(255,255,255,0.12)",
-                                        borderRadius: 16,
-                                        padding: isPhone ? "10px" : "14px",
-                                        background:
-                                          "linear-gradient(135deg, rgba(255,255,255,0.04), rgba(8,223,255,0.08))",
-                                        boxShadow:
-                                          "0 12px 28px rgba(0,0,0,0.35)",
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        gap: 10,
-                                      }}
-                                    >
-                                      <div
-                                        style={{
-                                          display: "flex",
-                                          flexDirection: isPhone
-                                            ? "column"
-                                            : "row",
-                                          gap: 8,
-                                          justifyContent: "space-between",
-                                          alignItems: isPhone
-                                            ? "flex-start"
-                                            : "center",
-                                        }}
-                                      >
-                                        <span
-                                          style={{
-                                            fontSize: 11,
-                                            color: "#9fb4c9",
-                                            letterSpacing: 0.3,
-                                          }}
-                                        >
-                                          Address
-                                        </span>
-                                        <code
-                                          style={{
-                                            fontFamily:
-                                              "'JetBrains Mono','SFMono-Regular',monospace",
-                                            fontSize: isPhone ? 11 : 12,
-                                            color: "#fff",
-                                            wordBreak: "break-word",
-                                            lineHeight: 1.3,
-                                          }}
-                                          title={t.addr}
-                                        >
-                                          {t.addr}
-                                        </code>
-                                      </div>
-                                      <div
-                                        style={{
-                                          display: "flex",
-                                          flexDirection: isPhone
-                                            ? "column"
-                                            : "row",
-                                          gap: 8,
-                                          justifyContent: "space-between",
-                                          alignItems: isPhone
-                                            ? "flex-start"
-                                            : "center",
-                                        }}
-                                      >
-                                        <span
-                                          style={{
-                                            fontSize: 11,
-                                            color: "#9fb4c9",
-                                            letterSpacing: 0.3,
-                                          }}
-                                        >
-                                          Explorer
-                                        </span>
-                                        <a
-                                          href={`${OKLINK_BASE}${t.addr}`}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          style={{
-                                            color: "#5ddcff",
-                                            textDecoration: "none",
-                                            fontSize: isPhone ? 11 : 12,
-                                            fontWeight: 800,
-                                            display: "inline-flex",
-                                            alignItems: "center",
-                                            gap: 6,
-                                          }}
-                                        >
-                                          View on OKLink
-                                          <span
-                                            aria-hidden="true"
-                                            style={{
-                                              fontSize: 14,
-                                              color: "#ffe800",
-                                            }}
-                                          >
-                                            {"\u2197"}
-                                          </span>
-                                        </a>
-                                      </div>
-                                    </div>
-                                  </td>
-                                  <td
-                                    style={{ ...tdBase, whiteSpace: "nowrap" }}
-                                  >
-                                    <div
-                                      style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: 6,
-                                        padding: "6px 14px",
-                                        borderRadius: 999,
-                                        border:
-                                          "1px solid rgba(93,220,255,0.45)",
-                                        background:
-                                          "linear-gradient(120deg, rgba(8,223,255,0.15), rgba(255,232,0,0.12))",
-                                        color: "#5ddcff",
-                                        fontWeight: 900,
-                                        boxShadow:
-                                          "0 8px 18px rgba(0,0,0,0.35)",
-                                      }}
-                                    >
-                                      <span>{displayAllocation}</span>
-                                      <span
-                                        style={{
-                                          fontSize: 11,
-                                          color: "#ffe800",
-                                          letterSpacing: 1,
-                                        }}
-                                      >
-                                        POL
-                                      </span>
-                                    </div>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                            {(!pools || (pools.targets || []).length === 0) && (
-                              <tr>
-                                <td
-                                  colSpan={3}
-                                  style={{ ...tdBase, color: "#aaa" }}
-                                >
-                                  Loading...
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-
-                    <div
                       style={{
-                        marginTop: isPhone ? 10 : 12,
-                        display: "flex",
-                        justifyContent: "center",
+                        flex: 1,
+                        minHeight: 0,
+                        overflow: "hidden",
+                        padding: isPhone ? 8 : 14,
                       }}
                     >
-                      <button
-                        onClick={() => setPoolsOpen(false)}
+                      <div
                         style={{
-                          background: "transparent",
-                          border: "1px solid #ffe800",
-                          color: "#ffe800",
-                          borderRadius: 8,
-                          padding: "4px 14px",
-                          cursor: "pointer",
-                          fontWeight: 700,
+                          marginTop: isPhone ? 6 : 10,
+                          display: "grid",
+                          gap: isPhone ? 8 : 12,
                         }}
                       >
-                        Close
-                      </button>
+                        <div className="pools-card collection-stats-card">
+                          <div className="pools-card__header">
+                            <div className="collection-section-title">
+                              TOKEN OVERVIEW
+                            </div>
+                          </div>
+                          <div className="pools-card__body">
+                            <div className="collection-stats-grid">
+                            <div className="collection-stat-card">
+                              <div className="collection-stat-label">Price</div>
+                              <div className="collection-stat-value">
+                                {typeof biggiPrice === "number"
+                                  ? `${biggiPrice.toFixed(
+                                      biggiPrice >= 1 ? 3 : 6,
+                                    )} ${priceQuoteSymbol}`
+                                  : "-"}
+                              </div>
+                            </div>
+                            {!isPhone && (
+                              <div className="collection-stat-card">
+                                <div className="collection-stat-label">
+                                  24H Change
+                                </div>
+                                <div
+                                  className="collection-stat-value"
+                                  style={{
+                                    color:
+                                      biggiChange24h == null
+                                        ? "#ffffff"
+                                        : biggiChange24h >= 0
+                                          ? "#47ff9a"
+                                          : "#ff6b6b",
+                                  }}
+                                >
+                                  {typeof biggiChange24h === "number"
+                                    ? `${biggiChange24h.toFixed(2)} %`
+                                    : "-"}
+                                </div>
+                              </div>
+                            )}
+                            <div className="collection-stat-card">
+                              <div className="collection-stat-label">
+                                Tradable supply
+                              </div>
+                              <div className="collection-stat-value">
+                                {typeof circulatingSupply === "number"
+                                  ? `${circulatingSupply.toLocaleString(
+                                      undefined,
+                                      { maximumFractionDigits: 2 },
+                                    )} ${resolvedTokenMeta.symbol}`
+                                  : "-"}
+                              </div>
+                            </div>
+                            <div className="collection-stat-card">
+                              <div className="collection-stat-label">
+                                Market Cap
+                              </div>
+                              <div className="collection-stat-value">
+                                {typeof biggiMcap === "number"
+                                  ? `${biggiMcap.toLocaleString(undefined, {
+                                      maximumFractionDigits: 0,
+                                    })} ${priceQuoteSymbol}`
+                                  : "-"}
+                              </div>
+                            </div>
+                            {!isPhone && (
+                              <div className="collection-stat-card">
+                                <div className="collection-stat-label">
+                                  Weekly Pool
+                                </div>
+                                <div className="collection-stat-value">
+                                  {typeof computedREWARDSPool === "number"
+                                    ? `${computedREWARDSPool.toLocaleString(
+                                        undefined,
+                                        { maximumFractionDigits: 4 },
+                                      )} POL`
+                                    : "-"}
+                                </div>
+                              </div>
+                            )}
+                            </div>
+                          </div>
+                        </div>
+                      <div className="pools-card collection-stats-card">
+                        <div className="pools-card__header">
+                          <div className="collection-section-title">
+                            POOLS & ALLOCATION
+                          </div>
+                        </div>
+                        <div className="pools-card__body">
+                          <div className="collection-stats-grid">
+                            {(() => {
+                              const entries = pools?.targets || [];
+                              if (!entries.length) {
+                                return (
+                                  <div className="collection-stat-card">
+                                    <div className="collection-stat-label">
+                                      Loading
+                                    </div>
+                                    <div className="collection-stat-value">--</div>
+                                  </div>
+                                );
+                              }
+                              return entries.map((t) => {
+                                const bal =
+                                  t.key && pools?.balances?.[t.key] != null
+                                    ? fmtPOL(pools.balances[t.key])
+                                    : "-";
+                                const allocation =
+                                  t.key && pools?.allocations?.[t.key] != null
+                                    ? fmtPOL(pools.allocations[t.key])
+                                    : "-";
+                                const prettyName =
+                                  t.key === "REWARDS"
+                                    ? "COLLECTION REWARDS"
+                                    : t.key === "BUYBACK"
+                                      ? "BUYBACK AGENT"
+                                      : t.name || t.key || "POOL";
+                                const balDisplay =
+                                  bal === "-" ? "-" : `${bal} POL`;
+                                const allocDisplay =
+                                  allocation === "-"
+                                    ? "-"
+                                    : `${allocation} POL`;
+                                return (
+                                  <div
+                                    key={t.key || t.addr || prettyName}
+                                    className="collection-stat-card"
+                                  >
+                                    <div className="collection-stat-label">
+                                      {prettyName}
+                                    </div>
+                                    <div className="collection-stat-value">
+                                      {balDisplay}
+                                    </div>
+                                    <div
+                                      style={{
+                                        color: "#9ee5ff",
+                                        fontSize: "0.68rem",
+                                        fontWeight: 700,
+                                        letterSpacing: "0.08em",
+                                        textTransform: "uppercase",
+                                      }}
+                                    >
+                                      Alloc: {allocDisplay}
+                                    </div>
+                                  </div>
+                                );
+                              });
+                            })()}
+                          </div>
+                        </div>
+                      </div>
+
+                      {!isPhone && (
+                        <div className="pools-card collection-stats-card">
+                          <div className="pools-card__header">
+                            <div className="collection-section-title">
+                              BIGGI IN CONTRACTS
+                            </div>
+                          </div>
+                          <div className="pools-card__body">
+                            <div className="collection-stats-grid">
+                              {(() => {
+                                const entries = (pools?.tokenBalances || []).filter(
+                                  (t) => t?.balance != null
+                                );
+                                const visible = entries.slice(0, 6);
+                                if (!visible.length) {
+                                  return (
+                                    <div className="collection-stat-card">
+                                      <div className="collection-stat-label">
+                                        Loading
+                                      </div>
+                                      <div className="collection-stat-value">--</div>
+                                    </div>
+                                  );
+                                }
+                                return visible.map((t) => {
+                                  const bal = fmtToken(
+                                    t.balance,
+                                    resolvedTokenMeta.decimals,
+                                  );
+                                  const balDisplay =
+                                    bal === "-"
+                                      ? "-"
+                                      : `${bal} ${resolvedTokenMeta.symbol}`;
+                                  return (
+                                    <div
+                                      key={t.key || t.addr || t.name}
+                                      className="collection-stat-card"
+                                    >
+                                      <div className="collection-stat-label">
+                                        {t.name || t.key || "Contract"}
+                                      </div>
+                                      <div className="collection-stat-value">
+                                        {balDisplay}
+                                      </div>
+                                    </div>
+                                  );
+                                });
+                              })()}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="pools-card collection-stats-card">
+                        <div className="pools-card__header">
+                          <div className="collection-section-title">
+                            LP TOKENS
+                          </div>
+                        </div>
+                        <div className="pools-card__body">
+                          <div className="collection-stats-grid">
+                            <div className="collection-stat-card">
+                              <div className="collection-stat-label">
+                                LP SYMBOL
+                              </div>
+                              <div className="collection-stat-value">
+                                {pools?.lpStats?.symbol || "-"}
+                              </div>
+                            </div>
+                            <div className="collection-stat-card">
+                              <div className="collection-stat-label">
+                                TOTAL SUPPLY
+                              </div>
+                              <div className="collection-stat-value">
+                                {pools?.lpStats?.totalSupply != null
+                                  ? `${fmtToken(
+                                      pools.lpStats.totalSupply,
+                                      pools.lpStats.decimals,
+                                    )} ${pools.lpStats.symbol}`
+                                  : "-"}
+                              </div>
+                            </div>
+                            <div className="collection-stat-card">
+                              <div className="collection-stat-label">
+                                LP PRICE
+                              </div>
+                              <div className="collection-stat-value">
+                                {typeof lpPrice === "number"
+                                  ? `${lpPrice.toFixed(
+                                      lpPrice >= 1 ? 3 : 6,
+                                    )} POL`
+                                  : "-"}
+                              </div>
+                            </div>
+                            {!isPhone &&
+                              (pools?.lpStats?.balances || [])
+                                .slice(0, 3)
+                                .map((t) => {
+                                  const bal =
+                                    t.balance != null && pools?.lpStats
+                                      ? fmtToken(
+                                          t.balance,
+                                          pools.lpStats.decimals,
+                                        )
+                                      : "-";
+                                  const balDisplay =
+                                    bal === "-" || !pools?.lpStats?.symbol
+                                      ? "-"
+                                      : `${bal} ${pools.lpStats.symbol}`;
+                                  return (
+                                    <div
+                                      key={t.key || t.addr || t.name}
+                                      className="collection-stat-card"
+                                    >
+                                      <div className="collection-stat-label">
+                                        {t.name || t.key || "Holder"}
+                                      </div>
+                                      <div className="collection-stat-value">
+                                        {balDisplay}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                     </div>
                   </div>
                 </div>
@@ -2405,8 +2612,8 @@ function LiveStats({
         <div
           className="pools-card collection-stats-card"
           style={{
-            width: "min(780px, 92vw)",
-            margin: "0 auto",
+            width: "100%",
+            margin: 0,
             borderColor: "rgba(255, 232, 0, 0.3)",
           }}
         >

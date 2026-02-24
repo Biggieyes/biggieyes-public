@@ -102,6 +102,7 @@ function REWARDSPanel({
   claimable = null,
   rewardPool = null,
   onClaim,
+  autoOpenInfo = false,
 }) {
   const [activeTab, setActiveTab] = React.useState("token");
   const [claimPreview, setClaimPreview] = React.useState(null);
@@ -112,6 +113,14 @@ function REWARDSPanel({
   const [infoOpen, setInfoOpen] = React.useState(false);
   const [blockSummaryOpen, setBlockSummaryOpen] = React.useState(false);
   const [explorerBase, setExplorerBase] = React.useState(DEFAULT_EXPLORER_BASE);
+  const autoInfoOpened = React.useRef(false);
+
+  React.useEffect(() => {
+    if (autoOpenInfo && !autoInfoOpened.current) {
+      setInfoOpen(true);
+      autoInfoOpened.current = true;
+    }
+  }, [autoOpenInfo]);
   const [COLLECTIONClaiming, setCOLLECTIONClaiming] = React.useState({
     block: null,
     orange: null,

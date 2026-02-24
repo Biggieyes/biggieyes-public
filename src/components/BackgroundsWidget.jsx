@@ -80,8 +80,8 @@ const cellBase = {
   whiteSpace: "nowrap",
   overFLOW: "hidden",
   textOverFLOW: "ellipsis",
-  textShadow: "0 1px 3px rgba(0,0,0,0.6)",
-  borderBottom: "1px solid rgba(255,232,0,0.2)",
+  textShadow: "none",
+  borderBottom: "1px solid rgba(255,255,255,0.06)",
 };
 const priceStyle = {
   ...cellBase,
@@ -180,13 +180,12 @@ const BackgroundsWidget = ({
     "Block Price Δ",
   ];
 
-  const handleRowHoverEnter = React.useCallback((e, bgIndex) => {
-    e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+  const handleRowHoverEnter = React.useCallback((e) => {
+    e.currentTarget.style.background = "rgba(158,229,255,0.14)";
   }, []);
 
-  const handleRowHoverLeave = React.useCallback((e, bgIndex) => {
-    e.currentTarget.style.background =
-      bgIndex % 2 === 0 ? "rgba(255,232,0,0.05)" : "rgba(255,232,0,0.02)";
+  const handleRowHoverLeave = React.useCallback((e) => {
+    e.currentTarget.style.background = "";
   }, []);
 
   return (
@@ -209,17 +208,16 @@ const BackgroundsWidget = ({
               {headerTitles.map((title, idx) => {
                 const isFirst = idx === 0;
                 const isLast = idx === headerTitles.length - 1;
-                const color = isFirst || isLast ? "#ffe800" : "#5ddcff";
                 return (
                   <th
                     key={title}
-                    className={isFirst || isLast ? "no-sweep" : undefined}
+                    className={isLast ? "no-sweep" : undefined}
                     style={{
-                      color,
+                      color: "#9ee5ff",
                       borderRight:
                         idx === headerTitles.length - 1
                           ? "none"
-                          : "1px solid rgba(255,232,0,0.22)",
+                          : "1px solid rgba(255,255,255,0.08)",
                       borderTopLeftRadius: isFirst ? 10 : 0,
                       borderTopRightRadius: isLast ? 10 : 0,
                     }}

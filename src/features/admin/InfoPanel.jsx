@@ -149,6 +149,8 @@ function DynamicContent({ data, compact, loading, onRefresh }) {
           }
         />
       </Block>
+
+      <UserInfoBlocks compact={compact} />
     </div>
   );
 }
@@ -208,76 +210,122 @@ function Badge({ children }) {
   );
 }
 
-function DefaultContent({ compact }) {
+function UserInfoBlocks({ compact }) {
   return (
-    <div style={{ display: "grid", gap: compact ? 14 : 18 }}>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-        <Badge>Polygon Amoy · Testnet</Badge>
-        <Badge>On-chain NFT lottery</Badge>
-        <Badge>DeFi tokenomics</Badge>
-        <Badge>VRF + rewards</Badge>
-        <Badge>BUYBACK & Treasury</Badge>
-        <Badge>Liquidity & REWARDS</Badge>
-      </div>
-
-      <Block title="What we are building" compact={compact}>
-        A gamified on-chain NFT lottery with dynamic block pricing, an integrated
-        BIGGI token, and weekly reward pools. Minting and payouts are on-chain;
-        the front-end uses read-only providers on Polygon Amoy.
-      </Block>
-
-      <Block title="How it works" compact={compact}>
+    <>
+      <Block title="Quickstart (2 min)" compact={compact}>
         <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
-          <li>Block prices increase; reader contracts provide prices and counts.</li>
-          <li>VRF router ensures fair draws; rewards are paid from the pool.</li>
-          <li>BUYBACK and treasury contracts handle tokenomic flow.</li>
-          <li>Liquidity manager keeps POL liquidity and funds reward pools.</li>
+          <li>Connect a wallet (MetaMask or compatible).</li>
+          <li>Switch network to Polygon Amoy (chainId 80002).</li>
+          <li>Get testnet POL for gas from a faucet.</li>
+          <li>Mint creates a ticket NFT; confirm in your wallet.</li>
+          <li>When eligible, use Redeem or Claim and confirm the transaction.</li>
+          <li>Use explorer links in the UI to verify on-chain status.</li>
         </ul>
       </Block>
 
-      <Block title="Tokenomics (high-level)" compact={compact}>
+      <Block title="How mint / redeem / claim works" compact={compact}>
         <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
-          <li>Primary flow: mint → fees → treasury / REWARDS / BUYBACK.</li>
-          <li>Weekly reward pool: dynamic share of mint volume.</li>
-          <li>BUYBACK agent can recapitalize rewards or burn tokens.</li>
+          <li>Mint = on-chain ticket NFT + entry into the current round.</li>
+          <li>Redeem = execute eligible redemption on-chain.</li>
+          <li>Claim = collect reward when your ticket is eligible.</li>
+          <li>Randomness uses Chainlink VRF and is verifiable on-chain.</li>
+          <li>All state is authoritative on-chain; UI only reads data.</li>
         </ul>
       </Block>
 
-      <Block title="Key addresses" compact={compact}>
-        <Stat label="Main" value="0x36D5...200A" />
-        <Stat label="Reader" value="0x55DF...9FD0" />
-        <Stat label="REWARDS" value="0x5952...3F39" />
-        <Stat label="Tokenomics reader" value="0xF0A8...23E8" />
-        <Stat label="Liquidity manager" value="0x1f60...b56e" />
-        <Stat label="BUYBACK agent" value="0xB775...5F8e" />
+      <Block title="Schemas (on-chain flow)" compact={compact}>
+        <div
+          style={{
+            fontFamily:
+              'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+            fontSize: compact ? 12 : 13,
+            lineHeight: 1.6,
+            whiteSpace: "pre-wrap",
+            opacity: 0.9,
+          }}
+        >
+{`Mint -> Ticket NFT
+Mint fees -> Distributor
+Distributor -> Reserve | Buyback | Treasury | CollectionRewards
+Buyback -> Treasury
+Treasury -> TokenRewards + Reserve
+Reserve -> LiquidityManager -> LiquidityVault`}
+        </div>
       </Block>
 
-      <Block title="Roadmap / status" compact={compact}>
+      <Block title="Wallet and network" compact={compact}>
         <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
-          <li>Mint + VRF + REWARDS deployed on Amoy, read via reader.</li>
-          <li>UI panels: lottery, community center, stats.</li>
-          <li>RPC monitoring: prefer public nodes, keep fallback minimal.</li>
-          <li>Add additional public RPCs if needed.</li>
+          <li>Network: Polygon Amoy (chainId 80002).</li>
+          <li>Gas: you need testnet POL for transactions.</li>
+          <li>Account: connect the same wallet you minted with.</li>
         </ul>
       </Block>
 
-      <Block title="Quick tips" compact={compact}>
+      <Block title="Transaction status" compact={compact}>
         <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
-          <li>Check network (Polygon Amoy) and refresh RPC if data fails.</li>
-          <li>Keep RPC fallback to public node only (see .env).</li>
-          <li>VRF and rewards are read-only; CALL_EXCEPTION means RPC issue.</li>
-          <li>Transactions are testnet-only; no private keys stored in-app.</li>
+          <li>Pending means the transaction is waiting to be confirmed.</li>
+          <li>Use the explorer link to check confirmations and status.</li>
+          <li>If pending too long, you can speed up or cancel in your wallet.</li>
+          <li>Failed or rejected transactions show an error in the status banner.</li>
         </ul>
       </Block>
 
-      <Block title="Contact / support" compact={compact}>
+      <Block title="On-chain verification" compact={compact}>
+        <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
+          <li>Contract addresses and explorers are listed in the Trust tab.</li>
+          <li>Supply caps, rewards, and reserve balances are enforced on-chain.</li>
+          <li>Readers aggregate snapshots for fast UI rendering.</li>
+        </ul>
+      </Block>
+
+      <Block title="Common issues" compact={compact}>
+        <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
+          <li>Wrong network: switch to Polygon Amoy (chainId 80002).</li>
+          <li>No data: refresh the panel or reconnect your wallet.</li>
+          <li>RPC degraded: retry or switch to a public RPC in settings.</li>
+          <li>Images missing: IPFS can be slow; wait or refresh the page.</li>
+        </ul>
+      </Block>
+
+      <Block title="Security notes" compact={compact}>
+        <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
+          <li>The app never asks for private keys or seed phrases.</li>
+          <li>Only approve transactions you expect; check the method name.</li>
+          <li>All critical balances are on-chain and verifiable.</li>
+        </ul>
+      </Block>
+
+      <Block title="Testnet disclaimer" compact={compact}>
+        THIS IS TESTNET. TOKENS HAVE NO REAL VALUE. MAINNET DEPLOYMENT AFTER
+        VALIDATION.
+      </Block>
+
+      <Block title="Support and references" compact={compact}>
         <div style={{ display: "grid", gap: 4 }}>
           <span>Web: biggieyes.com</span>
           <span>API: biggieyes.com/.netlify/functions</span>
           <span>Testnet: Polygon Amoy (chainId 80002)</span>
-          <span>Docs / README: see repo README + REFACTORING_SUMMARY</span>
+          <span>Docs: README.md, REFACTORING_SUMMARY.md, Trust tab</span>
         </div>
       </Block>
+    </>
+  );
+}
+
+function DefaultContent({ compact }) {
+  return (
+    <div style={{ display: "grid", gap: compact ? 14 : 18 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        <Badge>Polygon Amoy - Testnet</Badge>
+        <Badge>On-chain transparency</Badge>
+        <Badge>Reader contracts</Badge>
+        <Badge>VRF randomness</Badge>
+        <Badge>Treasury / Buyback / Reserve</Badge>
+        <Badge>No real value</Badge>
+      </div>
+
+      <UserInfoBlocks compact={compact} />
     </div>
   );
 }

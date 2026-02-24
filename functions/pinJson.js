@@ -8,6 +8,9 @@ import {
   parseJsonBody,
   pinataRequest,
 } from "./_pinataUtils.js";
+import { captureException, initSentry } from "./_sentry.js";
+
+initSentry();
 
 const allowRequest = createRateLimiter({ capacity: 10, refillMs: 60_000 });
 
@@ -52,6 +55,7 @@ export async function handler(event) {
     const status = err?.response?.status || 500;
     const details = err?.response?.data?.error || err?.response?.data || err?.message || "Pinata error";
     console.error("pinJson error", { error: details });
+    captureException(err, { stage: "pinata", status, details });
     return jsonResponse(status >= 400 && status < 600 ? status : 500, { success: false, error: String(details) });
   }
 }

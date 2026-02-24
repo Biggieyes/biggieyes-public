@@ -1,7 +1,7 @@
 import * as React from "react";
 import SimpleLineChart from "./SimpleLineChart";
 
-export default function LiquidityVaultChart({ data, height = 260 }) {
+function LiquidityVaultChart({ data, height = 260 }) {
   const chartData = Array.isArray(data) ? data : [];
   const safeHeight = Math.max(140, Number(height) || 260);
   const series = [{ key: "liquidity", label: "Liquidity", color: "#7ad7ff" }];
@@ -17,4 +17,6 @@ export default function LiquidityVaultChart({ data, height = 260 }) {
     </div>
   );
 }
+
+export default React.memo(LiquidityVaultChart);
 

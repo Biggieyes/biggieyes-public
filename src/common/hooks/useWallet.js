@@ -5,7 +5,9 @@ import {
   getContract,
   getInjectedProvider,
   setInjectedProvider,
+  syncAmoyRpcIfNeeded,
 } from "@/shared/utils/contract";
+import { isLikelyMetaMaskSdkProvider } from "@/shared/utils/injectedProviders";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
@@ -14,9 +16,16 @@ const pickInjectedProvider = () => {
   const { ethereum } = window;
   if (!ethereum) return null;
   if (Array.isArray(ethereum.providers) && ethereum.providers.length) {
-    const mm = ethereum.providers.find((prov) => prov && prov.isMetaMask);
-    return mm || ethereum.providers[0];
+    const mm = ethereum.providers.find(
+      (prov) =>
+        prov && prov.isMetaMask && !isLikelyMetaMaskSdkProvider(prov),
+    );
+    const nonSdk = ethereum.providers.find(
+      (prov) => prov && !isLikelyMetaMaskSdkProvider(prov),
+    );
+    return mm || nonSdk || null;
   }
+  if (isLikelyMetaMaskSdkProvider(ethereum)) return null;
   return ethereum;
 };
 
@@ -42,6 +51,11 @@ export function useWallet({ onConnected } = {}) {
       const accounts = await eth.request({ method: "eth_requestAccounts" });
       const addr = accounts?.[0];
       if (!addr) throw new Error("No account returned from wallet.");
+      try {
+        await syncAmoyRpcIfNeeded(eth);
+      } catch {
+        // non-fatal: wallet can still connect without metadata sync
+      }
 
       const chainHex = await eth
         .request({ method: "eth_chainId" })

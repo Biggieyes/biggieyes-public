@@ -9,10 +9,15 @@ function TopBar({
   isRedeeming,
   VRFPending,
   actionPerforming,
+  actionStatusLabel,
   actionError,
   icons = [], // ✅ fallback, kdyby ještě nebyly k dispozici
   onIconClick,
   isMobile = false, // ⬅️ přijmeme od Appu
+  infoGateActive = false,
+  onInfoGateComplete,
+  onInfoButtonRect,
+  forceInfoOpenTick = 0,
 }) {
   return (
     <div className={`top-bar ${isMobile ? "mobile" : "desktop"}`}>
@@ -32,7 +37,13 @@ function TopBar({
               isRedeeming={isRedeeming}
               VRFPending={VRFPending}
               performing={actionPerforming}
+              performingLabel={actionStatusLabel}
               actionError={actionError}
+              isMobile={isMobile}
+              infoGateActive={infoGateActive}
+              onInfoGateComplete={onInfoGateComplete}
+              onInfoButtonRect={onInfoButtonRect}
+              forceInfoOpenTick={forceInfoOpenTick}
             />
           </div>
 
@@ -71,7 +82,13 @@ function TopBar({
               isRedeeming={isRedeeming}
               VRFPending={VRFPending}
               performing={actionPerforming}
+              performingLabel={actionStatusLabel}
               actionError={actionError}
+              isMobile
+              infoGateActive={infoGateActive}
+              onInfoGateComplete={onInfoGateComplete}
+              onInfoButtonRect={onInfoButtonRect}
+              forceInfoOpenTick={forceInfoOpenTick}
             />
           </div>
         </>

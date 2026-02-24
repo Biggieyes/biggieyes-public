@@ -1,5 +1,6 @@
 // src/components/redeem/RedeemOverlay.jsx
 import * as React from "react";
+import { getInjectedProvider } from "@/shared/utils/contract";
 
 export default function RedeemOverlay({
   open,
@@ -26,7 +27,8 @@ export default function RedeemOverlay({
     let alive = true;
     async function loadNet() {
       try {
-        const idHex = await window.ethereum?.request?.({
+        const injected = getInjectedProvider();
+        const idHex = await injected?.request?.({
           method: "eth_chainId",
         });
         const id = idHex ? parseInt(idHex, 16) : null;
@@ -55,8 +57,9 @@ export default function RedeemOverlay({
     }
     loadNet();
     const onChain = () => loadNet();
-    window.ethereum?.on?.("chainChanged", onChain);
-    return () => window.ethereum?.removeListener?.("chainChanged", onChain);
+    const injected = getInjectedProvider();
+    injected?.on?.("chainChanged", onChain);
+    return () => injected?.removeListener?.("chainChanged", onChain);
   }, []);
 
   // Find and store the anchor widget reference when opened

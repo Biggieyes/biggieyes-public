@@ -3,7 +3,7 @@ import StatCard from "../../Common/components/StatCard.jsx";
 import LineChart from "../../Charts/charts/LineChart.jsx";
 import "./DRIPTab.css";
 
-export default function DRIPTab({
+function DRIPTab({
   snapshot,
   availableSeries = [],
   capSeries = [],
@@ -91,3 +91,5 @@ export default function DRIPTab({
     </section>
   );
 }
+
+export default React.memo(DRIPTab);

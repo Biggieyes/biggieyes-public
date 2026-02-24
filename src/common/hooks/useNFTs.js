@@ -7,6 +7,7 @@ import {
   getProviderForContract,
 } from "@/shared/utils/contract";
 import { queryLogsBatched, getSafeDeployBlock } from "@/shared/utils/shared";
+import { buildFeeOverrides } from "@/shared/utils/txFees";
 import { readJsonFromURI, resolveImageUrl } from "../../services/ipfs";
 
 /**
@@ -114,7 +115,8 @@ export function useNFTs({
       const estimateMint =
         contract?.estimateGas?.mintTicket || contract?.mintTicket?.estimateGas;
       if (estimateMint) await estimateMint({ value: price });
-      const tx = await contract.mintTicket({ value: price });
+      const feeOverrides = await buildFeeOverrides(provider);
+      const tx = await contract.mintTicket({ value: price, ...feeOverrides });
       await tx.wait();
 
       await fetchWalletAssets(walletAddress);
@@ -192,7 +194,9 @@ export function useNFTs({
       if (estimateRedeem) await estimateRedeem(ticketId);
       if (redeemFn?.staticCall) await redeemFn.staticCall(ticketId);
       setRedeemMsg("Please confirm in your wallet...");
-      const tx = await redeemFn(ticketId);
+      const provider = getProviderForContract(contract);
+      const feeOverrides = await buildFeeOverrides(provider);
+      const tx = await redeemFn(ticketId, { ...feeOverrides });
       await tx.wait();
 
       setPendingTicketId(ticketId.toString());
@@ -237,7 +241,9 @@ export function useNFTs({
       if (!ids.length) return alert("No eligible NFTs to claim.");
 
       const brl = await getLiquidityContract();
-      const tx = await brl.claim(ids);
+      const provider = getProviderForContract(brl);
+      const feeOverrides = await buildFeeOverrides(provider);
+      const tx = await brl.claim(ids, { ...feeOverrides });
       await tx.wait();
 
       await fetchREWARDS();

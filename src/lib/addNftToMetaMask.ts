@@ -56,15 +56,19 @@ export async function addNftToMetaMask({
   if (assetOptions?.image) options.image = assetOptions.image;
   if (assetOptions?.symbol) options.symbol = assetOptions.symbol;
 
-  const wasAdded: boolean = await provider.request({
-    method: "wallet_watchAsset",
-    params: {
-      type: "ERC721",
-      options,
-    },
-  });
-
-  return !!wasAdded;
+  try {
+    const wasAdded: boolean = await provider.request({
+      method: "wallet_watchAsset",
+      params: {
+        type: "ERC721",
+        options,
+      },
+    });
+    return !!wasAdded;
+  } catch (err) {
+    if (isUserRejected(err)) return false;
+    throw err;
+  }
 }
 
 /** Batch varianta – volitelná, zatím ji nepoužíváte. */
@@ -133,6 +137,22 @@ export async function addManyNftsToMetaMask({
 }
 
 /* ----------------- interní pomocníci ----------------- */
+
+function isUserRejected(err: unknown): boolean {
+  if (!err) return false;
+  const anyErr = err as {
+    code?: unknown;
+    message?: unknown;
+    error?: { code?: unknown; message?: unknown };
+  };
+  const code = anyErr?.code ?? anyErr?.error?.code;
+  if (code === 4001 || code === "4001" || code === "ACTION_REJECTED")
+    return true;
+  const msg = String(
+    anyErr?.message ?? anyErr?.error?.message ?? "",
+  ).toLowerCase();
+  return msg.includes("user rejected") || msg.includes("denied");
+}
 
 function getProvider(): EthereumishProvider {
   const eth = (globalThis as unknown as { ethereum?: EthereumishProvider })

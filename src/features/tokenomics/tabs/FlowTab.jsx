@@ -43,7 +43,7 @@ const FlowNode = ({ title, subtitle, tone = "default", children }) => {
   );
 };
 
-export default function FlowTab({ snapshot, loading, error }) {
+function FlowTab({ snapshot, loading, error }) {
   const splits = snapshot?.intendedSplits?.nativeFromMint;
   const tokenSplits = snapshot?.intendedSplits?.tokenInitial;
 
@@ -170,3 +170,5 @@ export default function FlowTab({ snapshot, loading, error }) {
     </div>
   );
 }
+
+export default React.memo(FlowTab);

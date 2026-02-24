@@ -1,7 +1,16 @@
 // src/utils/eth.js
 // Shared ethers helpers for Moderator Center.
-import { Contract, BrowserProvider, getAddress, formatUnits, parseUnits } from "ethers";
-import moderatorsREWARDSAbi from "../abis/ModeratorsREWARDS.json";
+import {
+  Contract,
+  BrowserProvider,
+  getAddress,
+  formatUnits,
+  parseUnits,
+  keccak256,
+  toUtf8Bytes,
+  ZeroHash,
+} from "ethers";
+import { ModeratorCenter as moderatorsREWARDSAbi } from "../../config/abi/index.js";
 import { ADDR } from "./addresses";
 import {
   getSharedFallbackProvider,
@@ -85,5 +94,73 @@ export const formatWei = (value, decimals = 18) => {
 export const parseWei = (value, decimals = 18) => {
   if (value == null || value === "") return 0n;
   return parseUnits(String(value), decimals);
+};
+
+export const toBytes32 = (value) => {
+  if (!value) return ZeroHash;
+  const raw = String(value).trim();
+  if (/^0x[0-9a-fA-F]{64}$/.test(raw)) return raw;
+  return keccak256(toUtf8Bytes(raw));
+};
+
+export const readSlotInfo = async (contract, slotId) => {
+  if (!contract) throw new Error("Contract not available");
+  const slot = Number(slotId);
+  if (!Number.isFinite(slot)) throw new Error("Invalid slot id");
+  try {
+    if (typeof contract.getSlotInfo === "function") {
+      const res = await contract.getSlotInfo(slot);
+      return {
+        enabled: res?.enabled ?? res?.[0] ?? null,
+        isLeader: res?.isLeader ?? res?.[1] ?? null,
+        payout: res?.payout ?? res?.[2] ?? null,
+        referralHash: res?.referralHash ?? res?.[3] ?? null,
+        cumulativeSales: res?.cumulativeSales ?? res?.[4] ?? null,
+        passwordHash: null,
+      };
+    }
+  } catch {
+    // fallback to slots mapping
+  }
+  if (typeof contract.slots === "function") {
+    const res = await contract.slots(slot);
+    return {
+      enabled: res?.enabled ?? res?.[0] ?? null,
+      isLeader: res?.isLeader ?? res?.[1] ?? null,
+      payout: res?.payout ?? res?.[2] ?? null,
+      passwordHash: res?.passwordHash ?? res?.[3] ?? null,
+      referralHash: res?.referralHash ?? res?.[4] ?? null,
+      cumulativeSales: res?.cumulativeTicketSales ?? res?.[5] ?? null,
+    };
+  }
+  throw new Error("Slot info function not found in ABI.");
+};
+
+export const readWeekStats = async (contract, week, slotId) => {
+  if (!contract) throw new Error("Contract not available");
+  const w = Number(week);
+  const slot = Number(slotId);
+  if (!Number.isFinite(w)) throw new Error("Invalid week");
+  if (!Number.isFinite(slot)) throw new Error("Invalid slot id");
+  if (typeof contract.getWeekStats === "function") {
+    const res = await contract.getWeekStats(w, slot);
+    return {
+      uniqueRefs: res?.uniqueRefs ?? res?.[0] ?? null,
+      ticketSales: res?.ticketSales ?? res?.[1] ?? null,
+      allocatedWei: res?.allocatedWei ?? res?.[2] ?? null,
+    };
+  }
+  const [uniqueRefs, ticketSales, allocatedWei] = await Promise.all([
+    typeof contract.weekUniqueCount === "function"
+      ? contract.weekUniqueCount(w, slot).catch(() => null)
+      : null,
+    typeof contract.weekTicketCount === "function"
+      ? contract.weekTicketCount(w, slot).catch(() => null)
+      : null,
+    typeof contract.weekAllocated === "function"
+      ? contract.weekAllocated(w).catch(() => null)
+      : null,
+  ]);
+  return { uniqueRefs, ticketSales, allocatedWei };
 };
 

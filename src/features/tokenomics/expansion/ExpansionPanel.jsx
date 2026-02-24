@@ -365,9 +365,10 @@ export default function ExpansionPanel() {
       try {
         // preferuj injektovaný provider pokud je, jinak RPC provider (ethers v6)
         const prov =
-          typeof window !== "undefined" && window.ethereum
+          getReadProvider() ||
+          (typeof window !== "undefined" && window.ethereum
             ? new BrowserProvider(window.ethereum, "any")
-            : getReadProvider();
+            : null);
         if (!prov) throw new Error("No provider available");
         setProvider(prov);
         // nastav contract proti read-only provider (ne defaultProvider)

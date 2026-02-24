@@ -2,7 +2,8 @@
 // Live chat UI backed by Supabase realtime and a serverless signature-verified API.
 import * as React from "react";
 import { BrowserProvider } from "ethers";
-import { supabase } from "../services/chatClient";
+import { supabase, supabaseReady } from "../services/chatClient";
+import { getInjectedProvider } from "@/shared/utils/contract";
 import "./LiveChatPanel.css";
 
 const API_BASE = import.meta.env.VITE_CHAT_API_BASE || "";
@@ -39,6 +40,19 @@ const buildApiUrl = (path) => {
   return `${API_BASE}/api${path}`;
 };
 
+const formatChatError = (err) => {
+  if (!err) return "Unknown error";
+  if (typeof err === "string") return err;
+  const message =
+    err.message || err.msg || err.error_description || err.details || err.hint;
+  if (message) return message;
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return String(err);
+  }
+};
+
 function LiveChatPanel({ walletAddress = "" }) {
   const [messages, setMessages] = React.useState([]);
   const [rulesText, setRulesText] = React.useState("");
@@ -47,7 +61,10 @@ function LiveChatPanel({ walletAddress = "" }) {
   const [error, setError] = React.useState("");
   const [content, setContent] = React.useState("");
   const [name, setName] = React.useState("");
+  const [chatDisabled, setChatDisabled] = React.useState(false);
   const listRef = React.useRef(null);
+  const rulesWarnedRef = React.useRef(false);
+  const loadWarnedRef = React.useRef(false);
 
   const isConnected = Boolean(walletAddress);
 
@@ -63,6 +80,12 @@ function LiveChatPanel({ walletAddress = "" }) {
     setLoading(true);
     setError("");
     try {
+      if (!supabaseReady) {
+        setError("Live chat is not configured (missing Supabase env vars).");
+        setChatDisabled(true);
+        return;
+      }
+
       const [rulesRes, msgsRes] = await Promise.all([
         supabase.from("rules").select("text").eq("id", 1).maybeSingle(),
         supabase
@@ -74,16 +97,52 @@ function LiveChatPanel({ walletAddress = "" }) {
           .limit(80),
       ]);
 
+      if (rulesRes?.error && !rulesWarnedRef.current) {
+        console.warn(
+          "LiveChatPanel rules load failed",
+          formatChatError(rulesRes.error),
+        );
+        rulesWarnedRef.current = true;
+      }
+
+      const missingTables =
+        rulesRes?.error?.code === "PGRST205" ||
+        msgsRes?.error?.code === "PGRST205";
+      if (missingTables) {
+        setError(
+          "Live chat tables are missing in Supabase. Run sql/migration_init.sql.",
+        );
+        setChatDisabled(true);
+        return;
+      }
       if (rulesRes?.data?.text) {
         setRulesText(String(rulesRes.data.text));
       }
 
-      if (msgsRes?.error) throw msgsRes.error;
+      if (msgsRes?.error) {
+        if (!loadWarnedRef.current) {
+          console.warn(
+            "LiveChatPanel load failed",
+            formatChatError(msgsRes.error),
+          );
+          loadWarnedRef.current = true;
+        }
+        setError(`Failed to load chat: ${formatChatError(msgsRes.error)}`);
+        setChatDisabled(true);
+        return;
+      }
       const list = Array.isArray(msgsRes?.data) ? msgsRes.data : [];
       setMessages(list.reverse());
     } catch (err) {
-      console.error("LiveChatPanel load failed", err);
-      setError("Failed to load chat. Try again.");
+      if (!loadWarnedRef.current) {
+        console.error(
+          "LiveChatPanel load failed",
+          formatChatError(err),
+        );
+        loadWarnedRef.current = true;
+      }
+      setError(`Failed to load chat: ${formatChatError(err)}`);
+      setChatDisabled(true);
     } finally {
       setLoading(false);
     }
@@ -94,6 +153,7 @@ function LiveChatPanel({ walletAddress = "" }) {
   }, [loadInitial]);
 
   React.useEffect(() => {
+    if (chatDisabled || !supabaseReady) return;
     const channel = supabase
       .channel("biggi-chat")
       .on(
@@ -116,7 +176,7 @@ function LiveChatPanel({ walletAddress = "" }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [chatDisabled]);
 
   React.useEffect(() => {
     if (!listRef.current) return;
@@ -145,17 +205,15 @@ function LiveChatPanel({ walletAddress = "" }) {
       setError("Message blocked by profanity filter.");
       return;
     }
-    if (!window.ethereum) {
+    const injected = getInjectedProvider();
+    if (!injected) {
       setError("Wallet provider not available.");
       return;
     }
 
     setSending(true);
     try {
-      const provider = new BrowserProvider(
-        window.ethereum,
-        "any",
-      );
+      const provider = new BrowserProvider(injected, "any");
       const signer = await provider.getSigner();
       const signerAddress = await signer.getAddress();
 

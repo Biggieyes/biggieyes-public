@@ -24,9 +24,10 @@ import { buildBlockImagePath } from "@/shared/utils/images";
 
 /**
  * utils/contract.js (ethers v6 kompat wrappery)
- * - používáš své factories: getMain/getROProvider/getReaderRO atd.
+ * - pouĹľĂ­vĂˇĹˇ svĂ© factories: getMain/getROProvider/getReaderRO atd.
  */
 import {
+  AMOY,
   ensureAmoy,
   getReadOnlyMain as getReadOnlyContract,
   getMainRW,
@@ -45,11 +46,15 @@ import {
   getBiggiTokenomicsReaderRO,
   getInjectedProvider,
   getProviderForContract,
+  getROProvider as getSharedROProvider,
   setInjectedProvider,
   getVRFRO,
   resetROProvider,
+  syncAmoyRpcIfNeeded,
 } from "@/shared/utils/contract";
 import { clearPreferredRpc, ensurePreferredRpc } from "@/shared/utils/rpcConfig";
+import { buildFeeOverrides } from "@/shared/utils/txFees";
+import { coerceBool } from "@/shared/utils/boolean";
 import {
   queryLogsBatched as queryLogsBatchedShared,
   getSafeDeployBlock as getSafeDeployBlockShared,
@@ -58,6 +63,12 @@ import {
 import { setVRFAllOrPartial } from "@/shared/utils/adminActions";
 import { getArchiveProvider, resetSharedFallbackProvider } from "@/web3/provider";
 import { canPoll, getPollInterval, runWithLock } from "@/utils/polling";
+import {
+  getInjectedProviderCandidates,
+  isMetaMaskExtensionMissingError,
+  isLikelyMetaMaskSdkProvider,
+  startInjectedProviderDiscovery,
+} from "@/shared/utils/injectedProviders";
 
 import "./styles/biggi-token.skin.css";
 
@@ -218,6 +229,29 @@ const buildBlockImageUrl = (blockName, fileName, baseOverride) => {
   return buildBlockImagePath(fileName);
 };
 
+const withTimeout = (promise, ms) => {
+  const timeoutMs = Number(ms) || 0;
+  if (timeoutMs <= 0) return promise.catch(() => null);
+  return Promise.race([
+    promise.catch(() => null),
+    new Promise((resolve) => setTimeout(() => resolve(null), timeoutMs)),
+  ]);
+};
+
+const requestWithTimeout = (promise, ms, timeoutMessage = "REQUEST_TIMEOUT") =>
+  new Promise((resolve, reject) => {
+    const timeoutMs = Number(ms) || 0;
+    if (timeoutMs <= 0) {
+      Promise.resolve(promise).then(resolve).catch(reject);
+      return;
+    }
+    const t = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+    Promise.resolve(promise)
+      .then(resolve)
+      .catch(reject)
+      .finally(() => clearTimeout(t));
+  });
+
 const parseNftInfo = (info) => {
   if (!info) return null;
   const background = info?.background ?? info?.[1];
@@ -307,7 +341,7 @@ function toNumEth(v) {
     if (typeof v === "string") return Number(v);
     if (typeof v?.toString === "function") {
       const s = v.toString();
-      // pokud je to uint-like string bez decimals, zkusíme to jako wei bigint
+      // pokud je to uint-like string bez decimals, zkusĂ­me to jako wei bigint
       if (/^\d+$/.test(s)) return Number(formatEther(BigInt(s)));
       const n = Number(s);
       return Number.isFinite(n) ? n : null;
@@ -495,6 +529,91 @@ async function resolveImageUrlCached(imageField, metadataUri) {
   return url;
 }
 
+const toTokenIdStr = (item) => {
+  if (!item) return "";
+  if (item.tokenId != null) return String(item.tokenId);
+  if (item.id != null) return String(item.id);
+  return "";
+};
+
+const toTokenIdBigIntSafe = (value) => {
+  try {
+    if (value == null) return null;
+    if (typeof value === "bigint") return value;
+    if (typeof value === "number") {
+      if (!Number.isFinite(value)) return null;
+      return BigInt(Math.trunc(value));
+    }
+    if (typeof value === "string") {
+      const s = value.trim();
+      if (!s) return null;
+      if (/^\d+$/.test(s)) return BigInt(s);
+      return null;
+    }
+    if (typeof value?.toString === "function") {
+      return toTokenIdBigIntSafe(value.toString());
+    }
+  } catch {
+    return null;
+  }
+  return null;
+};
+
+const isTicketLikeItem = (item) => {
+  if (!item) return false;
+  if (item.isPending) return true;
+  if (item.isTicket) return true;
+  const meta = item?.meta;
+  return looksLikeTicketMeta(meta) && !looksLikeNftMeta(meta);
+};
+
+const resolveNewlyMintedTokenId = (prevList, nextList, preferredId) => {
+  const prevMap = new Map();
+  for (const item of Array.isArray(prevList) ? prevList : []) {
+    const id = toTokenIdStr(item);
+    if (!id) continue;
+    prevMap.set(id, item);
+  }
+
+  const candidates = [];
+  for (const item of Array.isArray(nextList) ? nextList : []) {
+    const id = toTokenIdStr(item);
+    if (!id) continue;
+    if (isTicketLikeItem(item)) continue;
+    const prev = prevMap.get(id);
+    if (!prev) {
+      candidates.push(id);
+      continue;
+    }
+    if (isTicketLikeItem(prev)) candidates.push(id);
+  }
+
+  if (!candidates.length) return null;
+
+  if (preferredId) {
+    const preferred = String(preferredId);
+    if (candidates.includes(preferred)) return preferred;
+  }
+
+  let best = candidates[0];
+  let bestBI = toTokenIdBigIntSafe(best);
+  for (let i = 1; i < candidates.length; i += 1) {
+    const cur = candidates[i];
+    const curBI = toTokenIdBigIntSafe(cur);
+    if (bestBI == null && curBI != null) {
+      best = cur;
+      bestBI = curBI;
+      continue;
+    }
+    if (bestBI != null && curBI != null && curBI > bestBI) {
+      best = cur;
+      bestBI = curBI;
+    }
+  }
+
+  return best;
+};
+
 /* ======================================================================== */
 /* ============================ DEVICE DETECTION ============================ */
 /* ======================================================================== */
@@ -547,15 +666,51 @@ const ICONS = [
 /* ======================================================================== */
 
 const pickInjectedProvider = () => {
-  if (typeof window === "undefined") return null;
-  const { ethereum } = window;
-  if (!ethereum) return null;
+  const candidates = getInjectedProviderCandidates({
+    preferred: getInjectedProvider(),
+  });
+  return candidates[0] || null;
+};
 
-  if (Array.isArray(ethereum.providers) && ethereum.providers.length) {
-    const mm = ethereum.providers.find((prov) => prov && prov.isMetaMask);
-    return mm || ethereum.providers[0];
+const METAMASK_PROVIDER_PROBE_TIMEOUT_MS = 3_500;
+const METAMASK_REQUEST_TIMEOUT_MS = 90_000;
+
+const getProviderErrorCode = (error) =>
+  error?.code ?? error?.error?.code ?? error?.data?.originalError?.code;
+
+const probeInjectedProvider = async (provider) => {
+  if (!provider || typeof provider.request !== "function") {
+    throw new Error("INVALID_INJECTED_PROVIDER");
   }
-  return ethereum;
+  await requestWithTimeout(
+    provider.request({ method: "eth_chainId" }),
+    METAMASK_PROVIDER_PROBE_TIMEOUT_MS,
+    "METAMASK_PROVIDER_TIMEOUT",
+  );
+};
+
+const probeInjectedProviderSoft = async (provider) => {
+  try {
+    await probeInjectedProvider(provider);
+    return null;
+  } catch (error) {
+    if (String(error?.message || "") === "METAMASK_PROVIDER_TIMEOUT") {
+      return error;
+    }
+    throw error;
+  }
+};
+
+const describeInjectedProvider = (provider) => {
+  if (!provider) return "null";
+  const flags = [];
+  if (provider.isMetaMask) flags.push("isMetaMask");
+  if (provider.isBraveWallet) flags.push("isBraveWallet");
+  if (provider.isCoinbaseWallet) flags.push("isCoinbaseWallet");
+  if (provider.isRabby) flags.push("isRabby");
+  if (provider.isTrust) flags.push("isTrust");
+  if (provider.providers) flags.push("hasProviders");
+  return flags.join(",") || "generic";
 };
 
 const connectWithWalletConnect = async () => {
@@ -640,6 +795,41 @@ async function resolveContractAddress(contract) {
   return contract?.target || contract?.address || null;
 }
 
+function isRateLimitedRpcError(err) {
+  const code = err?.code ?? err?.error?.code ?? err?.info?.error?.code;
+  if (Number(code) === 429 || Number(code) === -32005) return true;
+  const status =
+    err?.status ??
+    err?.data?.httpStatus ??
+    err?.error?.data?.httpStatus ??
+    err?.info?.error?.data?.httpStatus;
+  if (Number(status) === 429) return true;
+  const msg = String(
+    err?.reason ||
+      err?.shortMessage ||
+      err?.message ||
+      err?.error?.message ||
+      err?.info?.error?.message ||
+      "",
+  ).toLowerCase();
+  return (
+    msg.includes("rate limit") ||
+    msg.includes("rate limited") ||
+    msg.includes("too many request") ||
+    msg.includes("http 429")
+  );
+}
+
+function getContractCheckProvider(primaryProvider) {
+  try {
+    const ro = getSharedROProvider();
+    if (ro && typeof ro.getCode === "function") return ro;
+  } catch {
+    // fall back to primary provider
+  }
+  return primaryProvider;
+}
+
 async function assertContractDeployed(contract, provider, label = "Contract") {
   const addr = await resolveContractAddress(contract);
   if (!addr) {
@@ -648,7 +838,18 @@ async function assertContractDeployed(contract, provider, label = "Contract") {
   if (!provider || typeof provider.getCode !== "function") {
     throw new Error(`${label} provider not available.`);
   }
-  const code = await provider.getCode(addr);
+  let code = null;
+  try {
+    code = await provider.getCode(addr);
+  } catch (err) {
+    if (!isRateLimitedRpcError(err)) throw err;
+    resetROProvider();
+    const fallbackProvider = getContractCheckProvider(provider);
+    if (!fallbackProvider || typeof fallbackProvider.getCode !== "function") {
+      throw err;
+    }
+    code = await fallbackProvider.getCode(addr);
+  }
   if (!code || code === "0x" || code === "0x0") {
     throw new Error(
       `${label} not found on current network (address ${addr}). Switch to Polygon Amoy (chainId 80002) or update addresses.`,
@@ -709,6 +910,58 @@ function isUserRejectedAction(err) {
   );
 }
 
+async function callReadWithProviderFallback(
+  contract,
+  methodName,
+  args = [],
+  primaryProvider = null,
+) {
+  const invoke = async (target) => {
+    const fn = target?.[methodName];
+    if (typeof fn !== "function") return undefined;
+    return await fn(...args);
+  };
+
+  try {
+    return await invoke(contract);
+  } catch (err) {
+    if (!isRateLimitedRpcError(err) && !isMissingRevertDataError(err)) {
+      throw err;
+    }
+    resetROProvider();
+    const fallbackProvider = getContractCheckProvider(
+      primaryProvider || getProviderFor(contract),
+    );
+    if (!fallbackProvider || typeof contract?.connect !== "function") {
+      throw err;
+    }
+    const fallbackContract = contract.connect(fallbackProvider);
+    return await invoke(fallbackContract);
+  }
+}
+
+async function getBlockNumberWithFallback(provider) {
+  if (!provider || typeof provider.getBlockNumber !== "function") {
+    throw new Error("Provider not available");
+  }
+  try {
+    return await provider.getBlockNumber();
+  } catch (err) {
+    if (!isRateLimitedRpcError(err) && !isMissingRevertDataError(err)) {
+      throw err;
+    }
+    resetROProvider();
+    const fallbackProvider = getContractCheckProvider(provider);
+    if (
+      !fallbackProvider ||
+      typeof fallbackProvider.getBlockNumber !== "function"
+    ) {
+      throw err;
+    }
+    return await fallbackProvider.getBlockNumber();
+  }
+}
+
 const INVALID_CONSUMER_SELECTOR = "0x79bfd401";
 
 function extractRevertData(err) {
@@ -745,6 +998,8 @@ const KNOWN_CUSTOM_ERROR_MESSAGES = {
   "0xd69b5766": "No eligible NFTs to claim this week.",
 };
 
+const INFO_GATE_STORAGE_KEY = "biggi_info_gate_seen_v1";
+
 function decodeKnownCustomError(err) {
   const data = extractRevertData(err);
   if (!data || typeof data !== "string" || !data.startsWith("0x")) return null;
@@ -760,7 +1015,11 @@ export default function AppCore() {
   const isMobile = useIsMobile(700);
 
   const [openNavIdx, setOpenNavIdx] = React.useState(null);
+  const [autoOpenInfoPanel, setAutoOpenInfoPanel] = React.useState(null);
   const [walletAddress, setWalletAddress] = React.useState("");
+  const [infoGateActive, setInfoGateActive] = React.useState(false);
+  const [infoGateRect, setInfoGateRect] = React.useState(null);
+  const [infoGateOpenTick, setInfoGateOpenTick] = React.useState(0);
 
   const [ticketPrice, setTicketPrice] = React.useState(null);
   const [biggiMinted, setBiggiMinted] = React.useState(0);
@@ -809,12 +1068,25 @@ export default function AppCore() {
   });
 
   const [VRFPending, setVRFPending] = React.useState(false);
+  const [isMinting, setIsMinting] = React.useState(false);
   const [isRedeeming, setIsRedeeming] = React.useState(false);
+  const [isClaiming, setIsClaiming] = React.useState(false);
   const [redeemMsg, setRedeemMsg] = React.useState("");
   const [redeemStartBlock, setRedeemStartBlock] = React.useState(null);
   const [redeemStartedAt, setRedeemStartedAt] = React.useState(null);
   const [pendingTicketId, setPendingTicketId] = React.useState(null);
   const [topFirstId, setTopFirstId] = React.useState(null);
+  const [txStatus, setTxStatus] = React.useState(null);
+
+  const pendingTicketIdRef = React.useRef(null);
+  const latestWalletItemsRef = React.useRef([]);
+  const lastRedeemTicketIdRef = React.useRef(null);
+  React.useEffect(() => {
+    pendingTicketIdRef.current = pendingTicketId;
+  }, [pendingTicketId]);
+  React.useEffect(() => {
+    latestWalletItemsRef.current = Array.isArray(myNFTs) ? myNFTs : [];
+  }, [myNFTs]);
 
   const [adminOpen, setAdminOpen] = React.useState(false);
   const [adminOwner, setAdminOwner] = React.useState("");
@@ -829,6 +1101,8 @@ export default function AppCore() {
   const walletFetchRef = React.useRef({ inFlight: null, addr: null });
   const claimableFetchRef = React.useRef(0);
   const lastVRFFulfilledRef = React.useRef("");
+  const txClearTimerRef = React.useRef(null);
+  const connectInFlightRef = React.useRef(false);
 
   const hideExtras = false;
   const epochStartTs = null;
@@ -837,6 +1111,123 @@ export default function AppCore() {
 
   const navOpen = openNavIdx !== null;
   const navAlt = navOpen ? ICONS[openNavIdx]?.alt : "";
+
+  React.useEffect(() => {
+    startInjectedProviderDiscovery();
+  }, []);
+
+  const resolvePanelAlt = React.useCallback((raw) => {
+    const key = String(raw || "").trim().toLowerCase();
+    if (!key) return null;
+    if (["rewards", "reward", "weekly"].includes(key)) return "REWARDS";
+    if (["collection", "blocks", "nft"].includes(key)) return "COLLECTION";
+    if (["vrf", "mint", "vrf-mint", "vrf mint"].includes(key)) return "VRF MINT";
+    if (["ecosystem", "token", "tokenomics", "biggi"].includes(key))
+      return "BIGGI ECOSYSTEM";
+    if (["users", "user", "wallet"].includes(key)) return "USERS";
+    if (["community", "community-center", "communitycenter", "expansion"].includes(key))
+      return "COMMUNITY CENTER";
+    return null;
+  }, []);
+
+  const hasSeenInfoGate = React.useCallback(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem(INFO_GATE_STORAGE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const startInfoGate = React.useCallback(() => {
+    if (hasSeenInfoGate()) return;
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    setInfoGateActive(true);
+  }, [hasSeenInfoGate]);
+
+  const completeInfoGate = React.useCallback(() => {
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(INFO_GATE_STORAGE_KEY, "1");
+      } catch {
+        // ignore storage errors
+      }
+    }
+    setInfoGateActive(false);
+  }, []);
+
+  React.useEffect(() => {
+    if (!walletAddress && infoGateActive) setInfoGateActive(false);
+  }, [walletAddress, infoGateActive]);
+
+  React.useEffect(() => {
+    if (!infoGateActive) setInfoGateRect(null);
+  }, [infoGateActive]);
+
+  const handleInfoButtonRect = React.useCallback((rect) => {
+    if (!rect || !infoGateActive) return;
+    setInfoGateRect(rect);
+  }, [infoGateActive]);
+
+  const handleInfoGateClick = React.useCallback((event) => {
+    if (!infoGateRect) {
+      setInfoGateOpenTick((v) => v + 1);
+      return;
+    }
+    const { clientX, clientY } = event;
+    const within =
+      clientX >= infoGateRect.left &&
+      clientX <= infoGateRect.right &&
+      clientY >= infoGateRect.top &&
+      clientY <= infoGateRect.bottom;
+    if (within) setInfoGateOpenTick((v) => v + 1);
+  }, [infoGateRect]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const parseInfoLink = () => {
+      const url = new URL(window.location.href);
+      const params = new URLSearchParams(url.search);
+      const rawHash = url.hash ? String(url.hash) : "";
+      const hash = rawHash.replace(/^#/, "");
+
+      if (hash.includes("?")) {
+        const q = hash.split("?")[1];
+        if (q) {
+          for (const [k, v] of new URLSearchParams(q)) params.set(k, v);
+        }
+      } else if (hash && !hash.startsWith("/")) {
+        for (const [k, v] of new URLSearchParams(hash)) params.set(k, v);
+      }
+
+      const panelRaw = params.get("panel") || params.get("p");
+      const infoRaw = params.get("info") || params.get("i");
+      if (!panelRaw || !infoRaw) return;
+
+      const wantsInfo = ["1", "true", "yes", "open"].includes(
+        String(infoRaw).trim().toLowerCase(),
+      );
+      if (!wantsInfo) return;
+
+      const alt = resolvePanelAlt(panelRaw);
+      if (!alt) return;
+
+      const idx = ICONS.findIndex((icon) => icon.alt === alt);
+      if (idx >= 0) setOpenNavIdx(idx);
+      setAutoOpenInfoPanel(alt);
+    };
+
+    parseInfoLink();
+    window.addEventListener("hashchange", parseInfoLink);
+    window.addEventListener("popstate", parseInfoLink);
+    return () => {
+      window.removeEventListener("hashchange", parseInfoLink);
+      window.removeEventListener("popstate", parseInfoLink);
+    };
+  }, [resolvePanelAlt]);
 
   const isAdmin =
     adminOwner &&
@@ -882,6 +1273,20 @@ export default function AppCore() {
     if (isUserRejectedAction(err)) {
       return "Transaction was cancelled in MetaMask.";
     }
+    if (isRateLimitedRpcError(err)) {
+      return "RPC endpoint is rate-limited (429). Wait a few seconds and retry, or switch Polygon Amoy RPC in MetaMask.";
+    }
+
+    const lowerMsg = String(
+      err?.reason || err?.shortMessage || err?.message || "",
+    ).toLowerCase();
+    if (
+      err?.code === "INSUFFICIENT_FUNDS" ||
+      lowerMsg.includes("insufficient funds") ||
+      lowerMsg.includes("insufficient balance")
+    ) {
+      return "Insufficient POL balance for value + gas.";
+    }
 
     const knownCustom = decodeKnownCustomError(err);
     if (knownCustom) return knownCustom;
@@ -902,7 +1307,7 @@ export default function AppCore() {
     if (invalidConsumer) {
       const sub = invalidConsumer.subId || "unknown";
       const consumer = invalidConsumer.consumer || "unknown";
-      return `VRF subscription invalid: VRF Router ${consumer} is not a consumer of subscription ${sub}. Add it in Chainlink VRF or update the subId in Admin → VRF.`;
+      return `VRF subscription invalid: VRF Router ${consumer} is not a consumer of subscription ${sub}. Add it in Chainlink VRF or update the subId in Admin â†’ VRF.`;
     }
 
     const map = {
@@ -945,6 +1350,38 @@ export default function AppCore() {
         await fn();
       } catch {}
     }, delay);
+  }, []);
+
+  React.useEffect(() => {
+    return () => {
+      if (txClearTimerRef.current) clearTimeout(txClearTimerRef.current);
+    };
+  }, []);
+
+  const updateTxStatus = React.useCallback((next, autoClearMs = null) => {
+    if (txClearTimerRef.current) {
+      clearTimeout(txClearTimerRef.current);
+      txClearTimerRef.current = null;
+    }
+    setTxStatus(next);
+    if (autoClearMs) {
+      txClearTimerRef.current = setTimeout(() => {
+        txClearTimerRef.current = null;
+        setTxStatus(null);
+      }, autoClearMs);
+    }
+  }, []);
+
+  const clearTxStatus = React.useCallback((type = null) => {
+    if (txClearTimerRef.current) {
+      clearTimeout(txClearTimerRef.current);
+      txClearTimerRef.current = null;
+    }
+    setTxStatus((prev) => {
+      if (!type) return null;
+      if (!prev) return null;
+      return String(prev?.type || "") === String(type) ? null : prev;
+    });
   }, []);
 
   /* ====================================================================== */
@@ -1412,7 +1849,7 @@ export default function AppCore() {
 
           const pushOrReplace = (trait_type, value) => {
             const i = attrs.findIndex((a) => String(a?.trait_type) === trait_type);
-            const v = value != null ? `${value.toFixed(4)} POL` : "—";
+            const v = value != null ? `${value.toFixed(4)} POL` : "â€”";
             if (i === -1) attrs.push({ trait_type, value: v });
             else attrs[i] = { ...attrs[i], value: v };
           };
@@ -1486,18 +1923,22 @@ export default function AppCore() {
             return null;
           const address = toFilter?.address || contract?.target || contract?.address;
           const [toLogs, fromLogs] = await Promise.all([
-            logProvider.getLogs({
-              address,
-              topics: toFilter?.topics,
-              fromBlock: FROM,
-              toBlock: latest,
-            }),
-            logProvider.getLogs({
-              address,
-              topics: fromFilter?.topics,
-              fromBlock: FROM,
-              toBlock: latest,
-            }),
+            logProvider
+              .getLogs({
+                address,
+                topics: toFilter?.topics,
+                fromBlock: FROM,
+                toBlock: latest,
+              })
+              .catch(() => []),
+            logProvider
+              .getLogs({
+                address,
+                topics: fromFilter?.topics,
+                fromBlock: FROM,
+                toBlock: latest,
+              })
+              .catch(() => []),
           ]);
           return { toLogs, fromLogs };
         } catch {
@@ -1567,36 +2008,25 @@ export default function AppCore() {
     return onlyTickets;
   }, []);
 
-    const fetchMyTickets = React.useCallback(async (addr) => {
-      try {
-        const contract = contractRef.current || getReadOnlyContract();
-        const reader = getCachedReaderInstance("main");
+  const fetchMyTickets = React.useCallback(async (addr) => {
+    try {
+      const contract = contractRef.current || getReadOnlyContract();
+      const reader = getCachedReaderInstance("main");
 
-        let ids = [];
-        try {
-          if (reader && typeof reader.findTicket === "function") {
-            ids = await reader.findTicket(addr);
-          }
-          if (!ids?.length && typeof contract.findTicket === "function") {
-            ids = await contract.findTicket(addr);
-          }
-          if (!ids?.length) {
-            ids = await findTicketsViaLogs(contract, addr);
-          }
-        } catch {
+      let ids = [];
+      try {
+        if (reader && typeof reader.findTicket === "function") {
+          ids = await reader.findTicket(addr);
+        }
+        if (!ids?.length && typeof contract.findTicket === "function") {
+          ids = await contract.findTicket(addr);
+        }
+        if (!ids?.length) {
           ids = await findTicketsViaLogs(contract, addr);
         }
-
-      const coerceBool = (val) => {
-        if (typeof val === "boolean") return val;
-        if (typeof val === "bigint") return val !== 0n;
-        if (typeof val?.toString === "function") {
-          const s = val.toString();
-          if (s === "0") return false;
-          if (s === "1") return true;
-        }
-        return Boolean(val);
-      };
+      } catch {
+        ids = await findTicketsViaLogs(contract, addr);
+      }
 
       let ticketIds = ids;
       if (typeof contract?.isTicket === "function" && Array.isArray(ids)) {
@@ -1706,16 +2136,6 @@ export default function AppCore() {
           return false;
         }
       };
-      const coerceBool = (val) => {
-        if (typeof val === "boolean") return val;
-        if (typeof val === "bigint") return val !== 0n;
-        if (typeof val?.toString === "function") {
-          const s = val.toString();
-          if (s === "0") return false;
-          if (s === "1") return true;
-        }
-        return Boolean(val);
-      };
       const uniqIds = (list) => {
         const out = [];
         const seen = new Set();
@@ -1751,16 +2171,15 @@ export default function AppCore() {
             const latestBlock = await p.getBlockNumber();
             return { contract: c, provider: p, latest: latestBlock };
           }
-          // Final fallback: use injected provider (MetaMask) if available.
+          // Final fallback: use archive RPC provider (if configured).
           try {
-            const injectedEth = getInjectedProvider();
-            if (!injectedEth) throw err;
-            const injected = new BrowserProvider(injectedEth, "any");
-            const latestBlock = await injected.getBlockNumber();
-            const injectedContract = c.connect(injected);
+            const archive = getArchiveProvider();
+            if (!archive) throw err;
+            const latestBlock = await archive.getBlockNumber();
+            const archiveContract = c.connect(archive);
             return {
-              contract: injectedContract,
-              provider: injected,
+              contract: archiveContract,
+              provider: archive,
               latest: latestBlock,
             };
           } catch {
@@ -1840,18 +2259,22 @@ export default function AppCore() {
               const address =
                 toFilter?.address || contract?.target || contract?.address;
               const [toLogs, fromLogs] = await Promise.all([
-                logProvider.getLogs({
-                  address,
-                  topics: toFilter?.topics,
-                  fromBlock: FROM,
-                  toBlock: latest,
-                }),
-                logProvider.getLogs({
-                  address,
-                  topics: fromFilter?.topics,
-                  fromBlock: FROM,
-                  toBlock: latest,
-                }),
+                logProvider
+                  .getLogs({
+                    address,
+                    topics: toFilter?.topics,
+                    fromBlock: FROM,
+                    toBlock: latest,
+                  })
+                  .catch(() => []),
+                logProvider
+                  .getLogs({
+                    address,
+                    topics: fromFilter?.topics,
+                    fromBlock: FROM,
+                    toBlock: latest,
+                  })
+                  .catch(() => []),
               ]);
               return { toLogs, fromLogs };
             } catch {
@@ -1882,38 +2305,37 @@ export default function AppCore() {
             ]);
             return { toLogs, fromLogs };
           } catch (err) {
-            // If RO provider blocks getLogs (CORS / rate limit), fall back to injected provider.
-            const eth = getInjectedProvider();
-            if (!eth) throw err;
-            const injected = new BrowserProvider(eth, "any");
-            const injectedLatest = await injected
+            // If RO provider blocks getLogs, retry via archive RPC provider.
+            const archive = getArchiveProvider();
+            if (!archive) throw err;
+            const archiveLatest = await archive
               .getBlockNumber()
               .catch(() => latest);
-            const injectedContract = contract.connect(injected);
-            const toFilterInjected = injectedContract.filters.Transfer(
+            const archiveContract = contract.connect(archive);
+            const toFilterArchive = archiveContract.filters.Transfer(
               null,
               addr,
               null,
             );
-            const fromFilterInjected = injectedContract.filters.Transfer(
+            const fromFilterArchive = archiveContract.filters.Transfer(
               addr,
               null,
               null,
             );
             const [toLogs, fromLogs] = await Promise.all([
               queryLogsBatched(
-                injectedContract,
-                toFilterInjected,
+                archiveContract,
+                toFilterArchive,
                 FROM,
-                injectedLatest,
+                archiveLatest,
                 LOGS_BATCH,
                 opts,
               ),
               queryLogsBatched(
-                injectedContract,
-                fromFilterInjected,
+                archiveContract,
+                fromFilterArchive,
                 FROM,
-                injectedLatest,
+                archiveLatest,
                 LOGS_BATCH,
                 opts,
               ),
@@ -2346,7 +2768,7 @@ export default function AppCore() {
     }
   }, [enrichMetaWithPrices]);
 
-  const mergeWithTopFirst = React.useCallback((finalList) => {
+  const mergeWithTopFirst = React.useCallback((finalList, preferredTopId = null) => {
     return setMyNFTs((prev) => {
       const pending = prev.find((x) => x.isPending);
       if (VRFPending && pending) {
@@ -2363,9 +2785,11 @@ export default function AppCore() {
         );
         return [pending, ...dedup];
       }
-      if (topFirstId) {
-        const top = finalList.find((x) => x.tokenId === topFirstId);
-        const rest = finalList.filter((x) => x.tokenId !== topFirstId);
+      const targetTopId =
+        preferredTopId != null ? String(preferredTopId) : topFirstId;
+      if (targetTopId) {
+        const top = finalList.find((x) => x.tokenId === targetTopId);
+        const rest = finalList.filter((x) => x.tokenId !== targetTopId);
         return top ? [top, ...rest] : finalList;
       }
       return finalList;
@@ -2411,11 +2835,21 @@ export default function AppCore() {
 
           const prevIsTicket = Boolean(prev?.isTicket);
           const nextIsTicket = Boolean(item?.isTicket);
-          if (prevIsTicket && !nextIsTicket) {
+          const prevLooksTicket = looksLikeTicketMeta(prev?.meta);
+          const nextLooksTicket = looksLikeTicketMeta(item?.meta);
+          const prevLooksNft = looksLikeNftMeta(prev?.meta);
+          const nextLooksNft = looksLikeNftMeta(item?.meta);
+
+          const prevIsTicketLike =
+            prevIsTicket || (prevLooksTicket && !prevLooksNft);
+          const nextIsTicketLike =
+            nextIsTicket || (nextLooksTicket && !nextLooksNft);
+
+          if (prevIsTicketLike && !nextIsTicketLike) {
             byId.set(key, item);
             return;
           }
-          if (!prevIsTicket && nextIsTicket) {
+          if (!prevIsTicketLike && nextIsTicketLike) {
             return;
           }
 
@@ -2451,7 +2885,19 @@ export default function AppCore() {
         };
 
         const merged = mergeWithCache(final, seed);
-        mergeWithTopFirst(merged);
+        const prevSnapshot = latestWalletItemsRef.current;
+        const pendingRedeemId = lastRedeemTicketIdRef.current;
+        const resolvedMintedId =
+          pendingRedeemId != null
+            ? resolveNewlyMintedTokenId(prevSnapshot, merged, pendingRedeemId)
+            : null;
+        if (resolvedMintedId) {
+          lastRedeemTicketIdRef.current = null;
+          setTopFirstId(resolvedMintedId);
+          mergeWithTopFirst(merged, resolvedMintedId);
+        } else {
+          mergeWithTopFirst(merged);
+        }
         saveWalletCache(addr, merged);
         saveGalleryCache(addr, merged, contractAddr);
         await refreshClaimable(addr, merged);
@@ -2485,6 +2931,9 @@ export default function AppCore() {
       const contract = contractRef.current || getReadOnlyContract();
       const provider = getProviderFor(contract);
       if (!provider) throw new Error("Provider not available");
+      const pendingId = pendingTicketIdRef.current
+        ? String(pendingTicketIdRef.current)
+        : "";
       let total = null;
       try {
         const totalRaw = await callFirst(contract, [
@@ -2557,28 +3006,96 @@ export default function AppCore() {
       } catch (err) {
         console.warn("fetchLastMinted: log scan skipped", err);
       }
-      const last = logs[logs.length - 1];
-      const tokenIdArg = last ? safeLogArg(last.args, "tokenId", 1) : null;
-      let tokenId =
-        tokenIdArg != null && typeof tokenIdArg.toString === "function"
-          ? tokenIdArg.toString()
-          : "";
-      if ((!tokenId || tokenId === "0") && total != null && total > 0) {
-        tokenId = String(total);
+      const candidates = [];
+      if (logs.length) {
+        for (let i = logs.length - 1; i >= 0; i -= 1) {
+          const tokenIdArg = safeLogArg(logs[i]?.args, "tokenId", 1);
+          const idStr =
+            tokenIdArg != null && typeof tokenIdArg.toString === "function"
+              ? tokenIdArg.toString()
+              : "";
+          if (idStr && idStr !== "0") candidates.push(idStr);
+        }
       }
+      if (!candidates.length && total != null && total > 0) {
+        candidates.push(String(total));
+      }
+
+      let ticketBaseUri = null;
+      try {
+        if (typeof contract?.ticketBaseURI === "function") {
+          const base = await contract.ticketBaseURI().catch(() => null);
+          if (base) ticketBaseUri = String(base);
+        }
+      } catch {
+        ticketBaseUri = null;
+      }
+      const normalizedTicketBase = normalizeBaseUri(ticketBaseUri);
+
+      let tokenId = "";
+      let seededUri = null;
+      let seededMeta = null;
+
+      for (const idStr of candidates) {
+        if (!idStr || idStr === "0") continue;
+        if (pendingId && idStr === pendingId) continue;
+        let isTicket = null;
+        if (typeof contract?.isTicket === "function") {
+          isTicket = await contract.isTicket(idStr).catch(() => null);
+        }
+        let uriTry = null;
+        let metaTry = null;
+        let uriLooksTicket = false;
+        try {
+          if (normalizedTicketBase || isTicket == null) {
+            uriTry = await getTokenUriCached(contract, idStr).catch(() => null);
+            uriLooksTicket = isTicketUri(uriTry, normalizedTicketBase);
+            if (!uriLooksTicket && uriTry) {
+              metaTry = await readJsonFromURICached(uriTry).catch(() => null);
+            }
+          }
+        } catch {
+          uriTry = null;
+          metaTry = null;
+        }
+
+        const isTicketFlag = isTicket == null ? null : coerceBool(isTicket);
+        if (isTicketFlag === true || uriLooksTicket) continue;
+
+        if (metaTry) {
+          const metaLooksTicket = looksLikeTicketMeta(metaTry);
+          const metaLooksNft = looksLikeNftMeta(metaTry);
+          if (metaLooksTicket || !metaLooksNft) continue;
+        } else if (isTicketFlag == null) {
+          // Unknown status without usable metadata; skip to avoid tickets.
+          continue;
+        }
+
+        if (isTicketFlag === false || metaTry) {
+          tokenId = idStr;
+          seededUri = uriTry;
+          seededMeta = metaTry;
+          break;
+        }
+      }
+
       if (!tokenId || tokenId === "0") {
-        setLastMinted({
-          tokenId: "-",
-          image: "/images/Biggi.png",
-          blockName: "-",
-          backgroundName: "-",
-        });
+        setLastMinted((prev) =>
+          prev?.tokenId && prev.tokenId !== "-"
+            ? prev
+            : {
+                tokenId: "-",
+                image: "/images/Biggi.png",
+                blockName: "-",
+                backgroundName: "-",
+              },
+        );
         return;
       }
 
       let uri = null;
       try {
-        uri = await getTokenUriCached(contract, tokenId);
+        uri = seededUri || (await getTokenUriCached(contract, tokenId));
       } catch (err) {
         const msg = String(err?.message || "");
         if (/NoToken/i.test(msg)) {
@@ -2588,7 +3105,7 @@ export default function AppCore() {
           uri = null;
         }
       }
-      let meta = await readJsonFromURICached(uri);
+      let meta = seededMeta || (await readJsonFromURICached(uri));
       if (looksLikeTicketMeta(meta)) {
         try {
           const freshUri = await getTokenUriCached(contract, tokenId, {
@@ -2603,12 +3120,24 @@ export default function AppCore() {
         } catch {
           // ignore refresh errors
         }
+        if (looksLikeTicketMeta(meta)) {
+          setLastMinted((prev) =>
+            prev?.tokenId && prev.tokenId !== "-"
+              ? prev
+              : {
+                  tokenId: tokenId || "-",
+                  image: "/images/Biggi.png",
+                  blockName: "-",
+                  backgroundName: "-",
+                },
+          );
+          return;
+        }
       }
 
       let image =
         (await resolveImageUrlCached(meta?.image || meta?.image_url, uri)) ||
         PLACEHOLDER_IMAGE;
-      // If metadata is still a ticket, keep the ticket image (if any) so LiveStats isn't blank.
 
       let blockName = "-";
       let backgroundName = "-";
@@ -2686,6 +3215,29 @@ export default function AppCore() {
         } catch {
           // ignore nftInfo fallback errors
         }
+      }
+
+      const imageLooksTicket = String(image || "").includes(TICKET_IMAGE_FILE);
+      const incomplete =
+        image === PLACEHOLDER_IMAGE ||
+        imageLooksTicket ||
+        blockName === "-" ||
+        backgroundName === "-";
+      if (incomplete) {
+        // Keep last known NFT in LiveStats when RPC/IPFS metadata is temporarily incomplete.
+        setLastMinted((prev) => {
+          if (prev?.tokenId && prev.tokenId !== "-") return prev;
+          return {
+            tokenId: tokenId || "-",
+            image:
+              !imageLooksTicket && image && image !== PLACEHOLDER_IMAGE
+                ? image
+                : "/images/Biggi.png",
+            blockName: blockName !== "-" ? blockName : "-",
+            backgroundName: backgroundName !== "-" ? backgroundName : "-",
+          };
+        });
+        return;
       }
 
       setLastMinted({ tokenId, image, blockName, backgroundName });
@@ -2875,7 +3427,7 @@ export default function AppCore() {
 
       const zeroL = ZERO_ADDRESS.toLowerCase();
 
-      const onTransfer = async (from, to, tokenId) => {
+      const onTransfer = async (from, to, tokenId, event) => {
         try {
           const fromL = (from || "").toLowerCase();
           const toL = (to || "").toLowerCase();
@@ -2888,8 +3440,14 @@ export default function AppCore() {
 
           if (fromL === me && toL === zeroL) {
             setVRFPending(true);
-            setRedeemMsg("Redeem confirmed. Waiting for VRF reveal…");
+            setRedeemMsg("Redeem confirmed. Waiting for VRF reveal...");
             setRedeemStartedAt((prev) => prev || Date.now());
+            if (event?.blockNumber != null) {
+              const bn = Number(event.blockNumber);
+              if (Number.isFinite(bn)) {
+                setRedeemStartBlock(bn);
+              }
+            }
           }
 
           if (toL === me) {
@@ -2916,6 +3474,8 @@ export default function AppCore() {
         setRedeemMsg("");
         setTopFirstId(null);
         setPendingTicketId(null);
+        pendingTicketIdRef.current = null;
+        lastRedeemTicketIdRef.current = null;
         setRedeemStartBlock(null);
         setRedeemStartedAt(null);
 
@@ -2933,6 +3493,7 @@ export default function AppCore() {
         await fetchREWARDS();
         if (walletAddress) await fetchWalletAssets(walletAddress);
         setDynamicTraitsById({});
+        lastRedeemTicketIdRef.current = null;
         await refreshVRFPanel();
       };
 
@@ -2973,37 +3534,197 @@ export default function AppCore() {
   /* ====================================================================== */
 
   const connectMetaMask = React.useCallback(async () => {
-    const eth = pickInjectedProvider();
-    if (!eth) {
-      alert("MetaMask extension is not installed.");
-      return;
-    }
-
+    if (connectInFlightRef.current) return;
+    connectInFlightRef.current = true;
     try {
-      setInjectedProvider(eth);
+      startInjectedProviderDiscovery();
+      const metaMaskCandidates = getInjectedProviderCandidates({
+        preferred: null,
+        metaMaskOnly: true,
+      });
+      const fallbackCandidates = getInjectedProviderCandidates({
+        preferred: getInjectedProvider(),
+        metaMaskOnly: false,
+      });
+      const candidates = [...metaMaskCandidates, ...fallbackCandidates].filter(
+        (provider, index, list) =>
+          provider &&
+          list.indexOf(provider) === index &&
+          !isLikelyMetaMaskSdkProvider(provider),
+      );
 
-      const accounts = await eth.request({ method: "eth_requestAccounts" });
-      const addr = accounts?.[0];
-      if (!addr) throw new Error("No account returned from wallet.");
+      if (!candidates.length) {
+        console.warn(
+          "connectMetaMask: no MetaMask provider candidates found",
+          fallbackCandidates.map(describeInjectedProvider),
+        );
+        alert(
+          "MetaMask nebyl detekovan. Over, ze mas nainstalovanou a povolenou MetaMask a stranka bezi v beznem okne (ne iframe).",
+        );
+        return;
+      }
+
+      let eth = null;
+      let addr = "";
+      let lastError = null;
+
+      for (const candidate of candidates) {
+        try {
+          const probeTimeout = await probeInjectedProviderSoft(candidate);
+          if (probeTimeout) {
+            console.warn(
+              "connectMetaMask: provider probe timed out, trying requestAccounts anyway",
+              describeInjectedProvider(candidate),
+            );
+          }
+          const accounts = await requestWithTimeout(
+            candidate.request({ method: "eth_requestAccounts" }),
+            METAMASK_REQUEST_TIMEOUT_MS,
+            "METAMASK_TIMEOUT",
+          );
+          const maybeAddr = accounts?.[0];
+          if (!maybeAddr) continue;
+          eth = candidate;
+          addr = maybeAddr;
+          break;
+        } catch (candidateError) {
+          lastError = candidateError;
+          const candidateCode = getProviderErrorCode(candidateError);
+          const isMissingExtension =
+            isMetaMaskExtensionMissingError(candidateError);
+
+          if (isMissingExtension) continue;
+          if (candidateCode === 4001 || candidateCode === "ACTION_REJECTED") {
+            throw candidateError;
+          }
+          if (candidateCode === -32002 || candidateCode === 4100) {
+            throw candidateError;
+          }
+          if (String(candidateError?.message || "") === "METAMASK_PROVIDER_TIMEOUT")
+            continue;
+        }
+      }
+
+      if (!eth || !addr) {
+        try {
+          const rootProvider = window?.ethereum;
+          if (
+            rootProvider &&
+            typeof rootProvider.request === "function" &&
+            !isLikelyMetaMaskSdkProvider(rootProvider)
+          ) {
+            const probeTimeout = await probeInjectedProviderSoft(rootProvider);
+            if (probeTimeout) {
+              console.warn(
+                "connectMetaMask: root provider probe timed out, trying requestAccounts anyway",
+                describeInjectedProvider(rootProvider),
+              );
+            }
+            const accounts = await requestWithTimeout(
+              rootProvider.request({ method: "eth_requestAccounts" }),
+              METAMASK_REQUEST_TIMEOUT_MS,
+              "METAMASK_TIMEOUT",
+            );
+            const maybeAddr = accounts?.[0];
+            if (maybeAddr) {
+              eth = rootProvider;
+              addr = maybeAddr;
+            }
+          }
+        } catch (rootError) {
+          lastError = rootError;
+        }
+      }
+
+      if (!eth || !addr) {
+        console.warn(
+          "connectMetaMask: candidate attempts failed",
+          candidates.map(describeInjectedProvider),
+          lastError,
+        );
+        throw lastError || new Error("MetaMask extension not found");
+      }
+
+      setInjectedProvider(eth);
+      try {
+        await syncAmoyRpcIfNeeded(eth);
+      } catch {
+        // non-fatal: continue connect flow even when chain metadata sync fails
+      }
 
       const injectedProvider = new BrowserProvider(eth, "any");
       const net = await injectedProvider.getNetwork().catch(() => null);
-      if (Number(net?.chainId) !== 80002) await ensureAmoy(eth);
+      let amoyReady = Number(net?.chainId) === 80002;
+      if (!amoyReady) {
+        try {
+          await ensureAmoy(eth);
+          amoyReady = true;
+        } catch (switchErr) {
+          console.warn("connectMetaMask: ensureAmoy failed", switchErr);
+          amoyReady = false;
+        }
+      }
 
       setWalletAddress(addr);
+      startInfoGate();
 
       contractRef.current = getReadOnlyContract();
 
-      await fetchStats();
-      await fetchREWARDS();
-      await fetchWalletAssets(addr);
-      await fetchLastMinted();
-      await refreshVRFPanel();
+      await Promise.allSettled([
+        fetchStats(),
+        fetchREWARDS(),
+        fetchWalletAssets(addr),
+        fetchLastMinted(),
+        refreshVRFPanel(),
+      ]);
 
       attachEventListeners(addr);
+
+      if (!amoyReady) {
+        alert(
+          "Peněženka je připojená, ale síť se nepřepnula na Polygon Amoy. Přepni ji ručně v MetaMask.",
+        );
+      }
     } catch (err) {
-      alert("Connection rejected.");
+      const code = getProviderErrorCode(err);
+      if (code === 4001 || code === "ACTION_REJECTED") {
+        alert("Pripojeni bylo zruseno v MetaMask.");
+        return;
+      }
+      if (isMetaMaskExtensionMissingError(err)) {
+        alert(
+          "MetaMask extension nebyla nalezena. Otevri stranku v prohlizeci s nainstalovanou MetaMask extension.",
+        );
+        return;
+      }
+      if (String(err?.message || "") === "METAMASK_TIMEOUT") {
+        alert(
+          "MetaMask nereaguje. Otevri rozsireni MetaMask a potvrd pripojeni. Pokud mas vice wallet rozsireni, docasne je vypni.",
+        );
+        return;
+      }
+      if (String(err?.message || "") === "METAMASK_PROVIDER_TIMEOUT") {
+        alert(
+          "MetaMask provider neodpovida. Zkus restartovat prohlizec nebo vypnout kolidujici wallet rozsireni.",
+        );
+        return;
+      }
+      if (code === -32002) {
+        alert(
+          "MetaMask uz ma otevreny pozadavek. Otevri rozsireni MetaMask a potvrd/odmitni pripojeni.",
+        );
+        return;
+      }
+      if (code === 4100) {
+        alert(
+          "MetaMask nepovolil pristup k uctum. Otevri MetaMask a povol pristup pro tuto stranku.",
+        );
+        return;
+      }
+      alert(err?.message || "Pripojeni k MetaMask selhalo.");
       console.error("connectMetaMask", err);
+    } finally {
+      connectInFlightRef.current = false;
     }
   }, [
     fetchStats,
@@ -3012,6 +3733,7 @@ export default function AppCore() {
     fetchLastMinted,
     refreshVRFPanel,
     attachEventListeners,
+    startInfoGate,
   ]);
 
   const connectWalletConnect = React.useCallback(async () => {
@@ -3058,63 +3780,58 @@ export default function AppCore() {
       if (!provider) throw new Error("Provider not available");
       const net = await provider.getNetwork();
       if (Number(net?.chainId) !== 80002) await ensureAmoy();
-      await assertContractDeployed(contract, provider, "MAIN");
+      const netAfter = await provider.getNetwork().catch(() => net);
+      const chainId = Number(netAfter?.chainId) || AMOY.chainId;
+      await assertContractDeployed(
+        contract,
+        getContractCheckProvider(provider),
+        "MAIN",
+      );
 
-      if (typeof contract.paused === "function" && (await contract.paused())) {
+      const isPaused =
+        typeof contract.paused === "function"
+          ? await callReadWithProviderFallback(contract, "paused", [], provider)
+          : false;
+      if (isPaused === true) {
         return alert("Mint is paused.");
       }
 
-      try {
-        const [maxTickets, mintedTickets] = await Promise.all([
-          typeof contract.MAX_TICKETS === "function" ? contract.MAX_TICKETS() : null,
-          typeof contract.ticketMinted === "function" ? contract.ticketMinted() : null,
-        ]);
-        if (
-          maxTickets != null &&
-          mintedTickets != null &&
-          Number(mintedTickets) >= Number(maxTickets)
-        ) {
-          return alert("All tickets are sold out.");
-        }
-      } catch {
-        // ignore preflight errors
+      const ticketsSoldOut =
+        Number.isFinite(ticketMinted) &&
+        Number.isFinite(maxTickets) &&
+        Number(ticketMinted) >= Number(maxTickets);
+      if (ticketsSoldOut) {
+        return alert("All tickets are sold out.");
       }
-
-      try {
-        const [maxSupply, minted] = await Promise.all([
-          typeof contract.MAX_SUPPLY === "function" ? contract.MAX_SUPPLY() : null,
-          typeof contract.biggiMinted === "function" ? contract.biggiMinted() : null,
-        ]);
-        if (
-          maxSupply != null &&
-          minted != null &&
-          Number(minted) >= Number(maxSupply)
-        ) {
-          return alert("All NFTs are already minted.");
-        }
-      } catch {
-        // ignore preflight errors
-      }
-
-      try {
-        if (typeof contract.BIGGI === "function") {
-          const tokenAddr = await contract.BIGGI();
-          if (!tokenAddr || tokenAddr === ZERO_ADDRESS) {
-            return alert("BIGGI token is not configured yet.");
-          }
-        }
-      } catch {
-        // ignore preflight errors
+      const nftsSoldOut =
+        Number.isFinite(biggiMinted) &&
+        Number.isFinite(maxSupply) &&
+        Number(biggiMinted) >= Number(maxSupply);
+      if (nftsSoldOut) {
+        return alert("All NFTs are already minted.");
       }
 
       const price = await resolveTicketPriceWei();
+      try {
+        const balance = await provider.getBalance(walletAddress);
+        if (balance != null && balance < price) {
+          const missing = price - balance;
+          return alert(
+            `Insufficient POL. Missing ${formatEther(
+              missing,
+            )} POL (price is ${formatEther(price)} POL, plus gas).`,
+          );
+        }
+      } catch {
+        // ignore balance precheck errors
+      }
 
       const estimateMint =
         contract?.estimateGas?.mintTicket || contract?.mintTicket?.estimateGas;
       let gasLimitOverride = null;
       if (estimateMint) {
         try {
-          const est = await estimateMint({ value: price });
+          const est = await withTimeout(estimateMint({ value: price }), 1200);
           if (est != null) {
             const buf = BigInt(est) + BigInt(est) / 5n;
             gasLimitOverride = buf;
@@ -3124,34 +3841,62 @@ export default function AppCore() {
           gasLimitOverride = 800000n;
         }
       }
+      setIsMinting(true);
+      updateTxStatus(
+        { type: "mint", stage: "wallet", hash: "", chainId },
+      );
+
+      const feeOverrides = await buildFeeOverrides(provider);
       const tx = await contract.mintTicket({
         value: price,
         ...(gasLimitOverride ? { gasLimit: gasLimitOverride } : {}),
+        ...feeOverrides,
       });
+      updateTxStatus(
+        { type: "mint", stage: "pending", hash: tx?.hash, chainId },
+      );
       await tx.wait();
+      updateTxStatus(
+        { type: "redeem", stage: "confirmed", hash: tx?.hash, chainId },
+      );
+      updateTxStatus(
+        { type: "mint", stage: "confirmed", hash: tx?.hash, chainId },
+        9000,
+      );
 
-      await fetchWalletAssets(walletAddress);
-      await fetchStats();
-      await fetchREWARDS();
-
+      setTimeout(() => {
+        fetchStats().catch(() => {});
+        fetchREWARDS().catch(() => {});
+        refreshVRFPanel?.();
+        fetchWalletAssets(walletAddress).catch(() => {});
+      }, 800);
       alert("Ticket minted.");
-      refreshVRFPanel();
     } catch (err) {
       if (isUserRejectedAction(err)) {
         console.info("mintTicket cancelled in wallet");
+        clearTxStatus("mint");
         return;
       }
       alert("Mint failed: " + prettyError(err));
       console.error("mintTicket", err);
+      clearTxStatus("mint");
+    } finally {
+      setIsMinting(false);
     }
   }, [
     walletAddress,
+    ticketMinted,
+    maxTickets,
+    biggiMinted,
+    maxSupply,
     resolveTicketPriceWei,
     fetchWalletAssets,
     fetchStats,
     fetchREWARDS,
     prettyError,
     refreshVRFPanel,
+    clearTxStatus,
+    updateTxStatus,
   ]);
 
   const redeemTicket = React.useCallback(async () => {
@@ -3166,35 +3911,91 @@ export default function AppCore() {
       if (!provider) throw new Error("Provider not available");
       const net = await provider.getNetwork();
       if (Number(net?.chainId) !== 80002) await ensureAmoy();
-      await assertContractDeployed(contract, provider, "MAIN");
+      const netAfter = await provider.getNetwork().catch(() => net);
+      const chainId = Number(netAfter?.chainId) || AMOY.chainId;
+      await assertContractDeployed(
+        contract,
+        getContractCheckProvider(provider),
+        "MAIN",
+      );
 
-      if (typeof contract.paused === "function" && (await contract.paused())) {
+      const isPaused =
+        typeof contract.paused === "function"
+          ? await callReadWithProviderFallback(contract, "paused", [], provider)
+          : false;
+      if (isPaused === true) {
         return alert("Redeem is paused.");
       }
 
       setIsRedeeming(true);
-      setRedeemMsg("Submitting redeem transaction…");
-      let tickets = [];
-      try {
-        const reader = getCachedReaderInstance("main");
-        if (reader && typeof reader.findTicket === "function") {
-          tickets = await reader.findTicket(walletAddress);
+      setRedeemMsg("Preparing redeem transaction...");
+
+      const toTicketId = (raw) => {
+        try {
+          if (raw == null) return null;
+          if (typeof raw === "bigint") return raw;
+          if (typeof raw === "number") return BigInt(raw);
+          if (typeof raw === "string") return BigInt(raw);
+          if (typeof raw?.toString === "function") {
+            return BigInt(raw.toString());
+          }
+        } catch {
+          return null;
         }
-        if (!Array.isArray(tickets)) {
-          tickets = tickets ? [tickets] : [];
-        }
-        if (!tickets.length && typeof contract.findTicket === "function") {
-          tickets = await contract.findTicket(walletAddress);
-        }
-        if (!Array.isArray(tickets)) {
-          tickets = tickets ? [tickets] : [];
-        }
-        if (!tickets.length) {
+        return null;
+      };
+
+      const localTickets = [];
+      const seen = new Set();
+      for (const item of Array.isArray(myNFTs) ? myNFTs : []) {
+        if (!item || !item.isTicket || item.isPending) continue;
+        const id = toTicketId(item.tokenId);
+        if (id == null) continue;
+        const key = id.toString();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        localTickets.push(id);
+      }
+
+      let tickets = localTickets;
+      const usedLocalTickets = tickets.length > 0;
+
+      if (!tickets.length) {
+        try {
+          const reader = getCachedReaderInstance("main");
+          if (reader && typeof reader.findTicket === "function") {
+            tickets = await reader.findTicket(walletAddress);
+          }
+          if (!Array.isArray(tickets)) {
+            tickets = tickets ? [tickets] : [];
+          }
+          if (!tickets.length && typeof contract.findTicket === "function") {
+            tickets = await contract.findTicket(walletAddress);
+          }
+          if (!Array.isArray(tickets)) {
+            tickets = tickets ? [tickets] : [];
+          }
+          if (!tickets.length) {
+            tickets = await findTicketsViaLogs(contract, walletAddress);
+          }
+        } catch {
           tickets = await findTicketsViaLogs(contract, walletAddress);
         }
-      } catch {
-        tickets = await findTicketsViaLogs(contract, walletAddress);
       }
+
+      // Normalize ticket candidates once (BigInt + dedupe) to avoid repeated
+      // parsing work and noisy edge-case handling later in the flow.
+      const normalizedTickets = [];
+      const seenTicketIds = new Set();
+      for (const raw of Array.isArray(tickets) ? tickets : []) {
+        const id = toTicketId(raw);
+        if (id == null) continue;
+        const key = id.toString();
+        if (seenTicketIds.has(key)) continue;
+        seenTicketIds.add(key);
+        normalizedTickets.push(id);
+      }
+      tickets = normalizedTickets;
 
       if (!tickets.length) {
         setIsRedeeming(false);
@@ -3216,19 +4017,11 @@ export default function AppCore() {
         // ignore pending check failures
       }
 
-      const startBlock = await provider.getBlockNumber();
+      const startBlock = await getBlockNumberWithFallback(provider);
       setRedeemStartBlock(startBlock);
       setRedeemStartedAt(Date.now());
 
-      const ticketIdBN = (() => {
-        const raw = tickets[0];
-        if (raw == null) return null;
-        if (typeof raw === "bigint") return raw;
-        if (typeof raw === "number") return BigInt(raw);
-        if (typeof raw === "string") return BigInt(raw);
-        if (typeof raw?.toString === "function") return BigInt(raw.toString());
-        return null;
-      })();
+      const ticketIdBN = tickets[0] ?? null;
       if (ticketIdBN == null) {
         setIsRedeeming(false);
         setRedeemMsg("");
@@ -3243,7 +4036,7 @@ export default function AppCore() {
         );
       }
       try {
-        if (typeof contract.ownerOf === "function") {
+        if (!usedLocalTickets && typeof contract.ownerOf === "function") {
           const owner = await contract.ownerOf(ticketIdBN);
           if (
             owner &&
@@ -3264,7 +4057,7 @@ export default function AppCore() {
       let redeemGasOverride = null;
       try {
         if (estimateRedeem) {
-          const est = await estimateRedeem(ticketIdBN);
+          const est = await withTimeout(estimateRedeem(ticketIdBN), 1400);
           if (est != null) {
             const buf = BigInt(est) + BigInt(est) / 4n;
             redeemGasOverride = buf;
@@ -3276,26 +4069,27 @@ export default function AppCore() {
           redeemGasOverride = 900000n;
         }
       }
-      if (redeemFn?.staticCall) {
-        try {
-          await redeemFn.staticCall(ticketIdBN);
-        } catch (e) {
-          if (!isMissingRevertDataError(e)) throw e;
-        }
-      }
 
       setRedeemMsg("Please confirm in your wallet...");
+      updateTxStatus(
+        { type: "redeem", stage: "wallet", hash: "", chainId },
+      );
+      const feeOverrides = await buildFeeOverrides(provider);
       const tx = await redeemFn(ticketIdBN, {
         ...(redeemGasOverride ? { gasLimit: redeemGasOverride } : {}),
+        ...feeOverrides,
       });
-      setRedeemMsg("Waiting for transaction confirmation…");
+      updateTxStatus(
+        { type: "redeem", stage: "pending", hash: tx?.hash, chainId },
+      );
+      setRedeemMsg("Waiting for transaction confirmation...");
       await tx.wait();
 
       const pendingTicket = {
         tokenId: ticketIdStr,
         image: "/images/Biggi.png",
         meta: {
-          name: `Ticket #${ticketIdStr} — VRF pending`,
+          name: `Ticket #${ticketIdStr} - VRF pending`,
           description: "Your NFT is being selected via Chainlink VRF.",
         },
         isTicket: true,
@@ -3304,34 +4098,37 @@ export default function AppCore() {
       };
 
       setPendingTicketId(ticketIdStr);
+      pendingTicketIdRef.current = ticketIdStr;
+      lastRedeemTicketIdRef.current = ticketIdStr;
       setVRFPending(true);
-      setRedeemMsg("Redeem confirmed. Waiting for VRF reveal…");
+      setIsRedeeming(false);
+      setRedeemMsg("Redeem confirmed. Waiting for VRF reveal...");
       setTopFirstId(ticketIdStr);
 
-      const [ticketsNow, nftsNow] = await Promise.all([
-        fetchMyTickets(walletAddress),
-        fetchOwnedNFTsViaTransfers(walletAddress),
-      ]);
+      setMyNFTs((prev) => {
+        const list = Array.isArray(prev) ? prev : [];
+        const filtered = list.filter(
+          (item) => String(item?.tokenId ?? "") !== ticketIdStr,
+        );
+        return [pendingTicket, ...filtered];
+      });
 
-      const byId = new Map();
-      for (const t of ticketsNow) byId.set(t.tokenId, t);
-      for (const n of nftsNow) byId.set(n.tokenId, n);
-
-      const baseAssets = Array.from(byId.values());
-      setMyNFTs([pendingTicket, ...baseAssets]);
-
-      await fetchREWARDS();
-      await fetchStats();
-      await refreshVRFPanel();
-
-      setTimeout(() => fetchWalletAssets(walletAddress).catch(() => {}), 2000);
+      setTimeout(() => {
+        const refreshTasks = [Promise.resolve(refreshVRFPanel?.())];
+        if (walletAddress) {
+          refreshTasks.push(fetchWalletAssets(walletAddress));
+        }
+        Promise.allSettled(refreshTasks).catch(() => {});
+      }, 1200);
     } catch (err) {
       setIsRedeeming(false);
       setVRFPending(false);
       setRedeemMsg("");
       setPendingTicketId(null);
+      pendingTicketIdRef.current = null;
       setRedeemStartBlock(null);
       setRedeemStartedAt(null);
+      clearTxStatus("redeem");
 
       if (isUserRejectedAction(err)) {
         setRedeemMsg("Transaction cancelled in wallet.");
@@ -3347,14 +4144,15 @@ export default function AppCore() {
     walletAddress,
     isRedeeming,
     VRFPending,
-    fetchMyTickets,
-    fetchOwnedNFTsViaTransfers,
+    myNFTs,
     fetchWalletAssets,
     fetchREWARDS,
     fetchStats,
     prettyError,
     findTicketsViaLogs,
     refreshVRFPanel,
+    clearTxStatus,
+    updateTxStatus,
   ]);
 
   const claimREWARDS = React.useCallback(async () => {
@@ -3409,6 +4207,11 @@ export default function AppCore() {
       }
 
       const brl = await getLiquidityContract();
+      const claimProvider = getProviderFor(brl);
+      const claimNet = claimProvider
+        ? await claimProvider.getNetwork().catch(() => null)
+        : null;
+      const chainId = Number(claimNet?.chainId) || AMOY.chainId;
       const toBigIntSafe = (v) => {
         try {
           if (v == null) return null;
@@ -3443,8 +4246,20 @@ export default function AppCore() {
         return alert("No eligible NFTs to claim this week.");
       }
 
-      const tx = await brl.claim(tokenIds);
+      setIsClaiming(true);
+      updateTxStatus(
+        { type: "claim", stage: "wallet", hash: "", chainId },
+      );
+      const feeOverrides = await buildFeeOverrides(claimProvider);
+      const tx = await brl.claim(tokenIds, { ...feeOverrides });
+      updateTxStatus(
+        { type: "claim", stage: "pending", hash: tx?.hash, chainId },
+      );
       await tx.wait();
+      updateTxStatus(
+        { type: "claim", stage: "confirmed", hash: tx?.hash, chainId },
+        9000,
+      );
 
       await fetchREWARDS();
       await fetchStats();
@@ -3453,10 +4268,14 @@ export default function AppCore() {
     } catch (err) {
       if (isUserRejectedAction(err)) {
         console.info("claimREWARDS cancelled in wallet");
+        clearTxStatus("claim");
         return;
       }
       alert("Claim failed: " + prettyError(err));
       console.error("claimREWARDS", err);
+      clearTxStatus("claim");
+    } finally {
+      setIsClaiming(false);
     }
   }, [
     walletAddress,
@@ -3466,7 +4285,94 @@ export default function AppCore() {
     fetchStats,
     prettyError,
     refreshClaimable,
+    clearTxStatus,
+    updateTxStatus,
   ]);
+
+  const checkVrfFulfilledByTransfer = React.useCallback(async () => {
+    if (!walletAddress) return false;
+
+    const baseContract = contractRef.current || getReadOnlyContract();
+    const provider = getProviderFor(baseContract);
+    if (!provider) return false;
+
+    let latest = null;
+    try {
+      latest = await provider.getBlockNumber();
+    } catch {
+      return false;
+    }
+    if (!Number.isFinite(latest)) return false;
+
+    let startBlock = Number(redeemStartBlock);
+    if (!Number.isFinite(startBlock)) {
+      try {
+        const burnFilter = baseContract.filters.Transfer(
+          walletAddress,
+          ZERO_ADDRESS,
+          null,
+        );
+        const burnFrom = Math.max(0, latest - 50_000);
+        const burnLogs = await queryLogsBatched(
+          baseContract,
+          burnFilter,
+          burnFrom,
+          latest,
+        );
+        const lastBurn = burnLogs[burnLogs.length - 1];
+        if (lastBurn?.blockNumber != null) {
+          const bn = Number(lastBurn.blockNumber);
+          if (Number.isFinite(bn)) startBlock = bn;
+        }
+      } catch {
+        // ignore burn lookup failures
+      }
+    }
+
+    if (!Number.isFinite(startBlock)) return false;
+    if (startBlock > latest) return false;
+
+    let filter = null;
+    try {
+      filter = baseContract.filters.Transfer(ZERO_ADDRESS, walletAddress, null);
+    } catch {
+      return false;
+    }
+
+    let logs = [];
+    try {
+      logs = await queryLogsBatched(baseContract, filter, Math.max(0, startBlock - 3), latest);
+    } catch {
+      logs = [];
+    }
+
+    for (let i = logs.length - 1; i >= 0; i -= 1) {
+      const l = logs[i];
+      const tid = safeLogArg(l?.args, "tokenId", 2);
+      if (!tid) continue;
+
+      let isTicketNow = null;
+      if (typeof baseContract?.isTicket === "function") {
+        isTicketNow = await baseContract.isTicket(tid).catch(() => null);
+      }
+      const isTicketFlag = isTicketNow == null ? null : coerceBool(isTicketNow);
+      if (isTicketFlag === false) return true;
+
+      if (
+        isTicketNow == null &&
+        typeof baseContract?.tokenURI === "function"
+      ) {
+        const uri = await getTokenUriCached(baseContract, tid, { force: true }).catch(
+          () => null,
+        );
+        if (uri && !/RANDOM_MINT_TICKET|MINT_TICKET|TICKET/i.test(String(uri))) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }, [walletAddress, redeemStartBlock]);
 
   /* ====================================================================== */
   /* ============================ VRF: AUTO POLL ============================ */
@@ -3486,11 +4392,15 @@ export default function AppCore() {
 
       const finalizeVrf = async (message = "VRF fulfilled. NFT minted.") => {
         stopPolling = true;
+        const resolvedId = pendingTicketId ? String(pendingTicketId) : null;
         setVRFPending(false);
         setRedeemMsg(message);
+        clearTxStatus("redeem");
         setRedeemStartedAt(null);
+        setRedeemStartBlock(null);
         setPendingTicketId(null);
-        setTopFirstId(null);
+        pendingTicketIdRef.current = null;
+        setTopFirstId((prev) => resolvedId || prev);
         clearWalletCache(walletAddress);
         if (pendingTicketId) clearTokenCaches(pendingTicketId);
         await fetchWalletAssets(walletAddress);
@@ -3517,12 +4427,12 @@ export default function AppCore() {
         if (c && typeof c.pendingMintRequest === "function") {
           pendingReq = await c.pendingMintRequest(walletAddress).catch(() => null);
         }
-        // If RO provider failed, fall back to injected provider for this read.
-        const injectedEth = getInjectedProvider();
-        if (pendingReq == null && injectedEth) {
+        // If RO provider failed, retry once via archive RPC provider.
+        if (pendingReq == null) {
           try {
-            const injected = new BrowserProvider(injectedEth, "any");
-            c = baseContract?.connect ? baseContract.connect(injected) : baseContract;
+            const archive = getArchiveProvider();
+            if (!archive) throw new Error("archive provider unavailable");
+            c = baseContract?.connect ? baseContract.connect(archive) : baseContract;
             pendingReq = await c.pendingMintRequest(walletAddress).catch(() => null);
           } catch {
             pendingReq = null;
@@ -3542,8 +4452,12 @@ export default function AppCore() {
         try {
           const baseContract = contractRef.current || getReadOnlyContract();
           if (typeof baseContract?.isTicket === "function") {
-            const isTicketNow = await baseContract.isTicket(pendingTicketId).catch(() => null);
-            if (isTicketNow === false) {
+            const isTicketNow = await baseContract
+              .isTicket(pendingTicketId)
+              .catch(() => null);
+            const isTicketFlag =
+              isTicketNow == null ? null : coerceBool(isTicketNow);
+            if (isTicketFlag === false) {
               await finalizeVrf();
             }
           }
@@ -3557,6 +4471,17 @@ export default function AppCore() {
           }
         } catch {
           // ignore fallback errors
+        }
+      }
+
+      if (!stopPolling && pollCount % 3 === 0) {
+        try {
+          const minted = await checkVrfFulfilledByTransfer();
+          if (minted) {
+            await finalizeVrf();
+          }
+        } catch {
+          // ignore log-scan fallback errors
         }
       }
 
@@ -3584,8 +4509,10 @@ export default function AppCore() {
     fetchWalletAssets,
     fetchLastMinted,
     refreshVRFPanel,
+    checkVrfFulfilledByTransfer,
     redeemStartedAt,
     pendingTicketId,
+    clearTxStatus,
   ]);
 
   React.useEffect(() => {
@@ -3598,9 +4525,12 @@ export default function AppCore() {
     const pendingId = pendingTicketId;
     setVRFPending(false);
     setRedeemMsg("VRF fulfilled. NFT minted.");
+    clearTxStatus("redeem");
     setRedeemStartedAt(null);
+    setRedeemStartBlock(null);
     setPendingTicketId(null);
-    setTopFirstId(null);
+    pendingTicketIdRef.current = null;
+    setTopFirstId((prev) => (pendingId ? String(pendingId) : prev));
     setMyNFTs((prev) => prev.filter((x) => !x?.isPending));
 
     if (pendingId) {
@@ -3626,6 +4556,7 @@ export default function AppCore() {
     fetchWalletAssets,
     fetchLastMinted,
     refreshVRFPanel,
+    clearTxStatus,
   ]);
 
   /* ====================================================================== */
@@ -3757,6 +4688,12 @@ export default function AppCore() {
   /* ============================ RENDER HELPERS ============================ */
   /* ====================================================================== */
 
+  const txExplorerLink = React.useMemo(() => {
+    if (!txStatus?.hash) return "";
+    const base = explorerBaseFor(txStatus.chainId || AMOY.chainId);
+    return base ? `${base}/tx/${txStatus.hash}` : "";
+  }, [txStatus]);
+
   const renderActivePanel = React.useMemo(() => {
     const alt = navAlt;
 
@@ -3764,7 +4701,7 @@ export default function AppCore() {
 
     if (alt === "REWARDS") {
       return (
-        <React.Suspense fallback={<Loader label="Loading REWARDS…" />}>
+        <React.Suspense fallback={<Loader label="Loading REWARDSâ€¦" />}>
           <REWARDSPanel
             walletAddress={walletAddress}
             items={myNFTs}
@@ -3772,6 +4709,7 @@ export default function AppCore() {
             claimable={myClaimable}
             rewardPool={rewardPool}
             onClaim={claimREWARDS}
+            autoOpenInfo={autoOpenInfoPanel === "REWARDS"}
           />
         </React.Suspense>
       );
@@ -3779,11 +4717,12 @@ export default function AppCore() {
 
     if (alt === "COLLECTION") {
       return (
-        <React.Suspense fallback={<Loader label="Loading Collection…" />}>
+        <React.Suspense fallback={<Loader label="Loading Collectionâ€¦" />}>
           <COLLECTIONBlocksGrid
             blockNames={DEFAULT_BLOCKS}
             blockPrices={blockPrices}
             blockMintCounts={blockMintCounts}
+            autoOpenInfo={autoOpenInfoPanel === "COLLECTION"}
           />
         </React.Suspense>
       );
@@ -3791,12 +4730,13 @@ export default function AppCore() {
 
     if (alt === "VRF MINT") {
       return (
-        <React.Suspense fallback={<Loader label="Loading VRF Panel…" />}>
+        <React.Suspense fallback={<Loader label="Loading VRF Panelâ€¦" />}>
           <VRFPanel
             data={VRFUIData}
             walletAddress={walletAddress}
             onRequestRandomness={redeemTicket}
             onRefresh={refreshVRFPanel}
+            autoOpenInfo={autoOpenInfoPanel === "VRF MINT"}
             onOpenExplorer={(hash) => {
               const base = explorerBaseFor(VRFUIData?.chainId);
               if (!base) return;
@@ -3809,29 +4749,56 @@ export default function AppCore() {
 
     if (alt === "BIGGI ECOSYSTEM") {
       return (
-        <React.Suspense fallback={<Loader label="Loading Ecosystem…" />}>
-          <EcosystemPanel />
+        <React.Suspense fallback={<Loader label="Loading Ecosystemâ€¦" />}>
+          <EcosystemPanel
+            autoOpenInfo={autoOpenInfoPanel === "BIGGI ECOSYSTEM"}
+          />
         </React.Suspense>
       );
     }
 
     if (alt === "USERS") {
       return (
-        <React.Suspense fallback={<Loader label="Loading User panel…" />}>
-          <USERPANEL />
+        <React.Suspense fallback={<Loader label="Loading User panelâ€¦" />}>
+          <USERPANEL
+            autoOpenInfo={autoOpenInfoPanel === "USERS"}
+            walletAddress={walletAddress}
+            onMint={mintTicket}
+            onRedeem={redeemTicket}
+            onClaim={claimREWARDS}
+            isMinting={isMinting}
+            isRedeeming={isRedeeming}
+            isClaiming={isClaiming}
+            VRFPending={VRFPending}
+            redeemMsg={redeemMsg}
+            txStatus={txStatus}
+            txExplorerLink={txExplorerLink}
+            myNFTs={myNFTs}
+            ticketPrice={ticketPrice}
+            minted={biggiMinted}
+            maxSupply={maxSupply}
+            ticketsLeft={Math.max(
+              0,
+              (maxTickets ?? 0) - (ticketMinted ?? 0),
+            )}
+            claimable={myClaimable}
+            rewardPool={rewardPool}
+            mintVolumeMatic={mintVolumeMatic}
+          />
         </React.Suspense>
       );
     }
 
     if (alt === "COMMUNITY CENTER") {
       return (
-        <React.Suspense fallback={<Loader label="Loading Community Center…" />}>
+        <React.Suspense fallback={<Loader label="Loading Community Centerâ€¦" />}>
           <COMMUNITYCENTERPanel
             walletAddress={walletAddress}
             onConnectMetaMask={connectMetaMask}
             onConnectWalletConnect={connectWalletConnect}
             isAdmin={isAdmin}
             onOpenAdmin={openAdmin}
+            autoOpenInfo={autoOpenInfoPanel === "COMMUNITY CENTER"}
           />
         </React.Suspense>
       );
@@ -3854,7 +4821,50 @@ export default function AppCore() {
     VRFPending,
     redeemTicket,
     refreshVRFPanel,
+    mintTicket,
+    claimREWARDS,
+    isMinting,
+    isRedeeming,
+    isClaiming,
+    redeemMsg,
+    txStatus,
+    txExplorerLink,
+    myNFTs,
+    ticketPrice,
+    biggiMinted,
+    maxSupply,
+    maxTickets,
+    ticketMinted,
+    myClaimable,
+    rewardPool,
+    mintVolumeMatic,
   ]);
+
+  const actionPerforming = React.useMemo(
+    () => isMinting || isRedeeming || isClaiming || VRFPending,
+    [isMinting, isRedeeming, isClaiming, VRFPending],
+  );
+
+  const actionStatusLabel = React.useMemo(() => {
+    if (redeemMsg) return redeemMsg;
+    if (VRFPending) return "Waiting for VRF reveal...";
+    if (isRedeeming) return "Redeem transaction pending...";
+    if (txStatus?.type === "mint") {
+      if (txStatus?.stage === "wallet") return "Mint: confirm in wallet...";
+      if (txStatus?.stage === "pending") return "Mint: pending confirmation...";
+    }
+    if (txStatus?.type === "claim") {
+      if (txStatus?.stage === "wallet") return "Claim: confirm in wallet...";
+      if (txStatus?.stage === "pending") return "Claim: pending confirmation...";
+    }
+    return "";
+  }, [redeemMsg, VRFPending, isRedeeming, txStatus]);
+
+  const handleStatusRefresh = React.useCallback(async () => {
+    await fetchStats?.();
+    await fetchREWARDS?.();
+    await fetchWalletAssets?.(walletAddress);
+  }, [fetchStats, fetchREWARDS, fetchWalletAssets, walletAddress]);
 
   /* ====================================================================== */
   /* ================================= UI ================================== */
@@ -3871,7 +4881,8 @@ export default function AppCore() {
         mintTicket={mintTicket}
         redeemTicket={redeemTicket}
         claimREWARDS={claimREWARDS}
-        actionPerforming={isRedeeming || VRFPending}
+        actionPerforming={actionPerforming}
+        actionStatusLabel={actionStatusLabel}
         actionError={null}
         icons={ICONS}
         setOpenNavIdx={setOpenNavIdx}
@@ -3897,9 +4908,8 @@ export default function AppCore() {
         setCardsHelpOpen={setCardsHelpOpen}
         galleryLoading={galleryLoading}
         galleryNotice={galleryNotice}
-        onOpenAdmin={openAdmin}
-        isAdmin={isAdmin}
         hideExtras={hideExtras}
+        topFirstId={topFirstId}
         setTopFirstId={setTopFirstId}
         fetchDynamicTraitsFor={fetchDynamicTraitsFor}
         dynamicTraitsById={dynamicTraitsById}
@@ -3908,7 +4918,47 @@ export default function AppCore() {
         fetchStats={fetchStats}
         fetchREWARDS={fetchREWARDS}
         redeemMsg={redeemMsg}
+        txStatus={txStatus}
+        txExplorerLink={txExplorerLink}
+        onStatusRefresh={handleStatusRefresh}
+        infoGateActive={infoGateActive}
+        onInfoGateComplete={completeInfoGate}
+        onInfoButtonRect={handleInfoButtonRect}
+        forceInfoOpenTick={infoGateOpenTick}
       />
+
+      {infoGateActive ? (
+        <div
+          className="info-gate-screen"
+          role="button"
+          tabIndex={0}
+          aria-label="Open project info"
+          onClick={handleInfoGateClick}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              setInfoGateOpenTick((v) => v + 1);
+            }
+          }}
+        >
+          {infoGateRect ? (
+            <div
+              className="info-gate-spotlight"
+              style={{
+                left: infoGateRect.left,
+                top: infoGateRect.top,
+                width: infoGateRect.width,
+                height: infoGateRect.height,
+              }}
+            >
+              <span className="info-gate-pulse" aria-hidden="true" />
+              <div className="info-gate-callout" aria-hidden="true">
+                Otevri INFO
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {navOpen ? (
         <FullscreenPanel
@@ -3945,3 +4995,7 @@ export default function AppCore() {
     </div>
   );
 }
+
+
+
+

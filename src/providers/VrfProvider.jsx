@@ -7,6 +7,7 @@ import {
   isFullHistoryEnabled,
 } from "../shared/utils/shared";
 import { getProviderForContract } from "../shared/utils/contract";
+import { buildFeeOverrides } from "../shared/utils/txFees";
 
 const Ctx = React.createContext(null);
 const FULL_HISTORY = isFullHistoryEnabled();
@@ -145,6 +146,7 @@ export function VRFProvider({ children }) {
     async (userAddr = "") => {
       try {
         const c = await mainRW();
+        const provider = getProviderForContract(c);
         setIsRedeeming(true);
         setRedeemMsg("Submitting redeem...");
 
@@ -205,7 +207,8 @@ export function VRFProvider({ children }) {
         if (c?.callStatic?.redeemTicketAndMintNFT)
           await c.callStatic.redeemTicketAndMintNFT(id);
         setRedeemMsg("Confirm in wallet...");
-        const tx = await redeemFn(id);
+        const feeOverrides = await buildFeeOverrides(provider);
+        const tx = await redeemFn(id, { ...feeOverrides });
         setRedeemMsg("Waiting for confirmation...");
         await tx.wait();
 
