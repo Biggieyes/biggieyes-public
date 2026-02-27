@@ -6,6 +6,11 @@ import * as React from "react";
  * @returns true pokud je viewport <= breakpoint
  */
 export default function useIsMobile(breakpoint: number = 700): boolean {
+  type LegacyMql = MediaQueryList & {
+    addListener?: (..._args: unknown[]) => void;
+    removeListener?: (..._args: unknown[]) => void;
+  };
+
   const getMatch = () =>
     typeof window !== "undefined"
       ? window.matchMedia(`(max-width: ${breakpoint}px)`).matches
@@ -24,19 +29,18 @@ export default function useIsMobile(breakpoint: number = 700): boolean {
     setIsMobile(mql.matches);
 
     // Posluchač změny media query
-    if (mql.addEventListener) {
+    const legacyMql = mql as LegacyMql;
+    if (typeof mql.addEventListener === "function") {
       mql.addEventListener("change", handleChange);
     } else {
-      // @ts-expect-error Safari legacy `addListener`.
-      mql.addListener(handleChange);
+      legacyMql.addListener?.(handleChange);
     }
 
     return () => {
-      if (mql.removeEventListener) {
+      if (typeof mql.removeEventListener === "function") {
         mql.removeEventListener("change", handleChange);
       } else {
-        // @ts-expect-error Safari legacy `removeListener`.
-        mql.removeListener(handleChange);
+        legacyMql.removeListener?.(handleChange);
       }
     };
   }, [breakpoint]);

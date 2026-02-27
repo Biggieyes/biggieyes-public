@@ -57,7 +57,7 @@ export async function addNftToMetaMask({
   if (assetOptions?.symbol) options.symbol = assetOptions.symbol;
 
   try {
-    const wasAdded: boolean = await provider.request({
+    const wasAdded = await provider.request({
       method: "wallet_watchAsset",
       params: {
         type: "ERC721",
