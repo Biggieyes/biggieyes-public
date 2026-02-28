@@ -43,8 +43,9 @@ const FutureCollectionsModal = React.memo(
                 Future COLLECTIONs
               </h2>
               <p className="rewards-grid__subtitle">
-                Preview upcoming drops preparing integration with the
-                Distributor.
+                Preview upcoming collection drops being prepared for
+                Distributor integration. Track planned rarity tiers, reward
+                hooks, and launch readiness before public rollout.
               </p>
             </div>
             <div className="rewards-grid__header-actions">

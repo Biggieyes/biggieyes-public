@@ -4,7 +4,7 @@ import {
   BiggiDRIPLM as ABI_BiggiDRIPLM,
   BiggiToken as ABI_BiggiToken,
 } from "@/config/abi/index.js";
-import { getDRIPAddresses } from "../../config/addresses";
+import { getDRIPAddresses } from "../../config/addresses/index.js";
 import defaultProvider from "../provider";
 
 export function getDRIPContracts(chainId, provider) {

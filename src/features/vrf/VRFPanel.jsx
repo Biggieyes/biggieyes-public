@@ -15,6 +15,7 @@ export default function VRFPanel({
 }) {
   const [active, setActive] = React.useState("requests");
   const [infoOpen, setInfoOpen] = React.useState(false);
+  const [diagramInfoOpen, setDiagramInfoOpen] = React.useState(false);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   const autoInfoOpened = React.useRef(false);
   const refreshInFlightRef = React.useRef(null);
@@ -116,6 +117,31 @@ export default function VRFPanel({
           "Redeem triggers a new VRF request from BiggiEyesMain.",
           "Refresh pulls the latest VRF status from on-chain history.",
         ],
+      },
+    ],
+    [],
+  );
+  const diagramInfoItems = React.useMemo(
+    () => [
+      {
+        label: "Panel sections",
+        description:
+          "Requests, History, Post-Redeem, CRE Engine, and Proof Log are shown as separate read views over one VRF data model.",
+      },
+      {
+        label: "Contract path",
+        description:
+          "Wallet redeem/request tx goes to BiggiEyesMain, then to Chainlink VRF coordinator, then callback fulfillment updates request status.",
+      },
+      {
+        label: "Read path",
+        description:
+          "Refresh loads RPC/event snapshots through the useVRF layer and rehydrates all tabs from one source of truth.",
+      },
+      {
+        label: "Explorer links",
+        description:
+          "Tx hash shortcuts from Requests/History/Proof are external links for audit and verification.",
       },
     ],
     [],
@@ -605,8 +631,10 @@ export default function VRFPanel({
             <span className="vrf-badge">Chainlink VRF</span>
             <h2 className="rewards-grid__title">VRF Dashboard</h2>
             <p className="rewards-grid__subtitle">
-              Monitor redeem requests, proofs, and results directly from on-chain
-              data on {netLabel}.
+              Observe the full Chainlink VRF lifecycle on {netLabel}: request
+              creation, fulfillment timing, random words, CRE signals, and
+              proof checks. Every state is sourced from on-chain data for
+              transparent redeem auditing.
             </p>
           </div>
           <div className="rewards-grid__header-actions">
@@ -1094,6 +1122,38 @@ export default function VRFPanel({
           </div>
         )}
 
+        <div
+          className="rewards-grid__section-header"
+          style={{ "--section-accent": "#27d9d2" }}
+        >
+          <span className="rewards-grid__section-title">VRF Diagram</span>
+          <span className="rewards-grid__section-line" />
+        </div>
+        <section className="vrf-diagram-wrap">
+          <button
+            type="button"
+            className="vrf-diagram-info-btn panel-info-btn biggi-btn biggi-btn--ghost"
+            onClick={() => setDiagramInfoOpen(true)}
+            aria-label="Open VRF diagram info"
+            title="VRF diagram info"
+          >
+            <span>i</span>
+          </button>
+          <img
+            className="vrf-diagram-image"
+            src="/images/schemas/vrf-flow-diagram.png?v=20260224a"
+            alt="VRF panel diagram showing sections, request lifecycle, Chainlink callback, and proof or explorer data paths."
+            loading="lazy"
+            decoding="async"
+          />
+        </section>
+
+        <PanelInfoModal
+          open={diagramInfoOpen}
+          onClose={() => setDiagramInfoOpen(false)}
+          title="VRF diagram info"
+          items={diagramInfoItems}
+        />
         <PanelInfoModal
           open={infoOpen}
           onClose={() => setInfoOpen(false)}

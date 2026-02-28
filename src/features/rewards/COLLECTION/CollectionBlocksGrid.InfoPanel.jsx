@@ -82,7 +82,8 @@ const InfoPanel = React.memo(
         </div>
 
         <p className="collection-grid__subtitle">
-          Explore live pricing and availability for every block.
+          Explore live pricing, remaining supply, and expansion pressure for
+          every block tier with data refreshed from on-chain reads.
         </p>
       </div>
     );

@@ -1,7 +1,7 @@
 import { Contract } from "ethers";
 import { getProvider } from "../../../web3/provider";
 import { getLiquidityContracts } from "../../../web3/contracts/liquidity.contracts";
-import { getTokenDexAddresses } from "../../../config/addresses";
+import { getTokenDexAddresses } from "../../../config/addresses/index.js";
 import {
   BiggiLiquidityHelperReader as ABI_BiggiLiquidityHelperReader,
   BiggiReserveTreasuryReader as ABI_BiggiReserveTreasuryReader,

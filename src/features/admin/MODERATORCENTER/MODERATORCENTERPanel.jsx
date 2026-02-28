@@ -245,7 +245,9 @@ export default function MODERATORCENTERPanel({
         <div>
           <h2>Moderator Center</h2>
           <p className="muted">
-            On-chain Moderator Center + Supabase referral dashboard.
+            Operational hub for moderator workflows, referral performance, and
+            owner-controlled testnet actions backed by on-chain and Supabase
+            telemetry.
           </p>
         </div>
         <WalletConnectButton

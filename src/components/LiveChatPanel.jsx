@@ -7,6 +7,14 @@ import { getInjectedProvider } from "@/shared/utils/contract";
 import "./LiveChatPanel.css";
 
 const API_BASE = import.meta.env.VITE_CHAT_API_BASE || "";
+const API_TIMEOUT_MS = (() => {
+  const parsed = Number(
+    import.meta.env.VITE_CHAT_API_TIMEOUT_MS ||
+      import.meta.env.VITE_API_TIMEOUT_MS,
+  );
+  if (Number.isFinite(parsed) && parsed > 0) return Math.trunc(parsed);
+  return 12_000;
+})();
 const MAX_LEN = 280;
 const BAD_WORDS = ["spam", "scam", "phish"]; // basic default list for expansion
 
@@ -38,6 +46,39 @@ const buildApiUrl = (path) => {
   if (!API_BASE) return `/api${path}`;
   if (API_BASE.includes("/.netlify/functions")) return `${API_BASE}${path}`;
   return `${API_BASE}/api${path}`;
+};
+
+const fetchJsonWithTimeout = async (
+  url,
+  { timeoutMs = API_TIMEOUT_MS, ...options } = {},
+) => {
+  const ms = Number.isFinite(Number(timeoutMs))
+    ? Math.max(0, Math.trunc(Number(timeoutMs)))
+    : 0;
+  const controller =
+    typeof AbortController !== "undefined" && ms > 0
+      ? new AbortController()
+      : null;
+  const timer = controller ? setTimeout(() => controller.abort(), ms) : null;
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller?.signal,
+      cache: "no-store",
+    });
+    const json = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(json?.error || json?.message || "Request failed");
+    }
+    return json;
+  } catch (error) {
+    if (error?.name === "AbortError" && ms > 0) {
+      throw new Error(`Endpoint timeout after ${ms} ms`);
+    }
+    throw error;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 };
 
 const formatChatError = (err) => {
@@ -217,13 +258,11 @@ function LiveChatPanel({ walletAddress = "" }) {
       const signer = await provider.getSigner();
       const signerAddress = await signer.getAddress();
 
-      const nonceRes = await fetch(buildApiUrl("/nonce"), {
+      const nonceData = await fetchJsonWithTimeout(buildApiUrl("/nonce"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ address: signerAddress }),
       });
-      if (!nonceRes.ok) throw new Error("Nonce request failed");
-      const nonceData = await nonceRes.json();
       const nonce = nonceData?.nonce;
       if (!nonce) throw new Error("Nonce missing");
 
@@ -231,7 +270,7 @@ function LiveChatPanel({ walletAddress = "" }) {
       const payload = buildPayload(nonce, trimmed, timestamp);
       const signature = await signer.signMessage(payload);
 
-      const msgRes = await fetch(buildApiUrl("/message"), {
+      const msgJson = await fetchJsonWithTimeout(buildApiUrl("/message"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -243,8 +282,7 @@ function LiveChatPanel({ walletAddress = "" }) {
           name: trimmedName || null,
         }),
       });
-      const msgJson = await msgRes.json().catch(() => ({}));
-      if (!msgRes.ok || !msgJson?.ok) {
+      if (!msgJson?.ok) {
         throw new Error(msgJson?.error || "Message send failed");
       }
 

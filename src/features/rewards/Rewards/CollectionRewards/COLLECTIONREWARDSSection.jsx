@@ -3,7 +3,8 @@ import {
   BLOCK_INDICES,
   ORANGE_MAIN_IDS,
 } from "../../../../services/collectionRewardsService.js";
-import { ADDR } from "../../../../utils/addresses";
+import { ADDR } from "@/shared/utils/addresses.js";
+import { handleImageError } from "../../../../utils/images.ts";
 
 const FEEDBACK_CLASS = {
   success: "is-success",
@@ -12,7 +13,16 @@ const FEEDBACK_CLASS = {
 const WAITING_VALUE = "--";
 
 const thumbnailPath = (segments) => {
-  return `/images/${segments.join("/")}`;
+  const originalPath = `/images/${segments.join("/")}`;
+  const thumbRelative = segments.slice(1).join("/");
+  const thumbPath = `/images/rewards-thumb/${thumbRelative}`.replace(
+    /\.png$/i,
+    ".jpg",
+  );
+  return {
+    src: thumbPath,
+    fallback: originalPath,
+  };
 };
 
 const orangeThumbnailsForId = (mainId) => {
@@ -43,16 +53,25 @@ const renderThumbnailPlate = (paths = [], label = "Preview") => {
   }
   return (
     <div className="rewards-panel__claim-thumbnail-row" aria-label={label}>
-      {paths.map((src) => (
-        <img
-          key={src}
-          src={src}
-          alt={`${label} preview`}
-          loading="React.lazy"
-          width="56"
-          height="56"
-        />
-      ))}
+      {paths.map((item, index) => {
+        const src = typeof item === "string" ? item : item?.src;
+        if (!src) return null;
+        const fallback =
+          typeof item === "string" ? undefined : item?.fallback || undefined;
+        return (
+          <img
+            key={`${src}-${index}`}
+            src={src}
+            data-fallback-src={fallback}
+            alt={`${label} preview`}
+            loading="lazy"
+            decoding="async"
+            width={56}
+            height={56}
+            onError={handleImageError}
+          />
+        );
+      })}
     </div>
   );
 };

@@ -1,7 +1,7 @@
 /* @refresh reload */
 // src/context/StatsProvider.jsx
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress } from "ethers";
+import { formatEther } from "ethers";
 import { useContracts } from "./ContractsProvider";
 import {
   resolveTicketPriceWeiFromHub,
@@ -13,10 +13,7 @@ const Ctx = React.createContext(null);
 export function StatsProvider({ children }) {
   const { mainRead, readerRead } = useContracts();
 
-  const idxs = React.useMemo(
-    () => Array.from({ length: 10 }, (_, i) => i + 1),
-    [],
-  );
+  const rowIdxs = React.useMemo(() => Array.from({ length: 10 }, (_, i) => i), []);
 
   const [data, setData] = React.useState({
     ticketPrice: null, // number (POL)
@@ -28,6 +25,50 @@ export function StatsProvider({ children }) {
     charactersMinted: 0,
   });
   const [loading, setLoading] = React.useState(false);
+
+  const detectBlockIndexBase = React.useCallback(async (main) => {
+    if (!main) return 1;
+    const silent = async (fn) => {
+      try {
+        return await fn();
+      } catch {
+        return null;
+      }
+    };
+
+    const probes = [];
+    if (typeof main.getCurrentBlockPrice === "function") {
+      probes.push((i) => main.getCurrentBlockPrice(i));
+    } else if (typeof main.getCurrentBlockPriceWei === "function") {
+      probes.push((i) => main.getCurrentBlockPriceWei(i));
+    }
+    if (typeof main.blockInfos === "function") {
+      probes.push((i) => main.blockInfos(i));
+    }
+    if (typeof main.getBlockMintCount === "function") {
+      probes.push((i) => main.getBlockMintCount(i));
+    } else if (typeof main.blockMintCounts === "function") {
+      probes.push((i) => main.blockMintCounts(i));
+    }
+
+    let scoreBase0 = 0;
+    let scoreBase1 = 0;
+
+    for (const probe of probes) {
+      const [at0, at9, at1, at10] = await Promise.all([
+        silent(() => probe(0)),
+        silent(() => probe(9)),
+        silent(() => probe(1)),
+        silent(() => probe(10)),
+      ]);
+
+      if (at0 != null && at9 != null) scoreBase0 += 1;
+      if (at1 != null && at10 != null) scoreBase1 += 1;
+    }
+
+    if (scoreBase0 > scoreBase1) return 0;
+    return 1;
+  }, []);
 
   const refresh = React.useCallback(async () => {
     setLoading(true);
@@ -82,24 +123,21 @@ export function StatsProvider({ children }) {
         ],
       );
 
+      const blockIndexBase = await detectBlockIndexBase(main);
+      const readBlockIndex = (rowIdx) => rowIdx + blockIndexBase;
+
       const [blockPricesWei, blocksMinted] = await Promise.all([
         Promise.all(
-          idxs.map(async (i) => {
+          rowIdxs.map(async (rowIdx) => {
             const f = main.getCurrentBlockPrice || main.getCurrentBlockPriceWei;
-            if (typeof f === "function") return f(i);
+            if (typeof f === "function") return f(readBlockIndex(rowIdx));
             return 0n;
           }),
         ).catch(() => Array(10).fill(0n)),
         Promise.all(
-          idxs.map(async (i) => {
-            const f = main.blockMintCounts || main.getBlockMintCount;
-            if (typeof f === "function") {
-              try {
-                return f(i - 1);
-              } catch {
-                return f(i);
-              }
-            }
+          rowIdxs.map(async (rowIdx) => {
+            const f = main.getBlockMintCount || main.blockMintCounts;
+            if (typeof f === "function") return f(readBlockIndex(rowIdx));
             return 0;
           }),
         ).catch(() => Array(10).fill(0)),
@@ -121,7 +159,7 @@ export function StatsProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [readerRead, mainRead, idxs]);
+  }, [readerRead, mainRead, rowIdxs, detectBlockIndexBase]);
 
   return (
     <Ctx.Provider value={{ data, loading, refresh }}>{children}</Ctx.Provider>
@@ -133,4 +171,3 @@ export function useStats() {
   if (!v) throw new Error("useStats must be used inside <StatsProvider>");
   return v;
 }
-

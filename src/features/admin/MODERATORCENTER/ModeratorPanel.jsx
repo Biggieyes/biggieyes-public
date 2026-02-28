@@ -68,7 +68,8 @@ export default function ModeratorPanel({
         <div>
           <h2>Moderator Center</h2>
           <div className="muted">
-            Track referrals, payouts, and weekly performance.
+            Track referrals, payout routing, and weekly performance windows
+            with a wallet-focused view of your moderator slot.
           </div>
         </div>
         <div className="moderator-center__wallet">

@@ -25,18 +25,23 @@ import { toNumberSafe } from "@/hooks/tokenomics/_utils";
 import EcosystemErrorBoundary from "./components/EcosystemErrorBoundary.jsx";
 import HeroStats from "./HeroStats.jsx";
 import TabsBar from "./TabsBar.jsx";
-import FlowTab from "./tabs/FlowTab";
-import PolicyTab from "./tabs/PolicyTab";
-import BUYBACKTreasuryTab from "./tabs/BUYBACKTreasuryTab";
-import DRIPTab from "./tabs/DRIPTab";
-import HistoryTab from "./tabs/HistoryTab";
-import DistributorTokenTab from "./tabs/DistributorTokenTab";
-import TokenomicsPanel from "./sections/TokenomicsPanel";
-import TransparencyTab from "./tabs/TransparencyTab.jsx";
 import Card from "./components/Card.jsx";
 import { shortAddr, explorerLink, isAddress } from "./utils/format";
 import { ADDR } from "@/shared/utils/addresses.js";
 import PanelInfoModal from "@/components/common/PanelInfoModal";
+
+const FlowTab = React.lazy(() => import("./tabs/FlowTab.jsx"));
+const PolicyTab = React.lazy(() => import("./tabs/PolicyTab.jsx"));
+const BUYBACKTreasuryTab = React.lazy(
+  () => import("./tabs/BUYBACKTreasuryTab.jsx"),
+);
+const DRIPTab = React.lazy(() => import("./tabs/DRIPTab.jsx"));
+const HistoryTab = React.lazy(() => import("./tabs/HistoryTab.jsx"));
+const DistributorTokenTab = React.lazy(
+  () => import("./tabs/DistributorTokenTab.jsx"),
+);
+const TokenomicsPanel = React.lazy(() => import("./sections/TokenomicsPanel.jsx"));
+const TransparencyTab = React.lazy(() => import("./tabs/TransparencyTab.jsx"));
 
 const TABS = [
   { key: "flow", label: "FLOW" },
@@ -57,7 +62,6 @@ const LIQUIDITY_INTERVAL = 25_000;
 const POLICY_INTERVAL = 26_000;
 const DEX_INTERVAL = 27_000;
 const DISTRIBUTOR_INTERVAL = 29_000;
-const IDLE_INTERVAL = 120_000;
 const HISTORY_LIMIT = 24;
 const HISTORY_MIN_INTERVAL = 30_000;
 const FLOW_DELAY = 0;
@@ -67,24 +71,18 @@ const BUYBACK_DELAY = 750;
 const DRIP_DELAY = 1000;
 const DISTRIBUTOR_DELAY = 1250;
 const POLICY_DELAY = 1500;
-const WARMUP_ORDER = [
-  "flow",
-  "distributor",
-  "buyback",
-  "drip",
-  "liquidity",
-  "policy",
-  "dex",
-];
-const WARMUP_STEP_MS = 2_800;
+const REFRESH_GAP_MS = 1100;
+const PRIME_ALL_ON_MOUNT = true;
+const SNAPSHOT_CACHE_TTL_MS = 60_000;
+const SNAPSHOT_COMPARE_IGNORE_KEYS = ["ts", "tsLabel"];
 
 export default function EcosystemPanel({ autoOpenInfo = false }) {
   const { chainId, account } = useWeb3();
+  const snapshotScope = chainId ?? "unknown";
   const [active, setActive] = React.useState("flow");
   const [infoOpen, setInfoOpen] = React.useState(false);
   const autoInfoOpened = React.useRef(false);
   const [wiringOpen, setWiringOpen] = React.useState(false);
-  const [warmupStage, setWarmupStage] = React.useState(1);
   const isLive = true;
   React.useEffect(() => {
     if (autoOpenInfo && !autoInfoOpened.current) {
@@ -93,22 +91,17 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
     }
   }, [autoOpenInfo]);
 
-  React.useEffect(() => {
-    if (warmupStage >= WARMUP_ORDER.length) return undefined;
-    const timer = setTimeout(() => {
-      setWarmupStage((stage) => Math.min(stage + 1, WARMUP_ORDER.length));
-    }, WARMUP_STEP_MS);
-    return () => clearTimeout(timer);
-  }, [warmupStage]);
+  const handleTabChange = React.useCallback((next) => {
+    const run =
+      typeof React.startTransition === "function"
+        ? React.startTransition
+        : (fn) => fn();
+    run(() => setActive(next));
+  }, []);
 
-  const warmedKeys = React.useMemo(
-    () => new Set(WARMUP_ORDER.slice(0, warmupStage)),
-    [warmupStage],
-  );
   const isFlowFocused =
     active === "flow" || active === "transparency" || wiringOpen;
-  const isPolicyFocused =
-    active === "policy" || active === "transparency";
+  const isPolicyFocused = active === "policy" || active === "transparency";
   const isDistributorFocused =
     active === "distributor" || active === "transparency" || wiringOpen;
   const needsDistributorHistory =
@@ -125,33 +118,41 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
     needsBuybackHistory || active === "distributor" || wiringOpen;
   const isDripFocused =
     needsDripHistory || active === "distributor";
-  const isLiquidityFocused =
-    needsLiquidityHistory || wiringOpen;
+  const isLiquidityFocused = needsLiquidityHistory || wiringOpen;
   const isDexFocused =
     needsDexHistory || active === "distributor" || wiringOpen;
 
-  const needsFlow = isFlowFocused || warmedKeys.has("flow");
-  const needsPolicy = isPolicyFocused || warmedKeys.has("policy");
-  const needsDistributor = isDistributorFocused || warmedKeys.has("distributor");
-  const needsBuyback = isBuybackFocused || warmedKeys.has("buyback");
-  const needsDrip = isDripFocused || warmedKeys.has("drip");
-  const needsLiquidity = isLiquidityFocused || warmedKeys.has("liquidity");
-  const needsDex = isDexFocused || warmedKeys.has("dex");
+  // Keep full data availability: prefetch every snapshot once, then keep live polling
+  // only for focused sections to reduce CPU/RPC load.
+  const needsFlow = PRIME_ALL_ON_MOUNT || isFlowFocused;
+  const needsPolicy = PRIME_ALL_ON_MOUNT || isPolicyFocused;
+  const needsDistributor = PRIME_ALL_ON_MOUNT || isDistributorFocused;
+  const needsBuyback = PRIME_ALL_ON_MOUNT || isBuybackFocused;
+  const needsDrip = PRIME_ALL_ON_MOUNT || isDripFocused;
+  const needsLiquidity = PRIME_ALL_ON_MOUNT || isLiquidityFocused;
+  const needsDex = PRIME_ALL_ON_MOUNT || isDexFocused;
 
-  const flowIntervalMs = isFlowFocused ? FLOW_INTERVAL : IDLE_INTERVAL;
-  const policyIntervalMs = isPolicyFocused ? POLICY_INTERVAL : IDLE_INTERVAL;
-  const distributorIntervalMs = isDistributorFocused
-    ? DISTRIBUTOR_INTERVAL
-    : IDLE_INTERVAL;
-  const buybackIntervalMs = isBuybackFocused ? BUYBACK_INTERVAL : IDLE_INTERVAL;
-  const dripIntervalMs = isDripFocused ? DRIP_INTERVAL : IDLE_INTERVAL;
-  const liquidityIntervalMs = isLiquidityFocused
-    ? LIQUIDITY_INTERVAL
-    : IDLE_INTERVAL;
-  const dexIntervalMs = isDexFocused ? DEX_INTERVAL : IDLE_INTERVAL;
+  // Performance mode: poll only focused/visible sections, disable background polling.
+  const flowIntervalMs = isFlowFocused ? FLOW_INTERVAL : 0;
+  const policyIntervalMs = isPolicyFocused ? POLICY_INTERVAL : 0;
+  const distributorIntervalMs = isDistributorFocused ? DISTRIBUTOR_INTERVAL : 0;
+  const buybackIntervalMs = isBuybackFocused ? BUYBACK_INTERVAL : 0;
+  const dripIntervalMs = isDripFocused ? DRIP_INTERVAL : 0;
+  const liquidityIntervalMs = isLiquidityFocused ? LIQUIDITY_INTERVAL : 0;
+  const dexIntervalMs = isDexFocused ? DEX_INTERVAL : 0;
 
   const historyOptions = React.useMemo(
     () => ({ limit: HISTORY_LIMIT, minIntervalMs: HISTORY_MIN_INTERVAL }),
+    [],
+  );
+  const snapshotBaseOptions = React.useMemo(
+    () => ({
+      sanitize: false,
+      minRefreshGapMs: REFRESH_GAP_MS,
+      cacheTtlMs: SNAPSHOT_CACHE_TTL_MS,
+      dedupeSnapshot: true,
+      compareIgnoreKeys: SNAPSHOT_COMPARE_IGNORE_KEYS,
+    }),
     [],
   );
 
@@ -228,48 +229,66 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
   const flow = useFlowSnapshot({
     intervalMs: isLive && needsFlow ? flowIntervalMs : 0,
     immediate: needsFlow,
-    initialDelayMs: needsFlow ? (isFlowFocused ? FLOW_DELAY : 0) : 0,
+    initialDelayMs: needsFlow ? (isFlowFocused ? 0 : FLOW_DELAY) : 0,
     refreshKey: isFlowFocused ? active : null,
+    cacheKey: `ecosystem:${snapshotScope}:flow`,
+    ...snapshotBaseOptions,
   });
   const policy = usePolicySnapshot({
     intervalMs: isLive && needsPolicy ? policyIntervalMs : 0,
     immediate: needsPolicy,
-    initialDelayMs: needsPolicy ? (isPolicyFocused ? POLICY_DELAY : 0) : 0,
+    initialDelayMs: needsPolicy ? (isPolicyFocused ? 0 : POLICY_DELAY) : 0,
     refreshKey: isPolicyFocused ? active : null,
+    cacheKey: `ecosystem:${snapshotScope}:policy`,
+    ...snapshotBaseOptions,
   });
   const buyback = useBUYBACKTreasurySnapshot({
     intervalMs: isLive && needsBuyback ? buybackIntervalMs : 0,
     immediate: needsBuyback,
-    initialDelayMs: needsBuyback ? (isBuybackFocused ? BUYBACK_DELAY : 0) : 0,
+    initialDelayMs: needsBuyback ? (isBuybackFocused ? 0 : BUYBACK_DELAY) : 0,
     refreshKey: isBuybackFocused ? active : null,
+    cacheKey: `ecosystem:${snapshotScope}:buyback`,
+    ...snapshotBaseOptions,
   });
   const drip = useDRIPSnapshot({
     intervalMs: isLive && needsDrip ? dripIntervalMs : 0,
     immediate: needsDrip,
-    initialDelayMs: needsDrip ? (isDripFocused ? DRIP_DELAY : 0) : 0,
+    initialDelayMs: needsDrip ? (isDripFocused ? 0 : DRIP_DELAY) : 0,
     refreshKey: isDripFocused ? active : null,
+    cacheKey: `ecosystem:${snapshotScope}:drip`,
+    ...snapshotBaseOptions,
   });
   const liquidity = useLiquiditySnapshot({
     intervalMs: isLive && needsLiquidity ? liquidityIntervalMs : 0,
     immediate: needsLiquidity,
-    initialDelayMs: needsLiquidity ? (isLiquidityFocused ? LIQUIDITY_DELAY : 0) : 0,
+    initialDelayMs: needsLiquidity
+      ? isLiquidityFocused
+        ? 0
+        : LIQUIDITY_DELAY
+      : 0,
     refreshKey: isLiquidityFocused ? active : null,
+    cacheKey: `ecosystem:${snapshotScope}:liquidity`,
+    ...snapshotBaseOptions,
   });
   const tokenDex = useTokenDexSnapshot({
     intervalMs: isLive && needsDex ? dexIntervalMs : 0,
     immediate: needsDex,
-    initialDelayMs: needsDex ? (isDexFocused ? TOKEN_DEX_DELAY : 0) : 0,
+    initialDelayMs: needsDex ? (isDexFocused ? 0 : TOKEN_DEX_DELAY) : 0,
     refreshKey: isDexFocused ? active : null,
+    cacheKey: `ecosystem:${snapshotScope}:dex`,
+    ...snapshotBaseOptions,
   });
   const distributor = useDistributorSnapshot({
     intervalMs: isLive && needsDistributor ? distributorIntervalMs : 0,
     immediate: needsDistributor,
     initialDelayMs: needsDistributor
       ? isDistributorFocused
-        ? DISTRIBUTOR_DELAY
-        : 0
+        ? 0
+        : DISTRIBUTOR_DELAY
       : 0,
     refreshKey: isDistributorFocused ? active : null,
+    cacheKey: `ecosystem:${snapshotScope}:distributor`,
+    ...snapshotBaseOptions,
   });
 
   // --- histories (client-side buffers) ---
@@ -601,7 +620,10 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
             <div className="rewards-grid__headline">
               <h2 className="rewards-grid__title">BIGGI ECOSYSTEM</h2>
               <p className="rewards-grid__subtitle">
-                View-only tokenomics dashboard (no transactions).
+                Read-only map of Biggi tokenomics and contract wiring. Follow
+                how mint revenue, liquidity, buyback logic, and reward streams
+                connect across pools and vaults before any transaction is
+                signed.
               </p>
             </div>
 
@@ -623,7 +645,7 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
               flexWrap: "wrap",
             }}
           >
-            <TabsBar tabs={TABS} active={active} onChange={setActive} />
+            <TabsBar tabs={TABS} active={active} onChange={handleTabChange} />
             <button
               type="button"
               className="panel-info-btn biggi-btn biggi-btn--ghost"
@@ -696,102 +718,110 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
             )}
           </Card>
           <div className="biggi-content">
-          {active === "flow" ? (
-            <FlowTab snapshot={flow.snapshot} loading={flow.loading} error={flow.error} />
-          ) : null}
-
-          {active === "buyback" ? (
-            <BUYBACKTreasuryTab
-              snapshot={buyback.snapshot}
-              isLoading={buyback.loading}
-              error={buyback.error}
-              onRefresh={buyback.refresh}
-              nativeSeries={buybackHistory.nativeSeries}
-              treasurySeries={buybackHistory.treasurySeries}
-              biggiSeries={buybackHistory.biggiSeries}
-            />
-          ) : null}
-
-          {active === "distributor" ? (
-            <DistributorTokenTab
-              distributorData={distributor.snapshot}
-              tokenSnapshot={tokenDex.snapshot}
-              BUYBACKSnapshot={buyback.snapshot}
-              BUYBACKFallback={buyback.snapshot?.BUYBACK?.totalBiggiAcquired}
-              DRIPAvailable={
-                drip.snapshot?.distributor?.availableTokens ??
-                drip.snapshot?.distributor?.availableNumeric
+            <React.Suspense
+              fallback={
+                <div className="flow-panel-box">
+                  <div className="biggi-muted">Loading section...</div>
+                </div>
               }
-              tokenTotalSupply={tokenTotalSupply}
-              historyOptions={historyOptions}
-            />
-          ) : null}
+            >
+              {active === "flow" ? (
+                <FlowTab snapshot={flow.snapshot} loading={flow.loading} error={flow.error} />
+              ) : null}
 
-          {active === "drip" ? (
-            <DRIPTab
-              snapshot={drip.snapshot}
-              isLoading={drip.loading}
-              error={drip.error}
-              onRefresh={drip.refresh}
-              availableSeries={dripHistory.availableSeries}
-              capSeries={dripHistory.capSeries}
-              nativeSeries={dripHistory.nativeSeries}
-            />
-          ) : null}
+              {active === "buyback" ? (
+                <BUYBACKTreasuryTab
+                  snapshot={buyback.snapshot}
+                  isLoading={buyback.loading}
+                  error={buyback.error}
+                  onRefresh={buyback.refresh}
+                  nativeSeries={buybackHistory.nativeSeries}
+                  treasurySeries={buybackHistory.treasurySeries}
+                  biggiSeries={buybackHistory.biggiSeries}
+                />
+              ) : null}
 
-          {active === "liquidity" ? (
-            <TokenomicsPanel
-              activeSection="liquidity"
-              chainStatus={chainStatus}
-              liquidity={liquidity.snapshot}
-              tokenDex={tokenDex.snapshot}
-              liquidityHistory={liquidityChart}
-            />
-          ) : null}
+              {active === "distributor" ? (
+                <DistributorTokenTab
+                  distributorData={distributor.snapshot}
+                  tokenSnapshot={tokenDex.snapshot}
+                  BUYBACKSnapshot={buyback.snapshot}
+                  BUYBACKFallback={buyback.snapshot?.BUYBACK?.totalBiggiAcquired}
+                  DRIPAvailable={
+                    drip.snapshot?.distributor?.availableTokens ??
+                    drip.snapshot?.distributor?.availableNumeric
+                  }
+                  tokenTotalSupply={tokenTotalSupply}
+                  historyOptions={historyOptions}
+                />
+              ) : null}
 
-          {active === "policy" ? (
-            <PolicyTab
-              snapshot={policy.snapshot}
-              loading={policy.loading}
-              error={policy.error}
-            />
-          ) : null}
+              {active === "drip" ? (
+                <DRIPTab
+                  snapshot={drip.snapshot}
+                  isLoading={drip.loading}
+                  error={drip.error}
+                  onRefresh={drip.refresh}
+                  availableSeries={dripHistory.availableSeries}
+                  capSeries={dripHistory.capSeries}
+                  nativeSeries={dripHistory.nativeSeries}
+                />
+              ) : null}
 
-          {active === "dex" ? (
-            <TokenomicsPanel
-              activeSection="dex"
-              chainStatus={chainStatus}
-              pumpView={pumpView}
-              liquidity={dexLiquidity}
-              dexHistory={dexChart}
-              tok={tokenDex.snapshot?.token}
-              router={tokenDex.snapshot?.dex?.router}
-              tokenDex={tokenDex.snapshot}
-            />
-          ) : null}
-          {active === "history" ? (
-            <HistoryTab
-              buybackHistory={buybackHistory.history}
-              dripHistory={dripHistory.history}
-              liquidityHistory={liquidityHistory.history}
-            />
-          ) : null}
-          {active === "transparency" ? (
-            <TransparencyTab
-              flowSnapshot={flow.snapshot}
-              policySnapshot={policy.snapshot}
-              distributorSnapshot={distributor.snapshot}
-              buybackSnapshot={buyback.snapshot}
-              dripSnapshot={drip.snapshot}
-              liquiditySnapshot={liquidity.snapshot}
-              tokenDexSnapshot={tokenDex.snapshot}
-              buybackHistory={buybackHistory.history}
-              dripHistory={dripHistory.history}
-              liquidityHistory={liquidityHistory.history}
-              distributorHistory={distributorHistory.history}
-              tokenDexHistory={tokenDexHistory.history}
-            />
-          ) : null}
+              {active === "liquidity" ? (
+                <TokenomicsPanel
+                  activeSection="liquidity"
+                  chainStatus={chainStatus}
+                  liquidity={liquidity.snapshot}
+                  tokenDex={tokenDex.snapshot}
+                  liquidityHistory={liquidityChart}
+                />
+              ) : null}
+
+              {active === "policy" ? (
+                <PolicyTab
+                  snapshot={policy.snapshot}
+                  loading={policy.loading}
+                  error={policy.error}
+                />
+              ) : null}
+
+              {active === "dex" ? (
+                <TokenomicsPanel
+                  activeSection="dex"
+                  chainStatus={chainStatus}
+                  pumpView={pumpView}
+                  liquidity={dexLiquidity}
+                  dexHistory={dexChart}
+                  tok={tokenDex.snapshot?.token}
+                  router={tokenDex.snapshot?.dex?.router}
+                  tokenDex={tokenDex.snapshot}
+                />
+              ) : null}
+              {active === "history" ? (
+                <HistoryTab
+                  buybackHistory={buybackHistory.history}
+                  dripHistory={dripHistory.history}
+                  liquidityHistory={liquidityHistory.history}
+                />
+              ) : null}
+              {active === "transparency" ? (
+                <TransparencyTab
+                  flowSnapshot={flow.snapshot}
+                  policySnapshot={policy.snapshot}
+                  distributorSnapshot={distributor.snapshot}
+                  buybackSnapshot={buyback.snapshot}
+                  dripSnapshot={drip.snapshot}
+                  liquiditySnapshot={liquidity.snapshot}
+                  tokenDexSnapshot={tokenDex.snapshot}
+                  buybackHistory={buybackHistory.history}
+                  dripHistory={dripHistory.history}
+                  liquidityHistory={liquidityHistory.history}
+                  distributorHistory={distributorHistory.history}
+                  tokenDexHistory={tokenDexHistory.history}
+                />
+              ) : null}
+            </React.Suspense>
           </div>
         </div>
       </section>

@@ -1,68 +1,60 @@
 import * as React from "react";
 const Gallery = React.lazy(() => import("../Gallery"));
 
+const HELP_ROWS = [
+  {
+    topic: "Image zoom",
+    detail:
+      "Click the thumbnail inside the card. A local zoom modal opens and can be closed with X.",
+  },
+  {
+    topic: "Details",
+    detail:
+      "Use the Details button to open metadata with mint-time values and attributes.",
+  },
+  {
+    topic: "Mint-time values",
+    detail:
+      "Metadata values are preferred; when unavailable, the UI falls back to on-chain recalculation.",
+  },
+  {
+    topic: "Ticket vs NFT",
+    detail:
+      "A ticket is an entry pass. After Redeem, the final NFT is revealed via Chainlink VRF.",
+  },
+  {
+    topic: "VRF pending",
+    detail:
+      "A short pending state after transaction confirmation is expected; the NFT appears automatically.",
+  },
+  {
+    topic: "IPFS images",
+    detail:
+      "Images load from IPFS gateways, so the first open can take slightly longer.",
+  },
+];
+
 function GalleryHelp() {
   return (
-    <div
-      role="region"
-      aria-label="NFT card help"
-      style={{
-        marginTop: 10,
-        background: "rgba(0,0,0,0.55)",
-        border: "1px solid #00ffd0",
-        borderRadius: 12,
-        padding: 12,
-        boxShadow: "0 6px 18px rgba(0,0,0,.35)",
-      }}
-    >
-      <table
-        className="nft-attributes-table"
-        style={{ width: "100%", fontSize: 14, color: "#e9f2ff" }}
-      >
+    <div role="region" aria-label="NFT card help" className="gallery-help">
+      <div className="gallery-help__header">
+        <strong>Card Help</strong>
+        <span>Quick reference for ticket and NFT states</span>
+      </div>
+      <table className="gallery-help__table">
+        <thead>
+          <tr>
+            <th scope="col">Topic</th>
+            <th scope="col">How it works</th>
+          </tr>
+        </thead>
         <tbody>
-          <tr>
-            <td style={{ opacity: 0.8, padding: "6px 8px" }}>Image zoom</td>
-            <td style={{ padding: "6px 8px" }}>
-              Click the thumbnail inside the card - a local zoom opens with the
-              X button.
-            </td>
-          </tr>
-          <tr>
-            <td style={{ opacity: 0.8, padding: "6px 8px" }}>Details</td>
-            <td style={{ padding: "6px 8px" }}>
-              The "Details" button expands the metadata: Mint-time values and
-              Attributes.
-            </td>
-          </tr>
-          <tr>
-            <td style={{ opacity: 0.8, padding: "6px 8px" }}>
-              Mint-time values
-            </td>
-            <td style={{ padding: "6px 8px" }}>
-              Prefer the values from metadata. When they are missing, they are
-              recalculated from on-chain data as a fallback.
-            </td>
-          </tr>
-          <tr>
-            <td style={{ opacity: 0.8, padding: "6px 8px" }}>Ticket vs. NFT</td>
-            <td style={{ padding: "6px 8px" }}>
-              A ticket is an entry pass. After "Redeem" the final NFT is
-              revealed via VRF.
-            </td>
-          </tr>
-          <tr>
-            <td style={{ opacity: 0.8, padding: "6px 8px" }}>VRF pending</td>
-            <td style={{ padding: "6px 8px" }}>
-              After the transaction is confirmed you may briefly see a pending
-              state; the NFT appears automatically.
-            </td>
-          </tr>
-          <tr>
-            <td style={{ opacity: 0.8, padding: "6px 8px" }}>IPFS images</td>
-            <td style={{ padding: "6px 8px" }}>
-              Images load from IPFS; the first view may take a bit longer.
-            </td>
-          </tr>
+          {HELP_ROWS.map((row) => (
+            <tr key={row.topic}>
+              <td>{row.topic}</td>
+              <td>{row.detail}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
@@ -96,13 +88,7 @@ export default function GallerySection({
 
   return (
     <div className="gallery-section" id="gallery">
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <div className="gallery-section__header">
         <h2 style={{ color: "#fff", margin: 0 }}>My NFTs</h2>
         <button
           type="button"
@@ -110,23 +96,11 @@ export default function GallerySection({
           aria-label="Open NFT card help"
           aria-expanded={cardsHelpOpen ? "true" : "false"}
           title="Info"
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: "50%",
-            background: "#ffe800",
-            color: "#111",
-            border: "2px solid #00ffd0",
-            fontWeight: 900,
-            cursor: "pointer",
-            lineHeight: 1,
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 2px 10px rgba(0,0,0,.35)",
-          }}
+          className={`gallery-section__info-btn${cardsHelpOpen ? " is-open" : ""}`}
         >
-          i
+          <span className="gallery-section__info-icon" aria-hidden="true">
+            i
+          </span>
         </button>
       </div>
 
@@ -147,10 +121,15 @@ export default function GallerySection({
           dynamicTraitsById={dynamicTraitsById}
           topFirstId={topFirstId}
           onOpenDetails={(nft) => {
-            setTopFirstId(nft?.tokenId ?? null);
             fetchDynamicTraitsFor(nft);
           }}
-          onZoom={(nft) => setZoomImg(nft.image)}
+          onZoom={(nft) =>
+            setZoomImg({
+              src: nft?.image || "/images/Biggi.png",
+              alt: nft?.name || nft?.meta?.name || "NFT zoom",
+              anchorRect: nft?.anchorRect || null,
+            })
+          }
           compact={isMobile}
         />
       </React.Suspense>

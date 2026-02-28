@@ -121,8 +121,9 @@ const COLLECTION2Panel = React.memo(
             <h3>COLLECTION 2</h3>
           </div>
           <p className="collection-grid__panel-subtitle">
-            Live pricing, availability, and a streamlined mint helper for every
-            block.
+            Live pricing, availability, and a guided mint helper for each
+            block, with status cues that keep public mint execution
+            predictable.
           </p>
         </header>
 

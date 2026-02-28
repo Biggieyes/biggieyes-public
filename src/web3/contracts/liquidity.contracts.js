@@ -6,7 +6,7 @@ import {
   LiquidityVault as ABI_LiquidityVault,
   BiggiReserveTreasuryReader as ABI_BiggiReserveTreasuryReader,
 } from "@/config/abi/index.js";
-import { getLiquidityAddresses } from "../../config/addresses";
+import { getLiquidityAddresses } from "../../config/addresses/index.js";
 import defaultProvider from "../provider";
 export function getLiquidityContracts(chainId, provider) {
   const signerOrProvider = provider || defaultProvider;

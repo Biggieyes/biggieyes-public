@@ -1,20 +1,98 @@
 import * as React from "react";
 
+const SNAPSHOT_CACHE = new Map();
+
+function readCachedSnapshot(cacheKey, cacheTtlMs = 0) {
+  if (!cacheKey) return null;
+  const hit = SNAPSHOT_CACHE.get(cacheKey);
+  if (!hit) return null;
+  const ttl = Number(cacheTtlMs) || 0;
+  if (ttl > 0 && Date.now() - hit.ts > ttl) {
+    SNAPSHOT_CACHE.delete(cacheKey);
+    return null;
+  }
+  return hit.snapshot ?? null;
+}
+
+function writeCachedSnapshot(cacheKey, snapshot) {
+  if (!cacheKey || snapshot == null) return;
+  SNAPSHOT_CACHE.set(cacheKey, { ts: Date.now(), snapshot });
+}
+
+function deepEqualIgnoringKeys(a, b, ignoreKeys, seen = new WeakMap()) {
+  if (Object.is(a, b)) return true;
+  if (typeof a !== typeof b) return false;
+  if (a == null || b == null) return false;
+  if (typeof a !== "object") return false;
+
+  if (a instanceof Date || b instanceof Date) {
+    return a instanceof Date && b instanceof Date && a.getTime() === b.getTime();
+  }
+
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b)) return false;
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i += 1) {
+      if (!deepEqualIgnoringKeys(a[i], b[i], ignoreKeys, seen)) return false;
+    }
+    return true;
+  }
+
+  const seenB = seen.get(a);
+  if (seenB === b) return true;
+  seen.set(a, b);
+
+  const keysA = Object.keys(a).filter((k) => !ignoreKeys?.has(k));
+  const keysB = Object.keys(b).filter((k) => !ignoreKeys?.has(k));
+  if (keysA.length !== keysB.length) return false;
+
+  for (let i = 0; i < keysA.length; i += 1) {
+    const key = keysA[i];
+    if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
+    if (!deepEqualIgnoringKeys(a[key], b[key], ignoreKeys, seen)) return false;
+  }
+  return true;
+}
+
 export default function usePollingSnapshot(fetcher, options = {}) {
   const {
     intervalMs = 15000,
     immediate = true,
     pauseWhenHidden = true,
     initialDelayMs = 0,
+    minRefreshGapMs = 0,
     refreshKey = null,
+    cacheKey = null,
+    cacheTtlMs = 0,
+    dedupeSnapshot = false,
+    compareIgnoreKeys = null,
     sanitize: sanitizeOpt = true,
   } = options;
-  const [snapshot, setSnapshot] = React.useState(null);
+  const [snapshot, setSnapshot] = React.useState(() =>
+    readCachedSnapshot(cacheKey, cacheTtlMs),
+  );
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
   const inFlightRef = React.useRef(false);
-  const hasLoadedRef = React.useRef(false);
+  const lastRefreshAtRef = React.useRef(0);
+  const hasLoadedRef = React.useRef(snapshot != null);
   const snapshotRef = React.useRef(snapshot);
+  const compareIgnoreSet = React.useMemo(() => {
+    if (!dedupeSnapshot) return null;
+    if (!Array.isArray(compareIgnoreKeys) || compareIgnoreKeys.length === 0) {
+      return new Set(["ts", "tsLabel"]);
+    }
+    return new Set(compareIgnoreKeys);
+  }, [dedupeSnapshot, compareIgnoreKeys]);
+
+  React.useEffect(() => {
+    if (!cacheKey) return;
+    const cached = readCachedSnapshot(cacheKey, cacheTtlMs);
+    setSnapshot(cached);
+    snapshotRef.current = cached;
+    hasLoadedRef.current = cached != null;
+  }, [cacheKey, cacheTtlMs]);
+
   const [isVisible, setIsVisible] = React.useState(() => {
     if (typeof document === "undefined") return true;
     return !document.hidden;
@@ -49,14 +127,20 @@ export default function usePollingSnapshot(fetcher, options = {}) {
     return walk(value);
   }, []);
 
-  const refresh = React.useCallback(async () => {
+  const refresh = React.useCallback(async (force = false) => {
     const startTransition =
       typeof React.startTransition === "function"
         ? React.startTransition
         : (fn) => fn();
     if (typeof fetcher !== "function") return null;
+    const now = Date.now();
+    const minGap = Number(minRefreshGapMs) || 0;
+    if (!force && minGap > 0 && now - lastRefreshAtRef.current < minGap) {
+      return null;
+    }
     if (inFlightRef.current) return null;
     inFlightRef.current = true;
+    lastRefreshAtRef.current = now;
     const shouldSetLoading =
       !hasLoadedRef.current && snapshotRef.current == null;
     if (shouldSetLoading) setLoading(true);
@@ -71,8 +155,15 @@ export default function usePollingSnapshot(fetcher, options = {}) {
             : typeof sanitizeOpt === "function"
               ? sanitizeOpt(data)
               : sanitize(data);
+      if (safe != null) writeCachedSnapshot(cacheKey, safe);
+      const prev = snapshotRef.current;
+      const sameSnapshot =
+        dedupeSnapshot &&
+        prev != null &&
+        safe != null &&
+        deepEqualIgnoringKeys(prev, safe, compareIgnoreSet);
       startTransition(() => {
-        setSnapshot(safe);
+        if (!sameSnapshot) setSnapshot(safe);
       });
       if (safe != null) hasLoadedRef.current = true;
       return safe;
@@ -85,7 +176,15 @@ export default function usePollingSnapshot(fetcher, options = {}) {
       inFlightRef.current = false;
       if (shouldSetLoading) setLoading(false);
     }
-  }, [fetcher, sanitize, sanitizeOpt]);
+  }, [
+    cacheKey,
+    compareIgnoreSet,
+    dedupeSnapshot,
+    fetcher,
+    minRefreshGapMs,
+    sanitize,
+    sanitizeOpt,
+  ]);
 
   React.useEffect(() => {
     if (!immediate) return undefined;

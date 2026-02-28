@@ -4,7 +4,7 @@ import {
   BiggiTreasury as ABI_BiggiTreasury,
   BiggiToken as ABI_BiggiToken,
 } from "@/config/abi/index.js";
-import { getBUYBACKAddresses } from "../../config/addresses";
+import { getBUYBACKAddresses } from "../../config/addresses/index.js";
 import defaultProvider from "../provider";
 
 export function getBUYBACKTreasuryContracts(chainId, provider) {

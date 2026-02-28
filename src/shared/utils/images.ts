@@ -30,6 +30,13 @@ export function handleImageError(e: Event): void {
   const img = e?.currentTarget as HTMLImageElement | null;
   if (!img) return;
 
+  const explicitFallback = img.dataset.fallbackSrc;
+  if (explicitFallback && img.dataset.fallbackTried !== "1") {
+    img.dataset.fallbackTried = "1";
+    img.src = explicitFallback;
+    return;
+  }
+
   const tried = img.dataset.triedVariant || "none";
   const m = img.src.match(
     /(Biggi_)(\d{1,3})(_[A-Z]+_)(O|B|W|BR|BL|G|V|R|P|RB)(\.png)$/,
@@ -71,11 +78,29 @@ export function handleImageError(e: Event): void {
 /** Thumbnail bloku */
 export function getBlockThumb(name?: unknown): string {
   const block = safeBlockFolder(name);
-  const mapped = BLOCK_IMAGES?.[block];
-  if (Array.isArray(mapped) && mapped.length) {
-    return buildBlockImagePath(mapped[0]);
+  if (!block) return PLACEHOLDER;
+  return addBase(`/images/blocks/${block}/thumb.jpg`);
+}
+
+const toJpgName = (fileName?: unknown): string =>
+  String(fileName ?? "").replace(/\.\w+$/, ".jpg");
+
+/** Cesta k miniatuře obrázku bloku (JPG) */
+export function buildBlockThumbPath(blockOrFile?: unknown, file?: unknown): string {
+  if (file == null) {
+    const fileName = String(blockOrFile ?? "");
+    if (!fileName) return PLACEHOLDER;
+    const match = fileName.match(/^Biggi_\d+_([A-Z]+)_[A-Z]+\.png$/);
+    const folder = match ? match[1] : "";
+    const jpgName = toJpgName(fileName);
+    return folder
+      ? addBase(`/images/blocks-thumb/${folder}/${jpgName}`)
+      : addBase(`/images/blocks-thumb/${jpgName}`);
   }
-  return addBase(`/images/blocks/${block}/thumb.png`);
+
+  return addBase(
+    `/images/blocks-thumb/${safeBlockFolder(blockOrFile)}/${toJpgName(file)}`,
+  );
 }
 
 /** Cesta k jednomu obrázku v bloku */

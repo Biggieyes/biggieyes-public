@@ -133,14 +133,19 @@ export function useStatsREWARDS(options = {}) {
         indexProbes.push((i) => blockMintCountReader(i));
       }
 
-      let blockIndexBase = 1;
+      let scoreBase0 = 0;
+      let scoreBase1 = 0;
       for (const probe of indexProbes) {
-        const probe0 = await safeCall(() => probe(0), null);
-        if (probe0 != null) {
-          blockIndexBase = 0;
-          break;
-        }
+        const [at0, at9, at1, at10] = await Promise.all([
+          safeCall(() => probe(0), null),
+          safeCall(() => probe(9), null),
+          safeCall(() => probe(1), null),
+          safeCall(() => probe(10), null),
+        ]);
+        if (at0 != null && at9 != null) scoreBase0 += 1;
+        if (at1 != null && at10 != null) scoreBase1 += 1;
       }
+      const blockIndexBase = scoreBase0 > scoreBase1 ? 0 : 1;
 
       const blockRows = await Promise.all(
         Array.from({ length: 10 }, async (_, i) => {

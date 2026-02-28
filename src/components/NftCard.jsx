@@ -1,6 +1,7 @@
 // src/components/NftCard.jsx
 import * as React from "react";
 import { formatEther } from "ethers";
+import { explorerBaseFor } from "@/config/chains.js";
 import { DEFAULT_BLOCKS } from "@/shared/blocks";
 import { buildBlockImagePath } from "@/shared/utils/images";
 import "./NftCard.css";
@@ -130,6 +131,16 @@ const looksLikeTicketMeta = (meta) => {
   );
 };
 
+const normalizeExternalUrl = (value) => {
+  if (!value) return "";
+  const raw = String(value).trim();
+  if (!raw) return "";
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (raw.startsWith("//")) return `https:${raw}`;
+  if (/^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(raw)) return `https://${raw}`;
+  return "";
+};
+
 /* optional color-to-blockId map as fallback if needed */
 const COLOR_TO_BLOCKID = {
   Orange: 1,
@@ -148,7 +159,6 @@ export default function NftCard({
   nft = {},
   dynamicTraits = {},
   onOpenDetails,
-  onZoom,
   fallbackContractAddress = null,
   highlight = false,
 }) {
@@ -184,6 +194,7 @@ export default function NftCard({
   const [loadingMint, setLoadingMint] = React.useState(false);
   const [loadingBlockNow, setLoadingBlockNow] = React.useState(false);
   const [detailsOpen, setDetailsOpen] = React.useState(false);
+  const [imageZoomed, setImageZoomed] = React.useState(false);
   const metadataRef = React.useRef(metadata);
   const onchainFallbackRef = React.useRef(new Set());
 
@@ -233,6 +244,7 @@ export default function NftCard({
     setImage(nft.image || null);
     setImageLoaded(false);
     setImageFailed(false);
+    setImageZoomed(false);
   }, [nft.image, tokenId]);
 
   React.useEffect(() => {
@@ -764,25 +776,54 @@ export default function NftCard({
   }, [image, nft?.image]);
   const showImageFallback =
     imageIsIpfs && (imageFailed || (!imageLoaded && isOffline));
+  const externalHref = React.useMemo(() => {
+    const metaUrl = normalizeExternalUrl(metadata?.external_url);
+    if (metaUrl) return metaUrl;
+
+    if (!contractAddress || !tokenId) return "";
+    const chainIdCandidate = Number(nft?.chainId || metadata?.chainId || 80002);
+    const explorerBase =
+      explorerBaseFor(chainIdCandidate) ||
+      explorerBaseFor(80002) ||
+      "https://amoy.polygonscan.com";
+    if (!explorerBase) return "";
+
+    const token = encodeURIComponent(String(tokenId));
+    return `${explorerBase}/token/${String(contractAddress)}?a=${token}`;
+  }, [metadata?.external_url, metadata?.chainId, contractAddress, tokenId, nft?.chainId]);
 
   const handleToggleDetails = () => {
     setDetailsOpen((prev) => !prev);
     if (typeof onOpenDetails === "function") onOpenDetails(nft);
   };
 
-  const handleZoom = () => {
-    if (typeof onZoom === "function") onZoom({ ...nft, image: imageSrc });
-  };
+  const handleZoom = () => setImageZoomed((prev) => !prev);
+
+  React.useEffect(() => {
+    if (!imageZoomed || typeof window === "undefined") return;
+    const handleEsc = (event) => {
+      if (event.key === "Escape") setImageZoomed(false);
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [imageZoomed]);
 
   const cardClassName = `nft-card${
     detailsOpen ? " nft-card--open" : ""
-  }${highlight ? " nft-card--highlight" : ""}`;
+  }${highlight ? " nft-card--highlight" : ""}${
+    imageZoomed ? " nft-card--image-zoomed" : ""
+  }`;
 
   return (
     <article className={cardClassName}>
       <div className="nft-card__figure">
-        <button type="button" className="nft-card__zoom" onClick={handleZoom}>
-          Zoom
+        <button
+          type="button"
+          className="nft-card__zoom"
+          aria-pressed={imageZoomed ? "true" : "false"}
+          onClick={handleZoom}
+        >
+          {imageZoomed ? "Close" : "Zoom"}
         </button>
         {nft.isTicket && <span className="nft-card__badge">Ticket</span>}
         {!nft.isTicket && (
@@ -884,14 +925,14 @@ export default function NftCard({
           >
             {detailsOpen ? "Hide details" : "Show details"}
           </button>
-          {metadata?.external_url && (
+          {externalHref && (
             <a
               className="nft-card__external"
-              href={metadata.external_url}
+              href={externalHref}
               target="_blank"
               rel="noreferrer"
             >
-              External link
+              Explorer
             </a>
           )}
         </div>

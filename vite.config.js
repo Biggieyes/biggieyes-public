@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { resolve } from 'node:path';
 
 export default defineConfig({
   plugins: [react()],
@@ -22,6 +23,10 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 1700,
     rollupOptions: {
+      input: {
+        landing: resolve(__dirname, 'index.html'),
+        app: resolve(__dirname, 'app/index.html'),
+      },
       onwarn(warning, warn) {
         const message = warning?.message || "";
         const id = warning?.id || warning?.loc?.file || "";

@@ -501,8 +501,10 @@ export default function COMMUNITYCENTERPanel({
             <div className="rewards-grid__headline">
               <h2 className="rewards-grid__title">Community Center</h2>
               <p className="rewards-grid__subtitle">
-                Governance proposals, community events, and participation
-                telemetry.
+                Hub for governance proposals, community events, and
+                participation telemetry. Review voting momentum, member
+                activity, and contract-backed snapshots to understand how the
+                community layer evolves over time.
               </p>
             </div>
             <div className="rewards-grid__header-actions">

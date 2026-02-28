@@ -1,5 +1,6 @@
 import * as React from "react";
 import { FALLBACK_VALUE } from "./COLLECTIONBlocksGrid.constants";
+import PanelInfoModal from "@/components/common/PanelInfoModal";
 
 const SectionHeader = ({ label, accent = "#ffe800" }) => (
   <div
@@ -28,6 +29,8 @@ const COLLECTION1Panel = React.memo(
     topMintedName,
     additionalText,
   }) => {
+    const [schemaInfoOpen, setSchemaInfoOpen] = React.useState(false);
+
     const nf0 = React.useMemo(
       () => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }),
       [],
@@ -168,6 +171,27 @@ const COLLECTION1Panel = React.memo(
       }));
     }, [maxValueForChart, rows]);
 
+    const schemaInfoItems = React.useMemo(
+      () => [
+        {
+          label: "Rarity line",
+          description:
+            "Top row maps 10 block tiers from ORANGE to RAINBOW with base price, NFT count, linked block, and growth.",
+        },
+        {
+          label: "Background line",
+          description:
+            "Bottom row maps 10 backgrounds with fixed mint bonus percentages (+5% to +50%).",
+        },
+        {
+          label: "Mint formula",
+          description:
+            "Final Mint Price = Block Price + (Block Price x Background Bonus%).",
+        },
+      ],
+      [],
+    );
+
     if (!blockEntries || blockEntries.length === 0) {
       return (
         <div className="collection-grid__panel">
@@ -207,8 +231,8 @@ const COLLECTION1Panel = React.memo(
             <div>
               <h3>COLLECTION stats (live)</h3>
               <p className="collection-grid__panel-subtitle">
-                Fresh on-chain snapshots for pricing, minting depth, and
-                headline blocks.
+                Fresh on-chain snapshots for pricing bands, mint depth, block
+                exposure, and headline collection metrics in real time.
               </p>
             </div>
           </header>
@@ -300,6 +324,32 @@ const COLLECTION1Panel = React.memo(
             </div>
           </div>
         </section>
+
+        <SectionHeader label="Structure" accent="#ff8a00" />
+        <section className="collection-grid__schema-image-wrap">
+          <button
+            type="button"
+            className="collection-grid__schema-info-btn panel-info-btn biggi-btn biggi-btn--ghost"
+            onClick={() => setSchemaInfoOpen(true)}
+            aria-label="Open structure schema info"
+            title="Structure info"
+          >
+            <span>i</span>
+          </button>
+          <img
+            className="collection-grid__schema-image"
+            src="/images/schemas/collection-structure-schema.png?v=20260224b"
+            alt="Collection structure schema PNG with ten rarity blocks, base price, NFT count, linked block, and growth percent."
+            loading="lazy"
+            decoding="async"
+          />
+        </section>
+        <PanelInfoModal
+          open={schemaInfoOpen}
+          onClose={() => setSchemaInfoOpen(false)}
+          title="Structure schema info"
+          items={schemaInfoItems}
+        />
       </>
     );
   },

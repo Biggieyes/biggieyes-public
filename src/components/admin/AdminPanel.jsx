@@ -7,7 +7,7 @@ import {
   parseEther,
   isAddress,
 } from "ethers";
-import { ADDR } from "../../utils/addresses.js";
+import { ADDR } from "@/shared/utils/addresses.js";
 import { getROProvider } from "@/shared/utils/contract";
 import { BiggiCommunityCenter } from "@/config/abi/index.js";
 import { supabase } from "../../services/chatClient";
@@ -18,6 +18,14 @@ const COMMUNITY_CENTER_ABI = Array.isArray(BiggiCommunityCenter)
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const CHAT_API_BASE = import.meta.env.VITE_CHAT_API_BASE || "";
+const CHAT_API_TIMEOUT_MS = (() => {
+  const parsed = Number(
+    import.meta.env.VITE_CHAT_API_TIMEOUT_MS ||
+      import.meta.env.VITE_API_TIMEOUT_MS,
+  );
+  if (Number.isFinite(parsed) && parsed > 0) return Math.trunc(parsed);
+  return 12_000;
+})();
 
 function buildChatApiUrl(path) {
   const safePath = (() => {
@@ -30,6 +38,40 @@ function buildChatApiUrl(path) {
   if (CHAT_API_BASE.includes("/.netlify/functions"))
     return `${CHAT_API_BASE}${safePath}`;
   return `${CHAT_API_BASE}/api${safePath}`;
+}
+
+async function fetchJsonWithTimeout(
+  url,
+  { timeoutMs = CHAT_API_TIMEOUT_MS, ...options } = {},
+) {
+  const ms = Number.isFinite(Number(timeoutMs))
+    ? Math.max(0, Math.trunc(Number(timeoutMs)))
+    : 0;
+  const controller =
+    typeof AbortController !== "undefined" && ms > 0
+      ? new AbortController()
+      : null;
+  const timer = controller ? setTimeout(() => controller.abort(), ms) : null;
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller?.signal,
+      cache: "no-store",
+    });
+    const json = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(json?.error || json?.message || "Request failed");
+    }
+    return json;
+  } catch (error) {
+    if (error?.name === "AbortError" && ms > 0) {
+      throw new Error(`Endpoint timeout after ${ms} ms`);
+    }
+    throw error;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 function resolveCOMMUNITYCENTERAddress() {
@@ -453,19 +495,21 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       const payload = `${action}|${id}|${nextContent || ""}`;
       const signature = await signer.signMessage(payload);
 
-      const res = await fetch(buildChatApiUrl("/admin/editMessage"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          address,
-          signature,
-          action,
-          messageId: id,
-          newContent: nextContent || undefined,
-        }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok || !json?.ok) {
+      const json = await fetchJsonWithTimeout(
+        buildChatApiUrl("/admin/editMessage"),
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            address,
+            signature,
+            action,
+            messageId: id,
+            newContent: nextContent || undefined,
+          }),
+        },
+      );
+      if (!json?.ok) {
         throw new Error(json?.error || "Moderation failed");
       }
       await loadChatAdmin();
@@ -491,17 +535,19 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       const payload = `rules|${rulesText}`;
       const signature = await signer.signMessage(payload);
 
-      const res = await fetch(buildChatApiUrl("/admin/updateRules"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          address,
-          signature,
-          rulesText,
-        }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok || !json?.ok) {
+      const json = await fetchJsonWithTimeout(
+        buildChatApiUrl("/admin/updateRules"),
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            address,
+            signature,
+            rulesText,
+          }),
+        },
+      );
+      if (!json?.ok) {
         throw new Error(json?.error || "Rules update failed");
       }
       setChatRules(rulesText);
@@ -1003,18 +1049,31 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
     >
       {/* Sticky topbar */}
       <div style={topbar} onClick={(e) => e.stopPropagation()}>
-        <h2
-          style={{
-            margin: 0,
-            color: C.y,
-            textTransform: "uppercase",
-            letterSpacing: ".04em",
-            textShadow: "0 0 12px rgba(255,232,0,.35)",
-            fontWeight: 900,
-          }}
-        >
-          Admin Panel
-        </h2>
+        <div style={{ display: "grid", gap: 2 }}>
+          <h2
+            style={{
+              margin: 0,
+              color: C.y,
+              textTransform: "uppercase",
+              letterSpacing: ".04em",
+              textShadow: "0 0 12px rgba(255,232,0,.35)",
+              fontWeight: 900,
+            }}
+          >
+            Admin Panel
+          </h2>
+          <p
+            style={{
+              margin: 0,
+              color: "#c8cae3",
+              fontSize: 12,
+              lineHeight: 1.35,
+            }}
+          >
+            Configure testnet tokenomics, monitor live contract state, and run
+            guarded admin actions from one control surface.
+          </p>
+        </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <span style={pill}>Owner: {short(data?.owner)}</span>
           {actions.refresh && (
@@ -3403,9 +3462,5 @@ function copyToClipboard(text) {
     navigator.clipboard?.writeText(text);
   } catch {}
 }
-
-
-
-
 
 

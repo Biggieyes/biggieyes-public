@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -12,7 +12,8 @@ const toPosix = (v) => String(v || "").split(path.sep).join("/");
 const parseArgs = (argv) => {
   const out = {
     dryRun: false,
-    workflow: "cre/workflows/biggieyes-vrf-postredeem.workflow.yaml",
+    workflow: "biggieeyes/biggieyes-vrf-postredeem/workflow.yaml",
+    projectRoot: "biggieeyes",
     outDir: "evidence/cre-simulation",
     creBin: "",
     triggerIndex: "0",
@@ -25,6 +26,8 @@ const parseArgs = (argv) => {
     const arg = argv[i];
     if (arg === "--dry-run") out.dryRun = true;
     else if (arg === "--workflow" && argv[i + 1]) out.workflow = argv[++i];
+    else if (arg === "--project-root" && argv[i + 1])
+      out.projectRoot = argv[++i];
     else if (arg === "--out-dir" && argv[i + 1]) out.outDir = argv[++i];
     else if (arg === "--cre-bin" && argv[i + 1]) out.creBin = argv[++i];
     else if (arg === "--trigger-index" && argv[i + 1])
@@ -39,6 +42,7 @@ const parseArgs = (argv) => {
 const opts = parseArgs(process.argv.slice(2));
 const workflowPath = path.resolve(projectRoot, opts.workflow);
 const workflowFolderPath = path.dirname(workflowPath);
+const creProjectRoot = path.resolve(projectRoot, opts.projectRoot);
 const outDir = path.resolve(projectRoot, opts.outDir);
 mkdirSync(outDir, { recursive: true });
 
@@ -94,6 +98,14 @@ if (opts.dryRun) {
   );
   } else {
     const candidates = [];
+    const projectFlag = existsSync(path.join(creProjectRoot, "project.yaml"))
+      ? ["--project-root", creProjectRoot]
+      : [];
+    if (!projectFlag.length) {
+      report.notes.push(
+        `CRE project settings not found at ${toPosix(path.join(creProjectRoot, "project.yaml"))}`,
+      );
+    }
     if (opts.creBin) {
       candidates.push({
         cmd: opts.creBin,
@@ -101,6 +113,7 @@ if (opts.dryRun) {
           "workflow",
           "simulate",
           workflowFolderPath,
+          ...projectFlag,
           "--non-interactive",
           "--trigger-index",
           String(opts.triggerIndex),
@@ -117,6 +130,7 @@ if (opts.dryRun) {
           "workflow",
           "simulate",
           workflowFolderPath,
+          ...projectFlag,
           "--non-interactive",
           "--trigger-index",
           String(opts.triggerIndex),
@@ -133,6 +147,7 @@ if (opts.dryRun) {
           "workflow",
           "simulate",
           workflowFolderPath,
+          ...projectFlag,
           "--non-interactive",
           "--trigger-index",
           String(opts.triggerIndex),

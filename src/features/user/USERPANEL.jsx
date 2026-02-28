@@ -491,8 +491,10 @@ export default function USERPANEL({
           <div>
             <h2 className="user-panel__title">User Panel</h2>
             <p className="user-panel__subtitle">
-              Wallet status, quick actions, and core contract shortcuts in one
-              place.
+              Personal cockpit for wallet health, quick actions, referrals, and
+              portfolio diagnostics. Monitor balances, execute key flows, and
+              verify core contract shortcuts without jumping across multiple
+              tabs.
             </p>
           </div>
           <div className="user-panel__header-actions">

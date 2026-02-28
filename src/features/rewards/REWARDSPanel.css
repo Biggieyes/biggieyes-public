@@ -358,6 +358,53 @@
   margin-top: 12px;
 }
 
+.rewards-grid__diagram-wrap {
+  margin-top: 16px;
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 232, 0, 0.24);
+  background:
+    radial-gradient(
+      120% 120% at 8% 0%,
+      rgba(39, 217, 210, 0.12),
+      transparent 62%
+    ),
+    radial-gradient(
+      120% 120% at 92% 0%,
+      rgba(255, 232, 0, 0.1),
+      transparent 62%
+    ),
+    rgba(8, 11, 18, 0.92);
+  box-shadow:
+    0 14px 28px rgba(0, 0, 0, 0.38),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.rewards-grid__diagram-info-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rewards-grid__diagram-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 80vh;
+  object-fit: contain;
+}
+
 .rewards-panel__status-grid {
   display: grid;
   gap: 10px;
@@ -1092,11 +1139,12 @@
 }
 
 .rewards-grid__subtitle {
-  margin: 6px 0 0;
+  margin: 8px 0 0;
   color: var(--panel-text-dim);
-  font-size: 0.95rem;
-  max-width: 520px;
-  line-height: 1.5;
+  font-size: 1rem;
+  max-width: 760px;
+  line-height: 1.65;
+  letter-spacing: 0.01em;
   text-align: center;
   position: relative;
   z-index: 1;
@@ -2753,15 +2801,35 @@
   }
 
   .rewards-grid__info-toggle {
-    width: 100px;
-    height: 100px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
     padding: 0;
-    border-radius: 14px;
-    font-size: 1rem;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    letter-spacing: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
     align-self: center;
+  }
+
+  .rewards-grid__diagram-wrap {
+    border-radius: 14px;
+  }
+
+  .rewards-grid__diagram-info-btn {
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  .rewards-grid__diagram-image {
+    max-height: 68vh;
   }
 }

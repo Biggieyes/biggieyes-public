@@ -48,10 +48,11 @@ const BlockCard = React.memo(
         <div className="collection-grid__thumb">
           <img
             src={entry.thumb}
+            data-fallback-src={entry.thumbFallback || undefined}
             alt={`${entry.name} thumbnail`}
             width={THUMB_SIZE}
             height={THUMB_SIZE}
-            loading="React.lazy"
+            loading="lazy"
             decoding="async"
             onError={handleImageError}
           />

@@ -1,2 +1,2 @@
 // Re-export wrapper (canonical source)
-export { default } from "../../../features/tokenomics";
+export { default } from "../../../features/tokenomics/EcosystemPanel.jsx";

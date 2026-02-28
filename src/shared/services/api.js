@@ -6,6 +6,11 @@ const API_BASE =
   import.meta.env.VITE_CHAT_API_BASE ||
   import.meta.env.VITE_API_BASE_URL ||
   "";
+const API_TIMEOUT_MS = (() => {
+  const parsed = Number(import.meta.env.VITE_API_TIMEOUT_MS);
+  if (Number.isFinite(parsed) && parsed > 0) return Math.trunc(parsed);
+  return 12_000;
+})();
 
 const buildApiUrl = (path) => {
   if (!API_BASE) return `/api${path}`;
@@ -13,20 +18,54 @@ const buildApiUrl = (path) => {
   return `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
 };
 
-const apiFetch = async (path, { method = "GET", body, token } = {}) => {
+const createTimeoutController = (timeoutMs = API_TIMEOUT_MS) => {
+  if (
+    typeof AbortController === "undefined" ||
+    !Number.isFinite(timeoutMs) ||
+    timeoutMs <= 0
+  ) {
+    return { signal: undefined, clear: () => {}, timeoutMs: 0 };
+  }
+  const ms = Math.trunc(timeoutMs);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return {
+    signal: controller.signal,
+    timeoutMs: ms,
+    clear: () => clearTimeout(timer),
+  };
+};
+
+const apiFetch = async (
+  path,
+  { method = "GET", body, token, timeoutMs = API_TIMEOUT_MS } = {},
+) => {
   const headers = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(buildApiUrl(path), {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const msg = json?.error || json?.message || "API request failed";
-    throw new Error(msg);
+  const { signal, clear, timeoutMs: effectiveTimeoutMs } =
+    createTimeoutController(timeoutMs);
+  try {
+    const res = await fetch(buildApiUrl(path), {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+      signal,
+      cache: "no-store",
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = json?.error || json?.message || "API request failed";
+      throw new Error(msg);
+    }
+    return json;
+  } catch (error) {
+    if (error?.name === "AbortError" && effectiveTimeoutMs > 0) {
+      throw new Error(`API request timed out after ${effectiveTimeoutMs} ms`);
+    }
+    throw error;
+  } finally {
+    clear();
   }
-  return json;
 };
 
 export const getNonce = (address) =>

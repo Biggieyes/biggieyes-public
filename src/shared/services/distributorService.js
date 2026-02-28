@@ -1,6 +1,6 @@
 // src/services/distributorService.js
 import { formatEther } from "ethers";
-import { ADDR } from "../utils/addresses";
+import { ADDR } from "@/shared/utils/addresses.js";
 import { getMCDReaderV2RO } from "@/shared/utils/contract";
 
 const toEth = (v) => (v != null ? formatEther(v) : null);

@@ -39,6 +39,16 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
+[[redirects]]
+  from = "/app"
+  to = "/app/"
+  status = 301
+
+[[redirects]]
+  from = "/app/*"
+  to = "/app/index.html"
+  status = 200
+
 [[headers]]
   for = "/assets/*"
   [headers.values]
@@ -52,8 +62,3 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200

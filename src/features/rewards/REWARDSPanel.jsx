@@ -8,7 +8,7 @@ import useNFTREWARDS from "../../hooks/useNFTRewards";
 import useTokenRewardsReader from "../../hooks/useTokenRewardsReader";
 import useNftRewardsReader from "../../hooks/useNftRewardsReader";
 import useREWARDSReader from "../../hooks/useRewardsReader";
-import { ADDR } from "../../utils/addresses";
+import { ADDR } from "@/shared/utils/addresses.js";
 import { getROProvider, getSignerProvider, ABI_REWARDS_READER } from "@/shared/utils/contract";
 import { explorerBaseFor } from "@/config/chains.js";
 import PanelInfoModal from "@/components/common/PanelInfoModal";
@@ -111,6 +111,7 @@ function REWARDSPanel({
   const [claiming, setClaiming] = React.useState(false);
   const [claimMessage, setClaimMessage] = React.useState("");
   const [infoOpen, setInfoOpen] = React.useState(false);
+  const [diagramInfoOpen, setDiagramInfoOpen] = React.useState(false);
   const [blockSummaryOpen, setBlockSummaryOpen] = React.useState(false);
   const [explorerBase, setExplorerBase] = React.useState(DEFAULT_EXPLORER_BASE);
   const autoInfoOpened = React.useRef(false);
@@ -159,6 +160,27 @@ function REWARDSPanel({
           "Pulls the latest on-chain values and updates the panels.",
           "Use if you just minted or redeemed.",
         ],
+      },
+    ],
+    [],
+  );
+
+  const diagramInfoItems = React.useMemo(
+    () => [
+      {
+        label: "Read layer",
+        description:
+          "REWARDS readers provide read-only snapshots and feed UI stats without sending transactions.",
+      },
+      {
+        label: "Write layer",
+        description:
+          "Claim transactions are signed by the wallet and executed against TOKEN, COLLECTION, and NFT reward contracts.",
+      },
+      {
+        label: "Value flow",
+        description:
+          "BIGGI token and native POL rewards flow from reward pools to the wallet; NFT rewards flow as minted/distributed NFT outputs.",
       },
     ],
     [],
@@ -933,8 +955,10 @@ function REWARDSPanel({
           <div className="rewards-grid__headline">
             <h2 className="rewards-grid__title">Biggi REWARDS</h2>
             <p className="rewards-grid__subtitle">
-              Token, COLLECTION and NFT claims are grouped by contract. The
-              token view highlights pool stats and your personal claim preview.
+              Unified rewards control room for TOKEN, COLLECTION, and NFT
+              claims. Track weekly payout windows, compare claimable balances
+              before signing, and open proof links to verify every reward path
+              from source pools to your wallet in one panel.
             </p>
           </div>
           <div className="rewards-panel__header-meta">
@@ -943,26 +967,13 @@ function REWARDSPanel({
             >
               {rewardsSource.label}
             </span>
-            {readerAddresses?.reader ? (
-              <span className="rewards-grid__pill rewards-panel__source-pill rewards-panel__source-pill--mono">
-                Reader: {shortAddress(readerAddresses.reader)}
-              </span>
-            ) : null}
-            {tokenRewardsReaderAddr ? (
-              <span className="rewards-grid__pill rewards-panel__source-pill rewards-panel__source-pill--mono">
-                TokenReader: {shortAddress(tokenRewardsReaderAddr)}
-              </span>
-            ) : null}
-            {nftRewardsReaderAddr ? (
-              <span className="rewards-grid__pill rewards-panel__source-pill rewards-panel__source-pill--mono">
-                NftReader: {shortAddress(nftRewardsReaderAddr)}
-              </span>
-            ) : null}
-            {tokenRewardsAddr ? (
-              <span className="rewards-grid__pill rewards-panel__source-pill rewards-panel__source-pill--mono">
-                Token: {shortAddress(tokenRewardsAddr)}
-              </span>
-            ) : null}
+            <span className="rewards-grid__pill rewards-panel__source-pill">
+              {weeklyLoading
+                ? "Weekly claim window: syncing"
+                : weeklyDisplayed.status === "claimable"
+                  ? "Weekly claim window: OPEN"
+                  : "Weekly claim window: pending"}
+            </span>
           </div>
         </header>
         <PanelInfoModal
@@ -970,6 +981,12 @@ function REWARDSPanel({
           onClose={() => setInfoOpen(false)}
           title="Rewards Panel"
           items={infoItems}
+        />
+        <PanelInfoModal
+          open={diagramInfoOpen}
+          onClose={() => setDiagramInfoOpen(false)}
+          title="Rewards diagram info"
+          items={diagramInfoItems}
         />
         <div className="view-tabs rewards-panel__tabs" role="tablist">
           {TAB_ORDER.map((tab) => (
@@ -1000,6 +1017,25 @@ function REWARDSPanel({
           </button>
         </div>
         {renderTab()}
+        <SectionHeader label="Rewards Diagram" accent="#27d9d2" />
+        <section className="rewards-grid__diagram-wrap">
+          <button
+            type="button"
+            className="rewards-grid__diagram-info-btn panel-info-btn biggi-btn biggi-btn--ghost"
+            onClick={() => setDiagramInfoOpen(true)}
+            aria-label="Open rewards diagram info"
+            title="Rewards diagram info"
+          >
+            <span>i</span>
+          </button>
+          <img
+            className="rewards-grid__diagram-image"
+            src="/images/schemas/rewards-flow-diagram.png?v=20260224c"
+            alt="Rewards diagram showing reward contracts, readers, and native or token flows to wallet claims."
+            loading="lazy"
+            decoding="async"
+          />
+        </section>
       </div>
     </section>
   );

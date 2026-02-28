@@ -4,7 +4,7 @@ import NftCard from "./NftCard";
 import { useContracts } from "../providers/ContractsProvider";
 import { useWeb3 } from "../providers/Web3Provider";
 import { formatEther } from "ethers";
-import { ADDR } from "../utils/addresses.js";
+import { ADDR } from "@/shared/utils/addresses.js";
 import { DEFAULT_BLOCKS, ROWS_BY_BLOCK } from "../shared/blocks";
 import { getProviderForContract } from "../shared/utils/contract";
 import { mergeGalleryItem } from "../shared/services/gallery/gallery.merge.js";
@@ -27,6 +27,7 @@ const PAGE_SIZE_MOBILE = 6;
 
 // Smaller batch size to reduce RPC rejections on public endpoints.
 const LOGS_BATCH = 300;
+const CHAIN_FETCH_TIMEOUT_MS = 25000;
 const PLACEHOLDER_IMAGE = "/images/Biggi.png";
 
 // paralelní limit pro tokenURI / metadata fetch (snižuje šanci na RPC timeouts)
@@ -50,6 +51,12 @@ const RARITY_TIER_RANK = {
   rare: 3,
   uncommon: 4,
   common: 5,
+};
+const SORT_LABELS = {
+  default: "Newest",
+  token: "Token ID",
+  name: "Name",
+  rarity: "Rarity",
 };
 const BLOCK_NAME_SET = new Set(DEFAULT_BLOCKS);
 const normalizeBlockName = (value) => {
@@ -94,6 +101,25 @@ const getParallelism = () => {
     // ignore
   }
   return METADATA_PARALLELISM;
+};
+
+const withTimeout = async (promise, timeoutMs, label = "task") => {
+  const ms = Number(timeoutMs) || 0;
+  if (ms <= 0) return promise;
+
+  let timer = null;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          reject(new Error(`${label} timed out after ${ms}ms`));
+        }, ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 };
 
 const looksLikeTicketMeta = (meta) => {
@@ -978,58 +1004,69 @@ export default function Gallery({
         return;
       setFetching(true);
       try {
-        // contracts may expose factory functions or actual instances
-        const main = contracts.mainRead?.();
-        const main2 = contracts.main2Read?.();
-        const reader = contracts.readerRead?.();
+        await withTimeout(
+          (async () => {
+            // contracts may expose factory functions or actual instances
+            const main = contracts.mainRead?.();
+            const main2 = contracts.main2Read?.();
+            const reader = contracts.readerRead?.();
 
-        if (!main && !main2) {
-          console.warn("Gallery: main contracts not available");
-          if (!cancelled) setHydratedItems([]);
-          return;
-        }
-
-        const tokensOut = [];
-
-        if (main) {
-          const provider = getProviderForContract(main);
-          if (!provider || typeof provider.getBlockNumber !== "function") {
-            console.warn("Gallery: provider not available on MAIN contract");
-          } else {
-            const tokenIds = await resolveHeldTokenIds(main, address, reader);
-            if (tokenIds.length) {
-              const tokens = await hydrateTokens(main, reader, tokenIds);
-              tokensOut.push(...tokens);
+            if (!main && !main2) {
+              console.warn("Gallery: main contracts not available");
+              if (!cancelled) setHydratedItems([]);
+              return;
             }
-          }
-        }
 
-        if (main2) {
-          const provider = getProviderForContract(main2);
-          if (!provider || typeof provider.getBlockNumber !== "function") {
-            console.warn("Gallery: provider not available on MAIN2 contract");
-          } else {
-            const tokenIds2 = await resolveHeldTokenIds(main2, address, reader);
-            if (tokenIds2.length) {
-              const tokens2 = await hydrateTokens(main2, reader, tokenIds2);
-              tokensOut.push(...tokens2);
+            const tokensOut = [];
+
+            if (main) {
+              const provider = getProviderForContract(main);
+              if (!provider || typeof provider.getBlockNumber !== "function") {
+                console.warn("Gallery: provider not available on MAIN contract");
+              } else {
+                const tokenIds = await resolveHeldTokenIds(main, address, reader);
+                if (tokenIds.length) {
+                  const tokens = await hydrateTokens(main, reader, tokenIds);
+                  tokensOut.push(...tokens);
+                }
+              }
             }
-          }
-        }
 
-        if (!cancelled) {
-          const seen = new Set();
-          const deduped = tokensOut.filter((t) => {
-            const key = `${String(t?.contractAddress || "").toLowerCase()}:${t?.tokenId}`;
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-          });
-          setHydratedItems(deduped);
-        }
+            if (main2) {
+              const provider = getProviderForContract(main2);
+              if (!provider || typeof provider.getBlockNumber !== "function") {
+                console.warn("Gallery: provider not available on MAIN2 contract");
+              } else {
+                const tokenIds2 = await resolveHeldTokenIds(main2, address, reader);
+                if (tokenIds2.length) {
+                  const tokens2 = await hydrateTokens(main2, reader, tokenIds2);
+                  tokensOut.push(...tokens2);
+                }
+              }
+            }
+
+            if (!cancelled) {
+              const seen = new Set();
+              const deduped = tokensOut.filter((t) => {
+                const key = `${String(t?.contractAddress || "").toLowerCase()}:${t?.tokenId}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+              });
+              setHydratedItems(deduped);
+            }
+          })(),
+          CHAIN_FETCH_TIMEOUT_MS,
+          "gallery chain fetch",
+        );
       } catch (err) {
         console.error("Gallery chain fetch failed", err);
-        if (!cancelled) setHydratedItems([]);
+        if (
+          !cancelled &&
+          !String(err?.message || "").includes("timed out")
+        ) {
+          setHydratedItems([]);
+        }
       } finally {
         if (!cancelled) setFetching(false);
       }
@@ -1090,14 +1127,7 @@ export default function Gallery({
     }
     const sorted = [...list];
     if (sortBy === "default") {
-      const topId = topFirstId != null ? String(topFirstId) : "";
       sorted.sort((a, b) => {
-        const aId = String(a?.tokenId ?? a?.id ?? "");
-        const bId = String(b?.tokenId ?? b?.id ?? "");
-        const aTop = topId && aId === topId;
-        const bTop = topId && bId === topId;
-        if (aTop && !bTop) return -1;
-        if (bTop && !aTop) return 1;
         const aPending = Boolean(a?.isPending);
         const bPending = Boolean(b?.isPending);
         if (aPending !== bPending) return aPending ? -1 : 1;
@@ -1191,6 +1221,14 @@ export default function Gallery({
     setPage((prev) => Math.min(totalPages - 1, prev + 1));
 
   const totalOwned = renderedItems.length;
+  const totalNfts = nonTicketItemsSource.length;
+  const totalTickets = ticketItems.length;
+  const pendingTickets = React.useMemo(
+    () => ticketItems.reduce((sum, item) => sum + (item?.isPending ? 1 : 0), 0),
+    [ticketItems],
+  );
+  const redeemableTickets = Math.max(0, totalTickets - pendingTickets);
+  const showSummaryLoading = fetching && renderedItems.length === 0;
 
   const rarityCounts = React.useMemo(() => {
     const counts = {};
@@ -1200,6 +1238,21 @@ export default function Gallery({
     });
     return counts;
   }, [nonTicketItemsSource]);
+  const rarityRows = React.useMemo(
+    () =>
+      Object.entries(rarityCounts).sort(([a], [b]) => {
+        const rankA = RARITY_TIER_RANK[a] ?? Number.MAX_SAFE_INTEGER;
+        const rankB = RARITY_TIER_RANK[b] ?? Number.MAX_SAFE_INTEGER;
+        if (rankA !== rankB) return rankA - rankB;
+        return a.localeCompare(b);
+      }),
+    [rarityCounts],
+  );
+  const activeSortLabel = SORT_LABELS[sortBy] || SORT_LABELS.default;
+  const activeFilterLabel =
+    filterRarity === "all"
+      ? "All rarities"
+      : `${filterRarity.charAt(0).toUpperCase()}${filterRarity.slice(1)}`;
 
   const renderCard = (item, index) => {
     const { rarity, rarityRank } = deriveRarityInfo(item);
@@ -1235,41 +1288,67 @@ export default function Gallery({
   return (
     <section className="gallery">
       <header className="gallery__header">
-        <div>
+        <div className="gallery__header-main">
+          <div className="gallery__header-meta">
+            <span
+              className={`gallery__connection ${isConnected ? "is-connected" : "is-disconnected"}`}
+            >
+              <span className="gallery__connection-dot" aria-hidden="true" />
+              {isConnected ? "Wallet connected" : "Wallet disconnected"}
+            </span>
+            <span className="gallery__header-mode">
+              Sort: {activeSortLabel} · Filter: {activeFilterLabel}
+            </span>
+          </div>
           <h2 className="gallery__title">My Biggi COLLECTION</h2>
           <p className="gallery__subtitle">
-            Browse every Biggi token linked to your wallet. Sort, filter, and
-            inspect detailed metadata pulled directly from the smart contracts.
+            Browse every Biggi NFT linked to your wallet with richer sorting
+            and filtering. Open card details to review rarity context, metadata
+            traits, and explorer-verified contract records in one place.
           </p>
-        </div>
-        <div className="gallery__header-actions">
-          <div className="gallery__select">
-            <label htmlFor="gallery-sort">Sort</label>
-            <select
-              id="gallery-sort"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="default">Newest</option>
-              <option value="token">Token ID</option>
-              <option value="name">Name</option>
-              <option value="rarity">Rarity</option>
-            </select>
+          <div className="gallery__quick-stats">
+            <span className="gallery__chip gallery__chip--nft">
+              NFTs: {showSummaryLoading ? "..." : totalNfts}
+            </span>
+            <span className="gallery__chip gallery__chip--ticket">
+              Tickets: {showSummaryLoading ? "..." : totalTickets}
+            </span>
+            <span className="gallery__chip gallery__chip--pending">
+              Pending: {showSummaryLoading ? "..." : pendingTickets}
+            </span>
           </div>
-          <div className="gallery__select">
-            <label htmlFor="gallery-filter">Rarity</label>
-            <select
-              id="gallery-filter"
-              value={filterRarity}
-              onChange={(e) => setFilterRarity(e.target.value)}
-            >
-              <option value="all">All</option>
-              <option value="legendary">Legendary</option>
-              <option value="epic">Epic</option>
-              <option value="rare">Rare</option>
-              <option value="uncommon">Uncommon</option>
-              <option value="common">Common</option>
-            </select>
+        </div>
+        <div className="gallery__header-actions-shell">
+          <div className="gallery__header-actions-title">Gallery controls</div>
+          <div className="gallery__header-actions">
+            <div className="gallery__select">
+              <label htmlFor="gallery-sort">Sort</label>
+              <select
+                id="gallery-sort"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="default">Newest</option>
+                <option value="token">Token ID</option>
+                <option value="name">Name</option>
+                <option value="rarity">Rarity</option>
+              </select>
+            </div>
+            <div className="gallery__select">
+              <label htmlFor="gallery-filter">Rarity</label>
+              <select
+                id="gallery-filter"
+                value={filterRarity}
+                onChange={(e) => setFilterRarity(e.target.value)}
+              >
+                <option value="all">All</option>
+                <option value="legendary">Legendary</option>
+                <option value="epic">Epic</option>
+                <option value="rare">Rare</option>
+                <option value="uncommon">Uncommon</option>
+                <option value="common">Common</option>
+              </select>
+            </div>
           </div>
         </div>
       </header>
@@ -1283,21 +1362,68 @@ export default function Gallery({
               : "Not connected"}
           </strong>
         </div>
-        <div className="gallery__summary-item">
-          <span>Total Owned</span>
-          <strong>{fetching ? "Loading..." : totalOwned}</strong>
+        <div className="gallery__summary-item gallery__summary-item--metric">
+          <span>Total Assets</span>
+          <strong>
+            {showSummaryLoading ? (
+              <span className="gallery__loading-label">Loading...</span>
+            ) : (
+              totalOwned
+            )}
+          </strong>
+        </div>
+        <div className="gallery__summary-item gallery__summary-item--nft gallery__summary-item--metric">
+          <span>NFTs</span>
+          <strong>
+            {showSummaryLoading ? (
+              <span className="gallery__loading-label">Loading...</span>
+            ) : (
+              totalNfts
+            )}
+          </strong>
+          <small>
+            {showSummaryLoading
+              ? "Fetching metadata..."
+              : filterRarity === "all"
+                ? "All rarities"
+                : `Filter: ${filterRarity}`}
+          </small>
+        </div>
+        <div className="gallery__summary-item gallery__summary-item--ticket gallery__summary-item--metric">
+          <span>Tickets</span>
+          <strong>
+            {showSummaryLoading ? (
+              <span className="gallery__loading-label">Loading...</span>
+            ) : (
+              totalTickets
+            )}
+          </strong>
+          <small>
+            {showSummaryLoading
+              ? "Checking status..."
+              : totalTickets > 0
+                ? `${redeemableTickets} ready | ${pendingTickets} pending`
+                : "No tickets in wallet"}
+          </small>
         </div>
         <div className="gallery__summary-item">
           <span>Rarities</span>
-          <strong>
-            {Object.keys(rarityCounts).length
-              ? Object.entries(rarityCounts)
-                  .map(([rarity, count]) => `${rarity}: ${count}`)
-                  .join(" | ")
-              : "--"}
-          </strong>
+          {rarityRows.length ? (
+            <div className="gallery__rarity-list">
+              {rarityRows.map(([rarity, count]) => (
+                <span
+                  key={rarity}
+                  className={`gallery__rarity-pill gallery__rarity-pill--${rarity}`}
+                >
+                  {rarity}: {count}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <strong>--</strong>
+          )}
         </div>
-        <div className="gallery__summary-item">
+        <div className="gallery__summary-item gallery__summary-item--metric">
           <span>Page</span>
           <strong>
             {page + 1} / {totalPages}
@@ -1306,19 +1432,27 @@ export default function Gallery({
       </div>
 
       {ticketItems.length > 0 && (
-        <div className="gallery__grid gallery__grid--tickets">
-          {ticketItems.map(renderCard)}
-        </div>
+        <section className="gallery__ticket-panel" aria-label="Wallet tickets">
+          <div className="gallery__ticket-head">
+            <h3>Tickets in wallet</h3>
+            <span>
+              {showSummaryLoading ? "Loading..." : `${totalTickets} total`}
+            </span>
+          </div>
+          <div className="gallery__grid gallery__grid--tickets">
+            {ticketItems.map(renderCard)}
+          </div>
+        </section>
       )}
 
-      <div className={`gallery__grid${fetching ? " is-loading" : ""}`}>
+      <div className={`gallery__grid${showSummaryLoading ? " is-loading" : ""}`}>
         {!isConnected && (
           <div className="gallery__placeholder">
             <h3>Connect Wallet</h3>
             <p>Connect MetaMask to load your Biggi NFTs.</p>
           </div>
         )}
-        {isConnected && fetching && !renderedItems.length && (
+        {isConnected && showSummaryLoading && (
           <div className="gallery__placeholder">Loading COLLECTION...</div>
         )}
         {isConnected && !fetching && renderedItems.length === 0 && (

@@ -38,7 +38,11 @@ function DistributorTokenTab({
     BUYBACKSnapshot?.BUYBACK?.totalBiggiAcquired ??
     BUYBACKFallback ??
     "--";
-  const { points } = useDistributorHistory(dist, historyOptions);
+  const tabHistoryOptions = React.useMemo(
+    () => ({ ...(historyOptions || {}), minIntervalMs: 0 }),
+    [historyOptions],
+  );
+  const { points } = useDistributorHistory(dist, tabHistoryOptions);
 
   const stats = [
     {

@@ -33,16 +33,6 @@ function pctFromBps(bps) {
   return Number.isFinite(n) ? `${n.toFixed(2)}%` : "--";
 }
 
-const FlowNode = ({ title, subtitle, tone = "default", children }) => {
-  return (
-    <div className={`${styles.ecoFlowNode} ${styles[`ecoFlowNode_${tone}`] || ""}`.trim()}>
-      <div className={styles.ecoFlowNodeTitle}>{title}</div>
-      {subtitle ? <div className={styles.ecoFlowNodeSubtitle}>{subtitle}</div> : null}
-      <div className={styles.ecoFlowNodeBody}>{children}</div>
-    </div>
-  );
-};
-
 function FlowTab({ snapshot, loading, error }) {
   const splits = snapshot?.intendedSplits?.nativeFromMint;
   const tokenSplits = snapshot?.intendedSplits?.tokenInitial;
@@ -51,6 +41,7 @@ function FlowTab({ snapshot, loading, error }) {
   const meta = snapshot?.tokenMeta || {};
   const live = snapshot?.liveBalances || {};
   const d = meta?.decimals ?? 18;
+
   const nativeSplitRows = [
     { label: "DEV (direct)", value: splits ? pctFromBps(splits.devBps) : "--" },
     {
@@ -80,55 +71,24 @@ function FlowTab({ snapshot, loading, error }) {
 
   return (
     <div className={styles.ecoFlowGrid}>
-      <Card title="FLOW OVERVIEW" subtitle="Native distribution + BIGGI distribution (view-only)">
-        {loading ? <div className="biggi-muted">Loading…</div> : null}
+      <Card
+        title="FLOW SNAPSHOT"
+        subtitle="Compact split view for native mint routing and initial BIGGI allocation"
+      >
+        {loading ? <div className="biggi-muted">Loading...</div> : null}
         {error ? <div className="biggi-muted">{String(error?.message || error)}</div> : null}
 
-        <div className={styles.ecoFlowDiagram}>
-          <FlowNode
-            title="MINT (NATIVE)"
-            subtitle="60% → Distributor bucket (flows below)"
-            tone="accent"
-          >
-            <Line label="DEV (direct)" value={splits ? pctFromBps(splits.devBps) : "--"} />
-          </FlowNode>
-
-          <div className={styles.ecoFlowArrow}>→</div>
-
-          <FlowNode title="DISTRIBUTOR SPLIT" subtitle="From 60% bucket">
-            <Line label="CollectionRewards" value={splits ? pctFromBps(splits.collectionRewardsBps) : "--"} />
-            <Line label="Reserve" value={splits ? pctFromBps(splits.reserveBps) : "--"} />
-            <Line label="Buyback" value={splits ? pctFromBps(splits.buybackBps) : "--"} />
-            <Line label="Community" value={splits ? pctFromBps(splits.communityCenterBps) : "--"} />
-            <Line label="Treasury" value={splits ? pctFromBps(splits.treasuryBps) : "--"} />
-          </FlowNode>
-
-          <div className={styles.ecoFlowArrow}>→</div>
-
-          <FlowNode title="BIGGI TOKEN" subtitle="Initial allocations">
-            <Line label="Reserve" value={tokenSplits ? `${tokenSplits.reservePct}%` : "--"} />
-            <Line label="TokenRewards" value={tokenSplits ? `${tokenSplits.tokenRewardsPct}%` : "--"} />
-            <Line label="DRIP Distributor" value={tokenSplits ? `${tokenSplits.dripDistributorPct}%` : "--"} />
-          </FlowNode>
-        </div>
-
-        <div className={styles.ecoTables}>
-          <div className={styles.ecoTable}>
-            <div className={styles.ecoTableHeader}>Native split (from mint)</div>
+        <div className={styles.ecoFlowTwoCols}>
+          <div className={styles.ecoFlowSplitCard}>
+            <div className={styles.ecoMiniTitle}>Native split (from mint)</div>
             {nativeSplitRows.map((row) => (
-              <div key={row.label} className={styles.ecoTableRow}>
-                <span className={styles.ecoTableLabel}>{row.label}</span>
-                <span className={styles.ecoTableValue}>{row.value}</span>
-              </div>
+              <Line key={row.label} label={row.label} value={row.value} />
             ))}
           </div>
-          <div className={styles.ecoTable}>
-            <div className={styles.ecoTableHeader}>Token allocation (initial)</div>
+          <div className={styles.ecoFlowSplitCard}>
+            <div className={styles.ecoMiniTitle}>Token allocation (initial)</div>
             {tokenSplitRows.map((row) => (
-              <div key={row.label} className={styles.ecoTableRow}>
-                <span className={styles.ecoTableLabel}>{row.label}</span>
-                <span className={styles.ecoTableValue}>{row.value}</span>
-              </div>
+              <Line key={row.label} label={row.label} value={row.value} />
             ))}
           </div>
         </div>

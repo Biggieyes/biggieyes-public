@@ -5,6 +5,7 @@ import { ADDR } from "./addresses.js";
 import {
   AMOY,
   PUBLIC_AMOY_RPCS,
+  getPreferredRpc,
   getRpcUrls,
   setPreferredRpc,
 } from "./rpcConfig.js";
@@ -154,6 +155,8 @@ export function _secureRandomInt(maxExclusive) {
 export { ADDR, AMOY, PUBLIC_AMOY_RPCS };
 
 let _roProvider = undefined;
+let _roProviderCacheKey = "";
+let _roProviderCreatedAt = 0;
 let _injectedProviderOverride = null;
 
 function _emitInjectedProviderChanged() {
@@ -218,10 +221,21 @@ function _mkRpcProvider(url) {
   return new JsonRpcProvider(url, network, { staticNetwork: network });
 }
 
-export function getROProvider() {
-  // Always rebuild provider to avoid sticky stale/blocked endpoints.
-  _roProvider = undefined;
+function _resolveROProviderMaxAgeMs() {
+  const configured = Number(_env("VITE_RO_PROVIDER_MAX_AGE_MS"));
+  if (Number.isFinite(configured) && configured >= 0)
+    return Math.trunc(configured);
+  return 45_000;
+}
 
+function _cacheROProvider(provider, cacheKey) {
+  _roProvider = _applyPollingInterval(provider);
+  _roProviderCacheKey = cacheKey;
+  _roProviderCreatedAt = Date.now();
+  return _roProvider;
+}
+
+export function getROProvider() {
   const urls = getRpcUrls();
   if (!urls.length) {
     throw new Error(
@@ -258,31 +272,33 @@ export function getROProvider() {
     return null;
   })();
   const allowInjected = injectedChainId === AMOY.chainId;
+  const useInjected = !forceRpc && preferInjected && allowInjected && ethereum;
+  const cacheKey = `${useInjected ? "inj" : "rpc"}|${urls.join("|")}`;
+  const maxAgeMs = _resolveROProviderMaxAgeMs();
+  if (_roProvider && _roProviderCacheKey === cacheKey) {
+    const isFresh =
+      maxAgeMs <= 0 || Date.now() - _roProviderCreatedAt <= maxAgeMs;
+    if (isFresh) return _roProvider;
+  }
 
-  if (
-    !forceRpc &&
-    preferInjected &&
-    allowInjected &&
-    ethereum
-  ) {
+  if (useInjected) {
     try {
-      _roProvider = new BrowserProvider(ethereum, "any");
-      return _applyPollingInterval(_roProvider);
+      return _cacheROProvider(new BrowserProvider(ethereum, "any"), cacheKey);
     } catch (err) {
       console.warn(
         "getROProvider: failed to use injected provider, falling back to RPC:",
         err?.message || err,
       );
-      _roProvider = undefined;
     }
   }
 
   // RPC path (synchronous, no async health probes to avoid invalid provider objects)
-  setPreferredRpc(urls[0]);
+  if (urls[0] && getPreferredRpc() !== urls[0]) {
+    setPreferredRpc(urls[0]);
+  }
 
   if (urls.length === 1) {
-    _roProvider = _mkRpcProvider(urls[0]);
-    return _applyPollingInterval(_roProvider);
+    return _cacheROProvider(_mkRpcProvider(urls[0]), cacheKey);
   }
 
   const configs = urls.map((url, index) => ({
@@ -293,15 +309,16 @@ export function getROProvider() {
   }));
 
   try {
-    _roProvider = new FallbackProvider(configs, AMOY.chainId, { quorum: 1 });
-    return _applyPollingInterval(_roProvider);
+    return _cacheROProvider(
+      new FallbackProvider(configs, AMOY.chainId, { quorum: 1 }),
+      cacheKey,
+    );
   } catch (err) {
     console.warn(
       "getROProvider: FallbackProvider construction failed, using first RPC:",
       err?.message || err,
     );
-    _roProvider = _mkRpcProvider(urls[0]);
-    return _applyPollingInterval(_roProvider);
+    return _cacheROProvider(_mkRpcProvider(urls[0]), cacheKey);
   }
 }
 
@@ -321,6 +338,8 @@ export function getProviderForContract(contract) {
 
 export function resetROProvider() {
   _roProvider = undefined;
+  _roProviderCacheKey = "";
+  _roProviderCreatedAt = 0;
 }
 
 export function getSignerProvider() {

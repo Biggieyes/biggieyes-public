@@ -7,7 +7,7 @@ import {
   BiggiLpPriceFeed as ABI_BiggiLpPriceFeed,
 } from "@/config/abi/index.js";
 import defaultProvider from "../provider";
-import { getTokenDexAddresses } from "../../config/addresses";
+import { getTokenDexAddresses } from "../../config/addresses/index.js";
 export function getTokenDexContracts(chainId, provider) {
   const signerOrProvider = provider || defaultProvider;
   const {

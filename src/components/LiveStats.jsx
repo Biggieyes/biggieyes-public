@@ -899,6 +899,7 @@ function LiveStats({
   const [biggiChange24h, setBiggiChange24h] = React.useState(null);
   const [biggiSupply, setBiggiSupply] = React.useState(null);
   const [circulatingSupply, setCirculatingSupply] = React.useState(null);
+  const [tradableSupply, setTradableSupply] = React.useState(null);
   const biggiMcap = React.useMemo(() => {
     const supplyForMarketCap =
       typeof circulatingSupply === "number" ? circulatingSupply : null;
@@ -1110,9 +1111,13 @@ function LiveStats({
         };
 
         let price = null;
+        let dexTradable = null;
         if (addr0 === biggiAddr) {
           const base = Number(_formatUnits(r0, m0.decimals));
           const quote = Number(_formatUnits(r1, m1.decimals));
+          if (Number.isFinite(base) && base >= 0) {
+            dexTradable = base;
+          }
           if (
             Number.isFinite(base) &&
             base > 0 &&
@@ -1125,6 +1130,9 @@ function LiveStats({
         } else if (addr1 === biggiAddr) {
           const base = Number(_formatUnits(r1, m1.decimals));
           const quote = Number(_formatUnits(r0, m0.decimals));
+          if (Number.isFinite(base) && base >= 0) {
+            dexTradable = base;
+          }
           if (
             Number.isFinite(base) &&
             base > 0 &&
@@ -1136,11 +1144,19 @@ function LiveStats({
           }
         }
 
-        if (!cancel && Number.isFinite(price) && price > 0) {
-          setBiggiPrice(price);
+        if (!cancel) {
+          if (Number.isFinite(dexTradable) && dexTradable >= 0) {
+            setTradableSupply(dexTradable);
+          } else {
+            setTradableSupply(null);
+          }
+          if (Number.isFinite(price) && price > 0) {
+            setBiggiPrice(price);
+          }
         }
       } catch (e) {
         console.warn("LiveStats: failed reading DEX price", e);
+        if (!cancel) setTradableSupply(null);
       }
     })();
     return () => {
@@ -1155,10 +1171,14 @@ function LiveStats({
       ? "14px 12px 12px 12px"
       : "24px 16px 18px 16px"
     : "38px 44px 32px 44px";
-  const boxFontSize = isTiny ? "0.75em" : isPhone ? "0.85em" : "0.95em";
-  const boxBigFontSize = isTiny ? "1.0em" : isPhone ? "1.15em" : "1.3em";
-  const infoCardFontSize = isTiny ? "0.7em" : isPhone ? "0.8em" : "0.9em";
-  const infoCardBigFontSize = isTiny ? "0.95em" : isPhone ? "1.05em" : "1.2em";
+  const boxFontSize = isTiny ? "0.78em" : isPhone ? "0.9em" : "1.02em";
+  const boxBigFontSize = isTiny ? "1.06em" : isPhone ? "1.22em" : "1.42em";
+  const infoCardFontSize = isTiny ? "0.54em" : isPhone ? "0.64em" : "0.74em";
+  const infoCardBigFontSize = isTiny ? "0.96em" : isPhone ? "1.12em" : "1.24em";
+  const tokenomicsLabelFontSize = isTiny ? "0.68em" : isPhone ? "0.78em" : "0.86em";
+  const marketCapBoxLabelFontSize = isTiny ? "0.6em" : isPhone ? "0.7em" : "0.78em";
+  const marketCapBoxValueFontSize = isTiny ? "0.72em" : isPhone ? "0.82em" : "0.92em";
+  const marketCapBoxBigValueFontSize = isTiny ? "0.92em" : isPhone ? "1.04em" : "1.16em";
   const mobileMaxWidth = isPhone ? (isTiny ? 320 : 420) : undefined;
   const statsBoxWidth = isPhone ? (isTiny ? "100%" : "calc(50% - 6px)") : BOX;
   const statsBoxHeight = isPhone ? "auto" : BOX;
@@ -1258,6 +1278,43 @@ function LiveStats({
   };
 
   const titleStyle = { color: "#fff", fontWeight: 700, fontSize: boxFontSize };
+  const metricLabelStyle = {
+    ...titleStyle,
+    alignSelf: "center",
+    textAlign: "center",
+    lineHeight: 1.25,
+  };
+  const tokenomicsLabelStyle = {
+    ...metricLabelStyle,
+    fontSize: tokenomicsLabelFontSize,
+    lineHeight: 1.15,
+  };
+  const metricValueRowStyle = {
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    flexWrap: "wrap",
+    columnGap: isPhone ? 4 : 6,
+    rowGap: 2,
+    textAlign: "center",
+    lineHeight: 1.2,
+    overflowWrap: "anywhere",
+    wordBreak: "break-word",
+  };
+  const infoRowStyle = {
+    width: "100%",
+    color: "#fff",
+    textTransform: "uppercase",
+    fontSize: infoCardFontSize,
+    textAlign: "center",
+    lineHeight: 1.3,
+    overflowWrap: "normal",
+    wordBreak: "normal",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  };
 
   const thBase = {
     position: "sticky",
@@ -1534,29 +1591,16 @@ function LiveStats({
     >
       {menuButtons.map((btn) => (
         <button
+          type="button"
           key={btn.label}
           onClick={btn.onClick}
+          aria-pressed={btn.active}
+          className={`live-menu-btn live-menu-btn--legacy ${btn.active ? "is-active" : ""}`}
           style={{
             ...menuBtnBase,
-            background: "#000",
-            color: "#ffe800",
-            border: "2px solid #08ffe6",
-            boxShadow: "0 0 14px rgba(255,232,0,0.25)",
-            transition: "transform 0.2s ease, box-shadow 0.2s ease",
-            willChange: "transform",
             ...(isPhone
               ? { flex: "1 1 0%", minWidth: 0, textAlign: "center" }
               : { minWidth: 180 }),
-          }}
-          onMouseEnter={(event) => {
-            event.currentTarget.style.transform = "translateY(-2px)";
-            event.currentTarget.style.boxShadow =
-              "0 0 20px rgba(255,232,0,0.4)";
-          }}
-          onMouseLeave={(event) => {
-            event.currentTarget.style.transform = "none";
-            event.currentTarget.style.boxShadow =
-              "0 0 14px rgba(255,232,0,0.25)";
           }}
         >
           {btn.label}
@@ -1911,49 +1955,32 @@ function LiveStats({
           }}
         >
           <div
-            style={{
-              color: "#fff",
-              textTransform: "uppercase",
-              fontSize: infoCardFontSize,
-            }}
+            style={infoRowStyle}
           >
             LAST NFT:&nbsp;
             <span className="highlight" style={{ color: "#ff0000" }}>
               #{lastNftId}
             </span>
           </div>
-          <div
-            style={{
-              color: "#fff",
-              textTransform: "uppercase",
-              fontSize: infoCardFontSize,
-            }}
-          >
+          <div style={infoRowStyle}>
             BLOCK:&nbsp;
             <span className="highlight">
               {String(lastBlockName || "-").toUpperCase()}
             </span>
           </div>
-          <div
-            style={{
-              color: "#fff",
-              textTransform: "uppercase",
-              fontSize: infoCardFontSize,
-            }}
-          >
+          <div style={infoRowStyle}>
             BACKGROUND:&nbsp;
             <span className="highlight">
               {String(lastBackgroundName || "-").toUpperCase()}
             </span>
           </div>
-          <div>
+          <div style={metricValueRowStyle}>
             <span
               className="highlight"
               style={{
                 color: "#5ddcff",
                 fontSize: infoCardBigFontSize,
                 fontWeight: 800,
-                whiteSpace: "nowrap",
               }}
             >
               {currentBlockPrice != null
@@ -1966,10 +1993,10 @@ function LiveStats({
 
       <div style={statsGroupStyle}>
         <div style={statsTable}>
-          <div className="widget-title" style={titleStyle}>
+          <div className="widget-title" style={metricLabelStyle}>
             TICKETS LEFT
           </div>
-          <div style={{ fontSize: boxFontSize }}>
+          <div style={{ ...metricValueRowStyle, fontSize: boxFontSize }}>
             <span className="highlight" style={{ color: "#ffe800" }}>
               {Math.max(0, (maxTickets || 0) - (ticketMinted || 0))}
             </span>{" "}
@@ -1977,11 +2004,11 @@ function LiveStats({
           </div>
           <div
             className="widget-title"
-            style={{ ...titleStyle, marginTop: isPhone ? 6 : 8 }}
+            style={{ ...metricLabelStyle, marginTop: isPhone ? 6 : 8 }}
           >
             NFT MINTED
           </div>
-          <div style={{ fontSize: boxFontSize }}>
+          <div style={{ ...metricValueRowStyle, fontSize: boxFontSize }}>
             <span className="highlight" style={{ color: "#ffe800" }}>
               {biggiMinted}
             </span>{" "}
@@ -1990,10 +2017,10 @@ function LiveStats({
         </div>
 
         <div style={ticketPriceTable}>
-          <div className="widget-title" style={titleStyle}>
+          <div className="widget-title" style={metricLabelStyle}>
             TICKET PRICE
           </div>
-          <div>
+          <div style={metricValueRowStyle}>
             <span
               className="highlight"
               style={{
@@ -2012,10 +2039,10 @@ function LiveStats({
 
       <div style={statsGroupStyle}>
         <div style={statsTable}>
-          <div className="widget-title" style={titleStyle}>
+          <div className="widget-title" style={tokenomicsLabelStyle}>
             BIGGI PRICE
           </div>
-          <div style={{ fontSize: boxFontSize }}>
+          <div style={{ ...metricValueRowStyle, fontSize: boxFontSize }}>
             <span
               className="highlight"
               style={{
@@ -2031,12 +2058,13 @@ function LiveStats({
           </div>
           <div
             className="widget-title"
-            style={{ ...titleStyle, marginTop: isPhone ? 6 : 8 }}
+            style={{ ...tokenomicsLabelStyle, marginTop: isPhone ? 4 : 6 }}
           >
             24H CHANGE
           </div>
           <div
             style={{
+              ...metricValueRowStyle,
               fontWeight: 900,
               color:
                 biggiChange24h == null
@@ -2053,15 +2081,29 @@ function LiveStats({
           </div>
         </div>
 
-        <div style={ticketPriceTable}>
-          <div className="widget-title" style={titleStyle}>
-            TRADABLE SUPPLY
+        <div
+          style={{
+            ...ticketPriceTable,
+            gap: isPhone ? 2 : 4,
+            padding: isPhone ? "8px 10px" : "12px 14px",
+          }}
+        >
+          <div
+            className="widget-title"
+            style={{ ...tokenomicsLabelStyle, fontSize: marketCapBoxLabelFontSize }}
+          >
+            TRADEABLE SUPPLY
           </div>
           <div
-            style={{ fontSize: boxFontSize, color: "#ffe800", fontWeight: 900 }}
+            style={{
+              ...metricValueRowStyle,
+              fontSize: marketCapBoxValueFontSize,
+              color: "#ffe800",
+              fontWeight: 900,
+            }}
           >
-            {typeof circulatingSupply === "number"
-              ? circulatingSupply.toLocaleString(undefined, {
+            {typeof tradableSupply === "number"
+              ? tradableSupply.toLocaleString(undefined, {
                   maximumFractionDigits: 2,
                 })
               : "-"}{" "}
@@ -2069,16 +2111,20 @@ function LiveStats({
           </div>
           <div
             className="widget-title"
-            style={{ ...titleStyle, marginTop: isPhone ? 6 : 8 }}
+            style={{
+              ...tokenomicsLabelStyle,
+              fontSize: marketCapBoxLabelFontSize,
+              marginTop: isPhone ? 2 : 4,
+            }}
           >
             MARKET CAP
           </div>
           <div
             style={{
+              ...metricValueRowStyle,
               color: "#5ddcff",
               fontWeight: 900,
-              fontSize: boxBigFontSize,
-              whiteSpace: "nowrap",
+              fontSize: marketCapBoxBigValueFontSize,
             }}
           >
             {typeof biggiMcap === "number"
@@ -2108,76 +2154,37 @@ function LiveStats({
             }}
           >
             <button
+              type="button"
               ref={weeklyBtnRef}
               onClick={handleToggleWeekly}
+              aria-pressed={weeklyOpen}
+              className={`live-menu-btn live-menu-btn--legacy live-menu-btn--cyan ${weeklyOpen ? "is-active" : ""}`}
               style={{
                 ...actionBtnBase,
-                background: "#000",
-                color: "#ffe800",
-                border: "2px solid #08ffe6",
-                boxShadow: "0 0 14px rgba(8,223,255,0.25)",
-                transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                willChange: "transform",
-              }}
-              onMouseEnter={(event) => {
-                event.currentTarget.style.transform = "translateY(-2px)";
-                event.currentTarget.style.boxShadow =
-                  "0 0 20px rgba(8,223,255,0.4)";
-              }}
-              onMouseLeave={(event) => {
-                event.currentTarget.style.transform = "none";
-                event.currentTarget.style.boxShadow =
-                  "0 0 14px rgba(8,223,255,0.25)";
               }}
             >
               BIGGI WEEKLY
             </button>
 
             <button
+              type="button"
               onClick={handlePoolsButtonClick}
+              aria-pressed={poolsOpen}
+              className={`live-menu-btn live-menu-btn--legacy live-menu-btn--gold ${poolsOpen ? "is-active" : ""}`}
               style={{
                 ...actionBtnBase,
-                background: "#000",
-                color: "#ffe800",
-                border: "2px solid #08ffe6",
-                boxShadow: "0 0 14px rgba(255,232,0,0.25)",
-                transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                willChange: "transform",
-              }}
-              onMouseEnter={(event) => {
-                event.currentTarget.style.transform = "translateY(-2px)";
-                event.currentTarget.style.boxShadow =
-                  "0 0 20px rgba(255,232,0,0.4)";
-              }}
-              onMouseLeave={(event) => {
-                event.currentTarget.style.transform = "none";
-                event.currentTarget.style.boxShadow =
-                  "0 0 14px rgba(255,232,0,0.25)";
               }}
             >
               TOKENOMICS
             </button>
 
             <button
+              type="button"
               onClick={handleChatButtonClick}
+              aria-pressed={chatOpen}
+              className={`live-menu-btn live-menu-btn--legacy live-menu-btn--pink ${chatOpen ? "is-active" : ""}`}
               style={{
                 ...actionBtnBase,
-                background: "#000",
-                color: "#ffe800",
-                border: "2px solid #08ffe6",
-                boxShadow: "0 0 14px rgba(255,232,0,0.25)",
-                transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                willChange: "transform",
-              }}
-              onMouseEnter={(event) => {
-                event.currentTarget.style.transform = "translateY(-2px)";
-                event.currentTarget.style.boxShadow =
-                  "0 0 20px rgba(255,232,0,0.4)";
-              }}
-              onMouseLeave={(event) => {
-                event.currentTarget.style.transform = "none";
-                event.currentTarget.style.boxShadow =
-                  "0 0 14px rgba(255,232,0,0.25)";
               }}
             >
               LIVE CHAT
@@ -2300,11 +2307,11 @@ function LiveStats({
                             )}
                             <div className="collection-stat-card">
                               <div className="collection-stat-label">
-                                Tradable supply
+                                Tradeable supply
                               </div>
                               <div className="collection-stat-value">
-                                {typeof circulatingSupply === "number"
-                                  ? `${circulatingSupply.toLocaleString(
+                                {typeof tradableSupply === "number"
+                                  ? `${tradableSupply.toLocaleString(
                                       undefined,
                                       { maximumFractionDigits: 2 },
                                     )} ${resolvedTokenMeta.symbol}`

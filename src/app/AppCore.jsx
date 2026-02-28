@@ -17,7 +17,7 @@ import {
   ZeroAddress,
 } from "ethers";
 
-import { ADDR } from "@/addresses.js";
+import { ADDR } from "@/shared/utils/addresses.js";
 import { explorerBaseFor } from "@/config/chains.js";
 import { DEFAULT_BLOCKS, BASE_PRICES } from "@/shared/blocks";
 import { buildBlockImagePath } from "@/shared/utils/images";
@@ -101,7 +101,9 @@ import { mergeGalleryItem } from "@/shared/services/gallery/gallery.merge.js";
 const ProjectInfoModal = React.lazy(
   () => import("./ACTIONBUTTONS/INFO/ProjectInfoModal.jsx")
 );
-const EcosystemPanel = React.lazy(() => import("../features/tokenomics"));
+const EcosystemPanel = React.lazy(
+  () => import("../features/tokenomics/EcosystemPanel.jsx")
+);
 const COLLECTIONBlocksGrid = React.lazy(
   () => import("./components/COLLECTIONBlocksGrid")
 );
@@ -117,7 +119,6 @@ const COMMUNITYCENTERPanel = React.lazy(
   () => import("../features/admin/COMMUNITYCENTERPanel.jsx")
 );
 const AdminPanel = React.lazy(() => import("./components/admin/AdminPanel.jsx"));
-const ZoomModal = React.lazy(() => import("./components/gallery/ZoomModal.jsx"));
 
 /* ======================================================================== */
 /* ============================== CONSTANTS ================================ */
@@ -1036,7 +1037,7 @@ export default function AppCore() {
   const [galleryLoading, setGalleryLoading] = React.useState(false);
   const [galleryNotice, setGalleryNotice] = React.useState("");
   const [cardsHelpOpen, setCardsHelpOpen] = React.useState(false);
-  const [zoomImg, setZoomImg] = React.useState(null);
+  const [, setZoomImg] = React.useState(null);
 
   const [lastMinted, setLastMinted] = React.useState({
     tokenId: "-",
@@ -1204,20 +1205,19 @@ export default function AppCore() {
       }
 
       const panelRaw = params.get("panel") || params.get("p");
-      const infoRaw = params.get("info") || params.get("i");
-      if (!panelRaw || !infoRaw) return;
-
-      const wantsInfo = ["1", "true", "yes", "open"].includes(
-        String(infoRaw).trim().toLowerCase(),
-      );
-      if (!wantsInfo) return;
+      if (!panelRaw) return;
 
       const alt = resolvePanelAlt(panelRaw);
       if (!alt) return;
 
       const idx = ICONS.findIndex((icon) => icon.alt === alt);
       if (idx >= 0) setOpenNavIdx(idx);
-      setAutoOpenInfoPanel(alt);
+
+      const infoRaw = params.get("info") || params.get("i");
+      const wantsInfo = ["1", "true", "yes", "open"].includes(
+        String(infoRaw || "").trim().toLowerCase(),
+      );
+      if (wantsInfo) setAutoOpenInfoPanel(alt);
     };
 
     parseInfoLink();
@@ -1452,14 +1452,19 @@ export default function AppCore() {
       indexProbes.push((i) => blockMintCountReader(i));
     }
 
-    let blockIndexBase = 1;
+    let scoreBase0 = 0;
+    let scoreBase1 = 0;
     for (const probe of indexProbes) {
-      const probe0 = await silent(() => probe(0));
-      if (probe0 != null) {
-        blockIndexBase = 0;
-        break;
-      }
+      const [at0, at9, at1, at10] = await Promise.all([
+        silent(() => probe(0)),
+        silent(() => probe(9)),
+        silent(() => probe(1)),
+        silent(() => probe(10)),
+      ]);
+      if (at0 != null && at9 != null) scoreBase0 += 1;
+      if (at1 != null && at10 != null) scoreBase1 += 1;
     }
+    const blockIndexBase = scoreBase0 > scoreBase1 ? 0 : 1;
 
     const blockRows = await Promise.all(
       Array.from({ length: 10 }, async (_, i) => {
@@ -2931,6 +2936,11 @@ export default function AppCore() {
       const contract = contractRef.current || getReadOnlyContract();
       const provider = getProviderFor(contract);
       if (!provider) throw new Error("Provider not available");
+      const walletScopedAddress =
+        typeof walletAddress === "string" &&
+        /^0x[0-9a-fA-F]{40}$/.test(walletAddress.trim())
+          ? walletAddress.trim()
+          : "";
       const pendingId = pendingTicketIdRef.current
         ? String(pendingTicketIdRef.current)
         : "";
@@ -2964,7 +2974,9 @@ export default function AppCore() {
       let logs = [];
       try {
         const latest = await provider.getBlockNumber();
-        const filter = contract.filters.NFTMinted();
+        const filter = walletScopedAddress
+          ? contract.filters.NFTMinted(walletScopedAddress)
+          : contract.filters.NFTMinted();
         const baseFrom = await getSafeDeployBlock(provider);
         const latestNum = Number(latest ?? 0);
         const safeLatest = Number.isFinite(latestNum) && latestNum >= 0 ? latestNum : 0;
@@ -3018,7 +3030,7 @@ export default function AppCore() {
         }
       }
       const hasMintLogs = candidates.length > 0;
-      if (!hasMintLogs && total != null && total > 0) {
+      if (!walletScopedAddress && !hasMintLogs && total != null && total > 0) {
         candidates.push(String(total));
       }
       const uniqueCandidates = [...new Set(candidates)];
@@ -3100,6 +3112,85 @@ export default function AppCore() {
       }
 
       if (!tokenId || tokenId === "0") {
+        if (walletScopedAddress) {
+          const walletItems = Array.isArray(latestWalletItemsRef.current)
+            ? latestWalletItemsRef.current
+            : [];
+          const topOwned = walletItems.find(
+            (item) => item && !item.isTicket && !item.isPending,
+          );
+          if (topOwned?.tokenId) {
+            const attrs = Array.isArray(topOwned?.meta?.attributes)
+              ? topOwned.meta.attributes
+              : [];
+            const findAttrValue = (names) => {
+              const hit = attrs.find((a) =>
+                names.includes(String(a?.trait_type || "").toLowerCase()),
+              );
+              return hit?.value;
+            };
+            const blockFromMeta =
+              findAttrValue([
+                "eye color",
+                "eyes",
+                "block/eye color",
+                "block",
+                "block id",
+              ]) || findAttrValue(["linked block", "block name"]);
+            const bgFromMeta = findAttrValue(["background", "background color"]);
+            const blockResolved = topOwned.blockName || blockFromMeta || "-";
+            const bgRaw = topOwned.backgroundName || bgFromMeta || "-";
+            const backgroundResolved =
+              bgRaw && bgRaw !== "-" ? canonBackgroundName(bgRaw) || bgRaw : "-";
+            const imageResolved = topOwned.image || PLACEHOLDER_IMAGE;
+            const imageLooksTicket = String(imageResolved || "").includes(
+              TICKET_IMAGE_FILE,
+            );
+            const fallbackComplete =
+              blockResolved !== "-" &&
+              backgroundResolved !== "-" &&
+              imageResolved !== PLACEHOLDER_IMAGE &&
+              !imageLooksTicket;
+
+            if (!fallbackComplete) {
+              setLastMinted((prev) => {
+                const prevImageLooksTicket = String(prev?.image || "").includes(
+                  TICKET_IMAGE_FILE,
+                );
+                const prevComplete =
+                  Boolean(prev?.tokenId) &&
+                  prev.tokenId !== "-" &&
+                  String(prev?.blockName || "") !== "-" &&
+                  String(prev?.backgroundName || "") !== "-" &&
+                  String(prev?.image || "") !== PLACEHOLDER_IMAGE &&
+                  !prevImageLooksTicket;
+                return prevComplete
+                  ? prev
+                  : {
+                      tokenId: "-",
+                      image: PLACEHOLDER_IMAGE,
+                      blockName: "-",
+                      backgroundName: "-",
+                    };
+              });
+              return;
+            }
+            setLastMinted({
+              tokenId: String(topOwned.tokenId),
+              image: imageResolved,
+              blockName: blockResolved,
+              backgroundName: backgroundResolved,
+            });
+            return;
+          }
+          setLastMinted({
+            tokenId: "-",
+            image: "/images/Biggi.png",
+            blockName: "-",
+            backgroundName: "-",
+          });
+          return;
+        }
         setLastMinted((prev) =>
           prev?.tokenId && prev.tokenId !== "-"
             ? prev
@@ -3246,15 +3337,22 @@ export default function AppCore() {
       if (incomplete) {
         // Keep last known NFT in LiveStats when RPC/IPFS metadata is temporarily incomplete.
         setLastMinted((prev) => {
-          if (prev?.tokenId && prev.tokenId !== "-") return prev;
+          const prevImageLooksTicket = String(prev?.image || "").includes(
+            TICKET_IMAGE_FILE,
+          );
+          const prevComplete =
+            Boolean(prev?.tokenId) &&
+            prev.tokenId !== "-" &&
+            String(prev?.blockName || "") !== "-" &&
+            String(prev?.backgroundName || "") !== "-" &&
+            String(prev?.image || "") !== PLACEHOLDER_IMAGE &&
+            !prevImageLooksTicket;
+          if (prevComplete) return prev;
           return {
-            tokenId: tokenId || "-",
-            image:
-              !imageLooksTicket && image && image !== PLACEHOLDER_IMAGE
-                ? image
-                : "/images/Biggi.png",
-            blockName: blockName !== "-" ? blockName : "-",
-            backgroundName: backgroundName !== "-" ? backgroundName : "-",
+            tokenId: "-",
+            image: PLACEHOLDER_IMAGE,
+            blockName: "-",
+            backgroundName: "-",
           };
         });
         return;
@@ -3269,7 +3367,7 @@ export default function AppCore() {
       }
       console.error("fetchLastMinted", e);
     }
-  }, []);
+  }, [walletAddress]);
 
   /* ====================================================================== */
   /* ============================ VRF PANEL DATA =========================== */
@@ -4881,9 +4979,11 @@ export default function AppCore() {
   }, [redeemMsg, VRFPending, isRedeeming, txStatus]);
 
   const handleStatusRefresh = React.useCallback(async () => {
-    await fetchStats?.();
-    await fetchREWARDS?.();
-    await fetchWalletAssets?.(walletAddress);
+    await Promise.allSettled([
+      fetchStats?.(),
+      fetchREWARDS?.(),
+      fetchWalletAssets?.(walletAddress),
+    ]);
   }, [fetchStats, fetchREWARDS, fetchWalletAssets, walletAddress]);
 
   /* ====================================================================== */
@@ -4990,13 +5090,6 @@ export default function AppCore() {
         >
           {renderActivePanel}
         </FullscreenPanel>
-      ) : null}
-
-      {/* ZOOM MODAL */}
-      {zoomImg ? (
-        <React.Suspense fallback={null}>
-          <ZoomModal image={zoomImg} onClose={() => setZoomImg(null)} />
-        </React.Suspense>
       ) : null}
 
       {/* REDEEM OVERLAY REMOVED: status banner is shown on dashboard instead */}

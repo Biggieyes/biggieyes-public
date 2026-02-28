@@ -255,7 +255,7 @@ export default vercelHandler;
 
 /* NETLIFY / AWS LAMBDA style export */
 export const handler = async (event) => {
-  const body = event?.body ? JSON.parse(event.body) : {};
+  const body = parseBody(event);
   const result = await handleRequest({ method: event?.httpMethod, body });
   return { statusCode: result.status, headers: result.headers, body: result.body };
 };

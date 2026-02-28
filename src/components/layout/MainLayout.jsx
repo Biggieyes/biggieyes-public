@@ -78,9 +78,11 @@ function MainLayout({
     Number(chainId) !== expectedChainId;
 
   const handleNetworkRetry = React.useCallback(async () => {
-    await fetchStats?.();
-    await fetchREWARDS?.();
-    await fetchWalletAssets?.(walletAddress);
+    await Promise.allSettled([
+      fetchStats?.(),
+      fetchREWARDS?.(),
+      fetchWalletAssets?.(walletAddress),
+    ]);
   }, [fetchStats, fetchREWARDS, fetchWalletAssets, walletAddress]);
 
   React.useEffect(() => {
@@ -219,6 +221,5 @@ function MainLayout({
 }
 
 export default React.memo(MainLayout);
-
 
 

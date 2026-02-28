@@ -1,1 +1,1 @@
-export { BUYBACKTreasuryTab as default } from "../../features/tokenomics";
+export { default } from "../../features/tokenomics/tabs/BUYBACKTreasuryTab.jsx";

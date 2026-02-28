@@ -24,6 +24,9 @@
     "check:rpc": "node scripts/check-rpc-health.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "^8.1.0",
+    "@capacitor/cli": "^8.1.0",
+    "@capacitor/core": "^8.1.0",
     "@ethersproject/abi": "^5.0.9",
     "@ethersproject/bignumber": "^5.8.0",
     "@ethersproject/constants": "^5.8.0",

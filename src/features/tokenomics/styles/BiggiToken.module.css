@@ -494,6 +494,13 @@
   gap: 14px;
 }
 
+.ecoFlowSplitCard {
+  border: 1px solid rgba(255, 232, 0, 0.2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: linear-gradient(165deg, rgba(15, 17, 24, 0.86), rgba(8, 10, 16, 0.96));
+}
+
 .ecoMiniTitle {
   font-size: 12px;
   font-weight: 700;
@@ -644,6 +651,41 @@
   }
   .ecoTableStatus {
     justify-self: flex-start;
+  }
+}
+
+/* Mobile/low-power rendering path: preserve layout and values, reduce paint cost. */
+@media (max-width: 900px), (prefers-reduced-motion: reduce) {
+  .ecosystem :global(.biggi-token-surface) {
+    backdrop-filter: none;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.42);
+  }
+
+  .ecosystem :global(.biggi-token-surface)::before,
+  .ecosystem :global(.biggi-token-surface)::after {
+    display: none;
+    animation: none;
+  }
+
+  .ecosystem :global(.biggi-header) {
+    backdrop-filter: none;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.34);
+  }
+
+  .ecosystem :global(.biggi-header)::after {
+    animation: none;
+    opacity: 0.5;
+  }
+
+  .ecosystem :global(.biggi-card),
+  .ecosystem :global(.biggi-hero__stat) {
+    transition: none;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .ecosystem :global(.biggi-card:hover),
+  .ecosystem :global(.biggi-hero__stat:hover) {
+    transform: none;
   }
 }
 

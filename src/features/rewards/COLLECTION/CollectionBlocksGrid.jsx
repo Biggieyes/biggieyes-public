@@ -18,6 +18,7 @@ import {
   getBlockImages,
   getBlockThumb,
   buildBlockImagePath,
+  buildBlockThumbPath,
 } from "../../../utils/images";
 import { useContracts } from "../../../providers/ContractsProvider";
 import { ensureAmoy, getCOLLECTIONPublicRO, getROProvider } from "@/shared/utils/contract";
@@ -408,6 +409,9 @@ function COLLECTIONBlocksGrid({
         const minted = normalizedMintCounts[index];
         const basePrice =
           typeof BASE_PRICES[folder] === "number" ? BASE_PRICES[folder] : null;
+        const blockFiles = getBlockImages(name);
+        const thumbFallback =
+          blockFiles.length > 0 ? buildBlockImagePath(blockFiles[0]) : "";
 
         return {
           id: `${folder || "BLOCK"}-${index}`,
@@ -418,6 +422,7 @@ function COLLECTIONBlocksGrid({
           basePrice,
           diff: computeDiff(currentPrice ?? NaN, basePrice ?? NaN),
           thumb: getBlockThumb(name),
+          thumbFallback,
           hasData: Boolean(name && name !== "-"),
           buttonStyle: resolveButtonStyle(name),
         };
@@ -783,7 +788,10 @@ function COLLECTIONBlocksGrid({
           <div>
             <h2 className="collection-grid__title">Biggi COLLECTION</h2>
             <p className="collection-grid__subtitle">
-              COLLECTIONs hub - live on-chain stats
+              Live collection command view with block pricing, background
+              impact, and rarity-linked supply signals. Switch between tabs to
+              inspect mint flow, market structure, and current on-chain
+              distribution.
             </p>
           </div>
 
@@ -919,6 +927,7 @@ function COLLECTIONBlocksGrid({
                     const isColumnStart = index % modalRows === 0;
                     const columnNumber = Math.floor(index / modalRows) + 1;
                     const imagePath = buildBlockImagePath(file);
+                    const thumbPath = buildBlockThumbPath(file);
                     return (
                       <div
                         key={`${file}-${index}`}
@@ -930,11 +939,12 @@ function COLLECTIONBlocksGrid({
                           </div>
                         )}
                         <img
-                          src={imagePath}
+                          src={thumbPath}
+                          data-fallback-src={imagePath}
                           alt={`${safeBlockFolder(openBlock)} NFT ${index + 1}`}
                           width={PREVIEW_SIZE}
                           height={PREVIEW_SIZE}
-                          loading="React.lazy"
+                          loading="lazy"
                           decoding="async"
                           onError={handleImageError}
                         />
