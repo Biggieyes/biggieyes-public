@@ -24,6 +24,7 @@ import {
 
 const PAGE_SIZE_DESKTOP = 12;
 const PAGE_SIZE_MOBILE = 6;
+const TOP_HIGHLIGHT_MS = 70_000;
 
 // Smaller batch size to reduce RPC rejections on public endpoints.
 const LOGS_BATCH = 300;
@@ -126,11 +127,7 @@ const looksLikeTicketMeta = (meta) => {
   if (!meta) return false;
   const name = String(meta?.name || "").toLowerCase();
   const desc = String(meta?.description || "").toLowerCase();
-  return (
-    name.includes("ticket") ||
-    desc.includes("ticket") ||
-    desc.includes("redeem")
-  );
+  return name.includes("ticket") || desc.includes("ticket");
 };
 
 const looksLikeNftMeta = (meta) => {
@@ -725,12 +722,12 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
             meta = {
               ...(meta || {}),
               name: `Biggi NFT #${idStr}`,
-              description: "Metadata is updating after redeem.",
+              description: "Metadata is updating on-chain.",
             };
           } else if (!isTicket && !meta) {
             meta = {
               name: `Biggi NFT #${idStr}`,
-              description: "Metadata is updating after redeem.",
+              description: "Metadata is updating on-chain.",
             };
           }
 
@@ -776,13 +773,13 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
               meta = {
                 ...(meta || {}),
                 name: `Biggi NFT #${idStr}`,
-                description: "Metadata is updating after redeem.",
+                description: "Metadata is updating on-chain.",
               };
               image = "/images/Biggi.png";
             } else if (!meta) {
               meta = {
                 name: `Biggi NFT #${idStr}`,
-                description: "Metadata is updating after redeem.",
+                description: "Metadata is updating on-chain.",
               };
               image = image || "/images/Biggi.png";
             }
@@ -898,6 +895,8 @@ export default function Gallery({
   const [highlightId, setHighlightId] = React.useState("");
   const highlightTimerRef = React.useRef(null);
   const topFirstResetRef = React.useRef("");
+  const topFirstVisibleRef = React.useRef({ id: "", visible: false });
+  const [pinnedTopId, setPinnedTopId] = React.useState("");
   const [isMobile, setIsMobile] = React.useState(() =>
     typeof window !== "undefined"
       ? window.matchMedia("(max-width: 768px)").matches
@@ -1119,6 +1118,7 @@ export default function Gallery({
 
   const processedItems = React.useMemo(() => {
     let list = nonTicketItemsSource;
+    const topId = pinnedTopId != null ? String(pinnedTopId) : "";
     if (filterRarity !== "all") {
       const target = String(filterRarity).toLowerCase();
       list = list.filter(
@@ -1169,8 +1169,15 @@ export default function Gallery({
         return idA < idB ? -1 : 1;
       });
     }
+    if (topId) {
+      const topIndex = sorted.findIndex((item) => toIdString(item) === topId);
+      if (topIndex > 0) {
+        const [topItem] = sorted.splice(topIndex, 1);
+        sorted.unshift(topItem);
+      }
+    }
     return sorted;
-  }, [nonTicketItemsSource, filterRarity, sortBy, topFirstId]);
+  }, [nonTicketItemsSource, filterRarity, sortBy, pinnedTopId]);
 
   React.useEffect(() => {
     setPage(0);
@@ -1183,27 +1190,44 @@ export default function Gallery({
     topFirstResetRef.current = id;
     setPage(0);
     setSortBy("default");
+    setFilterRarity("all");
   }, [topFirstId]);
 
   React.useEffect(() => {
     const id = topFirstId != null ? String(topFirstId) : "";
-    if (!id) return;
-    setHighlightId(id);
+    if (!id) {
+      topFirstVisibleRef.current = { id: "", visible: false };
+      setPinnedTopId("");
+      return;
+    }
+    const isVisible = processedItems.some((item) => toIdString(item) === id);
+    const prev = topFirstVisibleRef.current;
+    const becameVisible = isVisible && (prev.id !== id || !prev.visible);
+    topFirstVisibleRef.current = { id, visible: isVisible };
+    if (becameVisible) {
+      setHighlightId(id);
+      setPinnedTopId(id);
+    }
+  }, [topFirstId, processedItems]);
+
+  React.useEffect(() => {
+    if (!highlightId) return;
+    const activeId = String(highlightId);
     if (highlightTimerRef.current) {
       clearTimeout(highlightTimerRef.current);
       highlightTimerRef.current = null;
     }
     highlightTimerRef.current = setTimeout(() => {
-      setHighlightId((prev) => (prev === id ? "" : prev));
+      setHighlightId((prev) => (String(prev) === activeId ? "" : prev));
       highlightTimerRef.current = null;
-    }, 5000);
+    }, TOP_HIGHLIGHT_MS);
     return () => {
       if (highlightTimerRef.current) {
         clearTimeout(highlightTimerRef.current);
         highlightTimerRef.current = null;
       }
     };
-  }, [topFirstId]);
+  }, [highlightId]);
 
   const totalPages = Math.max(1, Math.ceil(processedItems.length / pageSize));
 
@@ -1254,7 +1278,7 @@ export default function Gallery({
       ? "All rarities"
       : `${filterRarity.charAt(0).toUpperCase()}${filterRarity.slice(1)}`;
 
-  const renderCard = (item, index) => {
+  const renderCard = (item, index, inMainGrid = false) => {
     const { rarity, rarityRank } = deriveRarityInfo(item);
     const enriched =
       (item?.rarity == null && rarity != null) ||
@@ -1269,6 +1293,8 @@ export default function Gallery({
     const dynamic = dynamicTraitsById[tokenId] || {};
     const isHighlight =
       highlightId && tokenId && String(tokenId) === String(highlightId);
+    const isPromoted =
+      inMainGrid && page === 0 && index === 0 && Boolean(isHighlight);
     const key =
       tokenId ||
       `${String(item?.contractAddress || mainContractAddress || "unknown")}:${index}`;
@@ -1281,6 +1307,7 @@ export default function Gallery({
         onZoom={onZoom}
         fallbackContractAddress={mainContractAddress}
         highlight={Boolean(isHighlight)}
+        promoted={Boolean(isPromoted)}
       />
     );
   };
@@ -1306,17 +1333,6 @@ export default function Gallery({
             and filtering. Open card details to review rarity context, metadata
             traits, and explorer-verified contract records in one place.
           </p>
-          <div className="gallery__quick-stats">
-            <span className="gallery__chip gallery__chip--nft">
-              NFTs: {showSummaryLoading ? "..." : totalNfts}
-            </span>
-            <span className="gallery__chip gallery__chip--ticket">
-              Tickets: {showSummaryLoading ? "..." : totalTickets}
-            </span>
-            <span className="gallery__chip gallery__chip--pending">
-              Pending: {showSummaryLoading ? "..." : pendingTickets}
-            </span>
-          </div>
         </div>
         <div className="gallery__header-actions-shell">
           <div className="gallery__header-actions-title">Gallery controls</div>
@@ -1440,7 +1456,7 @@ export default function Gallery({
             </span>
           </div>
           <div className="gallery__grid gallery__grid--tickets">
-            {ticketItems.map(renderCard)}
+            {ticketItems.map((item, index) => renderCard(item, index, false))}
           </div>
         </section>
       )}
@@ -1464,7 +1480,7 @@ export default function Gallery({
             </p>
           </div>
         )}
-        {pagedItems.map(renderCard)}
+        {pagedItems.map((item, index) => renderCard(item, index, true))}
       </div>
 
       {totalPages > 1 && (

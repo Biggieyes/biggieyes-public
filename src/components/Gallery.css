@@ -373,14 +373,17 @@
 }
 
 .gallery__summary-item--metric strong {
+  color: #ff4d5f;
   font-size: clamp(2rem, 1vw + 1.5rem, 2.55rem);
   line-height: 1;
   letter-spacing: 0.03em;
   margin: 0;
+  text-shadow: 0 0 14px rgba(255, 77, 95, 0.35);
 }
 
 .gallery__loading-label {
   display: inline-block;
+  color: #ff7b88;
   font-size: clamp(1.15rem, 0.6vw + 0.9rem, 1.55rem);
   line-height: 1.1;
   letter-spacing: 0.06em;

@@ -120,15 +120,14 @@ const parseMatic = (value) => {
   return Number.isNaN(n) ? null : n;
 };
 
+const isPositivePrice = (value) =>
+  typeof value === "number" && Number.isFinite(value) && value > 0;
+
 const looksLikeTicketMeta = (meta) => {
   if (!meta) return false;
   const name = String(meta?.name || "").toLowerCase();
   const desc = String(meta?.description || "").toLowerCase();
-  return (
-    name.includes("ticket") ||
-    desc.includes("ticket") ||
-    desc.includes("redeem")
-  );
+  return name.includes("ticket") || desc.includes("ticket");
 };
 
 const normalizeExternalUrl = (value) => {
@@ -161,6 +160,7 @@ export default function NftCard({
   onOpenDetails,
   fallbackContractAddress = null,
   highlight = false,
+  promoted = false,
 }) {
   // HOOKS must be called deterministically; keep outside conditionals
   let contracts = null;
@@ -181,8 +181,11 @@ export default function NftCard({
   );
   const [mintData, setMintData] = React.useState(() => {
     if (nft?.mint) {
+      const initialTicket = parseMatic(
+        nft.mint.ticketPrice ?? nft.mint.mintTicket,
+      );
       return {
-        ticketPrice: parseMatic(nft.mint.ticketPrice ?? nft.mint.mintTicket),
+        ticketPrice: isPositivePrice(initialTicket) ? initialTicket : null,
         blockPrice: parseMatic(nft.mint.blockPrice ?? nft.mint.mintBlock),
         finalPrice: parseMatic(nft.mint.finalPrice ?? nft.mint.mintFinal),
       };
@@ -407,7 +410,7 @@ export default function NftCard({
             const bgName = bgNameFromCode(bgCode) || bgCode;
             const fallbackMeta = {
               name: `Biggi NFT #${mainId}`,
-              description: "Metadata is updating after redeem.",
+              description: "Metadata is updating on-chain.",
               attributes: [
                 blockName ? { trait_type: "Block", value: blockName } : null,
                 bgName ? { trait_type: "Background", value: bgName } : null,
@@ -424,7 +427,7 @@ export default function NftCard({
           ? {
               ...(json || {}),
               name: `Biggi NFT #${tokenId}`,
-              description: "Metadata is updating after redeem.",
+              description: "Metadata is updating on-chain.",
             }
           : json;
         if (!cancelled) {
@@ -464,7 +467,7 @@ export default function NftCard({
         if (!cancelled && !nft?.isTicket && !currentMeta) {
           setMetadata({
             name: tokenId ? `Biggi NFT #${tokenId}` : "Biggi NFT",
-            description: "Metadata is updating after redeem.",
+            description: "Metadata is updating on-chain.",
             image: PLACEHOLDER_IMG,
           });
           setImage(PLACEHOLDER_IMG);
@@ -513,9 +516,29 @@ export default function NftCard({
         if (reader && typeof reader.getMintDataByTokenId === "function") {
           const res = await reader.getMintDataByTokenId(tokenId).catch(() => null);
           if (res) {
-            ticketPrice = fmtEtherNum(res?.[0] ?? 0);
+            const tp = fmtEtherNum(res?.[0] ?? 0);
+            if (isPositivePrice(tp)) ticketPrice = tp;
             blockPrice = fmtEtherNum(res?.[1] ?? 0);
             finalPrice = fmtEtherNum(res?.[2] ?? 0);
+          }
+        }
+
+        // Some deployments expose per-index mint data only.
+        if (ticketPrice == null && reader && typeof reader.getMintData === "function") {
+          const res = await reader.getMintData(tokenId).catch(() => null);
+          if (res) {
+            const tp = fmtEtherNum(res?.[0] ?? 0);
+            if (isPositivePrice(tp)) ticketPrice = tp;
+            if (blockPrice == null) blockPrice = fmtEtherNum(res?.[1] ?? 0);
+            if (finalPrice == null) finalPrice = fmtEtherNum(res?.[2] ?? 0);
+          }
+        }
+
+        if (ticketPrice == null && main && typeof main.getMintData === "function") {
+          const res = await main.getMintData(tokenId).catch(() => null);
+          if (res) {
+            const tp = fmtEtherNum(res?.[0] ?? 0);
+            if (isPositivePrice(tp)) ticketPrice = tp;
           }
         }
 
@@ -552,7 +575,9 @@ export default function NftCard({
         if (ticketPrice == null && blockPrice == null && finalPrice == null) return;
         if (!cancelled) {
           setMintData((prev) => ({
-            ticketPrice: ticketPrice ?? prev?.ticketPrice ?? null,
+            ticketPrice:
+              ticketPrice ??
+              (isPositivePrice(prev?.ticketPrice) ? prev.ticketPrice : null),
             blockPrice: blockPrice ?? prev?.blockPrice ?? null,
             finalPrice: finalPrice ?? prev?.finalPrice ?? null,
           }));
@@ -708,10 +733,17 @@ export default function NftCard({
     dynamicTraits?.mintBlock,
   ]);
 
+  const derivedTicketPrice = React.useMemo(() => {
+    const fromMintData = mintData?.ticketPrice;
+    if (isPositivePrice(fromMintData)) return fromMintData;
+    const fromTraits = parseMatic(dynamicTraits?.mintTicket);
+    if (isPositivePrice(fromTraits)) return fromTraits;
+    return null;
+  }, [mintData?.ticketPrice, dynamicTraits?.mintTicket]);
+
   const derivedMintData = React.useMemo(
     () => ({
-      ticketPrice:
-        mintData?.ticketPrice ?? parseMatic(dynamicTraits?.mintTicket),
+      ticketPrice: derivedTicketPrice,
       blockPriceNow:
         currentBlockPrice != null
           ? currentBlockPrice
@@ -720,7 +752,7 @@ export default function NftCard({
         mintData?.finalPrice ??
         parseMatic(dynamicTraits?.mintFinal ?? dynamicTraits?.finalPrice),
     }),
-    [mintData, dynamicTraits, currentBlockPrice],
+    [derivedTicketPrice, mintData, dynamicTraits, currentBlockPrice],
   );
 
   const attributes = React.useMemo(() => {
@@ -811,6 +843,8 @@ export default function NftCard({
   const cardClassName = `nft-card${
     detailsOpen ? " nft-card--open" : ""
   }${highlight ? " nft-card--highlight" : ""}${
+    promoted ? " nft-card--promoted" : ""
+  }${
     imageZoomed ? " nft-card--image-zoomed" : ""
   }`;
 
@@ -826,6 +860,9 @@ export default function NftCard({
           {imageZoomed ? "Close" : "Zoom"}
         </button>
         {nft.isTicket && <span className="nft-card__badge">Ticket</span>}
+        {!nft.isTicket && promoted && (
+          <span className="nft-card__fresh">Fresh redeem</span>
+        )}
         {!nft.isTicket && (
           <ImportNftButton
             contractAddress={contractAddress}
@@ -875,22 +912,26 @@ export default function NftCard({
                   : formatMatic(derivedMintData?.ticketPrice)}
               </strong>
             </div>
-            <div title="Current block price">
-              <span>Block (now)</span>
-              <strong>
-                {loadingBlockNow
-                  ? "..."
-                  : formatMatic(derivedMintData?.blockPriceNow)}
-              </strong>
-            </div>
-            <div>
-              <span>Final</span>
-              <strong>
-                {loadingMint
-                  ? "..."
-                  : formatMatic(derivedMintData?.finalPrice)}
-              </strong>
-            </div>
+            {!nft?.isTicket && (
+              <div title="Current block price">
+                <span>Block (now)</span>
+                <strong>
+                  {loadingBlockNow
+                    ? "..."
+                    : formatMatic(derivedMintData?.blockPriceNow)}
+                </strong>
+              </div>
+            )}
+            {!nft?.isTicket && (
+              <div>
+                <span>Final</span>
+                <strong>
+                  {loadingMint
+                    ? "..."
+                    : formatMatic(derivedMintData?.finalPrice)}
+                </strong>
+              </div>
+            )}
           </div>
         </div>
 

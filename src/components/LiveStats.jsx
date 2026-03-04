@@ -19,11 +19,15 @@ import {
   ADDR,
 } from "@/shared/utils/contract";
 import { fetchDistributorSnapshot } from "@/shared/services/tokenomics/distributor.reader";
+import { httpFromIpfs } from "@/shared/services/ipfs";
+import { readJsonFromURI, resolveImageUrl } from "@/shared/services/ipfs";
+import { buildBlockImagePath } from "@/shared/utils/images";
 import { DEFAULT_BLOCKS, BASE_PRICES } from "@/shared/blocks";
 import ModalPortal from "./common/ModalPortal";
 import WeeklyCountdown from "./WeeklyCountdown";
 import useWeeklyCountdown from "../hooks/useWeeklyCountdown";
 import "./LiveStatsPools.css";
+import "./InfoTables.css";
 
 const OKLINK_BASE = "https://www.oklink.com/amoy/address/";
 
@@ -40,6 +44,50 @@ const TOKEN_REWARDS_MIN_ABI = [
 ];
 
 const BACKGROUND_BONUSES = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50];
+const COLLECTION_INFO_ROWS = [
+  {
+    concept: "Total minted / Tickets minted",
+    detail:
+      "Core supply counters for revealed NFTs and mint tickets in the current collection.",
+    tone: "mint",
+  },
+  {
+    concept: "Ticket price / Reward pool / Mint volume",
+    detail:
+      "Live economic values in POL that summarize ticket cost, reward funding, and aggregate mint flow.",
+    tone: "core",
+  },
+  {
+    concept: "Avg / Highest / Lowest block price",
+    detail:
+      "Distribution snapshot of current block prices derived from on-chain block pricing state.",
+    tone: "live",
+  },
+  {
+    concept: "Blocks minted / BG minted",
+    detail:
+      "Counts of minted outcomes by eye-block and by background dimension used in pricing mechanics.",
+    tone: "link",
+  },
+  {
+    concept: "Block prices table",
+    detail:
+      "Per-block comparison of Base vs Live price and Delta to make dynamic price movement transparent.",
+    tone: "base",
+  },
+  {
+    concept: "Background bonuses table",
+    detail:
+      "Per-background minted counts, one-time bonus percentage, and corresponding block price delta.",
+    tone: "bonus",
+  },
+  {
+    concept: "My weekly BIGGI",
+    detail:
+      "Wallet-specific estimate of weekly BIGGI units from owned NFTs and current on-chain reward settings.",
+    tone: "supply",
+  },
+];
 
 // ===== ethers v5/v6 safe helpers =====
 const isBigNumber = (value) =>
@@ -91,11 +139,7 @@ const looksLikeTicketMeta = (meta) => {
   if (!meta) return false;
   const name = String(meta?.name || "").toLowerCase();
   const desc = String(meta?.description || "").toLowerCase();
-  return (
-    name.includes("ticket") ||
-    desc.includes("ticket") ||
-    desc.includes("redeem")
-  );
+  return name.includes("ticket") || desc.includes("ticket");
 };
 
 const looksLikeNftMeta = (meta) => {
@@ -105,6 +149,229 @@ const looksLikeNftMeta = (meta) => {
     const t = String(a?.trait_type || "").toLowerCase();
     return t.includes("background") || t.includes("block") || t.includes("eye");
   });
+};
+
+const traitValueFromMeta = (meta, names) => {
+  const attrs = Array.isArray(meta?.attributes) ? meta.attributes : [];
+  for (const attr of attrs) {
+    const key = String(attr?.trait_type || "").toLowerCase();
+    if (names.includes(key)) {
+      const value = String(attr?.value ?? "").trim();
+      if (value) return value;
+    }
+  }
+  return "";
+};
+
+const toDisplayLastMinted = (payload) => {
+  const tokenId = String(payload?.tokenId ?? payload?.id ?? "").trim() || "-";
+  const image = String(payload?.image || "").trim();
+  const blockName = String(payload?.blockName || "").trim() || "-";
+  const backgroundName = String(payload?.backgroundName || "").trim() || "-";
+  return { tokenId, image, blockName, backgroundName };
+};
+
+const normalizeLiveStatsImage = (raw) => {
+  const input = String(raw || "").trim();
+  if (!input) return "";
+  try {
+    const normalized = httpFromIpfs(input);
+    return String(normalized || input).trim();
+  } catch {
+    return input;
+  }
+};
+
+const BACKGROUND_CODE_BY_NAME = Object.freeze({
+  ORANGE: "O",
+  BLACK: "B",
+  WHITE: "W",
+  BROWN: "BR",
+  BLUE: "BL",
+  GREEN: "G",
+  VIOLET: "V",
+  RED: "R",
+  PINK: "P",
+  RAINBOW: "RB",
+});
+
+const BLOCK_IMAGE_BASES = Object.freeze({
+  ORANGE:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeihs2zmll4beazspdqf5cr4hufmcqlby2cdwkwjfd4kyhl2rp27ohq/",
+  BLACK:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeiexwu2aiocaw4jh4yihywdkabbp2u7v2vf7wydhqcgehcispvjhfy/",
+  WHITE:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeicqja4j6wmdm2jbomtloggwafe4kluokgp5qhdr2pkrgxju6tpyl4/",
+  BROWN:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeibbqjofkkvldzfmmi5tfzucrmbd56ba3i5pfivywqb7g25wa7677m/",
+  BLUE:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeieuk5o3mktitbutdzyymacz27me5zntkybk3zhndjvsfuqa6osj4m/",
+  GREEN:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeihgbvpuomieigi3eenho6fzbbtwpvw7lfqbpbriojenvutufn6opa/",
+  VIOLET:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeibs3xyn3wdsssxubow5wqh4vyg4dkumshqza6ppssiqqrbo4chq3a/",
+  RED:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeifuhvp33jihz2xzr45vwme2drg7uxe5sukabttx4eqqupdbfmmebi/",
+  PINK:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeihkz72p25huca3b463o7q7yp4xnv2l4lejyzckodolqij6m5ofw2a/",
+  RAINBOW:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeibda5h7lwnalrugm4fek63pqsndvm4nyesm3t77tuegziloqgna3i/",
+});
+
+const trimSlash = (val) => String(val || "").replace(/\/+$/, "");
+
+const normalizeBgCode = (value) => {
+  const raw = String(value || "").trim().toUpperCase();
+  if (!raw) return "";
+  if (BACKGROUND_CODE_BY_NAME[raw]) return BACKGROUND_CODE_BY_NAME[raw];
+  const allowed = new Set(Object.values(BACKGROUND_CODE_BY_NAME));
+  if (allowed.has(raw)) return raw;
+  return "";
+};
+
+const normalizeBlockForImage = (value) => {
+  const raw = String(value || "").trim().toUpperCase();
+  if (!raw || raw === "-") return "";
+  if (DEFAULT_BLOCKS.includes(raw)) return raw;
+  return raw;
+};
+
+const stripRetryParam = (url) =>
+  String(url || "")
+    .replace(/([?&])r=\d+(&?)/g, "$1")
+    .replace(/[?&]$/, "");
+
+const isUsableLiveStatsImage = (raw) => {
+  const normalized = normalizeLiveStatsImage(raw);
+  if (!normalized) return false;
+  const lowered = normalized.toLowerCase();
+  if (lowered === "/images/biggi.png") return false;
+  if (lowered.includes("biggi_random_mint_ticket")) return false;
+  return true;
+};
+
+const LAST_IMAGE_TOKEN_CACHE_LIMIT = 64;
+const liveStatsImageByToken = new Map();
+const LIVE_STATS_IMAGE_CACHE_PREFIX = "biggi_live_stats_image_v1_";
+const LIVE_STATS_IMAGE_LAST_KEY = "biggi_live_stats_image_last_v1";
+
+const canUseLiveStatsStorage = () =>
+  typeof window !== "undefined" && Boolean(window.localStorage);
+
+const persistLiveStatsImageForToken = (tokenId, image) => {
+  try {
+    if (!canUseLiveStatsStorage()) return;
+    const key = String(tokenId || "").trim();
+    const src = String(image || "").trim();
+    if (!key || key === "-" || !src) return;
+    window.localStorage.setItem(`${LIVE_STATS_IMAGE_CACHE_PREFIX}${key}`, src);
+    window.localStorage.setItem(
+      LIVE_STATS_IMAGE_LAST_KEY,
+      JSON.stringify({ tokenId: key, image: src }),
+    );
+  } catch {
+    // ignore storage errors
+  }
+};
+
+const readPersistedLiveStatsImageForToken = (tokenId) => {
+  try {
+    if (!canUseLiveStatsStorage()) return "";
+    const key = String(tokenId || "").trim();
+    if (!key || key === "-") return "";
+    const raw = window.localStorage.getItem(`${LIVE_STATS_IMAGE_CACHE_PREFIX}${key}`);
+    const normalized = normalizeLiveStatsImage(raw);
+    return isUsableLiveStatsImage(normalized) ? normalized : "";
+  } catch {
+    return "";
+  }
+};
+
+const readPersistedLastLiveStatsImage = () => {
+  try {
+    if (!canUseLiveStatsStorage()) return { tokenId: "", image: "" };
+    const raw = window.localStorage.getItem(LIVE_STATS_IMAGE_LAST_KEY);
+    if (!raw) return { tokenId: "", image: "" };
+    const parsed = JSON.parse(raw);
+    const tokenId = String(parsed?.tokenId || "").trim();
+    const image = normalizeLiveStatsImage(parsed?.image);
+    if (!tokenId || !isUsableLiveStatsImage(image)) {
+      return { tokenId: "", image: "" };
+    }
+    return { tokenId, image };
+  } catch {
+    return { tokenId: "", image: "" };
+  }
+};
+
+const cacheLiveStatsImageForToken = (tokenId, rawImage) => {
+  const key = String(tokenId || "").trim();
+  if (!key || key === "-") return;
+  if (!isUsableLiveStatsImage(rawImage)) return;
+  const image = normalizeLiveStatsImage(rawImage);
+  if (!image) return;
+  if (liveStatsImageByToken.has(key)) liveStatsImageByToken.delete(key);
+  liveStatsImageByToken.set(key, image);
+  while (liveStatsImageByToken.size > LAST_IMAGE_TOKEN_CACHE_LIMIT) {
+    const oldest = liveStatsImageByToken.keys().next().value;
+    if (oldest == null) break;
+    liveStatsImageByToken.delete(oldest);
+  }
+  persistLiveStatsImageForToken(key, image);
+};
+
+const getCachedLiveStatsImageForToken = (tokenId) => {
+  const key = String(tokenId || "").trim();
+  if (!key || key === "-") return "";
+  const hit = liveStatsImageByToken.get(key);
+  const inMemory = String(hit || "").trim();
+  if (inMemory) return inMemory;
+  const persisted = readPersistedLiveStatsImageForToken(key);
+  if (!persisted) return "";
+  if (liveStatsImageByToken.has(key)) liveStatsImageByToken.delete(key);
+  liveStatsImageByToken.set(key, persisted);
+  return persisted;
+};
+
+const buildLastMintedImageCandidates = ({
+  primaryImage,
+  tokenId,
+  blockName,
+  backgroundName,
+}) => {
+  const out = [];
+  const push = (raw) => {
+    const normalized = normalizeLiveStatsImage(raw);
+    if (!isUsableLiveStatsImage(normalized)) return;
+    const key = stripRetryParam(normalized).toLowerCase();
+    if (!key) return;
+    if (out.some((item) => stripRetryParam(item).toLowerCase() === key)) return;
+    out.push(normalized);
+  };
+
+  push(primaryImage);
+
+  const token = String(tokenId || "").trim();
+  const block = normalizeBlockForImage(blockName);
+  const bgCode = normalizeBgCode(backgroundName);
+  if (/^\d+$/.test(token) && block && bgCode) {
+    const fileName = `Biggi_${token}_${block}_${bgCode}.png`;
+    const remoteBase = trimSlash(BLOCK_IMAGE_BASES[block] || "");
+    if (remoteBase) push(`${remoteBase}/${fileName}`);
+    push(buildBlockImagePath(block, fileName));
+  }
+
+  return out;
+};
+
+const parseTokenUriPartsForImage = (uri) => {
+  const m = String(uri || "").match(/Biggi_(\d+)_([A-Z]+)_([A-Z]+)\.json/i);
+  if (!m) return null;
+  return {
+    mainId: m[1],
+    blockName: String(m[2] || "").toUpperCase(),
+    bgCode: String(m[3] || "").toUpperCase(),
+  };
 };
 
 function LiveStats({
@@ -138,20 +405,274 @@ function LiveStats({
   // lpPrice,
   // setLpPrice,
 }) {
+  const normalizedItems = React.useMemo(() => {
+    const arr = Array.isArray(items) ? items : [];
+    if (!arr.length) return arr;
+    return arr.map((it) => {
+      if (!it) return it;
+      const meta = it?.meta;
+      const metaLooksTicket = looksLikeTicketMeta(meta);
+      const metaLooksNft = looksLikeNftMeta(meta);
+      let isTicket = it?.isTicket;
+      if (metaLooksNft) {
+        isTicket = false;
+      } else if ((isTicket == null) && metaLooksTicket && !metaLooksNft) {
+        isTicket = true;
+      } else if (isTicket != null) {
+        isTicket = Boolean(isTicket);
+      }
+      if (
+        isTicket === it?.isTicket ||
+        (it?.isTicket == null && isTicket == null)
+      ) {
+        return it;
+      }
+      return { ...it, isTicket };
+    });
+  }, [items]);
+
+  const walletLastMintedFallback = React.useMemo(() => {
+    const arr = Array.isArray(normalizedItems) ? normalizedItems : [];
+    const nftItems = arr.filter((it) => it && !it.isTicket && !it.isPending);
+    if (!nftItems.length) return null;
+
+    const isUsableImage = (raw) => {
+      const image = String(raw || "").trim();
+      if (!image) return false;
+      const lowered = image.toLowerCase();
+      if (lowered === "/images/biggi.png") return false;
+      if (lowered.includes("biggi_random_mint_ticket")) return false;
+      return true;
+    };
+
+    // Prefer the UI order provided by AppCore (already reconciled around latest redeem),
+    // and only then fall back to "first available NFT with usable image".
+    const fallbackItem =
+      nftItems.find((item) => isUsableImage(item?.image)) || nftItems[0];
+    const blockName =
+      String(fallbackItem?.blockName || "").trim() ||
+      traitValueFromMeta(fallbackItem?.meta, [
+        "eye color",
+        "eyes",
+        "block/eye color",
+        "block",
+        "block id",
+        "linked block",
+        "block name",
+      ]) ||
+      "-";
+    const backgroundName =
+      String(fallbackItem?.backgroundName || "").trim() ||
+      traitValueFromMeta(fallbackItem?.meta, ["background", "background color"]) ||
+      "-";
+
+    return toDisplayLastMinted({
+      tokenId: fallbackItem?.tokenId ?? fallbackItem?.id,
+      image: fallbackItem?.image,
+      blockName,
+      backgroundName,
+    });
+  }, [normalizedItems]);
+
+  const walletNftByTokenId = React.useMemo(() => {
+    const out = new Map();
+    const arr = Array.isArray(normalizedItems) ? normalizedItems : [];
+    for (const item of arr) {
+      if (!item || item.isTicket || item.isPending) continue;
+      const tokenId = String(item?.tokenId ?? item?.id ?? "").trim();
+      if (!tokenId) continue;
+      out.set(tokenId, item);
+    }
+    return out;
+  }, [normalizedItems]);
+
+  const chainLastMinted = React.useMemo(
+    () =>
+      toDisplayLastMinted({
+        image: lastImage,
+        tokenId: lastNftId,
+        blockName: lastBlockName,
+        backgroundName: lastBackgroundName,
+      }),
+    [lastImage, lastNftId, lastBlockName, lastBackgroundName],
+  );
+
+  const chainTokenWalletFallback = React.useMemo(() => {
+    const chainTokenId = String(chainLastMinted.tokenId || "").trim();
+    if (!chainTokenId || chainTokenId === "-") return null;
+    const item = walletNftByTokenId.get(chainTokenId);
+    if (!item) return null;
+
+    const blockName =
+      String(item?.blockName || "").trim() ||
+      traitValueFromMeta(item?.meta, [
+        "eye color",
+        "eyes",
+        "block/eye color",
+        "block",
+        "block id",
+        "linked block",
+        "block name",
+      ]) ||
+      "-";
+    const backgroundName =
+      String(item?.backgroundName || "").trim() ||
+      traitValueFromMeta(item?.meta, ["background", "background color"]) ||
+      "-";
+
+    return toDisplayLastMinted({
+      tokenId: chainTokenId,
+      image: item?.image,
+      blockName,
+      backgroundName,
+    });
+  }, [chainLastMinted.tokenId, walletNftByTokenId]);
+
+  const effectiveLastMinted = React.useMemo(() => {
+    const chainImageRaw = String(chainLastMinted.image || "").trim();
+    const chainImageLower = chainImageRaw.toLowerCase();
+    const chainHasImage =
+      Boolean(chainImageRaw) &&
+      chainImageLower !== "/images/biggi.png" &&
+      !chainImageLower.includes("biggi_random_mint_ticket");
+    const chainHasTraits =
+      chainLastMinted.blockName !== "-" &&
+      chainLastMinted.backgroundName !== "-";
+    const chainHasToken = chainLastMinted.tokenId !== "-";
+    const chainComplete = chainHasImage && chainHasTraits && chainHasToken;
+
+    if (chainComplete) return chainLastMinted;
+
+    if (chainTokenWalletFallback) {
+      return {
+        tokenId: chainLastMinted.tokenId,
+        image: chainHasImage
+          ? chainLastMinted.image
+          : chainTokenWalletFallback.image || "",
+        blockName:
+          chainLastMinted.blockName !== "-"
+            ? chainLastMinted.blockName
+            : chainTokenWalletFallback.blockName,
+        backgroundName:
+          chainLastMinted.backgroundName !== "-"
+            ? chainLastMinted.backgroundName
+            : chainTokenWalletFallback.backgroundName,
+      };
+    }
+
+    if (walletLastMintedFallback) return walletLastMintedFallback;
+    return chainLastMinted;
+  }, [chainLastMinted, chainTokenWalletFallback, walletLastMintedFallback]);
+
+  const normalizedLastImage = React.useMemo(
+    () => normalizeLiveStatsImage(effectiveLastMinted.image),
+    [effectiveLastMinted.image],
+  );
+  const [resolvedLastImage, setResolvedLastImage] = React.useState("");
+  React.useEffect(() => {
+    setResolvedLastImage("");
+  }, [effectiveLastMinted.tokenId]);
+
+  React.useEffect(() => {
+    const tokenId = String(effectiveLastMinted.tokenId || "").trim();
+    if (!tokenId || tokenId === "-" || !/^\d+$/.test(tokenId)) return;
+    if (normalizedLastImage) return;
+    if (resolvedLastImage) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const provider = getROProvider();
+        const mainAddr = ADDR?.MAIN;
+        if (!provider || !mainAddr) return;
+        const contract = new Contract(
+          mainAddr,
+          ["function tokenURI(uint256 tokenId) view returns (string)"],
+          provider,
+        );
+        const uri = await contract.tokenURI(tokenId).catch(() => null);
+        if (!uri) return;
+
+        const meta = await readJsonFromURI(uri).catch(() => null);
+        const imgField = meta?.image || meta?.image_url || "";
+        let resolved =
+          (await resolveImageUrl(imgField, uri).catch(() => null)) ||
+          normalizeLiveStatsImage(httpFromIpfs(imgField));
+
+        if (!resolved) {
+          const parsed = parseTokenUriPartsForImage(uri);
+          if (parsed?.mainId && parsed?.blockName && parsed?.bgCode) {
+            const fileName = `Biggi_${parsed.mainId}_${parsed.blockName}_${parsed.bgCode}.png`;
+            const remoteBase = trimSlash(BLOCK_IMAGE_BASES[parsed.blockName] || "");
+            if (remoteBase) {
+              resolved = `${remoteBase}/${fileName}`;
+            } else {
+              resolved = buildBlockImagePath(parsed.blockName, fileName);
+            }
+          }
+        }
+
+        const normalized = normalizeLiveStatsImage(resolved);
+        if (!cancelled && normalized) {
+          setResolvedLastImage(normalized);
+        }
+      } catch {
+        // ignore best-effort image resolve failures
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveLastMinted.tokenId, normalizedLastImage, resolvedLastImage]);
+
+  const effectivePrimaryImage = normalizedLastImage || resolvedLastImage;
+  const lastImageCandidates = React.useMemo(
+    () =>
+      buildLastMintedImageCandidates({
+        primaryImage: effectivePrimaryImage,
+        tokenId: effectiveLastMinted.tokenId,
+        blockName: effectiveLastMinted.blockName,
+        backgroundName: effectiveLastMinted.backgroundName,
+      }),
+    [
+      effectivePrimaryImage,
+      effectiveLastMinted.tokenId,
+      effectiveLastMinted.blockName,
+      effectiveLastMinted.backgroundName,
+    ],
+  );
+
   const [lastImageSrc, setLastImageSrc] = React.useState(
-    lastImage || "/images/Biggi.png",
+    lastImageCandidates[0] || "",
   );
   const [lastImageLoaded, setLastImageLoaded] = React.useState(false);
   const [lastImageFailed, setLastImageFailed] = React.useState(false);
+  const lastImageRetryRef = React.useRef(0);
+  const persistedStableRef = React.useRef(readPersistedLastLiveStatsImage());
+  const lastStableImageRef = React.useRef(persistedStableRef.current.image || "");
+  const lastStableTokenRef = React.useRef(persistedStableRef.current.tokenId || "");
+  const lastPrimaryBaseRef = React.useRef("");
+  const lastPrimaryTokenRef = React.useRef("");
   const [isOffline, setIsOffline] = React.useState(
     typeof navigator !== "undefined" ? !navigator.onLine : false,
   );
 
   React.useEffect(() => {
-    setLastImageSrc(lastImage || "/images/Biggi.png");
+    const next = String(lastImageCandidates[0] || "").trim();
+    if (!next) return;
+    const nextBase = stripRetryParam(next).toLowerCase();
+    const tokenId = String(effectiveLastMinted.tokenId || "").trim();
+    const prevBase = String(lastPrimaryBaseRef.current || "").toLowerCase();
+    const prevToken = String(lastPrimaryTokenRef.current || "").trim();
+    if (prevBase === nextBase && prevToken === tokenId) return;
+    lastPrimaryBaseRef.current = nextBase;
+    lastPrimaryTokenRef.current = tokenId;
+    lastImageRetryRef.current = 0;
+    setLastImageSrc(next);
     setLastImageLoaded(false);
     setLastImageFailed(false);
-  }, [lastImage]);
+  }, [lastImageCandidates, effectiveLastMinted.tokenId]);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -165,8 +686,46 @@ function LiveStats({
     };
   }, []);
 
+  const effectiveTokenId = String(effectiveLastMinted.tokenId || "").trim();
+  const displayLastImageSrc = React.useMemo(() => {
+    const direct = String(lastImageSrc || "").trim();
+    if (direct) return direct;
+
+    const stableToken = String(lastStableTokenRef.current || "").trim();
+    const stableSrc = String(lastStableImageRef.current || "").trim();
+    if (
+      stableSrc &&
+      effectiveTokenId &&
+      effectiveTokenId !== "-" &&
+      stableToken === effectiveTokenId
+    ) {
+      return stableSrc;
+    }
+
+    const cached = getCachedLiveStatsImageForToken(effectiveTokenId);
+    if (cached) return cached;
+
+    const firstCandidate = String(lastImageCandidates[0] || "").trim();
+    if (stableSrc && !firstCandidate) {
+      return stableSrc;
+    }
+
+    if (firstCandidate) return firstCandidate;
+
+    return String(lastImageCandidates[0] || "").trim();
+  }, [effectiveTokenId, lastImageCandidates, lastImageSrc]);
+
+  React.useEffect(() => {
+    if (!effectiveTokenId || effectiveTokenId === "-") return;
+    const primary = String(lastImageCandidates[0] || "").trim();
+    if (!primary) return;
+    cacheLiveStatsImageForToken(effectiveTokenId, primary);
+  }, [effectiveTokenId, lastImageCandidates]);
+
   const lastImageIsIpfs = React.useMemo(() => {
-    const raw = String(lastImage || "").toLowerCase();
+    const raw =
+      `${String(normalizedLastImage || "")} ${String(displayLastImageSrc || "")}`
+        .toLowerCase();
     return (
       raw.includes("ipfs://") ||
       raw.includes("/ipfs/") ||
@@ -176,11 +735,34 @@ function LiveStats({
       raw.includes("mypinata") ||
       raw.includes("ipfs")
     );
-  }, [lastImage]);
+  }, [displayLastImageSrc, normalizedLastImage]);
 
   const showLastImageFallback =
     lastImageIsIpfs &&
     (lastImageFailed || (!lastImageLoaded && isOffline));
+  const hasLastImage = Boolean(displayLastImageSrc);
+  const hasLastToken = effectiveTokenId !== "-";
+
+  React.useEffect(() => {
+    if (!lastImageFailed || !lastImageIsIpfs) return;
+    if (lastImageRetryRef.current >= 2) return;
+    const base = String(displayLastImageSrc || lastImageCandidates[0] || "").trim();
+    if (!base) return;
+    const timer = setTimeout(() => {
+      lastImageRetryRef.current += 1;
+      const withoutRetry = stripRetryParam(base);
+      const sep = withoutRetry.includes("?") ? "&" : "?";
+      setLastImageSrc(`${withoutRetry}${sep}r=${Date.now()}`);
+      setLastImageFailed(false);
+      setLastImageLoaded(false);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [
+    displayLastImageSrc,
+    lastImageCandidates,
+    lastImageFailed,
+    lastImageIsIpfs,
+  ]);
 
   // LP price state
   const [lpPrice, setLpPrice] = React.useState(null);
@@ -215,6 +797,7 @@ function LiveStats({
   const [showBlocks, setShowBlocks] = React.useState(false);
   const [showBgStats, setShowBgStats] = React.useState(false);
   const [showREWARDS, setShowREWARDS] = React.useState(false);
+  const [showCollectionInfo, setShowCollectionInfo] = React.useState(false);
   const [weeklyOpen, setWeeklyOpen] = React.useState(false);
   const weeklyBtnRef = React.useRef(null);
 
@@ -308,28 +891,6 @@ function LiveStats({
   const effectiveBackgroundMintCounts = bgsMinted ?? backgroundMintCounts ?? [];
   const safeBlockNames = Array.isArray(blockNames) ? blockNames : [];
 
-  const normalizedItems = React.useMemo(() => {
-    const arr = Array.isArray(items) ? items : [];
-    if (!arr.length) return arr;
-    return arr.map((it) => {
-      if (!it) return it;
-      const meta = it?.meta;
-      const metaLooksTicket = looksLikeTicketMeta(meta);
-      const metaLooksNft = looksLikeNftMeta(meta);
-      let isTicket = it?.isTicket;
-      if (metaLooksNft) {
-        isTicket = false;
-      } else if ((isTicket == null) && metaLooksTicket && !metaLooksNft) {
-        isTicket = true;
-      } else if (isTicket != null) {
-        isTicket = Boolean(isTicket);
-      }
-      if (isTicket === it?.isTicket || it?.isTicket == null && isTicket == null)
-        return it;
-      return { ...it, isTicket };
-    });
-  }, [items]);
-
   const onlyTickets = React.useMemo(() => {
     const arr = Array.isArray(normalizedItems) ? normalizedItems : [];
     return arr.length > 0 && arr.every((it) => it?.isTicket);
@@ -339,6 +900,7 @@ function LiveStats({
     setShowBlocks(false);
     setShowBgStats(false);
     setShowREWARDS(false);
+    setShowCollectionInfo(false);
   }, []);
 
   const openBlocks = React.useCallback(() => {
@@ -357,11 +919,18 @@ function LiveStats({
   }, [resetAll]);
 
   React.useEffect(() => {
+    if (!showREWARDS) setShowCollectionInfo(false);
+  }, [showREWARDS]);
+
+  React.useEffect(() => {
     if (typeof window === "undefined") return undefined;
     const handleEscapeBack = (event) => {
       if (event.key !== "Escape") return;
       let handled = false;
-      if (showBlocks || showBgStats || showREWARDS) {
+      if (showCollectionInfo) {
+        setShowCollectionInfo(false);
+        handled = true;
+      } else if (showBlocks || showBgStats || showREWARDS) {
         resetAll();
         handled = true;
       } else if (weeklyOpen) {
@@ -382,6 +951,7 @@ function LiveStats({
     window.addEventListener("keydown", handleEscapeBack);
     return () => window.removeEventListener("keydown", handleEscapeBack);
   }, [
+    showCollectionInfo,
     showBlocks,
     showBgStats,
     showREWARDS,
@@ -1612,16 +2182,22 @@ function LiveStats({
   // current block price for the last minted block (fallback to base if missing)
   const currentBlockPrice = React.useMemo(() => {
     const idx =
-      Array.isArray(safeBlockNames) && lastBlockName
-        ? safeBlockNames.indexOf(String(lastBlockName).toUpperCase())
+      Array.isArray(safeBlockNames) &&
+      effectiveLastMinted.blockName &&
+      effectiveLastMinted.blockName !== "-"
+        ? safeBlockNames.indexOf(
+            String(effectiveLastMinted.blockName).toUpperCase(),
+          )
         : -1;
     const live =
       idx >= 0 ? Number(effectiveBlockPrices?.[idx]) : Number.NaN;
     if (Number.isFinite(live)) return live;
     const key =
       idx >= 0
-        ? String(safeBlockNames[idx] || lastBlockName || "").toUpperCase()
-        : String(lastBlockName || "").toUpperCase();
+        ? String(
+            safeBlockNames[idx] || effectiveLastMinted.blockName || "",
+          ).toUpperCase()
+        : String(effectiveLastMinted.blockName || "").toUpperCase();
     const base =
       typeof BASE_PRICES?.[key] === "number"
         ? BASE_PRICES[key]
@@ -1629,7 +2205,7 @@ function LiveStats({
           ? idx + 1
           : null;
     return Number.isFinite(Number(base)) ? Number(base) : null;
-  }, [safeBlockNames, lastBlockName, effectiveBlockPrices]);
+  }, [safeBlockNames, effectiveLastMinted.blockName, effectiveBlockPrices]);
 
   const formatMaybe = React.useCallback((value, digits = 2) => {
     if (value == null || !Number.isFinite(Number(value))) return "--";
@@ -1889,32 +2465,117 @@ function LiveStats({
             position: "relative",
           }}
         >
-          <img
-            src={lastImageSrc}
-            alt="Last Minted NFT"
-            style={{
-              maxWidth: "100%",
-              maxHeight: "100%",
-              borderRadius: 12,
-              boxShadow: "0 4px 14px rgba(0,0,0,0.6)",
-              transition: "all 0.3s ease",
-              cursor: "pointer",
-            }}
-            onLoad={() => setLastImageLoaded(true)}
-            onError={() => {
-              setLastImageFailed(true);
-              setLastImageSrc("/images/Biggi.png");
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "scale(1.05)";
-              e.currentTarget.style.boxShadow =
-                "0 6px 25px rgba(0,0,0,0.7), 0 0 18px #ffe800";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "scale(1)";
-              e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,0,0,0.6)";
-            }}
-          />
+          {hasLastImage ? (
+            <img
+              src={displayLastImageSrc}
+              alt="Last Minted NFT"
+              style={{
+                maxWidth: "100%",
+                maxHeight: "100%",
+                borderRadius: 12,
+                boxShadow: "0 4px 14px rgba(0,0,0,0.6)",
+                transition: "all 0.3s ease",
+                cursor: "pointer",
+              }}
+              onLoad={(e) => {
+                setLastImageLoaded(true);
+                setLastImageFailed(false);
+                const loadedSrc = String(
+                  e?.currentTarget?.currentSrc || displayLastImageSrc || "",
+                ).trim();
+                const tokenId = String(effectiveLastMinted.tokenId || "").trim();
+                if (loadedSrc && tokenId && tokenId !== "-") {
+                  lastStableImageRef.current = loadedSrc;
+                  lastStableTokenRef.current = tokenId;
+                  cacheLiveStatsImageForToken(tokenId, loadedSrc);
+                }
+              }}
+              onError={() => {
+                setLastImageFailed(true);
+                setLastImageLoaded(false);
+
+                const currentKey = stripRetryParam(displayLastImageSrc).toLowerCase();
+                const currentIdx = lastImageCandidates.findIndex(
+                  (candidate) =>
+                    stripRetryParam(candidate).toLowerCase() === currentKey,
+                );
+                if (
+                  currentIdx >= 0 &&
+                  currentIdx < lastImageCandidates.length - 1
+                ) {
+                  setLastImageSrc(lastImageCandidates[currentIdx + 1]);
+                  setLastImageFailed(false);
+                  setLastImageLoaded(false);
+                  return;
+                }
+
+                // Keep retry flow for IPFS URLs. If retries are exhausted,
+                // try the last stable image for the same token and avoid collapsing
+                // to the "No wallet NFT yet" placeholder.
+                if (!lastImageIsIpfs || lastImageRetryRef.current >= 2) {
+                  const tokenId = String(effectiveLastMinted.tokenId || "").trim();
+                  const cachedSrc = getCachedLiveStatsImageForToken(tokenId);
+                  if (
+                    cachedSrc &&
+                    stripRetryParam(cachedSrc).toLowerCase() !== currentKey
+                  ) {
+                    setLastImageSrc(cachedSrc);
+                    setLastImageFailed(false);
+                    setLastImageLoaded(false);
+                    return;
+                  }
+                  const stableTokenId = String(lastStableTokenRef.current || "").trim();
+                  const stableSrc = String(lastStableImageRef.current || "").trim();
+                  if (
+                    stableSrc &&
+                    tokenId &&
+                    tokenId !== "-" &&
+                    stableTokenId === tokenId &&
+                    stableSrc !== displayLastImageSrc
+                  ) {
+                    setLastImageSrc(stableSrc);
+                    setLastImageFailed(false);
+                    setLastImageLoaded(true);
+                    return;
+                  }
+
+                  // Final global fallback: keep the last known good image even when
+                  // current token metadata is incomplete or temporarily broken.
+                  if (
+                    stableSrc &&
+                    stripRetryParam(stableSrc).toLowerCase() !== currentKey
+                  ) {
+                    setLastImageSrc(stableSrc);
+                    setLastImageFailed(false);
+                    setLastImageLoaded(true);
+                  }
+                }
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "scale(1.05)";
+                e.currentTarget.style.boxShadow =
+                  "0 6px 25px rgba(0,0,0,0.7), 0 0 18px #ffe800";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "scale(1)";
+                e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,0,0,0.6)";
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                color: "rgba(255, 232, 0, 0.9)",
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                fontSize: 12,
+                textAlign: "center",
+                padding: "0 10px",
+              }}
+            >
+              {hasLastToken ? "Last NFT image unavailable" : "No wallet NFT yet"}
+            </div>
+          )}
           {showLastImageFallback && (
             <div
               style={{
@@ -1959,19 +2620,19 @@ function LiveStats({
           >
             LAST NFT:&nbsp;
             <span className="highlight" style={{ color: "#ff0000" }}>
-              #{lastNftId}
+              #{effectiveLastMinted.tokenId}
             </span>
           </div>
           <div style={infoRowStyle}>
             BLOCK:&nbsp;
             <span className="highlight">
-              {String(lastBlockName || "-").toUpperCase()}
+              {String(effectiveLastMinted.blockName || "-").toUpperCase()}
             </span>
           </div>
           <div style={infoRowStyle}>
             BACKGROUND:&nbsp;
             <span className="highlight">
-              {String(lastBackgroundName || "-").toUpperCase()}
+              {String(effectiveLastMinted.backgroundName || "-").toUpperCase()}
             </span>
           </div>
           <div style={metricValueRowStyle}>
@@ -2254,7 +2915,11 @@ function LiveStats({
                       style={{
                         flex: 1,
                         minHeight: 0,
-                        overflow: "hidden",
+                        overflowY: "auto",
+                        overflowX: "hidden",
+                        WebkitOverflowScrolling: "touch",
+                        overscrollBehavior: "contain",
+                        touchAction: "pan-y",
                         padding: isPhone ? 8 : 14,
                       }}
                     >
@@ -2599,6 +3264,7 @@ function LiveStats({
             blockNames={safeBlockNames}
             blockMintCounts={effectiveBlockMintCounts}
             blockPrices={effectiveBlockPrices}
+            backgroundMintCounts={effectiveBackgroundMintCounts}
             onBack={resetAll}
           />
         </React.Suspense>
@@ -2616,6 +3282,7 @@ function LiveStats({
       )}
 
       {showREWARDS && (
+        <>
         <div
           className="pools-card collection-stats-card"
           style={{
@@ -2625,8 +3292,20 @@ function LiveStats({
           }}
         >
           <div className="pools-card__header">
-            <div style={{ color: "#ffe800", fontWeight: 900 }}>
-              COLLECTION STATS
+            <div className="collection-stats-header-title">
+              <div style={{ color: "#ffe800", fontWeight: 900 }}>
+                COLLECTION STATS
+              </div>
+              <button
+                type="button"
+                className="live-info-button"
+                onClick={() => setShowCollectionInfo((v) => !v)}
+                aria-label="Open collection stats information"
+                aria-expanded={showCollectionInfo ? "true" : "false"}
+                title="Info"
+              >
+                i
+              </button>
             </div>
             <button
               onClick={resetAll}
@@ -2819,6 +3498,52 @@ function LiveStats({
             </div>
           </div>
         </div>
+        {showCollectionInfo && (
+          <div
+            className="ls-info-modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ls-collection-info-title"
+            onClick={() => setShowCollectionInfo(false)}
+          >
+            <div
+              className="ls-info-modal-content"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="ls-info-modal-header" id="ls-collection-info-title">
+                Collection Stats Info
+              </div>
+              <div className="ls-info-modal-body">
+                <table className="rw-info-table">
+                  <thead>
+                    <tr>
+                      <th>Concept</th>
+                      <th>Explanation</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {COLLECTION_INFO_ROWS.map((row) => (
+                      <tr key={row.concept} className={`info-row--${row.tone}`}>
+                        <td className="rw-k">{row.concept}</td>
+                        <td className="rw-v">{row.detail}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="ls-info-modal-footer">
+                <button
+                  type="button"
+                  className="ls-info-modal-close-button"
+                  onClick={() => setShowCollectionInfo(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        </>
       )}
     </div>
   );

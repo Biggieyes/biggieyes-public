@@ -332,7 +332,11 @@ export default function TransparencyTab({
           <div className={styles.ecoTableRow}>
             <span className={styles.ecoTableLabel}>Buybacks paused</span>
             <span className={styles.ecoTableValue}>
-              {policySnapshot?.policy?.buybacksPaused ? "Yes" : "No"}
+              {policySnapshot?.policy?.buybacksPaused == null
+                ? "--"
+                : policySnapshot.policy.buybacksPaused
+                  ? "Yes"
+                  : "No"}
             </span>
           </div>
           <div className={styles.ecoTableRow}>

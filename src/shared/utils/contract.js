@@ -5,6 +5,7 @@ import { ADDR } from "./addresses.js";
 import {
   AMOY,
   PUBLIC_AMOY_RPCS,
+  getWalletRpcUrls,
   getPreferredRpc,
   getRpcUrls,
   setPreferredRpc,
@@ -157,6 +158,9 @@ export { ADDR, AMOY, PUBLIC_AMOY_RPCS };
 let _roProvider = undefined;
 let _roProviderCacheKey = "";
 let _roProviderCreatedAt = 0;
+let _signerProvider = undefined;
+let _signerProviderSource = null;
+let _signerProviderCreatedAt = 0;
 let _injectedProviderOverride = null;
 
 function _emitInjectedProviderChanged() {
@@ -184,6 +188,7 @@ function _getEffectiveInjectedProvider() {
 export function setInjectedProvider(provider) {
   _injectedProviderOverride = provider || null;
   resetROProvider();
+  resetSignerProvider();
   _emitInjectedProviderChanged();
   return _getEffectiveInjectedProvider();
 }
@@ -191,6 +196,7 @@ export function setInjectedProvider(provider) {
 export function clearInjectedProvider() {
   _injectedProviderOverride = null;
   resetROProvider();
+  resetSignerProvider();
   _emitInjectedProviderChanged();
 }
 
@@ -223,6 +229,13 @@ function _mkRpcProvider(url) {
 
 function _resolveROProviderMaxAgeMs() {
   const configured = Number(_env("VITE_RO_PROVIDER_MAX_AGE_MS"));
+  if (Number.isFinite(configured) && configured >= 0)
+    return Math.trunc(configured);
+  return 45_000;
+}
+
+function _resolveSignerProviderMaxAgeMs() {
+  const configured = Number(_env("VITE_SIGNER_PROVIDER_MAX_AGE_MS"));
   if (Number.isFinite(configured) && configured >= 0)
     return Math.trunc(configured);
   return 45_000;
@@ -342,20 +355,36 @@ export function resetROProvider() {
   _roProviderCreatedAt = 0;
 }
 
+export function resetSignerProvider() {
+  _signerProvider = undefined;
+  _signerProviderSource = null;
+  _signerProviderCreatedAt = 0;
+}
+
 export function getSignerProvider() {
   const injected = _getEffectiveInjectedProvider();
   if (!injected) {
     throw new Error("Injected provider not available");
   }
-  return new BrowserProvider(injected, "any");
+  const maxAgeMs = _resolveSignerProviderMaxAgeMs();
+  const hasFreshSignerProvider =
+    _signerProvider &&
+    _signerProviderSource === injected &&
+    (maxAgeMs <= 0 || Date.now() - _signerProviderCreatedAt <= maxAgeMs);
+  if (hasFreshSignerProvider) return _signerProvider;
+  const provider = _applyPollingInterval(new BrowserProvider(injected, "any"));
+  _signerProvider = provider;
+  _signerProviderSource = injected;
+  _signerProviderCreatedAt = Date.now();
+  return _signerProvider;
 }
 
 function _hasRequest(provider) {
   return provider && typeof provider.request === "function";
 }
 
-function _getRpcSyncFingerprint() {
-  const urls = getRpcUrls();
+function _getRpcSyncFingerprint(rpcUrls = null) {
+  const urls = Array.isArray(rpcUrls) ? rpcUrls : getWalletRpcUrls();
   const joined = Array.isArray(urls)
     ? urls
         .map((url) => String(url || "").trim())
@@ -365,22 +394,25 @@ function _getRpcSyncFingerprint() {
   return `${AMOY.chainId}:${joined}`;
 }
 
-function _markRpcSynced() {
+function _markRpcSynced(rpcUrls = null) {
   try {
     if (typeof window !== "undefined" && window.localStorage) {
-      window.localStorage.setItem(LOCAL_STORAGE_RPC_SYNC_KEY, _getRpcSyncFingerprint());
+      window.localStorage.setItem(
+        LOCAL_STORAGE_RPC_SYNC_KEY,
+        _getRpcSyncFingerprint(rpcUrls),
+      );
     }
   } catch {
     // ignore localStorage write failure
   }
 }
 
-function _hasSyncedRpc() {
+function _hasSyncedRpc(rpcUrls = null) {
   try {
     if (typeof window !== "undefined" && window.localStorage) {
       return (
         window.localStorage.getItem(LOCAL_STORAGE_RPC_SYNC_KEY) ===
-        _getRpcSyncFingerprint()
+        _getRpcSyncFingerprint(rpcUrls)
       );
     }
   } catch {
@@ -391,14 +423,14 @@ function _hasSyncedRpc() {
 
 export async function syncAmoyRpcIfNeeded(
   externalProvider,
-  { force = false } = {},
+  { force = false, preferPublicFirst = false } = {},
 ) {
   const provider = externalProvider || _getEffectiveInjectedProvider();
   if (!_hasRequest(provider))
     throw new Error("Ethereum provider not available");
-  if (!force && _hasSyncedRpc()) return false;
+  const rpcUrls = getWalletRpcUrls({ preferPublicFirst });
+  if (!force && _hasSyncedRpc(rpcUrls)) return false;
 
-  const rpcUrls = getRpcUrls();
   const params = {
     chainId: AMOY.hex,
     chainName: AMOY.name,
@@ -412,7 +444,7 @@ export async function syncAmoyRpcIfNeeded(
     params: [params],
   });
 
-  _markRpcSynced();
+  _markRpcSynced(rpcUrls);
   return true;
 }
 

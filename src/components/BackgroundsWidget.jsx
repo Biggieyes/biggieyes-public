@@ -318,46 +318,46 @@ const BackgroundsWidget = ({
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
+                  <tr className="info-row--core">
                     <td className="bgw-k">Background</td>
                     <td className="bgw-v">
                       Background color of the NFT; also used to determine a
                       one-time price bonus.
                     </td>
                   </tr>
-                  <tr>
+                  <tr className="info-row--mint">
                     <td className="bgw-k">Minted</td>
                     <td className="bgw-v">
                       How many NFTs with this background have been minted.
                     </td>
                   </tr>
-                  <tr>
+                  <tr className="info-row--link">
                     <td className="bgw-k">Linked Block</td>
                     <td className="bgw-v">
                       Human-readable name of the linked block (same as
                       background name).
                     </td>
                   </tr>
-                  <tr>
+                  <tr className="info-row--bonus">
                     <td className="bgw-k">BG Inc</td>
                     <td className="bgw-v">
                       One-off bonus applied to the current block price (5–50%).
                     </td>
                   </tr>
-                  <tr>
+                  <tr className="info-row--mint">
                     <td className="bgw-k">Mint %</td>
                     <td className="bgw-v">
                       Derived helper percentage based on the background index
                       (1..10).
                     </td>
                   </tr>
-                  <tr>
+                  <tr className="info-row--supply">
                     <td className="bgw-k">Max Supply</td>
                     <td className="bgw-v">
                       Maximum number of NFTs in that segment (informational).
                     </td>
                   </tr>
-                  <tr>
+                  <tr className="info-row--delta">
                     <td className="bgw-k">Block Price Δ</td>
                     <td className="bgw-v">
                       Current block price minus base block price.

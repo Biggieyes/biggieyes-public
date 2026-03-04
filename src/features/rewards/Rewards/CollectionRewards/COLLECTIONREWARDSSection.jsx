@@ -219,7 +219,9 @@ function COLLECTIONREWARDSSection({
             </div>
             <div className="biggi-card__body">
               <div className="rewards-panel__claim-list">
-                <div className="rewards-panel__claim-row">
+                <div
+                  className={`rewards-panel__claim-row ${rainbowClaimed ? "row-claimed" : canClaimCOLLECTION ? "row-open" : "row-locked"}`.trim()}
+                >
                   <div className="rewards-panel__claim-plate">
                     {renderThumbnailPlate(
                       rainbowThumbnails(),
@@ -229,9 +231,13 @@ function COLLECTIONREWARDSSection({
                   <div className="rewards-panel__claim-info">
                     <div className="label">Rainbow reward</div>
                     <div
-                      className={`pill ${rainbowClaimed ? "is-claimed" : "is-available"}`}
+                      className={`pill ${rainbowClaimed ? "is-claimed" : canClaimCOLLECTION ? "is-available" : "is-locked"}`}
                     >
-                      {rainbowClaimed ? "Paid" : "Open"}
+                      {rainbowClaimed
+                        ? "Paid"
+                        : canClaimCOLLECTION
+                          ? "Open"
+                          : "Wallet needed"}
                     </div>
                   </div>
                   <button
@@ -266,7 +272,9 @@ function COLLECTIONREWARDSSection({
                 <div className="collection-table__header">
                   <div>
                     <div className="collection-table__title">Block REWARDS</div>
-                    <small>Claim if you hold all 10 Main IDs in a block.</small>
+                    <small className="collection-table__hint">
+                      Claim if you hold all 10 Main IDs in a block.
+                    </small>
                   </div>
                   <span className="rewards-panel__chip">{blockBadgeLabel}</span>
                 </div>
@@ -280,11 +288,21 @@ function COLLECTIONREWARDSSection({
                         ? "Paid"
                         : "Open"
                       : "Loading...";
+                    const statusTone = !blockStatusesLoaded
+                      ? "is-loading"
+                      : paid
+                        ? "is-claimed"
+                        : "is-available";
+                    const rowTone = !blockStatusesLoaded
+                      ? "row-loading"
+                      : paid
+                        ? "row-claimed"
+                        : "row-open";
                     const blockThumbs = blockThumbnailsForId(blockIdx);
                     return (
                       <div
                         key={`block-${blockIdx}`}
-                        className="rewards-panel__claim-row"
+                        className={`rewards-panel__claim-row ${rowTone}`}
                       >
                         <div className="rewards-panel__claim-plate">
                           {renderThumbnailPlate(
@@ -294,9 +312,7 @@ function COLLECTIONREWARDSSection({
                         </div>
                         <div className="rewards-panel__claim-info">
                           <div className="label">Block {blockIdx}</div>
-                          <div
-                            className={`pill ${paid ? "is-claimed" : "is-available"}`}
-                          >
+                          <div className={`pill ${statusTone}`}>
                             {statusLabel}
                           </div>
                         </div>
@@ -323,7 +339,9 @@ function COLLECTIONREWARDSSection({
                 <div className="collection-table__header">
                   <div>
                     <div className="collection-table__title">Orange drop</div>
-                    <small>Each Main ID (1-10) can mint once.</small>
+                    <small className="collection-table__hint">
+                      Each Main ID (1-10) can mint once.
+                    </small>
                   </div>
                   <span className="rewards-panel__chip">
                     {orangeBadgeLabel}
@@ -338,6 +356,16 @@ function COLLECTIONREWARDSSection({
                       : claimedOrange
                         ? "Already claimed"
                         : "Open";
+                    const statusTone = paid
+                      ? "is-claimed"
+                      : claimedOrange
+                        ? "is-locked"
+                        : "is-available";
+                    const rowTone = paid
+                      ? "row-claimed"
+                      : claimedOrange
+                        ? "row-locked"
+                        : "row-open";
                     const disabled =
                       paid ||
                       claimedOrange ||
@@ -347,7 +375,7 @@ function COLLECTIONREWARDSSection({
                     return (
                       <div
                         key={`orange-${mainId}`}
-                        className="rewards-panel__claim-row"
+                        className={`rewards-panel__claim-row ${rowTone}`}
                       >
                         <div className="rewards-panel__claim-plate">
                           {renderThumbnailPlate(
@@ -357,9 +385,7 @@ function COLLECTIONREWARDSSection({
                         </div>
                         <div className="rewards-panel__claim-info">
                           <div className="label">Main ID {mainId}</div>
-                          <div
-                            className={`pill ${paid ? "is-claimed" : "is-available"}`}
-                          >
+                          <div className={`pill ${statusTone}`}>
                             {statusLabel}
                           </div>
                         </div>

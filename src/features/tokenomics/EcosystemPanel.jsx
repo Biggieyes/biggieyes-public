@@ -9,7 +9,6 @@ import styles from "./styles/BiggiToken.module.css";
 import { useWeb3 } from "@/providers/Web3Provider";
 
 import useFlowSnapshot from "@/hooks/tokenomics/useFlowSnapshot";
-import usePolicySnapshot from "@/hooks/tokenomics/usePolicySnapshot";
 import useBUYBACKTreasurySnapshot from "@/hooks/tokenomics/useBUYBACKTreasurySnapshot";
 import useBUYBACKTreasuryHistory from "@/hooks/tokenomics/useBuybackTreasuryHistory";
 import useDRIPSnapshot from "@/hooks/tokenomics/useDRIPSnapshot";
@@ -28,6 +27,7 @@ import TabsBar from "./TabsBar.jsx";
 import Card from "./components/Card.jsx";
 import { shortAddr, explorerLink, isAddress } from "./utils/format";
 import { ADDR } from "@/shared/utils/addresses.js";
+import { getAddresses } from "@/config/addresses/index.js";
 import PanelInfoModal from "@/components/common/PanelInfoModal";
 
 const FlowTab = React.lazy(() => import("./tabs/FlowTab.jsx"));
@@ -59,7 +59,6 @@ const FLOW_INTERVAL = 15_000;
 const BUYBACK_INTERVAL = 21_000;
 const DRIP_INTERVAL = 23_000;
 const LIQUIDITY_INTERVAL = 25_000;
-const POLICY_INTERVAL = 26_000;
 const DEX_INTERVAL = 27_000;
 const DISTRIBUTOR_INTERVAL = 29_000;
 const HISTORY_LIMIT = 24;
@@ -70,11 +69,21 @@ const LIQUIDITY_DELAY = 500;
 const BUYBACK_DELAY = 750;
 const DRIP_DELAY = 1000;
 const DISTRIBUTOR_DELAY = 1250;
-const POLICY_DELAY = 1500;
 const REFRESH_GAP_MS = 1100;
 const PRIME_ALL_ON_MOUNT = true;
 const SNAPSHOT_CACHE_TTL_MS = 60_000;
 const SNAPSHOT_COMPARE_IGNORE_KEYS = ["ts", "tsLabel"];
+const STATIC_POLICY_PARAMS = Object.freeze({
+  // Static defaults from deployed BiggiPolicy profile.
+  buybacksPaused: false,
+  swapSlippageBps: 500,
+  txDeadlineSec: 600,
+  minBuybackInterval: 300,
+  maxDailyBuybackNative: 0n,
+  // Day-bound counters are intentionally omitted in static mode.
+  usedToday: null,
+  dayIndex: null,
+});
 
 export default function EcosystemPanel({ autoOpenInfo = false }) {
   const { chainId, account } = useWeb3();
@@ -101,7 +110,6 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
 
   const isFlowFocused =
     active === "flow" || active === "transparency" || wiringOpen;
-  const isPolicyFocused = active === "policy" || active === "transparency";
   const isDistributorFocused =
     active === "distributor" || active === "transparency" || wiringOpen;
   const needsDistributorHistory =
@@ -125,7 +133,6 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
   // Keep full data availability: prefetch every snapshot once, then keep live polling
   // only for focused sections to reduce CPU/RPC load.
   const needsFlow = PRIME_ALL_ON_MOUNT || isFlowFocused;
-  const needsPolicy = PRIME_ALL_ON_MOUNT || isPolicyFocused;
   const needsDistributor = PRIME_ALL_ON_MOUNT || isDistributorFocused;
   const needsBuyback = PRIME_ALL_ON_MOUNT || isBuybackFocused;
   const needsDrip = PRIME_ALL_ON_MOUNT || isDripFocused;
@@ -134,7 +141,6 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
 
   // Performance mode: poll only focused/visible sections, disable background polling.
   const flowIntervalMs = isFlowFocused ? FLOW_INTERVAL : 0;
-  const policyIntervalMs = isPolicyFocused ? POLICY_INTERVAL : 0;
   const distributorIntervalMs = isDistributorFocused ? DISTRIBUTOR_INTERVAL : 0;
   const buybackIntervalMs = isBuybackFocused ? BUYBACK_INTERVAL : 0;
   const dripIntervalMs = isDripFocused ? DRIP_INTERVAL : 0;
@@ -234,14 +240,24 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
     cacheKey: `ecosystem:${snapshotScope}:flow`,
     ...snapshotBaseOptions,
   });
-  const policy = usePolicySnapshot({
-    intervalMs: isLive && needsPolicy ? policyIntervalMs : 0,
-    immediate: needsPolicy,
-    initialDelayMs: needsPolicy ? (isPolicyFocused ? 0 : POLICY_DELAY) : 0,
-    refreshKey: isPolicyFocused ? active : null,
-    cacheKey: `ecosystem:${snapshotScope}:policy`,
-    ...snapshotBaseOptions,
-  });
+  const policy = React.useMemo(() => {
+    const addrs = getAddresses(chainId);
+    const policyAddress = addrs?.policy || addrs?.POLICY || ADDR.POLICY || null;
+    return {
+      snapshot: {
+        ts: 0,
+        tsLabel: "Static policy",
+        policy: {
+          address: policyAddress,
+          ...STATIC_POLICY_PARAMS,
+        },
+        addresses: addrs,
+      },
+      loading: false,
+      error: null,
+      refresh: async () => null,
+    };
+  }, [chainId]);
   const buyback = useBUYBACKTreasurySnapshot({
     intervalMs: isLive && needsBuyback ? buybackIntervalMs : 0,
     immediate: needsBuyback,

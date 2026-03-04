@@ -129,9 +129,11 @@ export function InventoryProvider({ children }) {
           try {
             const uri = await c.tokenURI(tid);
             const j = await readJsonFromURI(uri);
-            const cached = getCachedPriceAttrs(tid);
+            const contractAddr =
+              c?.target || c?.address || c?.runner?.address || null;
+            const cached = getCachedPriceAttrs(tid, contractAddr);
             const base = j || {};
-            base.attributes = mergeAttrs(base.attributes, cached);
+            base.attributes = mergeAttrs(cached, base.attributes);
             meta = base;
             const imgUrl = j?.image || j?.image_url;
             const resolved = await resolveImageUrl(imgUrl, uri);

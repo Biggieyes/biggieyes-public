@@ -1,34 +1,66 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>BiggiEyes — VRF Ticket → Reveal Ecosystem</title>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-S49TZ90XND"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-S49TZ90XND");
+    </script>
+    <title>BiggiEyes NFT Ticket VRF | Tradable Reveal Ecosystem</title>
     <meta
       name="description"
-      content="BiggiEyes is a VRF-driven Ticket to Reveal ecosystem with tradable tickets, tradable revealed NFTs, five chapters, and a Last Episode finale."
+      content="BiggiEyes is a Web3 NFT project on Polygon: mint tradable ticket entries, redeem with VRF, and collect tradable rarity-based NFTs across five chapters."
     />
-    <link rel="canonical" href="https://www.biggieyes.com/" />
-    <meta property="og:title" content="BiggiEyes — VRF Ticket → Reveal Ecosystem" />
+    <meta
+      name="robots"
+      content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"
+    />
+    <link rel="canonical" href="https://biggieyes.com/" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="BiggiEyes" />
+    <meta
+      property="og:title"
+      content="BiggiEyes NFT Ticket VRF | Tradable Reveal Ecosystem"
+    />
     <meta
       property="og:description"
-      content="Ticket to Reveal on Polygon: mint tradable tickets, redeem with VRF, and collect rarity-linked NFTs across five chapters."
+      content="Web3 NFT ticket ecosystem on Polygon: mint tradable ticket entries, redeem with VRF, and collect tradable rarity-based NFTs across five chapters."
     />
-    <meta property="og:url" content="https://www.biggieyes.com/" />
+    <meta property="og:url" content="https://biggieyes.com/" />
     <meta property="og:type" content="website" />
     <meta
       property="og:image"
-      content="https://www.biggieyes.com/og/og-biggieyes.png"
+      content="https://biggieyes.com/og/og-biggieyes.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="BiggiEyes VRF ticket reveal ecosystem preview"
     />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="BiggiEyes — VRF Ticket → Reveal Ecosystem" />
     <meta
-      name="twitter:description"
-      content="Mint tickets, redeem with VRF, reveal tradable NFTs, and follow the five-chapter BiggiEyes ecosystem."
+      name="twitter:title"
+      content="BiggiEyes NFT Ticket VRF | Tradable Reveal Ecosystem"
     />
     <meta
+      name="twitter:description"
+      content="Mint tradable ticket entries, redeem with VRF, reveal tradable NFTs, and follow the five-chapter BiggiEyes ecosystem."
+    />
+    <meta name="twitter:url" content="https://biggieyes.com/" />
+    <meta
       name="twitter:image"
-      content="https://www.biggieyes.com/og/og-biggieyes.png"
+      content="https://biggieyes.com/og/og-biggieyes.png"
+    />
+    <meta
+      name="twitter:image:alt"
+      content="BiggiEyes VRF ticket reveal ecosystem preview"
     />
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" href="/images/favicon.png" />
@@ -36,18 +68,50 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "BiggiEyes",
-        "url": "https://www.biggieyes.com/",
-        "logo": "https://www.biggieyes.com/apple-touch-icon.png"
-      }
-    </script>
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "BiggiEyes",
-        "url": "https://www.biggieyes.com/"
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://biggieyes.com/#organization",
+            "name": "BiggiEyes",
+            "url": "https://biggieyes.com/",
+            "logo": "https://biggieyes.com/apple-touch-icon.png",
+            "sameAs": [
+              "https://x.com/EyesBiggi",
+              "https://www.linkedin.com/in/biggi-eyes-660639398/",
+              "https://github.com/Biggieyes/biggieyes-public"
+            ]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://biggieyes.com/#website",
+            "name": "BiggiEyes",
+            "url": "https://biggieyes.com/",
+            "description": "BiggiEyes Web3 ticket-to-reveal ecosystem on Polygon.",
+            "publisher": { "@id": "https://biggieyes.com/#organization" },
+            "inLanguage": "en"
+          },
+          {
+            "@type": "Project",
+            "@id": "https://biggieyes.com/#project",
+            "name": "BiggiEyes",
+            "url": "https://biggieyes.com/",
+            "description": "Web3 Ticket-to-Reveal project with verifiable randomness and tradable NFTs.",
+            "image": "https://biggieyes.com/og/og-biggieyes.png",
+            "creator": { "@id": "https://biggieyes.com/#organization" },
+            "keywords": ["Web3", "NFT", "VRF", "Polygon", "Ticket to Reveal"]
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://biggieyes.com/app/#webapp",
+            "name": "BiggiEyes App",
+            "url": "https://biggieyes.com/app/",
+            "description": "Mint, redeem, and trade BiggiEyes tickets and NFTs on Polygon.",
+            "applicationCategory": "FinanceApplication",
+            "operatingSystem": "Web",
+            "publisher": { "@id": "https://biggieyes.com/#organization" },
+            "isPartOf": { "@id": "https://biggieyes.com/#project" }
+          }
+        ]
       }
     </script>
     <style>
@@ -177,6 +241,27 @@
         gap: 12px;
       }
 
+      .landing-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 12px;
+      }
+
+      .landing-gallery__item {
+        margin: 0;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid rgba(97, 217, 255, 0.28);
+        background: rgba(16, 26, 54, 0.8);
+      }
+
+      .landing-gallery__item img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+      }
+
       .live-card {
         background: linear-gradient(180deg, rgba(16, 26, 54, 0.9), rgba(10, 16, 34, 0.95));
         border: 1px solid rgba(97, 217, 255, 0.24);
@@ -266,6 +351,31 @@
           </article>
         </div>
         <div class="live-status" id="stat-updated">Waiting for first update...</div>
+      </section>
+
+      <section id="landing-gallery">
+        <h2>Landing Preview</h2>
+        <p>
+          Visual preview from the latest landing assets shown before entering the
+          dashboard.
+        </p>
+        <div class="landing-gallery">
+          <figure class="landing-gallery__item">
+            <img src="/images/tolanding/Snímek obrazovky 2026-03-01 030413.png" alt="BiggiEyes landing preview 1" loading="lazy" decoding="async" />
+          </figure>
+          <figure class="landing-gallery__item">
+            <img src="/images/tolanding/Snímek obrazovky 2026-03-01 030455.png" alt="BiggiEyes landing preview 2" loading="lazy" decoding="async" />
+          </figure>
+          <figure class="landing-gallery__item">
+            <img src="/images/tolanding/Snímek obrazovky 2026-03-01 030601.png" alt="BiggiEyes landing preview 3" loading="lazy" decoding="async" />
+          </figure>
+          <figure class="landing-gallery__item">
+            <img src="/images/tolanding/Snímek obrazovky 2026-03-01 030655.png" alt="BiggiEyes landing preview 4" loading="lazy" decoding="async" />
+          </figure>
+          <figure class="landing-gallery__item">
+            <img src="/images/tolanding/Snímek obrazovky 2026-03-01 034817.png" alt="BiggiEyes landing preview 5" loading="lazy" decoding="async" />
+          </figure>
+        </div>
       </section>
 
       <section>
@@ -596,3 +706,5 @@
     </script>
   </body>
 </html>
+
+

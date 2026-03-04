@@ -103,8 +103,7 @@ export async function checkRpcHealth(url, options = {}) {
 }
 export async function ensurePreferredRpc() {
   if (typeof window === "undefined") return null;
-  const ignorePreferred =
-    env("VITE_FORCE_RPC") === "1" || env("VITE_IGNORE_RPC_PREFERENCE") === "1";
+  const ignorePreferred = env("VITE_IGNORE_RPC_PREFERENCE") === "1";
   if (ignorePreferred) return null;
   const healthy = await getHealthyRpcUrl();
   if (healthy) setPreferredRpc(healthy);
@@ -112,6 +111,7 @@ export async function ensurePreferredRpc() {
   return healthy;
 }
 const LOCAL_STORAGE_RPC_PREF_KEY = "biggi_last_amoy_rpc_v1";
+const RPC_RATE_LIMIT_MEMORY_MS = 10 * 60 * 1000;
 const BAD_RPC_SUBSTRINGS = ["tenderly"];
 const BAD_CORS_RPCS = ["rpc-amoy.polygon.technology"];
 const UNSTABLE_AMOY_RPC_HOSTS = [
@@ -124,6 +124,7 @@ const RATE_LIMITED_AMOY_RPC_HOSTS = [
   // Public onfinality endpoint is frequently rate-limited in browser workloads.
   "polygon-amoy.api.onfinality.io",
 ];
+const rateLimitedRpcMarks = new Map();
 
 function env(key) {
   try {
@@ -173,6 +174,33 @@ function uniq(values) {
     out.push(v);
   }
   return out;
+}
+
+function cleanupRateLimitedRpcMarks(now = Date.now()) {
+  for (const [url, ts] of rateLimitedRpcMarks.entries()) {
+    if (now - Number(ts || 0) > RPC_RATE_LIMIT_MEMORY_MS) {
+      rateLimitedRpcMarks.delete(url);
+    }
+  }
+}
+
+function isRecentlyRateLimited(url, now = Date.now()) {
+  if (!url) return false;
+  cleanupRateLimitedRpcMarks(now);
+  const ts = rateLimitedRpcMarks.get(String(url));
+  if (!ts) return false;
+  return now - Number(ts) <= RPC_RATE_LIMIT_MEMORY_MS;
+}
+
+function prioritizeHealthyRpcs(urls) {
+  const now = Date.now();
+  const healthy = [];
+  const degraded = [];
+  for (const url of Array.isArray(urls) ? urls : []) {
+    if (isRecentlyRateLimited(url, now)) degraded.push(url);
+    else healthy.push(url);
+  }
+  return [...healthy, ...degraded];
 }
 
 export const PUBLIC_AMOY_RPCS = [
@@ -250,11 +278,16 @@ export function clearPreferredRpc() {
   }
 }
 
+export function markRpcRateLimited(url) {
+  const normalized = String(url || "").trim();
+  if (!normalized) return;
+  rateLimitedRpcMarks.set(normalized, Date.now());
+}
+
 function rankRpcUrls(urls) {
   const deduped = uniq((urls || []).filter(Boolean));
   if (!deduped.length) return deduped;
-  const ignorePreferred =
-    env("VITE_FORCE_RPC") === "1" || env("VITE_IGNORE_RPC_PREFERENCE") === "1";
+  const ignorePreferred = env("VITE_IGNORE_RPC_PREFERENCE") === "1";
   const preferred = ignorePreferred ? null : getPreferredRpc();
   if (ignorePreferred) clearPreferredRpc();
   if (preferred && deduped.includes(preferred)) {
@@ -336,12 +369,38 @@ export function getRpcUrls() {
   }
 
   const rankedFiltered = rankRpcUrls(filtered);
-  if (rankedFiltered.length) return rankedFiltered;
+  const prioritized = prioritizeHealthyRpcs(rankedFiltered);
+  if (prioritized.length) return prioritized;
 
   const fallback = [];
   if (AMOY.rpcUrl) fallback.push(AMOY.rpcUrl);
   if (allowPublic) fallback.push(...PUBLIC_AMOY_RPCS);
   fallback.push(...infura);
-  return rankRpcUrls(filterOutBadRpcs(fallback));
+  return prioritizeHealthyRpcs(rankRpcUrls(filterOutBadRpcs(fallback)));
+}
+
+export function getWalletRpcUrls({ preferPublicFirst = false } = {}) {
+  const explicit = filterOutBadRpcs(EXPLICIT_AMOY_RPCS);
+  const infura = filterOutBadRpcs(INFURA_RPC_CANDIDATES);
+  const allowPublicFallback = env("VITE_WALLET_PUBLIC_RPC_FALLBACK") !== "0";
+
+  const ordered = preferPublicFirst
+    ? allowPublicFallback
+      ? uniq([...PUBLIC_AMOY_RPCS, ...explicit, ...infura])
+      : uniq([...explicit, ...infura])
+    : allowPublicFallback
+      ? uniq([...explicit, ...PUBLIC_AMOY_RPCS, ...infura])
+      : uniq([...explicit, ...infura]);
+
+  const filtered = filterOutBadRpcs(ordered);
+  const ranked = rankRpcUrls(filtered);
+  const prioritized = prioritizeHealthyRpcs(ranked);
+  if (prioritized.length) return prioritized;
+
+  const fallback = [];
+  if (AMOY.rpcUrl) fallback.push(AMOY.rpcUrl);
+  if (allowPublicFallback) fallback.push(...PUBLIC_AMOY_RPCS);
+  fallback.push(...infura);
+  return prioritizeHealthyRpcs(rankRpcUrls(filterOutBadRpcs(fallback)));
 }
 

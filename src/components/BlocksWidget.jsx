@@ -8,6 +8,7 @@ const ANIMATION_DURATION = 2.8;
 
 const BLOCK_MAX_SUPPLY = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10];
 const BASE_PRICES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const BG_GROWTH_PCT = [5, 2, 2, 3, 3, 4, 4, 5, 5, 10];
 
 const BLOCK_COLORS = {
   ORANGE: "#ff9000",
@@ -93,7 +94,23 @@ const fmtPrice = (value) => {
   }).format(n);
 };
 
-const BlocksWidget = ({ blockNames, blockMintCounts, blockPrices, onBack }) => {
+const derivePriceFromBgMints = (basePrice, bgMinted, growthPct) => {
+  const base = Number(basePrice);
+  const mints = Number(bgMinted);
+  const growth = Number(growthPct);
+  if (!Number.isFinite(base) || base <= 0) return null;
+  if (!Number.isFinite(mints) || mints <= 0) return base;
+  if (!Number.isFinite(growth) || growth <= 0) return base;
+  return base * Math.pow(1 + growth / 100, mints);
+};
+
+const BlocksWidget = ({
+  blockNames,
+  blockMintCounts,
+  blockPrices,
+  backgroundMintCounts = [],
+  onBack,
+}) => {
   const [infoVisible, setInfoVisible] = React.useState(false);
   const [isPhone, setIsPhone] = React.useState(() =>
     typeof window !== "undefined"
@@ -206,11 +223,24 @@ const BlocksWidget = ({ blockNames, blockMintCounts, blockPrices, onBack }) => {
                   {BASE_PRICES[i]}
                 </td>
                 <td style={priceStyle} data-label={headerTitles[5]}>
-                  {fmtPrice(
-                    Number.isFinite(Number(blockPrices[i]))
-                      ? Number(blockPrices[i])
-                      : BASE_PRICES[i],
-                  )}{" "}
+                  {(() => {
+                    const base = Number(BASE_PRICES[i]);
+                    const live = Number(blockPrices?.[i]);
+                    const bgMinted = Number(backgroundMintCounts?.[i] ?? 0);
+                    const growth = Number(BG_GROWTH_PCT[i] ?? 0);
+                    const derived = derivePriceFromBgMints(base, bgMinted, growth);
+
+                    let resolved = Number.isFinite(live) && live > 0 ? live : base;
+                    // If upstream RPC data is stale at base while bg mints exist, use derived value.
+                    if (
+                      bgMinted > 0 &&
+                      Number.isFinite(derived) &&
+                      resolved <= base + 1e-9
+                    ) {
+                      resolved = derived;
+                    }
+                    return fmtPrice(resolved);
+                  })()}{" "}
                   POL
                 </td>
               </tr>
@@ -250,45 +280,45 @@ const BlocksWidget = ({ blockNames, blockMintCounts, blockPrices, onBack }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
+                  <tr className="info-row--core">
                     <td className="bw-k">Eyes Color</td>
                     <td className="bw-v">
                       Block name (NFT eye color). Example:{" "}
-                      <span className="bw-chip">BLUE</span>,{" "}
-                      <span className="bw-chip">GREEN</span>.
+                      <span className="bw-chip info-chip info-chip--block">BLUE</span>,{" "}
+                      <span className="bw-chip info-chip info-chip--mint">GREEN</span>.
                     </td>
                   </tr>
-                  <tr>
+                  <tr className="info-row--mint">
                     <td className="bw-k">Minted Eyes</td>
                     <td className="bw-v">
                       Number of NFTs already minted in this block.
                     </td>
                   </tr>
-                  <tr>
+                  <tr className="info-row--link">
                     <td className="bw-k">Linked BG</td>
                     <td className="bw-v">
                       Abbreviation of the background linked to the block (e.g.,{" "}
-                      <span className="bw-chip bw-mono">BL</span>,{" "}
-                      <span className="bw-chip bw-mono">G</span>).
+                      <span className="bw-chip bw-mono info-chip info-chip--link">BL</span>,{" "}
+                      <span className="bw-chip bw-mono info-chip info-chip--link">G</span>).
                     </td>
                   </tr>
-                  <tr>
+                  <tr className="info-row--supply">
                     <td className="bw-k">Max Supply</td>
                     <td className="bw-v">
                       Maximum number of NFTs in this block.
                     </td>
                   </tr>
-                  <tr>
+                  <tr className="info-row--base">
                     <td className="bw-k">Base Price</td>
                     <td className="bw-v">
                       Starting price of the block before any increases.
                     </td>
                   </tr>
-                  <tr>
+                  <tr className="info-row--live">
                     <td className="bw-k">Current Price</td>
                     <td className="bw-v">
                       Live price after increases driven solely by background
-                      mints (<span className="bw-chip">BG Inc</span>).
+                      mints (<span className="bw-chip info-chip info-chip--bonus">BG Inc</span>).
                     </td>
                   </tr>
                 </tbody>

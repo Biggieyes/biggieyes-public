@@ -15,6 +15,16 @@ const RPC_MAP = {
   1: "https://cloudflare-eth.com", // Ethereum Mainnet
 };
 
+function resolvePollingIntervalMs() {
+  const fromEnv = Number(
+    import.meta.env.VITE_SIGNER_POLL_INTERVAL_MS ||
+      import.meta.env.VITE_RPC_POLL_INTERVAL_MS ||
+      8000,
+  );
+  if (Number.isFinite(fromEnv) && fromEnv > 0) return Math.trunc(fromEnv);
+  return 8000;
+}
+
 export async function connectWithWalletConnect() {
   if (!WC_PROJECT_ID) throw new Error("Missing VITE_WC_PROJECT_ID in .env");
 
@@ -68,7 +78,7 @@ export async function connectWithWalletConnect() {
 
   const ethersProvider = new BrowserProvider(wc, "any");
   if (typeof ethersProvider.pollingInterval === "number") {
-    ethersProvider.pollingInterval = 4000;
+    ethersProvider.pollingInterval = resolvePollingIntervalMs();
   }
 
   const signer = await ethersProvider.getSigner();

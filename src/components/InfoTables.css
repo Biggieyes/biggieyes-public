@@ -89,3 +89,156 @@
   color: inherit;
   filter: none;
 }
+
+.bw-k,
+.bgw-k,
+.rw-k {
+  font-weight: 700;
+  color: #e9edf6;
+  white-space: nowrap;
+  width: 36%;
+}
+
+.bw-v,
+.bgw-v,
+.rw-v {
+  width: 64%;
+}
+
+.bw-info-table tbody tr[class*="info-row--"],
+.bgw-info-table tbody tr[class*="info-row--"],
+.rw-info-table tbody tr[class*="info-row--"] {
+  border-left: 3px solid transparent;
+}
+
+.bw-info-table tbody tr.info-row--core,
+.bgw-info-table tbody tr.info-row--core,
+.rw-info-table tbody tr.info-row--core {
+  border-left-color: #5ddcff;
+  background: linear-gradient(90deg, rgba(93, 220, 255, 0.14), rgba(93, 220, 255, 0.03));
+}
+
+.bw-info-table tbody tr.info-row--mint,
+.bgw-info-table tbody tr.info-row--mint,
+.rw-info-table tbody tr.info-row--mint {
+  border-left-color: #58f39b;
+  background: linear-gradient(90deg, rgba(88, 243, 155, 0.13), rgba(88, 243, 155, 0.03));
+}
+
+.bw-info-table tbody tr.info-row--link,
+.bgw-info-table tbody tr.info-row--link,
+.rw-info-table tbody tr.info-row--link {
+  border-left-color: #a594ff;
+  background: linear-gradient(90deg, rgba(165, 148, 255, 0.14), rgba(165, 148, 255, 0.03));
+}
+
+.bw-info-table tbody tr.info-row--supply,
+.bgw-info-table tbody tr.info-row--supply,
+.rw-info-table tbody tr.info-row--supply {
+  border-left-color: #ffe97d;
+  background: linear-gradient(90deg, rgba(255, 233, 125, 0.14), rgba(255, 233, 125, 0.03));
+}
+
+.bw-info-table tbody tr.info-row--base,
+.bgw-info-table tbody tr.info-row--base,
+.rw-info-table tbody tr.info-row--base {
+  border-left-color: #ffb86b;
+  background: linear-gradient(90deg, rgba(255, 184, 107, 0.14), rgba(255, 184, 107, 0.03));
+}
+
+.bw-info-table tbody tr.info-row--live,
+.bgw-info-table tbody tr.info-row--live,
+.rw-info-table tbody tr.info-row--live {
+  border-left-color: #ff8cd6;
+  background: linear-gradient(90deg, rgba(255, 140, 214, 0.14), rgba(255, 140, 214, 0.03));
+}
+
+.bw-info-table tbody tr.info-row--bonus,
+.bgw-info-table tbody tr.info-row--bonus,
+.rw-info-table tbody tr.info-row--bonus {
+  border-left-color: #ffb3ff;
+  background: linear-gradient(90deg, rgba(255, 179, 255, 0.15), rgba(255, 179, 255, 0.03));
+}
+
+.bw-info-table tbody tr.info-row--delta,
+.bgw-info-table tbody tr.info-row--delta,
+.rw-info-table tbody tr.info-row--delta {
+  border-left-color: #ff9b9b;
+  background: linear-gradient(90deg, rgba(255, 155, 155, 0.13), rgba(255, 155, 155, 0.03));
+}
+
+.bw-info-table tbody tr.info-row--core td:first-child,
+.bgw-info-table tbody tr.info-row--core td:first-child,
+.rw-info-table tbody tr.info-row--core td:first-child {
+  color: #8fdfff;
+}
+
+.bw-info-table tbody tr.info-row--mint td:first-child,
+.bgw-info-table tbody tr.info-row--mint td:first-child,
+.rw-info-table tbody tr.info-row--mint td:first-child {
+  color: #89f4b5;
+}
+
+.bw-info-table tbody tr.info-row--link td:first-child,
+.bgw-info-table tbody tr.info-row--link td:first-child,
+.rw-info-table tbody tr.info-row--link td:first-child {
+  color: #c2b8ff;
+}
+
+.bw-info-table tbody tr.info-row--supply td:first-child,
+.bgw-info-table tbody tr.info-row--supply td:first-child,
+.rw-info-table tbody tr.info-row--supply td:first-child {
+  color: #ffe892;
+}
+
+.bw-info-table tbody tr.info-row--base td:first-child,
+.bgw-info-table tbody tr.info-row--base td:first-child,
+.rw-info-table tbody tr.info-row--base td:first-child {
+  color: #ffc68f;
+}
+
+.bw-info-table tbody tr.info-row--live td:first-child,
+.bgw-info-table tbody tr.info-row--live td:first-child,
+.rw-info-table tbody tr.info-row--live td:first-child {
+  color: #ffb4e6;
+}
+
+.bw-info-table tbody tr.info-row--bonus td:first-child,
+.bgw-info-table tbody tr.info-row--bonus td:first-child,
+.rw-info-table tbody tr.info-row--bonus td:first-child {
+  color: #ffd1ff;
+}
+
+.bw-info-table tbody tr.info-row--delta td:first-child,
+.bgw-info-table tbody tr.info-row--delta td:first-child,
+.rw-info-table tbody tr.info-row--delta td:first-child {
+  color: #ffbbbb;
+}
+
+.info-chip {
+  border-width: 1px;
+}
+
+.info-chip--block {
+  border-color: rgba(93, 220, 255, 0.45);
+  color: #8fdfff;
+  background: rgba(93, 220, 255, 0.15);
+}
+
+.info-chip--mint {
+  border-color: rgba(88, 243, 155, 0.45);
+  color: #9cf6bf;
+  background: rgba(88, 243, 155, 0.15);
+}
+
+.info-chip--link {
+  border-color: rgba(165, 148, 255, 0.45);
+  color: #c6bcff;
+  background: rgba(165, 148, 255, 0.14);
+}
+
+.info-chip--bonus {
+  border-color: rgba(255, 179, 255, 0.45);
+  color: #ffd3ff;
+  background: rgba(255, 179, 255, 0.15);
+}

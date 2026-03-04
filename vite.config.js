@@ -41,6 +41,12 @@ export default defineConfig({
       },
       output: {
         manualChunks(id) {
+          // Keep Vite's preload helper out of heavy vendor chunks.
+          // Otherwise app entry can import the helper from vendor-wallet
+          // and force early download of the wallet stack.
+          if (id.includes("vite/preload-helper")) {
+            return "vendor-preload";
+          }
           if (!id.includes('node_modules')) return undefined;
           if (id.match(/node_modules\/(react|react-dom|scheduler)/)) {
             return 'vendor-react';

@@ -257,15 +257,51 @@
 }
 
 .collection-table {
-  border-radius: 16px;
-  border: 1px solid rgba(255, 232, 0, 0.16);
-  background: rgba(9, 11, 18, 0.92);
+  position: relative;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 232, 0, 0.22);
+  background:
+    linear-gradient(180deg, rgba(12, 15, 23, 0.95), rgba(7, 10, 16, 0.98)),
+    radial-gradient(
+      140% 120% at 90% -15%,
+      rgba(255, 232, 0, 0.08),
+      transparent 65%
+    );
   padding: 16px;
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.55);
+  box-shadow:
+    0 18px 34px rgba(0, 0, 0, 0.52),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02);
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-width: 0;
+  overflow: hidden;
+}
+
+.collection-table::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 232, 0, 0.95),
+    rgba(93, 220, 255, 0.7)
+  );
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.collection-table--orange::before {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 152, 76, 0.95),
+    rgba(255, 232, 0, 0.75)
+  );
+}
+
+.rewards-panel__card--claims .biggi-card__body {
+  gap: 14px;
 }
 
 .collection-table__header {
@@ -273,6 +309,8 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed rgba(255, 232, 0, 0.2);
 }
 
 .collection-table__title {
@@ -284,10 +322,11 @@
 }
 
 .collection-table__hint {
-  font-size: 0.7rem;
-  color: #b7badd;
+  font-size: 0.72rem;
+  color: #b7c1d7;
   display: block;
-  margin-top: 4px;
+  margin-top: 5px;
+  line-height: 1.4;
 }
 
 .rewards-panel__card {
@@ -459,6 +498,19 @@
   .collection-claims-layout--two {
     grid-template-columns: 1fr;
   }
+  .collection-table .rewards-panel__claim-list {
+    max-height: none;
+    padding-right: 0;
+  }
+  .collection-table .rewards-panel__claim-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "plate plate"
+      "info action";
+  }
+  .collection-table .rewards-panel__claim-plate {
+    min-height: 86px;
+  }
 }
 .rewards-panel__status-grid--collection {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -576,13 +628,17 @@
 }
 .rewards-panel__chip {
   justify-self: end;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(255, 232, 0, 0.14);
-  border: 1px solid rgba(255, 232, 0, 0.28);
+  background: rgba(255, 232, 0, 0.18);
+  border: 1px solid rgba(255, 232, 0, 0.42);
   color: #ffe800;
   font-weight: 800;
   font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.32),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .rewards-panel__claim-list {
@@ -601,8 +657,31 @@
   padding: 12px;
   border-radius: 12px;
   border: 1px solid rgba(255, 232, 0, 0.16);
-  background: rgba(12, 14, 22, 0.9);
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
+  background: linear-gradient(
+    165deg,
+    rgba(15, 18, 28, 0.95),
+    rgba(9, 11, 18, 0.96)
+  );
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.3);
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.rewards-panel__claim-row:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 232, 0, 0.34);
+  box-shadow:
+    0 14px 24px rgba(0, 0, 0, 0.35),
+    inset 0 0 12px rgba(255, 232, 0, 0.08);
+}
+
+.rewards-panel__claim-row:focus-within {
+  border-color: rgba(93, 220, 255, 0.55);
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(93, 220, 255, 0.32);
 }
 .rewards-panel__claim-plate {
   flex-shrink: 0;
@@ -731,9 +810,119 @@
   background: rgba(115, 255, 198, 0.12);
 }
 .rewards-panel__claim-row .pill.is-claimed {
-  color: #ff9fab;
-  border-color: rgba(255, 140, 156, 0.35);
-  background: rgba(255, 140, 156, 0.14);
+  color: #ffe89d;
+  border-color: rgba(255, 232, 0, 0.38);
+  background: rgba(255, 232, 0, 0.14);
+}
+.rewards-panel__claim-row .pill.is-locked {
+  color: #9ea8bf;
+  border-color: rgba(158, 168, 191, 0.36);
+  background: rgba(158, 168, 191, 0.13);
+}
+.rewards-panel__claim-row .pill.is-loading {
+  color: #ffd580;
+  border-color: rgba(255, 213, 128, 0.42);
+  background: rgba(255, 213, 128, 0.12);
+}
+
+.rewards-panel__claim-row.row-open {
+  border-color: rgba(115, 255, 198, 0.35);
+}
+
+.rewards-panel__claim-row.row-claimed {
+  border-color: rgba(255, 232, 0, 0.3);
+  background: linear-gradient(
+    165deg,
+    rgba(22, 19, 10, 0.94),
+    rgba(11, 10, 7, 0.96)
+  );
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.34),
+    inset 0 0 14px rgba(255, 232, 0, 0.08);
+}
+
+.rewards-panel__claim-row.row-locked {
+  border-color: rgba(145, 154, 178, 0.34);
+}
+
+.rewards-panel__claim-row.row-loading {
+  border-style: dashed;
+  border-color: rgba(255, 213, 128, 0.4);
+}
+
+.collection-table .rewards-panel__claim-list {
+  max-height: clamp(340px, 52vh, 560px);
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.collection-table .rewards-panel__claim-list::-webkit-scrollbar {
+  width: 7px;
+}
+
+.collection-table .rewards-panel__claim-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 232, 0, 0.36);
+  border-radius: 999px;
+}
+
+.collection-table .rewards-panel__claim-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+}
+
+.collection-table .rewards-panel__claim-row {
+  grid-template-columns: minmax(180px, 1.8fr) minmax(128px, 1fr) auto;
+  grid-template-areas: "plate info action";
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+}
+
+.collection-table .rewards-panel__claim-row:nth-child(even) {
+  background: linear-gradient(
+    165deg,
+    rgba(14, 17, 26, 0.96),
+    rgba(8, 10, 16, 0.97)
+  );
+}
+
+.collection-table .rewards-panel__claim-plate {
+  min-height: 72px;
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow:
+    0 12px 22px rgba(0, 0, 0, 0.4),
+    inset 0 0 26px rgba(255, 232, 0, 0.08);
+}
+
+.collection-table .rewards-panel__claim-thumbnail-row {
+  height: 56px;
+  gap: 6px;
+}
+
+.collection-table .rewards-panel__claim-thumbnail-row img {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+}
+
+.collection-table .rewards-panel__claim-info {
+  gap: 4px;
+  justify-content: center;
+}
+
+.collection-table .rewards-panel__claim-row .label {
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+}
+
+.collection-table .rewards-panel__claim-row .pill {
+  margin-top: 0;
+}
+
+.collection-table .rewards-panel__claim-row .biggi-btn {
+  min-width: 108px;
 }
 
 .rewards-panel__meta {
@@ -876,6 +1065,14 @@
   }
   .rewards-panel__cta-row {
     flex-direction: column;
+  }
+  .collection-table .rewards-panel__claim-row {
+    gap: 9px;
+  }
+  .collection-table .rewards-panel__claim-row .biggi-btn {
+    width: 100%;
+    min-width: 0;
+    justify-self: stretch;
   }
 }
 .nft-rewards__stat-grid {

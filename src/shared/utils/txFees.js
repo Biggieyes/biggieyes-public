@@ -146,23 +146,20 @@ function resolveFeeProvider(provider) {
 export async function buildFeeOverrides(provider, options = {}) {
   const isInjected = isInjectedProvider(provider);
   const feeProvider = resolveFeeProvider(provider);
-  if (!feeProvider || typeof feeProvider.getFeeData !== "function") return {};
+  if (!feeProvider) return {};
 
   const minTipGwei = resolveMinPriorityFeeGwei(options.minPriorityFeeGwei);
   const minTip = minTipGwei ? parseUnits(String(minTipGwei), "gwei") : null;
-  const forceEip1559 = resolveBoolOption(
-    options.forceEip1559,
-    "VITE_FORCE_EIP1559",
-  );
   const forceLegacy = resolveBoolOption(
     options.forceLegacy,
     "VITE_FORCE_LEGACY_GAS",
   );
 
-  const preferLegacy = forceLegacy || (isInjected && !forceEip1559);
+  // Injected providers (MetaMask, WalletConnect) are safest in legacy mode.
+  const preferLegacy = forceLegacy || isInjected;
   if (preferLegacy) {
     let gasPrice = await getLegacyGasPrice(feeProvider);
-    const baseFee = await getBaseFee(feeProvider);
+    const baseFee = isInjected ? null : await getBaseFee(feeProvider);
     if (minTip) {
       const floor = baseFee != null ? baseFee + minTip : minTip;
       if (gasPrice == null || gasPrice < floor) gasPrice = floor;
@@ -176,7 +173,9 @@ export async function buildFeeOverrides(provider, options = {}) {
         minTip || parseUnits(String(DEFAULT_MIN_PRIORITY_FEE_GWEI), "gwei");
       return { type: 0, gasPrice: fallbackGasPrice };
     }
+    if (typeof feeProvider.getFeeData !== "function") return {};
   }
+  if (typeof feeProvider.getFeeData !== "function") return {};
 
   let feeData = null;
   try {
@@ -218,7 +217,11 @@ export async function buildFeeOverrides(provider, options = {}) {
   }
   if (gasPrice != null) return { gasPrice };
 
-  if (isInjected) return {};
+  if (isInjected) {
+    const fallbackGasPrice =
+      minTip || parseUnits(String(DEFAULT_MIN_PRIORITY_FEE_GWEI), "gwei");
+    return { type: 0, gasPrice: fallbackGasPrice };
+  }
 
   if (maxPriorityFeePerGas != null && hasEip1559Hints) {
     return {
