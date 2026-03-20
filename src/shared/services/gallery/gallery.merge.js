@@ -1,11 +1,18 @@
+import {
+  getAssetCompositeKey,
+  getAssetContractAddress,
+  getAssetTokenIdString,
+} from "@/shared/utils/assetIdentity.js";
+
 const PLACEHOLDER_IMAGE = "/images/Biggi.png";
 const TICKET_IMAGE_MARKER = "biggi_random_mint_ticket.png";
 
 function toIdString(item) {
-  if (!item) return "";
-  if (item.tokenId != null) return String(item.tokenId);
-  if (item.id != null) return String(item.id);
-  return "";
+  return getAssetTokenIdString(item);
+}
+
+function toExactKey(item) {
+  return getAssetCompositeKey(item);
 }
 
 function isEmptyMeta(meta) {
@@ -90,6 +97,8 @@ export function mergeGalleryItem(prev, next) {
     tokenId: toIdString(next) || toIdString(prev),
     image: pickImage(prev.image, next.image),
     meta: mergedMeta,
+    contractAddress:
+      next?.contractAddress ?? prev?.contractAddress ?? null,
     isTicket: mergedIsTicket,
     isPending: resolvePending(prev, next, mergedMeta, mergedIsTicket),
     mint: next.mint ?? prev.mint,
@@ -98,23 +107,41 @@ export function mergeGalleryItem(prev, next) {
 
 export function mergeGalleryLists(baseItems = [], incomingItems = []) {
   const baseMap = new Map();
+  const legacyMap = new Map();
   const out = [];
 
   for (const item of baseItems) {
-    const key = toIdString(item);
+    const key = toExactKey(item);
     if (!key) continue;
-    baseMap.set(key, item);
+    baseMap.set(key, { key, item });
+    if (!getAssetContractAddress(item)) {
+      const legacyKey = toIdString(item);
+      if (legacyKey && !legacyMap.has(legacyKey)) legacyMap.set(legacyKey, key);
+    }
   }
 
   for (const item of incomingItems) {
-    const key = toIdString(item);
+    const key = toExactKey(item);
     if (!key) continue;
-    const merged = mergeGalleryItem(baseMap.get(key), item);
-    baseMap.delete(key);
+    let entry = baseMap.get(key);
+    if (!entry && getAssetContractAddress(item)) {
+      const legacyKey = toIdString(item);
+      const legacyExactKey = legacyMap.get(legacyKey);
+      if (legacyExactKey) entry = baseMap.get(legacyExactKey);
+    }
+    const merged = mergeGalleryItem(entry?.item, item);
+    if (entry) {
+      baseMap.delete(entry.key);
+      const legacyKey = toIdString(entry.item);
+      if (legacyKey && legacyMap.get(legacyKey) === entry.key) {
+        legacyMap.delete(legacyKey);
+      }
+    }
     out.push(merged);
   }
 
-  for (const item of baseMap.values()) {
+  for (const entry of baseMap.values()) {
+    const item = entry?.item;
     if (item?.isTicket || item?.isPending) continue;
     out.push(item);
   }

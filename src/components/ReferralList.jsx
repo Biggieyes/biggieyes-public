@@ -18,9 +18,14 @@ const fmtDate = (value) => {
 export default function ReferralList({ items = [] }) {
   return (
     <section className="moderator-center__card">
-      <h3>Referral list</h3>
+      <div className="moderator-center__card-head">
+        <h3>Referral list</h3>
+        <span className="moderator-center__chip">{items.length} records</span>
+      </div>
       {items.length === 0 ? (
-        <div className="muted">No data.</div>
+        <div className="moderator-center__empty">
+          No referrals have been recorded for this slot yet.
+        </div>
       ) : (
         <div className="moderator-center__table">
           <div className="moderator-center__table-head">

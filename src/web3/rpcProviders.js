@@ -6,9 +6,7 @@ import {
   getArchiveRpcUrls,
 } from "../shared/utils/rpcConfig.js";
 
-const BATCH_LIMITED_HOSTS = new Set([
-  "polygon-amoy.drpc.org",
-]);
+const BATCH_LIMITED_HOSTS = new Set(["polygon.drpc.org"]);
 
 function env(key) {
   try {
@@ -32,11 +30,18 @@ function resolveBatchMaxCount(url) {
   if (!url) return undefined;
   try {
     const host = new URL(url).hostname.toLowerCase();
-    if (BATCH_LIMITED_HOSTS.has(host)) return 3;
+    if (BATCH_LIMITED_HOSTS.has(host) || host.endsWith(".drpc.org")) return 3;
   } catch {
     // ignore URL parsing failures
   }
   return undefined;
+}
+
+function shouldUseEthersFallbackProvider() {
+  const raw = String(env("VITE_ENABLE_ETHERS_FALLBACK_PROVIDER") || "")
+    .trim()
+    .toLowerCase();
+  return raw === "1" || raw === "true";
 }
 
 function makeStaticProvider(url, chainId = AMOY.chainId) {
@@ -71,6 +76,8 @@ export function createFallbackProvider(urls, chainId = AMOY.chainId) {
       "No RPC URLs configured (set VITE_JSON_RPC_URL or VITE_AMOY_RPC_URL)",
     );
   if (list.length === 1) return createJsonRpcProvider(list[0], chainId);
+  if (!shouldUseEthersFallbackProvider())
+    return createJsonRpcProvider(list[0], chainId);
 
   const configs = list.map((url, index) => ({
     provider: makeStaticProvider(url, chainId),
@@ -94,6 +101,8 @@ export function createArchiveProvider(urls, chainId = AMOY.chainId) {
   const list = Array.isArray(urls) && urls.length ? urls : [];
   if (!list.length) return null;
   if (list.length === 1) return createJsonRpcProvider(list[0], chainId);
+  if (!shouldUseEthersFallbackProvider())
+    return createJsonRpcProvider(list[0], chainId);
 
   const configs = list.map((url, index) => ({
     provider: makeStaticProvider(url, chainId),

@@ -41,6 +41,18 @@ function _shortAddress(address = "") {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
+function _shortHex(value = "") {
+  if (!value) return PLACEHOLDER;
+  const normalized = String(value);
+  if (normalized.length <= 18) return normalized;
+  return `${normalized.slice(0, 10)}...${normalized.slice(-6)}`;
+}
+
+function _sameAddress(a, b) {
+  if (!a || !b) return false;
+  return String(a).toLowerCase() === String(b).toLowerCase();
+}
+
 export function mapDRIPSnapshotToUI(raw) {
   if (!raw) return null;
   const ts = raw.ts ?? Date.now();
@@ -53,6 +65,7 @@ export function mapDRIPSnapshotToUI(raw) {
 
   const distributorRaw = raw.distributor || {};
   const DRIPLMRaw = raw.DRIPLM || {};
+  const keeperRaw = raw.keeper || {};
 
   const cap = _formatAmount(distributorRaw.cap);
   const available = _formatAmount(distributorRaw.availableTokens);
@@ -61,10 +74,19 @@ export function mapDRIPSnapshotToUI(raw) {
   const totalClaimed = _formatAmount(distributorRaw.totalClaimed);
   const totalNotified = _formatAmount(distributorRaw.totalNotified);
   const totalTopUp = _formatAmount(distributorRaw.totalTopUp);
+  const effectiveAvailable = _formatAmount(
+    distributorRaw.effectiveAvailable ?? distributorRaw.getAvailable,
+  );
+  const totalReceived = _formatAmount(distributorRaw.totalReceived);
+  const distributorBalance = _formatAmount(
+    distributorRaw.balance ?? distributorRaw.tokenBalance,
+  );
   const biggiBalance = _formatAmount(distributorRaw.tokenBalance);
 
   const nativeBalance = _formatAmount(DRIPLMRaw.nativeBalance);
   const lmBiggiBalance = _formatAmount(DRIPLMRaw.biggiBalance);
+  const totalNativeForwarded = _formatAmount(DRIPLMRaw.totalNativeForwarded);
+  const totalSoldTokens = _formatAmount(DRIPLMRaw.totalSoldTokens);
 
   const capNumeric = cap.numeric ?? null;
   const availableNumeric = available.numeric ?? null;
@@ -92,6 +114,41 @@ export function mapDRIPSnapshotToUI(raw) {
     : canSellNow
       ? "active"
       : "warning";
+  const distributorTargetMatches =
+    distributorRaw.targetMatches ??
+    (distributorRaw.DRIPLM && DRIPLMRaw.address
+      ? _sameAddress(distributorRaw.DRIPLM, DRIPLMRaw.address)
+      : null);
+  const keeperTargetMatches =
+    keeperRaw.targetMatches ??
+    (keeperRaw.dripLM && DRIPLMRaw.address
+      ? _sameAddress(keeperRaw.dripLM, DRIPLMRaw.address)
+      : null);
+  const lmDistributorMatches =
+    DRIPLMRaw.distributorMatches ??
+    (DRIPLMRaw.distributor && distributorRaw.address
+      ? _sameAddress(DRIPLMRaw.distributor, distributorRaw.address)
+      : null);
+
+  let automationStatusLabel = "Unknown";
+  let automationStatusTone = "warning";
+  if (keeperRaw.paused === true) {
+    automationStatusLabel = "Keeper paused";
+    automationStatusTone = "paused";
+  } else if (
+    distributorTargetMatches === false ||
+    keeperTargetMatches === false ||
+    lmDistributorMatches === false
+  ) {
+    automationStatusLabel = "Target mismatch";
+    automationStatusTone = "warning";
+  } else if (keeperRaw.upkeepNeeded === true) {
+    automationStatusLabel = "Ready";
+    automationStatusTone = "active";
+  } else if (keeperRaw.upkeepNeeded === false) {
+    automationStatusLabel = "Idle";
+    automationStatusTone = "warning";
+  }
 
   return {
     ts,
@@ -112,27 +169,62 @@ export function mapDRIPSnapshotToUI(raw) {
       totalClaimed: totalClaimed.display,
       totalNotified: totalNotified.display,
       totalTopUp: totalTopUp.display,
+      effectiveAvailable: effectiveAvailable.display,
+      effectiveAvailableNumeric: effectiveAvailable.numeric,
+      totalReceived: totalReceived.display,
+      totalReceivedNumeric: totalReceived.numeric,
       DRIPLM: distributorRaw.DRIPLM,
       DRIPLMShort: _shortAddress(distributorRaw.DRIPLM),
       treasury: distributorRaw.treasury,
       treasuryShort: _shortAddress(distributorRaw.treasury),
       tokenBalance: biggiBalance.display,
       tokenBalanceNumeric: biggiBalance.numeric,
+      balance: distributorBalance.display,
+      balanceNumeric: distributorBalance.numeric,
+      operator: distributorRaw.operator ?? null,
+      operatorShort: _shortAddress(distributorRaw.operator),
+      targetMatches: distributorTargetMatches,
     },
     DRIPLM: {
       address: DRIPLMRaw.address,
       shortAddress: _shortAddress(DRIPLMRaw.address),
       sellPct: DRIPLMRaw.sellPct ?? null,
+      reserveShareBps: DRIPLMRaw.reserveShareBps ?? null,
+      moderatorShareBps: DRIPLMRaw.moderatorShareBps ?? null,
       slippageBps: DRIPLMRaw.slippageBps ?? null,
       txDeadlineSec: DRIPLMRaw.txDeadlineSec ?? null,
       router: DRIPLMRaw.router,
       routerShort: _shortAddress(DRIPLMRaw.router),
       reserve: DRIPLMRaw.reserve,
       reserveShort: _shortAddress(DRIPLMRaw.reserve),
+      moderatorCenter: DRIPLMRaw.moderatorCenter ?? null,
+      moderatorCenterShort: _shortAddress(DRIPLMRaw.moderatorCenter),
+      buybackAgent: DRIPLMRaw.buybackAgent ?? null,
+      buybackAgentShort: _shortAddress(DRIPLMRaw.buybackAgent),
       nativeBalance: nativeBalance.display,
       nativeBalanceNumeric: nativeBalance.numeric,
+      totalNativeForwarded: totalNativeForwarded.display,
+      totalNativeForwardedNumeric: totalNativeForwarded.numeric,
       biggiBalance: lmBiggiBalance.display,
       biggiBalanceNumeric: lmBiggiBalance.numeric,
+      totalSoldTokens: totalSoldTokens.display,
+      totalSoldTokensNumeric: totalSoldTokens.numeric,
+      distributor: DRIPLMRaw.distributor ?? null,
+      distributorShort: _shortAddress(DRIPLMRaw.distributor),
+      distributorMatches: lmDistributorMatches,
+    },
+    keeper: {
+      address: keeperRaw.address,
+      shortAddress: _shortAddress(keeperRaw.address),
+      dripLM: keeperRaw.dripLM,
+      dripLMShort: _shortAddress(keeperRaw.dripLM),
+      paused: keeperRaw.paused ?? null,
+      owner: keeperRaw.owner ?? null,
+      ownerShort: _shortAddress(keeperRaw.owner),
+      upkeepNeeded: keeperRaw.upkeepNeeded ?? null,
+      performData: keeperRaw.performData ?? null,
+      performDataShort: _shortHex(keeperRaw.performData),
+      targetMatches: keeperTargetMatches,
     },
     derived: {
       availablePercent:
@@ -146,6 +238,8 @@ export function mapDRIPSnapshotToUI(raw) {
       canSellNow,
       statusLabel,
       statusTone,
+      automationStatusLabel,
+      automationStatusTone,
     },
   };
 }
@@ -161,7 +255,7 @@ export function mapDRIPSnapshotToFLOWRows(snapshot) {
     },
     {
       label: "DRIPLM → Reserve (native)",
-      value: snapshot.DRIPLM.nativeBalance,
+      value: snapshot.DRIPLM.totalNativeForwarded || snapshot.DRIPLM.nativeBalance,
       hint: snapshot.DRIPLM.reserveShort,
       segment: "DRIPLM",
     },

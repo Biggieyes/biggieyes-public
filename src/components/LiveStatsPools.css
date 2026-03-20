@@ -269,6 +269,75 @@
   text-align: center;
 }
 
+.ls-fullscreen-tokenomics {
+  overflow: hidden;
+}
+
+.ls-fullscreen-tokenomics .ls-tokenomics-modal__content {
+  overflow: hidden;
+}
+
+.ls-fullscreen-tokenomics .ls-tokenomics-modal__grid {
+  min-height: 0;
+}
+
+.ls-fullscreen-tokenomics .ls-tokenomics-modal__section {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ls-fullscreen-tokenomics .pools-card {
+  min-height: 0;
+  overflow: hidden;
+  padding: 12px;
+  gap: 10px;
+  border-radius: 18px;
+}
+
+.ls-fullscreen-tokenomics .pools-card__header {
+  gap: 4px;
+  padding-bottom: 6px;
+}
+
+.ls-fullscreen-tokenomics .pools-card__body {
+  min-height: 0;
+  padding: 8px;
+  gap: 8px;
+}
+
+.ls-fullscreen-tokenomics .collection-stats-grid {
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.ls-fullscreen-tokenomics .collection-stat-card {
+  min-height: 74px;
+  padding: 6px 8px;
+  gap: 6px;
+  border-radius: 12px;
+}
+
+.ls-fullscreen-tokenomics .collection-stat-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+}
+
+.ls-fullscreen-tokenomics .collection-stat-value {
+  font-size: 0.88rem;
+}
+
+.ls-fullscreen-tokenomics .collection-section-title {
+  font-size: 0.72rem;
+}
+
+.ls-fullscreen-tokenomics .ls-tokenomics-modal__meta {
+  font-size: 0.62rem;
+}
+
+.ls-fullscreen-chat__content {
+  overflow: hidden;
+}
+
 .collection-stats-header-title {
   display: inline-flex;
   align-items: center;

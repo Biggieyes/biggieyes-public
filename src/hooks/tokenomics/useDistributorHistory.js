@@ -20,20 +20,73 @@ const resolveTotal = (entry) =>
   entry?.totalNativeReceived ??
   null;
 
+const buildSeries = (history, selector) =>
+  history
+    .map((entry) => ({
+      label: entry?.tsLabel || "",
+      value: toNumberLoose(selector(entry)),
+    }))
+    .filter((point) => Number.isFinite(point.value));
+
 export default function useDistributorHistory(snapshot, options = {}) {
   const { limit = 30, minIntervalMs = 0 } = options;
   const { history } = useHistoryBuffer(snapshot, { limit, minIntervalMs });
 
-  const points = React.useMemo(
+  const totalSeries = React.useMemo(
     () =>
-      history
-        .map((entry) => ({
-          label: entry?.tsLabel || "",
-          value: toNumberLoose(resolveTotal(entry)),
-        }))
-        .filter((point) => Number.isFinite(point.value)),
+      buildSeries(
+        history,
+        (entry) => entry?.totalReceivedNumeric ?? resolveTotal(entry),
+      ),
     [history],
   );
 
-  return { history, points };
+  const pendingSeries = React.useMemo(
+    () => buildSeries(history, (entry) => entry?.totalPendingNumeric ?? entry?.totalPending),
+    [history],
+  );
+
+  const reserveSeries = React.useMemo(
+    () =>
+      buildSeries(
+        history,
+        (entry) => entry?.pendingReserveNumeric ?? entry?.pendingReserve,
+      ),
+    [history],
+  );
+
+  const buybackSeries = React.useMemo(
+    () =>
+      buildSeries(
+        history,
+        (entry) =>
+          entry?.pendingBUYBACKNumeric ??
+          entry?.pendingBUYBACK ??
+          entry?.pendingBUYBACKAgent,
+      ),
+    [history],
+  );
+
+  const communitySeries = React.useMemo(
+    () =>
+      buildSeries(
+        history,
+        (entry) =>
+          entry?.communityPoolBalanceNumeric ??
+          entry?.communityPoolBalance ??
+          entry?.pendingCOMMUNITYCENTERNumeric ??
+          entry?.pendingCOMMUNITYCENTER,
+      ),
+    [history],
+  );
+
+  return {
+    history,
+    points: totalSeries,
+    totalSeries,
+    pendingSeries,
+    reserveSeries,
+    buybackSeries,
+    communitySeries,
+  };
 }

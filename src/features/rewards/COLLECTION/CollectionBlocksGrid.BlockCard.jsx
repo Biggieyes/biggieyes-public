@@ -79,7 +79,7 @@ const BlockCard = React.memo(
           </div>
           <div>
             <dt>Minted</dt>
-            <dd>{formatCount(entry.minted)}</dd>
+            <dd style={{ color: "#ff3b4f" }}>{formatCount(entry.minted)}</dd>
           </div>
         </dl>
 

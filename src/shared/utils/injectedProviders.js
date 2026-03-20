@@ -1,3 +1,5 @@
+import { isLikelyMobileWalletRuntime } from "@/shared/utils/mobileWallet";
+
 const EIP6963_ANNOUNCE_EVENT = "eip6963:announceProvider";
 const EIP6963_REQUEST_EVENT = "eip6963:requestProvider";
 
@@ -28,6 +30,7 @@ export const isLikelyMetaMaskSdkProvider = (provider) => {
   const info = providerInfoByRef.get(provider);
   const rdns = normalizeRdns(info?.rdns);
   if (rdns.includes("mmsdk") || rdns.includes("metamask-sdk")) return true;
+  if (isLikelyMobileWalletRuntime()) return false;
   // Avoid direct reads from `ethereum._metamask`:
   // MetaMask logs a warning when that experimental field is accessed.
   return Boolean(

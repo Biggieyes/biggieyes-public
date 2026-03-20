@@ -10,12 +10,16 @@ import { getProviderForContract } from "../shared/utils/contract";
 import { mergeGalleryItem } from "../shared/services/gallery/gallery.merge.js";
 import { coerceBool } from "../shared/utils/boolean";
 import {
+  isCanonicalTicketTokenId,
+  toMainNftIndexFromTokenId,
+} from "../shared/utils/biggiIdIndex";
+import {
   queryLogsBatched,
   getSafeDeployBlock,
+  isFullHistoryEnabled,
   loadWalletCache,
   saveWalletCache,
 } from "../shared/utils/shared";
-import { getArchiveProvider } from "../web3/provider";
 import {
   readJsonFromURI,
   resolveImageUrl,
@@ -28,7 +32,17 @@ const TOP_HIGHLIGHT_MS = 70_000;
 
 // Smaller batch size to reduce RPC rejections on public endpoints.
 const LOGS_BATCH = 300;
-const CHAIN_FETCH_TIMEOUT_MS = 25000;
+const CHAIN_FETCH_TIMEOUT_MS = (() => {
+  const configured = Number(
+    typeof import.meta !== "undefined" && import.meta.env
+      ? import.meta.env.VITE_GALLERY_CHAIN_FETCH_TIMEOUT_MS
+      : 0,
+  );
+  if (Number.isFinite(configured) && configured > 0) {
+    return Math.trunc(configured);
+  }
+  return 45_000;
+})();
 const PLACEHOLDER_IMAGE = "/images/Biggi.png";
 
 // paralelní limit pro tokenURI / metadata fetch (snižuje šanci na RPC timeouts)
@@ -211,14 +225,35 @@ const deriveRarityInfo = (item) => {
   return { rarity, rarityRank, blockName };
 };
 
-const isTicketLike = (item) => {
-  if (!item) return false;
-  if (item.isPending) return true;
-  if (item.isTicket) return true;
+const classifyGalleryItem = (item, maxSupplyHint = 550) => {
+  if (!item) return "unknown";
+  if (item.isPending) return "ticket";
+
+  const ticketFlag = item?.isTicket;
+  if (ticketFlag === false) return "nft";
+  if (ticketFlag === true) return "ticket";
+
+  const tokenId = String(item?.tokenId ?? item?.id ?? "").trim();
+  if (tokenId) {
+    const mainIdx = toMainNftIndexFromTokenId(tokenId, {
+      maxSupply: maxSupplyHint,
+      allowLegacy: true,
+    });
+    if (mainIdx != null) return "nft";
+    if (isCanonicalTicketTokenId(tokenId)) return "ticket";
+  }
+
   const meta = item?.meta;
-  if (looksLikeTicketMeta(meta) && !looksLikeNftMeta(meta)) return true;
-  return false;
+  const metaLooksNft = looksLikeNftMeta(meta);
+  if (metaLooksNft) return "nft";
+  const metaLooksTicket = looksLikeTicketMeta(meta);
+  if (metaLooksTicket && !metaLooksNft) return "ticket";
+
+  return "unknown";
 };
+
+const isTicketLike = (item, maxSupplyHint = 550) =>
+  classifyGalleryItem(item, maxSupplyHint) === "ticket";
 
 function toIdString(item) {
   if (!item) return "";
@@ -397,7 +432,62 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
     );
   }
 
-  // 3) Fallback přes logy (robustní, ale pomalejší)
+  // 3) ERC-721 Enumerable fallback (faster than full log scans when available)
+  try {
+    if (
+      typeof mainContract.balanceOf === "function" &&
+      typeof mainContract.tokenOfOwnerByIndex === "function"
+    ) {
+      const balanceRaw = await withTimeout(
+        mainContract.balanceOf(address),
+        8_000,
+        "gallery balanceOf",
+      );
+      const balanceNum = Number(
+        balanceRaw?.toString?.() ?? balanceRaw ?? 0,
+      );
+      if (Number.isFinite(balanceNum) && balanceNum >= 0) {
+        const balance = Math.trunc(balanceNum);
+        if (balance === 0) return [];
+        const upper = Math.min(balance, 2_000);
+        const out = [];
+        const chunkSize = Math.max(4, getParallelism());
+        for (let i = 0; i < upper; i += chunkSize) {
+          const idxs = Array.from(
+            { length: Math.min(chunkSize, upper - i) },
+            (_, off) => i + off,
+          );
+          const part = await Promise.all(
+            idxs.map(async (idx) => {
+              try {
+                return await withTimeout(
+                  mainContract
+                    .tokenOfOwnerByIndex(address, idx)
+                    .catch(() => null),
+                  8_000,
+                  "gallery tokenOfOwnerByIndex",
+                );
+              } catch {
+                return null;
+              }
+            }),
+          );
+          for (const id of part) {
+            const parsed = coerceBigIntId(id);
+            if (parsed != null) out.push(parsed);
+          }
+        }
+        if (out.length) return saveIds(out);
+      }
+    }
+  } catch (e) {
+    console.warn(
+      "balanceOf/tokenOfOwnerByIndex fallback failed, falling back to logs",
+      e,
+    );
+  }
+
+  // 4) Fallback přes logy (robustní, ale pomalejší)
   try {
     const provider = getProviderForContract(mainContract);
     if (!provider || typeof provider.getBlockNumber !== "function") {
@@ -422,58 +512,25 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
 
     let toLogs = [];
     let fromLogs = [];
-    const logProvider = getArchiveProvider() || provider;
-    const direct = await (async () => {
-      try {
-        if (!logProvider || typeof logProvider.getLogs !== "function")
-          return null;
-        const address = toFilter?.address || contractAddr;
-        const [directTo, directFrom] = await Promise.all([
-          logProvider
-            .getLogs({
-              address,
-              topics: toFilter?.topics,
-              fromBlock,
-              toBlock: latest,
-            })
-            .catch(() => []),
-          logProvider
-            .getLogs({
-              address,
-              topics: fromFilter?.topics,
-              fromBlock,
-              toBlock: latest,
-            })
-            .catch(() => []),
-        ]);
-        return { toLogs: directTo, fromLogs: directFrom };
-      } catch {
-        return null;
-      }
-    })();
-    if (direct) {
-      ({ toLogs, fromLogs } = direct);
-    } else {
-      const opts = getArchiveProvider() ? { fullHistory: true } : undefined;
-      [toLogs, fromLogs] = await Promise.all([
-        queryLogsBatched(
-          mainContract,
-          toFilter,
-          fromBlock,
-          latest,
-          LOGS_BATCH,
-          opts,
-        ),
-        queryLogsBatched(
-          mainContract,
-          fromFilter,
-          fromBlock,
-          latest,
-          LOGS_BATCH,
-          opts,
-        ),
-      ]);
-    }
+    const opts = isFullHistoryEnabled() ? { fullHistory: true } : undefined;
+    [toLogs, fromLogs] = await Promise.all([
+      queryLogsBatched(
+        mainContract,
+        toFilter,
+        fromBlock,
+        latest,
+        LOGS_BATCH,
+        opts,
+      ),
+      queryLogsBatched(
+        mainContract,
+        fromFilter,
+        fromBlock,
+        latest,
+        LOGS_BATCH,
+        opts,
+      ),
+    ]);
 
     const ordered = [...toLogs, ...fromLogs].sort((a, b) => {
       if (a.blockNumber !== b.blockNumber) return a.blockNumber - b.blockNumber;
@@ -864,6 +921,7 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
 export default function Gallery({
   address: addressProp,
   items: itemsProp = [],
+  liveTicketPrice = null,
   dynamicTraitsById = {},
   topFirstId = null,
   onOpenDetails,
@@ -872,13 +930,14 @@ export default function Gallery({
   useProvidedOnly = false,
 }) {
   // fallback na adresu z kontextu peněženky
-  const { address: ctxAddress } = (() => {
+  const { account: ctxAccount, address: ctxAddressLegacy } = (() => {
     try {
       return useWeb3();
     } catch {
-      return { address: "" };
+      return { account: "", address: "" };
     }
   })();
+  const ctxAddress = ctxAccount || ctxAddressLegacy || "";
 
   let contracts;
   try {
@@ -908,6 +967,10 @@ export default function Gallery({
   const isConnected = Boolean(address);
 
   const providedItems = Array.isArray(itemsProp) ? itemsProp : [];
+  const maxSupplyHint = 550;
+  const debugEnabled = Boolean(
+    typeof import.meta !== "undefined" && import.meta.env?.DEV,
+  );
   const providedHasNft = React.useMemo(
     () =>
       providedItems.some((item) => item && !item.isTicket && !item.isPending),
@@ -1003,67 +1066,84 @@ export default function Gallery({
         return;
       setFetching(true);
       try {
-        await withTimeout(
-          (async () => {
-            // contracts may expose factory functions or actual instances
-            const main = contracts.mainRead?.();
-            const main2 = contracts.main2Read?.();
-            const reader = contracts.readerRead?.();
+        // contracts may expose factory functions or actual instances
+        const main = contracts.mainRead?.();
+        const main2 = contracts.main2Read?.();
+        const reader = contracts.readerRead?.();
 
-            if (!main && !main2) {
-              console.warn("Gallery: main contracts not available");
-              if (!cancelled) setHydratedItems([]);
-              return;
+        if (!main && !main2) {
+          console.warn("Gallery: main contracts not available");
+          if (!cancelled) setHydratedItems([]);
+          return;
+        }
+
+        const loadForContract = async (contract, label) => {
+          if (!contract) return [];
+          const provider = getProviderForContract(contract);
+          if (!provider || typeof provider.getBlockNumber !== "function") {
+            console.warn(`Gallery: provider not available on ${label} contract`);
+            return [];
+          }
+          return withTimeout(
+            (async () => {
+              const tokenIds = await resolveHeldTokenIds(contract, address, reader);
+              if (!tokenIds.length) return [];
+              return hydrateTokens(contract, reader, tokenIds);
+            })(),
+            CHAIN_FETCH_TIMEOUT_MS,
+            `gallery ${String(label || "").toLowerCase()} fetch`,
+          );
+        };
+
+        const labels = ["MAIN", "MAIN2"];
+        const settled = await Promise.allSettled([
+          loadForContract(main, labels[0]),
+          loadForContract(main2, labels[1]),
+        ]);
+
+        const tokensOut = [];
+        let hadFailures = false;
+        let hadTimeout = false;
+        settled.forEach((result, idx) => {
+          if (result.status === "fulfilled") {
+            if (Array.isArray(result.value) && result.value.length) {
+              tokensOut.push(...result.value);
             }
+            return;
+          }
+          hadFailures = true;
+          const reason = result.reason;
+          const message = String(reason?.message || reason || "");
+          const tag = labels[idx] || `#${idx + 1}`;
+          if (message.includes("timed out")) {
+            hadTimeout = true;
+            console.warn(`Gallery ${tag} fetch timed out`, reason);
+          } else {
+            console.error(`Gallery ${tag} fetch failed`, reason);
+          }
+        });
 
-            const tokensOut = [];
-
-            if (main) {
-              const provider = getProviderForContract(main);
-              if (!provider || typeof provider.getBlockNumber !== "function") {
-                console.warn("Gallery: provider not available on MAIN contract");
-              } else {
-                const tokenIds = await resolveHeldTokenIds(main, address, reader);
-                if (tokenIds.length) {
-                  const tokens = await hydrateTokens(main, reader, tokenIds);
-                  tokensOut.push(...tokens);
-                }
-              }
-            }
-
-            if (main2) {
-              const provider = getProviderForContract(main2);
-              if (!provider || typeof provider.getBlockNumber !== "function") {
-                console.warn("Gallery: provider not available on MAIN2 contract");
-              } else {
-                const tokenIds2 = await resolveHeldTokenIds(main2, address, reader);
-                if (tokenIds2.length) {
-                  const tokens2 = await hydrateTokens(main2, reader, tokenIds2);
-                  tokensOut.push(...tokens2);
-                }
-              }
-            }
-
-            if (!cancelled) {
-              const seen = new Set();
-              const deduped = tokensOut.filter((t) => {
-                const key = `${String(t?.contractAddress || "").toLowerCase()}:${t?.tokenId}`;
-                if (seen.has(key)) return false;
-                seen.add(key);
-                return true;
-              });
-              setHydratedItems(deduped);
-            }
-          })(),
-          CHAIN_FETCH_TIMEOUT_MS,
-          "gallery chain fetch",
-        );
+        if (!cancelled) {
+          const seen = new Set();
+          const deduped = tokensOut.filter((t) => {
+            const key = `${String(t?.contractAddress || "").toLowerCase()}:${t?.tokenId}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+          // Keep last successful data when all concurrent reads fail by timeout.
+          if (deduped.length || (!hadFailures && !hadTimeout)) {
+            setHydratedItems(deduped);
+          }
+        }
       } catch (err) {
-        console.error("Gallery chain fetch failed", err);
-        if (
-          !cancelled &&
-          !String(err?.message || "").includes("timed out")
-        ) {
+        const isTimeout = String(err?.message || "").includes("timed out");
+        if (isTimeout) {
+          console.warn("Gallery chain fetch timed out; keeping previous data", err);
+        } else {
+          console.error("Gallery chain fetch failed", err);
+        }
+        if (!cancelled && !isTimeout) {
           setHydratedItems([]);
         }
       } finally {
@@ -1086,7 +1166,7 @@ export default function Gallery({
   const pageSize = isMobile || compact ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP;
 
   const ticketItems = React.useMemo(() => {
-    const list = renderedItems.filter(isTicketLike);
+    const list = renderedItems.filter((item) => isTicketLike(item, maxSupplyHint));
     if (!list.length) return list;
     const topId = topFirstId != null ? String(topFirstId) : "";
     const sorted = [...list];
@@ -1109,12 +1189,38 @@ export default function Gallery({
       return idA > idB ? -1 : 1;
     });
     return sorted;
-  }, [renderedItems, topFirstId]);
+  }, [renderedItems, topFirstId, maxSupplyHint]);
 
   const nonTicketItemsSource = React.useMemo(
-    () => renderedItems.filter((item) => !isTicketLike(item)),
-    [renderedItems],
+    () =>
+      renderedItems.filter(
+        (item) => !isTicketLike(item, maxSupplyHint),
+      ),
+    [renderedItems, maxSupplyHint],
   );
+
+  React.useEffect(() => {
+    if (!isConnected || !debugEnabled) return;
+    console.info("Gallery:render summary", {
+      wallet: address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "",
+      providedItems: providedItems.length,
+      renderedItems: renderedItems.length,
+      nftItems: nonTicketItemsSource.length,
+      ticketItems: ticketItems.length,
+      sampleTokenIds: renderedItems
+        .slice(0, 12)
+        .map((it) => String(it?.tokenId ?? it?.id ?? "").trim())
+        .filter(Boolean),
+    });
+  }, [
+    debugEnabled,
+    isConnected,
+    address,
+    providedItems,
+    renderedItems,
+    nonTicketItemsSource,
+    ticketItems,
+  ]);
 
   const processedItems = React.useMemo(() => {
     let list = nonTicketItemsSource;
@@ -1302,6 +1408,7 @@ export default function Gallery({
       <NftCard
         key={key}
         nft={enriched}
+        liveTicketPrice={liveTicketPrice}
         dynamicTraits={dynamic}
         onOpenDetails={onOpenDetails}
         onZoom={onZoom}
@@ -1480,6 +1587,32 @@ export default function Gallery({
             </p>
           </div>
         )}
+        {isConnected &&
+          !fetching &&
+          renderedItems.length > 0 &&
+          nonTicketItemsSource.length === 0 &&
+          ticketItems.length > 0 && (
+            <div className="gallery__placeholder">
+              <h3>No revealed NFTs yet</h3>
+              <p>
+                Wallet data loaded. You currently hold tickets; redeem them to
+                reveal NFTs. Tickets are listed above.
+              </p>
+            </div>
+          )}
+        {isConnected &&
+          !fetching &&
+          renderedItems.length > 0 &&
+          nonTicketItemsSource.length > 0 &&
+          processedItems.length === 0 && (
+            <div className="gallery__placeholder">
+              <h3>No NFTs match current filter</h3>
+              <p>
+                Clear rarity filters to display all available NFTs in this
+                wallet.
+              </p>
+            </div>
+          )}
         {pagedItems.map((item, index) => renderCard(item, index, true))}
       </div>
 

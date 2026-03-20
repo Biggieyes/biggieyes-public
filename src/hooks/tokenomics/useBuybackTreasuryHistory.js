@@ -29,6 +29,8 @@ export default function useBUYBACKTreasuryHistory(snapshot, options = {}) {
       buildSeries(
         history,
         (entry) =>
+          entry?.BUYBACK?.nativeBalanceNumeric ??
+          entry?.BUYBACK?.nativeBalance ??
           entry?.BUYBACK?.totalNativeSpentNumeric ??
           entry?.BUYBACK?.totalNativeSpent,
       ),
@@ -40,6 +42,8 @@ export default function useBUYBACKTreasuryHistory(snapshot, options = {}) {
       buildSeries(
         history,
         (entry) =>
+          entry?.BUYBACK?.biggiBalanceNumeric ??
+          entry?.BUYBACK?.biggiBalance ??
           entry?.BUYBACK?.totalBiggiAcquiredNumeric ??
           entry?.BUYBACK?.totalBiggiAcquired,
       ),
@@ -52,7 +56,9 @@ export default function useBUYBACKTreasuryHistory(snapshot, options = {}) {
         history,
         (entry) =>
           entry?.treasury?.biggiBalanceNumeric ??
-          entry?.treasury?.biggiBalance,
+          entry?.treasury?.biggiBalance ??
+          entry?.treasury?.totalBiggiReceivedNumeric ??
+          entry?.treasury?.totalBiggiReceived,
       ),
     [history],
   );

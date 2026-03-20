@@ -7,6 +7,28 @@ const MULTICALL_ABI = [
   "function aggregate(tuple(address target, bytes callData)[] calls) view returns (uint256 blockNumber, bytes[] returnData)",
 ];
 
+function _hasFn(iface, name) {
+  if (!iface || !name) return false;
+  try {
+    iface.getFunction(name);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function _resolveTarget(contractOrTarget) {
+  if (!contractOrTarget) return null;
+  if (typeof contractOrTarget === "string") return contractOrTarget;
+  return contractOrTarget.target || contractOrTarget.address || null;
+}
+
+function _unwrapDecoded(decoded, unwrap = true) {
+  if (!unwrap) return decoded;
+  if (Array.isArray(decoded) && decoded.length === 1) return decoded[0];
+  return decoded;
+}
+
 function _getMulticallAddress() {
   try {
     if (
@@ -73,5 +95,41 @@ export async function multicallAggregate(
   );
 }
 
-export default { multicallAggregate };
+export async function multicallReadContract(
+  provider,
+  contractOrTarget,
+  entries = [],
+  iface = null,
+) {
+  if (!provider || !Array.isArray(entries) || !entries.length) return null;
+  const target = _resolveTarget(contractOrTarget);
+  const resolvedIface = iface || contractOrTarget?.interface || null;
+  if (!target || !resolvedIface) return null;
+
+  const filtered = entries.filter(
+    (entry) => entry?.method && _hasFn(resolvedIface, entry.method),
+  );
+  if (!filtered.length) return null;
+
+  const decoded = await multicallAggregate(
+    provider,
+    filtered.map((entry) => ({
+      target,
+      iface: resolvedIface,
+      method: entry.method,
+      params: entry.params || [],
+    })),
+  );
+
+  const out = {};
+  filtered.forEach((entry, idx) => {
+    out[entry.key || entry.method] = _unwrapDecoded(
+      decoded[idx],
+      entry.unwrap !== false,
+    );
+  });
+  return out;
+}
+
+export default { multicallAggregate, multicallReadContract };
 

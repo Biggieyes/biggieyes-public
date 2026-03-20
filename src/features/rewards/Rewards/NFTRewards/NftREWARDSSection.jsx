@@ -23,7 +23,7 @@ const renderStaticPreview = (basePath, count, prefix) => {
   return (
     <div className="rewards-grid__preview-grid">
       {Array.from({ length: safeCount }).map((_, index) => {
-        const fallbackSrc = addBase(`${basePath}/${index + 1}.png`);
+        const fallbackSrc = addBase(`${basePath}/${index + 1}.optimized.jpg`);
         const thumbSrc = addBase(
           `${basePath.replace("/images/rewards", "/images/rewards-thumb")}/${index + 1}.jpg`,
         );

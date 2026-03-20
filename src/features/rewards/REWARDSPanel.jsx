@@ -12,19 +12,48 @@ import { ADDR } from "@/shared/utils/addresses.js";
 import { getROProvider, getSignerProvider, ABI_REWARDS_READER } from "@/shared/utils/contract";
 import { explorerBaseFor } from "@/config/chains.js";
 import PanelInfoModal from "@/components/common/PanelInfoModal";
+import PanelInfoButton from "@/components/common/PanelInfoButton";
 import COLLECTIONREWARDSSection from "./Rewards/CollectionRewards/COLLECTIONREWARDSSection";
 import NftREWARDSTab from "./Rewards/NFTRewards/tabs/NftREWARDSTab";
 import useWeeklyCountdown from "../../hooks/useWeeklyCountdown";
 import FullscreenPanel from "../../components/common/FullscreenPanel";
 import REWARDSBlockSummary from "./REWARDSBlockSummary.jsx";
+import { buildRewardClaimPayload } from "@/shared/utils/assetIdentity.js";
 import "./REWARDSPanel.css";
 import "../../styles/biggi-token.skin.css";
 
 const TAB_ORDER = [
-  { id: "token", label: "Token REWARDS" },
+  { id: "token", label: "TOKEN REWARDS" },
   { id: "COLLECTION", label: "COLLECTION REWARDS" },
   { id: "nft", label: "NFT REWARDS" },
 ];
+
+const SECTION_META = {
+  token: {
+    title: "TOKEN REWARDS",
+    subtitle:
+      "Track weekly token payouts, preview your live claim, and verify the contract rails behind every reward route.",
+    accent: "#ffe800",
+    accentSoft: "rgba(255, 232, 0, 0.22)",
+    accentGlow: "rgba(255, 232, 0, 0.38)",
+  },
+  COLLECTION: {
+    title: "COLLECTION REWARDS",
+    subtitle:
+      "Check block, orange, and rainbow collection rewards in one view and claim each unlocked collection drop from the same panel.",
+    accent: "#5ddcff",
+    accentSoft: "rgba(93, 220, 255, 0.22)",
+    accentGlow: "rgba(93, 220, 255, 0.38)",
+  },
+  nft: {
+    title: "NFT REWARDS",
+    subtitle:
+      "Review character, leaderboard, and mystery NFT reward status, metadata rails, and explorer links for every reward contract output.",
+    accent: "#b584ff",
+    accentSoft: "rgba(181, 132, 255, 0.22)",
+    accentGlow: "rgba(181, 132, 255, 0.38)",
+  },
+};
 
 const NFT_RANGE = Array.from({ length: 10 }, (_, idx) => idx + 1);
 const DEFAULT_EXPLORER_BASE = "https://amoy.polygonscan.com";
@@ -103,6 +132,7 @@ function REWARDSPanel({
   rewardPool = null,
   onClaim,
   autoOpenInfo = false,
+  onActiveSectionChange,
 }) {
   const [activeTab, setActiveTab] = React.useState("token");
   const [claimPreview, setClaimPreview] = React.useState(null);
@@ -115,6 +145,11 @@ function REWARDSPanel({
   const [blockSummaryOpen, setBlockSummaryOpen] = React.useState(false);
   const [explorerBase, setExplorerBase] = React.useState(DEFAULT_EXPLORER_BASE);
   const autoInfoOpened = React.useRef(false);
+  const activeSectionMeta = SECTION_META[activeTab] || SECTION_META.token;
+
+  React.useEffect(() => {
+    onActiveSectionChange?.(activeSectionMeta);
+  }, [activeSectionMeta, onActiveSectionChange]);
 
   React.useEffect(() => {
     if (autoOpenInfo && !autoInfoOpened.current) {
@@ -253,6 +288,23 @@ function REWARDSPanel({
     useNftRewardsReader(readProvider, nftRewardsReaderAddr);
 
   const tokenStats = tokenStatsReader || tokenStatsRaw;
+  const rewardClaimPayload = React.useMemo(
+    () =>
+      buildRewardClaimPayload(items, {
+        maxSupply: 550,
+        primaryCollectionAddress:
+          tokenStats?.mainNFT || tokenStats?.main || ADDR.COLLECTION_VRF || ADDR.MAIN,
+        allowedCollectionAddresses: [
+          tokenStats?.mainNFT,
+          tokenStats?.main2NFT,
+          tokenStats?.main,
+          tokenStats?.main2,
+          ADDR.COLLECTION_VRF || ADDR.MAIN,
+          ADDR.MAIN2 || ADDR.COLLECTION_PUBLIC,
+        ],
+      }),
+    [items, tokenStats],
+  );
 
   React.useEffect(() => {
     let cancelled = false;
@@ -311,17 +363,8 @@ function REWARDSPanel({
   }, [readProvider, collectionRewardsAddr]);
 
   const eligibleTokenIds = React.useMemo(() => {
-    return (items || [])
-      .filter((token) => token && token.tokenId && !token.isTicket)
-      .map((token) => {
-        try {
-          return BigInt(String(token.tokenId));
-        } catch {
-          return null;
-        }
-      })
-      .filter(Boolean);
-  }, [items]);
+    return rewardClaimPayload.tokenIds;
+  }, [rewardClaimPayload]);
 
   const loadClaimPreview = React.useCallback(
     async (signal = {}) => {
@@ -339,8 +382,15 @@ function REWARDSPanel({
       }
       setPreviewLoading(true);
       try {
-        const [units, amount] =
-          await tokenService.claimablePreview(eligibleTokenIds);
+        const useCollectionAware =
+          rewardClaimPayload.shouldUseCollectionAware &&
+          typeof tokenService?.claimablePreviewFor === "function";
+        const [units, amount] = useCollectionAware
+          ? await tokenService.claimablePreviewFor(
+              rewardClaimPayload.collections,
+              eligibleTokenIds,
+            )
+          : await tokenService.claimablePreview(eligibleTokenIds);
         if (signal.aborted) return;
         const decimals =
           Number(
@@ -357,7 +407,7 @@ function REWARDSPanel({
         if (!signal.aborted) setPreviewLoading(false);
       }
     },
-    [eligibleTokenIds, tokenService, tokenStats],
+    [eligibleTokenIds, rewardClaimPayload, tokenService, tokenStats],
   );
 
   React.useEffect(() => {
@@ -652,12 +702,16 @@ function REWARDSPanel({
   );
 
   const blockPaid = COLLECTIONStats?.blockPaid ?? [];
+  const blockClaimability = COLLECTIONStats?.blockClaimability ?? [];
   const orangeMainIdPaid = COLLECTIONStats?.orangeMainIdPaid ?? [];
+  const orangeClaimability = COLLECTIONStats?.orangeClaimability ?? [];
   const rainbowClaimed = Boolean(
     COLLECTIONStats?.rainbowClaimed ??
       COLLECTIONStats?.rainbowRewardClaimedGlobal,
   );
-  const claimedOrange = Boolean(COLLECTIONStats?.claimedOrange);
+  const rainbowClaimability =
+    COLLECTIONStats?.rainbowClaimability ??
+    { ok: null, reason: null, resolved: false };
   const metadataRows = [
     { label: "Distributor", value: COLLECTIONStats?.distributor },
     { label: "Eyes main", value: COLLECTIONStats?.main },
@@ -730,7 +784,10 @@ function REWARDSPanel({
 
   const tokenTab = (
     <section className="rewards-panel__section">
-      <SectionHeader label="Token REWARDS" accent="#ffe800" />
+      <SectionHeader
+        label="TOKEN REWARDS"
+        accent={SECTION_META.token.accent}
+      />
       {heroSection}
       <SectionHeader label="Claims & rails" accent="#9b7bff" />
       <div className="rewards-panel__grid">
@@ -879,7 +936,10 @@ function REWARDSPanel({
 
   const COLLECTIONTab = (
     <section className="rewards-panel__section">
-      <SectionHeader label="COLLECTION REWARDS" accent="#ffe800" />
+      <SectionHeader
+        label="COLLECTION REWARDS"
+        accent={SECTION_META.COLLECTION.accent}
+      />
       <COLLECTIONREWARDSSection
         stats={COLLECTIONStats}
         statusRows={COLLECTIONStatus}
@@ -887,9 +947,11 @@ function REWARDSPanel({
         rewardPool={rewardPool}
         collectionBalance={collectionBalance}
         blockPaid={blockPaid}
+        blockClaimability={blockClaimability}
         orangeMainIdPaid={orangeMainIdPaid}
+        orangeClaimability={orangeClaimability}
         rainbowClaimed={rainbowClaimed}
-        claimedOrange={claimedOrange}
+        rainbowClaimability={rainbowClaimability}
         canClaimCOLLECTION={canClaimCOLLECTION}
         claimState={COLLECTIONClaiming}
         onClaimBlockReward={handleClaimBlockReward}
@@ -904,7 +966,7 @@ function REWARDSPanel({
 
   const nftTab = (
     <section className="rewards-panel__section rewards-grid__section--nft">
-      <SectionHeader label="NFT REWARDS" accent="#27d9d2" />
+      <SectionHeader label="NFT REWARDS" accent={SECTION_META.nft.accent} />
       <NftREWARDSTab
         data={nftData}
         range={NFT_RANGE}
@@ -930,6 +992,11 @@ function REWARDSPanel({
   return (
     <section
       className={`rewards-grid biggi-skin${compact ? " is-compact" : ""}`}
+      style={{
+        "--rewards-active-accent": activeSectionMeta.accent,
+        "--rewards-active-accent-soft": activeSectionMeta.accentSoft,
+        "--rewards-active-accent-glow": activeSectionMeta.accentGlow,
+      }}
     >
       <FullscreenPanel
         open={blockSummaryOpen}
@@ -953,12 +1020,9 @@ function REWARDSPanel({
       <div className="rewards-grid__surface biggi-token-surface">
         <header className="rewards-grid__header biggi-header panel-header panel-header--rewards">
           <div className="rewards-grid__headline">
-            <h2 className="rewards-grid__title">Biggi REWARDS</h2>
+            <h2 className="rewards-grid__title">{activeSectionMeta.title}</h2>
             <p className="rewards-grid__subtitle">
-              Unified rewards control room for TOKEN, COLLECTION, and NFT
-              claims. Track weekly payout windows, compare claimable balances
-              before signing, and open proof links to verify every reward path
-              from source pools to your wallet in one panel.
+              {activeSectionMeta.subtitle}
             </p>
           </div>
           <div className="rewards-panel__header-meta">
@@ -1007,27 +1071,20 @@ function REWARDSPanel({
           >
             {refreshing ? "Refreshing..." : "Refresh stats"}
           </button>
-          <button
-            type="button"
-            className="panel-info-btn biggi-btn biggi-btn--ghost"
+          <PanelInfoButton
             onClick={() => setInfoOpen(true)}
-            aria-label="REWARDS buttons info"
-          >
-            <span>i</span>
-          </button>
+            ariaLabel="REWARDS buttons info"
+          />
         </div>
         {renderTab()}
         <SectionHeader label="Rewards Diagram" accent="#27d9d2" />
         <section className="rewards-grid__diagram-wrap">
-          <button
-            type="button"
-            className="rewards-grid__diagram-info-btn panel-info-btn biggi-btn biggi-btn--ghost"
+          <PanelInfoButton
+            className="rewards-grid__diagram-info-btn"
             onClick={() => setDiagramInfoOpen(true)}
-            aria-label="Open rewards diagram info"
+            ariaLabel="Open rewards diagram info"
             title="Rewards diagram info"
-          >
-            <span>i</span>
-          </button>
+          />
           <img
             className="rewards-grid__diagram-image"
             src="/images/schemas/rewards-flow-diagram.png?v=20260224c"

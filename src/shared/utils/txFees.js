@@ -131,7 +131,21 @@ function resolveFeeProvider(provider) {
   if (url) {
     try {
       const network = Network.from({ chainId: AMOY.chainId, name: AMOY.name });
-      return new JsonRpcProvider(url, network, { staticNetwork: network });
+      const options = { staticNetwork: network };
+      const fromEnv = parsePositiveNumber(env("VITE_RPC_BATCH_MAX_COUNT"));
+      if (fromEnv != null) {
+        options.batchMaxCount = Math.trunc(fromEnv);
+      } else {
+        try {
+          const host = new URL(String(url)).hostname.toLowerCase();
+          if (host === "polygon-amoy.drpc.org" || host.endsWith(".drpc.org")) {
+            options.batchMaxCount = 3;
+          }
+        } catch {
+          // ignore URL parsing failures
+        }
+      }
+      return new JsonRpcProvider(url, network, options);
     } catch {
       // fall back to default RO provider
     }

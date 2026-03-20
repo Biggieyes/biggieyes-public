@@ -160,6 +160,25 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "totalBiggiReceived",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "totalPolReceived",
+        "type": "uint256"
+      }
+    ],
+    "name": "HistoricalTotalsSeeded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "previousOwner",
@@ -323,6 +342,19 @@
   },
   {
     "inputs": [],
+    "name": "historicalTotalsSeeded",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "owner",
     "outputs": [
       {
@@ -332,6 +364,19 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "ownerDepositAndSplit",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -345,6 +390,13 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "receiveMintShare",
+    "outputs": [],
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -406,6 +458,24 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "biggiReceived_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "polReceived_",
+        "type": "uint256"
+      }
+    ],
+    "name": "seedHistoricalTotals",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

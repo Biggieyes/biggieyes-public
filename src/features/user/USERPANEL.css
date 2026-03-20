@@ -67,14 +67,13 @@
 }
 
 .user-panel__header {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   gap: 16px;
   align-items: flex-start;
-  justify-content: space-between;
   background:
     linear-gradient(135deg, rgba(10, 12, 18, 0.35), rgba(6, 8, 14, 0.3)),
-    url("/images/panels/ecosystem.png");
+    url("/images/panels/ecosystem.optimized.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -90,6 +89,14 @@
 }
 .user-panel__header::before {
   content: none;
+}
+
+.user-panel__headline {
+  grid-column: 2;
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  min-width: 0;
 }
 
 .user-panel__title {
@@ -111,6 +118,8 @@
 }
 
 .user-panel__header-actions {
+  grid-column: 3;
+  justify-self: end;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -705,12 +714,17 @@
 }
 
 .user-panel--compact .user-panel__header {
-  flex-direction: column;
-  align-items: stretch;
+  grid-template-columns: 1fr;
+}
+
+.user-panel--compact .user-panel__headline,
+.user-panel--compact .user-panel__header-actions {
+  grid-column: auto;
 }
 
 .user-panel--compact .user-panel__header-actions {
   justify-content: flex-start;
+  justify-self: stretch;
 }
 
 @media (max-width: 768px) {
@@ -738,11 +752,19 @@
   }
 
   .user-panel__header {
+    grid-template-columns: 1fr;
     padding: 10px 12px;
+  }
+
+  .user-panel__headline,
+  .user-panel__header-actions {
+    grid-column: auto;
   }
 
   .user-panel__header-actions {
     width: 100%;
+    justify-self: stretch;
+    justify-content: center;
   }
 
   .user-panel__btn {

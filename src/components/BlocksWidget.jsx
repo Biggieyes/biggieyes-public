@@ -109,6 +109,9 @@ const BlocksWidget = ({
   blockMintCounts,
   blockPrices,
   backgroundMintCounts = [],
+  lastRedeemedTokenId = "",
+  lastRedeemedBlock = "",
+  lastRedeemedBackground = "",
   onBack,
 }) => {
   const [infoVisible, setInfoVisible] = React.useState(false);
@@ -145,18 +148,37 @@ const BlocksWidget = ({
     "Current Price",
   ];
 
-  const handleRowHoverEnter = React.useCallback((e) => {
-    e.currentTarget.style.background = "rgba(158,229,255,0.14)";
-  }, []);
+  const normalizedLastBlock = String(lastRedeemedBlock || "")
+    .trim()
+    .toUpperCase();
+  const normalizedLastBg = String(lastRedeemedBackground || "")
+    .trim()
+    .toUpperCase();
+  const normalizedLastToken = String(lastRedeemedTokenId || "").trim();
 
-  const handleRowHoverLeave = React.useCallback((e) => {
-    e.currentTarget.style.background = "";
+  const headerLastRedeemedId = normalizedLastToken
+    ? `NFT #${normalizedLastToken} (${normalizedLastBlock || "-"}/${normalizedLastBg || "-"})`
+    : "";
+  const headerLastRedeemedLabel = headerLastRedeemedId
+    ? `Last redeem: ${headerLastRedeemedId}`
+    : "";
+
+  const getRowBaseBackground = React.useCallback((index, isLastRedeemed) => {
+    if (isLastRedeemed) {
+      return "linear-gradient(135deg, rgba(109,255,138,0.24), rgba(71,255,154,0.12))";
+    }
+    return index % 2 === 0 ? "rgba(255,232,0,0.05)" : "rgba(255,232,0,0.02)";
   }, []);
 
   return (
     <div className="bw-container">
       <div className="bw-header">
         <span className="bw-header-text">EYES COLOR</span>
+        {headerLastRedeemedId ? (
+          <span className="bw-header-last-id" title={headerLastRedeemedLabel}>
+            {headerLastRedeemedId}
+          </span>
+        ) : null}
         <button
           className={`bw-info-button ${isPhone ? "bw-info-button--phone" : ""}`}
           onClick={() => setInfoVisible(!infoVisible)}
@@ -194,18 +216,19 @@ const BlocksWidget = ({
             </tr>
           </thead>
           <tbody>
-            {blockNames.map((name, i) => (
+            {blockNames.map((name, i) => {
+              const isLastRedeemed =
+                String(name || "").trim().toUpperCase() === normalizedLastBlock;
+              return (
               <tr
                 key={name}
                 style={{
                   transition: "all 0.2s ease",
-                  background:
-                    i % 2 === 0
-                      ? "rgba(255,232,0,0.05)"
-                      : "rgba(255,232,0,0.02)",
+                  background: getRowBaseBackground(i, isLastRedeemed),
+                  boxShadow: isLastRedeemed
+                    ? "inset 0 0 0 1px rgba(109,255,138,0.85), 0 0 16px rgba(71,255,154,0.32)"
+                    : "none",
                 }}
-                onMouseEnter={handleRowHoverEnter}
-                onMouseLeave={(e) => handleRowHoverLeave(e, i)}
               >
                 <td style={getBlockColor(name)} data-label={headerTitles[0]}>
                   {name}
@@ -244,7 +267,7 @@ const BlocksWidget = ({
                   POL
                 </td>
               </tr>
-            ))}
+            )})}
           </tbody>
         </table>
       </div>

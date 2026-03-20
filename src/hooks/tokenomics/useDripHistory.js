@@ -52,7 +52,11 @@ export default function useDRIPHistory(snapshot, options = {}) {
         history,
         (entry) =>
           entry?.DRIPLM?.nativeBalanceNumeric ??
-          entry?.DRIPLM?.nativeBalance,
+          entry?.DRIPLM?.nativeBalance ??
+          entry?.DRIPLM?.totalNativeForwardedNumeric ??
+          entry?.DRIPLM?.totalNativeForwarded ??
+          entry?.DRIPLM?.totalSoldTokensNumeric ??
+          entry?.DRIPLM?.totalSoldTokens,
       ),
     [history],
   );

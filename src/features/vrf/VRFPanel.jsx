@@ -3,6 +3,197 @@ import "../rewards/REWARDSPanel.css";
 import "./VRFPanel.css";
 import { useVRF } from "../../hooks/useVRF";
 import PanelInfoModal from "@/components/common/PanelInfoModal";
+import PanelInfoButton from "@/components/common/PanelInfoButton";
+
+const VRF_COLORS = {
+  bg: "#090a0f",
+  text: "#f6f7fb",
+  dim: "#cfd2db",
+  line: "rgba(255,255,255,.12)",
+  y: "#FFE800",
+  p: "#FF5DA2",
+  v: "#9B7BFF",
+  c: "#27D9D2",
+  g: "#6BEE5B",
+};
+
+const Badge = React.memo(function VRFBadge({
+  children,
+  tone = "info",
+  colors = VRF_COLORS,
+}) {
+  const palette = {
+    info: {
+      clr: colors.y,
+      border: "rgba(255,232,0,.35)",
+      bg: "rgba(255,232,0,.12)",
+    },
+    warn: {
+      clr: colors.p,
+      border: "rgba(255,93,162,.4)",
+      bg: "rgba(255,93,162,.12)",
+    },
+    ok: {
+      clr: colors.g,
+      border: "rgba(107,238,91,.4)",
+      bg: "rgba(107,238,91,.12)",
+    },
+    dim: {
+      clr: colors.dim,
+      border: "rgba(207,210,219,.33)",
+      bg: "rgba(207,210,219,.1)",
+    },
+  };
+  const toneResolved = palette[tone] || palette.info;
+
+  return (
+    <span
+      className="vrf-pill"
+      style={{
+        color: toneResolved.clr,
+        borderColor: toneResolved.border,
+        background: toneResolved.bg,
+      }}
+    >
+      {children}
+    </span>
+  );
+});
+
+const Tabs = React.memo(function VRFTabs({
+  sections,
+  active,
+  onChange,
+}) {
+  return (
+    <div role="tablist" aria-label="VRF tabs" className="rewards-grid__tabs vrf-tabs">
+      {sections.map((section) => (
+        <button
+          key={section.key}
+          type="button"
+          role="tab"
+          aria-selected={active === section.key}
+          onClick={() => onChange(section.key)}
+          className={`rewards-grid__tab${active === section.key ? " is-active" : ""}`}
+        >
+          {section.label}
+        </button>
+      ))}
+    </div>
+  );
+});
+
+function GhostBtn({ children, className = "", tone = "ghost", ...props }) {
+  const toneClass =
+    tone === "accent"
+      ? "biggi-btn--accent"
+      : tone === "ghost"
+        ? "biggi-btn--ghost"
+        : "";
+
+  return (
+    <button
+      {...props}
+      type="button"
+      className={`biggi-btn ${toneClass} ${className}`.trim()}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Value({
+  mono,
+  children,
+  tone = "neutral",
+  title,
+  colors = VRF_COLORS,
+}) {
+  const toneMap = {
+    neutral:
+      "linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.18))",
+    warm: `linear-gradient(180deg, ${colors.y}14, rgba(0,0,0,.18))`,
+    cool: `linear-gradient(180deg, ${colors.c}14, rgba(0,0,0,.18))`,
+    violet: `linear-gradient(180deg, ${colors.v}14, rgba(0,0,0,.18))`,
+    pink: `linear-gradient(180deg, ${colors.p}14, rgba(0,0,0,.18))`,
+    green: `linear-gradient(180deg, ${colors.g}14, rgba(0,0,0,.18))`,
+  };
+
+  return (
+    <span
+      title={title}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        minHeight: 34,
+        padding: "8px 12px",
+        borderRadius: 12,
+        border: `1px solid ${colors.line}`,
+        background: toneMap[tone] || toneMap.neutral,
+        fontWeight: 800,
+        color: colors.text,
+        fontFamily: mono
+          ? "ui-monospace,Menlo,Consolas,monospace"
+          : "inherit",
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function KV({ items = [], colors = VRF_COLORS }) {
+  return (
+    <div className="vrf-kv">
+      {items.map(({ k, v, tone, mono, title }, i) => (
+        <React.Fragment key={i}>
+          <div className="vrf-kv__label">{k}</div>
+          <div className="vrf-kv__value" title={title}>
+            <Value tone={tone} mono={mono} title={title} colors={colors}>
+              {v}
+            </Value>
+          </div>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+const QuickStat = React.memo(function VRFQuickStat({
+  label,
+  value,
+  accent,
+  colors = VRF_COLORS,
+}) {
+  return (
+    <div
+      className="rewards-grid__hero-card"
+      style={{
+        borderColor: accent ? `${accent}55` : undefined,
+        boxShadow: accent
+          ? `0 10px 24px rgba(0,0,0,0.28), 0 0 12px ${accent}22`
+          : undefined,
+      }}
+    >
+      <span
+        className="rewards-grid__hero-label"
+        style={{ color: accent || colors.dim }}
+      >
+        {label}
+      </span>
+      <span
+        className="rewards-grid__hero-value"
+        style={{ fontFamily: "ui-monospace,Menlo,Consolas,monospace" }}
+      >
+        {value}
+      </span>
+      <div className="rewards-grid__hero-bar">
+        <span />
+      </div>
+    </div>
+  );
+});
 
 export default function VRFPanel({
   data = {},
@@ -19,6 +210,7 @@ export default function VRFPanel({
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   const autoInfoOpened = React.useRef(false);
   const refreshInFlightRef = React.useRef(null);
+  const refreshDataRef = React.useRef(null);
   const sections = React.useMemo(
     () => [
       { key: "requests", label: "Requests" },
@@ -150,11 +342,11 @@ export default function VRFPanel({
   const { refreshVRFPanel: refreshVRFPanelHook } = useVRF();
   const [hookData, setHookData] = React.useState(null);
 
-  const refreshData = React.useCallback(async () => {
+  const refreshData = React.useCallback(async ({ silent = false } = {}) => {
     if (refreshInFlightRef.current) return refreshInFlightRef.current;
 
     const task = (async () => {
-      setIsRefreshing(true);
+      if (!silent) setIsRefreshing(true);
       try {
         if (typeof onRefresh === "function") {
           return await onRefresh();
@@ -163,7 +355,7 @@ export default function VRFPanel({
         if (next) setHookData(next);
         return next;
       } finally {
-        setIsRefreshing(false);
+        if (!silent) setIsRefreshing(false);
         refreshInFlightRef.current = null;
       }
     })();
@@ -171,6 +363,7 @@ export default function VRFPanel({
     refreshInFlightRef.current = task;
     return task;
   }, [onRefresh, refreshVRFPanelHook, walletAddress]);
+  refreshDataRef.current = refreshData;
 
   const hasExternalData = data && Object.keys(data).length > 0;
   const viewData = hasExternalData ? data : hookData || {};
@@ -185,33 +378,23 @@ export default function VRFPanel({
     walletAddress ||
     "";
 
-  const C = {
-    bg: "#090a0f",
-    text: "#f6f7fb",
-    dim: "#cfd2db",
-    line: "rgba(255,255,255,.12)",
-    y: "#FFE800",
-    p: "#FF5DA2",
-    v: "#9B7BFF",
-    c: "#27D9D2",
-    g: "#6BEE5B",
-  };
+  const C = VRF_COLORS;
 
   React.useEffect(() => {
-    let mounted = true;
+    let cancelled = false;
     (async () => {
       try {
-        await refreshData();
+        await refreshDataRef.current?.({ silent: true });
       } catch (e) {
-        console.error("VRFPanel: refresh failed", e);
-      } finally {
-        if (!mounted) return;
+        if (!cancelled) {
+          console.error("VRFPanel: refresh failed", e);
+        }
       }
     })();
     return () => {
-      mounted = false;
+      cancelled = true;
     };
-  }, [refreshData]);
+  }, [walletAddress]);
 
   const short = React.useCallback(
     (addr) =>
@@ -219,155 +402,6 @@ export default function VRFPanel({
         ? `${addr.slice(0, 6)}...${addr.slice(-4)}`
         : addr || "-",
     [],
-  );
-
-  const Badge = ({ children, tone = "info" }) => {
-    const palette = {
-      info: {
-        clr: C.y,
-        border: "rgba(255,232,0,.35)",
-        bg: "rgba(255,232,0,.12)",
-      },
-      warn: {
-        clr: C.p,
-        border: "rgba(255,93,162,.4)",
-        bg: "rgba(255,93,162,.12)",
-      },
-      ok: {
-        clr: C.g,
-        border: "rgba(107,238,91,.4)",
-        bg: "rgba(107,238,91,.12)",
-      },
-      dim: {
-        clr: C.dim,
-        border: "rgba(207,210,219,.33)",
-        bg: "rgba(207,210,219,.1)",
-      },
-    };
-    const toneResolved = palette[tone] || palette.info;
-    return (
-      <span
-        className="vrf-pill"
-        style={{
-          color: toneResolved.clr,
-          borderColor: toneResolved.border,
-          background: toneResolved.bg,
-        }}
-      >
-        {children}
-      </span>
-    );
-  };
-
-  const Tabs = () => (
-    <div role="tablist" aria-label="VRF tabs" className="rewards-grid__tabs vrf-tabs">
-      {sections.map((section) => (
-        <button
-          key={section.key}
-          type="button"
-          role="tab"
-          aria-selected={active === section.key}
-          onClick={() => setActive(section.key)}
-          className={`rewards-grid__tab${active === section.key ? " is-active" : ""}`}
-        >
-          {section.label}
-        </button>
-      ))}
-    </div>
-  );
-
-  const GhostBtn = ({ children, className = "", tone = "ghost", ...props }) => {
-    const toneClass =
-      tone === "accent"
-        ? "biggi-btn--accent"
-        : tone === "ghost"
-          ? "biggi-btn--ghost"
-          : "";
-    return (
-      <button
-        {...props}
-        type="button"
-        className={`biggi-btn ${toneClass} ${className}`.trim()}
-      >
-        {children}
-      </button>
-    );
-  };
-
-  const Value = ({ mono, children, tone = "neutral" }) => {
-    const toneMap = {
-      neutral:
-        "linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.18))",
-      warm: `linear-gradient(180deg, ${C.y}14, rgba(0,0,0,.18))`,
-      cool: `linear-gradient(180deg, ${C.c}14, rgba(0,0,0,.18))`,
-      violet: `linear-gradient(180deg, ${C.v}14, rgba(0,0,0,.18))`,
-      pink: `linear-gradient(180deg, ${C.p}14, rgba(0,0,0,.18))`,
-      green: `linear-gradient(180deg, ${C.g}14, rgba(0,0,0,.18))`,
-    };
-    return (
-      <span
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          minHeight: 34,
-          padding: "8px 12px",
-          borderRadius: 12,
-          border: `1px solid ${C.line}`,
-          background: toneMap[tone] || toneMap.neutral,
-          fontWeight: 800,
-          color: C.text,
-          fontFamily: mono
-            ? "ui-monospace,Menlo,Consolas,monospace"
-            : "inherit",
-        }}
-      >
-        {children}
-      </span>
-    );
-  };
-
-  const KV = ({ items = [] }) => (
-    <div className="vrf-kv">
-      {items.map(({ k, v, tone, mono, title }, i) => (
-        <React.Fragment key={i}>
-          <div className="vrf-kv__label">{k}</div>
-          <div className="vrf-kv__value" title={title}>
-            <Value tone={tone} mono={mono}>
-              {v}
-            </Value>
-          </div>
-        </React.Fragment>
-      ))}
-    </div>
-  );
-
-  const QuickStat = ({ label, value, accent }) => (
-    <div
-      className="rewards-grid__hero-card"
-      style={{
-        borderColor: accent ? `${accent}55` : undefined,
-        boxShadow: accent
-          ? `0 10px 24px rgba(0,0,0,0.28), 0 0 12px ${accent}22`
-          : undefined,
-      }}
-    >
-      <span
-        className="rewards-grid__hero-label"
-        style={{ color: accent || C.dim }}
-      >
-        {label}
-      </span>
-      <span
-        className="rewards-grid__hero-value"
-        style={{ fontFamily: "ui-monospace,Menlo,Consolas,monospace" }}
-      >
-        {value}
-      </span>
-      <div className="rewards-grid__hero-bar">
-        <span />
-      </div>
-    </div>
   );
 
   const netLabel = React.useMemo(() => {
@@ -659,14 +693,10 @@ export default function VRFPanel({
             >
               Redeem / Request
             </GhostBtn>
-            <button
-              type="button"
-              className="panel-info-btn biggi-btn biggi-btn--ghost"
+            <PanelInfoButton
               onClick={() => setInfoOpen(true)}
-              aria-label="VRF panel info"
-            >
-              <span>i</span>
-            </button>
+              ariaLabel="VRF panel info"
+            />
           </div>
         </header>
 
@@ -681,7 +711,7 @@ export default function VRFPanel({
           ))}
         </div>
 
-        <Tabs />
+        <Tabs sections={sections} active={active} onChange={setActive} />
 
         <div className="vrf-section-head" role="status" aria-live="polite">
           <span className="vrf-section-head__kicker">{activeSectionMeta.kicker}</span>
@@ -1130,15 +1160,12 @@ export default function VRFPanel({
           <span className="rewards-grid__section-line" />
         </div>
         <section className="vrf-diagram-wrap">
-          <button
-            type="button"
-            className="vrf-diagram-info-btn panel-info-btn biggi-btn biggi-btn--ghost"
+          <PanelInfoButton
+            className="vrf-diagram-info-btn"
             onClick={() => setDiagramInfoOpen(true)}
-            aria-label="Open VRF diagram info"
+            ariaLabel="Open VRF diagram info"
             title="VRF diagram info"
-          >
-            <span>i</span>
-          </button>
+          />
           <img
             className="vrf-diagram-image"
             src="/images/schemas/vrf-flow-diagram.png?v=20260224a"

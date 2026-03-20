@@ -13,6 +13,27 @@ import { ensurePreferredRpc } from "../shared/utils/rpcConfig.js";
 import LoadingOverlay from "@/components/LoadingOverlay.jsx";
 import { createPreloadManager } from "../shared/utils/preloadManager.js";
 
+const BiggiEyesDocsApp = React.lazy(() => import("../docs/BiggiEyesDocsApp.jsx"));
+
+const isBiggiEyesDocsRoute =
+  typeof window !== "undefined" &&
+  window.location.pathname.replace(/\/+$/, "") === "/docs/biggieyes";
+
+// React dev tooling and some debug paths stringify props/snapshots.
+// Native BigInt breaks JSON.stringify, which can crash the whole render tree.
+if (
+  typeof BigInt === "function" &&
+  typeof BigInt.prototype.toJSON !== "function"
+) {
+  Object.defineProperty(BigInt.prototype, "toJSON", {
+    value() {
+      return this.toString();
+    },
+    configurable: true,
+    writable: true,
+  });
+}
+
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN || "";
 if (SENTRY_DSN) {
   const tracesSampleRate = Number(
@@ -29,7 +50,7 @@ if (SENTRY_DSN) {
 }
 
 // Spusť fix jen v prohlížeči a po mountu
-if (typeof window !== "undefined") {
+if (typeof window !== "undefined" && !isBiggiEyesDocsRoute) {
   (async () => {
     try {
       await ensurePreferredRpc();
@@ -87,15 +108,13 @@ function Bootstrap({ children }) {
 
   React.useEffect(() => {
     let cancelled = false;
-    const MIN_DURATION = 2000; // minimal visual duration in ms (change if you want longer)
+    const MIN_DURATION = 350;
     (async () => {
       try {
         const startTime = Date.now();
 
         const doneWindowLoad = manager.addTask(1);
         const doneFonts = manager.addTask(1);
-        const doneDelay = manager.addTask(1);
-        const doneSnapshot = manager.addTask(1);
         const doneFinalize = manager.addTask(1);
 
         manager.setMessage("Connecting resources...");
@@ -128,19 +147,10 @@ function Bootstrap({ children }) {
             : Promise.resolve()
         ).then(() => doneFonts(1));
 
-        const smallDelay = new Promise((res) => setTimeout(res, 500)).then(() =>
-          doneDelay(1),
-        );
-
-        await Promise.all([waitForWindowLoad, fontsReady, smallDelay]);
+        await Promise.all([waitForWindowLoad, fontsReady]);
         if (cancelled) return;
 
-        manager.setMessage("Loading the on-chain snapshot...");
-        await new Promise((res) => setTimeout(res, 700));
-        doneSnapshot(1);
-        if (cancelled) return;
-
-        manager.setMessage("Finalizing...");
+        manager.setMessage("Preparing dashboard...");
 
         const elapsed = Date.now() - startTime;
         const remaining = Math.max(0, MIN_DURATION - elapsed);
@@ -150,14 +160,10 @@ function Bootstrap({ children }) {
         if (cancelled) return;
 
         doneFinalize(1);
-
-        await new Promise((res) => setTimeout(res, 420));
-        if (cancelled) return;
-
-        manager.setMessage("Done - loading the app");
+        manager.setMessage("Done");
         setPercent(100);
 
-        await new Promise((res) => setTimeout(res, 180));
+        await new Promise((res) => setTimeout(res, 80));
         if (cancelled) return;
 
         setReady(true);
@@ -189,7 +195,13 @@ const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("#root element not found");
 
 const root = createRoot(rootEl);
-const appTree = (
+const appTree = isBiggiEyesDocsRoute ? (
+  <React.Suspense
+    fallback={<LoadingOverlay open percent={90} message="Loading docs..." />}
+  >
+    <BiggiEyesDocsApp />
+  </React.Suspense>
+) : (
   <Bootstrap>
     <Web3Provider>
       <ContractsProvider>

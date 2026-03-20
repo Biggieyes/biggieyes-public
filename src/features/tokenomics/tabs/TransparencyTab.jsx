@@ -140,11 +140,16 @@ const buildTimeline = ({
 
 const buildAllocationRows = (flowSnapshot, distributorSnapshot) => {
   const splits = flowSnapshot?.intendedSplits?.nativeFromMint || {};
+  const bpsDenom = Number(flowSnapshot?.splitConfig?.bpsDenom ?? 10000);
   const total = distributorSnapshot?.totalReceivedNumeric ?? null;
-  if (!total) return [];
+  if (total == null || !Object.keys(splits).length || !Number.isFinite(bpsDenom) || bpsDenom <= 0) {
+    return [];
+  }
 
   const toAmount = (bps) =>
-    Number.isFinite(Number(bps)) ? (Number(total) * Number(bps)) / 10000 : null;
+    Number.isFinite(Number(bps))
+      ? (Number(total) * Number(bps)) / bpsDenom
+      : null;
 
   return [
     {
@@ -413,10 +418,12 @@ export default function TransparencyTab({
 
       <Card
         title="ALLOCATION vs ACTUAL"
-        subtitle="Target split from Distributor total received vs current pending buckets"
+        subtitle="Canonical Biggi BPS split versus live pending distributor buckets"
       >
         <div className={styles.ecoTable}>
-          <div className={styles.ecoTableHeader}>Distributor split health (POL)</div>
+          <div className={styles.ecoTableHeader}>
+            Distributor split health (POL, canonical config)
+          </div>
           {allocationRows.length ? (
             allocationRows.map((row) => (
               <div key={row.bucket} className={styles.ecoTableRow}>

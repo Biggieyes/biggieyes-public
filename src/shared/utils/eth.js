@@ -103,36 +103,43 @@ export const toBytes32 = (value) => {
   return keccak256(toUtf8Bytes(raw));
 };
 
+const mapSlotInfoResult = (res) => ({
+  enabled: res?.enabled ?? res?.[0] ?? null,
+  isLeader: res?.isLeader ?? res?.[1] ?? null,
+  payout: res?.payout ?? res?.[2] ?? null,
+  passwordHash: res?.passwordHash ?? res?.[3] ?? null,
+  referralHash: res?.referralHash ?? res?.[4] ?? null,
+  cumulativeSales:
+    res?.cumulativeSales ?? res?.cumulativeTicketSales ?? res?.[5] ?? null,
+});
+
 export const readSlotInfo = async (contract, slotId) => {
   if (!contract) throw new Error("Contract not available");
   const slot = Number(slotId);
   if (!Number.isFinite(slot)) throw new Error("Invalid slot id");
-  try {
-    if (typeof contract.getSlotInfo === "function") {
-      const res = await contract.getSlotInfo(slot);
-      return {
-        enabled: res?.enabled ?? res?.[0] ?? null,
-        isLeader: res?.isLeader ?? res?.[1] ?? null,
-        payout: res?.payout ?? res?.[2] ?? null,
-        referralHash: res?.referralHash ?? res?.[3] ?? null,
-        cumulativeSales: res?.cumulativeSales ?? res?.[4] ?? null,
-        passwordHash: null,
-      };
-    }
-  } catch {
-    // fallback to slots mapping
-  }
-  if (typeof contract.slots === "function") {
-    const res = await contract.slots(slot);
+  const [slotInfoRes, slotMappingRes] = await Promise.all([
+    typeof contract.getSlotInfo === "function"
+      ? contract.getSlotInfo(slot).catch(() => null)
+      : null,
+    typeof contract.slots === "function"
+      ? contract.slots(slot).catch(() => null)
+      : null,
+  ]);
+
+  if (slotInfoRes || slotMappingRes) {
+    const slotInfo = slotInfoRes ? mapSlotInfoResult(slotInfoRes) : {};
+    const slotMapping = slotMappingRes ? mapSlotInfoResult(slotMappingRes) : {};
     return {
-      enabled: res?.enabled ?? res?.[0] ?? null,
-      isLeader: res?.isLeader ?? res?.[1] ?? null,
-      payout: res?.payout ?? res?.[2] ?? null,
-      passwordHash: res?.passwordHash ?? res?.[3] ?? null,
-      referralHash: res?.referralHash ?? res?.[4] ?? null,
-      cumulativeSales: res?.cumulativeTicketSales ?? res?.[5] ?? null,
+      enabled: slotInfo.enabled ?? slotMapping.enabled ?? null,
+      isLeader: slotInfo.isLeader ?? slotMapping.isLeader ?? null,
+      payout: slotInfo.payout ?? slotMapping.payout ?? null,
+      passwordHash: slotMapping.passwordHash ?? slotInfo.passwordHash ?? null,
+      referralHash: slotInfo.referralHash ?? slotMapping.referralHash ?? null,
+      cumulativeSales:
+        slotInfo.cumulativeSales ?? slotMapping.cumulativeSales ?? null,
     };
   }
+
   throw new Error("Slot info function not found in ABI.");
 };
 

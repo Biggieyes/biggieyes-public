@@ -1,39 +1,22 @@
-// src/panels/BiggiToken/expansion/ExpansionPanel.jsx
 import * as React from "react";
-import { BrowserProvider, Contract, JsonRpcProvider, formatEther } from "ethers";
+import PanelInfoModal from "@/components/common/PanelInfoModal";
+import PanelInfoButton from "@/components/common/PanelInfoButton";
 import {
-  ADDR,
-  getProviderForContract,
-} from "@/shared/utils/contract";
-import { getRpcUrls } from "@/shared/utils/rpcConfig";
-import {
-  queryLogsBatched,
-  getSafeDeployBlock,
-  isFullHistoryEnabled,
-} from "@/shared/utils/shared";
-import { FUTURE_COLLECTIONS } from "../../rewards/COLLECTION/CollectionBlocksGrid.constants";
-
-/* ====== CONFIG - nastav adresu distributor kontraktu ===== */
-const DISTRIBUTOR_ADDRESS =
-  ADDR.MULTI_COLLECTION_DISTRIBUTOR || ADDR.DISTRIBUTOR;
-/* ======================================================= */
-
-/* Minimal ABI (read-only + events) */
-import { BiggiMultiCollectionDistributor } from "@/config/abi/index.js";
-const DISTRIBUTOR_ABI = BiggiMultiCollectionDistributor;
-const FULL_HISTORY = isFullHistoryEnabled();
+  FUTURE_COLLECTION_STAGES,
+  getFutureCollectionStats,
+} from "../../rewards/COLLECTION/CollectionBlocksGrid.constants";
 
 const THEME = {
   bgStart: "#07070a",
   bgEnd: "#0f1014",
   gold: "#FFE800",
   cyan: "#5ddcff",
+  pink: "#ff8fd8",
   dim: "#cfd2db",
   surface: "rgba(255,255,255,0.03)",
   glass: "rgba(255,255,255,0.04)",
   border: "rgba(255,232,0,0.16)",
-  accentSoft:
-    "linear-gradient(135deg, rgba(255,232,0,0.06), rgba(93,220,255,0.03))",
+  softBorder: "rgba(255,255,255,0.06)",
 };
 
 const styles = {
@@ -48,986 +31,844 @@ const styles = {
   },
   container: {
     margin: "0 auto",
-    maxWidth: 1200,
+    maxWidth: 1240,
     display: "grid",
     gap: 18,
-    gridTemplateColumns: "1fr 420px",
-    alignItems: "start",
   },
   headerCard: {
-    gridColumn: "1 / -1",
-    borderRadius: 16,
-    padding: 20,
-    background: `linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.18))`,
+    borderRadius: 18,
+    padding: 24,
+    background: "linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.18))",
     border: `1px solid ${THEME.border}`,
     boxShadow:
       "0 12px 40px rgba(0,0,0,0.6), 0 0 30px rgba(255,232,0,0.03) inset",
-    display: "flex",
-    justifyContent: "space-between",
-    gap: 12,
-    alignItems: "center",
-  },
-  titleGroup: { display: "flex", gap: 12, alignItems: "center" },
-  logoBadge: {
-    width: 74,
-    height: 74,
-    borderRadius: 12,
-    background: `linear-gradient(135deg, rgba(255,232,0,0.14), rgba(93,220,255,0.06))`,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: 900,
-    color: "#0b0b0b",
-    fontSize: 22,
-    boxShadow: "0 8px 30px rgba(0,0,0,0.6), 0 6px 20px rgba(255,232,0,0.06)",
-  },
-  h1: { margin: 0, fontSize: 20, letterSpacing: "0.06em", color: THEME.gold },
-  subtitle: { margin: 0, color: THEME.dim, fontSize: 13 },
-  headerActions: { display: "flex", gap: 8, alignItems: "center" },
-
-  // hero stats row
-  heroRow: {
     display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: 12,
-    marginTop: 12,
+    gap: 18,
   },
-  statCard: {
-    borderRadius: 12,
-    padding: 14,
-    background: THEME.surface,
-    border: `1px solid rgba(255,255,255,0.03)`,
-    boxShadow: "0 8px 22px rgba(0,0,0,0.6)",
-    minHeight: 88,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-  },
-  statLabel: { fontSize: 12, color: THEME.dim, fontWeight: 700 },
-  statValue: { fontSize: 20, fontWeight: 900, color: THEME.gold },
-
-  // main left column
-  leftPanel: {
-    borderRadius: 14,
-    padding: 16,
-    background:
-      "linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.14))",
-    border: `1px solid ${THEME.border}`,
-    boxShadow: "0 12px 30px rgba(0,0,0,0.55)",
-  },
-  infoText: { color: THEME.dim, fontSize: 14, lineHeight: 1.6 },
-
-  // events
-  eventsCard: {
-    marginTop: 14,
-    borderRadius: 12,
-    overflow: "hidden",
-    border: `1px solid rgba(255,255,255,0.03)`,
-    background:
-      "linear-gradient(180deg, rgba(255,255,255,0.012), rgba(0,0,0,0.16))",
-  },
-  eventsHeader: {
-    padding: 12,
+  headerTop: {
     display: "flex",
     justifyContent: "space-between",
+    gap: 16,
+    alignItems: "flex-start",
+    flexWrap: "wrap",
+  },
+  headerActions: {
+    display: "flex",
     alignItems: "center",
-    borderBottom: "1px solid rgba(255,255,255,0.02)",
-    background: THEME.accentSoft,
+    gap: 10,
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
   },
-  eventsList: { maxHeight: 320, overflowY: "auto", padding: 12 },
-
-  // right panel
-  rightPanel: {
-    borderRadius: 14,
-    padding: 16,
-    background:
-      "linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.13))",
-    border: `1px solid ${THEME.border}`,
-    boxShadow: "0 10px 26px rgba(0,0,0,0.55)",
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-  },
-  primaryBtn: {
-    background: `linear-gradient(90deg, ${THEME.gold}, rgba(255,232,0,0.9))`,
-    border: "none",
-    color: "#101010",
-    fontWeight: 800,
-    padding: "10px 14px",
-    borderRadius: 10,
-    cursor: "pointer",
-    boxShadow: "0 8px 24px rgba(255,232,0,0.08), 0 2px 6px rgba(0,0,0,0.6)",
-  },
-  ghostBtn: {
-    background: "transparent",
-    border: "1px solid rgba(255,255,255,0.06)",
-    color: THEME.dim,
-    padding: "8px 12px",
-    borderRadius: 10,
-    cursor: "pointer",
-  },
-  explorerBtn: {
-    background: `linear-gradient(90deg, rgba(93,220,255,0.12), rgba(255,232,0,0.06))`,
-    border: `1px solid rgba(93,220,255,0.12)`,
-    color: THEME.cyan,
-    fontWeight: 800,
-    padding: "8px 12px",
-    borderRadius: 10,
-    cursor: "pointer",
-    display: "flex",
+  titleBadge: {
+    display: "inline-flex",
     alignItems: "center",
     gap: 8,
-    boxShadow: "0 6px 18px rgba(0,0,0,0.5)",
+    padding: "6px 12px",
+    borderRadius: 999,
+    background: "rgba(255,232,0,0.08)",
+    border: "1px solid rgba(255,232,0,0.2)",
+    color: THEME.gold,
+    fontWeight: 800,
+    letterSpacing: "0.05em",
+    textTransform: "uppercase",
+    fontSize: 12,
   },
-  smallNote: { color: THEME.dim, fontSize: 12 },
-
-  modalOverlay: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(0,0,0,0.8)",
-    display: "flex",
+  title: {
+    margin: "10px 0 8px",
+    fontSize: 24,
+    fontWeight: 900,
+    color: THEME.gold,
+    letterSpacing: "0.03em",
+  },
+  subtitle: {
+    margin: 0,
+    maxWidth: 760,
+    color: THEME.dim,
+    fontSize: 14,
+    lineHeight: 1.6,
+  },
+  tokenomicsPill: {
+    display: "inline-flex",
     alignItems: "center",
-    justifyContent: "center",
-    zIndex: 9999,
-    backdropFilter: "blur(8px)",
+    gap: 8,
+    padding: "8px 14px",
+    borderRadius: 999,
+    background: "linear-gradient(135deg, rgba(93,220,255,0.12), rgba(255,232,0,0.08))",
+    border: "1px solid rgba(93,220,255,0.22)",
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: 800,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
   },
-  modalCard: {
-    width: "min(940px, 96vw)",
-    borderRadius: 20,
-    padding: 24,
-    background:
-      "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.25))",
-    border: `1px solid rgba(255,232,0,0.15)`,
-    boxShadow:
-      "0 40px 100px rgba(0,0,0,0.8), 0 0 60px rgba(255,232,0,0.05) inset",
-    maxHeight: "90vh",
-    overflowY: "auto",
-  },
-  futureGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-    gap: 20,
-    marginTop: 20,
-  },
-  placeCard: {
+  tokenomicsBanner: {
     borderRadius: 16,
-    padding: 20,
+    padding: 18,
     background:
-      "linear-gradient(135deg, rgba(255,255,255,0.03), rgba(0,0,0,0.2))",
-    border: "1px solid rgba(255,255,255,0.05)",
-    boxShadow: "0 12px 30px rgba(0,0,0,0.4)",
+      "linear-gradient(135deg, rgba(93,220,255,0.08), rgba(255,232,0,0.06) 55%, rgba(255,255,255,0.02))",
+    border: "1px solid rgba(93,220,255,0.16)",
+    boxShadow: "0 12px 30px rgba(0,0,0,0.36)",
+    display: "grid",
+    gap: 14,
+  },
+  tokenomicsBannerTop: {
     display: "flex",
-    flexDirection: "column",
-    gap: 16,
-    alignItems: "center",
     justifyContent: "space-between",
-    transition: "all 0.3s ease",
+    gap: 12,
+    alignItems: "flex-start",
+    flexWrap: "wrap",
+  },
+  tokenomicsBannerTitle: {
+    margin: 0,
+    fontSize: 16,
+    fontWeight: 900,
+    color: "#ffffff",
+  },
+  tokenomicsBannerText: {
+    margin: "6px 0 0",
+    color: THEME.dim,
+    fontSize: 14,
+    lineHeight: 1.6,
+    maxWidth: 840,
+  },
+  tokenomicsTagRow: {
+    display: "flex",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+  tokenomicsTag: {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "7px 12px",
+    borderRadius: 999,
+    background: "rgba(255,255,255,0.04)",
+    border: `1px solid ${THEME.softBorder}`,
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: 700,
+  },
+  summaryGrid: {
+    display: "grid",
+    gap: 12,
+  },
+  summaryCard: {
+    borderRadius: 14,
+    padding: 16,
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.045), rgba(0,0,0,0.22))",
+    border: `1px solid ${THEME.softBorder}`,
+    boxShadow: "0 14px 32px rgba(0,0,0,0.45)",
+    minHeight: 102,
+    display: "grid",
+    gap: 8,
+    alignContent: "start",
     position: "relative",
     overflow: "hidden",
   },
-  placeThumb: {
-    width: 120,
-    height: 120,
-    borderRadius: 12,
+  summaryCardGlow: {
+    position: "absolute",
+    inset: "0 auto auto 0",
+    width: "100%",
+    height: 3,
     background:
-      "linear-gradient(135deg, rgba(255,232,0,0.1), rgba(93,220,255,0.05))",
+      "linear-gradient(90deg, rgba(93,220,255,0.8), rgba(255,232,0,0.8), rgba(255,143,216,0.75))",
+  },
+  summaryLabel: {
+    fontSize: 12,
+    color: THEME.dim,
+    fontWeight: 700,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+  },
+  summaryValue: {
+    fontSize: 24,
+    fontWeight: 900,
+    color: THEME.gold,
+    lineHeight: 1.1,
+  },
+  summaryHint: {
+    fontSize: 13,
+    color: THEME.dim,
+    lineHeight: 1.5,
+  },
+  roadmapGrid: {
+    display: "grid",
+    gap: 18,
+  },
+  stageCard: {
+    borderRadius: 18,
+    padding: 20,
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.035), rgba(0,0,0,0.2))",
+    border: `1px solid ${THEME.border}`,
+    boxShadow: "0 16px 36px rgba(0,0,0,0.52)",
+    display: "grid",
+    gap: 16,
+  },
+  stageTop: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 12,
+    alignItems: "flex-start",
+    flexWrap: "wrap",
+  },
+  stageMeta: {
+    display: "grid",
+    gap: 8,
+  },
+  stageTitle: {
+    margin: 0,
+    fontSize: 20,
+    fontWeight: 900,
+    color: "#ffffff",
+  },
+  stageDescription: {
+    margin: 0,
+    color: THEME.dim,
+    fontSize: 14,
+    lineHeight: 1.6,
+    maxWidth: 760,
+  },
+  stageBadgeRow: {
+    display: "flex",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  stageNumber: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "6px 10px",
+    borderRadius: 999,
+    fontSize: 11,
+    fontWeight: 900,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    border: "1px solid rgba(255,232,0,0.2)",
+    background: "rgba(255,232,0,0.1)",
+    color: THEME.gold,
+  },
+  stageBadge: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "6px 10px",
+    borderRadius: 999,
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: "0.05em",
+    textTransform: "uppercase",
+    border: `1px solid ${THEME.softBorder}`,
+    background: THEME.glass,
+    color: THEME.dim,
+  },
+  collectionGrid: {
+    display: "grid",
+    gap: 14,
+  },
+  collectionCard: {
+    borderRadius: 14,
+    padding: 16,
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.045), rgba(0,0,0,0.18))",
+    border: `1px solid ${THEME.softBorder}`,
+    display: "grid",
+    gap: 10,
+    minHeight: 156,
+    alignContent: "start",
+    boxShadow: "0 12px 26px rgba(0,0,0,0.28)",
+  },
+  collectionImageFrame: {
+    width: "100%",
+    aspectRatio: "1 / 1",
+    borderRadius: 12,
+    overflow: "hidden",
+    background: "linear-gradient(135deg, rgba(255,255,255,0.04), rgba(0,0,0,0.22))",
+    border: `1px solid ${THEME.softBorder}`,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    color: THEME.gold,
-    fontWeight: 800,
-    fontSize: 24,
-    boxShadow: "0 8px 25px rgba(0,0,0,0.3)",
-    border: "1px solid rgba(255,232,0,0.1)",
+    boxShadow: "0 10px 24px rgba(0,0,0,0.35)",
   },
-  COLLECTIONBadge: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    background: "rgba(255,232,0,0.1)",
-    color: THEME.gold,
-    padding: "4px 10px",
-    borderRadius: 20,
-    fontSize: 11,
-    fontWeight: 700,
-    border: "1px solid rgba(255,232,0,0.2)",
-  },
-  statsRow: {
-    display: "flex",
-    justifyContent: "space-between",
+  collectionImage: {
     width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
+  },
+  collectionPlaceholder: {
+    padding: 18,
+    textAlign: "center",
+    color: THEME.dim,
+    fontSize: 13,
+    lineHeight: 1.5,
+    fontWeight: 700,
+  },
+  collectionType: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "4px 10px",
+    borderRadius: 999,
+    fontSize: 11,
+    fontWeight: 800,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    width: "fit-content",
+  },
+  collectionName: {
+    margin: 0,
+    fontSize: 18,
+    fontWeight: 800,
+    color: "#ffffff",
+  },
+  collectionDescription: {
+    margin: 0,
+    color: THEME.dim,
+    fontSize: 13,
+    lineHeight: 1.5,
+  },
+  collectionStats: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
     gap: 10,
   },
   statMini: {
-    flex: 1,
-    textAlign: "center",
-    padding: 8,
-    background: "rgba(255,255,255,0.02)",
-    borderRadius: 8,
-    border: "1px solid rgba(255,255,255,0.03)",
-  },
-  progressBar: {
-    width: "100%",
-    height: 6,
-    background: "rgba(255,255,255,0.05)",
     borderRadius: 10,
-    overflow: "hidden",
-    margin: "8px 0",
+    padding: 10,
+    background: "rgba(255,255,255,0.025)",
+    border: `1px solid ${THEME.softBorder}`,
+    display: "grid",
+    gap: 4,
   },
-  progressFill: {
-    height: "100%",
-    background: `linear-gradient(90deg, ${THEME.gold}, ${THEME.cyan})`,
-    borderRadius: 10,
+  statMiniLabel: {
+    fontSize: 11,
+    color: THEME.dim,
+    textTransform: "uppercase",
+    letterSpacing: "0.06em",
+  },
+  statMiniValue: {
+    fontSize: 15,
+    fontWeight: 800,
+    color: THEME.gold,
+  },
+  noteGrid: {
+    display: "grid",
+    gap: 18,
+  },
+  noteCard: {
+    borderRadius: 16,
+    padding: 18,
+    background: "linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.16))",
+    border: `1px solid ${THEME.softBorder}`,
+    boxShadow: "0 12px 28px rgba(0,0,0,0.4)",
+    display: "grid",
+    gap: 12,
+  },
+  noteTitle: {
+    margin: 0,
+    fontSize: 16,
+    fontWeight: 800,
+    color: THEME.cyan,
+  },
+  noteList: {
+    margin: 0,
+    paddingLeft: 18,
+    color: THEME.dim,
+    display: "grid",
+    gap: 8,
+    fontSize: 14,
+    lineHeight: 1.6,
   },
 };
 
-function shortAddr(a = "") {
-  if (!a) return "";
-  return `${String(a).slice(0, 6)}...${String(a).slice(-4)}`;
-}
-function explorerUrlFor(address, networkName) {
-  if (!address) return "#";
-  const n = (networkName || "").toLowerCase();
-  if (n.includes("polygon") || n.includes("matic"))
-    return `https://polygonscan.com/address/${address}`;
-  if (n.includes("goerli"))
-    return `https://goerli.etherscan.io/address/${address}`;
-  if (n.includes("sepolia"))
-    return `https://sepolia.etherscan.io/address/${address}`;
-  if (n.includes("mainnet") || n === "homestead")
-    return `https://etherscan.io/address/${address}`;
-  return `https://etherscan.io/address/${address}`;
-}
-
-function getReadProvider() {
-  const urls = getRpcUrls();
-  const primary = urls && urls.length ? urls[0] : null;
-  if (!primary) return null;
-  try {
-    return new JsonRpcProvider(primary);
-  } catch {
-    return null;
+const getCollectionAccent = (type) => {
+  if (type === "VRF") {
+    return {
+      background: "rgba(255,143,216,0.1)",
+      borderColor: "rgba(255,143,216,0.24)",
+      color: THEME.pink,
+    };
   }
+  if (type === "Public") {
+    return {
+      background: "rgba(93,220,255,0.1)",
+      borderColor: "rgba(93,220,255,0.24)",
+      color: THEME.cyan,
+    };
+  }
+  return {
+    background: "rgba(255,232,0,0.1)",
+    borderColor: "rgba(255,232,0,0.24)",
+    color: THEME.gold,
+  };
+};
+
+const getImageFrameStyle = (type) => {
+  if (type === "VRF") {
+    return {
+      background:
+        "linear-gradient(135deg, rgba(125, 218, 255, 0.18), rgba(8,16,34,0.4))",
+      border: "1px solid rgba(125, 218, 255, 0.55)",
+      boxShadow:
+        "0 10px 24px rgba(0,0,0,0.35), 0 0 18px rgba(125, 218, 255, 0.22)",
+    };
+  }
+
+  return {
+    background:
+      "linear-gradient(135deg, rgba(255,255,255,0.04), rgba(0,0,0,0.22))",
+    border: `1px solid ${THEME.softBorder}`,
+    boxShadow: "0 10px 24px rgba(0,0,0,0.35)",
+  };
+};
+
+function SummaryCard({ label, value, hint, compact = false }) {
+  return (
+    <div
+      style={{
+        ...styles.summaryCard,
+        padding: compact ? 14 : styles.summaryCard.padding,
+        minHeight: compact ? 0 : styles.summaryCard.minHeight,
+      }}
+    >
+      <div style={styles.summaryCardGlow} aria-hidden />
+      <div style={styles.summaryLabel}>{label}</div>
+      <div
+        style={{
+          ...styles.summaryValue,
+          fontSize: compact ? 20 : styles.summaryValue.fontSize,
+        }}
+      >
+        {value}
+      </div>
+      <div style={styles.summaryHint}>{hint}</div>
+    </div>
+  );
 }
 
-export default function ExpansionPanel() {
-  const [provider, setProvider] = React.useState(null);
-  const [signer, setSigner] = React.useState(null);
-  const [account, setAccount] = React.useState(null);
-  const [contract, setContract] = React.useState(null);
-  const [totalReceived, setTotalReceived] = React.useState("0");
-  const [receivedForAddr, setReceivedForAddr] = React.useState("0");
-  const [isWhitelisted, setIsWhitelisted] = React.useState(false);
-  const [events, setEvents] = React.useState([]);
-  const [loading, setLoading] = React.useState(false);
-  const [status, setStatus] = React.useState("");
-  const [futureOpen, setFutureOpen] = React.useState(false);
-  const mintShareFilter = React.useMemo(() => {
-    if (!contract || !contract.filters || !contract.interface) return null;
-    const candidates = ["MintShareReceived", "MintShareAccepted"];
-    for (const name of candidates) {
-      try {
-        // Avoid touching filters for events not present in ABI
-        try {
-          contract.interface.getEvent(name);
-        } catch {
-          continue;
-        }
-        const fn = contract.filters?.[name];
-        if (typeof fn === "function") {
-          return fn();
-        }
-      } catch {
-        // Ignore if event is missing in ABI or proxy throws
-      }
-    }
-    return null;
-  }, [contract]);
-
-  const extractCollection = React.useCallback((evt) => {
-    if (!evt || !evt.args) return null;
-    return (
-      evt.args.COLLECTION ??
-      evt.args.collection ??
-      evt.args.coll ??
-      evt.args[0] ??
-      null
-    );
-  }, []);
-
-  const extractAmount = React.useCallback((evt) => {
-    if (!evt || !evt.args) return 0n;
-    return evt.args.amount ?? evt.args[1] ?? 0n;
-  }, []);
-
-  React.useEffect(() => {
-    const init = async () => {
-      try {
-        // preferuj injektovaný provider pokud je, jinak RPC provider (ethers v6)
-        const prov =
-          getReadProvider() ||
-          (typeof window !== "undefined" && window.ethereum
-            ? new BrowserProvider(window.ethereum, "any")
-            : null);
-        if (!prov) throw new Error("No provider available");
-        setProvider(prov);
-        // nastav contract proti read-only provider (ne defaultProvider)
-        setContract(
-          new Contract(DISTRIBUTOR_ADDRESS, DISTRIBUTOR_ABI, prov),
-        );
-      } catch (e) {
-        console.error(e);
-        setStatus("Init error");
-      }
-    };
-    init();
-  }, []);
-
-  const connect = React.useCallback(async () => {
-    try {
-      if (!window.ethereum) {
-        setStatus("No injected wallet");
-        return;
-      }
-      const prov = new BrowserProvider(window.ethereum, "any");
-      await prov.send("eth_requestAccounts", []);
-      const s = await prov.getSigner();
-      const addr = await s.getAddress();
-      setProvider(prov);
-      setSigner(s);
-      setAccount(addr);
-      // použij signer pro contract, aby read/write a events byly konzistentní
-      setContract(new Contract(DISTRIBUTOR_ADDRESS, DISTRIBUTOR_ABI, s));
-      setStatus("");
-    } catch (e) {
-      console.error(e);
-      setStatus("Connect failed");
-    }
-  }, []);
-
-  const loadOnChain = React.useCallback(async () => {
-    if (!contract) return;
-    setLoading(true);
-    try {
-      const tot = await contract.totalReceived();
-      setTotalReceived(formatEther(tot || 0));
-        if (account) {
-          const rec = await (async () => {
-            if (typeof contract.receivedByAddress === "function") {
-              return await contract.receivedByAddress(account);
-            }
-            if (typeof contract.receivedByCOLLECTION === "function") {
-              return await contract.receivedByCOLLECTION(account);
-            }
-            return 0n;
-          })();
-          setReceivedForAddr(formatEther(rec || 0));
-          const wh = await (async () => {
-            if (typeof contract.isCOLLECTION === "function") {
-              return await contract.isCOLLECTION(account);
-            }
-            if (typeof contract.tryGetRecipients === "function") {
-              const recipients = await contract.tryGetRecipients();
-              if (!Array.isArray(recipients)) return false;
-              const target = String(account).toLowerCase();
-              return recipients.some(
-                (addr) => String(addr).toLowerCase() === target,
-              );
-            }
-            return false;
-          })();
-          setIsWhitelisted(Boolean(wh));
-        } else {
-          setReceivedForAddr("0");
-          setIsWhitelisted(false);
-        }
-
-      const logProvider = getProviderForContract(contract);
-      const latest = logProvider ? await logProvider.getBlockNumber() : null;
-      const baseFrom =
-        logProvider && typeof logProvider.getBlockNumber === "function"
-          ? await getSafeDeployBlock(logProvider)
-          : 0;
-      const safeFetchLogs = async (from, to) => {
-        if (from > to) return [];
-        try {
-          return await queryLogsBatched(contract, mintShareFilter, from, to);
-        } catch (err) {
-          const msg = String(err?.message || err || "");
-          if (msg.toLowerCase().includes("pruned")) {
-            return [];
-          }
-          throw err;
-        }
-      };
-      const evts =
-        latest != null && mintShareFilter
-          ? await (async () => {
-              const span = 5_000;
-              const fromBlock = FULL_HISTORY
-                ? Math.max(0, baseFrom)
-                : Math.max(0, Math.max(baseFrom, latest - span));
-              let logs = await safeFetchLogs(fromBlock, latest);
-              if (!FULL_HISTORY && logs.length === 0 && span > 1_000) {
-                logs = await safeFetchLogs(
-                  Math.max(0, Math.max(baseFrom, latest - 1_000)),
-                  latest,
-                );
-              }
-              return logs;
-            })()
-          : [];
-      const mapped = (evts || [])
-        .slice(-12)
-        .reverse()
-        .map((e) => {
-          const col = extractCollection(e);
-          const amt = extractAmount(e);
-          return {
-            tx: e.transactionHash,
-            block: e.blockNumber,
-            COLLECTION: String(col),
-            amount: formatEther(amt),
-          };
-        });
-      setEvents(mapped);
-      if (!mintShareFilter) {
-        setStatus("Mint-share event not available in ABI");
-      } else {
-        setStatus("");
-      }
-    } catch (e) {
-      console.error(e);
-      setStatus("Load failed");
-    } finally {
-      setLoading(false);
-    }
-  }, [contract, account, provider, mintShareFilter, extractCollection, extractAmount]);
-
-  React.useEffect(() => {
-    loadOnChain();
-  }, [contract, account, loadOnChain]);
-
-  React.useEffect(() => {
-    if (!contract || !contract.on || !mintShareFilter) return;
-    const handler = (COLLECTION, amount, ev) => {
-      const item = {
-        tx: ev.transactionHash,
-        block: ev.blockNumber,
-        COLLECTION: String(COLLECTION),
-        amount: formatEther(amount),
-      };
-      setEvents((prev) => [item, ...prev].slice(0, 12));
-      loadOnChain();
-    };
-    contract.on(mintShareFilter, handler);
-    return () => {
-      try {
-        contract.off(mintShareFilter, handler);
-      } catch (e) {}
-    };
-  }, [contract, loadOnChain, mintShareFilter]);
-
-  const copyAddress = React.useCallback(() => {
-    if (!account) return;
-    navigator.clipboard?.writeText(account);
-    setStatus("Address copied");
-    setTimeout(() => setStatus(""), 1400);
-  }, [account]);
-
-  const openExplorer = React.useCallback(async () => {
-    const net = provider
-      ? await provider
-          .getNetwork()
-          .then((n) => n.name)
-          .catch(() => "")
-      : "";
-    const url = explorerUrlFor(DISTRIBUTOR_ADDRESS, net);
-    window.open(url, "_blank");
-  }, [provider]);
-
-  const futureCOLLECTIONs = Array.isArray(FUTURE_COLLECTIONS)
-    ? FUTURE_COLLECTIONS
-    : [];
+function CollectionCard({ collection, compact = false }) {
+  const accent = getCollectionAccent(collection.type);
+  const imageFrameStyle = getImageFrameStyle(collection.type);
 
   return (
-    <div style={styles.page}>
-      <div style={styles.container}>
-        <div style={styles.headerCard}>
-          <div style={styles.titleGroup}>
-            <div style={styles.logoBadge}>BG</div>
-            <div>
-              <h1 style={styles.h1}>{"Expansion -> Distributor"}</h1>
-              <p style={styles.subtitle}>
-                User dashboard — overview of the mint-share FLOW and your
-                COLLECTION status
-              </p>
-            </div>
+    <article
+      style={{
+        ...styles.collectionCard,
+        padding: compact ? 14 : styles.collectionCard.padding,
+        minHeight: compact ? 0 : styles.collectionCard.minHeight,
+      }}
+    >
+      <div
+        style={{
+          ...styles.collectionType,
+          background: accent.background,
+          border: `1px solid ${accent.borderColor}`,
+          color: accent.color,
+        }}
+      >
+        {collection.type}
+      </div>
+      <div style={{ ...styles.collectionImageFrame, ...imageFrameStyle }}>
+        {collection.imageSrc ? (
+          <img
+            src={collection.imageSrc}
+            alt={collection.imageAlt}
+            style={styles.collectionImage}
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <div style={styles.collectionPlaceholder}>
+            {collection.placeholderLabel || "Image coming soon"}
           </div>
-
-          <div style={styles.headerActions}>
-            {futureCOLLECTIONs.length ? (
-              <button
-                onClick={() => setFutureOpen(true)}
-                style={styles.primaryBtn}
-              >
-                Future COLLECTIONs
-              </button>
-            ) : null}
-            <button onClick={openExplorer} style={styles.explorerBtn}>
-              Open explorer
-            </button>
+        )}
+      </div>
+      <h4
+        style={{
+          ...styles.collectionName,
+          fontSize: compact ? 16 : styles.collectionName.fontSize,
+        }}
+      >
+        {collection.name}
+      </h4>
+      <p
+        style={{
+          ...styles.collectionDescription,
+          fontSize: compact ? 12 : styles.collectionDescription.fontSize,
+        }}
+      >
+        {collection.description}
+      </p>
+      <div
+        style={{
+          ...styles.collectionStats,
+          gap: compact ? 8 : styles.collectionStats.gap,
+        }}
+      >
+        <div style={styles.statMini}>
+          <div style={styles.statMiniLabel}>Supply</div>
+          <div style={styles.statMiniValue}>
+            {Number(collection.supply || 0).toLocaleString()} NFTs
           </div>
         </div>
+        <div style={styles.statMini}>
+          <div style={styles.statMiniLabel}>Status</div>
+          <div style={styles.statMiniValue}>{collection.status}</div>
+        </div>
+      </div>
+      {collection.featuredNote ? (
+        <div
+          style={{
+            ...styles.statMini,
+            gridColumn: "1 / -1",
+            borderColor: "rgba(255,232,0,0.24)",
+          }}
+        >
+          <div style={styles.statMiniLabel}>Highlight</div>
+          <div style={styles.statMiniValue}>{collection.featuredNote}</div>
+        </div>
+      ) : null}
+    </article>
+  );
+}
 
-        <div style={{ gridColumn: "1 / -1", display: "grid", gap: 12 }}>
-          <div
+function StageCard({ stage, stageIndex, compact = false }) {
+  const stageCollections = Array.isArray(stage.collections)
+    ? stage.collections
+    : [];
+  const isFinalStage = stage.kind === "final";
+  const stageLabel = isFinalStage
+    ? `Stage ${String(stageIndex + 1).padStart(2, "0")}`
+    : `Pair ${String(stageIndex + 1).padStart(2, "0")}`;
+
+  return (
+    <section
+      style={{
+        ...styles.stageCard,
+        padding: compact ? 16 : styles.stageCard.padding,
+        gap: compact ? 14 : styles.stageCard.gap,
+        borderColor: isFinalStage ? "rgba(255,232,0,0.34)" : THEME.border,
+        gridColumn: isFinalStage && !compact ? "1 / -1" : "auto",
+      }}
+    >
+      <div
+        style={{
+          ...styles.stageTop,
+          flexDirection: compact ? "column" : styles.stageTop.flexDirection,
+          gap: compact ? 10 : styles.stageTop.gap,
+        }}
+      >
+        <div style={styles.stageMeta}>
+          <div style={styles.stageBadgeRow}>
+            <span style={styles.stageNumber}>{stageLabel}</span>
+            <span style={styles.stageBadge}>{stage.chapterLabel}</span>
+            <span style={styles.stageBadge}>{stage.status}</span>
+          </div>
+          <h3
             style={{
-              display: "flex",
-              gap: 12,
-              alignItems: "stretch",
-              flexWrap: "wrap",
+              ...styles.stageTitle,
+              fontSize: compact ? 18 : styles.stageTitle.fontSize,
             }}
           >
-            <div style={{ flex: 1, minWidth: 220 }}>
-              <div style={styles.statCard}>
-                <div style={styles.statLabel}>Total received (contract)</div>
-                <div style={styles.statValue}>{totalReceived} POL</div>
-                <div style={{ color: THEME.dim, fontSize: 12, marginTop: 6 }}>
-                  Total POL received by the Distributor contract
-                </div>
-              </div>
-            </div>
-
-            <div style={{ flex: 1, minWidth: 220 }}>
-              <div style={styles.statCard}>
-                <div style={styles.statLabel}>Your COLLECTION received</div>
-                <div
-                  style={{ fontSize: 20, fontWeight: 900, color: THEME.cyan }}
-                >
-                  {receivedForAddr} POL
-                </div>
-                <div style={{ color: THEME.dim, fontSize: 12, marginTop: 6 }}>
-                  {isWhitelisted ? "You are whitelisted" : "Not whitelisted"}
-                </div>
-              </div>
-            </div>
-
-            <div style={{ flex: 1, minWidth: 220 }}>
-              <div style={styles.statCard}>
-                <div style={styles.statLabel}>Quick actions</div>
-                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                  <button
-                    onClick={copyAddress}
-                    style={{ ...styles.ghostBtn, flex: 1 }}
-                    disabled={!account}
-                  >
-                    Copy my address
-                  </button>
-                  <button
-                    onClick={() =>
-                      navigator.clipboard?.writeText(DISTRIBUTOR_ADDRESS)
-                    }
-                    style={{ ...styles.ghostBtn, flex: 1 }}
-                  >
-                    Copy distributor
-                  </button>
-                </div>
-                <div style={{ color: THEME.dim, fontSize: 12, marginTop: 8 }}>
-                  Read-only UI for users — for whitelist requests contact the
-                  project team.
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div style={styles.leftPanel}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                gap: 12,
-              }}
-            >
-              <div>
-                <div
-                  style={{ fontSize: 16, fontWeight: 800, color: THEME.gold }}
-                >
-                  What is Distributor?
-                </div>
-                <div style={styles.infoText}>
-                  The Distributor receives the mint-share (part of every mint)
-                  from whitelisted COLLECTIONs and routes it into reserves,
-                  REWARDS, BUYBACK, and the treasury. In this user panel you can
-                  see how much was received in total, how much was credited to
-                  your COLLECTION, and the most recent mint-share events.
-                </div>
-              </div>
-              <div style={{ minWidth: 160 }}>
-                <div
-                  style={{ fontSize: 13, color: THEME.dim, marginBottom: 8 }}
-                >
-                  Status
-                </div>
-                <div
-                  style={{
-                    padding: 10,
-                    borderRadius: 10,
-                    background: THEME.glass,
-                    border: "1px solid rgba(255,255,255,0.02)",
-                  }}
-                >
-                  <div style={{ fontWeight: 800, color: THEME.cyan }}>
-                    {isWhitelisted ? "Whitelisted" : "Not whitelisted"}
-                  </div>
-                  <div style={{ color: THEME.dim, marginTop: 6 }}>
-                    {status || "Ready"}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div style={styles.eventsCard}>
-              <div style={styles.eventsHeader}>
-                <div style={{ fontWeight: 800, color: THEME.gold }}>
-                  Recent mint-share events
-                </div>
-                <div style={{ color: THEME.dim, fontSize: 13 }}>
-                  {events.length} items
-                </div>
-              </div>
-
-              <div style={styles.eventsList}>
-                {loading ? (
-                  <div style={{ color: THEME.dim }}>Loading events...</div>
-                ) : events.length === 0 ? (
-                  <div style={{ color: THEME.dim }}>No recent events found</div>
-                ) : (
-                  <table
-                    style={{
-                      width: "100%",
-                      borderCollapse: "collapse",
-                      fontSize: 13,
-                    }}
-                  >
-                    <thead>
-                      <tr style={{ color: THEME.dim, textAlign: "left" }}>
-                        <th style={{ padding: "8px 6px" }}>COLLECTION</th>
-                        <th style={{ padding: "8px 6px", textAlign: "right" }}>
-                          Amount
-                        </th>
-                        <th style={{ padding: "8px 6px", textAlign: "right" }}>
-                          Block
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {events.map((ev, i) => (
-                        <tr
-                          key={i}
-                          style={{
-                            borderTop: "1px solid rgba(255,255,255,0.02)",
-                          }}
-                        >
-                          <td style={{ padding: "10px 6px", color: "#e9f9ff" }}>
-                            {shortAddr(ev.COLLECTION)}
-                          </td>
-                          <td
-                            style={{
-                              padding: "10px 6px",
-                              textAlign: "right",
-                              color: "#fff",
-                            }}
-                          >
-                            {ev.amount}
-                          </td>
-                          <td
-                            style={{
-                              padding: "10px 6px",
-                              textAlign: "right",
-                              color: THEME.dim,
-                            }}
-                          >
-                            {ev.block}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <aside style={styles.rightPanel}>
-            <div>
-              <div
-                style={{ fontWeight: 800, color: THEME.gold, marginBottom: 6 }}
-              >
-                Your quick tools
-              </div>
-              <div style={{ display: "grid", gap: 8 }}>
-                <button onClick={connect} style={styles.primaryBtn}>
-                  {account ? "Connected" : "Connect Wallet"}
-                </button>
-                <button onClick={loadOnChain} style={styles.ghostBtn}>
-                  Refresh on-chain
-                </button>
-                <button onClick={openExplorer} style={styles.ghostBtn}>
-                  Open distributor on explorer
-                </button>
-                <div style={{ marginTop: 8, color: THEME.dim }}>
-                  <div style={{ fontSize: 12, marginBottom: 6 }}>Tip</div>
-                  <div style={{ fontSize: 13 }}>
-                    If you manage a COLLECTION and want to be whitelisted,
-                    contact the project team. This panel is informational only.
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div
-                style={{ fontWeight: 800, color: THEME.cyan, marginBottom: 6 }}
-              >
-                Mini status
-              </div>
-              <div
-                style={{
-                  background: "rgba(255,255,255,0.02)",
-                  padding: 10,
-                  borderRadius: 10,
-                }}
-              >
-                <div style={{ color: THEME.dim }}>Contract</div>
-                <div
-                  style={{ color: THEME.gold, fontWeight: 800, marginTop: 6 }}
-                >
-                  {DISTRIBUTOR_ADDRESS ? shortAddr(DISTRIBUTOR_ADDRESS) : "-"}
-                </div>
-                <div style={{ color: THEME.dim, marginTop: 8, fontSize: 12 }}>
-                  {loading ? "Updating..." : "Synchronized"}
-                </div>
-              </div>
-            </div>
-
-            <div style={{ color: THEME.dim, fontSize: 12, marginTop: 6 }}>
-              <strong>Security</strong>: never call admin functions when the UI
-              is unfamiliar. This panel does not change anything on-chain
-              (read-only) — apart from an optional wallet connection.
-            </div>
-          </aside>
+            {stage.title}
+          </h3>
+          <p
+            style={{
+              ...styles.stageDescription,
+              maxWidth: compact ? "100%" : styles.stageDescription.maxWidth,
+              fontSize: compact ? 13 : styles.stageDescription.fontSize,
+            }}
+          >
+            {stage.description}
+          </p>
         </div>
       </div>
 
-      {/* Future COLLECTION modal */}
-      {futureOpen && (
-        <div style={styles.modalOverlay} onClick={() => setFutureOpen(false)}>
-          <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+      <div
+        style={{
+          ...styles.collectionGrid,
+          gridTemplateColumns: compact
+            ? "repeat(auto-fit, minmax(152px, 1fr))"
+            : `repeat(${Math.min(stageCollections.length || 1, 2)}, minmax(0, 1fr))`,
+        }}
+      >
+        {stageCollections.map((collection) => (
+            <CollectionCard
+              key={collection.id}
+              collection={collection}
+              compact={compact}
+            />
+          ))}
+      </div>
+    </section>
+  );
+}
+
+export default function ExpansionPanel({ compact = false } = {}) {
+  const [infoOpen, setInfoOpen] = React.useState(false);
+  const roadmapStages = Array.isArray(FUTURE_COLLECTION_STAGES)
+    ? FUTURE_COLLECTION_STAGES
+    : [];
+  const roadmapStats = React.useMemo(
+    () => getFutureCollectionStats(roadmapStages),
+    [roadmapStages],
+  );
+  const pairStages = roadmapStages.filter((stage) => stage.kind === "pair");
+  const finalStage =
+    roadmapStages.find((stage) => stage.kind === "final") || null;
+  const infoItems = React.useMemo(
+    () => [
+      {
+        label: "One Tokenomics",
+        description: [
+          "All roadmap collections plug into the same BIGGI tokenomics loop.",
+          "That means reward logic, reserve flow, liquidity support, buyback behavior, and treasury accounting stay aligned across the full collection roadmap.",
+        ],
+      },
+      {
+        label: "VRF + Public Pairs",
+        description: [
+          "Each pair combines one VRF collection and one Public collection.",
+          "The pair structure expands the ecosystem without splitting the underlying tokenomics into separate systems.",
+        ],
+      },
+      {
+        label: "Mainnet Scope",
+        description: [
+          "The collections shown here are presented as mainnet-ready roadmap entries.",
+          "Expansion tracks release structure and supply targets, not live mint activity.",
+        ],
+      },
+    ],
+    [],
+  );
+
+  return (
+    <section
+      style={{
+        ...styles.page,
+        minHeight: compact ? "auto" : styles.page.minHeight,
+        padding: compact ? 0 : styles.page.padding,
+      }}
+    >
+      <div
+        style={{
+          ...styles.container,
+          gap: compact ? 14 : styles.container.gap,
+          maxWidth: compact ? "100%" : styles.container.maxWidth,
+        }}
+      >
+        <header
+          style={{
+            ...styles.headerCard,
+            borderRadius: compact ? 16 : styles.headerCard.borderRadius,
+            padding: compact ? 16 : styles.headerCard.padding,
+            gap: compact ? 14 : styles.headerCard.gap,
+          }}
+        >
+          <div
+            style={{
+              ...styles.headerTop,
+              flexDirection: compact ? "column" : styles.headerTop.flexDirection,
+              alignItems: compact ? "stretch" : styles.headerTop.alignItems,
+              gap: compact ? 12 : styles.headerTop.gap,
+            }}
+          >
+            <div>
+              <div style={styles.titleBadge}>Expansion Roadmap</div>
+              <h2
+                style={{
+                  ...styles.title,
+                  fontSize: compact ? 22 : styles.title.fontSize,
+                  lineHeight: compact ? 1.15 : undefined,
+                }}
+              >
+                VRF + Public pairs before the final collection
+              </h2>
+              <p
+                style={{
+                  ...styles.subtitle,
+                  maxWidth: compact ? "100%" : styles.subtitle.maxWidth,
+                  fontSize: compact ? 13 : styles.subtitle.fontSize,
+                }}
+              >
+                This panel now tracks the collection roadmap instead of
+                distributor telemetry. The visible structure is four
+                `vrfplusPublic` pairs followed by one final collection, and all
+                visible collections are already prepared for mainnet. Every
+                non-final collection is set to 550 NFTs, and the final
+                collection is set to 1100 NFTs.
+              </p>
+            </div>
             <div
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                gap: 20,
-                marginBottom: 24,
-              }}
-            >
-              <div style={{ flex: 1 }}>
-                <div
-                  style={{
-                    fontWeight: 900,
-                    color: THEME.gold,
-                    fontSize: 24,
-                    marginBottom: 8,
-                  }}
-                >
-                  Future COLLECTIONs
-                </div>
-                <div
-                  style={{ color: THEME.dim, fontSize: 15, lineHeight: 1.5 }}
-                >
-                  Discover upcoming NFT COLLECTIONs in our ECOSYSTEM. Each
-                  COLLECTION brings unique artwork and utility to the platform.
-                </div>
-              </div>
-              <div>
-                <button
-                  onClick={() => setFutureOpen(false)}
-                  style={{
-                    ...styles.ghostBtn,
-                    padding: "10px 16px",
-                    border: `1px solid ${THEME.border}`,
-                  }}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-
-            <div style={styles.futureGrid}>
-              {futureCOLLECTIONs.length ? (
-                futureCOLLECTIONs.map((COLLECTION) => {
-                  const detailsUrl =
-                    COLLECTION?.detailsUrl || COLLECTION?.details || null;
-                  const waitlistUrl =
-                    COLLECTION?.waitlistUrl || COLLECTION?.waitlist || null;
-                  return (
-                    <div key={COLLECTION.id} style={styles.placeCard}>
-                      <div style={styles.COLLECTIONBadge}>
-                        {COLLECTION.status}
-                      </div>
-
-                      <div style={styles.placeThumb}>
-                        {COLLECTION.name
-                          .split(" ")
-                          .map((word) => word[0])
-                          .join("")}
-                      </div>
-
-                      <div style={{ width: "100%", textAlign: "center" }}>
-                        <div
-                          style={{
-                            color: THEME.gold,
-                            fontWeight: 800,
-                            fontSize: 18,
-                            marginBottom: 6,
-                          }}
-                        >
-                          {COLLECTION.name}
-                        </div>
-                        <div
-                          style={{
-                            color: THEME.dim,
-                            fontSize: 13,
-                            lineHeight: 1.4,
-                            marginBottom: 12,
-                          }}
-                        >
-                          {COLLECTION.description}
-                        </div>
-                      </div>
-
-                      <div style={styles.progressBar}>
-                        <div
-                          style={{
-                            ...styles.progressFill,
-                            width: `${COLLECTION.progress}%`,
-                          }}
-                        />
-                      </div>
-                      <div
-                        style={{
-                          color: THEME.cyan,
-                          fontSize: 12,
-                          fontWeight: 700,
-                          width: "100%",
-                          textAlign: "center",
-                        }}
-                      >
-                        Launch Progress: {COLLECTION.progress}%
-                      </div>
-
-                      <div style={styles.statsRow}>
-                        <div style={styles.statMini}>
-                          <div style={{ color: THEME.dim, fontSize: 11 }}>
-                            Items
-                          </div>
-                          <div
-                            style={{
-                              color: "#fff",
-                              fontWeight: 700,
-                              marginTop: 4,
-                            }}
-                          >
-                            {COLLECTION.items}
-                          </div>
-                        </div>
-                        <div style={styles.statMini}>
-                          <div style={{ color: THEME.dim, fontSize: 11 }}>
-                            Mint Price
-                          </div>
-                          <div
-                            style={{
-                              color: THEME.gold,
-                              fontWeight: 700,
-                              marginTop: 4,
-                            }}
-                          >
-                            {COLLECTION.mintPrice}
-                          </div>
-                        </div>
-                      </div>
-
-                      {detailsUrl || waitlistUrl ? (
-                        <div style={{ display: "flex", gap: 10, width: "100%" }}>
-                          {detailsUrl ? (
-                            <button
-                              style={{
-                                ...styles.ghostBtn,
-                                flex: 1,
-                                padding: "10px",
-                                background: "rgba(255,232,0,0.05)",
-                                border: `1px solid rgba(255,232,0,0.2)`,
-                                color: THEME.gold,
-                              }}
-                              onClick={() => window.open(detailsUrl, "_blank")}
-                            >
-                              View Details
-                            </button>
-                          ) : null}
-                          {waitlistUrl ? (
-                            <button
-                              style={{
-                                ...styles.ghostBtn,
-                                flex: 1,
-                                padding: "10px",
-                                background: "rgba(93,220,255,0.05)",
-                                border: `1px solid rgba(93,220,255,0.2)`,
-                                color: THEME.cyan,
-                              }}
-                              onClick={() => window.open(waitlistUrl, "_blank")}
-                            >
-                              Join Waitlist
-                            </button>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
-                  );
-                })
-              ) : (
-                <div style={{ color: THEME.dim, fontSize: 14 }}>
-                  No upcoming COLLECTIONs are configured yet.
-                </div>
-              )}
-            </div>
-
-            <div
-              style={{
-                marginTop: 30,
-                padding: 20,
-                background: "rgba(255,255,255,0.02)",
-                borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.03)",
+                ...styles.headerActions,
+                justifyContent: compact ? "space-between" : styles.headerActions.justifyContent,
+                width: compact ? "100%" : undefined,
               }}
             >
               <div
-                style={{ color: THEME.gold, fontWeight: 700, marginBottom: 8 }}
+                style={{
+                  ...styles.tokenomicsPill,
+                  padding: compact ? "8px 12px" : styles.tokenomicsPill.padding,
+                }}
               >
-                About Future COLLECTIONs
+                One shared BIGGI tokenomics
               </div>
-              <div style={{ color: THEME.dim, fontSize: 13, lineHeight: 1.6 }}>
-                These COLLECTIONs are currently in development and will be
-                integrated with the Distributor system upon launch. Each
-                COLLECTION undergoes a thorough review process to ensure quality
-                and compatibility with our ECOSYSTEM.
-              </div>
+              <PanelInfoButton
+                onClick={() => setInfoOpen(true)}
+                ariaLabel="Expansion panel info"
+              />
             </div>
           </div>
+
+          <section
+            style={{
+              ...styles.tokenomicsBanner,
+              padding: compact ? 14 : styles.tokenomicsBanner.padding,
+              gap: compact ? 12 : styles.tokenomicsBanner.gap,
+            }}
+          >
+            <div
+              style={{
+                ...styles.tokenomicsBannerTop,
+                flexDirection: compact ? "column" : styles.tokenomicsBannerTop.flexDirection,
+                gap: compact ? 10 : styles.tokenomicsBannerTop.gap,
+              }}
+            >
+              <div>
+                <h3
+                  style={{
+                    ...styles.tokenomicsBannerTitle,
+                    fontSize: compact ? 15 : styles.tokenomicsBannerTitle.fontSize,
+                  }}
+                >
+                  Every roadmap collection feeds one ecosystem economy
+                </h3>
+                <p
+                  style={{
+                    ...styles.tokenomicsBannerText,
+                    fontSize: compact ? 13 : styles.tokenomicsBannerText.fontSize,
+                  }}
+                >
+                  Universe, Mutant, Apocalipse, Super Hero, and MULTIVERSE are
+                  not isolated branches. They are designed to run on one shared
+                  BIGGI tokenomics system, so future collection launches expand
+                  the same reserve, liquidity, rewards, and treasury framework.
+                </p>
+              </div>
+            </div>
+            <div style={styles.tokenomicsTagRow}>
+              <span style={styles.tokenomicsTag}>Shared reserve logic</span>
+              <span style={styles.tokenomicsTag}>Shared liquidity path</span>
+              <span style={styles.tokenomicsTag}>Shared reward economy</span>
+              <span style={styles.tokenomicsTag}>Mainnet-ready roadmap</span>
+            </div>
+          </section>
+
+          <div
+            style={{
+              ...styles.summaryGrid,
+              gridTemplateColumns: compact
+                ? "repeat(2, minmax(0, 1fr))"
+                : "repeat(4, minmax(0, 1fr))",
+            }}
+          >
+            <SummaryCard
+              label="Pairs"
+              value={roadmapStats.totalPairs}
+              hint="Four mainnet-ready roadmap pairs are visible in the VRF + Public chapter."
+              compact={compact}
+            />
+            <SummaryCard
+              label="Pre-Final Collections"
+              value={roadmapStats.pairCollections}
+              hint="Each pair contains one VRF collection and one public collection, both prepared for mainnet."
+              compact={compact}
+            />
+            <SummaryCard
+              label="Pair Supply"
+              value={`${roadmapStats.pairSupply} NFTs`}
+              hint="Every non-final mainnet-ready collection is set to 550 NFTs."
+              compact={compact}
+            />
+            <SummaryCard
+              label="Final Supply"
+              value={`${roadmapStats.finalSupply} NFTs`}
+              hint="The final mainnet-ready collection doubles the supply target to 1100 NFTs."
+              compact={compact}
+            />
+          </div>
+        </header>
+        <PanelInfoModal
+          open={infoOpen}
+          onClose={() => setInfoOpen(false)}
+          title="Expansion Panel"
+          items={infoItems}
+        />
+
+        <div
+          style={{
+            ...styles.roadmapGrid,
+            gridTemplateColumns: compact ? "1fr" : "repeat(2, minmax(0, 1fr))",
+          }}
+        >
+          {pairStages.map((stage, stageIndex) => (
+            <StageCard
+              key={stage.id}
+              stage={stage}
+              stageIndex={stageIndex}
+              compact={compact}
+            />
+          ))}
+          {finalStage ? (
+            <StageCard
+              stage={finalStage}
+              stageIndex={pairStages.length}
+              compact={compact}
+            />
+          ) : null}
         </div>
-      )}
-    </div>
+
+        <div
+          style={{
+            ...styles.noteGrid,
+            gridTemplateColumns: compact ? "1fr" : "repeat(2, minmax(0, 1fr))",
+            gap: compact ? 14 : styles.noteGrid.gap,
+          }}
+        >
+          <section
+            style={{
+              ...styles.noteCard,
+              padding: compact ? 16 : styles.noteCard.padding,
+            }}
+          >
+            <h3 style={styles.noteTitle}>How the roadmap is structured</h3>
+            <ul style={styles.noteList}>
+              <li>Pairs 01 to 04 belong to the `vrfplusPublic` chapter.</li>
+              <li>Each pair contains exactly two mainnet-ready collections: one VRF and one Public.</li>
+              <li>Each of those eight roadmap collections is set to 550 NFTs.</li>
+              <li>The fifth and final roadmap stage is a single mainnet-ready collection with 1100 NFTs.</li>
+            </ul>
+          </section>
+
+          <section
+            style={{
+              ...styles.noteCard,
+              padding: compact ? 16 : styles.noteCard.padding,
+            }}
+          >
+            <h3 style={styles.noteTitle}>One tokenomics across every collection</h3>
+            <ul style={styles.noteList}>
+              <li>All roadmap collections connect to the same BIGGI tokenomics instead of spinning up separate economies.</li>
+              <li>That keeps reserve behavior, liquidity growth, reward distribution, and treasury routing under one system.</li>
+              <li>The roadmap expands collection variety while keeping the economic base consistent.</li>
+              <li>Use the `i` button for the short system explanation at any time.</li>
+            </ul>
+          </section>
+        </div>
+      </div>
+    </section>
   );
 }

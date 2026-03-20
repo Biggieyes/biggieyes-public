@@ -23,9 +23,13 @@ function TokenomicsPanel({
   tokenDex,
   liquidityHistory,
   dexHistory,
+  dexLoading,
+  dexError,
   pumpView,
   tok,
   router,
+  readerStatus,
+  onDexRefresh,
 }) {
   const resolved = activeSection || segment;
 
@@ -39,6 +43,17 @@ function TokenomicsPanel({
   const reserve = liquiditySnapshot?.reserve || null;
   const manager = liquiditySnapshot?.manager || null;
   const vault = liquiditySnapshot?.vault || null;
+  const treasury = liquiditySnapshot?.treasury || null;
+  const automation = liquiditySnapshot?.automation || null;
+  const keeperProxy = liquiditySnapshot?.keeperProxy || null;
+  const branchReader = liquiditySnapshot?.branchReader || null;
+  const liquidityHistoryBundle = React.useMemo(
+    () =>
+      Array.isArray(liquidityHistory)
+        ? { chartPoints: liquidityHistory }
+        : liquidityHistory || null,
+    [liquidityHistory],
+  );
 
   const reserveView = React.useMemo(() => {
     if (!reserve) return null;
@@ -73,6 +88,7 @@ function TokenomicsPanel({
       lpBalance: reserveView.lpBalanceInVault,
       reserveMatic: reserveView.maticBalance,
       reserveBiggi: reserveView.biggiBalance,
+      waitingBiggi: reserveView.waitingBiggi,
       dexRefillBiggi: reserveView.dexRefillBiggi,
     };
   }, [reserveView]);
@@ -103,41 +119,92 @@ function TokenomicsPanel({
     if (vault?.pairWhitelisted === false) {
       next.push("LP pair is not whitelisted.");
     }
-    if (manager && !manager.routerAddress) {
+    if (manager && !manager.router) {
       next.push("Router address missing.");
     }
-    if (manager && !manager.factoryAddress) {
+    if (manager && !manager.factory) {
       next.push("Factory address missing.");
     }
+    if (automation?.wiredOk === false) {
+      next.push("Liquidity orchestrator wiring mismatch.");
+    }
+    if (branchReader?.isStale) {
+      next.push("Legacy branch reader is wired to previous reserve/LM addresses.");
+    }
     return next;
-  }, [vault?.pairWhitelisted, manager?.routerAddress, manager?.factoryAddress, manager]);
+  }, [
+    vault?.pairWhitelisted,
+    manager?.router,
+    manager?.factory,
+    manager,
+    automation?.wiredOk,
+    branchReader?.isStale,
+  ]);
 
   const resolvedLiquidityProps = React.useMemo(
     () =>
       liquidityProps || {
-        liquidityHistory,
+        liquidityHistory: liquidityHistoryBundle,
         reserve: reserveView,
         lmView,
         chainStatus,
         userRole,
         lmChainBalances,
-        lmTokenPct: null,
-        lmSlippageBps: null,
-        lmDeadlineSec: null,
-        lmKeeperAddress: null,
-        lmAddress: manager?.address ?? null,
-        lmVaultAddress: vault?.address ?? null,
+        treasury,
+        snapshotTsLabel: liquiditySnapshot?.tsLabel ?? null,
+        lmTokenPct: automation?.lmTokenPct ?? null,
+        lmSlippageBps: automation?.lmSlippageBps ?? null,
+        lmDeadlineSec: automation?.lmDeadlineSec ?? null,
+        lmKeeperAddress:
+          manager?.keeper ??
+          automation?.keeperAddr ??
+          readerStatus?.res?.keeper ??
+          null,
+        lmAddress:
+          manager?.address ??
+          automation?.lmAddress ??
+          readerStatus?.res?.liquidityManager ??
+          reserve?.liquidityManager ??
+          null,
+        lmVaultAddress:
+          vault?.address ??
+          automation?.lmVault ??
+          readerStatus?.res?.liquidityVault ??
+          manager?.vault ??
+          null,
+        manager,
+        automation,
+        keeperProxy,
+        branchReader,
         warnings,
       },
     [
       liquidityProps,
-      liquidityHistory,
+      liquidityHistoryBundle,
       reserveView,
       lmView,
       chainStatus,
       userRole,
       lmChainBalances,
+      treasury,
+      liquiditySnapshot?.tsLabel,
+      automation?.keeperAddr,
+      automation?.lmAddress,
+      automation?.lmDeadlineSec,
+      automation?.lmSlippageBps,
+      automation?.lmTokenPct,
+      automation?.lmVault,
+      automation,
+      branchReader,
+      keeperProxy,
+      readerStatus?.res?.keeper,
+      readerStatus?.res?.liquidityManager,
+      readerStatus?.res?.liquidityVault,
+      reserve?.liquidityManager,
       manager?.address,
+      manager,
+      manager?.vault,
+      manager?.keeper,
       vault?.address,
       warnings,
     ],
@@ -149,6 +216,8 @@ function TokenomicsPanel({
     return {
       reserveNative: toNumberLoose(dexLiquidity.reserveNative),
       reserveBiggi: toNumberLoose(dexLiquidity.reserveBiggi),
+      waitingBiggi: reserveView?.waitingBiggi ?? null,
+      dexRefillBiggi: reserveView?.dexRefillBiggi ?? null,
       lpTotalSupply: toNumberLoose(dexLiquidity.lpTotalSupply),
       nativePerBiggi:
         dexLiquidity.nativePerBiggi ??
@@ -166,26 +235,42 @@ function TokenomicsPanel({
       contractEthBalance: dexLiquidity.contractEthBalance ?? null,
       tokenDecimals,
     };
-  }, [liquiditySnapshot, tokenDex?.derived, tokenDex?.dex?.pair, tokenDex?.dex?.pairAddress, tokenDecimals]);
+  }, [
+    liquiditySnapshot,
+    reserveView?.waitingBiggi,
+    reserveView?.dexRefillBiggi,
+    tokenDex?.derived,
+    tokenDex?.dex?.pair,
+    tokenDex?.dex?.pairAddress,
+    tokenDecimals,
+  ]);
 
   const resolvedDexProps = React.useMemo(
     () =>
       dexProps || {
+        tabBusy: dexLoading,
+        error: dexError,
+        onRefresh: onDexRefresh,
         pumpView,
         liquidity: dexLiquidityView,
         dexHistory,
         tok: tok || tokenDex?.token,
         router: router || tokenDex?.dex?.router,
         tokenDexSnapshot: tokenDex || null,
+        readerStatus,
       },
     [
       dexProps,
+      dexLoading,
+      dexError,
+      onDexRefresh,
       pumpView,
       dexLiquidityView,
       dexHistory,
       tok,
       router,
       tokenDex,
+      readerStatus,
     ],
   );
 

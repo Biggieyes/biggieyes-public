@@ -21,9 +21,16 @@ export default function useBUYBACKTreasurySnapshot(options = {}) {
       ...raw,
       BUYBACK: {
         ...raw.BUYBACK,
+        DRIPLM:
+          raw.BUYBACK?.DRIPLM ||
+          raw.addresses?.dripLM ||
+          raw.addresses?.DRIPLM ||
+          null,
         router: raw.addresses?.router || raw.BUYBACK?.router,
+        wrappedNative: raw.BUYBACK?.wrappedNative || raw.addresses?.weth || null,
         lastBUYBACK:
           raw.BUYBACK?.lastBUYBACK ??
+          raw.BUYBACK?.lastBuybackAt ??
           (raw.BUYBACK?.lastBUYBACKLabel && raw.BUYBACK.lastBUYBACKLabel !== "--"
             ? raw.BUYBACK.lastBUYBACKLabel
             : null),
@@ -31,6 +38,28 @@ export default function useBUYBACKTreasurySnapshot(options = {}) {
       treasury: {
         ...raw.treasury,
         address: raw.treasury?.address || raw.addresses?.treasury,
+        BUYBACKAgent:
+          raw.treasury?.BUYBACKAgent ||
+          raw.BUYBACK?.address ||
+          raw.addresses?.buyback ||
+          raw.addresses?.BUYBACK ||
+          raw.addresses?.BUYBACK_AGENT ||
+          null,
+        reserve:
+          raw.treasury?.reserve ||
+          raw.addresses?.reserve ||
+          raw.addresses?.RESERVE ||
+          null,
+        DRIPDistributor:
+          raw.treasury?.DRIPDistributor ||
+          raw.addresses?.DRIPDistributor ||
+          raw.addresses?.DRIP_DISTRIBUTOR ||
+          null,
+        tokenREWARDS:
+          raw.treasury?.tokenREWARDS ||
+          raw.addresses?.tokenREWARDS ||
+          raw.addresses?.TOKEN_REWARDS ||
+          null,
       },
     };
 

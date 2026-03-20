@@ -14,9 +14,10 @@ const FOCUSABLE = [
 export default function FullscreenPanel({
   open,
   title,
+  titleColor,
   onClose,
   children,
-  logoSrc = "/images/main-logo1.png",
+  logoSrc = "/images/main-logo1.optimized.png",
   // default behavior mirrors original
   closeOnEsc = false,
   closeOnOverlay = true,
@@ -35,6 +36,8 @@ export default function FullscreenPanel({
   contentStyle = undefined,
 }) {
   const rootRef = React.useRef(null);
+  const contentRef = React.useRef(null);
+  const containerRef = React.useRef(null);
   const lastActiveRef = React.useRef(null);
   const titleId = React.useId();
   const prevOverflowRef = React.useRef("");
@@ -267,6 +270,18 @@ export default function FullscreenPanel({
     isPopover,
     placePopover,
   ]);
+
+  React.useEffect(() => {
+    if (!open || isPopover) return;
+    const resetScroll = () => {
+      if (rootRef.current) rootRef.current.scrollTop = 0;
+      if (contentRef.current) contentRef.current.scrollTop = 0;
+      if (containerRef.current) containerRef.current.scrollTop = 0;
+    };
+    resetScroll();
+    const rafId = window.requestAnimationFrame(resetScroll);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [open, title, isPopover]);
 
   if (!open) return null;
 
@@ -501,6 +516,10 @@ export default function FullscreenPanel({
         height: "100svh",
         zIndex: 9999,
         overflow: "hidden",
+        overscrollBehavior: "none",
+        background:
+          "linear-gradient(180deg, rgba(5,8,15,.98), rgba(7,10,18,.97))",
+        backdropFilter: "blur(10px)",
       }}
     >
       <div
@@ -529,7 +548,7 @@ export default function FullscreenPanel({
           style={{
             margin: 0,
             letterSpacing: 0.5,
-            color: C.c,
+            color: titleColor || C.c,
             fontSize: isPhone ? 16 : 18,
           }}
         >
@@ -591,17 +610,20 @@ export default function FullscreenPanel({
 
       <div
         className="fullscreen-panel__content"
+        ref={contentRef}
         onMouseDown={(e) => e.stopPropagation()}
         style={{
           overflowY: "auto",
           minHeight: 0,
           padding: isPhone ? "10px" : "12px 12px",
           maxHeight: `calc(100svh - ${TOPBAR_EST}px)`,
+          overscrollBehavior: "contain",
           ...(contentStyle || {}),
         }}
       >
         <div
           className="fullscreen-panel__container"
+          ref={containerRef}
           style={{
             minHeight: 0,
             maxHeight: "100%",

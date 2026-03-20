@@ -82,8 +82,14 @@ export default class DRIPDistributorService {
   async getTotalNotified() {
     return await this.contract.getTotalNotified();
   }
+  async getTotalReceived() {
+    return await this.contract.getTotalReceived();
+  }
   async getTotalTopUp() {
-    return await this.contract.getTotalTopUp();
+    return await this.getTotalReceived();
+  }
+  async totalReceived() {
+    return await this.contract.totalReceived();
   }
   async totalClaimed() {
     return await this.contract.totalClaimed();
@@ -92,7 +98,7 @@ export default class DRIPDistributorService {
     return await this.contract.totalNotified();
   }
   async totalTopUp() {
-    return await this.contract.totalTopUp();
+    return await this.totalReceived();
   }
   async DRIPLM() {
     return await this.contract.dripLM();
@@ -122,10 +128,10 @@ export default class DRIPDistributorService {
         "getAvailable",
         "getTotalClaimed",
         "getTotalNotified",
-        "getTotalTopUp",
+        "getTotalReceived",
         "totalClaimed",
         "totalNotified",
-        "totalTopUp",
+        "totalReceived",
         "dripLM",
         "treasury",
         "paused",
@@ -150,10 +156,10 @@ export default class DRIPDistributorService {
           getAvailable,
           getTotalClaimed,
           getTotalNotified,
-          getTotalTopUp,
+          getTotalReceived,
           totalClaimed,
           totalNotified,
-          totalTopUp,
+          totalReceived,
           DRIPLM,
           treasury,
           paused,
@@ -166,10 +172,12 @@ export default class DRIPDistributorService {
           getAvailable,
           getTotalClaimed,
           getTotalNotified,
-          getTotalTopUp,
+          getTotalReceived,
+          getTotalTopUp: getTotalReceived,
           totalClaimed,
           totalNotified,
-          totalTopUp,
+          totalReceived,
+          totalTopUp: totalReceived,
           DRIPLM,
           treasury,
           paused,
@@ -190,10 +198,10 @@ export default class DRIPDistributorService {
       this.getAvailable(),
       this.getTotalClaimed(),
       this.getTotalNotified(),
-      this.getTotalTopUp(),
+      this.getTotalReceived(),
       this.totalClaimed(),
       this.totalNotified(),
-      this.totalTopUp(),
+      this.totalReceived(),
       this.DRIPLM(),
       this.treasury(),
       this.paused(),
@@ -206,10 +214,10 @@ export default class DRIPDistributorService {
       getAvailable,
       getTotalClaimed,
       getTotalNotified,
-      getTotalTopUp,
+      getTotalReceived,
       totalClaimed,
       totalNotified,
-      totalTopUp,
+      totalReceived,
       DRIPLM,
       treasury,
       paused,
@@ -222,10 +230,12 @@ export default class DRIPDistributorService {
       getAvailable,
       getTotalClaimed,
       getTotalNotified,
-      getTotalTopUp,
+      getTotalReceived,
+      getTotalTopUp: getTotalReceived,
       totalClaimed,
       totalNotified,
-      totalTopUp,
+      totalReceived,
+      totalTopUp: totalReceived,
       DRIPLM,
       treasury,
       paused,

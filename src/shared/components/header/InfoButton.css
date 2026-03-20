@@ -101,16 +101,14 @@
 }
 
 .action-buttons__wrapper--mint::before {
-  opacity: 0.7;
-  inset: -14px;
+  opacity: 0.24;
+  inset: -10px;
   background: radial-gradient(
     circle at 50% 50%,
-    rgba(32, 255, 210, 0.6) 0%,
-    rgba(32, 255, 210, 0.15) 52%,
+    rgba(32, 255, 210, 0.28) 0%,
+    rgba(32, 255, 210, 0.1) 52%,
     rgba(32, 255, 210, 0) 82%
   );
-  filter: blur(17px);
-  animation: mintMinimalPulse 5.2s ease-in-out infinite;
 }
 
 .action-buttons__wrapper--mint::after {
@@ -118,20 +116,19 @@
   border-radius: inherit;
   border: 1px solid rgba(145, 255, 234, 0.5);
   box-shadow:
-    0 0 16px rgba(32, 255, 210, 0.28),
-    0 0 36px rgba(32, 255, 210, 0.18);
+    0 0 12px rgba(32, 255, 210, 0.22),
+    0 0 22px rgba(32, 255, 210, 0.12);
   opacity: 0.78;
   transition: opacity 0.24s ease, box-shadow 0.24s ease;
 }
 
 .action-buttons__wrapper--mint button img {
-  filter: drop-shadow(0 4px 12px rgba(32, 255, 210, 0.28));
-  transition: filter 0.24s ease, transform 0.18s ease;
+  filter: none;
+  transition: transform 0.18s ease;
 }
 
 .action-buttons__wrapper--mint:hover button img,
 .action-buttons__wrapper--mint:focus-within button img {
-  filter: drop-shadow(0 8px 20px rgba(32, 255, 210, 0.48));
   transform: translateY(-2px);
 }
 
@@ -139,22 +136,8 @@
 .action-buttons__wrapper--mint:focus-within::after {
   opacity: 1;
   box-shadow:
-    0 0 26px rgba(32, 255, 210, 0.4),
-    0 0 48px rgba(32, 255, 210, 0.28);
-}
-
-@keyframes mintMinimalPulse {
-  0%,
-  100% {
-    opacity: 0.52;
-    filter: blur(12px);
-    transform: scale(0.96);
-  }
-  50% {
-    opacity: 0.88;
-    filter: blur(18px);
-    transform: scale(1.02);
-  }
+    0 0 18px rgba(32, 255, 210, 0.3),
+    0 0 30px rgba(32, 255, 210, 0.18);
 }
 
 .info-gate-screen {
@@ -272,8 +255,8 @@
   gap: 6px;
   margin: 0 0 14px;
   transform: translateY(-16px);
-  color: #ffe800;
-  text-shadow: 0 0 12px rgba(255, 232, 0, 0.35);
+  color: #8fe8ff;
+  text-shadow: 0 0 12px rgba(143, 232, 255, 0.35);
   max-width: 320px;
 }
 
@@ -281,12 +264,15 @@
   font-size: 0.95rem;
   font-weight: 800;
   letter-spacing: 0.05em;
+  color: #8fe8ff;
+  text-shadow: 0 0 12px rgba(143, 232, 255, 0.35);
 }
 
 .action-buttons-heading__subtitle {
   font-size: 0.78rem;
   line-height: 1.45;
-  color: #8fe8ff;
+  color: #ffe800;
+  text-shadow: 0 0 10px rgba(255, 232, 0, 0.3);
   letter-spacing: 0.02em;
 }
 

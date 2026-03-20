@@ -30,6 +30,7 @@ export default function useTokenDexHistory(snapshot, options = {}) {
 
   const reserveBundle = React.useMemo(() => {
     const reservePoints = [];
+    const biggiReservePoints = [];
     const dexSeries = [];
 
     for (const entry of history) {
@@ -52,6 +53,14 @@ export default function useTokenDexHistory(snapshot, options = {}) {
         });
       }
 
+      if (Number.isFinite(reserveBiggi)) {
+        biggiReservePoints.push({
+          label,
+          value: reserveBiggi,
+          nativeValue: reserveNative,
+        });
+      }
+
       if (
         Number.isFinite(reserveNative) ||
         Number.isFinite(reserveBiggi) ||
@@ -66,7 +75,7 @@ export default function useTokenDexHistory(snapshot, options = {}) {
       }
     }
 
-    return { reservePoints, dexSeries };
+    return { reservePoints, biggiReservePoints, dexSeries };
   }, [history, resolvedTokenDecimals]);
 
   const lpPoints = React.useMemo(
@@ -84,6 +93,7 @@ export default function useTokenDexHistory(snapshot, options = {}) {
     history,
     pricePoints,
     reservePoints: reserveBundle.reservePoints,
+    biggiReservePoints: reserveBundle.biggiReservePoints,
     lpPoints,
     dexSeries: reserveBundle.dexSeries,
   };

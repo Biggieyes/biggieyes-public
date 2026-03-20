@@ -2,14 +2,23 @@
 import * as React from "react";
 import { formatEther } from "ethers";
 import { explorerBaseFor } from "@/config/chains.js";
-import { DEFAULT_BLOCKS } from "@/shared/blocks";
+import { DEFAULT_BLOCKS, ROWS_BY_BLOCK } from "@/shared/blocks";
 import { buildBlockImagePath } from "@/shared/utils/images";
+import { toMainNftIndexFromTokenId } from "@/shared/utils/biggiIdIndex";
+import { mergeAttrs } from "@/shared/utils/metadata";
 import "./NftCard.css";
 import ImportNftButton from "./ImportNftButton";
 import { useContracts } from "../providers/ContractsProvider";
 import { httpFromIpfs, readJsonFromURI, resolveImageUrl } from "../shared/services/ipfs";
 
 const PLACEHOLDER_IMG = "/images/Biggi.png";
+const IPFS_HTTP_GATEWAYS = [
+  "https://biggieyes.mypinata.cloud/ipfs/",
+  "https://gateway.pinata.cloud/ipfs/",
+  "https://cloudflare-ipfs.com/ipfs/",
+  "https://ipfs.io/ipfs/",
+  "https://dweb.link/ipfs/",
+];
 
 const BG_NAMES = [
   "ORANGE",
@@ -24,6 +33,7 @@ const BG_NAMES = [
   "RAINBOW",
 ];
 const BG_CODES = ["O", "B", "W", "BR", "BL", "G", "V", "R", "P", "RB"];
+const RARITY_TIERS = ["legendary", "epic", "rare", "uncommon", "common"];
 
 const normalizeIndex = (val, max) => {
   const n = Number(val);
@@ -66,6 +76,23 @@ const parseTokenUriParts = (uri) => {
   };
 };
 
+const normalizeMainImageId = (rawMainId, tokenId) => {
+  const fromRaw = toMainNftIndexFromTokenId(rawMainId, {
+    maxSupply: 550,
+    allowLegacy: true,
+  });
+  if (fromRaw != null) return String(fromRaw);
+
+  const fromTokenId = toMainNftIndexFromTokenId(tokenId, {
+    maxSupply: 550,
+    allowLegacy: true,
+  });
+  if (fromTokenId != null) return String(fromTokenId);
+
+  const fallback = String(rawMainId ?? "").trim();
+  return /^\d+$/.test(fallback) ? fallback : "";
+};
+
 const trimSlash = (val) => String(val || "").replace(/\/+$/, "");
 
 const buildBlockImageUrl = (baseUri, blockName, bgCode, mainId) => {
@@ -81,12 +108,127 @@ const ipfsToHttp = (url) => {
   return httpFromIpfs(url);
 };
 
+const normalizeBlockName = (value) => {
+  if (!value) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const upper = raw.toUpperCase();
+  if (DEFAULT_BLOCKS.includes(upper)) return upper;
+  for (const name of DEFAULT_BLOCKS) {
+    if (upper.includes(name)) return name;
+  }
+  return null;
+};
+
+const getAttrValue = (attrs, keys) => {
+  if (!Array.isArray(attrs) || !attrs.length) return null;
+  const keySet = new Set(keys.map((key) => String(key).toLowerCase()));
+  const hit = attrs.find((attr) =>
+    keySet.has(String(attr?.trait_type ?? "").toLowerCase()),
+  );
+  return hit?.value ?? null;
+};
+
+const rarityTierFromBlockRank = (blockRank) => {
+  if (!Number.isFinite(Number(blockRank))) return null;
+  const rank = Number(blockRank);
+  if (rank <= 2) return "legendary";
+  if (rank <= 4) return "epic";
+  if (rank <= 6) return "rare";
+  if (rank <= 8) return "uncommon";
+  return "common";
+};
+
+const formatRarityLabel = (value) => {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (!RARITY_TIERS.includes(normalized)) return null;
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+};
+
+const normalizeCandidate = (value) => String(value || "").trim().toLowerCase();
+
+const trimIpfsPath = (value) => String(value || "").replace(/^\/+|\/+$/g, "");
+
+const extractIpfsPayload = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (/^ipfs:\/\//i.test(raw)) {
+    return trimIpfsPath(raw.replace(/^ipfs:\/\//i, ""));
+  }
+  try {
+    const parsed = new URL(raw);
+    const match = String(parsed.pathname || "").match(/\/ipfs\/([^?#]+)/i);
+    if (match?.[1]) return trimIpfsPath(match[1]);
+  } catch {
+    // ignore malformed URLs
+  }
+  return "";
+};
+
+const buildImageFallbackCandidates = (...values) => {
+  const out = [];
+  const seen = new Set();
+  const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "webp"];
+  const push = (candidate) => {
+    const normalized = normalizeCandidate(candidate);
+    if (!normalized || seen.has(normalized)) return;
+    seen.add(normalized);
+    out.push(String(candidate));
+  };
+  const pushWithAlternatives = (candidate) => {
+    const raw = String(candidate || "").trim();
+    if (!raw) return;
+    push(raw);
+    const extMatch = raw.match(/\.(png|jpe?g|webp)(\?.*)?$/i);
+    if (!extMatch) return;
+    const currentExt = String(extMatch[1] || "").toLowerCase();
+    const query = extMatch[2] || "";
+    const base = raw.slice(0, extMatch.index);
+    for (const ext of IMAGE_EXTENSIONS) {
+      if (ext === currentExt) continue;
+      push(`${base}.${ext}${query}`);
+    }
+  };
+
+  for (const value of values) {
+    const raw = String(value || "").trim();
+    if (!raw) continue;
+    const payload = extractIpfsPayload(raw);
+    if (payload) {
+      for (const base of IPFS_HTTP_GATEWAYS) {
+        pushWithAlternatives(`${base}${payload}`);
+      }
+      pushWithAlternatives(ipfsToHttp(raw));
+      continue;
+    }
+    if (/^https?:\/\//i.test(raw)) pushWithAlternatives(raw);
+  }
+
+  return out;
+};
+
 const normaliseAttributes = (meta) => {
   if (!meta) return [];
   const attrs = Array.isArray(meta.attributes) ? meta.attributes : [];
   return attrs
     .filter((e) => e && e.trait_type != null && e.value != null)
     .map((e) => ({ trait_type: String(e.trait_type), value: String(e.value) }));
+};
+
+const metadataFingerprint = (meta) => {
+  if (!meta || typeof meta !== "object") return "";
+  const attrs = normaliseAttributes(meta)
+    .map((entry) => `${entry.trait_type}:${entry.value}`)
+    .sort()
+    .join("|");
+  return [
+    String(meta?.name || ""),
+    String(meta?.description || ""),
+    String(meta?.image || ""),
+    String(meta?.image_url || ""),
+    String(meta?.external_url || ""),
+    attrs,
+  ].join("::");
 };
 
 const fmtEtherNum = (v) => {
@@ -111,6 +253,12 @@ const formatMatic = (value) => {
   return `${f.format(Number(value))} POL`;
 };
 
+const formatTraitPrice = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  return `${numeric.toFixed(4)} POL`;
+};
+
 const parseMatic = (value) => {
   if (value == null) return null;
   if (typeof value === "number" && !Number.isNaN(value)) return value;
@@ -122,6 +270,11 @@ const parseMatic = (value) => {
 
 const isPositivePrice = (value) =>
   typeof value === "number" && Number.isFinite(value) && value > 0;
+
+const normalizeTraitType = (value) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase();
 
 const looksLikeTicketMeta = (meta) => {
   if (!meta) return false;
@@ -140,6 +293,15 @@ const normalizeExternalUrl = (value) => {
   return "";
 };
 
+const pickSeedImageFromNft = (nft) => {
+  const direct = String(nft?.image || "").trim();
+  if (direct && direct !== PLACEHOLDER_IMG) return direct;
+  const fromMeta = String(nft?.meta?.image || nft?.meta?.image_url || "").trim();
+  if (fromMeta) return fromMeta;
+  if (direct) return direct;
+  return null;
+};
+
 /* optional color-to-blockId map as fallback if needed */
 const COLOR_TO_BLOCKID = {
   Orange: 1,
@@ -156,6 +318,7 @@ const COLOR_TO_BLOCKID = {
 
 export default function NftCard({
   nft = {},
+  liveTicketPrice = null,
   dynamicTraits = {},
   onOpenDetails,
   fallbackContractAddress = null,
@@ -171,6 +334,20 @@ export default function NftCard({
   }
 
   const tokenId = nft?.tokenId != null ? String(nft.tokenId) : null;
+  const displayTokenId = React.useMemo(() => {
+    if (!tokenId) return null;
+    const mainIdx = toMainNftIndexFromTokenId(tokenId, {
+      maxSupply: 550,
+      allowLegacy: true,
+    });
+    if (mainIdx != null) return String(mainIdx);
+    return tokenId;
+  }, [tokenId]);
+  const seedImage = React.useMemo(() => pickSeedImageFromNft(nft), [
+    nft?.image,
+    nft?.meta?.image,
+    nft?.meta?.image_url,
+  ]);
 
   const [metadata, setMetadata] = React.useState(nft.meta || null);
   const [image, setImage] = React.useState(nft.image || null);
@@ -199,7 +376,9 @@ export default function NftCard({
   const [detailsOpen, setDetailsOpen] = React.useState(false);
   const [imageZoomed, setImageZoomed] = React.useState(false);
   const metadataRef = React.useRef(metadata);
+  const syncedTokenIdRef = React.useRef(tokenId);
   const onchainFallbackRef = React.useRef(new Set());
+  const failedImageCandidatesRef = React.useRef(new Set());
 
   const contractAddress = React.useMemo(() => {
     if (nft?.contractAddress) return nft.contractAddress;
@@ -240,15 +419,27 @@ export default function NftCard({
   const forcedRefreshRef = React.useRef(new Set());
 
   React.useEffect(() => {
-    setMetadata(nft.meta || null);
-  }, [nft.meta]);
+    if (syncedTokenIdRef.current !== tokenId) {
+      syncedTokenIdRef.current = tokenId;
+      setMetadata(nft.meta || null);
+      return;
+    }
+
+    const nextMeta = nft.meta || null;
+    if (!nextMeta) return;
+    const nextFingerprint = metadataFingerprint(nextMeta);
+    setMetadata((prev) =>
+      metadataFingerprint(prev) === nextFingerprint ? prev : nextMeta,
+    );
+  }, [tokenId, nft.meta]);
 
   React.useEffect(() => {
-    setImage(nft.image || null);
+    setImage(seedImage);
     setImageLoaded(false);
     setImageFailed(false);
     setImageZoomed(false);
-  }, [nft.image, tokenId]);
+    failedImageCandidatesRef.current = new Set();
+  }, [seedImage, tokenId]);
 
   React.useEffect(() => {
     if (imageFailed && image === PLACEHOLDER_IMG) return;
@@ -278,7 +469,7 @@ export default function NftCard({
       if (!tokenId || nft?.isTicket || nft?.isPending) return;
       if (onchainFallbackRef.current.has(tokenId)) return;
 
-      const needsImage = !image || image === PLACEHOLDER_IMG;
+      const needsImage = !image || image === PLACEHOLDER_IMG || imageFailed;
       const attrs = Array.isArray(metadata?.attributes)
         ? metadata.attributes
         : [];
@@ -303,10 +494,7 @@ export default function NftCard({
       const blockIdx = info?.blockIdx ?? info?.[2];
       const background = info?.background ?? info?.[1];
       const mainIdRaw = info?.mainId ?? info?.[3];
-      const mainId =
-        mainIdRaw != null && typeof mainIdRaw?.toString === "function"
-          ? mainIdRaw.toString()
-          : String(mainIdRaw ?? "");
+      const mainId = normalizeMainImageId(mainIdRaw, tokenId);
 
       const blockName = blockNameFromIdx(blockIdx);
       const bgCode = bgCodeFromIdx(background);
@@ -377,6 +565,7 @@ export default function NftCard({
   }, [
     tokenId,
     image,
+    imageFailed,
     metadata,
     metadataContract,
     contracts,
@@ -406,10 +595,12 @@ export default function NftCard({
         if (!json) {
           const parsed = parseTokenUriParts(uri);
           if (parsed && !cancelled) {
-            const { mainId, blockName, bgCode } = parsed;
+            const { mainId: parsedMainId, blockName, bgCode } = parsed;
+            const mainId = normalizeMainImageId(parsedMainId, tokenId);
             const bgName = bgNameFromCode(bgCode) || bgCode;
+            const mainLabel = mainId || displayTokenId || tokenId;
             const fallbackMeta = {
-              name: `Biggi NFT #${mainId}`,
+              name: `Biggi NFT #${mainLabel}`,
               description: "Metadata is updating on-chain.",
               attributes: [
                 blockName ? { trait_type: "Block", value: blockName } : null,
@@ -426,7 +617,7 @@ export default function NftCard({
         const fixedMeta = ticketLike
           ? {
               ...(json || {}),
-              name: `Biggi NFT #${tokenId}`,
+              name: `Biggi NFT #${displayTokenId || tokenId}`,
               description: "Metadata is updating on-chain.",
             }
           : json;
@@ -456,7 +647,7 @@ export default function NftCard({
         ) {
           if (!cancelled) {
             setMetadata({
-              name: tokenId ? `#${tokenId}` : "Biggi NFT",
+              name: displayTokenId ? `#${displayTokenId}` : "Biggi NFT",
               description: "Metadata unavailable (token burned or not minted).",
               image: PLACEHOLDER_IMG,
             });
@@ -466,7 +657,7 @@ export default function NftCard({
         }
         if (!cancelled && !nft?.isTicket && !currentMeta) {
           setMetadata({
-            name: tokenId ? `Biggi NFT #${tokenId}` : "Biggi NFT",
+            name: displayTokenId ? `Biggi NFT #${displayTokenId}` : "Biggi NFT",
             description: "Metadata is updating on-chain.",
             image: PLACEHOLDER_IMG,
           });
@@ -497,6 +688,7 @@ export default function NftCard({
     metadataContract,
     nft.image,
     tokenId,
+    displayTokenId,
     nft?.isTicket,
     nft?.isPending,
   ]);
@@ -733,13 +925,27 @@ export default function NftCard({
     dynamicTraits?.mintBlock,
   ]);
 
+  const liveTicketPriceValue = React.useMemo(() => {
+    const parsed = parseMatic(liveTicketPrice);
+    return isPositivePrice(parsed) ? parsed : null;
+  }, [liveTicketPrice]);
+  const hasLiveTicketPrice = nft?.isTicket && isPositivePrice(liveTicketPriceValue);
+
   const derivedTicketPrice = React.useMemo(() => {
+    if (nft?.isTicket && isPositivePrice(liveTicketPriceValue)) {
+      return liveTicketPriceValue;
+    }
     const fromMintData = mintData?.ticketPrice;
     if (isPositivePrice(fromMintData)) return fromMintData;
     const fromTraits = parseMatic(dynamicTraits?.mintTicket);
     if (isPositivePrice(fromTraits)) return fromTraits;
     return null;
-  }, [mintData?.ticketPrice, dynamicTraits?.mintTicket]);
+  }, [
+    nft?.isTicket,
+    liveTicketPriceValue,
+    mintData?.ticketPrice,
+    dynamicTraits?.mintTicket,
+  ]);
 
   const derivedMintData = React.useMemo(
     () => ({
@@ -755,32 +961,89 @@ export default function NftCard({
     [derivedTicketPrice, mintData, dynamicTraits, currentBlockPrice],
   );
 
+  const priceAttributes = React.useMemo(() => {
+    const out = [];
+    const ticketPriceTraitLabel = nft?.isTicket
+      ? "Current Ticket Price"
+      : "Ticket Price";
+    const ticketPriceValue = formatTraitPrice(derivedMintData?.ticketPrice);
+    const blockPriceValue = formatTraitPrice(
+      mintData?.blockPrice ?? parseMatic(dynamicTraits?.mintBlock),
+    );
+    const finalPriceValue = formatTraitPrice(
+      mintData?.finalPrice ??
+        parseMatic(dynamicTraits?.mintFinal ?? dynamicTraits?.finalPrice),
+    );
+
+    if (ticketPriceValue) {
+      out.push({ trait_type: ticketPriceTraitLabel, value: ticketPriceValue });
+    }
+    if (!nft?.isTicket && blockPriceValue) {
+      out.push({ trait_type: "Block Price", value: blockPriceValue });
+    }
+    if (!nft?.isTicket && finalPriceValue) {
+      out.push({ trait_type: "Final Price", value: finalPriceValue });
+    }
+
+    return out;
+  }, [
+    derivedMintData?.ticketPrice,
+    mintData?.blockPrice,
+    mintData?.finalPrice,
+    dynamicTraits?.mintBlock,
+    dynamicTraits?.mintFinal,
+    dynamicTraits?.finalPrice,
+    nft?.isTicket,
+  ]);
+
   const attributes = React.useMemo(() => {
     const base = normaliseAttributes(metadata);
     const dyn = Array.isArray(dynamicTraits?.attributes)
       ? dynamicTraits.attributes
       : [];
-    const merged = [
-      ...base,
-      ...dyn
-        .map((e) => ({
-          trait_type: String(e?.trait_type ?? ""),
-          value: String(e?.value ?? ""),
-        }))
-        .filter((e) => e.trait_type),
-    ];
-    if (merged.length) return merged;
+    const dynamicAttributeList = dyn
+      .map((e) => ({
+        trait_type: String(e?.trait_type ?? ""),
+        value: String(e?.value ?? ""),
+      }))
+      .filter((e) => e.trait_type);
+    let mergedBase = mergeAttrs(base, dynamicAttributeList);
     if (nft?.isTicket) {
-      return [
-        { trait_type: "Type", value: "Mint Ticket" },
-        {
-          trait_type: "Status",
-          value: nft?.isPending ? "VRF pending" : "Redeem to mint NFT",
-        },
-      ];
+      mergedBase = mergedBase.filter((attr) => {
+        const key = normalizeTraitType(attr?.trait_type);
+        return (
+          key !== "ticket price" &&
+          key !== "current ticket price" &&
+          key !== "type" &&
+          key !== "status" &&
+          key !== "utility"
+        );
+      });
+    }
+    let merged = mergeAttrs(mergedBase, priceAttributes);
+    if (merged.length) {
+      if (nft?.isTicket && priceAttributes.length) {
+        const priceKeys = new Set(
+          priceAttributes.map((attr) => normalizeTraitType(attr?.trait_type)),
+        );
+        const priceFirst = [];
+        const rest = [];
+        merged.forEach((attr) => {
+          if (priceKeys.has(normalizeTraitType(attr?.trait_type))) {
+            priceFirst.push(attr);
+          } else {
+            rest.push(attr);
+          }
+        });
+        return [...priceFirst, ...rest];
+      }
+      return merged;
+    }
+    if (nft?.isTicket) {
+      return [];
     }
     return merged;
-  }, [metadata, dynamicTraits, nft?.isTicket, nft?.isPending]);
+  }, [metadata, dynamicTraits, nft?.isTicket, nft?.isPending, priceAttributes]);
 
   const visibleAttributes = React.useMemo(
     () => (detailsOpen ? attributes : attributes.slice(0, 4)),
@@ -788,9 +1051,43 @@ export default function NftCard({
   );
 
   const title =
-    metadata?.name || nft?.name || (tokenId ? `#${tokenId}` : "Biggi NFT");
-  const rarityLabel =
-    nft?.rarityRank != null ? `Rank #${nft.rarityRank}` : null;
+    metadata?.name || nft?.name || (displayTokenId ? `#${displayTokenId}` : "Biggi NFT");
+  const rarityTier = React.useMemo(() => {
+    if (nft?.isTicket) return null;
+    const attrs = normaliseAttributes(metadata);
+    const explicitRarity = String(
+      nft?.rarity ?? getAttrValue(attrs, ["rarity", "tier"]) ?? "",
+    )
+      .trim()
+      .toLowerCase();
+    if (RARITY_TIERS.includes(explicitRarity)) return explicitRarity;
+
+    const blockValue =
+      getAttrValue(attrs, [
+        "block/eye color",
+        "block",
+        "eye color",
+        "linked block",
+        "block color",
+      ]) ??
+      dynamicTraits?.linkedBlock ??
+      dynamicTraits?.block ??
+      dynamicTraits?.blockName;
+    const blockName = normalizeBlockName(blockValue);
+    const blockRank =
+      blockName && ROWS_BY_BLOCK?.[blockName]
+        ? Number(ROWS_BY_BLOCK[blockName])
+        : null;
+    return rarityTierFromBlockRank(blockRank);
+  }, [
+    nft?.isTicket,
+    nft?.rarity,
+    metadata,
+    dynamicTraits?.linkedBlock,
+    dynamicTraits?.block,
+    dynamicTraits?.blockName,
+  ]);
+  const rarityLabel = formatRarityLabel(rarityTier);
   const imageSrc = image ? ipfsToHttp(image) : PLACEHOLDER_IMG;
   const imageIsIpfs = React.useMemo(() => {
     const rawPrimary = String(image || "");
@@ -882,6 +1179,25 @@ export default function NftCard({
             onLoad={() => setImageLoaded(true)}
             onError={() => {
               setImageFailed(true);
+              const failed = failedImageCandidatesRef.current;
+              const currentKey = normalizeCandidate(imageSrc);
+              if (currentKey) failed.add(currentKey);
+
+              const nextCandidate = buildImageFallbackCandidates(
+                imageSrc,
+                image,
+                nft?.image,
+                metadata?.image,
+                metadata?.image_url,
+                nft?.meta?.image,
+                nft?.meta?.image_url,
+              ).find((candidate) => !failed.has(normalizeCandidate(candidate)));
+
+              if (nextCandidate) {
+                setImage(nextCandidate);
+                return;
+              }
+
               if (image !== PLACEHOLDER_IMG) setImage(PLACEHOLDER_IMG);
             }}
           />
@@ -895,9 +1211,13 @@ export default function NftCard({
 
       <div className="nft-card__body">
         <div className="nft-card__header">
-          <h3 className="nft-card__title">{title}</h3>
+          <h3 className="nft-card__title" title={title}>
+            {title}
+          </h3>
           {rarityLabel && (
-            <span className="nft-card__rarity">{rarityLabel}</span>
+            <span className={`nft-card__rarity nft-card__rarity--${rarityTier}`}>
+              {rarityLabel}
+            </span>
           )}
         </div>
 
@@ -905,9 +1225,9 @@ export default function NftCard({
           <div className="nft-card__section-title">Mint summary</div>
           <div className="nft-card__stats">
             <div>
-              <span>Ticket</span>
+              <span>{nft?.isTicket ? "Ticket (now)" : "Ticket"}</span>
               <strong>
-                {loadingMint
+                {loadingMint && !hasLiveTicketPrice
                   ? "..."
                   : formatMatic(derivedMintData?.ticketPrice)}
               </strong>
@@ -936,12 +1256,11 @@ export default function NftCard({
         </div>
 
         <div className="nft-card__section">
-          <div className="nft-card__section-title">Attributes</div>
-          {loadingMeta && !attributes.length && (
+          {detailsOpen && loadingMeta && !attributes.length && (
             <div className="nft-card__placeholder">Loading metadata...</div>
           )}
-          {!loadingMeta && attributes.length === 0 && (
-            <div className="nft-card__placeholder">No attributes provided.</div>
+          {detailsOpen && !loadingMeta && attributes.length === 0 && (
+            <div className="nft-card__placeholder">No details available.</div>
           )}
           {attributes.length > 0 && (
             <div className="nft-card__attributes">

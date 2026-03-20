@@ -3,6 +3,66 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+      (function () {
+        const MOBILE_LAYOUT_BREAKPOINT = 900;
+        const root = document.documentElement;
+
+        const readViewportWidth = () => {
+          const visualWidth = Number(window.visualViewport?.width || 0);
+          const innerWidth = Number(window.innerWidth || 0);
+          if (visualWidth > 0 && innerWidth > 0) {
+            return Math.min(visualWidth, innerWidth);
+          }
+          return visualWidth > 0 ? visualWidth : innerWidth;
+        };
+
+        const applyLandingViewportMode = () => {
+          const width = readViewportWidth();
+          const compact = Number.isFinite(width) && width <= MOBILE_LAYOUT_BREAKPOINT;
+          root.classList.toggle("landing-mobile-compact", compact);
+        };
+
+        applyLandingViewportMode();
+        document.addEventListener("DOMContentLoaded", applyLandingViewportMode, {
+          passive: true,
+        });
+        window.addEventListener("load", applyLandingViewportMode, {
+          passive: true,
+        });
+        window.addEventListener("resize", applyLandingViewportMode, {
+          passive: true,
+        });
+        window.visualViewport?.addEventListener("resize", applyLandingViewportMode, {
+          passive: true,
+        });
+        setTimeout(applyLandingViewportMode, 0);
+        setTimeout(applyLandingViewportMode, 180);
+      })();
+    </script>
+    <meta name="theme-color" content="#0a1022" />
+    <meta name="author" content="BiggiEyes" />
+    <script>
+      (function () {
+        const standaloneRedirects = {
+          "/rewards": "/rewards/index.html",
+          "/rewards/": "/rewards/index.html",
+          "/collection": "/collection/index.html",
+          "/collection/": "/collection/index.html",
+          "/vrf-mint": "/vrf-mint/index.html",
+          "/vrf-mint/": "/vrf-mint/index.html",
+          "/ecosystem": "/ecosystem/index.html",
+          "/ecosystem/": "/ecosystem/index.html",
+          "/community-center": "/community-center/index.html",
+          "/community-center/": "/community-center/index.html",
+        };
+
+        const target = standaloneRedirects[window.location.pathname];
+        if (!target) return;
+        if (window.location.pathname === target) return;
+        window.location.replace(`${target}${window.location.search}${window.location.hash}`);
+      })();
+    </script>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-S49TZ90XND"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -12,10 +72,10 @@
       gtag("js", new Date());
       gtag("config", "G-S49TZ90XND");
     </script>
-    <title>BiggiEyes NFT Ticket VRF | Tradable Reveal Ecosystem</title>
+    <title>BiggiEyes | NFT Tickets, VRF Reveal, Weekly BIGGI Rewards</title>
     <meta
       name="description"
-      content="BiggiEyes is a Web3 NFT project on Polygon: mint tradable ticket entries, redeem with VRF, and collect tradable rarity-based NFTs across five chapters."
+      content="BiggiEyes on Polygon starts with tradable NFT tickets, raises ticket price by 0.33% after every mint, and lets eligible finalized NFTs claim BIGGI weekly by rarity. Explore the guide, then open the app."
     />
     <meta
       name="robots"
@@ -26,11 +86,11 @@
     <meta property="og:site_name" content="BiggiEyes" />
     <meta
       property="og:title"
-      content="BiggiEyes NFT Ticket VRF | Tradable Reveal Ecosystem"
+      content="BiggiEyes | NFT Tickets, VRF Reveal, Weekly BIGGI Rewards"
     />
     <meta
       property="og:description"
-      content="Web3 NFT ticket ecosystem on Polygon: mint tradable ticket entries, redeem with VRF, and collect tradable rarity-based NFTs across five chapters."
+      content="Tradable NFT tickets, 0.33% price growth per mint, VRF reveal, and weekly BIGGI rewards for eligible finalized NFTs by rarity."
     />
     <meta property="og:url" content="https://biggieyes.com/" />
     <meta property="og:type" content="website" />
@@ -47,11 +107,11 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta
       name="twitter:title"
-      content="BiggiEyes NFT Ticket VRF | Tradable Reveal Ecosystem"
+      content="BiggiEyes | NFT Tickets, VRF Reveal, Weekly BIGGI Rewards"
     />
     <meta
       name="twitter:description"
-      content="Mint tradable ticket entries, redeem with VRF, reveal tradable NFTs, and follow the five-chapter BiggiEyes ecosystem."
+      content="Explore BiggiEyes on Polygon: tradable tickets, 0.33% ticket growth per mint, VRF reveal, and weekly BIGGI rewards by NFT rarity."
     />
     <meta name="twitter:url" content="https://biggieyes.com/" />
     <meta
@@ -62,9 +122,9 @@
       name="twitter:image:alt"
       content="BiggiEyes VRF ticket reveal ecosystem preview"
     />
-    <link rel="icon" href="/favicon.ico" sizes="any" />
-    <link rel="icon" type="image/png" href="/images/favicon.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" href="./favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="./images/favicon.png" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -86,7 +146,7 @@
             "@id": "https://biggieyes.com/#website",
             "name": "BiggiEyes",
             "url": "https://biggieyes.com/",
-            "description": "BiggiEyes Web3 ticket-to-reveal ecosystem on Polygon.",
+            "description": "BiggiEyes guide pages and interactive app dashboard for tradable NFT tickets, VRF reveal, and weekly BIGGI rewards on Polygon.",
             "publisher": { "@id": "https://biggieyes.com/#organization" },
             "inLanguage": "en"
           },
@@ -95,10 +155,10 @@
             "@id": "https://biggieyes.com/#project",
             "name": "BiggiEyes",
             "url": "https://biggieyes.com/",
-            "description": "Web3 Ticket-to-Reveal project with verifiable randomness and tradable NFTs.",
+            "description": "Web3 ticket-to-reveal project with tradable tickets, 0.33% ticket price growth after every mint, verifiable randomness, and weekly BIGGI rewards for eligible finalized NFTs.",
             "image": "https://biggieyes.com/og/og-biggieyes.png",
             "creator": { "@id": "https://biggieyes.com/#organization" },
-            "keywords": ["Web3", "NFT", "VRF", "Polygon", "Ticket to Reveal"]
+            "keywords": ["Web3", "NFT", "VRF", "Polygon", "Ticket to Reveal", "Weekly BIGGI Rewards", "0.33% Ticket Growth"]
           },
           {
             "@type": "WebApplication",
@@ -114,6 +174,85 @@
         ]
       }
     </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebPage",
+            "@id": "https://biggieyes.com/#webpage",
+            "url": "https://biggieyes.com/",
+            "name": "BiggiEyes | NFT Tickets, VRF Reveal, Weekly BIGGI Rewards",
+            "description": "Landing page for BiggiEyes on Polygon. Review tradable ticket pricing, weekly BIGGI rewards by rarity, VRF reveal flow, and then open the full interactive app.",
+            "inLanguage": "en",
+            "isPartOf": { "@id": "https://biggieyes.com/#website" },
+            "about": [
+              "Polygon NFT",
+              "VRF reveal",
+              "tradable ticket mint",
+              "weekly BIGGI rewards",
+              "0.33% ticket price growth",
+              "collection rewards",
+              "app guide"
+            ]
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://biggieyes.com/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "How does BiggiEyes minting work?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Users mint a tradable ticket that starts at 500 POL and rises by 0.33% after each mint, then redeem it through a VRF flow that reveals the final NFT on Polygon."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How do BIGGI rewards work?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Eligible finalized NFTs can claim BIGGI once per week, and the amount depends on block weight and rarity tier."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Are the tickets and NFTs tradable?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. Tickets are tradable before redeem, and the revealed NFTs remain tradable after the VRF outcome is finalized."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What makes the reveal verifiable?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "The final NFT state is derived from verifiable randomness and on-chain state, so collectors can inspect the process in the app and on-chain explorers."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Where can I see rewards, collection data, and tokenomics?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "BiggiEyes exposes dedicated pages and app panels for collection structure, rewards, VRF mint flow, the BIGGI ecosystem, and community access."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Is this homepage the full BiggiEyes app?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. The homepage is a guide and launcher. The full interactive BiggiEyes dashboard lives in /app/."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
     <style>
       :root {
         color-scheme: dark;
@@ -123,6 +262,11 @@
         --muted: #bbcae9;
         --accent: #ffe800;
         --accent-2: #61d9ff;
+        --frame-gold: rgba(255, 232, 0, 0.42);
+        --frame-cyan: rgba(97, 217, 255, 0.4);
+        --frame-red: rgba(255, 102, 102, 0.42);
+        --frame-green: rgba(123, 255, 178, 0.42);
+        --frame-violet: rgba(197, 140, 255, 0.42);
       }
 
       * {
@@ -135,27 +279,209 @@
         background:
           radial-gradient(circle at 20% 10%, rgba(97, 217, 255, 0.2), transparent 40%),
           radial-gradient(circle at 80% 0%, rgba(255, 232, 0, 0.18), transparent 36%),
+          linear-gradient(180deg, rgba(5, 10, 22, 0.62), rgba(5, 10, 22, 0.84)),
+          url("/images/panels/community.optimized.jpg") center top / cover no-repeat fixed,
           var(--bg);
         color: var(--text);
         line-height: 1.55;
       }
 
       main {
-        max-width: 980px;
+        max-width: 1620px;
         margin: 0 auto;
-        padding: 40px 20px 64px;
+        padding: 0 20px 64px;
+        position: relative;
+        display: grid;
+        grid-template-columns: 236px minmax(0, 1fr) 236px;
+        gap: 28px;
+        align-items: start;
+      }
+
+      main > section {
+        grid-column: 2;
+        min-width: 0;
+      }
+
+      .preview-rail,
+      .powered-by-rail {
+        grid-row: 1;
+        width: min(100%, 236px);
+        margin: 0;
+        padding: 22px 18px 24px;
+        min-height: 880px;
+        border-radius: 18px;
+        border: 1px solid rgba(97, 217, 255, 0.24);
+        background:
+          linear-gradient(180deg, rgba(8, 13, 27, 0.8), rgba(5, 10, 22, 0.88)),
+          url("/images/panels/ecosystem.optimized.jpg") center center / cover no-repeat,
+          rgba(10, 16, 34, 0.92);
+        box-shadow:
+          0 18px 34px rgba(0, 0, 0, 0.2),
+          0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+        position: sticky;
+        top: 0;
+      }
+
+      .preview-rail {
+        grid-column: 1;
+      }
+
+      .powered-by-rail {
+        grid-column: 3;
+      }
+
+      .preview-rail__label,
+      .powered-by__label {
+        margin: 0 0 12px;
+        color: var(--accent-2);
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        text-align: center;
+      }
+
+      .preview-rail__copy {
+        margin: 0 0 14px;
+        color: var(--muted);
+        font-size: 0.82rem;
+        text-align: center;
+      }
+
+      .powered-by__logos {
+        display: grid;
+        gap: 24px;
+        align-content: start;
+      }
+
+      .powered-by__logo-card {
+        appearance: none;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100px;
+        padding: 18px 16px;
+        border-radius: 14px;
+        border: 2px solid rgba(97, 217, 255, 0.34);
+        background: transparent;
+        box-shadow:
+          0 10px 22px rgba(0, 0, 0, 0.1),
+          0 0 0 1px rgba(97, 217, 255, 0.12) inset;
+        cursor: zoom-in;
+        transition:
+          transform 180ms ease,
+          min-height 180ms ease,
+          box-shadow 180ms ease,
+          border-color 180ms ease,
+          background 180ms ease;
+      }
+
+      .powered-by__logo-card--feature {
+        min-height: 176px;
+      }
+
+      .powered-by__logo-card:hover {
+        transform: translateY(-1px);
+        border-color: rgba(97, 217, 255, 0.62);
+        box-shadow:
+          0 14px 28px rgba(0, 0, 0, 0.2),
+          0 0 18px rgba(97, 217, 255, 0.16),
+          0 0 0 1px rgba(97, 217, 255, 0.18) inset;
+      }
+
+      .powered-by__logo-card.is-expanded {
+        min-height: 188px;
+        background: transparent;
+        border-color: rgba(255, 232, 0, 0.62);
+        box-shadow:
+          0 14px 30px rgba(0, 0, 0, 0.24),
+          0 0 18px rgba(255, 232, 0, 0.14),
+          0 0 0 1px rgba(255, 232, 0, 0.22) inset;
+        transform: scale(1.055);
+        cursor: zoom-out;
+      }
+
+      .powered-by__logo-card--feature.is-expanded {
+        min-height: 258px;
+      }
+
+      .powered-by__logo-card img {
+        display: block;
+        max-width: 100%;
+        max-height: 40px;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        transition: max-height 180ms ease, transform 180ms ease;
+      }
+
+      .powered-by__logo-card--feature img {
+        max-height: 108px;
+      }
+
+      .powered-by__logo-card--polygon img {
+        max-height: 54px;
+      }
+
+      .powered-by__logo-card--alchemy img {
+        max-height: 52px;
+      }
+
+      .powered-by__logo-card.is-expanded img {
+        max-height: 86px;
+        transform: scale(1.12);
+      }
+
+      .powered-by__logo-card--feature.is-expanded img {
+        max-height: 164px;
+      }
+
+      .powered-by__logo-card--polygon.is-expanded img {
+        max-height: 104px;
+      }
+
+      .powered-by__logo-card--alchemy.is-expanded img {
+        max-height: 108px;
       }
 
       .hero {
-        border: 1px solid rgba(255, 232, 0, 0.28);
+        grid-row: 1;
+        border: 1px solid var(--frame-gold);
         border-radius: 18px;
-        background: linear-gradient(180deg, rgba(16, 26, 54, 0.95), rgba(10, 16, 34, 0.95));
-        padding: 26px;
+        background:
+          linear-gradient(180deg, rgba(9, 16, 34, 0.8), rgba(5, 10, 22, 0.88)),
+          url("/images/panels/ecosystem.optimized.jpg") center center / cover no-repeat,
+          linear-gradient(180deg, rgba(16, 26, 54, 0.95), rgba(10, 16, 34, 0.95));
+        padding: 30px;
+        box-shadow:
+          0 22px 40px rgba(0, 0, 0, 0.18),
+          0 0 0 1px rgba(97, 217, 255, 0.12) inset;
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 22px;
+        align-items: start;
+      }
+
+      .hero-main,
+      .hero-side {
+        min-width: 0;
+      }
+
+      .hero-main {
+        display: grid;
+        gap: 12px;
+        justify-items: stretch;
+        text-align: left;
       }
 
       h1 {
         margin: 0 0 8px;
         font-size: clamp(1.9rem, 3.5vw, 2.7rem);
+        line-height: 1.04;
         color: var(--accent);
       }
 
@@ -165,16 +491,30 @@
         color: var(--accent);
       }
 
+      h3 {
+        margin: 0 0 8px;
+        font-size: 1rem;
+        color: var(--accent-2);
+      }
+
+      .faq-section h2,
+      .faq-section h3 {
+        display: inline-block;
+        padding-bottom: 4px;
+        border-bottom: 2px solid rgba(255, 232, 0, 0.72);
+      }
+
+      code {
+        font-family: "Consolas", "SFMono-Regular", "Menlo", monospace;
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: rgba(97, 217, 255, 0.14);
+        color: var(--text);
+      }
+
       p {
         margin: 0 0 14px;
         color: var(--muted);
-      }
-
-      .cta-row {
-        margin-top: 18px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
       }
 
       .btn {
@@ -190,7 +530,646 @@
 
       .btn.secondary {
         color: var(--text);
-        background: transparent;
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .hero-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        justify-self: start;
+        margin-bottom: 12px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: rgba(97, 217, 255, 0.12);
+        border: 1px solid rgba(97, 217, 255, 0.24);
+        color: var(--accent-2);
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .hero-copy {
+        max-width: none;
+        margin: 0;
+        color: #dfe8ff;
+        font-size: 1.02rem;
+        line-height: 1.72;
+      }
+
+      .hero-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+        justify-content: flex-start;
+      }
+
+      .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(97, 217, 255, 0.18);
+        color: #d7e7ff;
+        font-size: 0.86rem;
+        font-weight: 600;
+      }
+
+      .hero-note {
+        margin-top: 18px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        border: 1px solid var(--frame-gold);
+        background:
+          linear-gradient(180deg, rgba(255, 232, 0, 0.14), rgba(255, 232, 0, 0.08));
+        color: var(--text);
+        max-width: none;
+        box-shadow: 0 14px 28px rgba(255, 232, 0, 0.08);
+        backdrop-filter: blur(10px);
+      }
+
+      .hero-note strong {
+        color: var(--accent);
+      }
+
+      .hero-keyfacts {
+        margin-top: 18px;
+        width: 100%;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      }
+
+      .hero-keyfacts .card {
+        background: linear-gradient(180deg, rgba(8, 13, 27, 0.68), rgba(12, 19, 39, 0.48));
+        text-align: left;
+        backdrop-filter: blur(10px);
+      }
+
+      .hero-keyfacts .card:nth-child(1) {
+        border-color: var(--frame-gold);
+        box-shadow: 0 12px 24px rgba(255, 232, 0, 0.08);
+      }
+
+      .hero-keyfacts .card:nth-child(2) {
+        border-color: var(--frame-cyan);
+        box-shadow: 0 12px 24px rgba(97, 217, 255, 0.08);
+      }
+
+      .hero-keyfacts .card p:last-child {
+        margin-bottom: 0;
+      }
+
+      .quick-steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+      }
+
+      .quick-step {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        align-items: start;
+        padding: 12px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        min-height: 100%;
+      }
+
+      .quick-step:nth-child(1) {
+        border-color: var(--frame-cyan);
+        background: linear-gradient(180deg, rgba(97, 217, 255, 0.08), rgba(255, 255, 255, 0.03));
+      }
+
+      .quick-step:nth-child(2) {
+        border-color: var(--frame-gold);
+        background: linear-gradient(180deg, rgba(255, 232, 0, 0.08), rgba(255, 255, 255, 0.03));
+      }
+
+      .quick-step:nth-child(3) {
+        border-color: var(--frame-violet);
+        background: linear-gradient(180deg, rgba(197, 140, 255, 0.09), rgba(255, 255, 255, 0.03));
+      }
+
+      .quick-step__number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: rgba(255, 232, 0, 0.12);
+        border: 1px solid rgba(255, 232, 0, 0.28);
+        color: var(--accent);
+        font-weight: 800;
+        font-size: 1rem;
+      }
+
+      .quick-step__body strong {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--text);
+      }
+
+      .quick-step__body p {
+        margin: 0;
+        font-size: 0.9rem;
+      }
+
+      .hero-stats {
+        margin-top: 22px;
+        padding: 16px;
+        border-radius: 16px;
+        border: 1px solid var(--frame-cyan);
+        background: rgba(8, 13, 27, 0.58);
+        box-shadow: 0 16px 30px rgba(97, 217, 255, 0.08);
+        backdrop-filter: blur(12px);
+      }
+
+      .hero-stats .live-grid {
+        margin-top: 0;
+      }
+
+      .hero-stats .live-card {
+        background: linear-gradient(
+          180deg,
+          rgba(12, 19, 39, 0.96),
+          rgba(8, 12, 24, 0.94)
+        );
+      }
+
+      .hero-stats .live-card:nth-child(1) {
+        border-color: var(--frame-gold);
+        box-shadow: 0 10px 22px rgba(255, 232, 0, 0.08);
+      }
+
+      .hero-stats .live-card:nth-child(2) {
+        border-color: var(--frame-red);
+        box-shadow: 0 10px 22px rgba(255, 102, 102, 0.08);
+      }
+
+      .hero-stats .live-status {
+        margin-bottom: 0;
+      }
+
+      .hero-stats__label {
+        margin: 0 0 12px;
+        color: var(--accent-2);
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .hero-onboarding {
+        margin-top: 18px;
+      }
+
+      .hero-onboarding .launch-group {
+        background: rgba(7, 13, 28, 0.72);
+      }
+
+      .launch-group {
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+        border-radius: 14px;
+        border: 1px solid var(--frame-green);
+        background: rgba(7, 13, 28, 0.55);
+        box-shadow: 0 14px 30px rgba(123, 255, 178, 0.06);
+        backdrop-filter: blur(12px);
+      }
+
+      .launch-group__label {
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      .launch-group__copy {
+        margin: 0;
+        font-size: 0.92rem;
+      }
+
+      .topic-browser,
+      .app-launch {
+        margin-top: 24px;
+        display: grid;
+        gap: 16px;
+        padding: 18px;
+        border-radius: 18px;
+        background: linear-gradient(180deg, rgba(11, 17, 34, 0.66), rgba(8, 13, 27, 0.78));
+        box-shadow: 0 18px 34px rgba(0, 0, 0, 0.16);
+      }
+
+      .topic-browser {
+        border: 1px solid var(--frame-violet);
+      }
+
+      .app-launch {
+        border: 1px solid var(--frame-cyan);
+      }
+
+      .topic-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 10px;
+      }
+
+      .topic-summary__item {
+        display: grid;
+        gap: 4px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .topic-summary__item:nth-child(1) {
+        border-color: var(--frame-cyan);
+        background: linear-gradient(180deg, rgba(97, 217, 255, 0.08), rgba(255, 255, 255, 0.03));
+      }
+
+      .topic-summary__item:nth-child(2) {
+        border-color: var(--frame-gold);
+        background: linear-gradient(180deg, rgba(255, 232, 0, 0.08), rgba(255, 255, 255, 0.03));
+      }
+
+      .topic-summary__item strong {
+        color: var(--text);
+        font-size: 0.94rem;
+      }
+
+      .topic-summary__item span {
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .launch-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .launch-link {
+        flex: 1 1 170px;
+        text-align: center;
+        min-width: 0;
+      }
+
+      .launch-link--page {
+        background: rgba(255, 232, 0, 0.12);
+        border-color: rgba(255, 232, 0, 0.34);
+      }
+
+      .launch-link--panel {
+        flex-basis: 150px;
+        font-size: 0.88rem;
+        border-color: rgba(97, 217, 255, 0.32);
+      }
+
+      .launch-row .launch-link--panel:nth-child(1) {
+        background: linear-gradient(135deg, #ffe800, #ffbf00);
+        border-color: rgba(255, 232, 0, 0.68);
+        color: #221900;
+        box-shadow: 0 14px 28px rgba(255, 232, 0, 0.18);
+      }
+
+      .launch-row .launch-link--panel:nth-child(2) {
+        background: linear-gradient(135deg, #61d9ff, #2f8fff);
+        border-color: rgba(97, 217, 255, 0.72);
+        color: #041321;
+        box-shadow: 0 14px 28px rgba(47, 143, 255, 0.18);
+      }
+
+      .launch-row .launch-link--panel:nth-child(3) {
+        background: linear-gradient(135deg, #ff7a7a, #ff3b3b);
+        border-color: rgba(255, 102, 102, 0.76);
+        color: #250707;
+        box-shadow: 0 14px 28px rgba(255, 59, 59, 0.18);
+      }
+
+      .launch-row .launch-link--panel:nth-child(4) {
+        background: linear-gradient(135deg, #7bffb2, #22d3a6);
+        border-color: rgba(123, 255, 178, 0.68);
+        color: #051b15;
+        box-shadow: 0 14px 28px rgba(34, 211, 166, 0.18);
+      }
+
+      .launch-row .launch-link--panel:nth-child(5) {
+        background: linear-gradient(135deg, #7db7ff, #4f7cff);
+        border-color: rgba(125, 183, 255, 0.72);
+        color: #061427;
+        box-shadow: 0 14px 28px rgba(79, 124, 255, 0.18);
+      }
+
+      .launch-row .launch-link--panel:nth-child(6) {
+        background: linear-gradient(135deg, #c58cff, #8f63ff);
+        border-color: rgba(197, 140, 255, 0.72);
+        color: #140724;
+        box-shadow: 0 14px 28px rgba(143, 99, 255, 0.18);
+      }
+
+      .topic-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .topic-tab {
+        cursor: pointer;
+        transition:
+          transform 0.16s ease,
+          border-color 0.16s ease,
+          background 0.16s ease,
+          color 0.16s ease,
+          box-shadow 0.16s ease;
+      }
+
+      .topic-tab:hover {
+        transform: translateY(-1px);
+        border-color: rgba(255, 255, 255, 0.24);
+      }
+
+      .topic-tab[aria-selected="true"] {
+        color: #07101f;
+        box-shadow: 0 12px 26px rgba(0, 0, 0, 0.22);
+      }
+
+      .topic-tab[data-topic-tab="rewards"][aria-selected="true"],
+      .topic-panel[data-topic-panel="rewards"] .topic-panel__standalone {
+        background: linear-gradient(135deg, #ffe800, #ffbf00);
+        border-color: rgba(255, 232, 0, 0.68);
+        color: #221900;
+        box-shadow: 0 14px 28px rgba(255, 232, 0, 0.18);
+      }
+
+      .topic-tab[data-topic-tab="collection"][aria-selected="true"],
+      .topic-panel[data-topic-panel="collection"] .topic-panel__standalone {
+        background: linear-gradient(135deg, #61d9ff, #2f8fff);
+        border-color: rgba(97, 217, 255, 0.72);
+        color: #041321;
+        box-shadow: 0 14px 28px rgba(47, 143, 255, 0.18);
+      }
+
+      .topic-tab[data-topic-tab="vrf"][aria-selected="true"],
+      .topic-panel[data-topic-panel="vrf"] .topic-panel__standalone {
+        background: linear-gradient(135deg, #ff7a7a, #ff3b3b);
+        border-color: rgba(255, 102, 102, 0.76);
+        color: #250707;
+        box-shadow: 0 14px 28px rgba(255, 59, 59, 0.18);
+      }
+
+      .topic-tab[data-topic-tab="ecosystem"][aria-selected="true"],
+      .topic-panel[data-topic-panel="ecosystem"] .topic-panel__standalone {
+        background: linear-gradient(135deg, #7bffb2, #22d3a6);
+        border-color: rgba(123, 255, 178, 0.68);
+        color: #051b15;
+        box-shadow: 0 14px 28px rgba(34, 211, 166, 0.18);
+      }
+
+      .topic-tab[data-topic-tab="community"][aria-selected="true"],
+      .topic-panel[data-topic-panel="community"] .topic-panel__standalone {
+        background: linear-gradient(135deg, #c58cff, #8f63ff);
+        border-color: rgba(197, 140, 255, 0.72);
+        color: #140724;
+        box-shadow: 0 14px 28px rgba(143, 99, 255, 0.18);
+      }
+
+      .topic-panel {
+        background: linear-gradient(180deg, rgba(16, 26, 54, 0.9), rgba(10, 16, 34, 0.96));
+        border: 1px solid rgba(255, 232, 0, 0.18);
+        border-radius: 18px;
+        padding: 22px;
+      }
+
+      .topic-panel[data-topic-panel="rewards"] {
+        border-color: var(--frame-gold);
+        box-shadow: 0 18px 34px rgba(255, 232, 0, 0.08);
+      }
+
+      .topic-panel[data-topic-panel="collection"] {
+        border-color: var(--frame-cyan);
+        box-shadow: 0 18px 34px rgba(97, 217, 255, 0.08);
+      }
+
+      .topic-panel[data-topic-panel="vrf"] {
+        border-color: var(--frame-red);
+        box-shadow: 0 18px 34px rgba(255, 102, 102, 0.08);
+      }
+
+      .topic-panel[data-topic-panel="ecosystem"] {
+        border-color: var(--frame-green);
+        box-shadow: 0 18px 34px rgba(123, 255, 178, 0.08);
+      }
+
+      .topic-panel[data-topic-panel="community"] {
+        border-color: var(--frame-violet);
+        box-shadow: 0 18px 34px rgba(197, 140, 255, 0.08);
+      }
+
+      .topic-panel[hidden] {
+        display: none;
+      }
+
+      .topic-panel__eyebrow {
+        margin: 0 0 8px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      .topic-panel__lead {
+        margin: 0 0 16px;
+        color: #d8e5ff;
+        font-size: 1rem;
+      }
+
+      .topic-panel__highlights {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      .topic-highlight {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 232, 0, 0.08);
+        border: 1px solid rgba(255, 232, 0, 0.2);
+        color: #fff2a8;
+        font-size: 0.86rem;
+        font-weight: 600;
+      }
+
+      .topic-panel[data-topic-panel="collection"] .topic-highlight {
+        background: rgba(97, 217, 255, 0.1);
+        border-color: var(--frame-cyan);
+        color: #cdefff;
+      }
+
+      .topic-panel[data-topic-panel="vrf"] .topic-highlight {
+        background: rgba(255, 102, 102, 0.1);
+        border-color: var(--frame-red);
+        color: #ffd1d1;
+      }
+
+      .topic-panel[data-topic-panel="ecosystem"] .topic-highlight {
+        background: rgba(123, 255, 178, 0.1);
+        border-color: var(--frame-green);
+        color: #d6ffe7;
+      }
+
+      .topic-panel[data-topic-panel="community"] .topic-highlight {
+        background: rgba(197, 140, 255, 0.1);
+        border-color: var(--frame-violet);
+        color: #ead7ff;
+      }
+
+      .topic-panel__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      .topic-panel__standalone {
+        transition:
+          transform 0.16s ease,
+          border-color 0.16s ease,
+          background 0.16s ease,
+          color 0.16s ease,
+          box-shadow 0.16s ease;
+      }
+
+      .topic-panel__standalone:hover {
+        transform: translateY(-1px);
+      }
+
+      .hero-primary-cta {
+        margin-top: 22px;
+        display: flex;
+        justify-content: stretch;
+        width: 100%;
+      }
+
+      .app-cta {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-height: 68px;
+        border-radius: 16px;
+        font-size: 1.08rem;
+        letter-spacing: 0.04em;
+        box-shadow:
+          0 18px 34px rgba(47, 143, 255, 0.18),
+          0 0 0 1px rgba(97, 217, 255, 0.18) inset;
+      }
+
+      .hero-app-cta {
+        position: relative;
+        width: 100%;
+        max-width: none;
+        min-height: 96px;
+        padding: 18px 132px 18px 24px;
+        flex-direction: column;
+        gap: 4px;
+        overflow: hidden;
+        border: 1px solid rgba(125, 212, 255, 0.72);
+        background:
+          radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.24), transparent 26%),
+          linear-gradient(135deg, #9eeeff 0%, #4ebcff 44%, #1b6fff 100%);
+        color: #05111f;
+        box-shadow:
+          0 22px 44px rgba(27, 111, 255, 0.26),
+          0 0 38px rgba(97, 217, 255, 0.24),
+          0 0 0 1px rgba(125, 212, 255, 0.26) inset;
+        animation: heroCtaPulse 2.8s ease-in-out infinite;
+      }
+
+      .hero-app-cta::after {
+        content: "Enter App";
+        position: absolute;
+        right: 24px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 1;
+        font-size: 0.76rem;
+        font-weight: 900;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: rgba(5, 17, 31, 0.82);
+      }
+
+      .hero-app-cta::before {
+        content: "";
+        position: absolute;
+        top: -30%;
+        left: -22%;
+        width: 34%;
+        height: 160%;
+        background: linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0),
+          rgba(255, 255, 255, 0.52),
+          rgba(255, 255, 255, 0)
+        );
+        transform: rotate(16deg);
+        animation: heroCtaSweep 3.6s linear infinite;
+        pointer-events: none;
+      }
+
+      .hero-app-cta__eyebrow,
+      .hero-app-cta__title,
+      .hero-app-cta__meta {
+        position: relative;
+        z-index: 1;
+      }
+
+      .hero-app-cta__eyebrow {
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        opacity: 0.78;
+      }
+
+      .hero-app-cta__title {
+        font-size: clamp(1.3rem, 3vw, 1.85rem);
+        font-weight: 900;
+        letter-spacing: 0.04em;
+      }
+
+      .hero-app-cta__meta {
+        font-size: 0.9rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        opacity: 0.88;
+        max-width: 100%;
+      }
+
+      .card-link {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 12px;
+        color: var(--accent);
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .card-link:hover {
+        color: #fff8a6;
       }
 
       .links-list {
@@ -233,6 +1212,32 @@
         border: 1px solid rgba(97, 217, 255, 0.22);
         border-radius: 12px;
         padding: 14px;
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+      }
+
+      .topic-panel[data-topic-panel="rewards"] .card {
+        border-color: var(--frame-gold);
+        background: linear-gradient(180deg, rgba(255, 232, 0, 0.08), rgba(16, 26, 54, 0.9));
+      }
+
+      .topic-panel[data-topic-panel="collection"] .card {
+        border-color: var(--frame-cyan);
+        background: linear-gradient(180deg, rgba(97, 217, 255, 0.08), rgba(16, 26, 54, 0.9));
+      }
+
+      .topic-panel[data-topic-panel="vrf"] .card {
+        border-color: var(--frame-red);
+        background: linear-gradient(180deg, rgba(255, 102, 102, 0.08), rgba(16, 26, 54, 0.9));
+      }
+
+      .topic-panel[data-topic-panel="ecosystem"] .card {
+        border-color: var(--frame-green);
+        background: linear-gradient(180deg, rgba(123, 255, 178, 0.08), rgba(16, 26, 54, 0.9));
+      }
+
+      .topic-panel[data-topic-panel="community"] .card {
+        border-color: var(--frame-violet);
+        background: linear-gradient(180deg, rgba(197, 140, 255, 0.08), rgba(16, 26, 54, 0.9));
       }
 
       .live-grid {
@@ -243,8 +1248,32 @@
 
       .landing-gallery {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+      }
+
+      .preview-rail .landing-gallery {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      .hero-mobile-preview {
+        display: none;
+      }
+
+      .hero-mobile-preview__label {
+        margin: 0 0 10px;
+        color: var(--accent-2);
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .hero-mobile-preview__copy {
+        margin: 0 0 12px;
+        color: var(--muted);
+        font-size: 0.82rem;
       }
 
       .landing-gallery__item {
@@ -253,12 +1282,203 @@
         overflow: hidden;
         border: 1px solid rgba(97, 217, 255, 0.28);
         background: rgba(16, 26, 54, 0.8);
+        box-shadow:
+          0 14px 28px rgba(0, 0, 0, 0.18),
+          0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+      }
+
+      .landing-gallery__item:nth-child(odd) {
+        border-color: var(--frame-cyan);
+      }
+
+      .landing-gallery__item:nth-child(even) {
+        border-color: var(--frame-violet);
       }
 
       .landing-gallery__item img {
         display: block;
         width: 100%;
-        aspect-ratio: 4 / 3;
+        height: auto;
+        aspect-ratio: auto;
+        object-fit: contain;
+        background: rgba(4, 9, 18, 0.92);
+      }
+
+      .landing-mobile-compact,
+      .landing-mobile-compact body {
+        overflow-x: hidden;
+      }
+
+      .landing-mobile-compact main {
+        width: 100%;
+        max-width: 100%;
+        grid-template-columns: 1fr;
+        padding: 0 14px 40px;
+        gap: 16px;
+      }
+
+      .landing-mobile-compact main > section,
+      .landing-mobile-compact .powered-by-rail {
+        grid-column: 1;
+      }
+
+      .landing-mobile-compact .preview-rail,
+      .landing-mobile-compact .hero,
+      .landing-mobile-compact .powered-by-rail {
+        grid-row: auto;
+      }
+
+      .landing-mobile-compact .preview-rail {
+        display: none;
+      }
+
+      .landing-mobile-compact .hero,
+      .landing-mobile-compact .powered-by-rail,
+      .landing-mobile-compact .topic-browser,
+      .landing-mobile-compact .app-launch,
+      .landing-mobile-compact .topic-panel {
+        border-radius: 16px;
+      }
+
+      .landing-mobile-compact .hero {
+        /* Keep onboarding first on mobile; avoid reordering below topic switch blocks. */
+        order: 0;
+        padding: 22px 16px;
+      }
+
+      .landing-mobile-compact .hero-grid,
+      .landing-mobile-compact .hero-main {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .landing-mobile-compact .hero-main {
+        gap: 14px;
+      }
+
+      .landing-mobile-compact .hero-main h1,
+      .landing-mobile-compact .hero-copy,
+      .landing-mobile-compact .hero-badges,
+      .landing-mobile-compact .hero-note,
+      .landing-mobile-compact .hero-keyfacts,
+      .landing-mobile-compact .hero-primary-cta,
+      .landing-mobile-compact .hero-mobile-preview,
+      .landing-mobile-compact .hero-stats,
+      .landing-mobile-compact .hero-onboarding,
+      .landing-mobile-compact .launch-group,
+      .landing-mobile-compact .topic-tabs,
+      .landing-mobile-compact .launch-row {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+      }
+
+      .landing-mobile-compact .hero-main h1,
+      .landing-mobile-compact .hero-copy,
+      .landing-mobile-compact .hero-note,
+      .landing-mobile-compact .launch-group__copy {
+        overflow-wrap: anywhere;
+      }
+
+      .landing-mobile-compact .hero-main h1 {
+        font-size: clamp(1.72rem, 8vw, 2.18rem);
+        line-height: 1.08;
+      }
+
+      .landing-mobile-compact .hero-badges {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        justify-content: stretch;
+      }
+
+      .landing-mobile-compact .hero-badge {
+        width: 100%;
+        min-width: 0;
+        justify-content: flex-start;
+      }
+
+      .landing-mobile-compact .powered-by-rail {
+        order: 3;
+        position: static;
+        width: 100%;
+        max-width: 100%;
+        min-height: auto;
+        padding: 16px 14px 18px;
+        margin: 0 0 16px;
+      }
+
+      .landing-mobile-compact .hero-keyfacts,
+      .landing-mobile-compact .quick-steps,
+      .landing-mobile-compact .grid,
+      .landing-mobile-compact .live-grid,
+      .landing-mobile-compact .links-list,
+      .landing-mobile-compact .topic-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .landing-mobile-compact .topic-browser,
+      .landing-mobile-compact .app-launch,
+      .landing-mobile-compact .topic-panel {
+        padding: 16px;
+      }
+
+      .landing-mobile-compact .topic-tabs,
+      .landing-mobile-compact .launch-row {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .landing-mobile-compact .launch-link,
+      .landing-mobile-compact .launch-link--panel {
+        flex-basis: 100%;
+        width: 100%;
+      }
+
+      .landing-mobile-compact .hero-mobile-preview {
+        display: block;
+        margin-top: 18px;
+        padding: 14px 12px 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(97, 217, 255, 0.22);
+        background: linear-gradient(
+          180deg,
+          rgba(8, 13, 27, 0.56),
+          rgba(12, 19, 39, 0.34)
+        );
+      }
+
+      .landing-mobile-compact .hero-mobile-preview .landing-gallery {
+        grid-template-columns: none;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(232px, 82vw);
+        gap: 12px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 6px;
+        margin: 0 -2px;
+        scroll-snap-type: x proximity;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .landing-mobile-compact .hero-mobile-preview .landing-gallery::-webkit-scrollbar {
+        height: 6px;
+      }
+
+      .landing-mobile-compact .hero-mobile-preview .landing-gallery::-webkit-scrollbar-thumb {
+        background: rgba(97, 217, 255, 0.34);
+        border-radius: 999px;
+      }
+
+      .landing-mobile-compact .hero-mobile-preview .landing-gallery .landing-gallery__item {
+        aspect-ratio: 16 / 9;
+        scroll-snap-align: start;
+      }
+
+      .landing-mobile-compact .hero-mobile-preview .landing-gallery .landing-gallery__item img {
+        width: 100%;
+        height: 100%;
+        aspect-ratio: 16 / 9;
         object-fit: cover;
       }
 
@@ -270,10 +1490,22 @@
       }
 
       .live-label {
-        margin: 0 0 8px;
+        margin: 0 0 10px;
+        padding-bottom: 8px;
+        position: relative;
         color: var(--accent-2);
         font-size: 0.92rem;
         font-weight: 700;
+      }
+
+      .live-label::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 1px;
+        background: linear-gradient(90deg, rgba(97, 217, 255, 0.42), rgba(255, 255, 255, 0.08));
       }
 
       .live-value {
@@ -294,161 +1526,730 @@
         color: var(--muted);
       }
 
-      .panel-grid {
-        display: flex;
-        flex-wrap: nowrap;
-        gap: 6px;
-        overflow-x: auto;
-        padding-bottom: 2px;
+      .app-preview {
+        margin-top: 10px;
       }
 
-      .panel-link {
-        text-align: center;
-        flex: 1 0 0;
-        min-width: 118px;
-        padding: 8px 8px;
-        font-size: 0.72rem;
-        letter-spacing: 0.02em;
-        white-space: nowrap;
+      @keyframes heroCtaPulse {
+        0%,
+        100% {
+          transform: translateY(0) scale(1);
+          box-shadow:
+            0 22px 44px rgba(255, 232, 0, 0.24),
+            0 0 38px rgba(97, 217, 255, 0.22),
+            0 0 0 1px rgba(255, 255, 255, 0.14) inset;
+        }
+        50% {
+          transform: translateY(-2px) scale(1.01);
+          box-shadow:
+            0 28px 52px rgba(255, 232, 0, 0.3),
+            0 0 52px rgba(97, 217, 255, 0.28),
+            0 0 0 1px rgba(255, 255, 255, 0.22) inset;
+        }
+      }
+
+      @keyframes heroCtaSweep {
+        0% {
+          transform: translateX(-240%) rotate(16deg);
+        }
+        100% {
+          transform: translateX(520%) rotate(16deg);
+        }
       }
 
       @media (max-width: 760px) {
         .links-list {
           grid-template-columns: 1fr;
         }
+
+        .launch-link,
+        .launch-link--panel {
+          flex-basis: calc(50% - 5px);
+        }
+
+        .app-cta {
+          min-height: 60px;
+          font-size: 1rem;
+        }
+
+        .hero-app-cta {
+          min-height: 78px;
+          padding: 14px 20px;
+        }
+
+        .hero-app-cta__meta {
+          font-size: 0.84rem;
+        }
+
+        .hero-app-cta::after {
+          display: none;
+        }
+      }
+
+      @media (max-width: 1260px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+
+        .preview-rail,
+        .hero,
+        .powered-by-rail {
+          grid-row: auto;
+        }
+
+        .hero {
+          order: 1;
+        }
+
+        .preview-rail {
+          order: 2;
+        }
+
+        .powered-by-rail {
+          order: 3;
+        }
+
+        .preview-rail,
+        .powered-by-rail {
+          grid-column: 1;
+          position: static;
+          width: min(100%, 920px);
+          max-width: 100%;
+          min-height: auto;
+          margin: 0 auto 18px;
+        }
+      }
+
+      @media (max-width: 920px) {
+        .preview-rail,
+        .powered-by-rail {
+          padding: 18px 16px 20px;
+        }
+
+        .preview-rail .landing-gallery {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
+        }
+      }
+
+      @media (max-width: 760px) {
+        main {
+          padding: 0 14px 40px;
+          gap: 16px;
+        }
+
+        .preview-rail,
+        .hero,
+        .powered-by-rail {
+          border-radius: 16px;
+        }
+
+        .hero {
+          padding: 22px 16px;
+        }
+
+        .preview-rail {
+          display: none;
+        }
+
+        .powered-by-rail {
+          width: 100%;
+          padding: 16px 14px 18px;
+          margin-bottom: 16px;
+        }
+
+        .preview-rail__label,
+        .powered-by__label {
+          margin-bottom: 10px;
+        }
+
+        .preview-rail__copy {
+          margin-bottom: 12px;
+          font-size: 0.78rem;
+        }
+
+        .hero-mobile-preview {
+          display: block;
+          margin-top: 18px;
+          padding: 14px 12px 12px;
+          border-radius: 14px;
+          border: 1px solid rgba(97, 217, 255, 0.22);
+          background: linear-gradient(
+            180deg,
+            rgba(8, 13, 27, 0.56),
+            rgba(12, 19, 39, 0.34)
+          );
+        }
+
+        .hero-mobile-preview .landing-gallery {
+          grid-template-columns: none;
+          grid-auto-flow: column;
+          grid-auto-columns: minmax(232px, 82vw);
+          gap: 12px;
+          overflow-x: auto;
+          overflow-y: hidden;
+          padding-bottom: 6px;
+          margin: 0 -2px;
+          scroll-snap-type: x proximity;
+          overscroll-behavior-x: contain;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .hero-mobile-preview .landing-gallery::-webkit-scrollbar {
+          height: 6px;
+        }
+
+        .hero-mobile-preview .landing-gallery::-webkit-scrollbar-thumb {
+          background: rgba(97, 217, 255, 0.34);
+          border-radius: 999px;
+        }
+
+        .hero-mobile-preview .landing-gallery .landing-gallery__item {
+          aspect-ratio: 16 / 9;
+          scroll-snap-align: start;
+        }
+
+        .hero-mobile-preview .landing-gallery .landing-gallery__item img {
+          width: 100%;
+          height: 100%;
+          aspect-ratio: 16 / 9;
+          object-fit: cover;
+        }
+      }
+
+      @media (max-width: 520px) {
+        .launch-link,
+        .launch-link--panel {
+          flex-basis: 100%;
+        }
       }
     </style>
   </head>
   <body>
     <main>
-      <section class="hero">
-        <h1>BiggiEyes — VRF Ticket → Reveal Ecosystem</h1>
-        <p>
-          BiggiEyes combines tradable Tickets, verifiable randomness (VRF), and
-          reveal-driven NFT rarity into one on-chain flow.
-        </p>
-        <div class="cta-row">
-          <a class="btn" href="/app/">Open App</a>
-        </div>
-      </section>
-
-      <section id="live-stats">
-        <h2>Live On-Chain Stats</h2>
-        <p>
-          These values are fetched live from Polygon Amoy contracts used by the app.
-          They are not hardcoded marketing numbers.
-        </p>
-        <div class="live-grid">
-          <article class="live-card">
-            <p class="live-label">Current Ticket Price</p>
-            <div class="live-value" id="stat-ticket-price">Loading...</div>
-            <div class="live-meta">Source: BiggiMain `getTicketPrice()`</div>
-          </article>
-          <article class="live-card">
-            <p class="live-label">Current BIGGI Token Price</p>
-            <div class="live-value" id="stat-biggi-price">Loading...</div>
-            <div class="live-meta">Source: BIGGI price feed / DEX fallback</div>
-          </article>
-        </div>
-        <div class="live-status" id="stat-updated">Waiting for first update...</div>
-      </section>
-
-      <section id="landing-gallery">
-        <h2>Landing Preview</h2>
-        <p>
-          Visual preview from the latest landing assets shown before entering the
-          dashboard.
+      <aside class="preview-rail" aria-label="App preview images">
+        <p class="preview-rail__label">App Preview</p>
+        <p class="preview-rail__copy">
+          Dashboard preview cards before opening the live app.
         </p>
         <div class="landing-gallery">
           <figure class="landing-gallery__item">
-            <img src="/images/tolanding/Snímek obrazovky 2026-03-01 030413.png" alt="BiggiEyes landing preview 1" loading="lazy" decoding="async" />
+            <img src="./images/tolanding/landing-preview-1.optimized.jpg" alt="BiggiEyes landing preview 1" width="1920" height="1080" loading="lazy" decoding="async" />
           </figure>
           <figure class="landing-gallery__item">
-            <img src="/images/tolanding/Snímek obrazovky 2026-03-01 030455.png" alt="BiggiEyes landing preview 2" loading="lazy" decoding="async" />
+            <img src="./images/tolanding/landing-preview-2.optimized.jpg" alt="BiggiEyes landing preview 2" width="1920" height="1080" loading="lazy" decoding="async" />
           </figure>
           <figure class="landing-gallery__item">
-            <img src="/images/tolanding/Snímek obrazovky 2026-03-01 030601.png" alt="BiggiEyes landing preview 3" loading="lazy" decoding="async" />
+            <img src="./images/tolanding/landing-preview-3.optimized.jpg" alt="BiggiEyes landing preview 3" width="1920" height="1080" loading="lazy" decoding="async" />
           </figure>
           <figure class="landing-gallery__item">
-            <img src="/images/tolanding/Snímek obrazovky 2026-03-01 030655.png" alt="BiggiEyes landing preview 4" loading="lazy" decoding="async" />
+            <img src="./images/tolanding/landing-preview-4.optimized.jpg" alt="BiggiEyes landing preview 4" width="1920" height="1080" loading="lazy" decoding="async" />
           </figure>
           <figure class="landing-gallery__item">
-            <img src="/images/tolanding/Snímek obrazovky 2026-03-01 034817.png" alt="BiggiEyes landing preview 5" loading="lazy" decoding="async" />
+            <img src="./images/tolanding/landing-preview-5.optimized.jpg" alt="BiggiEyes landing preview 5" width="1920" height="1080" loading="lazy" decoding="async" />
           </figure>
+        </div>
+      </aside>
+
+      <aside class="powered-by-rail" aria-label="Powered by partner logos">
+        <p class="powered-by__label">Powered by</p>
+        <div class="powered-by__logos">
+          <button
+            type="button"
+            class="powered-by__logo-card powered-by__logo-card--feature"
+            data-powered-logo
+            aria-pressed="false"
+          >
+            <img src="./images/PwrdByLogos/email-header-2.png" alt="Powered by ecosystem banner" />
+          </button>
+          <button type="button" class="powered-by__logo-card" data-powered-logo aria-pressed="false">
+            <img src="./images/PwrdByLogos/Chainlink-Logo-Blue.png" alt="Chainlink logo" />
+          </button>
+          <button
+            type="button"
+            class="powered-by__logo-card powered-by__logo-card--alchemy"
+            data-powered-logo
+            aria-pressed="false"
+          >
+            <img src="./images/PwrdByLogos/alchemy-banner-2.jpg" alt="Alchemy logo" />
+          </button>
+          <button type="button" class="powered-by__logo-card" data-powered-logo aria-pressed="false">
+            <img src="./images/PwrdByLogos/light.png" alt="Partner ecosystem logo" />
+          </button>
+          <button type="button" class="powered-by__logo-card" data-powered-logo aria-pressed="false">
+            <img
+              src="./images/PwrdByLogos/Metamask-Financial-Services-Logo-PNG-thumb.png"
+              alt="MetaMask logo"
+            />
+          </button>
+          <button
+            type="button"
+            class="powered-by__logo-card powered-by__logo-card--polygon"
+            data-powered-logo
+            aria-pressed="false"
+          >
+            <img src="./images/PwrdByLogos/Polygon_Icon_White_Purple_Rn-4.webp" alt="Polygon logo" />
+          </button>
+        </div>
+      </aside>
+
+      <section class="hero">
+        <div class="hero-grid">
+          <div class="hero-main">
+            <div class="hero-kicker">Guide + App Launcher</div>
+            <h1>Understand BiggiEyes first. Open the app only when you want live actions.</h1>
+            <p class="hero-copy">
+              This homepage explains the two core mechanics first: the ticket
+              price rises by <strong>0.33%</strong> after every mint, and
+              finalized NFTs can claim <strong>BIGGI every week</strong> based
+              on rarity weight. Switch topics here, preview the dashboard, and
+              open <code>/app/</code> only when you need live wallet data.
+            </p>
+            <div class="hero-badges" aria-label="Landing overview">
+              <span class="hero-badge">Weekly BIGGI by NFT rarity</span>
+              <span class="hero-badge">Ticket price +0.33% every mint</span>
+              <span class="hero-badge">Tradable ticket → VRF reveal → NFT</span>
+            </div>
+            <div class="hero-note">
+              <strong>Most important:</strong> tickets follow a public on-chain
+              price curve, while finalized NFTs enter the weekly BIGGI claim
+              system. The topic buttons below only change this landing page; the
+              <code>Open App</code> button takes you into the live dashboard.
+            </div>
+            <div class="grid hero-keyfacts">
+              <article class="card">
+                <h3>Weekly BIGGI for NFT holders</h3>
+                <p>
+                  Each finalized NFT can claim once per week. Claim amount
+                  depends on block weight and rarity tier, so stronger outcomes
+                  carry more weekly BIGGI.
+                </p>
+              </article>
+              <article class="card">
+                <h3>0.33% ticket growth per mint</h3>
+                <p>
+                  The ticket curve starts at 500 POL and rises by 0.33% after
+                  every mint. That growth is on-chain, public, and keeps moving
+                  upward as new tickets are minted.
+                </p>
+              </article>
+            </div>
+            <div class="hero-primary-cta">
+              <a class="btn app-cta hero-app-cta" href="./app/">
+                <span class="hero-app-cta__eyebrow">Live Dashboard</span>
+                <span class="hero-app-cta__title">Open App</span>
+                <span class="hero-app-cta__meta">Mint, redeem, rewards, collection, ecosystem</span>
+              </a>
+            </div>
+            <div class="hero-mobile-preview" aria-label="App preview images for mobile">
+              <p class="hero-mobile-preview__label">App Preview</p>
+              <p class="hero-mobile-preview__copy">
+                Dashboard preview cards directly inside the main panel on mobile.
+              </p>
+              <div class="landing-gallery">
+                <figure class="landing-gallery__item">
+                  <img src="./images/tolanding/landing-preview-1.optimized.jpg" alt="BiggiEyes landing preview 1" width="1920" height="1080" loading="lazy" decoding="async" />
+                </figure>
+                <figure class="landing-gallery__item">
+                  <img src="./images/tolanding/landing-preview-2.optimized.jpg" alt="BiggiEyes landing preview 2" width="1920" height="1080" loading="lazy" decoding="async" />
+                </figure>
+                <figure class="landing-gallery__item">
+                  <img src="./images/tolanding/landing-preview-3.optimized.jpg" alt="BiggiEyes landing preview 3" width="1920" height="1080" loading="lazy" decoding="async" />
+                </figure>
+                <figure class="landing-gallery__item">
+                  <img src="./images/tolanding/landing-preview-4.optimized.jpg" alt="BiggiEyes landing preview 4" width="1920" height="1080" loading="lazy" decoding="async" />
+                </figure>
+                <figure class="landing-gallery__item">
+                  <img src="./images/tolanding/landing-preview-5.optimized.jpg" alt="BiggiEyes landing preview 5" width="1920" height="1080" loading="lazy" decoding="async" />
+                </figure>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="hero-stats">
+          <p class="hero-stats__label">Live Entry Stats</p>
+          <div class="live-grid">
+            <article class="live-card">
+              <p class="live-label">Current Ticket Price</p>
+              <div class="live-value" id="stat-ticket-price">Loading...</div>
+              <div class="live-meta">Source: BiggiMain `getTicketPrice()`</div>
+            </article>
+            <article class="live-card">
+              <p class="live-label">Current BIGGI Token Price</p>
+              <div class="live-value" id="stat-biggi-price">Loading...</div>
+              <div class="live-meta">Source: DEX pair / oracle fallback</div>
+            </article>
+          </div>
+          <div class="live-status" id="stat-updated">Waiting for first update...</div>
+        </div>
+        <div class="hero-onboarding" aria-label="Quick start">
+          <div class="launch-group">
+            <div class="launch-group__label">UNDERSTAND BIGGIEYES FIRST</div>
+            <p class="launch-group__copy">
+              First understand the mechanic here on landing, then open the app
+              only when you want live wallet actions.
+            </p>
+            <div class="quick-steps">
+              <article class="quick-step">
+                <div class="quick-step__number">1</div>
+                <div class="quick-step__body">
+                  <strong>Choose a topic</strong>
+                  <p>Start with Rewards, Collection, VRF Mint, Ecosystem, or Community.</p>
+                </div>
+              </article>
+              <article class="quick-step">
+                <div class="quick-step__number">2</div>
+                <div class="quick-step__body">
+                  <strong>Read the short guide</strong>
+                  <p>Each topic below explains the core idea without opening the app.</p>
+                </div>
+              </article>
+              <article class="quick-step">
+                <div class="quick-step__number">3</div>
+                <div class="quick-step__body">
+                  <strong>Open the live dashboard</strong>
+                  <p>Use <code>Open App</code> when you want wallet actions and live on-chain data.</p>
+                </div>
+              </article>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section>
-        <h2>How it works</h2>
-        <p>
-          Ticket -&gt; Redeem -&gt; VRF -&gt; NFT. You mint a Ticket first, then redeem it.
-          VRF selects the final mutation, and the Ticket turns into the final NFT.
-        </p>
+      <section class="topic-browser" id="topic-browser">
+        <div class="launch-group">
+          <div class="launch-group__label">Switch Guide Topic</div>
+          <p class="launch-group__copy">
+            Choose one topic below. The buttons only switch the content on this
+            landing page and do not open the app.
+          </p>
+          <div class="topic-summary" aria-label="How this section works">
+            <article class="topic-summary__item">
+              <strong>Guide here</strong>
+              <span>Switch topics and read the overview without leaving the homepage.</span>
+            </article>
+            <article class="topic-summary__item">
+              <strong>App later</strong>
+              <span>Open the app only when you want live wallet data, mint, redeem, or claim actions.</span>
+            </article>
+          </div>
+          <div class="topic-tabs" role="tablist" aria-label="BiggiEyes guide topics">
+            <button
+              class="btn secondary launch-link launch-link--page topic-tab"
+              id="topic-tab-rewards"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              aria-controls="topic-panel-rewards"
+              data-topic-tab="rewards"
+            >
+              Rewards
+            </button>
+            <button
+              class="btn secondary launch-link launch-link--page topic-tab"
+              id="topic-tab-collection"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="topic-panel-collection"
+              data-topic-tab="collection"
+            >
+              Collection
+            </button>
+            <button
+              class="btn secondary launch-link launch-link--page topic-tab"
+              id="topic-tab-vrf"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="topic-panel-vrf"
+              data-topic-tab="vrf"
+            >
+              VRF Mint
+            </button>
+            <button
+              class="btn secondary launch-link launch-link--page topic-tab"
+              id="topic-tab-ecosystem"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="topic-panel-ecosystem"
+              data-topic-tab="ecosystem"
+            >
+              Ecosystem
+            </button>
+            <button
+              class="btn secondary launch-link launch-link--page topic-tab"
+              id="topic-tab-community"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="topic-panel-community"
+              data-topic-tab="community"
+            >
+              Community
+            </button>
+          </div>
+        </div>
+
+        <article
+          class="topic-panel"
+          id="topic-panel-rewards"
+          role="tabpanel"
+          aria-labelledby="topic-tab-rewards"
+          data-topic-panel="rewards"
+        >
+          <p class="topic-panel__eyebrow">Rewards Guide</p>
+          <h2>Finalized NFTs can claim BIGGI every week, and rarity changes the amount</h2>
+          <p class="topic-panel__lead">
+            Each eligible finalized NFT can claim once per week. The amount is
+            tied to block weight and rarity tier, while collection progress and
+            reveal outcomes shape the wider reward context.
+          </p>
+          <div class="topic-panel__highlights">
+            <span class="topic-highlight">Weekly BIGGI claim</span>
+            <span class="topic-highlight">Rarity-weighted amount</span>
+            <span class="topic-highlight">Claiming stays in the app</span>
+          </div>
+          <div class="grid">
+            <article class="card">
+              <h3>Weekly claim cycle</h3>
+              <p>Each eligible finalized NFT can claim BIGGI once per week.</p>
+            </article>
+            <article class="card">
+              <h3>Rarity and block weight</h3>
+              <p>Claim amount depends on block weight and rarity tier, so rarer NFTs carry more weekly weight.</p>
+            </article>
+            <article class="card">
+              <h3>Collection context</h3>
+              <p>Reveal outcomes and collection structure still matter because reward logic stays tied to the same on-chain state.</p>
+            </article>
+          </div>
+          <div class="topic-panel__actions">
+            <a class="btn secondary topic-panel__standalone" href="/rewards/index.html">Open standalone rewards page</a>
+          </div>
+        </article>
+
+        <article
+          class="topic-panel"
+          id="topic-panel-collection"
+          role="tabpanel"
+          aria-labelledby="topic-tab-collection"
+          data-topic-panel="collection"
+          hidden
+        >
+          <p class="topic-panel__eyebrow">Collection Guide</p>
+          <h2>Collection structure explains chapters, blocks, and pricing</h2>
+          <p class="topic-panel__lead">
+            BiggiEyes is organized in chapters and blocks, and that structure
+            shapes pricing, rarity paths, and reward context.
+          </p>
+          <div class="topic-panel__highlights">
+            <span class="topic-highlight">Five chapters</span>
+            <span class="topic-highlight">VRF phase before public mint</span>
+            <span class="topic-highlight">Tickets and NFTs stay tradable</span>
+          </div>
+          <div class="grid">
+            <article class="card">
+              <h3>Five chapters</h3>
+              <p>The project unfolds in chapters instead of one flat release.</p>
+            </article>
+            <article class="card">
+              <h3>Block pricing</h3>
+              <p>Public mint pricing follows block values formed by the protocol flow.</p>
+            </article>
+            <article class="card">
+              <h3>Tradable states</h3>
+              <p>Collectors can trade tickets before reveal and NFTs after final reveal.</p>
+            </article>
+          </div>
+          <div class="topic-panel__actions">
+            <a class="btn secondary topic-panel__standalone" href="/collection/index.html">Open standalone collection page</a>
+          </div>
+        </article>
+
+        <article
+          class="topic-panel"
+          id="topic-panel-vrf"
+          role="tabpanel"
+          aria-labelledby="topic-tab-vrf"
+          data-topic-panel="vrf"
+          hidden
+        >
+          <p class="topic-panel__eyebrow">VRF Mint Guide</p>
+          <h2>Mint starts with a ticket, then VRF reveals the NFT</h2>
+          <p class="topic-panel__lead">
+            You mint a tradable ticket first. The ticket price starts at 500 POL
+            and rises by 0.33% after every mint. The final NFT appears only
+            after redeem and verifiable randomness.
+          </p>
+          <div class="topic-panel__highlights">
+            <span class="topic-highlight">0.33% ticket curve</span>
+            <span class="topic-highlight">Redeem through VRF</span>
+            <span class="topic-highlight">Final NFT after reveal</span>
+          </div>
+          <div class="grid">
+            <article class="card">
+              <h3>Ticket first</h3>
+              <p>The entry asset has its own tradable phase, and the ticket curve rises by 0.33% after every mint.</p>
+            </article>
+            <article class="card">
+              <h3>Redeem through VRF</h3>
+              <p>Redeem triggers verifiable randomness instead of a manual reveal list.</p>
+            </article>
+            <article class="card">
+              <h3>Final NFT state</h3>
+              <p>After fulfillment, the NFT becomes part of the collection and rewards logic.</p>
+            </article>
+          </div>
+          <div class="topic-panel__actions">
+            <a class="btn secondary topic-panel__standalone" href="/vrf-mint/index.html">Open standalone VRF page</a>
+          </div>
+        </article>
+
+        <article
+          class="topic-panel"
+          id="topic-panel-ecosystem"
+          role="tabpanel"
+          aria-labelledby="topic-tab-ecosystem"
+          data-topic-panel="ecosystem"
+          hidden
+        >
+          <p class="topic-panel__eyebrow">Ecosystem Guide</p>
+          <h2>Token, liquidity, and treasury share one public state</h2>
+          <p class="topic-panel__lead">
+            The BIGGI token, reserves, treasury, and market context are part of
+            the same public system behind the app.
+          </p>
+          <div class="topic-panel__highlights">
+            <span class="topic-highlight">Live token context</span>
+            <span class="topic-highlight">Liquidity and reserves</span>
+            <span class="topic-highlight">Shared public state</span>
+          </div>
+          <div class="grid">
+            <article class="card">
+              <h3>BIGGI token</h3>
+              <p>The token layer adds market context around the NFT app.</p>
+            </article>
+            <article class="card">
+              <h3>Liquidity and reserves</h3>
+              <p>Liquidity, treasury, and reserves can be read from the public system.</p>
+            </article>
+            <article class="card">
+              <h3>Live metrics</h3>
+              <p>The same state appears in landing stats and in deeper app panels.</p>
+            </article>
+          </div>
+          <div class="topic-panel__actions">
+            <a class="btn secondary topic-panel__standalone" href="/ecosystem/index.html">Open standalone ecosystem page</a>
+          </div>
+        </article>
+
+        <article
+          class="topic-panel"
+          id="topic-panel-community"
+          role="tabpanel"
+          aria-labelledby="topic-tab-community"
+          data-topic-panel="community"
+          hidden
+        >
+          <p class="topic-panel__eyebrow">Community Guide</p>
+          <h2>Community works as the onboarding bridge into the project</h2>
+          <p class="topic-panel__lead">
+            Community content helps visitors understand where to go next before
+            entering the live dashboard.
+          </p>
+          <div class="topic-panel__highlights">
+            <span class="topic-highlight">Readable entry point</span>
+            <span class="topic-highlight">Connects all topics</span>
+            <span class="topic-highlight">Bridge into the app</span>
+          </div>
+          <div class="grid">
+            <article class="card">
+              <h3>Project entry point</h3>
+              <p>It gives visitors a readable route into the project before live interaction.</p>
+            </article>
+            <article class="card">
+              <h3>Cross-topic navigation</h3>
+              <p>It naturally connects ecosystem, collection, rewards, and the app.</p>
+            </article>
+            <article class="card">
+              <h3>Expansion context</h3>
+              <p>It frames the wider project direction, not just one contract mechanic.</p>
+            </article>
+          </div>
+          <div class="topic-panel__actions">
+            <a class="btn secondary topic-panel__standalone" href="/community-center/index.html">Open standalone community page</a>
+          </div>
+        </article>
       </section>
 
-      <section>
-        <h2>Five Chapters</h2>
-        <p>
-          The series has five chapters. Each chapter starts with a VRF phase of
-          550 Tickets. Public mint opens only after that VRF set sells out. Public
-          pricing follows the block prices formed by the VRF outcome.
-        </p>
+      <section class="app-launch">
+        <div class="launch-group">
+          <div class="launch-group__label">Open Live App Panel</div>
+          <p class="launch-group__copy">
+            Ready for live data? These buttons open the interactive
+            <code>/app/</code> panels with wallet actions, mint, redeem, and claim
+            flows.
+          </p>
+          <div class="launch-row">
+            <a class="btn secondary launch-link launch-link--panel" href="./app/?panel=REWARDS">Open Rewards Panel</a>
+            <a class="btn secondary launch-link launch-link--panel" href="./app/?panel=COLLECTION">Open Collection Panel</a>
+            <a class="btn secondary launch-link launch-link--panel" href="./app/?panel=VRF%20MINT">Open VRF Panel</a>
+            <a class="btn secondary launch-link launch-link--panel" href="./app/?panel=BIGGI%20ECOSYSTEM">Open Ecosystem Panel</a>
+            <a class="btn secondary launch-link launch-link--panel" href="./app/?panel=USERS">Open Users Panel</a>
+            <a class="btn secondary launch-link launch-link--panel" href="./app/?panel=COMMUNITY%20CENTER">Open Community Panel</a>
+          </div>
+        </div>
       </section>
 
-      <section>
-        <h2>Tradable Tickets &amp; NFTs</h2>
-        <p>
-          Tickets are tradable before redeem, and revealed NFTs are tradable after
-          redeem. Tickets do not grant extra perks or weekly rewards. Ticket price
-          increases after each mint, and value can also rise from reveal potential
-          when collectors seek missing pieces for Collection Rewards.
-        </p>
-      </section>
-
-      <section>
-        <h2>Last Episode</h2>
-        <p>
-          The finale includes a $500,000 meta reward and allocates part of proceeds
-          to a transparent charity account supporting children with visual
-          impairments.
-        </p>
-      </section>
-
-      <section>
-        <h2>On-Chain Economics And Verification</h2>
-        <p>
-          BiggiEyes is built around a ticket-first model: every mint starts as a
-          tradable Ticket, then becomes a final NFT after VRF redeem. Ticket pricing
-          is read from smart contracts and updates with protocol activity, so users
-          can verify how entry cost changes over time.
-        </p>
-        <p>
-          The revealed NFT state is not decided manually. VRF randomness and on-chain
-          data decide final block/background outcomes, and those outcomes are reused
-          by other mechanics such as rarity weighting and rewards. This makes the
-          ecosystem deterministic from contract state and auditable in explorers.
-        </p>
-        <p>
-          BIGGI token flows, reserve/treasury balances, and panel-level statistics are
-          part of the same public state. The landing page exposes live entry metrics,
-          and the app panels provide deeper operational views for REWARDS, COLLECTION,
-          VRF, BIGGI ECOSYSTEM, USERS, and COMMUNITY CENTER.
-        </p>
-      </section>
-
-      <section>
-        <h2>Open Specific App Panel</h2>
-        <p>
-          Choose a panel directly from landing. Each button opens the app with that
-          panel selected first.
-        </p>
-        <div class="panel-grid">
-          <a class="btn secondary panel-link" href="/app/?panel=REWARDS">REWARDS</a>
-          <a class="btn secondary panel-link" href="/app/?panel=COLLECTION">COLLECTION</a>
-          <a class="btn secondary panel-link" href="/app/?panel=VRF%20MINT">VRF MINT</a>
-          <a class="btn secondary panel-link" href="/app/?panel=BIGGI%20ECOSYSTEM">BIGGI ECOSYSTEM</a>
-          <a class="btn secondary panel-link" href="/app/?panel=USERS">USERS</a>
-          <a class="btn secondary panel-link" href="/app/?panel=COMMUNITY%20CENTER">COMMUNITY CENTER</a>
+      <section class="faq-section">
+        <h2>FAQ</h2>
+        <div class="grid">
+          <article class="card">
+            <h3>How does minting start?</h3>
+            <p>
+              Minting starts with a tradable Ticket. The ticket curve starts at
+              500 POL and rises by 0.33% after every mint, while the final NFT
+              appears only after redeem and VRF completion.
+            </p>
+          </article>
+          <article class="card">
+            <h3>What do NFT holders get every week?</h3>
+            <p>
+              Eligible finalized NFTs can claim BIGGI once per week, and the
+              amount depends on block weight and rarity tier.
+            </p>
+          </article>
+          <article class="card">
+            <h3>What does VRF change?</h3>
+            <p>
+              VRF determines the final reveal outcome instead of a manual reveal
+              list, which makes the result auditable from on-chain data.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Can collectors trade before and after reveal?</h3>
+            <p>
+              Yes. Tickets are tradable before redeem, and revealed NFTs remain
+              tradable after the final state is assigned.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Where should I start?</h3>
+            <p>
+              Start with the guide topic that matches your intent on this
+              homepage, then open the app for live on-chain data, wallet
+              actions, and the full BiggiEyes dashboard.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Is this homepage the full app?</h3>
+            <p>
+              No. This root page is a guide and launcher. The actual interactive
+              BiggiEyes experience lives inside <code>/app/</code>.
+            </p>
+          </article>
         </div>
       </section>
 
@@ -467,8 +2268,9 @@
       (function () {
         const RPC_ENDPOINTS = [
           "https://rpc-amoy.polygon.technology",
+          "https://polygon.drpc.org",
           "https://polygon-amoy-bor-rpc.publicnode.com",
-          "https://polygon-amoy.drpc.org",
+          "https://polygon-amoy.api.onfinality.io/public",
         ];
 
         const ADDR = {
@@ -672,12 +2474,13 @@
             if (ticketNode) ticketNode.textContent = formatAdaptive(ticket, "POL");
 
             let biggi = null;
-            let source = "oracle";
+            let source = "pair";
             try {
-              biggi = await readBiggiFromOracle();
-            } catch (_oracleErr) {
+              // Prefer DEX pair price as primary "current" market value.
               biggi = await readBiggiFromPair();
-              source = "pair fallback";
+            } catch (_pairErr) {
+              biggi = await readBiggiFromOracle();
+              source = "oracle fallback";
             }
 
             if (biggiNode) biggiNode.textContent = formatAdaptive(biggi, "POL");
@@ -702,6 +2505,83 @@
 
         refreshStats();
         setInterval(refreshStats, 60000);
+      })();
+
+      (function () {
+        const tabs = Array.from(document.querySelectorAll("[data-topic-tab]"));
+        const panels = Array.from(document.querySelectorAll("[data-topic-panel]"));
+
+        if (!tabs.length || !panels.length) return;
+
+        const order = tabs.map((tab) => tab.dataset.topicTab);
+
+        const setActiveTopic = (topic, syncHash) => {
+          tabs.forEach((tab) => {
+            const isActive = tab.dataset.topicTab === topic;
+            tab.setAttribute("aria-selected", isActive ? "true" : "false");
+            tab.tabIndex = isActive ? 0 : -1;
+          });
+
+          panels.forEach((panel) => {
+            panel.hidden = panel.dataset.topicPanel !== topic;
+          });
+
+          if (syncHash) {
+            const nextHash = `#guide-${topic}`;
+            if (window.location.hash !== nextHash) {
+              history.replaceState(null, "", nextHash);
+            }
+          }
+        };
+
+        tabs.forEach((tab, index) => {
+          tab.addEventListener("click", function () {
+            setActiveTopic(tab.dataset.topicTab, true);
+          });
+
+          tab.addEventListener("keydown", function (event) {
+            if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+            event.preventDefault();
+
+            let nextIndex = index;
+            if (event.key === "ArrowRight") nextIndex = (index + 1) % tabs.length;
+            if (event.key === "ArrowLeft") nextIndex = (index - 1 + tabs.length) % tabs.length;
+            if (event.key === "Home") nextIndex = 0;
+            if (event.key === "End") nextIndex = tabs.length - 1;
+
+            const nextTab = tabs[nextIndex];
+            if (!nextTab) return;
+            nextTab.focus();
+            setActiveTopic(nextTab.dataset.topicTab, true);
+          });
+        });
+
+        const hashTopic = window.location.hash.startsWith("#guide-")
+          ? window.location.hash.slice(7)
+          : "";
+        const initialTopic = order.includes(hashTopic) ? hashTopic : order[0];
+        setActiveTopic(initialTopic, false);
+      })();
+
+      (function () {
+        const logos = Array.from(document.querySelectorAll("[data-powered-logo]"));
+        if (!logos.length) return;
+
+        logos.forEach((logo) => {
+          logo.addEventListener("click", function () {
+            const willExpand = !logo.classList.contains("is-expanded");
+
+            logos.forEach((item) => {
+              item.classList.remove("is-expanded");
+              item.setAttribute("aria-pressed", "false");
+            });
+
+            if (willExpand) {
+              logo.classList.add("is-expanded");
+              logo.setAttribute("aria-pressed", "true");
+            }
+          });
+        });
       })();
     </script>
   </body>

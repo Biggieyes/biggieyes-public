@@ -1,8 +1,10 @@
-import { Contract } from "ethers";
-import { formatEther } from "ethers";
+import { Contract, formatEther } from "ethers";
 import { BiggiToken as ABI_TOKEN } from "@/config/abi/index.js";
 import { ADDR } from "./addresses";
-import { getFullStatusSafe } from "./tokenomicsFullStatus.js";
+import {
+  getFullStatusSafe,
+  normalizeTokenomicsFullStatus,
+} from "./tokenomicsFullStatus.js";
 
 export async function refreshTokenMeta({
   getReadOnlyLiquidityContract,
@@ -68,7 +70,8 @@ export async function refreshTokenMeta({
   }));
 
   const reader = getBiggiTokenomicsReaderRO();
-  const [core, dist, buy, res, DRIP, tr] = await getFullStatusSafe(reader);
+  const { core, dist, buy, res, drip: DRIP, tr } =
+    normalizeTokenomicsFullStatus(await getFullStatusSafe(reader)) || {};
   const fmt = (v) => (v != null ? formatEther(v) : null);
   const communitySnapshot = await fetchCOMMUNITYCENTERStats();
 
@@ -213,8 +216,6 @@ export async function refreshTokenMeta({
     },
   }));
 }
-
-
 
 
 

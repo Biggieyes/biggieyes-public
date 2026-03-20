@@ -2,6 +2,7 @@
 import * as React from "react";
 import copy from "clipboard-copy";
 import { formatWei } from "@/utils/eth";
+import { buildModeratorReferralLink } from "@/shared/utils/referrals.js";
 import "./MODERATORCENTERPanel.css";
 
 const shortAddr = (addr) => {
@@ -9,6 +10,13 @@ const shortAddr = (addr) => {
   const s = String(addr);
   if (s.length <= 12) return s;
   return `${s.slice(0, 6)}...${s.slice(-4)}`;
+};
+
+const shortHash = (value) => {
+  if (!value) return "--";
+  const s = String(value);
+  if (s.length <= 18) return s;
+  return `${s.slice(0, 10)}...${s.slice(-6)}`;
 };
 
 export default function ModeratorPanel({
@@ -28,13 +36,12 @@ export default function ModeratorPanel({
 }) {
   const [refCode, setRefCode] = React.useState("");
   const slotId = stats?.slotId ?? "--";
+  const hasWallet = Boolean(walletAddress);
   const resolvedBaseUrl =
     baseUrl || (typeof window !== "undefined" ? window.location.origin : "");
 
   const referralLink = React.useMemo(() => {
-    const code = refCode || "code";
-    if (!slotId || slotId === "--") return "";
-    return `${resolvedBaseUrl}?ref=slot${slotId}:${code}`;
+    return buildModeratorReferralLink(resolvedBaseUrl, slotId, refCode);
   }, [resolvedBaseUrl, slotId, refCode]);
 
   const payoutWallet =
@@ -61,42 +68,87 @@ export default function ModeratorPanel({
     weekStats?.ticketSales != null ? String(weekStats.ticketSales) : "--";
   const weekAllocated =
     weekStats?.allocatedWei != null ? formatWei(weekStats.allocatedWei) : "--";
+  const slotState =
+    slotInfo?.enabled == null ? "Checking" : slotInfo.enabled ? "Active" : "Disabled";
+  const leaderState =
+    slotInfo?.isLeader == null ? "Unknown" : slotInfo.isLeader ? "Leader" : "Moderator";
+  const passwordState = passwordSet === "Yes" ? "Password set" : passwordSet === "No" ? "Password missing" : "Password unknown";
+  const globalMode =
+    globalUniquePerWeek == null ? "--" : globalUniquePerWeek ? "Global" : "Per slot";
+
+  const heroStats = [
+    {
+      icon: "Slot",
+      label: "Slot",
+      value: slotId,
+      hint: slotState,
+    },
+    {
+      icon: "Refs",
+      label: "Unique referrals",
+      value: stats?.uniqueCount ?? "--",
+      hint: `This week ${stats?.uniqueThisWeek ?? "--"}`,
+    },
+    {
+      icon: "Sales",
+      label: "Purchases",
+      value: stats?.purchasesCount ?? "--",
+      hint: `This week ${stats?.purchasesThisWeek ?? "--"}`,
+    },
+    {
+      icon: "POL",
+      label: "Allocated this week",
+      value: weekAllocated === "--" ? "--" : `${weekAllocated} POL`,
+      hint: globalMode,
+    },
+  ];
+
+  const performanceRows = [
+    ["Connected wallet", shortAddr(walletAddress || "")],
+    ["Payout wallet", shortAddr(payoutWallet)],
+    ["Strikes", stats?.strikes ?? "--"],
+    ["Weekly unique", stats?.uniqueThisWeek ?? "--"],
+    ["Weekly purchases", stats?.purchasesThisWeek ?? "--"],
+  ];
+
+  const onChainRows = [
+    ["Status", slotState],
+    ["Role", leaderState],
+    ["Payout", shortAddr(payoutWallet)],
+    ["Referral hash", shortHash(referralHash)],
+    ["Cumulative sales", cumulativeSales],
+    ["Password", passwordState],
+  ];
+
+  const weeklyRows = [
+    ["Week ID", weekId || "--"],
+    ["Unique refs", weekUnique],
+    ["Ticket sales", weekTickets],
+    ["Allocated", weekAllocated === "--" ? "--" : `${weekAllocated} POL`],
+    ["Unique mode", globalMode],
+  ];
+
+  const ownerRows = [
+    ["Reset password", "Admin Panel > Moderator Ops"],
+    ["Change payout", "Admin Panel > Moderator Ops"],
+    ["Change referral hash", "Admin Panel > Moderator Ops"],
+  ];
 
   return (
     <div className="moderator-center__stack">
-      <div className="moderator-center__header">
-        <div>
-          <h2>Moderator Center</h2>
-          <div className="muted">
-            Track referrals, payout routing, and weekly performance windows
-            with a wallet-focused view of your moderator slot.
-          </div>
-        </div>
-        <div className="moderator-center__wallet">
-          <div className="moderator-center__wallet-info">
-            <span className="muted">Wallet</span>
-            <strong>{shortAddr(walletAddress)}</strong>
-          </div>
-        </div>
-      </div>
-
-      <div className="moderator-center__meta">
-        <div>
-          <span className="muted">Slot ID</span>
-          <strong>{slotId}</strong>
-        </div>
-        <div>
-          <span className="muted">Payout wallet</span>
-          <strong>{shortAddr(payoutWallet)}</strong>
-        </div>
-        <div>
-          <span className="muted">Strikes</span>
-          <strong>{stats?.strikes ?? "--"}</strong>
-        </div>
-        <div>
-          <span className="muted">Referrals (total)</span>
-          <strong>{stats?.uniqueCount ?? "--"}</strong>
-        </div>
+      <div className="moderator-center__hero">
+        {heroStats.map((item) => (
+          <article key={item.label} className="moderator-center__stat-card">
+            <div className="moderator-center__stat-icon">{item.icon}</div>
+            <div>
+              <span className="moderator-center__stat-label">{item.label}</span>
+              <strong className="moderator-center__stat-value">
+                {item.value}
+              </strong>
+              <div className="moderator-center__stat-hint">{item.hint}</div>
+            </div>
+          </article>
+        ))}
       </div>
 
       <div
@@ -104,30 +156,32 @@ export default function ModeratorPanel({
       >
         <div className="moderator-center__stack">
           <div className="moderator-center__card">
-            <h3>Personal overview</h3>
-            <div className="moderator-center__stats">
-              <div>
-                <span className="muted">Unique referrals (total)</span>
-                <strong>{stats?.uniqueCount ?? "--"}</strong>
-              </div>
-              <div>
-                <span className="muted">Purchases (total)</span>
-                <strong>{stats?.purchasesCount ?? "--"}</strong>
-              </div>
-              <div>
-                <span className="muted">This week (unique)</span>
-                <strong>{stats?.uniqueThisWeek ?? "--"}</strong>
-              </div>
-              <div>
-                <span className="muted">This week (purchases)</span>
-                <strong>{stats?.purchasesThisWeek ?? "--"}</strong>
-              </div>
+            <div className="moderator-center__card-head">
+              <h3>Performance snapshot</h3>
+              <span className="moderator-center__chip moderator-center__chip--cyan">
+                Supabase
+              </span>
+            </div>
+            <p className="moderator-center__copy muted">
+              Quick view of your slot performance, payout routing, and current
+              session identity.
+            </p>
+            <div className="moderator-center__statlines">
+              {performanceRows.map(([label, value]) => (
+                <div key={label} className="moderator-center__statline">
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
             </div>
           </div>
 
           <div className="moderator-center__card">
-            <h3>Referral link</h3>
-            <p className="muted">
+            <div className="moderator-center__card-head">
+              <h3>Referral link</h3>
+              <span className="moderator-center__chip">Shareable</span>
+            </div>
+            <p className="moderator-center__copy muted">
               Share your link. A user must connect their wallet for the referral
               to be recorded.
             </p>
@@ -155,44 +209,57 @@ export default function ModeratorPanel({
               <button
                 type="button"
                 className="biggi-btn biggi-btn--ghost"
+                disabled={!hasWallet}
                 onClick={() => onRequestReset && onRequestReset()}
               >
                 Request password reset
               </button>
+            </div>
+            <div className="moderator-center__hint">
+              {hasWallet
+                ? "Reset requests use the connected wallet so the backend can verify who is asking for a new password."
+                : "Connect a wallet first if you need to request a password reset."}
             </div>
           </div>
         </div>
 
         <div className="moderator-center__stack">
           <div className="moderator-center__card">
-            <h3>On-chain slot</h3>
-            <div className="moderator-center__stats">
-              <div>
-                <span className="muted">Enabled</span>
-                <strong>{enabledLabel}</strong>
-              </div>
-              <div>
-                <span className="muted">Leader</span>
-                <strong>{leaderLabel}</strong>
-              </div>
-              <div>
-                <span className="muted">Payout</span>
-                <strong>{shortAddr(payoutWallet)}</strong>
-              </div>
-              <div>
-                <span className="muted">Referral hash</span>
-                <strong className="mono">{shortAddr(referralHash)}</strong>
-              </div>
-              <div>
-                <span className="muted">Cumulative sales</span>
-                <strong>{cumulativeSales}</strong>
-              </div>
-              <div>
-                <span className="muted">Password set</span>
-                <strong>{passwordSet}</strong>
+            <div className="moderator-center__card-head">
+              <h3>On-chain slot</h3>
+              <div className="moderator-center__chips">
+                <span
+                  className={`moderator-center__chip ${slotInfo?.enabled ? "moderator-center__chip--ok" : "moderator-center__chip--warn"}`.trim()}
+                >
+                  {enabledLabel}
+                </span>
+                <span className="moderator-center__chip">{leaderLabel}</span>
+                <span
+                  className={`moderator-center__chip ${passwordSet === "Yes" ? "moderator-center__chip--ok" : "moderator-center__chip--warn"}`.trim()}
+                >
+                  {passwordSet}
+                </span>
               </div>
             </div>
+            <div className="moderator-center__statlines">
+              {onChainRows.map(([label, value]) => (
+                <div key={label} className="moderator-center__statline">
+                  <span>{label}</span>
+                  <strong className={label === "Referral hash" ? "mono" : ""}>
+                    {value}
+                  </strong>
+                </div>
+              ))}
+            </div>
+          </div>
 
+          <div className="moderator-center__card">
+            <div className="moderator-center__card-head">
+              <h3>Weekly window</h3>
+              <span className="moderator-center__chip moderator-center__chip--cyan">
+                On-chain
+              </span>
+            </div>
             <div className="moderator-center__field">
               <label>Week ID</label>
               <input
@@ -216,35 +283,19 @@ export default function ModeratorPanel({
               <div className="moderator-center__error">{chainError}</div>
             ) : null}
 
-            <div className="moderator-center__stats">
-              <div>
-                <span className="muted">Week unique</span>
-                <strong>{weekUnique}</strong>
-              </div>
-              <div>
-                <span className="muted">Week tickets</span>
-                <strong>{weekTickets}</strong>
-              </div>
-              <div>
-                <span className="muted">Week allocated (POL)</span>
-                <strong>{weekAllocated}</strong>
-              </div>
-              <div>
-                <span className="muted">Global unique mode</span>
-                <strong>
-                  {globalUniquePerWeek == null
-                    ? "--"
-                    : globalUniquePerWeek
-                      ? "On"
-                      : "Off"}
-                </strong>
-              </div>
+            <div className="moderator-center__statlines">
+              {weeklyRows.map(([label, value]) => (
+                <div key={label} className="moderator-center__statline">
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
             </div>
           </div>
 
           <div className="moderator-center__card">
             <h3>Guidelines</h3>
-            <ul className="moderator-center__list">
+            <ul className="moderator-center__list moderator-center__list--bullets">
               <li>
                 Referrals are stored only on the first visit with a connected
                 wallet.
@@ -255,25 +306,25 @@ export default function ModeratorPanel({
               </li>
             </ul>
           </div>
+
           <div className="moderator-center__card">
-            <h3>Quick stats</h3>
-            <div className="moderator-center__stats">
-              <div>
-                <span className="muted">Weekly referrals</span>
-                <strong>{stats?.uniqueThisWeek ?? "--"}</strong>
-              </div>
-              <div>
-                <span className="muted">Weekly purchases</span>
-                <strong>{stats?.purchasesThisWeek ?? "--"}</strong>
-              </div>
-              <div>
-                <span className="muted">Total purchases</span>
-                <strong>{stats?.purchasesCount ?? "--"}</strong>
-              </div>
-              <div>
-                <span className="muted">Slot status</span>
-                <strong>{slotId !== "--" ? "Active" : "Pending"}</strong>
-              </div>
+            <div className="moderator-center__card-head">
+              <h3>Owner actions</h3>
+              <span className="moderator-center__chip moderator-center__chip--cyan">
+                Admin Panel
+              </span>
+            </div>
+            <p className="moderator-center__copy muted">
+              Moderator Center no longer mixes owner controls into this screen.
+              If a slot needs changes, the owner handles them in the main admin.
+            </p>
+            <div className="moderator-center__statlines">
+              {ownerRows.map(([label, value]) => (
+                <div key={label} className="moderator-center__statline">
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
             </div>
           </div>
         </div>

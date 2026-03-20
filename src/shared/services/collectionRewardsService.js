@@ -60,8 +60,16 @@ export default class COLLECTIONREWARDSService {
     return await this._sendTx("claimRainbowReward", [], overrides);
   }
 
-  async claimedOrange(addr) {
-    return await this.contract.claimedOrange(addr);
+  async canClaimBlock(addr, blockIdx) {
+    return await this.contract.canClaimBlock(addr, blockIdx);
+  }
+
+  async canClaimOrange(addr, mainId) {
+    return await this.contract.canClaimOrange(addr, mainId);
+  }
+
+  async canClaimRainbow(addr) {
+    return await this.contract.canClaimRainbow(addr);
   }
 
   async distributor() {
@@ -127,28 +135,49 @@ export default class COLLECTIONREWARDSService {
   }
 
   async getAllStats(walletAddress = null) {
+    const read = (fn, fallback = null) =>
+      COLLECTIONREWARDSService.safeRead(fn, fallback);
+    const readClaimability = (fn) =>
+      read(fn, null).then(COLLECTIONREWARDSService.normalizeClaimability);
+
     const blockPaidPromise = Promise.all(
-      BLOCK_INDICES.map((idx) => this.blockPaid(idx)),
+      BLOCK_INDICES.map((idx) => read(() => this.blockPaid(idx), false)),
     );
     const orangePaidPromise = Promise.all(
-      ORANGE_MAIN_IDS.map((id) => this.orangeMainIdPaid(id)),
+      ORANGE_MAIN_IDS.map((id) => read(() => this.orangeMainIdPaid(id), false)),
     );
-    const claimedOrangePromise = walletAddress
-      ? this.claimedOrange(walletAddress)
-      : Promise.resolve(false);
+    const blockClaimabilityPromise = walletAddress
+      ? Promise.all(
+          BLOCK_INDICES.map((idx) =>
+            readClaimability(() => this.canClaimBlock(walletAddress, idx)),
+          ),
+        )
+      : Promise.resolve([]);
+    const orangeClaimabilityPromise = walletAddress
+      ? Promise.all(
+          ORANGE_MAIN_IDS.map((mainId) =>
+            readClaimability(() => this.canClaimOrange(walletAddress, mainId)),
+          ),
+        )
+      : Promise.resolve([]);
+    const rainbowClaimabilityPromise = walletAddress
+      ? readClaimability(() => this.canClaimRainbow(walletAddress))
+      : Promise.resolve(COLLECTIONREWARDSService.normalizeClaimability(null));
     const promises = [
-      this.blockReward(),
-      this.blockWinnersCount(),
-      this.orangeReward(),
-      this.orangeWinnersCount(),
-      this.rainbowReward(),
-      this.rainbowRewardClaimedGlobal(),
-      this.distributor(),
-      this.main(),
-      this.owner(),
+      read(() => this.blockReward(), null),
+      read(() => this.blockWinnersCount(), null),
+      read(() => this.orangeReward(), null),
+      read(() => this.orangeWinnersCount(), null),
+      read(() => this.rainbowReward(), null),
+      read(() => this.rainbowRewardClaimedGlobal(), false),
+      read(() => this.distributor(), null),
+      read(() => this.main(), null),
+      read(() => this.owner(), null),
       blockPaidPromise,
       orangePaidPromise,
-      claimedOrangePromise,
+      blockClaimabilityPromise,
+      orangeClaimabilityPromise,
+      rainbowClaimabilityPromise,
     ];
     const [
       blockReward,
@@ -162,7 +191,9 @@ export default class COLLECTIONREWARDSService {
       owner,
       blockPaidRaw,
       orangePaidRaw,
-      claimedOrangeRaw,
+      blockClaimability,
+      orangeClaimability,
+      rainbowClaimability,
     ] = await Promise.all(promises);
 
     return {
@@ -177,8 +208,30 @@ export default class COLLECTIONREWARDSService {
       owner,
       blockPaid: (blockPaidRaw || []).map((paid) => Boolean(paid)),
       orangeMainIdPaid: (orangePaidRaw || []).map((paid) => Boolean(paid)),
-      claimedOrange: Boolean(claimedOrangeRaw),
+      blockClaimability,
+      orangeClaimability,
+      rainbowClaimability,
     };
+  }
+
+  static async safeRead(readFn, fallback = null) {
+    try {
+      return await readFn();
+    } catch {
+      return fallback;
+    }
+  }
+
+  static normalizeClaimability(value) {
+    if (value == null) {
+      return { ok: null, reason: null, resolved: false };
+    }
+    const okRaw = value?.ok ?? value?.[0] ?? null;
+    const reasonRaw = value?.reason ?? value?.[1] ?? null;
+    const ok = typeof okRaw === "boolean" ? okRaw : null;
+    const reason =
+      reasonRaw == null ? null : COLLECTIONREWARDSService.toNumber(reasonRaw);
+    return { ok, reason, resolved: true };
   }
 
   static toNumber(value) {
@@ -189,5 +242,3 @@ export default class COLLECTIONREWARDSService {
     return Number.isFinite(candidate) ? candidate : 0;
   }
 }
-
-

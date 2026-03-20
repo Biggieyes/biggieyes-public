@@ -40,6 +40,34 @@ const parseBody = (req) => {
   return {};
 };
 
+const isAddressSafe = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return false;
+  try {
+    if (typeof ethers.getAddress === "function") {
+      ethers.getAddress(raw);
+      return true;
+    }
+    if (ethers.utils && typeof ethers.utils.getAddress === "function") {
+      ethers.utils.getAddress(raw);
+      return true;
+    }
+  } catch {
+    return false;
+  }
+  return /^0x[a-fA-F0-9]{40}$/.test(raw);
+};
+
+const verifySignedMessage = (payload, signature) => {
+  if (typeof ethers.verifyMessage === "function") {
+    return ethers.verifyMessage(payload, signature);
+  }
+  if (ethers.utils && typeof ethers.utils.verifyMessage === "function") {
+    return ethers.utils.verifyMessage(payload, signature);
+  }
+  throw new Error("verifyMessage not available");
+};
+
 async function resolveOwnerAddress() {
   if (CHAT_OWNER_ADDRESS) return CHAT_OWNER_ADDRESS;
   const { data } = await supabase.from("chat_config").select("owner_address").eq("id", 1).maybeSingle();
@@ -59,7 +87,7 @@ async function handleRequest({ method, body }) {
   const messageId = Number(body?.messageId);
   const newContent = String(body?.newContent || "").trim();
 
-  if (!ethers.utils.isAddress(address)) {
+  if (!isAddressSafe(address)) {
     return jsonResponse(400, { ok: false, error: "Invalid address" });
   }
   if (!signature || !action || !Number.isFinite(messageId)) {
@@ -72,7 +100,7 @@ async function handleRequest({ method, body }) {
   }
 
   const payload = `${action}|${messageId}|${newContent || ""}`;
-  const recovered = ethers.utils.verifyMessage(payload, signature);
+  const recovered = verifySignedMessage(payload, signature);
   if (recovered.toLowerCase() !== owner) {
     return jsonResponse(401, { ok: false, error: "Signature mismatch" });
   }
@@ -107,10 +135,18 @@ async function handleRequest({ method, body }) {
   return jsonResponse(200, { ok: true });
 }
 
-export default async function handler(req, res) {
+const vercelHandler = async (req, res) => {
   const body = parseBody(req);
   const result = await handleRequest({ method: req?.method, body });
   res.statusCode = result.status;
   Object.entries(result.headers).forEach(([k, v]) => res.setHeader(k, v));
   res.end(result.body);
-}
+};
+
+export default vercelHandler;
+
+export const handler = async (event) => {
+  const body = parseBody(event);
+  const result = await handleRequest({ method: event?.httpMethod, body });
+  return { statusCode: result.status, headers: result.headers, body: result.body };
+};

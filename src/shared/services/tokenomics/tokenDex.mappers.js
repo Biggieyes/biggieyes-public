@@ -245,6 +245,8 @@ export function mapRawSnapshotToUI(raw) {
       address: tokenRaw.address,
       name: tokenRaw.name,
       symbol: tokenRaw.symbol,
+      decimals: tokenDecimals,
+      rewardsOperator: tokenRaw.REWARDSOperator ?? tokenRaw.rewardsOperator ?? null,
       totalSupply: totalSupply.display,
       totalSupplyNumeric: totalSupply.numeric,
       cap: cap.display,
@@ -358,4 +360,3 @@ export function mapHistoryToReservePoints(history = []) {
 export function mapHistoryToLpPoints(history = []) {
   return _mapHistory(history, (entry) => entry?.dex?.pair?.totalSupplyNumeric);
 }
-

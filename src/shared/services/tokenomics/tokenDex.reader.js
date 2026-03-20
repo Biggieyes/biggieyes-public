@@ -210,6 +210,7 @@ export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
     normalizeAddress(DRIPDistributorAddress);
   const normalizedTokenRewardsAddress =
     normalizeAddress(tokenREWARDSAddress);
+  const effectiveReserveAddress = normalizedReserveAddress || reserveAddr;
 
   const [
     reserveBalance,
@@ -218,8 +219,8 @@ export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
     DRIPDistributorBalance,
     REWARDSBalance,
   ] = await Promise.all([
-    reserveAddr
-      ? _callOptional(() => token.balanceOf(reserveAddr), null)
+    effectiveReserveAddress
+      ? _callOptional(() => token.balanceOf(effectiveReserveAddress), null)
       : null,
     vaultAddr
       ? _callOptional(() => token.balanceOf(vaultAddr), null)
@@ -290,6 +291,9 @@ export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
           }
         : null,
     },
-    addresses: addrs,
+    addresses: {
+      ...addrs,
+      reserve: effectiveReserveAddress || addrs.reserve,
+    },
   };
 }

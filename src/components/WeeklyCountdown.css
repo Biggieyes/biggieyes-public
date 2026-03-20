@@ -340,29 +340,143 @@
   width: 100%;
   height: 100%;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: stretch;
   position: relative;
-  padding: clamp(24px, 3vw, 48px);
+  padding: 0;
 }
 
 .wc-fullscreen-wrapper {
   flex: 1;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 12px;
+  justify-content: stretch;
+  align-items: stretch;
+  padding: clamp(56px, 5vw, 84px) clamp(14px, 3vw, 28px)
+    clamp(14px, 3vw, 28px);
   overflow-y: auto;
-  max-width: 1200px;
   width: 100%;
-  min-height: 100%;
+  min-height: 0;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .wc-fullscreen-wrapper .wc-card {
   width: 100%;
-  min-height: 500px;
+  min-height: 100%;
   max-width: 100%;
-  max-height: calc(100vh - 120px);
+  max-height: none;
+}
+
+.wc-fullscreen-shell--desktop {
+  overflow: hidden;
+}
+
+.wc-fullscreen-shell--desktop .wc-fullscreen-wrapper--desktop {
+  padding: 52px 16px 14px;
+  overflow: hidden;
+}
+
+.wc-fullscreen-shell--desktop .wc-card {
+  min-height: 0;
+  height: 100%;
+  padding: 18px 20px 16px;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.wc-fullscreen-shell--desktop .wc-card__header {
+  gap: 10px;
+}
+
+.wc-fullscreen-shell--desktop .wc-card__icon {
+  width: 40px;
+  height: 40px;
+}
+
+.wc-fullscreen-shell--desktop .wc-card__title {
+  font-size: 0.88rem;
+}
+
+.wc-fullscreen-shell--desktop .wc-card__subtitle {
+  font-size: 0.68rem;
+}
+
+.wc-fullscreen-shell--desktop .wc-badge {
+  padding: 4px 12px;
+  font-size: 0.68rem;
+}
+
+.wc-fullscreen-shell--desktop .wc-table-grid {
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 10px;
+  padding: 10px;
+}
+
+.wc-fullscreen-shell--desktop .wc-table-grid__pane {
+  min-height: 0;
+  padding: 10px 12px;
+  gap: 10px;
+}
+
+.wc-fullscreen-shell--desktop .wc-table-grid__title {
+  font-size: 0.64rem;
+  letter-spacing: 0.28em;
+}
+
+.wc-fullscreen-shell--desktop .wc-timer {
+  gap: 6px;
+}
+
+.wc-fullscreen-shell--desktop .wc-table-grid__pane--countdown .wc-timer__segment,
+.wc-fullscreen-shell--desktop .wc-timer__segment {
+  min-width: 48px;
+  padding: 8px 6px;
+}
+
+.wc-fullscreen-shell--desktop .wc-timer__value {
+  font-size: clamp(1.15rem, 1.5vw, 1.7rem);
+}
+
+.wc-fullscreen-shell--desktop .wc-timer__label {
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+}
+
+.wc-fullscreen-shell--desktop .wc-progress__meta,
+.wc-fullscreen-shell--desktop .wc-remaining-text {
+  font-size: 0.68rem;
+}
+
+.wc-fullscreen-shell--desktop .wc-data-grid {
+  gap: 8px;
+}
+
+.wc-fullscreen-shell--desktop .wc-data-row {
+  padding: 8px 10px;
+  font-size: 0.7rem;
+}
+
+.wc-fullscreen-shell--desktop .wc-data-label {
+  letter-spacing: 0.14em;
+}
+
+.wc-fullscreen-shell--desktop .wc-data-value,
+.wc-fullscreen-shell--desktop .wc-meta,
+.wc-fullscreen-shell--desktop .wc-meta__refresh,
+.wc-fullscreen-shell--desktop .wc-error,
+.wc-fullscreen-shell--desktop .wc-toast {
+  font-size: 0.7rem;
+}
+
+.wc-fullscreen-shell--desktop .wc-actions {
+  gap: 8px;
+}
+
+.wc-fullscreen-shell--desktop .wc-cta {
+  padding: 11px 12px;
+  letter-spacing: 0.12em;
 }
 
 .wc-fullscreen-close {
@@ -406,7 +520,11 @@
   }
 
   .wc-fullscreen-shell {
-    padding: 12px;
+    padding: 0;
+  }
+
+  .wc-fullscreen-wrapper {
+    padding: 52px 12px 12px;
   }
 
   .wc-fullscreen-close {

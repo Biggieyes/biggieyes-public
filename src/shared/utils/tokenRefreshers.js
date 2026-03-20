@@ -1,5 +1,4 @@
-import { Contract } from "ethers";
-import { formatEther } from "ethers";
+import { Contract, formatEther } from "ethers";
 import TreasuryService from "../services/treasuryService";
 import { parseIdsCsv } from "./ids";
 import { ADDR } from "./addresses";

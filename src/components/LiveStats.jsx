@@ -12,17 +12,28 @@ import {
   getTokenREWARDSRO,
   getDistributorRO,
   getROProvider,
+  getReaderRO,
+  getReadOnlyMain,
+  resetROProvider,
   getPairRO,
   getReadOnlyLiquidityContract,
   getTokenRO,
   getInjectedProvider,
   ADDR,
 } from "@/shared/utils/contract";
+import { toMainNftIndexFromTokenId } from "@/shared/utils/biggiIdIndex";
+import {
+  getPreferredRpc,
+  getRpcUrls,
+  markRpcRateLimited,
+  setPreferredRpc,
+} from "@/shared/utils/rpcConfig";
+import { isRateLimitedRpcError } from "@/shared/utils/rpcErrors";
 import { fetchDistributorSnapshot } from "@/shared/services/tokenomics/distributor.reader";
-import { httpFromIpfs } from "@/shared/services/ipfs";
-import { readJsonFromURI, resolveImageUrl } from "@/shared/services/ipfs";
+import { httpFromIpfs, readJsonFromURI, resolveImageUrl } from "@/shared/services/ipfs";
 import { buildBlockImagePath } from "@/shared/utils/images";
 import { DEFAULT_BLOCKS, BASE_PRICES } from "@/shared/blocks";
+import { getCachedPriceAttrs } from "@/shared/utils/metadata";
 import ModalPortal from "./common/ModalPortal";
 import WeeklyCountdown from "./WeeklyCountdown";
 import useWeeklyCountdown from "../hooks/useWeeklyCountdown";
@@ -33,7 +44,19 @@ const OKLINK_BASE = "https://www.oklink.com/amoy/address/";
 
 const BlocksWidget = React.lazy(() => import("./BlocksWidget"));
 const BackgroundsWidget = React.lazy(() => import("./BackgroundsWidget"));
-const LiveChatPanel = React.lazy(() => import("./LiveChatPanel"));
+const LiveChatLoadError = () => (
+  <section className="live-chat-panel">
+    <div className="live-chat-panel__error">
+      Live Chat module failed to load. Refresh the page or restart `dev:netlify`.
+    </div>
+  </section>
+);
+const LiveChatPanel = React.lazy(() =>
+  import("./LiveChatPanel").catch((error) => {
+    console.error("LiveStats: failed to load LiveChatPanel module", error);
+    return { default: LiveChatLoadError };
+  }),
+);
 
 // ---- minimal ABI for write ops ----
 const TOKEN_REWARDS_MIN_ABI = [
@@ -163,6 +186,52 @@ const traitValueFromMeta = (meta, names) => {
   return "";
 };
 
+const parsePriceNumber = (value) => {
+  if (value == null) return null;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value > 0 ? value : null;
+  }
+  if (typeof value === "bigint") {
+    const formatted = Number(_formatEther(value));
+    return Number.isFinite(formatted) && formatted > 0 ? formatted : null;
+  }
+  if (isBigNumber(value)) {
+    const formatted = Number(_formatEther(value));
+    return Number.isFinite(formatted) && formatted > 0 ? formatted : null;
+  }
+  if (typeof value === "string") {
+    const raw = value.trim();
+    if (!raw) return null;
+    if (/^\d{10,}$/.test(raw)) {
+      const formatted = Number(_formatEther(raw));
+      if (Number.isFinite(formatted) && formatted > 0) return formatted;
+    }
+    const match = raw.match(/([0-9]+(?:\.[0-9]+)?)/);
+    if (!match) return null;
+    const parsed = Number(match[1]);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }
+  if (typeof value?.toString === "function") {
+    return parsePriceNumber(value.toString());
+  }
+  return null;
+};
+
+const readPriceFromMeta = (meta, traitNames = [], directValues = []) => {
+  const normalizedNames = traitNames.map((name) =>
+    String(name || "").trim().toLowerCase(),
+  );
+  const attrValue = traitValueFromMeta(meta, normalizedNames);
+  const fromAttr = parsePriceNumber(attrValue);
+  if (fromAttr != null) return fromAttr;
+
+  for (const candidate of directValues) {
+    const parsed = parsePriceNumber(candidate);
+    if (parsed != null) return parsed;
+  }
+  return null;
+};
+
 const toDisplayLastMinted = (payload) => {
   const tokenId = String(payload?.tokenId ?? payload?.id ?? "").trim() || "-";
   const image = String(payload?.image || "").trim();
@@ -229,6 +298,17 @@ const normalizeBgCode = (value) => {
   return "";
 };
 
+const normalizeBackgroundName = (value) => {
+  const raw = String(value || "").trim().toUpperCase();
+  if (!raw || raw === "-") return "";
+  if (BACKGROUND_CODE_BY_NAME[raw]) return raw;
+  const byCode = Object.entries(BACKGROUND_CODE_BY_NAME).find(
+    ([, code]) => code === raw,
+  );
+  if (byCode?.[0]) return byCode[0];
+  return raw;
+};
+
 const normalizeBlockForImage = (value) => {
   const raw = String(value || "").trim().toUpperCase();
   if (!raw || raw === "-") return "";
@@ -252,8 +332,16 @@ const isUsableLiveStatsImage = (raw) => {
 
 const LAST_IMAGE_TOKEN_CACHE_LIMIT = 64;
 const liveStatsImageByToken = new Map();
-const LIVE_STATS_IMAGE_CACHE_PREFIX = "biggi_live_stats_image_v1_";
-const LIVE_STATS_IMAGE_LAST_KEY = "biggi_live_stats_image_last_v1";
+const LIVE_STATS_IMAGE_CACHE_VERSION = "v2";
+const LIVE_STATS_CACHE_CHAIN_ID = Number(ADDR?.CHAIN_ID || 80002) || 80002;
+const LIVE_STATS_CACHE_CONTRACT = String(ADDR?.MAIN || ADDR?.COLLECTION_VRF || "")
+  .trim()
+  .toLowerCase();
+const LIVE_STATS_CACHE_SCOPE = `${LIVE_STATS_IMAGE_CACHE_VERSION}_${LIVE_STATS_CACHE_CHAIN_ID}${
+  LIVE_STATS_CACHE_CONTRACT ? `_${LIVE_STATS_CACHE_CONTRACT}` : ""
+}`;
+const LIVE_STATS_IMAGE_CACHE_PREFIX = `biggi_live_stats_image_${LIVE_STATS_CACHE_SCOPE}_`;
+const LIVE_STATS_IMAGE_LAST_KEY = `biggi_live_stats_image_last_${LIVE_STATS_CACHE_SCOPE}`;
 
 const canUseLiveStatsStorage = () =>
   typeof window !== "undefined" && Boolean(window.localStorage);
@@ -402,6 +490,7 @@ function LiveStats({
   weekSeconds = 7 * 24 * 60 * 60,
   fetchChainNowTs = null,
   lastFinalPrice = null,
+  compact = false,
   // lpPrice,
   // setLpPrice,
 }) {
@@ -803,6 +892,11 @@ function LiveStats({
 
   const [poolsOpen, setPoolsOpen] = React.useState(false);
   const [chatOpen, setChatOpen] = React.useState(false);
+  const [modalViewportTop, setModalViewportTop] = React.useState(0);
+  const [modalViewportHeight, setModalViewportHeight] = React.useState(() =>
+    typeof window !== "undefined" ? window.innerHeight || 0 : 0,
+  );
+  const modalViewportTopRef = React.useRef(0);
   const [pools, setPools] = React.useState(null);
   const weekDuration = weekSeconds || 7 * 24 * 60 * 60;
   const {
@@ -819,42 +913,71 @@ function LiveStats({
     weekSeconds,
   });
 
-  const [isPhone, setIsPhone] = React.useState(() =>
-    typeof window !== "undefined"
-      ? window.matchMedia("(max-width: 700px)").matches
-      : false,
-  );
+  const computePhoneViewport = React.useCallback(() => {
+    if (typeof window === "undefined") return Boolean(compact);
+
+    const narrowViewport = window.matchMedia("(max-width: 700px)").matches;
+    if (narrowViewport) return true;
+
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    const touchPoints = Number(window.navigator?.maxTouchPoints || 0);
+    const likelyPhoneOrTablet = coarsePointer || touchPoints > 0;
+    const width = Number(window.innerWidth) || 0;
+    const height = Number(window.innerHeight) || 0;
+    const landscape = width > height;
+    const shortLandscapeViewport = height > 0 && height <= 500;
+
+    return Boolean(compact) || (likelyPhoneOrTablet && landscape && shortLandscapeViewport);
+  }, [compact]);
+
+  const [isPhone, setIsPhone] = React.useState(() => computePhoneViewport());
   const [isTiny, setIsTiny] = React.useState(() =>
     typeof window !== "undefined"
       ? window.matchMedia("(max-width: 480px)").matches
       : false,
   );
+  const desktopFullscreen = !isPhone;
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     const mq700 = window.matchMedia("(max-width: 700px)");
     const mq480 = window.matchMedia("(max-width: 480px)");
-    const on700 = (e) => setIsPhone(e.matches);
-    const on480 = (e) => setIsTiny(e.matches);
+    const mqPointer = window.matchMedia("(pointer: coarse)");
+    const updateViewportFlags = () => {
+      setIsPhone(computePhoneViewport());
+      setIsTiny(mq480.matches);
+    };
 
-    try {
-      mq700.addEventListener("change", on700);
-      mq480.addEventListener("change", on480);
-    } catch {
-      mq700.addListener(on700);
-      mq480.addListener(on480);
-    }
-    setIsPhone(mq700.matches);
-    setIsTiny(mq480.matches);
-    return () => {
+    const addMqlListener = (mql, listener) => {
       try {
-        mq700.removeEventListener("change", on700);
-        mq480.removeEventListener("change", on480);
+        mql.addEventListener("change", listener);
       } catch {
-        mq700.removeListener(on700);
-        mq480.removeListener(on480);
+        mql.addListener(listener);
       }
     };
-  }, []);
+
+    const removeMqlListener = (mql, listener) => {
+      try {
+        mql.removeEventListener("change", listener);
+      } catch {
+        mql.removeListener(listener);
+      }
+    };
+
+    addMqlListener(mq700, updateViewportFlags);
+    addMqlListener(mq480, updateViewportFlags);
+    addMqlListener(mqPointer, updateViewportFlags);
+    window.addEventListener("resize", updateViewportFlags);
+    window.addEventListener("orientationchange", updateViewportFlags);
+
+    updateViewportFlags();
+    return () => {
+      removeMqlListener(mq700, updateViewportFlags);
+      removeMqlListener(mq480, updateViewportFlags);
+      removeMqlListener(mqPointer, updateViewportFlags);
+      window.removeEventListener("resize", updateViewportFlags);
+      window.removeEventListener("orientationchange", updateViewportFlags);
+    };
+  }, [computePhoneViewport]);
 
   // Additional on-chain-derived state (contract-focused changes only)
   const [poolFromContract, setPoolFromContract] = React.useState(null);
@@ -866,6 +989,281 @@ function LiveStats({
   // new: read some potentially useful derived chain values if available
   const [lastFinalFromChain, setLastFinalFromChain] = React.useState(null);
   const [blockPricesFromChain, setBlockPricesFromChain] = React.useState(null);
+  const [lastMintPriceData, setLastMintPriceData] = React.useState({
+    ticketPrice: null,
+    blockPrice: null,
+    finalPrice: null,
+  });
+  const readRpcRotateAtRef = React.useRef(0);
+
+  const handleReadRpcFailure = React.useCallback((err, scope = "LiveStats") => {
+    const isRateLimited = isRateLimitedRpcError(err);
+    const status = Number(
+      err?.status ??
+        err?.data?.httpStatus ??
+        err?.error?.data?.httpStatus ??
+        err?.info?.error?.data?.httpStatus ??
+        0,
+    );
+    const msg = String(
+      err?.reason ||
+        err?.shortMessage ||
+        err?.message ||
+        err?.error?.message ||
+        err?.info?.error?.message ||
+        "",
+    ).toLowerCase();
+    const transientNetwork =
+      msg.includes("failed to fetch") ||
+      msg.includes("network error") ||
+      msg.includes("request failed") ||
+      msg.includes("timed out") ||
+      msg.includes("timeout") ||
+      [408, 425, 429, 500, 502, 503, 504].includes(status);
+    if (!isRateLimited && !transientNetwork) return false;
+
+    const now = Date.now();
+    // Avoid rotate storms when multiple effects fail in the same render frame.
+    if (now - Number(readRpcRotateAtRef.current || 0) < 4_000) return true;
+    readRpcRotateAtRef.current = now;
+
+    const toHost = (url) => {
+      const raw = String(url || "").trim();
+      if (!raw) return "";
+      try {
+        return new URL(raw).host || raw;
+      } catch {
+        return raw;
+      }
+    };
+
+    let current = null;
+    let next = null;
+    try {
+      current = getPreferredRpc();
+      if (current) markRpcRateLimited(current);
+      const urls = getRpcUrls();
+      if (Array.isArray(urls) && urls.length) {
+        const idx = current ? urls.indexOf(current) : -1;
+        next = idx >= 0 ? urls[(idx + 1) % urls.length] : urls[0];
+        if (next) setPreferredRpc(next);
+      }
+    } catch {
+      // ignore rpc-rotation helper failures
+    }
+
+    try {
+      resetROProvider();
+    } catch {
+      // ignore provider reset failures
+    }
+
+    const fromHost = toHost(current);
+    const toHostName = toHost(next);
+    const routeInfo =
+      fromHost || toHostName
+        ? ` (rpc ${fromHost || "?"} -> ${toHostName || "?"})`
+        : "";
+    const reasonLabel = isRateLimited ? "rate-limited" : "network-failure";
+    console.warn(`${scope}: RPC ${reasonLabel}, rotating read RPC${routeInfo}.`);
+    return true;
+  }, []);
+
+  React.useEffect(() => {
+    const tokenId = String(effectiveLastMinted.tokenId || "").trim();
+    if (!tokenId || tokenId === "-" || !/^\d+$/.test(tokenId)) {
+      setLastMintPriceData({
+        ticketPrice: null,
+        blockPrice: null,
+        finalPrice: null,
+      });
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        let next = {
+          ticketPrice: null,
+          blockPrice: null,
+          finalPrice: null,
+        };
+
+        const cachedAttrs = getCachedPriceAttrs(tokenId);
+        if (Array.isArray(cachedAttrs) && cachedAttrs.length) {
+          const cachedMeta = { attributes: cachedAttrs };
+          next = {
+            ticketPrice: readPriceFromMeta(cachedMeta, ["ticket price"]),
+            blockPrice: readPriceFromMeta(cachedMeta, ["block price"]),
+            finalPrice: readPriceFromMeta(cachedMeta, ["final price"]),
+          };
+        }
+
+        const provider = (() => {
+          try {
+            return getROProvider();
+          } catch {
+            return null;
+          }
+        })();
+
+        const reader = provider
+          ? (() => {
+              try {
+                return getReaderRO(provider);
+              } catch {
+                return null;
+              }
+            })()
+          : null;
+        const main = provider
+          ? (() => {
+              try {
+                return getReadOnlyMain(provider);
+              } catch {
+                return null;
+              }
+            })()
+          : null;
+
+        const mergeMintData = (res) => {
+          if (!res) return;
+          const ticketPrice = parsePriceNumber(res?.[0] ?? null);
+          const blockPrice = parsePriceNumber(res?.[1] ?? null);
+          const finalPrice = parsePriceNumber(res?.[2] ?? null);
+          if (ticketPrice != null) next.ticketPrice = ticketPrice;
+          if (blockPrice != null) next.blockPrice = blockPrice;
+          if (finalPrice != null) next.finalPrice = finalPrice;
+        };
+        const mainIndex = toMainNftIndexFromTokenId(tokenId, {
+          maxSupply: Number(maxSupply) || 550,
+          allowLegacy: true,
+        });
+        const tokenIdArg = BigInt(tokenId);
+        const mainIndexArg = mainIndex != null ? BigInt(mainIndex) : null;
+
+        if (reader && typeof reader.getMintDataByTokenId === "function") {
+          mergeMintData(
+            await reader.getMintDataByTokenId(tokenIdArg).catch(() => null),
+          );
+        }
+
+        if (
+          (next.ticketPrice == null ||
+            next.blockPrice == null ||
+            next.finalPrice == null) &&
+          reader &&
+          typeof reader.getMintData === "function"
+        ) {
+          mergeMintData(
+            await reader
+              .getMintData(mainIndexArg != null ? mainIndexArg : tokenIdArg)
+              .catch(() => null),
+          );
+        }
+
+        if (
+          (next.ticketPrice == null ||
+            next.blockPrice == null ||
+            next.finalPrice == null) &&
+          main &&
+          typeof main.getMintData === "function"
+        ) {
+          mergeMintData(
+            await main
+              .getMintData(mainIndexArg != null ? mainIndexArg : tokenIdArg)
+              .catch(() => null),
+          );
+        }
+
+        if (next.blockPrice == null && main) {
+          const blockPriceCandidates = [
+            "getCurrentBlockPriceByTokenId",
+            "currentBlockPriceByTokenId",
+          ];
+          for (const fn of blockPriceCandidates) {
+            if (typeof main?.[fn] !== "function") continue;
+            const parsed = parsePriceNumber(
+              await main[fn](tokenId).catch(() => null),
+            );
+            if (parsed != null) {
+              next.blockPrice = parsed;
+              break;
+            }
+          }
+        }
+
+        if (
+          (next.ticketPrice == null ||
+            next.blockPrice == null ||
+            next.finalPrice == null) &&
+          main &&
+          typeof main.tokenURI === "function"
+        ) {
+          const uri = await main.tokenURI(tokenId).catch(() => null);
+          const meta = uri ? await readJsonFromURI(uri).catch(() => null) : null;
+          if (meta) {
+            if (next.ticketPrice == null) {
+              next.ticketPrice = readPriceFromMeta(
+                meta,
+                ["ticket price", "current ticket price"],
+                [
+                  meta?.ticketPrice,
+                  meta?.ticket_price,
+                  meta?.mintTicket,
+                  meta?.mint?.ticketPrice,
+                  meta?.mint?.ticket_price,
+                ],
+              );
+            }
+            if (next.blockPrice == null) {
+              next.blockPrice = readPriceFromMeta(
+                meta,
+                ["block price"],
+                [
+                  meta?.blockPrice,
+                  meta?.block_price,
+                  meta?.mintBlock,
+                  meta?.mint?.blockPrice,
+                  meta?.mint?.block_price,
+                ],
+              );
+            }
+            if (next.finalPrice == null) {
+              next.finalPrice = readPriceFromMeta(
+                meta,
+                ["final price"],
+                [
+                  meta?.finalPrice,
+                  meta?.final_price,
+                  meta?.mintFinal,
+                  meta?.mint?.finalPrice,
+                  meta?.mint?.final_price,
+                ],
+              );
+            }
+          }
+        }
+
+        if (next.finalPrice == null && next.blockPrice != null) {
+          next.finalPrice = next.blockPrice;
+        }
+
+        if (!cancelled) {
+          setLastMintPriceData(next);
+        }
+      } catch (err) {
+        const handled = handleReadRpcFailure(err, "LiveStats last mint prices");
+        if (!handled) {
+          console.warn("LiveStats: failed reading last mint prices", err);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveLastMinted.tokenId, handleReadRpcFailure]);
 
   const effectiveBlockPrices = React.useMemo(() => {
     const normalize = (arr) =>
@@ -877,7 +1275,7 @@ function LiveStats({
         : [];
     const hasAnyValue = (arr) =>
       Array.isArray(arr) &&
-      arr.some((v) => Number.isFinite(Number(v)));
+      arr.some((v) => Number.isFinite(Number(v)) && Number(v) > 0);
 
     // Prefer prices coming from MAIN/snapshot props.
     // Liquidity-derived array is only a last-resort fallback.
@@ -895,6 +1293,7 @@ function LiveStats({
     const arr = Array.isArray(normalizedItems) ? normalizedItems : [];
     return arr.length > 0 && arr.every((it) => it?.isTicket);
   }, [normalizedItems]);
+  const hasConnectedWallet = Boolean(String(walletAddress || "").trim());
 
   const resetAll = React.useCallback(() => {
     setShowBlocks(false);
@@ -1033,13 +1432,19 @@ function LiveStats({
         if (Number.isFinite(Number(dec))) setTokenDecimals(Number(dec));
       } catch (e) {
         // silent fallback — not critical
-        console.warn("LiveStats: failed reading token REWARDS metadata", e);
+        const handled = handleReadRpcFailure(
+          e,
+          "LiveStats token REWARDS metadata",
+        );
+        if (!handled) {
+          console.warn("LiveStats: failed reading token REWARDS metadata", e);
+        }
       }
     })();
     return () => {
       alive = false;
     };
-  }, []);
+  }, [handleReadRpcFailure]);
 
   const WEIGHTS = React.useMemo(() => {
     if (
@@ -1402,7 +1807,10 @@ function LiveStats({
           }));
         }
       } catch (err) {
-        console.warn("refreshPools: token balances failed", err);
+        const handled = handleReadRpcFailure(err, "refreshPools token balances");
+        if (!handled) {
+          console.warn("refreshPools: token balances failed", err);
+        }
       }
 
       try {
@@ -1442,7 +1850,10 @@ function LiveStats({
           };
         }
       } catch (err) {
-        console.warn("refreshPools: LP stats failed", err);
+        const handled = handleReadRpcFailure(err, "refreshPools LP stats");
+        if (!handled) {
+          console.warn("refreshPools: LP stats failed", err);
+        }
       }
 
       setPools({
@@ -1458,10 +1869,13 @@ function LiveStats({
         lpStats,
       });
     } catch (e) {
-      console.error("refreshPools error", e);
-      setPools(null);
+      const handled = handleReadRpcFailure(e, "refreshPools");
+      if (!handled) {
+        console.error("refreshPools error", e);
+        setPools(null);
+      }
     }
-  }, [tokenDecimals, tokenSymbol]);
+  }, [tokenDecimals, tokenSymbol, handleReadRpcFailure]);
 
   // BIGGI ECOSYSTEM METRICS (unchanged intent, contract reads robustified)
   const [biggiPrice, setBiggiPrice] = React.useState(null);
@@ -1547,13 +1961,16 @@ function LiveStats({
           // setBiggiChange24h(xxx);
         }
       } catch (e) {
-        console.warn("LiveStats: failed reading token metrics", e);
+        const handled = handleReadRpcFailure(e, "LiveStats token metrics");
+        if (!handled) {
+          console.warn("LiveStats: failed reading token metrics", e);
+        }
       }
     })();
     return () => {
       alive = false;
     };
-  }, []);
+  }, [handleReadRpcFailure]);
 
   React.useEffect(() => {
     let alive = true;
@@ -1618,14 +2035,20 @@ function LiveStats({
         if (!alive) return;
         setCirculatingSupply(circulating);
       } catch (err) {
-        console.warn("LiveStats: failed to compute circulating supply", err);
+        const handled = handleReadRpcFailure(
+          err,
+          "LiveStats circulating supply",
+        );
+        if (!handled) {
+          console.warn("LiveStats: failed to compute circulating supply", err);
+        }
       }
     })();
 
     return () => {
       alive = false;
     };
-  }, [biggiSupply, tokenDecimals]);
+  }, [biggiSupply, tokenDecimals, handleReadRpcFailure]);
 
   // DEX price fallback (robust contract usage) - computes price against any quote token, respects decimals, updates quote symbol
   React.useEffect(() => {
@@ -1725,14 +2148,17 @@ function LiveStats({
           }
         }
       } catch (e) {
-        console.warn("LiveStats: failed reading DEX price", e);
-        if (!cancel) setTradableSupply(null);
+        const handled = handleReadRpcFailure(e, "LiveStats DEX price");
+        if (!handled) {
+          console.warn("LiveStats: failed reading DEX price", e);
+          if (!cancel) setTradableSupply(null);
+        }
       }
     })();
     return () => {
       cancel = true;
     };
-  }, []);
+  }, [handleReadRpcFailure]);
 
   // Layout
   const BOX = isPhone ? (isTiny ? 110 : 130) : 150;
@@ -2040,11 +2466,34 @@ function LiveStats({
     [actionBtnBase],
   );
 
-  const modalOverlayStyle = React.useMemo(
-    () => ({
+  const modalOverlayStyle = React.useMemo(() => {
+    if (desktopFullscreen) {
+      return {
+        position: "absolute",
+        top: modalViewportTop,
+        left: 0,
+        right: 0,
+        zIndex: 10060,
+        width: "100vw",
+        height:
+          modalViewportHeight > 0 ? `${modalViewportHeight}px` : "100vh",
+        display: "flex",
+        justifyContent: "stretch",
+        alignItems: "stretch",
+        pointerEvents: "auto",
+        padding: 0,
+        overflow: "hidden",
+        overscrollBehavior: "none",
+        backgroundColor: "rgba(0,0,0,0.75)",
+        backdropFilter: "blur(6px)",
+        isolation: "isolate",
+      };
+    }
+
+    return {
       position: "fixed",
       inset: 0,
-      zIndex: 999,
+      zIndex: 10060,
       width: "100vw",
       height: "100vh",
       display: "flex",
@@ -2052,33 +2501,34 @@ function LiveStats({
       alignItems: "center",
       pointerEvents: "auto",
       padding: 0,
-      overFLOW: "hidden",
+      overflow: "hidden",
+      overscrollBehavior: "none",
       backgroundColor: "rgba(0,0,0,0.75)",
       backdropFilter: "blur(6px)",
-    }),
-    [],
-  );
+      isolation: "isolate",
+    };
+  }, [desktopFullscreen, modalViewportHeight, modalViewportTop]);
 
   const fullscreenModalFrameStyle = React.useMemo(
     () => ({
       width: "100%",
       height: "100%",
       display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: desktopFullscreen ? "stretch" : "center",
+      alignItems: desktopFullscreen ? "stretch" : "center",
       padding: 0,
     }),
-    [],
+    [desktopFullscreen],
   );
 
   const fullscreenModalCardStyle = React.useMemo(() => {
-    const padding = isPhone ? 12 : 28;
     return {
       width: "100vw",
       height: "100vh",
       maxWidth: "100vw",
       maxHeight: "100vh",
-      overFLOWY: "auto",
+      overflowX: "hidden",
+      overflowY: desktopFullscreen ? "hidden" : "auto",
       borderRadius: 0,
       border: "2px solid #ffe800",
       boxShadow: "none",
@@ -2087,12 +2537,60 @@ function LiveStats({
       backgroundSize: "cover, cover",
       backgroundPosition: "center, center",
       backgroundRepeat: "no-repeat, no-repeat",
-      padding,
+      padding: 0,
       display: "flex",
       flexDirection: "column",
       boxSizing: "border-box",
+      overscrollBehavior: desktopFullscreen ? "none" : "contain",
     };
-  }, [isPhone]);
+  }, [desktopFullscreen]);
+
+  const tokenomicsModalBodyStyle = React.useMemo(
+    () => ({
+      flex: 1,
+      minHeight: 0,
+      overflowY: isPhone ? "auto" : "hidden",
+      overflowX: "hidden",
+      WebkitOverflowScrolling: "touch",
+      overscrollBehavior: isPhone ? "contain" : "none",
+      touchAction: isPhone ? "pan-y" : "none",
+      padding: isPhone ? 8 : 12,
+      boxSizing: "border-box",
+    }),
+    [isPhone],
+  );
+
+  const tokenomicsModalGridStyle = React.useMemo(
+    () =>
+      desktopFullscreen
+        ? {
+            marginTop: 0,
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            gridTemplateRows: "minmax(0, 1fr) minmax(0, 1fr)",
+            gap: 10,
+            height: "100%",
+            minHeight: 0,
+            alignItems: "stretch",
+          }
+        : {
+            marginTop: isPhone ? 6 : 10,
+            display: "grid",
+            gap: isPhone ? 8 : 12,
+          },
+    [desktopFullscreen, isPhone],
+  );
+
+  const chatModalContentStyle = React.useMemo(
+    () => ({
+      flex: 1,
+      minHeight: 0,
+      overflow: desktopFullscreen ? "hidden" : "auto",
+      padding: isPhone ? 8 : 14,
+      boxSizing: "border-box",
+    }),
+    [desktopFullscreen, isPhone],
+  );
 
   const modalHeaderStyle = React.useMemo(
     () => ({
@@ -2110,19 +2608,128 @@ function LiveStats({
     [isPhone],
   );
 
-  const handleToggleWeekly = React.useCallback(() => {
-    setWeeklyOpen((v) => !v);
+  const captureModalViewport = React.useCallback(() => {
+    if (typeof window !== "undefined") {
+      const nextTop = window.scrollY || window.pageYOffset || 0;
+      modalViewportTopRef.current = nextTop;
+      setModalViewportTop(nextTop);
+      setModalViewportHeight(window.innerHeight || 0);
+    }
+    if (typeof document !== "undefined") {
+      const active = document.activeElement;
+      if (active instanceof HTMLElement) active.blur();
+    }
   }, []);
+
+  const restoreModalViewport = React.useCallback(() => {
+    if (!desktopFullscreen || typeof window === "undefined") return;
+    const nextTop = modalViewportTopRef.current || 0;
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        window.scrollTo(0, nextTop);
+      });
+    });
+  }, [desktopFullscreen]);
+
+  const closeWeeklyModal = React.useCallback(() => {
+    setWeeklyOpen(false);
+    restoreModalViewport();
+  }, [restoreModalViewport]);
+
+  const closePoolsModal = React.useCallback(() => {
+    setPoolsOpen(false);
+    restoreModalViewport();
+  }, [restoreModalViewport]);
+
+  const closeChatModal = React.useCallback(() => {
+    setChatOpen(false);
+    restoreModalViewport();
+  }, [restoreModalViewport]);
+
+  const handleToggleWeekly = React.useCallback(() => {
+    setWeeklyOpen((v) => {
+      const next = !v;
+      if (next) captureModalViewport();
+      return next;
+    });
+  }, [captureModalViewport]);
 
   const handlePoolsButtonClick = React.useCallback(async () => {
     const next = !poolsOpen;
+    if (next) captureModalViewport();
     setPoolsOpen(next);
     if (next) await refreshPools();
-  }, [poolsOpen, refreshPools]);
+  }, [captureModalViewport, poolsOpen, refreshPools]);
 
   const handleChatButtonClick = React.useCallback(() => {
-    setChatOpen((v) => !v);
-  }, []);
+    setChatOpen((v) => {
+      const next = !v;
+      if (next) captureModalViewport();
+      return next;
+    });
+  }, [captureModalViewport]);
+
+  React.useEffect(() => {
+    if (!desktopFullscreen) return undefined;
+    if (!(weeklyOpen || poolsOpen || chatOpen)) return undefined;
+    if (typeof document === "undefined") return undefined;
+    const preventScroll = (event) => {
+      event.preventDefault();
+    };
+    const preventScrollKeys = (event) => {
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const tag = String(target.tagName || "").toUpperCase();
+        const isEditable =
+          target.isContentEditable ||
+          tag === "INPUT" ||
+          tag === "TEXTAREA" ||
+          tag === "SELECT";
+        if (isEditable) return;
+      }
+
+      const key = String(event.key || "");
+      const code = String(event.code || "");
+      const scrollKeys = new Set([
+        " ",
+        "Space",
+        "Spacebar",
+        "PageUp",
+        "PageDown",
+        "Home",
+        "End",
+        "ArrowUp",
+        "ArrowDown",
+      ]);
+      if (scrollKeys.has(key) || scrollKeys.has(code)) {
+        event.preventDefault();
+      }
+    };
+
+    document.addEventListener("wheel", preventScroll, {
+      passive: false,
+      capture: true,
+    });
+    document.addEventListener("touchmove", preventScroll, {
+      passive: false,
+      capture: true,
+    });
+    document.addEventListener("keydown", preventScrollKeys, {
+      capture: true,
+    });
+
+    return () => {
+      document.removeEventListener("wheel", preventScroll, {
+        capture: true,
+      });
+      document.removeEventListener("touchmove", preventScroll, {
+        capture: true,
+      });
+      document.removeEventListener("keydown", preventScrollKeys, {
+        capture: true,
+      });
+    };
+  }, [chatOpen, desktopFullscreen, poolsOpen, weeklyOpen]);
 
   React.useEffect(() => {
     if (!weeklyOpen) return;
@@ -2191,7 +2798,7 @@ function LiveStats({
         : -1;
     const live =
       idx >= 0 ? Number(effectiveBlockPrices?.[idx]) : Number.NaN;
-    if (Number.isFinite(live)) return live;
+    if (Number.isFinite(live) && live > 0) return live;
     const key =
       idx >= 0
         ? String(
@@ -2206,6 +2813,102 @@ function LiveStats({
           : null;
     return Number.isFinite(Number(base)) ? Number(base) : null;
   }, [safeBlockNames, effectiveLastMinted.blockName, effectiveBlockPrices]);
+
+  const normalizedLastRedeemedBlock = React.useMemo(
+    () => String(effectiveLastMinted.blockName || "").trim().toUpperCase(),
+    [effectiveLastMinted.blockName],
+  );
+
+  const normalizedLastRedeemedBackground = React.useMemo(
+    () => normalizeBackgroundName(effectiveLastMinted.backgroundName),
+    [effectiveLastMinted.backgroundName],
+  );
+
+  const lastRedeemedBackgroundBonusPct = React.useMemo(() => {
+    if (!normalizedLastRedeemedBackground) return null;
+    const namesSource =
+      Array.isArray(safeBlockNames) && safeBlockNames.length
+        ? safeBlockNames
+        : DEFAULT_BLOCKS;
+    const names = namesSource.map((n) => String(n || "").trim().toUpperCase());
+    const idx = names.indexOf(normalizedLastRedeemedBackground);
+    if (idx < 0) return null;
+    const bonus = Number(BACKGROUND_BONUSES[idx]);
+    return Number.isFinite(bonus) ? bonus : null;
+  }, [safeBlockNames, normalizedLastRedeemedBackground]);
+
+  const lastRedeemedBackgroundBonusValue = React.useMemo(() => {
+    const base = Number(currentBlockPrice);
+    const pct = Number(lastRedeemedBackgroundBonusPct);
+    if (!Number.isFinite(base) || !Number.isFinite(pct)) return null;
+    return (base * pct) / 100;
+  }, [currentBlockPrice, lastRedeemedBackgroundBonusPct]);
+
+  const computedLastFinalPrice = React.useMemo(() => {
+    const base = Number(currentBlockPrice);
+    const bonus = Number(lastRedeemedBackgroundBonusValue);
+    if (!Number.isFinite(base)) return null;
+    if (!Number.isFinite(bonus)) return base;
+    return base + bonus;
+  }, [currentBlockPrice, lastRedeemedBackgroundBonusValue]);
+
+  const resolvedLastMintBlockPrice = React.useMemo(() => {
+    const blockPrice = Number(lastMintPriceData?.blockPrice);
+    return Number.isFinite(blockPrice) && blockPrice > 0 ? blockPrice : null;
+  }, [lastMintPriceData?.blockPrice]);
+
+  const resolvedLastMintFinalPrice = React.useMemo(() => {
+    const finalPrice = Number(lastMintPriceData?.finalPrice);
+    return Number.isFinite(finalPrice) && finalPrice > 0 ? finalPrice : null;
+  }, [lastMintPriceData?.finalPrice]);
+
+  const effectiveDisplayedBlockPrice = React.useMemo(() => {
+    if (resolvedLastMintBlockPrice != null) return resolvedLastMintBlockPrice;
+    const current = Number(currentBlockPrice);
+    return Number.isFinite(current) && current > 0 ? current : null;
+  }, [resolvedLastMintBlockPrice, currentBlockPrice]);
+
+  const effectiveDisplayedBgBonusValue = React.useMemo(() => {
+    if (
+      resolvedLastMintFinalPrice != null &&
+      resolvedLastMintBlockPrice != null &&
+      resolvedLastMintFinalPrice >= resolvedLastMintBlockPrice
+    ) {
+      return resolvedLastMintFinalPrice - resolvedLastMintBlockPrice;
+    }
+    const fallback = Number(lastRedeemedBackgroundBonusValue);
+    return Number.isFinite(fallback) && fallback > 0 ? fallback : null;
+  }, [
+    resolvedLastMintFinalPrice,
+    resolvedLastMintBlockPrice,
+    lastRedeemedBackgroundBonusValue,
+  ]);
+
+  const effectiveLastFinalPrice = React.useMemo(() => {
+    if (resolvedLastMintFinalPrice != null) return resolvedLastMintFinalPrice;
+    const computed = Number(computedLastFinalPrice);
+    if (Number.isFinite(computed) && computed > 0) return computed;
+    const fromProp = Number(lastFinalPrice);
+    if (Number.isFinite(fromProp) && fromProp > 0) return fromProp;
+    const fromChain = Number(lastFinalFromChain);
+    if (Number.isFinite(fromChain) && fromChain > 0) return fromChain;
+    return null;
+  }, [
+    resolvedLastMintFinalPrice,
+    computedLastFinalPrice,
+    lastFinalPrice,
+    lastFinalFromChain,
+  ]);
+
+  const hasCurrentBlockPrice = Number.isFinite(
+    Number(effectiveDisplayedBlockPrice),
+  );
+  const hasLastRedeemedBgBonusPct = Number.isFinite(
+    Number(lastRedeemedBackgroundBonusPct),
+  );
+  const hasLastRedeemedBgBonusValue = Number.isFinite(
+    Number(effectiveDisplayedBgBonusValue),
+  );
 
   const formatMaybe = React.useCallback((value, digits = 2) => {
     if (value == null || !Number.isFinite(Number(value))) return "--";
@@ -2408,9 +3111,21 @@ function LiveStats({
     };
   }, [pools, tokenDecimals, tokenSymbol]);
 
+  const visibleTokenBalanceEntries = React.useMemo(() => {
+    const entries = (pools?.tokenBalances || []).filter((entry) => entry?.balance != null);
+    return desktopFullscreen ? entries.slice(0, 4) : entries.slice(0, 6);
+  }, [desktopFullscreen, pools]);
+
+  const visibleLpHolderEntries = React.useMemo(() => {
+    const entries = Array.isArray(pools?.lpStats?.balances)
+      ? pools.lpStats.balances
+      : [];
+    return desktopFullscreen ? entries.slice(0, 2) : entries.slice(0, 3);
+  }, [desktopFullscreen, pools]);
+
   const mainStats = (
     <div className="live-stats-main-flex" style={statsMainFlex}>
-      {onlyTickets && (
+      {onlyTickets && !hasConnectedWallet && (
         <div
           style={{
             width: "100%",
@@ -2635,6 +3350,15 @@ function LiveStats({
               {String(effectiveLastMinted.backgroundName || "-").toUpperCase()}
             </span>
           </div>
+          <div
+            style={{
+              ...infoRowStyle,
+              color: "#9ee5ff",
+              marginTop: isPhone ? 1 : 2,
+            }}
+          >
+            FINAL PRICE
+          </div>
           <div style={metricValueRowStyle}>
             <span
               className="highlight"
@@ -2644,10 +3368,25 @@ function LiveStats({
                 fontWeight: 800,
               }}
             >
-              {currentBlockPrice != null
-                ? `${formatMaybe(currentBlockPrice, 2)} POL`
+              {effectiveLastFinalPrice != null
+                ? `${formatMaybe(effectiveLastFinalPrice, 2)} POL`
                 : "-"}
             </span>
+          </div>
+          <div
+            style={{
+              ...infoRowStyle,
+              color: "#9ee5ff",
+              textTransform: "none",
+              fontSize: isTiny ? "0.48em" : isPhone ? "0.58em" : "0.64em",
+            }}
+          >
+            {hasCurrentBlockPrice
+              ? `Base ${formatMaybe(effectiveDisplayedBlockPrice, 2)} POL`
+              : "Base -"}
+            {hasLastRedeemedBgBonusValue
+              ? ` + BG bonus ${formatMaybe(effectiveDisplayedBgBonusValue, 2)} POL (${hasLastRedeemedBgBonusPct ? formatSigned(lastRedeemedBackgroundBonusPct, 0) : "--"}%)`
+              : ""}
           </div>
         </div>
       </div>
@@ -2859,17 +3598,19 @@ function LiveStats({
                 <div style={{ ...fullscreenModalFrameStyle, padding: 0 }}>
                   <div
                     style={fullscreenModalCardStyle}
-                    className="wc-fullscreen-shell"
+                    className={`wc-fullscreen-shell${desktopFullscreen ? " wc-fullscreen-shell--desktop" : ""}`}
                   >
                     <button
                       type="button"
                       className="wc-fullscreen-close"
-                      onClick={() => setWeeklyOpen(false)}
+                      onClick={closeWeeklyModal}
                       aria-label="Close weekly panel"
                     >
                       Close
                     </button>
-                    <div className="wc-fullscreen-wrapper">
+                    <div
+                      className={`wc-fullscreen-wrapper${desktopFullscreen ? " wc-fullscreen-wrapper--desktop" : ""}`}
+                    >
                       <WeeklyCountdown
                         info={weeklyCountdownInfo}
                         isClaiming={weeklyIsClaiming}
@@ -2885,16 +3626,19 @@ function LiveStats({
           )}
           {/* TOKENOMICS MODAL */}
           {poolsOpen && (
-            <ModalPortal lockScroll={true}>
+            <ModalPortal lockScroll={false}>
               <div style={modalOverlayStyle}>
                 <div style={fullscreenModalFrameStyle}>
-                  <div style={{ ...fullscreenModalCardStyle, padding: 0 }}>
+                  <div
+                    style={{ ...fullscreenModalCardStyle, padding: 0 }}
+                    className={desktopFullscreen ? "ls-fullscreen-tokenomics" : undefined}
+                  >
                     <div style={modalHeaderStyle}>
                       <div style={{ color: "#ffe800", fontWeight: 900 }}>
                         TOKENOMICS
                       </div>
                       <button
-                        onClick={() => setPoolsOpen(false)}
+                        onClick={closePoolsModal}
                         aria-label="Close pools"
                         title="Close"
                         style={{
@@ -2912,25 +3656,18 @@ function LiveStats({
                     </div>
 
                     <div
+                      className={desktopFullscreen ? "ls-tokenomics-modal__content" : undefined}
                       style={{
-                        flex: 1,
-                        minHeight: 0,
-                        overflowY: "auto",
-                        overflowX: "hidden",
-                        WebkitOverflowScrolling: "touch",
-                        overscrollBehavior: "contain",
-                        touchAction: "pan-y",
-                        padding: isPhone ? 8 : 14,
+                        ...tokenomicsModalBodyStyle,
                       }}
                     >
                       <div
+                        className={desktopFullscreen ? "ls-tokenomics-modal__grid" : undefined}
                         style={{
-                          marginTop: isPhone ? 6 : 10,
-                          display: "grid",
-                          gap: isPhone ? 8 : 12,
+                          ...tokenomicsModalGridStyle,
                         }}
                       >
-                        <div className="pools-card collection-stats-card">
+                        <div className="pools-card collection-stats-card ls-tokenomics-modal__section ls-tokenomics-modal__section--overview">
                           <div className="pools-card__header">
                             <div className="collection-section-title">
                               TOKEN OVERVIEW
@@ -3013,7 +3750,7 @@ function LiveStats({
                             </div>
                           </div>
                         </div>
-                      <div className="pools-card collection-stats-card">
+                      <div className="pools-card collection-stats-card ls-tokenomics-modal__section ls-tokenomics-modal__section--allocation">
                         <div className="pools-card__header">
                           <div className="collection-section-title">
                             POOLS & ALLOCATION
@@ -3066,9 +3803,10 @@ function LiveStats({
                                       {balDisplay}
                                     </div>
                                     <div
+                                      className="ls-tokenomics-modal__meta"
                                       style={{
                                         color: "#9ee5ff",
-                                        fontSize: "0.68rem",
+                                        fontSize: desktopFullscreen ? "0.62rem" : "0.68rem",
                                         fontWeight: 700,
                                         letterSpacing: "0.08em",
                                         textTransform: "uppercase",
@@ -3085,7 +3823,7 @@ function LiveStats({
                       </div>
 
                       {!isPhone && (
-                        <div className="pools-card collection-stats-card">
+                        <div className="pools-card collection-stats-card ls-tokenomics-modal__section ls-tokenomics-modal__section--contracts">
                           <div className="pools-card__header">
                             <div className="collection-section-title">
                               BIGGI IN CONTRACTS
@@ -3094,11 +3832,7 @@ function LiveStats({
                           <div className="pools-card__body">
                             <div className="collection-stats-grid">
                               {(() => {
-                                const entries = (pools?.tokenBalances || []).filter(
-                                  (t) => t?.balance != null
-                                );
-                                const visible = entries.slice(0, 6);
-                                if (!visible.length) {
+                                if (!visibleTokenBalanceEntries.length) {
                                   return (
                                     <div className="collection-stat-card">
                                       <div className="collection-stat-label">
@@ -3108,7 +3842,7 @@ function LiveStats({
                                     </div>
                                   );
                                 }
-                                return visible.map((t) => {
+                                return visibleTokenBalanceEntries.map((t) => {
                                   const bal = fmtToken(
                                     t.balance,
                                     resolvedTokenMeta.decimals,
@@ -3137,7 +3871,7 @@ function LiveStats({
                         </div>
                       )}
 
-                      <div className="pools-card collection-stats-card">
+                      <div className="pools-card collection-stats-card ls-tokenomics-modal__section ls-tokenomics-modal__section--lp">
                         <div className="pools-card__header">
                           <div className="collection-section-title">
                             LP TOKENS
@@ -3179,8 +3913,7 @@ function LiveStats({
                               </div>
                             </div>
                             {!isPhone &&
-                              (pools?.lpStats?.balances || [])
-                                .slice(0, 3)
+                              visibleLpHolderEntries
                                 .map((t) => {
                                   const bal =
                                     t.balance != null && pools?.lpStats
@@ -3223,13 +3956,16 @@ function LiveStats({
             <ModalPortal lockScroll={false}>
               <div style={modalOverlayStyle}>
                 <div style={fullscreenModalFrameStyle}>
-                  <div style={fullscreenModalCardStyle}>
+                  <div
+                    style={fullscreenModalCardStyle}
+                    className={desktopFullscreen ? "ls-fullscreen-chat" : undefined}
+                  >
                     <div style={modalHeaderStyle}>
                       <div style={{ color: "#ffe800", fontWeight: 900 }}>
                         LIVE CHAT
                       </div>
                       <button
-                        onClick={() => setChatOpen(false)}
+                        onClick={closeChatModal}
                         aria-label="Close live chat"
                         title="Close"
                         style={{
@@ -3245,7 +3981,12 @@ function LiveStats({
                         Close
                       </button>
                     </div>
-                    <div style={{ flex: 1, minHeight: 0 }}>
+                    <div
+                      className={desktopFullscreen ? "ls-fullscreen-chat__content" : undefined}
+                      style={{
+                        ...chatModalContentStyle,
+                      }}
+                    >
                       <React.Suspense fallback={null}>
                         <LiveChatPanel walletAddress={walletAddress} />
                       </React.Suspense>
@@ -3265,6 +4006,9 @@ function LiveStats({
             blockMintCounts={effectiveBlockMintCounts}
             blockPrices={effectiveBlockPrices}
             backgroundMintCounts={effectiveBackgroundMintCounts}
+            lastRedeemedTokenId={effectiveLastMinted.tokenId}
+            lastRedeemedBlock={effectiveLastMinted.blockName}
+            lastRedeemedBackground={effectiveLastMinted.backgroundName}
             onBack={resetAll}
           />
         </React.Suspense>
@@ -3276,6 +4020,9 @@ function LiveStats({
             blockNames={safeBlockNames}
             backgroundMintCounts={effectiveBackgroundMintCounts}
             blockPrices={effectiveBlockPrices}
+            lastRedeemedTokenId={effectiveLastMinted.tokenId}
+            lastRedeemedBlock={effectiveLastMinted.blockName}
+            lastRedeemedBackground={effectiveLastMinted.backgroundName}
             onBack={resetAll}
           />
         </React.Suspense>

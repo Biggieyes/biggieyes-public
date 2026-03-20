@@ -6,6 +6,25 @@ const ProjectInfoModal = React.lazy(() =>
   import("../../../ACTIONBUTTONS/INFO/ProjectInfoModal.jsx"),
 );
 
+const BUTTON_IMAGE_SOURCES = {
+  mint: {
+    src: "/images/mint.optimized.png",
+    fallbackSrc: "/images/mint.fallback.png",
+  },
+  claim: {
+    src: "/images/claim.optimized.png",
+    fallbackSrc: "/images/claim.fallback.png",
+  },
+  redeem: {
+    src: "/images/redeem-button.optimized.png",
+    fallbackSrc: "/images/redeem-button.fallback.png",
+  },
+  info: {
+    src: "/images/icons/info.optimized.png",
+    fallbackSrc: "/images/icons/info.fallback.png",
+  },
+};
+
 export default function ActionButtons({
   onMint,
   onRedeem,
@@ -100,7 +119,7 @@ export default function ActionButtons({
     overflow: "visible",
   };
 
-  const buttonWrapper = (src, alt, onClick, options = {}) => {
+  const buttonWrapper = (image, alt, onClick, options = {}) => {
     const {
       isDisabled = false,
       borderColor = "#1abc9c",
@@ -110,6 +129,8 @@ export default function ActionButtons({
       wrapperStyle,
       wrapperRef,
     } = options;
+    const resolvedImage =
+      typeof image === "string" ? { src: image, fallbackSrc: "" } : image;
 
     const hoverGlow = glow.replace(/([0-9]*\.?[0-9]+)\s*\)$/g, (_, alpha) => {
       const numeric = parseFloat(alpha);
@@ -173,8 +194,19 @@ export default function ActionButtons({
           }}
         >
           <img
-            src={src}
+            src={resolvedImage.src}
             alt={alt}
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
+            width="100"
+            height="100"
+            onError={(event) => {
+              if (!resolvedImage.fallbackSrc) return;
+              if (event.currentTarget.dataset.fallbackApplied === "1") return;
+              event.currentTarget.dataset.fallbackApplied = "1";
+              event.currentTarget.src = resolvedImage.fallbackSrc;
+            }}
             style={{
               width: "100%",
               height: "100%",
@@ -235,18 +267,28 @@ export default function ActionButtons({
           maxWidth: rowMaxWidth,
         }}
       >
-        {buttonWrapper("/images/mint.png", "Mint Ticket", runOnce(onMint, actionDisabled), {
-          isDisabled: actionDisabled,
-          variant: "mint",
-          borderColor: "#26f7d1",
-          glow: "rgba(38, 247, 209, 0.55)",
-        })}
-        {buttonWrapper("/images/claim.png", "Claim REWARDS", runOnce(onClaim, actionDisabled), {
-          isDisabled: actionDisabled,
-          variant: "mint",
-          borderColor: "#26f7d1",
-          glow: "rgba(38, 247, 209, 0.55)",
-        })}
+        {buttonWrapper(
+          BUTTON_IMAGE_SOURCES.mint,
+          "Mint Ticket",
+          runOnce(onMint, actionDisabled),
+          {
+            isDisabled: actionDisabled,
+            variant: "mint",
+            borderColor: "#26f7d1",
+            glow: "rgba(38, 247, 209, 0.55)",
+          },
+        )}
+        {buttonWrapper(
+          BUTTON_IMAGE_SOURCES.claim,
+          "Claim REWARDS",
+          runOnce(onClaim, actionDisabled),
+          {
+            isDisabled: actionDisabled,
+            variant: "mint",
+            borderColor: "#26f7d1",
+            glow: "rgba(38, 247, 209, 0.55)",
+          },
+        )}
       </div>
 
       <div
@@ -261,7 +303,7 @@ export default function ActionButtons({
         }}
       >
         {buttonWrapper(
-          "/images/redeem-button.png",
+          BUTTON_IMAGE_SOURCES.redeem,
           "Redeem Ticket",
           runOnce(onRedeem, redeemDisabled),
           {
@@ -271,12 +313,17 @@ export default function ActionButtons({
             glow: "rgba(38, 247, 209, 0.55)",
           },
         )}
-        {buttonWrapper("/images/icons/info.png", "Project Info", () => setInfoOpen(true), {
-          borderColor: "#ffe800",
-          glow: gateActive ? "rgba(255, 232, 0, 0.95)" : "rgba(255, 232, 0, 0.6)",
-          wrapperClassName: gateActive ? "info-gate-target" : undefined,
-          wrapperRef: infoButtonRef,
-        })}
+        {buttonWrapper(
+          BUTTON_IMAGE_SOURCES.info,
+          "Project Info",
+          () => setInfoOpen(true),
+          {
+            borderColor: "#ffe800",
+            glow: gateActive ? "rgba(255, 232, 0, 0.95)" : "rgba(255, 232, 0, 0.6)",
+            wrapperClassName: gateActive ? "info-gate-target" : undefined,
+            wrapperRef: infoButtonRef,
+          },
+        )}
       </div>
 
       {(performing || errorText) && (

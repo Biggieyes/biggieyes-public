@@ -67,6 +67,6 @@ values (1, '0x64ADb3e4B5BE8567c599bA8e050F7016C3D51eD0')
 on conflict (id) do update set owner_address = excluded.owner_address;
 
 insert into public.rules (id, text, updated_by_address)
-values (1, 'Be respectful. No spam, scams, or off-topic flooding.', '0x64ADb3e4B5BE8567c599bA8e050F7016C3D51eD0')
+values (1, 'Be respectful. No spam.', '0x64ADb3e4B5BE8567c599bA8e050F7016C3D51eD0')
 on conflict (id) do update
 set text = excluded.text, updated_by_address = excluded.updated_by_address, updated_at = now();

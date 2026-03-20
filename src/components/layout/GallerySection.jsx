@@ -68,26 +68,32 @@ export default function GallerySection({
   galleryLoading,
   galleryNotice,
   myNFTs,
+  ticketPrice,
   dynamicTraitsById,
   topFirstId,
   setTopFirstId,
   fetchDynamicTraitsFor,
   setZoomImg,
-  VRFPending,
-  isRedeeming,
   fetchWalletAssets,
   walletAddress,
   isMobile,
+  sectionId = "gallery",
 }) {
+  const fetchWalletAssetsRef = React.useRef(fetchWalletAssets);
+
+  React.useEffect(() => {
+    fetchWalletAssetsRef.current = fetchWalletAssets;
+  }, [fetchWalletAssets]);
+
   if (hideExtras) return null;
 
   React.useEffect(() => {
     if (!walletAddress) return;
-    fetchWalletAssets(walletAddress);
-  }, [walletAddress, VRFPending, isRedeeming, fetchWalletAssets]);
+    fetchWalletAssetsRef.current?.(walletAddress);
+  }, [walletAddress]);
 
   return (
-    <div className="gallery-section" id="gallery">
+    <div className="gallery-section" id={sectionId || undefined}>
       <div className="gallery-section__header">
         <h2 style={{ color: "#fff", margin: 0 }}>My NFTs</h2>
         <button
@@ -118,6 +124,8 @@ export default function GallerySection({
         <Gallery
           address={walletAddress}
           items={myNFTs}
+          useProvidedOnly
+          liveTicketPrice={ticketPrice}
           dynamicTraitsById={dynamicTraitsById}
           topFirstId={topFirstId}
           onOpenDetails={(nft) => {

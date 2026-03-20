@@ -55,6 +55,7 @@ export function mapBUYBACKSnapshotToUI(raw) {
   const totalNativeReceived = _formatAmount(BUYBACKRaw.totalNativeReceived);
   const totalBiggiAcquired = _formatAmount(BUYBACKRaw.totalBiggiAcquired);
   const tokenBalance = _formatAmount(BUYBACKRaw.tokenBalance);
+  const keeperThreshold = _formatAmount(BUYBACKRaw.keeperThreshold);
 
   const treasuryBiggi = _formatAmount(treasuryRaw.biggiBalance);
   const treasuryMatic = _formatAmount(treasuryRaw.maticBalance);
@@ -110,6 +111,14 @@ export function mapBUYBACKSnapshotToUI(raw) {
       fallbackMinIntervalSec: BUYBACKRaw.fallbackMinIntervalSec,
       fallbackSwapSlippageBps: BUYBACKRaw.fallbackSwapSlippageBps,
       fallbackTxDeadlineSec: BUYBACKRaw.fallbackTxDeadlineSec,
+      keeperProxy: BUYBACKRaw.keeperProxy,
+      keeperProxyShort: _shortAddress(BUYBACKRaw.keeperProxy),
+      keeperProxyPaused: BUYBACKRaw.keeperProxyPaused ?? null,
+      keeperThreshold: keeperThreshold.display,
+      keeperThresholdNumeric: keeperThreshold.numeric,
+      keeperAllowedCaller: BUYBACKRaw.keeperAllowedCaller,
+      keeperAllowedCallerShort: _shortAddress(BUYBACKRaw.keeperAllowedCaller),
+      keeperAgent: BUYBACKRaw.keeperAgent,
       lastBUYBACKLabel,
       nativeBalance: nativeBalance.display,
       nativeBalanceNumeric: nativeBalance.numeric,
@@ -118,6 +127,7 @@ export function mapBUYBACKSnapshotToUI(raw) {
       totalNativeSpent: totalNativeSpent.display,
       totalNativeSpentNumeric: totalNativeSpent.numeric,
       totalNativeReceived: totalNativeReceived.display,
+      totalNativeReceivedNumeric: totalNativeReceived.numeric,
       totalBiggiAcquired: totalBiggiAcquired.display,
       totalBiggiAcquiredNumeric: totalBiggiAcquired.numeric,
       paused: !!BUYBACKRaw.paused,
@@ -135,7 +145,9 @@ export function mapBUYBACKSnapshotToUI(raw) {
       maticBalance: treasuryMatic.display,
       maticBalanceNumeric: treasuryMatic.numeric,
       totalBiggiReceived: treasuryTotalReceived.display,
+      totalBiggiReceivedNumeric: treasuryTotalReceived.numeric,
       totalMaticReceived: treasuryMaticReceived.display,
+      totalMaticReceivedNumeric: treasuryMaticReceived.numeric,
       totalMaticFromDistributor: treasuryMaticFromDistributor.display,
       tokenBalance: treasuryTokenBalance.display,
       BUYBACKAgent: treasuryRaw.BUYBACKAgent,
@@ -168,8 +180,8 @@ export function mapBUYBACKSnapshotToFLOWRows(snapshot) {
       segment: "BUYBACK",
     },
     {
-      label: "Treasury BIGGI balance",
-      value: snapshot.treasury.biggiBalance,
+      label: "Treasury BIGGI received",
+      value: snapshot.treasury.totalBiggiReceived,
       hint: snapshot.treasury.shortAddress,
       segment: "treasury",
     },

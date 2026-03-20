@@ -9,6 +9,9 @@
   color: #f6f7fb;
   min-height: 100vh;
   --rewards-border: rgba(255, 232, 0, 0.28);
+  --rewards-active-accent: #ffe800;
+  --rewards-active-accent-soft: rgba(255, 232, 0, 0.22);
+  --rewards-active-accent-glow: rgba(255, 232, 0, 0.38);
   --panel-border: rgba(255, 232, 0, 0.24);
   --panel-border-strong: rgba(255, 232, 0, 0.5);
   --panel-surface-grad: linear-gradient(
@@ -425,15 +428,6 @@
   top: 12px;
   right: 12px;
   z-index: 3;
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
-  padding: 0;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .rewards-grid__diagram-image {
@@ -1224,7 +1218,7 @@
   border-radius: 18px 18px 0 0;
   background:
     linear-gradient(135deg, rgba(10, 12, 18, 0.5), rgba(6, 8, 14, 0.42)),
-    url("/images/panels/rewards.png");
+    url("/images/panels/rewards.optimized.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -1240,22 +1234,22 @@
 .panel-header--rewards {
   background-image:
     linear-gradient(135deg, rgba(10, 12, 18, 0.5), rgba(6, 8, 14, 0.42)),
-    url("/images/panels/ecosystem.png");
+    url("/images/panels/ecosystem.optimized.jpg");
 }
 .panel-header--vrf {
   background-image:
     linear-gradient(135deg, rgba(10, 12, 18, 0.5), rgba(6, 8, 14, 0.42)),
-    url("/images/panels/ecosystem.png");
+    url("/images/panels/ecosystem.optimized.jpg");
 }
 .panel-header--community {
   background-image:
     linear-gradient(135deg, rgba(10, 12, 18, 0.5), rgba(6, 8, 14, 0.42)),
-    url("/images/panels/ecosystem.png");
+    url("/images/panels/ecosystem.optimized.jpg");
 }
 .panel-header--ecosystem {
   background-image:
     linear-gradient(135deg, rgba(10, 12, 18, 0.5), rgba(6, 8, 14, 0.42)),
-    url("/images/panels/ecosystem.png");
+    url("/images/panels/ecosystem.optimized.jpg");
 }
 
 .rewards-grid__header::before {
@@ -1265,7 +1259,7 @@
   background:
     radial-gradient(
       120% 90% at 12% 10%,
-      rgba(255, 232, 0, 0.24),
+      var(--rewards-active-accent-soft),
       transparent 58%
     ),
     radial-gradient(
@@ -1329,10 +1323,29 @@
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #ffe800;
-  text-shadow: 0 0 6px rgba(255, 232, 0, 0.3);
+  color: var(--rewards-active-accent);
+  text-shadow: 0 0 6px var(--rewards-active-accent-glow);
   position: relative;
   z-index: 1;
+}
+
+.rewards-grid.biggi-skin .view-tabs .tab-button.active {
+  color: var(--rewards-active-accent) !important;
+  background:
+    linear-gradient(
+      145deg,
+      var(--rewards-active-accent-soft),
+      rgba(255, 255, 255, 0.08)
+    ) !important;
+  border-color: var(--rewards-active-accent) !important;
+  box-shadow:
+    0 10px 24px var(--rewards-active-accent-glow),
+    0 0 20px var(--rewards-active-accent-soft) !important;
+}
+
+.rewards-grid.biggi-skin .view-tabs .tab-button.active:hover {
+  color: var(--rewards-active-accent) !important;
+  border-color: var(--rewards-active-accent) !important;
 }
 
 .rewards-grid__subtitle {
@@ -3020,10 +3033,6 @@
   .rewards-grid__diagram-info-btn {
     top: 8px;
     right: 8px;
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    min-height: 32px;
   }
 
   .rewards-grid__diagram-image {

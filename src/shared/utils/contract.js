@@ -3,6 +3,7 @@
 import { BrowserProvider, Contract, FallbackProvider, JsonRpcProvider, Network, parseEther, formatEther } from "ethers";
 import { ADDR } from "./addresses.js";
 import {
+  AMOY_RPC,
   AMOY,
   PUBLIC_AMOY_RPCS,
   getWalletRpcUrls,
@@ -153,7 +154,7 @@ export function _secureRandomInt(maxExclusive) {
   return Math.floor(Math.random() * maxExclusive);
 }
 
-export { ADDR, AMOY, PUBLIC_AMOY_RPCS };
+export { ADDR, AMOY, AMOY_RPC, PUBLIC_AMOY_RPCS, getWalletRpcUrls };
 
 let _roProvider = undefined;
 let _roProviderCacheKey = "";
@@ -204,6 +205,10 @@ export function getInjectedProvider() {
   return _getEffectiveInjectedProvider();
 }
 
+export function hasInjectedProviderOverride() {
+  return Boolean(_injectedProviderOverride);
+}
+
 function _applyPollingInterval(provider) {
   const pollMs = Number(_env("VITE_RPC_POLL_INTERVAL_MS") || 8000);
   if (provider && Number.isFinite(pollMs) && pollMs > 0) {
@@ -224,7 +229,28 @@ export function getPrimaryRpcUrl() {
 function _mkRpcProvider(url) {
   // Plain provider is more tolerant of flaky RPCs than batch in some gateways.
   const network = Network.from({ chainId: AMOY.chainId, name: AMOY.name });
-  return new JsonRpcProvider(url, network, { staticNetwork: network });
+  const options = { staticNetwork: network };
+  const fromEnv = Number(_env("VITE_RPC_BATCH_MAX_COUNT"));
+  if (Number.isFinite(fromEnv) && fromEnv > 0) {
+    options.batchMaxCount = Math.trunc(fromEnv);
+  } else {
+    try {
+      const host = new URL(String(url || "")).hostname.toLowerCase();
+      if (host === "polygon-amoy.drpc.org" || host.endsWith(".drpc.org")) {
+        options.batchMaxCount = 3;
+      }
+    } catch {
+      // ignore URL parsing failures
+    }
+  }
+  return new JsonRpcProvider(url, network, options);
+}
+
+function _useEthersFallbackProvider() {
+  const raw = String(_env("VITE_ENABLE_ETHERS_FALLBACK_PROVIDER") || "")
+    .trim()
+    .toLowerCase();
+  return raw === "1" || raw === "true";
 }
 
 function _resolveROProviderMaxAgeMs() {
@@ -311,6 +337,13 @@ export function getROProvider() {
   }
 
   if (urls.length === 1) {
+    return _cacheROProvider(_mkRpcProvider(urls[0]), cacheKey);
+  }
+
+  // ethers@6.16 FallbackProvider can throw "invalid numeric value (%internal)"
+  // when one backend fails while resolving fuzzy quorum (e.g. getBlockNumber).
+  // Keep it opt-in until upstream behavior is stable.
+  if (!_useEthersFallbackProvider()) {
     return _cacheROProvider(_mkRpcProvider(urls[0]), cacheKey);
   }
 
@@ -423,7 +456,7 @@ function _hasSyncedRpc(rpcUrls = null) {
 
 export async function syncAmoyRpcIfNeeded(
   externalProvider,
-  { force = false, preferPublicFirst = false } = {},
+  { force = false, preferPublicFirst = true } = {},
 ) {
   const provider = externalProvider || _getEffectiveInjectedProvider();
   if (!_hasRequest(provider))

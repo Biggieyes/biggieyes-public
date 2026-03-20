@@ -11,6 +11,7 @@ import {
   toBytes32,
   readSlotInfo,
 } from "../utils/eth";
+import "../features/admin/MODERATORCENTER/MODERATORCENTERPanel.css";
 
 const ZERO_ADDR = ZeroAddress || "0x0000000000000000000000000000000000000000";
 

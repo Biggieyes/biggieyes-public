@@ -22,46 +22,73 @@ export default function HeaderControls({
   onInfoButtonRect,
   forceInfoOpenTick = 0,
 }) {
-  const showWalletRow = !(isMobile && walletAddress);
+  const verifiedWalletAddress = String(walletAddress || "").trim();
+  const hasVerifiedConnection = Boolean(verifiedWalletAddress);
+  const showWalletRow = !(isMobile && hasVerifiedConnection);
+  const isCompactWalletRow = isMobile;
+  const isSingleWalletButton = hasVerifiedConnection;
+  const disconnectedMetaMaskLabel = isMobile
+    ? "MetaMask"
+    : "Connect MetaMask";
+  const disconnectedWalletConnectLabel = isMobile
+    ? "WalletConnect"
+    : "Connect Wallet (WC)";
 
   return (
     <header
-      className="dashboard-shell"
+      className="dashboard-header-shell"
       style={{ width: "100%", zIndex: 1000, position: "relative" }}
     >
       {showWalletRow && (
-        <div className="wallet-row" style={{ padding: 8 }}>
+        <div
+          className={`wallet-row${isCompactWalletRow ? " wallet-row--mobile" : ""}${isSingleWalletButton ? " wallet-row--single" : ""}`}
+        >
           <button
             type="button"
             className="metamask-btn-top"
             onClick={connectMetaMask}
+            aria-label={
+              hasVerifiedConnection ? "Connected wallet" : "Connect MetaMask"
+            }
           >
             <img
               src="/images/metamask-fox.svg"
               alt="MetaMask"
               className="fox-icon"
             />
-            {walletAddress ? (
-              <span style={{ marginLeft: 8 }}>
-                Connected: <Address address={walletAddress} />
+            {hasVerifiedConnection ? (
+              <span className="wallet-btn-label">
+                Connected:{" "}
+                <Address
+                  address={verifiedWalletAddress}
+                  start={4}
+                  end={3}
+                  copy={false}
+                  monospace={false}
+                />
               </span>
             ) : (
-              <span style={{ marginLeft: 8 }}>Connect MetaMask</span>
+              <span className="wallet-btn-label">
+                {disconnectedMetaMaskLabel}
+              </span>
             )}
           </button>
 
-          {!walletAddress && (
+          {!hasVerifiedConnection && (
             <button
               type="button"
               className="wc-btn-top"
               onClick={connectWalletConnect}
+              aria-label="Connect WalletConnect"
             >
               <img
                 src="/images/walletconnect.svg"
                 alt="WalletConnect"
                 className="fox-icon"
               />
-              <span style={{ marginLeft: 8 }}>Connect Wallet (WC)</span>
+              <span className="wallet-btn-label">
+                {disconnectedWalletConnectLabel}
+              </span>
             </button>
           )}
         </div>

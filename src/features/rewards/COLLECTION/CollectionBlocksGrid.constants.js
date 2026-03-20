@@ -91,10 +91,238 @@ export const COLLECTION_STATUSES = {
   NETWORK: "Polygon Amoy",
 };
 
-// Future COLLECTIONs configuration
-export const FUTURE_COLLECTIONS = [
-  // Add future COLLECTIONs here as needed
-  // Format: { id, name, description, status, items, mintPrice, progress }
+const DEFAULT_PAIR_SUPPLY = 550;
+const DEFAULT_FINAL_SUPPLY = 1100;
+
+const roadmapImage = (name) => ({
+  imageSrc: `/images/expansion-roadmap/${name}.optimized.jpg`,
+  imageFallbackSrc: `/images/expansion-roadmap/${name}.png`,
+});
+
+const createRoadmapCollection = ({
+  id,
+  name,
+  type,
+  supply,
+  status,
+  description,
+  imageSrc = "",
+  imageFallbackSrc = "",
+  imageAlt = "",
+  placeholderLabel = "Image coming soon",
+  featuredNote = "",
+}) => ({
+  id,
+  name,
+  type,
+  supply,
+  status,
+  description,
+  imageSrc,
+  imageFallbackSrc,
+  imageAlt: imageAlt || `${name} preview`,
+  placeholderLabel,
+  featuredNote,
+  items: supply,
+  mintPrice: "TBA",
+  progress: 0,
+});
+
+export const FUTURE_COLLECTION_STAGES = [
+  {
+    id: "vrfpluspublic-universe",
+    kind: "pair",
+    title: "Universe",
+    chapterKey: "vrfplusPublic",
+    chapterLabel: "VRF + Public",
+    status: "Mainnet Ready",
+    description:
+      "The first mainnet-ready roadmap pair starts with Universe as the VRF release and Universe Public as the public companion.",
+    collections: [
+      createRoadmapCollection({
+        id: "universe-vrf",
+        name: "Universe",
+        type: "VRF",
+        supply: DEFAULT_PAIR_SUPPLY,
+        status: "Mainnet Ready",
+        description:
+          "VRF-led Universe collection prepared for mainnet in the first roadmap pair.",
+        ...roadmapImage("universe"),
+      }),
+      createRoadmapCollection({
+        id: "universe-public",
+        name: "Universe Public",
+        type: "Public",
+        supply: DEFAULT_PAIR_SUPPLY,
+        status: "Mainnet Ready",
+        description:
+          "Public companion for the Universe roadmap pair, prepared for mainnet.",
+        ...roadmapImage("universe-public"),
+      }),
+    ],
+  },
+  {
+    id: "vrfpluspublic-mutant",
+    kind: "pair",
+    title: "Mutant",
+    chapterKey: "vrfplusPublic",
+    chapterLabel: "VRF + Public",
+    status: "Mainnet Ready",
+    description:
+      "The second mainnet-ready roadmap pair introduces Mutant and its public companion.",
+    collections: [
+      createRoadmapCollection({
+        id: "mutant-vrf",
+        name: "Mutant",
+        type: "VRF",
+        supply: DEFAULT_PAIR_SUPPLY,
+        status: "Mainnet Ready",
+        description:
+          "VRF-led Mutant collection prepared for mainnet in the second roadmap pair.",
+        ...roadmapImage("mutant"),
+      }),
+      createRoadmapCollection({
+        id: "mutant-public",
+        name: "Mutant Public",
+        type: "Public",
+        supply: DEFAULT_PAIR_SUPPLY,
+        status: "Mainnet Ready",
+        description:
+          "Public companion for the Mutant roadmap pair, prepared for mainnet.",
+        ...roadmapImage("mutant-public"),
+      }),
+    ],
+  },
+  {
+    id: "vrfpluspublic-apocalipse",
+    kind: "pair",
+    title: "Apocalipse",
+    chapterKey: "vrfplusPublic",
+    chapterLabel: "VRF + Public",
+    status: "Mainnet Ready",
+    description:
+      "The third mainnet-ready roadmap pair keeps the same VRF + Public structure for Apocalipse.",
+    collections: [
+      createRoadmapCollection({
+        id: "apocalipse-vrf",
+        name: "Apocalipse",
+        type: "VRF",
+        supply: DEFAULT_PAIR_SUPPLY,
+        status: "Mainnet Ready",
+        description:
+          "VRF-led Apocalipse collection prepared for mainnet in the third roadmap pair.",
+        ...roadmapImage("apocalipse"),
+      }),
+      createRoadmapCollection({
+        id: "apocalipse-public",
+        name: "Apocalipse Public",
+        type: "Public",
+        supply: DEFAULT_PAIR_SUPPLY,
+        status: "Mainnet Ready",
+        description:
+          "Public companion for the Apocalipse roadmap pair, prepared for mainnet.",
+        ...roadmapImage("apocalipse-public"),
+      }),
+    ],
+  },
+  {
+    id: "vrfpluspublic-super-hero",
+    kind: "pair",
+    title: "Super Hero",
+    chapterKey: "vrfplusPublic",
+    chapterLabel: "VRF + Public",
+    status: "Mainnet Ready",
+    description:
+      "The fourth mainnet-ready roadmap pair completes the VRF + Public chapter with Super Hero.",
+    collections: [
+      createRoadmapCollection({
+        id: "super-hero-vrf",
+        name: "Super Hero",
+        type: "VRF",
+        supply: DEFAULT_PAIR_SUPPLY,
+        status: "Mainnet Ready",
+        description:
+          "VRF-led Super Hero collection prepared for mainnet in the fourth roadmap pair.",
+        ...roadmapImage("super-hero"),
+      }),
+      createRoadmapCollection({
+        id: "super-hero-public",
+        name: "Super Hero Public",
+        type: "Public",
+        supply: DEFAULT_PAIR_SUPPLY,
+        status: "Mainnet Ready",
+        description:
+          "Public companion for the Super Hero roadmap pair, prepared for mainnet.",
+        ...roadmapImage("super-hero-public"),
+      }),
+    ],
+  },
+  {
+    id: "final-collection-stage",
+    kind: "final",
+    title: "MULTIVERSE",
+    chapterKey: "final",
+    chapterLabel: "Final Stage",
+    status: "Mainnet Ready",
+    description:
+      "MULTIVERSE closes the roadmap after all four VRF + Public pairs are complete and is already prepared for the mainnet release.",
+    collections: [
+      createRoadmapCollection({
+        id: "final-collection",
+        name: "MULTIVERSE",
+        type: "Final",
+        supply: DEFAULT_FINAL_SUPPLY,
+        status: "Mainnet Ready",
+        description:
+          "Final roadmap collection prepared for mainnet with 1100 NFTs and the main prize spotlight.",
+        ...roadmapImage("multiverse"),
+        featuredNote: "Main prize: $500k",
+      }),
+    ],
+  },
 ];
+
+export const FUTURE_COLLECTIONS = FUTURE_COLLECTION_STAGES.flatMap((stage) =>
+  (Array.isArray(stage.collections) ? stage.collections : []).map((collection) => ({
+    ...collection,
+    stageId: stage.id,
+    stageKind: stage.kind,
+    stageTitle: stage.title,
+    stageStatus: stage.status,
+    stageDescription: stage.description,
+    chapterKey: stage.chapterKey,
+    chapterLabel: stage.chapterLabel,
+  })),
+);
+
+export const getFutureCollectionStats = (
+  stages = FUTURE_COLLECTION_STAGES,
+) => {
+  const safeStages = Array.isArray(stages) ? stages : [];
+  const collections = safeStages.flatMap((stage) =>
+    Array.isArray(stage.collections) ? stage.collections : [],
+  );
+  const pairStages = safeStages.filter((stage) => stage.kind === "pair");
+  const pairCollections = pairStages.flatMap((stage) =>
+    Array.isArray(stage.collections) ? stage.collections : [],
+  );
+  const finalCollections = safeStages
+    .filter((stage) => stage.kind === "final")
+    .flatMap((stage) => (Array.isArray(stage.collections) ? stage.collections : []));
+
+  return {
+    totalStages: safeStages.length,
+    totalPairs: pairStages.length,
+    totalCollections: collections.length,
+    totalItems: collections.reduce(
+      (sum, collection) => sum + Number(collection.supply || 0),
+      0,
+    ),
+    pairCollections: pairCollections.length,
+    finalCollections: finalCollections.length,
+    pairSupply: DEFAULT_PAIR_SUPPLY,
+    finalSupply: DEFAULT_FINAL_SUPPLY,
+  };
+};
 
 

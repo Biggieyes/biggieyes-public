@@ -125,6 +125,17 @@ function isFatalConsoleError(text) {
   return fatalPatterns.some((rx) => rx.test(text));
 }
 
+function isNetworkConsoleError(text) {
+  const networkPatterns = [
+    /Failed to fetch/i,
+    /NetworkError/i,
+    /ERR_(?:NETWORK|CONNECTION|FAILED)/i,
+    /Load failed/i,
+    /CORS/i,
+  ];
+  return networkPatterns.some((rx) => rx.test(text));
+}
+
 async function runSmoke(baseUrl) {
   console.log("[smoke] launching browser");
   const browser = await withTimeout(
@@ -137,6 +148,7 @@ async function runSmoke(baseUrl) {
 
     const pageErrors = [];
     const fatalConsoleErrors = [];
+    const networkConsoleErrors = [];
     const consoleErrors = [];
 
     page.on("pageerror", (err) => {
@@ -148,11 +160,16 @@ async function runSmoke(baseUrl) {
       const text = msg.text();
       consoleErrors.push(text);
       if (isFatalConsoleError(text)) fatalConsoleErrors.push(text);
+      if (isNetworkConsoleError(text)) networkConsoleErrors.push(text);
     });
 
-    console.log("[smoke] goto app");
-    await page.goto(baseUrl, { waitUntil: "domcontentloaded", timeout: 60_000 });
-    await page.waitForSelector("text=My NFTs", { timeout: 60_000 });
+    const appUrl = new URL("/app/", baseUrl).toString();
+    console.log(`[smoke] goto app: ${appUrl}`);
+    await page.goto(appUrl, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await page.waitForSelector(
+      '.gallery-section, #gallery, h2:has-text("My NFTs")',
+      { timeout: 60_000 },
+    );
     console.log("[smoke] app shell ready");
 
     // Gallery + metadata/IPFS path smoke.
@@ -182,7 +199,13 @@ async function runSmoke(baseUrl) {
     const rewardsPanel = page.locator("section.rewards-grid");
     await rewardsPanel.waitFor({ state: "visible", timeout: 45_000 });
     await rewardsPanel
-      .locator('h2.rewards-grid__title:has-text("Biggi REWARDS")')
+      .locator("h2.rewards-grid__title")
+      .waitFor({ state: "visible", timeout: 45_000 });
+    await page
+      .getByRole("heading", {
+        name: /TOKEN REWARDS|COLLECTION REWARDS|NFT REWARDS/i,
+      })
+      .first()
       .waitFor({ state: "visible", timeout: 45_000 });
     await rewardsPanel
       .getByRole("heading", { name: "Claim preview", exact: true })
@@ -193,13 +216,20 @@ async function runSmoke(baseUrl) {
       .waitFor({ state: "visible", timeout: 45_000 });
     console.log("[smoke] token rewards claim-status flow ok");
 
-    if (pageErrors.length || fatalConsoleErrors.length) {
+    if (
+      pageErrors.length ||
+      fatalConsoleErrors.length ||
+      networkConsoleErrors.length
+    ) {
       const details = [
         pageErrors.length
           ? `Page errors:\n- ${pageErrors.join("\n- ")}`
           : null,
         fatalConsoleErrors.length
           ? `Fatal console errors:\n- ${fatalConsoleErrors.join("\n- ")}`
+          : null,
+        networkConsoleErrors.length
+          ? `Network console errors:\n- ${networkConsoleErrors.join("\n- ")}`
           : null,
       ]
         .filter(Boolean)

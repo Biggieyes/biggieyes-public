@@ -1,6 +1,7 @@
 import * as React from "react";
 import { FALLBACK_VALUE } from "./COLLECTIONBlocksGrid.constants";
 import PanelInfoModal from "@/components/common/PanelInfoModal";
+import PanelInfoButton from "@/components/common/PanelInfoButton";
 
 const SectionHeader = ({ label, accent = "#ffe800" }) => (
   <div
@@ -327,15 +328,12 @@ const COLLECTION1Panel = React.memo(
 
         <SectionHeader label="Structure" accent="#ff8a00" />
         <section className="collection-grid__schema-image-wrap">
-          <button
-            type="button"
-            className="collection-grid__schema-info-btn panel-info-btn biggi-btn biggi-btn--ghost"
+          <PanelInfoButton
+            className="collection-grid__schema-info-btn"
             onClick={() => setSchemaInfoOpen(true)}
-            aria-label="Open structure schema info"
+            ariaLabel="Open structure schema info"
             title="Structure info"
-          >
-            <span>i</span>
-          </button>
+          />
           <img
             className="collection-grid__schema-image"
             src="/images/schemas/collection-structure-schema.png?v=20260224b"

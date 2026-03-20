@@ -3,11 +3,23 @@ import * as ethers from "ethers";
 const DECIMALS = 18;
 const PLACEHOLDER = "--";
 
+function _normalizeBigNumberish(raw) {
+  if (typeof raw !== "string") return raw;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (/^-?\d+$/.test(trimmed) || /^-?0x[0-9a-f]+$/i.test(trimmed)) {
+    return trimmed;
+  }
+  return null;
+}
+
 function _formatAmount(raw, decimals = DECIMALS) {
   if (raw === undefined || raw === null)
     return { display: PLACEHOLDER, numeric: null };
   try {
-    const formatted = ethers.formatUnits(raw, decimals);
+    const normalized = _normalizeBigNumberish(raw);
+    if (normalized == null) return { display: PLACEHOLDER, numeric: null };
+    const formatted = ethers.formatUnits(normalized, decimals);
     const numeric = Number(formatted);
     const display = Number.isFinite(numeric)
       ? numeric.toLocaleString("en-US", { maximumFractionDigits: 2 })
@@ -38,6 +50,7 @@ export function mapDistributorSnapshotToUI(raw) {
   const pendingCOMMUNITYCENTER = _formatAmount(
     raw.pendingCOMMUNITYCENTER ?? raw.pendingCommunity,
   );
+  const communityPoolBalance = _formatAmount(raw.communityPoolBalance);
 
   return {
     ts,
@@ -49,6 +62,9 @@ export function mapDistributorSnapshotToUI(raw) {
     COLLECTIONREWARDS: raw.COLLECTIONREWARDS ?? raw.collectionRewards ?? null,
     COMMUNITYCENTER: raw.COMMUNITYCENTER ?? raw.communityCenter ?? null,
     DRIPDistributor: raw.DRIPDistributor ?? null,
+    snapshotSource: raw.snapshotSource ?? null,
+    readerAddress: raw.readerAddress ?? null,
+    readerOk: raw.readerOk ?? null,
     totalReceived: totalReceived.display,
     totalReceivedNumeric: totalReceived.numeric,
     totalPending: totalPending.display,
@@ -65,6 +81,7 @@ export function mapDistributorSnapshotToUI(raw) {
     pendingCOMMUNITYCENTER: pendingCOMMUNITYCENTER.display,
     pendingCOMMUNITYCENTERNumeric: pendingCOMMUNITYCENTER.numeric,
     pendingCommunity: pendingCOMMUNITYCENTER.display,
-    communityPoolBalance: pendingCOMMUNITYCENTER.display,
+    communityPoolBalance: communityPoolBalance.display,
+    communityPoolBalanceNumeric: communityPoolBalance.numeric,
   };
 }

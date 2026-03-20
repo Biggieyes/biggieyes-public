@@ -48,19 +48,19 @@ export default defineConfig({
             return "vendor-preload";
           }
           if (!id.includes('node_modules')) return undefined;
-          if (id.match(/node_modules\/(react|react-dom|scheduler)/)) {
+          if (id.match(/node_modules\/(?:react|react-dom|scheduler)(?:\/|$)/)) {
             return 'vendor-react';
           }
-          if (id.match(/node_modules\/(@?ethers|@ethersproject)/)) {
+          if (id.match(/node_modules\/(?:ethers|@ethersproject)(?:\/|$)/)) {
             return 'vendor-ethers';
           }
-          if (id.match(/node_modules\/(@walletconnect|walletconnect|@reown|reown|viem|wagmi|@web3modal|web3modal)/)) {
+          if (id.match(/node_modules\/(?:@walletconnect|walletconnect|@reown|reown|viem|wagmi|@web3modal|web3modal)(?:\/|$)/)) {
             return 'vendor-wallet';
           }
-          if (id.match(/node_modules\/@supabase/)) {
+          if (id.match(/node_modules\/@supabase(?:\/|$)/)) {
             return 'vendor-supabase';
           }
-          if (id.match(/node_modules\/@phosphor-icons/)) {
+          if (id.match(/node_modules\/@phosphor-icons(?:\/|$)/)) {
             return 'vendor-icons';
           }
           return 'vendor';

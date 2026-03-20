@@ -110,10 +110,19 @@ export async function ensurePreferredRpc() {
   else clearPreferredRpc();
   return healthy;
 }
-const LOCAL_STORAGE_RPC_PREF_KEY = "biggi_last_amoy_rpc_v1";
+const LOCAL_STORAGE_RPC_PREF_KEY = "biggi_last_amoy_rpc_v2";
+const LEGACY_RPC_PREF_KEYS = ["biggi_last_amoy_rpc_v1"];
 const RPC_RATE_LIMIT_MEMORY_MS = 10 * 60 * 1000;
 const BAD_RPC_SUBSTRINGS = ["tenderly"];
 const BAD_CORS_RPCS = ["rpc-amoy.polygon.technology"];
+// Disabled endpoints for frontend runtime:
+// - dRPC polygon root endpoint resolves inconsistent data for Amoy contract reads
+// - onfinality public endpoint shows frequent log-query timeouts under wallet gallery load
+const BAD_CHAIN_RPCS = [
+  "polygon.drpc.org",
+  "polygon-amoy.drpc.org",
+  "polygon-amoy.api.onfinality.io",
+];
 const UNSTABLE_AMOY_RPC_HOSTS = [
   // These hosts have shown prolonged 503/empty-node responses for Amoy.
   "polygon-amoy-bor-rpc.publicnode.com",
@@ -203,10 +212,12 @@ function prioritizeHealthyRpcs(urls) {
   return [...healthy, ...degraded];
 }
 
-export const PUBLIC_AMOY_RPCS = [
-  // Keep this set conservative; optional providers can be added via env.
-  "https://polygon-amoy.drpc.org",
+export const AMOY_RPC = [
+  "https://rpc-amoy.polygon.technology",
+  "https://polygon-amoy-bor-rpc.publicnode.com",
 ];
+
+export const PUBLIC_AMOY_RPCS = [...AMOY_RPC];
 
 const INFURA_RPC_URL = getInfuraRpcUrl();
 const INFURA_RPC_CANDIDATES = uniq([INFURA_RPC_URL]);
@@ -249,6 +260,13 @@ export const AMOY = {
 export function getPreferredRpc() {
   try {
     if (typeof window !== "undefined" && window.localStorage) {
+      for (const legacyKey of LEGACY_RPC_PREF_KEYS) {
+        try {
+          window.localStorage.removeItem(legacyKey);
+        } catch {
+          // ignore legacy key cleanup errors
+        }
+      }
       return window.localStorage.getItem(LOCAL_STORAGE_RPC_PREF_KEY) || null;
     }
   } catch {
@@ -299,9 +317,10 @@ function rankRpcUrls(urls) {
 
 function filterOutBadRpcs(urls) {
   const allowTenderly = env("VITE_ALLOW_TENDERLY_RPC") === "1";
-  const allowUnstablePublicRpcs = env("VITE_ALLOW_UNSTABLE_PUBLIC_RPCS") === "1";
+  const allowUnstablePublicRpcs =
+    env("VITE_ALLOW_UNSTABLE_PUBLIC_RPCS") !== "0";
   const allowRateLimitedPublicRpcs =
-    env("VITE_ALLOW_RATE_LIMITED_PUBLIC_RPCS") === "1";
+    env("VITE_ALLOW_RATE_LIMITED_PUBLIC_RPCS") !== "0";
   const isBrowser = typeof window !== "undefined";
   return (urls || []).filter((u) => {
     if (!u) return false;
@@ -339,6 +358,7 @@ function filterOutBadRpcs(urls) {
     // Ankr requires an API key for stable access; plain /polygon_amoy endpoint
     // returns Unauthorized and causes noisy fallback churn.
     if (host === "rpc.ankr.com" && path === "/polygon_amoy") return false;
+    if (BAD_CHAIN_RPCS.some((x) => host === x)) return false;
     if (isBrowser && BAD_CORS_RPCS.some((x) => lower.includes(x))) return false;
     return true;
   });
@@ -353,14 +373,16 @@ export function getRpcUrls() {
   const explicit = filterOutBadRpcs(EXPLICIT_AMOY_RPCS);
   const infura = filterOutBadRpcs(INFURA_RPC_CANDIDATES);
   const preferInfura = env("VITE_PREFER_INFURA_RPC") === "1";
-  const allowPublic =
-    explicit.length === 0 || env("VITE_ALLOW_PUBLIC_RPCS") === "1";
+  const allowPublic = env("VITE_ALLOW_PUBLIC_RPCS") !== "0";
+  const preferPublicFirst = env("VITE_PREFER_PUBLIC_RPC_FIRST") !== "0";
   const primaryList = preferInfura
     ? allowPublic
       ? uniq([...infura, ...explicit, ...PUBLIC_AMOY_RPCS])
       : uniq([...infura, ...explicit])
     : allowPublic
-      ? uniq([...explicit, ...PUBLIC_AMOY_RPCS, ...infura])
+      ? preferPublicFirst
+        ? uniq([...PUBLIC_AMOY_RPCS, ...explicit, ...infura])
+        : uniq([...explicit, ...PUBLIC_AMOY_RPCS, ...infura])
       : uniq([...explicit, ...infura]);
   const filtered = filterOutBadRpcs(primaryList);
   if (!filtered.length && primaryList.length) {
@@ -379,12 +401,18 @@ export function getRpcUrls() {
   return prioritizeHealthyRpcs(rankRpcUrls(filterOutBadRpcs(fallback)));
 }
 
-export function getWalletRpcUrls({ preferPublicFirst = false } = {}) {
+export function getWalletRpcUrls({ preferPublicFirst = null } = {}) {
   const explicit = filterOutBadRpcs(EXPLICIT_AMOY_RPCS);
   const infura = filterOutBadRpcs(INFURA_RPC_CANDIDATES);
   const allowPublicFallback = env("VITE_WALLET_PUBLIC_RPC_FALLBACK") !== "0";
+  const preferPublicByDefault =
+    env("VITE_WALLET_PREFER_PUBLIC_RPC_FIRST") !== "0";
+  const usePublicFirst =
+    typeof preferPublicFirst === "boolean"
+      ? preferPublicFirst
+      : preferPublicByDefault;
 
-  const ordered = preferPublicFirst
+  const ordered = usePublicFirst
     ? allowPublicFallback
       ? uniq([...PUBLIC_AMOY_RPCS, ...explicit, ...infura])
       : uniq([...explicit, ...infura])

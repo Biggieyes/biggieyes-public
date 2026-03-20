@@ -11,6 +11,56 @@ const GallerySection = React.lazy(() => import("./GallerySection"));
 const LiveStatsPanel = React.lazy(() => import("./LiveStatsPanel"));
 const SiteFooter = React.lazy(() => import("./SiteFooter"));
 
+function SectionPlaceholder({ minHeight = 0 }) {
+  return <div aria-hidden="true" style={{ minHeight, width: "100%" }} />;
+}
+
+function DeferredSection({
+  children,
+  forceRender = false,
+  minHeight = 0,
+  rootMargin = "0px",
+  sectionId,
+}) {
+  const hostRef = React.useRef(null);
+  const [isVisible, setIsVisible] = React.useState(forceRender);
+
+  React.useEffect(() => {
+    if (forceRender) {
+      setIsVisible(true);
+      return undefined;
+    }
+    if (isVisible) return undefined;
+
+    const node = hostRef.current;
+    if (!node || typeof IntersectionObserver !== "function") {
+      setIsVisible(true);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        if (entry.isIntersecting || entry.intersectionRatio > 0) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [forceRender, isVisible, rootMargin]);
+
+  return (
+    <div ref={hostRef} id={sectionId}>
+      {isVisible ? children : <SectionPlaceholder minHeight={minHeight} />}
+    </div>
+  );
+}
+
 function MainLayout({
   walletAddress,
   connectMetaMask,
@@ -89,18 +139,14 @@ function MainLayout({
     if (anchor) scrollToAnchor(anchor);
   }, [anchor, scrollToAnchor]);
 
+  const galleryPlaceholder = <SectionPlaceholder minHeight={720} />;
+  const footerPlaceholder = <SectionPlaceholder minHeight={220} />;
+
   return (
     <>
       <style>{`
         .rewards-table { min-height: 520px !important; }
         .rewards-info table { min-height: 420px; }
-        .wallet-row { display:flex; gap:10px; align-items:center; }
-        .metamask-btn-top, .wc-btn-top {
-          display:inline-flex; align-items:center; border:2px solid #ffe800; background:#08ffe6;
-          color:#111; font-weight:800; padding:6px 12px; border-radius:8px; cursor:pointer;
-        }
-        .wc-btn-top { background:#b0ffea; }
-        .fox-icon { width:18px; height:18px; }
       `}</style>
 
       <HeaderControls
@@ -190,30 +236,41 @@ function MainLayout({
             onRefresh={onStatusRefresh}
           />
 
-          <React.Suspense fallback={null}>
-            <GallerySection
-              cardsHelpOpen={cardsHelpOpen}
-              setCardsHelpOpen={setCardsHelpOpen}
-              hideExtras={hideExtras}
-              galleryLoading={galleryLoading}
-              galleryNotice={galleryNotice}
-              myNFTs={myNFTs}
-              dynamicTraitsById={dynamicTraitsById}
-              topFirstId={topFirstId}
-              setTopFirstId={setTopFirstId}
-              fetchDynamicTraitsFor={fetchDynamicTraitsFor}
-              setZoomImg={setZoomImg}
-              VRFPending={VRFPending}
-              isRedeeming={isRedeeming}
-              fetchWalletAssets={fetchWalletAssets}
-              walletAddress={walletAddress}
-              isMobile={isMobile}
-            />
-          </React.Suspense>
+          <DeferredSection
+            forceRender={anchor === "gallery"}
+            minHeight={720}
+            rootMargin="900px 0px"
+            sectionId="gallery"
+          >
+            <React.Suspense fallback={galleryPlaceholder}>
+              <GallerySection
+                cardsHelpOpen={cardsHelpOpen}
+                setCardsHelpOpen={setCardsHelpOpen}
+                hideExtras={hideExtras}
+                galleryLoading={galleryLoading}
+                galleryNotice={galleryNotice}
+                myNFTs={myNFTs}
+                ticketPrice={ticketPrice}
+                dynamicTraitsById={dynamicTraitsById}
+                topFirstId={topFirstId}
+                setTopFirstId={setTopFirstId}
+                fetchDynamicTraitsFor={fetchDynamicTraitsFor}
+                setZoomImg={setZoomImg}
+                VRFPending={VRFPending}
+                isRedeeming={isRedeeming}
+                fetchWalletAssets={fetchWalletAssets}
+                walletAddress={walletAddress}
+                isMobile={isMobile}
+                sectionId={undefined}
+              />
+            </React.Suspense>
+          </DeferredSection>
 
-          <React.Suspense fallback={null}>
-            <SiteFooter />
-          </React.Suspense>
+          <DeferredSection minHeight={220} rootMargin="320px 0px">
+            <React.Suspense fallback={footerPlaceholder}>
+              <SiteFooter />
+            </React.Suspense>
+          </DeferredSection>
         </div>
       </main>
     </>

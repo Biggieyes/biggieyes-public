@@ -7,6 +7,10 @@ import { getInjectedProvider } from "@/shared/utils/contract";
 import "./LiveChatPanel.css";
 
 const API_BASE = import.meta.env.VITE_CHAT_API_BASE || "";
+const API_BASE_FALLBACKS = [
+  import.meta.env.VITE_API_BASE_URL || "",
+  import.meta.env.VITE_MOD_API_BASE || "",
+].filter(Boolean);
 const API_TIMEOUT_MS = (() => {
   const parsed = Number(
     import.meta.env.VITE_CHAT_API_TIMEOUT_MS ||
@@ -42,43 +46,136 @@ const hasProfanity = (value) => {
 const buildPayload = (nonce, content, timestamp) =>
   `${nonce}|${content}|${timestamp}`;
 
-const buildApiUrl = (path) => {
-  if (!API_BASE) return `/api${path}`;
-  if (API_BASE.includes("/.netlify/functions")) return `${API_BASE}${path}`;
-  return `${API_BASE}/api${path}`;
+const normalizeApiPath = (path) => {
+  const safe = String(path || "").trim();
+  if (!safe) return "";
+  return safe.startsWith("/") ? safe : `/${safe}`;
+};
+
+const buildApiCandidates = (path) => {
+  const safePath = normalizeApiPath(path);
+  if (!safePath) return [];
+
+  const add = (list, value) => {
+    const item = String(value || "").trim();
+    if (item && !list.includes(item)) list.push(item);
+  };
+
+  const buildFromBase = (baseInput) => {
+    const list = [];
+    const base = String(baseInput || "").replace(/\/+$/, "");
+    if (!base) {
+      add(list, `/api${safePath}`);
+      add(list, `/.netlify/functions${safePath}`);
+      return list;
+    }
+
+    if (base.includes("/.netlify/functions")) {
+      add(list, `${base}${safePath}`);
+      const root = base.replace(/\/\.netlify\/functions$/i, "");
+      add(list, `${root || ""}/api${safePath}`);
+      return list;
+    }
+
+    if (/\/api$/i.test(base)) {
+      add(list, `${base}${safePath}`);
+      const root = base.replace(/\/api$/i, "");
+      add(list, `${root}/.netlify/functions${safePath}`);
+      return list;
+    }
+
+    add(list, `${base}/api${safePath}`);
+    add(list, `${base}/.netlify/functions${safePath}`);
+    add(list, `${base}${safePath}`);
+    return list;
+  };
+
+  const merged = [];
+  buildFromBase(API_BASE).forEach((candidate) => add(merged, candidate));
+  API_BASE_FALLBACKS.forEach((fallbackBase) => {
+    buildFromBase(fallbackBase).forEach((candidate) => add(merged, candidate));
+  });
+  buildFromBase("").forEach((candidate) => add(merged, candidate));
+  return merged;
 };
 
 const fetchJsonWithTimeout = async (
-  url,
+  urlOrUrls,
   { timeoutMs = API_TIMEOUT_MS, ...options } = {},
 ) => {
+  const candidates = (Array.isArray(urlOrUrls) ? urlOrUrls : [urlOrUrls])
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+  if (!candidates.length) {
+    throw new Error("Chat API URL is not configured.");
+  }
+
   const ms = Number.isFinite(Number(timeoutMs))
     ? Math.max(0, Math.trunc(Number(timeoutMs)))
     : 0;
-  const controller =
-    typeof AbortController !== "undefined" && ms > 0
-      ? new AbortController()
-      : null;
-  const timer = controller ? setTimeout(() => controller.abort(), ms) : null;
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller?.signal,
-      cache: "no-store",
-    });
-    const json = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(json?.error || json?.message || "Request failed");
+
+  let lastError = null;
+  for (let idx = 0; idx < candidates.length; idx += 1) {
+    const url = candidates[idx];
+    const controller =
+      typeof AbortController !== "undefined" && ms > 0
+        ? new AbortController()
+        : null;
+    const timer = controller ? setTimeout(() => controller.abort(), ms) : null;
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller?.signal,
+        cache: "no-store",
+      });
+      const raw = await response.text();
+      let json = {};
+      try {
+        json = raw ? JSON.parse(raw) : {};
+      } catch {
+        json = {};
+      }
+
+      if (!response.ok) {
+        const textSnippet =
+          typeof raw === "string" && raw.trim()
+            ? raw.trim().slice(0, 140)
+            : "";
+        const reason =
+          json?.error ||
+          json?.message ||
+          textSnippet ||
+          `HTTP ${response.status}`;
+        const err = new Error(`HTTP ${response.status}: ${reason}`);
+        err.status = response.status;
+        throw err;
+      }
+      return json;
+    } catch (error) {
+      if (error?.name === "AbortError" && ms > 0) {
+        lastError = new Error(`Endpoint timeout after ${ms} ms`);
+        break;
+      }
+      lastError = error;
+      const status = Number(error?.status);
+      const shouldTryNext =
+        idx < candidates.length - 1 && (status === 404 || status === 405);
+      if (!shouldTryNext) break;
+    } finally {
+      if (timer) clearTimeout(timer);
     }
-    return json;
-  } catch (error) {
-    if (error?.name === "AbortError" && ms > 0) {
-      throw new Error(`Endpoint timeout after ${ms} ms`);
-    }
-    throw error;
-  } finally {
-    if (timer) clearTimeout(timer);
   }
+  if (
+    !API_BASE &&
+    Number(lastError?.status) === 404 &&
+    typeof window !== "undefined"
+  ) {
+    throw new Error(
+      "Chat API endpoint not reachable. Run with `npm run dev:netlify` or set VITE_CHAT_API_BASE.",
+    );
+  }
+
+  throw lastError || new Error("Request failed");
 };
 
 const formatChatError = (err) => {
@@ -94,6 +191,10 @@ const formatChatError = (err) => {
   }
 };
 
+const isMissingTableError = (err) =>
+  err?.code === "PGRST205" ||
+  /Could not find the table/i.test(formatChatError(err));
+
 function LiveChatPanel({ walletAddress = "" }) {
   const [messages, setMessages] = React.useState([]);
   const [rulesText, setRulesText] = React.useState("");
@@ -103,9 +204,13 @@ function LiveChatPanel({ walletAddress = "" }) {
   const [content, setContent] = React.useState("");
   const [name, setName] = React.useState("");
   const [chatDisabled, setChatDisabled] = React.useState(false);
+  const [preferApiPolling, setPreferApiPolling] = React.useState(false);
+  const [isDesktopCompact, setIsDesktopCompact] = React.useState(false);
+  const rootRef = React.useRef(null);
   const listRef = React.useRef(null);
   const rulesWarnedRef = React.useRef(false);
   const loadWarnedRef = React.useRef(false);
+  const sendWarnedRef = React.useRef(false);
 
   const isConnected = Boolean(walletAddress);
 
@@ -117,13 +222,27 @@ function LiveChatPanel({ walletAddress = "" }) {
     });
   }, [messages]);
 
+  const loadFromApiBootstrap = React.useCallback(async () => {
+    const json = await fetchJsonWithTimeout(buildApiCandidates("/chat-bootstrap"), {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!json?.ok) {
+      throw new Error(json?.error || "Chat bootstrap failed");
+    }
+    const list = Array.isArray(json?.messages) ? json.messages : [];
+    setMessages(list);
+    setRulesText(json?.rulesText ? String(json.rulesText) : "");
+    setChatDisabled(false);
+    setPreferApiPolling(true);
+  }, []);
+
   const loadInitial = React.useCallback(async () => {
     setLoading(true);
     setError("");
     try {
       if (!supabaseReady) {
-        setError("Live chat is not configured (missing Supabase env vars).");
-        setChatDisabled(true);
+        await loadFromApiBootstrap();
         return;
       }
 
@@ -138,42 +257,57 @@ function LiveChatPanel({ walletAddress = "" }) {
           .limit(80),
       ]);
 
-      if (rulesRes?.error && !rulesWarnedRef.current) {
+      const missingMessagesTable = isMissingTableError(msgsRes?.error);
+      if (missingMessagesTable) {
+        try {
+          await loadFromApiBootstrap();
+          return;
+        } catch {
+          setError(
+            "Live chat tables are missing in Supabase. Run sql/migration_init.sql.",
+          );
+          setChatDisabled(true);
+          return;
+        }
+      }
+
+      const missingRulesTable = isMissingTableError(rulesRes?.error);
+      if (
+        rulesRes?.error &&
+        !missingRulesTable &&
+        !rulesWarnedRef.current
+      ) {
         console.warn(
           "LiveChatPanel rules load failed",
           formatChatError(rulesRes.error),
         );
         rulesWarnedRef.current = true;
       }
-
-      const missingTables =
-        rulesRes?.error?.code === "PGRST205" ||
-        msgsRes?.error?.code === "PGRST205";
-      if (missingTables) {
-        setError(
-          "Live chat tables are missing in Supabase. Run sql/migration_init.sql.",
-        );
-        setChatDisabled(true);
-        return;
-      }
       if (rulesRes?.data?.text) {
         setRulesText(String(rulesRes.data.text));
+      } else if (missingRulesTable) {
+        setRulesText("");
       }
 
       if (msgsRes?.error) {
-        if (!loadWarnedRef.current) {
-          console.warn(
-            "LiveChatPanel load failed",
-            formatChatError(msgsRes.error),
-          );
-          loadWarnedRef.current = true;
+        try {
+          await loadFromApiBootstrap();
+          return;
+        } catch (apiErr) {
+          if (!loadWarnedRef.current) {
+            console.warn(
+              "LiveChatPanel load failed",
+              formatChatError(msgsRes.error),
+            );
+            loadWarnedRef.current = true;
+          }
+          setError(`Failed to load chat: ${formatChatError(apiErr)}`);
+          return;
         }
-        setError(`Failed to load chat: ${formatChatError(msgsRes.error)}`);
-        setChatDisabled(true);
-        return;
       }
       const list = Array.isArray(msgsRes?.data) ? msgsRes.data : [];
       setMessages(list.reverse());
+      setPreferApiPolling(false);
     } catch (err) {
       if (!loadWarnedRef.current) {
         console.error(
@@ -187,14 +321,14 @@ function LiveChatPanel({ walletAddress = "" }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadFromApiBootstrap]);
 
   React.useEffect(() => {
     loadInitial();
   }, [loadInitial]);
 
   React.useEffect(() => {
-    if (chatDisabled || !supabaseReady) return;
+    if (chatDisabled || !supabaseReady || preferApiPolling) return;
     const channel = supabase
       .channel("biggi-chat")
       .on(
@@ -217,12 +351,43 @@ function LiveChatPanel({ walletAddress = "" }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [chatDisabled]);
+  }, [chatDisabled, preferApiPolling]);
+
+  React.useEffect(() => {
+    if (chatDisabled || !preferApiPolling) return;
+    const id = setInterval(() => {
+      loadInitial();
+    }, 15000);
+    return () => clearInterval(id);
+  }, [chatDisabled, loadInitial, preferApiPolling]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const updateCompactMode = () => {
+      const inDesktopFullscreen = Boolean(
+        rootRef.current?.closest(".ls-fullscreen-chat"),
+      );
+      setIsDesktopCompact(inDesktopFullscreen);
+    };
+    updateCompactMode();
+    window.addEventListener("resize", updateCompactMode);
+    return () => window.removeEventListener("resize", updateCompactMode);
+  }, []);
 
   React.useEffect(() => {
     if (!listRef.current) return;
+    if (isDesktopCompact) return;
     listRef.current.scrollTop = listRef.current.scrollHeight;
-  }, [sortedMessages.length]);
+  }, [isDesktopCompact, sortedMessages.length]);
+
+  const visibleMessages = React.useMemo(() => {
+    if (!isDesktopCompact) return sortedMessages;
+    let limit = 6;
+    if (rulesText) limit -= 1;
+    if (error) limit -= 1;
+    if (loading) limit = 4;
+    return sortedMessages.slice(-Math.max(3, limit));
+  }, [error, isDesktopCompact, loading, rulesText, sortedMessages]);
 
   const sendMessage = React.useCallback(async () => {
     if (sending) return;
@@ -258,7 +423,7 @@ function LiveChatPanel({ walletAddress = "" }) {
       const signer = await provider.getSigner();
       const signerAddress = await signer.getAddress();
 
-      const nonceData = await fetchJsonWithTimeout(buildApiUrl("/nonce"), {
+      const nonceData = await fetchJsonWithTimeout(buildApiCandidates("/nonce"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ address: signerAddress }),
@@ -270,7 +435,7 @@ function LiveChatPanel({ walletAddress = "" }) {
       const payload = buildPayload(nonce, trimmed, timestamp);
       const signature = await signer.signMessage(payload);
 
-      const msgJson = await fetchJsonWithTimeout(buildApiUrl("/message"), {
+      const msgJson = await fetchJsonWithTimeout(buildApiCandidates("/message"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -288,15 +453,22 @@ function LiveChatPanel({ walletAddress = "" }) {
 
       setContent("");
     } catch (err) {
-      console.error("LiveChatPanel send failed", err);
-      setError(err?.message || "Failed to send message.");
+      const message = err?.message || "Failed to send message.";
+      if (!sendWarnedRef.current && !/^HTTP 4\d{2}:/.test(message)) {
+        console.error("LiveChatPanel send failed", err);
+        sendWarnedRef.current = true;
+      }
+      setError(message);
     } finally {
       setSending(false);
     }
   }, [API_BASE, content, isConnected, name, sending]);
 
   return (
-    <section className="live-chat-panel">
+    <section
+      ref={rootRef}
+      className={`live-chat-panel${isDesktopCompact ? " live-chat-panel--desktop-compact" : ""}`}
+    >
       <header className="live-chat-panel__header">
         <div>
           <div className="live-chat-panel__title">Live Chat</div>
@@ -327,10 +499,10 @@ function LiveChatPanel({ walletAddress = "" }) {
         {loading && (
           <div className="live-chat-panel__status">Loading chat...</div>
         )}
-        {!loading && sortedMessages.length === 0 && (
+        {!loading && visibleMessages.length === 0 && (
           <div className="live-chat-panel__status">No messages yet.</div>
         )}
-        {sortedMessages.map((msg) => {
+        {visibleMessages.map((msg) => {
           const authorLabel =
             msg.author_name || shortAddress(msg.author_address);
           return (

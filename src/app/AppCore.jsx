@@ -2,20 +2,8 @@ import * as React from "react";
 import "./App.css";
 
 import { MODAL_TEXTS } from "./constants/texts";
-import {
-  DIST_BUYBACK_BPS,
-  DIST_COLLECTION_BPS,
-  DIST_RESERVE_BPS,
-  DIST_TREASURY_BPS,
-} from "./constants/bps";
 
-import {
-  formatEther,
-  parseEther,
-  Contract,
-  BrowserProvider,
-  ZeroAddress,
-} from "ethers";
+import { formatEther, BrowserProvider, ZeroAddress } from "ethers";
 
 import { ADDR } from "@/shared/utils/addresses.js";
 import { explorerBaseFor } from "@/config/chains.js";
@@ -24,10 +12,11 @@ import { buildBlockImagePath } from "@/shared/utils/images";
 
 /**
  * utils/contract.js (ethers v6 kompat wrappery)
- * - pouĹľĂ­vĂˇĹˇ svĂ© factories: getMain/getROProvider/getReaderRO atd.
+ * - pouÄąÄľÄ‚Â­vÄ‚Ë‡ÄąË‡ svÄ‚Â© factories: getMain/getROProvider/getReaderRO atd.
  */
 import {
   AMOY,
+  clearInjectedProvider,
   ensureAmoy,
   getReadOnlyMain as getReadOnlyContract,
   getMainRW,
@@ -35,11 +24,6 @@ import {
   getLM as getLiquidityContract,
   getFrontendSnapshotLiteActive,
   getReaderRO,
-  getPOLICYRO,
-  getBUYBACKRO,
-  getLiquidityHelperReaderRO,
-  getReserveTreasurySnapshotRO,
-  getMCDReaderV2RO,
   getBiggiMainReaderRO,
   getBiggiREWARDSReaderRO,
   getBiggiTokenReaderRO,
@@ -70,6 +54,7 @@ import {
   isFullHistoryEnabled,
 } from "@/shared/utils/shared";
 import {
+  BIGGI_ID_RANGES,
   isCanonicalTicketTokenId,
   toMainNftIndexFromTokenId,
 } from "@/shared/utils/biggiIdIndex";
@@ -79,7 +64,17 @@ import {
   shouldRunWalletAssetRefresh,
 } from "@/shared/utils/vrfPolling";
 import { setVRFAllOrPartial } from "@/shared/utils/adminActions";
-import { getArchiveProvider, resetSharedFallbackProvider } from "@/web3/provider";
+import {
+  buildRewardClaimPayload,
+  getAssetCompositeKey,
+  getAssetContractAddress,
+  getAssetTokenIdString,
+  normalizeAssetAddress,
+} from "@/shared/utils/assetIdentity.js";
+import {
+  getArchiveProvider,
+  resetSharedFallbackProvider,
+} from "@/web3/provider";
 import { canPoll, getPollInterval, runWithLock } from "@/utils/polling";
 import {
   getInjectedProviderCandidates,
@@ -87,10 +82,12 @@ import {
   isLikelyMetaMaskSdkProvider,
   startInjectedProviderDiscovery,
 } from "@/shared/utils/injectedProviders";
+import {
+  getWalletConnectMobileLinks,
+  shouldUseMetaMaskMobileFallback,
+} from "@/shared/utils/mobileWallet";
 
 import "./styles/biggi-token.skin.css";
-
-import { BiggiToken as ABI_TOKEN } from "@/config/abi/index.js";
 
 const DEFAULT_BLOCK_PRICES = DEFAULT_BLOCKS.map(
   (name) => BASE_PRICES[name] ?? 0,
@@ -99,6 +96,7 @@ const DEFAULT_BLOCK_PRICES = DEFAULT_BLOCKS.map(
 import MainLayout from "../components/layout/MainLayout";
 import FullscreenPanel from "./components/common/FullscreenPanel";
 import Loader from "./components/common/Loader";
+import SEOManager from "./components/SEOManager.jsx";
 
 import {
   mergeAttrs,
@@ -114,29 +112,27 @@ import {
   saveGalleryCache,
 } from "@/shared/services/gallery/gallery.cache.js";
 import { mergeGalleryItem } from "@/shared/services/gallery/gallery.merge.js";
+import { registerReferral } from "@/shared/services/api.js";
+import { extractReferralParam } from "@/shared/utils/referrals.js";
 
 /* ========= LAZY LOADED HEAVY PANELS ========= */
-const ProjectInfoModal = React.lazy(
-  () => import("./ACTIONBUTTONS/INFO/ProjectInfoModal.jsx")
-);
 const EcosystemPanel = React.lazy(
-  () => import("../features/tokenomics/EcosystemPanel.jsx")
+  () => import("../features/tokenomics/EcosystemPanel.jsx"),
 );
 const COLLECTIONBlocksGrid = React.lazy(
-  () => import("./components/COLLECTIONBlocksGrid")
+  () => import("./components/COLLECTIONBlocksGrid"),
 );
 const REWARDSPanel = React.lazy(
-  () => import("./panels/Rewards/REWARDSPanel.jsx")
+  () => import("./panels/Rewards/REWARDSPanel.jsx"),
 );
 const VRFPanel = React.lazy(() => import("./panels/VRF/VRFPanel.jsx"));
-const InfoPanel = React.lazy(() => import("./panels/INFO/InfoPanel.jsx"));
-const USERPANEL = React.lazy(
-  () => import("./panels/UserPanel/USERPANEL.jsx")
-);
+const USERPANEL = React.lazy(() => import("./panels/UserPanel/USERPANEL.jsx"));
 const COMMUNITYCENTERPanel = React.lazy(
-  () => import("../features/admin/COMMUNITYCENTERPanel.jsx")
+  () => import("../features/admin/COMMUNITYCENTERPanel.jsx"),
 );
-const AdminPanel = React.lazy(() => import("./components/admin/AdminPanel.jsx"));
+const AdminPanel = React.lazy(
+  () => import("./components/admin/AdminPanel.jsx"),
+);
 
 /* ======================================================================== */
 /* ============================== CONSTANTS ================================ */
@@ -155,7 +151,6 @@ const BACKGROUND_NAMES = [
   "RAINBOW",
 ];
 const BACKGROUND_CODES = ["O", "B", "W", "BR", "BL", "G", "V", "R", "P", "RB"];
-const BACKGROUND_BONUSES = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50];
 
 const PLACEHOLDER_IMAGE = "/images/Biggi.png";
 const EMPTY_LAST_MINTED = Object.freeze({
@@ -177,16 +172,13 @@ const BLOCK_IMAGE_BASES = {
     "https://biggieyes.mypinata.cloud/ipfs/bafybeicqja4j6wmdm2jbomtloggwafe4kluokgp5qhdr2pkrgxju6tpyl4/",
   BROWN:
     "https://biggieyes.mypinata.cloud/ipfs/bafybeibbqjofkkvldzfmmi5tfzucrmbd56ba3i5pfivywqb7g25wa7677m/",
-  BLUE:
-    "https://biggieyes.mypinata.cloud/ipfs/bafybeieuk5o3mktitbutdzyymacz27me5zntkybk3zhndjvsfuqa6osj4m/",
+  BLUE: "https://biggieyes.mypinata.cloud/ipfs/bafybeieuk5o3mktitbutdzyymacz27me5zntkybk3zhndjvsfuqa6osj4m/",
   GREEN:
     "https://biggieyes.mypinata.cloud/ipfs/bafybeihgbvpuomieigi3eenho6fzbbtwpvw7lfqbpbriojenvutufn6opa/",
   VIOLET:
     "https://biggieyes.mypinata.cloud/ipfs/bafybeibs3xyn3wdsssxubow5wqh4vyg4dkumshqza6ppssiqqrbo4chq3a/",
-  RED:
-    "https://biggieyes.mypinata.cloud/ipfs/bafybeifuhvp33jihz2xzr45vwme2drg7uxe5sukabttx4eqqupdbfmmebi/",
-  PINK:
-    "https://biggieyes.mypinata.cloud/ipfs/bafybeihkz72p25huca3b463o7q7yp4xnv2l4lejyzckodolqij6m5ofw2a/",
+  RED: "https://biggieyes.mypinata.cloud/ipfs/bafybeifuhvp33jihz2xzr45vwme2drg7uxe5sukabttx4eqqupdbfmmebi/",
+  PINK: "https://biggieyes.mypinata.cloud/ipfs/bafybeihkz72p25huca3b463o7q7yp4xnv2l4lejyzckodolqij6m5ofw2a/",
   RAINBOW:
     "https://biggieyes.mypinata.cloud/ipfs/bafybeibda5h7lwnalrugm4fek63pqsndvm4nyesm3t77tuegziloqgna3i/",
   SPECIAL:
@@ -250,7 +242,8 @@ const parseTokenUriParts = (uri) => {
 const buildBlockImageUrl = (blockName, fileName, baseOverride) => {
   const preferred = blockBaseUrl(blockName);
   const base = trimSlash(preferred || baseOverride);
-  if (base && fileName) return `${base}/${String(fileName).replace(/^\/+/, "")}`;
+  if (base && fileName)
+    return `${base}/${String(fileName).replace(/^\/+/, "")}`;
   return buildBlockImagePath(fileName);
 };
 
@@ -297,6 +290,57 @@ const parseNftInfo = (info) => {
     mainId: id && id !== "0" ? id : null,
   };
 };
+
+const normalizeMainImageId = (rawMainId, tokenId, maxSupplyHint = 550) => {
+  const fromRaw = toMainNftIndexFromTokenId(rawMainId, {
+    maxSupply: maxSupplyHint,
+    allowLegacy: true,
+  });
+  if (fromRaw != null) return String(fromRaw);
+
+  const fromTokenId = toMainNftIndexFromTokenId(tokenId, {
+    maxSupply: maxSupplyHint,
+    allowLegacy: true,
+  });
+  if (fromTokenId != null) return String(fromTokenId);
+
+  const fallback = String(rawMainId ?? "").trim();
+  return /^\d+$/.test(fallback) ? fallback : "";
+};
+
+async function resolveRewardCollectionScope(contract) {
+  const readAddress = async (...methodNames) => {
+    for (const methodName of methodNames) {
+      if (typeof contract?.[methodName] !== "function") continue;
+      try {
+        const value = await contract[methodName]();
+        const normalized = normalizeAssetAddress(value);
+        if (normalized) return normalized;
+      } catch {
+        // ignore read failures and try the next method
+      }
+    }
+    return "";
+  };
+
+  const fallbackPrimary = normalizeAssetAddress(ADDR.COLLECTION_VRF || ADDR.MAIN);
+  const primaryCollectionAddress =
+    (await readAddress("mainNFT", "main")) || fallbackPrimary;
+  const secondaryCollectionAddress = await readAddress("main2NFT", "main2");
+
+  return {
+    primaryCollectionAddress,
+    allowedCollectionAddresses: Array.from(
+      new Set(
+        [
+          primaryCollectionAddress,
+          secondaryCollectionAddress,
+          fallbackPrimary,
+        ].filter(Boolean),
+      ),
+    ),
+  };
+}
 
 const collectNftInfoProbeKeys = (tokenId, maxSupplyHint = 550) => {
   const out = [];
@@ -351,12 +395,16 @@ const DEPLOY_BLOCK = Number(ADDR?.DEPLOY_BLOCK) || null;
 const ZERO_ADDRESS = ZeroAddress;
 
 const LOGS_BATCH = 2_000;
+const LAST_MINTED_DEDUPE_MS = 10_000;
 const FULL_HISTORY = isFullHistoryEnabled();
 
 const WALLET_CACHE_TTL = 5 * 60 * 1000;
-const WALLET_CACHE_VERSION = "v4";
+const WALLET_CACHE_VERSION = "v5";
 const TOP_FIRST_CACHE_VERSION = "v1";
 const LAST_MINTED_CACHE_VERSION = "v1";
+const PENDING_REFERRAL_CACHE_VERSION = "v1";
+const PENDING_REFERRAL_TTL = 30 * 24 * 60 * 60 * 1000;
+const CONSUMED_REFERRAL_CACHE_VERSION = "v1";
 
 function walletCacheKey(addr) {
   return `biggi_wallet_${WALLET_CACHE_VERSION}_${String(addr || "").toLowerCase()}`;
@@ -368,7 +416,8 @@ function loadWalletCache(addr) {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object") return null;
-    if (parsed.ts && Date.now() - Number(parsed.ts) > WALLET_CACHE_TTL) return null;
+    if (parsed.ts && Date.now() - Number(parsed.ts) > WALLET_CACHE_TTL)
+      return null;
     return Array.isArray(parsed.items) ? parsed.items : null;
   } catch {
     return null;
@@ -431,6 +480,81 @@ function lastMintedCacheKey() {
   return `biggi_last_minted_${LAST_MINTED_CACHE_VERSION}`;
 }
 
+function pendingReferralCacheKey() {
+  return `biggi_pending_referral_${PENDING_REFERRAL_CACHE_VERSION}`;
+}
+
+function consumedReferralCacheKey(addr, ref) {
+  return `biggi_registered_referral_${CONSUMED_REFERRAL_CACHE_VERSION}_${String(
+    addr || "",
+  ).toLowerCase()}_${encodeURIComponent(String(ref || "").trim().toLowerCase())}`;
+}
+
+function loadPendingReferralCache() {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return "";
+    const raw = window.localStorage.getItem(pendingReferralCacheKey());
+    if (!raw) return "";
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return "";
+    if (
+      parsed.ts &&
+      Date.now() - Number(parsed.ts) > Number(PENDING_REFERRAL_TTL)
+    ) {
+      window.localStorage.removeItem(pendingReferralCacheKey());
+      return "";
+    }
+    return String(parsed.ref || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+function savePendingReferralCache(ref) {
+  try {
+    const normalized = String(ref || "").trim();
+    if (!normalized) return;
+    if (typeof window === "undefined" || !window.localStorage) return;
+    window.localStorage.setItem(
+      pendingReferralCacheKey(),
+      JSON.stringify({ ts: Date.now(), ref: normalized }),
+    );
+  } catch {
+    // ignore
+  }
+}
+
+function clearPendingReferralCache() {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return;
+    window.localStorage.removeItem(pendingReferralCacheKey());
+  } catch {
+    // ignore
+  }
+}
+
+function hasConsumedReferralCache(addr, ref) {
+  try {
+    if (!addr || !ref) return false;
+    if (typeof window === "undefined" || !window.localStorage) return false;
+    return (
+      window.localStorage.getItem(consumedReferralCacheKey(addr, ref)) === "1"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function markConsumedReferralCache(addr, ref) {
+  try {
+    if (!addr || !ref) return;
+    if (typeof window === "undefined" || !window.localStorage) return;
+    window.localStorage.setItem(consumedReferralCacheKey(addr, ref), "1");
+  } catch {
+    // ignore
+  }
+}
+
 function normalizeLastMintedPayload(payload) {
   if (!payload || typeof payload !== "object") return null;
   const tokenId = String(payload.tokenId || "").trim() || "-";
@@ -450,7 +574,8 @@ function isUsableLastMintedImage(image) {
   if (!normalized) return false;
   const lowered = normalized.toLowerCase();
   if (lowered === PLACEHOLDER_IMAGE.toLowerCase()) return false;
-  if (lowered.includes(String(TICKET_IMAGE_FILE || "").toLowerCase())) return false;
+  if (lowered.includes(String(TICKET_IMAGE_FILE || "").toLowerCase()))
+    return false;
   return true;
 }
 
@@ -484,7 +609,10 @@ function saveLastMintedCache(payload) {
     const normalized = normalizeLastMintedPayload(payload);
     if (!isCompleteLastMintedPayload(normalized)) return;
     if (typeof window === "undefined" || !window.localStorage) return;
-    window.localStorage.setItem(lastMintedCacheKey(), JSON.stringify(normalized));
+    window.localStorage.setItem(
+      lastMintedCacheKey(),
+      JSON.stringify(normalized),
+    );
   } catch {
     // ignore
   }
@@ -515,7 +643,7 @@ function toNumEth(v) {
     if (typeof v === "string") return Number(v);
     if (typeof v?.toString === "function") {
       const s = v.toString();
-      // pokud je to uint-like string bez decimals, zkusĂ­me to jako wei bigint
+      // pokud je to uint-like string bez decimals, zkusÄ‚Â­me to jako wei bigint
       if (/^\d+$/.test(s)) return Number(formatEther(BigInt(s)));
       const n = Number(s);
       return Number.isFinite(n) ? n : null;
@@ -581,18 +709,27 @@ async function queryLogsBatched(
   step = LOGS_BATCH,
   options,
 ) {
-  return queryLogsBatchedShared(contract, filter, fromBlock, toBlock, step, options);
+  return queryLogsBatchedShared(
+    contract,
+    filter,
+    fromBlock,
+    toBlock,
+    step,
+    options,
+  );
 }
 
 async function mapLimit(items, limit, mapper) {
   const ret = [];
   let i = 0;
-  const workers = new Array(Math.min(limit, items.length)).fill(0).map(async () => {
-    while (i < items.length) {
-      const cur = i++;
-      ret[cur] = await mapper(items[cur], cur);
-    }
-  });
+  const workers = new Array(Math.min(limit, items.length))
+    .fill(0)
+    .map(async () => {
+      while (i < items.length) {
+        const cur = i++;
+        ret[cur] = await mapper(items[cur], cur);
+      }
+    });
   await Promise.all(workers);
   return ret;
 }
@@ -731,8 +868,10 @@ const toTokenIdBigIntSafe = (value) => {
 
 const isTicketLikeItem = (item) => {
   if (!item) return false;
+  const ticketFlag = item?.isTicket;
+  if (ticketFlag === false) return false;
   if (item.isPending) return true;
-  if (item.isTicket) return true;
+  if (ticketFlag === true) return true;
   const meta = item?.meta;
   return looksLikeTicketMeta(meta) && !looksLikeNftMeta(meta);
 };
@@ -771,15 +910,8 @@ const resolveNewlyMintedTokenId = (
     const id = toTokenIdStr(item);
     if (!id) continue;
     if (isTicketLikeItem(item)) continue;
-    const ticketFlag =
-      item?.isTicket == null ? null : Boolean(item?.isTicket);
-    if (
-      !isLikelyMainCollectionNftTokenId(
-        id,
-        maxSupplyHint,
-        ticketFlag,
-      )
-    ) {
+    const ticketFlag = item?.isTicket == null ? null : Boolean(item?.isTicket);
+    if (!isLikelyMainCollectionNftTokenId(id, maxSupplyHint, ticketFlag)) {
       continue;
     }
     const prev = prevMap.get(id);
@@ -821,31 +953,79 @@ const resolveNewlyMintedTokenId = (
 /* ======================================================================== */
 
 function useIsMobile(breakpoint = 700) {
-  const [isMobile, setIsMobile] = React.useState(() => {
+  const computeIsMobile = React.useCallback(() => {
     if (typeof window === "undefined") return false;
-    return window.innerWidth <= breakpoint;
-  });
+
+    const narrowViewport = window.matchMedia(
+      `(max-width: ${breakpoint}px)`,
+    ).matches;
+    if (narrowViewport) return true;
+
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    const noHover = window.matchMedia("(hover: none)").matches;
+    const touchPoints = Number(window.navigator?.maxTouchPoints || 0);
+    const likelyPhoneOrTablet = noHover && (coarsePointer || touchPoints > 0);
+    const width = Number(window.innerWidth) || 0;
+    const height = Number(window.innerHeight) || 0;
+    const landscape = width > height;
+    const tallTouchDesktopViewport =
+      likelyPhoneOrTablet &&
+      !landscape &&
+      width > breakpoint &&
+      width <= 980;
+    const shortLandscapeViewport = height > 0 && height <= 500;
+    const shortDesktopLikeViewport =
+      landscape &&
+      width > breakpoint &&
+      width <= 1100 &&
+      height > 0 &&
+      height <= 640;
+
+    return (
+      tallTouchDesktopViewport ||
+      (likelyPhoneOrTablet && landscape && shortLandscapeViewport) ||
+      shortDesktopLikeViewport
+    );
+  }, [breakpoint]);
+
+  const [isMobile, setIsMobile] = React.useState(() => computeIsMobile());
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
-    const mql = window.matchMedia(`(max-width: ${breakpoint}px)`);
-    const onChange = () => setIsMobile(mql.matches);
 
-    try {
-      mql.addEventListener("change", onChange);
-    } catch {
-      mql.addListener(onChange);
-    }
+    const mqlWidth = window.matchMedia(`(max-width: ${breakpoint}px)`);
+    const mqlPointer = window.matchMedia("(pointer: coarse)");
+    const onChange = () => setIsMobile(computeIsMobile());
+
+    const addMqlListener = (mql, listener) => {
+      try {
+        mql.addEventListener("change", listener);
+      } catch {
+        mql.addListener(listener);
+      }
+    };
+
+    const removeMqlListener = (mql, listener) => {
+      try {
+        mql.removeEventListener("change", listener);
+      } catch {
+        mql.removeListener(listener);
+      }
+    };
+
+    addMqlListener(mqlWidth, onChange);
+    addMqlListener(mqlPointer, onChange);
+    window.addEventListener("resize", onChange);
+    window.addEventListener("orientationchange", onChange);
 
     onChange();
     return () => {
-      try {
-        mql.removeEventListener("change", onChange);
-      } catch {
-        mql.removeListener(onChange);
-      }
+      removeMqlListener(mqlWidth, onChange);
+      removeMqlListener(mqlPointer, onChange);
+      window.removeEventListener("resize", onChange);
+      window.removeEventListener("orientationchange", onChange);
     };
-  }, [breakpoint]);
+  }, [breakpoint, computeIsMobile]);
 
   return isMobile;
 }
@@ -855,27 +1035,57 @@ function useIsMobile(breakpoint = 700) {
 /* ======================================================================== */
 
 const ICONS = [
-  { src: "/images/icons/rewards.png", alt: "REWARDS", modalText: MODAL_TEXTS.REWARDS || "" },
-  { src: "/images/icons/collection.png", alt: "COLLECTION", modalText: MODAL_TEXTS.COLLECTION || "" },
-  { src: "/images/icons/mint.png", alt: "VRF MINT", modalText: MODAL_TEXTS.mint || "" },
-  { src: "/images/icons/token.png", alt: "BIGGI ECOSYSTEM", modalText: MODAL_TEXTS.chance || "" },
-  { src: "/images/icons/users.png", alt: "USERS", modalText: "" },
-  { src: "/images/icons/expansion.png", alt: "COMMUNITY CENTER", modalText: MODAL_TEXTS.COMMUNITYCENTER || MODAL_TEXTS.expansion || "" },
+  {
+    src: "/images/icons/rewards.optimized.png",
+    fallbackSrc: "/images/icons/rewards.fallback.png",
+    alt: "REWARDS",
+    modalText: MODAL_TEXTS.REWARDS || "",
+    eager: true,
+  },
+  {
+    src: "/images/icons/collection.optimized.png",
+    fallbackSrc: "/images/icons/collection.fallback.png",
+    alt: "COLLECTION",
+    modalText: MODAL_TEXTS.COLLECTION || "",
+    eager: true,
+  },
+  {
+    src: "/images/icons/mint.optimized.png",
+    fallbackSrc: "/images/icons/mint.fallback.png",
+    alt: "VRF MINT",
+    modalText: MODAL_TEXTS.mint || "",
+    eager: true,
+  },
+  {
+    src: "/images/icons/token.optimized.png",
+    fallbackSrc: "/images/icons/token.fallback.png",
+    alt: "BIGGI ECOSYSTEM",
+    modalText: MODAL_TEXTS.chance || "",
+    eager: true,
+  },
+  {
+    src: "/images/icons/users.optimized.png",
+    fallbackSrc: "/images/icons/users.fallback.png",
+    alt: "USERS",
+    modalText: "",
+    eager: true,
+  },
+  {
+    src: "/images/icons/expansion.optimized.png",
+    fallbackSrc: "/images/icons/expansion.fallback.png",
+    alt: "COMMUNITY CENTER",
+    modalText: MODAL_TEXTS.COMMUNITYCENTER || MODAL_TEXTS.expansion || "",
+    eager: true,
+  },
 ];
 
 /* ======================================================================== */
 /* ============================ WALLET HELPERS ============================= */
 /* ======================================================================== */
 
-const pickInjectedProvider = () => {
-  const candidates = getInjectedProviderCandidates({
-    preferred: getInjectedProvider(),
-  });
-  return candidates[0] || null;
-};
-
 const METAMASK_PROVIDER_PROBE_TIMEOUT_MS = 3_500;
 const METAMASK_REQUEST_TIMEOUT_MS = 90_000;
+const WALLET_RESUME_SYNC_DEBOUNCE_MS = 450;
 
 const getProviderErrorCode = (error) =>
   error?.code ??
@@ -923,24 +1133,48 @@ const describeInjectedProvider = (provider) => {
 const isDirectMetaMaskProvider = (provider) =>
   Boolean(
     provider &&
-      provider.isMetaMask &&
-      !provider.isBraveWallet &&
-      !provider.isCoinbaseWallet &&
-      !provider.isRabby &&
-      !provider.isTrust,
+    provider.isMetaMask &&
+    !provider.isBraveWallet &&
+    !provider.isCoinbaseWallet &&
+    !provider.isRabby &&
+    !provider.isTrust,
   );
 
-const connectWithWalletConnect = async () => {
+const connectWithWalletConnect = async (options) => {
   try {
     const mod = await import("./wallet/wc.js");
     if (mod && typeof mod.connectWithWalletConnect === "function") {
-      return await mod.connectWithWalletConnect();
+      return await mod.connectWithWalletConnect(options);
     }
   } catch (err) {
     console.error("WalletConnect load failed:", err);
     throw err;
   }
   throw new Error("WalletConnect is not available in this version");
+};
+
+const restoreWalletConnectSession = async (options) => {
+  try {
+    const mod = await import("./wallet/wc.js");
+    if (mod && typeof mod.restoreWalletConnectSession === "function") {
+      return await mod.restoreWalletConnectSession(options);
+    }
+  } catch (err) {
+    console.debug("WalletConnect restore unavailable:", err);
+  }
+  return null;
+};
+
+const clearWalletConnectSession = async (options) => {
+  try {
+    const mod = await import("./wallet/wc.js");
+    if (mod && typeof mod.clearWalletConnectSession === "function") {
+      return await mod.clearWalletConnectSession(options);
+    }
+  } catch (err) {
+    console.debug("WalletConnect clear unavailable:", err);
+  }
+  return false;
 };
 
 /* ======================================================================== */
@@ -969,7 +1203,10 @@ function getCachedReaderInstance(kind = "main") {
       }
       return readersRef.current.BiggiTokenReader;
     }
-    if (kind === "tokenomics" && typeof getBiggiTokenomicsReaderRO === "function") {
+    if (
+      kind === "tokenomics" &&
+      typeof getBiggiTokenomicsReaderRO === "function"
+    ) {
       if (!readersRef.current.BiggiTokenomicsReader) {
         readersRef.current.BiggiTokenomicsReader = getBiggiTokenomicsReaderRO();
       }
@@ -1023,7 +1260,9 @@ function isDelegatedInflightLimitError(err) {
       "",
   ).toLowerCase();
 
-  if (text.includes("in-flight transaction limit reached for delegated accounts")) {
+  if (
+    text.includes("in-flight transaction limit reached for delegated accounts")
+  ) {
     return true;
   }
   return Number(code) === -32603 && text.includes("delegated accounts");
@@ -1071,8 +1310,136 @@ function isMissingRevertDataError(err) {
   const msg = String(err?.message || "");
   return (
     err?.code === "CALL_EXCEPTION" &&
-    (err?.data == null || /missing revert data/i.test(msg) || /internal json-rpc error/i.test(msg))
+    (err?.data == null ||
+      /missing revert data/i.test(msg) ||
+      /internal json-rpc error/i.test(msg))
   );
+}
+
+function isTransientRpcReadError(err) {
+  if (!err) return false;
+  if (isRateLimitedRpcError(err) || isMissingRevertDataError(err)) return true;
+
+  const codeRaw = err?.code ?? err?.error?.code ?? err?.info?.error?.code;
+  const code = String(codeRaw ?? "")
+    .trim()
+    .toUpperCase();
+  if (
+    code === "NETWORK_ERROR" ||
+    code === "SERVER_ERROR" ||
+    code === "TIMEOUT" ||
+    code === "ECONNRESET" ||
+    code === "ECONNREFUSED" ||
+    code === "ETIMEDOUT" ||
+    code === "UND_ERR_CONNECT_TIMEOUT"
+  ) {
+    return true;
+  }
+
+  const status = Number(
+    err?.status ??
+      err?.data?.httpStatus ??
+      err?.error?.data?.httpStatus ??
+      err?.info?.error?.data?.httpStatus ??
+      0,
+  );
+  if ([408, 425, 429, 500, 502, 503, 504].includes(status)) return true;
+
+  const msg = String(
+    err?.reason ||
+      err?.shortMessage ||
+      err?.message ||
+      err?.error?.message ||
+      err?.info?.error?.message ||
+      err?.cause?.message ||
+      "",
+  ).toLowerCase();
+  return (
+    msg.includes("failed to fetch") ||
+    msg.includes("network error") ||
+    msg.includes("networkerror") ||
+    msg.includes("fetch failed") ||
+    msg.includes("missing response") ||
+    msg.includes("request failed") ||
+    msg.includes("timed out") ||
+    msg.includes("quorum not met") ||
+    msg.includes("invalid numeric value") ||
+    msg.includes("%internal") ||
+    msg.includes("ranges over 10000 blocks") ||
+    msg.includes("method is not available on freetier") ||
+    msg.includes("freetier") ||
+    msg.includes("timeout") ||
+    msg.includes("fetch_tickets_timeout") ||
+    msg.includes("fetch_nfts_timeout") ||
+    msg.includes("rpc_unavailable")
+  );
+}
+
+function getProviderRpcUrl(providerLike) {
+  if (!providerLike) return "";
+  const direct = String(
+    providerLike?.connection?.url || providerLike?._url || "",
+  ).trim();
+  if (direct) return direct;
+  try {
+    const viaGetter = providerLike?._getConnection?.();
+    const viaUrl = String(viaGetter?.url || "").trim();
+    if (viaUrl) return viaUrl;
+  } catch {
+    // ignore private getter errors
+  }
+  const nested = providerLike?.provider;
+  const nestedUrl = String(
+    nested?.connection?.url || nested?._url || nested?.host || "",
+  ).trim();
+  if (nestedUrl) return nestedUrl;
+  try {
+    const nestedConn = nested?._getConnection?.();
+    const nestedConnUrl = String(nestedConn?.url || "").trim();
+    if (nestedConnUrl) return nestedConnUrl;
+  } catch {
+    // ignore nested getter errors
+  }
+  return "";
+}
+
+function isBatchLimitedRpc(providerLike) {
+  const providerName = String(
+    providerLike?.constructor?.name || "",
+  ).toLowerCase();
+  if (providerName.includes("fallback")) return true;
+  const url = getProviderRpcUrl(providerLike).toLowerCase();
+  if (!url) return false;
+  return url.includes("drpc.org");
+}
+
+function getRpcReadParallelism(providerLike, normal = 4) {
+  const n = Math.max(1, Math.trunc(Number(normal) || 1));
+  if (!isBatchLimitedRpc(providerLike)) return n;
+  return Math.min(n, 3);
+}
+
+function supportsLogSubscriptions(providerLike) {
+  if (!providerLike) return false;
+  const providerName = String(
+    providerLike?.constructor?.name || "",
+  ).toLowerCase();
+  const nestedName = String(
+    providerLike?.provider?.constructor?.name || "",
+  ).toLowerCase();
+  if (providerName.includes("websocket") || nestedName.includes("websocket")) {
+    return true;
+  }
+  if (providerName.includes("fallback") || nestedName.includes("fallback")) {
+    return false;
+  }
+
+  const url = getProviderRpcUrl(providerLike).toLowerCase();
+  if (!url) return false;
+  if (url.startsWith("ws://") || url.startsWith("wss://")) return true;
+  if (url.includes("drpc.org")) return false;
+  if (url.startsWith("http://") || url.startsWith("https://")) return false;
+  return false;
 }
 
 function isUserRejectedAction(err) {
@@ -1156,7 +1523,7 @@ async function getBlockNumberWithFallback(provider) {
   try {
     return await provider.getBlockNumber();
   } catch (err) {
-    if (!isRateLimitedRpcError(err) && !isMissingRevertDataError(err)) {
+    if (!isTransientRpcReadError(err)) {
       throw err;
     }
     resetROProvider();
@@ -1165,9 +1532,22 @@ async function getBlockNumberWithFallback(provider) {
       !fallbackProvider ||
       typeof fallbackProvider.getBlockNumber !== "function"
     ) {
+      const archive = getArchiveProvider({ forceRefresh: true });
+      if (archive && typeof archive.getBlockNumber === "function") {
+        return await archive.getBlockNumber();
+      }
       throw err;
     }
-    return await fallbackProvider.getBlockNumber();
+    try {
+      return await fallbackProvider.getBlockNumber();
+    } catch (fallbackErr) {
+      if (!isTransientRpcReadError(fallbackErr)) throw fallbackErr;
+      const archive = getArchiveProvider({ forceRefresh: true });
+      if (archive && typeof archive.getBlockNumber === "function") {
+        return await archive.getBlockNumber();
+      }
+      throw fallbackErr;
+    }
   }
 }
 
@@ -1213,6 +1593,59 @@ const KNOWN_CUSTOM_ERROR_MESSAGES = {
 };
 
 const INFO_GATE_STORAGE_KEY = "biggi_info_gate_seen_v1";
+const GALLERY_DEBUG_STORAGE_KEY = "biggi_gallery_debug_v1";
+
+function parseBoolFlag(value) {
+  if (value == null) return null;
+  const raw = String(value).trim().toLowerCase();
+  if (!raw) return null;
+  if (["1", "true", "yes", "on"].includes(raw)) return true;
+  if (["0", "false", "no", "off"].includes(raw)) return false;
+  return null;
+}
+
+function isGalleryDebugEnabled() {
+  let envFlag = null;
+  let devMode = false;
+  try {
+    if (typeof import.meta !== "undefined" && import.meta.env) {
+      const envRaw = import.meta.env.VITE_GALLERY_DEBUG;
+      envFlag = parseBoolFlag(envRaw);
+      devMode = Boolean(import.meta.env.DEV);
+    }
+  } catch {
+    // ignore env access failures
+  }
+  if (envFlag != null) return envFlag;
+
+  try {
+    if (typeof window !== "undefined" && window.localStorage) {
+      const stored = window.localStorage.getItem(GALLERY_DEBUG_STORAGE_KEY);
+      const storedFlag = parseBoolFlag(stored);
+      if (storedFlag != null) return storedFlag;
+    }
+  } catch {
+    // ignore storage access failures
+  }
+
+  return devMode;
+}
+
+function shortAddressLabel(addr) {
+  const value = String(addr || "").trim();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(value)) return value || "n/a";
+  return `${value.slice(0, 6)}...${value.slice(-4)}`;
+}
+
+function rpcHostLabel(url) {
+  const raw = String(url || "").trim();
+  if (!raw) return "n/a";
+  try {
+    return new URL(raw).host || raw;
+  } catch {
+    return raw;
+  }
+}
 
 function decodeKnownCustomError(err) {
   const data = extractRevertData(err);
@@ -1229,8 +1662,23 @@ export default function AppCore() {
   const isMobile = useIsMobile(700);
 
   const [openNavIdx, setOpenNavIdx] = React.useState(null);
+  const [rewardsPanelHeader, setRewardsPanelHeader] = React.useState({
+    title: "TOKEN REWARDS",
+    accent: "#ffe800",
+  });
+  const [collectionPanelHeader, setCollectionPanelHeader] = React.useState({
+    title: "VRF COLLECTION",
+    accent: "#ffe800",
+  });
+  const [ecosystemPanelHeader, setEcosystemPanelHeader] = React.useState({
+    title: "FLOW",
+    accent: "#ffe800",
+  });
   const [autoOpenInfoPanel, setAutoOpenInfoPanel] = React.useState(null);
   const [walletAddress, setWalletAddress] = React.useState("");
+  const [pendingReferral, setPendingReferral] = React.useState(() =>
+    loadPendingReferralCache(),
+  );
   const [infoGateActive, setInfoGateActive] = React.useState(false);
   const [infoGateRect, setInfoGateRect] = React.useState(null);
   const [infoGateOpenTick, setInfoGateOpenTick] = React.useState(0);
@@ -1242,9 +1690,13 @@ export default function AppCore() {
   const [ticketMinted, setTicketMinted] = React.useState(0);
   const [maxTickets] = React.useState(550);
 
-  const [blockMintCounts, setBlockMintCounts] = React.useState(new Array(10).fill(0));
+  const [blockMintCounts, setBlockMintCounts] = React.useState(
+    new Array(10).fill(0),
+  );
   const [blockPrices, setBlockPrices] = React.useState(DEFAULT_BLOCK_PRICES);
-  const [backgroundMintCounts, setBackgroundMintCounts] = React.useState(new Array(10).fill(0));
+  const [backgroundMintCounts, setBackgroundMintCounts] = React.useState(
+    new Array(10).fill(0),
+  );
 
   const [myNFTs, setMyNFTs] = React.useState([]);
   const [galleryLoading, setGalleryLoading] = React.useState(false);
@@ -1273,9 +1725,21 @@ export default function AppCore() {
 
   const [VRFUIData, setVRFUIData] = React.useState({
     network: "EVM",
-    params: { keyHash: "", confirmations: 3, numWords: 1, callbackGasLimit: 300000 },
+    params: {
+      keyHash: "",
+      confirmations: 3,
+      numWords: 1,
+      callbackGasLimit: 300000,
+    },
     subscription: { id: "" },
-    last: { requestId: "", status: "idle", requestedAt: "", txHash: "", blockNumber: undefined, randomWords: [] },
+    last: {
+      requestId: "",
+      status: "idle",
+      requestedAt: "",
+      txHash: "",
+      blockNumber: undefined,
+      randomWords: [],
+    },
     history: [],
   });
 
@@ -1289,13 +1753,23 @@ export default function AppCore() {
   const [pendingTicketId, setPendingTicketId] = React.useState(null);
   const [topFirstId, setTopFirstId] = React.useState(null);
   const [txStatus, setTxStatus] = React.useState(null);
+  const latestVRFUIDataRef = React.useRef(VRFUIData);
 
   const pendingTicketIdRef = React.useRef(null);
+  const walletAddressRef = React.useRef("");
+  const referralRegisterInFlightRef = React.useRef("");
   const latestWalletItemsRef = React.useRef([]);
   const lastRedeemTicketIdRef = React.useRef(null);
+  const walletConnectResumeAllowedRef = React.useRef(false);
+  React.useEffect(() => {
+    latestVRFUIDataRef.current = VRFUIData;
+  }, [VRFUIData]);
   React.useEffect(() => {
     pendingTicketIdRef.current = pendingTicketId;
   }, [pendingTicketId]);
+  React.useEffect(() => {
+    walletAddressRef.current = String(walletAddress || "");
+  }, [walletAddress]);
   React.useEffect(() => {
     latestWalletItemsRef.current = Array.isArray(myNFTs) ? myNFTs : [];
   }, [myNFTs]);
@@ -1338,11 +1812,23 @@ export default function AppCore() {
   const unsubRef = React.useRef(() => {});
   const mintIdxCacheRef = React.useRef(new Map());
   const walletFetchRef = React.useRef({ inFlight: null, addr: null });
+  const lastMintedFetchRef = React.useRef({
+    key: "",
+    promise: null,
+    settledAt: 0,
+  });
+  const walletFetchSeqRef = React.useRef(0);
+  const walletFetchFailureRef = React.useRef(new Map());
+  const walletFetchCooldownLogRef = React.useRef("");
   const claimableFetchRef = React.useRef(0);
   const lastVRFFulfilledRef = React.useRef("");
   const txClearTimerRef = React.useRef(null);
   const alertDedupeRef = React.useRef({ key: "", ts: 0 });
   const connectInFlightRef = React.useRef(false);
+  const walletResumeSyncRef = React.useRef({
+    inFlight: false,
+    timer: null,
+  });
   const rpcBackoffUntilRef = React.useRef(0);
   const walletRpcResyncedAtRef = React.useRef(0);
   const delegatedInflightUntilRef = React.useRef(0);
@@ -1361,19 +1847,60 @@ export default function AppCore() {
   const navAlt = navOpen ? ICONS[openNavIdx]?.alt : "";
 
   React.useEffect(() => {
+    if (navAlt === "REWARDS") {
+      setRewardsPanelHeader({
+        title: "TOKEN REWARDS",
+        accent: "#ffe800",
+      });
+    }
+    if (navAlt === "COLLECTION") {
+      setCollectionPanelHeader({
+        title: "VRF COLLECTION",
+        accent: "#ffe800",
+      });
+    }
+    if (navAlt === "BIGGI ECOSYSTEM") {
+      setEcosystemPanelHeader({
+        title: "FLOW",
+        accent: "#ffe800",
+      });
+    }
+  }, [navAlt]);
+  const panelReturnScrollYRef = React.useRef(null);
+
+  React.useEffect(() => {
     startInjectedProviderDiscovery();
   }, []);
 
+  React.useEffect(() => {
+    if (typeof window === "undefined" || !window.history) return undefined;
+    const previous = window.history.scrollRestoration;
+    window.history.scrollRestoration = "manual";
+    return () => {
+      window.history.scrollRestoration = previous;
+    };
+  }, []);
+
   const resolvePanelAlt = React.useCallback((raw) => {
-    const key = String(raw || "").trim().toLowerCase();
+    const key = String(raw || "")
+      .trim()
+      .toLowerCase();
     if (!key) return null;
     if (["rewards", "reward", "weekly"].includes(key)) return "REWARDS";
     if (["collection", "blocks", "nft"].includes(key)) return "COLLECTION";
-    if (["vrf", "mint", "vrf-mint", "vrf mint"].includes(key)) return "VRF MINT";
+    if (["vrf", "mint", "vrf-mint", "vrf mint"].includes(key))
+      return "VRF MINT";
     if (["ecosystem", "token", "tokenomics", "biggi"].includes(key))
       return "BIGGI ECOSYSTEM";
     if (["users", "user", "wallet"].includes(key)) return "USERS";
-    if (["community", "community-center", "communitycenter", "expansion"].includes(key))
+    if (
+      [
+        "community",
+        "community-center",
+        "communitycenter",
+        "expansion",
+      ].includes(key)
+    )
       return "COMMUNITY CENTER";
     return null;
   }, []);
@@ -1414,24 +1941,71 @@ export default function AppCore() {
     if (!infoGateActive) setInfoGateRect(null);
   }, [infoGateActive]);
 
-  const handleInfoButtonRect = React.useCallback((rect) => {
-    if (!rect || !infoGateActive) return;
-    setInfoGateRect(rect);
-  }, [infoGateActive]);
+  const handleInfoButtonRect = React.useCallback(
+    (rect) => {
+      if (!rect || !infoGateActive) return;
+      setInfoGateRect(rect);
+    },
+    [infoGateActive],
+  );
 
-  const handleInfoGateClick = React.useCallback((event) => {
-    if (!infoGateRect) {
-      setInfoGateOpenTick((v) => v + 1);
-      return;
-    }
-    const { clientX, clientY } = event;
-    const within =
-      clientX >= infoGateRect.left &&
-      clientX <= infoGateRect.right &&
-      clientY >= infoGateRect.top &&
-      clientY <= infoGateRect.bottom;
-    if (within) setInfoGateOpenTick((v) => v + 1);
-  }, [infoGateRect]);
+  const handleInfoGateClick = React.useCallback(
+    (event) => {
+      if (!infoGateRect) {
+        setInfoGateOpenTick((v) => v + 1);
+        return;
+      }
+      const { clientX, clientY } = event;
+      const within =
+        clientX >= infoGateRect.left &&
+        clientX <= infoGateRect.right &&
+        clientY >= infoGateRect.top &&
+        clientY <= infoGateRect.bottom;
+      if (within) setInfoGateOpenTick((v) => v + 1);
+    },
+    [infoGateRect],
+  );
+
+  const scrollViewportToTop = React.useCallback(() => {
+    if (typeof window === "undefined") return;
+
+    const resetScroll = () => {
+      const scrollingElement =
+        document.scrollingElement ||
+        document.documentElement ||
+        document.body ||
+        null;
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      if (scrollingElement) scrollingElement.scrollTop = 0;
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+    };
+
+    resetScroll();
+    window.requestAnimationFrame(() => {
+      resetScroll();
+      window.requestAnimationFrame(resetScroll);
+    });
+  }, []);
+
+  const openPanelAtIndex = React.useCallback(
+    (idx) => {
+      if (!Number.isInteger(idx) || idx < 0 || idx >= ICONS.length) return;
+
+      if (typeof window !== "undefined" && panelReturnScrollYRef.current == null) {
+        panelReturnScrollYRef.current =
+          window.scrollY ||
+          window.pageYOffset ||
+          document.documentElement?.scrollTop ||
+          document.body?.scrollTop ||
+          0;
+      }
+
+      scrollViewportToTop();
+      setOpenNavIdx(idx);
+    },
+    [scrollViewportToTop],
+  );
 
   React.useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -1458,11 +2032,13 @@ export default function AppCore() {
       if (!alt) return;
 
       const idx = ICONS.findIndex((icon) => icon.alt === alt);
-      if (idx >= 0) setOpenNavIdx(idx);
+      if (idx >= 0) openPanelAtIndex(idx);
 
       const infoRaw = params.get("info") || params.get("i");
       const wantsInfo = ["1", "true", "yes", "open"].includes(
-        String(infoRaw || "").trim().toLowerCase(),
+        String(infoRaw || "")
+          .trim()
+          .toLowerCase(),
       );
       if (wantsInfo) setAutoOpenInfoPanel(alt);
     };
@@ -1474,7 +2050,38 @@ export default function AppCore() {
       window.removeEventListener("hashchange", parseInfoLink);
       window.removeEventListener("popstate", parseInfoLink);
     };
-  }, [resolvePanelAlt]);
+  }, [openPanelAtIndex, resolvePanelAlt]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const url = new URL(window.location.href);
+    const params = new URLSearchParams(url.search);
+
+    if (navAlt) {
+      params.set("panel", navAlt);
+      params.delete("p");
+    } else {
+      params.delete("panel");
+      params.delete("p");
+    }
+
+    if (autoOpenInfoPanel === navAlt && navAlt) {
+      params.set("info", "1");
+      params.delete("i");
+    } else {
+      params.delete("info");
+      params.delete("i");
+    }
+
+    const nextSearch = params.toString();
+    const nextUrl = `${url.pathname}${nextSearch ? `?${nextSearch}` : ""}${url.hash}`;
+    const currentUrl = `${url.pathname}${url.search}${url.hash}`;
+
+    if (nextUrl !== currentUrl) {
+      window.history.replaceState(window.history.state, "", nextUrl);
+    }
+  }, [navAlt, autoOpenInfoPanel]);
 
   const isAdmin =
     adminOwner &&
@@ -1485,24 +2092,30 @@ export default function AppCore() {
   /* ============================ CORE HELPERS ============================= */
   /* ====================================================================== */
 
-  const callFirst = React.useCallback(async (contract, candidates, args = []) => {
-    for (const fn of candidates) {
-      const callable = contract?.[fn];
-      if (typeof callable === "function") {
-        try {
-          return await callable(...args);
-        } catch {}
+  const callFirst = React.useCallback(
+    async (contract, candidates, args = []) => {
+      for (const fn of candidates) {
+        const callable = contract?.[fn];
+        if (typeof callable === "function") {
+          try {
+            return await callable(...args);
+          } catch {}
+        }
       }
-    }
-    return null;
-  }, []);
+      return null;
+    },
+    [],
+  );
 
   const recoverRpcConnectivity = React.useCallback(async (context = "rpc") => {
     clearPreferredRpc();
     try {
       await ensurePreferredRpc();
     } catch (err) {
-      console.warn(`${context}: ensurePreferredRpc failed`, err?.message || err);
+      console.warn(
+        `${context}: ensurePreferredRpc failed`,
+        err?.message || err,
+      );
     }
     try {
       resetROProvider();
@@ -1532,19 +2145,29 @@ export default function AppCore() {
     delegatedInflightUntilRef.current = Date.now() + delay;
   }, []);
 
-  const hasPendingAccountTransaction = React.useCallback(async (provider, address) => {
-    if (!provider || typeof provider.getTransactionCount !== "function") return false;
-    if (!address) return false;
-    try {
-      const [latestNonce, pendingNonce] = await Promise.all([
-        provider.getTransactionCount(address, "latest"),
-        provider.getTransactionCount(address, "pending"),
-      ]);
-      return Number(pendingNonce) > Number(latestNonce);
-    } catch {
-      return false;
-    }
-  }, []);
+  const hasPendingAccountTransaction = React.useCallback(
+    async (provider, address) => {
+      if (!provider || typeof provider.getTransactionCount !== "function")
+        return false;
+      if (!address) return false;
+      try {
+        const noncePair = await requestWithTimeout(
+          Promise.all([
+            provider.getTransactionCount(address, "latest"),
+            provider.getTransactionCount(address, "pending"),
+          ]),
+          4500,
+          "NONCE_CHECK_TIMEOUT",
+        ).catch(() => null);
+        if (!noncePair) return false;
+        const [latestNonce, pendingNonce] = noncePair;
+        return Number(pendingNonce) > Number(latestNonce);
+      } catch {
+        return false;
+      }
+    },
+    [],
+  );
 
   const isWriteTxLockActive = React.useCallback(() => {
     const lock = writeTxLockRef.current;
@@ -1557,15 +2180,18 @@ export default function AppCore() {
     return true;
   }, []);
 
-  const acquireWriteTxLock = React.useCallback((label = "transaction") => {
-    if (isWriteTxLockActive()) return false;
-    writeTxLockRef.current = {
-      active: true,
-      label: String(label || "transaction"),
-      startedAt: Date.now(),
-    };
-    return true;
-  }, [isWriteTxLockActive]);
+  const acquireWriteTxLock = React.useCallback(
+    (label = "transaction") => {
+      if (isWriteTxLockActive()) return false;
+      writeTxLockRef.current = {
+        active: true,
+        label: String(label || "transaction"),
+        startedAt: Date.now(),
+      };
+      return true;
+    },
+    [isWriteTxLockActive],
+  );
 
   const releaseWriteTxLock = React.useCallback(() => {
     writeTxLockRef.current = { active: false, label: "", startedAt: 0 };
@@ -1606,7 +2232,10 @@ export default function AppCore() {
         0,
         Number(import.meta.env.VITE_WRITE_RATE_LIMIT_RETRIES ?? 2),
       );
-      const baseDelay = getPollInterval(4500, "VITE_WRITE_RATE_LIMIT_BACKOFF_MS");
+      const baseDelay = getPollInterval(
+        4500,
+        "VITE_WRITE_RATE_LIMIT_BACKOFF_MS",
+      );
       return runWriteWithRpcRetry(sendFn, {
         maxRetries: retries,
         baseDelayMs: baseDelay,
@@ -1688,7 +2317,7 @@ export default function AppCore() {
     if (invalidConsumer) {
       const sub = invalidConsumer.subId || "unknown";
       const consumer = invalidConsumer.consumer || "unknown";
-      return `VRF subscription invalid: VRF Router ${consumer} is not a consumer of subscription ${sub}. Add it in Chainlink VRF or update the subId in Admin â†’ VRF.`;
+      return `VRF subscription invalid: VRF Router ${consumer} is not a consumer of subscription ${sub}. Add it in Chainlink VRF or update the subId in Admin Ă˘â€ â€™ VRF.`;
     }
 
     const map = {
@@ -1705,7 +2334,8 @@ export default function AppCore() {
       Paused: "Contract is paused.",
       NoEligibleTokens: "No eligible NFTs to claim this week.",
       CapExceeded: "Token cap would be exceeded.",
-      NotFullyConfigured: "Contract metadata is not fully configured (owner must finish batch setup).",
+      NotFullyConfigured:
+        "Contract metadata is not fully configured (owner must finish batch setup).",
       BiggiTokenNotSet: "BIGGI token is not configured yet.",
       NoMinter: "Minter not configured.",
       NoToken: "Token not configured.",
@@ -1713,18 +2343,165 @@ export default function AppCore() {
     return map[name] || reason;
   }, []);
 
-  const showUserAlert = React.useCallback((message, key = "", cooldownMs = 4000) => {
-    const normalizedMessage = String(message || "").trim();
-    if (!normalizedMessage) return;
-    const dedupeKey = String(key || normalizedMessage);
-    const now = Date.now();
-    const prev = alertDedupeRef.current || { key: "", ts: 0 };
-    if (prev.key === dedupeKey && now - Number(prev.ts || 0) < Number(cooldownMs || 0)) {
-      return;
+  const showUserAlert = React.useCallback(
+    (message, key = "", cooldownMs = 4000) => {
+      const normalizedMessage = String(message || "").trim();
+      if (!normalizedMessage) return;
+      const dedupeKey = String(key || normalizedMessage);
+      const now = Date.now();
+      const prev = alertDedupeRef.current || { key: "", ts: 0 };
+      if (
+        prev.key === dedupeKey &&
+        now - Number(prev.ts || 0) < Number(cooldownMs || 0)
+      ) {
+        return;
+      }
+      alertDedupeRef.current = { key: dedupeKey, ts: now };
+      alert(normalizedMessage);
+    },
+    [],
+  );
+
+  const persistPendingReferral = React.useCallback((value) => {
+    const normalized = String(value || "").trim();
+    setPendingReferral(normalized);
+    if (normalized) {
+      savePendingReferralCache(normalized);
+    } else {
+      clearPendingReferralCache();
     }
-    alertDedupeRef.current = { key: dedupeKey, ts: now };
-    alert(normalizedMessage);
   }, []);
+
+  const clearReferralFromLocation = React.useCallback(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    let changed = false;
+
+    if (url.searchParams.has("ref")) {
+      url.searchParams.delete("ref");
+      changed = true;
+    }
+
+    const rawHash = url.hash ? String(url.hash) : "";
+    const hash = rawHash.replace(/^#/, "");
+    if (hash.includes("?")) {
+      const [prefix, query = ""] = hash.split("?");
+      const hashParams = new URLSearchParams(query);
+      if (hashParams.has("ref")) {
+        hashParams.delete("ref");
+        changed = true;
+      }
+      const nextHashQuery = hashParams.toString();
+      url.hash = nextHashQuery
+        ? `#${prefix}?${nextHashQuery}`
+        : prefix
+          ? `#${prefix}`
+          : "";
+    } else if (hash && !hash.startsWith("/")) {
+      const hashParams = new URLSearchParams(hash);
+      if (hashParams.has("ref")) {
+        hashParams.delete("ref");
+        changed = true;
+        const nextHash = hashParams.toString();
+        url.hash = nextHash ? `#${nextHash}` : "";
+      }
+    }
+
+    if (!changed) return;
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const syncPendingReferralFromLocation = () => {
+      const rawReferral = extractReferralParam(window.location.href);
+      if (!rawReferral) return;
+      persistPendingReferral(rawReferral);
+    };
+
+    syncPendingReferralFromLocation();
+    window.addEventListener("hashchange", syncPendingReferralFromLocation);
+    window.addEventListener("popstate", syncPendingReferralFromLocation);
+    return () => {
+      window.removeEventListener("hashchange", syncPendingReferralFromLocation);
+      window.removeEventListener("popstate", syncPendingReferralFromLocation);
+    };
+  }, [persistPendingReferral]);
+
+  const attemptPendingReferralRegistration = React.useCallback(
+    async (address, referral) => {
+      const normalizedAddress = String(address || "").trim();
+      const normalizedReferral = String(referral || "").trim();
+      if (!/^0x[0-9a-fA-F]{40}$/.test(normalizedAddress)) return false;
+      if (!normalizedReferral) return false;
+
+      if (hasConsumedReferralCache(normalizedAddress, normalizedReferral)) {
+        persistPendingReferral("");
+        clearReferralFromLocation();
+        return true;
+      }
+
+      const dedupeKey = `${normalizedAddress.toLowerCase()}|${normalizedReferral.toLowerCase()}`;
+      if (referralRegisterInFlightRef.current === dedupeKey) return false;
+      referralRegisterInFlightRef.current = dedupeKey;
+
+      try {
+        await registerReferral({
+          ref: normalizedReferral,
+          referral: normalizedReferral,
+          referralCode: normalizedReferral,
+          address: normalizedAddress,
+          wallet: normalizedAddress,
+          walletAddress: normalizedAddress,
+          userAddress: normalizedAddress,
+        });
+        markConsumedReferralCache(normalizedAddress, normalizedReferral);
+        persistPendingReferral("");
+        clearReferralFromLocation();
+        showUserAlert("Referral registered.", "referral-registered", 1500);
+        return true;
+      } catch (error) {
+        const message = String(error?.message || "").toLowerCase();
+        const looksConsumed = [
+          "already",
+          "used",
+          "duplicate",
+          "exists",
+          "registered",
+        ].some((token) => message.includes(token));
+        if (looksConsumed) {
+          markConsumedReferralCache(normalizedAddress, normalizedReferral);
+          persistPendingReferral("");
+          clearReferralFromLocation();
+          return true;
+        }
+        console.warn(
+          "registerReferral failed",
+          normalizedReferral,
+          normalizedAddress,
+          error,
+        );
+        return false;
+      } finally {
+        if (referralRegisterInFlightRef.current === dedupeKey) {
+          referralRegisterInFlightRef.current = "";
+        }
+      }
+    },
+    [clearReferralFromLocation, persistPendingReferral, showUserAlert],
+  );
+
+  React.useEffect(() => {
+    if (!walletAddress || !pendingReferral) return;
+    attemptPendingReferralRegistration(walletAddress, pendingReferral).catch(
+      () => {},
+    );
+  }, [walletAddress, pendingReferral, attemptPendingReferralRegistration]);
 
   const scheduleFetchStats = React.useCallback((delay = 500, fn) => {
     if (statsTimer.current) return;
@@ -1736,16 +2513,19 @@ export default function AppCore() {
     }, delay);
   }, []);
 
-  const scheduleRefreshVRF = React.useCallback((delay = 1200, fn) => {
-    if (vrfRefreshTimerRef.current) return;
-    vrfRefreshTimerRef.current = setTimeout(async () => {
-      vrfRefreshTimerRef.current = null;
-      if (isRpcBackoffActive()) return;
-      try {
-        await fn();
-      } catch {}
-    }, delay);
-  }, [isRpcBackoffActive]);
+  const scheduleRefreshVRF = React.useCallback(
+    (delay = 1200, fn) => {
+      if (vrfRefreshTimerRef.current) return;
+      vrfRefreshTimerRef.current = setTimeout(async () => {
+        vrfRefreshTimerRef.current = null;
+        if (isRpcBackoffActive()) return;
+        try {
+          await fn();
+        } catch {}
+      }, delay);
+    },
+    [isRpcBackoffActive],
+  );
 
   const scheduleFetchREWARDS = React.useCallback((delay = 500, fn) => {
     if (REWARDSTimer.current) return;
@@ -1856,7 +2636,12 @@ export default function AppCore() {
       return scoreBase1 > scoreBase0 ? 1 : 0;
     };
 
-    const readWithBaseFallback = async (probe, index, base, fallbackBase = null) => {
+    const readWithBaseFallback = async (
+      probe,
+      index,
+      base,
+      fallbackBase = null,
+    ) => {
       if (typeof probe !== "function") return null;
       const primary = await silent(() => probe(index + base));
       if (primary != null) return primary;
@@ -2130,7 +2915,6 @@ export default function AppCore() {
       } else {
         setRewardPool(0);
       }
-
     } catch (e) {
       if (isRateLimitedRpcError(e)) {
         engageRpcBackoff();
@@ -2139,12 +2923,7 @@ export default function AppCore() {
       }
       console.error("fetchREWARDS", e);
     }
-  }, [
-    callFirst,
-    isRpcBackoffActive,
-    engageRpcBackoff,
-    recoverRpcConnectivity,
-  ]);
+  }, [callFirst, isRpcBackoffActive, engageRpcBackoff, recoverRpcConnectivity]);
 
   const refreshClaimable = React.useCallback(
     async (addrOverride, assetsOverride) => {
@@ -2156,57 +2935,40 @@ export default function AppCore() {
         return 0;
       }
 
-      const toBigIntTokenId = (raw) => {
-        try {
-          if (raw == null) return null;
-          if (typeof raw === "bigint") return raw;
-          if (typeof raw === "number") {
-            if (!Number.isFinite(raw) || raw <= 0) return null;
-            return BigInt(Math.trunc(raw));
-          }
-          if (typeof raw === "string") {
-            const s = raw.trim();
-            if (!s) return null;
-            if (/^\d+$/.test(s)) return BigInt(s);
-            if (/^0x[0-9a-f]+$/i.test(s)) return BigInt(s);
-            return null;
-          }
-          if (typeof raw?.toString === "function") {
-            return toBigIntTokenId(raw.toString());
-          }
-        } catch {
-          return null;
-        }
-        return null;
-      };
-
-      const maxReasonableTokenId = BigInt(
-        Math.max((Number(maxSupply) || 550) * 1000, 1_000_000),
-      );
-      const sourceItems = Array.isArray(assetsOverride) ? assetsOverride : myNFTs;
-      const tokenIds = [];
-      const seen = new Set();
-      for (const item of sourceItems) {
-        if (!item || item.isTicket || item.isPending) continue;
-        const id = toBigIntTokenId(item.tokenId);
-        if (id == null || id <= 0n || id > maxReasonableTokenId) continue;
-        const key = id.toString();
-        if (seen.has(key)) continue;
-        seen.add(key);
-        tokenIds.push(id);
-      }
-
-      if (!tokenIds.length) {
-        if (claimableFetchRef.current === reqId) setMyClaimable(0);
-        return 0;
-      }
-
+      const sourceItems = Array.isArray(assetsOverride)
+        ? assetsOverride
+        : myNFTs;
       let next = 0;
       try {
         const brl = await getReadOnlyLiquidityContract();
+        const rewardScope = await resolveRewardCollectionScope(brl);
+        const rewardPayload = buildRewardClaimPayload(sourceItems, {
+          maxSupply,
+          ...rewardScope,
+        });
+        const tokenIds = rewardPayload.tokenIds;
+        if (!tokenIds.length) {
+          if (claimableFetchRef.current === reqId) setMyClaimable(0);
+          return 0;
+        }
         let amount = null;
+        const useCollectionAware =
+          rewardPayload.shouldUseCollectionAware &&
+          typeof brl?.claimablePreviewFor === "function";
 
-        if (typeof brl?.claimablePreview === "function") {
+        if (useCollectionAware) {
+          try {
+            const preview = await brl.claimablePreviewFor(
+              rewardPayload.collections,
+              tokenIds,
+            );
+            amount = Array.isArray(preview)
+              ? (preview[1] ?? preview[0] ?? null)
+              : (preview?.amount ?? preview?.claimable ?? null);
+          } catch {
+            amount = null;
+          }
+        } else if (typeof brl?.claimablePreview === "function") {
           try {
             const preview = await brl.claimablePreview(tokenIds);
             amount = Array.isArray(preview)
@@ -2249,7 +3011,12 @@ export default function AppCore() {
 
   const resolveTicketPriceWei = React.useCallback(async () => {
     const c = contractRef.current || getReadOnlyContract();
-    const candidates = ["getTicketPrice", "ticketPrice", "getTicketPriceWei", "ticketPriceWei"];
+    const candidates = [
+      "getTicketPrice",
+      "ticketPrice",
+      "getTicketPriceWei",
+      "ticketPriceWei",
+    ];
 
     for (const n of candidates) {
       const f = c?.[n];
@@ -2285,49 +3052,57 @@ export default function AppCore() {
   /* ======================= Metadata enrich (mint prices) ================== */
   /* ====================================================================== */
 
-  const enrichMetaWithPrices = React.useCallback(async (_contract, tokenId, meta) => {
-    try {
-      const contractAddr =
-        _contract?.target || _contract?.address || _contract?.runner?.address || null;
-      const cached = getCachedPriceAttrs(tokenId, contractAddr);
-      let attrs = Array.isArray(meta?.attributes) ? [...meta.attributes] : [];
-      if (cached) attrs = mergeAttrs(cached, attrs);
-
+  const enrichMetaWithPrices = React.useCallback(
+    async (_contract, tokenId, meta) => {
       try {
-        const tokenomicsReader =
-          getCachedReaderInstance("tokenomics") ||
-          getCachedReaderInstance("main") ||
-          getCachedReaderInstance("generic");
+        const contractAddr =
+          _contract?.target ||
+          _contract?.address ||
+          _contract?.runner?.address ||
+          null;
+        const cached = getCachedPriceAttrs(tokenId, contractAddr);
+        let attrs = Array.isArray(meta?.attributes) ? [...meta.attributes] : [];
+        if (cached) attrs = mergeAttrs(cached, attrs);
 
-        if (tokenomicsReader?.getMintDataByTokenId) {
-          const [tp, bp, fp] = await tokenomicsReader.getMintDataByTokenId(
-            BigInt(String(tokenId))
-          );
+        try {
+          const tokenomicsReader =
+            getCachedReaderInstance("tokenomics") ||
+            getCachedReaderInstance("main") ||
+            getCachedReaderInstance("generic");
 
-          const ticket = toNumEth(tp);
-          const blockP = toNumEth(bp);
-          const finalP = toNumEth(fp);
+          if (tokenomicsReader?.getMintDataByTokenId) {
+            const [tp, bp, fp] = await tokenomicsReader.getMintDataByTokenId(
+              BigInt(String(tokenId)),
+            );
 
-          const pushOrReplace = (trait_type, value) => {
-            const i = attrs.findIndex((a) => String(a?.trait_type) === trait_type);
-            const v = value != null ? `${value.toFixed(4)} POL` : "â€”";
-            if (i === -1) attrs.push({ trait_type, value: v });
-            else attrs[i] = { ...attrs[i], value: v };
-          };
+            const ticket = toNumEth(tp);
+            const blockP = toNumEth(bp);
+            const finalP = toNumEth(fp);
 
-          pushOrReplace("Ticket Price", ticket);
-          pushOrReplace("Block Price", blockP);
-          pushOrReplace("Final Price", finalP);
+            const pushOrReplace = (trait_type, value) => {
+              const i = attrs.findIndex(
+                (a) => String(a?.trait_type) === trait_type,
+              );
+              const v = value != null ? `${value.toFixed(4)} POL` : "-";
+              if (i === -1) attrs.push({ trait_type, value: v });
+              else attrs[i] = { ...attrs[i], value: v };
+            };
 
-          setCachedPriceAttrs(tokenId, attrs, contractAddr);
-        }
-      } catch {}
+            pushOrReplace("Ticket Price", ticket);
+            pushOrReplace("Block Price", blockP);
+            pushOrReplace("Final Price", finalP);
 
-      return { ...(meta || {}), attributes: attrs };
-    } catch {
-      return meta;
-    }
-  }, []);
+            setCachedPriceAttrs(tokenId, attrs, contractAddr);
+          }
+        } catch {}
+
+        return { ...(meta || {}), attributes: attrs };
+      } catch {
+        return meta;
+      }
+    },
+    [],
+  );
 
   const fetchDynamicTraitsFor = React.useCallback(
     async (nft) => {
@@ -2341,7 +3116,8 @@ export default function AppCore() {
           getCachedReaderInstance("tokenomics") ||
           getCachedReaderInstance("generic");
 
-        if (!reader || typeof reader.getMintDataByTokenId !== "function") return;
+        if (!reader || typeof reader.getMintDataByTokenId !== "function")
+          return;
 
         const res = await reader.getMintDataByTokenId(BigInt(tokenId));
         const ticket = toNumEth(res?.[0]);
@@ -2377,37 +3153,6 @@ export default function AppCore() {
     const fromFilter = contract.filters.Transfer(addr, null, null);
 
     const scanLogs = async (fullHistory = false) => {
-      const logProvider = getArchiveProvider() || provider;
-      const direct = await (async () => {
-        try {
-          if (!logProvider || typeof logProvider.getLogs !== "function")
-            return null;
-          const address = toFilter?.address || contract?.target || contract?.address;
-          const [toLogs, fromLogs] = await Promise.all([
-            logProvider
-              .getLogs({
-                address,
-                topics: toFilter?.topics,
-                fromBlock: FROM,
-                toBlock: latest,
-              })
-              .catch(() => []),
-            logProvider
-              .getLogs({
-                address,
-                topics: fromFilter?.topics,
-                fromBlock: FROM,
-                toBlock: latest,
-              })
-              .catch(() => []),
-          ]);
-          return { toLogs, fromLogs };
-        } catch {
-          return null;
-        }
-      })();
-      if (direct) return direct;
-
       const opts = fullHistory ? { fullHistory: true } : undefined;
       const [toLogs, fromLogs] = await Promise.all([
         queryLogsBatched(contract, toFilter, FROM, latest, LOGS_BATCH, opts),
@@ -2416,7 +3161,7 @@ export default function AppCore() {
       return { toLogs, fromLogs };
     };
 
-    let { toLogs, fromLogs } = await scanLogs(false);
+    let { toLogs, fromLogs } = await scanLogs(true);
     if (!toLogs.length && !fromLogs.length) {
       let balance = null;
       try {
@@ -2503,382 +3248,361 @@ export default function AppCore() {
     return onlyTickets;
   }, []);
 
-  const fetchMyTickets = React.useCallback(async (addr) => {
-    try {
-      const contract = contractRef.current || getReadOnlyContract();
-      const reader = getCachedReaderInstance("main");
-
-      let ids = [];
+  const fetchMyTickets = React.useCallback(
+    async (addr) => {
       try {
-        if (reader && typeof reader.findTicket === "function") {
-          ids = await reader.findTicket(addr);
+        const contract = contractRef.current || getReadOnlyContract();
+        const reader = getCachedReaderInstance("main");
+        const provider = getProviderFor(contract);
+        const metaReadParallelism = getRpcReadParallelism(provider, 4);
+        let normalizedTicketBase = null;
+        try {
+          if (typeof contract?.ticketBaseURI === "function") {
+            const base = await contract.ticketBaseURI().catch(() => null);
+            if (base) normalizedTicketBase = normalizeBaseUri(base);
+          }
+        } catch {
+          normalizedTicketBase = null;
         }
-        if (!ids?.length && typeof contract.findTicket === "function") {
-          ids = await contract.findTicket(addr);
-        }
-        if (!ids?.length) {
+
+        let ids = [];
+        try {
+          if (reader && typeof reader.findTicket === "function") {
+            ids = await reader.findTicket(addr);
+          }
+          if (!ids?.length && typeof contract.findTicket === "function") {
+            ids = await contract.findTicket(addr);
+          }
+          if (!ids?.length) {
+            ids = await findTicketsViaLogs(contract, addr);
+          }
+        } catch {
           ids = await findTicketsViaLogs(contract, addr);
         }
-      } catch {
-        ids = await findTicketsViaLogs(contract, addr);
-      }
 
-      let ticketIds = ids;
-      if (typeof contract?.isTicket === "function" && Array.isArray(ids)) {
-        const filtered = [];
-        for (const id of ids) {
+        let ticketIds = ids;
+        if (typeof contract?.isTicket === "function" && Array.isArray(ids)) {
+          const filtered = [];
+          const maxSupplyHint = Number(maxSupply) || 550;
+          const maxTicketIdHint = BigInt(
+            Math.max(maxSupplyHint * 1000, 10_000),
+          );
+          for (const id of ids) {
+            const idStr = String(id?.toString?.() ?? id ?? "").trim();
+            if (!idStr) continue;
+            const idBI = toTokenIdBigIntSafe(idStr);
+            if (idBI == null || idBI <= 0n || idBI > maxTicketIdHint) continue;
+
+            let keep = true;
+            try {
+              const res = await contract.isTicket(id);
+              if (res != null) keep = coerceBool(res);
+            } catch {
+              const canonicalTicket = isCanonicalTicketTokenId(idStr);
+              const legacyMainIdx = toMainNftIndexFromTokenId(idStr, {
+                maxSupply: maxSupplyHint,
+                allowLegacy: true,
+              });
+              const isLegacyMainCandidate = legacyMainIdx != null;
+
+              if (canonicalTicket && isLegacyMainCandidate) {
+                let uriTry = null;
+                try {
+                  uriTry = await getTokenUriCached(contract, id);
+                } catch {
+                  uriTry = null;
+                }
+                keep = isTicketUri(uriTry, normalizedTicketBase);
+              } else {
+                // Non-ambiguous canonical IDs remain ticket candidates.
+                keep = canonicalTicket;
+              }
+            }
+            if (!keep) continue;
+            filtered.push(id);
+          }
+          ticketIds = filtered;
+        }
+
+        const metas = await mapLimit(
+          ticketIds,
+          metaReadParallelism,
+          async (idBN) => {
+            const id = idBN.toString();
+            let meta = {
+              name: "Biggi Mint Ticket",
+              description: `Redeem this ticket (#${id}) to mint a BiggiEyes NFT.`,
+            };
+            let image = PLACEHOLDER_IMAGE;
+
+            try {
+              const uri = await getTokenUriCached(contract, idBN);
+              const j = await readJsonFromURICached(uri);
+              if (j) {
+                meta = j;
+                const imgUrl = j?.image || j?.image_url;
+                image = (await resolveImageUrlCached(imgUrl, uri)) || image;
+              }
+            } catch {}
+
+            if (!image || image === PLACEHOLDER_IMAGE) {
+              image = ticketImageUrl();
+            }
+            if (!meta?.name || /^\d{8,}$/.test(String(meta.name))) {
+              meta = {
+                ...(meta || {}),
+                name: "Biggi Mint Ticket",
+              };
+            }
+
+            return {
+              tokenId: id,
+              image,
+              meta,
+              isTicket: true,
+              contractAddress: contract?.target || contract?.address || null,
+            };
+          },
+        );
+
+        return metas;
+      } catch (e) {
+        if (isTransientRpcReadError(e)) {
+          const wrapped = new Error("FETCH_TICKETS_RPC_UNAVAILABLE");
+          wrapped.cause = e;
+          throw wrapped;
+        }
+        console.error("fetchMyTickets", e);
+        return [];
+      }
+    },
+    [findTicketsViaLogs, maxSupply, isTransientRpcReadError],
+  );
+
+  const fetchOwnedNFTsViaTransfers = React.useCallback(
+    async (addr) => {
+      try {
+        const topicToAddress = (topic) => {
+          if (!topic || typeof topic !== "string") return "";
+          const hex = topic.startsWith("0x") ? topic.slice(2) : topic;
+          if (hex.length < 40) return "";
+          return `0x${hex.slice(hex.length - 40)}`;
+        };
+        const topicToBigInt = (topic) => {
+          if (!topic || typeof topic !== "string") return null;
           try {
-            const res = await contract.isTicket(id);
-            if (res != null && !coerceBool(res)) continue;
+            return BigInt(topic);
           } catch {
-            // ignore isTicket failures, keep id
+            return null;
           }
-          filtered.push(id);
-        }
-        ticketIds = filtered;
-      }
-
-      const metas = await mapLimit(ticketIds, 4, async (idBN) => {
-        const id = idBN.toString();
-        let meta = {
-          name: "Biggi Mint Ticket",
-          description: `Redeem this ticket (#${id}) to mint a BiggiEyes NFT.`,
         };
-        let image = PLACEHOLDER_IMAGE;
-
-        try {
-          const uri = await getTokenUriCached(contract, idBN);
-          const j = await readJsonFromURICached(uri);
-          if (j) {
-            meta = j;
-            const imgUrl = j?.image || j?.image_url;
-            image = (await resolveImageUrlCached(imgUrl, uri)) || image;
+        const toTokenId = (raw) => {
+          if (raw == null) return "";
+          try {
+            if (typeof raw === "bigint") return raw.toString();
+            if (typeof raw === "number") {
+              if (!Number.isFinite(raw) || raw < 0) return "";
+              return Math.trunc(raw).toString();
+            }
+            if (typeof raw === "string") {
+              const s = raw.trim();
+              if (!s) return "";
+              if (/^\d+$/.test(s)) return s;
+              return BigInt(s).toString();
+            }
+            if (typeof raw?.toString === "function") {
+              const s = raw.toString();
+              if (!s) return "";
+              if (/^\d+$/.test(s)) return s;
+              return BigInt(s).toString();
+            }
+          } catch {
+            return "";
           }
-        } catch {}
-
-        if (!image || image === PLACEHOLDER_IMAGE) {
-          image = ticketImageUrl();
-        }
-        if (!meta?.name || /^\d{8,}$/.test(String(meta.name))) {
-          meta = {
-            ...(meta || {}),
-            name: "Biggi Mint Ticket",
-          };
-        }
-
-        return {
-          tokenId: id,
-          image,
-          meta,
-          isTicket: true,
-          contractAddress: contract?.target || contract?.address || null,
-        };
-      });
-
-      return metas;
-    } catch (e) {
-      console.error("fetchMyTickets", e);
-      return [];
-    }
-  }, [findTicketsViaLogs]);
-
-  const fetchOwnedNFTsViaTransfers = React.useCallback(async (addr) => {
-    try {
-      const topicToAddress = (topic) => {
-        if (!topic || typeof topic !== "string") return "";
-        const hex = topic.startsWith("0x") ? topic.slice(2) : topic;
-        if (hex.length < 40) return "";
-        return `0x${hex.slice(hex.length - 40)}`;
-      };
-      const topicToBigInt = (topic) => {
-        if (!topic || typeof topic !== "string") return null;
-        try {
-          return BigInt(topic);
-        } catch {
-          return null;
-        }
-      };
-      const toTokenId = (raw) => {
-        if (raw == null) return "";
-        try {
-          if (typeof raw === "bigint") return raw.toString();
-          if (typeof raw === "number") {
-            if (!Number.isFinite(raw) || raw < 0) return "";
-            return Math.trunc(raw).toString();
-          }
-          if (typeof raw === "string") {
-            const s = raw.trim();
-            if (!s) return "";
-            if (/^\d+$/.test(s)) return s;
-            return BigInt(s).toString();
-          }
-          if (typeof raw?.toString === "function") {
-            const s = raw.toString();
-            if (!s) return "";
-            if (/^\d+$/.test(s)) return s;
-            return BigInt(s).toString();
-          }
-        } catch {
           return "";
-        }
-        return "";
-      };
-      const hasPositiveBalance = (value) => {
-        try {
-          if (value == null) return false;
-          return BigInt(value.toString()) > 0n;
-        } catch {
-          return false;
-        }
-      };
-      const uniqIds = (list) => {
-        const out = [];
-        const seen = new Set();
-        for (const raw of Array.isArray(list) ? list : []) {
-          const id = toTokenId(raw);
-          if (!id || seen.has(id)) continue;
-          seen.add(id);
-          out.push(id);
-        }
-        return out;
-      };
-
-      const getProviderSafe = async () => {
-        let c = contractRef.current || getReadOnlyContract();
-        let p = getProviderFor(c);
-        if (!p) throw new Error("Provider not available");
-        try {
-          const latestBlock = await p.getBlockNumber();
-          return { contract: c, provider: p, latest: latestBlock };
-        } catch (err) {
-          // RPC failed (CORS / offline). Reset and retry once with a fresh provider.
-          clearPreferredRpc();
+        };
+        const hasPositiveBalance = (value) => {
           try {
-            await ensurePreferredRpc();
+            if (value == null) return false;
+            return BigInt(value.toString()) > 0n;
           } catch {
-            // ignore health probe failures
+            return false;
           }
-          resetROProvider();
-          c = getReadOnlyContract();
-          contractRef.current = c;
-          p = getProviderFor(c);
-          if (p) {
+        };
+        const uniqIds = (list) => {
+          const out = [];
+          const seen = new Set();
+          for (const raw of Array.isArray(list) ? list : []) {
+            const id = toTokenId(raw);
+            if (!id || seen.has(id)) continue;
+            seen.add(id);
+            out.push(id);
+          }
+          return out;
+        };
+
+        const getProviderSafe = async () => {
+          let c = contractRef.current || getReadOnlyContract();
+          let p = getProviderFor(c);
+          if (!p) throw new Error("Provider not available");
+          try {
             const latestBlock = await p.getBlockNumber();
             return { contract: c, provider: p, latest: latestBlock };
-          }
-          // Final fallback: use archive RPC provider (if configured).
-          try {
-            const archive = getArchiveProvider();
-            if (!archive) throw err;
-            const latestBlock = await archive.getBlockNumber();
-            const archiveContract = c.connect(archive);
-            return {
-              contract: archiveContract,
-              provider: archive,
-              latest: latestBlock,
-            };
-          } catch {
-            throw err;
-          }
-        }
-      };
-
-      const { contract, provider, latest } = await getProviderSafe();
-      const me = String(addr || "").toLowerCase();
-
-      // Prefer reader-based owner token id queries if available (fast + avoids archive log scans).
-      // If this returns data, we only fall back to Transfer logs when necessary.
-      let tokenIdsFromReader = null;
-      try {
-        const reader = getCachedReaderInstance("main");
-        if (reader) {
-          if (typeof reader.getUserRewardTokenIds === "function") {
-            const res = await reader
-              .getUserRewardTokenIds(addr)
-              .catch(() => null);
-            if (Array.isArray(res) && res.length) tokenIdsFromReader = res;
-          }
-          if (
-            !tokenIdsFromReader &&
-            typeof reader.getUserTokenIds === "function"
-          ) {
-            const res = await reader.getUserTokenIds(addr).catch(() => null);
-            if (Array.isArray(res) && res.length) tokenIdsFromReader = res;
-          }
-          if (
-            !tokenIdsFromReader &&
-            typeof reader.tokensOfOwner === "function"
-          ) {
-            const res = await reader.tokensOfOwner(addr).catch(() => null);
-            if (Array.isArray(res) && res.length) tokenIdsFromReader = res;
-          }
-        }
-      } catch {
-        tokenIdsFromReader = null;
-      }
-
-      let ticketBaseUri = null;
-      try {
-        if (typeof contract.ticketBaseURI === "function") {
-          const base = await contract.ticketBaseURI().catch(() => null);
-          if (base) ticketBaseUri = String(base);
-        }
-      } catch {
-        ticketBaseUri = null;
-      }
-
-      const normalizedTicketBase = normalizeBaseUri(ticketBaseUri);
-      let tokenIds = uniqIds(tokenIdsFromReader);
-      let balance = null;
-      const readBalance = async () => {
-        if (balance != null) return balance;
-        try {
-          balance = await contract.balanceOf(addr);
-        } catch {
-          balance = null;
-        }
-        return balance;
-      };
-
-      if (!tokenIds.length) {
-        const FROM = await getSafeDeployBlock(provider);
-        const toFilter = contract.filters.Transfer(null, addr, null);
-        const fromFilter = contract.filters.Transfer(addr, null, null);
-
-        const scanLogs = async (fullHistory = false) => {
-          const logProvider = getArchiveProvider() || provider;
-          const direct = await (async () => {
-            try {
-              if (!logProvider || typeof logProvider.getLogs !== "function")
-                return null;
-              const address =
-                toFilter?.address || contract?.target || contract?.address;
-              const [toLogs, fromLogs] = await Promise.all([
-                logProvider
-                  .getLogs({
-                    address,
-                    topics: toFilter?.topics,
-                    fromBlock: FROM,
-                    toBlock: latest,
-                  })
-                  .catch(() => []),
-                logProvider
-                  .getLogs({
-                    address,
-                    topics: fromFilter?.topics,
-                    fromBlock: FROM,
-                    toBlock: latest,
-                  })
-                  .catch(() => []),
-              ]);
-              return { toLogs, fromLogs };
-            } catch {
-              return null;
-            }
-          })();
-          if (direct) return direct;
-
-          const opts = fullHistory ? { fullHistory: true } : undefined;
-          try {
-            const [toLogs, fromLogs] = await Promise.all([
-              queryLogsBatched(
-                contract,
-                toFilter,
-                FROM,
-                latest,
-                LOGS_BATCH,
-                opts,
-              ),
-              queryLogsBatched(
-                contract,
-                fromFilter,
-                FROM,
-                latest,
-                LOGS_BATCH,
-                opts,
-              ),
-            ]);
-            return { toLogs, fromLogs };
           } catch (err) {
-            // If RO provider blocks getLogs, retry via archive RPC provider.
-            const archive = getArchiveProvider();
-            if (!archive) throw err;
-            const archiveLatest = await archive
-              .getBlockNumber()
-              .catch(() => latest);
-            const archiveContract = contract.connect(archive);
-            const toFilterArchive = archiveContract.filters.Transfer(
-              null,
-              addr,
-              null,
-            );
-            const fromFilterArchive = archiveContract.filters.Transfer(
-              addr,
-              null,
-              null,
-            );
-            const [toLogs, fromLogs] = await Promise.all([
-              queryLogsBatched(
-                archiveContract,
-                toFilterArchive,
-                FROM,
-                archiveLatest,
-                LOGS_BATCH,
-                opts,
-              ),
-              queryLogsBatched(
-                archiveContract,
-                fromFilterArchive,
-                FROM,
-                archiveLatest,
-                LOGS_BATCH,
-                opts,
-              ),
-            ]);
-            return { toLogs, fromLogs };
+            // RPC failed (CORS / offline). Reset and retry once with a fresh provider.
+            clearPreferredRpc();
+            try {
+              await ensurePreferredRpc();
+            } catch {
+              // ignore health probe failures
+            }
+            resetROProvider();
+            c = getReadOnlyContract();
+            contractRef.current = c;
+            p = getProviderFor(c);
+            if (p) {
+              const latestBlock = await p.getBlockNumber();
+              return { contract: c, provider: p, latest: latestBlock };
+            }
+            // Final fallback: use archive RPC provider (if configured).
+            try {
+              const archive = getArchiveProvider();
+              if (!archive) throw err;
+              const latestBlock = await archive.getBlockNumber();
+              const archiveContract = c.connect(archive);
+              return {
+                contract: archiveContract,
+                provider: archive,
+                latest: latestBlock,
+              };
+            } catch {
+              throw err;
+            }
           }
         };
 
-        let { toLogs, fromLogs } = await scanLogs(false);
-        const bal = await readBalance();
-        const hasBalance = hasPositiveBalance(bal);
+        const { contract, provider, latest } = await getProviderSafe();
+        const me = String(addr || "").toLowerCase();
+        const batchLimitedRpc = isBatchLimitedRpc(provider);
+        const ownerOfFallbackEnv = String(
+          import.meta.env.VITE_ENABLE_OWNEROF_FALLBACK ?? "",
+        )
+          .trim()
+          .toLowerCase();
+        const enableOwnerOfFallbackProbe = ownerOfFallbackEnv
+          ? !["0", "false", "off", "no"].includes(ownerOfFallbackEnv)
+          : true;
+        const ownerProbeParallelism = getRpcReadParallelism(provider, 16);
+        const verifyParallelism = getRpcReadParallelism(provider, 8);
+        const ownerVerifyParallelism = batchLimitedRpc
+          ? getRpcReadParallelism(provider, 3)
+          : verifyParallelism;
+        const metadataParallelism = getRpcReadParallelism(provider, 4);
+        const maxSupplyHint = Number(maxSupply) || 550;
+        const canonicalMainUpper = Number(
+          BIGGI_ID_RANGES.BIGGI_OFFSET + BigInt(maxSupplyHint) - 1n,
+        );
+        const maxReasonableTokenId = BigInt(
+          Math.max(maxSupplyHint * 1000, 1_000_000),
+        );
+        const isPlausibleOwnedNftCandidateTokenId = (idRaw) => {
+          const bi = toTokenIdBigIntSafe(idRaw);
+          if (bi == null || bi <= 0n) return false;
+          if (bi > maxReasonableTokenId) return false;
+          const legacyMainIdx = toMainNftIndexFromTokenId(idRaw, {
+            maxSupply: maxSupplyHint,
+            allowLegacy: true,
+          });
+          if (legacyMainIdx != null) return true;
+          if (isCanonicalTicketTokenId(idRaw)) return false;
+          return true;
+        };
 
-        if (!toLogs.length && !fromLogs.length) {
-          const shouldRetry = hasBalance || bal == null;
-          if (shouldRetry && getArchiveProvider()) {
-            ({ toLogs, fromLogs } = await scanLogs(true));
+        // Prefer reader-based owner token id queries if available (fast + avoids archive log scans).
+        // If this returns data, we only fall back to Transfer logs when necessary.
+        let tokenIdsFromReader = null;
+        try {
+          const reader = getCachedReaderInstance("main");
+          if (reader) {
+            if (typeof reader.getUserRewardTokenIds === "function") {
+              const res = await reader
+                .getUserRewardTokenIds(addr)
+                .catch(() => null);
+              if (Array.isArray(res) && res.length) tokenIdsFromReader = res;
+            }
+            if (
+              !tokenIdsFromReader &&
+              typeof reader.getUserTokenIds === "function"
+            ) {
+              const res = await reader.getUserTokenIds(addr).catch(() => null);
+              if (Array.isArray(res) && res.length) tokenIdsFromReader = res;
+            }
+            if (
+              !tokenIdsFromReader &&
+              typeof reader.tokensOfOwner === "function"
+            ) {
+              const res = await reader.tokensOfOwner(addr).catch(() => null);
+              if (Array.isArray(res) && res.length) tokenIdsFromReader = res;
+            }
+          }
+        } catch {
+          tokenIdsFromReader = null;
+        }
+
+        let ticketBaseUri = null;
+        try {
+          if (typeof contract.ticketBaseURI === "function") {
+            const base = await contract.ticketBaseURI().catch(() => null);
+            if (base) ticketBaseUri = String(base);
+          }
+        } catch {
+          ticketBaseUri = null;
+        }
+
+        const normalizedTicketBase = normalizeBaseUri(ticketBaseUri);
+        const rawReaderTokenIds = uniqIds(tokenIdsFromReader);
+        let tokenIds = rawReaderTokenIds.filter(
+          isPlausibleOwnedNftCandidateTokenId,
+        );
+        if (rawReaderTokenIds.length && !tokenIds.length) {
+          console.warn(
+            "fetchOwnedNFTsViaTransfers: reader returned only implausible token IDs; falling back to owner/log scans",
+            rawReaderTokenIds.slice(0, 5),
+          );
+        }
+        if (tokenIds.length && typeof contract?.ownerOf === "function") {
+          const sample = tokenIds.slice(0, Math.min(tokenIds.length, 6));
+          const sampleChecks = await mapLimit(
+            sample,
+            getRpcReadParallelism(provider, 4),
+            async (id) => {
+              try {
+                const owner = await contract.ownerOf(id);
+                return String(owner || "").toLowerCase() === me;
+              } catch {
+                return false;
+              }
+            },
+          );
+          if (!sampleChecks.some(Boolean)) {
+            console.warn(
+              "fetchOwnedNFTsViaTransfers: reader token IDs failed ownerOf sample check; falling back to owner/log scans",
+            );
+            tokenIds = [];
           }
         }
+        let balance = null;
+        const readBalance = async () => {
+          if (balance != null) return balance;
+          try {
+            balance = await contract.balanceOf(addr);
+          } catch {
+            balance = null;
+          }
+          return balance;
+        };
 
-        const all = [...toLogs, ...fromLogs].sort((a, b) => {
-          if (a.blockNumber !== b.blockNumber)
-            return a.blockNumber - b.blockNumber;
-          return a.logIndex - b.logIndex;
-        });
-
-        const held = new Set();
-        for (const l of all) {
-          const args = l.args;
-          const topicFrom = topicToAddress(l?.topics?.[1]);
-          const topicTo = topicToAddress(l?.topics?.[2]);
-          const topicToken = topicToBigInt(l?.topics?.[3]);
-
-          const from = String(
-            (topicFrom || safeLogArg(args, "from", 0) || "") ?? "",
-          ).toLowerCase();
-          const to = String(
-            (topicTo || safeLogArg(args, "to", 1) || "") ?? "",
-          ).toLowerCase();
-
-          const tokenId = toTokenId(topicToken ?? safeLogArg(args, "tokenId", 2));
-          if (!tokenId) continue;
-          if (to === me) held.add(tokenId);
-          if (from === me) held.delete(tokenId);
-        }
-
-        tokenIds = Array.from(held);
-
-        if (!tokenIds.length && hasBalance) {
+        const collectOwnedViaDirectOwnerReads = async () => {
           const directIds = [];
           if (typeof contract.tokensOfOwner === "function") {
             try {
@@ -2890,7 +3614,10 @@ export default function AppCore() {
               // ignore tokensOfOwner errors
             }
           }
-          if (!directIds.length && typeof contract.walletOfOwner === "function") {
+          if (
+            !directIds.length &&
+            typeof contract.walletOfOwner === "function"
+          ) {
             try {
               const res = await contract.walletOfOwner(addr);
               if (Array.isArray(res) && res.length) {
@@ -2905,23 +3632,36 @@ export default function AppCore() {
             typeof contract.tokenOfOwnerByIndex === "function"
           ) {
             try {
-              const balLocal = BigInt((await readBalance())?.toString?.() || "0");
-              for (let i = 0n; i < balLocal; i += 1n) {
-                const id = await contract.tokenOfOwnerByIndex(addr, i).catch(
-                  () => null,
-                );
+              const balLocal = BigInt(
+                (await readBalance())?.toString?.() || "0",
+              );
+              const maxEnumerate = batchLimitedRpc ? 120n : 400n;
+              const scanCount =
+                balLocal > maxEnumerate ? maxEnumerate : balLocal;
+              for (let i = 0n; i < scanCount; i += 1n) {
+                const id = await contract
+                  .tokenOfOwnerByIndex(addr, i)
+                  .catch(() => null);
                 if (id != null) directIds.push(id);
+              }
+              if (balLocal > scanCount) {
+                console.debug(
+                  "fetchOwnedNFTsViaTransfers: tokenOfOwnerByIndex capped",
+                  {
+                    address: addr,
+                    balance: balLocal.toString(),
+                    scanned: scanCount.toString(),
+                  },
+                );
               }
             } catch {
               // ignore tokenOfOwnerByIndex errors
             }
           }
-          tokenIds = uniqIds(directIds);
-        }
+          return uniqIds(directIds).filter(isPlausibleOwnedNftCandidateTokenId);
+        };
 
-        // Last-resort fallback for RPCs that reject / trim logs:
-        // scan ownerOf over known minted range (cheap here, collection is small).
-        if (!tokenIds.length && hasBalance && typeof contract.ownerOf === "function") {
+        const deriveOwnerScanUpperBound = async (balanceHintRaw) => {
           let upperBound = 0;
           const upperFns = [
             "ticketMinted",
@@ -2940,565 +3680,1413 @@ export default function AppCore() {
               // ignore getter errors
             }
           }
-          try {
-            const balNum = Number(
-              BigInt((await readBalance())?.toString?.() || "0"),
-            );
-            if (!Number.isFinite(upperBound) || upperBound <= 0) {
-              upperBound = Math.max(50, balNum * 16);
-            }
-            upperBound = Math.max(upperBound, balNum);
-          } catch {
-            if (!Number.isFinite(upperBound) || upperBound <= 0) upperBound = 550;
-          }
-          upperBound = Math.max(1, Math.min(Math.trunc(upperBound), 2500));
 
-          const idsToProbe = Array.from({ length: upperBound }, (_, i) =>
-            String(i + 1),
-          );
+          const fallbackMaxSupply = Number(maxSupply) || 550;
+          upperBound = Math.max(upperBound, fallbackMaxSupply);
+          if (Number.isFinite(canonicalMainUpper) && canonicalMainUpper > 0) {
+            upperBound = Math.max(upperBound, canonicalMainUpper);
+          }
+          try {
+            const balNum = Number(BigInt(balanceHintRaw?.toString?.() || "0"));
+            if (Number.isFinite(balNum) && balNum > 0) {
+              upperBound = Math.max(upperBound, balNum);
+            }
+          } catch {
+            // ignore balance parse errors
+          }
+          return Math.max(1, Math.min(Math.trunc(upperBound), 2500));
+        };
+
+        const probeOwnedViaOwnerOf = async (upperBound, expectedCount = 0) => {
+          if (typeof contract?.ownerOf !== "function") return [];
           const owned = new Set();
-          await mapLimit(idsToProbe, 16, async (id) => {
-            try {
-              const owner = await contract.ownerOf(id);
-              if (String(owner || "").toLowerCase() === me) owned.add(id);
-            } catch {
-              // token not minted or RPC rejected this id
+          const chunk = Math.max(1, ownerProbeParallelism);
+          const highShare = Math.max(1, Math.ceil(chunk / 2));
+          const lowShare = Math.max(0, chunk - highShare);
+          const probeStartedAt = Date.now();
+          const probeBudgetMs = batchLimitedRpc ? 20_000 : 35_000;
+          let hi = upperBound;
+          let lo = 1;
+
+          while (lo <= hi) {
+            if (expectedCount > 0 && owned.size >= expectedCount) break;
+            if (Date.now() - probeStartedAt > probeBudgetMs) break;
+            const ids = [];
+            for (let i = 0; i < highShare && hi >= lo; i += 1) {
+              ids.push(String(hi));
+              hi -= 1;
             }
-          });
-          tokenIds = Array.from(owned);
-        }
-      }
-
-      tokenIds = uniqIds(tokenIds);
-
-      if (tokenIds.length && typeof contract?.ownerOf === "function") {
-        const verified = await mapLimit(tokenIds, 8, async (id) => {
-          try {
-            const owner = await contract.ownerOf(id);
-            if (String(owner || "").toLowerCase() === me) return id;
-          } catch {
-            // ownerOf reverts for nonexistent/burned tokens
-          }
-          return null;
-        });
-        tokenIds = verified.filter(Boolean);
-      }
-
-      if (!tokenIds.length) {
-        const balAfter = await readBalance();
-        const hasBalanceAfter = hasPositiveBalance(balAfter);
-        if (hasBalanceAfter && typeof contract.ownerOf === "function") {
-          let upperBound = 0;
-          const upperFns = [
-            "ticketMinted",
-            "biggiMinted",
-            "tokenMinted",
-            "totalSupply",
-          ];
-          for (const fn of upperFns) {
-            if (typeof contract?.[fn] !== "function") continue;
-            try {
-              const raw = await contract[fn]();
-              const id = toTokenId(raw);
-              if (!id) continue;
-              upperBound = Math.max(upperBound, Number(id));
-            } catch {
-              // ignore getter errors
+            for (let i = 0; i < lowShare && lo <= hi; i += 1) {
+              ids.push(String(lo));
+              lo += 1;
             }
-          }
-          try {
-            const balNum = Number(
-              BigInt((balAfter)?.toString?.() || "0"),
-            );
-            if (!Number.isFinite(upperBound) || upperBound <= 0) {
-              upperBound = Math.max(50, balNum * 16);
-            }
-            upperBound = Math.max(upperBound, balNum);
-          } catch {
-            if (!Number.isFinite(upperBound) || upperBound <= 0) upperBound = 550;
-          }
-          upperBound = Math.max(1, Math.min(Math.trunc(upperBound), 2500));
-
-          const idsToProbe = Array.from({ length: upperBound }, (_, i) =>
-            String(i + 1),
-          );
-          const owned = new Set();
-          await mapLimit(idsToProbe, 16, async (id) => {
-            try {
-              const owner = await contract.ownerOf(id);
-              if (String(owner || "").toLowerCase() === me) owned.add(id);
-            } catch {
-              // token not minted or RPC rejected this id
-            }
-          });
-          tokenIds = Array.from(owned);
-        }
-      }
-      if (!tokenIds.length) {
-        saveWalletCache(addr, []);
-        return [];
-      }
-
-      const metas = await mapLimit(tokenIds, 4, async (tid) => {
-        let isT = null;
-        try {
-          if (typeof contract?.isTicket === "function") {
-            isT = coerceBool(await contract.isTicket(tid));
-          }
-        } catch {
-          isT = null;
-        }
-
-        let info = null;
-        let infoMinted = null;
-        let infoParsed = null;
-        try {
-          const infoRead = await readNftInfoBestEffort(
-            contract,
-            tid,
-            Number(maxSupply) || 550,
-          );
-          if (infoRead) {
-            info = infoRead.info;
-            infoMinted = infoRead.minted;
-            infoParsed = infoRead.parsed;
-          }
-        } catch {
-          info = null;
-          infoMinted = null;
-          infoParsed = null;
-        }
-
-        let uri = null;
-        let j = null;
-        try {
-          uri = await getTokenUriCached(contract, tid);
-          if (uri) j = await readJsonFromURICached(uri);
-        } catch {
-          uri = null;
-          j = null;
-        }
-
-        const uriLooksTicket = isTicketUri(uri, normalizedTicketBase);
-        let metaLooksTicket = looksLikeTicketMeta(j);
-        let metaLooksNft = looksLikeNftMeta(j);
-        const ticketHint =
-          uriLooksTicket || (metaLooksTicket && !metaLooksNft) || infoMinted === false;
-
-        if (isT == null && ticketHint) isT = true;
-
-        if (isT && metaLooksNft) isT = false;
-        if (isT && uri && !uriLooksTicket) isT = false;
-        if (isT && infoMinted === true) isT = false;
-
-        // Ticket -> NFT transition can lag a few blocks and often keeps the same tokenId.
-        // Force refresh whenever metadata still looks like a ticket (or ticket flag is true).
-        if (isT || uriLooksTicket || metaLooksTicket) {
-          try {
-            const freshUri = await getTokenUriCached(contract, tid, {
-              force: true,
-            });
-            if (freshUri && freshUri !== uri) {
-              uri = freshUri;
-              j = await readJsonFromURICached(uri, { force: true });
-            } else if (uri) {
-              j = await readJsonFromURICached(uri, { force: true });
-            }
-          } catch {
-            // ignore forced refresh errors
-          }
-          metaLooksTicket = looksLikeTicketMeta(j);
-          metaLooksNft = looksLikeNftMeta(j);
-          const refreshedTicketHint =
-            uriLooksTicket ||
-            (metaLooksTicket && !metaLooksNft) ||
-            infoMinted === false;
-          if (isT == null && refreshedTicketHint) isT = true;
-          if (isT && metaLooksNft) isT = false;
-        }
-
-        const finalIsTicket = Boolean(isT && !metaLooksNft);
-        if (!finalIsTicket && infoMinted === false && !uri && !j) {
-          // Keep a placeholder entry instead of dropping owned NFTs when RPC metadata fails.
-        }
-        let meta = {};
-        let image = PLACEHOLDER_IMAGE;
-        try {
-          const contractAddr =
-            contract?.target || contract?.address || contract?.runner?.address || null;
-          const cached = getCachedPriceAttrs(tid, contractAddr);
-          const base =
-            j ||
-            (finalIsTicket
-              ? {
-                  name: `Ticket #${tid}`,
-                  description: "Redeem this ticket to mint a BiggiEyes NFT.",
+            if (!ids.length) break;
+            const probed = await Promise.all(
+              ids.map(async (id) => {
+                try {
+                  const owner = await contract.ownerOf(id);
+                  if (String(owner || "").toLowerCase() === me) return id;
+                } catch {
+                  // token not minted / inaccessible / provider rejected
                 }
-              : {
-                  name: `Biggi NFT #${tid}`,
-                  description: "Metadata is updating on-chain.",
-                });
-
-          if (!finalIsTicket && metaLooksTicket && !metaLooksNft) {
-            base.name = `Biggi NFT #${tid}`;
-            base.description = "Metadata is updating on-chain.";
+                return null;
+              }),
+            );
+            for (const id of probed) {
+              if (id) owned.add(id);
+            }
           }
-          if (finalIsTicket && !looksLikeTicketMeta(base)) {
-            base.name = `Ticket #${tid}`;
-            base.description = "Redeem this ticket to mint a BiggiEyes NFT.";
-          }
+          return Array.from(owned);
+        };
 
-          if (finalIsTicket) {
-            meta = base;
-          } else {
-            base.attributes = mergeAttrs(cached, base.attributes);
-            meta = await enrichMetaWithPrices(contract, tid, base);
+        if (!tokenIds.length) {
+          const balBeforeLogs = await readBalance();
+          if (hasPositiveBalance(balBeforeLogs)) {
+            tokenIds = await collectOwnedViaDirectOwnerReads();
+            if (
+              !tokenIds.length &&
+              enableOwnerOfFallbackProbe &&
+              typeof contract.ownerOf === "function"
+            ) {
+              const expectedCount = (() => {
+                try {
+                  return Number(BigInt(balBeforeLogs?.toString?.() || "0"));
+                } catch {
+                  return 0;
+                }
+              })();
+              const upperBound = await deriveOwnerScanUpperBound(balBeforeLogs);
+              tokenIds = await probeOwnedViaOwnerOf(upperBound, expectedCount);
+            }
           }
-
-          const imgUrl = j?.image || j?.image_url;
-          image = (await resolveImageUrlCached(imgUrl, uri)) || image;
-          // For tickets, keep the resolved ticket image when available.
-        } catch {
-          // keep fallback
         }
 
-        if (!finalIsTicket) {
-          let needsImageFallback = !image || image === PLACEHOLDER_IMAGE;
-          let needsAttrsFallback =
-            !meta ||
-            !Array.isArray(meta.attributes) ||
-            meta.attributes.length === 0;
+        if (!tokenIds.length) {
+          const FROM = await getSafeDeployBlock(provider);
+          const toFilter = contract.filters.Transfer(null, addr, null);
+          const fromFilter = contract.filters.Transfer(addr, null, null);
 
-          if ((needsImageFallback || needsAttrsFallback) && uri) {
-            const parsed = parseTokenUriParts(uri);
-            if (parsed) {
-              const { mainId, blockName, bgCode } = parsed;
-              const bgName = bgNameFromCode(bgCode) || bgCode;
-              if (needsImageFallback && blockName && bgCode && mainId) {
-                const fileName = `Biggi_${mainId}_${blockName}_${bgCode}.png`;
-                const fallbackImage = buildBlockImageUrl(blockName, fileName);
-                if (fallbackImage) image = fallbackImage;
-              }
-              if (needsAttrsFallback && (blockName || bgName)) {
-                const attrs = mergeAttrs(meta?.attributes, [
-                  blockName
-                    ? { trait_type: "Block", value: blockName }
-                    : null,
-                  bgName
-                    ? { trait_type: "Background", value: bgName }
-                    : null,
-                ].filter(Boolean));
-                meta = { ...(meta || {}), attributes: attrs };
-              }
-              if (!meta?.name) {
-                meta = { ...(meta || {}), name: `Biggi NFT #${mainId}` };
-              }
+          const scanLogs = async (fullHistory = false) => {
+            const opts = fullHistory ? { fullHistory: true } : undefined;
+            try {
+              const [toLogs, fromLogs] = await Promise.all([
+                queryLogsBatched(
+                  contract,
+                  toFilter,
+                  FROM,
+                  latest,
+                  LOGS_BATCH,
+                  opts,
+                ),
+                queryLogsBatched(
+                  contract,
+                  fromFilter,
+                  FROM,
+                  latest,
+                  LOGS_BATCH,
+                  opts,
+                ),
+              ]);
+              return { toLogs, fromLogs };
+            } catch (err) {
+              // If RO provider blocks getLogs, retry via archive RPC provider.
+              const archive = getArchiveProvider();
+              if (!archive) throw err;
+              const archiveLatest = await archive
+                .getBlockNumber()
+                .catch(() => latest);
+              const archiveContract = contract.connect(archive);
+              const toFilterArchive = archiveContract.filters.Transfer(
+                null,
+                addr,
+                null,
+              );
+              const fromFilterArchive = archiveContract.filters.Transfer(
+                addr,
+                null,
+                null,
+              );
+              const [toLogs, fromLogs] = await Promise.all([
+                queryLogsBatched(
+                  archiveContract,
+                  toFilterArchive,
+                  FROM,
+                  archiveLatest,
+                  LOGS_BATCH,
+                  opts,
+                ),
+                queryLogsBatched(
+                  archiveContract,
+                  fromFilterArchive,
+                  FROM,
+                  archiveLatest,
+                  LOGS_BATCH,
+                  opts,
+                ),
+              ]);
+              return { toLogs, fromLogs };
             }
-            needsImageFallback = !image || image === PLACEHOLDER_IMAGE;
-            needsAttrsFallback =
-              !meta ||
-              !Array.isArray(meta.attributes) ||
-              meta.attributes.length === 0;
+          };
+
+          let { toLogs, fromLogs } = await scanLogs(false);
+          const bal = await readBalance();
+          const hasBalance = hasPositiveBalance(bal);
+
+          if (!toLogs.length && !fromLogs.length) {
+            const shouldRetry = hasBalance || bal == null;
+            if (
+              shouldRetry &&
+              getArchiveProvider() &&
+              enableOwnerOfFallbackProbe
+            ) {
+              ({ toLogs, fromLogs } = await scanLogs(true));
+            }
           }
 
-          if ((needsImageFallback || needsAttrsFallback) && info) {
+          const all = [...toLogs, ...fromLogs].sort((a, b) => {
+            if (a.blockNumber !== b.blockNumber)
+              return a.blockNumber - b.blockNumber;
+            return a.logIndex - b.logIndex;
+          });
+
+          const held = new Set();
+          for (const l of all) {
+            const args = l.args;
+            const topicFrom = topicToAddress(l?.topics?.[1]);
+            const topicTo = topicToAddress(l?.topics?.[2]);
+            const topicToken = topicToBigInt(l?.topics?.[3]);
+
+            const from = String(
+              (topicFrom || safeLogArg(args, "from", 0) || "") ?? "",
+            ).toLowerCase();
+            const to = String(
+              (topicTo || safeLogArg(args, "to", 1) || "") ?? "",
+            ).toLowerCase();
+
+            const tokenId = toTokenId(
+              topicToken ?? safeLogArg(args, "tokenId", 2),
+            );
+            if (!tokenId) continue;
+            if (to === me) held.add(tokenId);
+            if (from === me) held.delete(tokenId);
+          }
+
+          tokenIds = Array.from(held);
+
+          if (!tokenIds.length && hasBalance) {
+            tokenIds = await collectOwnedViaDirectOwnerReads();
+          }
+
+          // Last-resort fallback for providers where transfer logs are not usable:
+          // probe ownerOf from newest IDs first and stop once expected balance is found.
+          if (
+            enableOwnerOfFallbackProbe &&
+            !tokenIds.length &&
+            hasBalance &&
+            typeof contract.ownerOf === "function"
+          ) {
+            const balNow = await readBalance();
+            const expectedCount = (() => {
+              try {
+                return Number(BigInt(balNow?.toString?.() || "0"));
+              } catch {
+                return 0;
+              }
+            })();
+            const upperBound = await deriveOwnerScanUpperBound(balNow);
+            tokenIds = await probeOwnedViaOwnerOf(upperBound, expectedCount);
+          }
+        }
+
+        tokenIds = uniqIds(tokenIds);
+
+        if (tokenIds.length && typeof contract?.ownerOf === "function") {
+          const verified = await mapLimit(
+            tokenIds,
+            ownerVerifyParallelism,
+            async (id) => {
+              try {
+                const owner = await contract.ownerOf(id);
+                if (String(owner || "").toLowerCase() === me) return id;
+              } catch {
+                // ownerOf reverts for nonexistent/burned tokens
+              }
+              return null;
+            },
+          );
+          tokenIds = verified.filter(Boolean);
+        }
+
+        if (enableOwnerOfFallbackProbe && !tokenIds.length) {
+          const balAfter = await readBalance();
+          const hasBalanceAfter = hasPositiveBalance(balAfter);
+          if (hasBalanceAfter && typeof contract.ownerOf === "function") {
+            const expectedCount = (() => {
+              try {
+                return Number(BigInt(balAfter?.toString?.() || "0"));
+              } catch {
+                return 0;
+              }
+            })();
+            const upperBound = await deriveOwnerScanUpperBound(balAfter);
+            tokenIds = await probeOwnedViaOwnerOf(upperBound, expectedCount);
+          }
+        }
+        if (
+          enableOwnerOfFallbackProbe &&
+          typeof contract?.ownerOf === "function"
+        ) {
+          const balAfterVerify = await readBalance();
+          const expectedCount = (() => {
             try {
-              const parsed = infoParsed || parseNftInfo(info);
+              return Number(BigInt(balAfterVerify?.toString?.() || "0"));
+            } catch {
+              return 0;
+            }
+          })();
+          const mismatch =
+            Number.isFinite(expectedCount) &&
+            expectedCount >= 0 &&
+            tokenIds.length !== expectedCount;
+          if (mismatch && expectedCount > 0) {
+            const upperBound = await deriveOwnerScanUpperBound(balAfterVerify);
+            const reconciled = await probeOwnedViaOwnerOf(
+              upperBound,
+              expectedCount,
+            );
+            if (Array.isArray(reconciled) && reconciled.length) {
+              tokenIds = uniqIds(reconciled);
+            }
+          }
+        }
+        if (!tokenIds.length) {
+          saveWalletCache(addr, []);
+          return [];
+        }
+
+        const metadataHydrateLimit = batchLimitedRpc ? 10 : 20;
+        const perTokenHydrateTimeoutMs = batchLimitedRpc ? 1_800 : 3_000;
+        const toDisplayMainId = (tokenId) => {
+          const idx = toMainNftIndexFromTokenId(tokenId, {
+            maxSupply: maxSupplyHint,
+            allowLegacy: true,
+          });
+          return idx != null ? String(idx) : String(tokenId);
+        };
+        const buildFallbackOwnedItem = (tokenId) => ({
+          tokenId: String(tokenId),
+          image: PLACEHOLDER_IMAGE,
+          meta: {
+            name: `Biggi NFT #${toDisplayMainId(tokenId)}`,
+            description: "Metadata is updating on-chain.",
+          },
+          isTicket: false,
+          contractAddress: contract?.target || contract?.address || null,
+        });
+        const findMetaAttrValue = (meta, names = []) => {
+          const attrs = Array.isArray(meta?.attributes) ? meta.attributes : [];
+          const keySet = new Set(
+            names.map((name) => String(name || "").toLowerCase()),
+          );
+          const hit = attrs.find((entry) =>
+            keySet.has(
+              String(entry?.trait_type || entry?.traitType || "").toLowerCase(),
+            ),
+          );
+          return hit?.value ?? null;
+        };
+        const buildLightweightOwnedItem = async (tokenId) => {
+          const fallbackItem = buildFallbackOwnedItem(tokenId);
+          const displayMainId = toDisplayMainId(tokenId);
+          let blockName = "";
+          let backgroundName = "";
+          let bgCode = "";
+          let mainId = displayMainId;
+
+          try {
+            const infoRead = await readNftInfoBestEffort(
+              contract,
+              tokenId,
+              maxSupplyHint,
+            );
+            const parsed = infoRead?.parsed || parseNftInfo(infoRead?.info);
+            if (parsed) {
+              blockName = String(parsed.blockName || "").trim().toUpperCase();
+              backgroundName = String(parsed.bgName || "").trim().toUpperCase();
+              bgCode = String(parsed.bgCode || "").trim().toUpperCase();
+              mainId =
+                normalizeMainImageId(parsed.mainId, tokenId, maxSupplyHint) ||
+                displayMainId;
+            }
+          } catch {
+            // ignore nftInfo fallback errors for lightweight items
+          }
+
+          if (!blockName || !backgroundName || !bgCode) {
+            try {
+              const uri = await getTokenUriCached(contract, tokenId);
+              const parsed = parseTokenUriParts(uri);
               if (parsed) {
-                const { blockName, bgCode, bgName, mainId, blockIdx } = parsed;
-                let baseUri = null;
-                if (needsImageFallback && typeof contract?.blockBaseURIs === "function") {
-                  const candidates = [];
-                  const n = Number(blockIdx);
-                  if (Number.isFinite(n)) {
-                    candidates.push(n);
-                    if (n > 0) candidates.push(n - 1);
-                    candidates.push(n + 1);
+                blockName ||= String(parsed.blockName || "").trim().toUpperCase();
+                bgCode ||= String(parsed.bgCode || "").trim().toUpperCase();
+                backgroundName ||= String(
+                  bgNameFromCode(parsed.bgCode) || parsed.bgCode || "",
+                )
+                  .trim()
+                  .toUpperCase();
+                mainId =
+                  normalizeMainImageId(parsed.mainId, tokenId, maxSupplyHint) ||
+                  mainId;
+              }
+            } catch {
+              // ignore tokenURI fallback errors for lightweight items
+            }
+          }
+
+          const attrs = mergeAttrs(fallbackItem.meta?.attributes, [
+            blockName ? { trait_type: "Block", value: blockName } : null,
+            backgroundName
+              ? { trait_type: "Background", value: backgroundName }
+              : null,
+          ].filter(Boolean));
+          let image = PLACEHOLDER_IMAGE;
+          if (blockName && bgCode && mainId) {
+            const fileName = `Biggi_${mainId}_${blockName}_${bgCode}.png`;
+            image = buildBlockImageUrl(blockName, fileName) || image;
+          }
+
+          return {
+            ...fallbackItem,
+            image,
+            meta: {
+              ...fallbackItem.meta,
+              attributes: attrs,
+              name: `Biggi NFT #${mainId || displayMainId}`,
+            },
+            blockName: blockName || "-",
+            backgroundName: backgroundName || "-",
+            mainId: mainId || displayMainId,
+          };
+        };
+
+        const metas = await mapLimit(
+          tokenIds,
+          metadataParallelism,
+          async (tid, idx) => {
+            const displayMainId = toDisplayMainId(tid);
+            const fallbackItem = buildFallbackOwnedItem(tid);
+            if (idx >= metadataHydrateLimit) {
+              return await requestWithTimeout(
+                buildLightweightOwnedItem(tid),
+                Math.max(1200, perTokenHydrateTimeoutMs - 800),
+                "NFT_HINT_TIMEOUT",
+              ).catch(() => fallbackItem);
+            }
+
+            return await requestWithTimeout(
+              (async () => {
+                let isT = null;
+                try {
+                  if (typeof contract?.isTicket === "function") {
+                    isT = coerceBool(await contract.isTicket(tid));
                   }
-                  for (const idx of candidates) {
-                    const v = await contract.blockBaseURIs(idx).catch(() => null);
-                    if (typeof v === "string" && v.trim()) {
-                      baseUri = v.trim();
-                      break;
+                } catch {
+                  isT = null;
+                }
+
+                let info = null;
+                let infoMinted = null;
+                let infoParsed = null;
+                try {
+                  const infoRead = await readNftInfoBestEffort(
+                    contract,
+                    tid,
+                    Number(maxSupply) || 550,
+                  );
+                  if (infoRead) {
+                    info = infoRead.info;
+                    infoMinted = infoRead.minted;
+                    infoParsed = infoRead.parsed;
+                  }
+                } catch {
+                  info = null;
+                  infoMinted = null;
+                  infoParsed = null;
+                }
+
+                let uri = null;
+                let j = null;
+                try {
+                  uri = await getTokenUriCached(contract, tid);
+                  if (uri) j = await readJsonFromURICached(uri);
+                } catch {
+                  uri = null;
+                  j = null;
+                }
+
+                const uriLooksTicket = isTicketUri(uri, normalizedTicketBase);
+                let metaLooksTicket = looksLikeTicketMeta(j);
+                let metaLooksNft = looksLikeNftMeta(j);
+                const ticketHint = uriLooksTicket || infoMinted === false;
+
+                if (isT == null && ticketHint) isT = true;
+
+                if (isT && metaLooksNft) isT = false;
+                if (isT && uri && !uriLooksTicket) isT = false;
+                if (isT && infoMinted === true) isT = false;
+
+                // Ticket -> NFT transition can lag a few blocks and often keeps the same tokenId.
+                // Force refresh whenever metadata still looks like a ticket (or ticket flag is true).
+                if (isT || uriLooksTicket || metaLooksTicket) {
+                  try {
+                    const freshUri = await getTokenUriCached(contract, tid, {
+                      force: true,
+                    });
+                    if (freshUri && freshUri !== uri) {
+                      uri = freshUri;
+                      j = await readJsonFromURICached(uri, { force: true });
+                    } else if (uri) {
+                      j = await readJsonFromURICached(uri, { force: true });
+                    }
+                  } catch {
+                    // ignore forced refresh errors
+                  }
+                  metaLooksTicket = looksLikeTicketMeta(j);
+                  metaLooksNft = looksLikeNftMeta(j);
+                  const refreshedTicketHint =
+                    uriLooksTicket || infoMinted === false;
+                  if (isT == null && refreshedTicketHint) isT = true;
+                  if (isT && metaLooksNft) isT = false;
+                }
+
+                const finalIsTicket = Boolean(isT && !metaLooksNft);
+                if (!finalIsTicket && infoMinted === false && !uri && !j) {
+                  // Keep a placeholder entry instead of dropping owned NFTs when RPC metadata fails.
+                }
+                let meta = {};
+                let image = PLACEHOLDER_IMAGE;
+                try {
+                  const contractAddr =
+                    contract?.target ||
+                    contract?.address ||
+                    contract?.runner?.address ||
+                    null;
+                  const cached = getCachedPriceAttrs(tid, contractAddr);
+                  const base =
+                    j ||
+                    (finalIsTicket
+                      ? {
+                          name: `Ticket #${tid}`,
+                          description:
+                            "Redeem this ticket to mint a BiggiEyes NFT.",
+                        }
+                      : {
+                          name: `Biggi NFT #${displayMainId}`,
+                          description: "Metadata is updating on-chain.",
+                        });
+
+                  if (!finalIsTicket && metaLooksTicket && !metaLooksNft) {
+                    base.name = `Biggi NFT #${displayMainId}`;
+                    base.description = "Metadata is updating on-chain.";
+                  }
+                  if (finalIsTicket && !looksLikeTicketMeta(base)) {
+                    base.name = `Ticket #${tid}`;
+                    base.description =
+                      "Redeem this ticket to mint a BiggiEyes NFT.";
+                  }
+
+                  if (finalIsTicket) {
+                    meta = base;
+                  } else {
+                    base.attributes = mergeAttrs(cached, base.attributes);
+                    meta = await enrichMetaWithPrices(contract, tid, base);
+                  }
+
+                  const imgUrl = j?.image || j?.image_url;
+                  image = (await resolveImageUrlCached(imgUrl, uri)) || image;
+                  // For tickets, keep the resolved ticket image when available.
+                } catch {
+                  // keep fallback
+                }
+
+                if (!finalIsTicket) {
+                  let needsImageFallback =
+                    !image || image === PLACEHOLDER_IMAGE;
+                  let needsAttrsFallback =
+                    !meta ||
+                    !Array.isArray(meta.attributes) ||
+                    meta.attributes.length === 0;
+
+                  if ((needsImageFallback || needsAttrsFallback) && uri) {
+                    const parsed = parseTokenUriParts(uri);
+                    if (parsed) {
+                      const { mainId: rawMainId, blockName, bgCode } = parsed;
+                      const mainId = normalizeMainImageId(
+                        rawMainId,
+                        tid,
+                        maxSupplyHint,
+                      );
+                      const bgName = bgNameFromCode(bgCode) || bgCode;
+                      if (needsImageFallback && blockName && bgCode && mainId) {
+                        const fileName = `Biggi_${mainId}_${blockName}_${bgCode}.png`;
+                        const fallbackImage = buildBlockImageUrl(
+                          blockName,
+                          fileName,
+                        );
+                        if (fallbackImage) image = fallbackImage;
+                      }
+                      if (needsAttrsFallback && (blockName || bgName)) {
+                        const attrs = mergeAttrs(
+                          meta?.attributes,
+                          [
+                            blockName
+                              ? { trait_type: "Block", value: blockName }
+                              : null,
+                            bgName
+                              ? { trait_type: "Background", value: bgName }
+                              : null,
+                          ].filter(Boolean),
+                        );
+                        meta = { ...(meta || {}), attributes: attrs };
+                      }
+                      if (!meta?.name) {
+                        meta = {
+                          ...(meta || {}),
+                          name: `Biggi NFT #${mainId || displayMainId}`,
+                        };
+                      }
+                    }
+                    needsImageFallback = !image || image === PLACEHOLDER_IMAGE;
+                    needsAttrsFallback =
+                      !meta ||
+                      !Array.isArray(meta.attributes) ||
+                      meta.attributes.length === 0;
+                  }
+
+                  if ((needsImageFallback || needsAttrsFallback) && info) {
+                    try {
+                      const parsed = infoParsed || parseNftInfo(info);
+                      if (parsed) {
+                        const {
+                          blockName,
+                          bgCode,
+                          bgName,
+                          mainId: rawMainId,
+                          blockIdx,
+                        } = parsed;
+                        const mainId = normalizeMainImageId(
+                          rawMainId,
+                          tid,
+                          maxSupplyHint,
+                        );
+                        let baseUri = null;
+                        if (
+                          needsImageFallback &&
+                          typeof contract?.blockBaseURIs === "function"
+                        ) {
+                          const candidates = [];
+                          const n = Number(blockIdx);
+                          if (Number.isFinite(n)) {
+                            candidates.push(n);
+                            if (n > 0) candidates.push(n - 1);
+                            candidates.push(n + 1);
+                          }
+                          for (const idx of candidates) {
+                            const v = await contract
+                              .blockBaseURIs(idx)
+                              .catch(() => null);
+                            if (typeof v === "string" && v.trim()) {
+                              baseUri = v.trim();
+                              break;
+                            }
+                          }
+                        }
+                        if (
+                          needsImageFallback &&
+                          blockName &&
+                          bgCode &&
+                          mainId
+                        ) {
+                          const fileName = `Biggi_${mainId}_${blockName}_${bgCode}.png`;
+                          const fallbackImage = buildBlockImageUrl(
+                            blockName,
+                            fileName,
+                            baseUri,
+                          );
+                          if (fallbackImage) image = fallbackImage;
+                        }
+                        if (blockName || bgName) {
+                          const attrs = mergeAttrs(
+                            meta?.attributes,
+                            [
+                              blockName
+                                ? { trait_type: "Block", value: blockName }
+                                : null,
+                              bgName
+                                ? { trait_type: "Background", value: bgName }
+                                : null,
+                            ].filter(Boolean),
+                          );
+                          meta = { ...(meta || {}), attributes: attrs };
+                        }
+                      }
+                    } catch {
+                      // ignore nftInfo fallback errors
                     }
                   }
                 }
-                if (
-                  needsImageFallback &&
-                  blockName &&
-                  bgCode &&
-                  mainId
-                ) {
-                  const fileName = `Biggi_${mainId}_${blockName}_${bgCode}.png`;
-                  const fallbackImage = buildBlockImageUrl(blockName, fileName, baseUri);
-                  if (fallbackImage) image = fallbackImage;
+
+                if (finalIsTicket) {
+                  if (!image || image === PLACEHOLDER_IMAGE) {
+                    image = ticketImageUrl();
+                  }
+                  if (!meta?.name || /^\d{8,}$/.test(String(meta.name))) {
+                    meta = {
+                      ...(meta || {}),
+                      name: "Biggi Mint Ticket",
+                    };
+                  }
                 }
-                if (blockName || bgName) {
-                  const attrs = mergeAttrs(meta?.attributes, [
-                    blockName
-                      ? { trait_type: "Block", value: blockName }
-                      : null,
-                    bgName
-                      ? { trait_type: "Background", value: bgName }
-                      : null,
-                  ].filter(Boolean));
-                  meta = { ...(meta || {}), attributes: attrs };
+
+                const resolvedBlockName =
+                  String(
+                    findMetaAttrValue(meta, [
+                      "eye color",
+                      "eyes",
+                      "block/eye color",
+                      "block",
+                      "block id",
+                      "linked block",
+                      "block name",
+                    ]) ||
+                      infoParsed?.blockName ||
+                      parseTokenUriParts(uri)?.blockName ||
+                      "",
+                  )
+                    .trim()
+                    .toUpperCase() || "-";
+                const resolvedBackgroundName =
+                  String(
+                    canonBackgroundName(
+                      findMetaAttrValue(meta, [
+                        "background",
+                        "background color",
+                      ]) ||
+                        infoParsed?.bgName ||
+                        bgNameFromCode(infoParsed?.bgCode) ||
+                        bgNameFromCode(parseTokenUriParts(uri)?.bgCode) ||
+                        "",
+                    ) ||
+                      findMetaAttrValue(meta, [
+                        "background",
+                        "background color",
+                      ]) ||
+                      infoParsed?.bgName ||
+                      bgNameFromCode(infoParsed?.bgCode) ||
+                      bgNameFromCode(parseTokenUriParts(uri)?.bgCode) ||
+                      "",
+                  )
+                    .trim()
+                    .toUpperCase() || "-";
+                const resolvedMainId =
+                  normalizeMainImageId(
+                    infoParsed?.mainId || parseTokenUriParts(uri)?.mainId,
+                    tid,
+                    maxSupplyHint,
+                  ) || displayMainId;
+
+                return {
+                  tokenId: String(tid),
+                  image,
+                  meta,
+                  isTicket: finalIsTicket,
+                  blockName: finalIsTicket ? "-" : resolvedBlockName,
+                  backgroundName:
+                    finalIsTicket ? "-" : resolvedBackgroundName,
+                  mainId: finalIsTicket ? null : resolvedMainId,
+                  contractAddress:
+                    contract?.target || contract?.address || null,
+                };
+              })(),
+              perTokenHydrateTimeoutMs,
+              "NFT_METADATA_TIMEOUT",
+            ).catch(() => fallbackItem);
+          },
+        );
+
+        if (tokenIds.length > metadataHydrateLimit) {
+          console.debug(
+            "fetchOwnedNFTsViaTransfers: metadata hydration capped",
+            {
+              totalTokenIds: tokenIds.length,
+              hydratedTokenIds: metadataHydrateLimit,
+            },
+          );
+        }
+
+        const resolved = metas.filter(Boolean);
+        console.debug("fetchOwnedNFTsViaTransfers: resolved", {
+          tokenIds: tokenIds.length,
+          resolved: resolved.length,
+        });
+        saveWalletCache(addr, resolved);
+        return resolved;
+      } catch (e) {
+        if (isTransientRpcReadError(e)) {
+          const wrapped = new Error("FETCH_NFTS_RPC_UNAVAILABLE");
+          wrapped.cause = e;
+          throw wrapped;
+        }
+        console.error("fetchOwnedNFTsViaTransfers", e);
+        return [];
+      }
+    },
+    [enrichMetaWithPrices, maxSupply, isTransientRpcReadError],
+  );
+
+  const mergeWithTopFirst = React.useCallback(
+    (finalList, preferredTopId = null) => {
+      return setMyNFTs((prev) => {
+        const pending = prev.find((x) => x.isPending);
+        if (VRFPending && pending) {
+          const minted = finalList.find(
+            (x) => x.tokenId === pending.tokenId && !x.isPending && !x.isTicket,
+          );
+          if (minted) {
+            const rest = finalList.filter((x) => x.tokenId !== pending.tokenId);
+            return [minted, ...rest];
+          }
+          const dedup = finalList.filter(
+            (x) => !x.isPending && x.tokenId !== pending.tokenId,
+          );
+          return [pending, ...dedup];
+        }
+        const targetTopId =
+          preferredTopId != null ? String(preferredTopId) : topFirstId;
+        if (targetTopId) {
+          const top = finalList.find((x) => x.tokenId === targetTopId);
+          const rest = finalList.filter((x) => x.tokenId !== targetTopId);
+          return top ? [top, ...rest] : finalList;
+        }
+        return finalList;
+      });
+    },
+    [VRFPending, topFirstId],
+  );
+
+  const fetchWalletAssets = React.useCallback(
+    async (addr, options = null) => {
+      if (!addr) return [];
+      const forceRefresh = Boolean(options && options.force);
+      if (
+        !forceRefresh &&
+        walletFetchRef.current.inFlight &&
+        walletFetchRef.current.addr === addr
+      ) {
+        return walletFetchRef.current.inFlight;
+      }
+
+      const fetchSeq = (walletFetchSeqRef.current += 1);
+      const fetchStartedAt = Date.now();
+      const debugEnabled = isGalleryDebugEnabled();
+      const ticketsTimeoutMs = getPollInterval(
+        22_000,
+        "VITE_FETCH_TICKETS_TIMEOUT_MS",
+      );
+      const nftsTimeoutMs = getPollInterval(
+        120_000,
+        "VITE_FETCH_NFTS_TIMEOUT_MS",
+      );
+
+      const cachedTopId = loadTopFirstCache(addr);
+      const topIdForThisFetch =
+        topFirstId != null
+          ? String(topFirstId)
+          : cachedTopId != null
+            ? String(cachedTopId)
+            : null;
+      if (topFirstId == null && topIdForThisFetch) {
+        setTopFirstId(topIdForThisFetch);
+      }
+
+      const contractForCache = contractRef.current || getReadOnlyContract();
+      const contractAddr =
+        contractForCache?.target || contractForCache?.address || null;
+      const providerForDebug = getProviderFor(contractForCache);
+      const providerRpcUrl =
+        getProviderRpcUrl(providerForDebug) || getPreferredRpc() || "";
+      const providerLabel =
+        String(providerForDebug?.constructor?.name || "").trim() || "unknown";
+
+      const cached = loadWalletCache(addr);
+      const galleryCached = loadGalleryCache(addr, {
+        allowExpired: true,
+        contractAddr,
+      });
+      const normalizeSeedItems = (items) => {
+        if (!Array.isArray(items) || !items.length) return [];
+        const maxSupplyHint = Number(maxSupply) || 550;
+        const maxReasonableTokenId = BigInt(
+          Math.max(maxSupplyHint * 1000, 1_000_000),
+        );
+        const out = [];
+        for (const item of items) {
+          const tokenId = String(item?.tokenId ?? item?.id ?? "").trim();
+          const tokenIdBI = toTokenIdBigIntSafe(tokenId);
+          if (!tokenId || tokenIdBI == null || tokenIdBI <= 0n) continue;
+          if (tokenIdBI > maxReasonableTokenId) continue;
+          const contractAddress = getAssetContractAddress(item);
+          out.push({
+            ...item,
+            tokenId,
+            ...(contractAddress ? { contractAddress } : {}),
+          });
+        }
+        return out;
+      };
+      const seedRaw = cached?.length
+        ? cached
+        : galleryCached?.length
+          ? galleryCached
+          : null;
+      const seed = normalizeSeedItems(seedRaw);
+      if (seedRaw?.length && !seed.length) {
+        console.warn(
+          "fetchWalletAssets: dropped stale cached items with invalid token IDs",
+        );
+      }
+      const liveWalletItems = Array.isArray(latestWalletItemsRef.current)
+        ? latestWalletItemsRef.current
+        : [];
+      if (seed?.length && liveWalletItems.length === 0) {
+        mergeWithTopFirst(seed, topIdForThisFetch);
+      }
+
+      const addrKey = String(addr || "").toLowerCase();
+      const priorFailureState = walletFetchFailureRef.current.get(addrKey) || {
+        consecutiveFailures: 0,
+        cooldownUntil: 0,
+        lastReason: "",
+      };
+      const now = Date.now();
+      const cooldownUntil = Number(priorFailureState.cooldownUntil || 0);
+      const cooldownActive = now < cooldownUntil;
+      const fallbackItems =
+        Array.isArray(seed) && seed.length ? seed : liveWalletItems;
+      const shouldSkipForCooldown =
+        !forceRefresh && cooldownActive && fallbackItems.length > 0;
+      if (shouldSkipForCooldown) {
+        const remainingSec = Math.max(
+          1,
+          Math.ceil((cooldownUntil - now) / 1000),
+        );
+        const cooldownNotice = `Gallery load paused due RPC/network errors. Retrying in ${remainingSec}s.`;
+        setGalleryNotice((prev) =>
+          prev === cooldownNotice ? prev : cooldownNotice,
+        );
+        if (debugEnabled) {
+          const skipLogKey = `${addrKey}:${cooldownUntil}:${remainingSec}:${fallbackItems.length}`;
+          if (walletFetchCooldownLogRef.current !== skipLogKey) {
+            walletFetchCooldownLogRef.current = skipLogKey;
+            console.info("fetchWalletAssets:skip", {
+              reason: "wallet-fetch-cooldown",
+              wallet: addr,
+              walletShort: shortAddressLabel(addr),
+              rpcHost: rpcHostLabel(providerRpcUrl),
+              fallbackCount: fallbackItems.length,
+              cooldownUntil: new Date(cooldownUntil).toISOString(),
+            });
+          }
+        }
+        return fallbackItems;
+      }
+
+      const showSpinner = !seed?.length;
+
+      const exec = (async () => {
+        if (showSpinner) setGalleryLoading(true);
+        let debugChainId = null;
+        if (debugEnabled && providerForDebug?.getNetwork) {
+          try {
+            const network = await requestWithTimeout(
+              providerForDebug.getNetwork(),
+              3_000,
+              "GALLERY_DEBUG_NET_TIMEOUT",
+            ).catch(() => null);
+            debugChainId =
+              typeof network?.chainId === "bigint"
+                ? Number(network.chainId)
+                : Number(network?.chainId);
+          } catch {
+            debugChainId = null;
+          }
+        }
+
+        if (debugEnabled) {
+          console.info("fetchWalletAssets:start", {
+            fetchSeq,
+            wallet: addr,
+            walletShort: shortAddressLabel(addr),
+            forceRefresh,
+            provider: providerLabel,
+            rpcUrl: providerRpcUrl || null,
+            rpcHost: rpcHostLabel(providerRpcUrl),
+            chainId: Number.isFinite(debugChainId) ? debugChainId : null,
+            seedCount: seed.length,
+            topIdForThisFetch,
+            fromWalletCache: Array.isArray(cached) ? cached.length : 0,
+            fromGalleryCache: Array.isArray(galleryCached)
+              ? galleryCached.length
+              : 0,
+          });
+          const debugStartNotice = `[DBG #${fetchSeq}] ${shortAddressLabel(addr)} | RPC ${rpcHostLabel(providerRpcUrl)} | chain ${
+            Number.isFinite(debugChainId) ? debugChainId : "?"
+          } | seed ${seed.length} | loading...`;
+          setGalleryNotice((prev) =>
+            prev === debugStartNotice ? prev : debugStartNotice,
+          );
+        }
+
+        try {
+          const [ticketsResult, nftsResult] = await Promise.allSettled([
+            requestWithTimeout(
+              fetchMyTickets(addr),
+              ticketsTimeoutMs,
+              "FETCH_TICKETS_TIMEOUT",
+            ),
+            requestWithTimeout(
+              fetchOwnedNFTsViaTransfers(addr),
+              nftsTimeoutMs,
+              "FETCH_NFTS_TIMEOUT",
+            ),
+          ]);
+
+          const tickets =
+            ticketsResult.status === "fulfilled" &&
+            Array.isArray(ticketsResult.value)
+              ? ticketsResult.value
+              : [];
+          const nfts =
+            nftsResult.status === "fulfilled" && Array.isArray(nftsResult.value)
+              ? nftsResult.value
+              : [];
+          const hadFetchFailure =
+            ticketsResult.status === "rejected" ||
+            nftsResult.status === "rejected";
+          const ticketFailureReason =
+            ticketsResult.status === "rejected" ? ticketsResult.reason : null;
+          const nftFailureReason =
+            nftsResult.status === "rejected" ? nftsResult.reason : null;
+          const transientTicketFailure = isTransientRpcReadError(
+            ticketFailureReason?.cause || ticketFailureReason,
+          );
+          const transientNftFailure = isTransientRpcReadError(
+            nftFailureReason?.cause || nftFailureReason,
+          );
+          const hadTransientFetchFailure =
+            transientTicketFailure || transientNftFailure;
+
+          if (ticketsResult.status === "rejected") {
+            console.warn(
+              "fetchWalletAssets: ticket fetch failed",
+              ticketsResult.reason,
+            );
+          }
+          if (nftsResult.status === "rejected") {
+            console.warn(
+              "fetchWalletAssets: nft fetch failed",
+              nftsResult.reason,
+            );
+            const nftErrMsg = String(
+              nftsResult.reason?.message ||
+                nftsResult.reason?.reason ||
+                nftsResult.reason ||
+                "",
+            ).toLowerCase();
+            const shouldRotateRpc =
+              nftErrMsg.includes("fetch_nfts_timeout") ||
+              nftErrMsg.includes("timeout") ||
+              isTransientRpcReadError(
+                nftsResult.reason?.cause || nftsResult.reason,
+              );
+            if (shouldRotateRpc) {
+              if (providerRpcUrl) markRpcRateLimited(providerRpcUrl);
+              const nextRpc = rotatePreferredRpc({ preferPublicFirst: true });
+              if (nextRpc) {
+                console.warn(
+                  "fetchWalletAssets: rotated RPC after NFT fetch failure",
+                  {
+                    fetchSeq,
+                    from: providerRpcUrl || null,
+                    to: nextRpc,
+                    reason: nftErrMsg || "nft-fetch-failure",
+                  },
+                );
+              }
+            }
+          }
+          if (hadTransientFetchFailure) {
+            const prevFailures = Number(
+              priorFailureState.consecutiveFailures || 0,
+            );
+            const nextFailures = Math.min(8, prevFailures + 1);
+            const baseDelayMs = getPollInterval(
+              8000,
+              "VITE_FETCH_WALLET_FAILURE_BACKOFF_MS",
+            );
+            const maxDelayMs = getPollInterval(
+              60_000,
+              "VITE_FETCH_WALLET_FAILURE_BACKOFF_MAX_MS",
+            );
+            const cooldownMs = Math.min(maxDelayMs, baseDelayMs * nextFailures);
+            const reason = transientNftFailure
+              ? String(
+                  nftFailureReason?.message ||
+                    nftFailureReason?.reason ||
+                    nftFailureReason?.cause?.message ||
+                    "nft-transient-error",
+                )
+              : String(
+                  ticketFailureReason?.message ||
+                    ticketFailureReason?.reason ||
+                    ticketFailureReason?.cause?.message ||
+                    "ticket-transient-error",
+                );
+            walletFetchFailureRef.current.set(addrKey, {
+              consecutiveFailures: nextFailures,
+              cooldownUntil: Date.now() + cooldownMs,
+              lastReason: reason,
+            });
+            engageRpcBackoff(cooldownMs);
+            recoverRpcConnectivity("fetchWalletAssets").catch(() => {});
+          } else {
+            walletFetchFailureRef.current.delete(addrKey);
+            walletFetchCooldownLogRef.current = "";
+          }
+          console.debug("fetchWalletAssets: merge inputs", {
+            tickets: tickets.length,
+            nfts: nfts.length,
+            hadFetchFailure,
+            hadTransientFetchFailure,
+          });
+
+          const byId = new Map();
+          const legacyByTokenId = new Map();
+          const rememberEntry = (key, item) => {
+            byId.set(key, item);
+            if (!getAssetContractAddress(item)) {
+              const legacyKey = getAssetTokenIdString(item);
+              if (legacyKey && !legacyByTokenId.has(legacyKey)) {
+                legacyByTokenId.set(legacyKey, key);
+              }
+            }
+          };
+          const forgetEntry = (key, item) => {
+            byId.delete(key);
+            const legacyKey = getAssetTokenIdString(item);
+            if (legacyKey && legacyByTokenId.get(legacyKey) === key) {
+              legacyByTokenId.delete(legacyKey);
+            }
+          };
+          const findExistingEntry = (item) => {
+            const exactKey = getAssetCompositeKey(item);
+            if (exactKey && byId.has(exactKey)) {
+              return { key: exactKey, item: byId.get(exactKey) };
+            }
+
+            if (getAssetContractAddress(item)) {
+              const legacyKey = getAssetTokenIdString(item);
+              const fallbackKey = legacyByTokenId.get(legacyKey);
+              if (fallbackKey && byId.has(fallbackKey)) {
+                return { key: fallbackKey, item: byId.get(fallbackKey) };
+              }
+            }
+
+            return null;
+          };
+          const upsert = (item) => {
+            if (!item?.tokenId) return;
+            const exactKey = getAssetCompositeKey(item);
+            if (!exactKey) return;
+            const existing = findExistingEntry(item);
+            const key = existing?.key || exactKey;
+            const prev = existing?.item;
+            if (!prev) {
+              rememberEntry(key, item);
+              return;
+            }
+
+            const toTicketLike = (val) => {
+              const ticketFlag = val?.isTicket;
+              if (ticketFlag === false) return false;
+              if (ticketFlag === true) return true;
+              const looksTicket = looksLikeTicketMeta(val?.meta);
+              const looksNft = looksLikeNftMeta(val?.meta);
+              return looksTicket && !looksNft;
+            };
+
+            const prevIsTicketLike = toTicketLike(prev);
+            const nextIsTicketLike = toTicketLike(item);
+            const imageLooksTicket = (raw) =>
+              String(raw || "")
+                .toLowerCase()
+                .includes(String(TICKET_IMAGE_FILE || "").toLowerCase());
+            const hasNftSignal = (val) => {
+              const candidateTokenId = String(val?.tokenId || "").trim();
+              if (
+                val?.isTicket === false &&
+                candidateTokenId &&
+                toTokenIdBigIntSafe(candidateTokenId) != null
+              ) {
+                return true;
+              }
+              if (looksLikeNftMeta(val?.meta)) return true;
+              const image = String(val?.image || "").trim();
+              if (!image || image === PLACEHOLDER_IMAGE) return false;
+              if (imageLooksTicket(image)) return false;
+              return true;
+            };
+            const nextHasNftSignal = hasNftSignal(item);
+
+            if (prevIsTicketLike && !nextIsTicketLike) {
+              if (!nextHasNftSignal) return;
+              forgetEntry(key, prev);
+              rememberEntry(exactKey, item);
+              return;
+            }
+            if (!prevIsTicketLike && nextIsTicketLike) {
+              return;
+            }
+
+            const prevPending = Boolean(prev?.isPending);
+            const nextPending = Boolean(item?.isPending);
+            if (prevPending && !nextPending) {
+              forgetEntry(key, prev);
+              rememberEntry(exactKey, item);
+              return;
+            }
+            if (!prevPending && nextPending) {
+              return;
+            }
+
+            forgetEntry(key, prev);
+            rememberEntry(exactKey, item);
+          };
+
+          for (const t of tickets) upsert(t);
+          for (const n of nfts) upsert(n);
+
+          const final = Array.from(byId.values());
+          const mergeWithCache = (
+            fresh,
+            cachedList,
+            keepCacheOnEmpty = false,
+          ) => {
+            if (!Array.isArray(cachedList) || !cachedList.length) return fresh;
+            if ((!Array.isArray(fresh) || !fresh.length) && keepCacheOnEmpty) {
+              return cachedList;
+            }
+            const map = new Map();
+            const legacyMap = new Map();
+            for (const cachedItem of cachedList) {
+              const exactKey = getAssetCompositeKey(cachedItem);
+              if (!exactKey) continue;
+              map.set(exactKey, cachedItem);
+              if (!getAssetContractAddress(cachedItem)) {
+                const legacyKey = getAssetTokenIdString(cachedItem);
+                if (legacyKey && !legacyMap.has(legacyKey)) {
+                  legacyMap.set(legacyKey, exactKey);
+                }
+              }
+            }
+            return fresh.map((item) => {
+              const exactKey = getAssetCompositeKey(item);
+              let prev = exactKey ? map.get(exactKey) : null;
+              if (!prev && getAssetContractAddress(item)) {
+                const legacyKey = getAssetTokenIdString(item);
+                const fallbackKey = legacyMap.get(legacyKey);
+                prev = fallbackKey ? map.get(fallbackKey) : null;
+              }
+              return prev ? mergeGalleryItem(prev, item) : item;
+            });
+          };
+
+          let keepSeedOnEmpty = hadFetchFailure;
+          if (!keepSeedOnEmpty && final.length === 0 && seed?.length) {
+            try {
+              const balanceContract =
+                contractRef.current || getReadOnlyContract();
+              if (typeof balanceContract?.balanceOf === "function") {
+                const bal = await requestWithTimeout(
+                  balanceContract.balanceOf(addr),
+                  4_000,
+                  "BALANCE_HINT_TIMEOUT",
+                ).catch(() => null);
+                if (bal != null) {
+                  keepSeedOnEmpty = BigInt(bal.toString()) > 0n;
                 }
               }
             } catch {
-              // ignore nftInfo fallback errors
+              keepSeedOnEmpty = true;
             }
           }
-        }
 
-        if (finalIsTicket) {
-          if (!image || image === PLACEHOLDER_IMAGE) {
-            image = ticketImageUrl();
+          const merged = mergeWithCache(final, seed, keepSeedOnEmpty);
+          const latestRequestedSeq = walletFetchSeqRef.current;
+          const walletStillMatches =
+            String(walletAddressRef.current || "").toLowerCase() ===
+            String(addr || "").toLowerCase();
+          const shouldApplyState =
+            fetchSeq === latestRequestedSeq && walletStillMatches;
+          if (!shouldApplyState) {
+            if (debugEnabled) {
+              console.info("fetchWalletAssets:stale-result-skip", {
+                fetchSeq,
+                latestRequestedSeq,
+                wallet: addr,
+                currentWallet: walletAddressRef.current || "",
+              });
+            }
+            return merged;
           }
-          if (!meta?.name || /^\d{8,}$/.test(String(meta.name))) {
-            meta = {
-              ...(meta || {}),
-              name: "Biggi Mint Ticket",
+          const mergedTickets = merged.reduce(
+            (count, item) => count + (isTicketLikeItem(item) ? 1 : 0),
+            0,
+          );
+          const mergedNfts = Math.max(0, merged.length - mergedTickets);
+          const mergedTokenIdsSample = merged
+            .map((item) => String(item?.tokenId || "").trim())
+            .filter(Boolean)
+            .slice(0, 10);
+          const prevSnapshot = latestWalletItemsRef.current;
+          const pendingRedeemId = lastRedeemTicketIdRef.current;
+          let resolvedMintedId =
+            pendingRedeemId != null
+              ? resolveNewlyMintedTokenId(
+                  prevSnapshot,
+                  merged,
+                  pendingRedeemId,
+                  Number(maxSupply) || 550,
+                )
+              : null;
+
+          if (!resolvedMintedId && pendingRedeemId != null) {
+            const pendingAsNft = merged.find(
+              (item) =>
+                item &&
+                !isTicketLikeItem(item) &&
+                String(item.tokenId || "") === String(pendingRedeemId),
+            );
+            if (pendingAsNft?.tokenId) {
+              resolvedMintedId = String(pendingAsNft.tokenId);
+            }
+          }
+
+          const currentTopId = topIdForThisFetch;
+          const currentTopStillVisible =
+            currentTopId != null &&
+            merged.some(
+              (item) => item && String(item.tokenId || "") === currentTopId,
+            );
+
+          let effectiveTopId = currentTopStillVisible ? currentTopId : null;
+
+          if (resolvedMintedId) {
+            const resolvedId = String(resolvedMintedId);
+            lastRedeemTicketIdRef.current = null;
+            setTopFirstId(resolvedId);
+            saveTopFirstCache(addr, resolvedId);
+            effectiveTopId = resolvedId;
+          }
+
+          mergeWithTopFirst(merged, effectiveTopId);
+          saveWalletCache(addr, merged);
+          saveGalleryCache(addr, merged, contractAddr);
+
+          try {
+            await refreshClaimable(addr, merged);
+          } catch (claimErr) {
+            console.warn(
+              "fetchWalletAssets: refreshClaimable failed",
+              claimErr,
+            );
+          }
+
+          const elapsedMs = Date.now() - fetchStartedAt;
+          if (debugEnabled) {
+            const summary = {
+              fetchSeq,
+              wallet: addr,
+              walletShort: shortAddressLabel(addr),
+              provider: providerLabel,
+              rpcUrl: providerRpcUrl || null,
+              rpcHost: rpcHostLabel(providerRpcUrl),
+              chainId: Number.isFinite(debugChainId) ? debugChainId : null,
+              elapsedMs,
+              tickets: tickets.length,
+              nfts: nfts.length,
+              merged: merged.length,
+              mergedNfts,
+              mergedTickets,
+              mergedTokenIdsSample,
+              hadFetchFailure,
+              hadTransientFetchFailure,
+              keepSeedOnEmpty,
             };
+            console.info("fetchWalletAssets:done", summary);
+            const debugDoneNotice = `[DBG #${fetchSeq}] ${shortAddressLabel(addr)} | RPC ${rpcHostLabel(providerRpcUrl)} | chain ${
+              Number.isFinite(debugChainId) ? debugChainId : "?"
+            } | src t${tickets.length}/n${nfts.length} | merged ${merged.length} (n${mergedNfts}/t${mergedTickets}) | ${elapsedMs}ms${
+              hadFetchFailure ? " | WARN fetch-failure" : ""
+            }`;
+            setGalleryNotice((prev) =>
+              prev === debugDoneNotice ? prev : debugDoneNotice,
+            );
+          } else if (hadFetchFailure && !merged.length) {
+            const warnNotice =
+              "Gallery load warning: RPC read failed or timed out. Retry after a few seconds.";
+            setGalleryNotice((prev) =>
+              prev === warnNotice ? prev : warnNotice,
+            );
+          } else {
+            setGalleryNotice((prev) => (prev ? "" : prev));
           }
+
+          return merged;
+        } finally {
+          setGalleryLoading(false);
         }
+      })();
 
-        return {
-          tokenId: String(tid),
-          image,
-          meta,
-          isTicket: finalIsTicket,
-          contractAddress: contract?.target || contract?.address || null,
-        };
-      });
-
-      const resolved = metas.filter(Boolean);
-      saveWalletCache(addr, resolved);
-      return resolved;
-    } catch (e) {
-      console.error("fetchOwnedNFTsViaTransfers", e);
-      return [];
-    }
-  }, [enrichMetaWithPrices, maxSupply]);
-
-  const mergeWithTopFirst = React.useCallback((finalList, preferredTopId = null) => {
-    return setMyNFTs((prev) => {
-      const pending = prev.find((x) => x.isPending);
-      if (VRFPending && pending) {
-        const minted = finalList.find(
-          (x) =>
-            x.tokenId === pending.tokenId && !x.isPending && !x.isTicket,
-        );
-        if (minted) {
-          const rest = finalList.filter((x) => x.tokenId !== pending.tokenId);
-          return [minted, ...rest];
-        }
-        const dedup = finalList.filter(
-          (x) => !x.isPending && x.tokenId !== pending.tokenId,
-        );
-        return [pending, ...dedup];
-      }
-      const targetTopId =
-        preferredTopId != null ? String(preferredTopId) : topFirstId;
-      if (targetTopId) {
-        const top = finalList.find((x) => x.tokenId === targetTopId);
-        const rest = finalList.filter((x) => x.tokenId !== targetTopId);
-        return top ? [top, ...rest] : finalList;
-      }
-      return finalList;
-    });
-  }, [VRFPending, topFirstId]);
-
-  const fetchWalletAssets = React.useCallback(async (addr) => {
-    if (!addr) return [];
-    if (walletFetchRef.current.inFlight && walletFetchRef.current.addr === addr) {
-      return walletFetchRef.current.inFlight;
-    }
-
-    const cachedTopId = loadTopFirstCache(addr);
-    const topIdForThisFetch =
-      topFirstId != null
-        ? String(topFirstId)
-        : cachedTopId != null
-          ? String(cachedTopId)
-          : null;
-    if (topFirstId == null && topIdForThisFetch) {
-      setTopFirstId(topIdForThisFetch);
-    }
-
-    const contractForCache = contractRef.current || getReadOnlyContract();
-    const contractAddr =
-      contractForCache?.target || contractForCache?.address || null;
-
-    const cached = loadWalletCache(addr);
-    const galleryCached = loadGalleryCache(addr, {
-      allowExpired: true,
-      contractAddr,
-    });
-    const seed =
-      cached?.length ? cached : galleryCached?.length ? galleryCached : null;
-    if (seed?.length) mergeWithTopFirst(seed, topIdForThisFetch);
-
-    const showSpinner = !seed?.length;
-
-    const exec = (async () => {
-      if (showSpinner) setGalleryLoading(true);
+      walletFetchRef.current = { inFlight: exec, addr };
       try {
-        const tickets = await fetchMyTickets(addr);
-        const nfts = await fetchOwnedNFTsViaTransfers(addr);
-
-        const byId = new Map();
-        const upsert = (item) => {
-          if (!item?.tokenId) return;
-          const key = String(item.tokenId);
-          const prev = byId.get(key);
-          if (!prev) {
-            byId.set(key, item);
-            return;
-          }
-
-          const prevIsTicket = Boolean(prev?.isTicket);
-          const nextIsTicket = Boolean(item?.isTicket);
-          const prevLooksTicket = looksLikeTicketMeta(prev?.meta);
-          const nextLooksTicket = looksLikeTicketMeta(item?.meta);
-          const prevLooksNft = looksLikeNftMeta(prev?.meta);
-          const nextLooksNft = looksLikeNftMeta(item?.meta);
-
-          const prevIsTicketLike =
-            prevIsTicket || (prevLooksTicket && !prevLooksNft);
-          const nextIsTicketLike =
-            nextIsTicket || (nextLooksTicket && !nextLooksNft);
-          const imageLooksTicket = (raw) =>
-            String(raw || "")
-              .toLowerCase()
-              .includes(String(TICKET_IMAGE_FILE || "").toLowerCase());
-          const hasNftSignal = (val) => {
-            if (looksLikeNftMeta(val?.meta)) return true;
-            const image = String(val?.image || "").trim();
-            if (!image || image === PLACEHOLDER_IMAGE) return false;
-            if (imageLooksTicket(image)) return false;
-            return true;
-          };
-          const nextHasNftSignal = hasNftSignal(item);
-
-          if (prevIsTicketLike && !nextIsTicketLike) {
-            if (!nextHasNftSignal) return;
-            byId.set(key, item);
-            return;
-          }
-          if (!prevIsTicketLike && nextIsTicketLike) {
-            return;
-          }
-
-          const prevPending = Boolean(prev?.isPending);
-          const nextPending = Boolean(item?.isPending);
-          if (prevPending && !nextPending) {
-            byId.set(key, item);
-            return;
-          }
-          if (!prevPending && nextPending) {
-            return;
-          }
-
-          byId.set(key, item);
-        };
-
-        for (const t of tickets) upsert(t);
-        for (const n of nfts) upsert(n);
-
-        const final = Array.from(byId.values());
-        const mergeWithCache = (fresh, cachedList) => {
-          if (!Array.isArray(cachedList) || !cachedList.length) return fresh;
-          const map = new Map(
-            cachedList
-              .map((item) => [String(item?.tokenId ?? ""), item])
-              .filter(([k]) => k),
-          );
-          return fresh.map((item) => {
-            const key = String(item?.tokenId ?? "");
-            const prev = key ? map.get(key) : null;
-            return prev ? mergeGalleryItem(prev, item) : item;
-          });
-        };
-
-        const merged = mergeWithCache(final, seed);
-        const prevSnapshot = latestWalletItemsRef.current;
-        const pendingRedeemId = lastRedeemTicketIdRef.current;
-        let resolvedMintedId =
-          pendingRedeemId != null
-            ? resolveNewlyMintedTokenId(
-                prevSnapshot,
-                merged,
-                pendingRedeemId,
-                Number(maxSupply) || 550,
-              )
-            : null;
-
-        if (!resolvedMintedId && pendingRedeemId != null) {
-          const pendingAsNft = merged.find(
-            (item) =>
-              item &&
-              !isTicketLikeItem(item) &&
-              String(item.tokenId || "") === String(pendingRedeemId),
-          );
-          if (pendingAsNft?.tokenId) {
-            resolvedMintedId = String(pendingAsNft.tokenId);
-          }
-        }
-
-        const currentTopId = topIdForThisFetch;
-        const currentTopStillVisible =
-          currentTopId != null &&
-          merged.some(
-            (item) => item && String(item.tokenId || "") === currentTopId,
-          );
-
-        let effectiveTopId = currentTopStillVisible ? currentTopId : null;
-
-        if (resolvedMintedId) {
-          const resolvedId = String(resolvedMintedId);
-          lastRedeemTicketIdRef.current = null;
-          setTopFirstId(resolvedId);
-          saveTopFirstCache(addr, resolvedId);
-          effectiveTopId = resolvedId;
-        }
-
-        mergeWithTopFirst(merged, effectiveTopId);
-        saveWalletCache(addr, merged);
-        saveGalleryCache(addr, merged, contractAddr);
-        await refreshClaimable(addr, merged);
-        return merged;
+        return await exec;
       } finally {
-        setGalleryLoading(false);
+        if (walletFetchRef.current.inFlight === exec) {
+          walletFetchRef.current = { inFlight: null, addr: null };
+        }
       }
-    })();
-
-    walletFetchRef.current = { inFlight: exec, addr };
-    try {
-      return await exec;
-    } finally {
-      if (walletFetchRef.current.inFlight === exec) {
-        walletFetchRef.current = { inFlight: null, addr: null };
-      }
-    }
-  }, [
-    fetchMyTickets,
-    fetchOwnedNFTsViaTransfers,
-    mergeWithTopFirst,
-    refreshClaimable,
-    maxSupply,
-    topFirstId,
-  ]);
+    },
+    [
+      fetchMyTickets,
+      fetchOwnedNFTsViaTransfers,
+      mergeWithTopFirst,
+      refreshClaimable,
+      isTransientRpcReadError,
+      engageRpcBackoff,
+      recoverRpcConnectivity,
+      rotatePreferredRpc,
+      maxSupply,
+      topFirstId,
+    ],
+  );
 
   /* ====================================================================== */
   /* ============================ LAST MINTED ============================== */
   /* ====================================================================== */
 
-  const fetchLastMinted = React.useCallback(async (addressOverride = null) => {
-    try {
-      const contract = contractRef.current || getReadOnlyContract();
-      const provider = getProviderFor(contract);
-      if (!provider) throw new Error("Provider not available");
+  const fetchLastMinted = React.useCallback(
+    async (addressOverride = null, options = {}) => {
       const walletScopedAddress =
         typeof addressOverride === "string" &&
         /^0x[0-9a-fA-F]{40}$/.test(addressOverride.trim())
@@ -3510,322 +5098,398 @@ export default function AppCore() {
       const pendingId = pendingTicketIdRef.current
         ? String(pendingTicketIdRef.current)
         : "";
-      let total = null;
-      try {
-        const totalRaw = await callFirst(contract, [
-          "biggiMinted",
-          "totalSupply",
-          "totalMinted",
-          "nftMinted",
-          "minted",
-        ]);
-        if (totalRaw != null) {
-          const totalStr =
-            typeof totalRaw?.toString === "function" ? totalRaw.toString() : totalRaw;
-          const totalNum = Number(totalStr);
-          if (Number.isFinite(totalNum)) total = totalNum;
+      const requestKey = `${walletScopedAddress || "__global__"}:${pendingId}`;
+      const allowReuse = options?.force !== true;
+      const now = Date.now();
+      const inFlight = lastMintedFetchRef.current;
+      if (allowReuse && inFlight.key === requestKey) {
+        if (inFlight.promise) return inFlight.promise;
+        if (
+          Number(inFlight.settledAt || 0) > 0 &&
+          now - Number(inFlight.settledAt || 0) < LAST_MINTED_DEDUPE_MS
+        ) {
+          return;
         }
-      } catch {}
-
-      if (total != null && total <= 0) {
-        setLastMinted((prev) => {
-          if (isCompleteLastMintedPayload(prev)) return prev;
-          const cached = loadLastMintedCache();
-          if (cached) return cached;
-          return { ...EMPTY_LAST_MINTED };
-        });
-        return;
       }
 
-      const parsedTotal = Number(total);
-      const parsedMaxSupply = Number(maxSupply);
-      let candidateUpperBoundBase = 0;
-      if (Number.isFinite(parsedTotal) && parsedTotal > 0) {
-        candidateUpperBoundBase = Math.max(
-          candidateUpperBoundBase,
-          Math.trunc(parsedTotal),
-        );
-      }
-      if (Number.isFinite(parsedMaxSupply) && parsedMaxSupply > 0) {
-        candidateUpperBoundBase = Math.max(
-          candidateUpperBoundBase,
-          Math.trunc(parsedMaxSupply),
-        );
-      }
-      // Token IDs can be significantly higher than current minted/supply counters
-      // (historical migrations / sparse IDs). Keep a wide safety margin to reject
-      // obvious junk values while allowing valid higher IDs.
-      const candidateUpperBoundBigInt =
-        candidateUpperBoundBase > 0
-          ? BigInt(Math.max(candidateUpperBoundBase * 10_000, 1_000_000))
-          : null;
+      const exec = (async () => {
+        try {
+        const contract = contractRef.current || getReadOnlyContract();
+        const provider = getProviderFor(contract);
+        if (!provider) throw new Error("Provider not available");
+        let total = null;
+        try {
+          const totalRaw = await callFirst(contract, [
+            "biggiMinted",
+            "totalSupply",
+            "totalMinted",
+            "nftMinted",
+            "minted",
+          ]);
+          if (totalRaw != null) {
+            const totalStr =
+              typeof totalRaw?.toString === "function"
+                ? totalRaw.toString()
+                : totalRaw;
+            const totalNum = Number(totalStr);
+            if (Number.isFinite(totalNum)) total = totalNum;
+          }
+        } catch {}
 
-      const candidates = [];
-      let authoritativeMintLogs = false;
-      try {
-        const latest = await provider.getBlockNumber();
-        const baseFrom = await getSafeDeployBlock(provider);
-        const latestNum = Number(latest ?? 0);
-        const safeLatest = Number.isFinite(latestNum) && latestNum >= 0 ? latestNum : 0;
+        if (total != null && total <= 0) {
+          setLastMinted((prev) => {
+            if (isCompleteLastMintedPayload(prev)) return prev;
+            const cached = loadLastMintedCache();
+            if (cached) return cached;
+            return { ...EMPTY_LAST_MINTED };
+          });
+          return;
+        }
 
-        const runLogQuery = async (
-          filter,
-          fromBlock,
-          toBlock,
-          options = {},
-        ) => {
-          try {
-            if (
-              options.fullHistory === true &&
-              provider &&
-              typeof provider.getLogs === "function"
-            ) {
-              const raw = await provider.getLogs({
-                address:
-                  filter?.address || contract?.target || contract?.address || undefined,
-                topics: filter?.topics,
-                fromBlock,
-                toBlock,
-              });
-              if (
-                Array.isArray(raw) &&
-                raw.length &&
-                contract?.interface &&
-                typeof contract.interface.parseLog === "function"
-              ) {
-                return raw.map((log) => {
-                  try {
-                    const parsed = contract.interface.parseLog(log);
-                    return {
-                      ...log,
-                      args: parsed?.args,
-                      eventName: parsed?.name,
-                      fragment: parsed?.fragment,
-                    };
-                  } catch {
-                    return log;
-                  }
-                });
-              }
-              if (Array.isArray(raw)) return raw;
-            }
-            return await queryLogsBatched(contract, filter, fromBlock, toBlock, LOGS_BATCH, {
-              preferArchive: options.preferArchive === true,
-              fullHistory: options.fullHistory === true,
-            });
-          } catch (err) {
-            const msg = String(err?.message || "");
-            if (/invalid block range params/i.test(msg)) {
-              const fallbackTo = Math.max(0, safeLatest - 1);
-              const fallbackFrom = Math.max(0, fallbackTo - 8_000);
+        const parsedTotal = Number(total);
+        const parsedMaxSupply = Number(maxSupply);
+        let candidateUpperBoundBase = 0;
+        if (Number.isFinite(parsedTotal) && parsedTotal > 0) {
+          candidateUpperBoundBase = Math.max(
+            candidateUpperBoundBase,
+            Math.trunc(parsedTotal),
+          );
+        }
+        if (Number.isFinite(parsedMaxSupply) && parsedMaxSupply > 0) {
+          candidateUpperBoundBase = Math.max(
+            candidateUpperBoundBase,
+            Math.trunc(parsedMaxSupply),
+          );
+        }
+        // Token IDs can be significantly higher than current minted/supply counters
+        // (historical migrations / sparse IDs). Keep a wide safety margin to reject
+        // obvious junk values while allowing valid higher IDs.
+        const candidateUpperBoundBigInt =
+          candidateUpperBoundBase > 0
+            ? BigInt(Math.max(candidateUpperBoundBase * 10_000, 1_000_000))
+            : null;
+
+        const candidates = [];
+        let authoritativeMintLogs = false;
+        try {
+          const latest = await provider.getBlockNumber();
+          const baseFrom = await getSafeDeployBlock(provider);
+          const latestNum = Number(latest ?? 0);
+          const safeLatest =
+            Number.isFinite(latestNum) && latestNum >= 0 ? latestNum : 0;
+
+          const runLogQuery = async (
+            filter,
+            fromBlock,
+            toBlock,
+            options = {},
+          ) => {
+            try {
               return await queryLogsBatched(
                 contract,
                 filter,
-                fallbackFrom,
-                fallbackTo,
+                fromBlock,
+                toBlock,
                 LOGS_BATCH,
                 {
                   preferArchive: options.preferArchive === true,
                   fullHistory: options.fullHistory === true,
+                  disableLookbackClamp: options.disableLookbackClamp === true,
                 },
               );
+            } catch (err) {
+              const msg = String(err?.message || "");
+              if (/invalid block range params/i.test(msg)) {
+                const fallbackTo = Math.max(0, safeLatest - 1);
+                const fallbackFrom = Math.max(0, fallbackTo - 8_000);
+                return await queryLogsBatched(
+                  contract,
+                  filter,
+                  fallbackFrom,
+                  fallbackTo,
+                  LOGS_BATCH,
+                  {
+                    preferArchive: options.preferArchive === true,
+                    fullHistory: options.fullHistory === true,
+                    disableLookbackClamp:
+                      options.disableLookbackClamp === true,
+                  },
+                );
+              }
+              throw err;
             }
-            throw err;
-          }
-        };
+          };
 
-        const collectFromLogs = (
-          sourceLogs,
-          {
+          const collectFromLogs = (
+            sourceLogs,
+            { tokenIndex = 1, allowIndexFallback = false } = {},
+          ) => {
+            if (!Array.isArray(sourceLogs) || !sourceLogs.length) return 0;
+            let added = 0;
+            for (let i = sourceLogs.length - 1; i >= 0; i -= 1) {
+              const args = sourceLogs[i]?.args;
+              const tokenIdArg =
+                safeLogArg(args, "tokenId") ??
+                safeLogArg(args, "tokenID") ??
+                safeLogArg(args, "_tokenId") ??
+                safeLogArg(args, "id") ??
+                (allowIndexFallback
+                  ? safeLogArg(args, null, tokenIndex)
+                  : undefined);
+              const idBI = toTokenIdBigIntSafe(tokenIdArg);
+              if (idBI == null || idBI <= 0n) continue;
+              if (
+                candidateUpperBoundBigInt != null &&
+                idBI > candidateUpperBoundBigInt
+              ) {
+                continue;
+              }
+              candidates.push(idBI.toString());
+              added += 1;
+            }
+            return added;
+          };
+
+          const querySource = async ({
+            label,
+            buildFilter,
             tokenIndex = 1,
             allowIndexFallback = false,
-          } = {},
-        ) => {
-          if (!Array.isArray(sourceLogs) || !sourceLogs.length) return 0;
-          let added = 0;
-          for (let i = sourceLogs.length - 1; i >= 0; i -= 1) {
-            const args = sourceLogs[i]?.args;
-            const tokenIdArg =
-              safeLogArg(args, "tokenId") ??
-              safeLogArg(args, "tokenID") ??
-              safeLogArg(args, "_tokenId") ??
-              safeLogArg(args, "id") ??
-              (allowIndexFallback ? safeLogArg(args, null, tokenIndex) : undefined);
-            const idBI = toTokenIdBigIntSafe(tokenIdArg);
-            if (idBI == null || idBI <= 0n) continue;
+            authoritative = false,
+            fromBlock,
+            toBlock,
+            options,
+          }) => {
+            try {
+              const filter = buildFilter?.();
+              if (!filter) return 0;
+              const sourceLogs = await runLogQuery(
+                filter,
+                fromBlock,
+                toBlock,
+                options,
+              );
+              const count = collectFromLogs(sourceLogs, {
+                tokenIndex,
+                allowIndexFallback,
+              });
+              if (count > 0 && authoritative) authoritativeMintLogs = true;
+              return count;
+            } catch (err) {
+              if (isTransientRpcReadError(err)) {
+                console.debug(
+                  `fetchLastMinted: ${label} log query failed`,
+                  err,
+                );
+              } else {
+                console.warn(`fetchLastMinted: ${label} log query failed`, err);
+              }
+              return 0;
+            }
+          };
+
+          const eventSources = [
+            {
+              label: "NFTMinted",
+              buildFilter: () =>
+                walletScopedAddress
+                  ? contract.filters?.NFTMinted?.(walletScopedAddress)
+                  : contract.filters?.NFTMinted?.(),
+              tokenIndex: 1,
+              allowIndexFallback: true,
+              authoritative: true,
+            },
+            {
+              label: "PublicMint",
+              buildFilter: () =>
+                walletScopedAddress
+                  ? contract.filters?.PublicMint?.(walletScopedAddress)
+                  : contract.filters?.PublicMint?.(),
+              tokenIndex: 1,
+              allowIndexFallback: true,
+              authoritative: true,
+            },
+            {
+              label: "MintFulfilled",
+              buildFilter: () =>
+                walletScopedAddress
+                  ? contract.filters?.MintFulfilled?.(walletScopedAddress)
+                  : contract.filters?.MintFulfilled?.(),
+              tokenIndex: 1,
+              allowIndexFallback: false,
+              authoritative: false,
+            },
+          ];
+
+          const scanRange = async (fromBlock, toBlock, options = {}) => {
+            const boundedFrom = Math.max(
+              0,
+              Math.min(Number(fromBlock) || 0, safeLatest),
+            );
+            const boundedTo = Math.max(
+              0,
+              Math.min(Number(toBlock) || safeLatest, safeLatest),
+            );
+            let finalFrom = boundedFrom;
+            let finalTo = boundedTo;
+            if (finalFrom >= finalTo && finalTo > 0) {
+              finalFrom = Math.max(0, finalTo - 1);
+            }
+            if (finalFrom > finalTo) return;
+
+            for (const source of eventSources) {
+              const count = await querySource({
+                ...source,
+                fromBlock: finalFrom,
+                toBlock: finalTo,
+                options,
+              });
+              if (count > 0) break;
+            }
+
+            if (!candidates.length) {
+              await querySource({
+                label: "TransferMint",
+                buildFilter: () =>
+                  contract.filters?.Transfer?.(
+                    ZERO_ADDRESS,
+                    walletScopedAddress || null,
+                    null,
+                  ),
+                tokenIndex: 2,
+                allowIndexFallback: true,
+                authoritative: false,
+                fromBlock: finalFrom,
+                toBlock: finalTo,
+                options,
+              });
+            }
+          };
+
+          const recentFromBase = Number(baseFrom);
+          const recentFrom =
+            Number.isFinite(recentFromBase) && recentFromBase >= 0
+              ? Math.max(
+                  Math.max(0, Math.min(recentFromBase, safeLatest)),
+                  Math.max(0, safeLatest - 60_000),
+                )
+              : Math.max(0, safeLatest - 60_000);
+
+          await scanRange(recentFrom, safeLatest, {
+            preferArchive: false,
+            fullHistory: false,
+          });
+
+          if (!candidates.length) {
+            const historyFloor =
+              Number.isFinite(recentFromBase) && recentFromBase >= 0
+                ? Math.max(0, Math.min(recentFromBase, safeLatest))
+                : Math.max(0, safeLatest - 250_000);
+            let cursorTo = recentFrom > 0 ? recentFrom - 1 : -1;
+            let chunksScanned = 0;
+            while (
+              !candidates.length &&
+              cursorTo >= historyFloor &&
+              chunksScanned < 25
+            ) {
+              const cursorFrom = Math.max(
+                historyFloor,
+                cursorTo - LOGS_BATCH + 1,
+              );
+              await scanRange(cursorFrom, cursorTo, {
+                preferArchive: false,
+                fullHistory: false,
+                disableLookbackClamp: true,
+              });
+              cursorTo = cursorFrom - 1;
+              chunksScanned += 1;
+            }
+          }
+        } catch (err) {
+          if (isTransientRpcReadError(err)) {
+            console.debug("fetchLastMinted: log scan skipped", err);
+          } else {
+            console.warn("fetchLastMinted: log scan skipped", err);
+          }
+        }
+
+        const uniqueCandidates = [...new Set(candidates)];
+
+        let ticketBaseUri = null;
+        try {
+          if (typeof contract?.ticketBaseURI === "function") {
+            const base = await contract.ticketBaseURI().catch(() => null);
+            if (base) ticketBaseUri = String(base);
+          }
+        } catch {
+          ticketBaseUri = null;
+        }
+        const normalizedTicketBase = normalizeBaseUri(ticketBaseUri);
+
+        let tokenId = "";
+        let seededUri = null;
+        let seededMeta = null;
+
+        for (const idStr of uniqueCandidates) {
+          if (!idStr || idStr === "0") continue;
+          if (walletScopedAddress && pendingId && idStr === pendingId) continue;
+
+          if (authoritativeMintLogs) {
+            // Even authoritative logs can occasionally contain non-NFT IDs in this
+            // deployment layout. Accept only candidates with a non-ticket signal.
+            let isTicket = null;
+            if (typeof contract?.isTicket === "function") {
+              isTicket = await contract.isTicket(idStr).catch(() => null);
+            }
+            const isTicketFlag = isTicket == null ? null : coerceBool(isTicket);
+            if (isTicketFlag === true) continue;
+            if (isTicketFlag == null && isCanonicalTicketTokenId(idStr))
+              continue;
             if (
-              candidateUpperBoundBigInt != null &&
-              idBI > candidateUpperBoundBigInt
+              !isLikelyMainCollectionNftTokenId(
+                idStr,
+                Number(maxSupply) || 550,
+                isTicketFlag,
+              )
             ) {
               continue;
             }
-            candidates.push(idBI.toString());
-            added += 1;
-          }
-          return added;
-        };
 
-        const querySource = async ({
-          label,
-          buildFilter,
-          tokenIndex = 1,
-          allowIndexFallback = false,
-          authoritative = false,
-          fromBlock,
-          toBlock,
-          options,
-        }) => {
-          try {
-            const filter = buildFilter?.();
-            if (!filter) return 0;
-            const sourceLogs = await runLogQuery(
-              filter,
-              fromBlock,
-              toBlock,
-              options,
-            );
-            const count = collectFromLogs(sourceLogs, {
-              tokenIndex,
-              allowIndexFallback,
-            });
-            if (count > 0 && authoritative) authoritativeMintLogs = true;
-            return count;
-          } catch (err) {
-            console.warn(`fetchLastMinted: ${label} log query failed`, err);
-            return 0;
-          }
-        };
+            let uriTry = null;
+            let uriLooksTicket = false;
+            try {
+              uriTry = await getTokenUriCached(contract, idStr).catch(
+                () => null,
+              );
+              uriLooksTicket = isTicketUri(uriTry, normalizedTicketBase);
+            } catch {
+              uriTry = null;
+              uriLooksTicket = false;
+            }
+            if (uriLooksTicket) continue;
 
-        const eventSources = [
-          {
-            label: "NFTMinted",
-            buildFilter: () =>
-              walletScopedAddress
-                ? contract.filters?.NFTMinted?.(walletScopedAddress)
-                : contract.filters?.NFTMinted?.(),
-            tokenIndex: 1,
-            allowIndexFallback: true,
-            authoritative: true,
-          },
-          {
-            label: "PublicMint",
-            buildFilter: () =>
-              walletScopedAddress
-                ? contract.filters?.PublicMint?.(walletScopedAddress)
-                : contract.filters?.PublicMint?.(),
-            tokenIndex: 1,
-            allowIndexFallback: true,
-            authoritative: true,
-          },
-          {
-            label: "MintFulfilled",
-            buildFilter: () =>
-              walletScopedAddress
-                ? contract.filters?.MintFulfilled?.(walletScopedAddress)
-                : contract.filters?.MintFulfilled?.(),
-            tokenIndex: 1,
-            allowIndexFallback: false,
-            authoritative: false,
-          },
-        ];
+            const hasStrongSignal = isTicketFlag === false || Boolean(uriTry);
+            if (!hasStrongSignal) continue;
 
-        const scanRange = async (fromBlock, toBlock, options = {}) => {
-          const boundedFrom = Math.max(0, Math.min(Number(fromBlock) || 0, safeLatest));
-          const boundedTo = Math.max(0, Math.min(Number(toBlock) || safeLatest, safeLatest));
-          let finalFrom = boundedFrom;
-          let finalTo = boundedTo;
-          if (finalFrom >= finalTo && finalTo > 0) {
-            finalFrom = Math.max(0, finalTo - 1);
-          }
-          if (finalFrom > finalTo) return;
-
-          for (const source of eventSources) {
-            const count = await querySource({
-              ...source,
-              fromBlock: finalFrom,
-              toBlock: finalTo,
-              options,
-            });
-            if (count > 0) break;
+            tokenId = idStr;
+            seededUri = uriTry;
+            if (uriTry) {
+              try {
+                seededMeta = await readJsonFromURICached(uriTry).catch(
+                  () => null,
+                );
+              } catch {
+                // ignore prefetch errors; metadata is resolved later with fallbacks
+              }
+            }
+            break;
           }
 
-          if (!candidates.length) {
-            await querySource({
-              label: "TransferMint",
-              buildFilter: () =>
-                contract.filters?.Transfer?.(
-                  ZERO_ADDRESS,
-                  walletScopedAddress || null,
-                  null,
-                ),
-              tokenIndex: 2,
-              allowIndexFallback: true,
-              authoritative: false,
-              fromBlock: finalFrom,
-              toBlock: finalTo,
-              options,
-            });
-          }
-        };
-
-        const recentFromBase = Number(baseFrom);
-        const recentFrom = Number.isFinite(recentFromBase) && recentFromBase >= 0
-          ? Math.max(
-              Math.max(0, Math.min(recentFromBase, safeLatest)),
-              Math.max(0, safeLatest - 60_000),
-            )
-          : Math.max(0, safeLatest - 60_000);
-
-        await scanRange(recentFrom, safeLatest, {
-          preferArchive: false,
-          fullHistory: false,
-        });
-
-        if (!candidates.length) {
-          const extendedFrom = Number.isFinite(recentFromBase) && recentFromBase >= 0
-            ? Math.max(0, Math.min(recentFromBase, safeLatest))
-            : Math.max(0, safeLatest - 250_000);
-          if (extendedFrom < recentFrom) {
-            await scanRange(extendedFrom, safeLatest, {
-              preferArchive: true,
-              fullHistory: true,
-            });
-          }
-        }
-      } catch (err) {
-        console.warn("fetchLastMinted: log scan skipped", err);
-      }
-
-      const uniqueCandidates = [...new Set(candidates)];
-
-      let ticketBaseUri = null;
-      try {
-        if (typeof contract?.ticketBaseURI === "function") {
-          const base = await contract.ticketBaseURI().catch(() => null);
-          if (base) ticketBaseUri = String(base);
-        }
-      } catch {
-        ticketBaseUri = null;
-      }
-      const normalizedTicketBase = normalizeBaseUri(ticketBaseUri);
-
-      let tokenId = "";
-      let seededUri = null;
-      let seededMeta = null;
-
-      for (const idStr of uniqueCandidates) {
-        if (!idStr || idStr === "0") continue;
-        if (walletScopedAddress && pendingId && idStr === pendingId) continue;
-
-        if (authoritativeMintLogs) {
-          // Even authoritative logs can occasionally contain non-NFT IDs in this
-          // deployment layout. Accept only candidates with a non-ticket signal.
           let isTicket = null;
           if (typeof contract?.isTicket === "function") {
             isTicket = await contract.isTicket(idStr).catch(() => null);
           }
           const isTicketFlag = isTicket == null ? null : coerceBool(isTicket);
-          if (isTicketFlag === true) continue;
           if (isTicketFlag == null && isCanonicalTicketTokenId(idStr)) continue;
           if (
             !isLikelyMainCollectionNftTokenId(
@@ -3836,122 +5500,45 @@ export default function AppCore() {
           ) {
             continue;
           }
-
           let uriTry = null;
+          let metaTry = null;
           let uriLooksTicket = false;
           try {
-            uriTry = await getTokenUriCached(contract, idStr).catch(() => null);
-            uriLooksTicket = isTicketUri(uriTry, normalizedTicketBase);
+            if (normalizedTicketBase || isTicketFlag !== true) {
+              uriTry = await getTokenUriCached(contract, idStr).catch(
+                () => null,
+              );
+              uriLooksTicket = isTicketUri(uriTry, normalizedTicketBase);
+              if (!uriLooksTicket && uriTry) {
+                metaTry = await readJsonFromURICached(uriTry).catch(() => null);
+              }
+            }
           } catch {
             uriTry = null;
-            uriLooksTicket = false;
+            metaTry = null;
           }
-          if (uriLooksTicket) continue;
 
-          const hasStrongSignal = isTicketFlag === false || Boolean(uriTry);
-          if (!hasStrongSignal) continue;
+          if (isTicketFlag === true || uriLooksTicket) continue;
+          if (isTicketFlag === false && !uriTry) continue;
 
-          tokenId = idStr;
-          seededUri = uriTry;
-          if (uriTry) {
-            try {
-              seededMeta = await readJsonFromURICached(uriTry).catch(() => null);
-            } catch {
-              // ignore prefetch errors; metadata is resolved later with fallbacks
-            }
+          if (metaTry) {
+            const metaLooksTicket = looksLikeTicketMeta(metaTry);
+            const metaLooksNft = looksLikeNftMeta(metaTry);
+            if (metaLooksTicket || !metaLooksNft) continue;
+          } else if (isTicketFlag == null) {
+            // Unknown status without usable metadata; skip to avoid tickets.
+            continue;
           }
-          break;
-        }
 
-        let isTicket = null;
-        if (typeof contract?.isTicket === "function") {
-          isTicket = await contract.isTicket(idStr).catch(() => null);
-        }
-        const isTicketFlag = isTicket == null ? null : coerceBool(isTicket);
-        if (isTicketFlag == null && isCanonicalTicketTokenId(idStr)) continue;
-        if (
-          !isLikelyMainCollectionNftTokenId(
-            idStr,
-            Number(maxSupply) || 550,
-            isTicketFlag,
-          )
-        ) {
-          continue;
-        }
-        let uriTry = null;
-        let metaTry = null;
-        let uriLooksTicket = false;
-        try {
-          if (normalizedTicketBase || isTicketFlag !== true) {
-            uriTry = await getTokenUriCached(contract, idStr).catch(() => null);
-            uriLooksTicket = isTicketUri(uriTry, normalizedTicketBase);
-            if (!uriLooksTicket && uriTry) {
-              metaTry = await readJsonFromURICached(uriTry).catch(() => null);
-            }
+          if (isTicketFlag === false || metaTry) {
+            tokenId = idStr;
+            seededUri = uriTry;
+            seededMeta = metaTry;
+            break;
           }
-        } catch {
-          uriTry = null;
-          metaTry = null;
         }
 
-        if (isTicketFlag === true || uriLooksTicket) continue;
-        if (isTicketFlag === false && !uriTry) continue;
-
-        if (metaTry) {
-          const metaLooksTicket = looksLikeTicketMeta(metaTry);
-          const metaLooksNft = looksLikeNftMeta(metaTry);
-          if (metaLooksTicket || !metaLooksNft) continue;
-        } else if (isTicketFlag == null) {
-          // Unknown status without usable metadata; skip to avoid tickets.
-          continue;
-        }
-
-        if (isTicketFlag === false || metaTry) {
-          tokenId = idStr;
-          seededUri = uriTry;
-          seededMeta = metaTry;
-          break;
-        }
-      }
-
-      if (!tokenId || tokenId === "0") {
-        setLastMinted((prev) => {
-          if (isCompleteLastMintedPayload(prev)) return prev;
-          const cached = loadLastMintedCache();
-          if (cached) return cached;
-          return { ...EMPTY_LAST_MINTED };
-        });
-        return;
-      }
-
-      let uri = null;
-      try {
-        uri = seededUri || (await getTokenUriCached(contract, tokenId));
-      } catch (err) {
-        const msg = String(err?.message || "");
-        if (/NoToken/i.test(msg)) {
-          uri = null;
-        } else {
-          console.warn("fetchLastMinted: tokenURI failed", err);
-          uri = null;
-        }
-      }
-      let meta = seededMeta || (await readJsonFromURICached(uri));
-      if (looksLikeTicketMeta(meta)) {
-        try {
-          const freshUri = await getTokenUriCached(contract, tokenId, {
-            force: true,
-          });
-          if (freshUri && freshUri !== uri) {
-            uri = freshUri;
-            meta = await readJsonFromURICached(uri, { force: true });
-          } else if (uri) {
-            meta = await readJsonFromURICached(uri, { force: true });
-          }
-        } catch {
-          // ignore refresh errors
-        }
-        if (looksLikeTicketMeta(meta)) {
+        if (!tokenId || tokenId === "0") {
           setLastMinted((prev) => {
             if (isCompleteLastMintedPayload(prev)) return prev;
             const cached = loadLastMintedCache();
@@ -3960,278 +5547,375 @@ export default function AppCore() {
           });
           return;
         }
-      }
 
-      let image =
-        (await resolveImageUrlCached(meta?.image || meta?.image_url, uri)) ||
-        PLACEHOLDER_IMAGE;
-
-      let blockName = "-";
-      let backgroundName = "-";
-
-      const attrs = Array.isArray(meta?.attributes) ? meta.attributes : [];
-      const findAttr = (names) =>
-        attrs.find((a) =>
-          names.includes(String(a?.trait_type || "").toLowerCase()),
-        );
-
-      const blockAttr =
-        findAttr(["eye color", "eyes", "block/eye color", "block", "block id"]) ||
-        findAttr(["linked block", "block name"]);
-
-      if (blockAttr) blockName = blockAttr.value;
-
-      const bgAttr = findAttr(["background", "background color"]);
-
-      if (bgAttr) backgroundName = canonBackgroundName(bgAttr.value) || bgAttr.value;
-
-      if (image === PLACEHOLDER_IMAGE || blockName === "-" || backgroundName === "-") {
-        const parsed = parseTokenUriParts(uri);
-        if (parsed) {
-          const { mainId, blockName: bName, bgCode } = parsed;
-          const bgName = bgNameFromCode(bgCode) || bgCode;
-          if (image === PLACEHOLDER_IMAGE && bName && bgCode && mainId) {
-            const fileName = `Biggi_${mainId}_${bName}_${bgCode}.png`;
-            const fallbackImage = buildBlockImageUrl(bName, fileName);
-            if (fallbackImage) image = fallbackImage;
-          }
-          if (blockName === "-" && bName) blockName = bName;
-          if (backgroundName === "-" && bgName) backgroundName = bgName;
-        }
-      }
-
-      if (
-        (image === PLACEHOLDER_IMAGE || blockName === "-" || backgroundName === "-") &&
-        typeof contract?.nftInfo === "function"
-      ) {
+        let uri = null;
         try {
-          const infoRead = await readNftInfoBestEffort(
-            contract,
-            tokenId,
-            Number(maxSupply) || 550,
+          uri = seededUri || (await getTokenUriCached(contract, tokenId));
+        } catch (err) {
+          const msg = String(err?.message || "");
+          if (/NoToken/i.test(msg)) {
+            uri = null;
+          } else {
+            console.warn("fetchLastMinted: tokenURI failed", err);
+            uri = null;
+          }
+        }
+        let meta = seededMeta || (await readJsonFromURICached(uri));
+        if (looksLikeTicketMeta(meta)) {
+          try {
+            const freshUri = await getTokenUriCached(contract, tokenId, {
+              force: true,
+            });
+            if (freshUri && freshUri !== uri) {
+              uri = freshUri;
+              meta = await readJsonFromURICached(uri, { force: true });
+            } else if (uri) {
+              meta = await readJsonFromURICached(uri, { force: true });
+            }
+          } catch {
+            // ignore refresh errors
+          }
+          if (looksLikeTicketMeta(meta)) {
+            setLastMinted((prev) => {
+              if (isCompleteLastMintedPayload(prev)) return prev;
+              const cached = loadLastMintedCache();
+              if (cached) return cached;
+              return { ...EMPTY_LAST_MINTED };
+            });
+            return;
+          }
+        }
+
+        let image =
+          (await resolveImageUrlCached(meta?.image || meta?.image_url, uri)) ||
+          PLACEHOLDER_IMAGE;
+
+        let blockName = "-";
+        let backgroundName = "-";
+
+        const attrs = Array.isArray(meta?.attributes) ? meta.attributes : [];
+        const findAttr = (names) =>
+          attrs.find((a) =>
+            names.includes(String(a?.trait_type || "").toLowerCase()),
           );
-          const parsed = infoRead?.parsed || parseNftInfo(infoRead?.info);
+
+        const blockAttr =
+          findAttr([
+            "eye color",
+            "eyes",
+            "block/eye color",
+            "block",
+            "block id",
+          ]) || findAttr(["linked block", "block name"]);
+
+        if (blockAttr) blockName = blockAttr.value;
+
+        const bgAttr = findAttr(["background", "background color"]);
+
+        if (bgAttr)
+          backgroundName = canonBackgroundName(bgAttr.value) || bgAttr.value;
+
+        if (
+          image === PLACEHOLDER_IMAGE ||
+          blockName === "-" ||
+          backgroundName === "-"
+        ) {
+          const parsed = parseTokenUriParts(uri);
           if (parsed) {
-            const { blockName: bName, bgCode, bgName, mainId, blockIdx } = parsed;
-            let baseUri = null;
-            if (image === PLACEHOLDER_IMAGE && typeof contract?.blockBaseURIs === "function") {
-              const candidates = [];
-              const n = Number(blockIdx);
-              if (Number.isFinite(n)) {
-                candidates.push(n);
-                if (n > 0) candidates.push(n - 1);
-                candidates.push(n + 1);
-              }
-              for (const idx of candidates) {
-                const v = await contract.blockBaseURIs(idx).catch(() => null);
-                if (typeof v === "string" && v.trim()) {
-                  baseUri = v.trim();
-                  break;
-                }
-              }
+            const { mainId: rawMainId, blockName: bName, bgCode } = parsed;
+            const mainId = normalizeMainImageId(
+              rawMainId,
+              tokenId,
+              Number(maxSupply) || 550,
+            );
+            const bgName = bgNameFromCode(bgCode) || bgCode;
+            if (image === PLACEHOLDER_IMAGE && bName && bgCode && mainId) {
+              const fileName = `Biggi_${mainId}_${bName}_${bgCode}.png`;
+              const fallbackImage = buildBlockImageUrl(bName, fileName);
+              if (fallbackImage) image = fallbackImage;
             }
             if (blockName === "-" && bName) blockName = bName;
             if (backgroundName === "-" && bgName) backgroundName = bgName;
-            if (
-              image === PLACEHOLDER_IMAGE &&
-              bName &&
-              bgCode &&
-              mainId
-            ) {
-              const fileName = `Biggi_${mainId}_${bName}_${bgCode}.png`;
-              const fallbackImage = buildBlockImageUrl(bName, fileName, baseUri);
-              if (fallbackImage) image = fallbackImage;
-            }
           }
-        } catch {
-          // ignore nftInfo fallback errors
         }
-      }
 
-      if (walletScopedAddress) {
-        const walletItems = Array.isArray(latestWalletItemsRef.current)
-          ? latestWalletItemsRef.current
-          : [];
-        const walletMatch = walletItems.find(
-          (item) =>
-            item &&
-            !item.isTicket &&
-            !item.isPending &&
-            String(item.tokenId || "") === String(tokenId || ""),
-        );
-        if (walletMatch) {
-          const walletAttrs = Array.isArray(walletMatch?.meta?.attributes)
-            ? walletMatch.meta.attributes
-            : [];
-          const findWalletAttr = (names) => {
-            const hit = walletAttrs.find((a) =>
-              names.includes(String(a?.trait_type || "").toLowerCase()),
+        if (
+          (image === PLACEHOLDER_IMAGE ||
+            blockName === "-" ||
+            backgroundName === "-") &&
+          typeof contract?.nftInfo === "function"
+        ) {
+          try {
+            const infoRead = await readNftInfoBestEffort(
+              contract,
+              tokenId,
+              Number(maxSupply) || 550,
             );
-            return hit?.value;
-          };
-
-          const walletImage = String(walletMatch?.image || "").trim();
-          const walletImageLooksTicket = walletImage.includes(TICKET_IMAGE_FILE);
-          const walletImageUsable =
-            walletImage &&
-            walletImage !== PLACEHOLDER_IMAGE &&
-            !walletImageLooksTicket;
-
-          if (image === PLACEHOLDER_IMAGE && walletImageUsable) {
-            image = walletImage;
-          }
-
-          if (blockName === "-") {
-            const walletBlock =
-              walletMatch?.blockName ||
-              findWalletAttr([
-                "eye color",
-                "eyes",
-                "block/eye color",
-                "block",
-                "block id",
-                "linked block",
-                "block name",
-              ]);
-            if (walletBlock) blockName = String(walletBlock);
-          }
-
-          if (backgroundName === "-") {
-            const walletBg =
-              walletMatch?.backgroundName ||
-              findWalletAttr(["background", "background color"]);
-            if (walletBg) {
-              backgroundName = canonBackgroundName(walletBg) || String(walletBg);
-            }
-          }
-        }
-      }
-
-      const imageLooksTicket = String(image || "")
-        .toLowerCase()
-        .includes(String(TICKET_IMAGE_FILE || "").toLowerCase());
-      const incomplete =
-        !isUsableLastMintedImage(image) ||
-        imageLooksTicket ||
-        blockName === "-" ||
-        backgroundName === "-";
-      if (incomplete) {
-        // Keep last known NFT in LiveStats when RPC/IPFS metadata is temporarily incomplete.
-        setLastMinted((prev) => {
-          const sameToken = String(prev?.tokenId || "") === String(tokenId || "");
-          const prevImageUsable = isUsableLastMintedImage(prev?.image);
-          const nextImageUsable = isUsableLastMintedImage(image) && !imageLooksTicket;
-          const nextImage = nextImageUsable
-            ? image
-            : sameToken && prevImageUsable
-              ? prev.image
-              : "";
-          const nextBlock =
-            blockName !== "-"
-              ? blockName
-              : sameToken && String(prev?.blockName || "") !== "-"
-                ? prev.blockName
-                : "-";
-          const nextBackground =
-            backgroundName !== "-"
-              ? backgroundName
-              : sameToken && String(prev?.backgroundName || "") !== "-"
-                ? prev.backgroundName
-                : "-";
-          const hasAnyResolved =
-            Boolean(String(nextImage || "").trim()) ||
-            nextBlock !== "-" ||
-            nextBackground !== "-";
-          const nextCandidate = {
-            tokenId: String(tokenId || "-"),
-            image: nextImage,
-            blockName: nextBlock,
-            backgroundName: nextBackground,
-          };
-          const nextComplete = isCompleteLastMintedPayload(nextCandidate);
-          const prevComplete = isCompleteLastMintedPayload(prev);
-          if (nextComplete) return nextCandidate;
-          // Never replace a complete LiveStats card with partial/blank data.
-          if (prevComplete) return prev;
-          const cached = loadLastMintedCache();
-          if (cached) return cached;
-          if (hasAnyResolved) return nextCandidate;
-          return {
-            tokenId: "-",
-            image: PLACEHOLDER_IMAGE,
-            blockName: "-",
-            backgroundName: "-",
-          };
-        });
-        return;
-      }
-
-      if (walletScopedAddress) {
-        const mintedId = String(tokenId || "");
-        const walletItems = Array.isArray(latestWalletItemsRef.current)
-          ? latestWalletItemsRef.current
-          : [];
-        const mintedInWallet = walletItems.some(
-          (item) =>
-            item &&
-            !isTicketLikeItem(item) &&
-            !item.isPending &&
-            String(item.tokenId || "") === mintedId,
-        );
-
-        if (mintedId && mintedInWallet) {
-          const currentTopId =
-            topFirstId != null ? String(topFirstId) : "";
-          const currentTopItem = currentTopId
-            ? walletItems.find(
-                (item) =>
-                  item && String(item.tokenId || "") === currentTopId,
-              )
-            : null;
-          const currentTopValid =
-            Boolean(currentTopItem) &&
-            !isTicketLikeItem(currentTopItem) &&
-            !Boolean(currentTopItem?.isPending);
-          const currentTopLikelyMain = currentTopValid
-            ? isLikelyMainCollectionNftTokenId(
-                currentTopId,
+            const parsed = infoRead?.parsed || parseNftInfo(infoRead?.info);
+            if (parsed) {
+              const {
+                blockName: bName,
+                bgCode,
+                bgName,
+                mainId: rawMainId,
+                blockIdx,
+              } = parsed;
+              const mainId = normalizeMainImageId(
+                rawMainId,
+                tokenId,
                 Number(maxSupply) || 550,
-                currentTopItem?.isTicket == null
-                  ? null
-                  : Boolean(currentTopItem.isTicket),
-              )
-            : false;
-
-          const currentTopBI = toTokenIdBigIntSafe(currentTopId);
-          const mintedBI = toTokenIdBigIntSafe(mintedId);
-          const mintedIsNewer =
-            mintedBI != null &&
-            (currentTopBI == null || mintedBI > currentTopBI);
-
-          if (
-            !currentTopValid ||
-            !currentTopLikelyMain ||
-            currentTopId === String(pendingId || "") ||
-            mintedIsNewer
-          ) {
-            if (currentTopId !== mintedId) {
-              setTopFirstId(mintedId);
+              );
+              let baseUri = null;
+              if (
+                image === PLACEHOLDER_IMAGE &&
+                typeof contract?.blockBaseURIs === "function"
+              ) {
+                const candidates = [];
+                const n = Number(blockIdx);
+                if (Number.isFinite(n)) {
+                  candidates.push(n);
+                  if (n > 0) candidates.push(n - 1);
+                  candidates.push(n + 1);
+                }
+                for (const idx of candidates) {
+                  const v = await contract.blockBaseURIs(idx).catch(() => null);
+                  if (typeof v === "string" && v.trim()) {
+                    baseUri = v.trim();
+                    break;
+                  }
+                }
+              }
+              if (blockName === "-" && bName) blockName = bName;
+              if (backgroundName === "-" && bgName) backgroundName = bgName;
+              if (image === PLACEHOLDER_IMAGE && bName && bgCode && mainId) {
+                const fileName = `Biggi_${mainId}_${bName}_${bgCode}.png`;
+                const fallbackImage = buildBlockImageUrl(
+                  bName,
+                  fileName,
+                  baseUri,
+                );
+                if (fallbackImage) image = fallbackImage;
+              }
             }
-            saveTopFirstCache(walletScopedAddress, mintedId);
+          } catch {
+            // ignore nftInfo fallback errors
           }
         }
-      }
 
-      setLastMinted({ tokenId, image, blockName, backgroundName });
-    } catch (e) {
-      const msg = String(e?.message || "");
-      if (/invalid block range params/i.test(msg)) {
-        console.warn("fetchLastMinted skipped due to RPC range validation");
-        return;
+        if (walletScopedAddress) {
+          const walletItems = Array.isArray(latestWalletItemsRef.current)
+            ? latestWalletItemsRef.current
+            : [];
+          const walletMatch = walletItems.find(
+            (item) =>
+              item &&
+              !item.isTicket &&
+              !item.isPending &&
+              String(item.tokenId || "") === String(tokenId || ""),
+          );
+          if (walletMatch) {
+            const walletAttrs = Array.isArray(walletMatch?.meta?.attributes)
+              ? walletMatch.meta.attributes
+              : [];
+            const findWalletAttr = (names) => {
+              const hit = walletAttrs.find((a) =>
+                names.includes(String(a?.trait_type || "").toLowerCase()),
+              );
+              return hit?.value;
+            };
+
+            const walletImage = String(walletMatch?.image || "").trim();
+            const walletImageLooksTicket =
+              walletImage.includes(TICKET_IMAGE_FILE);
+            const walletImageUsable =
+              walletImage &&
+              walletImage !== PLACEHOLDER_IMAGE &&
+              !walletImageLooksTicket;
+
+            if (image === PLACEHOLDER_IMAGE && walletImageUsable) {
+              image = walletImage;
+            }
+
+            if (blockName === "-") {
+              const walletBlock =
+                walletMatch?.blockName ||
+                findWalletAttr([
+                  "eye color",
+                  "eyes",
+                  "block/eye color",
+                  "block",
+                  "block id",
+                  "linked block",
+                  "block name",
+                ]);
+              if (walletBlock) blockName = String(walletBlock);
+            }
+
+            if (backgroundName === "-") {
+              const walletBg =
+                walletMatch?.backgroundName ||
+                findWalletAttr(["background", "background color"]);
+              if (walletBg) {
+                backgroundName =
+                  canonBackgroundName(walletBg) || String(walletBg);
+              }
+            }
+          }
+        }
+
+        const imageLooksTicket = String(image || "")
+          .toLowerCase()
+          .includes(String(TICKET_IMAGE_FILE || "").toLowerCase());
+        const incomplete =
+          !isUsableLastMintedImage(image) ||
+          imageLooksTicket ||
+          blockName === "-" ||
+          backgroundName === "-";
+        if (incomplete) {
+          // Keep last known NFT in LiveStats when RPC/IPFS metadata is temporarily incomplete.
+          setLastMinted((prev) => {
+            const sameToken =
+              String(prev?.tokenId || "") === String(tokenId || "");
+            const prevImageUsable = isUsableLastMintedImage(prev?.image);
+            const nextImageUsable =
+              isUsableLastMintedImage(image) && !imageLooksTicket;
+            const nextImage = nextImageUsable
+              ? image
+              : sameToken && prevImageUsable
+                ? prev.image
+                : "";
+            const nextBlock =
+              blockName !== "-"
+                ? blockName
+                : sameToken && String(prev?.blockName || "") !== "-"
+                  ? prev.blockName
+                  : "-";
+            const nextBackground =
+              backgroundName !== "-"
+                ? backgroundName
+                : sameToken && String(prev?.backgroundName || "") !== "-"
+                  ? prev.backgroundName
+                  : "-";
+            const hasAnyResolved =
+              Boolean(String(nextImage || "").trim()) ||
+              nextBlock !== "-" ||
+              nextBackground !== "-";
+            const nextCandidate = {
+              tokenId: String(tokenId || "-"),
+              image: nextImage,
+              blockName: nextBlock,
+              backgroundName: nextBackground,
+            };
+            const nextComplete = isCompleteLastMintedPayload(nextCandidate);
+            const prevComplete = isCompleteLastMintedPayload(prev);
+            if (nextComplete) return nextCandidate;
+            // Never replace a complete LiveStats card with partial/blank data.
+            if (prevComplete) return prev;
+            const cached = loadLastMintedCache();
+            if (cached) return cached;
+            if (hasAnyResolved) return nextCandidate;
+            return {
+              tokenId: "-",
+              image: PLACEHOLDER_IMAGE,
+              blockName: "-",
+              backgroundName: "-",
+            };
+          });
+          return;
+        }
+
+        if (walletScopedAddress) {
+          const mintedId = String(tokenId || "");
+          const walletItems = Array.isArray(latestWalletItemsRef.current)
+            ? latestWalletItemsRef.current
+            : [];
+          const mintedInWallet = walletItems.some(
+            (item) =>
+              item &&
+              !isTicketLikeItem(item) &&
+              !item.isPending &&
+              String(item.tokenId || "") === mintedId,
+          );
+
+          if (mintedId && mintedInWallet) {
+            const currentTopId = topFirstId != null ? String(topFirstId) : "";
+            const currentTopItem = currentTopId
+              ? walletItems.find(
+                  (item) => item && String(item.tokenId || "") === currentTopId,
+                )
+              : null;
+            const currentTopValid =
+              Boolean(currentTopItem) &&
+              !isTicketLikeItem(currentTopItem) &&
+              !Boolean(currentTopItem?.isPending);
+            const currentTopLikelyMain = currentTopValid
+              ? isLikelyMainCollectionNftTokenId(
+                  currentTopId,
+                  Number(maxSupply) || 550,
+                  currentTopItem?.isTicket == null
+                    ? null
+                    : Boolean(currentTopItem.isTicket),
+                )
+              : false;
+
+            const currentTopBI = toTokenIdBigIntSafe(currentTopId);
+            const mintedBI = toTokenIdBigIntSafe(mintedId);
+            const mintedIsNewer =
+              mintedBI != null &&
+              (currentTopBI == null || mintedBI > currentTopBI);
+
+            if (
+              !currentTopValid ||
+              !currentTopLikelyMain ||
+              currentTopId === String(pendingId || "") ||
+              mintedIsNewer
+            ) {
+              if (currentTopId !== mintedId) {
+                setTopFirstId(mintedId);
+              }
+              saveTopFirstCache(walletScopedAddress, mintedId);
+            }
+          }
+        }
+
+        setLastMinted({ tokenId, image, blockName, backgroundName });
+      } catch (e) {
+        const msg = String(e?.message || "");
+        if (/invalid block range params/i.test(msg)) {
+          console.warn("fetchLastMinted skipped due to RPC range validation");
+          return;
+        }
+        if (isTransientRpcReadError(e)) {
+          console.debug("fetchLastMinted", e);
+          return;
+        }
+        console.error("fetchLastMinted", e);
+        }
+      })();
+
+      lastMintedFetchRef.current = {
+        key: requestKey,
+        promise: exec,
+        settledAt: 0,
+      };
+
+      try {
+        return await exec;
+      } finally {
+        if (
+          lastMintedFetchRef.current.key === requestKey &&
+          lastMintedFetchRef.current.promise === exec
+        ) {
+          lastMintedFetchRef.current = {
+            key: requestKey,
+            promise: null,
+            settledAt: Date.now(),
+          };
+        }
       }
-      console.error("fetchLastMinted", e);
-    }
-  }, [walletAddress, topFirstId, maxSupply]);
+    },
+    [walletAddress, topFirstId, maxSupply],
+  );
 
   /* ====================================================================== */
   /* ============================ VRF PANEL DATA =========================== */
@@ -4243,7 +5927,9 @@ export default function AppCore() {
       if (!provider) throw new Error("Provider not available");
       const latest = await provider.getBlockNumber();
       const safeFrom = await getSafeDeployBlock(provider);
-      const hintFrom = redeemStartBlock ? Math.max(redeemStartBlock - 2000, 0) : 0;
+      const hintFrom = redeemStartBlock
+        ? Math.max(redeemStartBlock - 2000, 0)
+        : 0;
       const from = FULL_HISTORY
         ? Math.max(safeFrom, hintFrom || 0)
         : Math.max(safeFrom, hintFrom || 0, latest - 120_000);
@@ -4291,13 +5977,15 @@ export default function AppCore() {
           fulfillByReq.set(rid, payload);
           return;
         }
-        const prevWords = Array.isArray(prev.randomWords) ? prev.randomWords : [];
+        const prevWords = Array.isArray(prev.randomWords)
+          ? prev.randomWords
+          : [];
         const nextWords = Array.isArray(payload.randomWords)
           ? payload.randomWords
           : [];
         const preferPayload =
           nextWords.length > prevWords.length ||
-          (Number(payload?.blockNumber || 0) > Number(prev?.blockNumber || 0));
+          Number(payload?.blockNumber || 0) > Number(prev?.blockNumber || 0);
         if (preferPayload) {
           fulfillByReq.set(rid, {
             ...prev,
@@ -4337,7 +6025,10 @@ export default function AppCore() {
         }
       }
 
-      if (requestIds.size && typeof c?.filters?.RandomFulfilled === "function") {
+      if (
+        requestIds.size &&
+        typeof c?.filters?.RandomFulfilled === "function"
+      ) {
         const fulfillLogsRaw = await queryLogsBatched(
           c,
           c.filters.RandomFulfilled(),
@@ -4367,7 +6058,10 @@ export default function AppCore() {
       if (requestIds.size) {
         try {
           const vrfRouter = getVRFRO(provider);
-          if (vrfRouter && typeof vrfRouter?.filters?.RandomFulfilled === "function") {
+          if (
+            vrfRouter &&
+            typeof vrfRouter?.filters?.RandomFulfilled === "function"
+          ) {
             const fulfillLogsRaw = await queryLogsBatched(
               vrfRouter,
               vrfRouter.filters.RandomFulfilled(),
@@ -4378,7 +6072,9 @@ export default function AppCore() {
                 preferArchive: true,
               },
             );
-            for (const l of Array.isArray(fulfillLogsRaw) ? fulfillLogsRaw : []) {
+            for (const l of Array.isArray(fulfillLogsRaw)
+              ? fulfillLogsRaw
+              : []) {
               const args = l?.args;
               const rid = safeLogArg(args, "requestId", 0)?.toString?.() || "";
               if (!rid || !requestIds.has(rid)) continue;
@@ -4450,7 +6146,9 @@ export default function AppCore() {
             const current = reqSeq[i];
             if (!current?.rid) continue;
             const nextReqBlock =
-              i + 1 < reqSeq.length ? Number(reqSeq[i + 1]?.blockNumber || 0) : null;
+              i + 1 < reqSeq.length
+                ? Number(reqSeq[i + 1]?.blockNumber || 0)
+                : null;
 
             while (
               mintIdx < mintLogs.length &&
@@ -4462,7 +6160,11 @@ export default function AppCore() {
             let matchedMint = null;
             for (let j = mintIdx; j < mintLogs.length; j += 1) {
               const mintBlock = Number(mintLogs[j]?.blockNumber || 0);
-              if (nextReqBlock != null && nextReqBlock > 0 && mintBlock >= nextReqBlock) {
+              if (
+                nextReqBlock != null &&
+                nextReqBlock > 0 &&
+                mintBlock >= nextReqBlock
+              ) {
                 break;
               }
               matchedMint = mintLogs[j];
@@ -4474,7 +6176,9 @@ export default function AppCore() {
               mergeFulfillment(current.rid, {
                 requestId: current.rid,
                 tx: matchedMint?.transactionHash || "",
-                blockNumber: Number(matchedMint?.blockNumber || current.blockNumber),
+                blockNumber: Number(
+                  matchedMint?.blockNumber || current.blockNumber,
+                ),
                 randomWords: [],
               });
             }
@@ -4527,7 +6231,9 @@ export default function AppCore() {
 
       const seenReq = new Set();
       const dedup = [];
-      for (const row of rows.sort((a, b) => (b.blockNumber || 0) - (a.blockNumber || 0))) {
+      for (const row of rows.sort(
+        (a, b) => (b.blockNumber || 0) - (a.blockNumber || 0),
+      )) {
         const key = String(row?.requestId || "");
         if (!key || seenReq.has(key)) continue;
         seenReq.add(key);
@@ -4553,13 +6259,19 @@ export default function AppCore() {
       try {
         const vrf = getVRFRO(provider);
         const [keyHash, conf, numWords, gas, sub, coord] = await Promise.all([
-          vrf?.keyHash ? vrf.keyHash().catch(() => "") : c.keyHash().catch(() => ""),
+          vrf?.keyHash
+            ? vrf.keyHash().catch(() => "")
+            : c.keyHash().catch(() => ""),
           c.requestConfirmations?.().catch?.(() => 3) ?? 3,
-          vrf?.numWords ? vrf.numWords().catch(() => 1) : c.numWords().catch(() => 1),
+          vrf?.numWords
+            ? vrf.numWords().catch(() => 1)
+            : c.numWords().catch(() => 1),
           vrf?.callbackGasLimit
             ? vrf.callbackGasLimit().catch(() => 300000)
             : c.callbackGasLimit().catch(() => 300000),
-          vrf?.subId ? vrf.subId().catch(() => "") : (c.s_subscriptionId?.().catch?.(() => "") ?? ""),
+          vrf?.subId
+            ? vrf.subId().catch(() => "")
+            : (c.s_subscriptionId?.().catch?.(() => "") ?? ""),
           vrf?.coordinator ? vrf.coordinator().catch(() => "") : "",
         ]);
 
@@ -4585,7 +6297,9 @@ export default function AppCore() {
 
       if (walletAddress) {
         try {
-          const pendingReqIdBN = await c.pendingMintRequest(walletAddress).catch(() => 0n);
+          const pendingReqIdBN = await c
+            .pendingMintRequest(walletAddress)
+            .catch(() => 0n);
           const ridStr = pendingReqIdBN?.toString?.() || "0";
           const hasPendingOnchain = ridStr !== "0";
           setVRFPending(hasPendingOnchain);
@@ -4601,7 +6315,9 @@ export default function AppCore() {
               hasPendingOnchain ? ridStr : "",
             );
           } else {
-            history = Array.isArray(VRFUIData?.history) ? VRFUIData.history : [];
+            history = Array.isArray(latestVRFUIDataRef.current?.history)
+              ? latestVRFUIDataRef.current.history
+              : [];
           }
 
           if (hasPendingOnchain) {
@@ -4641,7 +6357,9 @@ export default function AppCore() {
       }
 
       setVRFUIData({
-        network: net?.name ? `${net.name} (${net.chainId})` : `chainId ${net.chainId}`,
+        network: net?.name
+          ? `${net.name} (${net.chainId})`
+          : `chainId ${net.chainId}`,
         chainId: Number(net?.chainId),
         userAddress: walletAddress || "",
         subscription: { id: subId },
@@ -4650,8 +6368,9 @@ export default function AppCore() {
         history,
       });
     } catch (e) {
-      if (isRateLimitedRpcError(e)) {
-        engageRpcBackoff();
+      if (isTransientRpcReadError(e)) {
+        const delay = getPollInterval(12_000, "VITE_RPC_RATE_LIMIT_BACKOFF_MS");
+        engageRpcBackoff(delay);
         recoverRpcConnectivity("refreshVRFPanel").catch(() => {});
         return;
       }
@@ -4661,167 +6380,273 @@ export default function AppCore() {
     walletAddress,
     buildVRFHistory,
     isRpcBackoffActive,
+    isTransientRpcReadError,
     engageRpcBackoff,
     recoverRpcConnectivity,
-    VRFUIData,
   ]);
 
   /* ====================================================================== */
   /* ============================ EVENT LISTENERS ========================== */
   /* ====================================================================== */
 
-  const attachEventListeners = React.useCallback((addr) => {
-    try {
-      const contract = contractRef.current || getReadOnlyContract();
-      contractRef.current = contract;
-
-      const zeroL = ZERO_ADDRESS.toLowerCase();
-
-      const onTransfer = async (from, to, tokenId, event) => {
+  const attachEventListeners = React.useCallback(
+    (addr) => {
+      try {
+        const existingUnsub = unsubRef.current;
+        unsubRef.current = () => {};
         try {
-          const fromL = (from || "").toLowerCase();
-          const toL = (to || "").toLowerCase();
-          const me = addr.toLowerCase();
-          const tid = tokenId.toString();
-
-          scheduleFetchStats(900, fetchStats);
-          scheduleFetchREWARDS(900, fetchREWARDS);
-          scheduleRefreshVRF(1200, refreshVRFPanel);
-
-          if (fromL === me && toL === zeroL) {
-            setVRFPending(true);
-            setRedeemMsg("Redeem confirmed. Waiting for VRF reveal...");
-            setRedeemStartedAt((prev) => prev || Date.now());
-            if (event?.blockNumber != null) {
-              const bn = Number(event.blockNumber);
-              if (Number.isFinite(bn)) {
-                setRedeemStartBlock(bn);
-              }
-            }
-          }
-
-          if (fromL === zeroL && toL === me) {
-            const hasRedeemPending = Boolean(
-              lastRedeemTicketIdRef.current || pendingTicketIdRef.current,
-            );
-            if (hasRedeemPending && tid) {
-              let isTicketNow = null;
-              if (typeof contract?.isTicket === "function") {
-                isTicketNow = await contract.isTicket(tid).catch(() => null);
-              }
-              const isTicketFlag =
-                isTicketNow == null ? null : coerceBool(isTicketNow);
-              const isLikelyMainMint = isLikelyMainCollectionNftTokenId(
-                tid,
-                Number(maxSupply) || 550,
-                isTicketFlag,
-              );
-              if (isLikelyMainMint) {
-                const mintedId = String(tid);
-                setTopFirstId(mintedId);
-                saveTopFirstCache(addr, mintedId);
-                lastRedeemTicketIdRef.current = null;
-              }
-            }
-          }
-
-          if (toL === me) {
-            setTimeout(() => fetchWalletAssets(addr).catch(() => {}), 1200);
-          }
-
-          if (fromL === me && toL !== zeroL) {
-            setMyNFTs((prev) => prev.filter((x) => x.tokenId !== tid));
-          }
-        } catch (e) {
-          console.error("onTransfer", e);
+          existingUnsub?.();
+        } catch (cleanupErr) {
+          console.warn(
+            "attachEventListeners: previous cleanup failed",
+            cleanupErr,
+          );
         }
-      };
 
-      contract.on("Transfer", onTransfer);
+        const contract = contractRef.current || getReadOnlyContract();
+        contractRef.current = contract;
 
-      const onAccountsChanged = async (accs) => {
-        const a = accs?.[0] || "";
-        setWalletAddress(a);
+        const zeroL = ZERO_ADDRESS.toLowerCase();
+
+        const onTransfer = async (from, to, tokenId, event) => {
+          try {
+            const activeWallet = String(
+              walletAddressRef.current || addr || "",
+            ).trim();
+            if (!activeWallet) return;
+            const fromL = (from || "").toLowerCase();
+            const toL = (to || "").toLowerCase();
+            const me = activeWallet.toLowerCase();
+            const tid = tokenId.toString();
+
+            scheduleFetchStats(900, fetchStats);
+            scheduleFetchREWARDS(900, fetchREWARDS);
+            scheduleRefreshVRF(1200, refreshVRFPanel);
+
+            if (fromL === me && toL === zeroL) {
+              setVRFPending(true);
+              setRedeemMsg("Redeem confirmed. Waiting for VRF reveal...");
+              setRedeemStartedAt((prev) => prev || Date.now());
+              if (event?.blockNumber != null) {
+                const bn = Number(event.blockNumber);
+                if (Number.isFinite(bn)) {
+                  setRedeemStartBlock(bn);
+                }
+              }
+            }
+
+            if (fromL === zeroL && toL === me) {
+              const hasRedeemPending = Boolean(
+                lastRedeemTicketIdRef.current || pendingTicketIdRef.current,
+              );
+              if (hasRedeemPending && tid) {
+                let isTicketNow = null;
+                if (typeof contract?.isTicket === "function") {
+                  isTicketNow = await contract.isTicket(tid).catch(() => null);
+                }
+                const isTicketFlag =
+                  isTicketNow == null ? null : coerceBool(isTicketNow);
+                const isLikelyMainMint = isLikelyMainCollectionNftTokenId(
+                  tid,
+                  Number(maxSupply) || 550,
+                  isTicketFlag,
+                );
+                if (isLikelyMainMint) {
+                  const mintedId = String(tid);
+                  setTopFirstId(mintedId);
+                  saveTopFirstCache(activeWallet, mintedId);
+                  lastRedeemTicketIdRef.current = null;
+                }
+              }
+            }
+
+            if (toL === me) {
+              setTimeout(
+                () => fetchWalletAssets(activeWallet).catch(() => {}),
+                1200,
+              );
+            }
+
+            if (fromL === me && toL !== zeroL) {
+              setMyNFTs((prev) => prev.filter((x) => x.tokenId !== tid));
+            }
+          } catch (e) {
+            console.error("onTransfer", e);
+          }
+        };
+
+        const transferProvider =
+          contract?.runner?.provider ||
+          contract?.provider ||
+          getProviderFor(contract);
+        const canSubscribeTransfers =
+          supportsLogSubscriptions(transferProvider);
+
+        if (canSubscribeTransfers && typeof contract?.on === "function") {
+          contract.on("Transfer", onTransfer);
+        } else {
+          console.info(
+            "attachEventListeners: Transfer subscription disabled for current RPC provider; using polling refresh only.",
+          );
+        }
+
+        const onAccountsChanged = async (accs) => {
+          const a = accs?.[0] || "";
+          if (!a) {
+            walletConnectResumeAllowedRef.current = false;
+            clearInjectedProvider();
+            clearWalletConnectSession().catch(() => {});
+            try {
+              unsubRef.current?.();
+            } catch {}
+            unsubRef.current = () => {};
+          }
+          walletAddressRef.current = a;
+          setWalletAddress(a);
+          setLastMinted((prev) => {
+            if (isCompleteLastMintedPayload(prev)) return prev;
+            const cached = loadLastMintedCache();
+            if (cached) return cached;
+            return { ...EMPTY_LAST_MINTED };
+          });
+          setMyNFTs([]);
+          setDynamicTraitsById({});
+          setVRFPending(false);
+          setIsRedeeming(false);
+          setRedeemMsg("");
+          setTopFirstId(null);
+          setPendingTicketId(null);
+          pendingTicketIdRef.current = null;
+          lastRedeemTicketIdRef.current = null;
+          setRedeemStartBlock(null);
+          setRedeemStartedAt(null);
+          walletFetchFailureRef.current = new Map();
+          walletFetchCooldownLogRef.current = "";
+
+          if (a) {
+            restoreTopFirstForAddress(a);
+            await fetchStats();
+            await fetchREWARDS();
+            await fetchWalletAssets(a);
+            await fetchLastMinted(a);
+            await refreshVRFPanel();
+          } else {
+            await fetchLastMinted(null);
+          }
+        };
+
+        const onChainChanged = async () => {
+          const activeWallet = walletAddressRef.current || "";
+          await fetchStats();
+          await fetchREWARDS();
+          if (activeWallet) {
+            await fetchWalletAssets(activeWallet);
+          }
+          await fetchLastMinted(activeWallet || null);
+          setDynamicTraitsById({});
+          lastRedeemTicketIdRef.current = null;
+          await refreshVRFPanel();
+        };
+
+        const injectedProvider = getInjectedProvider();
+        injectedProvider?.on?.("accountsChanged", onAccountsChanged);
+        injectedProvider?.on?.("chainChanged", onChainChanged);
+
+        unsubRef.current = () => {
+          try {
+            if (canSubscribeTransfers && typeof contract?.off === "function") {
+              contract.off("Transfer", onTransfer);
+            }
+          } catch {}
+          try {
+            injectedProvider?.removeListener?.(
+              "accountsChanged",
+              onAccountsChanged,
+            );
+          } catch {}
+          try {
+            injectedProvider?.removeListener?.("chainChanged", onChainChanged);
+          } catch {}
+        };
+      } catch (e) {
+        console.error("attachEventListeners", e);
+        unsubRef.current = () => {};
+      }
+    },
+    [
+      fetchStats,
+      fetchREWARDS,
+      fetchWalletAssets,
+      fetchLastMinted,
+      refreshVRFPanel,
+      scheduleFetchStats,
+      scheduleFetchREWARDS,
+      scheduleRefreshVRF,
+      restoreTopFirstForAddress,
+      maxSupply,
+      walletAddress,
+    ],
+  );
+
+  /* ====================================================================== */
+  /* ============================ CONNECT WALLET ============================ */
+  /* ====================================================================== */
+
+  const connectViaWalletConnect = React.useCallback(
+    async ({ mobileLinks, startInfo = false } = {}) => {
+      walletConnectResumeAllowedRef.current = true;
+      try {
+        const { provider, signer, address } = await connectWithWalletConnect({
+          forceNewSession: true,
+          ...(mobileLinks ? { mobileLinks } : {}),
+        });
+        const addr =
+          String(address || "").trim() ||
+          (await signer.getAddress().catch(() => ""));
+        if (!addr) throw new Error("WalletConnect returned no address.");
+
+        setWalletAddress(addr);
+        walletAddressRef.current = addr;
         setLastMinted((prev) => {
           if (isCompleteLastMintedPayload(prev)) return prev;
           const cached = loadLastMintedCache();
           if (cached) return cached;
           return { ...EMPTY_LAST_MINTED };
         });
-        setMyNFTs([]);
-        setDynamicTraitsById({});
-        setVRFPending(false);
-        setIsRedeeming(false);
-        setRedeemMsg("");
-        setTopFirstId(null);
-        setPendingTicketId(null);
-        pendingTicketIdRef.current = null;
-        lastRedeemTicketIdRef.current = null;
-        setRedeemStartBlock(null);
-        setRedeemStartedAt(null);
+        restoreTopFirstForAddress(addr);
+        setInjectedProvider(provider);
 
-        if (a) {
-          restoreTopFirstForAddress(a);
-          await fetchStats();
-          await fetchREWARDS();
-          await fetchWalletAssets(a);
-          await fetchLastMinted(a);
-          await refreshVRFPanel();
-        } else {
-          await fetchLastMinted(null);
+        contractRef.current = getReadOnlyContract();
+
+        await Promise.allSettled([
+          fetchStats(),
+          fetchREWARDS(),
+          fetchWalletAssets(addr),
+          refreshVRFPanel(),
+        ]);
+        await fetchLastMinted(addr);
+
+        attachEventListeners(addr);
+        if (startInfo) startInfoGate();
+        return addr;
+      } catch (error) {
+        if (!walletAddressRef.current) {
+          walletConnectResumeAllowedRef.current = false;
         }
-      };
-
-      const onChainChanged = async () => {
-        await fetchStats();
-        await fetchREWARDS();
-        if (walletAddress) {
-          await fetchWalletAssets(walletAddress);
-        }
-        await fetchLastMinted(walletAddress || null);
-        setDynamicTraitsById({});
-        lastRedeemTicketIdRef.current = null;
-        await refreshVRFPanel();
-      };
-
-      const injectedProvider = getInjectedProvider();
-      injectedProvider?.on?.("accountsChanged", onAccountsChanged);
-      injectedProvider?.on?.("chainChanged", onChainChanged);
-
-      const prev = unsubRef.current;
-      unsubRef.current = () => {
-        try {
-          contract.off("Transfer", onTransfer);
-        } catch {}
-        try {
-          injectedProvider?.removeListener?.("accountsChanged", onAccountsChanged);
-        } catch {}
-        try {
-          injectedProvider?.removeListener?.("chainChanged", onChainChanged);
-        } catch {}
-        prev?.();
-      };
-    } catch (e) {
-      console.error("attachEventListeners", e);
-      unsubRef.current = () => {};
-    }
-  }, [
-    fetchStats,
-    fetchREWARDS,
-    fetchWalletAssets,
-    fetchLastMinted,
-    refreshVRFPanel,
-    scheduleFetchStats,
-    scheduleFetchREWARDS,
-    scheduleRefreshVRF,
-    restoreTopFirstForAddress,
-    maxSupply,
-    walletAddress,
-  ]);
-
-  /* ====================================================================== */
-  /* ============================ CONNECT WALLET ============================ */
-  /* ====================================================================== */
+        throw error;
+      }
+    },
+    [
+      fetchStats,
+      fetchREWARDS,
+      fetchWalletAssets,
+      fetchLastMinted,
+      refreshVRFPanel,
+      attachEventListeners,
+      restoreTopFirstForAddress,
+      startInfoGate,
+    ],
+  );
 
   const connectMetaMask = React.useCallback(async () => {
     if (connectInFlightRef.current) return;
@@ -4845,15 +6670,26 @@ export default function AppCore() {
       );
 
       if (!candidates.length) {
+        if (shouldUseMetaMaskMobileFallback()) {
+          await connectViaWalletConnect({
+            mobileLinks: getWalletConnectMobileLinks({ preferMetaMask: true }),
+            startInfo: true,
+          });
+          return;
+        }
         console.warn(
           "connectMetaMask: no direct MetaMask extension provider candidates found",
           {
-            metaMaskCandidates: metaMaskCandidates.map(describeInjectedProvider),
-            fallbackCandidates: fallbackCandidates.map(describeInjectedProvider),
+            metaMaskCandidates: metaMaskCandidates.map(
+              describeInjectedProvider,
+            ),
+            fallbackCandidates: fallbackCandidates.map(
+              describeInjectedProvider,
+            ),
           },
         );
         alert(
-          "MetaMask nebyl detekovan. Over, ze mas nainstalovanou a povolenou MetaMask a stranka bezi v beznem okne (ne iframe).",
+          "MetaMask was not detected. Make sure MetaMask is installed and enabled, and that this page is running in a normal browser window (not an iframe).",
         );
         return;
       }
@@ -4894,7 +6730,10 @@ export default function AppCore() {
           if (candidateCode === -32002 || candidateCode === 4100) {
             throw candidateError;
           }
-          if (String(candidateError?.message || "") === "METAMASK_PROVIDER_TIMEOUT")
+          if (
+            String(candidateError?.message || "") ===
+            "METAMASK_PROVIDER_TIMEOUT"
+          )
             continue;
         }
       }
@@ -4932,6 +6771,13 @@ export default function AppCore() {
       }
 
       if (!eth || !addr) {
+        if (shouldUseMetaMaskMobileFallback()) {
+          await connectViaWalletConnect({
+            mobileLinks: getWalletConnectMobileLinks({ preferMetaMask: true }),
+            startInfo: true,
+          });
+          return;
+        }
         console.warn(
           "connectMetaMask: candidate attempts failed",
           candidates.map(describeInjectedProvider),
@@ -4940,6 +6786,7 @@ export default function AppCore() {
         throw lastError || new Error("MetaMask extension not found");
       }
 
+      walletConnectResumeAllowedRef.current = false;
       setInjectedProvider(eth);
       try {
         await syncAmoyRpcIfNeeded(eth);
@@ -4961,6 +6808,7 @@ export default function AppCore() {
       }
 
       setWalletAddress(addr);
+      walletAddressRef.current = addr;
       setLastMinted((prev) => {
         if (isCompleteLastMintedPayload(prev)) return prev;
         const cached = loadLastMintedCache();
@@ -4984,46 +6832,46 @@ export default function AppCore() {
 
       if (!amoyReady) {
         alert(
-          "Peněženka je připojená, ale síť se nepřepnula na Polygon Amoy. Přepni ji ručně v MetaMask.",
+          "Your wallet is connected, but the network did not switch to Polygon Amoy. Switch it manually in MetaMask.",
         );
       }
     } catch (err) {
       const code = getProviderErrorCode(err);
       if (code === 4001 || code === "ACTION_REJECTED") {
-        alert("Pripojeni bylo zruseno v MetaMask.");
+        alert("The connection request was canceled in MetaMask.");
         return;
       }
       if (isMetaMaskExtensionMissingError(err)) {
         alert(
-          "MetaMask extension nebyla nalezena. Otevri stranku v prohlizeci s nainstalovanou MetaMask extension.",
+          "The MetaMask extension was not found. Open this page in a browser with the MetaMask extension installed.",
         );
         return;
       }
       if (String(err?.message || "") === "METAMASK_TIMEOUT") {
         alert(
-          "MetaMask nereaguje. Otevri rozsireni MetaMask a potvrd pripojeni. Pokud mas vice wallet rozsireni, docasne je vypni.",
+          "MetaMask is not responding. Open the MetaMask extension and confirm the connection. If you have multiple wallet extensions, temporarily disable the others.",
         );
         return;
       }
       if (String(err?.message || "") === "METAMASK_PROVIDER_TIMEOUT") {
         alert(
-          "MetaMask provider neodpovida. Zkus restartovat prohlizec nebo vypnout kolidujici wallet rozsireni.",
+          "The MetaMask provider is not responding. Try restarting the browser or disabling conflicting wallet extensions.",
         );
         return;
       }
       if (code === -32002) {
         alert(
-          "MetaMask uz ma otevreny pozadavek. Otevri rozsireni MetaMask a potvrd/odmitni pripojeni.",
+          "MetaMask already has a pending request. Open the MetaMask extension and confirm or reject the connection request.",
         );
         return;
       }
       if (code === 4100) {
         alert(
-          "MetaMask nepovolil pristup k uctum. Otevri MetaMask a povol pristup pro tuto stranku.",
+          "MetaMask denied access to your accounts. Open MetaMask and allow access for this site.",
         );
         return;
       }
-      alert(err?.message || "Pripojeni k MetaMask selhalo.");
+      alert(err?.message || "MetaMask connection failed.");
       console.error("connectMetaMask", err);
     } finally {
       connectInFlightRef.current = false;
@@ -5035,37 +6883,129 @@ export default function AppCore() {
     fetchLastMinted,
     refreshVRFPanel,
     attachEventListeners,
+    connectViaWalletConnect,
     restoreTopFirstForAddress,
     startInfoGate,
   ]);
 
   const connectWalletConnect = React.useCallback(async () => {
     try {
-      const { provider, signer } = await connectWithWalletConnect();
-      const addr = await signer.getAddress();
-      setWalletAddress(addr);
+      await connectViaWalletConnect();
+    } catch (err) {
+      console.error("connectWalletConnect", err);
+      alert(err?.message || "WalletConnect failed");
+    }
+  }, [connectViaWalletConnect]);
+
+  const resyncWalletAfterResume = React.useCallback(async () => {
+    const currentWallet = String(walletAddressRef.current || "");
+    const allowWalletConnectRestore =
+      walletConnectResumeAllowedRef.current &&
+      (Boolean(currentWallet) || shouldUseMetaMaskMobileFallback());
+    let injected = getInjectedProvider();
+    let nextWallet = currentWallet;
+
+    const tryRestoreWalletConnectProvider = async () => {
+      if (!allowWalletConnectRestore) return null;
+      const restoredSession = await restoreWalletConnectSession();
+      const restoredProvider = restoredSession?.provider;
+      if (!restoredProvider) return null;
+      walletConnectResumeAllowedRef.current = true;
+      setInjectedProvider(restoredProvider);
+      injected = restoredProvider;
+      return restoredSession;
+    };
+
+    if (!injected) {
+      const restoredSession = await tryRestoreWalletConnectProvider();
+      if (restoredSession?.address) {
+        nextWallet = String(restoredSession.address || "").trim();
+      }
+    }
+
+    if (injected && typeof injected.request === "function") {
+      try {
+        const accounts = await injected.request({ method: "eth_accounts" });
+        nextWallet = Array.isArray(accounts) ? accounts[0] || "" : "";
+      } catch {
+        nextWallet = currentWallet;
+      }
+    }
+
+    if (!nextWallet) {
+      const restoredSession = await tryRestoreWalletConnectProvider();
+      if (restoredSession?.address) {
+        nextWallet = String(restoredSession.address || "").trim();
+      }
+    }
+
+    if (!nextWallet && !currentWallet) return;
+
+    if (!nextWallet && currentWallet) {
+      walletConnectResumeAllowedRef.current = false;
+      clearInjectedProvider();
+      clearWalletConnectSession().catch(() => {});
+      try {
+        unsubRef.current?.();
+      } catch {}
+      unsubRef.current = () => {};
+      walletAddressRef.current = "";
+      setWalletAddress("");
       setLastMinted((prev) => {
         if (isCompleteLastMintedPayload(prev)) return prev;
         const cached = loadLastMintedCache();
         if (cached) return cached;
         return { ...EMPTY_LAST_MINTED };
       });
-      restoreTopFirstForAddress(addr);
-      setInjectedProvider(provider);
+      setMyNFTs([]);
+      setDynamicTraitsById({});
+      setVRFPending(false);
+      setIsRedeeming(false);
+      setRedeemMsg("");
+      setTopFirstId(null);
+      setPendingTicketId(null);
+      pendingTicketIdRef.current = null;
+      lastRedeemTicketIdRef.current = null;
+      setRedeemStartBlock(null);
+      setRedeemStartedAt(null);
+      walletFetchFailureRef.current = new Map();
+      walletFetchCooldownLogRef.current = "";
 
-      contractRef.current = getReadOnlyContract();
-
-      await fetchStats();
-      await fetchREWARDS();
-      await fetchWalletAssets(addr);
-      await fetchLastMinted(addr);
-      await refreshVRFPanel();
-
-      attachEventListeners(addr);
-    } catch (err) {
-      console.error("connectWalletConnect", err);
-      alert(err?.message || "WalletConnect failed");
+      await Promise.allSettled([
+        fetchStats(),
+        fetchREWARDS(),
+        fetchLastMinted(null),
+        refreshVRFPanel(),
+      ]);
+      return;
     }
+
+    if (nextWallet && nextWallet !== currentWallet) {
+      walletAddressRef.current = nextWallet;
+      setWalletAddress(nextWallet);
+      setLastMinted((prev) => {
+        if (isCompleteLastMintedPayload(prev)) return prev;
+        const cached = loadLastMintedCache();
+        if (cached) return cached;
+        return { ...EMPTY_LAST_MINTED };
+      });
+      restoreTopFirstForAddress(nextWallet);
+    }
+
+    if (nextWallet) {
+      attachEventListeners(nextWallet);
+    }
+
+    const refreshTasks = [
+      fetchStats(),
+      fetchREWARDS(),
+      fetchLastMinted(nextWallet || null),
+      refreshVRFPanel(),
+    ];
+    if (nextWallet) {
+      refreshTasks.push(fetchWalletAssets(nextWallet));
+    }
+    await Promise.allSettled(refreshTasks);
   }, [
     fetchStats,
     fetchREWARDS,
@@ -5083,7 +7023,11 @@ export default function AppCore() {
   const mintTicket = React.useCallback(async () => {
     if (!walletAddress) return showUserAlert("Please connect MetaMask first.");
     if (isDelegatedInflightActive()) {
-      return showUserAlert(delegatedInflightMessage, "delegated-inflight", 5000);
+      return showUserAlert(
+        delegatedInflightMessage,
+        "delegated-inflight",
+        5000,
+      );
     }
     if (!acquireWriteTxLock("mintTicket")) {
       return showUserAlert(
@@ -5110,8 +7054,9 @@ export default function AppCore() {
       );
 
       if (await hasPendingAccountTransaction(roProvider, walletAddress)) {
-        markDelegatedInflight();
-        return showUserAlert(delegatedInflightMessage, "delegated-inflight", 5000);
+        console.warn(
+          "mintTicket: pending nonce detected on RPC precheck; continuing and letting wallet enforce nonce flow",
+        );
       }
 
       const isPaused =
@@ -5163,7 +7108,9 @@ export default function AppCore() {
       if (writeProvider) {
         const writeNet = await writeProvider.getNetwork().catch(() => netAfter);
         if (Number(writeNet?.chainId) !== 80002) await ensureAmoy();
-        netAfter = await writeProvider.getNetwork().catch(() => writeNet || netAfter);
+        netAfter = await writeProvider
+          .getNetwork()
+          .catch(() => writeNet || netAfter);
         chainId = Number(netAfter?.chainId) || AMOY.chainId;
       }
 
@@ -5182,13 +7129,14 @@ export default function AppCore() {
           gasLimitOverride = 800000n;
         }
       }
-      updateTxStatus(
-        { type: "mint", stage: "wallet", hash: "", chainId },
-      );
+      updateTxStatus({ type: "mint", stage: "wallet", hash: "", chainId });
 
-      const feeOverrides = await buildFeeOverrides(writeProvider || roProvider, {
-        forceLegacy: true,
-      });
+      const feeOverrides = await buildFeeOverrides(
+        writeProvider || roProvider,
+        {
+          forceLegacy: true,
+        },
+      );
       const tx = await sendWriteWithRpcRetry(
         () =>
           contract.mintTicket({
@@ -5198,13 +7146,19 @@ export default function AppCore() {
           }),
         "mintTicket",
       );
-      updateTxStatus(
-        { type: "mint", stage: "pending", hash: tx?.hash, chainId },
-      );
+      updateTxStatus({
+        type: "mint",
+        stage: "pending",
+        hash: tx?.hash,
+        chainId,
+      });
       await tx.wait();
-      updateTxStatus(
-        { type: "redeem", stage: "confirmed", hash: tx?.hash, chainId },
-      );
+      updateTxStatus({
+        type: "mint",
+        stage: "confirmed",
+        hash: tx?.hash,
+        chainId,
+      });
       updateTxStatus(
         { type: "mint", stage: "confirmed", hash: tx?.hash, chainId },
         9000,
@@ -5214,7 +7168,10 @@ export default function AppCore() {
         fetchStats().catch(() => {});
         fetchREWARDS().catch(() => {});
         refreshVRFPanel?.();
-        fetchWalletAssets(walletAddress).catch(() => {});
+        fetchWalletAssets(walletAddress, { force: true }).catch(() => {});
+        setTimeout(() => {
+          fetchWalletAssets(walletAddress, { force: true }).catch(() => {});
+        }, 2200);
       }, 800);
       showUserAlert("Ticket minted.", "mint-success", 1200);
     } catch (err) {
@@ -5273,7 +7230,11 @@ export default function AppCore() {
     if (!walletAddress) return showUserAlert("Please connect MetaMask first.");
     if (isRedeeming) return;
     if (isDelegatedInflightActive()) {
-      return showUserAlert(delegatedInflightMessage, "delegated-inflight", 5000);
+      return showUserAlert(
+        delegatedInflightMessage,
+        "delegated-inflight",
+        5000,
+      );
     }
     if (!acquireWriteTxLock("redeemTicket")) {
       return showUserAlert(
@@ -5315,8 +7276,9 @@ export default function AppCore() {
       }
 
       if (await hasPendingAccountTransaction(roProvider, walletAddress)) {
-        markDelegatedInflight();
-        return showUserAlert(delegatedInflightMessage, "delegated-inflight", 5000);
+        console.warn(
+          "redeemTicket: pending nonce detected on RPC precheck; continuing and letting wallet enforce nonce flow",
+        );
       }
 
       setRedeemMsg("Preparing redeem transaction...");
@@ -5360,7 +7322,10 @@ export default function AppCore() {
           if (!Array.isArray(tickets)) {
             tickets = tickets ? [tickets] : [];
           }
-          if (!tickets.length && typeof readContract.findTicket === "function") {
+          if (
+            !tickets.length &&
+            typeof readContract.findTicket === "function"
+          ) {
             tickets = await readContract.findTicket(walletAddress);
           }
           if (!Array.isArray(tickets)) {
@@ -5396,11 +7361,14 @@ export default function AppCore() {
 
       try {
         if (typeof readContract.pendingMintRequest === "function") {
-          const pendingReq = await readContract.pendingMintRequest(walletAddress);
+          const pendingReq =
+            await readContract.pendingMintRequest(walletAddress);
           const pendingReqId = pendingReq?.toString?.() || "0";
           if (pendingReqId !== "0") {
             setVRFPending(true);
-            setRedeemMsg("You already have a pending VRF request. Waiting for reveal...");
+            setRedeemMsg(
+              "You already have a pending VRF request. Waiting for reveal...",
+            );
             scheduleRefreshVRF(700, refreshVRFPanel);
             return showUserAlert(
               "You already have a pending VRF draw. Wait for reveal before redeeming another ticket.",
@@ -5435,7 +7403,9 @@ export default function AppCore() {
       if (writeProvider) {
         const writeNet = await writeProvider.getNetwork().catch(() => netAfter);
         if (Number(writeNet?.chainId) !== 80002) await ensureAmoy();
-        netAfter = await writeProvider.getNetwork().catch(() => writeNet || netAfter);
+        netAfter = await writeProvider
+          .getNetwork()
+          .catch(() => writeNet || netAfter);
         chainId = Number(netAfter?.chainId) || AMOY.chainId;
       }
 
@@ -5447,11 +7417,14 @@ export default function AppCore() {
       }
       try {
         if (typeof writeContract?.pendingMintRequest === "function") {
-          const pendingReqWrite = await writeContract.pendingMintRequest(walletAddress);
+          const pendingReqWrite =
+            await writeContract.pendingMintRequest(walletAddress);
           const pendingReqWriteId = pendingReqWrite?.toString?.() || "0";
           if (pendingReqWriteId !== "0") {
             setVRFPending(true);
-            setRedeemMsg("You already have a pending VRF request. Waiting for reveal...");
+            setRedeemMsg(
+              "You already have a pending VRF request. Waiting for reveal...",
+            );
             scheduleRefreshVRF(700, refreshVRFPanel);
             return showUserAlert(
               "You already have a pending VRF draw. Wait for reveal before redeeming another ticket.",
@@ -5473,7 +7446,9 @@ export default function AppCore() {
           ) {
             setIsRedeeming(false);
             setRedeemMsg("");
-            return showUserAlert("Ticket is not owned by the connected wallet.");
+            return showUserAlert(
+              "Ticket is not owned by the connected wallet.",
+            );
           }
         }
       } catch {
@@ -5481,7 +7456,8 @@ export default function AppCore() {
       }
 
       const estimateRedeem =
-        writeContract?.estimateGas?.redeemTicketAndMintNFT || redeemFn?.estimateGas;
+        writeContract?.estimateGas?.redeemTicketAndMintNFT ||
+        redeemFn?.estimateGas;
       let redeemGasOverride = null;
       try {
         if (estimateRedeem) {
@@ -5499,12 +7475,13 @@ export default function AppCore() {
       }
 
       setRedeemMsg("Please confirm in your wallet...");
-      updateTxStatus(
-        { type: "redeem", stage: "wallet", hash: "", chainId },
+      updateTxStatus({ type: "redeem", stage: "wallet", hash: "", chainId });
+      const feeOverrides = await buildFeeOverrides(
+        writeProvider || roProvider,
+        {
+          forceLegacy: true,
+        },
       );
-      const feeOverrides = await buildFeeOverrides(writeProvider || roProvider, {
-        forceLegacy: true,
-      });
       const tx = await sendWriteWithRpcRetry(
         () =>
           redeemFn(ticketIdBN, {
@@ -5513,9 +7490,12 @@ export default function AppCore() {
           }),
         "redeemTicket",
       );
-      updateTxStatus(
-        { type: "redeem", stage: "pending", hash: tx?.hash, chainId },
-      );
+      updateTxStatus({
+        type: "redeem",
+        stage: "pending",
+        hash: tx?.hash,
+        chainId,
+      });
       setRedeemMsg("Waiting for transaction confirmation...");
       await tx.wait();
 
@@ -5567,11 +7547,17 @@ export default function AppCore() {
       if (isDelegatedInflightLimitError(err)) {
         markDelegatedInflight();
         try {
-          if (readContract && typeof readContract.pendingMintRequest === "function") {
-            const pendingReq = await readContract.pendingMintRequest(walletAddress);
+          if (
+            readContract &&
+            typeof readContract.pendingMintRequest === "function"
+          ) {
+            const pendingReq =
+              await readContract.pendingMintRequest(walletAddress);
             if (pendingReq && pendingReq.toString?.() !== "0") {
               setVRFPending(true);
-              setRedeemMsg("You already have a pending VRF request. Waiting for reveal...");
+              setRedeemMsg(
+                "You already have a pending VRF request. Waiting for reveal...",
+              );
               scheduleRefreshVRF(700, refreshVRFPanel);
             }
           }
@@ -5632,7 +7618,11 @@ export default function AppCore() {
   const claimREWARDS = React.useCallback(async () => {
     if (!walletAddress) return showUserAlert("Please connect MetaMask first.");
     if (isDelegatedInflightActive()) {
-      return showUserAlert(delegatedInflightMessage, "delegated-inflight", 5000);
+      return showUserAlert(
+        delegatedInflightMessage,
+        "delegated-inflight",
+        5000,
+      );
     }
     if (!acquireWriteTxLock("claimREWARDS")) {
       return showUserAlert(
@@ -5645,60 +7635,30 @@ export default function AppCore() {
     try {
       await ensureAmoy();
 
-      const toBigIntTokenId = (raw) => {
-        try {
-          if (raw == null) return null;
-          if (typeof raw === "bigint") return raw;
-          if (typeof raw === "number") {
-            if (!Number.isFinite(raw) || raw <= 0) return null;
-            return BigInt(Math.trunc(raw));
-          }
-          if (typeof raw === "string") {
-            const s = raw.trim();
-            if (!s) return null;
-            if (/^\d+$/.test(s)) return BigInt(s);
-            if (/^0x[0-9a-f]+$/i.test(s)) return BigInt(s);
-            return null;
-          }
-          if (typeof raw?.toString === "function") {
-            return toBigIntTokenId(raw.toString());
-          }
-        } catch {
-          return null;
-        }
-        return null;
-      };
-
-      // Defensive filter: ignore malformed/hash-like IDs that can leak from stale UI state.
-      const maxReasonableTokenId = BigInt(
-        Math.max((Number(maxSupply) || 550) * 1000, 1_000_000),
-      );
-      const tokenIds = [];
-      const seen = new Set();
-      for (const item of Array.isArray(myNFTs) ? myNFTs : []) {
-        if (!item || item.isTicket || item.isPending) continue;
-        const id = toBigIntTokenId(item.tokenId);
-        if (id == null || id <= 0n) continue;
-        if (id > maxReasonableTokenId) continue;
-        const key = id.toString();
-        if (seen.has(key)) continue;
-        seen.add(key);
-        tokenIds.push(id);
-      }
+      const roBrl = getReadOnlyLiquidityContract();
+      const rewardScope = await resolveRewardCollectionScope(roBrl);
+      const rewardPayload = buildRewardClaimPayload(myNFTs, {
+        maxSupply,
+        ...rewardScope,
+      });
+      const tokenIds = rewardPayload.tokenIds;
+      const useCollectionAware =
+        rewardPayload.shouldUseCollectionAware &&
+        typeof roBrl?.claimablePreviewFor === "function";
 
       if (!tokenIds.length) {
         return showUserAlert("No eligible NFTs to claim this week.");
       }
 
-      const roBrl = getReadOnlyLiquidityContract();
       const roClaimProvider = getProviderFor(roBrl);
       const claimNet = roClaimProvider
         ? await roClaimProvider.getNetwork().catch(() => null)
         : null;
       let chainId = Number(claimNet?.chainId) || AMOY.chainId;
       if (await hasPendingAccountTransaction(roClaimProvider, walletAddress)) {
-        markDelegatedInflight();
-        return showUserAlert(delegatedInflightMessage, "delegated-inflight", 5000);
+        console.warn(
+          "claimREWARDS: pending nonce detected on RPC precheck; continuing and letting wallet enforce nonce flow",
+        );
       }
       const toBigIntSafe = (v) => {
         try {
@@ -5717,13 +7677,22 @@ export default function AppCore() {
       let previewUnits = null;
       let previewAmount = null;
       try {
-        if (typeof roBrl?.claimablePreview === "function") {
+        if (useCollectionAware) {
+          const preview = await roBrl.claimablePreviewFor(
+            rewardPayload.collections,
+            tokenIds,
+          );
+          previewUnits = toBigIntSafe(preview?.[0] ?? preview?.units ?? null);
+          previewAmount = toBigIntSafe(preview?.[1] ?? preview?.amount ?? null);
+        } else if (typeof roBrl?.claimablePreview === "function") {
           const preview = await roBrl.claimablePreview(tokenIds);
           previewUnits = toBigIntSafe(preview?.[0] ?? preview?.units ?? null);
           previewAmount = toBigIntSafe(preview?.[1] ?? preview?.amount ?? null);
         } else if (typeof roBrl?.claimStatus === "function") {
           const status = await roBrl.claimStatus(tokenIds);
-          previewAmount = toBigIntSafe(status?.[0] ?? status?.claimable ?? null);
+          previewAmount = toBigIntSafe(
+            status?.[0] ?? status?.claimable ?? null,
+          );
         }
       } catch {
         // ignore preflight call errors; claim tx path will still surface exact revert
@@ -5735,25 +7704,35 @@ export default function AppCore() {
       }
 
       const brl = await getLiquidityContract();
+      const useCollectionAwareWrite =
+        useCollectionAware && typeof brl?.claimWithCollections === "function";
       const claimProvider = getProviderFor(brl) || roClaimProvider;
       if (claimProvider) {
         const writeNet = await claimProvider.getNetwork().catch(() => claimNet);
         chainId = Number(writeNet?.chainId) || chainId;
       }
 
-      updateTxStatus(
-        { type: "claim", stage: "wallet", hash: "", chainId },
-      );
+      updateTxStatus({ type: "claim", stage: "wallet", hash: "", chainId });
       const feeOverrides = await buildFeeOverrides(claimProvider, {
         forceLegacy: true,
       });
       const tx = await sendWriteWithRpcRetry(
-        () => brl.claim(tokenIds, { ...feeOverrides }),
+        () => {
+          if (useCollectionAwareWrite) {
+            return brl.claimWithCollections(rewardPayload.collections, tokenIds, {
+              ...feeOverrides,
+            });
+          }
+          return brl.claim(tokenIds, { ...feeOverrides });
+        },
         "claimREWARDS",
       );
-      updateTxStatus(
-        { type: "claim", stage: "pending", hash: tx?.hash, chainId },
-      );
+      updateTxStatus({
+        type: "claim",
+        stage: "pending",
+        hash: tx?.hash,
+        chainId,
+      });
       await tx.wait();
       updateTxStatus(
         { type: "claim", stage: "confirmed", hash: tx?.hash, chainId },
@@ -5864,7 +7843,12 @@ export default function AppCore() {
 
     let logs = [];
     try {
-      logs = await queryLogsBatched(baseContract, filter, Math.max(0, startBlock - 3), latest);
+      logs = await queryLogsBatched(
+        baseContract,
+        filter,
+        Math.max(0, startBlock - 3),
+        latest,
+      );
     } catch {
       logs = [];
     }
@@ -5881,14 +7865,14 @@ export default function AppCore() {
       const isTicketFlag = isTicketNow == null ? null : coerceBool(isTicketNow);
       if (isTicketFlag === false) return true;
 
-      if (
-        isTicketNow == null &&
-        typeof baseContract?.tokenURI === "function"
-      ) {
-        const uri = await getTokenUriCached(baseContract, tid, { force: true }).catch(
-          () => null,
-        );
-        if (uri && !/RANDOM_MINT_TICKET|MINT_TICKET|TICKET/i.test(String(uri))) {
+      if (isTicketNow == null && typeof baseContract?.tokenURI === "function") {
+        const uri = await getTokenUriCached(baseContract, tid, {
+          force: true,
+        }).catch(() => null);
+        if (
+          uri &&
+          !/RANDOM_MINT_TICKET|MINT_TICKET|TICKET/i.test(String(uri))
+        ) {
           return true;
         }
       }
@@ -5948,15 +7932,21 @@ export default function AppCore() {
         let c = baseContract;
         let pendingReq = null;
         if (c && typeof c.pendingMintRequest === "function") {
-          pendingReq = await c.pendingMintRequest(walletAddress).catch(() => null);
+          pendingReq = await c
+            .pendingMintRequest(walletAddress)
+            .catch(() => null);
         }
         // If RO provider failed, retry once via archive RPC provider.
         if (pendingReq == null) {
           try {
             const archive = getArchiveProvider();
             if (!archive) throw new Error("archive provider unavailable");
-            c = baseContract?.connect ? baseContract.connect(archive) : baseContract;
-            pendingReq = await c.pendingMintRequest(walletAddress).catch(() => null);
+            c = baseContract?.connect
+              ? baseContract.connect(archive)
+              : baseContract;
+            pendingReq = await c
+              .pendingMintRequest(walletAddress)
+              .catch(() => null);
           } catch {
             pendingReq = null;
           }
@@ -5988,7 +7978,10 @@ export default function AppCore() {
             const uri = await getTokenUriCached(baseContract, pendingTicketId, {
               force: true,
             }).catch(() => null);
-            if (uri && !/RANDOM_MINT_TICKET|MINT_TICKET|TICKET/i.test(String(uri))) {
+            if (
+              uri &&
+              !/RANDOM_MINT_TICKET|MINT_TICKET|TICKET/i.test(String(uri))
+            ) {
               await finalizeVrf();
             }
           }
@@ -6101,7 +8094,56 @@ export default function AppCore() {
     return () => {
       cancelled = true;
     };
-  }, [walletAddress, fetchStats, fetchREWARDS, fetchLastMinted, refreshVRFPanel]);
+  }, [
+    walletAddress,
+    fetchStats,
+    fetchREWARDS,
+    fetchLastMinted,
+    refreshVRFPanel,
+  ]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const scheduleResumeSync = () => {
+      if (
+        !walletAddressRef.current &&
+        !walletConnectResumeAllowedRef.current
+      ) {
+        return;
+      }
+      const state = walletResumeSyncRef.current;
+      if (state.timer) clearTimeout(state.timer);
+      state.timer = setTimeout(() => {
+        if (state.inFlight) return;
+        state.inFlight = true;
+        resyncWalletAfterResume()
+          .catch((error) => {
+            console.debug("resyncWalletAfterResume", error);
+          })
+          .finally(() => {
+            state.inFlight = false;
+          });
+      }, WALLET_RESUME_SYNC_DEBOUNCE_MS);
+    };
+
+    const onVisibilityChange = () => {
+      if (!document.hidden) scheduleResumeSync();
+    };
+
+    window.addEventListener("focus", scheduleResumeSync);
+    window.addEventListener("pageshow", scheduleResumeSync);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      const state = walletResumeSyncRef.current;
+      if (state.timer) clearTimeout(state.timer);
+      state.timer = null;
+      window.removeEventListener("focus", scheduleResumeSync);
+      window.removeEventListener("pageshow", scheduleResumeSync);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [resyncWalletAfterResume]);
 
   React.useEffect(() => {
     return () => {
@@ -6116,7 +8158,16 @@ export default function AppCore() {
   /* ====================================================================== */
 
   const closePanel = React.useCallback(() => {
+    const restoreY = panelReturnScrollYRef.current;
+    panelReturnScrollYRef.current = null;
     setOpenNavIdx(null);
+
+    if (typeof window === "undefined" || !Number.isFinite(restoreY)) return;
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: restoreY, left: 0, behavior: "auto" });
+      if (document.documentElement) document.documentElement.scrollTop = restoreY;
+      if (document.body) document.body.scrollTop = restoreY;
+    });
   }, []);
 
   const goPrevPanel = React.useCallback(() => {
@@ -6144,9 +8195,7 @@ export default function AppCore() {
       const target = event.target;
       const tag = target?.tagName?.toLowerCase?.() || "";
       const isEditable =
-        tag === "input" ||
-        tag === "textarea" ||
-        target?.isContentEditable;
+        tag === "input" || tag === "textarea" || target?.isContentEditable;
       if (isEditable) return;
 
       if (event.key === "Escape") {
@@ -6168,11 +8217,32 @@ export default function AppCore() {
   const adminData = React.useMemo(() => {
     const vrfParams = VRFUIData?.params || {};
     const subscriptionId = VRFUIData?.subscription?.id || "";
+    const frontendInfo =
+      typeof window === "undefined"
+        ? null
+        : {
+            app: "BIGGINFTWEB",
+            react: React.version,
+            network: VRFUIData?.network || "EVM",
+            wallet: walletAddress || "",
+            screen: `${window.innerWidth}x${window.innerHeight}`,
+            userAgent: window.navigator?.userAgent || "",
+            lastRefreshAt: new Date().toLocaleString(),
+          };
     return {
+      owner: adminOwner || "",
       networkLabel: VRFUIData?.network || "EVM",
       contractAddress: ADDR.COLLECTION_VRF || ADDR.MAIN || "",
       ticketPrice: ticketPrice ?? "",
       REWARDSPool: rewardPool ?? "",
+      treasury: ADDR.TREASURY || "",
+      liquiditySink: ADDR.LIQUIDITY_VAULT || ADDR.LM_VAULT || "",
+      token: {
+        address: ADDR.BIGGI || "",
+      },
+      dex: {
+        router: ADDR.ROUTER || "",
+      },
       VRF: {
         keyHash: vrfParams.keyHash || "",
         confirmations: vrfParams.confirmations ?? 3,
@@ -6184,10 +8254,21 @@ export default function AppCore() {
       blocks: DEFAULT_BLOCKS.map((name, idx) => ({
         name,
         minted: blockMintCounts[idx] ?? 0,
+        basePrice: DEFAULT_BLOCK_PRICES[idx] ?? 0,
+        currentPrice: blockPrices[idx] ?? 0,
         price: blockPrices[idx] ?? 0,
       })),
+      frontend: frontendInfo,
     };
-  }, [VRFUIData, ticketPrice, rewardPool, blockMintCounts, blockPrices]);
+  }, [
+    VRFUIData,
+    adminOwner,
+    ticketPrice,
+    rewardPool,
+    blockMintCounts,
+    blockPrices,
+    walletAddress,
+  ]);
 
   const adminActions = React.useMemo(
     () => ({
@@ -6221,7 +8302,7 @@ export default function AppCore() {
 
     if (alt === "REWARDS") {
       return (
-        <React.Suspense fallback={<Loader label="Loading REWARDSâ€¦" />}>
+        <React.Suspense fallback={<Loader label="Loading REWARDS..." />}>
           <REWARDSPanel
             walletAddress={walletAddress}
             items={myNFTs}
@@ -6230,6 +8311,7 @@ export default function AppCore() {
             rewardPool={rewardPool}
             onClaim={claimREWARDS}
             autoOpenInfo={autoOpenInfoPanel === "REWARDS"}
+            onActiveSectionChange={setRewardsPanelHeader}
           />
         </React.Suspense>
       );
@@ -6237,12 +8319,13 @@ export default function AppCore() {
 
     if (alt === "COLLECTION") {
       return (
-        <React.Suspense fallback={<Loader label="Loading Collectionâ€¦" />}>
+        <React.Suspense fallback={<Loader label="Loading Collection..." />}>
           <COLLECTIONBlocksGrid
             blockNames={DEFAULT_BLOCKS}
             blockPrices={blockPrices}
             blockMintCounts={blockMintCounts}
             autoOpenInfo={autoOpenInfoPanel === "COLLECTION"}
+            onActiveSectionChange={setCollectionPanelHeader}
           />
         </React.Suspense>
       );
@@ -6250,7 +8333,7 @@ export default function AppCore() {
 
     if (alt === "VRF MINT") {
       return (
-        <React.Suspense fallback={<Loader label="Loading VRF Panelâ€¦" />}>
+        <React.Suspense fallback={<Loader label="Loading VRF Panel..." />}>
           <VRFPanel
             data={VRFUIData}
             walletAddress={walletAddress}
@@ -6260,7 +8343,11 @@ export default function AppCore() {
             onOpenExplorer={(hash) => {
               const base = explorerBaseFor(VRFUIData?.chainId);
               if (!base) return;
-              window.open(`${base}/tx/${hash}`, "_blank", "noopener,noreferrer");
+              window.open(
+                `${base}/tx/${hash}`,
+                "_blank",
+                "noopener,noreferrer",
+              );
             }}
           />
         </React.Suspense>
@@ -6269,9 +8356,10 @@ export default function AppCore() {
 
     if (alt === "BIGGI ECOSYSTEM") {
       return (
-        <React.Suspense fallback={<Loader label="Loading Ecosystemâ€¦" />}>
+        <React.Suspense fallback={<Loader label="Loading Ecosystem..." />}>
           <EcosystemPanel
             autoOpenInfo={autoOpenInfoPanel === "BIGGI ECOSYSTEM"}
+            onActiveSectionChange={setEcosystemPanelHeader}
           />
         </React.Suspense>
       );
@@ -6279,7 +8367,7 @@ export default function AppCore() {
 
     if (alt === "USERS") {
       return (
-        <React.Suspense fallback={<Loader label="Loading User panelâ€¦" />}>
+        <React.Suspense fallback={<Loader label="Loading User panel..." />}>
           <USERPANEL
             autoOpenInfo={autoOpenInfoPanel === "USERS"}
             walletAddress={walletAddress}
@@ -6297,10 +8385,7 @@ export default function AppCore() {
             ticketPrice={ticketPrice}
             minted={biggiMinted}
             maxSupply={maxSupply}
-            ticketsLeft={Math.max(
-              0,
-              (maxTickets ?? 0) - (ticketMinted ?? 0),
-            )}
+            ticketsLeft={Math.max(0, (maxTickets ?? 0) - (ticketMinted ?? 0))}
             claimable={myClaimable}
             rewardPool={rewardPool}
             mintVolumeMatic={mintVolumeMatic}
@@ -6311,7 +8396,9 @@ export default function AppCore() {
 
     if (alt === "COMMUNITY CENTER") {
       return (
-        <React.Suspense fallback={<Loader label="Loading Community Centerâ€¦" />}>
+        <React.Suspense
+          fallback={<Loader label="Loading Community Center..." />}
+        >
           <COMMUNITYCENTERPanel
             walletAddress={walletAddress}
             onConnectMetaMask={connectMetaMask}
@@ -6375,7 +8462,8 @@ export default function AppCore() {
     }
     if (txStatus?.type === "claim") {
       if (txStatus?.stage === "wallet") return "Claim: confirm in wallet...";
-      if (txStatus?.stage === "pending") return "Claim: pending confirmation...";
+      if (txStatus?.stage === "pending")
+        return "Claim: pending confirmation...";
     }
     return "";
   }, [redeemMsg, VRFPending, isRedeeming, txStatus]);
@@ -6404,6 +8492,8 @@ export default function AppCore() {
 
   return (
     <div className="app-root">
+      <SEOManager navAlt={navAlt} />
+
       <MainLayout
         walletAddress={walletAddress}
         connectMetaMask={connectMetaMask}
@@ -6417,7 +8507,7 @@ export default function AppCore() {
         actionStatusLabel={actionStatusLabel}
         actionError={null}
         icons={ICONS}
-        setOpenNavIdx={setOpenNavIdx}
+        setOpenNavIdx={openPanelAtIndex}
         isMobile={isMobile}
         lastMinted={lastMinted}
         biggiMinted={biggiMinted}
@@ -6485,7 +8575,7 @@ export default function AppCore() {
             >
               <span className="info-gate-pulse" aria-hidden="true" />
               <div className="info-gate-callout" aria-hidden="true">
-                Otevri INFO
+                Open INFO
               </div>
             </div>
           ) : null}
@@ -6495,10 +8585,28 @@ export default function AppCore() {
       {navOpen ? (
         <FullscreenPanel
           open={navOpen}
-          title={navAlt}
+          title={
+            navAlt === "REWARDS"
+              ? rewardsPanelHeader.title
+              : navAlt === "COLLECTION"
+                ? collectionPanelHeader.title
+                : navAlt === "BIGGI ECOSYSTEM"
+                  ? ecosystemPanelHeader.title
+                : navAlt
+          }
+          titleColor={
+            navAlt === "REWARDS"
+              ? rewardsPanelHeader.accent
+              : navAlt === "COLLECTION"
+                ? collectionPanelHeader.accent
+                : navAlt === "BIGGI ECOSYSTEM"
+                  ? ecosystemPanelHeader.accent
+                : undefined
+          }
           onClose={closePanel}
           onPrev={goPrevPanel}
           onNext={goNextPanel}
+          preventScroll
           containerStyle={panelContainerStyle}
         >
           {renderActivePanel}
@@ -6521,7 +8629,3 @@ export default function AppCore() {
     </div>
   );
 }
-
-
-
-

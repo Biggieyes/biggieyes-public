@@ -5,9 +5,11 @@ import { BrowserProvider } from "ethers";
 
 import {
   AMOY,
+  clearInjectedProvider,
   ensureAmoy,
   getInjectedProvider,
   getROProvider,
+  hasInjectedProviderOverride,
   setInjectedProvider,
   syncAmoyRpcIfNeeded,
 } from "@/shared/utils/contract";
@@ -17,8 +19,54 @@ import {
   isLikelyMetaMaskSdkProvider,
   startInjectedProviderDiscovery,
 } from "@/shared/utils/injectedProviders";
+import {
+  getWalletConnectMobileLinks,
+  shouldUseMetaMaskMobileFallback,
+} from "@/shared/utils/mobileWallet";
+import {
+  clearWalletConnectResumeExpected,
+  getWalletConnectResumeExpected,
+  setWalletConnectResumeExpected,
+} from "@/shared/utils/walletConnectResume";
 
 const Ctx = React.createContext(null);
+const WALLET_RESUME_DEBOUNCE_MS = 350;
+let walletConnectModulePromise = null;
+
+async function loadWalletConnectModule() {
+  if (!walletConnectModulePromise) {
+    walletConnectModulePromise = import("@/wallet/wc.js");
+  }
+  return walletConnectModulePromise;
+}
+
+async function connectWithWalletConnectLazy(options) {
+  const mod = await loadWalletConnectModule();
+  if (typeof mod?.connectWithWalletConnect !== "function") {
+    throw new Error("WalletConnect module is unavailable");
+  }
+  return mod.connectWithWalletConnect(options);
+}
+
+async function clearWalletConnectSessionLazy(options) {
+  try {
+    const mod = await loadWalletConnectModule();
+    if (typeof mod?.clearWalletConnectSession !== "function") return false;
+    return await mod.clearWalletConnectSession(options);
+  } catch {
+    return false;
+  }
+}
+
+async function restoreWalletConnectSessionLazy(options) {
+  try {
+    const mod = await loadWalletConnectModule();
+    if (typeof mod?.restoreWalletConnectSession !== "function") return null;
+    return await mod.restoreWalletConnectSession(options);
+  } catch {
+    return null;
+  }
+}
 
 function applyPollingInterval(provider) {
   const pollMs = Number(
@@ -70,6 +118,8 @@ export function Web3Provider({ children }) {
   const [chainId, setChainId] = React.useState(undefined);
   const [isConnecting, setIsConnecting] = React.useState(false);
   const [injectedVersion, setInjectedVersion] = React.useState(0);
+  const resumeTimerRef = React.useRef(null);
+  const explicitConnectionRef = React.useRef(false);
 
   React.useEffect(() => {
     startInjectedProviderDiscovery();
@@ -78,7 +128,9 @@ export function Web3Provider({ children }) {
   /** Refresh state from the current wallet and attach signer + provider. */
   const refresh = React.useCallback(async () => {
     const injected = pickInjectedProvider();
-    if (!injected) {
+    const isExplicitConnection =
+      explicitConnectionRef.current || hasInjectedProviderOverride();
+    if (!injected || !isExplicitConnection) {
       try {
         const roProvider = getROProvider();
         setProvider(roProvider);
@@ -113,6 +165,32 @@ export function Web3Provider({ children }) {
       setAccount("");
       setChainId(undefined);
     }
+  }, []);
+
+  React.useEffect(() => {
+    if (!getWalletConnectResumeExpected()) return undefined;
+
+    let cancelled = false;
+    setIsConnecting(true);
+
+    restoreWalletConnectSessionLazy()
+      .then((restoredSession) => {
+        if (cancelled || !restoredSession?.provider) return;
+        explicitConnectionRef.current = true;
+        setWalletConnectResumeExpected(true);
+        setInjectedProvider(restoredSession.provider);
+        setSigner(restoredSession.signer || null);
+        setProvider(restoredSession.ethersProvider || null);
+        setAccount(restoredSession.address || "");
+        setChainId(restoredSession.chainId || AMOY.chainId);
+      })
+      .finally(() => {
+        if (!cancelled) setIsConnecting(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   /** Switch/add the target chain. Uses ensureAmoy for Amoy. */
@@ -171,6 +249,26 @@ export function Web3Provider({ children }) {
     setIsConnecting(true);
     try {
       if (!candidates.length) {
+        if (shouldUseMetaMaskMobileFallback()) {
+          setWalletConnectResumeExpected(true);
+          const {
+            provider: wcProvider,
+            ethersProvider,
+            signer: wcSigner,
+            address,
+            chainId: connectedChainId,
+          } = await connectWithWalletConnectLazy({
+            forceNewSession: true,
+            mobileLinks: getWalletConnectMobileLinks({ preferMetaMask: true }),
+          });
+          explicitConnectionRef.current = true;
+          setInjectedProvider(wcProvider);
+          setSigner(wcSigner);
+          setProvider(ethersProvider);
+          setAccount(address || "");
+          setChainId(connectedChainId || AMOY.chainId);
+          return Boolean(address);
+        }
         console.warn(
           "Web3Provider.connectMetaMask: no direct MetaMask extension provider candidates found",
           {
@@ -220,8 +318,32 @@ export function Web3Provider({ children }) {
           }
         }
       }
-      if (!eth) return false;
+      if (!eth) {
+        if (shouldUseMetaMaskMobileFallback()) {
+          setWalletConnectResumeExpected(true);
+          const {
+            provider: wcProvider,
+            ethersProvider,
+            signer: wcSigner,
+            address,
+            chainId: connectedChainId,
+          } = await connectWithWalletConnectLazy({
+            forceNewSession: true,
+            mobileLinks: getWalletConnectMobileLinks({ preferMetaMask: true }),
+          });
+          explicitConnectionRef.current = true;
+          setInjectedProvider(wcProvider);
+          setSigner(wcSigner);
+          setProvider(ethersProvider);
+          setAccount(address || "");
+          setChainId(connectedChainId || AMOY.chainId);
+          return Boolean(address);
+        }
+        return false;
+      }
 
+      explicitConnectionRef.current = true;
+      clearWalletConnectResumeExpected();
       setInjectedProvider(eth);
       try {
         await syncAmoyRpcIfNeeded(eth);
@@ -254,10 +376,19 @@ export function Web3Provider({ children }) {
   }, [ensureChain, refresh]);
 
   const disconnect = React.useCallback(() => {
+    explicitConnectionRef.current = false;
+    clearWalletConnectResumeExpected();
+    clearInjectedProvider();
+    clearWalletConnectSessionLazy().catch(() => {});
+    try {
+      setProvider(getROProvider());
+      setChainId(AMOY.chainId);
+    } catch {
+      setProvider(null);
+      setChainId(undefined);
+    }
     setSigner(null);
-    setProvider(null);
     setAccount("");
-    setChainId(undefined);
   }, []);
 
   React.useEffect(() => {
@@ -282,19 +413,56 @@ export function Web3Provider({ children }) {
         disconnect();
         return;
       }
+      if (!explicitConnectionRef.current) {
+        await refresh();
+        return;
+      }
       await refresh();
     };
     const onChainChanged = async () => {
       await refresh();
     };
+    const onDisconnect = () => {
+      disconnect();
+    };
 
     eth.on?.("accountsChanged", onAccountsChanged);
     eth.on?.("chainChanged", onChainChanged);
+    eth.on?.("disconnect", onDisconnect);
+    eth.on?.("session_delete", onDisconnect);
     return () => {
       eth.removeListener?.("accountsChanged", onAccountsChanged);
       eth.removeListener?.("chainChanged", onChainChanged);
+      eth.removeListener?.("disconnect", onDisconnect);
+      eth.removeListener?.("session_delete", onDisconnect);
     };
   }, [refresh, disconnect, injectedVersion]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const scheduleRefresh = () => {
+      if (!explicitConnectionRef.current && !account) return;
+      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+      resumeTimerRef.current = setTimeout(() => {
+        refresh().catch(() => {});
+      }, WALLET_RESUME_DEBOUNCE_MS);
+    };
+    const onVisibilityChange = () => {
+      if (!document.hidden) scheduleRefresh();
+    };
+
+    window.addEventListener("focus", scheduleRefresh);
+    window.addEventListener("pageshow", scheduleRefresh);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+      window.removeEventListener("focus", scheduleRefresh);
+      window.removeEventListener("pageshow", scheduleRefresh);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [account, refresh]);
 
   const value = {
     provider,

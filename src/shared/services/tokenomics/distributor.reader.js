@@ -6,6 +6,8 @@ import {
 } from "@/config/abi/index.js";
 import { getMCDReaderV2RO } from "@/shared/utils/contract";
 import { getAddresses } from "@/config/addresses/index.js";
+import { multicallReadContract } from "@/shared/utils/multicall.js";
+import { unwrapDistributorSnapshot } from "./distributor.snapshot.js";
 
 async function _callOptional(fn, fallback = null) {
   if (typeof fn !== "function") return fallback;
@@ -20,13 +22,18 @@ async function _callOptional(fn, fallback = null) {
 let _skipReader = false;
 const _ENABLE_READER = (() => {
   try {
-    return (
+    if (
       typeof import.meta !== "undefined" &&
-      import.meta.env &&
-      import.meta.env.VITE_ENABLE_MCD_READER === "true"
-    );
+      import.meta.env
+    ) {
+      const raw = String(import.meta.env.VITE_ENABLE_MCD_READER || "")
+        .trim()
+        .toLowerCase();
+      if (raw === "false" || raw === "0") return false;
+    }
+    return true;
   } catch {
-    return false;
+    return true;
   }
 })();
 
@@ -53,8 +60,22 @@ function normalizeAddress(value) {
   return value;
 }
 
+async function _multicallOptional(provider, contract, entries, label) {
+  try {
+    return await multicallReadContract(provider, contract, entries);
+  } catch (error) {
+    console.warn(`Distributor snapshot ${label} multicall failed`, error);
+    return null;
+  }
+}
+
 export async function fetchDistributorSnapshot({ chainId, provider } = {}) {
   const signerOrProvider = provider || getProvider();
+  const readProvider =
+    signerOrProvider?.provider ||
+    signerOrProvider?.runner?.provider ||
+    signerOrProvider?.runner ||
+    signerOrProvider;
   let reader = null;
   let readerAddr = null;
   try {
@@ -67,13 +88,17 @@ export async function fetchDistributorSnapshot({ chainId, provider } = {}) {
   let globalSnap = null;
   let distributorAddr = null;
   let readerOk = false;
+  let snapshotSource = "Direct distributor";
 
   if (_ENABLE_READER && reader && !_skipReader) {
     globalSnap = await _callReader(() => reader.globalSnapshot?.(), null);
     if (!_skipReader) {
       distributorAddr = await _callReader(() => reader.distributor?.(), null);
     }
-    if (globalSnap) readerOk = true;
+    if (globalSnap) {
+      readerOk = true;
+      snapshotSource = "MCD Reader V2";
+    }
   }
   if (!globalSnap && _skipReader) {
     reader = null;
@@ -95,13 +120,16 @@ export async function fetchDistributorSnapshot({ chainId, provider } = {}) {
           null,
         );
       }
-      if (globalSnap) readerOk = true;
+      if (globalSnap) {
+        readerOk = true;
+        snapshotSource = "MCD Reader V1";
+      }
     } catch (error) {
       console.warn("Distributor reader V1 fallback failed", error);
     }
   }
 
-  let snap = globalSnap?.s ?? globalSnap?.[0] ?? globalSnap;
+  let snap = unwrapDistributorSnapshot(globalSnap);
   let directDistributor = null;
 
   // Fallback to direct distributor contract if reader snapshots fail.
@@ -118,32 +146,60 @@ export async function fetchDistributorSnapshot({ chainId, provider } = {}) {
         BiggiMultiCollectionDistributor,
         signerOrProvider,
       );
+      const directMulti = await _multicallOptional(
+        readProvider,
+        directDistributor,
+        [
+          { key: "collectionRewards", method: "collectionRewards" },
+          { key: "reserve", method: "reserve" },
+          { key: "buybackAgent", method: "buybackAgent" },
+          { key: "treasury", method: "treasury" },
+          { key: "communityCenter", method: "communityCenter" },
+          { key: "totalPending", method: "totalPending" },
+          { key: "totalReceived", method: "totalReceived" },
+        ],
+        "direct snapshot",
+      );
       snap = {
-        collectionRewards: await _callOptional(
+        collectionRewards:
+          directMulti?.collectionRewards ??
+          (await _callOptional(
           () => directDistributor.collectionRewards?.(),
           null,
-        ),
-        reserve: await _callOptional(() => directDistributor.reserve?.(), null),
-        buybackAgent: await _callOptional(
+        )),
+        reserve:
+          directMulti?.reserve ??
+          (await _callOptional(() => directDistributor.reserve?.(), null)),
+        buybackAgent:
+          directMulti?.buybackAgent ??
+          (await _callOptional(
           () => directDistributor.buybackAgent?.(),
           null,
-        ),
-        treasury: await _callOptional(
+        )),
+        treasury:
+          directMulti?.treasury ??
+          (await _callOptional(
           () => directDistributor.treasury?.(),
           null,
-        ),
-        communityCenter: await _callOptional(
+        )),
+        communityCenter:
+          directMulti?.communityCenter ??
+          (await _callOptional(
           () => directDistributor.communityCenter?.(),
           null,
-        ),
-        totalPending: await _callOptional(
+        )),
+        totalPending:
+          directMulti?.totalPending ??
+          (await _callOptional(
           () => directDistributor.totalPending?.(),
           null,
-        ),
-        totalReceived: await _callOptional(
+        )),
+        totalReceived:
+          directMulti?.totalReceived ??
+          (await _callOptional(
           () => directDistributor.totalReceived?.(),
           null,
-        ),
+        )),
       };
       distributorAddr = distributorFallback;
     } catch (error) {
@@ -183,9 +239,20 @@ export async function fetchDistributorSnapshot({ chainId, provider } = {}) {
       pendingMap.set(addr.toLowerCase(), pendingValues?.[idx] ?? null);
     });
   } else if (pendingTargets.length && directDistributor) {
+    const directPendingMulti = await _multicallOptional(
+      readProvider,
+      directDistributor,
+      pendingTargets.map((addr, idx) => ({
+        key: `pending_${idx}`,
+        method: "pendingOf",
+        params: [addr],
+      })),
+      "direct pendingOf",
+    );
     const pendingValues = await Promise.all(
-      pendingTargets.map((addr) =>
-        _callOptional(() => directDistributor.pending?.(addr), null),
+      pendingTargets.map((addr, idx) =>
+        directPendingMulti?.[`pending_${idx}`] ??
+        _callOptional(() => directDistributor.pendingOf?.(addr), null),
       ),
     );
     pendingTargets.forEach((addr, idx) => {
@@ -215,6 +282,12 @@ export async function fetchDistributorSnapshot({ chainId, provider } = {}) {
     normalizeAddress(addrs?.DRIPDistributor) ||
     normalizeAddress(addrs?.DRIP_DISTRIBUTOR) ||
     null;
+  const resolvedCommunity =
+    normalizeAddress(communityCenter) || fallbackCommunity;
+  const communityPoolBalance =
+    readProvider?.getBalance && resolvedCommunity
+      ? await _callOptional(() => readProvider.getBalance(resolvedCommunity), null)
+      : null;
 
   const ts = Date.now();
   return {
@@ -227,6 +300,9 @@ export async function fetchDistributorSnapshot({ chainId, provider } = {}) {
     COLLECTIONREWARDS: normalizeAddress(collectionRewards) || fallbackCollection,
     COMMUNITYCENTER: normalizeAddress(communityCenter) || fallbackCommunity,
     DRIPDistributor: fallbackDRIP,
+    snapshotSource,
+    readerAddress: normalizeAddress(readerAddr),
+    readerOk,
     totalPending,
     totalReceived,
     pendingReserve: getPending(reserve),
@@ -235,5 +311,6 @@ export async function fetchDistributorSnapshot({ chainId, provider } = {}) {
     pendingCOLLECTIONREWARDS: getPending(collectionRewards),
     pendingCOMMUNITYCENTER: getPending(communityCenter, pendingCommunity),
     pendingCommunity: getPending(communityCenter, pendingCommunity),
+    communityPoolBalance,
   };
 }

@@ -257,12 +257,19 @@ export default function RedeemOverlay({
           <div style={S.header}>
             <div style={S.iconContainer}>
               <img
-                src="/images/icons/mint.png"
+                src="/images/icons/mint.optimized.png"
                 alt=""
                 style={S.icon}
-                loading="React.lazy"
+                loading="eager"
                 decoding="async"
-                fetchPriority="low"
+                fetchPriority="high"
+                onError={(event) => {
+                  if (event.currentTarget.dataset.fallbackApplied === "1") {
+                    return;
+                  }
+                  event.currentTarget.dataset.fallbackApplied = "1";
+                  event.currentTarget.src = "/images/icons/mint.fallback.png";
+                }}
               />
             </div>
             <div style={S.headerTxts}>

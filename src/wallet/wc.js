@@ -1,19 +1,70 @@
 // src/wallet/wc.js
 import { BrowserProvider } from "ethers";
 import { EthereumProvider } from "@walletconnect/ethereum-provider";
-import { AMOY, PUBLIC_AMOY_RPCS, getPrimaryRpcUrl } from "@/shared/utils/contract";
+import {
+  AMOY,
+  PUBLIC_AMOY_RPCS,
+  getPrimaryRpcUrl,
+  getWalletRpcUrls,
+} from "@/shared/utils/contract";
+import { getWalletConnectMobileLinks } from "@/shared/utils/mobileWallet";
 
-const WC_PROJECT_ID = import.meta.env.VITE_WC_PROJECT_ID;
+const BIGGIEYES_PUBLIC_SITE_URL = "https://biggieyes.com/";
+const BIGGIEYES_PUBLIC_APP_URL = "https://biggieyes.com/app/";
+const BIGGIEYES_NATIVE_REDIRECT = "com.biggieyes.app://walletconnect";
 
 // Public RPC fallback for Amoy. Prefer your own infra in production.
 const DEFAULT_AMOY_RPC =
   getPrimaryRpcUrl() || AMOY?.rpcUrl || PUBLIC_AMOY_RPCS[0];
+const DEFAULT_AMOY_RPC_URLS = getWalletRpcUrls({ preferPublicFirst: true });
 
 const RPC_MAP = {
   80002: DEFAULT_AMOY_RPC, // Polygon Amoy
   137: "https://polygon-rpc.com", // Polygon Mainnet
   1: "https://cloudflare-eth.com", // Ethereum Mainnet
 };
+
+function normalizeWalletAddress(value) {
+  const raw = String(value || "").trim();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(raw)) return "";
+  return raw;
+}
+
+async function resolveWalletConnectAccounts(provider) {
+  const out = [];
+  const seen = new Set();
+  const push = (value) => {
+    const normalized = normalizeWalletAddress(value);
+    if (!normalized) return;
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(normalized);
+  };
+
+  try {
+    const directAccounts = await provider?.request?.({ method: "eth_accounts" });
+    if (Array.isArray(directAccounts)) {
+      directAccounts.forEach(push);
+    }
+  } catch {
+    // ignore direct account lookup failures
+  }
+
+  const sessionAccounts = provider?.session?.namespaces?.eip155?.accounts;
+  if (Array.isArray(sessionAccounts)) {
+    sessionAccounts.forEach((entry) => {
+      const parts = String(entry || "").split(":");
+      push(parts[parts.length - 1] || "");
+    });
+  }
+
+  if (Array.isArray(provider?.accounts)) {
+    provider.accounts.forEach(push);
+  }
+
+  return out;
+}
 
 function resolvePollingIntervalMs() {
   const fromEnv = Number(
@@ -25,25 +76,78 @@ function resolvePollingIntervalMs() {
   return 8000;
 }
 
-export async function connectWithWalletConnect() {
-  if (!WC_PROJECT_ID) throw new Error("Missing VITE_WC_PROJECT_ID in .env");
+function resolvePublicSiteUrl() {
+  if (typeof window !== "undefined") {
+    try {
+      const { origin, protocol } = window.location;
+      if (protocol === "http:" || protocol === "https:") {
+        return new URL("/", origin).href;
+      }
+    } catch {
+      // ignore non-http origins
+    }
+  }
+  return BIGGIEYES_PUBLIC_SITE_URL;
+}
 
-  const wc = await EthereumProvider.init({
-    projectId: WC_PROJECT_ID,
+function resolvePublicAppUrl() {
+  if (typeof window !== "undefined") {
+    try {
+      const { origin, protocol } = window.location;
+      if (protocol === "http:" || protocol === "https:") {
+        return new URL("/app/", origin).href;
+      }
+    } catch {
+      // ignore non-http origins
+    }
+  }
+  return BIGGIEYES_PUBLIC_APP_URL;
+}
+
+function resolveWalletMetadata() {
+  const siteUrl = resolvePublicSiteUrl();
+  return {
+    name: "BiggiEyes",
+    description: "BiggiEyes DApp",
+    url: siteUrl,
+    icons: [new URL("/apple-touch-icon.png", siteUrl).href],
+    redirect: {
+      native: BIGGIEYES_NATIVE_REDIRECT,
+      universal: resolvePublicAppUrl(),
+    },
+  };
+}
+
+function getWalletConnectProjectId() {
+  return import.meta.env.VITE_WC_PROJECT_ID;
+}
+
+function assertWalletConnectProjectId() {
+  if (!getWalletConnectProjectId()) {
+    throw new Error("Missing VITE_WC_PROJECT_ID in .env");
+  }
+}
+
+async function initWalletConnectProvider(options = {}) {
+  const {
+    mobileLinks,
+    qrModalOptions,
+    showQrModal = true,
+  } = options;
+  const resolvedMobileLinks =
+    Array.isArray(mobileLinks) && mobileLinks.length
+      ? [...mobileLinks]
+      : getWalletConnectMobileLinks();
+
+  return await EthereumProvider.init({
+    projectId: getWalletConnectProjectId(),
     chains: [80002],
     optionalChains: [137, 1],
     rpcMap: RPC_MAP,
-    showQrModal: true,
+    showQrModal,
     qrModalOptions: {
-      mobileLinks: [
-        "metamask",
-        "trust",
-        "okx",
-        "rainbow",
-        "zerion",
-        "bitget",
-        "coinbase",
-      ],
+      ...qrModalOptions,
+      mobileLinks: resolvedMobileLinks,
     },
     methods: [
       "eth_requestAccounts",
@@ -62,53 +166,39 @@ export async function connectWithWalletConnect() {
       "eth_signTypedData_v4",
     ],
     events: ["chainChanged", "accountsChanged", "disconnect", "session_delete"],
-    metadata: {
-      name: "BiggiEyes",
-      description: "BiggiEyes DApp",
-      url:
-        typeof window !== "undefined"
-          ? window.location.origin
-          : "https://example.org",
-      icons: ["https://walletconnect.com/walletconnect-logo.png"],
-    },
+    metadata: resolveWalletMetadata(),
   });
+}
 
-  // Open QR and establish session
-  await wc.connect();
-
+async function buildWalletConnectSessionResult(wc) {
   const ethersProvider = new BrowserProvider(wc, "any");
   if (typeof ethersProvider.pollingInterval === "number") {
     ethersProvider.pollingInterval = resolvePollingIntervalMs();
   }
-
-  const signer = await ethersProvider.getSigner();
 
   const chainId = await resolveChainId(wc);
   if (chainId && chainId !== AMOY.chainId) {
     await ensureAmoy(wc);
   }
 
-  // Basic listeners
-  const hardReload = () => {
-    if (typeof window !== "undefined") window.location.reload();
-  };
-  wc.on("chainChanged", hardReload);
-  wc.on("accountsChanged", hardReload);
-  wc.on("disconnect", () => {
-    // session ended
-  });
-  wc.on("session_delete", () => {
-    // wallet forcibly closed session
-  });
+  const resolvedAccounts = await resolveWalletConnectAccounts(wc);
+  const signer = resolvedAccounts[0]
+    ? await ethersProvider.getSigner(resolvedAccounts[0])
+    : await ethersProvider.getSigner();
 
-  const address = await signer.getAddress();
+  const address =
+    resolvedAccounts[0] ||
+    normalizeWalletAddress(await signer.getAddress().catch(() => ""));
+  if (!address) {
+    throw new Error(
+      "WalletConnect session opened, but no wallet address was confirmed.",
+    );
+  }
   const net = await ethersProvider.getNetwork();
   const connectedChainId = Number(net?.chainId ?? 0);
 
   const disconnect = () => {
     try {
-      wc.removeListener?.("chainChanged", hardReload);
-      wc.removeListener?.("accountsChanged", hardReload);
       wc.disconnect();
     } catch {
       // ignore disconnect cleanup errors
@@ -123,6 +213,73 @@ export async function connectWithWalletConnect() {
     chainId: connectedChainId,
     disconnect,
   };
+}
+
+export async function connectWithWalletConnect(options = {}) {
+  assertWalletConnectProjectId();
+  const { connectOptions, forceNewSession = false } = options;
+  const wc = await initWalletConnectProvider(options);
+
+  if (forceNewSession && wc.session) {
+    try {
+      await wc.disconnect();
+    } catch {
+      // ignore stale session cleanup errors
+    }
+    return await connectWithWalletConnect({
+      ...options,
+      forceNewSession: false,
+    });
+  }
+
+  if (wc.session) {
+    await wc.enable();
+  } else {
+    await wc.connect(connectOptions);
+  }
+
+  return await buildWalletConnectSessionResult(wc);
+}
+
+export async function restoreWalletConnectSession(options = {}) {
+  if (!getWalletConnectProjectId()) return null;
+
+  const wc = await initWalletConnectProvider({
+    ...options,
+    showQrModal: false,
+  });
+
+  if (!wc?.session) return null;
+
+  try {
+    await wc.enable();
+    return await buildWalletConnectSessionResult(wc);
+  } catch (error) {
+    try {
+      await wc.disconnect();
+    } catch {
+      // ignore stale session cleanup errors
+    }
+    console.debug("restoreWalletConnectSession", error);
+    return null;
+  }
+}
+
+export async function clearWalletConnectSession(options = {}) {
+  if (!getWalletConnectProjectId()) return false;
+
+  try {
+    const wc = await initWalletConnectProvider({
+      ...options,
+      showQrModal: false,
+    });
+    if (!wc?.session) return false;
+    await wc.disconnect();
+    return true;
+  } catch (error) {
+    console.debug("clearWalletConnectSession", error);
+    return false;
+  }
 }
 
 /* ---------------- Helpers ---------------- */
@@ -147,8 +304,8 @@ async function ensureAmoy(wc) {
             decimals: 18,
           },
           rpcUrls:
-            Array.isArray(AMOY?.rpcUrls) && AMOY.rpcUrls.length
-              ? AMOY.rpcUrls
+            Array.isArray(DEFAULT_AMOY_RPC_URLS) && DEFAULT_AMOY_RPC_URLS.length
+              ? DEFAULT_AMOY_RPC_URLS
               : [DEFAULT_AMOY_RPC],
           blockExplorerUrls: [AMOY?.explorer].filter(Boolean),
         },

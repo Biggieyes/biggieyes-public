@@ -10,6 +10,11 @@ import {
 import { ADDR } from "@/shared/utils/addresses.js";
 import { getROProvider } from "@/shared/utils/contract";
 import { BiggiCommunityCenter } from "@/config/abi/index.js";
+import AdminDashboard from "@/components/AdminDashboard";
+import {
+  fetchCommunityPolls,
+  submitCommunityPollAdminAction,
+} from "@/shared/services/communityVotingApi.js";
 import { supabase } from "../../services/chatClient";
 
 const COMMUNITY_CENTER_ABI = Array.isArray(BiggiCommunityCenter)
@@ -92,7 +97,12 @@ function resolveCOMMUNITYCENTERAddress() {
   return null;
 }
 
-export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
+export default function AdminPanel({
+  open,
+  onClose,
+  data = {},
+  actions: actionsInput = {},
+}) {
   const C = {
     y: "#FFE800",
     line: "rgba(255,255,255,.12)",
@@ -165,11 +175,41 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
 
   // Community Center event editing
   const [eventId, setEventId] = React.useState("");
+  const [eventTitle, setEventTitle] = React.useState("");
+  // Stored as `ipfsHash` on-chain; can be `ipfs://...` or any short descriptor.
   const [eventIpfs, setEventIpfs] = React.useState("");
+  const [eventDescription, setEventDescription] = React.useState("");
+  const [eventImage, setEventImage] = React.useState("");
   const [eventStart, setEventStart] = React.useState("");
   const [eventEnd, setEventEnd] = React.useState("");
-  const [eventCapacity, setEventCapacity] = React.useState("");
-  const [eventDeposit, setEventDeposit] = React.useState("");
+  const [eventTotalPrize, setEventTotalPrize] = React.useState("");
+  const [eventWinners, setEventWinners] = React.useState("");
+  const [eventAmounts, setEventAmounts] = React.useState("");
+  const [communityPollId, setCommunityPollId] = React.useState("");
+  const [communityPollTitle, setCommunityPollTitle] = React.useState("");
+  const [communityPollDescription, setCommunityPollDescription] =
+    React.useState("");
+  const [communityPollEventId, setCommunityPollEventId] = React.useState("");
+  const [communityPollStartsAt, setCommunityPollStartsAt] = React.useState("");
+  const [communityPollEndsAt, setCommunityPollEndsAt] = React.useState("");
+  const [communityPollOptions, setCommunityPollOptions] = React.useState("");
+  const [communityPolls, setCommunityPolls] = React.useState([]);
+  const [communityPollsError, setCommunityPollsError] = React.useState("");
+  const [communityOwner, setCommunityOwner] = React.useState("");
+  const [communityDistributor, setCommunityDistributor] = React.useState("");
+  const [communityPoolBalance, setCommunityPoolBalance] = React.useState("");
+  const [communityTotalLocked, setCommunityTotalLocked] = React.useState("");
+  const [communityContractBalance, setCommunityContractBalance] =
+    React.useState("");
+  const [communityNextEventId, setCommunityNextEventId] = React.useState("");
+  const [communityPaused, setCommunityPaused] = React.useState(false);
+  const [communityDistributorInput, setCommunityDistributorInput] =
+    React.useState("");
+  const [communityDepositAmount, setCommunityDepositAmount] =
+    React.useState("");
+  const [communityRescueTo, setCommunityRescueTo] = React.useState("");
+  const [communityRescueAmount, setCommunityRescueAmount] = React.useState("");
+  const [communityEmergencyTo, setCommunityEmergencyTo] = React.useState("");
 
   // NFT REWARDS admin (manual + mystery)
   const [nftMainContract, setNftMainContract] = React.useState("");
@@ -198,10 +238,142 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
   });
   const [healthLoading, setHealthLoading] = React.useState(false);
   const [healthError, setHealthError] = React.useState("");
+  const actions = React.useMemo(
+    () =>
+      new Proxy(actionsInput || {}, {
+        get(target, prop, receiver) {
+          const value = Reflect.get(target, prop, receiver);
+          if (typeof value === "function") return value;
+          return () => {
+            throw new Error(
+              `Action "${String(prop)}" is unavailable in this build`,
+            );
+          };
+        },
+      }),
+    [actionsInput],
+  );
+
+  const hasAction = React.useCallback(
+    (name) => typeof actionsInput?.[name] === "function",
+    [actionsInput],
+  );
+  const hasAnyAction = React.useCallback(
+    (names) => names.some((name) => hasAction(name)),
+    [hasAction],
+  );
+
+  const coreAvailability = React.useMemo(
+    () => ({
+      pause: hasAction("setPaused"),
+      baseURI: hasAction("setBaseURI"),
+      ticketPrice: hasAction("setTicketPrice"),
+      blockBasePrice: hasAction("setBlockBasePrice"),
+      vrf: hasAction("setVRFParams"),
+      treasury: hasAction("setTreasury"),
+      liquiditySink: hasAction("setLiquiditySink"),
+      tokenAddress: hasAction("setTokenAddress"),
+      router: hasAction("setRouter"),
+      withdrawNative: hasAction("withdrawNative"),
+      withdrawToken: hasAction("withdrawToken"),
+      sweepDust: hasAction("sweepDust"),
+    }),
+    [hasAction],
+  );
+  const hasCoreSetters = React.useMemo(
+    () => Object.values(coreAvailability).some(Boolean),
+    [coreAvailability],
+  );
+  const liquidityAvailable = React.useMemo(
+    () =>
+      hasAnyAction([
+        "liq_setLiquidityRecipient",
+        "liq_setLpUseBalanceBps",
+        "liq_setSwapSlippageBps",
+        "liq_setLpAddSlippageBps",
+        "liq_setTxDeadline",
+        "liq_setSwapPath",
+        "liq_clearSwapPath",
+        "liq_BUYBACKToTreasury",
+        "liq_BUYBACKAllToTreasury",
+        "liq_addLiquidityFromBalances",
+        "liq_bootstrapLiquidity",
+        "liq_routeBiggiToTreasury",
+      ]),
+    [hasAnyAction],
+  );
+  const policyAvailable = React.useMemo(
+    () =>
+      hasAnyAction([
+        "pol_setSplits",
+        "pol_setGuards",
+        "pol_setPauses",
+        "pol_setOperator",
+        "pol_consumeDaily",
+        "pol_resetDailyCounter",
+      ]),
+    [hasAnyAction],
+  );
+  const nftAvailable = React.useMemo(
+    () =>
+      hasAnyAction([
+        "nft_setMainContract",
+        "nft_setVRFRouter",
+        "nft_createManualReward",
+        "nft_createMysteryEvent",
+        "nft_requestMysteryRandom",
+      ]),
+    [hasAnyAction],
+  );
+  const frontendAvailable = Boolean(data?.frontend);
+  const ownerWallet = String(data?.frontend?.wallet || "");
 
   // pending stavy pro tlačítka + status info
   const [pending, setPending] = React.useState({});
   const [statusMsg, setStatusMsg] = React.useState("");
+  React.useEffect(() => {
+    if (!open) return;
+
+    setBaseURI(String(data?.baseURI || ""));
+    setPauseFlag(Boolean(data?.paused));
+    setTicketPrice(
+      data?.ticketPrice == null || data?.ticketPrice === ""
+        ? ""
+        : String(data.ticketPrice),
+    );
+    setTreasury(String(data?.treasury || ""));
+    setLiquiditySink(String(data?.liquiditySink || ""));
+    setTokenAddress(String(data?.token?.address || ""));
+    setRouterAddress(String(data?.dex?.router || ""));
+    setVRF({
+      keyHash: data?.VRF?.keyHash || "",
+      confirmations: data?.VRF?.confirmations ?? 3,
+      numWords: data?.VRF?.numWords ?? 1,
+      callbackGasLimit: data?.VRF?.callbackGasLimit ?? 300000,
+      coordinator: data?.VRF?.coordinator || "",
+      subscriptionId: data?.VRF?.subscriptionId || "",
+    });
+    setNftMainContract(String(data?.nft?.mainContract || ""));
+    setNftVRFRouter(String(data?.nft?.vrfRouter || data?.VRF?.router || ""));
+  }, [
+    open,
+    data?.baseURI,
+    data?.paused,
+    data?.ticketPrice,
+    data?.treasury,
+    data?.liquiditySink,
+    data?.token?.address,
+    data?.dex?.router,
+    data?.VRF?.keyHash,
+    data?.VRF?.confirmations,
+    data?.VRF?.numWords,
+    data?.VRF?.callbackGasLimit,
+    data?.VRF?.coordinator,
+    data?.VRF?.subscriptionId,
+    data?.VRF?.router,
+    data?.nft?.mainContract,
+    data?.nft?.vrfRouter,
+  ]);
 
   // --- Handlers helpers ---
   const run = async (key, fn) => {
@@ -212,7 +384,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       await fn();
       setStatusMsg("✅ Done");
       // auto-refresh, pokud existuje akce refresh
-      if (actions.refresh) {
+      if (hasAction("refresh")) {
         await actions.refresh();
         setStatusMsg("✅ Done & refreshed");
       }
@@ -247,16 +419,9 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
         await window.ethereum
           .request?.({ method: "eth_requestAccounts" })
           .catch(() => {});
-        const provider = new BrowserProvider(
-          window.ethereum,
-          "any",
-        );
+        const provider = new BrowserProvider(window.ethereum, "any");
         const signer = await provider.getSigner();
-        return new Contract(
-          communityAddress,
-          COMMUNITY_CENTER_ABI,
-          signer,
-        );
+        return new Contract(communityAddress, COMMUNITY_CENTER_ABI, signer);
       }
 
       let provider = null;
@@ -267,11 +432,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
         provider = new BrowserProvider(window.ethereum, "any");
       }
       if (!provider) throw new Error("Read provider unavailable");
-      return new Contract(
-        communityAddress,
-        COMMUNITY_CENTER_ABI,
-        provider,
-      );
+      return new Contract(communityAddress, COMMUNITY_CENTER_ABI, provider);
     },
     [communityAddress],
   );
@@ -308,26 +469,303 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
     return parseEther(String(value));
   };
 
+  const formatPolDisplay = (value) => {
+    try {
+      const next = Number(formatEther(value ?? 0n));
+      if (!Number.isFinite(next)) return "--";
+      if (next === 0) return "0 POL";
+      if (next >= 1000) {
+        return `${next.toLocaleString(undefined, {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        })} POL`;
+      }
+      if (next >= 1) return `${next.toFixed(2)} POL`;
+      return `${next.toFixed(4)} POL`;
+    } catch {
+      return "--";
+    }
+  };
+
+  const syncCommunityOverview = React.useCallback(async () => {
+    if (!communityAvailable) return;
+    const contract = await getCommunityContract(false);
+    let provider = null;
+    try {
+      provider = contract?.runner?.provider || getROProvider();
+    } catch {}
+
+    const [
+      owner,
+      distributor,
+      poolBalance,
+      totalLocked,
+      paused,
+      nextEventId,
+      contractBalance,
+    ] = await Promise.all([
+      contract.owner().catch(() => ZERO_ADDRESS),
+      contract.distributor().catch(() => ZERO_ADDRESS),
+      contract.poolBalance().catch(() => 0n),
+      contract.totalLocked().catch(() => 0n),
+      contract.paused().catch(() => false),
+      contract.nextEventId().catch(() => 0n),
+      provider?.getBalance
+        ? provider.getBalance(communityAddress).catch(() => 0n)
+        : Promise.resolve(0n),
+    ]);
+
+    setCommunityOwner(String(owner || ""));
+    setCommunityDistributor(String(distributor || ""));
+    setCommunityPoolBalance(formatPolDisplay(poolBalance));
+    setCommunityTotalLocked(formatPolDisplay(totalLocked));
+    setCommunityContractBalance(formatPolDisplay(contractBalance));
+    setCommunityNextEventId(bnToString(nextEventId));
+    setCommunityPaused(Boolean(paused));
+    setCommunityDistributorInput((prev) =>
+      String(prev || "").trim() ? prev : String(distributor || ""),
+    );
+    setCommunityRescueTo((prev) =>
+      String(prev || "").trim() ? prev : String(owner || ""),
+    );
+    setCommunityEmergencyTo((prev) =>
+      String(prev || "").trim() ? prev : String(owner || ""),
+    );
+  }, [communityAddress, communityAvailable, getCommunityContract]);
+
+  const loadCommunityOverview = () =>
+    run("community_overview", async () => {
+      await syncCommunityOverview();
+    });
+
+  React.useEffect(() => {
+    if (!open || activeTab !== "community") return;
+    if (communityAvailable) syncCommunityOverview().catch(() => {});
+  }, [activeTab, communityAvailable, open, syncCommunityOverview]);
+
   const clearCommunityEventForm = () => {
+    setEventTitle("");
     setEventIpfs("");
+    setEventDescription("");
+    setEventImage("");
     setEventStart("");
     setEventEnd("");
-    setEventCapacity("");
-    setEventDeposit("");
+    setEventTotalPrize("");
+    setEventWinners("");
+    setEventAmounts("");
   };
+
+  const parseCommunityPollDate = (value, label) => {
+    const raw = String(value || "").trim();
+    if (!raw) throw new Error(`${label} is required`);
+    const asNumber = Number(raw);
+    const date =
+      Number.isFinite(asNumber) && raw !== ""
+        ? new Date(raw.length >= 13 ? asNumber : asNumber * 1000)
+        : new Date(raw);
+    if (Number.isNaN(date.getTime())) {
+      throw new Error(`${label} is invalid`);
+    }
+    return date.toISOString();
+  };
+
+  const toDateTimeLocalValue = (value) => {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return "";
+    const pad = (next) => String(next).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+      date.getDate(),
+    )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
+
+  const clearCommunityPollForm = () => {
+    setCommunityPollId("");
+    setCommunityPollTitle("");
+    setCommunityPollDescription("");
+    setCommunityPollEventId("");
+    setCommunityPollStartsAt("");
+    setCommunityPollEndsAt("");
+    setCommunityPollOptions("");
+  };
+
+  const loadCommunityPolls = React.useCallback(async () => {
+    setCommunityPollsError("");
+    try {
+      const json = await fetchCommunityPolls({ includeAll: true });
+      setCommunityPolls(Array.isArray(json?.polls) ? json.polls : []);
+    } catch (error) {
+      console.error("Community polls load failed", error);
+      setCommunityPolls([]);
+      setCommunityPollsError(
+        error?.message || "Failed to load community polls.",
+      );
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (!open || activeTab !== "community") return;
+    loadCommunityPolls().catch(() => {});
+  }, [activeTab, loadCommunityPolls, open]);
+
+  const loadCommunityPollIntoForm = React.useCallback((poll) => {
+    setCommunityPollId(String(poll?.id || "").trim());
+    setCommunityPollTitle(String(poll?.title || "").trim());
+    setCommunityPollDescription(String(poll?.description || "").trim());
+    setCommunityPollEventId(
+      poll?.linkedEventId == null ? "" : String(poll.linkedEventId),
+    );
+    setCommunityPollStartsAt(toDateTimeLocalValue(poll?.startsAt));
+    setCommunityPollEndsAt(toDateTimeLocalValue(poll?.endsAt));
+    setCommunityPollOptions(
+      (Array.isArray(poll?.options) ? poll.options : [])
+        .map((option) => String(option?.label || "").trim())
+        .filter(Boolean)
+        .join("\n"),
+    );
+  }, []);
+
+  const signCommunityAdminPayload = async (payload) => {
+    if (typeof window === "undefined" || !window.ethereum) {
+      throw new Error("Wallet provider not found");
+    }
+    await window.ethereum
+      .request?.({ method: "eth_requestAccounts" })
+      .catch(() => {});
+    const provider = new BrowserProvider(window.ethereum, "any");
+    const signer = await provider.getSigner();
+    const address = await signer.getAddress();
+    const signature = await signer.signMessage(`community-admin|${payload}`);
+    return { address, signature };
+  };
+
+  const saveCommunityPoll = () =>
+    run("community_poll_save", async () => {
+      const title = String(communityPollTitle || "").trim();
+      if (!title) throw new Error("Poll title is required");
+
+      const options = splitListInput(communityPollOptions);
+      if (options.length < 2) {
+        throw new Error("At least two vote options are required");
+      }
+
+      const startsAt = parseCommunityPollDate(
+        communityPollStartsAt,
+        "Poll start",
+      );
+      const endsAt = parseCommunityPollDate(communityPollEndsAt, "Poll end");
+      if (new Date(endsAt).getTime() <= new Date(startsAt).getTime()) {
+        throw new Error("Poll end must be later than poll start");
+      }
+
+      const linkedEventIdRaw = String(communityPollEventId || "").trim();
+      if (linkedEventIdRaw && !/^\d+$/.test(linkedEventIdRaw)) {
+        throw new Error("Linked event ID must be a non-negative integer");
+      }
+
+      const payload = JSON.stringify({
+        action: "upsert",
+        timestamp: Date.now(),
+        poll: {
+          ...(String(communityPollId || "").trim()
+            ? { id: String(communityPollId || "").trim() }
+            : {}),
+          title,
+          description: String(communityPollDescription || "").trim(),
+          linkedEventId: linkedEventIdRaw || null,
+          startsAt,
+          endsAt,
+          options,
+        },
+      });
+
+      const { address, signature } = await signCommunityAdminPayload(payload);
+      const json = await submitCommunityPollAdminAction({
+        address,
+        payload,
+        signature,
+      });
+
+      if (json?.poll?.id) {
+        loadCommunityPollIntoForm(json.poll);
+      }
+      await loadCommunityPolls();
+    });
+
+  const closeCommunityPoll = (pollId) =>
+    run(`community_poll_close_${pollId}`, async () => {
+      const safePollId = String(pollId || "").trim();
+      if (!safePollId) throw new Error("Poll ID is required");
+
+      const payload = JSON.stringify({
+        action: "close",
+        timestamp: Date.now(),
+        pollId: safePollId,
+      });
+
+      const { address, signature } = await signCommunityAdminPayload(payload);
+      await submitCommunityPollAdminAction({
+        address,
+        payload,
+        signature,
+      });
+      await loadCommunityPolls();
+    });
 
   const loadCommunityEvent = () =>
     run("community_loadEvent", async () => {
       const contract = await getCommunityContract(false);
       const id = parseUintField(eventId, "Event ID", true);
-      const ev = await contract.getEvent(id);
-      setEventIpfs(ev?.ipfs ?? "");
+      const [ev, winnersTuple] = await Promise.all([
+        contract.getEvent(id),
+        typeof contract.getEventWinners === "function"
+          ? contract.getEventWinners(id).catch(() => null)
+          : Promise.resolve(null),
+      ]);
+
+      const rawMetadata = String(ev?.ipfsHash ?? ev?.ipfs ?? "").trim();
+      const inlineMetadata = (() => {
+        if (!rawMetadata || !rawMetadata.startsWith("{")) return null;
+        try {
+          const parsed = JSON.parse(rawMetadata);
+          return parsed && typeof parsed === "object" ? parsed : null;
+        } catch {
+          return null;
+        }
+      })();
+
+      setEventTitle(String(ev?.title ?? "").trim());
+      setEventIpfs(inlineMetadata ? "" : rawMetadata);
+      setEventDescription(String(inlineMetadata?.description ?? "").trim());
+      setEventImage(String(inlineMetadata?.image ?? "").trim());
       setEventStart(bnToString(ev?.start));
       setEventEnd(bnToString(ev?.end));
-      setEventCapacity(bnToString(ev?.capacity));
-      setEventDeposit(
-        ev?.depositWei ? formatEther(ev.depositWei) : "",
-      );
+
+      const totalPrizeBn = ev?.totalPrize_ ?? ev?.totalPrize ?? null;
+      setEventTotalPrize(totalPrizeBn != null ? formatEther(totalPrizeBn) : "");
+
+      if (Array.isArray(winnersTuple) && winnersTuple.length >= 2) {
+        const [winnersRaw, amountsRaw] = winnersTuple;
+        const winners = Array.isArray(winnersRaw) ? winnersRaw : [];
+        const amounts = Array.isArray(amountsRaw) ? amountsRaw : [];
+        setEventWinners(winners.join("\n"));
+        setEventAmounts(
+          amounts
+            .map((amt) => {
+              try {
+                return formatEther(amt ?? 0);
+              } catch {
+                return "";
+              }
+            })
+            .filter(Boolean)
+            .join("\n"),
+        );
+      } else {
+        setEventWinners("");
+        setEventAmounts("");
+      }
     });
 
   const createCommunityEvent = () =>
@@ -335,45 +773,114 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       if (!communityAvailable)
         throw new Error("Community Center contract not available");
       const contract = await getCommunityContract(true);
-      const trimmed = eventIpfs.trim();
-      if (!trimmed) throw new Error("Event text / IPFS hash is required");
-      const args = [
-        trimmed,
-        parseUintField(eventStart, "Start timestamp"),
-        parseUintField(eventEnd, "End timestamp"),
-        parseUintField(eventCapacity, "Capacity"),
-        parseDepositField(eventDeposit),
-      ];
-      const nextId = await contract.callStatic.createEvent(...args);
+      const title = eventTitle.trim();
+      if (!title) throw new Error("Event title is required");
+
+      const description = String(eventDescription || "").trim();
+      const image = String(eventImage || "").trim();
+      const ipfsInput = String(eventIpfs || "").trim();
+      const ipfsHash =
+        ipfsInput ||
+        (description || image
+          ? JSON.stringify({
+              title,
+              ...(description ? { description } : {}),
+              ...(image ? { image } : {}),
+            })
+          : "");
+      const start = parseUintField(eventStart, "Start timestamp");
+      const end = parseUintField(eventEnd, "End timestamp");
+
+      const winners = parseAddressListInput(eventWinners);
+      if (!winners.length) {
+        throw new Error("At least one winner address is required");
+      }
+      const amountsText = splitListInput(eventAmounts);
+      const amounts = amountsText.map((amt) => parseDepositField(amt));
+      if (amounts.length !== winners.length) {
+        throw new Error("Winners and amounts must have the same item count");
+      }
+      if (BigInt(end) <= BigInt(start)) {
+        throw new Error("End timestamp must be greater than start timestamp");
+      }
+
+      const totalPrize =
+        String(eventTotalPrize || "").trim() !== ""
+          ? parseDepositField(eventTotalPrize)
+          : amounts.reduce((acc, amt) => acc + amt, 0n);
+
+      const args = [title, ipfsHash, start, end, totalPrize, winners, amounts];
+      const nextId = await contract.createEvent.staticCall(...args);
       const tx = await contract.createEvent(...args);
       await tx.wait();
       setEventId(nextId.toString());
+      await syncCommunityOverview();
     });
 
-  const updateCommunityEvent = () =>
-    run("community_updateEvent", async () => {
+  const setCommunityDistributorAddress = () =>
+    run("community_setDistributor", async () => {
       if (!communityAvailable)
         throw new Error("Community Center contract not available");
-      const trimmed = eventIpfs.trim();
-      if (!trimmed) throw new Error("Event text / IPFS hash is required");
-      const id = parseUintField(eventId, "Event ID", true);
+      const addr = String(communityDistributorInput || "").trim();
+      if (!isAddress(addr)) throw new Error("Distributor address is invalid");
       const contract = await getCommunityContract(true);
-      const args = [
-        id,
-        trimmed,
-        parseUintField(eventStart, "Start timestamp"),
-        parseUintField(eventEnd, "End timestamp"),
-        parseUintField(eventCapacity, "Capacity"),
-        parseDepositField(eventDeposit),
-      ];
-      const updateFn = contract?.["updateEventMetadata"];
-      if (typeof updateFn !== "function") {
-        throw new Error(
-          "Update is not supported by the current Community Center contract",
-        );
-      }
-      const tx = await updateFn(...args);
+      const tx = await contract.setDistributor(addr);
       await tx.wait();
+      await syncCommunityOverview();
+    });
+
+  const depositCommunityPool = () =>
+    run("community_ownerDeposit", async () => {
+      if (!communityAvailable)
+        throw new Error("Community Center contract not available");
+      const value = parseDepositField(communityDepositAmount);
+      if (value <= 0n)
+        throw new Error("Deposit amount must be greater than zero");
+      const contract = await getCommunityContract(true);
+      const tx = await contract.ownerDeposit({ value });
+      await tx.wait();
+      setCommunityDepositAmount("");
+      await syncCommunityOverview();
+    });
+
+  const rescueCommunityPool = () =>
+    run("community_rescuePool", async () => {
+      if (!communityAvailable)
+        throw new Error("Community Center contract not available");
+      const to = String(communityRescueTo || "").trim();
+      if (!isAddress(to)) throw new Error("Rescue target address is invalid");
+      const value = parseDepositField(communityRescueAmount);
+      if (value <= 0n)
+        throw new Error("Rescue amount must be greater than zero");
+      const contract = await getCommunityContract(true);
+      const tx = await contract.rescuePool(to, value);
+      await tx.wait();
+      await syncCommunityOverview();
+    });
+
+  const toggleCommunityPause = () =>
+    run("community_pauseToggle", async () => {
+      if (!communityAvailable)
+        throw new Error("Community Center contract not available");
+      const contract = await getCommunityContract(true);
+      const tx = communityPaused
+        ? await contract.unpause()
+        : await contract.pause();
+      await tx.wait();
+      await syncCommunityOverview();
+    });
+
+  const emergencyWithdrawCommunity = () =>
+    run("community_emergencyWithdraw", async () => {
+      if (!communityAvailable)
+        throw new Error("Community Center contract not available");
+      const to = String(communityEmergencyTo || "").trim();
+      if (!isAddress(to))
+        throw new Error("Emergency withdraw target is invalid");
+      const contract = await getCommunityContract(true);
+      const tx = await contract.emergencyWithdraw(to);
+      await tx.wait();
+      await syncCommunityOverview();
     });
 
   const splitListInput = (value) =>
@@ -392,16 +899,14 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
   const applyNftMainContract = () =>
     run("nft_setMain", async () => {
       const addr = nftMainContract.trim();
-      if (!isAddress(addr))
-        throw new Error("Main contract address is invalid");
+      if (!isAddress(addr)) throw new Error("Main contract address is invalid");
       await actions.nft_setMainContract?.(addr);
     });
 
   const applyNftVRFRouter = () =>
     run("nft_setVRF", async () => {
       const addr = nftVRFRouter.trim();
-      if (!isAddress(addr))
-        throw new Error("VRF router address is invalid");
+      if (!isAddress(addr)) throw new Error("VRF router address is invalid");
       await actions.nft_setVRFRouter?.(addr);
     });
 
@@ -409,8 +914,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
     run("nft_manual", async () => {
       const winner = nftManualWinner.trim();
       const uri = nftManualUri.trim();
-      if (!isAddress(winner))
-        throw new Error("Winner address is invalid");
+      if (!isAddress(winner)) throw new Error("Winner address is invalid");
       if (!uri) throw new Error("Token URI is required");
       const res = await actions.nft_createManualReward?.(winner, uri);
       if (res?.eventId != null) setNftLastEventId(String(res.eventId));
@@ -456,8 +960,13 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       ]);
 
       const rulesText = rulesRes?.data?.text ? String(rulesRes.data.text) : "";
-      setChatRules(rulesText);
-      if (!chatRulesDraft && rulesText) setChatRulesDraft(rulesText);
+      setChatRules((prevRules) => {
+        setChatRulesDraft((prevDraft) => {
+          if (!prevDraft || prevDraft === prevRules) return rulesText;
+          return prevDraft;
+        });
+        return rulesText;
+      });
 
       if (msgsRes?.error) throw msgsRes.error;
       const list = Array.isArray(msgsRes?.data) ? msgsRes.data : [];
@@ -468,7 +977,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
     } finally {
       setChatLoading(false);
     }
-  }, [chatRulesDraft]);
+  }, []);
 
   const applyChatModeration = () =>
     run("chat_moderate", async () => {
@@ -486,10 +995,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       await window.ethereum
         .request?.({ method: "eth_requestAccounts" })
         .catch(() => {});
-      const provider = new BrowserProvider(
-        window.ethereum,
-        "any",
-      );
+      const provider = new BrowserProvider(window.ethereum, "any");
       const signer = await provider.getSigner();
       const address = await signer.getAddress();
       const payload = `${action}|${id}|${nextContent || ""}`;
@@ -526,10 +1032,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       await window.ethereum
         .request?.({ method: "eth_requestAccounts" })
         .catch(() => {});
-      const provider = new BrowserProvider(
-        window.ethereum,
-        "any",
-      );
+      const provider = new BrowserProvider(window.ethereum, "any");
       const signer = await provider.getSigner();
       const address = await signer.getAddress();
       const payload = `rules|${rulesText}`;
@@ -586,7 +1089,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
   };
 
   const scroller = {
-    overFLOW: "auto",
+    overflow: "auto",
     minHeight: 0,
   };
 
@@ -597,7 +1100,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
     borderRadius: 16,
     boxShadow:
       "0 18px 42px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.02)",
-    overFLOW: "hidden",
+    overflow: "hidden",
   };
 
   const header = {
@@ -619,7 +1122,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
     fontWeight: 900,
     padding: "8px 12px",
     cursor: "pointer",
-    opacity: pending && active ? 0.85 : 1,
+    opacity: 1,
   });
 
   const pill = {
@@ -643,7 +1146,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
 
   const sectionGrid = {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
     gap: 16,
   };
 
@@ -667,7 +1170,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       style={{
         border: "1px solid rgba(255,255,255,.08)",
         borderRadius: 14,
-        overFLOW: "hidden",
+        overflow: "hidden",
         boxShadow:
           "inset 0 0 0 1px rgba(255,255,255,.03), 0 10px 28px rgba(0,0,0,.45)",
         background:
@@ -1014,27 +1517,35 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
     if (!open) return;
     const onKey = (e) => {
       if (e.key === "Escape") onClose?.();
-      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-        run(
-          "setVRFParams",
-          () => actions.setVRFParams && actions.setVRFParams({ ...VRF }),
-        );
+      if (
+        hasAction("setVRFParams") &&
+        e.key === "Enter" &&
+        (e.ctrlKey || e.metaKey)
+      ) {
+        run("setVRFParams", () => actions.setVRFParams({ ...VRF }));
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, VRF, actions, onClose]);
+  }, [open, VRF, actions, hasAction, onClose]);
 
-  const tabs = [
-    { id: "core", label: "Core" },
-    { id: "liquidity", label: "Liquidity" },
-    { id: "POLICY", label: "POLICY" },
-    { id: "community", label: "Community" },
-    { id: "nft", label: "NFT REWARDS" },
-    { id: "chat", label: "Live Chat" },
-    { id: "health", label: "Health" },
-    { id: "frontend", label: "Frontend" },
-  ];
+  const tabs = React.useMemo(() => {
+    const next = [{ id: "core", label: "Core" }];
+    next.push({ id: "moderator", label: "Moderator Ops" });
+    if (liquidityAvailable) next.push({ id: "liquidity", label: "Liquidity" });
+    if (policyAvailable) next.push({ id: "POLICY", label: "POLICY" });
+    next.push({ id: "community", label: "Community" });
+    if (nftAvailable) next.push({ id: "nft", label: "NFT REWARDS" });
+    next.push({ id: "chat", label: "Live Chat" });
+    next.push({ id: "health", label: "Health" });
+    if (frontendAvailable) next.push({ id: "frontend", label: "Frontend" });
+    return next;
+  }, [frontendAvailable, liquidityAvailable, nftAvailable, policyAvailable]);
+
+  React.useEffect(() => {
+    if (tabs.some((tab) => tab.id === activeTab)) return;
+    setActiveTab(tabs[0]?.id || "core");
+  }, [activeTab, tabs]);
 
   // ---- UI ----
   if (!open) return null;
@@ -1076,7 +1587,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <span style={pill}>Owner: {short(data?.owner)}</span>
-          {actions.refresh && (
+          {hasAction("refresh") && (
             <button
               style={smallBtn(true)}
               disabled={!!pending.refresh}
@@ -1243,7 +1754,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     <div
                       style={{
                         padding: 0,
-                        overFLOWX: "auto",
+                        overflowX: "auto",
                         borderRadius: 14,
                         border: "1px solid rgba(255,255,255,.08)",
                         boxShadow:
@@ -1315,10 +1826,10 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                               <td style={{ padding: "10px 14px" }}>{i}</td>
                               <td style={{ padding: "10px 14px" }}>{b.name}</td>
                               <td style={{ padding: "10px 14px" }}>
-                                {num(b.basePrice)} POL
+                                {num(b.basePrice ?? b.price)} POL
                               </td>
                               <td style={{ padding: "10px 14px" }}>
-                                {num(b.currentPrice)} POL
+                                {num(b.currentPrice ?? b.price)} POL
                               </td>
                               <td style={{ padding: "10px 14px" }}>
                                 {num(b.minted)}
@@ -1355,410 +1866,546 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
               </div>
 
               <div style={{ padding: 12, display: "grid", gap: 16 }}>
+                {!hasCoreSetters && (
+                  <div
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      border: `1px solid ${C.line}`,
+                      background: "rgba(255, 209, 102, 0.14)",
+                      color: "#ffe29a",
+                    }}
+                  >
+                    This build currently exposes the admin snapshot as
+                    read-only. Wire additional owner actions in{" "}
+                    <code>src/app/AppCore.jsx</code> to enable more setters
+                    here.
+                  </div>
+                )}
+
                 {/* Pause/Unpause + BaseURI */}
-                <div style={sectionGrid}>
-                  <div>
-                    <div
-                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
-                    >
-                      Pause
-                    </div>
-                    <div
-                      style={{ display: "flex", gap: 8, alignItems: "center" }}
-                    >
-                      <label
+                {(coreAvailability.pause || coreAvailability.baseURI) && (
+                  <div style={sectionGrid}>
+                    <div>
+                      <div
                         style={{
-                          display: "inline-flex",
+                          color: C.dim,
+                          fontWeight: 900,
+                          marginBottom: 6,
+                        }}
+                      >
+                        Pause
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
                           gap: 8,
                           alignItems: "center",
                         }}
                       >
+                        <label
+                          style={{
+                            display: "inline-flex",
+                            gap: 8,
+                            alignItems: "center",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={pauseFlag}
+                            onChange={(e) => setPauseFlag(e.target.checked)}
+                          />
+                          <span>Paused</span>
+                        </label>
+                        <button
+                          style={smallBtn(true)}
+                          disabled={!coreAvailability.pause || !!pending.setPaused}
+                          onClick={() =>
+                            run(
+                              "setPaused",
+                              () =>
+                                actions.setPaused &&
+                                actions.setPaused(pauseFlag),
+                            )
+                          }
+                        >
+                          {pending.setPaused ? "Setting…" : "Set"}
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <div
+                        style={{
+                          color: C.dim,
+                          fontWeight: 900,
+                          marginBottom: 6,
+                        }}
+                      >
+                        BaseURI
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
                         <input
-                          type="checkbox"
-                          checked={pauseFlag}
-                          onChange={(e) => setPauseFlag(e.target.checked)}
+                          value={baseURI}
+                          onChange={(e) => setBaseURI(e.target.value)}
+                          placeholder="ipfs://CID/"
+                          style={inputStyle()}
                         />
-                        <span>Paused</span>
-                      </label>
-                      <button
-                        style={smallBtn(true)}
-                        disabled={!!pending.setPaused}
-                        onClick={() =>
-                          run(
-                            "setPaused",
-                            () =>
-                              actions.setPaused && actions.setPaused(pauseFlag),
-                          )
-                        }
-                      >
-                        {pending.setPaused ? "Setting…" : "Set"}
-                      </button>
+                        <button
+                          style={smallBtn(true)}
+                          disabled={
+                            !coreAvailability.baseURI || !!pending.setBaseURI
+                          }
+                          onClick={() =>
+                            run(
+                              "setBaseURI",
+                              () =>
+                                actions.setBaseURI &&
+                                actions.setBaseURI(baseURI),
+                            )
+                          }
+                        >
+                          {pending.setBaseURI ? "Setting…" : "Set"}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <div
-                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
-                    >
-                      BaseURI
-                    </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <input
-                        value={baseURI}
-                        onChange={(e) => setBaseURI(e.target.value)}
-                        placeholder="ipfs://CID/"
-                        style={inputStyle()}
-                      />
-                      <button
-                        style={smallBtn(true)}
-                        disabled={!!pending.setBaseURI}
-                        onClick={() =>
-                          run(
-                            "setBaseURI",
-                            () =>
-                              actions.setBaseURI && actions.setBaseURI(baseURI),
-                          )
-                        }
-                      >
-                        {pending.setBaseURI ? "Setting…" : "Set"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                )}
 
                 {/* Ticket price + Block base price */}
-                <div style={sectionGrid}>
-                  <div>
-                    <div
-                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
-                    >
-                      Ticket Price (POL)
-                    </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <input
-                        value={ticketPrice}
-                        onChange={(e) => setTicketPrice(e.target.value)}
-                        placeholder="e.g. 500"
-                        style={inputStyle()}
-                      />
-                      <button
-                        style={smallBtn(true)}
-                        disabled={!!pending.setTicketPrice}
-                        onClick={() =>
-                          run(
-                            "setTicketPrice",
-                            () =>
-                              actions.setTicketPrice &&
-                              actions.setTicketPrice(Number(ticketPrice)),
-                          )
-                        }
+                {(coreAvailability.ticketPrice ||
+                  coreAvailability.blockBasePrice) && (
+                  <div style={sectionGrid}>
+                    <div>
+                      <div
+                        style={{
+                          color: C.dim,
+                          fontWeight: 900,
+                          marginBottom: 6,
+                        }}
                       >
-                        {pending.setTicketPrice ? "Setting…" : "Set"}
-                      </button>
+                        Ticket Price (POL)
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <input
+                          value={ticketPrice}
+                          onChange={(e) => setTicketPrice(e.target.value)}
+                          placeholder="e.g. 500"
+                          style={inputStyle()}
+                        />
+                        <button
+                          style={smallBtn(true)}
+                          disabled={
+                            !coreAvailability.ticketPrice ||
+                            !!pending.setTicketPrice
+                          }
+                          onClick={() =>
+                            run(
+                              "setTicketPrice",
+                              () =>
+                                actions.setTicketPrice &&
+                                actions.setTicketPrice(Number(ticketPrice)),
+                            )
+                          }
+                        >
+                          {pending.setTicketPrice ? "Setting…" : "Set"}
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <div
+                        style={{
+                          color: C.dim,
+                          fontWeight: 900,
+                          marginBottom: 6,
+                        }}
+                      >
+                        Block Base Price
+                      </div>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "80px 1fr auto",
+                          gap: 8,
+                        }}
+                      >
+                        <input
+                          value={blockIdx}
+                          onChange={(e) => setBlockIdx(e.target.value)}
+                          placeholder="idx"
+                          style={inputStyle()}
+                        />
+                        <input
+                          value={blockBasePrice}
+                          onChange={(e) => setBlockBasePrice(e.target.value)}
+                          placeholder="price"
+                          style={inputStyle()}
+                        />
+                        <button
+                          style={smallBtn(true)}
+                          disabled={
+                            !coreAvailability.blockBasePrice ||
+                            !!pending.setBlockBasePrice
+                          }
+                          onClick={() =>
+                            run(
+                              "setBlockBasePrice",
+                              () =>
+                                actions.setBlockBasePrice &&
+                                actions.setBlockBasePrice(
+                                  Number(blockIdx),
+                                  Number(blockBasePrice),
+                                ),
+                            )
+                          }
+                        >
+                          {pending.setBlockBasePrice ? "Setting…" : "Set"}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <div
-                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
-                    >
-                      Block Base Price
-                    </div>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "80px 1fr auto",
-                        gap: 8,
-                      }}
-                    >
-                      <input
-                        value={blockIdx}
-                        onChange={(e) => setBlockIdx(e.target.value)}
-                        placeholder="idx"
-                        style={inputStyle()}
-                      />
-                      <input
-                        value={blockBasePrice}
-                        onChange={(e) => setBlockBasePrice(e.target.value)}
-                        placeholder="price"
-                        style={inputStyle()}
-                      />
-                      <button
-                        style={smallBtn(true)}
-                        disabled={!!pending.setBlockBasePrice}
-                        onClick={() =>
-                          run(
-                            "setBlockBasePrice",
-                            () =>
-                              actions.setBlockBasePrice &&
-                              actions.setBlockBasePrice(
-                                Number(blockIdx),
-                                Number(blockBasePrice),
-                              ),
-                          )
-                        }
-                      >
-                        {pending.setBlockBasePrice ? "Setting…" : "Set"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                )}
 
                 {/* VRF setup */}
-                <div
-                  style={{ borderTop: `1px dashed ${C.line}`, paddingTop: 12 }}
-                >
+                {coreAvailability.vrf && (
                   <div
-                    style={{ color: C.dim, fontWeight: 900, marginBottom: 10 }}
+                    style={{
+                      borderTop: `1px dashed ${C.line}`,
+                      paddingTop: 12,
+                    }}
                   >
-                    VRF (Ctrl+Enter = Apply)
-                  </div>
-                  <div style={{ display: "grid", gap: 8 }}>
-                    <Row k="KeyHash">
-                      <input
-                        value={VRF.keyHash}
-                        onChange={(e) =>
-                          setVRF({ ...VRF, keyHash: e.target.value })
-                        }
-                        style={inputStyle(true)}
-                      />
-                    </Row>
-                    <Row k="Confirmations">
-                      <input
-                        type="number"
-                        value={VRF.confirmations}
-                        onChange={(e) =>
-                          setVRF({
-                            ...VRF,
-                            confirmations: Number(e.target.value),
-                          })
-                        }
-                        style={inputStyle()}
-                      />
-                    </Row>
-                    <Row k="NumWords">
-                      <input
-                        type="number"
-                        value={VRF.numWords}
-                        onChange={(e) =>
-                          setVRF({ ...VRF, numWords: Number(e.target.value) })
-                        }
-                        style={inputStyle()}
-                      />
-                    </Row>
-                    <Row k="Callback Gas">
-                      <input
-                        type="number"
-                        value={VRF.callbackGasLimit}
-                        onChange={(e) =>
-                          setVRF({
-                            ...VRF,
-                            callbackGasLimit: Number(e.target.value),
-                          })
-                        }
-                        style={inputStyle()}
-                      />
-                    </Row>
-                    <Row k="Coordinator">
-                      <input
-                        value={VRF.coordinator}
-                        onChange={(e) =>
-                          setVRF({ ...VRF, coordinator: e.target.value })
-                        }
-                        style={inputStyle(true)}
-                      />
-                    </Row>
-                    <Row k="Subscription Id">
-                      <input
-                        value={VRF.subscriptionId}
-                        onChange={(e) =>
-                          setVRF({
-                            ...VRF,
-                            subscriptionId: e.target.value,
-                          })
-                        }
-                        style={inputStyle()}
-                      />
-                    </Row>
                     <div
-                      style={{ display: "flex", justifyContent: "flex-end" }}
+                      style={{
+                        color: C.dim,
+                        fontWeight: 900,
+                        marginBottom: 10,
+                      }}
                     >
+                      VRF (Ctrl+Enter = Apply)
+                    </div>
+                    <div style={{ display: "grid", gap: 8 }}>
+                      <Row k="KeyHash">
+                        <input
+                          value={VRF.keyHash}
+                          onChange={(e) =>
+                            setVRF({ ...VRF, keyHash: e.target.value })
+                          }
+                          style={inputStyle(true)}
+                        />
+                      </Row>
+                      <Row k="Confirmations">
+                        <input
+                          type="number"
+                          value={VRF.confirmations}
+                          onChange={(e) =>
+                            setVRF({
+                              ...VRF,
+                              confirmations: Number(e.target.value),
+                            })
+                          }
+                          style={inputStyle()}
+                        />
+                      </Row>
+                      <Row k="NumWords">
+                        <input
+                          type="number"
+                          value={VRF.numWords}
+                          onChange={(e) =>
+                            setVRF({ ...VRF, numWords: Number(e.target.value) })
+                          }
+                          style={inputStyle()}
+                        />
+                      </Row>
+                      <Row k="Callback Gas">
+                        <input
+                          type="number"
+                          value={VRF.callbackGasLimit}
+                          onChange={(e) =>
+                            setVRF({
+                              ...VRF,
+                              callbackGasLimit: Number(e.target.value),
+                            })
+                          }
+                          style={inputStyle()}
+                        />
+                      </Row>
+                      <Row k="Coordinator">
+                        <input
+                          value={VRF.coordinator}
+                          onChange={(e) =>
+                            setVRF({ ...VRF, coordinator: e.target.value })
+                          }
+                          style={inputStyle(true)}
+                        />
+                      </Row>
+                      <Row k="Subscription Id">
+                        <input
+                          value={VRF.subscriptionId}
+                          onChange={(e) =>
+                            setVRF({
+                              ...VRF,
+                              subscriptionId: e.target.value,
+                            })
+                          }
+                          style={inputStyle()}
+                        />
+                      </Row>
+                      <div
+                        style={{ display: "flex", justifyContent: "flex-end" }}
+                      >
+                        <button
+                          style={smallBtn(true)}
+                          disabled={!coreAvailability.vrf || !!pending.setVRFParams}
+                          onClick={() =>
+                            run(
+                              "setVRFParams",
+                              () =>
+                                actions.setVRFParams &&
+                                actions.setVRFParams({ ...VRF }),
+                            )
+                          }
+                          title="Apply VRF params"
+                        >
+                          {pending.setVRFParams ? "Applying…" : "Apply VRF"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Addresses */}
+                {(coreAvailability.treasury ||
+                  coreAvailability.liquiditySink ||
+                  coreAvailability.tokenAddress ||
+                  coreAvailability.router) && (
+                  <div
+                    style={{
+                      borderTop: `1px dashed ${C.line}`,
+                      paddingTop: 12,
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: C.dim,
+                        fontWeight: 900,
+                        marginBottom: 10,
+                      }}
+                    >
+                      Addresses
+                    </div>
+                    <div style={{ display: "grid", gap: 8 }}>
+                      <Row k="Treasury">
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <input
+                            value={treasury}
+                            onChange={(e) => setTreasury(e.target.value)}
+                            style={inputStyle(true)}
+                          />
+                          <button
+                            style={smallBtn(true)}
+                            disabled={
+                              !coreAvailability.treasury || !!pending.setTreasury
+                            }
+                            onClick={() =>
+                              run(
+                                "setTreasury",
+                                () =>
+                                  actions.setTreasury &&
+                                  actions.setTreasury(treasury),
+                              )
+                            }
+                          >
+                            {pending.setTreasury ? "Saving…" : "Set"}
+                          </button>
+                        </div>
+                      </Row>
+                      <Row k="Liquidity Sink">
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <input
+                            value={liquiditySink}
+                            onChange={(e) => setLiquiditySink(e.target.value)}
+                            style={inputStyle(true)}
+                          />
+                          <button
+                            style={smallBtn(true)}
+                            disabled={
+                              !coreAvailability.liquiditySink ||
+                              !!pending.setLiquiditySink
+                            }
+                            onClick={() =>
+                              run(
+                                "setLiquiditySink",
+                                () =>
+                                  actions.setLiquiditySink &&
+                                  actions.setLiquiditySink(liquiditySink),
+                              )
+                            }
+                          >
+                            {pending.setLiquiditySink ? "Saving…" : "Set"}
+                          </button>
+                        </div>
+                      </Row>
+                      <Row k="BIGGI ECOSYSTEM">
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <input
+                            value={tokenAddress}
+                            onChange={(e) => setTokenAddress(e.target.value)}
+                            style={inputStyle(true)}
+                          />
+                          <button
+                            style={smallBtn(true)}
+                            disabled={
+                              !coreAvailability.tokenAddress ||
+                              !!pending.setTokenAddress
+                            }
+                            onClick={() =>
+                              run(
+                                "setTokenAddress",
+                                () =>
+                                  actions.setTokenAddress &&
+                                  actions.setTokenAddress(tokenAddress),
+                              )
+                            }
+                          >
+                            {pending.setTokenAddress ? "Saving…" : "Set"}
+                          </button>
+                        </div>
+                      </Row>
+                      <Row k="DEX Router">
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <input
+                            value={routerAddress}
+                            onChange={(e) => setRouterAddress(e.target.value)}
+                            style={inputStyle(true)}
+                          />
+                          <button
+                            style={smallBtn(true)}
+                            disabled={!coreAvailability.router || !!pending.setRouter}
+                            onClick={() =>
+                              run(
+                                "setRouter",
+                                () =>
+                                  actions.setRouter &&
+                                  actions.setRouter(routerAddress),
+                              )
+                            }
+                          >
+                            {pending.setRouter ? "Saving…" : "Set"}
+                          </button>
+                        </div>
+                      </Row>
+                    </div>
+                  </div>
+                )}
+
+                {/* Finance ops */}
+                {(coreAvailability.withdrawNative ||
+                  coreAvailability.withdrawToken ||
+                  coreAvailability.sweepDust) && (
+                  <div
+                    style={{
+                      borderTop: `1px dashed ${C.line}`,
+                      paddingTop: 12,
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: C.dim,
+                        fontWeight: 900,
+                        marginBottom: 10,
+                      }}
+                    >
+                      Finance
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       <button
                         style={smallBtn(true)}
-                        disabled={!!pending.setVRFParams}
+                        disabled={
+                          !coreAvailability.withdrawNative ||
+                          !!pending.withdrawNative
+                        }
                         onClick={() =>
                           run(
-                            "setVRFParams",
+                            "withdrawNative",
                             () =>
-                              actions.setVRFParams &&
-                              actions.setVRFParams({ ...VRF }),
+                              actions.withdrawNative &&
+                              actions.withdrawNative(),
                           )
                         }
-                        title="Apply VRF params"
                       >
-                        {pending.setVRFParams ? "Applying…" : "Apply VRF"}
+                        {pending.withdrawNative
+                          ? "Withdrawing…"
+                          : "Withdraw Native"}
+                      </button>
+                      <button
+                        style={smallBtn(true)}
+                        disabled={
+                          !coreAvailability.withdrawToken ||
+                          !!pending.withdrawToken
+                        }
+                        onClick={() =>
+                          run(
+                            "withdrawToken",
+                            () =>
+                              actions.withdrawToken && actions.withdrawToken(),
+                          )
+                        }
+                      >
+                        {pending.withdrawToken
+                          ? "Withdrawing…"
+                          : "Withdraw BIGGI"}
+                      </button>
+                      <button
+                        style={smallBtn(true)}
+                        disabled={
+                          !coreAvailability.sweepDust || !!pending.sweepDust
+                        }
+                        onClick={() =>
+                          run(
+                            "sweepDust",
+                            () => actions.sweepDust && actions.sweepDust(),
+                          )
+                        }
+                      >
+                        {pending.sweepDust ? "Sweeping…" : "Sweep Dust"}
                       </button>
                     </div>
                   </div>
-                </div>
+                )}
+              </div>
+            </section>
+          </div>
+        )}
 
-                {/* Addresses */}
-                <div
-                  style={{ borderTop: `1px dashed ${C.line}`, paddingTop: 12 }}
+        {activeTab === "moderator" && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18 }}>
+            <section style={card}>
+              <div style={{ ...header, borderBottom: `1px solid ${C.line}` }}>
+                <h3
+                  style={{
+                    margin: 0,
+                    color: C.y,
+                    textShadow: "0 0 10px rgba(255,232,0,.35)",
+                  }}
                 >
-                  <div
-                    style={{ color: C.dim, fontWeight: 900, marginBottom: 10 }}
-                  >
-                    Addresses
-                  </div>
-                  <div style={{ display: "grid", gap: 8 }}>
-                    <Row k="Treasury">
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <input
-                          value={treasury}
-                          onChange={(e) => setTreasury(e.target.value)}
-                          style={inputStyle(true)}
-                        />
-                        <button
-                          style={smallBtn(true)}
-                          disabled={!!pending.setTreasury}
-                          onClick={() =>
-                            run(
-                              "setTreasury",
-                              () =>
-                                actions.setTreasury &&
-                                actions.setTreasury(treasury),
-                            )
-                          }
-                        >
-                          {pending.setTreasury ? "Saving…" : "Set"}
-                        </button>
-                      </div>
-                    </Row>
-                    <Row k="Liquidity Sink">
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <input
-                          value={liquiditySink}
-                          onChange={(e) => setLiquiditySink(e.target.value)}
-                          style={inputStyle(true)}
-                        />
-                        <button
-                          style={smallBtn(true)}
-                          disabled={!!pending.setLiquiditySink}
-                          onClick={() =>
-                            run(
-                              "setLiquiditySink",
-                              () =>
-                                actions.setLiquiditySink &&
-                                actions.setLiquiditySink(liquiditySink),
-                            )
-                          }
-                        >
-                          {pending.setLiquiditySink ? "Saving…" : "Set"}
-                        </button>
-                      </div>
-                    </Row>
-                    <Row k="BIGGI ECOSYSTEM">
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <input
-                          value={tokenAddress}
-                          onChange={(e) => setTokenAddress(e.target.value)}
-                          style={inputStyle(true)}
-                        />
-                        <button
-                          style={smallBtn(true)}
-                          disabled={!!pending.setTokenAddress}
-                          onClick={() =>
-                            run(
-                              "setTokenAddress",
-                              () =>
-                                actions.setTokenAddress &&
-                                actions.setTokenAddress(tokenAddress),
-                            )
-                          }
-                        >
-                          {pending.setTokenAddress ? "Saving…" : "Set"}
-                        </button>
-                      </div>
-                    </Row>
-                    <Row k="DEX Router">
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <input
-                          value={routerAddress}
-                          onChange={(e) => setRouterAddress(e.target.value)}
-                          style={inputStyle(true)}
-                        />
-                        <button
-                          style={smallBtn(true)}
-                          disabled={!!pending.setRouter}
-                          onClick={() =>
-                            run(
-                              "setRouter",
-                              () =>
-                                actions.setRouter &&
-                                actions.setRouter(routerAddress),
-                            )
-                          }
-                        >
-                          {pending.setRouter ? "Saving…" : "Set"}
-                        </button>
-                      </div>
-                    </Row>
-                  </div>
-                </div>
-
-                {/* Finance ops */}
-                <div
-                  style={{ borderTop: `1px dashed ${C.line}`, paddingTop: 12 }}
-                >
-                  <div
-                    style={{ color: C.dim, fontWeight: 900, marginBottom: 10 }}
-                  >
-                    Finance
-                  </div>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <button
-                      style={smallBtn(true)}
-                      disabled={!!pending.withdrawNative}
-                      onClick={() =>
-                        run(
-                          "withdrawNative",
-                          () =>
-                            actions.withdrawNative && actions.withdrawNative(),
-                        )
-                      }
-                    >
-                      {pending.withdrawNative
-                        ? "Withdrawing…"
-                        : "Withdraw Native"}
-                    </button>
-                    <button
-                      style={smallBtn(true)}
-                      disabled={!!pending.withdrawToken}
-                      onClick={() =>
-                        run(
-                          "withdrawToken",
-                          () =>
-                            actions.withdrawToken && actions.withdrawToken(),
-                        )
-                      }
-                    >
-                      {pending.withdrawToken
-                        ? "Withdrawing…"
-                        : "Withdraw BIGGI"}
-                    </button>
-                    <button
-                      style={smallBtn(true)}
-                      disabled={!!pending.sweepDust}
-                      onClick={() =>
-                        run(
-                          "sweepDust",
-                          () => actions.sweepDust && actions.sweepDust(),
-                        )
-                      }
-                    >
-                      {pending.sweepDust ? "Sweeping…" : "Sweep Dust"}
-                    </button>
-                  </div>
-                </div>
+                  Moderator Center Owner Ops
+                </h3>
+              </div>
+              <div style={{ padding: 12, display: "grid", gap: 12 }}>
+                <p style={{ margin: 0, color: C.dim, lineHeight: 1.6 }}>
+                  Owner-only Moderator Center actions were moved here from the
+                  moderator screen. Slot configuration, password and referral
+                  hashes, reward coefficients, allocations, distribution, and
+                  withdrawals now live in the main Admin Panel.
+                </p>
+                <AdminDashboard
+                  walletAddress={ownerWallet}
+                  onTx={(payload) => {
+                    const message = String(payload?.message || "").trim();
+                    const txHash = String(payload?.txHash || "").trim();
+                    const suffix = txHash ? ` (${short(txHash)})` : "";
+                    setStatusMsg(message ? `${message}${suffix}` : "Tx submitted");
+                  }}
+                />
               </div>
             </section>
           </div>
@@ -2190,6 +2837,227 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                 </div>
               </div>
             </section>
+
+            <section style={{ ...card }}>
+              <div style={{ ...header, borderBottom: `1px solid ${C.line}` }}>
+                <h3
+                  style={{
+                    margin: 0,
+                    color: C.y,
+                    textShadow: "0 0 10px rgba(255,232,0,.35)",
+                  }}
+                >
+                  Community Center Owner Ops
+                </h3>
+                <button
+                  style={smallBtn(false)}
+                  disabled={!communityAvailable || !!pending.community_overview}
+                  onClick={() => communityAvailable && loadCommunityOverview()}
+                >
+                  {pending.community_overview ? "Refreshing..." : "Refresh overview"}
+                </button>
+              </div>
+              <div style={{ padding: 12, display: "grid", gap: 16 }}>
+                <p style={{ margin: 0, color: C.dim }}>
+                  Owner-only contract operations for the Community Center. This is
+                  where distributor, pool, pause, rescue, and emergency flows now live.
+                </p>
+
+                {!communityAvailable && (
+                  <div
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      border: `1px solid ${C.line}`,
+                      background: "rgba(255, 88, 88, 0.14)",
+                      color: "#ffb3b3",
+                    }}
+                  >
+                    Community Center contract address or ABI is missing.
+                    Configure it in <code>src/shared/utils/addresses.js</code>{" "}
+                    to enable owner operations.
+                  </div>
+                )}
+
+                <KV
+                  items={[
+                    {
+                      k: "Contract",
+                      v: short(communityAddress),
+                      mono: true,
+                      copy: communityAddress,
+                    },
+                    {
+                      k: "Owner",
+                      v: short(communityOwner),
+                      mono: true,
+                      copy: communityOwner,
+                    },
+                    {
+                      k: "Distributor",
+                      v: short(communityDistributor),
+                      mono: true,
+                      copy: communityDistributor,
+                    },
+                    { k: "Pool balance", v: communityPoolBalance || "--" },
+                    { k: "Total locked", v: communityTotalLocked || "--" },
+                    {
+                      k: "Contract balance",
+                      v: communityContractBalance || "--",
+                    },
+                    { k: "Next event ID", v: communityNextEventId || "--" },
+                    {
+                      k: "Paused",
+                      v: communityPaused ? "TRUE" : "FALSE",
+                    },
+                  ]}
+                />
+
+                <div
+                  style={{
+                    display: "grid",
+                    gap: 16,
+                    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                  }}
+                >
+                  <div style={{ display: "grid", gap: 10 }}>
+                    <div style={{ color: C.dim, fontWeight: 900 }}>
+                      Distributor
+                    </div>
+                    <input
+                      value={communityDistributorInput}
+                      onChange={(e) => setCommunityDistributorInput(e.target.value)}
+                      style={inputStyle()}
+                      placeholder="0x..."
+                    />
+                    <button
+                      style={smallBtn(true)}
+                      disabled={
+                        !communityAvailable || !!pending.community_setDistributor
+                      }
+                      onClick={() =>
+                        communityAvailable && setCommunityDistributorAddress()
+                      }
+                    >
+                      {pending.community_setDistributor
+                        ? "Saving..."
+                        : "Set distributor"}
+                    </button>
+                  </div>
+
+                  <div style={{ display: "grid", gap: 10 }}>
+                    <div style={{ color: C.dim, fontWeight: 900 }}>
+                      Pool top-up
+                    </div>
+                    <input
+                      value={communityDepositAmount}
+                      onChange={(e) => setCommunityDepositAmount(e.target.value)}
+                      style={inputStyle()}
+                      placeholder="POL amount"
+                    />
+                    <button
+                      style={smallBtn(true)}
+                      disabled={
+                        !communityAvailable || !!pending.community_ownerDeposit
+                      }
+                      onClick={() => communityAvailable && depositCommunityPool()}
+                    >
+                      {pending.community_ownerDeposit
+                        ? "Depositing..."
+                        : "Owner deposit"}
+                    </button>
+                  </div>
+
+                  <div style={{ display: "grid", gap: 10 }}>
+                    <div style={{ color: C.dim, fontWeight: 900 }}>
+                      Pause control
+                    </div>
+                    <div style={{ color: C.dim, fontSize: "0.9rem" }}>
+                      Current state: {communityPaused ? "Paused" : "Active"}
+                    </div>
+                    <button
+                      style={smallBtn(!communityPaused)}
+                      disabled={
+                        !communityAvailable || !!pending.community_pauseToggle
+                      }
+                      onClick={() => communityAvailable && toggleCommunityPause()}
+                    >
+                      {pending.community_pauseToggle
+                        ? "Submitting..."
+                        : communityPaused
+                          ? "Unpause contract"
+                          : "Pause contract"}
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gap: 16,
+                    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                  }}
+                >
+                  <div style={{ display: "grid", gap: 10 }}>
+                    <div style={{ color: C.dim, fontWeight: 900 }}>
+                      Rescue free pool
+                    </div>
+                    <input
+                      value={communityRescueTo}
+                      onChange={(e) => setCommunityRescueTo(e.target.value)}
+                      style={inputStyle()}
+                      placeholder="Recipient address"
+                    />
+                    <input
+                      value={communityRescueAmount}
+                      onChange={(e) => setCommunityRescueAmount(e.target.value)}
+                      style={inputStyle()}
+                      placeholder="POL amount"
+                    />
+                    <button
+                      style={smallBtn(true)}
+                      disabled={
+                        !communityAvailable || !!pending.community_rescuePool
+                      }
+                      onClick={() => communityAvailable && rescueCommunityPool()}
+                    >
+                      {pending.community_rescuePool ? "Sending..." : "Rescue pool"}
+                    </button>
+                  </div>
+
+                  <div style={{ display: "grid", gap: 10 }}>
+                    <div style={{ color: C.dim, fontWeight: 900 }}>
+                      Emergency withdraw
+                    </div>
+                    <div style={{ color: C.dim, fontSize: "0.9rem" }}>
+                      Available only while paused. Sends contract free balance to
+                      the target address.
+                    </div>
+                    <input
+                      value={communityEmergencyTo}
+                      onChange={(e) => setCommunityEmergencyTo(e.target.value)}
+                      style={inputStyle()}
+                      placeholder="Recipient address"
+                    />
+                    <button
+                      style={smallBtn(true)}
+                      disabled={
+                        !communityAvailable ||
+                        !communityPaused ||
+                        !!pending.community_emergencyWithdraw
+                      }
+                      onClick={() =>
+                        communityAvailable && emergencyWithdrawCommunity()
+                      }
+                    >
+                      {pending.community_emergencyWithdraw
+                        ? "Withdrawing..."
+                        : "Emergency withdraw"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
           </div>
         )}
 
@@ -2532,6 +3400,268 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                 </div>
               </div>
             </section>
+
+            <section style={{ ...card }}>
+              <div style={{ ...header, borderBottom: `1px solid ${C.line}` }}>
+                <h3
+                  style={{
+                    margin: 0,
+                    color: C.y,
+                    textShadow: "0 0 10px rgba(255,232,0,.35)",
+                  }}
+                >
+                  Community Voting
+                </h3>
+                <button
+                  style={smallBtn(false)}
+                  disabled={!!pending.community_poll_refresh}
+                  onClick={() =>
+                    run("community_poll_refresh", async () => {
+                      await loadCommunityPolls();
+                    })
+                  }
+                >
+                  {pending.community_poll_refresh ? "Refreshing..." : "Refresh polls"}
+                </button>
+              </div>
+              <div style={{ padding: 12, display: "grid", gap: 12 }}>
+                <p style={{ margin: 0, color: C.dim }}>
+                  Create and manage wallet-signed community polls that show in the
+                  user-facing Community Center next to events. This voting layer is
+                  off-chain and is not stored in the current Community Center
+                  contract.
+                </p>
+
+                {communityPollsError ? (
+                  <div
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      border: `1px solid ${C.line}`,
+                      background: "rgba(255, 88, 88, 0.14)",
+                      color: "#ffb3b3",
+                    }}
+                  >
+                    {communityPollsError}
+                  </div>
+                ) : null}
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "minmax(180px, 1fr) minmax(180px, 1fr)",
+                    gap: 12,
+                  }}
+                >
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                  >
+                    <span style={{ color: C.dim, fontWeight: 900 }}>
+                      Poll ID (optional)
+                    </span>
+                    <input
+                      value={communityPollId}
+                      onChange={(e) => setCommunityPollId(e.target.value)}
+                      style={inputStyle()}
+                      placeholder="Leave empty to create a new poll"
+                    />
+                  </div>
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                  >
+                    <span style={{ color: C.dim, fontWeight: 900 }}>
+                      Linked event ID (optional)
+                    </span>
+                    <input
+                      value={communityPollEventId}
+                      onChange={(e) => setCommunityPollEventId(e.target.value)}
+                      style={inputStyle()}
+                      placeholder="Event ID shown on the poll card"
+                    />
+                  </div>
+                </div>
+
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
+                  <span style={{ color: C.dim, fontWeight: 900 }}>
+                    Poll title
+                  </span>
+                  <input
+                    value={communityPollTitle}
+                    onChange={(e) => setCommunityPollTitle(e.target.value)}
+                    style={inputStyle()}
+                    placeholder="Short voting question shown to users"
+                  />
+                </div>
+
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
+                  <span style={{ color: C.dim, fontWeight: 900 }}>
+                    Description for users
+                  </span>
+                  <textarea
+                    value={communityPollDescription}
+                    onChange={(e) => setCommunityPollDescription(e.target.value)}
+                    style={{ ...inputStyle(), minHeight: 80, resize: "vertical" }}
+                    placeholder="Explain what the vote is about and what the choice means"
+                  />
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gap: 12,
+                    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                  }}
+                >
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                  >
+                    <span style={{ color: C.dim, fontWeight: 900 }}>
+                      Poll start
+                    </span>
+                    <input
+                      type="datetime-local"
+                      value={communityPollStartsAt}
+                      onChange={(e) => setCommunityPollStartsAt(e.target.value)}
+                      style={inputStyle()}
+                    />
+                  </div>
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                  >
+                    <span style={{ color: C.dim, fontWeight: 900 }}>
+                      Poll end
+                    </span>
+                    <input
+                      type="datetime-local"
+                      value={communityPollEndsAt}
+                      onChange={(e) => setCommunityPollEndsAt(e.target.value)}
+                      style={inputStyle()}
+                    />
+                  </div>
+                </div>
+
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
+                  <span style={{ color: C.dim, fontWeight: 900 }}>
+                    Vote options (one per line)
+                  </span>
+                  <textarea
+                    value={communityPollOptions}
+                    onChange={(e) => setCommunityPollOptions(e.target.value)}
+                    style={{ ...inputStyle(), minHeight: 96, resize: "vertical" }}
+                    placeholder={"Yes\nNo"}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    flexWrap: "wrap",
+                    justifyContent: "flex-end",
+                  }}
+                >
+                  <button
+                    style={smallBtn(false)}
+                    onClick={clearCommunityPollForm}
+                  >
+                    Clear poll form
+                  </button>
+                  <button
+                    style={smallBtn(true)}
+                    disabled={!!pending.community_poll_save}
+                    onClick={saveCommunityPoll}
+                  >
+                    {pending.community_poll_save
+                      ? "Saving..."
+                      : communityPollId
+                        ? "Save poll"
+                        : "Create poll"}
+                  </button>
+                </div>
+
+                <div style={{ display: "grid", gap: 10 }}>
+                  <div style={{ color: C.dim, fontWeight: 900 }}>
+                    Existing polls
+                  </div>
+                  {!communityPolls.length ? (
+                    <div style={{ color: C.dim }}>
+                      No polls created yet.
+                    </div>
+                  ) : (
+                    communityPolls.map((poll) => (
+                      <div
+                        key={poll.id}
+                        style={{
+                          display: "grid",
+                          gap: 8,
+                          padding: 12,
+                          borderRadius: 12,
+                          border: `1px solid ${C.line}`,
+                          background:
+                            "linear-gradient(180deg, rgba(255,255,255,.035), rgba(0,0,0,.16))",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            gap: 12,
+                            alignItems: "center",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <div style={{ display: "grid", gap: 4 }}>
+                            <strong>{poll.title || poll.id}</strong>
+                            <span style={{ color: C.dim, fontSize: "0.9rem" }}>
+                              {poll.id}
+                              {poll.linkedEventId != null
+                                ? ` · Event #${poll.linkedEventId}`
+                                : ""}
+                            </span>
+                          </div>
+                          <span style={pill}>
+                            {poll.status || "Live"} · {Number(poll.totalVotes || 0)} votes
+                          </span>
+                        </div>
+                        {poll.description ? (
+                          <div style={{ color: C.dim }}>{poll.description}</div>
+                        ) : null}
+                        <div style={{ color: C.dim, fontSize: "0.9rem" }}>
+                          {poll.startsAt ? `Opens: ${new Date(poll.startsAt).toLocaleString()}` : "Opens: --"}
+                          {" · "}
+                          {poll.endsAt ? `Closes: ${new Date(poll.endsAt).toLocaleString()}` : "Closes: --"}
+                        </div>
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                          <button
+                            style={smallBtn(false)}
+                            onClick={() => loadCommunityPollIntoForm(poll)}
+                          >
+                            Load to form
+                          </button>
+                          {poll.status !== "Closed" ? (
+                            <button
+                              style={smallBtn(true)}
+                              disabled={!!pending[`community_poll_close_${poll.id}`]}
+                              onClick={() => closeCommunityPoll(poll.id)}
+                            >
+                              {pending[`community_poll_close_${poll.id}`]
+                                ? "Closing..."
+                                : "Close now"}
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </section>
           </div>
         )}
 
@@ -2551,10 +3681,17 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
               </div>
               <div style={{ padding: 12, display: "grid", gap: 12 }}>
                 <p style={{ margin: 0, color: C.dim }}>
-                  Create or update on-chain event metadata - the fields map to
-                  the Community Center panel cards. Timestamps are unix seconds,
-                  deposit is in POL.
+                  Create new on-chain community events, or load an existing event
+                  into the form for inspection and reuse. Timestamps are unix
+                  seconds. At least one winner is required and every winner must
+                  have a matching POL amount.
                 </p>
+                <div style={{ margin: 0, color: C.dim, fontSize: "0.92rem" }}>
+                  For simple content, write `Description` and optional `Image URI`
+                  directly below. If `IPFS metadata` is left empty, the panel will
+                  store this metadata inline so it still shows to users without a
+                  separate IPFS upload.
+                </div>
                 {!communityAvailable && (
                   <div
                     style={{
@@ -2566,8 +3703,8 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     }}
                   >
                     Community Center contract address or ABI is missing.
-                    Configure it in <code>src/shared/utils/addresses.js</code> to enable
-                    editing.
+                    Configure it in <code>src/shared/utils/addresses.js</code>{" "}
+                    to enable editing.
                   </div>
                 )}
                 <div
@@ -2581,7 +3718,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     value={eventId}
                     onChange={(e) => setEventId(e.target.value)}
                     style={inputStyle()}
-                    placeholder="Event ID (for load/update)"
+                    placeholder="Event ID (for load)"
                   />
                   <button
                     style={smallBtn(true)}
@@ -2600,15 +3737,61 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                   style={{ display: "flex", flexDirection: "column", gap: 6 }}
                 >
                   <span style={{ color: C.dim, fontWeight: 900 }}>
-                    Event text / IPFS hash
+                    Title
+                  </span>
+                  <input
+                    value={eventTitle}
+                    onChange={(e) => setEventTitle(e.target.value)}
+                    placeholder="Short on-chain title shown in Community Center"
+                    style={inputStyle()}
+                  />
+                </div>
+
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
+                  <span style={{ color: C.dim, fontWeight: 900 }}>
+                    Description for users
+                  </span>
+                  <textarea
+                    value={eventDescription}
+                    onChange={(e) => setEventDescription(e.target.value)}
+                    placeholder="Short text shown on the event card in Community Center"
+                    style={{
+                      ...inputStyle(),
+                      minHeight: 80,
+                      resize: "vertical",
+                    }}
+                  />
+                </div>
+
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
+                  <span style={{ color: C.dim, fontWeight: 900 }}>
+                    Image URI (optional)
+                  </span>
+                  <input
+                    value={eventImage}
+                    onChange={(e) => setEventImage(e.target.value)}
+                    placeholder="ipfs://..., https://..., or leave empty"
+                    style={inputStyle()}
+                  />
+                </div>
+
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
+                  <span style={{ color: C.dim, fontWeight: 900 }}>
+                    IPFS metadata URI (optional)
                   </span>
                   <textarea
                     value={eventIpfs}
                     onChange={(e) => setEventIpfs(e.target.value)}
-                    placeholder="ipfs://... or descriptive text shown in Community Center"
+                    placeholder="ipfs://... or CID. Leave empty to use the fields above as inline metadata."
                     style={{
                       ...inputStyle(),
-                      minHeight: 96,
+                      minHeight: 72,
                       resize: "vertical",
                     }}
                   />
@@ -2651,26 +3834,61 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     style={{ display: "flex", flexDirection: "column", gap: 6 }}
                   >
                     <span style={{ color: C.dim, fontWeight: 900 }}>
-                      Capacity
+                      Total prize (POL)
                     </span>
                     <input
-                      value={eventCapacity}
-                      onChange={(e) => setEventCapacity(e.target.value)}
+                      value={eventTotalPrize}
+                      onChange={(e) => setEventTotalPrize(e.target.value)}
                       style={inputStyle()}
-                      placeholder="Max RSVPs"
+                      placeholder="Leave empty to sum amounts"
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginTop: -6, color: C.dim, fontSize: "0.9rem" }}>
+                  Contract rule: no empty winner list, matching winner and amount
+                  counts, and end timestamp must be later than start.
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gap: 12,
+                    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                  }}
+                >
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                  >
+                    <span style={{ color: C.dim, fontWeight: 900 }}>
+                      Winners (one per line)
+                    </span>
+                    <textarea
+                      value={eventWinners}
+                      onChange={(e) => setEventWinners(e.target.value)}
+                      placeholder={"0x...\n0x..."}
+                      style={{
+                        ...inputStyle(),
+                        minHeight: 96,
+                        resize: "vertical",
+                      }}
                     />
                   </div>
                   <div
                     style={{ display: "flex", flexDirection: "column", gap: 6 }}
                   >
                     <span style={{ color: C.dim, fontWeight: 900 }}>
-                      Deposit (POL)
+                      Amounts (POL, one per line)
                     </span>
-                    <input
-                      value={eventDeposit}
-                      onChange={(e) => setEventDeposit(e.target.value)}
-                      style={inputStyle()}
-                      placeholder="e.g. 0.5"
+                    <textarea
+                      value={eventAmounts}
+                      onChange={(e) => setEventAmounts(e.target.value)}
+                      placeholder={"0.5\n0.25"}
+                      style={{
+                        ...inputStyle(),
+                        minHeight: 96,
+                        resize: "vertical",
+                      }}
                     />
                   </div>
                 </div>
@@ -2693,21 +3911,8 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     style={smallBtn(true)}
                     disabled={
                       !communityAvailable ||
-                      !!pending.community_updateEvent ||
-                      !String(eventId).trim()
-                    }
-                    onClick={() => communityAvailable && updateCommunityEvent()}
-                  >
-                    {pending.community_updateEvent
-                      ? "Updating..."
-                      : "Update event"}
-                  </button>
-                  <button
-                    style={smallBtn(true)}
-                    disabled={
-                      !communityAvailable ||
                       !!pending.community_createEvent ||
-                      !eventIpfs.trim()
+                      !eventTitle.trim()
                     }
                     onClick={() => communityAvailable && createCommunityEvent()}
                   >
@@ -3115,7 +4320,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
                     display: "grid",
                     gap: 10,
                     maxHeight: 360,
-                    overFLOW: "auto",
+                    overflow: "auto",
                   }}
                 >
                   {chatMessages.map((msg) => (
@@ -3462,5 +4667,3 @@ function copyToClipboard(text) {
     navigator.clipboard?.writeText(text);
   } catch {}
 }
-
-

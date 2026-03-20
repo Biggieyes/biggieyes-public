@@ -1,125 +1,226 @@
 @import "../../Common/components/StatCard.css";
 
 .distributor-token-tab {
-  border-radius: 18px;
-  border: 1px solid rgba(255, 232, 0, 0.2);
-  background: linear-gradient(160deg, rgba(12, 14, 22, 0.9), rgba(6, 8, 14, 0.98));
-  padding: 22px;
-  margin: 0;
+  border-radius: 24px;
+  border: 1px solid rgba(65, 97, 145, 0.32);
+  background:
+    radial-gradient(circle at top right, rgba(68, 123, 255, 0.16), transparent 32%),
+    linear-gradient(180deg, rgba(7, 15, 28, 0.98), rgba(4, 9, 18, 0.96));
+  box-shadow: inset 0 1px 0 rgba(132, 164, 255, 0.08), 0 24px 60px rgba(0, 0, 0, 0.28);
+  padding: 26px 26px 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+  gap: 22px;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.distributor-token-tab__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 56rem) minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+}
+
+.distributor-token-tab__headline {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  max-width: 56rem;
+  width: 100%;
+  align-items: center;
+  justify-self: center;
+  text-align: center;
 }
 
 .distributor-token-tab__header h3 {
   margin: 0;
   font-size: 1.2rem;
+  letter-spacing: 0.04em;
+}
+
+.distributor-token-tab__headline p {
+  margin: 0;
+  color: #8ea0bd;
+  font-size: 0.92rem;
+  max-width: 48rem;
+  line-height: 1.55;
+}
+
+.distributor-token-tab__header-meta {
+  grid-column: 3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-self: flex-start;
+  justify-self: end;
+  max-width: 100%;
+}
+
+.distributor-token-tab__badge,
+.distributor-token-tab__timestamp {
+  border-radius: 999px;
+  border: 1px solid rgba(93, 117, 156, 0.28);
+  background: rgba(9, 17, 32, 0.82);
+  padding: 8px 12px;
+  font-size: 0.76rem;
   letter-spacing: 0.06em;
-}
-
-.distributor-token-tab__content {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 18px;
-  align-items: stretch;
-}
-
-.distributor-token-tab__column {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.distributor-token-tab__meta {
-  border: 1px solid rgba(255, 232, 0, 0.18);
-  background: linear-gradient(160deg, rgba(16, 18, 26, 0.9), rgba(9, 11, 18, 0.98));
-  border-radius: 12px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.distributor-token-tab__meta-title {
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: rgba(255, 232, 0, 0.82);
-  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.distributor-token-tab__meta-list {
+.distributor-token-tab__badge {
+  color: #dbe7ff;
+}
+
+.distributor-token-tab__badge--active {
+  border-color: rgba(56, 189, 248, 0.36);
+  color: #9be6ff;
+}
+
+.distributor-token-tab__badge--warning {
+  border-color: rgba(250, 204, 21, 0.32);
+  color: #fde68a;
+}
+
+.distributor-token-tab__badge--paused {
+  border-color: rgba(248, 113, 113, 0.32);
+  color: #fda4af;
+}
+
+.distributor-token-tab__timestamp {
+  color: #90a4c4;
+}
+
+.distributor-token-tab__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+  grid-auto-rows: 1fr;
+}
+
+.distributor-token-tab__charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+  grid-auto-rows: 1fr;
+}
+
+.distributor-token-tab__chart {
+  border-radius: 18px;
+  border: 1px solid rgba(55, 75, 109, 0.34);
+  background:
+    linear-gradient(180deg, rgba(10, 18, 32, 0.96), rgba(5, 11, 22, 0.9));
+  padding: 18px;
+  box-shadow: inset 0 1px 0 rgba(129, 151, 188, 0.06);
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-.distributor-token-tab__meta-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   gap: 10px;
-  font-size: 0.9rem;
-  color: rgba(212, 222, 238, 0.9);
+  min-height: 252px;
+  height: 100%;
 }
 
-.distributor-token-tab__meta-address {
-  font-family:
-    "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
-  color: #d6e4ff;
-}
-
-.distributor-token-tab__chart-wrap {
-  border-radius: 16px;
-  border: 1px solid rgba(255, 232, 0, 0.18);
-  padding: 16px;
-  background: linear-gradient(160deg, rgba(16, 18, 26, 0.9), rgba(9, 11, 18, 0.98));
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.32);
-}
-
-.distributor-token-tab__chart-wrap header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.distributor-token-tab__chart-wrap h4 {
+.distributor-token-tab__chart h4 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  color: #f4f7ff;
 }
 
-.distributor-token-tab__chart-wrap span {
-  font-size: 0.85rem;
-  color: #7e8ca9;
+.distributor-token-tab__chart p {
+  margin: 6px 0 12px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #7f92b0;
+}
+
+.distributor-token-tab__chart .line-chart {
+  flex: 1;
+  min-height: 0;
+}
+
+.distributor-token-tab__chart .line-chart__svg {
+  min-height: 172px;
+}
+
+.distributor-token-tab .stat-card {
+  min-height: 124px;
+  border-radius: 18px;
+  border-color: rgba(56, 74, 110, 0.38);
+  background:
+    linear-gradient(180deg, rgba(9, 17, 31, 0.98), rgba(6, 11, 21, 0.92));
+  box-shadow: inset 0 1px 0 rgba(143, 169, 211, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.distributor-token-tab .stat-card__label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.74rem;
+}
+
+.distributor-token-tab .stat-card__value {
+  font-size: 1.5rem;
+  line-height: 1.08;
+}
+
+.distributor-token-tab .stat-card__hint {
+  color: #7f92b0;
+}
+
+.distributor-token-tab .stat-card--native {
+  border-color: rgba(248, 113, 113, 0.26);
+  background:
+    linear-gradient(180deg, rgba(37, 12, 18, 0.94), rgba(19, 9, 14, 0.9));
+}
+
+.distributor-token-tab .stat-card--token {
+  border-color: rgba(96, 165, 250, 0.28);
+  background:
+    linear-gradient(180deg, rgba(9, 21, 40, 0.96), rgba(6, 14, 29, 0.9));
+}
+
+.distributor-token-tab--error {
+  border-color: #7f1d1d;
+  color: #fecaca;
 }
 
 @media (max-width: 900px) {
   .distributor-token-tab {
-    padding: 16px;
-    gap: 16px;
+    padding: 18px 18px 16px;
   }
 
-  .distributor-token-tab__header h3 {
-    font-size: 1.1rem;
-  }
-
-  .distributor-token-tab__content {
-    grid-template-columns: 1fr;
-  }
-
-  .distributor-token-tab__chart-wrap {
-    padding: 12px;
-  }
-
-  .distributor-token-tab__chart-wrap header {
+  .distributor-token-tab__header {
+    display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 6px;
+  }
+
+  .distributor-token-tab__headline {
+    grid-column: auto;
+    width: 100%;
+    align-items: flex-start;
+    justify-self: auto;
+    text-align: left;
+  }
+
+  .distributor-token-tab__header-meta {
+    grid-column: auto;
+    width: 100%;
+    justify-self: auto;
+    justify-content: flex-start;
+  }
+
+  .distributor-token-tab__badge,
+  .distributor-token-tab__timestamp {
+    width: fit-content;
   }
 }

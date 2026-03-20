@@ -172,14 +172,40 @@
   color: #ff3355;
   font-weight: bold;
   letter-spacing: 1px;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  column-gap: 8px;
   align-items: center;
   width: 100%;
   max-width: 680px;
   background-image: url("/images/bg-tab0.png");
   background-size: cover;
   background-position: center;
+}
+
+.bgw-header-text {
+  grid-column: 1;
+  justify-self: start;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+
+.bgw-header-last-id {
+  grid-column: 2;
+  justify-self: center;
+  color: #6dff8a;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-shadow: 0 0 10px rgba(109, 255, 138, 0.35);
 }
 
 .bgw-table-wrapper {
@@ -244,6 +270,8 @@
 
 /* Info Button */
 .bgw-info-button {
+  grid-column: 3;
+  justify-self: end;
   font-size: 0.85em;
   padding: 3px 6px;
   cursor: pointer;
@@ -265,11 +293,11 @@
 }
 
 .bgw-info-button--phone {
-  width: 100px;
-  height: 100px;
+  width: 40px;
+  height: 40px;
   padding: 0;
-  border-radius: 14px;
-  font-size: 1rem;
+  border-radius: 50%;
+  font-size: 0.95rem;
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -354,12 +382,15 @@
 /* Responsive */
 @media (max-width: 768px) {
   .bgw-header {
-    flex-direction: column;
-    gap: 12px;
+    gap: 6px;
+  }
+
+  .bgw-header-last-id {
+    max-width: 50vw;
   }
 
   .bgw-info-button {
-    width: 100%;
+    width: auto;
   }
 }
 

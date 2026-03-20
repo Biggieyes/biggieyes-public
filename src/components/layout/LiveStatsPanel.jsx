@@ -36,6 +36,7 @@ export default function LiveStatsPanel({
           lastNftId={lastMinted.tokenId}
           lastBlockName={lastMinted.blockName}
           lastBackgroundName={lastMinted.backgroundName}
+          lastFinalPrice={lastMinted?.finalPrice ?? null}
           biggiMinted={biggiMinted}
           maxSupply={maxSupply}
           ticketMinted={ticketMinted}
@@ -60,4 +61,3 @@ export default function LiveStatsPanel({
     </div>
   );
 }
-

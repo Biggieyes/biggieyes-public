@@ -6,6 +6,7 @@ import { useContracts } from "@/providers/ContractsProvider";
 import { chainNameFor, explorerBaseFor } from "@/config/chains.js";
 import { ADDR } from "@/shared/utils/addresses";
 import PanelInfoModal from "@/components/common/PanelInfoModal";
+import PanelInfoButton from "@/components/common/PanelInfoButton";
 import "./USERPANEL.css";
 
 function shortAddress(addr) {
@@ -488,7 +489,7 @@ export default function USERPANEL({
     <div className={`user-panel${compact ? " user-panel--compact" : ""}`}>
       <section className="user-panel__surface">
         <header className="user-panel__header">
-          <div>
+          <div className="user-panel__headline">
             <h2 className="user-panel__title">User Panel</h2>
             <p className="user-panel__subtitle">
               Personal cockpit for wallet health, quick actions, referrals, and
@@ -506,14 +507,11 @@ export default function USERPANEL({
             >
               {connected ? "Wallet connected" : "Connect wallet"}
             </button>
-            <button
-              type="button"
-              className="panel-info-btn biggi-btn biggi-btn--ghost"
+            <PanelInfoButton
+              className="panel-info-btn--transparent"
               onClick={() => setInfoOpen(true)}
-              aria-label="User panel buttons info"
-            >
-              <span>i</span>
-            </button>
+              ariaLabel="User panel buttons info"
+            />
           </div>
         </header>
 

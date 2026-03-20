@@ -19,7 +19,9 @@ import useTokenDexSnapshot from "@/hooks/tokenomics/useTokenDexSnapshot";
 import useTokenDexHistory from "@/hooks/tokenomics/useTokenDexHistory";
 import useDistributorSnapshot from "@/hooks/tokenomics/useDistributorSnapshot";
 import useDistributorHistory from "@/hooks/tokenomics/useDistributorHistory";
+import usePolicySnapshot from "@/hooks/tokenomics/usePolicySnapshot";
 import { toNumberSafe } from "@/hooks/tokenomics/_utils";
+import resolveBuybackSnapshot from "./utils/resolveBuybackSnapshot";
 
 import EcosystemErrorBoundary from "./components/EcosystemErrorBoundary.jsx";
 import HeroStats from "./HeroStats.jsx";
@@ -27,8 +29,8 @@ import TabsBar from "./TabsBar.jsx";
 import Card from "./components/Card.jsx";
 import { shortAddr, explorerLink, isAddress } from "./utils/format";
 import { ADDR } from "@/shared/utils/addresses.js";
-import { getAddresses } from "@/config/addresses/index.js";
 import PanelInfoModal from "@/components/common/PanelInfoModal";
+import PanelInfoButton from "@/components/common/PanelInfoButton";
 
 const FlowTab = React.lazy(() => import("./tabs/FlowTab.jsx"));
 const PolicyTab = React.lazy(() => import("./tabs/PolicyTab.jsx"));
@@ -49,46 +51,116 @@ const TABS = [
   { key: "buyback", label: "BUYBACK" },
   { key: "drip", label: "DRIP" },
   { key: "liquidity", label: "RESERVE / LM" },
-  { key: "policy", label: "POLICY" },
   { key: "dex", label: "TOKEN / DEX" },
   { key: "history", label: "HISTORY" },
   { key: "transparency", label: "TRANSPARENCY" },
+  { key: "policy", label: "POLICY" },
 ];
 
-const FLOW_INTERVAL = 15_000;
-const BUYBACK_INTERVAL = 21_000;
-const DRIP_INTERVAL = 23_000;
-const LIQUIDITY_INTERVAL = 25_000;
-const DEX_INTERVAL = 27_000;
-const DISTRIBUTOR_INTERVAL = 29_000;
-const HISTORY_LIMIT = 24;
-const HISTORY_MIN_INTERVAL = 30_000;
+const TAB_META = {
+  flow: {
+    title: "FLOW",
+    subtitle:
+      "Trace how mint revenue, liquidity routing, buyback logic, and reward streams move across the ecosystem before any transaction is signed.",
+    accent: "#ffe800",
+    accentSoft: "rgba(255, 232, 0, 0.22)",
+    accentGlow: "rgba(255, 232, 0, 0.36)",
+  },
+  distributor: {
+    title: "DISTRIBUTOR",
+    subtitle:
+      "Inspect multi-collection distribution rails, reward splits, and live allocation status for community and collection buckets.",
+    accent: "#5ddcff",
+    accentSoft: "rgba(93, 220, 255, 0.22)",
+    accentGlow: "rgba(93, 220, 255, 0.36)",
+  },
+  buyback: {
+    title: "BUYBACK",
+    subtitle:
+      "Review buyback routing, treasury impact, and executed swap outcomes through the live buyback control surface.",
+    accent: "#ff8a00",
+    accentSoft: "rgba(255, 138, 0, 0.22)",
+    accentGlow: "rgba(255, 138, 0, 0.36)",
+  },
+  drip: {
+    title: "DRIP",
+    subtitle:
+      "Monitor DRIP balances, reward schedule pressure, and distributor-linked emissions in the current snapshot.",
+    accent: "#27d9d2",
+    accentSoft: "rgba(39, 217, 210, 0.22)",
+    accentGlow: "rgba(39, 217, 210, 0.36)",
+  },
+  liquidity: {
+    title: "RESERVE / LM",
+    subtitle:
+      "Track reserve balances, liquidity manager state, vault exposure, and supporting pool history from one section.",
+    accent: "#6bee5b",
+    accentSoft: "rgba(107, 238, 91, 0.22)",
+    accentGlow: "rgba(107, 238, 91, 0.36)",
+  },
+  policy: {
+    title: "POLICY",
+    subtitle:
+      "Read the active on-chain policy limits, slippage rules, deadlines, and safety parameters that guide the protocol.",
+    accent: "#ff5da2",
+    accentSoft: "rgba(255, 93, 162, 0.22)",
+    accentGlow: "rgba(255, 93, 162, 0.36)",
+  },
+  dex: {
+    title: "TOKEN / DEX",
+    subtitle:
+      "Compare token supply, derived price, LP health, and DEX reserve structure in the BIGGI trading layer.",
+    accent: "#b584ff",
+    accentSoft: "rgba(181, 132, 255, 0.22)",
+    accentGlow: "rgba(181, 132, 255, 0.36)",
+  },
+  history: {
+    title: "HISTORY",
+    subtitle:
+      "Browse recent buyback, liquidity manager, and DRIP timeline events for a fast operational audit trail.",
+    accent: "#f7d400",
+    accentSoft: "rgba(247, 212, 0, 0.22)",
+    accentGlow: "rgba(247, 212, 0, 0.36)",
+  },
+  transparency: {
+    title: "TRANSPARENCY",
+    subtitle:
+      "Open the full verifiable balance sheet, address wiring, and subsystem snapshots for end-to-end on-chain transparency.",
+    accent: "#8fe8ff",
+    accentSoft: "rgba(143, 232, 255, 0.22)",
+    accentGlow: "rgba(143, 232, 255, 0.36)",
+  },
+};
+
+const FLOW_INTERVAL = 12_000;
+const BUYBACK_INTERVAL = 15_000;
+const POLICY_INTERVAL = 18_000;
+const DRIP_INTERVAL = 15_000;
+const LIQUIDITY_INTERVAL = 16_000;
+const DEX_INTERVAL = 15_000;
+const DISTRIBUTOR_INTERVAL = 15_000;
+const HISTORY_LIMIT = 72;
+const HISTORY_MIN_INTERVAL = 10_000;
 const FLOW_DELAY = 0;
 const TOKEN_DEX_DELAY = 250;
 const LIQUIDITY_DELAY = 500;
 const BUYBACK_DELAY = 750;
+const POLICY_DELAY = 875;
 const DRIP_DELAY = 1000;
 const DISTRIBUTOR_DELAY = 1250;
 const REFRESH_GAP_MS = 1100;
-const PRIME_ALL_ON_MOUNT = true;
 const SNAPSHOT_CACHE_TTL_MS = 60_000;
 const SNAPSHOT_COMPARE_IGNORE_KEYS = ["ts", "tsLabel"];
-const STATIC_POLICY_PARAMS = Object.freeze({
-  // Static defaults from deployed BiggiPolicy profile.
-  buybacksPaused: false,
-  swapSlippageBps: 500,
-  txDeadlineSec: 600,
-  minBuybackInterval: 300,
-  maxDailyBuybackNative: 0n,
-  // Day-bound counters are intentionally omitted in static mode.
-  usedToday: null,
-  dayIndex: null,
-});
 
-export default function EcosystemPanel({ autoOpenInfo = false }) {
+export default function EcosystemPanel({
+  autoOpenInfo = false,
+  onActiveSectionChange,
+}) {
   const { chainId, account } = useWeb3();
   const snapshotScope = chainId ?? "unknown";
   const [active, setActive] = React.useState("flow");
+  const activeTabMeta = TAB_META[active] || TAB_META.flow;
+  const renderedTab = React.useDeferredValue(active);
   const [infoOpen, setInfoOpen] = React.useState(false);
   const autoInfoOpened = React.useRef(false);
   const [wiringOpen, setWiringOpen] = React.useState(false);
@@ -99,6 +171,10 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
       autoInfoOpened.current = true;
     }
   }, [autoOpenInfo]);
+
+  React.useEffect(() => {
+    onActiveSectionChange?.(activeTabMeta);
+  }, [activeTabMeta, onActiveSectionChange]);
 
   const handleTabChange = React.useCallback((next) => {
     const run =
@@ -121,6 +197,7 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
   const needsLiquidityHistory =
     active === "liquidity" || active === "history" || active === "transparency";
   const needsDexHistory = active === "dex" || active === "transparency";
+  const isPolicyFocused = active === "policy" || active === "transparency";
 
   const isBuybackFocused =
     needsBuybackHistory || active === "distributor" || wiringOpen;
@@ -130,19 +207,25 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
   const isDexFocused =
     needsDexHistory || active === "distributor" || wiringOpen;
 
-  // Keep full data availability: prefetch every snapshot once, then keep live polling
-  // only for focused sections to reduce CPU/RPC load.
-  const needsFlow = PRIME_ALL_ON_MOUNT || isFlowFocused;
-  const needsDistributor = PRIME_ALL_ON_MOUNT || isDistributorFocused;
-  const needsBuyback = PRIME_ALL_ON_MOUNT || isBuybackFocused;
-  const needsDrip = PRIME_ALL_ON_MOUNT || isDripFocused;
-  const needsLiquidity = PRIME_ALL_ON_MOUNT || isLiquidityFocused;
-  const needsDex = PRIME_ALL_ON_MOUNT || isDexFocused;
+  // Prefetch only the always-visible summary feeds. Other sections load on demand.
+  const needsFlow = true;
+  const needsDistributor = isDistributorFocused;
+  const needsBuyback = isBuybackFocused;
+  const needsPolicy = isPolicyFocused;
+  const needsDrip = isDripFocused;
+  const needsLiquidity = isLiquidityFocused;
+  const needsDex =
+    active === "flow" ||
+    active === "dex" ||
+    active === "distributor" ||
+    active === "transparency" ||
+    wiringOpen;
 
   // Performance mode: poll only focused/visible sections, disable background polling.
   const flowIntervalMs = isFlowFocused ? FLOW_INTERVAL : 0;
   const distributorIntervalMs = isDistributorFocused ? DISTRIBUTOR_INTERVAL : 0;
   const buybackIntervalMs = isBuybackFocused ? BUYBACK_INTERVAL : 0;
+  const policyIntervalMs = isPolicyFocused ? POLICY_INTERVAL : 0;
   const dripIntervalMs = isDripFocused ? DRIP_INTERVAL : 0;
   const liquidityIntervalMs = isLiquidityFocused ? LIQUIDITY_INTERVAL : 0;
   const dexIntervalMs = isDexFocused ? DEX_INTERVAL : 0;
@@ -200,13 +283,6 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
         ],
       },
       {
-        label: "POLICY",
-        description: [
-          "On-chain policy parameters.",
-          "Controls slippage, deadlines, and safety limits.",
-        ],
-      },
-      {
         label: "TOKEN / DEX",
         description: [
           "Token price + DEX metrics.",
@@ -227,6 +303,13 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
           "Snapshot timeline for quick audits.",
         ],
       },
+      {
+        label: "POLICY",
+        description: [
+          "On-chain policy parameters.",
+          "Controls slippage, deadlines, and safety limits.",
+        ],
+      },
     ],
     [],
   );
@@ -240,24 +323,14 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
     cacheKey: `ecosystem:${snapshotScope}:flow`,
     ...snapshotBaseOptions,
   });
-  const policy = React.useMemo(() => {
-    const addrs = getAddresses(chainId);
-    const policyAddress = addrs?.policy || addrs?.POLICY || ADDR.POLICY || null;
-    return {
-      snapshot: {
-        ts: 0,
-        tsLabel: "Static policy",
-        policy: {
-          address: policyAddress,
-          ...STATIC_POLICY_PARAMS,
-        },
-        addresses: addrs,
-      },
-      loading: false,
-      error: null,
-      refresh: async () => null,
-    };
-  }, [chainId]);
+  const policy = usePolicySnapshot({
+    intervalMs: isLive && needsPolicy ? policyIntervalMs : 0,
+    immediate: needsPolicy,
+    initialDelayMs: needsPolicy ? (isPolicyFocused ? 0 : POLICY_DELAY) : 0,
+    refreshKey: isPolicyFocused ? active : null,
+    cacheKey: `ecosystem:${snapshotScope}:policy`,
+    ...snapshotBaseOptions,
+  });
   const buyback = useBUYBACKTreasurySnapshot({
     intervalMs: isLive && needsBuyback ? buybackIntervalMs : 0,
     immediate: needsBuyback,
@@ -329,24 +402,24 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
     historyOptions,
   );
 
+  const resolvedBuybackSnapshot = React.useMemo(
+    () =>
+      resolveBuybackSnapshot(buyback.snapshot, {
+        flowSnapshot: flow.snapshot,
+        liquiditySnapshot: liquidity.snapshot,
+        tokenDexSnapshot: tokenDex.snapshot,
+      }),
+    [buyback.snapshot, flow.snapshot, liquidity.snapshot, tokenDex.snapshot],
+  );
+
   const chainStatus = React.useMemo(
     () => ({ chainId, account, role: account ? "Connected" : "Viewer" }),
     [chainId, account],
   );
-
-  const liquidityChart = React.useMemo(() => {
-    if (active !== "liquidity") return [];
-    const pts = liquidityHistory?.chartPoints || [];
-    return pts.map((p) => ({ time: p.time, liquidity: p.value }));
-  }, [active, liquidityHistory?.chartPoints]);
-
-  const dexChart = React.useMemo(() => {
-    if (active !== "dex") return [];
-    return tokenDexHistory?.dexSeries || [];
-  }, [active, tokenDexHistory?.dexSeries]);
+  const readerStatus = flow.snapshot?.readerStatus ?? null;
 
   const dexLiquidity = React.useMemo(() => {
-    if (active !== "dex") return null;
+    if (renderedTab !== "dex") return null;
     const p = tokenDex.snapshot?.dex?.pair;
     const r = p?.reserves;
     if (!r) return null;
@@ -359,10 +432,10 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
       biggiPerNative: derived.priceTokenPerNative ?? null,
       pairAddress: p.address ?? tokenDex.snapshot?.dex?.pairAddress ?? null,
     };
-  }, [active, tokenDex.snapshot]);
+  }, [renderedTab, tokenDex.snapshot]);
 
   const pumpView = React.useMemo(() => {
-    if (active !== "dex") return null;
+    if (renderedTab !== "dex") return null;
     const p = tokenDex.snapshot?.dex?.pair;
     if (!p) return null;
     return {
@@ -374,15 +447,29 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
       },
       derived: tokenDex.snapshot?.derived,
     };
-  }, [active, tokenDex.snapshot]);
+  }, [renderedTab, tokenDex.snapshot]);
 
   const heroStats = React.useMemo(() => {
     const items = [];
+    const tokenDecimals =
+      tokenDex.snapshot?.token?.decimals ?? flow.snapshot?.tokenMeta?.decimals ?? 18;
     const priceNative = tokenDex.snapshot?.derived?.priceNativePerToken;
-    const reserveNative = liquidity.snapshot?.reserve?.maticBalanceNumeric;
-    const lpLocked = liquidity.snapshot?.vault?.totalLpLockedNumeric;
-    const treasuryBiggi = buyback.snapshot?.treasury?.biggiBalanceNumeric;
-    const dripAvailable = drip.snapshot?.distributor?.availableNumeric;
+    const reserveNative =
+      liquidity.snapshot?.reserve?.maticBalanceNumeric ??
+      toNumberSafe(flow.snapshot?.liveBalances?.native?.reserve, 18);
+    const lpLocked =
+      liquidity.snapshot?.vault?.totalLpLockedNumeric ??
+      toNumberSafe(readerStatus?.res?.lpBalanceInVault, 18);
+    const treasuryBiggi =
+      resolvedBuybackSnapshot?.treasury?.biggiBalanceNumeric ??
+      toNumberSafe(flow.snapshot?.liveBalances?.token?.treasury, tokenDecimals);
+    const treasuryNative =
+      resolvedBuybackSnapshot?.treasury?.maticBalanceNumeric ??
+      toNumberSafe(liquidity.snapshot?.treasury?.nativeBalance, 18) ??
+      toNumberSafe(flow.snapshot?.liveBalances?.native?.treasury, 18);
+    const dripAvailable =
+      drip.snapshot?.distributor?.availableNumeric ??
+      toNumberSafe(readerStatus?.drip?.availableTokens, tokenDecimals);
 
     if (Number.isFinite(priceNative)) {
       items.push({
@@ -424,6 +511,16 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
         tone: "token",
       });
     }
+    if (Number.isFinite(treasuryNative)) {
+      items.push({
+        key: "treasury-native",
+        label: "Treasury POL",
+        value: treasuryNative.toLocaleString("en-US", {
+          maximumFractionDigits: 2,
+        }),
+        tone: "native",
+      });
+    }
     if (Number.isFinite(dripAvailable)) {
       items.push({
         key: "drip",
@@ -434,10 +531,17 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
       });
     }
     return items;
-  }, [tokenDex.snapshot, liquidity.snapshot, buyback.snapshot, drip.snapshot]);
+  }, [
+    tokenDex.snapshot,
+    liquidity.snapshot,
+    resolvedBuybackSnapshot,
+    drip.snapshot,
+    flow.snapshot,
+    readerStatus,
+  ]);
 
   const tokenTotalSupply = React.useMemo(() => {
-    if (active !== "distributor") return null;
+    if (renderedTab !== "distributor") return null;
     const total = tokenDex.snapshot?.token?.totalSupply;
     if (total == null) return null;
     try {
@@ -446,13 +550,13 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
     } catch {
       return total?.toString?.() ?? null;
     }
-  }, [active, tokenDex.snapshot]);
+  }, [renderedTab, tokenDex.snapshot]);
 
   const lastUpdatedLabel = React.useMemo(() => {
     const ts = Math.max(
       flow.snapshot?.ts || 0,
       policy.snapshot?.ts || 0,
-      buyback.snapshot?.ts || 0,
+      resolvedBuybackSnapshot?.ts || 0,
       drip.snapshot?.ts || 0,
       liquidity.snapshot?.ts || 0,
       tokenDex.snapshot?.ts || 0,
@@ -467,7 +571,7 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
   }, [
     flow.snapshot,
     policy.snapshot,
-    buyback.snapshot,
+    resolvedBuybackSnapshot,
     drip.snapshot,
     liquidity.snapshot,
     tokenDex.snapshot,
@@ -508,7 +612,7 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
       {
         label: "Treasury",
         address: pickAddr(
-          buyback.snapshot?.treasury?.address,
+          resolvedBuybackSnapshot?.treasury?.address,
           flow.snapshot?.addresses?.treasury,
           ADDR.TREASURY,
         ),
@@ -516,9 +620,18 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
       {
         label: "Buyback Agent",
         address: pickAddr(
-          buyback.snapshot?.BUYBACK?.address,
+          resolvedBuybackSnapshot?.BUYBACK?.address,
           flow.snapshot?.addresses?.BUYBACK,
           ADDR.BUYBACK_AGENT,
+        ),
+      },
+      {
+        label: "Policy",
+        address: pickAddr(
+          policy.snapshot?.policy?.address,
+          policy.snapshot?.addresses?.policy,
+          policy.snapshot?.addresses?.POLICY,
+          ADDR.POLICY,
         ),
       },
     ];
@@ -571,6 +684,13 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
         ),
       },
       {
+        label: "LP Price Feed",
+        address: pickAddr(
+          tokenDex.snapshot?.dex?.priceFeed?.address,
+          ADDR.LP_PRICE_FEED,
+        ),
+      },
+      {
         label: "Wrapped Native",
         address: pickAddr(
           tokenDex.snapshot?.dex?.weth,
@@ -612,6 +732,10 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
           ADDR.DRIP_DISTRIBUTOR,
         ),
       },
+      {
+        label: "DRIP LM",
+        address: pickAddr(ADDR.DRIP_LM),
+      },
     ];
 
     return [
@@ -624,22 +748,27 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
     flow.snapshot,
     distributor.snapshot,
     liquidity.snapshot,
-    buyback.snapshot,
+    resolvedBuybackSnapshot,
+    policy.snapshot,
     tokenDex.snapshot,
   ]);
 
   return (
     <EcosystemErrorBoundary>
-      <section className={`rewards-grid biggi-skin ${styles.ecosystem}`}>
+      <section
+        className={`rewards-grid biggi-skin ${styles.ecosystem}`}
+        style={{
+          "--eco-active-accent": activeTabMeta.accent,
+          "--eco-active-accent-soft": activeTabMeta.accentSoft,
+          "--eco-active-accent-glow": activeTabMeta.accentGlow,
+        }}
+      >
         <div className="rewards-grid__surface biggi-token-surface">
           <header className="rewards-grid__header biggi-header panel-header panel-header--ecosystem">
             <div className="rewards-grid__headline">
-              <h2 className="rewards-grid__title">BIGGI ECOSYSTEM</h2>
+              <h2 className="rewards-grid__title">{activeTabMeta.title}</h2>
               <p className="rewards-grid__subtitle">
-                Read-only map of Biggi tokenomics and contract wiring. Follow
-                how mint revenue, liquidity, buyback logic, and reward streams
-                connect across pools and vaults before any transaction is
-                signed.
+                {activeTabMeta.subtitle}
               </p>
             </div>
 
@@ -651,28 +780,18 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
             </div>
           </header>
 
-          <HeroStats items={heroStats} />
+          <HeroStats items={heroStats} className={styles.ecoHeroStats} />
           <div
-            className="panel-tabs-row"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              flexWrap: "wrap",
-            }}
+            className={`panel-tabs-row ${styles.ecoToolbarRow}`}
           >
             <TabsBar tabs={TABS} active={active} onChange={handleTabChange} />
-            <button
-              type="button"
-              className="panel-info-btn biggi-btn biggi-btn--ghost"
+            <PanelInfoButton
               onClick={() => setInfoOpen(true)}
-              aria-label="Ecosystem buttons info"
-            >
-              <span>i</span>
-            </button>
+              ariaLabel="Ecosystem buttons info"
+            />
           </div>
           {lastUpdatedLabel ? (
-            <div className="biggi-value mono" style={{ marginTop: 10 }}>
+            <div className={`biggi-value mono ${styles.ecoUpdateStamp}`}>
               {lastUpdatedLabel}
             </div>
           ) : null}
@@ -682,58 +801,7 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
             title="Ecosystem Panel"
             items={infoItems}
           />
-          <Card
-            title="ECOSYSTEM WIRING"
-            subtitle="Full on-chain wiring (addresses + status)"
-            action={
-              <button
-                type="button"
-                className="biggi-btn biggi-btn--ghost"
-                onClick={() => setWiringOpen((open) => !open)}
-              >
-                {wiringOpen ? "Hide" : "Show"}
-              </button>
-            }
-          >
-            {wiringOpen && (
-              <div className={styles.ecoWiringGrid}>
-                {wiringGroups.map((group) => (
-                  <div key={group.title} className={styles.ecoWiringCard}>
-                    <div className={styles.ecoWiringTitle}>{group.title}</div>
-                    <div className={styles.ecoTable}>
-                      {group.rows.map((row) => (
-                        <div
-                          key={`${group.title}-${row.label}`}
-                          className={`${styles.ecoTableRow} ${styles.ecoTableRowThree}`}
-                        >
-                          <span className={styles.ecoTableLabel}>{row.label}</span>
-                          <span className={`${styles.ecoTableValue} ${styles.ecoAddrMono}`}>
-                            {row.address ? shortAddr(row.address) : "--"}
-                            {row.address ? (
-                              <a
-                                className={styles.ecoTableLink}
-                                href={explorerLink(row.address)}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                Explorer
-                              </a>
-                            ) : null}
-                          </span>
-                          <span
-                            className={`${styles.ecoStatusDot} ${row.address ? styles.ecoStatusOk : styles.ecoStatusWarn}`}
-                            title={row.address ? "Connected" : "Missing"}
-                            aria-label={row.address ? "Connected" : "Missing"}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-          <div className="biggi-content">
+          <div className={`biggi-content ${styles.ecoContent}`}>
             <React.Suspense
               fallback={
                 <div className="flow-panel-box">
@@ -741,13 +809,26 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
                 </div>
               }
             >
-              {active === "flow" ? (
-                <FlowTab snapshot={flow.snapshot} loading={flow.loading} error={flow.error} />
+              {renderedTab === "flow" ? (
+                <FlowTab
+                  snapshot={flow.snapshot}
+                  buybackSnapshot={resolvedBuybackSnapshot}
+                  dripSnapshot={drip.snapshot}
+                  liquiditySnapshot={liquidity.snapshot}
+                  tokenDexSnapshot={tokenDex.snapshot}
+                  loading={flow.loading}
+                  error={flow.error}
+                />
               ) : null}
 
-              {active === "buyback" ? (
+              {renderedTab === "buyback" ? (
                 <BUYBACKTreasuryTab
-                  snapshot={buyback.snapshot}
+                  snapshot={resolvedBuybackSnapshot}
+                  readerStatus={readerStatus?.buy}
+                  flowSnapshot={flow.snapshot}
+                  dripSnapshot={drip.snapshot}
+                  liquiditySnapshot={liquidity.snapshot}
+                  tokenDexSnapshot={tokenDex.snapshot}
                   isLoading={buyback.loading}
                   error={buyback.error}
                   onRefresh={buyback.refresh}
@@ -757,24 +838,39 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
                 />
               ) : null}
 
-              {active === "distributor" ? (
+              {renderedTab === "distributor" ? (
                 <DistributorTokenTab
                   distributorData={distributor.snapshot}
                   tokenSnapshot={tokenDex.snapshot}
-                  BUYBACKSnapshot={buyback.snapshot}
-                  BUYBACKFallback={buyback.snapshot?.BUYBACK?.totalBiggiAcquired}
+                  BUYBACKSnapshot={resolvedBuybackSnapshot}
+                  BUYBACKFallback={
+                    resolvedBuybackSnapshot?.BUYBACK?.totalBiggiAcquired
+                  }
                   DRIPAvailable={
                     drip.snapshot?.distributor?.availableTokens ??
                     drip.snapshot?.distributor?.availableNumeric
                   }
                   tokenTotalSupply={tokenTotalSupply}
-                  historyOptions={historyOptions}
+                  historyPoints={distributorHistory.points}
+                  totalSeries={distributorHistory.totalSeries}
+                  pendingSeries={distributorHistory.pendingSeries}
+                  reserveSeries={distributorHistory.reserveSeries}
+                  buybackSeries={distributorHistory.buybackSeries}
+                  communitySeries={distributorHistory.communitySeries}
+                  readerStatus={readerStatus?.dist}
+                  isLoading={distributor.loading}
+                  error={distributor.error}
                 />
               ) : null}
 
-              {active === "drip" ? (
+              {renderedTab === "drip" ? (
                 <DRIPTab
                   snapshot={drip.snapshot}
+                  readerStatus={readerStatus?.drip}
+                  flowSnapshot={flow.snapshot}
+                  buybackSnapshot={resolvedBuybackSnapshot}
+                  liquiditySnapshot={liquidity.snapshot}
+                  tokenDexSnapshot={tokenDex.snapshot}
                   isLoading={drip.loading}
                   error={drip.error}
                   onRefresh={drip.refresh}
@@ -784,17 +880,18 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
                 />
               ) : null}
 
-              {active === "liquidity" ? (
+              {renderedTab === "liquidity" ? (
                 <TokenomicsPanel
                   activeSection="liquidity"
                   chainStatus={chainStatus}
                   liquidity={liquidity.snapshot}
                   tokenDex={tokenDex.snapshot}
-                  liquidityHistory={liquidityChart}
+                  liquidityHistory={liquidityHistory}
+                  readerStatus={readerStatus}
                 />
               ) : null}
 
-              {active === "policy" ? (
+              {renderedTab === "policy" ? (
                 <PolicyTab
                   snapshot={policy.snapshot}
                   loading={policy.loading}
@@ -802,31 +899,35 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
                 />
               ) : null}
 
-              {active === "dex" ? (
+              {renderedTab === "dex" ? (
                 <TokenomicsPanel
                   activeSection="dex"
                   chainStatus={chainStatus}
                   pumpView={pumpView}
                   liquidity={dexLiquidity}
-                  dexHistory={dexChart}
+                  dexHistory={tokenDexHistory}
+                  dexLoading={tokenDex.loading}
+                  dexError={tokenDex.error}
                   tok={tokenDex.snapshot?.token}
                   router={tokenDex.snapshot?.dex?.router}
                   tokenDex={tokenDex.snapshot}
+                  readerStatus={readerStatus}
+                  onDexRefresh={tokenDex.refresh}
                 />
               ) : null}
-              {active === "history" ? (
+              {renderedTab === "history" ? (
                 <HistoryTab
                   buybackHistory={buybackHistory.history}
                   dripHistory={dripHistory.history}
                   liquidityHistory={liquidityHistory.history}
                 />
               ) : null}
-              {active === "transparency" ? (
+              {renderedTab === "transparency" ? (
                 <TransparencyTab
                   flowSnapshot={flow.snapshot}
                   policySnapshot={policy.snapshot}
                   distributorSnapshot={distributor.snapshot}
-                  buybackSnapshot={buyback.snapshot}
+                  buybackSnapshot={resolvedBuybackSnapshot}
                   dripSnapshot={drip.snapshot}
                   liquiditySnapshot={liquidity.snapshot}
                   tokenDexSnapshot={tokenDex.snapshot}
@@ -838,6 +939,108 @@ export default function EcosystemPanel({ autoOpenInfo = false }) {
                 />
               ) : null}
             </React.Suspense>
+          </div>
+          <div className={styles.ecoWiringDock}>
+            {wiringOpen ? (
+              <div className={styles.ecoWiringOverlay}>
+                <div className={styles.ecoWiringOverlayHeader}>
+                  <div>
+                    <div className={styles.ecoWiringOverlayTitle}>
+                      Live Wiring Map
+                    </div>
+                    <div className={styles.ecoWiringOverlaySub}>
+                      Address stack and current connection status across the
+                      ecosystem.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className={[
+                      "biggi-btn",
+                      "biggi-btn--ghost",
+                      styles.ecoWiringToggle,
+                      styles.ecoWiringToggleOpen,
+                    ].join(" ")}
+                    onClick={() => setWiringOpen(false)}
+                  >
+                    Hide wiring
+                  </button>
+                </div>
+                <div className={styles.ecoWiringOverlayBody}>
+                  <div className={styles.ecoWiringGrid}>
+                    {wiringGroups.map((group) => (
+                      <div key={group.title} className={styles.ecoWiringCard}>
+                        <div className={styles.ecoWiringTitle}>{group.title}</div>
+                        <div className={styles.ecoTable}>
+                          {group.rows.map((row) => (
+                            <div
+                              key={`${group.title}-${row.label}`}
+                              className={`${styles.ecoTableRow} ${styles.ecoTableRowThree} ${styles.ecoWiringRow}`}
+                            >
+                              <span className={`${styles.ecoTableLabel} ${styles.ecoWiringLabel}`}>
+                                {row.label}
+                              </span>
+                              <span
+                                className={`${styles.ecoTableValue} ${styles.ecoAddrMono} ${styles.ecoWiringValue}`}
+                              >
+                                <span
+                                  className={styles.ecoWiringAddressMain}
+                                  title={row.address || undefined}
+                                >
+                                  {row.address ? shortAddr(row.address) : "--"}
+                                </span>
+                                {row.address ? (
+                                  <a
+                                    className={styles.ecoTableLink}
+                                    href={explorerLink(row.address)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    Explorer
+                                  </a>
+                                ) : null}
+                              </span>
+                              <span
+                                className={`${styles.ecoStatusDot} ${styles.ecoWiringStatus} ${row.address ? styles.ecoStatusOk : styles.ecoStatusWarn}`}
+                                title={row.address ? "Connected" : "Missing"}
+                                aria-label={row.address ? "Connected" : "Missing"}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <Card
+              title="ECOSYSTEM WIRING"
+              subtitle="Full on-chain wiring (addresses + status)"
+              action={
+                <button
+                  type="button"
+                  className={[
+                    "biggi-btn",
+                    "biggi-btn--ghost",
+                    styles.ecoWiringToggle,
+                    wiringOpen
+                      ? styles.ecoWiringToggleOpen
+                      : styles.ecoWiringToggleClosed,
+                  ].join(" ")}
+                  onClick={() => setWiringOpen((open) => !open)}
+                  aria-expanded={wiringOpen}
+                >
+                  {wiringOpen ? "Wiring open" : "Show wiring"}
+                </button>
+              }
+            >
+              <div className={styles.ecoWiringHint}>
+                Bottom dock for the full address map. When opened, the wiring
+                drawer lifts above this bar.
+              </div>
+            </Card>
           </div>
         </div>
       </section>
