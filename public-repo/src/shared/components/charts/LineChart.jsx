@@ -19,6 +19,10 @@ const LineChart = ({ points = [], width = 320, height = 150 }) => {
       label: point.label || "",
     }))
     .filter((point) => Number.isFinite(point.value));
+  const clipIdRef = React.useRef(
+    `line-chart-clip-${Math.random().toString(36).slice(2, 9)}`,
+  );
+  const clipId = clipIdRef.current;
 
   if (!sanitized.length) {
     return <div className="line-chart__empty">No liquidity history yet.</div>;
@@ -31,10 +35,6 @@ const LineChart = ({ points = [], width = 320, height = 150 }) => {
   const padding = { top: 12, right: 12, bottom: 20, left: 20 };
   const plotWidth = Math.max(1, width - padding.left - padding.right);
   const plotHeight = Math.max(1, height - padding.top - padding.bottom);
-  const clipIdRef = React.useRef(
-    `line-chart-clip-${Math.random().toString(36).slice(2, 9)}`,
-  );
-  const clipId = clipIdRef.current;
 
   const coords = sanitized.map((entry, index) => {
     const x =

@@ -25,6 +25,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/chat-bootstrap"
+  to = "/.netlify/functions/chat-bootstrap"
+  status = 200
+
+[[redirects]]
   from = "/api/admin/editMessage"
   to = "/.netlify/functions/admin-editMessage"
   status = 200
@@ -43,6 +48,56 @@
   from = "/app"
   to = "/app/"
   status = 301
+
+[[redirects]]
+  from = "/rewards"
+  to = "/rewards/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/rewards/"
+  to = "/rewards/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/collection"
+  to = "/collection/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/collection/"
+  to = "/collection/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/vrf-mint"
+  to = "/vrf-mint/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/vrf-mint/"
+  to = "/vrf-mint/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/ecosystem"
+  to = "/ecosystem/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/ecosystem/"
+  to = "/ecosystem/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/community-center"
+  to = "/community-center/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/community-center/"
+  to = "/community-center/index.html"
+  status = 200
 
 [[redirects]]
   from = "/app/*"

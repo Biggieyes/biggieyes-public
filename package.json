@@ -74,6 +74,7 @@
     "react-is": "^19.2.3",
     "react-markdown": "^10.1.0",
     "recharts": "^3.6.0",
+    "remark-gfm": "^4.0.1",
     "scrypt-js": "^3.0.1",
     "util": "^0.12.5"
   },

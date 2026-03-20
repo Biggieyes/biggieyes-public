@@ -1225,9 +1225,14 @@ main,
   align-items: center;
 }
 .top-bar.compact .left-logo,
-.top-bar.compact .right-logo,
-.top-bar.compact .right-logo-desc {
+.top-bar.compact .right-logo {
   display: none !important;
+}
+.top-bar.compact .right-logo-group {
+  display: flex !important;
+}
+.top-bar.compact .right-logo-desc {
+  display: block !important;
 }
 .top-bar.compact .icon-row {
   margin-top: 0 !important;
