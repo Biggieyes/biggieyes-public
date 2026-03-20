@@ -1,0 +1,63 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "BiggiCapsLib",
+  "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/Library/BiggiCapsLib.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "BIGGI_TOTAL_SUPPLY",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "DRIP_DISTRIBUTOR_CAP",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "RESERVE_INITIAL",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "TOKEN_REWARDS_CAP",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x608080604052346100195760e3908161001f823930815050f35b600080fdfe60806040526004361015601157600080fd5b6000803560e01c8063013c50781460885780630ab432bb146088578063855e85da1460675763d67b6b6a14604457600080fd5b8060031936011260645760206040516b01f04ef12cb04cf1580000008152f35b80fd5b508060031936011260645760206040516b033b2e3c9fd0803ce80000008152f35b600036600319011260a85760206040516aa56fa5b99019a5c80000008152f35b600080fdfea264697066735822122058af452db395e8de89529411d3f5e2517518cb04e8f2a576b4e34974a136c46064736f6c63430008180033",
+  "deployedBytecode": "0x60806040526004361015601157600080fd5b6000803560e01c8063013c50781460885780630ab432bb146088578063855e85da1460675763d67b6b6a14604457600080fd5b8060031936011260645760206040516b01f04ef12cb04cf1580000008152f35b80fd5b508060031936011260645760206040516b033b2e3c9fd0803ce80000008152f35b600036600319011260a85760206040516aa56fa5b99019a5c80000008152f35b600080fdfea264697066735822122058af452db395e8de89529411d3f5e2517518cb04e8f2a576b4e34974a136c46064736f6c63430008180033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

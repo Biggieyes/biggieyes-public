@@ -8,7 +8,7 @@ Fill the addresses as you deploy. Order suggested:
 
 2. **Token**
    - Deploy `BiggiToken` with `initialOwner=<multisig>`.
-   - Set: `setReserve`, `setDripDistributor`, `setTokenRewards`, optionally `setRewardsOperator`.
+   - Set: `setReserve`, `setDripDistributor`, `setTokenRewards`, `setMarketingSupport`, optionally `setRewardsOperator`.
    - Call `initialDistribute()` once.
 
 3. **Treasury**
@@ -56,14 +56,14 @@ Record final addresses here (Polygon Amoy):
 - BIGGI token: 0xD4D0fa17f2955Eb3fF8D03ea0cD7A2f0a06E6d0E
 - Main (VRF): 0x3430f378032Cead7A82f38047e906C1E3cAFc703
 - Main2 (public): 0xf511267b2A08Cd2f94ACc0eF74c4Eb1Ac799980B
-- Treasury: 0xE2fa9DFFc69f53b42dC41681bfFd22dA74c64461
+- Treasury: 0x42f4d7091e2a23CD855b880de1676290f3E57fe4
 - Reserve (legacy): 0x516aBCBd1BaD369e702E3D52eccA755E7752FDd8
 - Reserve (legacy, replaced): 0xC700EA8E43259C832C2438D01F60C88752894B8f (BIGGI migrated out, POL remains locked there)
 - Reserve (active): 0xa283f6D745cd858133f7a3AE6A2ea97D7b8FA54f (patched ReserveV4, dexRefill restored from previous active reserve)
-- LiquidityManager: 0xd4818d563674560FFDD53dca0C85e665A533885a
+- LiquidityManager: 0x87f542886FC133C68F1b0ae7737Ecb4f8F647e6C
 - LiquidityVault: 0xD775DaBBa9246694F3F570D9CEC769B1b37808f5
 - LiquidityOrchestrator: 0xAfbA1a91A0211a0a892dC34B529f904bF6E70c59
-- DripDistributor: 0xbA5f786863a17a79A08bc1C35171aD5F32cDC310
+- DripDistributor: 0x2B835CFbF11AD44fd1A977D1781195674771ECa6
 - DripLMToModerator: 0xD32fC50c153Ab47F68763c739A2deA8b5Da81373
 - ModeratorCenter (CommunityCenter): 0x1aa66c77B3c7ec1eC704308a182C7f43a8744702
 - BuybackAgent: 0x06fC8552119d8B46e8dd19C54c81b9E3bDEfa266
@@ -81,10 +81,16 @@ Record final addresses here (Polygon Amoy):
   - BuybackUpkeepProxy: 0x833a208232BB157439404ba0A1898A6737986E72 (threshold 0.001 POL, keeper of BuybackAgent)
 - DripKeeperProxy: 0x5ca6D9bA630265997E246A6c5d9A54b89EDf5afb (owner/keeper = deployer, dripLM wired)
 - Readers:
-  - BuybackReader: 0xe03f1D87CbF850954ff46633d6f5f23b4f6dA7d2
-  - MultiCollectionDistributorReader: 0xeb8CAb231C81472010b4db9EdC5021C7666b617b
-  - LiquidityBranchUserReader: 0xbfDa58e5470e9B38d20dbFA4201dB7ABc4F9d137
-  - TokenomikReader: 0x5A2c4FF44260f355E5013B85356F60ACcCb7bFe9
+  - BuybackReader: 0xbee52e0954a97BE91925557e615e016168F6d4b1
+  - MultiCollectionDistributorReader: 0x1A1521465B4828726e2025C6f8351587A15903Cb
+  - LiquidityBranchUserReader: 0xeE810e1948B5f1968cd27C6109219F2C2621e0a8
+  - TokenomikReader: 0x6df60d74c6e187a9ad3396e3c36d60f2f432240a
+  - MainReader: 0x67b58d0f241b557a75Db0EbAf27F9452aDe0B749
+  - LiquidityHelperReader: 0x5FDD372008eC0475D91f465E0ED23c38E55EBeA4
+  - ReserveTreasuryReader: 0x82525E67414e69788612abCb851B54193c4a8593
+  - TokenRewardsReader: 0x523Fe9b6d30540144cB0bB834D0Bf8E89BFA4BF3
+  - NftRewardsReader: 0xB99320A777a394bB543bbAfC85A7D11e5b6f4E61
+- Multicall2: 0x55d1Bb6CdE2AF3B293fDADda12cbF5A6c367A348
 ```
 Bootstrap liquidity & tests (Amoy, new Uniswap V2):
 - Added 1 POL + 10,000 BIGGI via router 0xB767E3Cd07fD0Dd96827895AB8b3801A3b141e8a, pair 0x210d5aE3e0E954836D237363Eea2674bD36e9b63.
@@ -125,3 +131,4 @@ LM runtime tuning after migration (to prevent addLiquidity revert on low-depth p
   - direct `LM.executePairing(0.05)`: 0xbc7c3e925eac5994b90bfe92895254dbcc9b5e00f5e0fb1e6b247b5fbc4e2d94
   - `reserve.requestTopUpToLM()` (high gas) success: 0xaa00b0b8e8e0e00836645df73651cb04b88730264c4a65994d2c5cbf3eddf8fb
 ```
+

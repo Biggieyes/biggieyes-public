@@ -113,7 +113,9 @@ export async function ensurePreferredRpc() {
 }
 const LOCAL_STORAGE_RPC_PREF_KEY = "biggi_last_amoy_rpc_v1";
 const BAD_RPC_SUBSTRINGS = ["tenderly"];
-const BAD_CORS_RPCS = ["rpc-amoy.polygon.technology"];
+// Browser CORS support for rpc-amoy was historically flaky, but currently works.
+// Keep this empty so explicit env-configured endpoints are not filtered out.
+const BAD_CORS_RPCS = [];
 const UNSTABLE_AMOY_RPC_HOSTS = [
   // These hosts have shown prolonged 503/empty-node responses for Amoy.
   "polygon-amoy-bor-rpc.publicnode.com",

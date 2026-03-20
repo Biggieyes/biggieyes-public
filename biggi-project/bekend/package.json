@@ -7,6 +7,18 @@
   "scripts": {
     "compile": "npx hardhat compile",
     "clean": "npx hardhat clean",
+    "compile:master": "npx hardhat compile --config hardhat.biggi-master.cjs",
+    "clean:master": "npx hardhat clean --config hardhat.biggi-master.cjs",
+    "test:master": "npx hardhat test --config hardhat.biggi-master.cjs",
+    "test:master:fork": "node scripts/master/runForkMasterTests.js",
+    "deploy:master": "npx hardhat run --config hardhat.biggi-master.cjs scripts/master/deployMasterStack.js",
+    "deploy:master:polygon": "npx hardhat run --config hardhat.biggi-master.cjs scripts/master/deployMasterStack.js --network polygon",
+    "check:master": "npx hardhat run --config hardhat.biggi-master.cjs scripts/master/checkMasterStatus.js",
+    "check:master:polygon": "npx hardhat run --config hardhat.biggi-master.cjs scripts/master/checkMasterStatus.js --network polygon",
+    "check:master:strict": "node scripts/master/runCheckMasterStrict.js",
+    "node:master": "npx hardhat node --config hardhat.biggi-master.cjs",
+    "deploy:master:local": "npx hardhat run --config hardhat.biggi-master.cjs scripts/master/deployMasterStack.js --network localhost",
+    "check:master:local": "npx hardhat run --config hardhat.biggi-master.cjs scripts/master/checkMasterStatus.js --network localhost",
     "setup-liquidity": "npx hardhat run scripts/setupLiquidityOnce.js --network amoy",
     "test": "npx hardhat test",
     "console": "npx hardhat console --network amoy"

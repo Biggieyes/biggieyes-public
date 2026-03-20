@@ -1,0 +1,10 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "BiggiIdIndexLib",
+  "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/Library/BiggiIdIndexLib.sol",
+  "abi": [],
+  "bytecode": "0x60808060405234601757603a9081601d823930815050f35b600080fdfe600080fdfea2646970667358221220347e7aa3ed1fd2cbdb83dedf18d7d34b1c3e37c89f95d6f9b71527296397bbe464736f6c63430008180033",
+  "deployedBytecode": "0x600080fdfea2646970667358221220347e7aa3ed1fd2cbdb83dedf18d7d34b1c3e37c89f95d6f9b71527296397bbe464736f6c63430008180033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

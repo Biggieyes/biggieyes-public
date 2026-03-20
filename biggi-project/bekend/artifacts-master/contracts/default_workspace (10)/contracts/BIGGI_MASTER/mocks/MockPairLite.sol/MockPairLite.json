@@ -1,0 +1,94 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "MockPairLite",
+  "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/mocks/MockPairLite.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "token0_",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "token1_",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "getReserves",
+      "outputs": [
+        {
+          "internalType": "uint112",
+          "name": "",
+          "type": "uint112"
+        },
+        {
+          "internalType": "uint112",
+          "name": "",
+          "type": "uint112"
+        },
+        {
+          "internalType": "uint32",
+          "name": "",
+          "type": "uint32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint112",
+          "name": "reserve0_",
+          "type": "uint112"
+        },
+        {
+          "internalType": "uint112",
+          "name": "reserve1_",
+          "type": "uint112"
+        }
+      ],
+      "name": "setReserves",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "token0",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "token1",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x60803461008d57601f61023638819003918201601f19168301916001600160401b0383118484101761009257808492604094855283398101031261008d57610052602061004b836100a8565b92016100a8565b600080546001600160a01b039384166001600160a01b0319918216179091556001805492909316911617905560405161017990816100bd8239f35b600080fd5b634e487b7160e01b600052604160045260246000fd5b51906001600160a01b038216820361008d5756fe608080604052600436101561001357600080fd5b600090813560e01c9081630902f1ac14610106575080630dfe1681146100df57806375ea5f2e146100785763d21220a71461004d57600080fd5b346100755780600319360112610075576001546040516001600160a01b039091168152602090f35b80fd5b5034610075576040366003190112610075576004356001600160701b03908181168091036100db5760243591821682036100db5760709190911b6dffffffffffffffffffffffffffff60701b16174260e01b6001600160e01b0319161760025580f35b8280fd5b5034610075578060031936011261007557546040516001600160a01b039091168152602090f35b90503461013f578160031936011261013f576060906002546001600160701b0380821683528160701c16602083015260e01c6040820152f35b5080fdfea26469706673582212208191386f57213a2c62eb3fc137f6b2dc19c77437144cc77c45efa7fd4614840064736f6c63430008180033",
+  "deployedBytecode": "0x608080604052600436101561001357600080fd5b600090813560e01c9081630902f1ac14610106575080630dfe1681146100df57806375ea5f2e146100785763d21220a71461004d57600080fd5b346100755780600319360112610075576001546040516001600160a01b039091168152602090f35b80fd5b5034610075576040366003190112610075576004356001600160701b03908181168091036100db5760243591821682036100db5760709190911b6dffffffffffffffffffffffffffff60701b16174260e01b6001600160e01b0319161760025580f35b8280fd5b5034610075578060031936011261007557546040516001600160a01b039091168152602090f35b90503461013f578160031936011261013f576060906002546001600160701b0380821683528160701c16602083015260e01c6040820152f35b5080fdfea26469706673582212208191386f57213a2c62eb3fc137f6b2dc19c77437144cc77c45efa7fd4614840064736f6c63430008180033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

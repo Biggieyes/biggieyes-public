@@ -1,0 +1,152 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "MockCollectionMainView",
+  "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/mocks/MockCollectionMainView.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "exists",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "internalType": "uint16",
+          "name": "blk",
+          "type": "uint16"
+        },
+        {
+          "internalType": "uint256",
+          "name": "mainId",
+          "type": "uint256"
+        }
+      ],
+      "name": "hasAllBackgroundsForMainIdInBlock",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "internalType": "uint16",
+          "name": "blk",
+          "type": "uint16"
+        }
+      ],
+      "name": "hasAllTenMainIdsInBlock",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tokenId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "value",
+          "type": "bool"
+        }
+      ],
+      "name": "setExists",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "internalType": "uint16",
+          "name": "blk",
+          "type": "uint16"
+        },
+        {
+          "internalType": "uint256",
+          "name": "mainId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "value",
+          "type": "bool"
+        }
+      ],
+      "name": "setHasAllBackgroundsForMainIdInBlock",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "internalType": "uint16",
+          "name": "blk",
+          "type": "uint16"
+        },
+        {
+          "internalType": "bool",
+          "name": "value",
+          "type": "bool"
+        }
+      ],
+      "name": "setHasAllTenMainIdsInBlock",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x60808060405234610016576102bb908161001c8239f35b600080fdfe60806040818152600436101561001457600080fd5b600091823560e01c9081634f558e791461022f57508063543ca682146101c057806369b32ea114610164578063bf9a4fb914610113578063c30ec24d146100d25763f11e2f4e1461006457600080fd5b346100ce5760603660031901126100ce5761007d610259565b90610086610274565b906044359182151583036100ca576100c79360018060a01b03168552600160205261ffff8286209116855260205283209060ff801983541691151516179055565b80f35b8480fd5b5080fd5b50346100ce57806003193601126100ce57602435801515810361010f576100c79160043584528360205283209060ff801983541691151516179055565b8280fd5b50346100ce57806003193601126100ce5760ff81602093610132610259565b61013a610274565b6001600160a01b0390911682526001865282822061ffff9091168252855220549151911615158152f35b50346100ce5760603660031901126100ce5760ff81602093610184610259565b61018c610274565b6001600160a01b0390911682526002865282822061ffff909116825285528181206044358252855220549151911615158152f35b50346100ce5760803660031901126100ce576101da610259565b906101e3610274565b906064359182151583036100ca576100c79360018060a01b03168552600260205261ffff82862091168552602052808420604435855260205283209060ff801983541691151516179055565b9190503461010f57602036600319011261010f576004358352602083815292205460ff1615158152f35b600435906001600160a01b038216820361026f57565b600080fd5b6024359061ffff8216820361026f5756fea2646970667358221220d6f04612092b47020e6567b86507af4b4eb978957853d1145a1519a6265229a964736f6c63430008180033",
+  "deployedBytecode": "0x60806040818152600436101561001457600080fd5b600091823560e01c9081634f558e791461022f57508063543ca682146101c057806369b32ea114610164578063bf9a4fb914610113578063c30ec24d146100d25763f11e2f4e1461006457600080fd5b346100ce5760603660031901126100ce5761007d610259565b90610086610274565b906044359182151583036100ca576100c79360018060a01b03168552600160205261ffff8286209116855260205283209060ff801983541691151516179055565b80f35b8480fd5b5080fd5b50346100ce57806003193601126100ce57602435801515810361010f576100c79160043584528360205283209060ff801983541691151516179055565b8280fd5b50346100ce57806003193601126100ce5760ff81602093610132610259565b61013a610274565b6001600160a01b0390911682526001865282822061ffff9091168252855220549151911615158152f35b50346100ce5760603660031901126100ce5760ff81602093610184610259565b61018c610274565b6001600160a01b0390911682526002865282822061ffff909116825285528181206044358252855220549151911615158152f35b50346100ce5760803660031901126100ce576101da610259565b906101e3610274565b906064359182151583036100ca576100c79360018060a01b03168552600260205261ffff82862091168552602052808420604435855260205283209060ff801983541691151516179055565b9190503461010f57602036600319011261010f576004358352602083815292205460ff1615158152f35b600435906001600160a01b038216820361026f57565b600080fd5b6024359061ffff8216820361026f5756fea2646970667358221220d6f04612092b47020e6567b86507af4b4eb978957853d1145a1519a6265229a964736f6c63430008180033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

@@ -1,0 +1,10 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "BiggiBpsLib",
+  "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/Library/BiggiBpsLib.sol",
+  "abi": [],
+  "bytecode": "0x60808060405234601757603a9081601d823930815050f35b600080fdfe600080fdfea264697066735822122051003bb0bb366bfc1fb77cbab8913ffe24935f27b1cfa593d5756ffcf0207f6c64736f6c63430008180033",
+  "deployedBytecode": "0x600080fdfea264697066735822122051003bb0bb366bfc1fb77cbab8913ffe24935f27b1cfa593d5756ffcf0207f6c64736f6c63430008180033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

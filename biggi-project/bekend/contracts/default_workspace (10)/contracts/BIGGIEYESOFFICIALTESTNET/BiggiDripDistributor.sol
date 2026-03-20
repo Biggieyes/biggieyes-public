@@ -34,6 +34,7 @@ contract BiggiDripDistributor is Ownable, ReentrancyGuard, Pausable {
     uint256 public totalReceived;
     uint256 public totalClaimed;
     uint256 public totalNotified;
+    bool public historicalStateSeeded;
 
     uint256 public constant CAP = BiggiCapsLib.DRIP_DISTRIBUTOR_CAP;
 
@@ -51,6 +52,12 @@ contract BiggiDripDistributor is Ownable, ReentrancyGuard, Pausable {
 
     event TopUp(address indexed from, uint256 amount);
     event NotifyTokenMint(address indexed tokenContract, uint256 amount);
+    event HistoricalStateSeeded(
+        uint256 totalReceived,
+        uint256 totalClaimed,
+        uint256 totalNotified,
+        uint256 availableTokens
+    );
 
     event RescueERC20(address token, address to, uint256 amount);
     event RescueNative(address to, uint256 amount);
@@ -115,6 +122,21 @@ contract BiggiDripDistributor is Ownable, ReentrancyGuard, Pausable {
         tokensPerMint = v;
     }
 
+    function seedHistoricalState(
+        uint256 totalReceived_,
+        uint256 totalClaimed_,
+        uint256 totalNotified_,
+        uint256 availableTokens_
+    ) external onlyOwner {
+        require(!historicalStateSeeded, "already seeded");
+        totalReceived = totalReceived_;
+        totalClaimed = totalClaimed_;
+        totalNotified = totalNotified_;
+        availableTokens = availableTokens_;
+        historicalStateSeeded = true;
+        emit HistoricalStateSeeded(totalReceived_, totalClaimed_, totalNotified_, availableTokens_);
+    }
+
     function pause() external onlyOwner { _pause(); }
     function unpause() external onlyOwner { _unpause(); }
 
@@ -150,7 +172,6 @@ contract BiggiDripDistributor is Ownable, ReentrancyGuard, Pausable {
     /* ===== treasury deposit (TopUp) ===== */
     function depositTokens(uint256 amount) external nonReentrant whenNotPaused onlyTreasury {
         if (amount == 0) revert BiggiErrorsLib.AmountZero();
-        if (totalReceived + amount > CAP) revert BiggiErrorsLib.CapExceeded();
 
         BIGGI.safeTransferFrom(msg.sender, address(this), amount);
 

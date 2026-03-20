@@ -1,0 +1,148 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "MockTicketHubProgress",
+  "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/mocks/MockTicketHubProgress.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "marketingCap",
+      "outputs": [
+        {
+          "internalType": "uint16",
+          "name": "",
+          "type": "uint16"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "marketingMinted",
+      "outputs": [
+        {
+          "internalType": "uint16",
+          "name": "",
+          "type": "uint16"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "saleCap",
+      "outputs": [
+        {
+          "internalType": "uint16",
+          "name": "",
+          "type": "uint16"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "saleMinted",
+      "outputs": [
+        {
+          "internalType": "uint16",
+          "name": "",
+          "type": "uint16"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint16",
+          "name": "saleCap_",
+          "type": "uint16"
+        },
+        {
+          "internalType": "uint16",
+          "name": "marketingCap_",
+          "type": "uint16"
+        },
+        {
+          "internalType": "uint16",
+          "name": "totalCap_",
+          "type": "uint16"
+        }
+      ],
+      "name": "setCaps",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint16",
+          "name": "saleMinted_",
+          "type": "uint16"
+        },
+        {
+          "internalType": "uint16",
+          "name": "marketingMinted_",
+          "type": "uint16"
+        },
+        {
+          "internalType": "uint16",
+          "name": "totalMinted_",
+          "type": "uint16"
+        }
+      ],
+      "name": "setProgress",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalCap",
+      "outputs": [
+        {
+          "internalType": "uint16",
+          "name": "",
+          "type": "uint16"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalMinted",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalMintedValue",
+      "outputs": [
+        {
+          "internalType": "uint16",
+          "name": "",
+          "type": "uint16"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x608080604052346100165761028d908161001c8239f35b600080fdfe60806040818152600436101561001457600080fd5b600091823560e01c908163078fd9ea146101ff5750806316450092146101dd578063303bacb714610171578063389298e31461014e578063a2309ff81461014e578063a480b2cf1461012b578063b6877809146100cb578063de00772f146100ab5763e608d3e51461008557600080fd5b346100a757816003193601126100a75761ffff6020925460301c169051908152f35b5080fd5b50346100a757816003193601126100a75761ffff60209254169051908152f35b8234610128576060366003190112610128576100e561021f565b6100ed610235565b63ffff00006100fa610246565b61ffff8554918160501b9060501b169416906bffff000000000000ffffffff1916179160101b161717815580f35b80fd5b50346100a757816003193601126100a75761ffff6020925460101c169051908152f35b50346100a757816003193601126100a75761ffff6020925460501c169051908152f35b50346100a75760603660031901126100a75761018b61021f565b9067ffff00000000000061019d610235565b9165ffff0000000069ffff00000000000000006101b8610246565b8754931b169460201b169069ffffffffffff000000001916179160301b161717815580f35b50346100a757816003193601126100a75761ffff60209254821c169051908152f35b8390346100a757816003193601126100a75761ffff60209254831c168152f35b6004359061ffff8216820361023057565b600080fd5b6024359061ffff8216820361023057565b6044359061ffff821682036102305756fea26469706673582212203600d39fc734fac0647a0a663d2d0c2223522e12f1e466950110d42d62c0407f64736f6c63430008180033",
+  "deployedBytecode": "0x60806040818152600436101561001457600080fd5b600091823560e01c908163078fd9ea146101ff5750806316450092146101dd578063303bacb714610171578063389298e31461014e578063a2309ff81461014e578063a480b2cf1461012b578063b6877809146100cb578063de00772f146100ab5763e608d3e51461008557600080fd5b346100a757816003193601126100a75761ffff6020925460301c169051908152f35b5080fd5b50346100a757816003193601126100a75761ffff60209254169051908152f35b8234610128576060366003190112610128576100e561021f565b6100ed610235565b63ffff00006100fa610246565b61ffff8554918160501b9060501b169416906bffff000000000000ffffffff1916179160101b161717815580f35b80fd5b50346100a757816003193601126100a75761ffff6020925460101c169051908152f35b50346100a757816003193601126100a75761ffff6020925460501c169051908152f35b50346100a75760603660031901126100a75761018b61021f565b9067ffff00000000000061019d610235565b9165ffff0000000069ffff00000000000000006101b8610246565b8754931b169460201b169069ffffffffffff000000001916179160301b161717815580f35b50346100a757816003193601126100a75761ffff60209254821c169051908152f35b8390346100a757816003193601126100a75761ffff60209254831c168152f35b6004359061ffff8216820361023057565b600080fd5b6024359061ffff8216820361023057565b6044359061ffff821682036102305756fea26469706673582212203600d39fc734fac0647a0a663d2d0c2223522e12f1e466950110d42d62c0407f64736f6c63430008180033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

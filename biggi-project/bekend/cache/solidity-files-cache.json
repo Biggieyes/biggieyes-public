@@ -1,8 +1,8 @@
 {
   "_format": "hh-sol-cache-2",
   "files": {
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiBuyBackAgent.sol": {
-      "lastModificationDate": 1768536409226,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiBuyBackAgent.sol": {
+      "lastModificationDate": 1772749722137,
       "contentHash": "52b992f52bf1995efadb685e10024841",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiBuyBackAgent.sol",
       "solcConfig": {
@@ -47,8 +47,44 @@
         "IUniswapV2Router02"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiSwapLib.sol": {
-      "lastModificationDate": 1768519229173,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiErrorsLib.sol": {
+      "lastModificationDate": 1772749722183,
+      "contentHash": "44cf62c9286fb30eede1ff8d8b658f25",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiErrorsLib.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiErrorsLib"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiSwapLib.sol": {
+      "lastModificationDate": 1772749722228,
       "contentHash": "cc58b4053aed960c66a9d7ac4080d020",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiSwapLib.sol",
       "solcConfig": {
@@ -84,44 +120,8 @@
         "IUniswapV2Router02Biggi"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiErrorsLib.sol": {
-      "lastModificationDate": 1768519229169,
-      "contentHash": "44cf62c9286fb30eede1ff8d8b658f25",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiErrorsLib.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiErrorsLib"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\ReentrancyGuard.sol": {
-      "lastModificationDate": 1768536338006,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\ReentrancyGuard.sol": {
+      "lastModificationDate": 1772749725408,
       "contentHash": "190613e556d509d9e9a0ea43dc5d891d",
       "sourceName": "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
       "solcConfig": {
@@ -156,8 +156,8 @@
         "ReentrancyGuard"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\access\\Ownable.sol": {
-      "lastModificationDate": 1768536337991,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\access\\Ownable.sol": {
+      "lastModificationDate": 1772749725177,
       "contentHash": "d3c790edc9ccf808a17c5a6cd13614fd",
       "sourceName": "@openzeppelin/contracts/access/Ownable.sol",
       "solcConfig": {
@@ -194,8 +194,8 @@
         "Ownable"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\IERC20.sol": {
-      "lastModificationDate": 1768536337839,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\IERC20.sol": {
+      "lastModificationDate": 1772749725377,
       "contentHash": "8f19f64d2adadf448840908bbaf431c8",
       "sourceName": "@openzeppelin/contracts/token/ERC20/IERC20.sol",
       "solcConfig": {
@@ -230,8 +230,8 @@
         "IERC20"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\Context.sol": {
-      "lastModificationDate": 1768536337543,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\Context.sol": {
+      "lastModificationDate": 1772749725395,
       "contentHash": "67bfbc07588eb8683b3fd8f6f909563e",
       "sourceName": "@openzeppelin/contracts/utils/Context.sol",
       "solcConfig": {
@@ -266,8 +266,8 @@
         "Context"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\interfaces\\IERC20.sol": {
-      "lastModificationDate": 1768536337839,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\interfaces\\IERC20.sol": {
+      "lastModificationDate": 1772749725326,
       "contentHash": "79af12d64eacc7d77b9ee2ac4b4d51ee",
       "sourceName": "@openzeppelin/contracts/interfaces/IERC20.sol",
       "solcConfig": {
@@ -302,8 +302,8 @@
       ],
       "artifacts": []
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\interfaces\\IERC1363.sol": {
-      "lastModificationDate": 1768536337831,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\interfaces\\IERC1363.sol": {
+      "lastModificationDate": 1772749725323,
       "contentHash": "6b7c5ee7a59c981072a804c99ab0fac9",
       "sourceName": "@openzeppelin/contracts/interfaces/IERC1363.sol",
       "solcConfig": {
@@ -341,8 +341,8 @@
         "IERC1363"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\interfaces\\IERC165.sol": {
-      "lastModificationDate": 1768536337834,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\interfaces\\IERC165.sol": {
+      "lastModificationDate": 1772749725325,
       "contentHash": "f808b485ee0cdc6768ee8385ae5f9a2a",
       "sourceName": "@openzeppelin/contracts/interfaces/IERC165.sol",
       "solcConfig": {
@@ -377,8 +377,8 @@
       ],
       "artifacts": []
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\introspection\\IERC165.sol": {
-      "lastModificationDate": 1768536337839,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\introspection\\IERC165.sol": {
+      "lastModificationDate": 1772749725402,
       "contentHash": "bf0119eb2a570f219729ff38b6cd1df8",
       "sourceName": "@openzeppelin/contracts/utils/introspection/IERC165.sol",
       "solcConfig": {
@@ -413,8 +413,8 @@
         "IERC165"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\introspection\\ERC165.sol": {
-      "lastModificationDate": 1768536337672,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\introspection\\ERC165.sol": {
+      "lastModificationDate": 1772749725402,
       "contentHash": "7c03c1e37c3dc24eafb76dc2b8a5c3a6",
       "sourceName": "@openzeppelin/contracts/utils/introspection/ERC165.sol",
       "solcConfig": {
@@ -451,8 +451,8 @@
         "ERC165"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\ERC721.sol": {
-      "lastModificationDate": 1768536337722,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\ERC721.sol": {
+      "lastModificationDate": 1772749725380,
       "contentHash": "a7951c81f7037d558c6d2f220b0cb38e",
       "sourceName": "@openzeppelin/contracts/token/ERC721/ERC721.sol",
       "solcConfig": {
@@ -495,8 +495,8 @@
         "ERC721"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\IERC721.sol": {
-      "lastModificationDate": 1768536337872,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\IERC721.sol": {
+      "lastModificationDate": 1772749725386,
       "contentHash": "1fdc621cd6747e8985e11fc76ce74511",
       "sourceName": "@openzeppelin/contracts/token/ERC721/IERC721.sol",
       "solcConfig": {
@@ -533,8 +533,8 @@
         "IERC721"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\Strings.sol": {
-      "lastModificationDate": 1768536338039,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\Strings.sol": {
+      "lastModificationDate": 1772749725410,
       "contentHash": "f4cc092958a3ddec1f4ed4103bfc54dd",
       "sourceName": "@openzeppelin/contracts/utils/Strings.sol",
       "solcConfig": {
@@ -572,8 +572,46 @@
         "Strings"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\interfaces\\draft-IERC6093.sol": {
-      "lastModificationDate": 1768536337570,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\extensions\\IERC721Metadata.sol": {
+      "lastModificationDate": 1772749725385,
+      "contentHash": "12c206f185cb951213799561fdcaa40d",
+      "sourceName": "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../IERC721.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "IERC721Metadata"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\interfaces\\draft-IERC6093.sol": {
+      "lastModificationDate": 1772749725318,
       "contentHash": "267d92fe4de67b1bdb3302c08f387dbf",
       "sourceName": "@openzeppelin/contracts/interfaces/draft-IERC6093.sol",
       "solcConfig": {
@@ -610,8 +648,8 @@
         "IERC721Errors"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\utils\\ERC721Utils.sol": {
-      "lastModificationDate": 1768536337739,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\utils\\ERC721Utils.sol": {
+      "lastModificationDate": 1772749725388,
       "contentHash": "f4b67273e290784d0e155f004ae52f0b",
       "sourceName": "@openzeppelin/contracts/token/ERC721/utils/ERC721Utils.sol",
       "solcConfig": {
@@ -649,84 +687,8 @@
         "ERC721Utils"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\extensions\\IERC721Metadata.sol": {
-      "lastModificationDate": 1768536337939,
-      "contentHash": "12c206f185cb951213799561fdcaa40d",
-      "sourceName": "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "../IERC721.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "IERC721Metadata"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\math\\SignedMath.sol": {
-      "lastModificationDate": 1768536338039,
-      "contentHash": "ae3528afb8bdb0a7dcfba5b115ee8074",
-      "sourceName": "@openzeppelin/contracts/utils/math/SignedMath.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "./SafeCast.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "SignedMath"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\math\\Math.sol": {
-      "lastModificationDate": 1768536337972,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\math\\Math.sol": {
+      "lastModificationDate": 1772749725403,
       "contentHash": "2b2665ae9bdb1af440658741a77fe213",
       "sourceName": "@openzeppelin/contracts/utils/math/Math.sol",
       "solcConfig": {
@@ -764,10 +726,10 @@
         "Math"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\math\\SafeCast.sol": {
-      "lastModificationDate": 1768536338024,
-      "contentHash": "2adca1150f58fc6f3d1f0a0f22ee7cca",
-      "sourceName": "@openzeppelin/contracts/utils/math/SafeCast.sol",
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\math\\SignedMath.sol": {
+      "lastModificationDate": 1772749725405,
+      "contentHash": "ae3528afb8bdb0a7dcfba5b115ee8074",
+      "sourceName": "@openzeppelin/contracts/utils/math/SignedMath.sol",
       "solcConfig": {
         "version": "0.8.24",
         "settings": {
@@ -792,16 +754,18 @@
           }
         }
       },
-      "imports": [],
+      "imports": [
+        "./SafeCast.sol"
+      ],
       "versionPragmas": [
         "^0.8.20"
       ],
       "artifacts": [
-        "SafeCast"
+        "SignedMath"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\Panic.sol": {
-      "lastModificationDate": 1768536337991,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\Panic.sol": {
+      "lastModificationDate": 1772749725407,
       "contentHash": "2133dc13536b4a6a98131e431fac59e1",
       "sourceName": "@openzeppelin/contracts/utils/Panic.sol",
       "solcConfig": {
@@ -836,8 +800,44 @@
         "Panic"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\IERC721Receiver.sol": {
-      "lastModificationDate": 1768536337939,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\math\\SafeCast.sol": {
+      "lastModificationDate": 1772749725404,
+      "contentHash": "2adca1150f58fc6f3d1f0a0f22ee7cca",
+      "sourceName": "@openzeppelin/contracts/utils/math/SafeCast.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "SafeCast"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\IERC721Receiver.sol": {
+      "lastModificationDate": 1772749725386,
       "contentHash": "729ce0904eb533489ffcc3bfe91237d4",
       "sourceName": "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol",
       "solcConfig": {
@@ -872,281 +872,8 @@
         "IERC721Receiver"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiTokenRewards.sol": {
-      "lastModificationDate": 1768536417125,
-      "contentHash": "59669d2e190eb931e9ba967c4b57e8c1",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiTokenRewards.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
-        "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol",
-        "@openzeppelin/contracts/token/ERC721/IERC721.sol",
-        "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol",
-        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
-        "@openzeppelin/contracts/access/Ownable.sol",
-        "@openzeppelin/contracts/utils/Pausable.sol",
-        "./BiggiCapsLib.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiTokenRewards",
-        "IBiggiMainNFT",
-        "IBiggiToken"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiCapsLib.sol": {
-      "lastModificationDate": 1768519229169,
-      "contentHash": "de0bf4ddbbab619cc385f5200b717cee",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiCapsLib.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiCapsLib"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\Pausable.sol": {
-      "lastModificationDate": 1768536337991,
-      "contentHash": "24e52f6ef3868e6fca664a423140bee9",
-      "sourceName": "@openzeppelin/contracts/utils/Pausable.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "../utils/Context.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "Pausable"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\utils\\SafeERC20.sol": {
-      "lastModificationDate": 1768536338024,
-      "contentHash": "effe88dd27f56305c4513f7aa9970ec9",
-      "sourceName": "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "../IERC20.sol",
-        "../../../interfaces/IERC1363.sol",
-        "../../../utils/Address.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "SafeERC20"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\extensions\\IERC20Metadata.sol": {
-      "lastModificationDate": 1768536337839,
-      "contentHash": "794db3115001aa372c79326fcfd44b1f",
-      "sourceName": "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "../IERC20.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "IERC20Metadata"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\Address.sol": {
-      "lastModificationDate": 1768536337518,
-      "contentHash": "553fc9ae17d9c00fd1c301b760781e26",
-      "sourceName": "@openzeppelin/contracts/utils/Address.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "./Errors.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "Address"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\Errors.sol": {
-      "lastModificationDate": 1768536337750,
-      "contentHash": "6b5eac2b85500c3012977849cfd633d8",
-      "sourceName": "@openzeppelin/contracts/utils/Errors.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "Errors"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\ERC20.sol": {
-      "lastModificationDate": 1768536337688,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\ERC20.sol": {
+      "lastModificationDate": 1772749725367,
       "contentHash": "38910c3dfa5e3778fac8888b1d714084",
       "sourceName": "@openzeppelin/contracts/token/ERC20/ERC20.sol",
       "solcConfig": {
@@ -1186,8 +913,46 @@
         "ERC20"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\extensions\\ERC20Permit.sol": {
-      "lastModificationDate": 1768536337706,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\extensions\\IERC20Metadata.sol": {
+      "lastModificationDate": 1772749725375,
+      "contentHash": "794db3115001aa372c79326fcfd44b1f",
+      "sourceName": "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../IERC20.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "IERC20Metadata"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\extensions\\ERC20Permit.sol": {
+      "lastModificationDate": 1772749725374,
       "contentHash": "b1a8fc63b83ce00408e0c9ed1230b717",
       "sourceName": "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol",
       "solcConfig": {
@@ -1228,8 +993,8 @@
         "ERC20Permit"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\Nonces.sol": {
-      "lastModificationDate": 1768536337988,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\Nonces.sol": {
+      "lastModificationDate": 1772749725406,
       "contentHash": "c32d108058718efb9061b88e83a83f79",
       "sourceName": "@openzeppelin/contracts/utils/Nonces.sol",
       "solcConfig": {
@@ -1264,8 +1029,44 @@
         "Nonces"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\cryptography\\EIP712.sol": {
-      "lastModificationDate": 1768536337623,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\cryptography\\ECDSA.sol": {
+      "lastModificationDate": 1772749725396,
+      "contentHash": "81de029d56aa803972be03c5d277cb6c",
+      "sourceName": "@openzeppelin/contracts/utils/cryptography/ECDSA.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "ECDSA"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\cryptography\\EIP712.sol": {
+      "lastModificationDate": 1772749725397,
       "contentHash": "8dbb261c55f358342798c4d1803d4f8e",
       "sourceName": "@openzeppelin/contracts/utils/cryptography/EIP712.sol",
       "solcConfig": {
@@ -1304,44 +1105,8 @@
         "EIP712"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\cryptography\\ECDSA.sol": {
-      "lastModificationDate": 1768536337614,
-      "contentHash": "81de029d56aa803972be03c5d277cb6c",
-      "sourceName": "@openzeppelin/contracts/utils/cryptography/ECDSA.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "ECDSA"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\extensions\\IERC20Permit.sol": {
-      "lastModificationDate": 1768536337854,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\extensions\\IERC20Permit.sol": {
+      "lastModificationDate": 1772749725376,
       "contentHash": "94ec15baf0d5df863f45b8f351937ec7",
       "sourceName": "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol",
       "solcConfig": {
@@ -1376,8 +1141,44 @@
         "IERC20Permit"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\ShortStrings.sol": {
-      "lastModificationDate": 1768536338024,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\interfaces\\IERC5267.sol": {
+      "lastModificationDate": 1772749725330,
+      "contentHash": "94364524cb1a39dcbc3d3afff6d8e53e",
+      "sourceName": "@openzeppelin/contracts/interfaces/IERC5267.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "IERC5267"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\ShortStrings.sol": {
+      "lastModificationDate": 1772749725409,
       "contentHash": "94e7feaf138d08fb736e43ca0be9bf26",
       "sourceName": "@openzeppelin/contracts/utils/ShortStrings.sol",
       "solcConfig": {
@@ -1414,44 +1215,8 @@
         "ShortStrings"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\interfaces\\IERC5267.sol": {
-      "lastModificationDate": 1768536337871,
-      "contentHash": "94364524cb1a39dcbc3d3afff6d8e53e",
-      "sourceName": "@openzeppelin/contracts/interfaces/IERC5267.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "IERC5267"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\cryptography\\MessageHashUtils.sol": {
-      "lastModificationDate": 1768536337972,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\cryptography\\MessageHashUtils.sol": {
+      "lastModificationDate": 1772749725399,
       "contentHash": "86fd93657e4e27ff76c38699e9b9fcef",
       "sourceName": "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol",
       "solcConfig": {
@@ -1488,8 +1253,8 @@
         "MessageHashUtils"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\StorageSlot.sol": {
-      "lastModificationDate": 1768536338039,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\StorageSlot.sol": {
+      "lastModificationDate": 1772749725409,
       "contentHash": "e656d64c4ce918f3d13030b91c935134",
       "sourceName": "@openzeppelin/contracts/utils/StorageSlot.sol",
       "solcConfig": {
@@ -1524,8 +1289,8 @@
         "StorageSlot"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiMain2.sol": {
-      "lastModificationDate": 1768536417018,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiMain2.sol": {
+      "lastModificationDate": 1772749722208,
       "contentHash": "fad0da2582c8d60092bd5a96dd75f834",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiMain2.sol",
       "solcConfig": {
@@ -1575,44 +1340,8 @@
         "IBiggiReserve"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Library\\BiggiPriceMathLib.sol": {
-      "lastModificationDate": 1768519229174,
-      "contentHash": "68b900da7284d91fbe82fbefa0ef3e41",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/Library/BiggiPriceMathLib.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiPriceMathLib"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Library\\BiggiIdIndexLib.sol": {
-      "lastModificationDate": 1768519229174,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Library\\BiggiIdIndexLib.sol": {
+      "lastModificationDate": 1772749722252,
       "contentHash": "1d078a93b764563c57def5987419c241",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/Library/BiggiIdIndexLib.sol",
       "solcConfig": {
@@ -1647,8 +1376,44 @@
         "BiggiIdIndexLib"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Library\\BiggiMetaRedeemLib.sol": {
-      "lastModificationDate": 1768519229174,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Library\\BiggiPriceMathLib.sol": {
+      "lastModificationDate": 1772749722256,
+      "contentHash": "68b900da7284d91fbe82fbefa0ef3e41",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/Library/BiggiPriceMathLib.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiPriceMathLib"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Library\\BiggiMetaRedeemLib.sol": {
+      "lastModificationDate": 1772749722253,
       "contentHash": "25ca380f54bfcc408739a8d52de90861",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/Library/BiggiMetaRedeemLib.sol",
       "solcConfig": {
@@ -1683,8 +1448,8 @@
         "BiggiMetaRedeemLib"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Library\\BiggiNamesLib2.sol": {
-      "lastModificationDate": 1768519229174,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Library\\BiggiNamesLib2.sol": {
+      "lastModificationDate": 1772749722254,
       "contentHash": "4df1173e5bb1a6075e3d5b0767282ea4",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/Library/BiggiNamesLib2.sol",
       "solcConfig": {
@@ -1719,8 +1484,160 @@
         "BiggiNamesLib2"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\RouterWrapper.sol": {
-      "lastModificationDate": 1768519229174,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\Pausable.sol": {
+      "lastModificationDate": 1772749725408,
+      "contentHash": "24e52f6ef3868e6fca664a423140bee9",
+      "sourceName": "@openzeppelin/contracts/utils/Pausable.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../utils/Context.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Pausable"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\utils\\SafeERC20.sol": {
+      "lastModificationDate": 1772749725379,
+      "contentHash": "effe88dd27f56305c4513f7aa9970ec9",
+      "sourceName": "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../IERC20.sol",
+        "../../../interfaces/IERC1363.sol",
+        "../../../utils/Address.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "SafeERC20"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\Address.sol": {
+      "lastModificationDate": 1772749725390,
+      "contentHash": "553fc9ae17d9c00fd1c301b760781e26",
+      "sourceName": "@openzeppelin/contracts/utils/Address.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./Errors.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Address"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\Errors.sol": {
+      "lastModificationDate": 1772749725401,
+      "contentHash": "6b5eac2b85500c3012977849cfd633d8",
+      "sourceName": "@openzeppelin/contracts/utils/Errors.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Errors"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\RouterWrapper.sol": {
+      "lastModificationDate": 1772749722259,
       "contentHash": "c3b48b787b8feeeed701ed0c640e7162",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/RouterWrapper.sol",
       "solcConfig": {
@@ -1757,8 +1674,670 @@
         "RouterWrapper"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiMain.sol": {
-      "lastModificationDate": 1768536417082,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\ModeratorCenter.sol": {
+      "lastModificationDate": 1773608687619,
+      "contentHash": "ad6d9cfdd2fd4265d45f8c5997a5b9c0",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/ModeratorCenter.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/utils/Address.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "ModeratorCenter"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\access\\Ownable2Step.sol": {
+      "lastModificationDate": 1772749725177,
+      "contentHash": "4c23c95621f1bdfb8c47bcb3795c53e8",
+      "sourceName": "@openzeppelin/contracts/access/Ownable2Step.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Ownable2Step"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiReserveV4.sol": {
+      "lastModificationDate": 1772749722221,
+      "contentHash": "ee3f953354200968bf6a43049c135a57",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiReserveV4.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable2Step.sol",
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "@openzeppelin/contracts/utils/Pausable.sol",
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol",
+        "./BiggiErrorsLib.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiReserveV4",
+        "IBiggiReserveV4",
+        "ILiquidityManagerTrigger"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\extensions\\ERC20Burnable.sol": {
+      "lastModificationDate": 1772749725370,
+      "contentHash": "273d8d24b06f67207dd5f35c3a0c1086",
+      "sourceName": "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../ERC20.sol",
+        "../../../utils/Context.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "ERC20Burnable"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiToken.sol": {
+      "lastModificationDate": 1772749722228,
+      "contentHash": "688749a0750abf3c1787daceedb97594",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiToken.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/ERC20.sol",
+        "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol",
+        "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol",
+        "@openzeppelin/contracts/utils/Pausable.sol",
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol",
+        "./BiggiCapsLib.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiToken",
+        "IBiggiDripDistributorNotify"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiCapsLib.sol": {
+      "lastModificationDate": 1772749722155,
+      "contentHash": "de0bf4ddbbab619cc385f5200b717cee",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiCapsLib.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiCapsLib"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiTokenRewards.sol": {
+      "lastModificationDate": 1772749722240,
+      "contentHash": "59669d2e190eb931e9ba967c4b57e8c1",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiTokenRewards.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol",
+        "@openzeppelin/contracts/token/ERC721/IERC721.sol",
+        "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol",
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/utils/Pausable.sol",
+        "./BiggiCapsLib.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiTokenRewards",
+        "IBiggiMainNFT",
+        "IBiggiToken"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiTokenRewardsReader.sol": {
+      "lastModificationDate": 1772749722240,
+      "contentHash": "b3e085b25a1074746a5e9d41aa04eed3",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiTokenRewardsReader.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiTokenRewardsReader",
+        "IBiggiTokenRewards"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiTokenomikReader.sol": {
+      "lastModificationDate": 1772749722237,
+      "contentHash": "40eb85ead748bab165718a012e80fb1f",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiTokenomikReader.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiTokenomikReader",
+        "IBiggiDripLMView",
+        "IBuybackAgent",
+        "IDripDistributor",
+        "ILiquidityManager",
+        "ILiquidityVault",
+        "IMultiCollectionDistributor",
+        "IReserveV4",
+        "ITokenRewards",
+        "IUniswapV2Pair",
+        "IUniswapV2Router02"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiNftRewardsReader.sol": {
+      "lastModificationDate": 1772749722215,
+      "contentHash": "41c59951f789e161101639b003287557",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiNftRewardsReader.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiNftRewardsReader",
+        "IBiggiNftRewards"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiNftRewards.sol": {
+      "lastModificationDate": 1772749722213,
+      "contentHash": "ced432ed381ab9f144134e51977616fa",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiNftRewards.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC721/ERC721.sol",
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiNFTRewards",
+        "IBiggiMain",
+        "IRewardVRFRouter"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiMultiCollectionDistributor.sol": {
+      "lastModificationDate": 1772749722209,
+      "contentHash": "102917f6c9721e54c912d0445167136c",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiMultiCollectionDistributor.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/utils/Pausable.sol",
+        "./Library/BiggiBpsLib.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "MultiCollectionDistributor"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Library\\BiggiBpsLib.sol": {
+      "lastModificationDate": 1772749722249,
+      "contentHash": "4f979b254dfd729fa49ef04297ebc909",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/Library/BiggiBpsLib.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiBpsLib"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiTreasury.sol": {
+      "lastModificationDate": 1773031332283,
+      "contentHash": "e0fd770bf23955543ca9b205ad702113",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiTreasury.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol",
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "./Library/BiggiBpsLib.sol",
+        "./BiggiErrorsLib.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiTreasury",
+        "IBiggiDripDistributorDeposit"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiPolicy.sol": {
+      "lastModificationDate": 1772749722218,
+      "contentHash": "dfa9b49a7b97fb86d400c2c608c3ff3e",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiPolicy.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "./BiggiErrorsLib.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiPolicy"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiDripDistributor.sol": {
+      "lastModificationDate": 1773031272977,
+      "contentHash": "1d4044635f53b98d49454113083372c7",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiDripDistributor.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol",
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/utils/Pausable.sol",
+        "./BiggiErrorsLib.sol",
+        "./BiggiCapsLib.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiDripDistributor"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiMain.sol": {
+      "lastModificationDate": 1772749722207,
       "contentHash": "aa39254c7006e8dc4008ba7337495bdb",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiMain.sol",
       "solcConfig": {
@@ -1812,8 +2391,8 @@
         "IBiggiVRFView"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Library\\BiggiNamesLib.sol": {
-      "lastModificationDate": 1768519229174,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Library\\BiggiNamesLib.sol": {
+      "lastModificationDate": 1772749722254,
       "contentHash": "3841ce9bc607001ef4b63cf75061cc45",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/Library/BiggiNamesLib.sol",
       "solcConfig": {
@@ -1848,10 +2427,10 @@
         "BiggiNamesLib"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiReserveV4.sol": {
-      "lastModificationDate": 1770508112131,
-      "contentHash": "0197c9b917e12ab5e3ce9d48b5aa2d78",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiReserveV4.sol",
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiMainReader.sol": {
+      "lastModificationDate": 1772749722208,
+      "contentHash": "6ffc6a57a1d9724751db41c1b359060e",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiMainReader.sol",
       "solcConfig": {
         "version": "0.8.24",
         "settings": {
@@ -1877,792 +2456,18 @@
         }
       },
       "imports": [
-        "@openzeppelin/contracts/access/Ownable2Step.sol",
-        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
-        "@openzeppelin/contracts/utils/Pausable.sol",
-        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
-        "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol",
-        "./BiggiErrorsLib.sol"
+        "./Library/BiggiIdIndexLib.sol"
       ],
       "versionPragmas": [
         "^0.8.24"
       ],
       "artifacts": [
-        "BiggiReserveV4",
-        "IBiggiReserveV4",
-        "ILiquidityManagerTrigger"
+        "BiggiMainReader",
+        "IBiggiMainMinimal"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\access\\Ownable2Step.sol": {
-      "lastModificationDate": 1768536337991,
-      "contentHash": "4c23c95621f1bdfb8c47bcb3795c53e8",
-      "sourceName": "@openzeppelin/contracts/access/Ownable2Step.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "./Ownable.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "Ownable2Step"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\extensions\\ERC20Burnable.sol": {
-      "lastModificationDate": 1768536337689,
-      "contentHash": "273d8d24b06f67207dd5f35c3a0c1086",
-      "sourceName": "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "../ERC20.sol",
-        "../../../utils/Context.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "ERC20Burnable"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiToken.sol": {
-      "lastModificationDate": 1768536417101,
-      "contentHash": "688749a0750abf3c1787daceedb97594",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiToken.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/token/ERC20/ERC20.sol",
-        "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol",
-        "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol",
-        "@openzeppelin/contracts/utils/Pausable.sol",
-        "@openzeppelin/contracts/access/Ownable.sol",
-        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
-        "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol",
-        "./BiggiCapsLib.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiToken",
-        "IBiggiDripDistributorNotify"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiMultiCollectionDistributor.sol": {
-      "lastModificationDate": 1768536416977,
-      "contentHash": "102917f6c9721e54c912d0445167136c",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiMultiCollectionDistributor.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
-        "@openzeppelin/contracts/access/Ownable.sol",
-        "@openzeppelin/contracts/utils/Pausable.sol",
-        "./Library/BiggiBpsLib.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "MultiCollectionDistributor"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Library\\BiggiBpsLib.sol": {
-      "lastModificationDate": 1768530240742,
-      "contentHash": "b57649f54fbb9f3dedb10358ef1d9bff",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/Library/BiggiBpsLib.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiBpsLib"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiTreasury.sol": {
-      "lastModificationDate": 1768536400143,
-      "contentHash": "32d6347510658e94f35fea82964c84ab",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiTreasury.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
-        "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol",
-        "@openzeppelin/contracts/access/Ownable.sol",
-        "./Library/BiggiBpsLib.sol",
-        "./BiggiErrorsLib.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiTreasury"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiPolicy.sol": {
-      "lastModificationDate": 1768536400083,
-      "contentHash": "dfa9b49a7b97fb86d400c2c608c3ff3e",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiPolicy.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/access/Ownable.sol",
-        "./BiggiErrorsLib.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiPolicy"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiDripDistributor.sol": {
-      "lastModificationDate": 1768536416857,
-      "contentHash": "0f4da9250fa4070d192d6a08269131e5",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiDripDistributor.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
-        "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol",
-        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
-        "@openzeppelin/contracts/access/Ownable.sol",
-        "@openzeppelin/contracts/utils/Pausable.sol",
-        "./BiggiErrorsLib.sol",
-        "./BiggiCapsLib.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiDripDistributor"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiLiquidityOrchestrator.sol": {
-      "lastModificationDate": 1768536416949,
-      "contentHash": "6ac1c77d3e16dadc11a844551857f0c9",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiLiquidityOrchestrator.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/access/Ownable2Step.sol",
-        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
-        "@openzeppelin/contracts/utils/Pausable.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiLiquidityOrchestrator",
-        "IBiggiLiquidityManagerOrch",
-        "IBiggiReserveOrch",
-        "ILiquidityVaultOrch"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiLiquidityKeeperProxy.sol": {
-      "lastModificationDate": 1768536416919,
-      "contentHash": "7ea5b4ac1f0a46609d3edacc1faa4882",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiLiquidityKeeperProxy.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/access/Ownable2Step.sol",
-        "@openzeppelin/contracts/access/Ownable.sol",
-        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
-        "@openzeppelin/contracts/utils/Pausable.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiLiquidityKeeperProxy",
-        "ILiquidityOrchestrator",
-        "IReserveForKeeper"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiDripKeeperProxy.sol": {
-      "lastModificationDate": 1768536416874,
-      "contentHash": "1694d0ed63c552cfdb055ff444ebb690",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiDripKeeperProxy.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/access/Ownable.sol",
-        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
-        "@openzeppelin/contracts/utils/Pausable.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "DripKeeperProxy"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiCommunityCenter.sol": {
-      "lastModificationDate": 1768536416823,
-      "contentHash": "5e12db45aff7e2d1663474a4d32abab9",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiCommunityCenter.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
-        "@openzeppelin/contracts/utils/Pausable.sol",
-        "@openzeppelin/contracts/utils/Address.sol",
-        "@openzeppelin/contracts/access/Ownable.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiCommunityCenter"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiVrfRouter.sol": {
-      "lastModificationDate": 1768536400154,
-      "contentHash": "a449c4375e305006c6df320dfe3a24cf",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiVrfRouter.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/access/Ownable.sol",
-        "./chainlink/VRFConsumerBaseV2Plus.sol",
-        "./chainlink/VRFCoordinatorV2PlusInterface.sol",
-        "./chainlink/VRFV2PlusClient.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiVRFRouter",
-        "IBiggiEyesMainCallback"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\chainlink\\VRFConsumerBaseV2Plus.sol": {
-      "lastModificationDate": 1768008013721,
-      "contentHash": "b028365cf3de8a59444b0aa53d78cbbb",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/chainlink/VRFConsumerBaseV2Plus.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "./VRFCoordinatorV2PlusInterface.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "VRFConsumerBaseV2Plus"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\chainlink\\VRFCoordinatorV2PlusInterface.sol": {
-      "lastModificationDate": 1768535690696,
-      "contentHash": "fa6b2c4f0548e26eff1058ca90b7cdfa",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/chainlink/VRFCoordinatorV2PlusInterface.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "./VRFV2PlusClient.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "VRFCoordinatorV2PlusInterface"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\chainlink\\VRFV2PlusClient.sol": {
-      "lastModificationDate": 1768008013721,
-      "contentHash": "3787dcd98289aac71390ccf914424994",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/chainlink/VRFV2PlusClient.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "VRFV2PlusClient"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiUpKeeperProxy.sol": {
-      "lastModificationDate": 1768536400163,
-      "contentHash": "aa0633a9e33431bde991101d2df5283b",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiUpKeeperProxy.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/access/Ownable.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "AutomationCompatibleInterface",
-        "BiggiBuybackUpkeepProxy",
-        "IBiggiBuybackAgent",
-        "IBiggiPolicy"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiNftRewards.sol": {
-      "lastModificationDate": 1768536409439,
-      "contentHash": "ced432ed381ab9f144134e51977616fa",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiNftRewards.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/token/ERC721/ERC721.sol",
-        "@openzeppelin/contracts/access/Ownable.sol",
-        "@openzeppelin/contracts/utils/ReentrancyGuard.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiNFTRewards",
-        "IBiggiMain",
-        "IRewardVRFRouter"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiLpPriceFeed.sol": {
-      "lastModificationDate": 1768536400000,
-      "contentHash": "9e5caa423a4cf8762cf1ed2e3bbbf6b5",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiLpPriceFeed.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/access/Ownable.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiLpPriceFeed",
-        "IUniswapV2PairLike"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiLiquidityVault.sol": {
-      "lastModificationDate": 1768536409565,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiLiquidityVault.sol": {
+      "lastModificationDate": 1772749722205,
       "contentHash": "3763e82c74c042f8e9b8ae1cc326b5b1",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiLiquidityVault.sol",
       "solcConfig": {
@@ -2703,8 +2508,8 @@
         "LiquidityVault"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiLiquiditySetup.sol": {
-      "lastModificationDate": 1768536409386,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiLiquiditySetup.sol": {
+      "lastModificationDate": 1772749722196,
       "contentHash": "566fb111e9b0552fbb9a18fdb075ef68",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiLiquiditySetup.sol",
       "solcConfig": {
@@ -2750,9 +2555,52 @@
         "LiquiditySetup"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiLiquidityManager.sol": {
-      "lastModificationDate": 1768536409375,
-      "contentHash": "c83a7115946f07b890ccfd25f4000c17",
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiLiquidityOrchestrator.sol": {
+      "lastModificationDate": 1772749722196,
+      "contentHash": "6ac1c77d3e16dadc11a844551857f0c9",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiLiquidityOrchestrator.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable2Step.sol",
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "@openzeppelin/contracts/utils/Pausable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiLiquidityOrchestrator",
+        "IBiggiLiquidityManagerOrch",
+        "IBiggiReserveOrch",
+        "ILiquidityVaultOrch"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiLiquidityManager.sol": {
+      "lastModificationDate": 1773026207552,
+      "contentHash": "1933148b750470f0dd4504958d5ee025",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiLiquidityManager.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -2792,11 +2640,55 @@
         "ILiquidityVault",
         "IReserveV4",
         "IUniswapV2Factory",
+        "IUniswapV2Pair",
         "IUniswapV2Router02"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiLiquidityAutomation.sol": {
-      "lastModificationDate": 1768536409318,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiLiquidityKeeperProxy.sol": {
+      "lastModificationDate": 1772749722192,
+      "contentHash": "7ea5b4ac1f0a46609d3edacc1faa4882",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiLiquidityKeeperProxy.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable2Step.sol",
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "@openzeppelin/contracts/utils/Pausable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiLiquidityKeeperProxy",
+        "ILiquidityOrchestrator",
+        "IReserveForKeeper"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiLiquidityAutomation.sol": {
+      "lastModificationDate": 1772749722188,
       "contentHash": "5cc8c687f9ad8baf6b7e7a25b0903ad7",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiLiquidityAutomation.sol",
       "solcConfig": {
@@ -2838,8 +2730,8 @@
         "LiquidityAutomation"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiDripLMToModerator.sol": {
-      "lastModificationDate": 1768536409303,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiDripLMToModerator.sol": {
+      "lastModificationDate": 1772749722176,
       "contentHash": "41fda7f48d4f14f979c920257e7e7833",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiDripLMToModerator.sol",
       "solcConfig": {
@@ -2885,8 +2777,8 @@
         "IUniswapV2Router02"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Library\\BiggiErrorsLib.sol": {
-      "lastModificationDate": 1768519229174,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Library\\BiggiErrorsLib.sol": {
+      "lastModificationDate": 1772749722251,
       "contentHash": "44cf62c9286fb30eede1ff8d8b658f25",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/Library/BiggiErrorsLib.sol",
       "solcConfig": {
@@ -2921,8 +2813,8 @@
         "BiggiErrorsLib"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Library\\BiggiSwapLib.sol": {
-      "lastModificationDate": 1768519229174,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Library\\BiggiSwapLib.sol": {
+      "lastModificationDate": 1772749722257,
       "contentHash": "cc58b4053aed960c66a9d7ac4080d020",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/Library/BiggiSwapLib.sol",
       "solcConfig": {
@@ -2958,8 +2850,89 @@
         "IUniswapV2Router02Biggi"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiCollectionRewards.sol": {
-      "lastModificationDate": 1768536409230,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiDripKeeperProxy.sol": {
+      "lastModificationDate": 1772749722176,
+      "contentHash": "1694d0ed63c552cfdb055ff444ebb690",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiDripKeeperProxy.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "@openzeppelin/contracts/utils/Pausable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "DripKeeperProxy"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiCommunityCenter.sol": {
+      "lastModificationDate": 1772749722172,
+      "contentHash": "5e12db45aff7e2d1663474a4d32abab9",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiCommunityCenter.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "@openzeppelin/contracts/utils/Pausable.sol",
+        "@openzeppelin/contracts/utils/Address.sol",
+        "@openzeppelin/contracts/access/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiCommunityCenter"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiCollectionRewards.sol": {
+      "lastModificationDate": 1772749722155,
       "contentHash": "346e3c424bf4a84fd2352c442f529cb6",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiCollectionRewards.sol",
       "solcConfig": {
@@ -2997,10 +2970,10 @@
         "IBiggiEyesMainView"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiTokenomikReader.sol": {
-      "lastModificationDate": 1768535425331,
-      "contentHash": "ad8f719e556a61decd4c7fa658e033e9",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiTokenomikReader.sol",
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiVrfRouter.sol": {
+      "lastModificationDate": 1772749722242,
+      "contentHash": "a449c4375e305006c6df320dfe3a24cf",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiVrfRouter.sol",
       "solcConfig": {
         "version": "0.8.24",
         "settings": {
@@ -3026,28 +2999,293 @@
         }
       },
       "imports": [
-        "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol"
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "./chainlink/VRFConsumerBaseV2Plus.sol",
+        "./chainlink/VRFCoordinatorV2PlusInterface.sol",
+        "./chainlink/VRFV2PlusClient.sol"
       ],
       "versionPragmas": [
         "^0.8.24"
       ],
       "artifacts": [
-        "BiggiTokenomikReader",
-        "IBiggiDripLMView",
-        "IBuybackAgent",
-        "IDripDistributor",
-        "ILiquidityManager",
-        "ILiquidityVault",
-        "IMultiCollectionDistributor",
-        "IReserveV4",
-        "ITokenRewards",
-        "IUniswapV2Pair",
-        "IUniswapV2Router02"
+        "BiggiVRFRouter",
+        "IBiggiEyesMainCallback"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiBuybackReader.sol": {
-      "lastModificationDate": 1768522321315,
-      "contentHash": "55bcd9122f364555eb531c2662381aa6",
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\chainlink\\VRFConsumerBaseV2Plus.sol": {
+      "lastModificationDate": 1772749722246,
+      "contentHash": "8608aa587fc723e1552069e9e569e6ca",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/chainlink/VRFConsumerBaseV2Plus.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./VRFCoordinatorV2PlusInterface.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "VRFConsumerBaseV2Plus"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\chainlink\\VRFV2PlusClient.sol": {
+      "lastModificationDate": 1772749722246,
+      "contentHash": "ed77131399e68e4ffaeac386dc025a31",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/chainlink/VRFV2PlusClient.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "VRFV2PlusClient"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\chainlink\\VRFCoordinatorV2PlusInterface.sol": {
+      "lastModificationDate": 1772749722246,
+      "contentHash": "07cfb9cecebd9235246704dbd8505964",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/chainlink/VRFCoordinatorV2PlusInterface.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./VRFV2PlusClient.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "VRFCoordinatorV2PlusInterface"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiUpKeeperProxy.sol": {
+      "lastModificationDate": 1772749722242,
+      "contentHash": "aa0633a9e33431bde991101d2df5283b",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiUpKeeperProxy.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "AutomationCompatibleInterface",
+        "BiggiBuybackUpkeepProxy",
+        "IBiggiBuybackAgent",
+        "IBiggiPolicy"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiMasterTokenomicsConfig.sol": {
+      "lastModificationDate": 1772749722209,
+      "contentHash": "0247a49e09c5239f1e9de891f2c8c692",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiMasterTokenomicsConfig.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiMasterTokenomicsConfig"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiLpPriceFeed.sol": {
+      "lastModificationDate": 1772749722206,
+      "contentHash": "9e5caa423a4cf8762cf1ed2e3bbbf6b5",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiLpPriceFeed.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiLpPriceFeed",
+        "IUniswapV2PairLike"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiBuybackDripSetup.sol": {
+      "lastModificationDate": 1772749722137,
+      "contentHash": "a16f45381ee1534eaa55d4b7006ed193",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiBuybackDripSetup.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiBuybackDripSetup",
+        "IBiggiBuybackAgent",
+        "IBiggiDripLiquidityManager",
+        "IDripDistributor"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiBuybackReader.sol": {
+      "lastModificationDate": 1773138475056,
+      "contentHash": "f427af3867a3ad70bbce181e914e7347",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiBuybackReader.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -3085,8 +3323,8 @@
         "ITreasuryView"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiCompute.sol": {
-      "lastModificationDate": 1768519229169,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiCompute.sol": {
+      "lastModificationDate": 1772749722174,
       "contentHash": "ba6eb0cd3087a6bd1050b8e3ed05c700",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiCompute.sol",
       "solcConfig": {
@@ -3121,9 +3359,46 @@
         "BiggiCompute"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiLiquidityBranchUserReader.sol": {
-      "lastModificationDate": 1768521258883,
-      "contentHash": "b78c6bee372b29006048ea30ea357bc7",
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiEyesMainRewardsAdapter.sol": {
+      "lastModificationDate": 1773192516427,
+      "contentHash": "51d27a5a7d241548966e2d6d2038ea4d",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiEyesMainRewardsAdapter.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiEyesMainRewardsAdapter",
+        "IBiggiEyesMainRewardsSource"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiLiquidityBranchUserReader.sol": {
+      "lastModificationDate": 1772749722190,
+      "contentHash": "3b21b56792fece9d018a06833e170019",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiLiquidityBranchUserReader.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -3160,9 +3435,51 @@
         "IVaultUserView"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiMultiCollectionDistributorReader.sol": {
-      "lastModificationDate": 1768530254001,
-      "contentHash": "70403c8c406387e6f9f364804cc92f6f",
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiLiquidityHelperReader.sol": {
+      "lastModificationDate": 1773026277354,
+      "contentHash": "391bcac40e30e4d791ba0c0d0570c7c8",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiLiquidityHelperReader.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiLiquidityHelperReader",
+        "ILiquidityManagerView",
+        "IReserveView",
+        "IUniswapV2FactoryView",
+        "IUniswapV2PairView",
+        "IUniswapV2RouterView",
+        "IVaultView"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiMultiCollectionDistributorReader.sol": {
+      "lastModificationDate": 1772749722210,
+      "contentHash": "9e7e2573773c6f328731957179e64703",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiMultiCollectionDistributorReader.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -3197,8 +3514,83 @@
         "IMultiCollectionDistributorView"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\FactoryWrapper.sol": {
-      "lastModificationDate": 1768519229174,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiMultiCollectionDistributorReaderV2.sol": {
+      "lastModificationDate": 1772749722211,
+      "contentHash": "266fde36bb9b8cb62c5d01e7b15999f6",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiMultiCollectionDistributorReaderV2.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiMultiCollectionDistributorReaderV2",
+        "IMultiCollectionDistributorMinimal"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiReserveTreasuryReader.sol": {
+      "lastModificationDate": 1772749722219,
+      "contentHash": "d11b7a68d324d1f7d623483ac598806b",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiReserveTreasuryReader.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiReserveTreasuryReader",
+        "IReserveSnapshotView",
+        "ITreasurySnapshotView"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\FactoryWrapper.sol": {
+      "lastModificationDate": 1772749722248,
       "contentHash": "31ede7016e085d2386904f2bed38c28d",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/FactoryWrapper.sol",
       "solcConfig": {
@@ -3235,8 +3627,8 @@
         "FactoryWrapper"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiWETH9.sol": {
-      "lastModificationDate": 1768519229173,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiWETH9.sol": {
+      "lastModificationDate": 1772749722244,
       "contentHash": "60866c28ae10bc5444ee295044cc0db4",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiWETH9.sol",
       "solcConfig": {
@@ -3271,8 +3663,8 @@
         "WETH9"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Library\\BiggiCapsLib.sol": {
-      "lastModificationDate": 1768519229174,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Library\\BiggiCapsLib.sol": {
+      "lastModificationDate": 1772749722250,
       "contentHash": "de0bf4ddbbab619cc385f5200b717cee",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/Library/BiggiCapsLib.sol",
       "solcConfig": {
@@ -3307,8 +3699,44 @@
         "BiggiCapsLib"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\UniswapV2Router02.sol": {
-      "lastModificationDate": 1768536400177,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Multicall2.sol": {
+      "lastModificationDate": 1772749722259,
+      "contentHash": "a740091a5c1c98ef3b581963a160e44c",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/Multicall2.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Multicall2"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\UniswapV2Router02.sol": {
+      "lastModificationDate": 1772749722261,
       "contentHash": "d469707f0d0059c2b39ff54ff4ae1c85",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/UniswapV2Router02.sol",
       "solcConfig": {
@@ -3349,8 +3777,8 @@
         "UniswapV2Router02"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiUniswapV2Pair.sol": {
-      "lastModificationDate": 1768519229173,
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiUniswapV2Pair.sol": {
+      "lastModificationDate": 1772749722242,
       "contentHash": "1aa027c62e61b90206ece5bcbcc26b03",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiUniswapV2Pair.sol",
       "solcConfig": {
@@ -3387,9 +3815,9 @@
         "UniswapV2Pair"
       ]
     },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\UniswapV2Factory.sol": {
-      "lastModificationDate": 1768540296409,
-      "contentHash": "4229178c125abf09d1ceda3c4832dc7b",
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\UniswapV2Factory.sol": {
+      "lastModificationDate": 1772749722260,
+      "contentHash": "1b601b761a26351073394f028edac930",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/UniswapV2Factory.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -3424,393 +3852,6 @@
       "artifacts": [
         "IUniswapV2PairInit",
         "UniswapV2Factory"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiMainReader.sol": {
-      "lastModificationDate": 1768684290660,
-      "contentHash": "46490a0687f10097e92faaa1a8ff862e",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiMainReader.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "./Library/BiggiIdIndexLib.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiMainReader",
-        "IBiggiMainMinimal"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiLiquidityHelperReader.sol": {
-      "lastModificationDate": 1768684306201,
-      "contentHash": "0a4b92e450d8c5c191fa2a629a81d723",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiLiquidityHelperReader.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiLiquidityHelperReader",
-        "ILiquidityManagerView",
-        "IReserveView",
-        "IUniswapV2RouterView",
-        "IVaultView"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiMultiCollectionDistributorReaderV2.sol": {
-      "lastModificationDate": 1768684331667,
-      "contentHash": "a91d8b827f08c4ec7b724e0a26b87c66",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiMultiCollectionDistributorReaderV2.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiMultiCollectionDistributorReaderV2",
-        "IMultiCollectionDistributorMinimal"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiReserveTreasuryReader.sol": {
-      "lastModificationDate": 1768684317937,
-      "contentHash": "ff9518e2bf37a3cdcc8b7d29027da0c1",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiReserveTreasuryReader.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiReserveTreasuryReader",
-        "IReserveSnapshotView",
-        "ITreasurySnapshotView"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiMasterTokenomicsConfig.sol": {
-      "lastModificationDate": 1768684595788,
-      "contentHash": "4b97f37bbded656d7d8627f6633ea670",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiMasterTokenomicsConfig.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/access/Ownable.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiMasterTokenomicsConfig"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\ModeratorCenter.sol": {
-      "lastModificationDate": 1769803365083,
-      "contentHash": "fab0bbd71da9795bd2eefdeb89439683",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/ModeratorCenter.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
-        "@openzeppelin/contracts/access/Ownable.sol",
-        "@openzeppelin/contracts/utils/Address.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "ModeratorCenter"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiBuybackDripSetup.sol": {
-      "lastModificationDate": 1769804354876,
-      "contentHash": "61d99738e234a43fbe4f5b4734806775",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiBuybackDripSetup.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/access/Ownable.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiBuybackDripSetup",
-        "IBiggiBuybackAgent",
-        "IBiggiDripLiquidityManager",
-        "IDripDistributor"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiTokenRewardsReader.sol": {
-      "lastModificationDate": 1769820800557,
-      "contentHash": "345704c62acdc74ef497a0d51dadef31",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiTokenRewardsReader.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiTokenRewardsReader",
-        "IBiggiTokenRewards"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\BiggiNftRewardsReader.sol": {
-      "lastModificationDate": 1769821122425,
-      "contentHash": "1a487236ed41e680dae6716cc1519fa9",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiNftRewardsReader.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.24"
-      ],
-      "artifacts": [
-        "BiggiNftRewardsReader",
-        "IBiggiNftRewards"
-      ]
-    },
-    "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET\\Multicall2.sol": {
-      "lastModificationDate": 1769846790803,
-      "contentHash": "d5d0a4a0f504427b43ac6a80e86aba2a",
-      "sourceName": "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/Multicall2.sol",
-      "solcConfig": {
-        "version": "0.8.24",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "Multicall2"
       ]
     }
   }

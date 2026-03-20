@@ -1,0 +1,400 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "BiggiPolicy",
+  "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiPolicy.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "initialOwner",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "AmountZero",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "DailyQuotaExceeded",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnableInvalidOwner",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "OwnableUnauthorizedAccount",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroAddress",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "oldVal",
+          "type": "bool"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "newVal",
+          "type": "bool"
+        }
+      ],
+      "name": "BuybacksPausedSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "dayIndex",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "usedToday",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "added",
+          "type": "uint256"
+        }
+      ],
+      "name": "DailyQuotaConsumed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "oldVal",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "newVal",
+          "type": "uint256"
+        }
+      ],
+      "name": "MaxDailyBuybackNativeSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "oldVal",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "newVal",
+          "type": "uint256"
+        }
+      ],
+      "name": "MinBuybackIntervalSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "oldVal",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "newVal",
+          "type": "uint256"
+        }
+      ],
+      "name": "SwapSlippageBpsSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "oldVal",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "newVal",
+          "type": "uint256"
+        }
+      ],
+      "name": "TxDeadlineSecSet",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "buybacksPaused",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "nativeAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "consumeDailyBuybackQuota",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "dayIndex",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "maxDailyBuybackNative",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "minBuybackInterval",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bool",
+          "name": "paused_",
+          "type": "bool"
+        }
+      ],
+      "name": "setBuybacksPaused",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "newMax",
+          "type": "uint256"
+        }
+      ],
+      "name": "setMaxDailyBuybackNative",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "newInterval",
+          "type": "uint256"
+        }
+      ],
+      "name": "setMinBuybackInterval",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "newBps",
+          "type": "uint256"
+        }
+      ],
+      "name": "setSwapSlippageBps",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "newDeadline",
+          "type": "uint256"
+        }
+      ],
+      "name": "setTxDeadlineSec",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "swapSlippageBps",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "txDeadlineSec",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "usedToday",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x6080346100f2576001600160401b0390601f61079338819003918201601f1916830191848311848410176100f7578084926020946040528339810103126100f257516001600160a01b03808216918290036100f25781156100d9576000548260018060a01b0319821617600055167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0600080a36101f460015561025860025561012c60035560ff196004541660045560006005556201518042041660018060401b03196007541617600755604051610685908161010e8239f35b604051631e4fbdf760e01b815260006004820152602490fd5b600080fd5b634e487b7160e01b600052604160045260246000fdfe60406080815260048036101561001457600080fd5b600091823560e01c80630305d1a81461048b5780631a882e2b1461041e5780632a8faa4a146103ca5780632ae1c8ef146103ab5780633419ae941461038c5780634de7c6941461036d578063715018a6146103135780638da5cb5b146102eb5780639646dec6146102c2578063b3088b68146102a2578063b6d7ba9714610234578063cb2e419f14610215578063cf89ba30146101f2578063ed3bd222146101cc578063f2fde38b1461013f5763fd08f504146100d057600080fd5b3461013b57602036600319011261013b578135916100ec610623565b612710831161012d57507f11ea6be8c2ead6521c15581336666ace55313d79724f18531df19b9ee6a3d451906001548151908152836020820152a160015580f35b90516365e52d5160e11b8152fd5b8280fd5b503461013b57602036600319011261013b576001600160a01b038235818116939192908490036101c857610171610623565b83156101b257505082546001600160a01b0319811683178455167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e08380a380f35b51631e4fbdf760e01b8152908101849052602490fd5b8480fd5b5082346101ef57806003193601126101ef575060ff602092541690519015158152f35b80fd5b8382346102115781600319360112610211576020906002549051908152f35b5080fd5b8382346102115781600319360112610211576020906003549051908152f35b503461013b57602036600319011261013b57813591610251610623565b82158015610296575b61012d57507fc1a7caf117a3bbc4acf9ccca8f918b8aa2e528b5c4a9270b78b7d1df0572ffc8906002548151908152836020820152a160025580f35b5062015180831161025a565b505034610211576020366003190112610211576102bf903561050d565b80f35b83823461021157816003193601126102115760209067ffffffffffffffff600754169051908152f35b838234610211578160031936011261021157905490516001600160a01b039091168152602090f35b83346101ef57806003193601126101ef5761032c610623565b80546001600160a01b03198116825581906001600160a01b03167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e08280a380f35b8382346102115781600319360112610211576020906005549051908152f35b8382346102115781600319360112610211576020906006549051908152f35b8382346102115781600319360112610211576020906001549051908152f35b50903461013b57602036600319011261013b577f989dd2bb6cc294035a307d6270fc64c8fee006076f72b9f78721affc07a22d80903591610409610623565b6005548151908152836020820152a160055580f35b503461013b57602036600319011261013b5781358015158091036104875760ff90610447610623565b7f8b68143ec45bdf97a3ca79a813a996d694c012e266c1fe8966db3c7db32c5932845493805184861615158152836020820152a1169060ff191617905580f35b8380fd5b503461013b57602036600319011261013b578135916104a8610623565b62015180831161012d57507f08340bf83ff7c45c942e53a6aa70b6304acf4dd1b9d234a5a2b12fbbd0491e3a906003548151908152836020820152a160035580f35b919082018092116104f757565b634e487b7160e01b600052601160045260246000fd5b80156106115767ffffffffffffffff908162015180420416809260075490811682036105f6575b50506005549182156105c4576006549261054e83856104ea565b116105b2576105ad610581837f030fc31afcdbc8dbbec4391a5c7943f69380b85b5e58d1f28114bee05930ea61956104ea565b92836006556040519384938460409194939267ffffffffffffffff606083019616825260208201520152565b0390a1565b604051630cd8597960e31b8152600490fd5b7f030fc31afcdbc8dbbec4391a5c7943f69380b85b5e58d1f28114bee05930ea6192506105ad610581836006546104ea565b67ffffffffffffffff19161760075560006006558138610534565b6040516365e52d5160e11b8152600490fd5b6000546001600160a01b0316330361063757565b60405163118cdaa760e01b8152336004820152602490fdfea264697066735822122053730e7fdd2dd2ea4e27920ee5f0628f13e76a3404c1870956ade0a42ff2d45e64736f6c63430008180033",
+  "deployedBytecode": "0x60406080815260048036101561001457600080fd5b600091823560e01c80630305d1a81461048b5780631a882e2b1461041e5780632a8faa4a146103ca5780632ae1c8ef146103ab5780633419ae941461038c5780634de7c6941461036d578063715018a6146103135780638da5cb5b146102eb5780639646dec6146102c2578063b3088b68146102a2578063b6d7ba9714610234578063cb2e419f14610215578063cf89ba30146101f2578063ed3bd222146101cc578063f2fde38b1461013f5763fd08f504146100d057600080fd5b3461013b57602036600319011261013b578135916100ec610623565b612710831161012d57507f11ea6be8c2ead6521c15581336666ace55313d79724f18531df19b9ee6a3d451906001548151908152836020820152a160015580f35b90516365e52d5160e11b8152fd5b8280fd5b503461013b57602036600319011261013b576001600160a01b038235818116939192908490036101c857610171610623565b83156101b257505082546001600160a01b0319811683178455167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e08380a380f35b51631e4fbdf760e01b8152908101849052602490fd5b8480fd5b5082346101ef57806003193601126101ef575060ff602092541690519015158152f35b80fd5b8382346102115781600319360112610211576020906002549051908152f35b5080fd5b8382346102115781600319360112610211576020906003549051908152f35b503461013b57602036600319011261013b57813591610251610623565b82158015610296575b61012d57507fc1a7caf117a3bbc4acf9ccca8f918b8aa2e528b5c4a9270b78b7d1df0572ffc8906002548151908152836020820152a160025580f35b5062015180831161025a565b505034610211576020366003190112610211576102bf903561050d565b80f35b83823461021157816003193601126102115760209067ffffffffffffffff600754169051908152f35b838234610211578160031936011261021157905490516001600160a01b039091168152602090f35b83346101ef57806003193601126101ef5761032c610623565b80546001600160a01b03198116825581906001600160a01b03167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e08280a380f35b8382346102115781600319360112610211576020906005549051908152f35b8382346102115781600319360112610211576020906006549051908152f35b8382346102115781600319360112610211576020906001549051908152f35b50903461013b57602036600319011261013b577f989dd2bb6cc294035a307d6270fc64c8fee006076f72b9f78721affc07a22d80903591610409610623565b6005548151908152836020820152a160055580f35b503461013b57602036600319011261013b5781358015158091036104875760ff90610447610623565b7f8b68143ec45bdf97a3ca79a813a996d694c012e266c1fe8966db3c7db32c5932845493805184861615158152836020820152a1169060ff191617905580f35b8380fd5b503461013b57602036600319011261013b578135916104a8610623565b62015180831161012d57507f08340bf83ff7c45c942e53a6aa70b6304acf4dd1b9d234a5a2b12fbbd0491e3a906003548151908152836020820152a160035580f35b919082018092116104f757565b634e487b7160e01b600052601160045260246000fd5b80156106115767ffffffffffffffff908162015180420416809260075490811682036105f6575b50506005549182156105c4576006549261054e83856104ea565b116105b2576105ad610581837f030fc31afcdbc8dbbec4391a5c7943f69380b85b5e58d1f28114bee05930ea61956104ea565b92836006556040519384938460409194939267ffffffffffffffff606083019616825260208201520152565b0390a1565b604051630cd8597960e31b8152600490fd5b7f030fc31afcdbc8dbbec4391a5c7943f69380b85b5e58d1f28114bee05930ea6192506105ad610581836006546104ea565b67ffffffffffffffff19161760075560006006558138610534565b6040516365e52d5160e11b8152600490fd5b6000546001600160a01b0316330361063757565b60405163118cdaa760e01b8152336004820152602490fdfea264697066735822122053730e7fdd2dd2ea4e27920ee5f0628f13e76a3404c1870956ade0a42ff2d45e64736f6c63430008180033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

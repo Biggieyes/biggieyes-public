@@ -4,7 +4,7 @@
 const { ethers } = require("hardhat");
 
 async function main() {
-  const LM = process.env.LM || "0xd4818d563674560FFDD53dca0C85e665A533885a";
+  const LM = process.env.LM || "0x87f542886FC133C68F1b0ae7737Ecb4f8F647e6C";
   const KEEPER =
     process.env.LIQUIDITY_AUTOMATION ||
     "0x30C23F4DC63212eCeDa7612c9434f5368A5c6071";

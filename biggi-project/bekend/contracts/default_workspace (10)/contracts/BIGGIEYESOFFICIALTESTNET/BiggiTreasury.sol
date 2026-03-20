@@ -7,6 +7,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Library/BiggiBpsLib.sol";
 import "./BiggiErrorsLib.sol";
 
+interface IBiggiDripDistributorDeposit {
+    function depositTokens(uint256 amount) external;
+}
+
 /**
  * BiggiTreasury — final
  * - přijímá BIGGI z BuybackAgent (agent approve -> treasury.buybackDepositAndSplit(amount))
@@ -27,6 +31,7 @@ contract BiggiTreasury is Ownable {
 
     uint256 public totalBiggiReceived;
     uint256 public totalPolReceived;
+    bool public historicalTotalsSeeded;
 
     event DistributorSet(address indexed oldAddr, address indexed newAddr);
     event BuybackAgentSet(address indexed oldAddr, address indexed newAddr);
@@ -35,6 +40,7 @@ contract BiggiTreasury is Ownable {
     event DripDistributorSet(address indexed oldAddr, address indexed newAddr);
     event BuybackReceived(uint256 amount, uint256 toRewards, uint256 toReserve, uint256 toDrip);
     event PolFromDistributor(uint256 amount, uint256 totalReceived);
+    event HistoricalTotalsSeeded(uint256 totalBiggiReceived, uint256 totalPolReceived);
 
     constructor(address biggiToken, address initialOwner) Ownable(initialOwner) {
         if (biggiToken == address(0) || initialOwner == address(0)) {
@@ -69,9 +75,25 @@ contract BiggiTreasury is Ownable {
         dripDistributor = d;
     }
 
+    function seedHistoricalTotals(uint256 biggiReceived_, uint256 polReceived_) external onlyOwner {
+        require(!historicalTotalsSeeded, "already seeded");
+        totalBiggiReceived = biggiReceived_;
+        totalPolReceived = polReceived_;
+        historicalTotalsSeeded = true;
+        emit HistoricalTotalsSeeded(biggiReceived_, polReceived_);
+    }
+
     /* ===== Inflow POL z Distributoru (10% podíl apod.) =====
            Distributor musí volat tuto funkci. POL zůstanou v treasury. */
     function depositPolFromDistributor() external payable {
+        _recordPolFromDistributor();
+    }
+
+    function receiveMintShare() external payable {
+        _recordPolFromDistributor();
+    }
+
+    function _recordPolFromDistributor() internal {
         if (msg.sender != distributor) revert BiggiErrorsLib.NotDistributor();
         if (msg.value == 0) revert BiggiErrorsLib.AmountZero();
         totalPolReceived += msg.value;
@@ -89,6 +111,17 @@ contract BiggiTreasury is Ownable {
         // Pull tokeny z buyback agenta (musí mít allowance)
         BIGGI.safeTransferFrom(msg.sender, address(this), amount);
 
+        _splitBuybackBiggi(amount);
+    }
+
+    function ownerDepositAndSplit(uint256 amount) external onlyOwner {
+        if (amount == 0) revert BiggiErrorsLib.AmountZero();
+        BIGGI.safeTransferFrom(msg.sender, address(this), amount);
+        _splitBuybackBiggi(amount);
+    }
+
+    function _splitBuybackBiggi(uint256 amount) internal {
+
         // účetnictví
         totalBiggiReceived += amount;
 
@@ -105,10 +138,23 @@ contract BiggiTreasury is Ownable {
             BIGGI.safeTransfer(reserveAddr, partReserve);
         }
         if (dripDistributor != address(0) && partDrip > 0) {
-            BIGGI.safeTransfer(dripDistributor, partDrip);
+            _approveToken(dripDistributor, partDrip);
+            IBiggiDripDistributorDeposit(dripDistributor).depositTokens(partDrip);
         }
 
         emit BuybackReceived(amount, partRewards, partReserve, partDrip);
+    }
+
+    function _approveToken(address spender, uint256 amount) internal {
+        (bool ok0, bytes memory d0) = address(BIGGI).call(
+            abi.encodeWithSelector(IERC20.approve.selector, spender, 0)
+        );
+        require(ok0 && (d0.length == 0 || abi.decode(d0, (bool))), "approve0 failed");
+
+        (bool ok1, bytes memory d1) = address(BIGGI).call(
+            abi.encodeWithSelector(IERC20.approve.selector, spender, amount)
+        );
+        require(ok1 && (d1.length == 0 || abi.decode(d1, (bool))), "approve failed");
     }
 
     /* ===== Views pro frontend / audit ===== */

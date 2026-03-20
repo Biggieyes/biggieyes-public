@@ -1,6 +1,6 @@
 // Wire BiggiToken + BiggiTreasury (optionally initialDistribute)
 // Env (required): TOKEN, TREASURY, RESERVE, DRIP_DISTRIBUTOR, TOKEN_REWARDS
-// Env (optional): DISTRIBUTOR, BUYBACK_AGENT, REWARDS_OPERATOR, DO_DISTRIBUTE=1 to call initialDistribute
+// Env (optional): DISTRIBUTOR, BUYBACK_AGENT, REWARDS_OPERATOR, MARKETING_SUPPORT, DO_DISTRIBUTE=1 to call initialDistribute
 // Run: TOKEN=<addr> TREASURY=<addr> RESERVE=<addr> DRIP_DISTRIBUTOR=<addr> TOKEN_REWARDS=<addr> npx hardhat run scripts/setupTokenAndTreasury.js --network <net>
 
 const { ethers } = require("hardhat");
@@ -24,6 +24,7 @@ async function main() {
   const distributorAddr = process.env.DISTRIBUTOR;
   const buybackAddr = process.env.BUYBACK_AGENT;
   const rewardsOp = process.env.REWARDS_OPERATOR;
+  const marketingSupportAddr = process.env.MARKETING_SUPPORT;
   const doDistribute = process.env.DO_DISTRIBUTE === "1";
 
   const token = await ethers.getContractAt("BiggiToken", tokenAddr, signer);
@@ -33,6 +34,9 @@ async function main() {
   await (await token.setReserve(reserveAddr)).wait();
   await (await token.setDripDistributor(dripDistributorAddr)).wait();
   await (await token.setTokenRewards(tokenRewardsAddr)).wait();
+  if (marketingSupportAddr) {
+    await (await token.setMarketingSupport(marketingSupportAddr)).wait();
+  }
   if (rewardsOp) {
     await (await token.setRewardsOperator(rewardsOp)).wait();
   }
