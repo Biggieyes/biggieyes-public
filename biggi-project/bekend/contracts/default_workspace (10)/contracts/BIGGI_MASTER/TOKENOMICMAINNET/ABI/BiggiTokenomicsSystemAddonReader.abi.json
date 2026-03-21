@@ -1,0 +1,119 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "masterConfig_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "token_",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "getStatus",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "masterConfig",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "supplyController",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "supplyGuardian",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "dexReserveGuard",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "tokenPaused",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "guardianMintPaused",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "controllerPaused",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "guardianDexMinted",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "guardianRewardsMinted",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "baselineReserve",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "currentPairReserve",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct BiggiTokenomicsSystemAddonReader.AddonStatus",
+        "name": "s",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "masterConfig",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "token",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
