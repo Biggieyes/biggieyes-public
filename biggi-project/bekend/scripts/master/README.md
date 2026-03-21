@@ -37,6 +37,32 @@ scripts/master/.env.polygon.example
 - `CIRCUIT_BREAKER_ENABLED` (`1` default)
 - `CB_DEX_CRITICAL_FLOOR` (default `500` BIGGI)
 - `CB_REWARDS_CRITICAL_FLOOR` (default `500` BIGGI)
+- supply controller params:
+  - `SUPPLY_DEX_RESERVE_DROP_BPS` (default `5000`)
+  - `SUPPLY_DEX_REFILL_AMOUNT` (default `20000000` BIGGI)
+  - `SUPPLY_DEX_COOLDOWN_SEC` (default `1800`)
+  - `SUPPLY_MIN_RESERVE_FLOOR` (default `0` BIGGI)
+  - `SUPPLY_AUTO_REFRESH_BASELINE` (`1|0`, default `0`)
+  - `SUPPLY_REWARDS_THRESHOLD` (default `5000000` BIGGI)
+  - `SUPPLY_REWARDS_REFILL_AMOUNT` (default `200000000` BIGGI)
+  - `SUPPLY_REWARDS_COOLDOWN_SEC` (default `43200`)
+- dex guard params:
+  - `DEX_GUARD_MIN_RESERVE_RATIO_BPS` (default `5000`)
+  - `DEX_GUARD_REFILL_AMOUNT` (default `20000000` BIGGI)
+  - `DEX_GUARD_COOLDOWN_SEC` (default `1800`)
+  - `DEX_GUARD_AUTO_REFRESH_BASELINE` (`1|0`, default `1`)
+  - `DEX_GUARD_PRICE_CHECK_ENABLED` (`1|0`, default `0`)
+  - `DEX_GUARD_MAX_DEVIATION_BPS` (default `2000`)
+  - `DEX_GUARD_QUOTE_ORACLE` (optional oracle address)
+- policy / buyback params:
+  - `POLICY_SWAP_SLIPPAGE_BPS` (default `500`)
+  - `POLICY_TX_DEADLINE_SEC` (default `600`)
+  - `POLICY_MIN_BUYBACK_INTERVAL_SEC` (default `300`)
+  - `POLICY_BUYBACKS_PAUSED` (`1|0`, default `0`)
+  - `POLICY_MAX_DAILY_BUYBACK_NATIVE` (default `0`)
+  - `BUYBACK_FALLBACK_SLIPPAGE_BPS` (default `200`)
+  - `BUYBACK_FALLBACK_DEADLINE_SEC` (default `600`)
+  - `BUYBACK_FALLBACK_COOLDOWN_SEC` (default `300`)
 - `MARKETING_SUPPORT` (optional; if omitted, initial 200M marketing support mints to `TREASURY`)
 - optional branch addresses: `DRIP_LM`, `BUYBACK_AGENT`, `BUYBACK_ROUTER`, `COMMUNITY_CENTER`, `POLICY`, `LIQUIDITY_MANAGER`, `LIQUIDITY_VAULT`, `LIQUIDITY_ORCHESTRATOR`, `LIQUIDITY_KEEPER_PROXY`, `LIQUIDITY_AUTOMATION`, `DRIP_KEEPER_PROXY`, `BUYBACK_UPKEEP_PROXY`, `MULTI_COLLECTION_READER`, `CHAPTER_SERIES_READER`, `MULTICALL`, `ROUTER`, `FACTORY`, `WETH`
 - `DEPLOY_LIQUIDITY_BRANCH` (`1|0`, default `1` on local networks)
@@ -66,6 +92,7 @@ If hinted addresses have no deployed code on target network, script ignores them
 Deploy writes `addresses.master.json`.
 It also includes `BUYBACK_AGENT_EFFECTIVE` and `COMMUNITY_CENTER_EFFECTIVE` for the real distributor recipients used after fallback/validation.
 When available, `BUYBACK_ROUTER` and `MOCK_BUYBACK_ROUTER` are also exported.
+It also stores the applied parameter profile under `PARAMS` (supply/guard/policy/fallback values).
 
 ## Check status
 
@@ -134,6 +161,9 @@ CHECK_STRICT=1 CHECK_REQUIRE_CODE=1 npx hardhat run --config hardhat.biggi-maste
 
 # use deployed addresses file + strict
 CHECK_STRICT=1 MASTER_ADDRESSES_FILE=./addresses.json npx hardhat run --config hardhat.biggi-master.cjs scripts/master/checkMasterStatus.js --network amoy
+
+# strict + ownership target + explicit liquidity path
+CHECK_STRICT=1 EXPECT_OWNER=0xYourSafe EXPECT_LIQUIDITY_PATH=keeper_proxy npx hardhat run --config hardhat.biggi-master.cjs scripts/master/checkMasterStatus.js --network localhost
 ```
 
 Optional env:
@@ -142,6 +172,86 @@ Optional env:
 - `CHECK_REQUIRE_CODE=1`
 - `MASTER_ADDRESSES_FILE=./addresses.json`
 - `EXPECT_STRICT_NOTIFY=1|0` (default follows strict mode)
+- `EXPECT_OWNER=<address>` (checks `owner()` on all ownable core/tokenomics contracts)
+- `EXPECT_LIQUIDITY_PATH=keeper_proxy|automation|none` (checks `LM.keeper` target)
+- parameter expectation env (optional, checker compares only when provided):
+  - supply: `SUPPLY_DEX_RESERVE_DROP_BPS`, `SUPPLY_DEX_REFILL_AMOUNT`, `SUPPLY_DEX_COOLDOWN_SEC`, `SUPPLY_MIN_RESERVE_FLOOR`, `SUPPLY_AUTO_REFRESH_BASELINE`, `SUPPLY_REWARDS_THRESHOLD`, `SUPPLY_REWARDS_REFILL_AMOUNT`, `SUPPLY_REWARDS_COOLDOWN_SEC`
+  - guard: `DEX_GUARD_MIN_RESERVE_RATIO_BPS`, `DEX_GUARD_REFILL_AMOUNT`, `DEX_GUARD_COOLDOWN_SEC`, `DEX_GUARD_AUTO_REFRESH_BASELINE`, `DEX_GUARD_PRICE_CHECK_ENABLED`, `DEX_GUARD_MAX_DEVIATION_BPS`, `DEX_GUARD_QUOTE_ORACLE`
+  - policy/buyback: `POLICY_SWAP_SLIPPAGE_BPS`, `POLICY_TX_DEADLINE_SEC`, `POLICY_MIN_BUYBACK_INTERVAL_SEC`, `POLICY_BUYBACKS_PAUSED`, `POLICY_MAX_DAILY_BUYBACK_NATIVE`, `BUYBACK_FALLBACK_SLIPPAGE_BPS`, `BUYBACK_FALLBACK_DEADLINE_SEC`, `BUYBACK_FALLBACK_COOLDOWN_SEC`
+  - liquidity: `LIQ_TOKEN_PCT`, `LIQ_SLIPPAGE_BPS`, `LIQ_DEADLINE_SEC`, `LIQ_ORCH_MIN_POL_PER_TX`, `LIQ_ORCH_MAX_POL_PER_TX`, `LIQ_ORCH_MIN_DEX_REFILL_BIGGI`, `LIQ_ORCH_COOLDOWN_SEC`, `LIQ_ORCH_DAILY_QUOTA_POL`, `LIQ_KEEPER_MODE`, `LIQ_KEEPER_FIXED_POL`, `LIQ_KEEPER_PERCENT_BPS`, `LIQ_KEEPER_MIN_INTERVAL_SEC`, `LIQ_KEEPER_MIN_RESERVE_POL`, `LIQ_KEEPER_MAX_PER_TX`, `LIQ_KEEPER_MIN_DEX_REFILL_BIGGI`, `LIQ_AUTO_MIN_POL_WEI`, `LIQ_AUTO_MAX_POL_WEI`, `LIQ_AUTO_MIN_INTERVAL_SEC`
+
+Optional CLI args (for direct node run, e.g. `node scripts/master/checkMasterStatus.js --strict`):
+
+- `--strict`
+- `--require-code`
+- `--addresses <file>`
+- `--expect-owner <address>`
+- `--expect-liquidity-path keeper_proxy|automation|none`
+
+## Mainnet env validation (pre-deploy)
+
+Validate critical env and parameter ranges before one-shot deploy:
+
+```bash
+npm run validate:master:polygon
+```
+
+Strict mode (warnings become fail):
+
+```bash
+node scripts/master/validateMainnetEnv.js --network polygon --strict --expect-liquidity-path keeper_proxy
+```
+
+Optional flags:
+
+- `--env <path>` (custom env file)
+- `--network polygon|amoy`
+- `--expect-liquidity-path keeper_proxy|automation|none`
+
+## One-command local final gate
+
+Run full local preflight in one command:
+
+```bash
+npm run gate:master:local
+```
+
+What it does:
+
+1. `compile:master`
+2. `test:master`
+3. starts local hardhat node if needed
+4. `deploy:master:local`
+5. strict `check:master:local` with:
+   - `CHECK_STRICT=1`
+   - `CHECK_REQUIRE_CODE=1`
+   - `EXPECT_LIQUIDITY_PATH=keeper_proxy` (default)
+
+Useful overrides:
+
+```bash
+node scripts/master/runFinalGateLocal.js --expect-liquidity-path automation
+node scripts/master/runFinalGateLocal.js --skip-tests
+node scripts/master/runFinalGateLocal.js --expect-owner 0xYourSafe
+```
+
+Gate report output:
+
+- `reports/master-final-gate-local.json`
+
+## Ownership batch (offline)
+
+Generate a JSON batch for `transferOwnership(...)` from deployed addresses file:
+
+```bash
+npm run batch:ownership -- --to 0xYourSafe
+```
+
+Optional:
+
+```bash
+npm run batch:ownership -- --addresses ./addresses.master.json --to 0xYourSafe --out ./ownership-transfer-batch.json
+```
 
 ## Test without deployment
 

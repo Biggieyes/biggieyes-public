@@ -31,6 +31,8 @@ function parseArgs(argv) {
     strict: false,
     requireCode: false,
     addressesFile: null,
+    expectOwner: null,
+    expectLiquidityPath: null,
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -43,6 +45,16 @@ function parseArgs(argv) {
       const next = argv[i + 1];
       if (!next) throw new Error(`${a} requires a file path`);
       opts.addressesFile = next;
+      i++;
+    } else if (a === "--expect-owner") {
+      const next = argv[i + 1];
+      if (!next) throw new Error(`${a} requires an address`);
+      opts.expectOwner = next;
+      i++;
+    } else if (a === "--expect-liquidity-path") {
+      const next = argv[i + 1];
+      if (!next) throw new Error(`${a} requires one of: keeper_proxy | automation | none`);
+      opts.expectLiquidityPath = next;
       i++;
     }
   }
@@ -213,6 +225,44 @@ function expectAddressSet(label, value, issues) {
   if (!ok) issues.push(`${label}: zero address`);
 }
 
+function envIntOpt(name) {
+  const raw = process.env[name];
+  if (raw == null || raw === "") return null;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) throw new Error(`Invalid integer env ${name}: ${raw}`);
+  return n;
+}
+
+function envBoolOpt(name) {
+  const raw = process.env[name];
+  if (raw == null || raw === "") return null;
+  const v = String(raw).toLowerCase();
+  if (["1", "true", "yes", "on"].includes(v)) return true;
+  if (["0", "false", "no", "off"].includes(v)) return false;
+  throw new Error(`Invalid boolean env ${name}: ${raw}`);
+}
+
+function envTokenOpt(name) {
+  const raw = process.env[name];
+  if (raw == null || raw === "") return null;
+  return ethers.utils.parseUnits(String(raw), 18);
+}
+
+function expectBigNumberishMatch(label, actual, expected, issues) {
+  if (actual == null || expected == null) return;
+  let a;
+  let e;
+  try {
+    a = ethers.BigNumber.from(actual);
+    e = ethers.BigNumber.from(expected);
+  } catch {
+    return;
+  }
+  const ok = a.eq(e);
+  console.log(`${ok ? "OK" : "MISMATCH"} ${label}: actual=${a.toString()} expected=${e.toString()}`);
+  if (!ok) issues.push(`${label}: actual=${a.toString()}, expected=${e.toString()}`);
+}
+
 async function main() {
   const cli = parseArgs(process.argv.slice(2));
   const strict = cli.strict || process.env.CHECK_STRICT === "1";
@@ -223,13 +273,29 @@ async function main() {
   const addressesPath = resolveAddressesPath(cli.addressesFile || process.env.MASTER_ADDRESSES_FILE || null);
   const rawAddresses = JSON.parse(fs.readFileSync(addressesPath, "utf8"));
   const addresses = normalizeAddresses(rawAddresses);
+  const expectedOwnerInput =
+    cli.expectOwner ||
+    process.env.EXPECT_OWNER ||
+    rawAddresses.MULTISIG ||
+    rawAddresses.TIMELOCK ||
+    rawAddresses.SAFE ||
+    rawAddresses.OWNER ||
+    null;
+  const expectedOwner = isAddress(expectedOwnerInput) ? ethers.utils.getAddress(expectedOwnerInput) : ZERO;
+  const expectedLiquidityPath = String(
+    cli.expectLiquidityPath || process.env.EXPECT_LIQUIDITY_PATH || ""
+  ).toLowerCase();
 
   console.log("Network:", network.name);
   console.log("Addresses file:", addressesPath);
   console.log("Strict mode:", strict);
   console.log("Require deployed code:", requireCode);
+  console.log("Expected owner:", expectedOwner === ZERO ? "<unset>" : expectedOwner);
+  console.log("Expected liquidity path:", expectedLiquidityPath || "<auto>");
 
   const issues = [];
+  let observedLiquidityKeeper = ZERO;
+  let observedOrchestratorKeeper = ZERO;
 
   await section("MAIN", addresses.MAIN, requireCode, issues, async () => {
     const mainC = viewContract(addresses.MAIN, [
@@ -782,6 +848,9 @@ async function main() {
       "function totalBiggiAcquired() view returns (uint256)",
       "function nativeBalance() view returns (uint256)",
       "function biggiBalance() view returns (uint256)",
+      "function fallbackSwapSlippageBps() view returns (uint256)",
+      "function fallbackTxDeadlineSec() view returns (uint256)",
+      "function fallbackMinIntervalSec() view returns (uint256)",
     ]);
     await safe("BUYBACK.autoBuybackEnabled", () => buyback.autoBuybackEnabled());
     await safe("BUYBACK.paused", () => buyback.paused());
@@ -797,6 +866,9 @@ async function main() {
     await safe("BUYBACK.totalBiggiAcquired", () => buyback.totalBiggiAcquired());
     await safe("BUYBACK.nativeBalance", () => buyback.nativeBalance());
     await safe("BUYBACK.biggiBalance", () => buyback.biggiBalance());
+    const fallbackSlip = await safe("BUYBACK.fallbackSwapSlippageBps", () => buyback.fallbackSwapSlippageBps());
+    const fallbackDeadline = await safe("BUYBACK.fallbackTxDeadlineSec", () => buyback.fallbackTxDeadlineSec());
+    const fallbackCooldown = await safe("BUYBACK.fallbackMinIntervalSec", () => buyback.fallbackMinIntervalSec());
 
     const expectedBuybackRouter = isAddress(addresses.BUYBACK_ROUTER) ? addresses.BUYBACK_ROUTER : addresses.ROUTER;
     if (isAddress(expectedBuybackRouter)) {
@@ -811,6 +883,13 @@ async function main() {
     if (isAddress(addresses.DRIP_LM)) {
       expectAddressMatch("BUYBACK.dripLM == DRIP_LM", dripLm, addresses.DRIP_LM, issues);
     }
+
+    const expFallbackSlip = envIntOpt("BUYBACK_FALLBACK_SLIPPAGE_BPS");
+    const expFallbackDeadline = envIntOpt("BUYBACK_FALLBACK_DEADLINE_SEC");
+    const expFallbackCooldown = envIntOpt("BUYBACK_FALLBACK_COOLDOWN_SEC");
+    if (expFallbackSlip != null) expectNumberMatch("BUYBACK.fallbackSwapSlippageBps", fallbackSlip, expFallbackSlip, issues);
+    if (expFallbackDeadline != null) expectNumberMatch("BUYBACK.fallbackTxDeadlineSec", fallbackDeadline, expFallbackDeadline, issues);
+    if (expFallbackCooldown != null) expectNumberMatch("BUYBACK.fallbackMinIntervalSec", fallbackCooldown, expFallbackCooldown, issues);
   });
 
   await section("POLICY", addresses.POLICY, requireCode, issues, async () => {
@@ -823,13 +902,25 @@ async function main() {
       "function usedToday() view returns (uint256)",
       "function dayIndex() view returns (uint64)",
     ]);
-    await safe("POLICY.swapSlippageBps", () => policy.swapSlippageBps());
-    await safe("POLICY.txDeadlineSec", () => policy.txDeadlineSec());
-    await safe("POLICY.minBuybackInterval", () => policy.minBuybackInterval());
-    await safe("POLICY.buybacksPaused", () => policy.buybacksPaused());
-    await safe("POLICY.maxDailyBuybackNative", () => policy.maxDailyBuybackNative());
+    const slip = await safe("POLICY.swapSlippageBps", () => policy.swapSlippageBps());
+    const deadline = await safe("POLICY.txDeadlineSec", () => policy.txDeadlineSec());
+    const minInterval = await safe("POLICY.minBuybackInterval", () => policy.minBuybackInterval());
+    const paused_ = await safe("POLICY.buybacksPaused", () => policy.buybacksPaused());
+    const maxDaily = await safe("POLICY.maxDailyBuybackNative", () => policy.maxDailyBuybackNative());
     await safe("POLICY.usedToday", () => policy.usedToday());
     await safe("POLICY.dayIndex", () => policy.dayIndex());
+
+    const expSlip = envIntOpt("POLICY_SWAP_SLIPPAGE_BPS");
+    const expDeadline = envIntOpt("POLICY_TX_DEADLINE_SEC");
+    const expMinInterval = envIntOpt("POLICY_MIN_BUYBACK_INTERVAL_SEC");
+    const expPaused = envBoolOpt("POLICY_BUYBACKS_PAUSED");
+    const expMaxDaily = envTokenOpt("POLICY_MAX_DAILY_BUYBACK_NATIVE");
+
+    if (expSlip != null) expectNumberMatch("POLICY.swapSlippageBps", slip, expSlip, issues);
+    if (expDeadline != null) expectNumberMatch("POLICY.txDeadlineSec", deadline, expDeadline, issues);
+    if (expMinInterval != null) expectNumberMatch("POLICY.minBuybackInterval", minInterval, expMinInterval, issues);
+    if (expPaused != null) expectBool("POLICY.buybacksPaused", paused_, expPaused, issues);
+    if (expMaxDaily != null) expectBigNumberishMatch("POLICY.maxDailyBuybackNative", maxDaily, expMaxDaily, issues);
   });
 
   await section("COMMUNITY_CENTER", addresses.COMMUNITY_CENTER, requireCode, issues, async () => {
@@ -1158,6 +1249,14 @@ async function main() {
       "function previewMaintenance() view returns (bool,bool,uint256,uint256)",
       "function pair() view returns (address)",
       "function paused() view returns (bool)",
+      "function reserveDropBps() view returns (uint256)",
+      "function dexRefillAmount() view returns (uint256)",
+      "function dexCooldown() view returns (uint256)",
+      "function minimumReserveFloor() view returns (uint256)",
+      "function autoRefreshBaselineOnDexRefill() view returns (bool)",
+      "function rewardsThreshold() view returns (uint256)",
+      "function rewardsRefillAmount() view returns (uint256)",
+      "function rewardsCooldown() view returns (uint256)",
       "function circuitBreakerEnabled() view returns (bool)",
       "function dexCriticalFloor() view returns (uint256)",
       "function rewardsCriticalFloor() view returns (uint256)",
@@ -1168,26 +1267,75 @@ async function main() {
     await safe("SUPPLY_CONTROLLER.previewMaintenance", () => controller.previewMaintenance());
     const pairAddr = await safe("SUPPLY_CONTROLLER.pair", () => controller.pair());
     await safe("SUPPLY_CONTROLLER.paused", () => controller.paused());
-    await safe("SUPPLY_CONTROLLER.circuitBreakerEnabled", () => controller.circuitBreakerEnabled());
-    await safe("SUPPLY_CONTROLLER.dexCriticalFloor", () => controller.dexCriticalFloor());
-    await safe("SUPPLY_CONTROLLER.rewardsCriticalFloor", () => controller.rewardsCriticalFloor());
+    const reserveDropBps = await safe("SUPPLY_CONTROLLER.reserveDropBps", () => controller.reserveDropBps());
+    const dexRefillAmount = await safe("SUPPLY_CONTROLLER.dexRefillAmount", () => controller.dexRefillAmount());
+    const dexCooldown = await safe("SUPPLY_CONTROLLER.dexCooldown", () => controller.dexCooldown());
+    const minimumReserveFloor = await safe("SUPPLY_CONTROLLER.minimumReserveFloor", () => controller.minimumReserveFloor());
+    const autoRefreshBaseline = await safe(
+      "SUPPLY_CONTROLLER.autoRefreshBaselineOnDexRefill",
+      () => controller.autoRefreshBaselineOnDexRefill()
+    );
+    const rewardsThreshold = await safe("SUPPLY_CONTROLLER.rewardsThreshold", () => controller.rewardsThreshold());
+    const rewardsRefillAmount = await safe("SUPPLY_CONTROLLER.rewardsRefillAmount", () => controller.rewardsRefillAmount());
+    const rewardsCooldown = await safe("SUPPLY_CONTROLLER.rewardsCooldown", () => controller.rewardsCooldown());
+    const circuitBreakerEnabled_ = await safe("SUPPLY_CONTROLLER.circuitBreakerEnabled", () => controller.circuitBreakerEnabled());
+    const dexCriticalFloor = await safe("SUPPLY_CONTROLLER.dexCriticalFloor", () => controller.dexCriticalFloor());
+    const rewardsCriticalFloor = await safe("SUPPLY_CONTROLLER.rewardsCriticalFloor", () => controller.rewardsCriticalFloor());
     await safe("SUPPLY_CONTROLLER.previewCriticalStatus", () => controller.previewCriticalStatus());
 
     expectAddressMatch("SUPPLY_CONTROLLER.pair == PAIR", pairAddr, addresses.PAIR, issues);
+
+    const expReserveDropBps = envIntOpt("SUPPLY_DEX_RESERVE_DROP_BPS");
+    const expDexRefillAmount = envTokenOpt("SUPPLY_DEX_REFILL_AMOUNT");
+    const expDexCooldown = envIntOpt("SUPPLY_DEX_COOLDOWN_SEC");
+    const expMinReserveFloor = envTokenOpt("SUPPLY_MIN_RESERVE_FLOOR");
+    const expAutoRefresh = envBoolOpt("SUPPLY_AUTO_REFRESH_BASELINE");
+    const expRewardsThreshold = envTokenOpt("SUPPLY_REWARDS_THRESHOLD");
+    const expRewardsRefillAmount = envTokenOpt("SUPPLY_REWARDS_REFILL_AMOUNT");
+    const expRewardsCooldown = envIntOpt("SUPPLY_REWARDS_COOLDOWN_SEC");
+    const expCircuitEnabled = envBoolOpt("CIRCUIT_BREAKER_ENABLED");
+    const expDexCriticalFloor = envTokenOpt("CB_DEX_CRITICAL_FLOOR");
+    const expRewardsCriticalFloor = envTokenOpt("CB_REWARDS_CRITICAL_FLOOR");
+
+    if (expReserveDropBps != null) expectNumberMatch("SUPPLY.reserveDropBps", reserveDropBps, expReserveDropBps, issues);
+    if (expDexRefillAmount != null) expectBigNumberishMatch("SUPPLY.dexRefillAmount", dexRefillAmount, expDexRefillAmount, issues);
+    if (expDexCooldown != null) expectNumberMatch("SUPPLY.dexCooldown", dexCooldown, expDexCooldown, issues);
+    if (expMinReserveFloor != null) expectBigNumberishMatch("SUPPLY.minimumReserveFloor", minimumReserveFloor, expMinReserveFloor, issues);
+    if (expAutoRefresh != null) expectBool("SUPPLY.autoRefreshBaselineOnDexRefill", autoRefreshBaseline, expAutoRefresh, issues);
+    if (expRewardsThreshold != null) expectBigNumberishMatch("SUPPLY.rewardsThreshold", rewardsThreshold, expRewardsThreshold, issues);
+    if (expRewardsRefillAmount != null) expectBigNumberishMatch("SUPPLY.rewardsRefillAmount", rewardsRefillAmount, expRewardsRefillAmount, issues);
+    if (expRewardsCooldown != null) expectNumberMatch("SUPPLY.rewardsCooldown", rewardsCooldown, expRewardsCooldown, issues);
+    if (expCircuitEnabled != null) expectBool("SUPPLY.circuitBreakerEnabled", circuitBreakerEnabled_, expCircuitEnabled, issues);
+    if (expDexCriticalFloor != null) expectBigNumberishMatch("SUPPLY.dexCriticalFloor", dexCriticalFloor, expDexCriticalFloor, issues);
+    if (expRewardsCriticalFloor != null) expectBigNumberishMatch("SUPPLY.rewardsCriticalFloor", rewardsCriticalFloor, expRewardsCriticalFloor, issues);
   });
 
   await section("DEX_RESERVE_GUARD", addresses.DEX_RESERVE_GUARD, requireCode, issues, async () => {
     const guard = viewContract(addresses.DEX_RESERVE_GUARD, [
       "function baselineReserve() view returns (uint256)",
+      "function minReserveRatioBps() view returns (uint256)",
       "function minAllowedReserve() view returns (uint256)",
       "function currentTokenReserve() view returns (uint256)",
+      "function refillAmount() view returns (uint256)",
+      "function cooldown() view returns (uint256)",
+      "function autoRefreshBaselineOnRefill() view returns (bool)",
+      "function priceCheckEnabled() view returns (bool)",
+      "function maxPriceDeviationBps() view returns (uint256)",
+      "function quoteOracle() view returns (address)",
       "function refillNeeded() view returns (bool,string)",
       "function pair() view returns (address)",
       "function supplyController() view returns (address)",
     ]);
     await safe("DEX_GUARD.baselineReserve", () => guard.baselineReserve());
+    const minReserveRatioBps = await safe("DEX_GUARD.minReserveRatioBps", () => guard.minReserveRatioBps());
     await safe("DEX_GUARD.minAllowedReserve", () => guard.minAllowedReserve());
     await safe("DEX_GUARD.currentTokenReserve", () => guard.currentTokenReserve());
+    const refillAmount = await safe("DEX_GUARD.refillAmount", () => guard.refillAmount());
+    const cooldown = await safe("DEX_GUARD.cooldown", () => guard.cooldown());
+    const autoRefreshBaseline = await safe("DEX_GUARD.autoRefreshBaselineOnRefill", () => guard.autoRefreshBaselineOnRefill());
+    const priceCheckEnabled = await safe("DEX_GUARD.priceCheckEnabled", () => guard.priceCheckEnabled());
+    const maxPriceDeviationBps = await safe("DEX_GUARD.maxPriceDeviationBps", () => guard.maxPriceDeviationBps());
+    const quoteOracle = await safe("DEX_GUARD.quoteOracle", () => guard.quoteOracle());
     await safe("DEX_GUARD.refillNeeded", () => guard.refillNeeded());
     const guardPair = await safe("DEX_GUARD.pair", () => guard.pair());
     const guardController = await safe("DEX_GUARD.supplyController", () => guard.supplyController());
@@ -1199,6 +1347,24 @@ async function main() {
       addresses.SUPPLY_CONTROLLER,
       issues
     );
+
+    const expMinReserveRatioBps = envIntOpt("DEX_GUARD_MIN_RESERVE_RATIO_BPS");
+    const expRefillAmount = envTokenOpt("DEX_GUARD_REFILL_AMOUNT");
+    const expCooldown = envIntOpt("DEX_GUARD_COOLDOWN_SEC");
+    const expAutoRefreshBaseline = envBoolOpt("DEX_GUARD_AUTO_REFRESH_BASELINE");
+    const expPriceCheckEnabled = envBoolOpt("DEX_GUARD_PRICE_CHECK_ENABLED");
+    const expMaxDeviationBps = envIntOpt("DEX_GUARD_MAX_DEVIATION_BPS");
+    const expQuoteOracle = process.env.DEX_GUARD_QUOTE_ORACLE;
+
+    if (expMinReserveRatioBps != null) expectNumberMatch("DEX_GUARD.minReserveRatioBps", minReserveRatioBps, expMinReserveRatioBps, issues);
+    if (expRefillAmount != null) expectBigNumberishMatch("DEX_GUARD.refillAmount", refillAmount, expRefillAmount, issues);
+    if (expCooldown != null) expectNumberMatch("DEX_GUARD.cooldown", cooldown, expCooldown, issues);
+    if (expAutoRefreshBaseline != null) expectBool("DEX_GUARD.autoRefreshBaselineOnRefill", autoRefreshBaseline, expAutoRefreshBaseline, issues);
+    if (expPriceCheckEnabled != null) expectBool("DEX_GUARD.priceCheckEnabled", priceCheckEnabled, expPriceCheckEnabled, issues);
+    if (expMaxDeviationBps != null) expectNumberMatch("DEX_GUARD.maxPriceDeviationBps", maxPriceDeviationBps, expMaxDeviationBps, issues);
+    if (expQuoteOracle && isAddress(expQuoteOracle)) {
+      expectAddressMatch("DEX_GUARD.quoteOracle", quoteOracle, expQuoteOracle, issues);
+    }
   });
 
   await section("LIQUIDITY_MANAGER", addresses.LIQUIDITY_MANAGER, requireCode, issues, async () => {
@@ -1219,10 +1385,10 @@ async function main() {
     await safe("LM.factory", () => lm.factory());
     const lmReserve = await safe("LM.reserve", () => lm.reserve());
     const lmVault = await safe("LM.liquidityVault", () => lm.liquidityVault());
-    await safe("LM.keeper", () => lm.keeper());
-    await safe("LM.tokenPct", () => lm.tokenPct());
-    await safe("LM.slippageBps", () => lm.slippageBps());
-    await safe("LM.txDeadlineSec", () => lm.txDeadlineSec());
+    observedLiquidityKeeper = await safe("LM.keeper", () => lm.keeper());
+    const lmTokenPct = await safe("LM.tokenPct", () => lm.tokenPct());
+    const lmSlippageBps = await safe("LM.slippageBps", () => lm.slippageBps());
+    const lmDeadlineSec = await safe("LM.txDeadlineSec", () => lm.txDeadlineSec());
     await safe("LM.autoTopUpEnabled", () => lm.autoTopUpEnabled());
     await safe("LM.autoTriggerMinPolWei", () => lm.autoTriggerMinPolWei());
     await safe("LM.autoRequestPolWei", () => lm.autoRequestPolWei());
@@ -1231,6 +1397,13 @@ async function main() {
     if (isAddress(addresses.LIQUIDITY_VAULT)) {
       expectAddressMatch("LM.liquidityVault == LIQUIDITY_VAULT", lmVault, addresses.LIQUIDITY_VAULT, issues);
     }
+
+    const expLmTokenPct = envIntOpt("LIQ_TOKEN_PCT");
+    const expLmSlippageBps = envIntOpt("LIQ_SLIPPAGE_BPS");
+    const expLmDeadlineSec = envIntOpt("LIQ_DEADLINE_SEC");
+    if (expLmTokenPct != null) expectNumberMatch("LM.tokenPct", lmTokenPct, expLmTokenPct, issues);
+    if (expLmSlippageBps != null) expectNumberMatch("LM.slippageBps", lmSlippageBps, expLmSlippageBps, issues);
+    if (expLmDeadlineSec != null) expectNumberMatch("LM.txDeadlineSec", lmDeadlineSec, expLmDeadlineSec, issues);
   });
 
   await section("LIQUIDITY_VAULT", addresses.LIQUIDITY_VAULT, requireCode, issues, async () => {
@@ -1255,16 +1428,27 @@ async function main() {
     ]);
     const orchReserve = await safe("ORCH.reserve", () => orchestrator.reserve());
     const orchLm = await safe("ORCH.lm", () => orchestrator.lm());
-    await safe("ORCH.keeper", () => orchestrator.keeper());
-    await safe("ORCH.minPolPerTx", () => orchestrator.minPolPerTx());
-    await safe("ORCH.maxPolPerTx", () => orchestrator.maxPolPerTx());
-    await safe("ORCH.minDexRefillBiggi", () => orchestrator.minDexRefillBiggi());
-    await safe("ORCH.cooldownSec", () => orchestrator.cooldownSec());
-    await safe("ORCH.dailyQuotaPol", () => orchestrator.dailyQuotaPol());
+    observedOrchestratorKeeper = await safe("ORCH.keeper", () => orchestrator.keeper());
+    const orchMinPolPerTx = await safe("ORCH.minPolPerTx", () => orchestrator.minPolPerTx());
+    const orchMaxPolPerTx = await safe("ORCH.maxPolPerTx", () => orchestrator.maxPolPerTx());
+    const orchMinDexRefillBiggi = await safe("ORCH.minDexRefillBiggi", () => orchestrator.minDexRefillBiggi());
+    const orchCooldownSec = await safe("ORCH.cooldownSec", () => orchestrator.cooldownSec());
+    const orchDailyQuotaPol = await safe("ORCH.dailyQuotaPol", () => orchestrator.dailyQuotaPol());
     await safe("ORCH.lastRunTimestamp", () => orchestrator.lastRunTimestamp());
 
     expectAddressMatch("ORCH.reserve == RESERVE", orchReserve, addresses.RESERVE, issues);
     expectAddressMatch("ORCH.lm == LIQUIDITY_MANAGER", orchLm, addresses.LIQUIDITY_MANAGER, issues);
+
+    const expOrchMinPolPerTx = envTokenOpt("LIQ_ORCH_MIN_POL_PER_TX");
+    const expOrchMaxPolPerTx = envTokenOpt("LIQ_ORCH_MAX_POL_PER_TX");
+    const expOrchMinDexRefillBiggi = envTokenOpt("LIQ_ORCH_MIN_DEX_REFILL_BIGGI");
+    const expOrchCooldownSec = envIntOpt("LIQ_ORCH_COOLDOWN_SEC");
+    const expOrchDailyQuotaPol = envTokenOpt("LIQ_ORCH_DAILY_QUOTA_POL");
+    if (expOrchMinPolPerTx != null) expectBigNumberishMatch("ORCH.minPolPerTx", orchMinPolPerTx, expOrchMinPolPerTx, issues);
+    if (expOrchMaxPolPerTx != null) expectBigNumberishMatch("ORCH.maxPolPerTx", orchMaxPolPerTx, expOrchMaxPolPerTx, issues);
+    if (expOrchMinDexRefillBiggi != null) expectBigNumberishMatch("ORCH.minDexRefillBiggi", orchMinDexRefillBiggi, expOrchMinDexRefillBiggi, issues);
+    if (expOrchCooldownSec != null) expectNumberMatch("ORCH.cooldownSec", orchCooldownSec, expOrchCooldownSec, issues);
+    if (expOrchDailyQuotaPol != null) expectBigNumberishMatch("ORCH.dailyQuotaPol", orchDailyQuotaPol, expOrchDailyQuotaPol, issues);
   });
 
   await section("LIQUIDITY_KEEPER_PROXY", addresses.LIQUIDITY_KEEPER_PROXY, requireCode, issues, async () => {
@@ -1285,13 +1469,13 @@ async function main() {
     const kpOrch = await safe("LKP.orchestrator", () => keeper.orchestrator());
     const kpReserve = await safe("LKP.reserve", () => keeper.reserve());
     await safe("LKP.allowedCaller", () => keeper.allowedCaller());
-    await safe("LKP.amountMode", () => keeper.amountMode());
-    await safe("LKP.fixedAmount", () => keeper.fixedAmount());
-    await safe("LKP.percentBps", () => keeper.percentBps());
-    await safe("LKP.minIntervalSec", () => keeper.minIntervalSec());
-    await safe("LKP.minReservePol", () => keeper.minReservePol());
-    await safe("LKP.maxPerTx", () => keeper.maxPerTx());
-    await safe("LKP.minDexRefillBiggi", () => keeper.minDexRefillBiggi());
+    const kpAmountMode = await safe("LKP.amountMode", () => keeper.amountMode());
+    const kpFixedAmount = await safe("LKP.fixedAmount", () => keeper.fixedAmount());
+    const kpPercentBps = await safe("LKP.percentBps", () => keeper.percentBps());
+    const kpMinIntervalSec = await safe("LKP.minIntervalSec", () => keeper.minIntervalSec());
+    const kpMinReservePol = await safe("LKP.minReservePol", () => keeper.minReservePol());
+    const kpMaxPerTx = await safe("LKP.maxPerTx", () => keeper.maxPerTx());
+    const kpMinDexRefillBiggi = await safe("LKP.minDexRefillBiggi", () => keeper.minDexRefillBiggi());
     await safe("LKP.lastPerformTs", () => keeper.lastPerformTs());
     await safe("LKP.paused", () => keeper.paused());
 
@@ -1299,6 +1483,22 @@ async function main() {
       expectAddressMatch("LKP.orchestrator == LIQUIDITY_ORCHESTRATOR", kpOrch, addresses.LIQUIDITY_ORCHESTRATOR, issues);
     }
     expectAddressMatch("LKP.reserve == RESERVE", kpReserve, addresses.RESERVE, issues);
+
+    const expKpMode = envIntOpt("LIQ_KEEPER_MODE");
+    const expKpFixed = envTokenOpt("LIQ_KEEPER_FIXED_POL");
+    const expKpPct = envIntOpt("LIQ_KEEPER_PERCENT_BPS");
+    const expKpMinInterval = envIntOpt("LIQ_KEEPER_MIN_INTERVAL_SEC");
+    const expKpMinReservePol = envTokenOpt("LIQ_KEEPER_MIN_RESERVE_POL");
+    const expKpMaxPerTx = envTokenOpt("LIQ_KEEPER_MAX_PER_TX");
+    const expKpMinDexRefillBiggi = envTokenOpt("LIQ_KEEPER_MIN_DEX_REFILL_BIGGI");
+
+    if (expKpMode != null) expectNumberMatch("LKP.amountMode", kpAmountMode, expKpMode, issues);
+    if (expKpFixed != null) expectBigNumberishMatch("LKP.fixedAmount", kpFixedAmount, expKpFixed, issues);
+    if (expKpPct != null) expectNumberMatch("LKP.percentBps", kpPercentBps, expKpPct, issues);
+    if (expKpMinInterval != null) expectNumberMatch("LKP.minIntervalSec", kpMinIntervalSec, expKpMinInterval, issues);
+    if (expKpMinReservePol != null) expectBigNumberishMatch("LKP.minReservePol", kpMinReservePol, expKpMinReservePol, issues);
+    if (expKpMaxPerTx != null) expectBigNumberishMatch("LKP.maxPerTx", kpMaxPerTx, expKpMaxPerTx, issues);
+    if (expKpMinDexRefillBiggi != null) expectBigNumberishMatch("LKP.minDexRefillBiggi", kpMinDexRefillBiggi, expKpMinDexRefillBiggi, issues);
   });
 
   await section("LIQUIDITY_AUTOMATION", addresses.LIQUIDITY_AUTOMATION, requireCode, issues, async () => {
@@ -1310,12 +1510,96 @@ async function main() {
       "function lastUpkeepTime() view returns (uint256)",
     ]);
     const autoLm = await safe("LAUTO.lm", () => automation.lm());
-    await safe("LAUTO.minPolWei", () => automation.minPolWei());
-    await safe("LAUTO.maxPolWei", () => automation.maxPolWei());
-    await safe("LAUTO.minIntervalSec", () => automation.minIntervalSec());
+    const autoMinPolWei = await safe("LAUTO.minPolWei", () => automation.minPolWei());
+    const autoMaxPolWei = await safe("LAUTO.maxPolWei", () => automation.maxPolWei());
+    const autoMinIntervalSec = await safe("LAUTO.minIntervalSec", () => automation.minIntervalSec());
     await safe("LAUTO.lastUpkeepTime", () => automation.lastUpkeepTime());
     expectAddressMatch("LAUTO.lm == LIQUIDITY_MANAGER", autoLm, addresses.LIQUIDITY_MANAGER, issues);
+
+    const expAutoMinPolWei = envTokenOpt("LIQ_AUTO_MIN_POL_WEI");
+    const expAutoMaxPolWei = envTokenOpt("LIQ_AUTO_MAX_POL_WEI");
+    const expAutoMinIntervalSec = envIntOpt("LIQ_AUTO_MIN_INTERVAL_SEC");
+    if (expAutoMinPolWei != null) expectBigNumberishMatch("LAUTO.minPolWei", autoMinPolWei, expAutoMinPolWei, issues);
+    if (expAutoMaxPolWei != null) expectBigNumberishMatch("LAUTO.maxPolWei", autoMaxPolWei, expAutoMaxPolWei, issues);
+    if (expAutoMinIntervalSec != null) expectNumberMatch("LAUTO.minIntervalSec", autoMinIntervalSec, expAutoMinIntervalSec, issues);
   });
+
+  if (expectedLiquidityPath && !["keeper_proxy", "automation", "none"].includes(expectedLiquidityPath)) {
+    issues.push(`EXPECT_LIQUIDITY_PATH invalid: ${expectedLiquidityPath} (use keeper_proxy|automation|none)`);
+  }
+
+  const hasKeeperProxy = isAddress(addresses.LIQUIDITY_KEEPER_PROXY);
+  const hasAutomation = isAddress(addresses.LIQUIDITY_AUTOMATION);
+  const hasLmKeeper = isAddress(observedLiquidityKeeper);
+  const hasOrchKeeper = isAddress(observedOrchestratorKeeper);
+  const hasOrchestratorAddress = isAddress(addresses.LIQUIDITY_ORCHESTRATOR);
+
+  if (expectedLiquidityPath === "keeper_proxy") {
+    expectAddressSet("LIQ_PATH keeper_proxy address", addresses.LIQUIDITY_KEEPER_PROXY, issues);
+    if (hasLmKeeper && hasOrchestratorAddress) {
+      expectAddressMatch(
+        "LIQ_PATH LM.keeper == LIQUIDITY_ORCHESTRATOR",
+        observedLiquidityKeeper,
+        addresses.LIQUIDITY_ORCHESTRATOR,
+        issues
+      );
+    }
+    if (hasOrchKeeper && hasKeeperProxy) {
+      expectAddressMatch(
+        "LIQ_PATH ORCH.keeper == LIQUIDITY_KEEPER_PROXY",
+        observedOrchestratorKeeper,
+        addresses.LIQUIDITY_KEEPER_PROXY,
+        issues
+      );
+    }
+  } else if (expectedLiquidityPath === "automation") {
+    expectAddressSet("LIQ_PATH automation address", addresses.LIQUIDITY_AUTOMATION, issues);
+    if (hasLmKeeper && hasAutomation) {
+      expectAddressMatch(
+        "LIQ_PATH LM.keeper == LIQUIDITY_AUTOMATION",
+        observedLiquidityKeeper,
+        addresses.LIQUIDITY_AUTOMATION,
+        issues
+      );
+    }
+  } else if (expectedLiquidityPath === "none") {
+    if (hasLmKeeper) {
+      issues.push(`LIQ_PATH expected none, but LM.keeper is set: ${observedLiquidityKeeper}`);
+    }
+  } else if (strict) {
+    if (hasKeeperProxy && !hasAutomation) {
+      if (hasLmKeeper && hasOrchestratorAddress) {
+        expectAddressMatch(
+          "LIQ_PATH(auto) LM.keeper == LIQUIDITY_ORCHESTRATOR",
+          observedLiquidityKeeper,
+          addresses.LIQUIDITY_ORCHESTRATOR,
+          issues
+        );
+      }
+      if (hasOrchKeeper) {
+        expectAddressMatch(
+          "LIQ_PATH(auto) ORCH.keeper == LIQUIDITY_KEEPER_PROXY",
+          observedOrchestratorKeeper,
+          addresses.LIQUIDITY_KEEPER_PROXY,
+          issues
+        );
+      }
+    }
+    if (!hasKeeperProxy && hasAutomation && hasLmKeeper) {
+      expectAddressMatch(
+        "LIQ_PATH(auto) LM.keeper == LIQUIDITY_AUTOMATION",
+        observedLiquidityKeeper,
+        addresses.LIQUIDITY_AUTOMATION,
+        issues
+      );
+    }
+    if (hasKeeperProxy && hasAutomation) {
+      console.log(
+        "WARN LIQ_PATH: both LIQUIDITY_KEEPER_PROXY and LIQUIDITY_AUTOMATION are configured. " +
+          "Set EXPECT_LIQUIDITY_PATH to enforce one active path."
+      );
+    }
+  }
 
   await section("DRIP_KEEPER_PROXY", addresses.DRIP_KEEPER_PROXY, requireCode, issues, async () => {
     const dripKeeper = viewContract(addresses.DRIP_KEEPER_PROXY, [
@@ -1406,6 +1690,52 @@ async function main() {
       }
     }
   });
+
+  const ownershipTargets = [
+    ["MAIN", addresses.MAIN],
+    ["MAIN2", addresses.MAIN2],
+    ["TICKET_HUB", addresses.TICKET_HUB],
+    ["VRF_ROUTER", addresses.VRF_ROUTER],
+    ["REGISTRY", addresses.REGISTRY],
+    ["CHAPTER_CONTROLLER", addresses.CHAPTER_CONTROLLER],
+    ["DISTRIBUTOR", addresses.DISTRIBUTOR],
+    ["COLLECTION_REWARDS", addresses.COLLECTION_REWARDS],
+    ["COMMUNITY_CENTER", addresses.COMMUNITY_CENTER],
+    ["MODERATOR_CENTER", addresses.MODERATOR_CENTER],
+    ["BIGGI_TOKEN", addresses.BIGGI_TOKEN],
+    ["RESERVE", addresses.RESERVE],
+    ["TREASURY", addresses.TREASURY],
+    ["DRIP_DISTRIBUTOR", addresses.DRIP_DISTRIBUTOR],
+    ["TOKEN_REWARDS", addresses.TOKEN_REWARDS],
+    ["NFT_REWARDS", addresses.NFT_REWARDS],
+    ["BUYBACK_AGENT", addresses.BUYBACK_AGENT],
+    ["POLICY", addresses.POLICY],
+    ["SUPPLY_CONTROLLER", addresses.SUPPLY_CONTROLLER],
+    ["SUPPLY_GUARDIAN", addresses.SUPPLY_GUARDIAN],
+    ["DEX_RESERVE_GUARD", addresses.DEX_RESERVE_GUARD],
+    ["LIQUIDITY_MANAGER", addresses.LIQUIDITY_MANAGER],
+    ["LIQUIDITY_VAULT", addresses.LIQUIDITY_VAULT],
+    ["LIQUIDITY_ORCHESTRATOR", addresses.LIQUIDITY_ORCHESTRATOR],
+    ["LIQUIDITY_KEEPER_PROXY", addresses.LIQUIDITY_KEEPER_PROXY],
+    ["LIQUIDITY_AUTOMATION", addresses.LIQUIDITY_AUTOMATION],
+    ["DRIP_KEEPER_PROXY", addresses.DRIP_KEEPER_PROXY],
+    ["BUYBACK_UPKEEP_PROXY", addresses.BUYBACK_UPKEEP_PROXY],
+    ["MASTER_CONFIG", addresses.MASTER_CONFIG],
+  ];
+
+  for (const [name, addr] of ownershipTargets) {
+    await section(`OWNER_${name}`, addr, requireCode, issues, async () => {
+      const c = viewContract(addr, ["function owner() view returns (address)"]);
+      const ownerAddr = await safe(`${name}.owner`, () => c.owner());
+      if (!isAddress(ownerAddr)) {
+        if (strict) issues.push(`${name}.owner invalid or not set`);
+        return;
+      }
+      if (expectedOwner !== ZERO) {
+        expectAddressMatch(`${name}.owner == EXPECT_OWNER`, ownerAddr, expectedOwner, issues);
+      }
+    });
+  }
 
   if (issues.length === 0) {
     console.log("Consistency checks: OK (no mismatches detected).");

@@ -11,6 +11,12 @@
 //   VRF_COORDINATOR, VRF_KEY_HASH, VRF_SUB_ID, VRF_ROUTER
 //   PAIR, QUOTE_TOKEN (required on non-local unless DEPLOY_MOCK_PAIR=1)
 //   CIRCUIT_BREAKER_ENABLED, CB_DEX_CRITICAL_FLOOR, CB_REWARDS_CRITICAL_FLOOR
+//   SUPPLY_DEX_RESERVE_DROP_BPS, SUPPLY_DEX_REFILL_AMOUNT, SUPPLY_DEX_COOLDOWN_SEC, SUPPLY_MIN_RESERVE_FLOOR, SUPPLY_AUTO_REFRESH_BASELINE
+//   SUPPLY_REWARDS_THRESHOLD, SUPPLY_REWARDS_REFILL_AMOUNT, SUPPLY_REWARDS_COOLDOWN_SEC
+//   DEX_GUARD_MIN_RESERVE_RATIO_BPS, DEX_GUARD_REFILL_AMOUNT, DEX_GUARD_COOLDOWN_SEC, DEX_GUARD_AUTO_REFRESH_BASELINE
+//   DEX_GUARD_PRICE_CHECK_ENABLED, DEX_GUARD_MAX_DEVIATION_BPS, DEX_GUARD_QUOTE_ORACLE
+//   POLICY_SWAP_SLIPPAGE_BPS, POLICY_TX_DEADLINE_SEC, POLICY_MIN_BUYBACK_INTERVAL_SEC, POLICY_BUYBACKS_PAUSED, POLICY_MAX_DAILY_BUYBACK_NATIVE
+//   BUYBACK_FALLBACK_SLIPPAGE_BPS, BUYBACK_FALLBACK_DEADLINE_SEC, BUYBACK_FALLBACK_COOLDOWN_SEC
 //   MARKETING_SUPPORT
 //   NFT_REWARDS, DEPLOY_NFT_REWARDS
 //   DRIP_LM, BUYBACK_AGENT, BUYBACK_ROUTER, COMMUNITY_CENTER, POLICY
@@ -55,6 +61,15 @@ function asInt(name, fallback) {
   const n = Number(raw);
   if (!Number.isInteger(n) || n < 0) throw new Error(`Invalid integer for ${name}: ${raw}`);
   return n;
+}
+
+function asBool(name, fallback) {
+  const raw = process.env[name];
+  if (raw == null || raw === "") return fallback;
+  const v = String(raw).toLowerCase();
+  if (["1", "true", "yes", "on"].includes(v)) return true;
+  if (["0", "false", "no", "off"].includes(v)) return false;
+  throw new Error(`Invalid boolean for ${name}: ${raw}`);
 }
 
 function asTokenAmount(name, fallbackTokens) {
@@ -132,6 +147,33 @@ async function main() {
   const circuitBreakerEnabled = process.env.CIRCUIT_BREAKER_ENABLED !== "0";
   const cbDexCriticalFloor = asTokenAmount("CB_DEX_CRITICAL_FLOOR", "500");
   const cbRewardsCriticalFloor = asTokenAmount("CB_REWARDS_CRITICAL_FLOOR", "500");
+  const supplyDexReserveDropBps = asInt("SUPPLY_DEX_RESERVE_DROP_BPS", 5000);
+  const supplyDexRefillAmount = asTokenAmount("SUPPLY_DEX_REFILL_AMOUNT", "20000000");
+  const supplyDexCooldownSec = asInt("SUPPLY_DEX_COOLDOWN_SEC", 1800);
+  const supplyMinimumReserveFloor = asTokenAmount("SUPPLY_MIN_RESERVE_FLOOR", "0");
+  const supplyAutoRefreshBaseline = asBool("SUPPLY_AUTO_REFRESH_BASELINE", false);
+  const supplyRewardsThreshold = asTokenAmount("SUPPLY_REWARDS_THRESHOLD", "5000000");
+  const supplyRewardsRefillAmount = asTokenAmount("SUPPLY_REWARDS_REFILL_AMOUNT", "200000000");
+  const supplyRewardsCooldownSec = asInt("SUPPLY_REWARDS_COOLDOWN_SEC", 43200);
+
+  const dexGuardMinReserveRatioBps = asInt("DEX_GUARD_MIN_RESERVE_RATIO_BPS", 5000);
+  const dexGuardRefillAmount = asTokenAmount("DEX_GUARD_REFILL_AMOUNT", "20000000");
+  const dexGuardCooldownSec = asInt("DEX_GUARD_COOLDOWN_SEC", 1800);
+  const dexGuardAutoRefreshBaseline = asBool("DEX_GUARD_AUTO_REFRESH_BASELINE", true);
+  const dexGuardPriceCheckEnabled = asBool("DEX_GUARD_PRICE_CHECK_ENABLED", false);
+  const dexGuardMaxDeviationBps = asInt("DEX_GUARD_MAX_DEVIATION_BPS", 2000);
+  const dexGuardQuoteOracle = envAddr("DEX_GUARD_QUOTE_ORACLE");
+
+  const policySwapSlippageBps = asInt("POLICY_SWAP_SLIPPAGE_BPS", 500);
+  const policyTxDeadlineSec = asInt("POLICY_TX_DEADLINE_SEC", 600);
+  const policyMinBuybackIntervalSec = asInt("POLICY_MIN_BUYBACK_INTERVAL_SEC", 300);
+  const policyBuybacksPaused = asBool("POLICY_BUYBACKS_PAUSED", false);
+  const policyMaxDailyBuybackNative = asTokenAmount("POLICY_MAX_DAILY_BUYBACK_NATIVE", "0");
+
+  const buybackFallbackSlipBps = asInt("BUYBACK_FALLBACK_SLIPPAGE_BPS", 200);
+  const buybackFallbackDeadlineSec = asInt("BUYBACK_FALLBACK_DEADLINE_SEC", 600);
+  const buybackFallbackCooldownSec = asInt("BUYBACK_FALLBACK_COOLDOWN_SEC", 300);
+
   const addressHints = loadAddressHints();
   if (saleCap + marketingCap !== totalCap) {
     throw new Error(`Invalid caps: sale(${saleCap}) + marketing(${marketingCap}) must equal ${totalCap}`);
@@ -263,6 +305,22 @@ async function main() {
     pairAddress,
   ]);
   await (
+    await supplyController.setDexConfig(
+      supplyDexReserveDropBps,
+      supplyDexRefillAmount,
+      supplyDexCooldownSec,
+      supplyMinimumReserveFloor,
+      supplyAutoRefreshBaseline
+    )
+  ).wait();
+  await (
+    await supplyController.setRewardsConfig(
+      supplyRewardsThreshold,
+      supplyRewardsRefillAmount,
+      supplyRewardsCooldownSec
+    )
+  ).wait();
+  await (
     await supplyController.setCircuitBreakerConfig(
       circuitBreakerEnabled,
       cbDexCriticalFloor,
@@ -277,6 +335,14 @@ async function main() {
     quoteTokenAddress,
     supplyController.address,
   ]);
+  await (await dexReserveGuard.setReserveRatioBps(dexGuardMinReserveRatioBps)).wait();
+  await (await dexReserveGuard.setRefillAmount(dexGuardRefillAmount)).wait();
+  await (await dexReserveGuard.setCooldown(dexGuardCooldownSec)).wait();
+  await (await dexReserveGuard.setAutoRefreshBaselineOnRefill(dexGuardAutoRefreshBaseline)).wait();
+  await (await dexReserveGuard.setPriceCheckConfig(dexGuardPriceCheckEnabled, dexGuardMaxDeviationBps)).wait();
+  if (dexGuardQuoteOracle !== ZERO) {
+    await (await dexReserveGuard.setQuoteOracle(dexGuardQuoteOracle)).wait();
+  }
 
   await (await mainCollection.setModules(compute.address, vrfRouterAddress)).wait();
   await (await mainCollection.setTicketHub(ticketHub.address)).wait();
@@ -395,6 +461,18 @@ async function main() {
 
   if (policy === ZERO && shouldDeployPolicy) {
     policy = (await deploy("BiggiPolicy", [deployer.address])).address;
+  }
+  if (policy !== ZERO) {
+    try {
+      const policyContract = await ethers.getContractAt("BiggiPolicy", policy);
+      await (await policyContract.setSwapSlippageBps(policySwapSlippageBps)).wait();
+      await (await policyContract.setTxDeadlineSec(policyTxDeadlineSec)).wait();
+      await (await policyContract.setMinBuybackInterval(policyMinBuybackIntervalSec)).wait();
+      await (await policyContract.setBuybacksPaused(policyBuybacksPaused)).wait();
+      await (await policyContract.setMaxDailyBuybackNative(policyMaxDailyBuybackNative)).wait();
+    } catch (e) {
+      console.warn(`WARN: POLICY parameter setup skipped for ${policy}: ${e.message}`);
+    }
   }
   if (communityCenter === ZERO && shouldDeployCommunityCenter) {
     communityCenter = (await deploy("BiggiCommunityCenter", [deployer.address])).address;
@@ -633,6 +711,17 @@ async function main() {
           console.warn(`WARN: BUYBACK_AGENT.setDripLM skipped: ${e.message}`);
         }
       }
+      try {
+        await (
+          await buybackContract.setFallbacks(
+            buybackFallbackSlipBps,
+            buybackFallbackDeadlineSec,
+            buybackFallbackCooldownSec
+          )
+        ).wait();
+      } catch (e) {
+        console.warn(`WARN: BUYBACK_AGENT.setFallbacks skipped: ${e.message}`);
+      }
     } catch (e) {
       console.warn(`WARN: BUYBACK_AGENT wiring skipped for ${buybackAgent}: ${e.message}`);
     }
@@ -728,7 +817,6 @@ async function main() {
     console.warn("WARN: supplyController.snapshotBaseline() skipped:", e.message);
   }
   await (await supplyController.setAllowedCaller(dexReserveGuard.address, true)).wait();
-  await (await dexReserveGuard.setCooldown(0)).wait();
   try {
     await (await dexReserveGuard.snapshotBaseline()).wait();
   } catch (e) {
@@ -818,6 +906,38 @@ async function main() {
     MOCK_LIQUIDITY_ROUTER: mockLiquidityRouter ? mockLiquidityRouter.address : ZERO,
     MOCK_LIQUIDITY_FACTORY: mockLiquidityFactory ? mockLiquidityFactory.address : ZERO,
     MOCK_BUYBACK_ROUTER: mockBuybackRouter ? mockBuybackRouter.address : ZERO,
+    PARAMS: {
+      CIRCUIT_BREAKER_ENABLED: circuitBreakerEnabled,
+      CB_DEX_CRITICAL_FLOOR: cbDexCriticalFloor.toString(),
+      CB_REWARDS_CRITICAL_FLOOR: cbRewardsCriticalFloor.toString(),
+
+      SUPPLY_DEX_RESERVE_DROP_BPS: supplyDexReserveDropBps,
+      SUPPLY_DEX_REFILL_AMOUNT: supplyDexRefillAmount.toString(),
+      SUPPLY_DEX_COOLDOWN_SEC: supplyDexCooldownSec,
+      SUPPLY_MIN_RESERVE_FLOOR: supplyMinimumReserveFloor.toString(),
+      SUPPLY_AUTO_REFRESH_BASELINE: supplyAutoRefreshBaseline,
+      SUPPLY_REWARDS_THRESHOLD: supplyRewardsThreshold.toString(),
+      SUPPLY_REWARDS_REFILL_AMOUNT: supplyRewardsRefillAmount.toString(),
+      SUPPLY_REWARDS_COOLDOWN_SEC: supplyRewardsCooldownSec,
+
+      DEX_GUARD_MIN_RESERVE_RATIO_BPS: dexGuardMinReserveRatioBps,
+      DEX_GUARD_REFILL_AMOUNT: dexGuardRefillAmount.toString(),
+      DEX_GUARD_COOLDOWN_SEC: dexGuardCooldownSec,
+      DEX_GUARD_AUTO_REFRESH_BASELINE: dexGuardAutoRefreshBaseline,
+      DEX_GUARD_PRICE_CHECK_ENABLED: dexGuardPriceCheckEnabled,
+      DEX_GUARD_MAX_DEVIATION_BPS: dexGuardMaxDeviationBps,
+      DEX_GUARD_QUOTE_ORACLE: dexGuardQuoteOracle,
+
+      POLICY_SWAP_SLIPPAGE_BPS: policySwapSlippageBps,
+      POLICY_TX_DEADLINE_SEC: policyTxDeadlineSec,
+      POLICY_MIN_BUYBACK_INTERVAL_SEC: policyMinBuybackIntervalSec,
+      POLICY_BUYBACKS_PAUSED: policyBuybacksPaused,
+      POLICY_MAX_DAILY_BUYBACK_NATIVE: policyMaxDailyBuybackNative.toString(),
+
+      BUYBACK_FALLBACK_SLIPPAGE_BPS: buybackFallbackSlipBps,
+      BUYBACK_FALLBACK_DEADLINE_SEC: buybackFallbackDeadlineSec,
+      BUYBACK_FALLBACK_COOLDOWN_SEC: buybackFallbackCooldownSec,
+    },
   };
 
   const outPath = path.resolve(__dirname, "../../addresses.master.json");
