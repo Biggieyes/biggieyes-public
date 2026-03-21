@@ -1,0 +1,259 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "MockVrfCoordinatorV2Plus",
+  "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/mocks/MockVrfCoordinatorV2Plus.sol",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "consumer",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "requestId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "randomWord",
+          "type": "uint256"
+        }
+      ],
+      "name": "MockRandomWordsFulfilled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "requestId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "requester",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "keyHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "subId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint16",
+          "name": "requestConfirmations",
+          "type": "uint16"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint32",
+          "name": "callbackGasLimit",
+          "type": "uint32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint32",
+          "name": "numWords",
+          "type": "uint32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "extraArgs",
+          "type": "bytes"
+        }
+      ],
+      "name": "MockRandomWordsRequested",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "consumer",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "requestId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "randomWord",
+          "type": "uint256"
+        }
+      ],
+      "name": "fulfill",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getConfig",
+      "outputs": [
+        {
+          "internalType": "uint16",
+          "name": "minimumRequestConfirmations",
+          "type": "uint16"
+        },
+        {
+          "internalType": "uint32",
+          "name": "maxGasLimit",
+          "type": "uint32"
+        },
+        {
+          "internalType": "uint32",
+          "name": "stalenessSeconds",
+          "type": "uint32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "gasAfterPaymentCalculation",
+          "type": "uint256"
+        },
+        {
+          "internalType": "int256",
+          "name": "fallbackWeiPerUnitLink",
+          "type": "int256"
+        },
+        {
+          "internalType": "int256",
+          "name": "fallbackWeiPerUnitNative",
+          "type": "int256"
+        },
+        {
+          "internalType": "uint96",
+          "name": "feeConfig",
+          "type": "uint96"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "nextRequestId",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "keyHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "subId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint16",
+              "name": "requestConfirmations",
+              "type": "uint16"
+            },
+            {
+              "internalType": "uint32",
+              "name": "callbackGasLimit",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "numWords",
+              "type": "uint32"
+            },
+            {
+              "internalType": "bytes",
+              "name": "extraArgs",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct VRFV2PlusClient.RandomWordsRequest",
+          "name": "req",
+          "type": "tuple"
+        }
+      ],
+      "name": "requestRandomWords",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "requestId",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "requestedNumWords",
+      "outputs": [
+        {
+          "internalType": "uint32",
+          "name": "",
+          "type": "uint32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "requester",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x6080806040523461001b57600160005561047b90816100218239f35b600080fdfe608060408181526004918236101561001657600080fd5b600092833560e01c9182632e0ee81214610400575081634434c6c0146103d25781636a84a985146103b55781637f8ce9b9146102325781639b1c385e146100ad575063c3f909d41461006757600080fd5b346100a957816003193601126100a95760e091610e1082519260038452622dc6c060208501528301528060608301528060808301528060a083015260c0820152f35b5080fd5b9190503461022e576003199160203684011261022a5767ffffffffffffffff9080358281116102265760c081360395860112610226578554946000198614610213576001868101885586885260205284872080546001600160a01b03191633179055608482019061011d8261042f565b91600260205286892063ffffffff80941663ffffffff19825416179055604484013561ffff811680910361020f5761016061015a6064870161042f565b9261042f565b9260a4860135906022190181121561020b5785018681013597881161020b5760240194873603861361020b579360209a938189947f3f68da3ef4bc3f87d59483811b3effed199a77ec35195c87c77ac19b872c8a5998946024898f9c9a8f519b01358b5201358f8a01528c89015216606087015216608085015260c060a08501528160c085015260e084013760e0858301015260e0813395601f80199101168101030190a351908152f35b8a80fd5b8980fd5b634e487b7160e01b875260118352602487fd5b8580fd5b8380fd5b8280fd5b90503461022e57606036600319011261022e5780356001600160a01b038116919082900361022a57602435926044359181519082820167ffffffffffffffff90838110828211176103a2578452600192600181526020936020820191602036843780511561038f57878352883b1561020b579094918a928751968793631fe543e360e01b855260448501908d898701528a602487015251809152606485019392865b82811061037657505050505081900381838a5af1801561036c57610323575b5050507fbbebe21567d53e19d9f36dc6022950b6209edd727d5414d33101736d056693049160209151908152a380f35b829793971161035957508552938160207fbbebe21567d53e19d9f36dc6022950b6209edd727d5414d33101736d056693046102f3565b634e487b7160e01b835260419052602482fd5b84513d8a823e3d90fd5b845186528f97508a9650948101949381019383016102d4565b634e487b7160e01b8b526032855260248bfd5b634e487b7160e01b895260418352602489fd5b5050346100a957816003193601126100a957602091549051908152f35b90503461022e57602036600319011261022e578160209363ffffffff92358152600285522054169051908152f35b8484346100a95760203660031901126100a9579235815260016020908152929020546001600160a01b03168152f35b3563ffffffff811681036104405790565b600080fdfea2646970667358221220ff403f38077b22b232e638bc44c3b9e6563d863ef83e7a8d9102290f360c152a64736f6c63430008180033",
+  "deployedBytecode": "0x608060408181526004918236101561001657600080fd5b600092833560e01c9182632e0ee81214610400575081634434c6c0146103d25781636a84a985146103b55781637f8ce9b9146102325781639b1c385e146100ad575063c3f909d41461006757600080fd5b346100a957816003193601126100a95760e091610e1082519260038452622dc6c060208501528301528060608301528060808301528060a083015260c0820152f35b5080fd5b9190503461022e576003199160203684011261022a5767ffffffffffffffff9080358281116102265760c081360395860112610226578554946000198614610213576001868101885586885260205284872080546001600160a01b03191633179055608482019061011d8261042f565b91600260205286892063ffffffff80941663ffffffff19825416179055604484013561ffff811680910361020f5761016061015a6064870161042f565b9261042f565b9260a4860135906022190181121561020b5785018681013597881161020b5760240194873603861361020b579360209a938189947f3f68da3ef4bc3f87d59483811b3effed199a77ec35195c87c77ac19b872c8a5998946024898f9c9a8f519b01358b5201358f8a01528c89015216606087015216608085015260c060a08501528160c085015260e084013760e0858301015260e0813395601f80199101168101030190a351908152f35b8a80fd5b8980fd5b634e487b7160e01b875260118352602487fd5b8580fd5b8380fd5b8280fd5b90503461022e57606036600319011261022e5780356001600160a01b038116919082900361022a57602435926044359181519082820167ffffffffffffffff90838110828211176103a2578452600192600181526020936020820191602036843780511561038f57878352883b1561020b579094918a928751968793631fe543e360e01b855260448501908d898701528a602487015251809152606485019392865b82811061037657505050505081900381838a5af1801561036c57610323575b5050507fbbebe21567d53e19d9f36dc6022950b6209edd727d5414d33101736d056693049160209151908152a380f35b829793971161035957508552938160207fbbebe21567d53e19d9f36dc6022950b6209edd727d5414d33101736d056693046102f3565b634e487b7160e01b835260419052602482fd5b84513d8a823e3d90fd5b845186528f97508a9650948101949381019383016102d4565b634e487b7160e01b8b526032855260248bfd5b634e487b7160e01b895260418352602489fd5b5050346100a957816003193601126100a957602091549051908152f35b90503461022e57602036600319011261022e578160209363ffffffff92358152600285522054169051908152f35b8484346100a95760203660031901126100a9579235815260016020908152929020546001600160a01b03168152f35b3563ffffffff811681036104405790565b600080fdfea2646970667358221220ff403f38077b22b232e638bc44c3b9e6563d863ef83e7a8d9102290f360c152a64736f6c63430008180033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

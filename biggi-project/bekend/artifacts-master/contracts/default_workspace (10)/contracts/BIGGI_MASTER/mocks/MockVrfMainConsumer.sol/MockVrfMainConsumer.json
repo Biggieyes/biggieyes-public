@@ -1,0 +1,207 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "MockVrfMainConsumer",
+  "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/mocks/MockVrfMainConsumer.sol",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "requestId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "randomWord",
+          "type": "uint256"
+        }
+      ],
+      "name": "RandomFulfilled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "minter",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "ticketId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "requestId",
+          "type": "uint256"
+        }
+      ],
+      "name": "RequestForwarded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "oldRouter",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newRouter",
+          "type": "address"
+        }
+      ],
+      "name": "RouterSet",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "requestId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "randomWord",
+          "type": "uint256"
+        }
+      ],
+      "name": "fulfillRandomFromRouter",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "fulfilledRandomWord",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "fulfilledRequestId",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "lastMinter",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "lastRequestId",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "lastTicketId",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "minter",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "ticketId",
+          "type": "uint256"
+        }
+      ],
+      "name": "requestViaRouter",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "requestId",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "router",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "router_",
+          "type": "address"
+        }
+      ],
+      "name": "setRouter",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x6080806040523461001657610414908161001c8239f35b600080fdfe608060408181526004918236101561001657600080fd5b600092833560e01c91826312238054146103a7575081631affd03b1461022d578163366deaf41461020e57816338fb63f9146101f05781634cd609bc146101c7578163773cb68b1461013357508063c0d78655146100d0578063f887ea40146100a95763fc2a88c31461008857600080fd5b346100a557816003193601126100a5576020906001549051908152f35b5080fd5b50346100a557816003193601126100a557905490516001600160a01b039091168152602090f35b8234610130576020366003190112610130576100ea6103c3565b81546001600160a01b0391821691829082167f8ab4cea230ab04f96aaa9a71fbc4bfa98097c7b9f07e06be33868b500f8100288580a36001600160a01b03191617815580f35b80fd5b9050346101c357816003193601126101c35782548135926024359290916001600160a01b031633036101935791602091847f8f8ec3920627e72cd4e3358c8a710531fbf3f75e40a11da842da17b5b348fbaa94558160055551908152a280f35b6020606492519162461bcd60e51b8352820152600b60248201526a37b7363c903937baba32b960a91b6044820152fd5b8280fd5b5050346100a557816003193601126100a55760025490516001600160a01b039091168152602090f35b9050346101c357826003193601126101c35760209250549051908152f35b5050346100a557816003193601126100a5576020906003549051908152f35b839150346100a557826003193601126100a5576102486103c3565b6024359360018060a01b0380855416928315610379578591604460209285519485938492633a61cf3f60e01b84521697888a8401528b60248401525af193841561036f5785946102e5575b50509382917f426abd1972277d14ad82326667977a093b345c016e07e978b9da278ff208d21e60209684600155826bffffffffffffffffffffffff60a01b600254161760025583600355519580a48152f35b9091949593506020903d602011610367575b601f8201601f191683019067ffffffffffffffff821184831017610354575060209183918752810103126103505751919392817f426abd1972277d14ad82326667977a093b345c016e07e978b9da278ff208d21e610293565b8480fd5b634e487b7160e01b885260419052602487fd5b3d91506102f7565b82513d87823e3d90fd5b825162461bcd60e51b815260208187015260086024820152670726f757465723d360c41b6044820152606490fd5b8490346100a557816003193601126100a5576020906005548152f35b600435906001600160a01b03821682036103d957565b600080fdfea26469706673582212209be4fcc1ed0efd20356390b0a7a53c8bf4018415eb2d59b2ccea4719eb05c40964736f6c63430008180033",
+  "deployedBytecode": "0x608060408181526004918236101561001657600080fd5b600092833560e01c91826312238054146103a7575081631affd03b1461022d578163366deaf41461020e57816338fb63f9146101f05781634cd609bc146101c7578163773cb68b1461013357508063c0d78655146100d0578063f887ea40146100a95763fc2a88c31461008857600080fd5b346100a557816003193601126100a5576020906001549051908152f35b5080fd5b50346100a557816003193601126100a557905490516001600160a01b039091168152602090f35b8234610130576020366003190112610130576100ea6103c3565b81546001600160a01b0391821691829082167f8ab4cea230ab04f96aaa9a71fbc4bfa98097c7b9f07e06be33868b500f8100288580a36001600160a01b03191617815580f35b80fd5b9050346101c357816003193601126101c35782548135926024359290916001600160a01b031633036101935791602091847f8f8ec3920627e72cd4e3358c8a710531fbf3f75e40a11da842da17b5b348fbaa94558160055551908152a280f35b6020606492519162461bcd60e51b8352820152600b60248201526a37b7363c903937baba32b960a91b6044820152fd5b8280fd5b5050346100a557816003193601126100a55760025490516001600160a01b039091168152602090f35b9050346101c357826003193601126101c35760209250549051908152f35b5050346100a557816003193601126100a5576020906003549051908152f35b839150346100a557826003193601126100a5576102486103c3565b6024359360018060a01b0380855416928315610379578591604460209285519485938492633a61cf3f60e01b84521697888a8401528b60248401525af193841561036f5785946102e5575b50509382917f426abd1972277d14ad82326667977a093b345c016e07e978b9da278ff208d21e60209684600155826bffffffffffffffffffffffff60a01b600254161760025583600355519580a48152f35b9091949593506020903d602011610367575b601f8201601f191683019067ffffffffffffffff821184831017610354575060209183918752810103126103505751919392817f426abd1972277d14ad82326667977a093b345c016e07e978b9da278ff208d21e610293565b8480fd5b634e487b7160e01b885260419052602487fd5b3d91506102f7565b82513d87823e3d90fd5b825162461bcd60e51b815260208187015260086024820152670726f757465723d360c41b6044820152606490fd5b8490346100a557816003193601126100a5576020906005548152f35b600435906001600160a01b03821682036103d957565b600080fdfea26469706673582212209be4fcc1ed0efd20356390b0a7a53c8bf4018415eb2d59b2ccea4719eb05c40964736f6c63430008180033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

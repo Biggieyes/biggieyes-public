@@ -43,8 +43,8 @@
       ]
     },
     "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\BiggiSeriesRegistry.sol": {
-      "lastModificationDate": 1774013112002,
-      "contentHash": "cfc6ca531d71a664be431cb5d51e63e9",
+      "lastModificationDate": 1774040486206,
+      "contentHash": "58fc91e8d13220377b174058390a1438",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/BiggiSeriesRegistry.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -1899,8 +1899,8 @@
       ]
     },
     "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\Library\\BiggiCapsLib.sol": {
-      "lastModificationDate": 1774013112002,
-      "contentHash": "de0bf4ddbbab619cc385f5200b717cee",
+      "lastModificationDate": 1774038606841,
+      "contentHash": "742564d1e418bdda7872439f87e17ced",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/Library/BiggiCapsLib.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -2064,8 +2064,8 @@
       ]
     },
     "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\TOKENOMICMAINNET\\Library\\BiggiCapsLib.sol": {
-      "lastModificationDate": 1774023549381,
-      "contentHash": "0acc6700b3e3300b3326b6be4e469334",
+      "lastModificationDate": 1774038613697,
+      "contentHash": "742564d1e418bdda7872439f87e17ced",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/Library/BiggiCapsLib.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -2146,8 +2146,8 @@
       ]
     },
     "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\TOKENOMICMAINNET\\ModeratorCenter.sol": {
-      "lastModificationDate": 1774013112061,
-      "contentHash": "ad6d9cfdd2fd4265d45f8c5997a5b9c0",
+      "lastModificationDate": 1774039092353,
+      "contentHash": "c6ec1f2afe176688ef022745a3953228",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/ModeratorCenter.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -4926,6 +4926,85 @@
         "BiggiChapterSeriesReader",
         "IBiggiChapterControllerReaderView",
         "IBiggiSeriesRegistryReaderView"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\mocks\\MockVrfCoordinatorV2Plus.sol": {
+      "lastModificationDate": 1774040514993,
+      "contentHash": "770410620184604e4a31cc7ee0d09989",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/mocks/MockVrfCoordinatorV2Plus.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../chainlink/VRFCoordinatorV2PlusInterface.sol",
+        "../chainlink/VRFV2PlusClient.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "IVrfRawConsumer",
+        "MockVrfCoordinatorV2Plus"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\mocks\\MockVrfMainConsumer.sol": {
+      "lastModificationDate": 1774040524289,
+      "contentHash": "211e266895fe0d13ebfa9bf79c481a5a",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/mocks/MockVrfMainConsumer.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "IBiggiVrfRouterRequest",
+        "MockVrfMainConsumer"
       ]
     }
   }
