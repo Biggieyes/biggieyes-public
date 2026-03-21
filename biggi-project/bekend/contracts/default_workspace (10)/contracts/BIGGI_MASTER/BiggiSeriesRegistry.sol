@@ -8,6 +8,7 @@ error InvalidSeries();
 error InvalidChapter();
 error AlreadyExists();
 error ZeroAddress();
+error CollectionAssignedToOtherChapter();
 
 contract BiggiSeriesRegistry is Ownable {
     struct SeriesInfo {
@@ -78,6 +79,13 @@ contract BiggiSeriesRegistry is Ownable {
         ChapterInfo storage ch = chapterInfo[chapterId];
         if (!ch.exists) revert InvalidChapter();
         if (vrfCollection == address(0) || publicCollection == address(0) || ticketHub == address(0)) revert ZeroAddress();
+
+        uint256 mappedVrf = chapterByCollection[vrfCollection];
+        if (mappedVrf != 0 && mappedVrf != chapterId) revert CollectionAssignedToOtherChapter();
+        uint256 mappedPublic = chapterByCollection[publicCollection];
+        if (mappedPublic != 0 && mappedPublic != chapterId) revert CollectionAssignedToOtherChapter();
+        uint256 mappedHub = chapterByCollection[ticketHub];
+        if (mappedHub != 0 && mappedHub != chapterId) revert CollectionAssignedToOtherChapter();
 
         if (ch.vrfCollection != address(0)) chapterByCollection[ch.vrfCollection] = 0;
         if (ch.publicCollection != address(0)) chapterByCollection[ch.publicCollection] = 0;

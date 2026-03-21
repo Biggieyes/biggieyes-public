@@ -90,6 +90,7 @@ contract ModeratorCenter is Ownable, ReentrancyGuard {
     }
 
     function setReferralHash(uint8 slotId, bytes32 referralHash) external onlyOwner validSlot(slotId) {
+        require(referralHash != bytes32(0), "zero referral");
         slots[slotId].referralHash = referralHash;
         emit ReferralSet(slotId, referralHash);
     }
@@ -105,7 +106,12 @@ contract ModeratorCenter is Ownable, ReentrancyGuard {
     }
 
     function setCoefs(uint256 _leaderBps, uint256 _moderatorBps, uint256 _saleBoostBpsPerTicket) external onlyOwner {
-        require(_leaderBps <= BPS_DENOM && _moderatorBps <= BPS_DENOM, "bad coefs");
+        require(
+            _leaderBps <= BPS_DENOM &&
+            _moderatorBps <= BPS_DENOM &&
+            _saleBoostBpsPerTicket <= BPS_DENOM,
+            "bad coefs"
+        );
         leaderCoefBps = _leaderBps;
         moderatorCoefBps = _moderatorBps;
         saleBoostBpsPerTicket = _saleBoostBpsPerTicket;
@@ -126,6 +132,7 @@ contract ModeratorCenter is Ownable, ReentrancyGuard {
 
     /* ---- MultiCollection setter ---- */
     function setMultiCollection(address mc) external onlyOwner {
+        require(mc != address(0), "mc=0");
         emit MultiCollectionSet(multiCollection, mc);
         multiCollection = mc;
     }
@@ -133,6 +140,7 @@ contract ModeratorCenter is Ownable, ReentrancyGuard {
     /* ========== USER / FRONTEND FUNCTIONS ========== */
 
     function registerReferral(bytes32 referralHash) external nonReentrant {
+        require(referralHash != bytes32(0), "zero referral");
         uint8 slotId = _slotForReferral(referralHash);
         require(slots[slotId].enabled, "slot disabled");
 
@@ -154,6 +162,8 @@ contract ModeratorCenter is Ownable, ReentrancyGuard {
 
     function recordTicketSale(bytes32 referralHash, address buyer) external nonReentrant {
         require(reporters[msg.sender], "not reporter");
+        require(referralHash != bytes32(0), "zero referral");
+        require(buyer != address(0), "buyer=0");
         uint8 slotId = _slotForReferral(referralHash);
         require(slots[slotId].enabled, "slot disabled");
 
@@ -162,7 +172,12 @@ contract ModeratorCenter is Ownable, ReentrancyGuard {
         weekTicketCount[week][slotId] += 1;
         slots[slotId].cumulativeTicketSales += 1;
 
-        if (!usedThisWeekForSlot[week][slotId][buyer]) {
+        bool canCountUnique = !usedThisWeekForSlot[week][slotId][buyer];
+        if (canCountUnique && globalUniquePerWeek && usedThisWeekGlobally[week][buyer]) {
+            canCountUnique = false;
+        }
+
+        if (canCountUnique) {
             usedThisWeekForSlot[week][slotId][buyer] = true;
             weekUniqueCount[week][slotId] += 1;
             if (globalUniquePerWeek) usedThisWeekGlobally[week][buyer] = true;

@@ -91,4 +91,28 @@ describe("BIGGI_MASTER: moderator + drip consistency smoke", function () {
     expect(gainB).to.be.gt(0);
     expect(gainA).to.be.gt(gainB);
   });
+
+  it("enforces global unique buyer counting across slots in reporter flow", async () => {
+    const [owner, alice, bob, buyer] = await ethers.getSigners();
+    const moderator = await deploy("ModeratorCenter", owner.address);
+
+    const refA = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("slot-global-A"));
+    const refB = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("slot-global-B"));
+
+    await (await moderator.configureSlot(0, true, true, alice.address)).wait();
+    await (await moderator.configureSlot(1, true, false, bob.address)).wait();
+    await (await moderator.setReferralHash(0, refA)).wait();
+    await (await moderator.setReferralHash(1, refB)).wait();
+    await (await moderator.setReporter(owner.address, true)).wait();
+
+    await (await moderator.recordTicketSale(refA, buyer.address)).wait();
+    await (await moderator.recordTicketSale(refB, buyer.address)).wait();
+
+    const week = Math.floor((await ethers.provider.getBlock("latest")).timestamp / (7 * 24 * 60 * 60));
+
+    expect(await moderator.weekUniqueCount(week, 0)).to.equal(1);
+    expect(await moderator.weekUniqueCount(week, 1)).to.equal(0);
+    expect(await moderator.weekTicketCount(week, 0)).to.equal(1);
+    expect(await moderator.weekTicketCount(week, 1)).to.equal(1);
+  });
 });
