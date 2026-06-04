@@ -1,0 +1,227 @@
+{
+  "updated": 44,
+  "skipped": 0,
+  "total": 44,
+  "details": [
+    {
+      "name": "BiggiBuybackAgent.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiBuybackAgent.sol/BiggiBuybackAgent.json"
+    },
+    {
+      "name": "BiggiBuybackDripSetup.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiBuybackDripSetup.sol/BiggiBuybackDripSetup.json"
+    },
+    {
+      "name": "BiggiBuybackReader.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiBuybackReader.sol/BiggiBuybackReader.json"
+    },
+    {
+      "name": "BiggiBuybackUpkeepProxy.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiUpKeeperProxy.sol/BiggiBuybackUpkeepProxy.json"
+    },
+    {
+      "name": "BiggiCommunityCenter.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiCommunityCenter.sol/BiggiCommunityCenter.json"
+    },
+    {
+      "name": "BiggiDexReserveGuard.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiDexReserveGuard.sol/BiggiDexReserveGuard.json"
+    },
+    {
+      "name": "BiggiDexReserveGuardReader.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiDexReserveGuardReader.sol/BiggiDexReserveGuardReader.json"
+    },
+    {
+      "name": "BiggiDripDistributor.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiDripDistributor.sol/BiggiDripDistributor.json"
+    },
+    {
+      "name": "BiggiDripLMToModerator.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiDripLMToModerator.sol/BiggiDripLMToModerator.json"
+    },
+    {
+      "name": "BiggiChapterSeriesReader.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_READERS/BiggiChapterSeriesReader.sol/BiggiChapterSeriesReader.json"
+    },
+    {
+      "name": "BiggiLiquidityBranchUserReader.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiLiquidityBranchUserReader.sol/BiggiLiquidityBranchUserReader.json"
+    },
+    {
+      "name": "BiggiLiquidityHelperReader.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiLiquidityHelperReader.sol/BiggiLiquidityHelperReader.json"
+    },
+    {
+      "name": "BiggiLiquidityKeeperProxy.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiLiquidityKeeperProxy.sol/BiggiLiquidityKeeperProxy.json"
+    },
+    {
+      "name": "BiggiLiquidityManager.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiLiquidityManager.sol/BiggiLiquidityManager.json"
+    },
+    {
+      "name": "BiggiLiquidityOrchestrator.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiLiquidityOrchestrator.sol/BiggiLiquidityOrchestrator.json"
+    },
+    {
+      "name": "BiggiLpPriceFeed.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiLpPriceFeed.sol/BiggiLpPriceFeed.json"
+    },
+    {
+      "name": "BiggiMainReader.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_READERS/BiggiMainReader.sol/BiggiMainReader.json"
+    },
+    {
+      "name": "BiggiMasterTokenomicsConfig.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiMasterTokenomicsConfig.sol/BiggiMasterTokenomicsConfig.json"
+    },
+    {
+      "name": "BiggiMultiCollectionDistributorReaderV2.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_READERS/BiggiMultiCollectionDistributorReaderV2.sol/BiggiMultiCollectionDistributorReaderV2.json"
+    },
+    {
+      "name": "BiggiNftRewardsReader.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_READERS/BiggiNftRewardsReader.sol/BiggiNftRewardsReader.json"
+    },
+    {
+      "name": "BiggiPolicy.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiPolicy.sol/BiggiPolicy.json"
+    },
+    {
+      "name": "BiggiReserveTreasuryReader.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiReserveTreasuryReader.sol/BiggiReserveTreasuryReader.json"
+    },
+    {
+      "name": "BiggiReserveV4.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiReserveV4.sol/BiggiReserveV4.json"
+    },
+    {
+      "name": "BiggiSupplyController.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiSupplyController.sol/BiggiSupplyController.json"
+    },
+    {
+      "name": "BiggiSupplyControllerReader.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiSupplyControllerReader.sol/BiggiSupplyControllerReader.json"
+    },
+    {
+      "name": "BiggiSupplyGuardian.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiSupplyGuardian.sol/BiggiSupplyGuardian.json"
+    },
+    {
+      "name": "BiggiSupplyGuardianReader.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiSupplyGuardianReader.sol/BiggiSupplyGuardianReader.json"
+    },
+    {
+      "name": "BiggiSystemReader.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiSystemReader.sol/BiggiSystemReader.json"
+    },
+    {
+      "name": "BiggiToken.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiToken.sol/BiggiToken.json"
+    },
+    {
+      "name": "BiggiTokenomicsSystemAddonReader.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiTokenomicsSystemAddonReader.sol/BiggiTokenomicsSystemAddonReader.json"
+    },
+    {
+      "name": "BiggiTokenomikReader.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiTokenomikReader.sol/BiggiTokenomikReader.json"
+    },
+    {
+      "name": "BiggiTokenRewardsReader.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiTokenRewardsReader.sol/BiggiTokenRewardsReader.json"
+    },
+    {
+      "name": "BiggiTreasury.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiTreasury.sol/BiggiTreasury.json"
+    },
+    {
+      "name": "DripKeeperProxy.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiDripKeeperProxy.sol/DripKeeperProxy.json"
+    },
+    {
+      "name": "LiquidityAutomation.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiLiquidityAutomation.sol/LiquidityAutomation.json"
+    },
+    {
+      "name": "LiquiditySetup.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiLiquiditySetup.sol/LiquiditySetup.json"
+    },
+    {
+      "name": "LiquidityVault.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiLiquidityVault.sol/LiquidityVault.json"
+    },
+    {
+      "name": "ModeratorCenter.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/ModeratorCenter.sol/ModeratorCenter.json"
+    },
+    {
+      "name": "Multicall2.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/Multicall2.sol/Multicall2.json"
+    },
+    {
+      "name": "BiggiBpsLib.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_LIBRARY/BiggiBpsLib.sol/BiggiBpsLib.json"
+    },
+    {
+      "name": "BiggiCapsLib.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_LIBRARY/BiggiCapsLib.sol/BiggiCapsLib.json"
+    },
+    {
+      "name": "BiggiErrorsLib.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_LIBRARY/BiggiErrorsLib.sol/BiggiErrorsLib.json"
+    },
+    {
+      "name": "BiggiIdIndexLib.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_LIBRARY/BiggiIdIndexLib.sol/BiggiIdIndexLib.json"
+    },
+    {
+      "name": "BiggiSwapLib.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_LIBRARY/BiggiSwapLib.sol/BiggiSwapLib.json"
+    }
+  ]
+}
