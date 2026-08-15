@@ -2,7 +2,7 @@
 
 BIGGIEYES is a Polygon-based Web3 NFT ecosystem that combines ticket minting, verifiable randomness, multi-collection NFT issuance, on-chain tokenomics, automated liquidity management, and community reward rails into a single transparent protocol stack.
 
-The repository contains the frontend application, address registry, deployment scripts, contract artifacts, reader contracts, and protocol documentation for the BIGGIEYES ecosystem. The current public registry in this repo targets Polygon Amoy as the active deployment environment, while the architecture is designed to scale to Polygon mainnet.
+The repository contains the frontend application, address registry, deployment scripts, contract artifacts, reader contracts, and protocol documentation for the BIGGIEYES ecosystem. The current public registry in this repo targets Polygon mainnet as the active deployment environment.
 
 ## Key Features
 
@@ -72,7 +72,7 @@ The repository contains the frontend application, address registry, deployment s
 ## Repository Notes
 
 - Frontend stack: React 19, Vite, ethers v6, WalletConnect, Netlify functions
-- Chain environment in current repo registry: Polygon Amoy (`chainId 80002`)
+- Chain environment in current repo registry: Polygon mainnet (`chainId 137`)
 - Canonical frontend address map: `src/shared/utils/addresses.js`
 - Backend mirror of deployed addresses: `biggi-project/bekend/addresses.json`
 - Contract artifacts and sources: `biggi-project/bekend`

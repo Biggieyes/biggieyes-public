@@ -1,310 +1,169 @@
-# ZDROJE PRAVDY (Sources of Truth) - BiggiNFT Web
+# Sources Of Truth - BiggiNFT Web
 
-Tento dokument identifikuje všechny autoritativní zdroje konfigurace a dat v projektu BiggiNFT Web.
+Last verified: 2026-06-16
 
-## 📋 Přehled
+This document defines the authoritative configuration and data sources used by the frontend. Do not duplicate live values in feature components.
 
-Projekt obsahuje několik klíčových zdrojů pravdy, které definují kritická data pro běh aplikace.
+## 1. Active Network
 
----
+- Network: Polygon mainnet.
+- Chain ID: `137`.
+- Explorer: `https://polygonscan.com`.
+- Native currency label in UI: `POL`.
 
-## 🔗 1. ADRESY SMART KONTRAKTŮ
+## 2. Smart-Contract Addresses
 
-### Primární zdroj: `src/shared/utils/addresses.js`
+Primary source:
 
-**Popis**: Hlavní autoritativní zdroj všech adres smart kontraktů na Polygon Amoy síti (Chain ID: 80002).
+- `src/shared/utils/addresses.js`
 
-**Poznámka**: Konkrétní adresy se v dokumentaci neduplikují. Vždy čerpejte z
-`src/shared/utils/addresses.js` (env-aware, jediný zdroj pravdy).
+Mirrors and re-exports:
 
-**Rychlý výpis adres**:
-```bash
-node -e "import('./src/shared/utils/addresses.js').then(m => console.log(m.ADDR))"
-```
+- `biggi-project/bekend/addresses.json`
+- `public-repo/src/shared/utils/addresses.js`
+- `src/config/addresses/mainnet.js`
+- `src/config/addresses/index.js`
+- `src/config/addresses.js`
+- `src/addresses.js`
 
-**Hierarchie importů**:
-```
-src/shared/utils/addresses.js (ZDROJOVÝ SOUBOR)
-    ↓
-src/config/addresses/amoy.js (re-export)
-    ↓
-src/config/addresses/index.js (agregace sítí)
-    ↓
-src/config/addresses.js (legacy re-export, bez logiky)
-    ↓
-src/addresses.js (entry point)
-```
+Rules:
 
-**Důležité poznámky**:
-- ✅ Podporuje environment variable overrides (VITE_MAIN, VITE_BIGGI, atd.)
-- ✅ Jediný zdroj pravdy - NIKDY neduplikovat adresy jinde v kódu
-- ✅ Obsahuje aliasy pro zpětnou kompatibilitu
-- ✅ Backend zrcadlo: `biggi-project/bekend/addresses.json` musí být v syncu (stejné hodnoty + aliasy)
-- ✅ Canonical MCD reader: `MCD_READER_V2 = 0x1A1521465B4828726e2025C6f8351587A15903Cb`
-- ✅ `src/shared/addresses.js` je pouze re-export (bez vlastních adres)
-- ✅ Rewards readers (keys v addresses.js): `TOKEN_REWARDS_READER`, `NFT_REWARDS_READER`
+- Components must import addresses from the shared registry.
+- Documentation may list selected live addresses for audit context, but implementation must not rely on documentation tables.
+- Run `npm run check:contracts` after any address update.
 
----
-
-## 📜 2. ABI DEFINICE (Application Binary Interface)
-
-### Primární zdroj: `src/config/abi/index.js`
-
-**Popis**: Centralizovaný export všech ABI souborů smart kontraktů.
-
-**Poznámka**: Kompletní seznam ABI je veden v `ABI_INVENTORY.md`. V kódu se ABI
-importují výhradně z `src/config/abi/index.js`.
-
-**Umístění souborů**: `src/config/abi/*.json`
-
-**Nově přidané ABI (readery)**:
-- `BiggiTokenRewardsReader`
-- `BiggiNftRewardsReader`
-
----
-
-## 🗺️ 3. KONTRAKTOVÝ REGISTR
-
-### Primární zdroj: `src/config/contracts/index.js`
-
-**Popis**: Mapuje názvy kontraktů na jejich addressKey a abiName. Poskytuje funkci `getContractMeta()` pro získání kompletních metadat kontraktu.
-
-**Struktura**:
-```javascript
-export const CONTRACTS = {
-  MAIN: { addressKey: "MAIN", abiName: "BiggiMain" },
-  MAIN2: { addressKey: "MAIN2", abiName: "BiggiMain2" },
-  BIGGI: { addressKey: "BIGGI", abiName: "BiggiToken" },
-  DISTRIBUTOR: { addressKey: "DISTRIBUTOR", abiName: "BiggiMultiCollectionDistributor" },
-  // ... atd.
-};
-```
-
-**API**:
-```javascript
-getContractMeta(chainKeyOrId, contractKey)
-// Vrací: { chainKey, key, addressKey, abiName, address, abi }
-```
-
----
-
-## 🌐 4. KONFIGURACE SÍTÍ
-
-### Primární zdroje:
-- `src/config/chains.js` — chain metadata (chainId, hex, name, explorer, currency)
-- `src/config/addresses/index.js` — mapování `chainKey → adresy`
-- `src/shared/utils/rpcConfig.js` — výběr RPC + export `AMOY` (bere metadata z `chains.js`)
-
-**DEFAULT_CHAIN_ID**: 80002 (Polygon Amoy) — definováno v `src/shared/utils/addresses.js`
-
-**API funkce**:
-- `resolveChainKey(chainKeyOrId)` - převádí chain ID na klíč (addresses)
-- `getAddresses(chainKeyOrId)` - získá adresy pro danou síť (addresses)
-- `chainNameFor(chainId)` / `explorerBaseFor(chainId)` - chain metadata (chains)
-
----
-
-## 🗄️ 5. DATABÁZOVÁ SCHÉMATA
-
-### Primární zdroj: `sql/migration_init.sql`
-
-**Popis**: PostgreSQL/Supabase schéma pro live chat funkcionalitu.
-
-**Tabulky**:
-
-```sql
-public.messages           // Chat zprávy
-public.nonces             // Wallet authentication nonces
-public.rules              // Chat pravidla
-public.chat_config        // Konfigurace chatu (owner address)
-public.moderation_log     // Moderační akce
-```
-
-**Row Level Security**: ✅ Povoleno pro všechny tabulky
-
-**Výchozí vlastník chatu**: `0x64ADb3e4B5BE8567c599bA8e050F7016C3D51eD0`
-
----
-
-## 🔌 6. API ENDPOINTY (Netlify Functions)
-
-### Primární zdroj: `netlify.toml`
-
-**Serverless funkce**:
-
-```
-/api/nonce              → /.netlify/functions/nonce
-/api/message            → /.netlify/functions/message
-/api/admin/editMessage  → /.netlify/functions/admin-editMessage
-/api/admin/updateRules  → /.netlify/functions/admin-updateRules
-/functions/*            → /.netlify/functions/:splat
-```
-
-**Pinning funkce** (Pinata/IPFS):
-- `functions/pinFile.js` - Nahrává soubory na IPFS
-- `functions/pinJson.js` - Nahrává JSON metadata na IPFS
-- `functions/_pinataUtils.js` - Utility pro Pinata API
-
-**Bezpečnost**:
-- ⚠️ API klíče jsou uloženy POUZE na serveru (environment variables)
-- ⚠️ NIKDY nevystavovat Pinata/NFT.Storage klíče na frontendu
-
----
-
-## 🔐 7. ENVIRONMENT PROMĚNNÉ
-
-### Doporučené environment proměnné:
+Current sync check:
 
 ```bash
-# Blockchain RPC
-VITE_RPC_URL_AMOY="https://rpc-amoy.polygon.technology"
-
-# Supabase (Chat)
-VITE_SUPABASE_URL="..."
-VITE_SUPABASE_ANON_KEY="..."
-
-# Pinata (pouze server-side)
-PINATA_API_KEY="..."
-PINATA_API_SECRET="..."
-PINATA_JWT="..."
-
-# NFT.Storage (pouze server-side)
-NFT_STORAGE_API_KEY="..."
-
-# Redis (Rate limiting - volitelné)
-REDIS_URL="redis://..."
-
-# Monitoring (volitelné)
-SENTRY_DSN="..."
-
-# Contract overrides (volitelné)
-VITE_MAIN="0x..."
-VITE_BIGGI="0x..."
+npm run check:contracts
 ```
 
-**⚠️ BEZPEČNOSTNÍ UPOZORNĚNÍ**:
-- Prefixované `VITE_` jsou přístupné na frontendu
-- Neprefixované proměnné jsou přístupné POUZE v serverless funkcích
-- NIKDY neukládat privátní klíče do .env souborů
+Expected current result: 150 frontend keys and 150 backend keys.
 
----
+## 3. ABI Definitions
 
-## 📦 8. BUILD KONFIGURACE
+Primary source:
 
-### Primární zdroj: `package.json`
+- `src/config/abi/index.js`
 
-**Hlavní závislosti**:
-- React 19.2.3
-- ethers.js 6.16.0
-- @supabase/supabase-js 2.89.0
-- framer-motion 12.24.0
+ABI JSON files:
 
-**Build nástroje**:
-- Vite 7.3.0
-- Vitest 4.0.16
-- ESLint 9.39.2
+- `src/config/abi/*.json`
+- `src/abis/*.json` where legacy copies are still required
 
-**Skripty**:
-```json
-"dev": "vite",
-"build": "vite build",
-"test": "vitest run",
-"check:abis": "node scripts/check-abis.js"
-```
+Inventory:
 
----
+- `ABI_INVENTORY.md`
 
-## 📝 9. DOKUMENTACE
-
-**Klíčové dokumenty**:
-- `ABI_INVENTORY.md` - Kompletní seznam ABI kontraktů
-- `README_SECRET_ROTATION.md` - Bezpečnostní postupy
-- `REFACTORING_SUMMARY.md` - Historie refaktoringu
-- `docs/README_PINNING.md` - Dokumentace IPFS pinování
-- `docs/system-spec.md` - System spec + invariants + threat model + ops checklist
-- `docs/testing-strategy.md` - Integration/fork/fuzz test plan
-- `docs/abi-audit.md` - Audit ABI
-- `docs/frontend-audit.md` - Audit frontendu
-
----
-
-## 🎯 SUMMARY - Hierarchie zdrojů pravdy
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ 1. SMART CONTRACT ADDRESSES                                 │
-│    src/shared/utils/addresses.js                            │
-│    ↓ Single Source of Truth pro všechny adresy kontraktů   │
-├─────────────────────────────────────────────────────────────┤
-│ 2. ABI DEFINITIONS                                           │
-│    src/config/abi/index.js                                  │
-│    ↓ Exportuje všechny ABI JSON soubory                    │
-├─────────────────────────────────────────────────────────────┤
-│ 3. CONTRACT REGISTRY                                         │
-│    src/config/contracts/index.js                            │
-│    ↓ Mapuje contractKey → address + ABI                    │
-├─────────────────────────────────────────────────────────────┤
-│ 4. NETWORK CONFIG                                            │
-│    src/config/chains.js + src/config/addresses/index.js     │
-│    ↓ chain metadata + adresy pro sítě                       │
-├─────────────────────────────────────────────────────────────┤
-│ 5. DATABASE SCHEMA                                           │
-│    sql/migration_init.sql                                   │
-│    ↓ Supabase chat tables + RLS                            │
-├─────────────────────────────────────────────────────────────┤
-│ 6. API ENDPOINTS                                             │
-│    netlify.toml                                             │
-│    ↓ Serverless functions routing                           │
-├─────────────────────────────────────────────────────────────┤
-│ 7. ENVIRONMENT CONFIG                                        │
-│    .env (gitignored)                                        │
-│    ↓ RPC URLs, API keys, feature flags                     │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## ✅ BEST PRACTICES
-
-### Při práci se zdroji pravdy:
-
-1. **NIKDY neduplikovat adresy kontraktů** - vždy importovat z `src/shared/utils/addresses.js`
-
-2. **NIKDY neměnit ABI ručně** - vždy generovat ze smart kontraktů pomocí:
-   ```bash
-   npm run check:abis
-   ```
-
-3. **Environment overrides** - použít VITE_ prefix pro override adres:
-   ```bash
-   VITE_MAIN=0x... npm run dev
-   ```
-
-4. **Database migrace** - vždy aktualizovat `sql/migration_init.sql` při změnách schématu
-
-5. **API bezpečnost** - citlivé klíče POUZE v serverless funkcích, ne na frontendu
-
-6. **Dokumentace** - při změnách zdrojů pravdy aktualizovat tento dokument
-
----
-
-## 🔍 VERIFIKACE
-
-Pro ověření integrity zdrojů pravdy spusťte:
+Current ABI check:
 
 ```bash
-# Ověření ABI
 npm run check:abis
+```
 
-# Ověření adres
-node -e "import('./src/shared/utils/addresses.js').then(m => console.log(m.ADDR))"
+Expected current result: 58 ABI files and 745 functions.
 
-# Build test
+## 4. Contract Metadata Registry
+
+Primary source:
+
+- `src/config/contracts/index.js`
+
+This registry maps contract keys to address keys and ABI names. Use `getContractMeta()` instead of hand-building address/ABI pairs in UI code.
+
+## 5. RPC Configuration
+
+Primary source:
+
+- `src/shared/utils/rpcConfig.js`
+
+Read RPC variables:
+
+- `VITE_JSON_RPC_URL`
+- `VITE_POLYGON_RPC_URL`
+- `VITE_MOD_CHAIN_RPC`
+- `VITE_ADDITIONAL_RPC_URLS`
+
+Current built-in public fallbacks:
+
+- `https://polygon.drpc.org`
+- `https://polygon-bor-rpc.publicnode.com`
+
+`https://polygon-rpc.com` is intentionally blocked/filtered because it returned HTTP 401 during runtime smoke testing.
+
+## 6. Frontend Contract Factories
+
+Primary source:
+
+- `src/shared/utils/contract.js`
+
+Use this file for:
+
+- read-only providers
+- signer providers
+- chain enforcement
+- contract factory helpers
+- reader/direct fallback helpers
+
+## 7. Frontend Data Views
+
+Primary implementation areas:
+
+- Gallery: `src/features`, `src/components`, and shared metadata/IPFS utilities.
+- LiveStats: mainnet reader services and dashboard panels.
+- Rewards: token, NFT, and collection reward panels/services.
+- Tokenomics: reserve, treasury, buyback, liquidity, token, pair, and system reader panels.
+- Community: Netlify/Supabase-backed chat and community contract views.
+
+## 8. Serverless And Database Sources
+
+Netlify routing:
+
+- `netlify.toml`
+
+Functions:
+
+- `functions/nonce.js`
+- `functions/message.js`
+- `functions/pinFile.js`
+- `functions/pinJson.js`
+- `functions/admin/*`
+
+Supabase schema:
+
+- `sql/migration_init.sql`
+
+Server-only secrets must remain outside frontend bundles and outside committed files.
+
+## 9. Public Documentation Mirror
+
+Public documentation and assets live in:
+
+- `public-repo/`
+
+When mainnet addresses, ABI inventory, or active network language changes, update root docs and public docs together.
+
+## 10. Required Verification
+
+After frontend configuration or documentation changes:
+
+```bash
 npm run build
 ```
 
----
+After address or ABI changes:
 
-**Poslední aktualizace**: 31.1.2026
-**Verze projektu**: 0.0.0
-**Chain ID**: 80002 (Polygon Amoy)
+```bash
+npm run check:contracts
+npm run check:abis
+npm run smoke:runtime
+```
+
+Before release:
+
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run check:rpc
+```

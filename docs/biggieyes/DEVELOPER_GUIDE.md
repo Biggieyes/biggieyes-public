@@ -43,7 +43,7 @@ The frontend centralizes chain access in `src/shared/utils/contract.js`.
 ### Write path
 
 - use injected or WalletConnect signer providers
-- enforce Polygon Amoy before transaction submission
+- enforce Polygon mainnet before transaction submission
 - use retry helpers for write paths that may hit RPC throttling
 
 ## Address And ABI Discipline

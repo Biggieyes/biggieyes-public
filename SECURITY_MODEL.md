@@ -158,7 +158,7 @@ The frontend follows a read-heavy model:
 
 - read-only providers are preferred for dashboard and reader calls
 - signer-backed providers are used only for write paths
-- Polygon Amoy network enforcement is implemented for wallet sessions
+- Polygon mainnet network enforcement is implemented for wallet sessions
 - wallet-add and wallet-switch flows update stale RPC metadata where possible
 - RPC failover logic prioritizes healthy endpoints and de-prioritizes rate-limited ones
 

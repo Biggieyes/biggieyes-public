@@ -29,7 +29,7 @@ BIGGIEYES is being developed as a protocol, not a single campaign mint. The road
 
 **Target outcomes**
 
-- migrate from public testnet posture to mainnet governance standards
+- migrate from public mainnet posture to mainnet governance standards
 - multisig ownership across all privileged contracts
 - finalized treasury and reserve operating policy
 - final public documentation portal and launch-grade investor materials

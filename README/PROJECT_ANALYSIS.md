@@ -1,124 +1,127 @@
-# Analýza projektu — BIGGINFTWEB
+# Project Analysis - Current Frontend State
 
-Tento dokument shrnuje architekturu, externí služby, požadované proměnné prostředí, postupy pro lokální vývoj, běžné chybové stavy a doporučené další kroky.
+Last verified: 2026-06-16
 
-**Stručný popis**
-- Frontendová aplikace React/Vite pro on‑chain NFT loterii & tokenomics dashboard. Používá Netlify Functions pro server‑side operace (pinování na Pinata, nonce/auth endpoints, admin API) a komunikuje s blockchainem přes `ethers.js` a jiné RPC providery.
+This document summarizes the current frontend architecture, dependencies, environment requirements, troubleshooting paths, and operational checks for the BiggiEyes Polygon mainnet application.
 
-**Hlavní složky (vybrané)**
-- `src/` – React app, komponenty, hooky, utils (web3, ipfs, services).
-- `functions/` – Netlify Functions (např. `nonce.js`, `pinFile`, `pinJson`, `message`, admin handlers).
-- `src/shared/utils/addresses.js` – centrální seznam adres kontraktů a env override logika.
-- `src/utils/contract.js` – factory pro read/write kontrakty, `getReaderRO()` fallbacky a RPC logika.
-- `src/utils/rpcConfig.js` – konfigurace RPC endpointů a preference.
-- `src/utils/ipfs.js`, `src/components/PinUploader.jsx`, `docs/README_PINNING.md` – pinování na Pinata + fallbacky.
+## Short Description
 
-Externí služby a providery
-- Supabase
-  - Používá se pro ukládání nonce (auth flow) a další backend state.
-  - Klíče: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (funkce), `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` / `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` (frontend).
-- Netlify Functions
-  - Server‑side API `/.netlify/functions/*`. `netlify.toml` definuje redirecty. Lokální dev přes `npx netlify dev` nebo Vite proxy.
-- Pinata (IPFS)
-  - Hlavní pin provider pro NFT metadata/media. Env klíče: `PINATA_API_KEY`, `PINATA_SECRET_API_KEY` nebo `PINATA_JWT`.
-  - IPFS čtení využívá seznam gatewayů (`ipfs.io`, `cloudflare-ipfs.com`, `gateway.pinata.cloud`, `nftstorage.link`, atd.).
-- RPC providery / blockchain
-  - Primární: PublicNode `https://polygon-amoy-bor.publicnode.com` (konfig v `VITE_JSON_RPC_URL`, `VITE_AMOY_RPC_URL`).
-  - Podpora Infura přes `VITE_INFURA_PROJECT_ID`. Kód volí nejlepší RPC přes `getRpcUrls()`.
-  - Poznámka: "RPC history pruned" log znamená, že provider není archive node; pro plnou historii potřebujete archive RPC.
-- WalletConnect
-  - `VITE_WC_PROJECT_ID` a `@walletconnect/ethereum-provider` pro připojení uživatele.
-- NFT.storage (volitelný záložní pin)
-  - Fallback pro pinning pokud Pinata selže (dokumentováno v `README_PINNING.md`).
-- Hosting / monitoring
-  - Netlify hosting + esbuild bundling pro functions. `VITE_CHAT_API_BASE` ukazuje na `https://biggieyes.com/.netlify/functions`.
+The app is a React/Vite Web3 frontend for NFT ticket minting, VRF redemption, collection rewards, BIGGI token rewards, tokenomics transparency, liquidity, buyback, reserve, treasury, gallery, and community views. It uses ethers v6 for blockchain access, WalletConnect/injected wallets for signing, and Netlify Functions for chat and IPFS pinning support.
 
-Požadované proměnné prostředí (checklist)
-- Pro lokální dev (frontend):
-  - `VITE_JSON_RPC_URL` nebo `VITE_AMOY_RPC_URL` (např. https://polygon-amoy-bor.publicnode.com)
-  - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (frontend anon/public keys)
-  - `VITE_WC_PROJECT_ID` (WalletConnect)
-  - `VITE_INFURA_PROJECT_ID` (pokud používáte Infura fallback)
-  - `VITE_CHAT_API_BASE` (pokud chcete používat chat/admin přes remote functions)
-- Pro Netlify Functions (server-side):
-  - `SUPABASE_URL` (service URL)
-  - `SUPABASE_SERVICE_ROLE_KEY` (service role key — důvěrné)
-  - `PINATA_API_KEY`, `PINATA_SECRET_API_KEY` nebo `PINATA_JWT` (pro pinFile/pinJson functions)
-  - `NFT_STORAGE_KEY` (pokud je používán jako fallback)
+## Main Directories
 
-Jak spustit lokálně (dev)
-1. Vytvořte `.env.local` podle projektu s hodnotami (viz níže sekce příkladů).
-2. Spustit Vite dev server:
+- `src/`: frontend application, components, hooks, services, and Web3 utilities.
+- `src/app/`: main application shell and panel orchestration.
+- `src/features/`: larger feature panels.
+- `src/shared/utils/addresses.js`: canonical frontend contract address registry.
+- `src/shared/utils/contract.js`: read/write contract factories and provider helpers.
+- `src/shared/utils/rpcConfig.js`: RPC selection and filtering.
+- `src/config/abi/`: JSON ABI files.
+- `functions/`: Netlify Functions for nonce/message/admin/pinning flows.
+- `public-repo/`: public mirror docs and client assets.
+
+## Active Network
+
+- Network: Polygon mainnet.
+- Chain ID: `137`.
+- Native currency label in UI: `POL`.
+- Explorer: `https://polygonscan.com`.
+
+The active frontend path does not use Amoy, Mumbai, Sepolia, or any other testnet.
+
+## Contract And ABI Sources
+
+- Canonical frontend addresses: `src/shared/utils/addresses.js`.
+- Backend mirror: `biggi-project/bekend/addresses.json`.
+- ABI exports: `src/config/abi/index.js`.
+- ABI JSON files: `src/config/abi/*.json`.
+- Contract metadata registry: `src/config/contracts/index.js`.
+
+Current checks:
+
+- `npm run check:contracts`: 150 frontend keys and 150 backend keys.
+- `npm run check:abis`: 58 ABI files and 745 functions.
+
+## External Services
+
+- Polygon RPC: read-only chain access.
+- WalletConnect: wallet sessions and mobile/desktop connection.
+- Supabase: chat messages, nonces, moderation state.
+- Netlify Functions: server-side chat/admin/pinning endpoints.
+- Pinata/IPFS: NFT media and metadata pinning.
+- Optional nft.storage fallback for pinning.
+
+## Environment Checklist
+
+Frontend/public variables:
+
+- `VITE_JSON_RPC_URL`
+- `VITE_POLYGON_RPC_URL`
+- `VITE_ADDITIONAL_RPC_URLS`
+- `VITE_DEFAULT_CHAIN_ID`
+- `VITE_WC_PROJECT_ID`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_CHAT_API_BASE`
+
+Server-only variables:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `PINATA_API_KEY`
+- `PINATA_SECRET_API_KEY`
+- `PINATA_JWT`
+- `NFT_STORAGE_KEY`
+- `ALLOWED_ORIGIN`
+
+Do not place server-only keys in `VITE_*` or `NEXT_PUBLIC_*` variables.
+
+## RPC Notes
+
+Active public fallbacks:
+
+- `https://polygon.drpc.org`
+- `https://polygon-bor-rpc.publicnode.com`
+
+`https://polygon-rpc.com` is filtered by runtime config because it returned HTTP 401 during smoke testing. For production traffic, use a private or paid Polygon RPC.
+
+## Troubleshooting
+
+If a panel shows stale or empty chain data:
+
+1. Run `npm run check:contracts`.
+2. Run `npm run check:abis`.
+3. Run `npm run check:rpc`.
+4. Run `npm run smoke:runtime`.
+5. Confirm the browser is on Polygon mainnet (`chainId 137`).
+
+If a Netlify function returns `500`:
+
+- Check server-only environment variables in Netlify.
+- Do not expose service role keys to the frontend.
+- Inspect Netlify function logs.
+
+If IPFS media does not load:
+
+- Check gateway fallback behavior in `src/shared/utils/ipfs.js`.
+- Confirm metadata URI format from the mainnet contracts.
+- Confirm public gateways are not rate-limiting.
+
+## Verification Commands
 
 ```bash
-npm install
-npm run dev
-# nebo pro Netlify dev (pokud chcete emulovat functions):
-npx netlify dev
+npm run lint
+npm run typecheck
+npm run build
+npm test
+npm run check:contracts
+npm run check:abis
+npm run check:rpc
+npm run smoke:runtime
 ```
 
-3. Test Netlify function nonce (po nastavení env):
+## Current Residual Risks
 
-```bash
-curl "http://localhost:8888/.netlify/functions/nonce?address=0x1234567890abcdef1234567890abcdef12345678"
-# nebo pokud používáte Vite proxy (port 5173 dev):
-curl "http://localhost:5173/.netlify/functions/nonce?address=0x..."
-```
-Očekávaná odpověď: JSON s polem `nonce` a `expiresInMs`.
-
-Hlavní běžné chyby a jak je řešit
-- 500 z `/.netlify/functions/nonce`:
-  - Důvod: chybějící `SUPABASE_URL` nebo `SUPABASE_SERVICE_ROLE_KEY` v prostředí functions.
-  - Řešení: nastavit tyto proměnné v Netlify Site settings → Build & deploy → Environment variables, nebo lokálně pro `netlify dev` v `.env`.
-- `getReaderRO: reader address not configured; falling back to MAIN` (console warn):
-  - Důvod: v `src/shared/utils/addresses.js` je `ADDR.READER` nebo `ADDR.MAIN_READER` prázdné.
-  - Řešení: nastavit správnou adresu reader kontraktu v `ADDR` (přímo v souboru nebo pomocí env `VITE_READER` / `VITE_MAIN_READER`). Varování je informativní (kód použije `MAIN`), ale některé reader‑specific funkce mohou chybovat.
-- RPC historie oříznutá: pro deep historical queries použijte archive RPC poskytovatele.
-
-Důležité soubory pro troubleshooting
-- `functions/nonce.js` — Netlify function generující nonce (supabase insert). Pokud vrací 500, zkontrolovat error log v Netlify nebo v konzoli `netlify dev`.
-- `src/utils/contract.js` + `src/shared/utils/addresses.js` — contract factories, reader fallbacky a adresy.
-- `src/components/PinUploader.jsx`, `functions/pinFile`, `functions/pinJson` a `docs/README_PINNING.md` — pinning flow.
-- `src/utils/rpcConfig.js` — výběr RPC endpointů a relevantní env klíče.
-
-Bezpečnostní upozornění
-- Nikdy nesdílejte `SUPABASE_SERVICE_ROLE_KEY` veřejně. V Netlify jej uložte v prostředí (Site settings) — nesmí být commitován do repo.
-- Pinata secret/API keys a NFT.storage key držte také v env proměnných.
-
-Doporučené další kroky / vylepšení
-- Přidat validaci a čitelnější logging do funkcí — při 500 vracejte detailnější chybovou zprávu do serverových logů (ne do klienta).
-- Dokumentovat kompletní env checklist v repo root README (mohu ho vygenerovat automaticky).
-- Zvážit možnost přepnutí Netlify Functions na bezpečnější tajné úložiště a rotation policy pro klíče.
-- Pokud potřebujete full‑history on‑chain data, nasadit archive RPC (Alchemy/Infura/Podmíněné řešení u poskytovatele s historií).
-
-Příklady `.env.local` (lokální výchozí) — NEKOMITOVAT DO VCS
-
-```
-# RPC
-VITE_JSON_RPC_URL=https://polygon-amoy-bor.publicnode.com
-VITE_AMOY_RPC_URL=https://polygon-amoy-bor.publicnode.com
-
-# Supabase (frontend safe keys)
-VITE_SUPABASE_URL=https://kjwbcfevadkexohspuey.supabase.co
-VITE_SUPABASE_ANON_KEY=sb_publishable_x86muUVvzlG4ECeD5kLDyA_LuwFtnsT
-
-# WalletConnect
-VITE_WC_PROJECT_ID=d018c04da68f3dba4c604d056be6d716
-
-# Chat / backend base
-VITE_CHAT_API_BASE=https://biggieyes.com/.netlify/functions
-
-# Server-side (Netlify functions) — store these in Netlify env, not in public .env
-# SUPABASE_URL=https://kjwbcfevadkexohspuey.supabase.co
-# SUPABASE_SERVICE_ROLE_KEY=<your_service_role_key>
-# PINATA_API_KEY=<key>
-# PINATA_SECRET_API_KEY=<secret>
-# PINATA_JWT=<jwt optional>
-# NFT_STORAGE_KEY=<optional fallback>
-```
-
-Kontakt a další pomoc
-- Pokud chceš, mohu: (A) vygenerovat root `README.md` s kratším env‑checklistem, (B) otestovat `nonce` funkci lokálně (potřebuji service role key) nebo (C) zapsat `ADDR.READER` do `src/shared/utils/addresses.js` pokud poskytneš reader address.
-
----
-Vytvořeno: krátká projektová analýza; pokud chceš, doplním specifika (např. přesný seznam všech env proměnných s popisem, diagram závislostí nebo bezpečnostní postupy).
+- Public RPC providers can rate-limit or prune history.
+- Pinning endpoints need strict server-side secrets and operational rate limiting.
+- High-value launch should still include independent smart-contract and infrastructure review.

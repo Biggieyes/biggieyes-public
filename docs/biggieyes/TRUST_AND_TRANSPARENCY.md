@@ -110,7 +110,7 @@ Trust is also built by being explicit about the current stage of the protocol.
 
 In this repository:
 
-- the active public registry is on Polygon Amoy
+- the active public registry is on Polygon mainnet
 - governance is still owner-administered in the current implementation
 - production hardening still requires multisig ownership and audit discipline
 

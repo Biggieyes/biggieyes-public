@@ -1,4 +1,14 @@
-# Deploy & Wiring Notes (POL testnet/mainnet)
+﻿# Deploy & Wiring Notes (POL mainnet)
+
+Status: historical reference only. Do not use this file as the current frontend or backend address source of truth.
+
+Current sources of truth:
+
+- Frontend: `src/shared/utils/addresses.js`
+- Backend mirror: `biggi-project/bekend/addresses.json`
+- Public frontend mirror: `public-repo/src/shared/utils/addresses.js`
+
+The address block below records an older deployment path and is retained only for historical traceability.
 
 Fill the addresses as you deploy. Order suggested:
 
@@ -52,7 +62,7 @@ Fill the addresses as you deploy. Order suggested:
     - `BiggiLpPriceFeed`: deploy with BIGGI/WPOL + pair (or zero), set pair/tokens/decimals if needed.
     - `BiggiVrfRouter`: deploy with VRF coordinator + keyHash + subId, then set main contract.
 
-Record final addresses here (Polygon Amoy):
+Historical recorded addresses from an older Polygon mainnet deployment:
 - BIGGI token: 0xD4D0fa17f2955Eb3fF8D03ea0cD7A2f0a06E6d0E
 - Main (VRF): 0x3430f378032Cead7A82f38047e906C1E3cAFc703
 - Main2 (public): 0xf511267b2A08Cd2f94ACc0eF74c4Eb1Ac799980B
@@ -82,7 +92,7 @@ Record final addresses here (Polygon Amoy):
 - DripKeeperProxy: 0x5ca6D9bA630265997E246A6c5d9A54b89EDf5afb (owner/keeper = deployer, dripLM wired)
 - Readers:
   - BuybackReader: 0xbee52e0954a97BE91925557e615e016168F6d4b1
-  - MultiCollectionDistributorReader: 0x1A1521465B4828726e2025C6f8351587A15903Cb
+  - MultiCollectionDistributorReader: 0x1A1521465B4828726e2025C6f8351587A15903Cb (historical; current frontend uses `MCD_READER_V2` from `src/shared/utils/addresses.js`)
   - LiquidityBranchUserReader: 0xeE810e1948B5f1968cd27C6109219F2C2621e0a8
   - TokenomikReader: 0x6df60d74c6e187a9ad3396e3c36d60f2f432240a
   - MainReader: 0x67b58d0f241b557a75Db0EbAf27F9452aDe0B749
@@ -92,16 +102,16 @@ Record final addresses here (Polygon Amoy):
   - NftRewardsReader: 0xB99320A777a394bB543bbAfC85A7D11e5b6f4E61
 - Multicall2: 0x55d1Bb6CdE2AF3B293fDADda12cbF5A6c367A348
 ```
-Bootstrap liquidity & tests (Amoy, new Uniswap V2):
+Bootstrap liquidity & tests (Polygon mainnet, new Uniswap V2):
 - Added 1 POL + 10,000 BIGGI via router 0xB767E3Cd07fD0Dd96827895AB8b3801A3b141e8a, pair 0x210d5aE3e0E954836D237363Eea2674bD36e9b63.
   - transferFromReserveTo: 0x8609f0f6ad486794ce8d39ceeb74128d543cfbae501f0b08545d76c26c01caad
   - addLiquidityETH: 0x4c790f4daee468de2062aabc0caddbe4337fc2e5e7aed571b01cd2fd5a87a515
   - LP -> LiquidityVault transfer: 0x56a3be84e9c3881ab6d103f089ff1b26450d19cf2a7ad0403b5ff851e6eab2b8
-- Smoke swap 0.05 POL→BIGGI ok: 0xe796b3bdffcc07da28796cfc1fe3f8aae1bf510707ba9bb889257a98399563db
+- Smoke swap 0.05 POLâ†’BIGGI ok: 0xe796b3bdffcc07da28796cfc1fe3f8aae1bf510707ba9bb889257a98399563db
 - Buyback funded 0.1 POL + buybackAllToTreasury ok:
   - fund: 0xdcdf4738ee145e1f5719b9f5f3c0e4a846c6e6b936ef79db4f757dcd5f79d2d4
   - buyback: 0xbdd117d71a9e44c1d66727fac762fa78a25144fcbe9f992d9f4594fd3de2c347
-Reserve migration (Amoy, 2026-02-08):
+Reserve migration (Polygon mainnet, 2026-02-08):
 - New ReserveV4 deploy: 0xa283f6D745cd858133f7a3AE6A2ea97D7b8FA54f
 - Key txs:
   - deploy: 0x328fb0dea586e736a23564f4dcd7a4969a7614122533597274166e44cae8c8b8
@@ -131,4 +141,3 @@ LM runtime tuning after migration (to prevent addLiquidity revert on low-depth p
   - direct `LM.executePairing(0.05)`: 0xbc7c3e925eac5994b90bfe92895254dbcc9b5e00f5e0fb1e6b247b5fbc4e2d94
   - `reserve.requestTopUpToLM()` (high gas) success: 0xaa00b0b8e8e0e00836645df73651cb04b88730264c4a65994d2c5cbf3eddf8fb
 ```
-

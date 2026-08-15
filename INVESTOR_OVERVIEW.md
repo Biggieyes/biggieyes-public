@@ -28,7 +28,7 @@ The current repository and contract stack already include:
 
 - a ticket-based main collection
 - a public mint companion collection
-- a deployed Polygon Amoy address registry
+- a deployed Polygon mainnet address registry
 - a Chainlink VRF router integration
 - a full routing stack for reserve, treasury, buyback, drip, and liquidity modules
 - a live frontend architecture with tokenomics, VRF, rewards, user, and community panels
@@ -73,7 +73,7 @@ BIGGIEYES is built for Polygon because the network supports:
 - strong compatibility with Chainlink infrastructure
 - practical DeFi integration for liquidity and buybacks
 
-The active repo registry targets Polygon Amoy, which provides a public testnet environment for validation before mainnet expansion.
+The active repo registry targets Polygon mainnet for live protocol operation.
 
 ## Revenue And Value Loops
 

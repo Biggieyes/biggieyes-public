@@ -76,7 +76,7 @@ Front-end
 - Responsive layout and mobile-ready UI
 
 On-chain Integration
-- Polygon Amoy configured by default (chainId 80002)
+- Polygon mainnet configured by default (chainId 137)
 - Contract factories for main, reader, rewards, token, liquidity, treasury
 - Multiple RPC endpoints with fallback for reliability
 - Read-only RPC + wallet-injected providers for accuracy and speed

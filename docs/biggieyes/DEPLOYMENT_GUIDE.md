@@ -2,7 +2,7 @@
 
 ## Scope
 
-This guide describes how to deploy and wire the BIGGIEYES protocol stack as represented in this repository. The current public configuration targets Polygon Amoy, but the same sequence applies to Polygon mainnet with chain-specific address substitutions.
+This guide describes how to deploy and wire the BIGGIEYES protocol stack as represented in this repository. The current public configuration targets Polygon mainnet.
 
 ## Prerequisites
 
@@ -206,7 +206,7 @@ Populate `.env.local` or deployment env vars with:
 - optional Sentry DSN
 - optional archive RPC URLs
 
-The current `.env.example` already includes VRF and main collection placeholders for Polygon Amoy.
+The current `.env.example` already includes Polygon mainnet VRF and main collection values.
 
 ## Verification Checklist
 

@@ -1,156 +1,155 @@
 # Frontend Integration
 
-## Integration Goals
+Last verified: 2026-06-16
 
-The frontend is designed to make a multi-contract protocol feel like a single user product while preserving transparency and avoiding unnecessary write-surface complexity.
+This document records how the frontend is currently wired to the Polygon mainnet protocol. It intentionally avoids planned or historical testnet behavior.
 
-## 1. Wallet Connection
+## Active Network
 
-### Supported connection modes
+- Active chain: Polygon mainnet.
+- Required chain ID: `137`.
+- Native currency label in UI: `POL`.
+- Explorer: `https://polygonscan.com`.
+- Testnet address files and Amoy/Mumbai/Sepolia references are not part of the active frontend path.
+
+## Wallet Connection
+
+Supported modes:
 
 - injected browser wallets
-- WalletConnect sessions for desktop QR and mobile deep links
+- WalletConnect desktop QR and mobile deep links
 
-### Current implementation
+Current implementation:
 
-- injected provider discovery and chain enforcement live in `src/shared/utils/contract.js`
-- WalletConnect session bootstrapping lives in `src/wallet/wc.js`
+- injected provider, signer provider, chain enforcement, and contract factories: `src/shared/utils/contract.js`
+- WalletConnect bootstrap: `src/wallet/wc.js`
+- chain metadata: `src/config/chains.js`
 
-### Expected flow
+Expected write flow:
 
-1. detect wallet provider
-2. request accounts
-3. ensure Polygon Amoy or configured chain
-4. create signer-backed ethers provider
-5. subscribe to account and chain changes
+1. user selects a write action
+2. frontend confirms a wallet provider and active account
+3. frontend enforces Polygon mainnet
+4. signer-backed contract factory is created
+5. transaction is estimated where practical
+6. transaction status is displayed until mined or failed
 
-## 2. RPC Providers
+## RPC Providers
 
-### Read path
+Read RPCs come from:
 
-The app uses:
+- `VITE_JSON_RPC_URL`
+- `VITE_POLYGON_RPC_URL`
+- `VITE_MOD_CHAIN_RPC`
+- `VITE_ADDITIONAL_RPC_URLS`
+- built-in public fallbacks
 
-- configured RPC URLs from environment
-- public fallback RPCs
-- optional archive RPCs for deeper history access
-- optional ethers fallback provider
+Current built-in public fallbacks:
 
-### Health strategy
+- `https://polygon.drpc.org`
+- `https://polygon-bor-rpc.publicnode.com`
 
-`rpcConfig.js` checks:
+`https://polygon-rpc.com` is intentionally filtered because runtime smoke testing observed HTTP 401 responses from that endpoint.
 
-- chain ID correctness
-- block freshness
-- latency
-- recent rate-limit marks
+The app normally uses the first healthy static JSON-RPC provider. ethers `FallbackProvider` is opt-in only:
 
-This lets the UI prefer healthier endpoints while degrading safely during provider instability.
+```env
+VITE_ENABLE_ETHERS_FALLBACK_PROVIDER=1
+```
 
-## 3. Contract Read Interactions
+## Read Interactions
 
-### Primary pattern
+The frontend prefers reader contracts and snapshot services:
 
-- use address registry keys from `ADDR`
-- use read-only contract factories
-- prefer reader contracts for aggregated state
+- `MAIN_READER` for ticket and collection state
+- `MCD_READER_V2` for distributor/rewards routing state
+- `TOKEN_REWARDS_READER` and token rewards service for claim preview
+- `NFT_REWARDS_READER` and NFT rewards service for assigned reward state
+- `RESERVE_TREASURY_READER`, `BUYBACK_READER`, `BIGGI_TOKENOMICS_READER`, and system readers for tokenomics panels
+- direct DRIP, LM, reserve, treasury, token, and pair reads where no separate reader is configured
 
-### Common read targets
+Reads must import factories from `src/shared/utils/contract.js` and addresses from `src/shared/utils/addresses.js`.
 
-- main reader for ticket and collection snapshots
-- tokenomics reader for cross-contract status
-- collection rewards and token rewards readers for claim status
-- reserve, treasury, and buyback readers for transparency panels
+## Write Interactions
 
-## 4. Contract Write Interactions
+Current user-facing write paths:
 
-Write flows are limited to explicit user actions such as:
-
-- minting tickets
-- minting public NFTs
-- redeeming tickets
-- claiming BIGGI rewards
-- claiming collection rewards
-- claiming community event prizes
-
-The frontend should:
-
-1. validate prerequisites locally
-2. estimate gas where practical
-3. submit through the signer-backed contract factory
-4. surface pending, success, and failure states clearly
-
-## 5. Event Listeners And Polling
-
-The frontend combines direct reads with targeted polling.
-
-### Current patterns
-
-- VRF polling utilities for pending redemption state
-- reader snapshot refresh loops for tokenomics and rewards
-- wallet asset refresh triggers after successful writes
-
-### Why polling is still used
-
-Given public RPC variability and wallet differences, bounded polling is often more reliable than depending entirely on live event subscriptions in the browser.
-
-## 6. UI Panels
-
-### Core user panels
-
-- mint and gallery flows
-- VRF status panel
-- rewards panel
-- user wallet panel
-- community center panel
-
-### Transparency panels
-
-- tokenomics dashboard
-- reserve and treasury views
-- buyback and drip views
-- RPC latency and policy status
-
-## 7. Error Handling
-
-The integration layer should distinguish between:
-
-- wallet errors
-- RPC availability errors
-- contract revert messages
-- rate-limited endpoint behavior
-- stale data or partial reader failures
-
-The current frontend already includes utilities for RPC retry, error classification, and rate-limit marking.
-
-## 8. Recommended Integration Rules
-
-1. never hardcode contract addresses in components
-2. never couple UI logic directly to raw artifact paths
-3. use reader contracts for dashboards
-4. keep write logic behind one user intent per transaction
-5. refresh dependent panels after writes
-6. show the active chain and contract addresses in transparency views
-
-## 9. Example Integration Surfaces
-
-| User action | Primary contract path |
+| User action | Contract path used by frontend |
 | --- | --- |
-| Mint ticket | `BiggiEyesMain.mintTicket` or `mintTicketWithBiggi` |
-| Redeem ticket | `BiggiEyesMain.redeemTicketAndMintNFT` |
-| Mint public NFT | `BiggiEyesMain2.mintPublic` or `mintPublicWithBiggi` |
-| Claim weekly BIGGI | `TokenRewards.claim` or `claimWithCollections` |
-| Claim collection reward | `CollectionRewards.claimOrangeReward`, `claimBlockReward`, `claimRainbowReward` |
-| Claim community prize | `CommunityCenter.claim` |
+| Mint ticket with native token | `BiggiTicketHub.mintTicket` |
+| Mint ticket with BIGGI | `BiggiTicketHub.mintTicketWithBiggi` where supported |
+| Redeem ticket | `BiggiTicketHub.redeemTicket` |
+| Mint public NFT | `BiggiMain2.mintPublic` |
+| Mint public NFT with BIGGI | `BiggiMain2.mintPublicWithBiggi` |
+| Claim weekly token rewards | `BiggiTokenRewards.claim` or `claimWithCollections` |
+| Claim collection block reward | `BiggiCollectionRewards.claimBlockReward` |
+| Claim collection orange reward | `BiggiCollectionRewards.claimOrangeReward` |
+| Claim collection rainbow reward | `BiggiCollectionRewards.claimRainbowReward` |
+| Claim assigned NFT reward | `BiggiNftRewards.claim` |
+| Claim community event reward | `BiggiCommunityCenter.claim` |
 
-## 10. Operational Transparency In The UI
+Write logic must stay behind explicit UI actions. Components should receive callbacks from the app shell/services rather than instantiating write contracts ad hoc.
 
-The frontend should continue exposing:
+## Gallery And Metadata
 
-- contract addresses
-- chain ID
-- current RPC endpoint or health summary
-- reserve, treasury, and buyback balances
-- pending VRF state
-- claim eligibility reasons
+The gallery is mainnet-scoped:
 
-This approach makes the interface itself part of the protocol trust model.
+- session cache includes chain ID and contract address
+- memory cache is split for `MAIN` and `MAIN2`
+- token URI, metadata, and image caches are versioned after mainnet migration
+- old testnet cache payloads are ignored
+
+Primary file: `src/components/Gallery.jsx`.
+
+## LiveStats
+
+LiveStats reads current mainnet data and avoids stale fallback images:
+
+- active cache scope includes chain ID and collection contract
+- last minted cache is accepted only when chain ID and contract address match the current deployment
+- if on-chain supply is zero or unavailable, the UI uses placeholders instead of old cached NFT metadata
+
+Primary file: `src/components/LiveStats.jsx`.
+
+## Rewards
+
+Rewards UI combines three rails:
+
+- token rewards: weekly BIGGI claim preview and claim action
+- collection rewards: block, orange, and rainbow claim checks/actions
+- NFT rewards: assigned reward visibility and claim state
+
+Primary files:
+
+- `src/features/rewards/REWARDSPanel.jsx`
+- `src/shared/services/tokenRewardsService.js`
+- `src/shared/services/collectionRewardsService.js`
+- `src/shared/services/nftRewardsService.js`
+
+## Error Handling
+
+The integration layer distinguishes:
+
+- wallet rejection and missing wallet
+- wrong chain
+- RPC rate limit or unavailable endpoint
+- contract revert
+- stale or partial reader response
+- missing optional address with configured fallback
+
+User-facing errors should be actionable. Console-only errors are acceptable only for low-level diagnostics already surfaced through UI state.
+
+## Required Checks
+
+Run after address, ABI, RPC, or integration changes:
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+npm test
+npm run check:contracts
+npm run check:abis
+npm run check:rpc
+npm run smoke:runtime
+```

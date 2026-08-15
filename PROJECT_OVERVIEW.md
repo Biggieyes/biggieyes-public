@@ -67,7 +67,7 @@ Most NFT launches separate collectibles from protocol economics. Mint proceeds d
 
 The current repo includes:
 
-- a live address registry for Polygon Amoy
+- a live address registry for Polygon mainnet
 - frontend integration for the NFT, VRF, rewards, tokenomics, community, and liquidity panels
 - reader contracts for frontend snapshots
 - deployment and wiring scripts for buyback, reserve, treasury, distributor, and liquidity branches
@@ -78,8 +78,8 @@ The current repo includes:
 | Item | Value |
 | --- | --- |
 | Primary chain target | Polygon |
-| Current repo deployment registry | Polygon Amoy |
-| Chain ID | `80002` |
+| Current repo deployment registry | Polygon mainnet |
+| Chain ID | `137` |
 | Canonical address sources | `src/shared/utils/addresses.js`, `biggi-project/bekend/addresses.json` |
 | Frontend stack | React, Vite, ethers v6 |
 | Automation dependencies | Chainlink VRF, upkeep-style keeper proxies, Uniswap V2 style router/pair infrastructure |

@@ -6,10 +6,10 @@ liquidity) that unit tests miss.
 ## 1) Integration tests (multi-contract)
 - Scenario: mint -> split -> buyback -> treasury -> reserve -> LM/vault.
 - Validate balances, caps, and access control at each hop.
-- Use a live RPC (Amoy) with read-only checks when possible.
+- Use a live Polygon mainnet RPC with read-only checks when possible.
 
 ## 2) Fork tests (optional but high value)
-- Run against a forked Amoy/Mainnet when `FORK_URL` is provided.
+- Run against a forked Polygon mainnet when `FORK_URL` is provided.
 - Verify router/factory/pair behavior matches production.
 
 ## 3) Fuzz / property tests
@@ -28,6 +28,6 @@ liquidity) that unit tests miss.
 ## 6) How to run
 ```bash
 cd biggi-project/bekend
-AMOY_RPC_URL="https://..." npm test
+POLYGON_RPC_URL="https://polygon.drpc.org" npm test
 ```
 

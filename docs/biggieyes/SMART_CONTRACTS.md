@@ -19,6 +19,7 @@
 | `DripLiquidityManager` | `BiggiDripLMToModerator` | Drip conversion rail |
 | `CommunityCenter` | `BiggiCommunityCenter` | Community grant claims |
 | `VRFRouter` | `BiggiVRFRouter` | Chainlink randomness mediation |
+| `Multicall2` | `Multicall2` | Frontend batch-read utility |
 
 ## BiggiEyesMain
 
@@ -525,6 +526,16 @@ Dedicated Chainlink VRF gateway between the main collection and the VRF coordina
 - `BiggiBuybackReader`
 
 These contracts are read-only aggregation layers used to simplify frontend queries and external analytics.
+
+### Multicall2
+
+The official BIGGIEYES Polygon mainnet batch-read utility is:
+
+| Network | Name | Address | Purpose |
+| --- | --- | --- | --- |
+| Polygon mainnet | `MULTICALL2` / `Multicall2` | `0x70bc315E4E5548e54F358Abf4515C1bB1551687b` | Aggregates multiple frontend and analytics contract reads into a single RPC call. |
+
+This contract is used by the BIGGIEYES frontend read layer and protocol dashboards to reduce RPC overhead when collecting live state from deployed contracts. It does not custody protocol funds and is not a governance, treasury, rewards, minting, or upgrade authority.
 
 ### Automation Contracts
 

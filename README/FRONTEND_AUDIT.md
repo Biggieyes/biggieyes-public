@@ -1,118 +1,93 @@
-# Frontend Deep Audit — BIGGINFTWEB
+# Frontend Audit - Current Mainnet State
 
-Datum: 2026-01-04
-Repo: Biggieyes/a-gamified-on-chain-NFT-lottery-with-dynamic-pricing-and-integrated-DeFi-tokenomics
-Branch: feature/pinata-integration/20260104-pin
-Commit SHA: (doporučeno spustit `git rev-parse HEAD` a doplnit sem)
+Last verified: 2026-06-16
 
-Tento dokument sumarizuje hloubkovou analýzu celého frontendu, klient→server toků a provozních rizik.
+This document replaces the old January frontend audit. It reflects the current Polygon mainnet frontend wiring, ABI inventory, reader configuration, and runtime validation.
 
----
-1) Základní informace (scope & vstupy)
+## Scope
 
-- Rozsah auditu:
-  - Frontend: `src/` (React/Preact + Vite) — hlavní entry: `src/main.jsx`, `src/App.jsx`, `src/AppCore.jsx`.
-  - Integrace serverless: Netlify Functions v `functions/` a klientské `src/api/*` handlery.
-  - Off‑chain služby: Supabase (nonces/messages), Pinata + nft.storage (pinning), RPC providers (PublicNode/Infura), WalletConnect.
+- React/Vite frontend in `src/`.
+- Public frontend mirror in `public-repo/`.
+- Address registry and ABI exports used by frontend components.
+- Runtime read flows for Gallery, LiveStats, Rewards, and tokenomics panels.
+- Netlify function integration at documentation level.
 
-- Nasazené adresy a ABI: definované v `src/shared/utils/addresses.js` a `src/config/abi/index.js`. Pokud je potřeba audit kontraktů, dodat Solidity sources a compiler config.
+This is not a formal smart-contract security audit.
 
-- Požadované testovací účty a env proměnné (bez hodnot):
-  - Frontend (public): `VITE_SUPABASE_ANON_KEY`, `VITE_JSON_RPC_URL`, `VITE_WC_PROJECT_ID`, `VITE_AMOY_RPC_URL`.
-  - Serverless (server-only): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PINATA_API_KEY`, `PINATA_SECRET_API_KEY` / `PINATA_JWT`, `NFT_STORAGE_KEY`.
+## Current Status
 
-- Doporučený SLA a časový rámec auditu:
-  - FE + Functions: 2–4 pracovních dnů. Kontrakty + dynamické fuzzing: navíc 5–10 dní dle rozsahu.
+- Active chain: Polygon mainnet, `chainId 137`.
+- Canonical frontend address registry: `src/shared/utils/addresses.js`.
+- Backend address mirror: `biggi-project/bekend/addresses.json`.
+- ABI exports: `src/config/abi/index.js`.
+- ABI inventory: 58 ABI files, 745 exported functions.
+- Address mirror: 150 frontend keys and 150 backend keys.
+- Reader contracts are configured for mainnet; the old `MAIN_READER` missing warning is no longer current.
 
----
-2) Frontend — hlavní zjištění, bezpečnost a chyby
+## Verified Commands
 
-- Nonce / message endpoint mismatch (High):
-  - `src/components/LiveChatPanel.jsx` dělá POST JSON na `/api/nonce`, zatímco serverní handler v `src/api/nonce.js` (Vercel style) očekává GET query `address`. Tato neshoda vede k chybám 4xx/5xx při odeslání zprávy.
-  - Repro: spustit `npx netlify dev` a povolat endpoint (viz sekce "Reprodukce" níže).
+The latest frontend verification passed:
 
-- Secrets exposure (Critical):
-  - V repozitáři byla zmínka, že `.env` obsahoval `SUPABASE_SERVICE_ROLE_KEY`. Jestli je v git historii, považujte to za únik a okamžitě rotujte klíče.
-
-- Pinata / pin endpoints (High):
-  - `PinUploader` volá `/.netlify/functions/pinFile` a server používá in-memory rate-limiter (functions/_pinataUtils.js). Není škálovatelný ani účinný proti botům.
-  - Doporučení: přidat autentizaci (short-lived token) a přesunout rate-limiter do Redis / Cloudflare / API Gateway.
-
-- Reader fallback (Medium):
-  - `getReaderRO()` vrací fallback na `MAIN` pokud `ADDR.READER`/`MAIN_READER` není nakonfigurován — FE loguje výstrahu a může dostat nekompletní snapshot dat.
-
-- Input sanitization / XSS (Medium):
-  - `LiveChatPanel` ukládá a zobrazuje `content` z DB. React auto-escape je OK, ale pokud někde používáte `react-markdown` nebo raw HTML, nutná sanitizace.
-
-- Upload validation (OK):
-  - `PinUploader` kontroluje MIME a velikost klient-side; server-side také kontroluje — doplnit kontrolu magic-bytes a scanning pokud je vyžadováno.
-
----
-3) Klient→server toky a detaily
-
-- Nonce flow: FE získá nonce (nonce endpoint), vytvoří payload `${nonce}|${content}|${timestamp}` a EOA signMessage, pošle na `/api/message`.
-  - Server musí atomicky ověřit, že nonce nevyužitý a označit ho jako used v jedné transakci.
-
-- Pinning flow: FE volá `pinFile` (POST base64) → server pošle request do Pinata s API klíčem. Fallback na nft.storage pokud je nastaven `NFT_STORAGE_KEY`.
-
----
-4) Tests & QA
-
-- Aktuální testy: existuje `__tests__/pinFunctions.test.js`. Vitest je k dispozici v repo.
-- Doporučení: přidat unit/integration testy pro `nonce`/`message` (mock Supabase), pin flow (mock Pinata), a reader fallback scénáře. Cílová coverage >=90% pro kritické toky.
-
----
-5) Dependencie & supply-chain
-
-- `package.json` obsahuje mix caret verzí; spustit `npm audit` a přidat automatické SCA (Dependabot/renovate) a CI check.
-
----
-6) Infra & ops doporučení
-
-- RPC: pro historické `eth_getLogs` použít archive node nebo dedikovaný indexer; FE používá batched log reader (`queryLogsBatched`) ale stále závisí na dostupnosti history.
-- Secrets: nepouštět `SUPABASE_SERVICE_ROLE_KEY` do repo; používat Netlify env nebo Vault. Přidat CI secret scanning.
-- Observability: přidat Sentry / Log aggregation pro FE a functions.
-
----
-7) Reprodukce a krátké kroky
-
-- Spuštění lokálně (dev):
 ```bash
-npm install
-npm run dev:netlify
-# otevřít http://localhost:5173
+npm run lint
+npm run typecheck
+npm run build
+npm test
+npm run check:contracts
+npm run check:abis
+npm run check:rpc
+npm run smoke:runtime
 ```
 
-- Nonce test (pokud je `SUPABASE_SERVICE_ROLE_KEY` nastaven v Netlify dev prostředí):
+Runtime smoke verified Gallery, LiveStats, and Rewards panel flows against the configured mainnet readers/RPCs.
+
+## Mainnet Readers
+
+| Reader key | Address |
+| --- | --- |
+| `MAIN_READER` | `0x5B5b422D0Db094550B626749EE4F982A301F8471` |
+| `MCD_READER_V2` | `0xa65B4e88E37F085B9009295eA0AcF05e18a82884` |
+| `NFT_REWARDS_READER` | `0x430376b1f4F12ce2D641CC28f2968297aA2b0c12` |
+| `TOKEN_REWARDS_READER` | `0xB558137Ce8a2e065de09f7ef7cF24911E49A9972` |
+| `RESERVE_TREASURY_READER` | `0xb379bB928f3B683528C209C28A95F4D2854EC407` |
+| `BUYBACK_READER` | `0x8eD6c94e5Fb336096E6C28480f3C514c9bddFa89` |
+| `BIGGI_TOKENOMICS_READER` | `0x868640D9fd873AE3ecFCAbCbB458413A70D6f468` |
+| `TOKENOMICS_SYSTEM_ADDON_READER` | `0x28D73361F9E7778362cac9fEBe1c8E0a2B1121ea` |
+| `SYSTEM_READER` | `0x5C918B2E610BAF3E9f77B0b7dE456D63B7F8bD55` |
+| `LM_READER` | `0x1879b76c3a923d58970a90e3D004bD067c272a22` |
+| `LIQUIDITY_BRANCH_USER_READER` | `0xC04FC52560fe5A8fcEf16a3ADE7126e83Da0D4f5` |
+
+## RPC State
+
+Active public fallbacks:
+
+- `https://polygon.drpc.org`
+- `https://polygon-bor-rpc.publicnode.com`
+
+`https://polygon-rpc.com` is intentionally filtered in runtime config because smoke checks observed HTTP 401 behavior from that endpoint.
+
+## Findings
+
+- No active frontend testnet path is documented as current.
+- Mainnet readers are configured and consumed by dashboard components.
+- Contract addresses and ABI exports are centralized; components should not duplicate addresses.
+- Cache keys include mainnet chain/contract context, so stale testnet metadata is ignored.
+- `public-repo` documentation now describes Polygon mainnet as active, not planned.
+
+## Residual Risks
+
+- Public RPCs can rate-limit or return incomplete history. Use a private or paid RPC for production traffic.
+- Netlify/server secrets must remain server-only and out of committed files.
+- Heavy historical reads may require an archive RPC or indexer.
+- Independent third-party smart-contract audit is still separate from this frontend integration review.
+
+## Operating Rule
+
+After changing addresses, ABIs, or reader usage, run:
+
 ```bash
-curl -X POST http://localhost:8888/.netlify/functions/nonce \
-  -H "Content-Type: application/json" \
-  -d '{"address":"0xYourTestAddress"}'
+npm run check:contracts
+npm run check:abis
+npm run build
+npm run smoke:runtime
 ```
-Poznámka: serverní `src/api/nonce.js` může akceptovat GET; sjednotit metodiku.
-
----
-8) Prioritizace oprav (rychlé vítězství)
-
-1. Rotate & remove jakékoliv úniky `SUPABASE_SERVICE_ROLE_KEY` z historie (Critical).
-2. Sjednotit `nonce` API (POST vs GET) a přidat jasné 4xx error body (High).
-3. Zabezpečit `pinFile`/`pinJson` (auth + Redis/Cloudflare rate-limit) (High).
-4. Přidat CI secret-scan a pre-commit hook (`detect-secrets`/`git-secrets`) (High).
-5. Doplňte `ADDR.MAIN_READER` nebo nasadit reader kontrakt a nastavit env pro FE (Medium).
-
----
-9) Co mohu připravit dál (volba další akce)
-
-- Hotfix PR: `nonce` endpoint kompatibilní s POST JSON + lepší chybové body.
-- CI PR: GitHub Action + pre-commit hook pro detekci tajných klíčů.
-- Demo PR: Redis-based rate limiter wrapper pro `functions/pinFile.js` (příklad + README instrukce).
-
----
-10) Dodatečné poznámky
-
-- Tento audit je frontend‑centric. Pro kompletní smart contract audit jsou potřeba zdrojové Solidity soubory, kompilátor nastavení a deployed bytecode.
-
----
-11) Kontakt & další kroky
-
-Vyberte jednu z možností pro pokračování: A (nonce hotfix), B (CI secret scan), C (rate-limit demo), D (spustit lokální reprodukci). Po výběru připravím PR nebo instrukce.

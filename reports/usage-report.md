@@ -85,7 +85,7 @@
 - src\config\addresses.js
 - src\config\addresses\local.js
 - src\config\addresses\mainnet.js
-- src\config\addresses\amoy.js
+- src\config\addresses\mainnet.js
 - src\hooks\tokenomics\useTokenDexHistory.js
 - src\hooks\tokenomics\useTokenDexSnapshot.js
 - src\shared\services\tokenomics\tokenDex.reader.js

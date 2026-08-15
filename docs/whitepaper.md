@@ -1,18 +1,12 @@
-# Whitepaper (Draft)
+# BIGGIEYES Whitepaper
 
-This is a placeholder whitepaper. Replace with the full document or link to the published version.
+The canonical BIGGIEYES whitepaper is maintained at:
 
-## Summary
-Describe the project, core mechanics, and target users.
+- [../WHITEPAPER.md](../WHITEPAPER.md)
+- [biggieyes/WHITEPAPER.md](./biggieyes/WHITEPAPER.md)
 
-## Tokenomics
-Explain pricing, rewards, and any deflationary or incentive mechanics.
+Both canonical whitepaper copies include the Polygon mainnet `Multicall2` utility reference:
 
-## On-chain Architecture
-List the key contracts and how they interact.
-
-## Risks and Assumptions
-State operational risks, oracle dependencies, and economic assumptions.
-
-## Governance
-Describe admin roles, multisig setup, and upgrade policy.
+| Network | Name | Address | Purpose |
+| --- | --- | --- | --- |
+| Polygon mainnet | `MULTICALL2` / `Multicall2` | `0x70bc315E4E5548e54F358Abf4515C1bB1551687b` | Batch-read utility for BIGGIEYES frontend dashboards and analytics reads. |

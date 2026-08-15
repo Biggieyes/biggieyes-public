@@ -6,7 +6,7 @@ BIGGIEYES is a Polygon-native Web3 ecosystem that combines NFT ticket minting, v
 
 The protocol is designed around a simple thesis: NFT ecosystems become stronger when mint revenue is routed into visible economic rails rather than disappearing into opaque off-chain operations. BIGGIEYES therefore turns every mint into a contributor to rewards, reserve strength, buybacks, treasury inventory, and community programs.
 
-In the current implementation, the protocol is deployed and integrated through a Polygon Amoy address registry, with architecture, readers, and frontend components structured for Polygon mainnet expansion.
+In the current implementation, the protocol is deployed and integrated through a Polygon mainnet address registry, with architecture, readers, and frontend components structured for live operation.
 
 ## 2. Vision Of The BiggiEyes Ecosystem
 
@@ -213,6 +213,10 @@ The protocol is intentionally modular:
 - community claims are separate from collection rewards
 
 This lowers coupling, improves observability, and simplifies the mental model for audits and integrations.
+
+### Mainnet Read Utility
+
+BIGGIEYES uses an official Polygon mainnet `Multicall2` utility at `0x70bc315E4E5548e54F358Abf4515C1bB1551687b`. Its purpose is to support the protocol frontend, dashboards, and analytics tooling by batching multiple contract reads into a single RPC call. It is a developer/read-layer utility and does not act as a minting contract, treasury contract, rewards authority, governance authority, or custody vault.
 
 ## 17. Security Considerations
 

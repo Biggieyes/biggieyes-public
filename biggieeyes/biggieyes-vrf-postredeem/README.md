@@ -27,32 +27,26 @@ CRE_ETH_PRIVATE_KEY=000000000000000000000000000000000000000000000000000000000000
 
 For local simulation to interact with a chain, you must specify RPC endpoints for the chains you interact with in the `project.yaml` file. This is required for submitting transactions and reading blockchain state.
 
-Note: The following 7 chains are supported in local simulation (both testnet and mainnet variants):
-- Ethereum (`ethereum-testnet-sepolia`, `ethereum-mainnet`)
-- Base (`ethereum-testnet-sepolia-base-1`, `ethereum-mainnet-base-1`)
-- Avalanche (`avalanche-testnet-fuji`, `avalanche-mainnet`)
-- Polygon (`polygon-testnet-amoy`, `polygon-mainnet`)
-- BNB Chain (`binance-smart-chain-testnet`, `binance-smart-chain-mainnet`)
-- Arbitrum (`ethereum-testnet-sepolia-arbitrum-1`, `ethereum-mainnet-arbitrum-1`)
-- Optimism (`ethereum-testnet-sepolia-optimism-1`, `ethereum-mainnet-optimism-1`)
+This project is configured for Polygon mainnet:
+- Polygon (`polygon-mainnet`)
 
 Add your preferred RPCs under the `rpcs` section. For chain names, refer to https://github.com/smartcontractkit/chain-selectors/blob/main/selectors.yml
 
 ```yaml
 rpcs:
-  - chain-name: ethereum-testnet-sepolia
-    url: <Your RPC endpoint to ETH Sepolia>
+  - chain-name: polygon-mainnet
+    url: <Your Polygon mainnet RPC endpoint>
 ```
 Ensure the provided URLs point to valid RPC endpoints for the specified chains. You may use public RPC providers or set up your own node.
 
 ## 4. Deploy contracts
 
-Deploy the BalanceReader, MessageEmitter, ReserveManager and SimpleERC20 contracts. You can either do this on a local chain or on a testnet using tools like cast/foundry.
+Deploy the BalanceReader, MessageEmitter, ReserveManager and SimpleERC20 contracts on a mainnet fork or production mainnet using tools like cast/foundry.
 
-For a quick start, you can also use the pre-deployed contract addresses on Ethereum Sepolia—no action required on your part if you're just trying things out.
+For production, use the project-owned Polygon mainnet addresses recorded in the deployment manifest.
 
 For completeness, the Solidity source code for these contracts is located under projectRoot/contracts/evm/src.
-- chain: `ethereum-testnet-sepolia`
+- chain: `polygon-mainnet`
 - ReserveManager contract address: `0x073671aE6EAa2468c203fDE3a79dEe0836adF032`
 - SimpleERC20 contract address: `0x4700A50d858Cb281847ca4Ee0938F80DEfB3F1dd`
 - BalanceReader contract address: `0x4b0739c94C1389B55481cb7506c62430cA7211Cf`

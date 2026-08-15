@@ -9,7 +9,7 @@ Acquire a tradable ticket in the main BIGGIEYES collection.
 ### Preconditions
 
 - user wallet is connected
-- wallet is on Polygon Amoy or the configured deployment chain
+- wallet is on Polygon mainnet or the configured deployment chain
 - collection is not paused
 - ticket supply is not exhausted
 - user has not exceeded the per-wallet limit

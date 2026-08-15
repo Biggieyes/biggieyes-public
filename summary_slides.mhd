@@ -1,5 +1,5 @@
 # BiggiEyes Moderator Slides (.mhd)
-Date: 2026-02-07 | Network: Polygon Amoy (chainId 80002)
+Date: 2026-02-07 | Network: Polygon mainnet (chainId 137)
 
 SLIDE 1 ? What is BiggiEyes?
 - On-chain NFT system with VRF-based random assignment.
@@ -32,11 +32,11 @@ SLIDE 6 ? Transparency
 - IPFS gateways used for metadata reliability.
 
 SLIDE 7 ? Address Highlights
-- BiggiEyesMain: 0x3430f378032Cead7A82f38047e906C1E3cAFc703
-- BiggiToken: 0xD4D0fa17f2955Eb3fF8D03ea0cD7A2f0a06E6d0E
-- Distributor: 0xc8382527D0cb095fDa284547EA91eC352E7C75Cd
-- Reserve: 0xC700EA8E43259C832C2438D01F60C88752894B8f
-- BuybackAgent: 0x06fC8552119d8B46e8dd19C54c81b9E3bDEfa266
+- BiggiEyesMain: 0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4
+- BiggiToken: 0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD
+- Distributor: 0xCE892698159D8D799D5eF7f0dF0111487511fD22
+- Reserve: 0x2786e46e01a5d229118fEdC102267217C7e94574
+- BuybackAgent: 0x5A77E90c467576C82B8d0E74eD112B829C625BB4
 
 SLIDE 8 ? Visuals
 - diagrams/user-flow.svg

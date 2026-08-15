@@ -83,25 +83,25 @@ CommunityCenter -> User
 
 ## Current Public Registry In This Repo
 
-The current address registry exported in the frontend and backend mirror points to Polygon Amoy.
+The current address registry exported in the frontend and backend mirror points to Polygon mainnet.
 
 | Contract | Address |
 | --- | --- |
-| `BiggiEyesMain` | `0x3430f378032Cead7A82f38047e906C1E3cAFc703` |
-| `BiggiEyesMain2` | `0xf511267b2A08Cd2f94ACc0eF74c4Eb1Ac799980B` |
-| `VRFRouter` | `0x53cC9F2BD094f10D2cB477caE44aCBa32175db0B` |
-| `BiggiToken` | `0xD4D0fa17f2955Eb3fF8D03ea0cD7A2f0a06E6d0E` |
-| `Distributor` | `0xc8382527D0cb095fDa284547EA91eC352E7C75Cd` |
-| `Reserve` | `0xa283f6D745cd858133f7a3AE6A2ea97D7b8FA54f` |
-| `Treasury` | `0x42f4d7091e2a23CD855b880de1676290f3E57fe4` |
-| `BuybackAgent` | `0x06fC8552119d8B46e8dd19C54c81b9E3bDEfa266` |
-| `CollectionRewards` | `0xa708E016dEC7B6a5b3da640c0d995895979cE332` |
-| `TokenRewards` | `0x5Fc30c88CeA11f397ccc73d6bec020e7779D9cca` |
-| `DripDistributor` | `0x2B835CFbF11AD44fd1A977D1781195674771ECa6` |
-| `DripLiquidityManager` | `0xD32fC50c153Ab47F68763c739A2deA8b5Da81373` |
-| `LiquidityManager` | `0x87f542886FC133C68F1b0ae7737Ecb4f8F647e6C` |
-| `LiquidityVault` | `0xD775DaBBa9246694F3F570D9CEC769B1b37808f5` |
-| `CommunityCenter` | `0x1aa66c77B3c7ec1eC704308a182C7f43a8744702` |
+| `BiggiEyesMain` | `0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4` |
+| `BiggiEyesMain2` | `0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634` |
+| `VRFRouter` | `0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F` |
+| `BiggiToken` | `0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD` |
+| `Distributor` | `0xCE892698159D8D799D5eF7f0dF0111487511fD22` |
+| `Reserve` | `0x2786e46e01a5d229118fEdC102267217C7e94574` |
+| `Treasury` | `0x35EE9523D20fFfe47c62dCcF01fA0136424A05e7` |
+| `BuybackAgent` | `0x5A77E90c467576C82B8d0E74eD112B829C625BB4` |
+| `CollectionRewards` | `0x5d1273070c9133381C570009768621762F024FB8` |
+| `TokenRewards` | `0xA455775BBe0BC863f644516147b95Ef5103b29FA` |
+| `DripDistributor` | `0x2E4677729cb8a02aDd752Bcbd2637809C20CBAf3` |
+| `DripLiquidityManager` | `0xE258843bca54803a366413571b3B4d6a28eAF2eC` |
+| `LiquidityManager` | `0xfb770C5A5AC6e41C85f076DB7C3434eAcd8e0F19` |
+| `LiquidityVault` | `0xFe234394845B601B2c671c0dD631fA6290c02bb9` |
+| `CommunityCenter` | `0x81C6E90a991d7D210c43B00B7EB1a5450cc372Ae` |
 
 ## Revenue Routing Model
 

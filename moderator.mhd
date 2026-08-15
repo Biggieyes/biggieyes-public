@@ -1,7 +1,7 @@
 # BiggiEyes Moderator Information Pack (.mhd)
 Generated from repository: BIGGINFTWEB
 Date: 2026-02-07
-Network: Polygon Amoy (chainId 80002)
+Network: Polygon mainnet (chainId 137)
 
 ============================================================
 1. PROJECT OVERVIEW
@@ -256,8 +256,8 @@ IPFS:
 9. CURRENT STATUS
 ============================================================
 Network:
-- Default chain is Polygon Amoy (chainId 80002).
-- Explorer base: https://amoy.polygonscan.com
+- Default chain is Polygon mainnet (chainId 137).
+- Explorer base: https://polygonscan.com
 
 Configured modules (addresses set in src/shared/utils/addresses.js):
 - Core: Main, Main2, VRF Router, Compute.
@@ -316,7 +316,7 @@ A: The buyback system converts POL into BIGGI and the drip loop adds continuous 
 12. LINKS + TECH REFERENCES
 ============================================================
 Explorer base:
-- https://amoy.polygonscan.com
+- https://polygonscan.com
 
 OG URL (from index.html):
 - https://tvujweb.cz/  (placeholder set in repo)
@@ -331,18 +331,18 @@ IPFS gateways (frontend list):
 - https://ipfs.filebase.io/ipfs/
 - https://gateway.lighthouse.storage/ipfs/
 
-Contracts (Polygon Amoy):
+Contracts (Polygon mainnet):
 Core
-- BiggiEyesMain: 0x3430f378032Cead7A82f38047e906C1E3cAFc703
+- BiggiEyesMain: 0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4
 - BiggiEyesMain2: 0xf511267b2A08Cd2f94ACc0eF74c4Eb1Ac799980B
 - BiggiVRFRouter: 0x53cC9F2BD094f10D2cB477caE44aCBa32175db0B
 - BiggiCompute: 0xBDF1314101b006197c735054C95a5E8c49284fC2
 
 Token
-- BiggiToken: 0xD4D0fa17f2955Eb3fF8D03ea0cD7A2f0a06E6d0E
+- BiggiToken: 0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD
 
 Distribution / Rewards
-- MultiCollectionDistributor: 0xc8382527D0cb095fDa284547EA91eC352E7C75Cd
+- MultiCollectionDistributor: 0xCE892698159D8D799D5eF7f0dF0111487511fD22
 - BiggiCollectionRewards: 0xa708E016dEC7B6a5b3da640c0d995895979cE332
 - BiggiTokenRewards: 0x5Fc30c88CeA11f397ccc73d6bec020e7779D9cca
 - BiggiNFTRewards: 0x5a0030502c9f8D4C99b17c0dFb029e3e8041f51A
@@ -350,9 +350,9 @@ Distribution / Rewards
 - BiggiModeratorCenter: 0x41D9c920aB2779305d1B024e8Dc0B2087a74c6E6
 
 Reserve / Treasury / Buyback / Drip
-- BiggiReserveV4: 0xC700EA8E43259C832C2438D01F60C88752894B8f
+- BiggiReserveV4: 0x2786e46e01a5d229118fEdC102267217C7e94574
 - BiggiTreasury: 0x42f4d7091e2a23CD855b880de1676290f3E57fe4
-- BiggiBuybackAgent: 0x06fC8552119d8B46e8dd19C54c81b9E3bDEfa266
+- BiggiBuybackAgent: 0x5A77E90c467576C82B8d0E74eD112B829C625BB4
 - BiggiPolicy: 0xeaf0b4561CF70D130ff4E68C3558f77b432C2EC1
 - BiggiDripDistributor: 0x2B835CFbF11AD44fd1A977D1781195674771ECa6
 - BiggiDripLMToModerator: 0xD32fC50c153Ab47F68763c739A2deA8b5Da81373
@@ -394,4 +394,3 @@ Visual exports:
 ============================================================
 END OF MODERATOR PACK
 ============================================================
-

@@ -165,7 +165,7 @@
 
 **Key bullet points**
 
-- deployed address registry exists in the current repo for Polygon Amoy
+- deployed address registry exists in the current repo for Polygon mainnet
 - frontend panels already cover tokenomics, VRF, rewards, and community views
 - deployment scripts and reader contracts are implemented
 - tests exist for wallet flows, reward readers, and tokenomics normalization

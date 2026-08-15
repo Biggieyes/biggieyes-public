@@ -17,7 +17,7 @@
 2026-02-24T08:44:52Z [SIMULATION] Simulator Initialized
 
 2026-02-24T08:44:52Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
-2026-02-24T08:44:52Z [USER LOG] msg="fetching por" url=https://api.real-time-reserves.verinumus.io/v1/chainlink/proof-of-reserves/TrueUSD evms="[{TokenAddress:0x4700A50d858Cb281847ca4Ee0938F80DEfB3F1dd ReserveManagerAddress:0x51933aD3A79c770cb6800585325649494120401a BalanceReaderAddress:0x4b0739c94C1389B55481cb7506c62430cA7211Cf MessageEmitterAddress:0x1d598672486ecB50685Da5497390571Ac4E93FDc ChainName:ethereum-testnet-sepolia GasLimit:1000000}]"
+2026-02-24T08:44:52Z [USER LOG] msg="fetching por" url=https://api.real-time-reserves.verinumus.io/v1/chainlink/proof-of-reserves/TrueUSD evms="[{TokenAddress:0x4700A50d858Cb281847ca4Ee0938F80DEfB3F1dd ReserveManagerAddress:0x51933aD3A79c770cb6800585325649494120401a BalanceReaderAddress:0x4b0739c94C1389B55481cb7506c62430cA7211Cf MessageEmitterAddress:0x1d598672486ecB50685Da5497390571Ac4E93FDc ChainName:polygon-mainnet GasLimit:1000000}]"
 2026-02-24T08:44:53Z [USER LOG] msg=ReserveInfo reserveInfo="&{LastUpdated:2026-02-24 07:44:36.011 +0000 UTC TotalReserve:494515082.75}"
 2026-02-24T08:44:53Z [USER LOG] msg=TotalSupply totalSupply=1000000000000000000000000
 2026-02-24T08:44:53Z [USER LOG] msg=TotalReserveScaled totalReserveScaled=494515082750000000000000000

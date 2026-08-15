@@ -2,146 +2,146 @@
 
 ## A
 
-**Amoy**  
-Polygon testnet network with chain ID `80002`, used by the current public registry in this repo.
+**Polygon mainnet**
+Polygon production network with chain ID `137`, used by the current public registry in this repo.
 
-**Auto buyback**  
+**Auto buyback**
 Automated DEX purchase of BIGGI using protocol-controlled native value.
 
 ## B
 
-**Background**  
+**Background**
 One of the ten visual trait families used by BIGGIEYES NFTs.
 
-**BIGGI**  
+**BIGGI**
 The ERC20 utility token powering rewards, reserve replenishment, treasury routing, and drip logic.
 
-**Block**  
+**Block**
 A numbered rarity or category band in the BIGGIEYES NFT system. Each NFT belongs to one of ten blocks.
 
-**BuybackAgent**  
+**BuybackAgent**
 The contract that swaps native value for BIGGI and forwards acquired tokens to treasury.
 
 ## C
 
-**Chainlink VRF**  
+**Chainlink VRF**
 Verifiable randomness infrastructure used to assign NFTs fairly after ticket redemption.
 
-**Collection reward**  
+**Collection reward**
 A native-token payout triggered by completing an on-chain ownership set.
 
-**CommunityCenter**  
+**CommunityCenter**
 The contract that escrows event prizes and allows winners to claim assigned native-token amounts.
 
 ## D
 
-**DEX refill**  
+**DEX refill**
 Reserve bucket used to store BIGGI earmarked for liquidity operations.
 
-**Distributor**  
+**Distributor**
 The contract that routes approved collection mint revenue into fixed protocol destinations.
 
-**Drip**  
+**Drip**
 The protocol rail that manages BIGGI inventory and converts part of it into downstream ecosystem value.
 
-**DripDistributor**  
+**DripDistributor**
 The contract that tracks drip BIGGI balances, caps, and claimable availability.
 
-**DripLiquidityManager**  
+**DripLiquidityManager**
 The contract that sells drip BIGGI for native value and routes proceeds into reserve and community-style sinks.
 
 ## E
 
-**Effective gross mint share**  
+**Effective gross mint share**
 The share of total mint value each protocol sink receives after applying the collection-to-distributor split and the distributor split.
 
 ## F
 
-**Final price**  
+**Final price**
 NFT-specific economic value stored at mint time, derived from block price plus background bonus logic.
 
 ## K
 
-**Keeper**  
+**Keeper**
 An authorized automation actor or proxy that triggers scheduled protocol actions.
 
 ## L
 
-**LiquidityManager**  
+**LiquidityManager**
 The contract that pairs reserve assets and adds liquidity through the DEX router.
 
-**LiquidityVault**  
+**LiquidityVault**
 The contract that stores protocol-owned LP tokens.
 
-**LP token**  
+**LP token**
 Liquidity provider token representing pooled liquidity on a DEX pair.
 
 ## M
 
-**Main ID**  
+**Main ID**
 A core NFT identity index used in collection completion logic.
 
-**Multisig**  
+**Multisig**
 A multi-signature wallet used to secure privileged ownership functions in production deployments.
 
 ## N
 
-**Native token**  
+**Native token**
 The gas token of the chain, referred to as POL on Polygon in this documentation.
 
-**NFT index**  
+**NFT index**
 The internal metadata slot from which a token ID is derived.
 
 ## P
 
-**Pending forward**  
+**Pending forward**
 A distributor balance that failed to reach its destination and is held for retry.
 
-**Permit**  
+**Permit**
 EIP-2612 style signature-based token approval supported by BIGGI.
 
-**Policy**  
+**Policy**
 A contract that stores buyback timing, slippage, and quota guardrails.
 
 ## R
 
-**Reader contract**  
+**Reader contract**
 A read-only contract that aggregates state from multiple protocol contracts into a frontend-friendly snapshot.
 
-**Redeem**  
+**Redeem**
 The act of burning a ticket to request a random NFT assignment.
 
-**Reserve**  
+**Reserve**
 The contract that stores native and BIGGI balances used for liquidity operations and reserve accounting.
 
 ## S
 
-**Set completion**  
+**Set completion**
 Ownership state that satisfies a collection reward condition such as all backgrounds for one main ID or all main IDs in a block.
 
-**Slippage**  
+**Slippage**
 The tolerated execution variance between quoted and realized swap output.
 
 ## T
 
-**Ticket**  
+**Ticket**
 A tradable ERC721 entry asset that must be burned to receive a random NFT from the main collection.
 
-**TokenRewards**  
+**TokenRewards**
 The contract that distributes weekly BIGGI rewards to eligible NFT holders.
 
-**Treasury**  
+**Treasury**
 The contract that receives BIGGI from buybacks and redistributes it across protocol rails.
 
 ## V
 
-**Vault**  
+**Vault**
 Custody contract for LP assets or other protocol-held positions.
 
-**VRFRouter**  
+**VRFRouter**
 The dedicated contract that handles Chainlink VRF requests and fulfillment callbacks for the main collection.
 
 ## W
 
-**Weekly claim**  
+**Weekly claim**
 A reward claim cycle in which each eligible token can only contribute once per week inside `TokenRewards`.

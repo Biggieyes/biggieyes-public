@@ -1,195 +1,195 @@
-ï»¿PROJEKT: BIGGIEYES / BIGGINFTWEB
-VERZE: ProdejnÃ­ pÅ™ehled (31. 1. 2026)
+PROJEKT: BIGGIEYES / BIGGINFTWEB
+VERZE: Prodejní pøehled (31. 1. 2026)
 
-EXEKUTIVNÃ SHRNUTÃ
-BiggiEyes je on-chain NFT ekosystÃ©m postavenÃ½ na ovÄ›Å™itelnÃ© nÃ¡hodnosti (VRF), dynamickÃ©m cenovÃ©m modelu a transparentnÃ­m tokenomickÃ©m dashboardu. Kombinuje tok ticket -> VRF -> NFT, IPFS hostovanÃ© assety a plnÄ› integrovanÃ© UI (stats, rewards, liquidity, treasury, buyback, DRIP) do produkÄnÄ› pÅ™ipravenÃ©ho frontâ€‘endu. SystÃ©m je navrÅ¾en pro dÅ¯vÄ›ru: live ceny, mint poÄty a metriky odmÄ›n se Ätou pÅ™Ã­mo z kontraktÅ¯ a zobrazujÃ­ v reÃ¡lnÃ©m Äase.
+EXEKUTIVNÍ SHRNUTÍ
+BiggiEyes je on-chain NFT ekosystém postavenı na ovìøitelné náhodnosti (VRF), dynamickém cenovém modelu a transparentním tokenomickém dashboardu. Kombinuje tok ticket -> VRF -> NFT, IPFS hostované assety a plnì integrované UI (stats, rewards, liquidity, treasury, buyback, DRIP) do produkènì pøipraveného front-endu. Systém je navren pro dùvìru: live ceny, mint poèty a metriky odmìn se ètou pøímo z kontraktù a zobrazují v reálném èase.
 
-MARKETING / INVESTORSKÃ NARACE
-- FÃ©rovost: VRF dÄ›lÃ¡ vÃ½stupy prokazatelnÄ› nÃ¡hodnÃ©.
-- Transparentnost: live onâ€‘chain data ukazujÃ­ reÃ¡lnÃ½ stav ekonomiky.
-- Momentum: dynamickÃ© ceny odmÄ›ÅˆujÃ­ early adoptery a signalizujÃ­ poptÃ¡vku.
-- Utility: buyback, DRIP a LM tvoÅ™Ã­ uzavÅ™enÃ½ ekosystÃ©movÃ½ loop.
-- RozÅ¡iÅ™itelnost: modulÃ¡rnÃ­ architektura umoÅ¾Åˆuje rychlÃ© novÃ© funkce a trhy.
+MARKETING / INVESTORSKÁ NARACE
+- Férovost: VRF dìlá vıstupy prokazatelnì náhodné.
+- Transparentnost: live on-chain data ukazují reálnı stav ekonomiky.
+- Momentum: dynamické ceny odmìòují early adoptery a signalizují poptávku.
+- Utility: buyback, DRIP a LM tvoøí uzavøenı ekosystémovı loop.
+- Rozšiøitelnost: modulární architektura umoòuje rychlé nové funkce a trhy.
 
-PÅ˜EHLED PRODUKTU
-- VRF minting, kde finÃ¡lnÃ­ NFT je nÃ¡hodnÄ› vybrÃ¡no z IPFS.
-- DynamickÃ© block pricing, kterÃ© roste s mint aktivitou a vlivem backgroundu.
-- JednotnÃ© rozhranÃ­ pro mint, redeem, rewards, liquidity a tokenomiku.
+PØEHLED PRODUKTU
+- VRF minting, kde finální NFT je náhodnì vybráno z IPFS.
+- Dynamické block pricing, které roste s mint aktivitou a vlivem backgroundu.
+- Jednotné rozhraní pro mint, redeem, rewards, liquidity a tokenomiku.
 
-UÅ½IVATELSKÃ FLOW (ENDâ€‘TOâ€‘END)
+UIVATELSKİ FLOW (END-TO-END)
 1) Mint ticketu
-   - UÅ¾ivatel mintne ticket.
-   - Cena ticketu je onâ€‘chain a v UI je live.
+   - Uivatel mintne ticket.
+   - Cena ticketu je on-chain a v UI je live.
 
 2) Redeem ticketu -> VRF
-   - Redeem spustÃ­ VRF request.
-   - VRF vybere finÃ¡lnÃ­ NFT z IPFS.
-   - VRF panel ukazuje stav a kompletnÃ­ historii.
+   - Redeem spustí VRF request.
+   - VRF vybere finální NFT z IPFS.
+   - VRF panel ukazuje stav a kompletní historii.
 
-3) DoruÄenÃ­ NFT
-   - Po fulfillu se NFT mintne a objevÃ­ v galerii.
-   - UI autoâ€‘refreshuje stats, rewards a mint historii.
+3) Doruèení NFT
+   - Po fulfillu se NFT mintne a objeví v galerii.
+   - UI auto-refreshuje stats, rewards a mint historii.
 
-DYNAMICKÃ CENOVÃ MODEL (LIVE VS BASE)
-- Base price: startovnÃ­ reference (1â€“10 POL) pro kaÅ¾dÃ½ block.
-- Live price: onâ€‘chain cena, kterÃ¡ roste s poptÃ¡vkou.
-- Matching background barva navyÅ¡uje cenu stejnÃ©ho bloku.
-- UÅ¾ivatel vÅ¾dy vidÃ­ base i live cenu kvÅ¯li transparentnosti.
+DYNAMICKİ CENOVİ MODEL (LIVE VS BASE)
+- Base price: startovní reference (1–10 POL) pro kadı block.
+- Live price: on-chain cena, která roste s poptávkou.
+- Matching background barva navyšuje cenu stejného bloku.
+- Uivatel vdy vidí base i live cenu kvùli transparentnosti.
 
 TOKENOMIKA A EKONOMIKA (DEEP DIVE)
-TokenovÃ¡ vrstva
-- Biggi token je integrovanÃ½ napÅ™Ã­Ä ekosystÃ©mem.
-- Live token price pouÅ¾Ã­vÃ¡ onâ€‘chain feed a DEX fallback.
-- LP price a reserve/treasury balance jsou viditelnÃ© v Live Stats.
+Tokenová vrstva
+- Biggi token je integrovanı napøíè ekosystémem.
+- Live token price pouívá on-chain feed a DEX fallback.
+- LP price a reserve/treasury balance jsou viditelné v Live Stats.
 
-DistribuÄnÃ­ vrstva
-- Multiâ€‘Collection Distributor smÄ›ruje hodnotu do rewards poolÅ¯ a ekosystÃ©movÃ½ch walletÅ¯.
-- Community i collection alokace jsou trackovanÃ© onâ€‘chain.
-- Claimable rewards se zobrazujÃ­ v reÃ¡lnÃ©m Äase pÅ™es snapshoty.
+Distribuèní vrstva
+- Multi-Collection Distributor smìruje hodnotu do rewards poolù a ekosystémovıch walletù.
+- Community i collection alokace jsou trackované on-chain.
+- Claimable rewards se zobrazují v reálném èase pøes snapshoty.
 
 Buyback engine
-- Buyback Agent kontrakt provÃ¡dÃ­ market buybacky.
-- Slippage a deadline jsou Å™Ã­zenÃ© onâ€‘chain policy.
-- Totals a wallet flow jsou viditelnÃ© v tokenomickÃ©m dashboardu.
+- Buyback Agent kontrakt provádí market buybacky.
+- Slippage a deadline jsou øízené on-chain policy.
+- Totals a wallet flow jsou viditelné v tokenomickém dashboardu.
 
-DRIP systÃ©m
-- DRIP Distributor a DRIP Keeper zajiÅ¡Å¥ujÃ­ kontinuÃ¡lnÃ­ reward flow.
+DRIP systém
+- DRIP Distributor a DRIP Keeper zajišují kontinuální reward flow.
 - DRIP LM poskytuje liquidity incentivizaci.
-- DRIP caps, availability a claims se Ätou pÅ™Ã­mo z kontraktÅ¯.
+- DRIP caps, availability a claims se ètou pøímo z kontraktù.
 
 Liquidity Management (LM)
-- Liquidity Manager a Liquidity Automation jsou integrovÃ¡ny.
-- Router/Factory/Pair slouÅ¾Ã­ pro DEX pricing a LP health checky.
-- Liquidity preview dÃ¡vÃ¡ realtime pÅ™ehled o stavu poolÅ¯.
+- Liquidity Manager a Liquidity Automation jsou integrovány.
+- Router/Factory/Pair slouí pro DEX pricing a LP health checky.
+- Liquidity preview dává realtime pøehled o stavu poolù.
 
 Reserve & Treasury
-- Reserve a Treasury trackujÃ­ total received, balance a alokace.
-- Snapshoty obsahujÃ­ reserve balance, waiting amounts a refill metriky.
-- VÅ¡e je viditelnÃ© v ekosystÃ©movÃ©m dashboardu.
+- Reserve a Treasury trackují total received, balance a alokace.
+- Snapshoty obsahují reserve balance, waiting amounts a refill metriky.
+- Vše je viditelné v ekosystémovém dashboardu.
 
-TECHNICKÃ STACK (DETAILNÄš)
-Frontâ€‘end
-- React + Vite architektura (rychlÃ½ build, modulÃ¡rnÃ­ UI)
-- Ethers v6 pro read/write kontraktÅ¯
-- KomponentizovanÃ© panely: Live Stats, Tokenomics, VRF Mint, Rewards, User
-- Autoâ€‘refresh po VRF fulfillmentu a onâ€‘chain eventech
-- ResponsivnÃ­ layout a mobileâ€‘ready UI
+TECHNICKİ STACK (DETAILNÌ)
+Front-end
+- React + Vite architektura (rychlı build, modulární UI)
+- Ethers v6 pro read/write kontraktù
+- Komponentizované panely: Live Stats, Tokenomics, VRF Mint, Rewards, User
+- Auto-refresh po VRF fulfillmentu a on-chain eventech
+- Responsivní layout a mobile-ready UI
 
-Onâ€‘chain integrace
-- Polygon Amoy default (chainId 80002)
-- KontraktovÃ© factory pro main, reader, rewards, token, liquidity, treasury
-- VÃ­ce RPC endpointÅ¯ s fallbackem pro spolehlivost
-- Readâ€‘only RPC + walletâ€‘injected providery pro pÅ™esnost a rychlost
+On-chain integrace
+- Polygon mainnet default (chainId 137)
+- Kontraktové factory pro main, reader, rewards, token, liquidity, treasury
+- Více RPC endpointù s fallbackem pro spolehlivost
+- Read-only RPC + wallet-injected providery pro pøesnost a rychlost
 
 Data & assets
-- NFT uloÅ¾enÃ© na IPFS s blockâ€‘based sloÅ¾kami
-- Live pricing a mint counts jsou synchronizovanÃ© s onâ€‘chain stavem
-- NFT traits enriched pÅ™es VRF fulfillment metadata
+- NFT uloené na IPFS s block-based slokami
+- Live pricing a mint counts jsou synchronizované s on-chain stavem
+- NFT traits enriched pøes VRF fulfillment metadata
 
 DEPLOYMENT & OPS
-- Netlifyâ€‘ready konfigurace pro oneâ€‘click deploy
-- Envâ€‘based RPC a address konfigurace
-- StatickÃ½ build s CDN distribucÃ­
+- Netlify-ready konfigurace pro one-click deploy
+- Env-based RPC a address konfigurace
+- Statickı build s CDN distribucí
 - Logy a dev tooling pro monitoring a troubleshooting
 
-TECHNICKÃ‰ DETAILY (KONTRAKTOVÃ‰ MODULY)
+TECHNICKÉ DETAILY (KONTRAKTOVÉ MODULY)
 Core
 - Main / Main2: minting, VRF flow, block pricing, background influence
-- Reader: rychlÃ½ on-chain snapshot (frontend lite)
+- Reader: rychlı on-chain snapshot (frontend lite)
 
 Rewards & distribuce
-- Multiâ€‘Collection Distributor: routing hodnoty do collection a community poolÅ¯
+- Multi-Collection Distributor: routing hodnoty do collection a community poolù
 - Collection Rewards: claimable NFT reward logika
 
 Liquidity & market vrstva
 - Liquidity Manager: LM operace a pool health
-- Liquidity Automation: automatickÃ¡ ÃºdrÅ¾ba a balancing
+- Liquidity Automation: automatická údrba a balancing
 - Router / Factory / Pair: DEX price discovery a LP viditelnost
 
-TokenomickÃ¡ vrstva
-- Buyback Agent: exekuce buybackÅ¯
+Tokenomická vrstva
+- Buyback Agent: exekuce buybackù
 - Treasury: treasury balance a inflows
 - Reserve: reserve balance, waiting funds, refill flow
 
 DRIP vrstva
-- DRIP Distributor: kontinuÃ¡lnÃ­ emission logika
+- DRIP Distributor: kontinuální emission logika
 - DRIP Keeper: automation a upkeep
 - DRIP LM: liquidity incentive flow
 
-SEZNAM KONTRAKTÅ® (ALL ABIs)
-- BiggiBuybackAgent: provÃ¡dÃ­ market buybacky a logiku buybacku.
-- BiggiBuybackDripSetup: setup/konfigurace pro propojenÃ­ buyback + DRIP.
-- BiggiBuybackReader: readâ€‘only helper pro buyback statistiky a stav.
-- BiggiCollectionRewards: distribuce odmÄ›n pro NFT kolekce.
+SEZNAM KONTRAKTÙ (ALL ABIs)
+- BiggiBuybackAgent: provádí market buybacky a logiku buybacku.
+- BiggiBuybackDripSetup: setup/konfigurace pro propojení buyback + DRIP.
+- BiggiBuybackReader: read-only helper pro buyback statistiky a stav.
+- BiggiCollectionRewards: distribuce odmìn pro NFT kolekce.
 - BiggiCommunityCenter: community fond / logika community walletu.
-- BiggiCompute: compute/helper kontrakt pro sdÃ­lenÃ© vÃ½poÄty.
-- BiggiDRIPDistributor: distribuuje DRIP odmÄ›ny v Äase.
+- BiggiCompute: compute/helper kontrakt pro sdílené vıpoèty.
+- BiggiDRIPDistributor: distribuuje DRIP odmìny v èase.
 - BiggiDRIPKeeper: automation/keeper pro DRIP upkeep.
-- BiggiDRIPLM: liquidity mining modul navÃ¡zanÃ½ na DRIP incentivy.
-- BiggiLiquidityBranchUserReader: readâ€‘only snapshot pro liquidity/user data.
-- BiggiLiquidityHelperReader: readâ€‘only liquidity helper/aggregÃ¡tor.
+- BiggiDRIPLM: liquidity mining modul navázanı na DRIP incentivy.
+- BiggiLiquidityBranchUserReader: read-only snapshot pro liquidity/user data.
+- BiggiLiquidityHelperReader: read-only liquidity helper/aggregátor.
 - BiggiLiquidityManager: core liquidity management kontrakt.
-- BiggiLiquidityOrchestrator: orchestrace komplexnÃ­ch liquidity operacÃ­.
+- BiggiLiquidityOrchestrator: orchestrace komplexních liquidity operací.
 - BiggiLpPriceFeed: LP token price feed/oracle.
 - BiggiMain: core minting, VRF flow, block pricing.
 - BiggiMain2: core minting, VRF flow, block pricing (v2).
-- BiggiMainReader: readâ€‘only snapshot pro main data.
-- BiggiMasterTokenomicsConfig: centrÃ¡lnÃ­ tokenomickÃ¡ konfigurace.
-- BiggiMultiCollectionDistributor: routing odmÄ›n pro vÃ­ce kolekcÃ­.
-- BiggiMultiCollectionDistributorReader: readâ€‘only distributor snapshot.
-- BiggiMultiCollectionDistributorReaderV2: readâ€‘only distributor snapshot (v2).
+- BiggiMainReader: read-only snapshot pro main data.
+- BiggiMasterTokenomicsConfig: centrální tokenomická konfigurace.
+- BiggiMultiCollectionDistributor: routing odmìn pro více kolekcí.
+- BiggiMultiCollectionDistributorReader: read-only distributor snapshot.
+- BiggiMultiCollectionDistributorReaderV2: read-only distributor snapshot (v2).
 - BiggiNftRewards: NFT rewards a claim logika.
-- BiggiNftRewardsReader: readâ€‘only NFT rewards snapshot.
+- BiggiNftRewardsReader: read-only NFT rewards snapshot.
 - BiggiPolicy: policy parametry, limity a safety kontrola.
-- BiggiReserveTreasuryReader: readâ€‘only reserve/treasury snapshoty.
-- BiggiReserveV4: reserve vault pro ekosystÃ©movÃ© fondy.
+- BiggiReserveTreasuryReader: read-only reserve/treasury snapshoty.
+- BiggiReserveV4: reserve vault pro ekosystémové fondy.
 - BiggiToken: ERC20 token kontrakt (Biggi).
-- BiggiTokenomikReader: readâ€‘only tokenomics snapshot helper.
-- BiggiTokenRewards: distribuce/claim tokenovÃ½ch odmÄ›n.
-- BiggiTokenRewardsReader: readâ€‘only token rewards snapshot.
-- BiggiTreasury: treasury vault pro ekosystÃ©movÃ© alokace.
+- BiggiTokenomikReader: read-only tokenomics snapshot helper.
+- BiggiTokenRewards: distribuce/claim tokenovıch odmìn.
+- BiggiTokenRewardsReader: read-only token rewards snapshot.
+- BiggiTreasury: treasury vault pro ekosystémové alokace.
 - BiggiUpkeeperProxy: upkeep/automation proxy kontrakt.
 - BiggiVRFRouter: VRF integrace router/adapter.
-- LiquidityAutomation: automatizovanÃ¡ ÃºdrÅ¾ba liquidity.
+- LiquidityAutomation: automatizovaná údrba liquidity.
 - LiquidityKeeperProxy: keeper proxy pro liquidity automation.
-- LiquiditySetup: inicializaÄnÃ­ liquidity setup kontrakt.
-- LiquidityVault: vault pro drÅ¾enÃ­ liquidity fondÅ¯.
+- LiquiditySetup: inicializaèní liquidity setup kontrakt.
+- LiquidityVault: vault pro drení liquidity fondù.
 - ModeratorCenter: moderator/admin control center.
 - UniswapV2Factory: DEX factory (pair creation).
 - UniswapV2Pair: DEX pair kontrakt.
 - UniswapV2Router02: DEX router pro swapy a liquidity.
 - WETH9: wrapped native token (WETH/POL wrapper).
 
-HODNOTA PRO UÅ½IVATELE
-- FÃ©rovÃ¡ nÃ¡hodnost: VRF eliminuje bias.
-- TransparentnÃ­ cenovÃ½ vÃ½voj: uÅ¾ivatel vidÃ­ proÄ ceny rostou.
+HODNOTA PRO UIVATELE
+- Férová náhodnost: VRF eliminuje bias.
+- Transparentní cenovı vıvoj: uivatel vidí proè ceny rostou.
 - Viditelnost tokenomiky: buyback, DRIP, liquidity, treasury a reserve jsou live.
-- ÄŒistÃ© UX: mint, redeem, claim a tracking v jednom rozhranÃ­.
+- Èisté UX: mint, redeem, claim a tracking v jednom rozhraní.
 
-PROÄŒ INVESTOVAT / PROÄŒ KOUPIT
-- SilnÃ½ pÅ™Ã­bÄ›h: fÃ©rovost + dynamickÃ© ceny + onâ€‘chain transparentnost
-- ModulÃ¡rnÃ­ architektura umoÅ¾Åˆuje rychlÃ© novÃ© utility
-- Monetizace: ticket mints, dynamickÃ© ceny, ekosystÃ©movÃ¡ aktivita
-- TokenomickÃ© nÃ¡stroje (buyback, DRIP, LM) tvoÅ™Ã­ plnÃ½ ekonomickÃ½ loop
-- VysokÃ¡ dÅ¯vÄ›ra dÃ­ky onâ€‘chain transparentnosti a VRF
+PROÈ INVESTOVAT / PROÈ KOUPIT
+- Silnı pøíbìh: férovost + dynamické ceny + on-chain transparentnost
+- Modulární architektura umoòuje rychlé nové utility
+- Monetizace: ticket mints, dynamické ceny, ekosystémová aktivita
+- Tokenomické nástroje (buyback, DRIP, LM) tvoøí plnı ekonomickı loop
+- Vysoká dùvìra díky on-chain transparentnosti a VRF
 
-RIZIKA (TRANSPARENTNÄš)
-- Å½Ã¡dnÃ© sliby rÅ¯stu ceny nebo vÃ½nosu.
-- Likvidita zÃ¡visÃ­ na trhu.
-- VÃ½sledky tokenomiky zÃ¡visÃ­ na adopci a chovÃ¡nÃ­ trhu.
+RIZIKA (TRANSPARENTNÌ)
+- ádné sliby rùstu ceny nebo vınosu.
+- Likvidita závisí na trhu.
+- Vısledky tokenomiky závisí na adopci a chování trhu.
 
-KONKURENÄŒNÃ VÃHODA
-- VRF selection mÃ­sto statickÃ©ho rarity systÃ©mu
-- Live block pricing navÃ¡zanÃ½ na reÃ¡lnÃ© mint chovÃ¡nÃ­
-- KompletnÃ­ tokenomickÃ½ dashboard (buyback, DRIP, LM, treasury, reserve)
-- VÅ¡e v jednom: mint, redeem, rewards, ekosystÃ©movÃ¡ data
+KONKURENÈNÍ VİHODA
+- VRF selection místo statického rarity systému
+- Live block pricing navázanı na reálné mint chování
+- Kompletní tokenomickı dashboard (buyback, DRIP, LM, treasury, reserve)
+- Vše v jednom: mint, redeem, rewards, ekosystémová data
 
-POTENCIÃLNÃ ROZÅ ÃÅ˜ENÃ
-- Mainnet deploy s produkÄnÃ­mi RPC
+POTENCIÁLNÍ ROZŠÍØENÍ
+- Mainnet deploy s produkèními RPC
 - Staking / loyalty utility
-- RozÅ¡Ã­Å™enÃ© community incentives a gamifikace
-- PokroÄilÃ© analytics dashboardy a API integrace
+- Rozšíøené community incentives a gamifikace
+- Pokroèilé analytics dashboardy a API integrace
 
 KONTAKT / HANDOVER
-Projekt je dodÃ¡n jako kompletnÃ­ frontâ€‘end repository s kontraktovÃ½mi integracemi.
-PÅ™ipraveno pro produkÄnÃ­ nasazenÃ­ s minimÃ¡lnÃ­ konfiguracÃ­.
+Projekt je dodán jako kompletní front-end repository s kontraktovımi integracemi.
+Pøipraveno pro produkèní nasazení s minimální konfigurací.
