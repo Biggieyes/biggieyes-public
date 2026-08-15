@@ -15,8 +15,8 @@ Sells or routes drip branch value and distributes outputs toward moderator cente
 - `@openzeppelin/contracts/utils/ReentrancyGuard.sol`
 - `@openzeppelin/contracts/access/Ownable.sol`
 - `@openzeppelin/contracts/utils/Address.sol`
-- `./Library/BiggiErrorsLib.sol`
-- `./Library/BiggiSwapLib.sol`
+- `./TOKENOMIC_LIBRARY/BiggiErrorsLib.sol`
+- `./TOKENOMIC_LIBRARY/BiggiSwapLib.sol`
 
 ## Key public state to inspect
 - `immutable`
@@ -54,7 +54,8 @@ Sells or routes drip branch value and distributes outputs toward moderator cente
 - `rescueNative()`
 
 ## Integration points
-- Review file-local interfaces and imports before changing any external call patterns.
+- Claims from `BiggiDripDistributor`, sells BIGGI through the configured router, then splits native output to reserve and moderator center.
+- The drip path must quote protected `minOut` before claiming distributor inventory. If quote/minOut is unavailable, it emits `DripFailed("minOut==0")` and does not reduce distributor accounting.
 
 ## Safe-edit guidance for agents
 - Preserve storage layout unless a migration is explicitly planned.
@@ -63,7 +64,7 @@ Sells or routes drip branch value and distributes outputs toward moderator cente
 - Prefer additive changes with explicit events over implicit behavior changes.
 
 ## Known risks / review notes
-- No file-specific issue flagged in this pass beyond standard tokenomics/change-management caution.
+- Never move the distributor `claim()` before protected quote validation; that can strand BIGGI in DripLM and reduce `availableTokens` without a successful sell path.
 
 ## Agent checklist before modifying
 - Confirm who owns/controls this contract in deployment scripts.

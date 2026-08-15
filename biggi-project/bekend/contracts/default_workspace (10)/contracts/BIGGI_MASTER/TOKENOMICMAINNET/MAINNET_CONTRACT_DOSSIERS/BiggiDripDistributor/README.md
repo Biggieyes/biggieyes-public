@@ -1,28 +1,56 @@
-﻿# BiggiDripDistributor Mainnet Dossier
+# BiggiDripDistributor Mainnet Dossier
 
 ## Source of truth
-- Source: $(@{Name=BiggiDripDistributor; Source=BiggiDripDistributor.sol; Abi=ABI/BiggiDripDistributor.abi.json; Role=Drip inventory ledger and payout engine for token drip allocations across enabled collections/operators.; Delta=Mainnet alignment adds historical state seeding, explicit available-vs-balance sync, and cap-safe refill semantics.; Integrations=System.Object[]; Privileged=System.Object[]; Focus=System.Object[]}.Source)
-- ABI package source: $(@{Name=BiggiDripDistributor; Source=BiggiDripDistributor.sol; Abi=ABI/BiggiDripDistributor.abi.json; Role=Drip inventory ledger and payout engine for token drip allocations across enabled collections/operators.; Delta=Mainnet alignment adds historical state seeding, explicit available-vs-balance sync, and cap-safe refill semantics.; Integrations=System.Object[]; Privileged=System.Object[]; Focus=System.Object[]}.Abi)
 
-## Role
-Drip inventory ledger and payout engine for token drip allocations across enabled collections/operators.
+- Source file: `../../BiggiDripDistributor.sol`
+- Frozen ABI: `./ABI.json`
+- Canonical manifest: `biggi-project/bekend/addresses.master.json` plus phase-specific Polygon manifests.
 
-## Mainnet delta vs testnet
-Mainnet alignment adds historical state seeding, explicit available-vs-balance sync, and cap-safe refill semantics.
+## Constructor
 
-## Critical integrations
-- BiggiToken
-- BiggiDripLMToModerator
-- BiggiTreasury
-- BiggiSupplyController
+`constructor(address token_, address initialOwner)`
 
-## Privileged actions
-- Owner configures collection and treasury endpoints
-- Authorized mint notifier increases tracked availability
-- Operators tune per-mint emission
+## Runtime role
 
-## Mainnet readiness gates
-1. Final owner or multisig ownership transfer completed.
-2. Final production addresses and parameters loaded.
-3. Smoke tests and reader consistency checks pass.
-4. Explorer verification and ABI freeze completed.
+`BiggiDripDistributor` is the BIGGI drip branch tied to collection mint activity and a downstream drip LM claimant.
+
+It tracks:
+
+- allowed collection contracts for `notifyMint(uint256)`
+- BIGGI balances deposited by treasury through `depositTokens(uint256)`
+- configured drip emission size through `tokensPerMint`
+
+Main claim path:
+
+- collections report mint activity
+- treasury deposits BIGGI inventory
+- `dripLM` claims BIGGI via `claim(uint256)` or `claimTo(address,uint256)`
+
+## Owner/admin surface
+
+- `setCollection(address,bool)`
+- `setDripLM(address)`
+- `setTreasury(address)`
+- `setTokensPerMintOperator(address)`
+- `setTokensPerMint(uint256)`
+- `pause()`
+- `unpause()`
+
+Operator surface:
+
+- `setTokensPerMintFromOperator(uint256)`
+
+## Integration map
+
+- `BiggiToken` calls `notifyTokenMint(uint256)` on drip-side mint paths
+- `BiggiTreasury` feeds BIGGI inventory through `depositTokens(uint256)`
+- allowed collection contracts feed mint counts
+- `dripLM` is the only intended runtime claimer
+
+## Canonical Polygon Mainnet Address
+
+| Key | Address |
+| --- | --- |
+| `DRIP_DISTRIBUTOR` | `0x2E4677729cb8a02aDd752Bcbd2637809C20CBAf3` |
+
+Canonical manifests: `addresses.master.json`, phase-specific Polygon manifests, and `MAINNET_DEPLOYMENT_MANIFEST_POLYGON.json`.

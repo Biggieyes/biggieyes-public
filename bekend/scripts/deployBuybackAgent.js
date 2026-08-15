@@ -1,8 +1,8 @@
 // Deploys BiggiBuybackAgent with keeper support and wires core addresses.
-// Usage: npx hardhat run scripts/deployBuybackAgent.js --network amoy
+// Usage: npx hardhat run scripts/deployBuybackAgent.js --network polygon
 // Env (scripts/.env or .env):
 //  BIGGI, ROUTER, TREASURY, POLICY, DRIP_LM, UPKEEP_PROXY
-//  PRIVATE_KEY (owner/deployer), AMOY_RPC_URL (optional), GAS_PRIORITY_GWEI/GAS_FEE_GWEI (optional)
+//  PRIVATE_KEY (owner/deployer), POLYGON_RPC_URL (optional), GAS_PRIORITY_GWEI/GAS_FEE_GWEI (optional)
 
 require("dotenv").config({ path: require("path").join(__dirname, ".env") });
 const hre = require("hardhat");

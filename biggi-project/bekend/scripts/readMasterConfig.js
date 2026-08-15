@@ -1,5 +1,5 @@
 // scripts/readMasterConfig.js
-// Spusť: npx hardhat run scripts/readMasterConfig.js --network amoy
+// Spusť: npx hardhat run scripts/readMasterConfig.js --network polygon
 // Vyčte bundly z BiggiMasterTokenomicsConfig a ukáže, co je už nastaveno.
 
 const path = require("path");

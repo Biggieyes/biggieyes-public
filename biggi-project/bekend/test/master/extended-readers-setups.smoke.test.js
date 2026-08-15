@@ -66,10 +66,14 @@ describe("BIGGI_MASTER: extended readers + setup wrappers smoke", function () {
     await (await treasury.setReserve(reserve.address)).wait();
     await (await treasury.setDripDistributor(drip.address)).wait();
     await (await drip.setTreasury(treasury.address)).wait();
+    await (await reserve.setNotifyCaller(treasury.address, true)).wait();
+    await (await treasury.setEcosystemBiggiCaller(nftMain.address, true)).wait();
+    await (await treasury.setEcosystemBiggiCaller(nftMain2.address, true)).wait();
 
     await (await buyback.setRouter(buybackRouter.address)).wait();
     await (await buyback.setTreasury(treasury.address)).wait();
     await (await buyback.setPolicy(policy.address)).wait();
+    await (await policy.setBuybackAgent(buyback.address)).wait();
     await (await buyback.setDripLM(dripLm.address)).wait();
 
     await (await controller.snapshotBaseline()).wait();
@@ -89,8 +93,18 @@ describe("BIGGI_MASTER: extended readers + setup wrappers smoke", function () {
 
     const reserveSnap = await reserveTreasuryReader.reserveSnapshot();
     const treasurySnap = await reserveTreasuryReader.treasurySnapshot();
+    const reserveTreasuryWiring = await reserveTreasuryReader.wiringSnapshot();
+    const ecosystemRoute = await reserveTreasuryReader.ecosystemBiggiRouteSnapshot(
+      nftMain.address,
+      nftMain2.address,
+      rewards.address,
+      drip.address
+    );
     expect(reserveSnap.reserveBiggi).to.be.gt(0);
     expect(treasurySnap.totalBiggiFromBuyback).to.equal(0);
+    expect(treasurySnap.totalBiggiFromEcosystem).to.equal(0);
+    expect(reserveTreasuryWiring.treasuryTokenRewards).to.equal(rewards.address);
+    expect(ecosystemRoute.routeReady).to.equal(true);
 
     const [rewardsStatus] = await tokenRewardsReader.getStatus();
     expect(rewardsStatus.tokenRewards).to.equal(rewards.address);
@@ -110,6 +124,7 @@ describe("BIGGI_MASTER: extended readers + setup wrappers smoke", function () {
 
     const addonStatus = await addonReader.getStatus();
     expect(addonStatus.masterConfig).to.equal(masterConfig.address);
+    expect(addonStatus.core.biggi).to.equal(ethers.constants.AddressZero);
     expect(addonStatus.supplyController).to.equal(controller.address);
     expect(addonStatus.supplyGuardian).to.equal(guardian.address);
 
@@ -283,10 +298,16 @@ describe("BIGGI_MASTER: extended readers + setup wrappers smoke", function () {
     const ticketHub = await deploy("BiggiTicketHub", owner.address, main.address);
     const collectionRewards = await deploy("BiggiCollectionRewards", main.address, owner.address);
     const distributor = await deploy("MockMintShareReceiver");
+    const token = await deploy("BiggiToken", owner.address);
+    const treasury = await deploy("BiggiTreasury", token.address, owner.address);
 
     await (await main.setTicketHub(ticketHub.address)).wait();
     await (await ticketHub.setMainCollection(main.address)).wait();
     await (await ticketHub.setDistributor(distributor.address)).wait();
+    await (await ticketHub.setBiggiToken(token.address)).wait();
+    await (await ticketHub.setTokenSink(treasury.address, 10_000)).wait();
+    await (await ticketHub.setTokenSinkDepositMode(true)).wait();
+    await (await treasury.setEcosystemBiggiCaller(ticketHub.address, true)).wait();
 
     const ticketPrice = await ticketHub.ticketPrice();
     await (await ticketHub.connect(alice).mintTicket({ value: ticketPrice })).wait();
@@ -297,6 +318,9 @@ describe("BIGGI_MASTER: extended readers + setup wrappers smoke", function () {
     await mainReader.getAllBackgroundMintCounts();
     await mainReader.getRewardsCounters();
     await mainReader.getFrontendSnapshot();
+    const ticketHubSnapshot = await mainReader.getTicketHubFrontendSnapshot(alice.address, treasury.address);
+    expect(ticketHubSnapshot.ecosystemTreasuryRouteOk).to.equal(true);
+    expect(ticketHubSnapshot.userTicketCount).to.equal(1);
     const foundTickets = await mainReader.findTicket(alice.address);
     expect(foundTickets.length).to.equal(1);
 
@@ -324,7 +348,10 @@ describe("BIGGI_MASTER: extended readers + setup wrappers smoke", function () {
     await (await nftRewards.setRegistry(owner.address)).wait();
     await (await nftRewards.setAllowedMainCollection(main.address, true)).wait();
     await (await nftRewards.createManualReward(alice.address, "ipfs://reward/1")).wait();
-    await (await nftRewards.createMysteryEvent(["ipfs://reward/2"], [alice.address])).wait();
+    await expect(
+      nftRewards.createMysteryEvent(["ipfs://reward/bad"], [ethers.constants.AddressZero])
+    ).to.be.reverted;
+    await (await nftRewards.createMysteryEvent(["ipfs://reward/2"], [alice.address, alice.address])).wait();
 
     const nftReader = await deploy("BiggiNftRewardsReader", nftRewards.address);
     const nftStatus = await nftReader.getStatus();
@@ -349,6 +376,10 @@ describe("BIGGI_MASTER: extended readers + setup wrappers smoke", function () {
     const vrfCollection = await deploy("MockCollectionMainView");
     const publicCollection = await deploy("MockCollectionMainView");
     const ticketHub = await deploy("MockTicketHubProgress");
+
+    await (await ticketHub.setMainCollection(vrfCollection.address)).wait();
+    await (await ticketHub.setCaps(5, 5, 10)).wait();
+    await (await vrfCollection.setTicketHub(ticketHub.address)).wait();
 
     await (await registry.createSeries("MASTER")).wait();
     await (await registry.createChapter(1)).wait(); // chapterId 1
@@ -418,5 +449,6 @@ describe("BIGGI_MASTER: extended readers + setup wrappers smoke", function () {
     expect(allSnaps.length).to.equal(3);
     expect(allSnaps[1].isPublicCollection).to.equal(true);
     expect(allSnaps[2].isTicketHubCollection).to.equal(true);
+    await chapterSeriesReader.chapterPaymentSnapshot(1, owner.address);
   });
 });

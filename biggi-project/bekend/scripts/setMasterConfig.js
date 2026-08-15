@@ -1,6 +1,6 @@
-// scripts/setMasterConfig.js
-// Spusť: npx hardhat run scripts/setMasterConfig.js --network amoy
-// Poplní BiggiMasterTokenomicsConfig podle adres v .env. Nenastavené hodnoty přeskočí.
+﻿// scripts/setMasterConfig.js
+// SpusĹĄ: npx hardhat run scripts/setMasterConfig.js --network polygon
+// PoplnĂ­ BiggiMasterTokenomicsConfig podle adres v .env. NenastavenĂ© hodnoty pĹ™eskoÄŤĂ­.
 
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
@@ -44,8 +44,8 @@ async function maybeTx(label, fn) {
 async function main() {
   const env = process.env;
   const mcAddr = env.MASTER_CONFIG;
-  if (!mcAddr) throw new Error("Chybí MASTER_CONFIG v .env");
-  if (!env.PRIVATE_KEY) throw new Error("Chybí PRIVATE_KEY v .env");
+  if (!mcAddr) throw new Error("ChybĂ­ MASTER_CONFIG v .env");
+  if (!env.PRIVATE_KEY) throw new Error("ChybĂ­ PRIVATE_KEY v .env");
 
   const signer = new ethers.Wallet(env.PRIVATE_KEY, hre.ethers.provider);
   const mc = new ethers.Contract(mcAddr, ABI, signer);
@@ -53,7 +53,7 @@ async function main() {
 
   const owner = await mc.owner();
   if (owner.toLowerCase() !== signer.address.toLowerCase()) {
-    console.log("POZOR: signer není owner MasterConfigu", { owner, signer: signer.address });
+    console.log("POZOR: signer nenĂ­ owner MasterConfigu", { owner, signer: signer.address });
   }
 
   console.log("MasterConfig:", mcAddr);
@@ -65,14 +65,14 @@ async function main() {
   const liquidity = [env.LIQUIDITY_MANAGER, env.LIQUIDITY_VAULT, env.ROUTER, env.FACTORY, env.WETH].map(addrOrZero);
   const collections = [env.COLLECTION, env.COLLECTION2, env.REWARDS_READER || env.TOKENOMIK_READER, env.COLLECTION_DISTRIBUTOR].map(addrOrZero);
 
-  console.log("Plánuji nastavit:");
+  console.log("PlĂˇnuji nastavit:");
   console.log(" core:", core);
   console.log(" rewards:", rewards);
   console.log(" pump:", pump);
   console.log(" liquidity:", liquidity);
   console.log(" collections:", collections);
 
-  // Předchozí hodnoty
+  // PĹ™edchozĂ­ hodnoty
   const [corePrev, rewardsPrev, pumpPrev, liqPrev, collPrev] = await Promise.all([
     mc.coreBundle(),
     mc.rewardsBundle(),

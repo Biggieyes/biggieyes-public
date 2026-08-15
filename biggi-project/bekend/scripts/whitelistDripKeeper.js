@@ -1,4 +1,4 @@
-// Spusť: npx hardhat run scripts/whitelistDripKeeper.js --network amoy
+// Spusť: npx hardhat run scripts/whitelistDripKeeper.js --network polygon
 // Whitelistuje keeper v DripKeeperProxy a vypíše paused flag.
 
 const path = require("path");

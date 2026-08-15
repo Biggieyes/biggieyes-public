@@ -1,4 +1,4 @@
-# Agent documentation — BiggiLiquidityVault.sol
+# Agent documentation — BiggiLiquidityVault.sol / LiquidityVault
 
 **Role:** LP custody vault
 
@@ -35,7 +35,8 @@ Stores LP tokens, whitelists pairs, and only allows liquidity-manager-controlled
 - `rescueNative()`
 
 ## Integration points
-- Review file-local interfaces and imports before changing any external call patterns.
+- Primary runtime path is router minting LP directly to the vault, followed by `BiggiLiquidityManager.syncPairBalance(pair)`.
+- `depositLP()` is a fallback path for flows where LP is first held by LM; normal add-liquidity execution should not need it.
 
 ## Safe-edit guidance for agents
 - Preserve storage layout unless a migration is explicitly planned.
@@ -44,7 +45,7 @@ Stores LP tokens, whitelists pairs, and only allows liquidity-manager-controlled
 - Prefer additive changes with explicit events over implicit behavior changes.
 
 ## Known risks / review notes
-- No file-specific issue flagged in this pass beyond standard tokenomics/change-management caution.
+- LP pair must be whitelisted before LM can sync/deposit/withdraw that LP accounting.
 
 ## Agent checklist before modifying
 - Confirm who owns/controls this contract in deployment scripts.

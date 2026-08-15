@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -44,17 +44,30 @@
     <meta name="author" content="BiggiEyes" />
     <script>
       (function () {
+        const hostname = String(window.location.hostname || "").toLowerCase();
+        const isLocalAppHost =
+          hostname === "localhost" ||
+          hostname === "127.0.0.1" ||
+          hostname === "::1" ||
+          hostname.endsWith(".local");
+
+        window.__BIGGI_LOCAL_APP_ENABLED__ = isLocalAppHost;
+        if (isLocalAppHost) {
+          document.documentElement.classList.add("landing-local-app-enabled");
+          return;
+        }
+
         const standaloneRedirects = {
-          "/rewards": "/rewards/index.html",
-          "/rewards/": "/rewards/index.html",
-          "/collection": "/collection/index.html",
-          "/collection/": "/collection/index.html",
-          "/vrf-mint": "/vrf-mint/index.html",
-          "/vrf-mint/": "/vrf-mint/index.html",
-          "/ecosystem": "/ecosystem/index.html",
-          "/ecosystem/": "/ecosystem/index.html",
-          "/community-center": "/community-center/index.html",
-          "/community-center/": "/community-center/index.html",
+          "/rewards": "/",
+          "/rewards/": "/",
+          "/collection": "/",
+          "/collection/": "/",
+          "/vrf-mint": "/",
+          "/vrf-mint/": "/",
+          "/ecosystem": "/",
+          "/ecosystem/": "/",
+          "/community-center": "/",
+          "/community-center/": "/",
         };
 
         const target = standaloneRedirects[window.location.pathname];
@@ -146,7 +159,7 @@
             "@id": "https://biggieyes.com/#website",
             "name": "BiggiEyes",
             "url": "https://biggieyes.com/",
-            "description": "BiggiEyes guide pages and interactive app dashboard for tradable NFT tickets, VRF reveal, and weekly BIGGI rewards on Polygon.",
+            "description": "BiggiEyes landing page with project guide, ticket flow overview, VRF explanation, and weekly BIGGI reward context on Polygon.",
             "publisher": { "@id": "https://biggieyes.com/#organization" },
             "inLanguage": "en"
           },
@@ -183,7 +196,7 @@
             "@id": "https://biggieyes.com/#webpage",
             "url": "https://biggieyes.com/",
             "name": "BiggiEyes | NFT Tickets, VRF Reveal, Weekly BIGGI Rewards",
-            "description": "Landing page for BiggiEyes on Polygon. Review tradable ticket pricing, weekly BIGGI rewards by rarity, VRF reveal flow, and then open the full interactive app.",
+            "description": "Landing page for BiggiEyes on Polygon. Review tradable ticket pricing, weekly BIGGI rewards by rarity, and the VRF reveal flow while the interactive app is temporarily offline.",
             "inLanguage": "en",
             "isPartOf": { "@id": "https://biggieyes.com/#website" },
             "about": [
@@ -245,7 +258,7 @@
                 "name": "Is this homepage the full BiggiEyes app?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "No. The homepage is a guide and launcher. The full interactive BiggiEyes dashboard lives in /app/."
+                  "text": "The interactive app is temporarily offline, so the landing page is the only active public BiggiEyes surface right now."
                 }
               }
             ]
@@ -776,6 +789,206 @@
         border: 1px solid var(--frame-cyan);
       }
 
+      .landing-focus,
+      .landing-paths,
+      .landing-state,
+      .landing-trust {
+        margin-top: 24px;
+        display: grid;
+        gap: 16px;
+        padding: 18px;
+        border-radius: 18px;
+        background: linear-gradient(180deg, rgba(11, 17, 34, 0.66), rgba(8, 13, 27, 0.78));
+        box-shadow: 0 18px 34px rgba(0, 0, 0, 0.16);
+      }
+
+      .landing-focus {
+        border: 1px solid var(--frame-red);
+      }
+
+      .landing-paths {
+        border: 1px solid var(--frame-gold);
+      }
+
+      .landing-state {
+        border: 1px solid var(--frame-green);
+      }
+
+      .landing-trust {
+        border: 1px solid var(--frame-cyan);
+      }
+
+      .flow-strip,
+      .path-grid,
+      .state-grid,
+      .trust-strip {
+        display: grid;
+        gap: 12px;
+      }
+
+      .flow-strip {
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      }
+
+      .path-grid {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      }
+
+      .state-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      }
+
+      .trust-strip {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      }
+
+      .flow-step,
+      .path-card,
+      .state-card,
+      .trust-item {
+        border-radius: 14px;
+        padding: 14px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+      }
+
+      .flow-step--ticket,
+      .path-card--collector {
+        border-color: var(--frame-red);
+        background: linear-gradient(180deg, rgba(255, 102, 102, 0.08), rgba(255, 255, 255, 0.03));
+      }
+
+      .flow-step--redeem,
+      .path-card--holder {
+        border-color: var(--frame-gold);
+        background: linear-gradient(180deg, rgba(255, 232, 0, 0.08), rgba(255, 255, 255, 0.03));
+      }
+
+      .flow-step--claim,
+      .path-card--ecosystem {
+        border-color: var(--frame-cyan);
+        background: linear-gradient(180deg, rgba(97, 217, 255, 0.08), rgba(255, 255, 255, 0.03));
+      }
+
+      .flow-step__number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        margin-bottom: 10px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        color: var(--text);
+        font-weight: 800;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .path-card {
+        display: grid;
+        gap: 8px;
+        color: var(--text);
+        text-decoration: none;
+        transition:
+          transform 0.16s ease,
+          border-color 0.16s ease,
+          box-shadow 0.16s ease;
+      }
+
+      .path-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 28px rgba(0, 0, 0, 0.18);
+      }
+
+      .path-card__eyebrow,
+      .state-card__eyebrow {
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      .path-card__cta {
+        margin-top: 2px;
+        color: var(--text);
+        font-size: 0.86rem;
+        font-weight: 700;
+      }
+
+      .state-card__list {
+        display: grid;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .state-point {
+        position: relative;
+        padding-left: 16px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .state-point::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0.62em;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent);
+        transform: translateY(-50%);
+      }
+
+      .state-card--live {
+        border-color: var(--frame-green);
+        background: linear-gradient(180deg, rgba(123, 255, 178, 0.08), rgba(255, 255, 255, 0.03));
+      }
+
+      .state-card--future {
+        border-color: var(--frame-violet);
+        background: linear-gradient(180deg, rgba(197, 140, 255, 0.1), rgba(255, 255, 255, 0.03));
+      }
+
+      .trust-item {
+        display: grid;
+        gap: 6px;
+        align-content: start;
+        min-height: 100%;
+      }
+
+      .trust-item strong {
+        color: var(--accent);
+        font-size: 1.02rem;
+      }
+
+      .trust-item span {
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .trust-item--gold {
+        border-color: var(--frame-gold);
+      }
+
+      .trust-item--red {
+        border-color: var(--frame-red);
+      }
+
+      .trust-item--cyan {
+        border-color: var(--frame-cyan);
+      }
+
+      .trust-item--green {
+        border-color: var(--frame-green);
+      }
+
+      .trust-item--violet {
+        border-color: var(--frame-violet);
+      }
+
       .topic-summary {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -1099,7 +1312,7 @@
       }
 
       .hero-app-cta::after {
-        content: "Enter App";
+        content: "Landing Only";
         position: absolute;
         right: 24px;
         top: 50%;
@@ -1110,6 +1323,22 @@
         letter-spacing: 0.18em;
         text-transform: uppercase;
         color: rgba(5, 17, 31, 0.82);
+      }
+
+      .landing-local-app-enabled .hero-app-cta {
+        border-color: rgba(123, 255, 178, 0.78);
+        background:
+          radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.24), transparent 26%),
+          linear-gradient(135deg, #b7ffd1 0%, #57efb0 44%, #00b884 100%);
+        box-shadow:
+          0 22px 44px rgba(0, 184, 132, 0.24),
+          0 0 38px rgba(123, 255, 178, 0.2),
+          0 0 0 1px rgba(123, 255, 178, 0.26) inset;
+      }
+
+      .landing-local-app-enabled .hero-app-cta::after {
+        content: "Local Dev";
+        color: rgba(5, 27, 21, 0.84);
       }
 
       .hero-app-cta::before {
@@ -1334,6 +1563,10 @@
 
       .landing-mobile-compact .hero,
       .landing-mobile-compact .powered-by-rail,
+      .landing-mobile-compact .landing-focus,
+      .landing-mobile-compact .landing-paths,
+      .landing-mobile-compact .landing-state,
+      .landing-mobile-compact .landing-trust,
       .landing-mobile-compact .topic-browser,
       .landing-mobile-compact .app-launch,
       .landing-mobile-compact .topic-panel {
@@ -1409,6 +1642,10 @@
 
       .landing-mobile-compact .hero-keyfacts,
       .landing-mobile-compact .quick-steps,
+      .landing-mobile-compact .flow-strip,
+      .landing-mobile-compact .path-grid,
+      .landing-mobile-compact .state-grid,
+      .landing-mobile-compact .trust-strip,
       .landing-mobile-compact .grid,
       .landing-mobile-compact .live-grid,
       .landing-mobile-compact .links-list,
@@ -1416,6 +1653,10 @@
         grid-template-columns: 1fr;
       }
 
+      .landing-mobile-compact .landing-focus,
+      .landing-mobile-compact .landing-paths,
+      .landing-mobile-compact .landing-state,
+      .landing-mobile-compact .landing-trust,
       .landing-mobile-compact .topic-browser,
       .landing-mobile-compact .app-launch,
       .landing-mobile-compact .topic-panel {
@@ -1730,7 +1971,7 @@
       <aside class="preview-rail" aria-label="App preview images">
         <p class="preview-rail__label">App Preview</p>
         <p class="preview-rail__copy">
-          Dashboard preview cards before opening the live app.
+          Dashboard preview cards from the currently offline app.
         </p>
         <div class="landing-gallery">
           <figure class="landing-gallery__item">
@@ -1796,49 +2037,56 @@
       <section class="hero">
         <div class="hero-grid">
           <div class="hero-main">
-            <div class="hero-kicker">Guide + App Launcher</div>
-            <h1>Understand BiggiEyes first. Open the app only when you want live actions.</h1>
+            <div class="hero-kicker">Mainnet-Ready Collectible System</div>
+            <h1>BiggiEyes turns one public entry ticket into a full collectible and ecosystem flow.</h1>
             <p class="hero-copy">
-              This homepage explains the two core mechanics first: the ticket
-              price rises by <strong>0.33%</strong> after every mint, and
-              finalized NFTs can claim <strong>BIGGI every week</strong> based
-              on rarity weight. Switch topics here, preview the dashboard, and
-              open <code>/app/</code> only when you need live wallet data.
+              Entry starts with a tradable ticket at <strong>500 POL</strong>.
+              The ticket price rises by <strong>0.33%</strong> after every
+              mint, redeems through verifiable randomness into a final NFT, and
+              can later unlock <strong>weekly BIGGI claims</strong> if the NFT
+              is eligible. Behind that collector flow sits a connected
+              ecosystem of rewards, treasury, reserve, drip, buyback, and
+              liquidity guardrails. The interactive app is temporarily offline,
+              so this landing stays as the active public page.
             </p>
             <div class="hero-badges" aria-label="Landing overview">
-              <span class="hero-badge">Weekly BIGGI by NFT rarity</span>
-              <span class="hero-badge">Ticket price +0.33% every mint</span>
-              <span class="hero-badge">Tradable ticket → VRF reveal → NFT</span>
+              <span class="hero-badge">500 POL entry + weekly BIGGI utility</span>
+              <span class="hero-badge">Public ticket curve + verifiable reveal</span>
+              <span class="hero-badge">Treasury, reserve, buyback, liquidity</span>
             </div>
             <div class="hero-note">
-              <strong>Most important:</strong> tickets follow a public on-chain
-              price curve, while finalized NFTs enter the weekly BIGGI claim
-              system. The topic buttons below only change this landing page; the
-              <code>Open App</code> button takes you into the live dashboard.
+              <strong>Most important:</strong> BiggiEyes is not built as
+              separate NFT and token products. Tickets, VRF reveal, finalized
+              NFTs, rewards, tokenomics, and future chapter expansion all read
+              from one connected public architecture. The topic buttons below
+              only switch this landing guide; the interactive dashboard is
+              temporarily unavailable.
             </div>
             <div class="grid hero-keyfacts">
               <article class="card">
-                <h3>Weekly BIGGI for NFT holders</h3>
+                <h3>Collector flow with public rules</h3>
                 <p>
-                  Each finalized NFT can claim once per week. Claim amount
-                  depends on block weight and rarity tier, so stronger outcomes
-                  carry more weekly BIGGI.
+                  Buy the ticket, follow the public
+                  <strong>+0.33%</strong> mint curve, redeem through VRF, and
+                  hold the final NFT that later determines rarity and reward
+                  weight.
                 </p>
               </article>
               <article class="card">
-                <h3>0.33% ticket growth per mint</h3>
+                <h3>Ecosystem logic with visible branches</h3>
                 <p>
-                  The ticket curve starts at 500 POL and rises by 0.33% after
-                  every mint. That growth is on-chain, public, and keeps moving
-                  upward as new tickets are minted.
+                  BIGGI rewards, treasury routing, reserve support, drip,
+                  buyback branches, and liquidity protection are built to move
+                  value through clear destinations instead of a hidden black
+                  box.
                 </p>
               </article>
             </div>
             <div class="hero-primary-cta">
-              <a class="btn app-cta hero-app-cta" href="./app/">
-                <span class="hero-app-cta__eyebrow">Live Dashboard</span>
-                <span class="hero-app-cta__title">Open App</span>
-                <span class="hero-app-cta__meta">Mint, redeem, rewards, collection, ecosystem</span>
+              <a class="btn app-cta hero-app-cta" href="#app-status">
+                <span class="hero-app-cta__eyebrow">Temporary Status</span>
+                <span class="hero-app-cta__title">App Offline</span>
+                <span class="hero-app-cta__meta">Landing is live. Wallet actions and panels are disabled.</span>
               </a>
             </div>
             <div class="hero-mobile-preview" aria-label="App preview images for mobile">
@@ -1886,8 +2134,10 @@
           <div class="launch-group">
             <div class="launch-group__label">UNDERSTAND BIGGIEYES FIRST</div>
             <p class="launch-group__copy">
-              First understand the mechanic here on landing, then open the app
-              only when you want live wallet actions.
+              Start here if you want the system to make sense before you touch
+              a wallet. This landing explains what the ticket does, how the NFT
+              reveal works, why some NFTs earn more BIGGI, and how the broader
+              ecosystem routes value in the background.
             </p>
             <div class="quick-steps">
               <article class="quick-step">
@@ -1907,11 +2157,133 @@
               <article class="quick-step">
                 <div class="quick-step__number">3</div>
                 <div class="quick-step__body">
-                  <strong>Open the live dashboard</strong>
-                  <p>Use <code>Open App</code> when you want wallet actions and live on-chain data.</p>
+                  <strong>Wait for relaunch</strong>
+                  <p>Wallet actions and live panel data are temporarily unavailable while only the landing stays online.</p>
                 </div>
               </article>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="landing-focus" aria-label="BiggiEyes three step flow">
+        <div class="launch-group">
+          <div class="launch-group__label">How BiggiEyes Works</div>
+          <p class="launch-group__copy">
+            The full user flow is simple: enter through the ticket, redeem
+            through verifiable randomness, then hold the final NFT for
+            collection status and possible weekly BIGGI utility.
+          </p>
+          <div class="flow-strip">
+            <article class="flow-step flow-step--ticket">
+              <div class="flow-step__number">1</div>
+              <h3>Buy Ticket</h3>
+              <p>Start at 500 POL. Every mint moves the public ticket price up by 0.33%.</p>
+            </article>
+            <article class="flow-step flow-step--redeem">
+              <div class="flow-step__number">2</div>
+              <h3>Redeem Through VRF</h3>
+              <p>Redeem requests verifiable randomness, so the final NFT is not assigned from a hidden list.</p>
+            </article>
+            <article class="flow-step flow-step--claim">
+              <div class="flow-step__number">3</div>
+              <h3>Hold, Track, Claim</h3>
+              <p>The final NFT enters collection progression and can unlock weekly BIGGI claims if it is eligible.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="landing-paths" aria-label="Choose your path">
+        <div class="launch-group">
+          <div class="launch-group__label">Choose Your Path</div>
+          <p class="launch-group__copy">
+            Not every visitor needs the same starting point. Pick the route
+            that matches what you care about most.
+          </p>
+          <div class="path-grid">
+            <a class="path-card path-card--collector" href="#app-status">
+              <span class="path-card__eyebrow">Collector</span>
+              <h3>Start with the ticket flow</h3>
+              <p>See the 500 POL entry, the +0.33% curve, and the redeem path that creates the final NFT.</p>
+              <span class="path-card__cta">Landing only right now</span>
+            </a>
+            <a class="path-card path-card--holder" href="#app-status">
+              <span class="path-card__eyebrow">Holder</span>
+              <h3>Check weekly BIGGI utility</h3>
+              <p>See whether a finalized NFT is eligible, how much it can claim, and when the next claim window opens.</p>
+              <span class="path-card__cta">Landing only right now</span>
+            </a>
+            <a class="path-card path-card--ecosystem" href="#app-status">
+              <span class="path-card__eyebrow">Ecosystem</span>
+              <h3>Read the token and treasury layer</h3>
+              <p>Follow how rewards, treasury, reserve, buyback, drip, and liquidity fit into one public system.</p>
+              <span class="path-card__cta">Landing only right now</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="landing-state" aria-label="Live now versus future expansion">
+        <div class="launch-group">
+          <div class="launch-group__label">Live Now Vs Future Expansion</div>
+          <p class="launch-group__copy">
+            This matters because visitors need to know what they can already do
+            today and what the architecture is built to support over time.
+          </p>
+          <div class="state-grid">
+            <article class="state-card state-card--live">
+              <p class="state-card__eyebrow">Live Now</p>
+              <h3>What users can already do</h3>
+              <div class="state-card__list">
+                <span class="state-point">Buy a tradable ticket and watch the public price curve move.</span>
+                <span class="state-point">Redeem through VRF and receive the final NFT reveal.</span>
+                <span class="state-point">Track collection state, rarity context, and live panel data.</span>
+                <span class="state-point">Claim weekly BIGGI when a finalized NFT is eligible.</span>
+              </div>
+            </article>
+            <article class="state-card state-card--future">
+              <p class="state-card__eyebrow">Built For Expansion</p>
+              <h3>What the system is designed to support</h3>
+              <div class="state-card__list">
+                <span class="state-point">Additional chapters and future collection growth without rebuilding the project.</span>
+                <span class="state-point">Broader BIGGI utility branches connected to the same ecosystem state.</span>
+                <span class="state-point">Treasury, reserve, drip, buyback, and liquidity working as coordinated layers.</span>
+                <span class="state-point">A stronger community and onboarding layer as the public system expands.</span>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="landing-trust" aria-label="Trust signals">
+        <div class="launch-group">
+          <div class="launch-group__label">Trust Signals</div>
+          <p class="launch-group__copy">
+            These are the quick facts a visitor should understand without
+            reading the full architecture.
+          </p>
+          <div class="trust-strip">
+            <article class="trust-item trust-item--gold">
+              <strong>500 POL</strong>
+              <span>Starting ticket price</span>
+            </article>
+            <article class="trust-item trust-item--red">
+              <strong>+0.33%</strong>
+              <span>Public increase after every mint</span>
+            </article>
+            <article class="trust-item trust-item--cyan">
+              <strong>VRF Reveal</strong>
+              <span>Final NFT comes through verifiable randomness</span>
+            </article>
+            <article class="trust-item trust-item--green">
+              <strong>Weekly BIGGI</strong>
+              <span>Eligible finalized NFTs can claim rewards</span>
+            </article>
+            <article class="trust-item trust-item--violet">
+              <strong>Guardrails</strong>
+              <span>Treasury, reserve, buyback, and liquidity stay visible</span>
+            </article>
           </div>
         </div>
       </section>
@@ -2000,33 +2372,33 @@
           data-topic-panel="rewards"
         >
           <p class="topic-panel__eyebrow">Rewards Guide</p>
-          <h2>Finalized NFTs can claim BIGGI every week, and rarity changes the amount</h2>
+          <h2>Finalized NFTs unlock weekly BIGGI claims, and stronger rarity can lift the payout</h2>
           <p class="topic-panel__lead">
-            Each eligible finalized NFT can claim once per week. The amount is
-            tied to block weight and rarity tier, while collection progress and
-            reveal outcomes shape the wider reward context.
+            This is the holder utility layer. Once a ticket becomes its final
+            NFT, the app can show whether that NFT is eligible, how much BIGGI
+            it can claim, and when the next claim window opens.
           </p>
           <div class="topic-panel__highlights">
-            <span class="topic-highlight">Weekly BIGGI claim</span>
-            <span class="topic-highlight">Rarity-weighted amount</span>
-            <span class="topic-highlight">Claiming stays in the app</span>
+            <span class="topic-highlight">Weekly holder utility</span>
+            <span class="topic-highlight">Rarity can increase rewards</span>
+            <span class="topic-highlight">Live claim status in the app</span>
           </div>
           <div class="grid">
             <article class="card">
-              <h3>Weekly claim cycle</h3>
-              <p>Each eligible finalized NFT can claim BIGGI once per week.</p>
+              <h3>What the holder does</h3>
+              <p>Hold the finalized NFT, return to the rewards panel, and claim BIGGI when that week's window is open.</p>
             </article>
             <article class="card">
-              <h3>Rarity and block weight</h3>
-              <p>Claim amount depends on block weight and rarity tier, so rarer NFTs carry more weekly weight.</p>
+              <h3>Why some NFTs earn more</h3>
+              <p>Claim amounts are not flat. Rarity tier and collection weight can raise the weekly BIGGI attached to a stronger NFT.</p>
             </article>
             <article class="card">
-              <h3>Collection context</h3>
-              <p>Reveal outcomes and collection structure still matter because reward logic stays tied to the same on-chain state.</p>
+              <h3>Why it feels credible</h3>
+              <p>The reward logic reads from the same on-chain collection state as the reveal, so the payout stays tied to the NFT you actually own.</p>
             </article>
           </div>
           <div class="topic-panel__actions">
-            <a class="btn secondary topic-panel__standalone" href="/rewards/index.html">Open standalone rewards page</a>
+            <a class="btn secondary topic-panel__standalone" href="#app-status">Standalone pages temporarily offline</a>
           </div>
         </article>
 
@@ -2039,32 +2411,34 @@
           hidden
         >
           <p class="topic-panel__eyebrow">Collection Guide</p>
-          <h2>Collection structure explains chapters, blocks, and pricing</h2>
+          <h2>A chapter-based collection structure built to scale far beyond a one-time drop</h2>
           <p class="topic-panel__lead">
-            BiggiEyes is organized in chapters and blocks, and that structure
-            shapes pricing, rarity paths, and reward context.
+            BiggiEyes is designed as an expandable collectible system. Chapters
+            and blocks keep future releases organized, while preserving clear
+            pricing, rarity paths, and reward context across the wider
+            collection.
           </p>
           <div class="topic-panel__highlights">
-            <span class="topic-highlight">Five chapters</span>
-            <span class="topic-highlight">VRF phase before public mint</span>
-            <span class="topic-highlight">Tickets and NFTs stay tradable</span>
+            <span class="topic-highlight">Built for future collection growth</span>
+            <span class="topic-highlight">Ticket phase before final reveal</span>
+            <span class="topic-highlight">Tradable before and after reveal</span>
           </div>
           <div class="grid">
             <article class="card">
-              <h3>Five chapters</h3>
-              <p>The project unfolds in chapters instead of one flat release.</p>
+              <h3>Why the structure matters</h3>
+              <p>New chapters can be added without breaking the whole system, which makes long-term collection expansion far cleaner.</p>
             </article>
             <article class="card">
-              <h3>Block pricing</h3>
-              <p>Public mint pricing follows block values formed by the protocol flow.</p>
+              <h3>What blocks actually do</h3>
+              <p>Blocks help organize pricing and reward context, so every mint sits in a known place inside the broader collectible map.</p>
             </article>
             <article class="card">
-              <h3>Tradable states</h3>
-              <p>Collectors can trade tickets before reveal and NFTs after final reveal.</p>
+              <h3>What collectors can hold</h3>
+              <p>Before reveal you own the ticket. After redeem and randomness, you own the final NFT. Both states belong to the same public collectible flow.</p>
             </article>
           </div>
           <div class="topic-panel__actions">
-            <a class="btn secondary topic-panel__standalone" href="/collection/index.html">Open standalone collection page</a>
+            <a class="btn secondary topic-panel__standalone" href="#app-status">Standalone pages temporarily offline</a>
           </div>
         </article>
 
@@ -2077,33 +2451,34 @@
           hidden
         >
           <p class="topic-panel__eyebrow">VRF Mint Guide</p>
-          <h2>Mint starts with a ticket, then VRF reveals the NFT</h2>
+          <h2>Entry begins with a tradable ticket and ends with a verifiable NFT reveal</h2>
           <p class="topic-panel__lead">
-            You mint a tradable ticket first. The ticket price starts at 500 POL
-            and rises by 0.33% after every mint. The final NFT appears only
-            after redeem and verifiable randomness.
+            The mint flow is intentionally public and readable. A ticket starts
+            at 500 POL, rises by 0.33% after each mint, and later redeems into
+            a final NFT through verifiable randomness rather than a hidden
+            manual reveal.
           </p>
           <div class="topic-panel__highlights">
-            <span class="topic-highlight">0.33% ticket curve</span>
-            <span class="topic-highlight">Redeem through VRF</span>
-            <span class="topic-highlight">Final NFT after reveal</span>
+            <span class="topic-highlight">500 POL starting ticket</span>
+            <span class="topic-highlight">+0.33% public mint curve</span>
+            <span class="topic-highlight">Verifiable reveal after redeem</span>
           </div>
           <div class="grid">
             <article class="card">
-              <h3>Ticket first</h3>
-              <p>The entry asset has its own tradable phase, and the ticket curve rises by 0.33% after every mint.</p>
+              <h3>Step 1: Enter through the ticket</h3>
+              <p>Your first asset is the ticket itself, and its price moves on a public curve after every new mint.</p>
             </article>
             <article class="card">
-              <h3>Redeem through VRF</h3>
-              <p>Redeem triggers verifiable randomness instead of a manual reveal list.</p>
+              <h3>Step 2: Redeem into randomness</h3>
+              <p>When you redeem, the system requests verifiable randomness so the final result is not chosen by a team wallet or private list.</p>
             </article>
             <article class="card">
-              <h3>Final NFT state</h3>
-              <p>After fulfillment, the NFT becomes part of the collection and rewards logic.</p>
+              <h3>Step 3: Hold the final asset</h3>
+              <p>After reveal, the NFT becomes the collectible that enters rarity, collection progression, and the weekly reward system.</p>
             </article>
           </div>
           <div class="topic-panel__actions">
-            <a class="btn secondary topic-panel__standalone" href="/vrf-mint/index.html">Open standalone VRF page</a>
+            <a class="btn secondary topic-panel__standalone" href="#app-status">Standalone pages temporarily offline</a>
           </div>
         </article>
 
@@ -2116,32 +2491,34 @@
           hidden
         >
           <p class="topic-panel__eyebrow">Ecosystem Guide</p>
-          <h2>Token, liquidity, and treasury share one public state</h2>
+          <h2>BIGGI runs inside a transparent ecosystem of rewards, treasury, reserve, buyback, and liquidity guardrails</h2>
           <p class="topic-panel__lead">
-            The BIGGI token, reserves, treasury, and market context are part of
-            the same public system behind the app.
+            The collectible side and the token side are designed to work
+            together. BIGGI rewards, treasury routing, reserve support, drip
+            distribution, buyback logic, and liquidity protection are built as
+            one readable system instead of scattered disconnected features.
           </p>
           <div class="topic-panel__highlights">
-            <span class="topic-highlight">Live token context</span>
-            <span class="topic-highlight">Liquidity and reserves</span>
-            <span class="topic-highlight">Shared public state</span>
+            <span class="topic-highlight">Rewards and token branches share one system</span>
+            <span class="topic-highlight">Treasury routes value to clear destinations</span>
+            <span class="topic-highlight">Reserve and liquidity add guardrails</span>
           </div>
           <div class="grid">
             <article class="card">
-              <h3>BIGGI token</h3>
-              <p>The token layer adds market context around the NFT app.</p>
+              <h3>What BIGGI is used for</h3>
+              <p>BIGGI is not only a token on a chart. It powers weekly NFT rewards and supports the wider ecosystem as the project expands.</p>
             </article>
             <article class="card">
-              <h3>Liquidity and reserves</h3>
-              <p>Liquidity, treasury, and reserves can be read from the public system.</p>
+              <h3>What treasury and reserve mean</h3>
+              <p>Treasury routes value into clear branches such as token rewards, reserve, and drip, while reserve acts as a protective layer when the ecosystem needs support.</p>
             </article>
             <article class="card">
-              <h3>Live metrics</h3>
-              <p>The same state appears in landing stats and in deeper app panels.</p>
+              <h3>Why liquidity and buyback matter</h3>
+              <p>Liquidity keeps BIGGI tradable on DEX markets, and buyback plus guardrails are designed to help the system respond more safely in stressed conditions.</p>
             </article>
           </div>
           <div class="topic-panel__actions">
-            <a class="btn secondary topic-panel__standalone" href="/ecosystem/index.html">Open standalone ecosystem page</a>
+            <a class="btn secondary topic-panel__standalone" href="#app-status">Standalone pages temporarily offline</a>
           </div>
         </article>
 
@@ -2154,51 +2531,53 @@
           hidden
         >
           <p class="topic-panel__eyebrow">Community Guide</p>
-          <h2>Community works as the onboarding bridge into the project</h2>
+          <h2>The community layer turns a complex on-chain system into a clear public story</h2>
           <p class="topic-panel__lead">
-            Community content helps visitors understand where to go next before
-            entering the live dashboard.
+            Before anyone mints, claims, or connects a wallet, they need to
+            understand what the project is and why it matters. This layer ties
+            the collectible flow, reward logic, and ecosystem structure into
+            one readable first impression.
           </p>
           <div class="topic-panel__highlights">
-            <span class="topic-highlight">Readable entry point</span>
-            <span class="topic-highlight">Connects all topics</span>
-            <span class="topic-highlight">Bridge into the app</span>
+            <span class="topic-highlight">Made for first-time visitors</span>
+            <span class="topic-highlight">One story across collection and token layers</span>
+            <span class="topic-highlight">Scales with future chapters</span>
           </div>
           <div class="grid">
             <article class="card">
-              <h3>Project entry point</h3>
-              <p>It gives visitors a readable route into the project before live interaction.</p>
+              <h3>What visitors get first</h3>
+              <p>They can understand the collectible idea, the mint flow, and the reward model before approving a wallet or waiting for the app relaunch.</p>
             </article>
             <article class="card">
-              <h3>Cross-topic navigation</h3>
-              <p>It naturally connects ecosystem, collection, rewards, and the app.</p>
+              <h3>Why this matters</h3>
+              <p>If the first explanation is weak, the project feels fragmented. This layer makes a complex on-chain system understandable to normal users.</p>
             </article>
             <article class="card">
-              <h3>Expansion context</h3>
-              <p>It frames the wider project direction, not just one contract mechanic.</p>
+              <h3>Built for long-term growth</h3>
+              <p>As more chapters, collections, and token utilities arrive, the community layer keeps the whole project consistent instead of fragmented.</p>
             </article>
           </div>
           <div class="topic-panel__actions">
-            <a class="btn secondary topic-panel__standalone" href="/community-center/index.html">Open standalone community page</a>
+            <a class="btn secondary topic-panel__standalone" href="#app-status">Standalone pages temporarily offline</a>
           </div>
         </article>
       </section>
 
-      <section class="app-launch">
+      <section class="app-launch" id="app-status">
         <div class="launch-group">
-          <div class="launch-group__label">Open Live App Panel</div>
+          <div class="launch-group__label">App Status</div>
           <p class="launch-group__copy">
-            Ready for live data? These buttons open the interactive
-            <code>/app/</code> panels with wallet actions, mint, redeem, and claim
-            flows.
+            The interactive app is temporarily offline. Landing content stays
+            online, but mint, redeem, rewards, collection, users, community,
+            and ecosystem panels are disabled until relaunch.
           </p>
           <div class="launch-row">
-            <a class="btn secondary launch-link launch-link--panel" href="./app/?panel=REWARDS">Open Rewards Panel</a>
-            <a class="btn secondary launch-link launch-link--panel" href="./app/?panel=COLLECTION">Open Collection Panel</a>
-            <a class="btn secondary launch-link launch-link--panel" href="./app/?panel=VRF%20MINT">Open VRF Panel</a>
-            <a class="btn secondary launch-link launch-link--panel" href="./app/?panel=BIGGI%20ECOSYSTEM">Open Ecosystem Panel</a>
-            <a class="btn secondary launch-link launch-link--panel" href="./app/?panel=USERS">Open Users Panel</a>
-            <a class="btn secondary launch-link launch-link--panel" href="./app/?panel=COMMUNITY%20CENTER">Open Community Panel</a>
+            <a class="btn secondary launch-link launch-link--panel" href="#top">Rewards panel offline</a>
+            <a class="btn secondary launch-link launch-link--panel" href="#top">Collection panel offline</a>
+            <a class="btn secondary launch-link launch-link--panel" href="#top">VRF panel offline</a>
+            <a class="btn secondary launch-link launch-link--panel" href="#top">Ecosystem panel offline</a>
+            <a class="btn secondary launch-link launch-link--panel" href="#top">Users panel offline</a>
+            <a class="btn secondary launch-link launch-link--panel" href="#top">Community panel offline</a>
           </div>
         </div>
       </section>
@@ -2239,15 +2618,15 @@
             <h3>Where should I start?</h3>
             <p>
               Start with the guide topic that matches your intent on this
-              homepage, then open the app for live on-chain data, wallet
-              actions, and the full BiggiEyes dashboard.
+              homepage. The interactive app is temporarily offline, so this
+              landing is the only active public surface right now.
             </p>
           </article>
           <article class="card">
             <h3>Is this homepage the full app?</h3>
             <p>
-              No. This root page is a guide and launcher. The actual interactive
-              BiggiEyes experience lives inside <code>/app/</code>.
+              For now, yes in practice. The interactive app is temporarily
+              disabled, so only the landing guide remains available.
             </p>
           </article>
         </div>
@@ -2267,17 +2646,17 @@
     <script>
       (function () {
         const RPC_ENDPOINTS = [
-          "https://rpc-amoy.polygon.technology",
           "https://polygon.drpc.org",
-          "https://polygon-amoy-bor-rpc.publicnode.com",
-          "https://polygon-amoy.api.onfinality.io/public",
+          "https://polygon-bor-rpc.publicnode.com",
+          "https://polygon.drpc.org",
         ];
 
         const ADDR = {
-          MAIN: "0x3430f378032Cead7A82f38047e906C1E3cAFc703",
-          BIGGI: "0xD4D0fa17f2955Eb3fF8D03ea0cD7A2f0a06E6d0E",
-          PAIR: "0x210d5aE3e0E954836D237363Eea2674bD36e9b63",
-          PRICE_ORACLE: "0xDc259aC37b8A1B33AB8B5093A6A9F21D0892F533",
+          MAIN: "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+          TICKET_HUB: "0xe6d742D7DC66fA63434E6794C69798A5272e9873",
+          BIGGI: "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
+          PAIR: "0x59C7B17B3ACD48979B25215a0c477dF6FFFF3e90",
+          PRICE_ORACLE: "0x0000000000000000000000000000000000000000",
         };
 
         const SIG = {
@@ -2297,6 +2676,10 @@
         let activeRpc = null;
 
         const strip0x = (v) => String(v || "").replace(/^0x/i, "");
+        const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+        const hasAddress = (addr) =>
+          /^0x[0-9a-fA-F]{40}$/.test(String(addr || "")) &&
+          String(addr).toLowerCase() !== ZERO_ADDRESS;
 
         const withTimeout = async (promise, ms) => {
           let timer = null;
@@ -2390,19 +2773,23 @@
 
         const readTicketPrice = async () => {
           const candidates = [SIG.getTicketPrice, SIG.ticketPrice];
-          for (const selector of candidates) {
-            try {
-              const raw = await ethCall(ADDR.MAIN, selector);
-              const wei = decodeUintWord(raw, 0);
-              if (wei > 0n) return wei;
-            } catch (_err) {
-              // try next selector
+          const targets = [ADDR.TICKET_HUB, ADDR.MAIN].filter(hasAddress);
+          for (const target of targets) {
+            for (const selector of candidates) {
+              try {
+                const raw = await ethCall(target, selector);
+                const wei = decodeUintWord(raw, 0);
+                if (wei > 0n) return wei;
+              } catch (_err) {
+                // try next selector
+              }
             }
           }
           throw new Error("Ticket price unavailable");
         };
 
         const readBiggiFromOracle = async () => {
+          if (!hasAddress(ADDR.PRICE_ORACLE)) throw new Error("Oracle not configured");
           const [roundRaw, decRaw] = await Promise.all([
             ethCall(ADDR.PRICE_ORACLE, SIG.latestRoundData),
             ethCall(ADDR.PRICE_ORACLE, SIG.decimals),
@@ -2505,6 +2892,65 @@
 
         refreshStats();
         setInterval(refreshStats, 60000);
+      })();
+
+      (function () {
+        if (!window.__BIGGI_LOCAL_APP_ENABLED__) return;
+
+        const heroCta = document.querySelector(".hero-app-cta");
+        if (heroCta) {
+          heroCta.href = "/app/";
+          const eyebrow = heroCta.querySelector(".hero-app-cta__eyebrow");
+          const title = heroCta.querySelector(".hero-app-cta__title");
+          const meta = heroCta.querySelector(".hero-app-cta__meta");
+          if (eyebrow) eyebrow.textContent = "Local Development";
+          if (title) title.textContent = "Open App";
+          if (meta) meta.textContent = "Localhost keeps wallet actions and app panels enabled.";
+        }
+
+        const statusCopy = document.querySelector(".launch-group__copy");
+        if (statusCopy) {
+          statusCopy.textContent =
+            "Local development mode is enabled. On localhost the app panels are available again while production can stay landing-only.";
+        }
+
+        const panelDefs = [
+          { href: "/rewards/", text: "Open Rewards panel" },
+          { href: "/collection/", text: "Open Collection panel" },
+          { href: "/vrf-mint/", text: "Open VRF panel" },
+          { href: "/ecosystem/", text: "Open Ecosystem panel" },
+          { href: "/app/", text: "Open Users panel" },
+          { href: "/community-center/", text: "Open Community panel" },
+        ];
+
+        const panelLinks = Array.from(
+          document.querySelectorAll(".launch-row .launch-link--panel")
+        );
+        panelLinks.forEach((link, index) => {
+          const next = panelDefs[index];
+          if (!next) return;
+          link.href = next.href;
+          link.textContent = next.text;
+        });
+
+        const standaloneByTopic = {
+          rewards: { href: "/rewards/", text: "Open Rewards panel" },
+          collection: { href: "/collection/", text: "Open Collection panel" },
+          vrf: { href: "/vrf-mint/", text: "Open VRF panel" },
+          ecosystem: { href: "/ecosystem/", text: "Open Ecosystem panel" },
+          community: { href: "/community-center/", text: "Open Community panel" },
+        };
+
+        document
+          .querySelectorAll('.topic-panel[data-topic-panel]')
+          .forEach((panel) => {
+            const topic = panel.getAttribute("data-topic-panel");
+            const link = panel.querySelector('.topic-panel__standalone[href="#app-status"]');
+            const next = standaloneByTopic[topic];
+            if (!link || !next) return;
+            link.href = next.href;
+            link.textContent = next.text;
+          });
       })();
 
       (function () {

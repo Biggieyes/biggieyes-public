@@ -6,14 +6,14 @@ import "./VRFCoordinatorV2PlusInterface.sol";
 /**
  * @title VRFConsumerBaseV2Plus
  * @notice Base contract to integrate with Chainlink VRF v2.5 (Plus)
- * @dev Compatible se systémem Amoy testnet
+ * @dev Compatible se systĂ©mem Polygon mainnet
  */
 abstract contract VRFConsumerBaseV2Plus {
     error OnlyCoordinatorCanFulfill(address have, address want);
 
     VRFCoordinatorV2PlusInterface internal COORDINATOR;
 
-    event CoordinatorSet(address indexed coordinator); // Musí být mimo constructor
+    event CoordinatorSet(address indexed coordinator); // MusĂ­ bĂ˝t mimo constructor
 
     constructor(address _vrfCoordinator) {
         COORDINATOR = VRFCoordinatorV2PlusInterface(_vrfCoordinator);
@@ -21,7 +21,7 @@ abstract contract VRFConsumerBaseV2Plus {
     }
 
     /**
-     * @notice Fulfill function musí být implementována v kontraktu dědice
+     * @notice Fulfill function musĂ­ bĂ˝t implementovĂˇna v kontraktu dÄ›dice
      */
     function fulfillRandomWords(
         uint256 requestId,

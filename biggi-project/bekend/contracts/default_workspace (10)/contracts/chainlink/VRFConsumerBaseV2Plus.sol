@@ -6,7 +6,7 @@ import "./VRFCoordinatorV2PlusInterface.sol";
 /**
  * @title VRFConsumerBaseV2Plus
  * @notice Base contract to integrate with Chainlink VRF v2.5 (Plus)
- * @dev Compatible se systémem Amoy testnet
+ * @dev Compatible se systémem Polygon mainnet
  */
 abstract contract VRFConsumerBaseV2Plus {
     error OnlyCoordinatorCanFulfill(address have, address want);

@@ -7,8 +7,8 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-import "./Library/BiggiErrorsLib.sol";
-import "./Library/BiggiSwapLib.sol";
+import "./TOKENOMIC_LIBRARY/BiggiErrorsLib.sol";
+import "./TOKENOMIC_LIBRARY/BiggiSwapLib.sol";
 
 /// @dev Minimal router rozhraní kompatibilní s UniswapV2-like
 interface IUniswapV2Router02 {
@@ -169,33 +169,50 @@ contract BiggiDripLMToModerator is Ownable, ReentrancyGuard {
         if (toSell == 0) { emit DripFailed("toSell==0"); return; }
 
         // 1) claim z DripDistributor (pokud nastaven)
-        uint256 claimed = 0;
-        if (address(dripDistributor) != address(0)) {
+        uint256 currentBalance = BIGGI.balanceOf(address(this));
+        uint256 claimTarget = 0;
+        if (currentBalance < toSell && address(dripDistributor) != address(0)) {
+            uint256 missing = toSell - currentBalance;
             try dripDistributor.availableTokens() returns (uint256 avail) {
-                uint256 want = toSell;
-                if (avail < want) want = avail;
-                if (want > 0) {
-                    try dripDistributor.claim(want) {
-                        claimed = want;
-                        emit DripClaimed(claimed);
-                    } catch {
-                        emit DripFailed("claim failed");
-                    }
-                }
+                claimTarget = avail < missing ? avail : missing;
             } catch {
-                try dripDistributor.claim(toSell) {
-                    claimed = toSell;
-                    emit DripClaimed(claimed);
-                } catch {
-                    emit DripFailed("claim attempt failed");
-                }
+                claimTarget = missing;
             }
         }
 
         // 2) kolik máme k dispozici k prodeji
+        uint256 sellAmount = currentBalance + claimTarget;
+        if (sellAmount > toSell) sellAmount = toSell;
+        if (sellAmount == 0) { emit DripFailed("nothing to sell"); return; }
+
+        address[] memory path = BiggiSwapLib.pathTokenToNative(address(BIGGI), router.WETH());
+        uint256 minOut = BiggiSwapLib.quoteMinOut(
+            IUniswapV2Router02Biggi(address(router)),
+            sellAmount,
+            path,
+            slippageBps
+        );
+        if (minOut == 0) { emit DripFailed("minOut==0"); return; }
+
+        if (claimTarget > 0) {
+            try dripDistributor.claim(claimTarget) {
+                emit DripClaimed(claimTarget);
+            } catch {
+                emit DripFailed("claim failed");
+            }
+        }
+
         uint256 bal = BIGGI.balanceOf(address(this));
-        uint256 sellAmount = toSell;
-        if (sellAmount > bal) sellAmount = bal;
+        if (sellAmount > bal) {
+            sellAmount = bal;
+            minOut = BiggiSwapLib.quoteMinOut(
+                IUniswapV2Router02Biggi(address(router)),
+                sellAmount,
+                path,
+                slippageBps
+            );
+            if (minOut == 0) { emit DripFailed("minOut==0"); return; }
+        }
         if (sellAmount == 0) { emit DripFailed("nothing to sell"); return; }
 
         // 3) approve router
@@ -206,17 +223,6 @@ contract BiggiDripLMToModerator is Ownable, ReentrancyGuard {
             }
             BIGGI.approve(address(router), sellAmount);
         }
-
-        // 4) path (token -> WETH/WPOL)
-        address[] memory path = BiggiSwapLib.pathTokenToNative(address(BIGGI), router.WETH());
-
-        // 5) minOut
-        uint256 minOut = BiggiSwapLib.quoteMinOut(
-            IUniswapV2Router02Biggi(address(router)),
-            sellAmount,
-            path,
-            slippageBps
-        );
 
         uint256 deadline = block.timestamp + txDeadlineSec;
 

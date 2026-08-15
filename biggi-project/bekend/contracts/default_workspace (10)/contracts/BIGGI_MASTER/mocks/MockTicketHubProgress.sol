@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 contract MockTicketHubProgress {
+    address public mainCollection;
     uint16 public saleMinted;
     uint16 public marketingMinted;
     uint16 public saleCap;
@@ -21,6 +22,10 @@ contract MockTicketHubProgress {
     }
 
     uint16 internal _totalMinted;
+
+    function setMainCollection(address mainCollection_) external {
+        mainCollection = mainCollection_;
+    }
 
     function totalMintedValue() external view returns (uint16) {
         return _totalMinted;

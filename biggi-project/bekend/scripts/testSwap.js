@@ -8,8 +8,8 @@ const BIGGI = process.env.BIGGI || "0xD4D0fa17f2955Eb3fF8D03ea0cD7A2f0a06E6d0E";
 
 async function main() {
   if (!process.env.PRIVATE_KEY) throw new Error("PRIVATE_KEY missing");
-  const rpc = process.env.AMOY_RPC_URL || "https://polygon-amoy-bor.publicnode.com";
-  const provider = new ethers.providers.JsonRpcProvider(rpc, { name: "amoy", chainId: 80002 });
+  const rpc = process.env.POLYGON_RPC_URL || "https://polygon.drpc.org";
+  const provider = new ethers.providers.JsonRpcProvider(rpc, { name: "polygon", chainId: 137 });
   const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
   const router = new ethers.Contract(

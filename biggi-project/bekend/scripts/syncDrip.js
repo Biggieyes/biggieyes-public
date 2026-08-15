@@ -1,6 +1,6 @@
 // Syncs DripDistributor accounting to its on-chain BIGGI balance (syncAvailableToBalance)
 // Usage: `node scripts/syncDrip.js`
-// Requires PRIVATE_KEY and AMOY_RPC_URL (or uses public Amoy RPC as fallback).
+// Requires PRIVATE_KEY and POLYGON_RPC_URL (or uses public Polygon mainnet RPC as fallback).
 
 require("dotenv").config();
 const { ethers } = require("ethers");
@@ -19,12 +19,12 @@ const DEFAULT_MAX_FEE_GWEI = process.env.MAX_FEE_GWEI || "60";
 
 async function main() {
   const rpc =
-    process.env.AMOY_RPC_URL ||
-    "https://polygon-amoy-bor.publicnode.com";
+    process.env.POLYGON_RPC_URL ||
+    "https://polygon.drpc.org";
   if (!process.env.PRIVATE_KEY) {
     throw new Error("PRIVATE_KEY missing in .env");
   }
-  const provider = new ethers.providers.JsonRpcProvider(rpc, { name: "amoy", chainId: 80002 });
+  const provider = new ethers.providers.JsonRpcProvider(rpc, { name: "polygon", chainId: 137 });
   const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
   const dd = new ethers.Contract(DD_ADDRESS, ddAbi, signer);

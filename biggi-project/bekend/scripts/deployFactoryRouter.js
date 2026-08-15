@@ -1,5 +1,5 @@
 // Deploy only Factory + Router (reuse existing WETH)
-// Run: npx hardhat run scripts/deployFactoryRouter.js --network amoy
+// Run: npx hardhat run scripts/deployFactoryRouter.js --network polygon
 // Env: WETH (required), BIGGI (optional for createPair), MAX_FEE_GWEI/MAX_PRIORITY_FEE_GWEI (optional)
 
 require("dotenv").config();

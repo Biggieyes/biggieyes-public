@@ -1,4 +1,4 @@
-// Spusť: npx hardhat run scripts/showVaultLpBalance.js --network amoy
+// Spusť: npx hardhat run scripts/showVaultLpBalance.js --network polygon
 const hre = require("hardhat");
 const { ethers } = hre;
 

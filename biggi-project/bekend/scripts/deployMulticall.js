@@ -1,4 +1,4 @@
-// Run: npx hardhat run scripts/deployMulticall.js --network amoy
+// Run: npx hardhat run scripts/deployMulticall.js --network polygon
 const hre = require("hardhat");
 const fs = require("fs");
 const path = require("path");

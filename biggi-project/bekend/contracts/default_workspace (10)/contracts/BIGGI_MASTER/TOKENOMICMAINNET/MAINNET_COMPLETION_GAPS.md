@@ -2,6 +2,22 @@
 
 This checklist captures remaining work to reach full production readiness.
 
+## Current final-audit blockers (2026-06-04)
+
+Strict Polygon env validation is not yet deploy-ready.
+
+Hard blockers:
+
+1. `POLYGON_RPC_URL` is missing or still a placeholder.
+2. `QUOTE_TOKEN` must be a non-zero production address.
+
+Warnings to resolve before a real mainnet deploy:
+
+1. Only one liquidity path may be active; current strict audit expected `keeper_proxy`, but `LIQUIDITY_AUTOMATION` is also configured.
+2. `DEV_WALLET` must be explicitly set for Polygon mainnet.
+3. `EXPECT_OWNER` must be set to the final Safe / timelock before post-deploy owner verification.
+4. VRF production values are not provided yet, so `BiggiVRFRouter` would be skipped unless final VRF env is added.
+
 ## 1) Final addresses and ownership
 
 1. Fill all production addresses in setup/config layers:
@@ -59,11 +75,12 @@ This checklist captures remaining work to reach full production readiness.
    - `BiggiSystemReader`
    - `BiggiSupplyControllerReader`
    - `BiggiBuybackReader`
-   - tokenomics readers.
+   - `BiggiReserveTreasuryReader`
+   - `BiggiTokenomikReader`
+   - remaining tokenomics readers captured in `TOKENOMIC_READERS/README.md`.
 
 ## 7) Release and verification
 
 1. Verify source code and constructor args on explorer for all deployed contracts.
-2. Freeze exact ABI package used by backend/frontend (including `CORE_ABI` and `TOKENOMICMAINNET/ABI`).
+2. Freeze exact ABI package used by backend/frontend (including `CORE/CORE_ABI` and `TOKENOMICMAINNET/ABI`; current tokenomics package has 46 contract ABI files plus `index.json`, including 5 library snapshots).
 3. Tag release commit and archive deployment manifests with tx hashes.
-

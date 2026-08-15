@@ -97,6 +97,56 @@
             "type": "uint256"
           },
           {
+            "internalType": "address",
+            "name": "quoteOracle",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxOracleStaleness",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "requireQuoteOracleForPriceCheck",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "quoteOracleConfigured",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "quoteOracleRoundDataSupported",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "quoteOracleLegacyAnswerSupported",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quoteOracleAnswerE18",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quoteOracleUpdatedAt",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "quoteOracleStale",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "quoteOracleValid",
+            "type": "bool"
+          },
+          {
             "internalType": "uint256",
             "name": "currentTokenReserve",
             "type": "uint256"

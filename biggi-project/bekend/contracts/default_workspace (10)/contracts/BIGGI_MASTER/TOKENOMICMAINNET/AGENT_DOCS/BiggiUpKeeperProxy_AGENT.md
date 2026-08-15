@@ -24,6 +24,7 @@ Chainlink-style upkeep wrapper around buyback agent using policy and threshold c
 - `lastBuybackAt()`
 - `buybackAllToTreasury()`
 - `nativeBalance()`
+- `previewAutoMinOut()`
 - `checkUpkeep()`
 - `performUpkeep()`
 - `setAgent()`
@@ -34,6 +35,7 @@ Chainlink-style upkeep wrapper around buyback agent using policy and threshold c
 
 ## Integration points
 - This contract is orchestration/config glue. It should not become a new source of business logic unless deliberately planned.
+- Buyback execution is protected by `agent.previewAutoMinOut(nativeBalance)`. If the preview returns zero or reverts, `checkUpkeep()` returns false and `performUpkeep()` emits `PerformFailed("MIN_OUT_ZERO")` without calling the agent.
 
 ## Safe-edit guidance for agents
 - Preserve storage layout unless a migration is explicitly planned.
@@ -42,7 +44,7 @@ Chainlink-style upkeep wrapper around buyback agent using policy and threshold c
 - Prefer additive changes with explicit events over implicit behavior changes.
 
 ## Known risks / review notes
-- No file-specific issue flagged in this pass beyond standard tokenomics/change-management caution.
+- Do not call `buybackAllToTreasury(0)` from keeper paths. Keeper execution must pass the agent-resolved protected minimum output.
 
 ## Agent checklist before modifying
 - Confirm who owns/controls this contract in deployment scripts.

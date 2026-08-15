@@ -1,5 +1,5 @@
 // Enable immediate auto-buyback (no interval) on BuybackAgent + Policy
-// Run: npx hardhat run scripts/enableImmediateBuyback.js --network amoy
+// Run: npx hardhat run scripts/enableImmediateBuyback.js --network polygon
 
 const fs = require("fs");
 const path = require("path");

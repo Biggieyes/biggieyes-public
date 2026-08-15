@@ -1,4 +1,4 @@
-// Spusť: npx hardhat run scripts/deployLiquidityAutomation.js --network amoy
+// Spusť: npx hardhat run scripts/deployLiquidityAutomation.js --network polygon
 // Deployne LiquidityAutomation a vypíše adresu. Nastaví owner = deployer.
 
 const path = require("path");

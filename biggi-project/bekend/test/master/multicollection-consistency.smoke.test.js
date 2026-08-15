@@ -138,6 +138,7 @@ describe("BIGGI_MASTER: multicollection + rewards consistency smoke", function (
     await (await reserve.setDistributor(distributor.address)).wait();
     await (await treasury.setDistributor(distributor.address)).wait();
     await (await community.setDistributor(distributor.address)).wait();
+    await (await buyback.setDistributor(distributor.address)).wait();
 
     await (await distributor.setRegistry(registry.address)).wait();
     await (await distributor.setCollectionRewards(collectionRewards.address)).wait();
@@ -177,5 +178,68 @@ describe("BIGGI_MASTER: multicollection + rewards consistency smoke", function (
       .add(expectedTreasury)
       .add(expectedCommunity);
     expect(distributedSum).to.equal(value);
+  });
+
+  it("does not block native distribution when optional registry attribution is misconfigured", async () => {
+    const [owner] = await ethers.getSigners();
+
+    const source = await deploy("MockDistributorSource");
+    const distributor = await deploy("BiggiMultiCollectionDistributor", owner.address);
+    const collectionRewards = await deploy("MockMintShareReceiver");
+    const reserve = await deploy("MockMintShareReceiver");
+    const buyback = await deploy("MockMintShareReceiver");
+    const treasury = await deploy("MockMintShareReceiver");
+    const community = await deploy("MockMintShareReceiver");
+    const notRegistry = await deploy("MockMintShareReceiver");
+
+    await (await distributor.setRegistry(notRegistry.address)).wait();
+    await (await distributor.setCollectionRewards(collectionRewards.address)).wait();
+    await (await distributor.setReserve(reserve.address)).wait();
+    await (await distributor.setBuybackAgent(buyback.address)).wait();
+    await (await distributor.setTreasury(treasury.address)).wait();
+    await (await distributor.setCommunityCenter(community.address)).wait();
+    await (await distributor.addCollection(source.address)).wait();
+
+    const value = toWei("10");
+    await expect(source.forwardDistribute(distributor.address, { value }))
+      .to.emit(distributor, "ChapterAttributionFailed")
+      .withArgs(source.address, notRegistry.address, value);
+
+    expect(await distributor.totalReceived()).to.equal(value);
+    expect(await distributor.receivedByCollection(source.address)).to.equal(value);
+    expect(await distributor.receivedByChapter(1)).to.equal(0);
+    expect(await collectionRewards.totalReceived()).to.equal(value.mul(2500).div(10000));
+    expect(await reserve.totalReceived()).to.equal(value.mul(3500).div(10000));
+    expect(await buyback.totalReceived()).to.equal(value.mul(2000).div(10000));
+    expect(await treasury.totalReceived()).to.equal(value.mul(1000).div(10000));
+    expect(await community.totalReceived()).to.equal(value.mul(1000).div(10000));
+  });
+
+  it("keeps default main collection claimable after registry mode is enabled", async () => {
+    const [owner, alice] = await ethers.getSigners();
+
+    const registry = await deploy("BiggiSeriesRegistry", owner.address);
+    const defaultMain = await deploy("MockCollectionMainView");
+    const futureMain = await deploy("MockCollectionMainView");
+    const pub = await deploy("MockMintShareReceiver");
+    const hub = await deploy("MockMintShareReceiver");
+
+    await (await registry.createSeries("MASTER")).wait();
+    await (await registry.createChapter(1)).wait();
+    await (await registry.setChapterCollections(1, futureMain.address, pub.address, hub.address)).wait();
+
+    const rewards = await deploy("BiggiCollectionRewards", defaultMain.address, owner.address);
+    await (await rewards.setRegistry(registry.address)).wait();
+    await (await rewards.setRewardsAmounts(toWei("1"), toWei("2"), toWei("3"))).wait();
+    await owner.sendTransaction({ to: rewards.address, value: toWei("20") });
+
+    await (await defaultMain.setHasAllTenMainIdsInBlock(alice.address, 1, true)).wait();
+
+    const preview = await rewards.canClaimBlockFor(defaultMain.address, alice.address, 1);
+    expect(preview.ok).to.equal(true);
+    expect(preview.reason).to.equal(0);
+
+    await (await rewards.connect(alice).claimBlockRewardFor(defaultMain.address, 1)).wait();
+    expect(await rewards.blockWinnersCount(defaultMain.address)).to.equal(1);
   });
 });

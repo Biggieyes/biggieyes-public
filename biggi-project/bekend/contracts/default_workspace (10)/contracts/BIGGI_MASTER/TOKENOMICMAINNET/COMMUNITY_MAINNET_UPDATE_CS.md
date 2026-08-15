@@ -1,8 +1,8 @@
 ﻿# BIGGI Mainnet Update (community draft)
 
-Date: 2026-03-20
+Date: 2026-06-03
 
-## Co se meni oproti testnetu
+## Co se meni pro mainnet release
 1. Mainnet architektura je rozdelena na stabilni core vrstvu a oddelenou tokenomics vrstvu.
 2. Tokenomika ma nove bezpecnostni vetve:
    - BiggiSupplyController (automaticke doplnovani kritickych vetvi),

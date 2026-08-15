@@ -391,10 +391,7 @@ contract BiggiLiquidityManager is Ownable, ReentrancyGuard {
         if (amount == 0) return;
 
         BIGGI.safeTransfer(reserve, amount);
-
-        try IReserveV4(reserve).notifyBiggiReceived(amount) {
-        } catch {
-        }
+        IReserveV4(reserve).notifyBiggiReceived(amount);
     }
 
     // helper for try/catch decode

@@ -25,9 +25,16 @@ Aggregates reserve and treasury balances/accounting into a single read shape.
 - `polBalance()`
 - `biggiBalance()`
 - `totalBiggiReceivedFromBuyback()`
+- `totalBiggiReceivedFromEcosystem()`
 - `totalPolReceivedFromDistributor()`
 - `reserveSnapshot()`
 - `treasurySnapshot()`
+- `wiringSnapshot()`
+- `ecosystemBiggiRouteSnapshot(address ticketHub, address publicCollection, address expectedTokenRewards, address expectedDripDistributor)`
+
+## Frontend readiness additions
+- `wiringSnapshot()` returns reserve liquidity/distributor wiring, treasury recipients, and reserve bucket consistency.
+- `ecosystemBiggiRouteSnapshot(...)` returns `routeReady` for BIGGI NFT payment routing through treasury. It checks TicketHub/Main2 ecosystem allowlists, reserve notify caller, token rewards recipient, reserve recipient, and drip distributor recipient.
 
 ## Integration points
 - Read-only surface for UI/agents; changing return shapes will break dashboards and scripts first.

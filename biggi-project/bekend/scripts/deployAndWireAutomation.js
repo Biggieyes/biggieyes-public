@@ -1,4 +1,4 @@
-// Spusť: npx hardhat run scripts/deployAndWireAutomation.js --network amoy
+// Spusť: npx hardhat run scripts/deployAndWireAutomation.js --network polygon
 // Deployne LiquidityAutomation a hned nastaví keeper v LiquidityManager.
 
 const path = require("path");
@@ -54,7 +54,7 @@ async function main() {
   console.log("setKeeper tx:", tx.hash);
   await tx.wait();
   console.log("Hotovo. Keeper na LM je automation kontrakt.");
-  console.log("Další krok: zaregistruj Automation kontrakt v Chainlink Automation (Amoy) a fundni LINK.");
+  console.log("Další krok: zaregistruj Automation kontrakt v Chainlink Automation (Polygon mainnet) a fundni LINK.");
 }
 
 main().catch((err) => {

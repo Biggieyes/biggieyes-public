@@ -1,6 +1,6 @@
 // Prints MultiCollectionDistributor state: recipients, totalReceived, pending amounts.
 // Usage: node scripts/checkDistributor.js
-// Env: PRIVATE_KEY (for provider), AMOY_RPC_URL, DISTRIBUTOR address.
+// Env: PRIVATE_KEY (for provider), POLYGON_RPC_URL, DISTRIBUTOR address.
 
 require("dotenv").config({ path: require("path").join(__dirname, ".env") });
 const { ethers } = require("ethers");
@@ -23,8 +23,8 @@ const ABI = [
 ];
 
 async function main() {
-  const rpc = process.env.AMOY_RPC_URL || "https://polygon-amoy-bor.publicnode.com";
-  const provider = new ethers.providers.JsonRpcProvider(rpc, { name: "amoy", chainId: 80002 });
+  const rpc = process.env.POLYGON_RPC_URL || "https://polygon.drpc.org";
+  const provider = new ethers.providers.JsonRpcProvider(rpc, { name: "polygon", chainId: 137 });
 
   const dist = new ethers.Contract(DISTRIBUTOR, ABI, provider);
 

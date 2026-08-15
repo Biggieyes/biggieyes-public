@@ -1,27 +1,47 @@
-﻿# BiggiPolicy Mainnet Dossier
+# BiggiPolicy Mainnet Dossier
 
 ## Source of truth
-- Source: $(@{Name=BiggiPolicy; Source=BiggiPolicy.sol; Abi=ABI/BiggiPolicy.abi.json; Role=Global risk-policy registry for slippage, deadline, cadence, and daily buyback quotas.; Delta=Mainnet policy adds explicit daily quota accounting and emergency pause semantics for buyback flow.; Integrations=System.Object[]; Privileged=System.Object[]; Focus=System.Object[]}.Source)
-- ABI package source: $(@{Name=BiggiPolicy; Source=BiggiPolicy.sol; Abi=ABI/BiggiPolicy.abi.json; Role=Global risk-policy registry for slippage, deadline, cadence, and daily buyback quotas.; Delta=Mainnet policy adds explicit daily quota accounting and emergency pause semantics for buyback flow.; Integrations=System.Object[]; Privileged=System.Object[]; Focus=System.Object[]}.Abi)
 
-## Role
-Global risk-policy registry for slippage, deadline, cadence, and daily buyback quotas.
+- Source file: `../../BiggiPolicy.sol`
+- Frozen ABI: `./ABI.json`
+- Canonical manifest: `biggi-project/bekend/addresses.master.json` plus phase-specific Polygon manifests.
 
-## Mainnet delta vs testnet
-Mainnet policy adds explicit daily quota accounting and emergency pause semantics for buyback flow.
+## Constructor
 
-## Critical integrations
-- BiggiBuybackAgent
-- BiggiTreasury
-- Automation upkeeps
+`constructor(address initialOwner)`
 
-## Privileged actions
-- Owner updates slippage/deadline/interval
-- Owner can pause buyback policy
-- Owner sets daily native quota
+## Runtime role
 
-## Mainnet readiness gates
-1. Final owner or multisig ownership transfer completed.
-2. Final production addresses and parameters loaded.
-3. Smoke tests and reader consistency checks pass.
-4. Explorer verification and ABI freeze completed.
+`BiggiPolicy` is the buyback policy and quota contract.
+
+It stores the mutable policy values consumed by `BiggiBuybackAgent`:
+
+- swap slippage in BPS
+- transaction deadline
+- minimum buyback interval
+- pause flag for buybacks
+- max daily native spend
+
+It also tracks per-day quota consumption through `consumeDailyBuybackQuota(uint256)`.
+
+## Owner/admin surface
+
+- `setSwapSlippageBps(uint256)`
+- `setTxDeadlineSec(uint256)`
+- `setMinBuybackInterval(uint256)`
+- `setBuybacksPaused(bool)`
+- `setMaxDailyBuybackNative(uint256)`
+- `setBuybackAgent(address)`
+
+## Integration map
+
+- `BiggiBuybackAgent` reads policy values at runtime
+- `BiggiBuybackAgent` is the intended caller for quota consumption
+
+## Canonical Polygon Mainnet Address
+
+| Key | Address |
+| --- | --- |
+| `POLICY` | `0x50485231A0602DE7a7b64e2760EF21133c77a43C` |
+
+Canonical manifests: `addresses.master.json`, phase-specific Polygon manifests, and `MAINNET_DEPLOYMENT_MANIFEST_POLYGON.json`.

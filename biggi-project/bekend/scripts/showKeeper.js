@@ -1,4 +1,4 @@
-// Spusť: npx hardhat run scripts/showKeeper.js --network amoy
+// Spusť: npx hardhat run scripts/showKeeper.js --network polygon
 // Vypíše keeper adresu z BiggiLiquidityManager
 
 const path = require("path");

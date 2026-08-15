@@ -3,7 +3,7 @@ const { ethers } = require("ethers");
 const addresses = require("../../addresses.json");
 
 const RPC_URL =
-  process.env.AMOY_RPC_URL || process.env.RPC_URL || process.env.FORK_URL;
+  process.env.POLYGON_RPC_URL || process.env.RPC_URL || process.env.FORK_URL;
 
 const maybeDescribe = RPC_URL ? describe : describe.skip;
 

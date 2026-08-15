@@ -1,8 +1,8 @@
 // scripts/updateDripBranch.js
-// Spusť: `npx hardhat run scripts/updateDripBranch.js --network amoy`
+// Spusť: `npx hardhat run scripts/updateDripBranch.js --network polygon`
 //
 // Env proměnné (nezbytné):
-//  AMOY_RPC_URL, PRIVATE_KEY
+//  POLYGON_RPC_URL, PRIVATE_KEY
 //  DRIP_LM                = adresa BiggiDripLiquidityManager
 //  DRIP_DISTRIBUTOR       = adresa DripDistributor
 //  RESERVE                = adresa Reserve (kam má jít native)
@@ -62,7 +62,7 @@ async function main() {
   const signer = new ethers.Wallet(env.PRIVATE_KEY, hre.ethers.provider);
   console.log("Signer:", signer.address);
 
-   // EIP-1559 overrides (Amoy vyžaduje vyšší tip)
+   // EIP-1559 overrides (Polygon mainnet vyžaduje vyšší tip)
   const gasOverrides = gasOverridesFromEnv();
 
   const dripLM = await attach(env.DRIP_LM, ABI_DRIP_LM, signer);

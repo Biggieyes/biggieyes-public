@@ -48,6 +48,10 @@ describe("BIGGI_MASTER: scaling collections smoke", function () {
     const ticketProgress = await deploy("MockTicketHubProgress");
     const distributor = await deploy("MockMintShareReceiver");
 
+    await (await ticketProgress.setMainCollection(main.address)).wait();
+    await (await ticketProgress.setCaps(5, 5, 10)).wait();
+    await (await main.setTicketHub(ticketProgress.address)).wait();
+
     await (await registry.createSeries("Series A")).wait();
     await (await registry.createChapter(1)).wait();
     await (
@@ -117,5 +121,33 @@ describe("BIGGI_MASTER: scaling collections smoke", function () {
 
     const mintData = await main.getMintData(1);
     expect(mintData[0]).to.equal(mintPrice);
+  });
+
+  it("refunds TicketHub native overpayment and splits only the ticket price", async () => {
+    const main = await deployMainWithLinkedLibraries(owner.address);
+    const ticketHub = await deploy("BiggiTicketHub", owner.address, main.address);
+    const distributor = await deploy("MockMintShareReceiver");
+
+    await (await ticketHub.setDistributor(distributor.address)).wait();
+
+    const mintPrice = await ticketHub.ticketPrice();
+    const overpay = mintPrice.mul(2);
+    const sentValue = mintPrice.add(overpay);
+    const expectedDistributor = mintPrice.mul(6000).div(10000);
+    const expectedDev = mintPrice.sub(expectedDistributor);
+
+    const ownerBefore = await ethers.provider.getBalance(owner.address);
+    const aliceBefore = await ethers.provider.getBalance(alice.address);
+
+    const tx = await ticketHub.connect(alice).mintTicket({ value: sentValue });
+    const receipt = await tx.wait();
+    const gasCost = receipt.gasUsed.mul(receipt.effectiveGasPrice);
+
+    const ownerAfter = await ethers.provider.getBalance(owner.address);
+    const aliceAfter = await ethers.provider.getBalance(alice.address);
+
+    expect(await distributor.totalReceived()).to.equal(expectedDistributor);
+    expect(ownerAfter.sub(ownerBefore)).to.equal(expectedDev);
+    expect(aliceBefore.sub(aliceAfter)).to.equal(mintPrice.add(gasCost));
   });
 });

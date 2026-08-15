@@ -1,5 +1,5 @@
 // scripts/checkLiquidityStatus.js
-// Spusť: npx hardhat run scripts/checkLiquidityStatus.js --network amoy
+// Spusť: npx hardhat run scripts/checkLiquidityStatus.js --network polygon
 // Výstup: stav LM, Vault, Reserve a (volitelně) MasterConfig liquidity bundle.
 // MasterConfig je nepovinný – pokud není v env, přeskočí se.
 

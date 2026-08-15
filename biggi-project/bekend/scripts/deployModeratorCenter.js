@@ -1,6 +1,6 @@
 // Deploy ModeratorCenter
 // Env: OWNER (optional, defaults to deployer)
-// Run: npx hardhat run scripts/deployModeratorCenter.js --network amoy
+// Run: npx hardhat run scripts/deployModeratorCenter.js --network polygon
 
 const { ethers } = require("hardhat");
 

@@ -27,6 +27,7 @@ temp_*
 *.tmp
 *.pid
 .tmp-*
+*.bak.*
 
 # Editor directories and files
 .vscode/*

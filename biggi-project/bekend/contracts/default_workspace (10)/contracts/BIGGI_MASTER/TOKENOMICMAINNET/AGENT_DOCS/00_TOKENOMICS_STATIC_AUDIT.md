@@ -7,9 +7,9 @@ The tokenomics branch is structurally coherent: token, reserve, treasury, drip, 
 
 ## High-value findings
 - **Supply guardian/controller wiring:** `BiggiSupplyGuardian.manualMaintenance()` calls the controller as the guardian contract. Ensure the guardian address is accepted by controller auth (`owner/keeper/allowed caller`) in your final setup.
-- **Reserve notify surface:** `BiggiReserveV4.notifyBiggiReceived(uint256)` is permissive in this snapshot. Real token balance constrains accounting, but caller authorization is not strict. Tighten if you want less operational ambiguity.
-- **Filename/contract naming:** `BiggiBuyBackAgent.sol` contains `BiggiBuybackAgent`. Deployment tooling should account for that mismatch or you should rename in a controlled follow-up.
-- **Dynamic refill budgets:** `BiggiToken` plus `Library/BiggiCapsLib.sol` now encode capped refill budgets. Any further cap change is a business-logic change, not a cosmetic cleanup.
+- **Reserve notify surface:** `BiggiReserveV4.notifyBiggiReceived(uint256)` is caller-restricted in the current source through `notifyCallers` plus the BIGGI token address. Final mainnet wiring must explicitly allow intended callers such as treasury/LM return paths where needed.
+- **Filename/contract naming:** current buyback source and contract naming are aligned as `BiggiBuybackAgent.sol` / `BiggiBuybackAgent`.
+- **Dynamic refill budgets:** `BiggiToken` plus `TOKENOMIC_LIBRARY/BiggiCapsLib.sol` now encode capped refill budgets. Any further cap change is a business-logic change, not a cosmetic cleanup.
 
 ## Dependency notes
 - External OpenZeppelin packages are required to compile.
@@ -18,7 +18,7 @@ The tokenomics branch is structurally coherent: token, reserve, treasury, drip, 
 
 ## Recommended next checks outside this static pass
 1. Full compile with your target OZ version.
-2. Deployment rehearsal on a fork/testnet using actual address wiring.
+2. Deployment rehearsal on a fork/mainnet using actual address wiring.
 3. Happy-path + revert-path tests for:
    - reserve -> LM pairing
    - buyback -> treasury split

@@ -1,27 +1,54 @@
-﻿# BiggiCommunityCenter Mainnet Dossier
+# BiggiCommunityCenter Mainnet Dossier
 
 ## Source of truth
-- Source: $(@{Name=BiggiCommunityCenter; Source=BiggiCommunityCenter.sol; Abi=ABI/BiggiCommunityCenter.abi.json; Role=Community allocation and payout coordinator for configured destinations and incentive branches.; Delta=Mainnet setup expects deterministic branch percentages and compatibility with multi-collection revenue routing.; Integrations=System.Object[]; Privileged=System.Object[]; Focus=System.Object[]}.Source)
-- ABI package source: $(@{Name=BiggiCommunityCenter; Source=BiggiCommunityCenter.sol; Abi=ABI/BiggiCommunityCenter.abi.json; Role=Community allocation and payout coordinator for configured destinations and incentive branches.; Delta=Mainnet setup expects deterministic branch percentages and compatibility with multi-collection revenue routing.; Integrations=System.Object[]; Privileged=System.Object[]; Focus=System.Object[]}.Abi)
 
-## Role
-Community allocation and payout coordinator for configured destinations and incentive branches.
+- Source file: `../../BiggiCommunityCenter.sol`
+- Frozen ABI: `./ABI.json`
+- Canonical manifest: `biggi-project/bekend/addresses.master.json` plus phase-specific Polygon manifests.
 
-## Mainnet delta vs testnet
-Mainnet setup expects deterministic branch percentages and compatibility with multi-collection revenue routing.
+## Constructor
 
-## Critical integrations
-- BiggiMultiCollectionDistributor
-- ModeratorCenter
-- Reserve/Treasury destinations
+`constructor(address initialOwner)`
 
-## Privileged actions
-- Owner sets routes and payout shares
-- Authorized sender deposits native funds
-- Owner updates emergency settings
+## Runtime role
 
-## Mainnet readiness gates
-1. Final owner or multisig ownership transfer completed.
-2. Final production addresses and parameters loaded.
-3. Smoke tests and reader consistency checks pass.
-4. Explorer verification and ABI freeze completed.
+`BiggiCommunityCenter` is the owner-curated community grants and event payout pool.
+
+It receives POL into `poolBalance` from:
+
+- distributor through `depositFromDistributor()` or `receiveMintShare()`
+- owner through `ownerDeposit()`
+- direct donations through `receive()`
+
+Owner creates events with:
+
+- title and IPFS metadata
+- event time window
+- fixed winner list
+- fixed amount per winner
+
+At creation time, the prize amount is locked from available pool balance. Winners later claim their assigned POL through `claim(uint256)`.
+
+## Owner/admin surface
+
+- `setDistributor(address)`
+- `createEvent(...)`
+- `ownerDeposit()`
+- `rescuePool(address,uint256)`
+- `emergencyWithdraw(address)`
+- `pause()`
+- `unpause()`
+
+## Integration map
+
+- distributor is the intended official POL source
+- winners claim directly from the contract
+- downstream readers or frontend helpers can use the getter set for event status and winner allocations
+
+## Canonical Polygon Mainnet Address
+
+| Key | Address |
+| --- | --- |
+| `COMMUNITY_CENTER` | `0x81C6E90a991d7D210c43B00B7EB1a5450cc372Ae` |
+
+Canonical manifests: `addresses.master.json`, phase-specific Polygon manifests, and `MAINNET_DEPLOYMENT_MANIFEST_POLYGON.json`.

@@ -8,7 +8,7 @@
     <title>BiggiEyes VRF Mint | Tradable Ticket And 0.33% Price Growth</title>
     <meta
       name="description"
-      content="See how BiggiEyes VRF mint works on Polygon: the ticket starts at 500 POL, rises by 0.33% after every mint, stays tradable before redeem, and reveals the final NFT through VRF."
+      content="See how BiggiEyes VRF mint works on Polygon: the ticket starts at 500 POL, rises by 0.33% after every mint, stays tradable before redeem, and reveals the final NFT through verifiable randomness."
     />
     <meta
       name="robots"
@@ -36,7 +36,7 @@
     />
     <meta
       name="twitter:description"
-      content="Ticket starts at 500 POL, rises 0.33% per mint, stays tradable before redeem, and reveals the final NFT through VRF."
+      content="Ticket starts at 500 POL, rises 0.33% per mint, stays tradable before redeem, and reveals the final NFT through verifiable randomness."
     />
     <meta name="twitter:url" content="https://biggieyes.com/vrf-mint/" />
     <meta name="twitter:image" content="https://biggieyes.com/og/og-biggieyes.png" />
@@ -135,8 +135,7 @@
         <p>
           BiggiEyes starts with a tradable ticket, not a final NFT. The ticket
           starts at 500 POL, rises by 0.33% after every mint, and only becomes
-          the final NFT after the VRF redeem flow assigns the on-chain reveal
-          outcome.
+          the final NFT after the redeem flow triggers verifiable randomness.
         </p>
         <div class="cta-row">
           <a class="btn" href="/app/?panel=VRF%20MINT">Open VRF Mint In App</a>
@@ -148,24 +147,24 @@
         <h2>Flow overview</h2>
         <div class="feature-grid">
           <article class="card">
-            <h3>Ticket price curve</h3>
+            <h3>Step 1: Enter through the ticket</h3>
             <p>
-              The entry asset starts at 500 POL and rises by 0.33% after every
-              mint, so the ticket has its own price curve before reveal.
+              The first asset is the ticket itself, and its price moves on a
+              public curve after every new mint.
             </p>
           </article>
           <article class="card">
-            <h3>VRF redeem step</h3>
+            <h3>Step 2: Redeem into randomness</h3>
             <p>
-              Redeem triggers the randomness path that determines the final outcome
-              instead of relying on a manual reveal table.
+              Redeem triggers verifiable randomness so the final result is not
+              chosen by a team wallet or private reveal list.
             </p>
           </article>
           <article class="card">
-            <h3>Final NFT state</h3>
+            <h3>Step 3: Hold the final asset</h3>
             <p>
-              After VRF completion, the ticket becomes the final NFT and can
-              then be evaluated in the collection and rewards context.
+              After the reveal is complete, the NFT becomes the asset used by
+              the collection, rarity, and weekly reward logic.
             </p>
           </article>
         </div>
@@ -174,11 +173,9 @@
       <section>
         <h2>Why this matters</h2>
         <p>
-          Searchers looking for VRF NFT mint mechanics generally want a direct
-          explanation of the process. This page gives that explanation in a
-          stable URL, including the 500 POL starting point and the 0.33% price
-          increase per mint, while the app remains the live operational surface
-          for mint and redeem actions.
+          Most visitors need the mint flow explained before they open a wallet
+          panel. This page gives them the process in plain language, while the
+          app remains the live place for mint and redeem actions.
         </p>
       </section>
 
@@ -187,7 +184,7 @@
         <ul class="bullet-list">
           <li>The ticket starts at 500 POL and rises by 0.33% after every mint.</li>
           <li>Tickets remain tradable before the reveal step is completed.</li>
-          <li>VRF determines the final NFT outcome used by collection and rewards logic.</li>
+          <li>Verifiable randomness determines the final NFT outcome used by collection and rewards logic.</li>
         </ul>
       </section>
 
@@ -204,7 +201,7 @@
           </article>
           <article class="card">
             <h3>When is the NFT final?</h3>
-            <p>The NFT becomes final only after the VRF redeem step finishes the reveal outcome.</p>
+            <p>The NFT becomes final only after the redeem step finishes the reveal outcome through verifiable randomness.</p>
           </article>
         </div>
       </section>
@@ -218,11 +215,11 @@
           </a>
           <a class="card" href="/rewards/index.html">
             <h3>Rewards</h3>
-            <p>Understand how final NFT outcomes can affect reward-oriented goals.</p>
+            <p>Understand how final NFT outcomes can affect weekly BIGGI rewards.</p>
           </a>
           <a class="card" href="/ecosystem/index.html">
             <h3>Ecosystem</h3>
-            <p>Review the broader token and treasury context around the app.</p>
+            <p>Review the broader token, treasury, reserve, and liquidity context.</p>
           </a>
         </div>
       </section>

@@ -1,5 +1,5 @@
 // scripts/deployLiquiditySetup.js
-// Run: npx hardhat run scripts/deployLiquiditySetup.js --network amoy
+// Run: npx hardhat run scripts/deployLiquiditySetup.js --network polygon
 // Env: BIGGI, ROUTER, LIQUIDITY_VAULT, LIQUIDITY_MANAGER, RESERVE, PRIVATE_KEY
 // Optional: WETH, GAS_PRIORITY_GWEI, GAS_FEE_GWEI
 

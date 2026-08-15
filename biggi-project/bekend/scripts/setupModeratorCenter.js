@@ -1,5 +1,5 @@
 // Setup ModeratorCenter wiring
-// Run: npx hardhat run scripts/setupModeratorCenter.js --network amoy
+// Run: npx hardhat run scripts/setupModeratorCenter.js --network polygon
 
 const { ethers } = require("hardhat");
 

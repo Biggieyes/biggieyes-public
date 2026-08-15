@@ -32,6 +32,43 @@ async function deployMain2WithLinkedLibraries(initialOwner) {
   return main2;
 }
 
+async function seedFullMainMetadata(main) {
+  let nextIndex = 1;
+  let indices = [];
+  let backgrounds = [];
+  let blocks = [];
+  let mainIds = [];
+
+  async function flush() {
+    if (indices.length === 0) return;
+    await (await main.batchSetNFTBackgroundAndBlock(indices, backgrounds, blocks, mainIds)).wait();
+    indices = [];
+    backgrounds = [];
+    blocks = [];
+    mainIds = [];
+  }
+
+  for (let blockIdx = 1; blockIdx <= 10; blockIdx += 1) {
+    const backgroundCount = 11 - blockIdx;
+    const minMainId = ((blockIdx - 1) * 10) + 1;
+    const maxMainId = blockIdx * 10;
+    for (let mainId = minMainId; mainId <= maxMainId; mainId += 1) {
+      for (let background = 1; background <= backgroundCount; background += 1) {
+        indices.push(nextIndex);
+        backgrounds.push(background);
+        blocks.push(blockIdx);
+        mainIds.push(mainId);
+        nextIndex += 1;
+        if (indices.length === 55) {
+          await flush();
+        }
+      }
+    }
+  }
+
+  await flush();
+}
+
 describe("BIGGI_MASTER: lifecycle and consistency invariants", function () {
   let owner;
   let alice;
@@ -46,9 +83,11 @@ describe("BIGGI_MASTER: lifecycle and consistency invariants", function () {
     const ticketHub = await deploy("BiggiTicketHub", owner.address, main.address);
     const compute = await deploy("BiggiCompute");
     const mockVrfRouter = await deploy("MockVrfRouter");
+    const distributor = await deploy("MockMintShareReceiver");
 
     await (await main.setModules(compute.address, mockVrfRouter.address)).wait();
     await (await main.setTicketHub(ticketHub.address)).wait();
+    await (await ticketHub.setDistributor(distributor.address)).wait();
 
     await (
       await main.batchSetNFTBackgroundAndBlock([1, 2, 3], [1, 2, 3], [1, 1, 1], [1, 2, 3])
@@ -90,9 +129,56 @@ describe("BIGGI_MASTER: lifecycle and consistency invariants", function () {
     expect(await ticketHub.isTicket(3)).to.equal(false);
   });
 
+  it("allows retrying stale VRF pending after callback failure", async () => {
+    const main = await deployMainWithLinkedLibraries(owner.address);
+    const ticketHub = await deploy("BiggiTicketHub", owner.address, main.address);
+    const compute = await deploy("BiggiCompute");
+    const coordinator = await deploy("MockVrfCoordinatorV2Plus");
+    const keyHash = ethers.utils.hexZeroPad("0x1234", 32);
+    const router = await deploy("BiggiVRFRouter", coordinator.address, owner.address, keyHash, 7);
+    const distributor = await deploy("MockMintShareReceiver");
+
+    await (await router.setMain(main.address)).wait();
+    await (await main.setModules(compute.address, router.address)).wait();
+    await (await main.setTicketHub(ticketHub.address)).wait();
+    await (await main.setPendingRetryDelay(60)).wait();
+    await (await ticketHub.setDistributor(distributor.address)).wait();
+
+    const ticketPrice = await ticketHub.ticketPrice();
+    await (await ticketHub.connect(alice).mintTicket({ value: ticketPrice })).wait();
+    await (await ticketHub.connect(alice).redeemTicket(1)).wait();
+
+    const oldRequestId = await main.pendingMintRequest(alice.address);
+    expect(oldRequestId).to.not.equal(0);
+
+    // metadata for index #1 is not initialized yet, callback should fail and stay pending
+    await (await coordinator.fulfill(router.address, oldRequestId, 0)).wait();
+    expect(await main.pendingMintRequest(alice.address)).to.equal(oldRequestId);
+
+    await expect(main.connect(alice).retryPendingMint()).to.be.reverted;
+
+    await ethers.provider.send("evm_increaseTime", [61]);
+    await ethers.provider.send("evm_mine", []);
+
+    await (await main.connect(alice).retryPendingMint()).wait();
+    const newRequestId = await main.pendingMintRequest(alice.address);
+    expect(newRequestId).to.not.equal(oldRequestId);
+    expect(await main.pendingTicketId(newRequestId)).to.equal(1);
+    expect(await main.pendingTicketPrice(newRequestId)).to.equal(ticketPrice);
+
+    await (await main.batchSetNFTBackgroundAndBlock([1], [1], [1], [1])).wait();
+    await (await coordinator.fulfill(router.address, newRequestId, 0)).wait();
+
+    expect(await main.pendingMintRequest(alice.address)).to.equal(0);
+    expect(await main.ownerOf(1001)).to.equal(alice.address);
+  });
+
   it("enforces sale/marketing cap segregation in TicketHub", async () => {
     const main = await deployMainWithLinkedLibraries(owner.address);
     const ticketHub = await deploy("BiggiTicketHub", owner.address, main.address);
+    const distributor = await deploy("MockMintShareReceiver");
+
+    await (await ticketHub.setDistributor(distributor.address)).wait();
 
     await (await ticketHub.setTicketCaps(1, 549)).wait();
 
@@ -115,6 +201,10 @@ describe("BIGGI_MASTER: lifecycle and consistency invariants", function () {
     const main2 = await deployMain2WithLinkedLibraries(owner.address);
     const ticketProgress = await deploy("MockTicketHubProgress");
     const distributor = await deploy("MockMintShareReceiver");
+
+    await (await ticketProgress.setMainCollection(main.address)).wait();
+    await (await ticketProgress.setCaps(2, 1, 3)).wait();
+    await (await main.setTicketHub(ticketProgress.address)).wait();
 
     await (await registry.createSeries("Series A")).wait();
     await (await registry.createChapter(1)).wait();
@@ -162,6 +252,11 @@ describe("BIGGI_MASTER: lifecycle and consistency invariants", function () {
     // If chapter progress drops below configured caps, lock is active again
     await (await ticketProgress.setProgress(2, 0, 2)).wait();
     await expect(main2.connect(alice).mintPublic(2, { value: resolvedPrice })).to.be.reverted;
+
+    // If chapter stack wiring drifts, Main2 must not silently fall back to local pricing.
+    await (await ticketProgress.setMainCollection(owner.address)).wait();
+    expect(await controller.isPublicMintUnlocked(1)).to.equal(false);
+    await expect(main2.getCurrentBlockPrice(1)).to.be.reverted;
   });
 
   it("enforces MAX_BATCH and one-time metadata assignment in both Main contracts", async () => {
@@ -196,5 +291,28 @@ describe("BIGGI_MASTER: lifecycle and consistency invariants", function () {
 
     await expect(main.batchSetNFTBackgroundAndBlock([1], [2], [2], [2])).to.be.reverted;
     await expect(main2.batchSetNFTBackgroundAndBlock([1], [2], [2], [2])).to.be.reverted;
+  });
+
+  it("exposes launch-ready metadata consistency guards for Main and Main2", async () => {
+    const main = await deployMainWithLinkedLibraries(owner.address);
+    const main2 = await deployMain2WithLinkedLibraries(owner.address);
+
+    await expect(main.assertMetadataConsistency()).to.be.reverted;
+    await expect(main2.assertMetadataConsistency()).to.be.reverted;
+
+    await seedFullMainMetadata(main);
+    await seedFullMainMetadata(main2);
+
+    const [configuredCount, fullyConfigured, rewardMatrixConsistent] = await main.metadataConsistency();
+    expect(configuredCount).to.equal(550);
+    expect(fullyConfigured).to.equal(true);
+    expect(rewardMatrixConsistent).to.equal(true);
+    expect(await main.assertMetadataConsistency()).to.equal(true);
+
+    const [configuredCount2, fullyConfigured2, rewardMatrixConsistent2] = await main2.metadataConsistency();
+    expect(configuredCount2).to.equal(550);
+    expect(fullyConfigured2).to.equal(true);
+    expect(rewardMatrixConsistent2).to.equal(true);
+    expect(await main2.assertMetadataConsistency()).to.equal(true);
   });
 });

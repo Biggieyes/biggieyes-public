@@ -53,7 +53,8 @@ Pulls BIGGI and POL from reserve, adds LP through router, routes LP to vault, an
 - … plus 12 more
 
 ## Integration points
-- Review file-local interfaces and imports before changing any external call patterns.
+- Pulls POL and BIGGI only from `BiggiReserveV4`, adds liquidity through the configured router, mints LP to `LiquidityVault`, then calls `syncPairBalance(pair)`.
+- `onReserveTopUpRequest()` is threshold-based. It can be called after reserve native or DEX_REFILL BIGGI arrives, but it should only execute when reserve POL, reserve BIGGI, router, vault, and quote conditions are all ready.
 
 ## Safe-edit guidance for agents
 - Preserve storage layout unless a migration is explicitly planned.
@@ -63,6 +64,7 @@ Pulls BIGGI and POL from reserve, adds LP through router, routes LP to vault, an
 
 ## Known risks / review notes
 - Confirm failed add-liquidity refund paths and owner refund assumptions match intended reserve accounting before production deployment.
+- Preserve refund behavior: failed or partial liquidity operations must return leftover BIGGI/native to reserve and keep bucket accounting consistent.
 
 ## Agent checklist before modifying
 - Confirm who owns/controls this contract in deployment scripts.

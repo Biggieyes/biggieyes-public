@@ -5,7 +5,7 @@
 // - redeploys tokenomics reader with the active LM address
 //
 // Run:
-//   npx hardhat run scripts/finalizeTreasurySync.js --network amoy
+//   npx hardhat run scripts/finalizeTreasurySync.js --network polygon
 
 const fs = require("fs");
 const path = require("path");

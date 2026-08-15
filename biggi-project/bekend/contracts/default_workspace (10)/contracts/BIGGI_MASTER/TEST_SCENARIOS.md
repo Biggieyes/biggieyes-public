@@ -402,7 +402,7 @@ Validate system behavior at the end of chapter supply.
 
 # Scenario 15 — Recommended smoke test sequence
 
-Run this minimum smoke sequence before any public testnet rollout:
+Run this minimum smoke sequence before any public mainnet rollout:
 
 1. Deploy all contracts.
 2. Register one series and one chapter.
@@ -423,7 +423,7 @@ Run this minimum smoke sequence before any public testnet rollout:
 
 # Final Go/No-Go Checklist
 
-Mainnet/testnet promotion should be blocked unless all are true:
+Mainnet promotion should be blocked unless all are true:
 
 - [ ] TicketHub direct mint works in native and BIGGI modes
 - [ ] Redeem only works through TicketHub
@@ -437,4 +437,3 @@ Mainnet/testnet promotion should be blocked unless all are true:
 - [ ] all owner-only and router-only restrictions are enforced
 - [ ] pause flows behave correctly
 - [ ] sold-out behavior is deterministic and safe
-

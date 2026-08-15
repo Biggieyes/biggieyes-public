@@ -1,5 +1,5 @@
 // scripts/updateLiquidityBranch.js
-// Spusť: npx hardhat run scripts/updateLiquidityBranch.js --network amoy
+// Spusť: npx hardhat run scripts/updateLiquidityBranch.js --network polygon
 //
 // Env potřebné:
 //  RESERVE=0xbF694e346D69acCEb578eA7C52642C521178e385

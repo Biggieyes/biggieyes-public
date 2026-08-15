@@ -2,7 +2,7 @@
 // and optionally redeploy immutable readers that depend on Treasury.
 //
 // Run:
-//   npx hardhat run scripts/migrateTreasuryAndReaders.js --network amoy
+//   npx hardhat run scripts/migrateTreasuryAndReaders.js --network polygon
 //
 // Reads from scripts/.env and addresses.json.
 

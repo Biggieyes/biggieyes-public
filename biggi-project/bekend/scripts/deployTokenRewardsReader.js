@@ -1,6 +1,6 @@
 // Deploy BiggiTokenRewardsReader
 // Env: TOKEN_REWARDS (optional, fallback addresses.json)
-// Run: TOKEN_REWARDS=<addr> WRITE_ADDR=1 npx hardhat run scripts/deployTokenRewardsReader.js --network amoy
+// Run: TOKEN_REWARDS=<addr> WRITE_ADDR=1 npx hardhat run scripts/deployTokenRewardsReader.js --network polygon
 
 const fs = require("fs");
 const path = require("path");

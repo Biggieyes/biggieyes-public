@@ -1,6 +1,6 @@
 // Sends a test amount of native to BuybackAgent, then forces buybackAllToTreasury(0)
 // Usage: AMOUNT_MATIC=0.02 node scripts/fundAndBuyback.js
-// Env: PRIVATE_KEY, AMOY_RPC_URL, BUYBACK_AGENT
+// Env: PRIVATE_KEY, POLYGON_RPC_URL, BUYBACK_AGENT
 
 require("dotenv").config({ path: require("path").join(__dirname, ".env") });
 const { ethers } = require("ethers");
@@ -13,8 +13,8 @@ const AMOUNT = process.env.AMOUNT_MATIC || "0.02";
 
 async function main() {
   if (!process.env.PRIVATE_KEY) throw new Error("PRIVATE_KEY missing in scripts/.env");
-  const rpc = process.env.AMOY_RPC_URL || "https://polygon-amoy-bor.publicnode.com";
-  const provider = new ethers.providers.JsonRpcProvider(rpc, { name: "amoy", chainId: 80002 });
+  const rpc = process.env.POLYGON_RPC_URL || "https://polygon.drpc.org";
+  const provider = new ethers.providers.JsonRpcProvider(rpc, { name: "polygon", chainId: 137 });
   const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
   const gasPrio = ethers.utils.parseUnits(process.env.GAS_PRIORITY_GWEI || "40", "gwei");

@@ -1,6 +1,7 @@
 // Wire BiggiEyesMain2 (public collection)
 // Env (req): MAIN2, PRICE_PROVIDER (address of Main VRF)
-// Env (opt): DISTRIBUTOR, BIGGI, BIGGI_RATE, TOKEN_SINK, TOKEN_SINK_BPS, RESERVE, BLOCK_IDX, BLOCK_PRICE
+// Env (opt): DISTRIBUTOR, BIGGI, BIGGI_RATE, TOKEN_SINK, TOKEN_SINK_BPS, TOKEN_SINK_DEPOSIT_MODE,
+//            RESERVE, BLOCK_IDX, BLOCK_PRICE
 // Run: MAIN2=<addr> PRICE_PROVIDER=<addr> npx hardhat run scripts/setupMain2.js --network <net>
 
 const { ethers } = require("hardhat");
@@ -22,6 +23,7 @@ async function main() {
   const biggiRate = process.env.BIGGI_RATE;
   const tokenSink = process.env.TOKEN_SINK;
   const tokenSinkBps = process.env.TOKEN_SINK_BPS;
+  const tokenSinkDepositMode = process.env.TOKEN_SINK_DEPOSIT_MODE;
   const reserve = process.env.RESERVE;
   const blockIdx = process.env.BLOCK_IDX;
   const blockPrice = process.env.BLOCK_PRICE;
@@ -48,6 +50,11 @@ async function main() {
     const bps = tokenSinkBps || 10_000;
     await (await main2.setTokenSink(sink, bps)).wait();
     console.log("Token sink set:", sink, bps);
+  }
+  if (tokenSinkDepositMode) {
+    const enabled = ["1", "true", "yes", "on"].includes(String(tokenSinkDepositMode).toLowerCase());
+    await (await main2.setTokenSinkDepositMode(enabled)).wait();
+    console.log("Token sink deposit mode set:", enabled);
   }
   if (reserve) {
     await (await main2.setReserveAddress(reserve)).wait();

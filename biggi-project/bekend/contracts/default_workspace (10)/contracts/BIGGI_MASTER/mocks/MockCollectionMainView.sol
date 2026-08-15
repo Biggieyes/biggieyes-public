@@ -2,9 +2,23 @@
 pragma solidity ^0.8.24;
 
 contract MockCollectionMainView {
+    address public ticketHub;
     mapping(uint256 => bool) private _exists;
+    mapping(uint16 => uint256) private _currentBlockPrice;
     mapping(address => mapping(uint16 => bool)) private _allTenByBlock;
     mapping(address => mapping(uint16 => mapping(uint256 => bool))) private _allBgByMainInBlock;
+
+    function setTicketHub(address ticketHub_) external {
+        ticketHub = ticketHub_;
+    }
+
+    function setCurrentBlockPrice(uint16 blockIdx, uint256 price) external {
+        _currentBlockPrice[blockIdx] = price;
+    }
+
+    function getCurrentBlockPrice(uint16 blockIdx) external view returns (uint256) {
+        return _currentBlockPrice[blockIdx];
+    }
 
     function setExists(uint256 tokenId, bool value) external {
         _exists[tokenId] = value;

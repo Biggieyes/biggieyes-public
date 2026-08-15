@@ -1,4 +1,4 @@
-# Agent documentation — Library/BiggiErrorsLib.sol
+# Agent documentation — TOKENOMIC_LIBRARY/BiggiErrorsLib.sol
 
 **Role:** Shared custom errors library
 

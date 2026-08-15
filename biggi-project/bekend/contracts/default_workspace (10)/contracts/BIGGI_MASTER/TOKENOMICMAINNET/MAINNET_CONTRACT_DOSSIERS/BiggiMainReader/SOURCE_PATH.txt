@@ -1,1 +1,0 @@
-﻿BiggiMainReader.sol

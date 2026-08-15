@@ -5,9 +5,9 @@ const dotenv = require("dotenv");
 const cwd = path.resolve(__dirname, "../..");
 dotenv.config({ path: path.resolve(cwd, ".env") });
 
-const forkUrl = process.env.FORK_URL || process.env.AMOY_RPC_URL;
+const forkUrl = process.env.FORK_URL || process.env.POLYGON_RPC_URL;
 if (!forkUrl) {
-  console.error("Missing FORK_URL (or AMOY_RPC_URL in .env).");
+  console.error("Missing FORK_URL (or POLYGON_RPC_URL in .env).");
   process.exit(1);
 }
 

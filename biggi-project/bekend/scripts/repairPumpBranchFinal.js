@@ -2,7 +2,7 @@
 // recover stranded buyback BIGGI, redeploy immutable readers, and update addresses.json.
 //
 // Run:
-//   npx hardhat run scripts/repairPumpBranchFinal.js --network amoy
+//   npx hardhat run scripts/repairPumpBranchFinal.js --network polygon
 
 const fs = require("fs");
 const path = require("path");

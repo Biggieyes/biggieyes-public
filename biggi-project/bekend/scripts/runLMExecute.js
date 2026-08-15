@@ -1,6 +1,6 @@
 // Triggers LiquidityManager.executePairing(requestedMatic)
 // Usage: REQUESTED_MATIC=0.5 node scripts/runLMExecute.js
-// Env: PRIVATE_KEY, AMOY_RPC_URL, LIQUIDITY_MANAGER
+// Env: PRIVATE_KEY, POLYGON_RPC_URL, LIQUIDITY_MANAGER
 
 require("dotenv").config({ path: require("path").join(__dirname, ".env") });
 const { ethers } = require("ethers");
@@ -10,8 +10,8 @@ const REQUESTED = process.env.REQUESTED_MATIC || "0.5"; // in MATIC
 
 async function main() {
   if (!process.env.PRIVATE_KEY) throw new Error("PRIVATE_KEY missing in scripts/.env");
-  const rpc = process.env.AMOY_RPC_URL || "https://polygon-amoy-bor.publicnode.com";
-  const provider = new ethers.providers.JsonRpcProvider(rpc, { name: "amoy", chainId: 80002 });
+  const rpc = process.env.POLYGON_RPC_URL || "https://polygon.drpc.org";
+  const provider = new ethers.providers.JsonRpcProvider(rpc, { name: "polygon", chainId: 137 });
   const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
   const gasPrio = ethers.utils.parseUnits(process.env.GAS_PRIORITY_GWEI || "40", "gwei");

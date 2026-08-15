@@ -41,6 +41,10 @@ interface IBiggiSupplyControllerSetup {
     function snapshotBaseline() external;
 }
 
+interface IBiggiPolicySetup {
+    function setBuybackAgent(address agent) external;
+}
+
 contract BiggiBuybackDripSetup is Ownable {
     address public immutable buybackAgent;
     address public immutable dripLM;
@@ -75,6 +79,12 @@ contract BiggiBuybackDripSetup is Ownable {
         B.setRouter(routerAddr);
         B.setTreasury(treasuryAddr);
         B.setPolicy(policyAddr);
+        if (policyAddr != address(0)) {
+            // Best effort: if setup contract is not policy owner in a given environment,
+            // keep setup flow alive and let owner wire policy caller explicitly.
+            try IBiggiPolicySetup(policyAddr).setBuybackAgent(buybackAgent) {
+            } catch {}
+        }
         B.setDripLM(dripLM);
     }
 

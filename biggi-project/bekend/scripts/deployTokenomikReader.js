@@ -1,5 +1,5 @@
 // Nasazení BiggiTokenomikReader
-// Spuštění: npx hardhat run scripts/deployTokenomikReader.js --network amoy
+// Spuštění: npx hardhat run scripts/deployTokenomikReader.js --network polygon
 
 // Načti root .env; pokud spouštíš jinde, doplň env proměnné ručně.
 require("dotenv").config();

@@ -10,13 +10,8 @@ module.exports = {
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {},
-    amoy: {
-      url: process.env.AMOY_RPC_URL || "https://polygon-amoy-bor.publicnode.com",
-      chainId: 80002,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-    },
     polygon: {
-      url: process.env.POLYGON_RPC_URL || "https://polygon-rpc.com",
+      url: process.env.POLYGON_RPC_URL || "https://polygon.drpc.org",
       chainId: 137,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
@@ -54,18 +49,18 @@ module.exports = {
         settings: {},
       },
 
-      // Pokud používáš lokální kopie (tvoje cesta s UniswapV2forTEST), přidej i ji:
+      // Pokud používáš lokální kopie (tvoje cesta s UniswapV2), přidej i ji:
       // uprav cestu podle skutečné pozice souboru ve tvém projektu
-      "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/UniswapV2Router02.sol": {
+      "contracts/default_workspace (10)/contracts/BIGGI_MAINNET_SOURCE/UniswapV2Router02.sol": {
         version: "0.8.24",
         settings: {},
       },
 
       // Pokud máš i factory/pair ve stejné složce, přidej je taky:
-      "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/UniswapV2Factory.sol": {
+      "contracts/default_workspace (10)/contracts/BIGGI_MAINNET_SOURCE/UniswapV2Factory.sol": {
         version: "0.8.24",
       },
-      "contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET/BiggiUniswapV2Pair.sol": {
+      "contracts/default_workspace (10)/contracts/BIGGI_MAINNET_SOURCE/BiggiUniswapV2Pair.sol": {
         version: "0.8.24",
       },
     },
@@ -73,7 +68,7 @@ module.exports = {
 
   paths: {
     // Oddělený deploy balíček (minimal) — obsahuje pouze kontrakty potřebné pro aktuální deployy.
-    sources: "./contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET",
+    sources: "./contracts/default_workspace (10)/contracts/BIGGI_MAINNET_SOURCE",
     tests: "./test",
     cache: "./cache",
     artifacts: "./artifacts",

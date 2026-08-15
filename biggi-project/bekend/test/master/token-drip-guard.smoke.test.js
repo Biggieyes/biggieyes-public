@@ -13,9 +13,10 @@ async function deploy(name, ...args) {
 describe("BIGGI_MASTER: token, drip, tokenRewards, guard smoke", function () {
   let owner;
   let alice;
+  let bob;
 
   beforeEach(async () => {
-    [owner, alice] = await ethers.getSigners();
+    [owner, alice, bob] = await ethers.getSigners();
   });
 
   async function deployTokenStack() {
@@ -109,6 +110,27 @@ describe("BIGGI_MASTER: token, drip, tokenRewards, guard smoke", function () {
     await expect(controller.refillRewards(toWei("1"))).to.be.revertedWith("guardian mint paused");
   });
 
+  it("keeps rewards operator refill inside the guardian rewards budget", async () => {
+    const { token, rewards } = await deployTokenStack();
+
+    await (await token.setRewardsOperator(owner.address)).wait();
+
+    await (await token.refillRewardsIfBelow(toWei("200000001"), toWei("200000010"))).wait();
+
+    expect(await token.balanceOf(rewards.address)).to.equal(toWei("200000010"));
+    expect(await token.guardianRewardsMinted()).to.equal(toWei("10"));
+  });
+
+  it("prevents rewards operator from bypassing the guardian rewards cap", async () => {
+    const { token } = await deployTokenStack();
+
+    await (await token.setRewardsOperator(owner.address)).wait();
+
+    await expect(
+      token.refillRewardsIfBelow(toWei("200000001"), toWei("800000001"))
+    ).to.be.revertedWith("REWARDS_CAP");
+  });
+
   it("requires guardian wiring and then performs dual maintenance refill", async () => {
     const { token, drip, pair, controller, guardian } = await deployTokenStack();
 
@@ -180,6 +202,81 @@ describe("BIGGI_MASTER: token, drip, tokenRewards, guard smoke", function () {
     expect(await guard.lastRefillAt()).to.not.equal(0);
   });
 
+  it("accepts LP price feed as dex guard quote oracle and enforces fresh price sanity", async () => {
+    const { token, drip, pair, controller, guard } = await deployTokenStack();
+
+    const feed = await deploy("BiggiLpPriceFeed", token.address, await guard.quoteToken(), pair.address, 18, owner.address);
+    await (await feed.updateFromReserves()).wait();
+    expect(await feed.latestAnswer()).to.equal(toWei("1"));
+
+    await (
+      await controller.setDexConfig(
+        9000,
+        toWei("33"),
+        0,
+        0,
+        false
+      )
+    ).wait();
+    await (await controller.snapshotBaseline()).wait();
+    await (await controller.setAllowedCaller(guard.address, true)).wait();
+
+    await (await guard.setCooldown(0)).wait();
+    await (await guard.setReserveRatioBps(9000)).wait();
+    await (await guard.snapshotBaseline()).wait();
+    await (await guard.setQuoteOracle(feed.address)).wait();
+    await (await guard.setQuoteOracleConfig(24 * 60 * 60, true)).wait();
+    await (await guard.setPriceCheckConfig(true, 500)).wait();
+    await (await guard.refreshPriceAnchor()).wait();
+
+    await (await pair.setReserves(toWei("1000"), toWei("1000"))).wait();
+
+    const beforeReceived = await drip.getTotalReceived();
+    const performData = ethers.utils.defaultAbiCoder.encode(["uint256"], [toWei("33")]);
+    await (await guard.performUpkeep(performData)).wait();
+
+    expect(await token.guardianDexMinted()).to.equal(toWei("33"));
+    expect(await drip.getTotalReceived()).to.equal(beforeReceived.add(toWei("33")));
+
+    const status = await guard.quoteOracleStatus();
+    expect(status.valid).to.equal(true);
+    expect(status.roundDataSupported).to.equal(true);
+    expect(status.answerE18).to.equal(toWei("1"));
+  });
+
+  it("rejects dex guard refill when required quote oracle is stale", async () => {
+    const { pair, controller, guard } = await deployTokenStack();
+
+    const feed = await deploy("BiggiLpPriceFeed", await guard.token(), await guard.quoteToken(), pair.address, 18, owner.address);
+    await (await feed.updateFromReserves()).wait();
+
+    await (
+      await controller.setDexConfig(
+        9000,
+        toWei("10"),
+        0,
+        0,
+        false
+      )
+    ).wait();
+    await (await controller.snapshotBaseline()).wait();
+    await (await controller.setAllowedCaller(guard.address, true)).wait();
+
+    await (await guard.setCooldown(0)).wait();
+    await (await guard.setReserveRatioBps(9000)).wait();
+    await (await guard.snapshotBaseline()).wait();
+    await (await guard.setQuoteOracle(feed.address)).wait();
+    await (await guard.setQuoteOracleConfig(1, true)).wait();
+    await (await guard.setPriceCheckConfig(true, 500)).wait();
+
+    await ethers.provider.send("evm_increaseTime", [2]);
+    await ethers.provider.send("evm_mine");
+    await (await pair.setReserves(toWei("1000"), toWei("1000"))).wait();
+
+    const performData = ethers.utils.defaultAbiCoder.encode(["uint256"], [toWei("10")]);
+    await expect(guard.performUpkeep(performData)).to.be.reverted;
+  });
+
   it("uses upkeep performData hints for deterministic execution", async () => {
     const { token, pair, controller } = await deployTokenStack();
 
@@ -230,10 +327,16 @@ describe("BIGGI_MASTER: token, drip, tokenRewards, guard smoke", function () {
     expect(await token.guardianRewardsMinted()).to.equal(toWei("25"));
   });
 
+  it("locks reserve target after initial distribution", async () => {
+    const { token } = await deployTokenStack();
+
+    await expect(token.setReserve(alice.address)).to.be.revertedWith("reserve locked");
+  });
+
   it("enforces strict notify caller mode on reserve when enabled", async () => {
     const { token, reserve } = await deployTokenStack();
 
-    await (await token.transferFromReserveTo(reserve.address, toWei("5"))).wait();
+    await (await token.transfer(reserve.address, toWei("5"))).wait();
     await (await reserve.setNotifyCallerCheck(true)).wait();
 
     await expect(reserve.connect(alice).notifyBiggiReceived(toWei("1"))).to.be.reverted;
@@ -291,6 +394,98 @@ describe("BIGGI_MASTER: token, drip, tokenRewards, guard smoke", function () {
     ).to.be.reverted;
   });
 
+  it("uses dynamic token rewards budget while preserving rarity weights", async () => {
+    const { token, rewards, nftMain, nftMain2 } = await deployTokenStack();
+
+    const emission = await deploy(
+      "BiggiTokenRewardsEmissionController",
+      rewards.address,
+      ethers.constants.AddressZero,
+      token.address,
+      owner.address
+    );
+
+    await (await emission.setTargetWeeklyUnits(100)).wait();
+    await (
+      await emission.setBudgetConfig(
+        toWei("50"),
+        toWei("50"),
+        toWei("50"),
+        toWei("50"),
+        toWei("50"),
+        toWei("50"),
+        10000
+      )
+    ).wait();
+    await (await rewards.setEmissionController(emission.address, true)).wait();
+
+    await (await nftMain.mint(alice.address, 1, 3)).wait(); // 30 units
+    await (await nftMain2.mint(bob.address, 2, 7)).wait(); // 70 units
+
+    const alicePreview = await rewards.connect(alice).claimablePreviewFor([nftMain.address], [1]);
+    const bobPreview = await rewards.connect(bob).claimablePreviewFor([nftMain2.address], [2]);
+
+    expect(alicePreview.units).to.equal(30);
+    expect(alicePreview.amount).to.equal(toWei("15"));
+    expect(bobPreview.units).to.equal(70);
+    expect(bobPreview.amount).to.equal(toWei("35"));
+
+    await (await rewards.connect(alice).claimWithCollections([nftMain.address], [1])).wait();
+    await (await rewards.connect(bob).claimWithCollections([nftMain2.address], [2])).wait();
+
+    expect(await token.balanceOf(alice.address)).to.equal(toWei("15"));
+    expect(await token.balanceOf(bob.address)).to.equal(toWei("35"));
+
+    const week = await rewards.currentWeek();
+    const state = await emission.weekState(week);
+    expect(state.budget).to.equal(toWei("50"));
+    expect(state.paid).to.equal(toWei("50"));
+    expect(state.unitReward).to.equal(toWei("0.5"));
+  });
+
+  it("rejects token rewards claims that exceed the weekly dynamic budget", async () => {
+    const { token, rewards, nftMain } = await deployTokenStack();
+
+    const emission = await deploy(
+      "BiggiTokenRewardsEmissionController",
+      rewards.address,
+      ethers.constants.AddressZero,
+      token.address,
+      owner.address
+    );
+
+    await (await emission.setTargetWeeklyUnits(100)).wait();
+    await (
+      await emission.setBudgetConfig(
+        toWei("50"),
+        toWei("50"),
+        toWei("50"),
+        toWei("50"),
+        toWei("50"),
+        toWei("50"),
+        10000
+      )
+    ).wait();
+    await (await rewards.setEmissionController(emission.address, true)).wait();
+
+    await (await nftMain.mint(alice.address, 1, 10)).wait(); // 100 units => 50 BIGGI
+    await (await nftMain.mint(alice.address, 2, 10)).wait(); // 100 units => 50 BIGGI
+
+    const previewTooLarge = await rewards.connect(alice).claimablePreviewFor(
+      [nftMain.address, nftMain.address],
+      [1, 2]
+    );
+    expect(previewTooLarge.units).to.equal(200);
+    expect(previewTooLarge.amount).to.equal(0);
+
+    await expect(
+      rewards.connect(alice).claimWithCollections([nftMain.address, nftMain.address], [1, 2])
+    ).to.be.reverted;
+
+    await (await rewards.connect(alice).claimWithCollections([nftMain.address], [1])).wait();
+    expect(await token.balanceOf(alice.address)).to.equal(toWei("50"));
+  });
+
   it("accepts future VRF collections via registry and follows eligibility toggles", async () => {
     const { token, rewards } = await deployTokenStack();
 
@@ -310,7 +505,7 @@ describe("BIGGI_MASTER: token, drip, tokenRewards, guard smoke", function () {
     expect(await rewards.isAllowedCollection(futureVrf.address)).to.equal(true);
     expect(await rewards.isAllowedCollection(futurePublic.address)).to.equal(true);
 
-    const preview = await rewards.claimablePreviewFor([futureVrf.address], [77]);
+    const preview = await rewards.connect(alice).claimablePreviewFor([futureVrf.address], [77]);
     expect(preview.units).to.equal(100);
     expect(preview.amount).to.equal(toWei("100"));
 
@@ -326,5 +521,23 @@ describe("BIGGI_MASTER: token, drip, tokenRewards, guard smoke", function () {
     await expect(
       rewards.connect(alice).claimWithCollections([futureVrf.address], [77])
     ).to.be.reverted;
+  });
+
+  it("keeps legacy main collections claimable after registry mode is enabled", async () => {
+    const { token, rewards, nftMain } = await deployTokenStack();
+
+    const registry = await deploy("BiggiSeriesRegistry", owner.address);
+    await (await rewards.setRegistry(registry.address)).wait();
+    await (await token.mint(rewards.address, toWei("1000"))).wait();
+    await (await nftMain.mint(alice.address, 11, 4)).wait(); // block 4 => weight 40
+
+    const preview = await rewards.connect(alice).claimablePreview([11]);
+    expect(preview.units).to.equal(40);
+    expect(preview.amount).to.equal(toWei("40"));
+
+    const before = await token.balanceOf(alice.address);
+    await (await rewards.connect(alice).claim([11])).wait();
+    const after = await token.balanceOf(alice.address);
+    expect(after.sub(before)).to.equal(toWei("40"));
   });
 });

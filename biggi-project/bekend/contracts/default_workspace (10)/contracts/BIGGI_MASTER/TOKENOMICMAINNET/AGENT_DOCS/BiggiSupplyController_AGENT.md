@@ -3,7 +3,7 @@
 **Role:** Supply maintenance execution layer
 
 ## Purpose
-Execution contract that decides/refills drip inventory and token rewards based on reserve and balance thresholds.
+Execution contract that decides/refills drip inventory and token rewards based on reserve and balance thresholds. The DEX refill branch currently mints to BiggiDripDistributor through BiggiToken.mintToDripDistributor(); it does not mint directly into the LP pair.
 
 ## Top-level declarations
 - Contracts/libraries: BiggiSupplyController
@@ -65,7 +65,8 @@ Execution contract that decides/refills drip inventory and token rewards based o
 - Prefer additive changes with explicit events over implicit behavior changes.
 
 ## Known risks / review notes
-- `performUpkeep(bytes)` currently ignores performData and delegates to `performMaintenance()`. This is acceptable but less deterministic for offchain simulation/debugging.
+- `performUpkeep(bytes)` decodes `(bool dexAllowed, bool rewardsAllowed)` when performData is present; empty performData falls back to full `performMaintenance()`.
+- The term "DEX refill" means the bounded drip-inventory mint branch in current code. Pair-side replenishment requires downstream drip/sell or liquidity execution.
 
 ## Agent checklist before modifying
 - Confirm who owns/controls this contract in deployment scripts.

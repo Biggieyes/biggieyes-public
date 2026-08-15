@@ -33,6 +33,7 @@ Tyto hodnoty musí reader číst z:
 - reward counters pro konkrétní VRF collection
 - ticket discovery přes TicketHub
 - unified frontend snapshot
+- `getTicketHubFrontendSnapshot(user, treasury)` pro TicketHub caps, user ticket count, native/BIGGI price, pause state, token sink config, treasury allowlist, and `ecosystemTreasuryRouteOk`
 
 ## Safe-edit guidance
 - Nepřesměrovávej ticket stav zpět na `BiggiMain`

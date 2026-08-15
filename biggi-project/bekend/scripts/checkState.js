@@ -1,15 +1,15 @@
 // Quick state check for DripDistributor, BuybackAgent, Reserve, Treasury
 // Usage: `node scripts/checkState.js`
-// Reads RPC URL from .env (AMOY_RPC_URL) or falls back to public Amoy endpoint.
+// Reads RPC URL from .env (POLYGON_RPC_URL) or falls back to public Polygon mainnet endpoint.
 
 require("dotenv").config();
 const { ethers } = require("ethers");
 
 async function main() {
   const rpc =
-    process.env.AMOY_RPC_URL ||
-    "https://polygon-amoy-bor.publicnode.com";
-  const provider = new ethers.providers.JsonRpcProvider(rpc, { name: "amoy", chainId: 80002 });
+    process.env.POLYGON_RPC_URL ||
+    "https://polygon.drpc.org";
+  const provider = new ethers.providers.JsonRpcProvider(rpc, { name: "polygon", chainId: 137 });
 
   const ddAddr = process.env.DRIP_DISTRIBUTOR || "0x2564b32eE85d2DFe3c234f79BBCaA94704e91FAE";
   const baAddr =

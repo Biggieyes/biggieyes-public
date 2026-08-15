@@ -1,0 +1,81 @@
+# BIGGI mainnet pending actions
+
+Stav k 2026-07-05. Tento dokument vychazi z live read-only kontrol Polygon mainnetu. Audit sam neposila zadne transakce.
+
+Kompletni zavazne poradi je v [MAINNET_FULL_DEPLOY_SEQUENCE_CS.md](MAINNET_FULL_DEPLOY_SEQUENCE_CS.md). Posledni launch preflight aktualne eviduje 7 blockeru a 0 warningu.
+
+## 1. Kriticka bezpecnost
+
+- Puvodni deployer/owner private key byl zobrazen v pracovnim vystupu a puvodni adresa zustava pouze historickym deployerem.
+- Projektove ownable kontrakty i VRF v2.5 subscription byly preneseny na `0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2`.
+- Pred public launchem je stale doporuceno zvazit hardware-wallet-backed Safe/multisig jako dlouhodoby owner.
+- Nikdy neposilat ani nevkladat novy private key do chatu nebo dokumentace.
+
+## 2. Core konfigurace
+
+Zamer projektu je 550 ticketu celkem:
+
+- `SALE_CAP=500`
+- `MARKETING_CAP=50`
+- cena paid ticketu `1 POL`
+
+Live TicketHub ma `saleCap=500`, `marketingCap=50`, cenu `1 POL`, finalni distributor a novou dev wallet. CORE wiring kontrolovat pred kazdym dalsim write krokem pres `npm.cmd run check:master:core:polygon`.
+
+## 3. Chainlink VRF
+
+Subscription:
+
+- Coordinator: `0xec0Ed46f36576541C75739E915ADbCb3DE24bD77`
+- Subscription ID: `81201946401186585545741412524989119977867721966007705722641563343499481545614`
+- Consumer: `VRF_ROUTER=0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F`
+
+Live stav:
+
+- LINK balance: `0`
+- native balance: `2 POL`
+- consumers: pouze ocekavany `VRF_ROUTER`
+- request count: `0`
+- subscription owner: `0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2`
+
+Pred mintem provest jeden kontrolovany VRF request a podle realne spotreby nastavit monitoring zustatku.
+
+## 4. Token a likvidita
+
+Pred verejnym launchem:
+
+- jednorazovy `BIGGI.initialDistribute` je hotovy a reserve konfigurace je zamknuta;
+- live rozdeleni je Reserve 600M, DripDistributor 200M, TokenRewards 200M a marketing 200M BIGGI;
+- dodat pocatecni BIGGI/WPOL likviditu;
+- overit nenulove reserves a LP supply;
+- LP tokeny ulozit do urceneho LiquidityVaultu.
+
+Aktualne je total supply `1.2B BIGGI` a DEX pair nema likviditu.
+
+## 5. CRE
+
+- Deploy Access: ceka na schvaleni Chainlinkem.
+- Workflow dry-run: uspesny, `failed=0`, bez broadcastu.
+- Registry: `private`.
+- Receiver `0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6` je nasazeny, verifikovany a paused.
+- Pet produkcnich target/selector dvojic zatim neni allowlisted; to je zamerne do finalniho workflow ID/owner wiring.
+
+Po schvaleni:
+
+1. nasadit CRE workflow neaktivni;
+2. uzamknout receiver na workflow ID a workflow ownera;
+3. zapojit pouze pet schvalenych target/selector kombinaci;
+4. aktivovat workflow az po liquidity a finalnim preflightu;
+5. ponechat samostatny `DRIP_KEEPER_PROXY` paused, protoze drip spousti BuybackAgent primo.
+
+## 6. Metadata a finalni gate
+
+- MAIN metadata kontrola je konzistentni pro 550 polozek.
+- MAIN2 public metadata zatim nejsou plne launch-ready.
+- Pred otevrenim mintu spustit znovu:
+
+```powershell
+npm.cmd run check:master:core:polygon
+npm.cmd run preflight:launch:polygon
+```
+
+Public launch je povolen pouze pri nulovem poctu blockeru.

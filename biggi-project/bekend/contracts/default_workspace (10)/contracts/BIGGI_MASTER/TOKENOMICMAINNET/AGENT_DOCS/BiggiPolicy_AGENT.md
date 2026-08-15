@@ -11,7 +11,7 @@ Owner-managed config for pausability, buyback intervals, slippage/policy style l
 
 ## Imports / external dependencies
 - `@openzeppelin/contracts/access/Ownable.sol`
-- `./Library/BiggiErrorsLib.sol`
+- `./TOKENOMIC_LIBRARY/BiggiErrorsLib.sol`
 
 ## Key public state to inspect
 - `swapSlippageBps`

@@ -1,4 +1,4 @@
-// Spusť: npx hardhat run scripts/setKeeperToAutomation.js --network amoy
+// Spusť: npx hardhat run scripts/setKeeperToAutomation.js --network polygon
 // Nastaví keeper na LiquidityManager na adresu Automation kontraktu.
 
 const path = require("path");

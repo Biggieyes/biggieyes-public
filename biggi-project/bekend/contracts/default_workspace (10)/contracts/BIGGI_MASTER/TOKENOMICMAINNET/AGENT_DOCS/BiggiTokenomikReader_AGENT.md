@@ -50,6 +50,7 @@ High-level aggregated reader across distributor, buyback, reserve, liquidity, dr
 
 ## Integration points
 - Read-only surface for UI/agents; changing return shapes will break dashboards and scripts first.
+- Distributor status in `getFullStatus()` includes pending native balances for buyback, collection rewards, reserve, treasury, and community center. Frontend should use these fields instead of polling `pending(address)` for each recipient when rendering the tokenomics dashboard.
 
 ## Safe-edit guidance for agents
 - Preserve storage layout unless a migration is explicitly planned.

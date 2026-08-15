@@ -1,6 +1,6 @@
-// scripts/runPairing.js
-// Spusť: REQUESTED_MATIC_WEI=500000000000000000 npx hardhat run scripts/runPairing.js --network amoy
-// Volá executePairing na BiggiLiquidityManager s inline ABI (není třeba artifact).
+﻿// scripts/runPairing.js
+// SpusĹĄ: REQUESTED_MATIC_WEI=500000000000000000 npx hardhat run scripts/runPairing.js --network polygon
+// VolĂˇ executePairing na BiggiLiquidityManager s inline ABI (nenĂ­ tĹ™eba artifact).
 
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
@@ -20,9 +20,9 @@ function gasOverrides() {
 
 async function main() {
   const env = process.env;
-  if (!env.LIQUIDITY_MANAGER) throw new Error("Chybí LIQUIDITY_MANAGER v .env");
-  if (!env.REQUESTED_MATIC_WEI) throw new Error("Chybí REQUESTED_MATIC_WEI v env nebo inline před příkazem");
-  if (!env.PRIVATE_KEY) throw new Error("Chybí PRIVATE_KEY v .env");
+  if (!env.LIQUIDITY_MANAGER) throw new Error("ChybĂ­ LIQUIDITY_MANAGER v .env");
+  if (!env.REQUESTED_MATIC_WEI) throw new Error("ChybĂ­ REQUESTED_MATIC_WEI v env nebo inline pĹ™ed pĹ™Ă­kazem");
+  if (!env.PRIVATE_KEY) throw new Error("ChybĂ­ PRIVATE_KEY v .env");
 
   const signer = new ethers.Wallet(env.PRIVATE_KEY, hre.ethers.provider);
   const lm = new ethers.Contract(env.LIQUIDITY_MANAGER, ABI_LM, signer);

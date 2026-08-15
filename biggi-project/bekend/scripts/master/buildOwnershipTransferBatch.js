@@ -3,6 +3,11 @@ const path = require("path");
 const { ethers } = require("ethers");
 
 const ZERO = ethers.constants.AddressZero;
+const OWNABLE_2STEP_KEYS = new Set([
+  "RESERVE",
+  "LIQUIDITY_ORCHESTRATOR",
+  "LIQUIDITY_KEEPER_PROXY",
+]);
 
 function isAddress(v) {
   try {
@@ -78,6 +83,11 @@ function normalizeAddresses(raw) {
     TREASURY: pickAddress(raw, ["TREASURY"]),
     DRIP_DISTRIBUTOR: pickAddress(raw, ["DRIP_DISTRIBUTOR"]),
     TOKEN_REWARDS: pickAddress(raw, ["TOKEN_REWARDS"]),
+    TOKEN_REWARDS_EMISSION_CONTROLLER: pickAddress(raw, [
+      "TOKEN_REWARDS_EMISSION_CONTROLLER",
+      "TOKEN_REWARDS_CONTROLLER",
+      "EMISSION_CONTROLLER",
+    ]),
     NFT_REWARDS: pickAddress(raw, ["NFT_REWARDS", "BIGGI_NFT_REWARDS"]),
     BUYBACK_AGENT: pickAddress(raw, ["BUYBACK_AGENT", "BUYBACK"]),
     POLICY: pickAddress(raw, ["POLICY"]),
@@ -89,17 +99,20 @@ function normalizeAddresses(raw) {
     LIQUIDITY_ORCHESTRATOR: pickAddress(raw, ["LIQUIDITY_ORCHESTRATOR", "ORCHESTRATOR"]),
     LIQUIDITY_KEEPER_PROXY: pickAddress(raw, ["LIQUIDITY_KEEPER_PROXY", "KEEPER_PROXY"]),
     LIQUIDITY_AUTOMATION: pickAddress(raw, ["LIQUIDITY_AUTOMATION"]),
+    DRIP_LM: pickAddress(raw, ["DRIP_LM"]),
     DRIP_KEEPER_PROXY: pickAddress(raw, ["DRIP_KEEPER_PROXY"]),
     BUYBACK_UPKEEP_PROXY: pickAddress(raw, ["BUYBACK_UPKEEP_PROXY", "UPKEEP_PROXY"]),
+    CRE_AUTOMATION_RECEIVER: pickAddress(raw, ["CRE_AUTOMATION_RECEIVER"]),
     MASTER_CONFIG: pickAddress(raw, ["MASTER_CONFIG"]),
   };
 }
 
 function buildBatch(addresses, targetOwner) {
-  const batch = [];
+  const transferTxs = [];
+  const acceptTxs = [];
   for (const [key, value] of Object.entries(addresses)) {
     if (!isAddress(value)) continue;
-    batch.push({
+    transferTxs.push({
       label: `${key}.transferOwnership`,
       to: value,
       value: "0",
@@ -109,8 +122,20 @@ function buildBatch(addresses, targetOwner) {
       },
       note: "Run from current owner / deployer role.",
     });
+    if (OWNABLE_2STEP_KEYS.has(key)) {
+      acceptTxs.push({
+        label: `${key}.acceptOwnership`,
+        to: value,
+        value: "0",
+        data: {
+          method: "acceptOwnership",
+          args: [],
+        },
+        note: "Run from target owner / Safe after transferOwnership is mined.",
+      });
+    }
   }
-  return batch;
+  return { transferTxs, acceptTxs };
 }
 
 function main() {
@@ -119,20 +144,24 @@ function main() {
   const addresses = normalizeAddresses(raw);
   const targetOwner = ethers.utils.getAddress(opts.to);
 
-  const batch = buildBatch(addresses, targetOwner);
+  const { transferTxs, acceptTxs } = buildBatch(addresses, targetOwner);
   const outPayload = {
     createdAt: new Date().toISOString(),
     sourceAddressesFile: opts.addressesFile,
     targetOwner,
-    txCount: batch.length,
-    txs: batch,
+    txCount: transferTxs.length + acceptTxs.length,
+    transferTxCount: transferTxs.length,
+    acceptTxCount: acceptTxs.length,
+    txs: transferTxs,
+    acceptOwnershipTxs: acceptTxs,
   };
 
   fs.writeFileSync(opts.out, JSON.stringify(outPayload, null, 2));
 
   console.log(`Ownership transfer batch generated: ${opts.out}`);
   console.log(`Target owner: ${targetOwner}`);
-  console.log(`Transactions: ${batch.length}`);
+  console.log(`Transfer transactions: ${transferTxs.length}`);
+  console.log(`Accept transactions: ${acceptTxs.length}`);
 }
 
 main();

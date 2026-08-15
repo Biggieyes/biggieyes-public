@@ -2,10 +2,11 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./Library/BiggiErrorsLib.sol";
-import "./Library/BiggiSwapLib.sol";
+import "./TOKENOMIC_LIBRARY/BiggiErrorsLib.sol";
+import "./TOKENOMIC_LIBRARY/BiggiSwapLib.sol";
 
 interface IUniswapV2Router02 {
     function WETH() external view returns (address);
@@ -26,6 +27,7 @@ interface IUniswapV2Router02 {
 
 interface IBiggiTreasury {
     function buybackDepositAndSplit(uint256 amount) external;
+    function receiveBuybackFallback() external payable;
 }
 
 interface IBiggiPolicy {
@@ -34,6 +36,8 @@ interface IBiggiPolicy {
     function minBuybackInterval() external view returns (uint256);
     function buybacksPaused() external view returns (bool);
     function maxDailyBuybackNative() external view returns (uint256);
+    function usedToday() external view returns (uint256);
+    function dayIndex() external view returns (uint64);
     function consumeDailyBuybackQuota(uint256 nativeAmount) external;
 }
 
@@ -42,12 +46,15 @@ interface IDripLM {
 }
 
 contract BiggiBuybackAgent is Ownable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
     IERC20 public immutable BIGGI;
     IUniswapV2Router02 public router;
     address public wrappedNative;
     IBiggiTreasury public treasury;
     IBiggiPolicy   public policy;
     IDripLM        public dripLM;
+    address public distributor;
 
     // Automation/keeper that may trigger manual buyback entrypoints (in addition to owner).
     address public keeper;
@@ -70,6 +77,7 @@ contract BiggiBuybackAgent is Ownable, ReentrancyGuard {
     event TreasurySet(address treasury);
     event PolicySet(address policy);
     event DripLMSet(address dripLM);
+    event DistributorSet(address distributor);
     event PathSet(address[] path);
     event PathCleared();
     event FallbacksSet(uint256 slipBps, uint256 deadlineSec, uint256 cooldownSec);
@@ -77,6 +85,7 @@ contract BiggiBuybackAgent is Ownable, ReentrancyGuard {
     event BuybackExecuted(uint256 nativeSpent, uint256 biggiAcquired);
     event RoutedToTreasury(uint256 amountBiggi);
     event DripNotified(address dripLM, uint256 biggiReported);
+    event BuybackSplitFailed(uint256 amountBiggi);
     event AutoBuybackToggled(bool enabled);
     event PausedEvent();
     event UnpausedEvent();
@@ -143,6 +152,12 @@ contract BiggiBuybackAgent is Ownable, ReentrancyGuard {
         emit DripLMSet(dripLM_);
     }
 
+    function setDistributor(address distributor_) external onlyOwner {
+        if (distributor_ == address(0)) revert BiggiErrorsLib.ZeroAddress();
+        distributor = distributor_;
+        emit DistributorSet(distributor_);
+    }
+
     function setKeeper(address keeper_) external onlyOwner {
         keeper = keeper_;
         emit KeeperSet(keeper_);
@@ -186,6 +201,7 @@ contract BiggiBuybackAgent is Ownable, ReentrancyGuard {
     /* ================= Core: receiving share & auto buyback ================= */
     // Distributor -> this function payable
     function receiveMintShare() external payable {
+        if (msg.sender != distributor) revert BiggiErrorsLib.NotDistributor();
         if (msg.value == 0) revert BiggiErrorsLib.AmountZero();
         totalNativeReceived += msg.value;
         emit MintShareReceived(msg.value);
@@ -214,9 +230,15 @@ contract BiggiBuybackAgent is Ownable, ReentrancyGuard {
         uint256 nativeAmt = msg.value;
         _guardsAndQuota(nativeAmt);
 
+        uint256 autoMinOut = _resolveAutoMinOut(nativeAmt);
+        if (autoMinOut == 0) {
+            _forwardNativeToTreasury(nativeAmt);
+            return;
+        }
+
         uint256 acquired = 0;
         bool swapped = false;
-        try this._swapNativeForBiggi{value: nativeAmt}(nativeAmt, 0) returns (uint256 got) {
+        try this._swapNativeForBiggi{value: nativeAmt}(nativeAmt, autoMinOut) returns (uint256 got) {
             acquired = got;
             swapped = true;
         } catch {
@@ -239,10 +261,11 @@ contract BiggiBuybackAgent is Ownable, ReentrancyGuard {
         try treasury.buybackDepositAndSplit(acquired) {
             emit RoutedToTreasury(acquired);
         } catch {
-            // if treasury fails, forward native instead
-            _forwardNativeToTreasury(nativeAmt);
-            return;
+            emit BuybackSplitFailed(acquired);
+            revert BuybackAborted();
         }
+
+        _consumePolicyQuota(nativeAmt);
 
         lastBuybackAt = block.timestamp;
         totalNativeSpent += nativeAmt;
@@ -259,7 +282,7 @@ contract BiggiBuybackAgent is Ownable, ReentrancyGuard {
     }
 
     /* ================= internal helpers ================= */
-    function _guardsAndQuota(uint256 nativeAmount) internal {
+    function _guardsAndQuota(uint256 nativeAmount) internal view {
         if (address(router) == address(0) || wrappedNative == address(0)) revert RouterNotSet();
         if (address(treasury) == address(0)) revert BiggiErrorsLib.TreasuryNotSet();
         if (address(policy) != address(0)) {
@@ -268,12 +291,11 @@ contract BiggiBuybackAgent is Ownable, ReentrancyGuard {
             if (interval == 0) interval = fallbackMinIntervalSec;
             if (lastBuybackAt != 0 && block.timestamp < lastBuybackAt + interval) revert Cooldown();
             uint256 maxDaily = policy.maxDailyBuybackNative();
-            if (maxDaily > 0 && nativeAmount > maxDaily) revert BuybackAborted();
-
-            // enforce daily quota via policy (uses nativeAmount) - wrapped in try/catch to preserve safety
-            try policy.consumeDailyBuybackQuota(nativeAmount) {
-            } catch {
-                revert BuybackAborted();
+            if (maxDaily > 0) {
+                uint64 storedDay = policy.dayIndex();
+                uint64 today = uint64(block.timestamp / 1 days);
+                uint256 used = today == storedDay ? policy.usedToday() : 0;
+                if (used + nativeAmount > maxDaily) revert BuybackAborted();
             }
         } else {
             uint256 interval = fallbackMinIntervalSec;
@@ -290,6 +312,33 @@ contract BiggiBuybackAgent is Ownable, ReentrancyGuard {
             p[0] = wrappedNative;
             p[1] = address(BIGGI);
         }
+    }
+
+    function _currentSlippageBps() internal view returns (uint256 slipBps) {
+        slipBps = fallbackSwapSlippageBps;
+        if (address(policy) != address(0)) {
+            try policy.swapSlippageBps() returns (uint256 bps) {
+                if (bps <= 10_000) {
+                    slipBps = bps;
+                }
+            } catch {}
+        }
+    }
+
+    function _resolveAutoMinOut(uint256 nativeAmt) internal view returns (uint256 minOut) {
+        address[] memory path = _path();
+        minOut = BiggiSwapLib.quoteMinOut(
+            IUniswapV2Router02Biggi(address(router)),
+            nativeAmt,
+            path,
+            _currentSlippageBps()
+        );
+    }
+
+    function previewAutoMinOut(uint256 nativeAmt) external view returns (uint256 minOut) {
+        if (nativeAmt == 0) return 0;
+        if (address(router) == address(0) || wrappedNative == address(0)) return 0;
+        return _resolveAutoMinOut(nativeAmt);
     }
 
     // swap native -> BIGGI, returns acquired amount (external, no nonReentrant; guarded by caller)
@@ -333,9 +382,20 @@ contract BiggiBuybackAgent is Ownable, ReentrancyGuard {
 
     function _forwardNativeToTreasury(uint256 amount) internal {
         if (address(treasury) == address(0)) revert BiggiErrorsLib.TreasuryNotSet();
-        (bool ok, ) = payable(address(treasury)).call{value: amount}("");
+        (bool ok, ) = payable(address(treasury)).call{
+            value: amount
+        }(abi.encodeWithSelector(IBiggiTreasury.receiveBuybackFallback.selector));
         if (!ok) {
             emit ForwardNativeFailed(amount);
+            revert BuybackAborted();
+        }
+    }
+
+    function _consumePolicyQuota(uint256 nativeAmount) internal {
+        if (address(policy) == address(0)) return;
+        try policy.consumeDailyBuybackQuota(nativeAmount) {
+        } catch {
+            revert BuybackAborted();
         }
     }
 
@@ -364,9 +424,11 @@ contract BiggiBuybackAgent is Ownable, ReentrancyGuard {
         try treasury.buybackDepositAndSplit(acquired) {
             emit RoutedToTreasury(acquired);
         } catch {
-            _forwardNativeToTreasury(bal);
-            return;
+            emit BuybackSplitFailed(acquired);
+            revert BuybackAborted();
         }
+
+        _consumePolicyQuota(bal);
 
         lastBuybackAt = block.timestamp;
         totalNativeSpent += bal;
@@ -403,9 +465,11 @@ contract BiggiBuybackAgent is Ownable, ReentrancyGuard {
         try treasury.buybackDepositAndSplit(acquired) {
             emit RoutedToTreasury(acquired);
         } catch {
-            _forwardNativeToTreasury(nativeAmount);
-            return;
+            emit BuybackSplitFailed(acquired);
+            revert BuybackAborted();
         }
+
+        _consumePolicyQuota(nativeAmount);
 
         lastBuybackAt = block.timestamp;
         totalNativeSpent += nativeAmount;
@@ -421,12 +485,15 @@ contract BiggiBuybackAgent is Ownable, ReentrancyGuard {
 
     /* ================= rescue ================= */
     function rescueERC20(address token, address to, uint256 amount) external onlyOwner {
-        IERC20(token).transfer(to, amount);
+        if (to == address(0)) revert BiggiErrorsLib.ToZero();
+        IERC20(token).safeTransfer(to, amount);
         emit RescueERC20(token, to, amount);
     }
 
     function rescueNative(address payable to, uint256 amount) external onlyOwner {
-        to.transfer(amount);
+        if (to == address(0)) revert BiggiErrorsLib.ToZero();
+        (bool ok, ) = to.call{value: amount}("");
+        require(ok, "native xfer fail");
         emit RescueNative(address(to), amount);
     }
 

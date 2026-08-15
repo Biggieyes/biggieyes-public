@@ -1,6 +1,6 @@
 // scripts/setTestParams.js
-// Nastaví testovací parametry pro Policy a LiquidityManager.
-// Spusť: node scripts/setTestParams.js  (nebo npx hardhat run scripts/setTestParams.js --network amoy)
+// NastavĂ­ testovacĂ­ parametry pro Policy a LiquidityManager.
+// SpusĹĄ: node scripts/setTestParams.js  (nebo npx hardhat run scripts/setTestParams.js --network polygon)
 
 const hre = require("hardhat");
 const { ethers } = hre;
@@ -8,7 +8,7 @@ const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 async function main() {
-  const provider = new ethers.providers.JsonRpcProvider(process.env.AMOY_RPC_URL || "https://polygon-amoy-bor.publicnode.com");
+  const provider = new ethers.providers.JsonRpcProvider(process.env.POLYGON_RPC_URL || "https://polygon.drpc.org");
   const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
   console.log("Signer:", signer.address);
 

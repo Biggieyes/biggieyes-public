@@ -1,7 +1,7 @@
 // scripts/redeployReserveBranch.js
 // Redeploys ReserveV4 and rewires Reserve -> LM -> Orchestrator -> Keeper + related modules.
 // Run:
-//   npx hardhat run scripts/redeployReserveBranch.js --network amoy
+//   npx hardhat run scripts/redeployReserveBranch.js --network polygon
 //
 // Reads env from scripts/.env first, then process env.
 
@@ -233,4 +233,3 @@ main().catch((err) => {
   console.error("FATAL:", err);
   process.exitCode = 1;
 });
-

@@ -16,6 +16,7 @@
 - Alert on paused states, failed upkeep runs, and threshold breaches.
 - Alert on ownership/keeper changes.
 
-## Status (2026-03-20)
-- Code consistency in this branch: reviewed.
-- External dependency readiness: final mainnet addresses, keeper registration, and VRF production wiring still required before launch.
+## Status (2026-06-03)
+- Code consistency in this branch: reviewed against the current source and ABI artifact.
+- Deployment status: live on Polygon mainnet as of 2026-06-16.
+- External dependency readiness: final mainnet addresses and keeper/liquidity/automation production wiring still required before launch.

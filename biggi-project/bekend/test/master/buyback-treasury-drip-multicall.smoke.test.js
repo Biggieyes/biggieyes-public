@@ -34,11 +34,14 @@ async function setupBuybackStack(owner) {
   await (await treasury.setTokenRewards(rewards.address)).wait();
   await (await treasury.setReserve(reserve.address)).wait();
   await (await treasury.setDripDistributor(drip.address)).wait();
+  await (await reserve.setNotifyCaller(treasury.address, true)).wait();
   await (await drip.setTreasury(treasury.address)).wait();
 
   await (await buyback.setRouter(router.address)).wait();
   await (await buyback.setTreasury(treasury.address)).wait();
   await (await buyback.setPolicy(policy.address)).wait();
+  await (await buyback.setDistributor(owner.address)).wait();
+  await (await policy.setBuybackAgent(buyback.address)).wait();
   await (await buyback.setDripLM(dripLm.address)).wait();
 
   await (await token.mint(router.address, toWei("100000"))).wait();
@@ -47,6 +50,37 @@ async function setupBuybackStack(owner) {
 }
 
 describe("BIGGI_MASTER: buyback/treasury/drip + multicall smoke", function () {
+  it("rejects unsafe zero treasury routes and buyback rescue recipients", async () => {
+    const [owner] = await ethers.getSigners();
+    const token = await deploy("BiggiToken", owner.address);
+    const treasury = await deploy("BiggiTreasury", token.address, owner.address);
+    const buyback = await deploy("BiggiBuybackAgent", token.address, owner.address);
+
+    await expect(treasury.setDistributor(ethers.constants.AddressZero)).to.be.reverted;
+    await expect(treasury.setBuybackAgent(ethers.constants.AddressZero)).to.be.reverted;
+    await expect(treasury.setTokenRewards(ethers.constants.AddressZero)).to.be.reverted;
+    await expect(treasury.setReserve(ethers.constants.AddressZero)).to.be.reverted;
+    await expect(treasury.setDripDistributor(ethers.constants.AddressZero)).to.be.reverted;
+
+    await expect(buyback.rescueERC20(token.address, ethers.constants.AddressZero, 0)).to.be.reverted;
+    await expect(buyback.rescueNative(ethers.constants.AddressZero, 0)).to.be.reverted;
+  });
+
+  it("fails closed when BIGGI split targets are incomplete", async () => {
+    const [owner] = await ethers.getSigners();
+    const token = await deploy("BiggiToken", owner.address);
+    const treasury = await deploy("BiggiTreasury", token.address, owner.address);
+
+    const amount = toWei("1");
+    await (await treasury.setEcosystemBiggiCaller(owner.address, true)).wait();
+    await (await token.mint(owner.address, amount)).wait();
+    await (await token.approve(treasury.address, amount)).wait();
+
+    await expect(treasury.receiveEcosystemBiggi(amount)).to.be.reverted;
+    expect(await token.balanceOf(treasury.address)).to.equal(0);
+    expect(await treasury.totalBiggiReceivedFromEcosystem()).to.equal(0);
+  });
+
   it("executes auto buyback and routes BIGGI through treasury split into rewards/reserve/drip", async () => {
     const [owner] = await ethers.getSigners();
     const { token, reserve, drip, rewards, treasury, dripLm, buyback } = await setupBuybackStack(owner);
@@ -76,6 +110,59 @@ describe("BIGGI_MASTER: buyback/treasury/drip + multicall smoke", function () {
     expect(await dripLm.totalBought()).to.equal(acquired);
   });
 
+  it("executes full buyback -> treasury -> real dripLM sell -> reserve/moderator flow", async () => {
+    const [owner] = await ethers.getSigners();
+    const { token, reserve, drip, rewards, treasury, buyback } = await setupBuybackStack(owner);
+
+    const weth = await deploy("MockERC20", "Wrapped Native", "WNATIVE", 18);
+    const swapRouter = await deploy("MockSwapRouter", weth.address);
+    const moderator = await deploy("ModeratorCenter", owner.address);
+    const dripLm = await deploy("BiggiDripLMToModerator", token.address, swapRouter.address, owner.address);
+
+    await owner.sendTransaction({ to: swapRouter.address, value: toWei("1000") });
+    await (await drip.setDripLM(dripLm.address)).wait();
+    await (await drip.setTokensPerMintOperator(dripLm.address)).wait();
+    await (await dripLm.setDripDistributor(drip.address)).wait();
+    await (await dripLm.setReserve(reserve.address)).wait();
+    await (await dripLm.setBuybackAgent(buyback.address)).wait();
+    await (await dripLm.setModeratorCenter(moderator.address)).wait();
+    await (await dripLm.setShares(4000, 6000)).wait();
+    await (await moderator.setMultiCollection(dripLm.address)).wait();
+    await (await buyback.setDripLM(dripLm.address)).wait();
+
+    const initialRewards = await token.balanceOf(rewards.address);
+    const initialReserveBiggi = await token.balanceOf(reserve.address);
+    const initialDrip = await token.balanceOf(drip.address);
+    const initialDripAvailable = await drip.getAvailable();
+    const initialReservePol = await reserve.polBalance();
+    const weekBefore = Math.floor((await ethers.provider.getBlock("latest")).timestamp / (7 * 24 * 60 * 60));
+    const initialModeratorAllocation = await moderator.weekAllocated(weekBefore);
+
+    const nativeIn = toWei("10");
+    await (await buyback.receiveMintShare({ value: nativeIn })).wait();
+
+    const acquired = nativeIn;
+    const partRewards = acquired.mul(3400).div(10000);
+    const partReserve = acquired.mul(3300).div(10000);
+    const partDrip = acquired.sub(partRewards).sub(partReserve);
+    const dripSold = acquired.mul(70).div(100);
+    const reserveNative = dripSold.mul(4000).div(10000);
+    const moderatorNative = dripSold.sub(reserveNative);
+    const weekAfter = Math.floor((await ethers.provider.getBlock("latest")).timestamp / (7 * 24 * 60 * 60));
+
+    expect(await treasury.totalBiggiReceivedFromBuyback()).to.equal(acquired);
+    expect(await token.balanceOf(rewards.address)).to.equal(initialRewards.add(partRewards));
+    expect(await token.balanceOf(reserve.address)).to.equal(initialReserveBiggi.add(partReserve));
+    expect(await token.balanceOf(drip.address)).to.equal(initialDrip.add(partDrip).sub(dripSold));
+    expect(await drip.getAvailable()).to.equal(initialDripAvailable.add(partDrip).sub(dripSold));
+    expect(await drip.getTotalClaimed()).to.equal(dripSold);
+    expect(await token.balanceOf(swapRouter.address)).to.equal(dripSold);
+    expect(await reserve.polBalance()).to.equal(initialReservePol.add(reserveNative));
+    expect(await moderator.weekAllocated(weekAfter)).to.equal(initialModeratorAllocation.add(moderatorNative));
+    expect(await buyback.totalNativeSpent()).to.equal(nativeIn);
+    expect(await buyback.totalBiggiAcquired()).to.equal(acquired);
+  });
+
   it("forwards native to treasury on swap failure, treasury keeps it, and owner can transfer it out", async () => {
     const [owner] = await ethers.getSigners();
     const { treasury, buyback, router } = await setupBuybackStack(owner);
@@ -95,13 +182,40 @@ describe("BIGGI_MASTER: buyback/treasury/drip + multicall smoke", function () {
     expect(await buyback.totalNativeSpent()).to.equal(0);
     expect(await buyback.totalBiggiAcquired()).to.equal(0);
 
-    // Fallback receive() accepts forwarded native, but accounting counter is only for distributor entrypoints.
+    // Buyback fallback path must be explicitly accounted in treasury.
     expect(await treasury.totalPolReceivedFromDistributor()).to.equal(0);
+    expect(await treasury.totalPolReceivedFromBuyback()).to.equal(nativeIn);
 
     const nativeOut = toWei("3");
     await (await treasury.rescueETH(owner.address, nativeOut)).wait();
     const treasuryAfterRescue = await ethers.provider.getBalance(treasury.address);
     expect(treasuryAfterRescue).to.equal(treasuryAfterForward.sub(nativeOut));
+  });
+
+  it("rejects direct mint-share calls from non-distributor addresses", async () => {
+    const [owner, attacker] = await ethers.getSigners();
+    const { buyback } = await setupBuybackStack(owner);
+
+    await expect(
+      buyback.connect(attacker).receiveMintShare({ value: toWei("1") })
+    ).to.be.reverted;
+  });
+
+  it("does not consume daily quota or strand BIGGI when treasury split fails", async () => {
+    const [owner] = await ethers.getSigners();
+    const { token, treasury, policy, drip, buyback } = await setupBuybackStack(owner);
+
+    await (await drip.pause()).wait();
+
+    const nativeIn = toWei("2");
+    await (await buyback.receiveMintShare({ value: nativeIn })).wait();
+
+    expect(await policy.usedToday()).to.equal(0);
+    expect(await buyback.totalNativeSpent()).to.equal(0);
+    expect(await buyback.totalBiggiAcquired()).to.equal(0);
+    expect(await token.balanceOf(buyback.address)).to.equal(0);
+    expect(await treasury.totalBiggiReceivedFromBuyback()).to.equal(0);
+    expect(await treasury.totalPolReceivedFromBuyback()).to.equal(nativeIn);
   });
 
   it("aggregates buyback branch snapshots through Multicall2", async () => {

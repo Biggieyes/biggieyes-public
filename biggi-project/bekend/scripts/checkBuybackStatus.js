@@ -1,4 +1,4 @@
-// Spusť: npx hardhat run scripts/checkBuybackStatus.js --network amoy
+// Spusť: npx hardhat run scripts/checkBuybackStatus.js --network polygon
 const hre = require("hardhat");
 const { ethers } = hre;
 

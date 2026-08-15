@@ -272,6 +272,26 @@
             "type": "uint256"
           },
           {
+            "internalType": "uint256",
+            "name": "pendingCollectionRewards",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "pendingReserve",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "pendingTreasury",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "pendingCommunityCenter",
+            "type": "uint256"
+          },
+          {
             "internalType": "address",
             "name": "collectionRewards",
             "type": "address"
@@ -533,6 +553,16 @@
             "internalType": "uint256",
             "name": "unitReward",
             "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "emissionController",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "emissionControllerEnabled",
+            "type": "bool"
           },
           {
             "internalType": "uint8[11]",

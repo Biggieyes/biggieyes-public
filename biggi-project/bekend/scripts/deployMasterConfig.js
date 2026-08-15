@@ -1,5 +1,5 @@
 // scripts/deployMasterConfig.js
-// Spusť: npx hardhat run scripts/deployMasterConfig.js --network amoy
+// Spusť: npx hardhat run scripts/deployMasterConfig.js --network polygon
 
 const hre = require("hardhat");
 

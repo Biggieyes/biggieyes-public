@@ -1,5 +1,5 @@
 // Configure Buyback/Drip branch + whitelist collections
-// Run: npx hardhat run scripts/configureBuybackDripBranch.js --network amoy
+// Run: npx hardhat run scripts/configureBuybackDripBranch.js --network polygon
 
 const fs = require("fs");
 const path = require("path");

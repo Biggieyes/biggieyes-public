@@ -1,7 +1,7 @@
 {
-  "updated": 44,
+  "updated": 46,
   "skipped": 0,
-  "total": 44,
+  "total": 46,
   "details": [
     {
       "name": "BiggiBuybackAgent.abi.json",
@@ -27,6 +27,11 @@
       "name": "BiggiCommunityCenter.abi.json",
       "status": "updated",
       "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiCommunityCenter.sol/BiggiCommunityCenter.json"
+    },
+    {
+      "name": "BiggiCREAutomationReceiver.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiCREAutomationReceiver.sol/BiggiCREAutomationReceiver.json"
     },
     {
       "name": "BiggiDexReserveGuard.abi.json",
@@ -157,6 +162,11 @@
       "name": "BiggiTokenomikReader.abi.json",
       "status": "updated",
       "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiTokenomikReader.sol/BiggiTokenomikReader.json"
+    },
+    {
+      "name": "BiggiTokenRewardsEmissionController.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiTokenRewardsEmissionController.sol/BiggiTokenRewardsEmissionController.json"
     },
     {
       "name": "BiggiTokenRewardsReader.abi.json",

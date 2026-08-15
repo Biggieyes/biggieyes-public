@@ -1,5 +1,5 @@
 // Set LiquidityManager keeper
-// Run: npx hardhat run scripts/setLmKeeper.js --network amoy
+// Run: npx hardhat run scripts/setLmKeeper.js --network polygon
 
 const { ethers } = require("hardhat");
 

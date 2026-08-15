@@ -98,11 +98,12 @@ async function waitForRpc(timeoutMs) {
 }
 
 function startLocalNode() {
-  const npxCmd = process.platform === "win32" ? "npx.cmd" : "npx";
-  const proc = spawn(npxCmd, ["hardhat", "node", "--config", "hardhat.biggi-master.cjs"], {
+  const proc = spawn("npx", ["hardhat", "node", "--config", "hardhat.biggi-master.cjs"], {
     cwd,
     stdio: "ignore",
     detached: false,
+    shell: process.platform === "win32",
+    windowsHide: true,
   });
   return proc;
 }
@@ -151,7 +152,12 @@ async function main() {
     }
 
     if (!opts.skipDeploy) {
-      runStep("deploy:master:local", "npm", ["run", "deploy:master:local"], null, report);
+      const deployEnv = {};
+      if (opts.expectedLiquidityPath) {
+        deployEnv.LIQUIDITY_PATH = opts.expectedLiquidityPath;
+        deployEnv.EXPECT_LIQUIDITY_PATH = opts.expectedLiquidityPath;
+      }
+      runStep("deploy:master:local", "npm", ["run", "deploy:master:local"], deployEnv, report);
     }
 
     const checkEnv = {
@@ -160,6 +166,7 @@ async function main() {
     };
 
     if (opts.expectedLiquidityPath) {
+      checkEnv.LIQUIDITY_PATH = opts.expectedLiquidityPath;
       checkEnv.EXPECT_LIQUIDITY_PATH = opts.expectedLiquidityPath;
     }
     if (opts.expectedOwner) {

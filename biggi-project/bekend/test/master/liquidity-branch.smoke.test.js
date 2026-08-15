@@ -124,6 +124,28 @@ describe("BIGGI_MASTER: liquidity branch smoke", function () {
     expect(vaultLp).to.equal(vaultLpReal);
   });
 
+  it("auto-pairs when reserve BIGGI notification arrives after native reserve funding", async () => {
+    const { owner, token, reserve, vault, lpToken } = await deployLiquidityStack();
+
+    await (await reserve.setNotifyCaller(owner.address, true)).wait();
+
+    const beforePol = await reserve.polBalance();
+    expect(beforePol).to.be.gte(toWei("5"));
+    expect(await vault.lpBalanceOf(lpToken.address)).to.equal(0);
+
+    await (await token.transfer(reserve.address, toWei("10"))).wait();
+
+    await expect(reserve.notifyBiggiReceived(toWei("10"))).to.emit(reserve, "TopUpRequested");
+
+    const afterPol = await reserve.polBalance();
+    const vaultLp = await vault.lpBalanceOf(lpToken.address);
+    const vaultLpReal = await lpToken.balanceOf(vault.address);
+
+    expect(afterPol).to.be.lt(beforePol);
+    expect(vaultLp).to.be.gt(0);
+    expect(vaultLp).to.equal(vaultLpReal);
+  });
+
   it("keeper proxy checkUpkeep/performUpkeep executes pairing", async () => {
     const { reserve, orchestrator, keeperProxy } = await deployLiquidityStack();
 

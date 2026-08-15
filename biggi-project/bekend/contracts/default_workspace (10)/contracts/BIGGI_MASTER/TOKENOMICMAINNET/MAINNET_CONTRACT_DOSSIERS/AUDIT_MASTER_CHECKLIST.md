@@ -1,6 +1,8 @@
 ﻿# Mainnet Master Audit Checklist
 
-Date: 2026-03-20
+Date: 2026-06-03
+
+Status: post-deploy launch checklist. TOKENOMICMAINNET phase 1 and phase 2 are deployed on Polygon mainnet as of 2026-06-16.
 
 ## 1. Governance and ownership
 - [ ] Ownership transferred from deployer EOA to final multisig/timelock.
@@ -39,7 +41,7 @@ Date: 2026-03-20
 - [ ] MultiCollectionDistributor split sums and recipients validated.
 
 ## 7. Verification and release control
-- [ ] All contracts verified on explorer with exact constructor args.
+- [x] All 50 canonical project deployments verified on Polygon explorer (Etherscan V2 manifest, 2026-07-05).
 - [ ] ABI packages frozen for backend/frontend release.
 - [ ] Release tag created and deployment manifests archived.
 - [ ] Incident runbook and alerting thresholds approved.

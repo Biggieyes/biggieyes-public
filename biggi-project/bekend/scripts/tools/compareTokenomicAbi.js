@@ -146,16 +146,55 @@ async function main(){
     return parts;
   }
 
+  const backendRoot = path.resolve(__dirname, '..', '..');
+  const repoRoot = path.resolve(__dirname, '..', '..', '..');
+  function resolveArtifactPath(artifactRel) {
+    if (path.isAbsolute(artifactRel)) return artifactRel;
+    let normalized = artifactRel.replace(/\\/g, '/');
+    const repoName = path.basename(repoRoot);
+    const repoParent = path.basename(path.dirname(repoRoot));
+    const prefix1 = `${repoName}/`;
+    const prefix2 = `${repoParent}/${repoName}/`;
+    if (normalized.startsWith(prefix1)) normalized = normalized.slice(prefix1.length);
+    else if (normalized.startsWith(prefix2)) normalized = normalized.slice(prefix2.length);
+    return path.join(repoRoot, normalized);
+  }
+
+  function resolveSourcePath(sourceName) {
+    if (!sourceName) return null;
+    if (path.isAbsolute(sourceName) && fs.existsSync(sourceName) && fs.statSync(sourceName).isFile()) return sourceName;
+    const normalized = sourceName.replace(/\\/g, '/');
+    const candidates = [
+      path.join(backendRoot, normalized),
+      path.join(repoRoot, normalized),
+    ];
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) return candidate;
+    }
+    return null;
+  }
+
+  let processingErrors = 0;
+
   for(const entry of index){
     try{
       const abiPath = path.join(abiDir, entry.output);
       const abi = readJson(abiPath);
       const contractName = entry.contract;
-      // locate source file containing contract/library/interface
-      let src = solFiles.find(sf => {
-        const c = fs.readFileSync(sf,'utf8');
-        return new RegExp('\\b(?:contract|library|interface)\\s+' + contractName + '\\b').test(c);
-      });
+      const artifactPath = resolveArtifactPath(entry.artifact || '');
+      let src = null;
+      let artifact = null;
+      if (artifactPath && fs.existsSync(artifactPath)) {
+        artifact = readJson(artifactPath);
+        src = resolveSourcePath(artifact.sourceName);
+      }
+      if (!src) {
+        src = solFiles.find(sf => {
+          const c = fs.readFileSync(sf,'utf8');
+          return new RegExp('\\b(?:contract|library|interface)\\s+' + contractName + '\\b').test(c);
+        });
+      }
+      if (src) solByName.set(contractName, src);
       let srcContent = src ? fs.readFileSync(src,'utf8') : null;
       const abiFuncs = abi.filter(x=>x.type==='function').map(f=>({name:f.name,arity:(f.inputs||[]).length}));
       const abiEvents = abi.filter(x=>x.type==='event').map(e=>({name:e.name,arity:(e.inputs||[]).length}));
@@ -208,6 +247,7 @@ async function main(){
         publicVars: srcParts.varNames
       };
     }catch(e){
+      processingErrors++;
       console.error('error processing', entry.contract, e.stack||e);
     }
   }
@@ -231,6 +271,7 @@ async function main(){
   }
   report.summary.totalContracts = total;
   report.summary.contractsWithIssues = issues;
+  report.summary.processingErrors = processingErrors;
 
   const outDir = path.join(__dirname, 'reports');
   if(!fs.existsSync(outDir)) fs.mkdirSync(outDir, {recursive:true});
@@ -238,6 +279,9 @@ async function main(){
   fs.writeFileSync(outFile, JSON.stringify(report,null,2));
   console.log('Report written to', outFile);
   console.log('Summary:', report.summary);
+  if (processingErrors > 0 || total === 0) {
+    process.exitCode = 1;
+  }
 }
 
 main().catch(e=>{ console.error(e); process.exit(1); });

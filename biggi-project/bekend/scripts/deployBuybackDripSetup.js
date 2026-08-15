@@ -1,5 +1,5 @@
 // Deploy BiggiBuybackDripSetup (orchestrator)
-// Run: npx hardhat run scripts/deployBuybackDripSetup.js --network amoy
+// Run: npx hardhat run scripts/deployBuybackDripSetup.js --network polygon
 // Env: BUYBACK_AGENT, DRIP_LM, DRIP_DISTRIBUTOR, RESERVE, TREASURY, ROUTER, POLICY (optional)
 
 const { ethers } = require("hardhat");

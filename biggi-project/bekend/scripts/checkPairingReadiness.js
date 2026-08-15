@@ -1,5 +1,5 @@
 // scripts/checkPairingReadiness.js
-// Spusť: npx hardhat run scripts/checkPairingReadiness.js --network amoy
+// Spusť: npx hardhat run scripts/checkPairingReadiness.js --network polygon
 // Zkontroluje, proč executePairing nemintí LP: balancí na Reserve/LM, quote z routeru, callStatic executePairing.
 
 const path = require("path");

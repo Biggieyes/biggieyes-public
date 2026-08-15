@@ -1,8 +1,8 @@
 // scripts/updateKeepers.js
-// Spusť: npx hardhat run scripts/updateKeepers.js --network amoy
+// Spusť: npx hardhat run scripts/updateKeepers.js --network polygon
 //
 // Env:
-//  AMOY_RPC_URL, PRIVATE_KEY
+//  POLYGON_RPC_URL, PRIVATE_KEY
 //  UPKEEP_PROXY   = adresa BiggiBuybackUpkeepProxy
 //  DRIP_KEEPER_PROXY = adresa DripKeeperProxy
 //  KEEPER_ADDR    = adresa, kterou whitelis­tujeme do DripKeeperProxy (default signer)

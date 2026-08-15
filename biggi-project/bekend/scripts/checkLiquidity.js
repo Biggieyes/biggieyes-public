@@ -1,6 +1,6 @@
 // Checks WETH-BIGGI liquidity on the router/factory and prints reserves and quotes
 // Usage: node scripts/checkLiquidity.js
-// Requires PRIVATE_KEY (for provider access only), AMOY_RPC_URL in scripts/.env
+// Requires PRIVATE_KEY (for provider access only), POLYGON_RPC_URL in scripts/.env
 
 require("dotenv").config({ path: require("path").join(__dirname, ".env") });
 const { ethers } = require("ethers");
@@ -12,8 +12,8 @@ const WETH = process.env.WETH || "0x9984a18ee1f243992aF8d6a5E40c0373F88D99Ef";
 const BIGGI = process.env.BIGGI || "0x45C6cC46dcBf54E97bDf89e9F739F29Ce4ED0dB7";
 
 async function main() {
-  const rpc = process.env.AMOY_RPC_URL || "https://polygon-amoy-bor.publicnode.com";
-  const provider = new ethers.providers.JsonRpcProvider(rpc, { name: "amoy", chainId: 80002 });
+  const rpc = process.env.POLYGON_RPC_URL || "https://polygon.drpc.org";
+  const provider = new ethers.providers.JsonRpcProvider(rpc, { name: "polygon", chainId: 137 });
   if (!process.env.PRIVATE_KEY) {
     console.warn("Warning: PRIVATE_KEY missing in scripts/.env (only read calls used).");
   }

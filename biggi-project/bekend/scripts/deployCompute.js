@@ -1,5 +1,5 @@
 // Deploy BiggiCompute (helper for Main1 background pricing)
-// Run: npx hardhat run scripts/deployCompute.js --network amoy
+// Run: npx hardhat run scripts/deployCompute.js --network polygon
 // Env (opt): MAX_FEE_GWEI / MAX_PRIORITY_FEE_GWEI for gas control
 
 const hre = require("hardhat");

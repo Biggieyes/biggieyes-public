@@ -2,30 +2,30 @@
 version: 0.1.0
 description: >
   CRE workflow skeleton for post-redeem monitoring.
-  It combines a Polygon Amoy on-chain VRF signal with one external API signal.
+  It combines a Polygon mainnet on-chain VRF signal with one external API signal.
 
 metadata:
   project: BiggiEyes
-  network: polygon-amoy
-  chain_id: 80002
+  network: polygon-mainnet
+  chain_id: 137
 
 env:
-  AMOY_RPC_URL: ${AMOY_RPC_URL}
+  POLYGON_RPC_URL: ${POLYGON_RPC_URL}
   VRF_ROUTER_ADDRESS: ${VRF_ROUTER_ADDRESS}
   EXTERNAL_SIGNAL_URL: ${EXTERNAL_SIGNAL_URL}
 
 triggers:
   - id: vrf_fulfill_started
     type: onchain_event
-    chain: polygon-amoy
-    rpc_url: ${AMOY_RPC_URL}
+    chain: polygon-mainnet
+    rpc_url: ${POLYGON_RPC_URL}
     contract: ${VRF_ROUTER_ADDRESS}
     event: VRFFulfillStarted(uint256,address)
 
 steps:
   - id: read_request
     type: contract_read
-    chain: polygon-amoy
+    chain: polygon-mainnet
     contract: ${VRF_ROUTER_ADDRESS}
     function: getRequest
     args:

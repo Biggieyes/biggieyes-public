@@ -4,11 +4,16 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./Library/BiggiBpsLib.sol";
-import "./Library/BiggiErrorsLib.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "./TOKENOMIC_LIBRARY/BiggiBpsLib.sol";
+import "./TOKENOMIC_LIBRARY/BiggiErrorsLib.sol";
 
 interface IBiggiDripDistributorDeposit {
     function depositTokens(uint256 amount) external;
+}
+
+interface IBiggiReserveNotify {
+    function notifyBiggiReceived(uint256 amount) external;
 }
 
 /**
@@ -18,7 +23,7 @@ interface IBiggiDripDistributorDeposit {
  * - rozdělí přijaté BIGGI: 34% -> tokenRewards, 33% -> reserveAddr, 33% -> dripDistributor
  * - přijímá POL z Distributora přes depositPolFromDistributor() a drží ho jako emergency
  */
-contract BiggiTreasury is Ownable {
+contract BiggiTreasury is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     IERC20 public immutable BIGGI;
@@ -29,8 +34,12 @@ contract BiggiTreasury is Ownable {
     address public reserveAddr;      // příjemce 33%
     address public dripDistributor;  // příjemce 33%
 
+    mapping(address => bool) public ecosystemBiggiCallers;
+
     uint256 public totalBiggiReceived;
+    uint256 public totalEcosystemBiggiReceived;
     uint256 public totalPolReceived;
+    uint256 public totalPolReceivedFromBuybackFallback;
     bool public historicalTotalsSeeded;
 
     event DistributorSet(address indexed oldAddr, address indexed newAddr);
@@ -39,7 +48,10 @@ contract BiggiTreasury is Ownable {
     event ReserveSet(address indexed oldAddr, address indexed newAddr);
     event DripDistributorSet(address indexed oldAddr, address indexed newAddr);
     event BuybackReceived(uint256 amount, uint256 toRewards, uint256 toReserve, uint256 toDrip);
+    event EcosystemBiggiCallerSet(address indexed caller, bool allowed);
+    event EcosystemBiggiReceived(address indexed caller, uint256 amount, uint256 toRewards, uint256 toReserve, uint256 toDrip);
     event PolFromDistributor(uint256 amount, uint256 totalReceived);
+    event PolFromBuybackFallback(uint256 amount, uint256 totalReceivedFallback);
     event HistoricalTotalsSeeded(uint256 totalBiggiReceived, uint256 totalPolReceived);
 
     constructor(address biggiToken, address initialOwner) Ownable(initialOwner) {
@@ -51,28 +63,39 @@ contract BiggiTreasury is Ownable {
 
     /* ===== Settery (onlyOwner) ===== */
     function setDistributor(address d) external onlyOwner {
+        if (d == address(0)) revert BiggiErrorsLib.ZeroAddress();
         emit DistributorSet(distributor, d);
         distributor = d;
     }
 
     function setBuybackAgent(address b) external onlyOwner {
+        if (b == address(0)) revert BiggiErrorsLib.ZeroAddress();
         emit BuybackAgentSet(buybackAgent, b);
         buybackAgent = b;
     }
 
     function setTokenRewards(address r) external onlyOwner {
+        if (r == address(0)) revert BiggiErrorsLib.ZeroAddress();
         emit TokenRewardsSet(tokenRewards, r);
         tokenRewards = r;
     }
 
     function setReserve(address r) external onlyOwner {
+        if (r == address(0)) revert BiggiErrorsLib.ZeroAddress();
         emit ReserveSet(reserveAddr, r);
         reserveAddr = r;
     }
 
     function setDripDistributor(address d) external onlyOwner {
+        if (d == address(0)) revert BiggiErrorsLib.ZeroAddress();
         emit DripDistributorSet(dripDistributor, d);
         dripDistributor = d;
+    }
+
+    function setEcosystemBiggiCaller(address caller, bool allowed) external onlyOwner {
+        if (caller == address(0)) revert BiggiErrorsLib.ZeroAddress();
+        ecosystemBiggiCallers[caller] = allowed;
+        emit EcosystemBiggiCallerSet(caller, allowed);
     }
 
     function seedHistoricalTotals(uint256 biggiReceived_, uint256 polReceived_) external onlyOwner {
@@ -85,12 +108,19 @@ contract BiggiTreasury is Ownable {
 
     /* ===== Inflow POL z Distributoru (10% podíl apod.) =====
            Distributor musí volat tuto funkci. POL zůstanou v treasury. */
-    function depositPolFromDistributor() external payable {
+    function depositPolFromDistributor() external payable nonReentrant {
         _recordPolFromDistributor();
     }
 
-    function receiveMintShare() external payable {
+    function receiveMintShare() external payable nonReentrant {
         _recordPolFromDistributor();
+    }
+
+    function receiveBuybackFallback() external payable nonReentrant {
+        if (msg.sender != buybackAgent) revert BiggiErrorsLib.NotBuybackAgent();
+        if (msg.value == 0) revert BiggiErrorsLib.AmountZero();
+        totalPolReceivedFromBuybackFallback += msg.value;
+        emit PolFromBuybackFallback(msg.value, totalPolReceivedFromBuybackFallback);
     }
 
     function _recordPolFromDistributor() internal {
@@ -104,9 +134,10 @@ contract BiggiTreasury is Ownable {
        BuybackAgent nejprve approve(treasury, amount) a poté zavolá buybackDepositAndSplit(amount).
        Treasury PULLne tokeny pomocí safeTransferFrom(msg.sender, this, amount) a rozdělí je.
     */
-    function buybackDepositAndSplit(uint256 amount) external {
+    function buybackDepositAndSplit(uint256 amount) external nonReentrant {
         if (msg.sender != buybackAgent) revert BiggiErrorsLib.NotBuybackAgent();
         if (amount == 0) revert BiggiErrorsLib.AmountZero();
+        _requireBiggiSplitTargets();
 
         // Pull tokeny z buyback agenta (musí mít allowance)
         BIGGI.safeTransferFrom(msg.sender, address(this), amount);
@@ -114,10 +145,23 @@ contract BiggiTreasury is Ownable {
         _splitBuybackBiggi(amount);
     }
 
-    function ownerDepositAndSplit(uint256 amount) external onlyOwner {
+    function ownerDepositAndSplit(uint256 amount) external onlyOwner nonReentrant {
         if (amount == 0) revert BiggiErrorsLib.AmountZero();
+        _requireBiggiSplitTargets();
         BIGGI.safeTransferFrom(msg.sender, address(this), amount);
         _splitBuybackBiggi(amount);
+    }
+
+    function receiveEcosystemBiggi(uint256 amount) external nonReentrant {
+        if (!ecosystemBiggiCallers[msg.sender]) revert BiggiErrorsLib.NotAllowedCaller();
+        if (amount == 0) revert BiggiErrorsLib.AmountZero();
+        _requireBiggiSplitTargets();
+
+        BIGGI.safeTransferFrom(msg.sender, address(this), amount);
+        totalEcosystemBiggiReceived += amount;
+
+        (uint256 partRewards, uint256 partReserve, uint256 partDrip) = _splitBiggi(amount);
+        emit EcosystemBiggiReceived(msg.sender, amount, partRewards, partReserve, partDrip);
     }
 
     function _splitBuybackBiggi(uint256 amount) internal {
@@ -126,9 +170,9 @@ contract BiggiTreasury is Ownable {
         totalBiggiReceived += amount;
 
         // vypočítat části přes BiggiBpsLib.part (34 % / 33 % / 33 %)
-        uint256 partRewards = BiggiBpsLib.part(amount, 3400); // 34%
-        uint256 partReserve = BiggiBpsLib.part(amount, 3300); // 33%
-        uint256 partDrip    = amount - partRewards - partReserve; // zbytek (cca 33% +/- zaokrouhlení)
+        uint256 partRewards = BiggiBpsLib.part(amount, BiggiBpsLib.TREASURY_TO_REWARDS_BPS);
+        uint256 partReserve = BiggiBpsLib.part(amount, BiggiBpsLib.TREASURY_TO_RESERVE_BPS);
+        uint256 partDrip    = amount - partRewards - partReserve;
 
         // pokusit se rozeslat, pokud jsou cíle nastaveny; jinak ponechat v kontraktu
         if (tokenRewards != address(0) && partRewards > 0) {
@@ -136,6 +180,7 @@ contract BiggiTreasury is Ownable {
         }
         if (reserveAddr != address(0) && partReserve > 0) {
             BIGGI.safeTransfer(reserveAddr, partReserve);
+            IBiggiReserveNotify(reserveAddr).notifyBiggiReceived(partReserve);
         }
         if (dripDistributor != address(0) && partDrip > 0) {
             _approveToken(dripDistributor, partDrip);
@@ -143,6 +188,24 @@ contract BiggiTreasury is Ownable {
         }
 
         emit BuybackReceived(amount, partRewards, partReserve, partDrip);
+    }
+
+    function _splitBiggi(uint256 amount) internal returns (uint256 partRewards, uint256 partReserve, uint256 partDrip) {
+        partRewards = BiggiBpsLib.part(amount, BiggiBpsLib.TREASURY_TO_REWARDS_BPS);
+        partReserve = BiggiBpsLib.part(amount, BiggiBpsLib.TREASURY_TO_RESERVE_BPS);
+        partDrip = amount - partRewards - partReserve;
+
+        if (tokenRewards != address(0) && partRewards > 0) {
+            BIGGI.safeTransfer(tokenRewards, partRewards);
+        }
+        if (reserveAddr != address(0) && partReserve > 0) {
+            BIGGI.safeTransfer(reserveAddr, partReserve);
+            IBiggiReserveNotify(reserveAddr).notifyBiggiReceived(partReserve);
+        }
+        if (dripDistributor != address(0) && partDrip > 0) {
+            _approveToken(dripDistributor, partDrip);
+            IBiggiDripDistributorDeposit(dripDistributor).depositTokens(partDrip);
+        }
     }
 
     function _approveToken(address spender, uint256 amount) internal {
@@ -155,6 +218,12 @@ contract BiggiTreasury is Ownable {
             abi.encodeWithSelector(IERC20.approve.selector, spender, amount)
         );
         require(ok1 && (d1.length == 0 || abi.decode(d1, (bool))), "approve failed");
+    }
+
+    function _requireBiggiSplitTargets() internal view {
+        if (tokenRewards == address(0) || reserveAddr == address(0) || dripDistributor == address(0)) {
+            revert BiggiErrorsLib.ZeroAddress();
+        }
     }
 
     /* ===== Views pro frontend / audit ===== */
@@ -170,17 +239,25 @@ contract BiggiTreasury is Ownable {
         return totalBiggiReceived;
     }
 
+    function totalBiggiReceivedFromEcosystem() external view returns (uint256) {
+        return totalEcosystemBiggiReceived;
+    }
+
     function totalPolReceivedFromDistributor() external view returns (uint256) {
         return totalPolReceived;
     }
 
+    function totalPolReceivedFromBuyback() external view returns (uint256) {
+        return totalPolReceivedFromBuybackFallback;
+    }
+
     /* ===== Rescue (owner) ===== */
-    function rescueERC20(address token, address to, uint256 amount) external onlyOwner {
+    function rescueERC20(address token, address to, uint256 amount) external onlyOwner nonReentrant {
         if (to == address(0)) revert BiggiErrorsLib.ZeroAddress();
         IERC20(token).safeTransfer(to, amount);
     }
 
-    function rescueETH(address payable to, uint256 amount) external onlyOwner {
+    function rescueETH(address payable to, uint256 amount) external onlyOwner nonReentrant {
         if (to == address(0)) revert BiggiErrorsLib.ZeroAddress();
         (bool ok, ) = to.call{value: amount}("");
         require(ok, "rescue failed");
@@ -189,4 +266,3 @@ contract BiggiTreasury is Ownable {
     receive() external payable {}
     fallback() external payable {}
 }
-

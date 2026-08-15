@@ -1,4 +1,4 @@
-// Spusť: npx hardhat run scripts/checkDripBranch.js --network amoy
+// Spusť: npx hardhat run scripts/checkDripBranch.js --network polygon
 // Čte stav DripLM, DripDistributor, Treasury, Distributoru a pump bundle v MasterConfig.
 
 const path = require("path");

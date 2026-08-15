@@ -37,6 +37,7 @@ Aggregates buyback, treasury, policy, and upkeep proxy state for UI/agent inspec
 - `biggiBalance()`
 - `totalPolReceivedFromDistributor()`
 - `totalBiggiReceivedFromBuyback()`
+- `totalBiggiReceivedFromEcosystem()`
 - `swapSlippageBps()`
 - `txDeadlineSec()`
 - … plus 10 more

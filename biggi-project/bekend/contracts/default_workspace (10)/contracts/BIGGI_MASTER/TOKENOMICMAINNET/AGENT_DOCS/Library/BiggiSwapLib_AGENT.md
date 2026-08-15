@@ -1,4 +1,4 @@
-# Agent documentation — Library/BiggiSwapLib.sol
+# Agent documentation — TOKENOMIC_LIBRARY/BiggiSwapLib.sol
 
 **Role:** Swap math/helper library
 

@@ -1,9 +1,9 @@
-﻿// Set metadata URIs and batch NFT background/block data for Main1
-// Env (opt): MAIN, BATCH_JSON, SKIP_URIS=1, SKIP_BATCHES=1
+// Set metadata URIs and batch NFT background/block data for Main1
+// Env (opt): MAIN, TICKET_HUB, BATCH_JSON, SKIP_URIS=1, SKIP_BATCHES=1
 //            ORANGE_METADATA, BLACK_METADATA, WHITE_METADATA, BROWN_METADATA, BLUE_METADATA,
 //            GREEN_METADATA, VIOLET_METADATA, RED_METADATA, PINK_METADATA, RAINBOW_METADATA,
 //            SPECIAL_CHARACTERS, RAINBOW_REWARDS, MINT_TICKET
-// Run: MAIN=<addr> npx hardhat run scripts/setMain1MetadataAndBatches.js --network amoy
+// Run: MAIN=<addr> npx hardhat run scripts/setMain1MetadataAndBatches.js --network polygon
 
 const fs = require("fs");
 const path = require("path");
@@ -12,7 +12,6 @@ const addresses = require("../addresses.json");
 
 const URI_REWARDS = 0;
 const URI_CHARACTERS = 1;
-const URI_TICKET = 2;
 const URI_BLOCK = 3;
 
 function requireAddress() {
@@ -21,6 +20,15 @@ function requireAddress() {
     addresses.MAIN ||
     addresses.COLLECTION ||
     addresses.COLLECTION_VRF
+  );
+}
+
+function optionalTicketHubAddress() {
+  return (
+    process.env.TICKET_HUB ||
+    addresses.TICKET_HUB ||
+    addresses.TICKETHUB ||
+    addresses.TICKET_HUB_ADDRESS
   );
 }
 
@@ -122,7 +130,14 @@ async function main() {
 
     await (await main.setURI(URI_REWARDS, 0, rewardsUri)).wait();
     await (await main.setURI(URI_CHARACTERS, 0, charactersUri)).wait();
-    await (await main.setURI(URI_TICKET, 0, ticketUri)).wait();
+
+    const ticketHubAddr = optionalTicketHubAddress();
+    if (ticketHubAddr) {
+      const ticketHub = await hre.ethers.getContractAt("BiggiTicketHub", ticketHubAddr, signer);
+      await (await ticketHub.setTicketBaseURI(ticketUri)).wait();
+    } else {
+      console.warn("WARN: TICKET_HUB not set; ticketBaseURI was not updated.");
+    }
 
     for (let i = 1; i <= 10; i++) {
       const uri = blockUris[i];

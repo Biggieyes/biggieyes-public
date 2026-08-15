@@ -56,6 +56,43 @@ describe("BIGGI_MASTER: moderator + drip consistency smoke", function () {
     expect(afterReservePol.sub(beforeReservePol)).to.equal(toWei("28"));
   });
 
+  it("does not claim drip tokens when router quote cannot produce protected minOut", async () => {
+    const [owner] = await ethers.getSigners();
+
+    const token = await deploy("BiggiToken", owner.address);
+    const reserve = await deploy("BiggiReserveV4", token.address, owner.address);
+    const dripDistributor = await deploy("BiggiDripDistributor", token.address, owner.address);
+    const weth = await deploy("MockERC20", "Wrapped Native", "WNATIVE", 18);
+    const swapRouter = await deploy("MockSwapRouter", weth.address);
+    const moderator = await deploy("ModeratorCenter", owner.address);
+    const dripLM = await deploy("BiggiDripLMToModerator", token.address, swapRouter.address, owner.address);
+
+    await (await token.setReserve(reserve.address)).wait();
+    await (await token.setDripDistributor(dripDistributor.address)).wait();
+    await (await token.setTokenRewards(owner.address)).wait();
+    await (await token.setMarketingSupport(owner.address)).wait();
+    await (await dripDistributor.setTreasury(owner.address)).wait();
+    await (await token.initialDistribute()).wait();
+
+    await (await dripDistributor.setDripLM(dripLM.address)).wait();
+    await (await dripDistributor.setTokensPerMintOperator(dripLM.address)).wait();
+    await (await dripLM.setDripDistributor(dripDistributor.address)).wait();
+    await (await dripLM.setReserve(reserve.address)).wait();
+    await (await dripLM.setBuybackAgent(owner.address)).wait();
+    await (await dripLM.setModeratorCenter(moderator.address)).wait();
+    await (await moderator.setMultiCollection(dripLM.address)).wait();
+    await (await swapRouter.setFailQuote(true)).wait();
+
+    const beforeAvailable = await dripDistributor.getAvailable();
+    const beforeClaimed = await dripDistributor.getTotalClaimed();
+
+    await expect(dripLM.dripOnBuy(toWei("100"))).to.emit(dripLM, "DripFailed").withArgs("minOut==0");
+
+    expect(await dripDistributor.getAvailable()).to.equal(beforeAvailable);
+    expect(await dripDistributor.getTotalClaimed()).to.equal(beforeClaimed);
+    expect(await token.balanceOf(dripLM.address)).to.equal(0);
+  });
+
   it("distributes weekly moderator allocation by slot weights", async () => {
     const [owner, alice, bob, carol, dave, erin] = await ethers.getSigners();
     const moderator = await deploy("ModeratorCenter", owner.address);
@@ -114,5 +151,48 @@ describe("BIGGI_MASTER: moderator + drip consistency smoke", function () {
     expect(await moderator.weekUniqueCount(week, 1)).to.equal(0);
     expect(await moderator.weekTicketCount(week, 0)).to.equal(1);
     expect(await moderator.weekTicketCount(week, 1)).to.equal(1);
+  });
+
+  it("keeps weekly allocations isolated until the matching week is explicitly distributed", async () => {
+    const [owner, alice, bob, buyerA, buyerB] = await ethers.getSigners();
+    const moderator = await deploy("ModeratorCenter", owner.address);
+
+    const refA = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("slot-week-A"));
+    const refB = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("slot-week-B"));
+
+    await (await moderator.configureSlot(0, true, true, alice.address)).wait();
+    await (await moderator.configureSlot(1, true, false, bob.address)).wait();
+    await (await moderator.setReferralHash(0, refA)).wait();
+    await (await moderator.setReferralHash(1, refB)).wait();
+    await (await moderator.setReporter(owner.address, true)).wait();
+    await (await moderator.setMultiCollection(owner.address)).wait();
+
+    const week0 = Math.floor((await ethers.provider.getBlock("latest")).timestamp / (7 * 24 * 60 * 60));
+    await (await moderator.notifyAllocation({ value: toWei("10") })).wait();
+    await (await moderator.recordTicketSale(refA, buyerA.address)).wait();
+
+    await expect(moderator.withdrawToOwner(toWei("1"))).to.be.revertedWith("insufficient");
+
+    await ethers.provider.send("evm_increaseTime", [7 * 24 * 60 * 60 + 5]);
+    await ethers.provider.send("evm_mine", []);
+
+    const week1 = Math.floor((await ethers.provider.getBlock("latest")).timestamp / (7 * 24 * 60 * 60));
+    expect(week1).to.equal(week0 + 1);
+
+    await (await moderator.recordTicketSale(refB, buyerB.address)).wait();
+    await expect(moderator.distributeWeekRewards()).to.be.revertedWith("no funds to distribute");
+
+    const beforeAlice = await ethers.provider.getBalance(alice.address);
+    const beforeBob = await ethers.provider.getBalance(bob.address);
+
+    await (await moderator.distributeWeekRewardsForWeek(week0)).wait();
+
+    const afterAlice = await ethers.provider.getBalance(alice.address);
+    const afterBob = await ethers.provider.getBalance(bob.address);
+
+    expect(afterAlice.sub(beforeAlice)).to.equal(toWei("10"));
+    expect(afterBob.sub(beforeBob)).to.equal(0);
+    expect(await moderator.weekDistributed(week0)).to.equal(toWei("10"));
+    expect(await moderator.totalAllocatedOutstanding()).to.equal(0);
   });
 });

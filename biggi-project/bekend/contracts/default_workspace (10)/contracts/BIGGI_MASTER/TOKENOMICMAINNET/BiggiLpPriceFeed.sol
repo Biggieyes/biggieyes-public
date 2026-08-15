@@ -9,6 +9,7 @@ pragma solidity ^0.8.24;
     - WETH()
     - pair()
     - readReserves() => (bool ok, uint256 reserveBiggi, uint256 reserveWeth, uint32 blockTimestampLast)
+    - latestAnswer() => int256
     - latestRoundData() => (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
     - decimals()
 
@@ -104,6 +105,10 @@ contract BiggiLpPriceFeed is Ownable {
         _startedAt = startedAt;
         _updatedAt = updatedAt;
         _answeredInRound = answeredInRound;
+    }
+
+    function latestAnswer() external view returns (int256) {
+        return answer;
     }
 
     function readReserves()

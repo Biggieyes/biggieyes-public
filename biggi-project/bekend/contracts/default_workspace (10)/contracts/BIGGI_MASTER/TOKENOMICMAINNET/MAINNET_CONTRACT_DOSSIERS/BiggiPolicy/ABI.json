@@ -21,6 +21,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "NotBuybackAgent",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -46,6 +51,25 @@
     "inputs": [],
     "name": "ZeroAddress",
     "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "oldAgent",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newAgent",
+        "type": "address"
+      }
+    ],
+    "name": "BuybackAgentSet",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -188,6 +212,19 @@
   },
   {
     "inputs": [],
+    "name": "buybackAgent",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "buybacksPaused",
     "outputs": [
       {
@@ -267,6 +304,19 @@
   {
     "inputs": [],
     "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "agent",
+        "type": "address"
+      }
+    ],
+    "name": "setBuybackAgent",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

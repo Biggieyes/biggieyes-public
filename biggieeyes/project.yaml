@@ -9,7 +9,7 @@
 #   account:
 #     workflow-owner-address: "0x123..."            # Optional: Owner wallet/MSIG address (used for --unsigned transactions)
 #   rpcs:
-#     - chain-name: ethereum-testnet-sepolia        # Required if your workflow interacts with this chain
+#     - chain-name: polygon-mainnet                 # Required if your workflow interacts with this chain
 #       url: "<select your own rpc url>"
 #     - chain-name: ethereum-mainnet                # Required if your workflow interacts with this chain
 #       url: "<select your own rpc url>"
@@ -26,11 +26,11 @@
 # ==========================================================================
 staging-settings:
   rpcs:
-    - chain-name: ethereum-testnet-sepolia
-      url: https://ethereum-sepolia-rpc.publicnode.com
+    - chain-name: polygon-mainnet
+      url: https://polygon.drpc.org
 
 # ==========================================================================
 production-settings:
   rpcs:
-    - chain-name: ethereum-testnet-sepolia
-      url: https://ethereum-sepolia-rpc.publicnode.com
+    - chain-name: polygon-mainnet
+      url: https://polygon.drpc.org

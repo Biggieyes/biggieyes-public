@@ -1,6 +1,6 @@
 // Whitelist collection in MultiCollectionDistributor (addCollection)
 // Usage: COLLECTION=0xYourCollection node scripts/whitelistCollection.js
-// Env: PRIVATE_KEY, AMOY_RPC_URL, DISTRIBUTOR
+// Env: PRIVATE_KEY, POLYGON_RPC_URL, DISTRIBUTOR
 
 require("dotenv").config({ path: require("path").join(__dirname, ".env") });
 const { ethers } = require("ethers");
@@ -14,8 +14,8 @@ if (!process.env.PRIVATE_KEY) throw new Error("PRIVATE_KEY missing in scripts/.e
 const ABI = ["function addCollection(address coll) external", "function collections(address) view returns (bool)"];
 
 async function main() {
-  const rpc = process.env.AMOY_RPC_URL || "https://polygon-amoy-bor.publicnode.com";
-  const provider = new ethers.providers.JsonRpcProvider(rpc, { name: "amoy", chainId: 80002 });
+  const rpc = process.env.POLYGON_RPC_URL || "https://polygon.drpc.org";
+  const provider = new ethers.providers.JsonRpcProvider(rpc, { name: "polygon", chainId: 137 });
   const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
   const gasPrio = ethers.utils.parseUnits(process.env.GAS_PRIORITY_GWEI || "40", "gwei");

@@ -1,5 +1,5 @@
 // scripts/deployAndWireLM.js
-// Run: npx hardhat run scripts/deployAndWireLM.js --network amoy
+// Run: npx hardhat run scripts/deployAndWireLM.js --network polygon
 // Deploys a new BiggiLiquidityManager, wires Reserve/Vault/Orchestrator/MasterConfig,
 // and applies the live automation defaults used by the liquidity stack.
 

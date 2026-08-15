@@ -1,0 +1,54 @@
+{
+  "startedAt": "2026-07-05T19:43:58.894Z",
+  "status": "failed",
+  "options": {
+    "network": "polygon",
+    "envFile": "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\.env.core.polygon",
+    "addressesFile": "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\addresses.master.json",
+    "expectLiquidityPath": "",
+    "expectOwner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+    "skipCompile": false,
+    "skipTests": false,
+    "skipValidate": false,
+    "skipCheck": false,
+    "requireCode": true,
+    "withForkTests": false,
+    "reportPath": "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\reports\\master-mainnet-preflight-polygon.json"
+  },
+  "steps": [
+    {
+      "name": "compile:master",
+      "command": "npm run compile:master",
+      "startedAt": "2026-07-05T19:43:58.901Z",
+      "finishedAt": "2026-07-05T19:44:06.162Z",
+      "durationMs": 7261,
+      "status": 0
+    },
+    {
+      "name": "test:master",
+      "command": "npm run test:master",
+      "startedAt": "2026-07-05T19:44:06.162Z",
+      "finishedAt": "2026-07-05T19:45:19.833Z",
+      "durationMs": 73671,
+      "status": 0
+    },
+    {
+      "name": "test:master:fork",
+      "status": "skipped",
+      "reason": "not requested",
+      "startedAt": "2026-07-05T19:45:19.833Z",
+      "finishedAt": "2026-07-05T19:45:19.833Z",
+      "durationMs": 0
+    },
+    {
+      "name": "validate:master:polygon:strict",
+      "command": "node scripts/master/validateMainnetEnv.js --network polygon --strict --env C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\.env.core.polygon --expect-owner 0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "startedAt": "2026-07-05T19:45:19.833Z",
+      "finishedAt": "2026-07-05T19:45:20.399Z",
+      "durationMs": 566,
+      "status": 1
+    }
+  ],
+  "error": "validate:master:polygon:strict failed with status 1",
+  "finishedAt": "2026-07-05T19:45:20.400Z"
+}

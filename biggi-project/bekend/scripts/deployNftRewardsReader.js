@@ -1,6 +1,6 @@
 // Deploy BiggiNftRewardsReader
 // Env: NFT_REWARDS (optional, fallback addresses.json)
-// Run: NFT_REWARDS=<addr> WRITE_ADDR=1 npx hardhat run scripts/deployNftRewardsReader.js --network amoy
+// Run: NFT_REWARDS=<addr> WRITE_ADDR=1 npx hardhat run scripts/deployNftRewardsReader.js --network polygon
 
 const fs = require("fs");
 const path = require("path");

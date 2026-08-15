@@ -1,6 +1,6 @@
 # BIGGI Mainnet FAQ (community + investori)
 
-Datum: 2026-03-20
+Datum: 2026-06-03
 
 ## 1) Proc je mainnet architektura rozdelena na CORE a TOKENOMICMAINNET?
 Aby byly jasne oddeleny:
@@ -68,5 +68,15 @@ Nastaveni je navrzene tak, aby slo rozsirovat bez prepisu core logiky.
 4. Finalni fork rehearsal + release sign-off + explorer verification.
 
 ## Poznamka
-Dokument popisuje aktualni stav kodu a release-pripravy k 2026-03-20.
+Dokument popisuje aktualni stav kodu a release-pripravy k 2026-06-03.
 Neni to investicni doporuceni ani finalni release announcement.
+
+## Interni navazny material
+Pro onboarding noveho moderatora je pripraven dokument:
+`README_MODERATOR_MAINNET_CS.md`
+
+Detailni README primo ke moderatorskemu kontraktu:
+`README_ModeratorCenter_CS.md`
+
+English version:
+`README_MODERATOR_MAINNET_EN.md`

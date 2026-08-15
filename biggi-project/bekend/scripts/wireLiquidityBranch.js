@@ -1,6 +1,6 @@
-// scripts/wireLiquidityBranch.js
-// Spusť: npx hardhat run scripts/wireLiquidityBranch.js --network amoy
-// Nastaví Reserve -> LM -> Vault propojení a whitelisting páru. Volitelně spustí jeden pairing (executePairing) přes keeper/owner.
+﻿// scripts/wireLiquidityBranch.js
+// SpusĹĄ: npx hardhat run scripts/wireLiquidityBranch.js --network polygon
+// NastavĂ­ Reserve -> LM -> Vault propojenĂ­ a whitelisting pĂˇru. VolitelnÄ› spustĂ­ jeden pairing (executePairing) pĹ™es keeper/owner.
 
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
@@ -33,7 +33,7 @@ function gasOverrides() {
 async function main() {
   const env = process.env;
   const required = ["RESERVE", "LIQUIDITY_MANAGER", "LIQUIDITY_VAULT", "ROUTER", "FACTORY", "PAIR", "PRIVATE_KEY"];
-  for (const k of required) if (!env[k]) throw new Error(`Chybí ${k} v .env`);
+  for (const k of required) if (!env[k]) throw new Error(`ChybĂ­ ${k} v .env`);
 
   const signer = new ethers.Wallet(env.PRIVATE_KEY, hre.ethers.provider);
   const gas = gasOverrides();
@@ -68,7 +68,7 @@ async function main() {
     console.log("LM.setKeeper ->", env.KEEPER_ADDR);
     await (await lm.setKeeper(env.KEEPER_ADDR, gas)).wait();
   } else {
-    console.log("KEEPER_ADDR není zadán, krok přeskočen");
+    console.log("KEEPER_ADDR nenĂ­ zadĂˇn, krok pĹ™eskoÄŤen");
   }
 
   // Vault wiring
@@ -77,18 +77,18 @@ async function main() {
   console.log("Vault.addWhitelistedPair ->", env.PAIR);
   await (await vault.addWhitelistedPair(env.PAIR, gas)).wait();
 
-  // Volitelně spustit pairing (mintne LP do vaultu a LM zavolá syncPairBalance)
+  // VolitelnÄ› spustit pairing (mintne LP do vaultu a LM zavolĂˇ syncPairBalance)
   if (env.RUN_PAIRING === "true") {
     const requested = env.REQUESTED_MATIC_WEI;
-    if (!requested) throw new Error("RUN_PAIRING=true, ale chybí REQUESTED_MATIC_WEI");
+    if (!requested) throw new Error("RUN_PAIRING=true, ale chybĂ­ REQUESTED_MATIC_WEI");
     console.log("LM.executePairing ->", requested, "wei");
     await (await lm.executePairing(requested, gas)).wait();
     console.log("Pairing hotov.");
   } else {
-    console.log("RUN_PAIRING není true, pairing se nespustil.");
+    console.log("RUN_PAIRING nenĂ­ true, pairing se nespustil.");
   }
 
-  console.log("Hotovo. Rameno Reserve-LM-Vault je nastavené.");
+  console.log("Hotovo. Rameno Reserve-LM-Vault je nastavenĂ©.");
 }
 
 main().catch((err) => {

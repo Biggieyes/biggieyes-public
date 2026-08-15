@@ -1,4 +1,4 @@
-# Agent documentation — Library/BiggiBpsLib.sol
+# Agent documentation — TOKENOMIC_LIBRARY/BiggiBpsLib.sol
 
 **Role:** Basis points helper library
 

@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract MockSwapRouter {
     address public immutable weth;
     uint256 public quoteBps = 10_000;
+    bool public failQuote;
 
     constructor(address weth_) {
         require(weth_ != address(0), "weth=0");
@@ -21,11 +22,16 @@ contract MockSwapRouter {
         quoteBps = bps;
     }
 
+    function setFailQuote(bool fail) external {
+        failQuote = fail;
+    }
+
     function getAmountsOut(uint256 amountIn, address[] calldata path)
         external
         view
         returns (uint256[] memory amounts)
     {
+        require(!failQuote, "quote fail");
         require(path.length >= 2, "path");
         amounts = new uint256[](path.length);
         amounts[0] = amountIn;

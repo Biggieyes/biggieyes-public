@@ -1,7 +1,7 @@
 // scripts/setupLiquidityOnce.js
-// Spustit: npx hardhat run scripts/setupLiquidityOnce.js --network amoy
+// Spustit: npx hardhat run scripts/setupLiquidityOnce.js --network polygon
 // Před spuštěním nastav v .env (nebo env proměnnými):
-// AMOY_RPC_URL, PRIVATE_KEY, FACTORY, ROUTER, BIGGI, WETH (pokud chceš předepsanou), LIQ_TOKEN_AMOUNT, LIQ_ETH_AMOUNT
+// POLYGON_RPC_URL, PRIVATE_KEY, FACTORY, ROUTER, BIGGI, WETH (pokud chceš předepsanou), LIQ_TOKEN_AMOUNT, LIQ_ETH_AMOUNT
 // VOLITELNĚ: TRANSFER_FROM_RESERVE=true pokud chceš nejdříve volat BiggiToken.transferFromReserveTo
 // VOLITELNĚ: GAS_PRIORITY_GWEI, GAS_FEE_GWEI pro nastavení EIP-1559 (default 30/60)
 
@@ -36,7 +36,7 @@ async function main() {
     }
   }
 
-  // EIP-1559 gas nastavení (Amoy vyžaduje tip minimálně ~25 gwei)
+  // EIP-1559 gas nastavení (Polygon mainnet vyžaduje tip minimálně ~25 gwei)
   const GAS_PRIORITY_GWEI = env.GAS_PRIORITY_GWEI || "30";
   const GAS_FEE_GWEI = env.GAS_FEE_GWEI || "60";
   const maxPriorityFeePerGas = ethers.utils.parseUnits(GAS_PRIORITY_GWEI, "gwei");

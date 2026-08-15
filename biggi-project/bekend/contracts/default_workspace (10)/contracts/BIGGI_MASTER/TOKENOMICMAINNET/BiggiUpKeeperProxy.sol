@@ -5,7 +5,7 @@ pragma solidity ^0.8.24;
  * BiggiBuybackUpkeepProxy (OZ Ownable(initialOwner))
  * - Proxy pro Chainlink Automation (keeper) k volání buybackAgenta.
  * - checkUpkeep: ověří lokální paused, existence agenta, threshold, policy a cooldown.
- * - performUpkeep: bezpečně zavolá agent.buybackAllToTreasury(0) v try/catch, proxy nezarevertuje při chybě agenta.
+ * - performUpkeep: resolves minOut from the agent and calls buybackAllToTreasury(minOut) in try/catch.
  */
 
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -20,6 +20,7 @@ interface IBiggiBuybackAgent {
     function lastBuybackAt() external view returns (uint256);
     function buybackAllToTreasury(uint256 minOut) external;
     function nativeBalance() external view returns (uint256); // view helper (preferred)
+    function previewAutoMinOut(uint256 nativeAmount) external view returns (uint256);
 }
 
 interface AutomationCompatibleInterface {
@@ -84,9 +85,11 @@ contract BiggiBuybackUpkeepProxy is AutomationCompatibleInterface, Ownable {
         // preferovaný check přes agent.nativeBalance() pokud implementováno
         uint256 nativeBal = agent.nativeBalance();
         if (nativeBal < minNativeThresholdWei) return (false, bytes("LOW_BALANCE"));
+        uint256 minOut = _previewMinOut(nativeBal);
+        if (minOut == 0) return (false, bytes("MIN_OUT_ZERO"));
 
         // pokud vše OK, do performData vracíme adresu agenta a threshold (keeper může použít)
-        return (true, abi.encode(address(agent), minNativeThresholdWei));
+        return (true, abi.encode(address(agent), minNativeThresholdWei, minOut));
     }
 
     function performUpkeep(bytes calldata /* performData */) external override {
@@ -111,7 +114,13 @@ contract BiggiBuybackUpkeepProxy is AutomationCompatibleInterface, Ownable {
         }
 
         // bezpečné volání: pokud agent revertne, proxy nezarevertuje a jen zaloguje
-        try agent.buybackAllToTreasury(0) {
+        uint256 minOut = _previewMinOut(nativeBal);
+        if (minOut == 0) {
+            emit PerformFailed("MIN_OUT_ZERO");
+            return;
+        }
+
+        try agent.buybackAllToTreasury(minOut) {
             emit Performed(true, nativeBal);
         } catch Error(string memory reason) {
             emit PerformFailed(reason);
@@ -119,6 +128,14 @@ contract BiggiBuybackUpkeepProxy is AutomationCompatibleInterface, Ownable {
         } catch {
             emit PerformFailed("BUYBACK_CALL_REVERT");
             emit Performed(false, nativeBal);
+        }
+    }
+
+    function _previewMinOut(uint256 nativeBal) internal view returns (uint256) {
+        try agent.previewAutoMinOut(nativeBal) returns (uint256 minOut) {
+            return minOut;
+        } catch {
+            return 0;
         }
     }
 }

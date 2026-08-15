@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "./Library/BiggiErrorsLib.sol";
+import "./TOKENOMIC_LIBRARY/BiggiErrorsLib.sol";
 
 interface IBiggiReserveV4 {
     function lmPullBiggiDexRefill(address to, uint256 amount) external;
@@ -29,8 +29,7 @@ contract BiggiReserveV4 is Ownable2Step, ReentrancyGuard, Pausable, IBiggiReserv
     address public liquidityManager;
     address public distributor;
 
-    // Optional stricter mode for notifyBiggiReceived.
-    bool public notifyCallerCheckEnabled;
+    bool public notifyCallerCheckEnabled = true;
     mapping(address => bool) public notifyCallers;
 
     uint256 public totalPolReceived;
@@ -46,6 +45,7 @@ contract BiggiReserveV4 is Ownable2Step, ReentrancyGuard, Pausable, IBiggiReserv
     event DexRefillOwnerTopUp(uint256 amount, uint256 newDexRefill);
     event NotifyCallerSet(address indexed caller, bool allowed);
     event NotifyCallerCheckSet(bool enabled);
+    event ReserveNotifyReceived(address indexed caller, bytes32 indexed bucket, uint256 amount, uint256 bucketBalance, uint256 totalBucketed, uint256 realBalance);
 
     constructor(address biggi, address owner_) Ownable(owner_) {
         if (biggi == address(0) || owner_ == address(0)) revert BiggiErrorsLib.ZeroAddress();
@@ -71,6 +71,7 @@ contract BiggiReserveV4 is Ownable2Step, ReentrancyGuard, Pausable, IBiggiReserv
     }
 
     function setNotifyCallerCheck(bool enabled) external onlyOwner {
+        if (!enabled) revert BiggiErrorsLib.NotAllowedCaller();
         notifyCallerCheckEnabled = enabled;
         emit NotifyCallerCheckSet(enabled);
     }
@@ -83,7 +84,7 @@ contract BiggiReserveV4 is Ownable2Step, ReentrancyGuard, Pausable, IBiggiReserv
         _unpause();
     }
 
-    // Distributor -> 20% POL share.
+    // Distributor -> 35% native/POL reserve share.
     // Intentionally without nonReentrant: LM auto pairing may pull in same tx.
     function receiveMintShare() external payable whenNotPaused {
         if (msg.sender != distributor) revert BiggiErrorsLib.NotDistributor();
@@ -97,12 +98,17 @@ contract BiggiReserveV4 is Ownable2Step, ReentrancyGuard, Pausable, IBiggiReserv
 
     // Token notify for minted BIGGI buckets.
     function onBiggiMintedToReserve(uint256 amount, bytes32 bucket) external whenNotPaused {
-        if (msg.sender != address(BIGGI)) revert BiggiErrorsLib.OnlyToken();
-
-        if (bucket == WAITING) {
+        _requireAuthorizedNotifyCaller();
+        if (amount == 0) revert BiggiErrorsLib.AmountZero();
+       if (bucket == WAITING) {
             waitingBiggi += amount;
+            _enforceBucketConsistency();
+            emit ReserveNotifyReceived(msg.sender, bucket, amount, waitingBiggi, bucketedTotal(), BIGGI.balanceOf(address(this)));
         } else if (bucket == DEX_REFILL) {
             dexRefillBiggi += amount;
+            _enforceBucketConsistency();
+            emit ReserveNotifyReceived(msg.sender, bucket, amount, dexRefillBiggi, bucketedTotal(), BIGGI.balanceOf(address(this)));
+            _tryTriggerTopUpToLM();
         } else {
             revert("bad bucket");
         }
@@ -114,26 +120,21 @@ contract BiggiReserveV4 is Ownable2Step, ReentrancyGuard, Pausable, IBiggiReserv
     // Optional strict caller check can be enabled for mainnet hardening.
     function notifyBiggiReceived(uint256 amount) external whenNotPaused {
         if (amount == 0) revert BiggiErrorsLib.AmountZero();
-        if (
-            notifyCallerCheckEnabled &&
-            msg.sender != owner() &&
-            msg.sender != address(BIGGI) &&
-            !notifyCallers[msg.sender]
-        ) {
-            revert BiggiErrorsLib.NotAllowedCaller();
-        }
+        _requireAuthorizedNotifyCaller();
 
-        uint256 bal = BIGGI.balanceOf(address(this));
-        require(bal >= waitingBiggi + dexRefillBiggi + amount, "insufficient BIGGI balance");
         dexRefillBiggi += amount;
+        _enforceBucketConsistency();
+        emit ReserveNotifyReceived(msg.sender, DEX_REFILL, amount, dexRefillBiggi, bucketedTotal(), BIGGI.balanceOf(address(this)));
         emit BiggiNotified(DEX_REFILL, amount, waitingBiggi, dexRefillBiggi);
+        if (msg.sender != liquidityManager) {
+            _tryTriggerTopUpToLM();
+        }
     }
 
     function ownerTopUpDexRefill(uint256 amount) external onlyOwner {
         if (amount == 0) revert BiggiErrorsLib.AmountZero();
-        uint256 bal = BIGGI.balanceOf(address(this));
-        require(bal >= waitingBiggi + dexRefillBiggi + amount, "insufficient BIGGI balance");
         dexRefillBiggi += amount;
+        _enforceBucketConsistency();
         emit DexRefillOwnerTopUp(amount, dexRefillBiggi);
     }
 
@@ -188,6 +189,46 @@ contract BiggiReserveV4 is Ownable2Step, ReentrancyGuard, Pausable, IBiggiReserv
 
     function availableForDexRefill() external view returns (uint256) {
         return dexRefillBiggi;
+    }
+
+    function bucketedTotal() public view returns (uint256) {
+        return waitingBiggi + dexRefillBiggi;
+    }
+
+    function realBiggiBalance() public view returns (uint256) {
+        return BIGGI.balanceOf(address(this));
+    }
+
+    function bucketDifference() public view returns (uint256) {
+        uint256 realBalance = realBiggiBalance();
+        uint256 bucketed = bucketedTotal();
+        return realBalance > bucketed ? realBalance - bucketed : 0;
+    }
+
+    function isBucketConsistent() external view returns (bool) {
+        return bucketedTotal() <= realBiggiBalance();
+    }
+
+    function reserveConsistency()
+        external
+        view
+        returns (uint256 waitingBucket, uint256 dexRefillBucket, uint256 bucketed, uint256 realBalance, uint256 difference)
+    {
+        waitingBucket = waitingBiggi;
+        dexRefillBucket = dexRefillBiggi;
+        bucketed = bucketedTotal();
+        realBalance = realBiggiBalance();
+        difference = realBalance > bucketed ? realBalance - bucketed : 0;
+    }
+
+    function _requireAuthorizedNotifyCaller() internal view {
+        if (msg.sender != address(BIGGI) && !notifyCallers[msg.sender]) {
+            revert BiggiErrorsLib.NotAllowedCaller();
+        }
+    }
+
+    function _enforceBucketConsistency() internal view {
+        require(bucketedTotal() <= BIGGI.balanceOf(address(this)), "insufficient BIGGI balance");
     }
 
     receive() external payable {}

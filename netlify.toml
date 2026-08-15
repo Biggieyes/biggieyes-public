@@ -46,63 +46,147 @@
 
 [[redirects]]
   from = "/app"
-  to = "/app/"
-  status = 301
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/app/"
+  to = "/"
+  status = 302
+  force = true
 
 [[redirects]]
   from = "/rewards"
-  to = "/rewards/index.html"
-  status = 200
+  to = "/"
+  status = 302
+  force = true
 
 [[redirects]]
   from = "/rewards/"
-  to = "/rewards/index.html"
-  status = 200
+  to = "/"
+  status = 302
+  force = true
 
 [[redirects]]
   from = "/collection"
-  to = "/collection/index.html"
-  status = 200
+  to = "/"
+  status = 302
+  force = true
 
 [[redirects]]
   from = "/collection/"
-  to = "/collection/index.html"
-  status = 200
+  to = "/"
+  status = 302
+  force = true
 
 [[redirects]]
   from = "/vrf-mint"
-  to = "/vrf-mint/index.html"
-  status = 200
+  to = "/"
+  status = 302
+  force = true
 
 [[redirects]]
   from = "/vrf-mint/"
-  to = "/vrf-mint/index.html"
-  status = 200
+  to = "/"
+  status = 302
+  force = true
 
 [[redirects]]
   from = "/ecosystem"
-  to = "/ecosystem/index.html"
-  status = 200
+  to = "/"
+  status = 302
+  force = true
 
 [[redirects]]
   from = "/ecosystem/"
-  to = "/ecosystem/index.html"
-  status = 200
+  to = "/"
+  status = 302
+  force = true
 
 [[redirects]]
   from = "/community-center"
-  to = "/community-center/index.html"
-  status = 200
+  to = "/"
+  status = 302
+  force = true
 
 [[redirects]]
   from = "/community-center/"
-  to = "/community-center/index.html"
-  status = 200
+  to = "/"
+  status = 302
+  force = true
 
 [[redirects]]
   from = "/app/*"
-  to = "/app/index.html"
-  status = 200
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/app/index.html"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/rewards/index.html"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/rewards/*"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/collection/index.html"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/collection/*"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/vrf-mint/index.html"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/vrf-mint/*"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/ecosystem/index.html"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/ecosystem/*"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/community-center/index.html"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/community-center/*"
+  to = "/"
+  status = 302
+  force = true
 
 [[headers]]
   for = "/assets/*"

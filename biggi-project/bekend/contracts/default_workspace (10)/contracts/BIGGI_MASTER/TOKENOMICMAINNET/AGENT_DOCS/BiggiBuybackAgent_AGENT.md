@@ -1,4 +1,4 @@
-# Agent documentation — BiggiBuyBackAgent.sol
+# Agent documentation — BiggiBuybackAgent.sol
 
 **Role:** Buyback execution module
 
@@ -13,8 +13,8 @@ Receives native funds, swaps to BIGGI through router, forwards BIGGI to Treasury
 - `@openzeppelin/contracts/token/ERC20/IERC20.sol`
 - `@openzeppelin/contracts/utils/ReentrancyGuard.sol`
 - `@openzeppelin/contracts/access/Ownable.sol`
-- `./Library/BiggiErrorsLib.sol`
-- `./Library/BiggiSwapLib.sol`
+- `./TOKENOMIC_LIBRARY/BiggiErrorsLib.sol`
+- `./TOKENOMIC_LIBRARY/BiggiSwapLib.sol`
 
 ## Key public state to inspect
 - `immutable`

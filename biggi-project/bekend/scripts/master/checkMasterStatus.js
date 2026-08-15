@@ -104,15 +104,22 @@ function normalizeAddresses(raw) {
     VRF_ROUTER: pickAddress(raw, ["VRF_ROUTER"]),
     REGISTRY: pickAddress(raw, ["REGISTRY"]),
     CHAPTER_CONTROLLER: pickAddress(raw, ["CHAPTER_CONTROLLER"]),
+    SERIES_ID: pickNumber(raw, ["SERIES_ID"], null),
     CHAPTER_ID: pickNumber(raw, ["CHAPTER_ID"], null),
 
     BIGGI_TOKEN: pickAddress(raw, ["BIGGI_TOKEN", "BIGGI"]),
     RESERVE: pickAddress(raw, ["RESERVE"]),
     TREASURY: pickAddress(raw, ["TREASURY"]),
+    DEV_WALLET: pickAddress(raw, ["DEV_WALLET", "SAFE", "OWNER", "MULTISIG"]),
     MARKETING_SUPPORT: pickAddress(raw, ["MARKETING_SUPPORT", "MARKETING_SUPPORT_WALLET"]),
     DRIP_DISTRIBUTOR: pickAddress(raw, ["DRIP_DISTRIBUTOR"]),
     DRIP_LM: pickAddress(raw, ["DRIP_LM"]),
     TOKEN_REWARDS: pickAddress(raw, ["TOKEN_REWARDS"]),
+    TOKEN_REWARDS_EMISSION_CONTROLLER: pickAddress(raw, [
+      "TOKEN_REWARDS_EMISSION_CONTROLLER",
+      "TOKEN_REWARDS_CONTROLLER",
+      "EMISSION_CONTROLLER",
+    ]),
     NFT_REWARDS: pickAddress(raw, ["NFT_REWARDS", "BIGGI_NFT_REWARDS"]),
     COLLECTION_REWARDS: pickAddress(raw, ["COLLECTION_REWARDS"]),
     DISTRIBUTOR: pickAddress(raw, ["DISTRIBUTOR", "MULTI_COLLECTION_DISTRIBUTOR"]),
@@ -130,6 +137,7 @@ function normalizeAddresses(raw) {
     POLICY: pickAddress(raw, ["POLICY"]),
     MASTER_CONFIG: pickAddress(raw, ["MASTER_CONFIG"]),
     MULTICALL: pickAddress(raw, ["MULTICALL", "MULTICALL2"]),
+    MAIN_READER: pickAddress(raw, ["MAIN_READER", "READER"]),
     MULTI_COLLECTION_READER: pickAddress(raw, [
       "MULTI_COLLECTION_READER",
       "MULTI_COLLECTION_DISTRIBUTOR_READER",
@@ -140,6 +148,29 @@ function normalizeAddresses(raw) {
       "CHAPTER_READER",
       "SERIES_READER",
     ]),
+    NFT_REWARDS_READER: pickAddress(raw, ["NFT_REWARDS_READER"]),
+    RESERVE_TREASURY_READER: pickAddress(raw, ["RESERVE_TREASURY_READER", "TREASURY_READER"]),
+    BUYBACK_READER: pickAddress(raw, ["BUYBACK_READER", "BIGGI_BUYBACK_READER"]),
+    LIQUIDITY_BRANCH_READER: pickAddress(raw, [
+      "LIQUIDITY_BRANCH_READER",
+      "LIQUIDITY_BRANCH_USER_READER",
+    ]),
+    LIQUIDITY_HELPER_READER: pickAddress(raw, ["LIQUIDITY_HELPER_READER"]),
+    SUPPLY_CONTROLLER_READER: pickAddress(raw, ["SUPPLY_CONTROLLER_READER"]),
+    SUPPLY_GUARDIAN_READER: pickAddress(raw, ["SUPPLY_GUARDIAN_READER"]),
+    DEX_RESERVE_GUARD_READER: pickAddress(raw, ["DEX_RESERVE_GUARD_READER"]),
+    SYSTEM_READER: pickAddress(raw, ["SYSTEM_READER", "BIGGI_SYSTEM_READER"]),
+    TOKENOMICS_SYSTEM_ADDON_READER: pickAddress(raw, [
+      "TOKENOMICS_SYSTEM_ADDON_READER",
+      "TOKENOMIC_SYSTEM_ADDON_READER",
+    ]),
+    BIGGI_TOKENOMICS_READER: pickAddress(raw, [
+      "BIGGI_TOKENOMICS_READER",
+      "BIGGI_TOKENOMIK_READER",
+      "TOKENOMICS_READER",
+      "TOKENOMIK_READER",
+    ]),
+    TOKEN_REWARDS_READER: pickAddress(raw, ["TOKEN_REWARDS_READER"]),
 
     SUPPLY_CONTROLLER: pickAddress(raw, ["SUPPLY_CONTROLLER"]),
     SUPPLY_GUARDIAN: pickAddress(raw, ["SUPPLY_GUARDIAN"]),
@@ -184,6 +215,15 @@ function eqAddress(a, b) {
   return ethers.utils.getAddress(a) === ethers.utils.getAddress(b);
 }
 
+function isForkedHardhatNetwork() {
+  return network.name === "hardhat" && !!(network.config && network.config.forking && network.config.forking.url);
+}
+
+function isLocalLikeNetwork() {
+  if (network.name === "localhost") return true;
+  return network.name === "hardhat" && !isForkedHardhatNetwork();
+}
+
 async function section(name, addr, requireCode, issues, fn) {
   if (!isAddress(addr)) return;
   if (!(await hasCode(addr))) {
@@ -209,10 +249,17 @@ function expectBool(label, actual, expected, issues) {
   if (!ok) issues.push(`${label}: actual=${Boolean(actual)}, expected=${Boolean(expected)}`);
 }
 
+function toSafeNumber(value) {
+  if (value == null) return null;
+  if (ethers.BigNumber.isBigNumber(value)) return value.toNumber();
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
 function expectNumberMatch(label, actual, expected, issues) {
   if (actual == null || expected == null) return;
-  const a = Number(actual);
-  const e = Number(expected);
+  const a = toSafeNumber(actual);
+  const e = toSafeNumber(expected);
   if (!Number.isFinite(a) || !Number.isFinite(e)) return;
   const ok = a === e;
   console.log(`${ok ? "OK" : "MISMATCH"} ${label}: actual=${a} expected=${e}`);
@@ -294,6 +341,9 @@ async function main() {
   console.log("Expected liquidity path:", expectedLiquidityPath || "<auto>");
 
   const issues = [];
+  if (strict && !isLocalLikeNetwork() && !isAddress(addresses.VRF_ROUTER)) {
+    issues.push("VRF_ROUTER is required for non-local strict checks.");
+  }
   let observedLiquidityKeeper = ZERO;
   let observedOrchestratorKeeper = ZERO;
 
@@ -304,17 +354,43 @@ async function main() {
       "function vrfRouter() view returns (address)",
       "function biggiMinted() view returns (uint16)",
       "function getCurrentBlockPrice(uint16) view returns (uint256)",
+      "function metadataConsistency() view returns (uint256 configuredCount,bool fullyConfigured,bool rewardMatrixConsistent)",
+      "function assertMetadataConsistency() view returns (bool)",
     ]);
     const ticketHub = await safe("MAIN.ticketHub", () => mainC.ticketHub());
     const compute = await safe("MAIN.compute", () => mainC.compute());
     const vrfRouter = await safe("MAIN.vrfRouter", () => mainC.vrfRouter());
     await safe("MAIN.biggiMinted", () => mainC.biggiMinted());
     await safe("MAIN.block1Price", () => mainC.getCurrentBlockPrice(1));
+    const metadataState = await safe("MAIN.metadataConsistency", async () => {
+      const [configuredCount, fullyConfigured, rewardMatrixConsistent] = await mainC.metadataConsistency();
+      return {
+        configuredCount: configuredCount.toString(),
+        fullyConfigured,
+        rewardMatrixConsistent,
+      };
+    });
 
     expectAddressMatch("MAIN.ticketHub == TICKET_HUB", ticketHub, addresses.TICKET_HUB, issues);
     expectAddressMatch("MAIN.compute == COMPUTE", compute, addresses.COMPUTE, issues);
     if (isAddress(addresses.VRF_ROUTER)) {
       expectAddressMatch("MAIN.vrfRouter == VRF_ROUTER", vrfRouter, addresses.VRF_ROUTER, issues);
+    }
+    if (strict) {
+      if (!metadataState) {
+        issues.push("MAIN.metadataConsistency unavailable or failed");
+      } else {
+        if (metadataState.fullyConfigured !== true || metadataState.rewardMatrixConsistent !== true) {
+          issues.push(
+            `MAIN.metadataConsistency: configuredCount=${metadataState.configuredCount}, fullyConfigured=${metadataState.fullyConfigured}, rewardMatrixConsistent=${metadataState.rewardMatrixConsistent}`
+          );
+        }
+      }
+
+      const metadataAssert = await safe("MAIN.assertMetadataConsistency", () => mainC.assertMetadataConsistency());
+      if (metadataAssert !== true) {
+        issues.push("MAIN.assertMetadataConsistency failed");
+      }
     }
   });
 
@@ -322,6 +398,7 @@ async function main() {
     const vrfRouter = viewContract(addresses.VRF_ROUTER, [
       "function main() view returns (address)",
       "function approvedMains(address) view returns (bool)",
+      "function approvedRewardConsumers(address) view returns (bool)",
       "function keyHash() view returns (bytes32)",
       "function subId() view returns (uint256)",
       "function callbackGasLimit() view returns (uint32)",
@@ -332,8 +409,11 @@ async function main() {
     const mainApproved = isAddress(addresses.MAIN)
       ? await safe("VRF_ROUTER.approved[main]", () => vrfRouter.approvedMains(addresses.MAIN))
       : null;
-    const main2Approved = isAddress(addresses.MAIN2)
-      ? await safe("VRF_ROUTER.approved[main2]", () => vrfRouter.approvedMains(addresses.MAIN2))
+    const nftRewardsApproved = isAddress(addresses.NFT_REWARDS)
+      ? await safe(
+          "VRF_ROUTER.approvedRewardConsumer[nftRewards]",
+          () => vrfRouter.approvedRewardConsumers(addresses.NFT_REWARDS)
+        )
       : null;
     await safe("VRF_ROUTER.keyHash", () => vrfRouter.keyHash());
     await safe("VRF_ROUTER.subId", () => vrfRouter.subId());
@@ -347,8 +427,8 @@ async function main() {
     if (strict && mainApproved != null) {
       expectBool("VRF_ROUTER.approved[main]", mainApproved, true, issues);
     }
-    if (strict && main2Approved != null) {
-      expectBool("VRF_ROUTER.approved[main2]", main2Approved, true, issues);
+    if (strict && nftRewardsApproved != null) {
+      expectBool("VRF_ROUTER.approvedRewardConsumer[nftRewards]", nftRewardsApproved, true, issues);
     }
   });
 
@@ -358,12 +438,24 @@ async function main() {
       "function chapterController() view returns (address)",
       "function chapterId() view returns (uint256)",
       "function priceProvider() view returns (address)",
+      "function devWallet() view returns (address)",
+      "function BIGGI() view returns (address)",
+      "function reserveAddress() view returns (address)",
+      "function tokenSink() view returns (address)",
+      "function tokenSinkBps() view returns (uint256)",
+      "function tokenSinkDepositMode() view returns (bool)",
       "function getCurrentBlockPrice(uint16) view returns (uint256)",
     ]);
     const distributor = await safe("MAIN2.distributor", () => main2.distributor());
     const chapterController = await safe("MAIN2.chapterController", () => main2.chapterController());
     const chapterId = await safe("MAIN2.chapterId", () => main2.chapterId());
     const priceProvider = await safe("MAIN2.priceProvider", () => main2.priceProvider());
+    const devWallet = await safe("MAIN2.devWallet", () => main2.devWallet());
+    const biggi = await safe("MAIN2.BIGGI", () => main2.BIGGI());
+    const reserveAddress = await safe("MAIN2.reserveAddress", () => main2.reserveAddress());
+    const tokenSink = await safe("MAIN2.tokenSink", () => main2.tokenSink());
+    const tokenSinkBps = await safe("MAIN2.tokenSinkBps", () => main2.tokenSinkBps());
+    const tokenSinkDepositMode = await safe("MAIN2.tokenSinkDepositMode", () => main2.tokenSinkDepositMode());
     await safe("MAIN2.block1Price", () => main2.getCurrentBlockPrice(1));
 
     if (isAddress(addresses.DISTRIBUTOR)) {
@@ -378,6 +470,22 @@ async function main() {
     if (isAddress(addresses.MAIN)) {
       expectAddressMatch("MAIN2.priceProvider == MAIN", priceProvider, addresses.MAIN, issues);
     }
+    if (isAddress(addresses.DEV_WALLET)) {
+      expectAddressMatch("MAIN2.devWallet == DEV_WALLET", devWallet, addresses.DEV_WALLET, issues);
+    }
+    if (isAddress(addresses.BIGGI_TOKEN)) {
+      expectAddressMatch("MAIN2.BIGGI == BIGGI_TOKEN", biggi, addresses.BIGGI_TOKEN, issues);
+    }
+    if (isAddress(addresses.RESERVE)) {
+      expectAddressMatch("MAIN2.reserveAddress == RESERVE", reserveAddress, addresses.RESERVE, issues);
+    }
+    if (isAddress(addresses.TREASURY)) {
+      expectAddressMatch("MAIN2.tokenSink == TREASURY", tokenSink, addresses.TREASURY, issues);
+      if (strict) {
+        expectNumberMatch("MAIN2.tokenSinkBps == 10000", tokenSinkBps, 10_000, issues);
+        expectBool("MAIN2.tokenSinkDepositMode", tokenSinkDepositMode, true, issues);
+      }
+    }
   });
 
   await section("TICKET_HUB", addresses.TICKET_HUB, requireCode, issues, async () => {
@@ -387,16 +495,30 @@ async function main() {
       "function totalMinted() view returns (uint256)",
       "function saleCap() view returns (uint16)",
       "function marketingCap() view returns (uint16)",
+      "function totalCap() view returns (uint16)",
       "function mainCollection() view returns (address)",
       "function distributor() view returns (address)",
+      "function devWallet() view returns (address)",
+      "function BIGGI() view returns (address)",
+      "function reserveAddress() view returns (address)",
+      "function tokenSink() view returns (address)",
+      "function tokenSinkBps() view returns (uint256)",
+      "function tokenSinkDepositMode() view returns (bool)",
     ]);
-    await safe("TICKET_HUB.saleMinted", () => hub.saleMinted());
-    await safe("TICKET_HUB.marketingMinted", () => hub.marketingMinted());
-    await safe("TICKET_HUB.totalMinted", () => hub.totalMinted());
-    await safe("TICKET_HUB.saleCap", () => hub.saleCap());
-    await safe("TICKET_HUB.marketingCap", () => hub.marketingCap());
+    const saleMinted = await safe("TICKET_HUB.saleMinted", () => hub.saleMinted());
+    const marketingMinted = await safe("TICKET_HUB.marketingMinted", () => hub.marketingMinted());
+    const totalMinted = await safe("TICKET_HUB.totalMinted", () => hub.totalMinted());
+    const saleCap = await safe("TICKET_HUB.saleCap", () => hub.saleCap());
+    const marketingCap = await safe("TICKET_HUB.marketingCap", () => hub.marketingCap());
+    const totalCap = await safe("TICKET_HUB.totalCap", () => hub.totalCap());
     const mainCollection = await safe("TICKET_HUB.mainCollection", () => hub.mainCollection());
     const distributor = await safe("TICKET_HUB.distributor", () => hub.distributor());
+    const devWallet = await safe("TICKET_HUB.devWallet", () => hub.devWallet());
+    const biggi = await safe("TICKET_HUB.BIGGI", () => hub.BIGGI());
+    const reserveAddress = await safe("TICKET_HUB.reserveAddress", () => hub.reserveAddress());
+    const tokenSink = await safe("TICKET_HUB.tokenSink", () => hub.tokenSink());
+    const tokenSinkBps = await safe("TICKET_HUB.tokenSinkBps", () => hub.tokenSinkBps());
+    const tokenSinkDepositMode = await safe("TICKET_HUB.tokenSinkDepositMode", () => hub.tokenSinkDepositMode());
 
     if (isAddress(addresses.MAIN)) {
       expectAddressMatch("TICKET_HUB.mainCollection == MAIN", mainCollection, addresses.MAIN, issues);
@@ -404,17 +526,98 @@ async function main() {
     if (isAddress(addresses.DISTRIBUTOR)) {
       expectAddressMatch("TICKET_HUB.distributor == DISTRIBUTOR", distributor, addresses.DISTRIBUTOR, issues);
     }
+    if (isAddress(addresses.DEV_WALLET)) {
+      expectAddressMatch("TICKET_HUB.devWallet == DEV_WALLET", devWallet, addresses.DEV_WALLET, issues);
+    }
+    if (isAddress(addresses.BIGGI_TOKEN)) {
+      expectAddressMatch("TICKET_HUB.BIGGI == BIGGI_TOKEN", biggi, addresses.BIGGI_TOKEN, issues);
+    }
+    if (isAddress(addresses.RESERVE)) {
+      expectAddressMatch("TICKET_HUB.reserveAddress == RESERVE", reserveAddress, addresses.RESERVE, issues);
+    }
+    if (isAddress(addresses.TREASURY)) {
+      expectAddressMatch("TICKET_HUB.tokenSink == TREASURY", tokenSink, addresses.TREASURY, issues);
+      if (strict) {
+        expectNumberMatch("TICKET_HUB.tokenSinkBps == 10000", tokenSinkBps, 10_000, issues);
+        expectBool("TICKET_HUB.tokenSinkDepositMode", tokenSinkDepositMode, true, issues);
+      }
+    }
+    if (strict) {
+      expectNumberMatch(
+        "TICKET_HUB.saleCap + marketingCap == totalCap",
+        toSafeNumber(saleCap) + toSafeNumber(marketingCap),
+        totalCap,
+        issues
+      );
+      expectNumberMatch("TICKET_HUB.totalCap == 550", totalCap, 550, issues);
+      expectNumberMatch(
+        "TICKET_HUB.totalMinted == saleMinted + marketingMinted",
+        totalMinted,
+        toSafeNumber(saleMinted) + toSafeNumber(marketingMinted),
+        issues
+      );
+    }
   });
 
   if (isAddress(addresses.CHAPTER_CONTROLLER) && addresses.CHAPTER_ID != null) {
     await section("CHAPTER_CONTROLLER", addresses.CHAPTER_CONTROLLER, requireCode, issues, async () => {
       const chapter = viewContract(addresses.CHAPTER_CONTROLLER, [
+        "function registry() view returns (address)",
+        "function getChapterCollections(uint256) view returns (address,address,address)",
+        "function getChapterPriceProvider(uint256) view returns (address)",
+        "function isChapterStackConsistent(uint256) view returns (bool)",
+        "function isChapterCapConsistent(uint256) view returns (bool)",
         "function isPublicMintUnlocked(uint256) view returns (bool)",
         "function chapterMintProgress(uint256) view returns (uint256,uint256,uint256,uint256,uint256,uint256,bool)",
+        "function chapterConfig(uint256) view returns (bool,uint16,uint16,uint16)",
       ]);
       const chapterId = Number(addresses.CHAPTER_ID);
-      await safe("CHAPTER.isPublicMintUnlocked", () => chapter.isPublicMintUnlocked(chapterId));
-      await safe("CHAPTER.progress", () => chapter.chapterMintProgress(chapterId));
+      const controllerRegistry = await safe("CHAPTER.registry", () => chapter.registry());
+      const collections = await safe("CHAPTER.collections", () => chapter.getChapterCollections(chapterId));
+      const priceProvider = await safe("CHAPTER.priceProvider", () => chapter.getChapterPriceProvider(chapterId));
+      const stackConsistent = await safe("CHAPTER.stackConsistent", () => chapter.isChapterStackConsistent(chapterId));
+      const capConsistent = await safe("CHAPTER.capConsistent", () => chapter.isChapterCapConsistent(chapterId));
+      const publicUnlocked = await safe("CHAPTER.isPublicMintUnlocked", () => chapter.isPublicMintUnlocked(chapterId));
+      const progress = await safe("CHAPTER.progress", () => chapter.chapterMintProgress(chapterId));
+      const config = await safe("CHAPTER.config", () => chapter.chapterConfig(chapterId));
+
+      if (isAddress(addresses.REGISTRY)) {
+        expectAddressMatch("CHAPTER.registry == REGISTRY", controllerRegistry, addresses.REGISTRY, issues);
+      }
+      if (collections && collections.length >= 3) {
+        if (isAddress(addresses.MAIN)) {
+          expectAddressMatch("CHAPTER.collections.vrfCollection == MAIN", collections[0], addresses.MAIN, issues);
+        }
+        if (isAddress(addresses.MAIN2)) {
+          expectAddressMatch("CHAPTER.collections.publicCollection == MAIN2", collections[1], addresses.MAIN2, issues);
+        }
+        if (isAddress(addresses.TICKET_HUB)) {
+          expectAddressMatch("CHAPTER.collections.ticketHub == TICKET_HUB", collections[2], addresses.TICKET_HUB, issues);
+        }
+      }
+      if (isAddress(addresses.MAIN)) {
+        expectAddressMatch("CHAPTER.priceProvider == MAIN", priceProvider, addresses.MAIN, issues);
+      }
+      if (strict) {
+        expectBool("CHAPTER.stackConsistent", stackConsistent, true, issues);
+        expectBool("CHAPTER.capConsistent", capConsistent, true, issues);
+        if (config) expectBool("CHAPTER.config.exists", config[0], true, issues);
+        if (progress) {
+          expectNumberMatch(
+            "CHAPTER.progress.saleCap + marketingCap == totalCap",
+            toSafeNumber(progress[3]) + toSafeNumber(progress[4]),
+            progress[5],
+            issues
+          );
+          expectNumberMatch("CHAPTER.progress.totalCap == 550", progress[5], 550, issues);
+          expectBool(
+            "CHAPTER.progress.publicUnlocked matches isPublicMintUnlocked",
+            progress[6],
+            publicUnlocked,
+            issues
+          );
+        }
+      }
     });
   }
 
@@ -434,7 +637,7 @@ async function main() {
     if (addresses.CHAPTER_ID != null) {
       const chapterId = Number(addresses.CHAPTER_ID);
       const collections = await safe("REGISTRY.chapterCollections", () => registry.getChapterCollections(chapterId));
-      await safe("REGISTRY.chapterMeta", () => registry.getChapterMeta(chapterId));
+      const chapterMeta = await safe("REGISTRY.chapterMeta", () => registry.getChapterMeta(chapterId));
 
       if (Array.isArray(collections) && collections.length >= 3) {
         if (isAddress(addresses.MAIN)) {
@@ -447,19 +650,100 @@ async function main() {
           expectAddressMatch("REGISTRY.ticketHub == TICKET_HUB", collections[2], addresses.TICKET_HUB, issues);
         }
       }
+      if (chapterMeta && addresses.SERIES_ID != null) {
+        expectNumberMatch("REGISTRY.chapterMeta.seriesId == SERIES_ID", chapterMeta[0], addresses.SERIES_ID, issues);
+      }
     }
 
     if (isAddress(addresses.MAIN)) {
-      await safe("REGISTRY.chapterByCollection[main]", () => registry.chapterByCollection(addresses.MAIN));
-      await safe("REGISTRY.collectionRewardsEligible[main]", () => registry.isCollectionRewardsCollection(addresses.MAIN));
-      await safe("REGISTRY.tokenRewardsEligible[main]", () => registry.isTokenRewardsCollection(addresses.MAIN));
+      const mainChapter = await safe("REGISTRY.chapterByCollection[main]", () => registry.chapterByCollection(addresses.MAIN));
+      const mainCollectionRewardsEligible = await safe(
+        "REGISTRY.collectionRewardsEligible[main]",
+        () => registry.isCollectionRewardsCollection(addresses.MAIN)
+      );
+      const mainTokenRewardsEligible = await safe(
+        "REGISTRY.tokenRewardsEligible[main]",
+        () => registry.isTokenRewardsCollection(addresses.MAIN)
+      );
+      if (addresses.CHAPTER_ID != null) {
+        expectNumberMatch("REGISTRY.chapterByCollection[main] == CHAPTER_ID", mainChapter, addresses.CHAPTER_ID, issues);
+      }
+      if (strict) {
+        expectBool("REGISTRY.collectionRewardsEligible[main]", mainCollectionRewardsEligible, true, issues);
+        expectBool("REGISTRY.tokenRewardsEligible[main]", mainTokenRewardsEligible, true, issues);
+      }
     }
     if (isAddress(addresses.MAIN2)) {
-      await safe("REGISTRY.chapterByCollection[main2]", () => registry.chapterByCollection(addresses.MAIN2));
-      await safe("REGISTRY.tokenRewardsEligible[main2]", () => registry.isTokenRewardsCollection(addresses.MAIN2));
+      const main2Chapter = await safe("REGISTRY.chapterByCollection[main2]", () => registry.chapterByCollection(addresses.MAIN2));
+      const main2CollectionRewardsEligible = await safe(
+        "REGISTRY.collectionRewardsEligible[main2]",
+        () => registry.isCollectionRewardsCollection(addresses.MAIN2)
+      );
+      const main2TokenRewardsEligible = await safe(
+        "REGISTRY.tokenRewardsEligible[main2]",
+        () => registry.isTokenRewardsCollection(addresses.MAIN2)
+      );
+      if (addresses.CHAPTER_ID != null) {
+        expectNumberMatch("REGISTRY.chapterByCollection[main2] == CHAPTER_ID", main2Chapter, addresses.CHAPTER_ID, issues);
+      }
+      if (strict) {
+        expectBool("REGISTRY.collectionRewardsEligible[main2]", main2CollectionRewardsEligible, false, issues);
+        expectBool("REGISTRY.tokenRewardsEligible[main2]", main2TokenRewardsEligible, true, issues);
+      }
     }
     if (isAddress(addresses.TICKET_HUB)) {
-      await safe("REGISTRY.chapterByCollection[ticketHub]", () => registry.chapterByCollection(addresses.TICKET_HUB));
+      const hubChapter = await safe("REGISTRY.chapterByCollection[ticketHub]", () => registry.chapterByCollection(addresses.TICKET_HUB));
+      const hubCollectionRewardsEligible = await safe(
+        "REGISTRY.collectionRewardsEligible[ticketHub]",
+        () => registry.isCollectionRewardsCollection(addresses.TICKET_HUB)
+      );
+      const hubTokenRewardsEligible = await safe(
+        "REGISTRY.tokenRewardsEligible[ticketHub]",
+        () => registry.isTokenRewardsCollection(addresses.TICKET_HUB)
+      );
+      if (addresses.CHAPTER_ID != null) {
+        expectNumberMatch("REGISTRY.chapterByCollection[ticketHub] == CHAPTER_ID", hubChapter, addresses.CHAPTER_ID, issues);
+      }
+      if (strict) {
+        expectBool("REGISTRY.collectionRewardsEligible[ticketHub]", hubCollectionRewardsEligible, false, issues);
+        expectBool("REGISTRY.tokenRewardsEligible[ticketHub]", hubTokenRewardsEligible, false, issues);
+      }
+    }
+  });
+
+  await section("MAIN_READER", addresses.MAIN_READER, requireCode, issues, async () => {
+    const reader = viewContract(addresses.MAIN_READER, [
+      "function main() view returns (address)",
+      "function ticketHub() view returns (address)",
+      "function collectionRewards() view returns (address)",
+      "function getFrontendSnapshot() view returns (uint256,uint16,uint16,uint256[10],uint16[10],uint16[10],uint8,uint8,bool,uint8)",
+      "function getTicketHubFrontendSnapshot(address,address) view returns (tuple(address ticketHub,address biggi,address distributor,address tokenSink,address reserveAddress,uint256 tokenSinkBps,bool tokenSinkDepositMode,bool treasuryAllowsTicketHub,bool ecosystemTreasuryRouteOk,uint256 ticketPriceWei,uint256 ticketPriceBiggi,uint16 ticketMinted,uint16 saleMinted,uint16 marketingMinted,uint16 saleCap,uint16 marketingCap,uint16 maxTickets,uint16 maxPerWallet,uint256 userTicketCount,bool fullyExhausted,bool paused))",
+    ]);
+    const mainAddr = await safe("MAIN_READER.main", () => reader.main());
+    const ticketHub = await safe("MAIN_READER.ticketHub", () => reader.ticketHub());
+    const collectionRewards = await safe("MAIN_READER.collectionRewards", () => reader.collectionRewards());
+    await safe("MAIN_READER.frontendSnapshot", () => reader.getFrontendSnapshot());
+    const ticketHubFrontend = await safe(
+      "MAIN_READER.ticketHubFrontendSnapshot",
+      () => reader.getTicketHubFrontendSnapshot(ZERO, addresses.TREASURY || ZERO)
+    );
+
+    if (isAddress(addresses.MAIN)) {
+      expectAddressMatch("MAIN_READER.main == MAIN", mainAddr, addresses.MAIN, issues);
+    }
+    if (isAddress(addresses.TICKET_HUB)) {
+      expectAddressMatch("MAIN_READER.ticketHub == TICKET_HUB", ticketHub, addresses.TICKET_HUB, issues);
+    }
+    if (isAddress(addresses.COLLECTION_REWARDS)) {
+      expectAddressMatch(
+        "MAIN_READER.collectionRewards == COLLECTION_REWARDS",
+        collectionRewards,
+        addresses.COLLECTION_REWARDS,
+        issues
+      );
+    }
+    if (ticketHubFrontend && strict) {
+      expectBool("MAIN_READER.ticketHubFrontend.ecosystemTreasuryRouteOk", ticketHubFrontend.ecosystemTreasuryRouteOk, true, issues);
     }
   });
 
@@ -469,12 +753,17 @@ async function main() {
       "function seriesSnapshot(uint256) view returns (tuple(uint256 seriesId,bool exists,string name,uint256 chapterCount))",
       "function chapterSnapshot(uint256) view returns (tuple(uint256 chapterId,bool configured,bool chapterExists,uint256 seriesId,uint256 chapterNumber,address vrfCollection,address publicCollection,address ticketHub,uint16 saleCap,uint16 marketingCap,uint16 totalCap,uint256 saleMinted,uint256 marketingMinted,uint256 totalMinted,bool publicUnlocked,address priceProvider,bool tokenRewardsEligibleVRF,bool tokenRewardsEligiblePublic,bool collectionRewardsEligibleVRF,bool controllerRegistryMatch))",
       "function collectionSnapshot(address) view returns (tuple(address collection,uint256 chapterId,uint256 seriesId,uint256 chapterNumber,bool tokenRewardsEligible,bool collectionRewardsEligible,bool isVrfCollection,bool isPublicCollection,bool isTicketHubCollection))",
+      "function chapterPaymentSnapshot(uint256,address) view returns (tuple(uint256 chapterId,address treasury,tuple(address collection,address biggi,address distributor,address tokenSink,uint256 tokenSinkBps,bool tokenSinkDepositMode,uint256 biggiPerEth,address reserveAddress,bool paused,bool treasuryAllowsCollection,bool paymentConfigured,bool ecosystemTreasuryRouteOk) ticketHubRoute,tuple(address collection,address biggi,address distributor,address tokenSink,uint256 tokenSinkBps,bool tokenSinkDepositMode,uint256 biggiPerEth,address reserveAddress,bool paused,bool treasuryAllowsCollection,bool paymentConfigured,bool ecosystemTreasuryRouteOk) publicCollectionRoute))",
     ]);
     const global = await safe("CHAPTER_SERIES_READER.global", () => reader.globalSnapshot());
     const series = await safe("CHAPTER_SERIES_READER.series[1]", () => reader.seriesSnapshot(1));
 
     const chapterId = addresses.CHAPTER_ID != null ? Number(addresses.CHAPTER_ID) : 1;
     const chapter = await safe("CHAPTER_SERIES_READER.chapter", () => reader.chapterSnapshot(chapterId));
+    const chapterPayment = await safe(
+      "CHAPTER_SERIES_READER.chapterPayment",
+      () => reader.chapterPaymentSnapshot(chapterId, addresses.TREASURY || ZERO)
+    );
 
     let mainCollection = null;
     let main2Collection = null;
@@ -537,6 +826,10 @@ async function main() {
         expectBool("CHAPTER_SERIES_READER.chapter.exists", chapter.chapterExists, true, issues);
         expectBool("CHAPTER_SERIES_READER.chapter.controllerRegistryMatch", chapter.controllerRegistryMatch, true, issues);
       }
+    }
+    if (chapterPayment && strict) {
+      expectBool("CHAPTER_SERIES_READER.ticketHubRoute.ecosystemTreasuryRouteOk", chapterPayment.ticketHubRoute.ecosystemTreasuryRouteOk, true, issues);
+      expectBool("CHAPTER_SERIES_READER.publicCollectionRoute.ecosystemTreasuryRouteOk", chapterPayment.publicCollectionRoute.ecosystemTreasuryRouteOk, true, issues);
     }
     if (mainCollection) {
       expectNumberMatch("CHAPTER_SERIES_READER.main.chapterId", mainCollection.chapterId, chapterId, issues);
@@ -619,10 +912,13 @@ async function main() {
       "function dripDistributor() view returns (address)",
       "function totalBiggiReceived() view returns (uint256)",
       "function totalPolReceived() view returns (uint256)",
+      "function totalPolReceivedFromBuyback() view returns (uint256)",
       "function biggiBalance() view returns (uint256)",
       "function polBalance() view returns (uint256)",
       "function totalBiggiReceivedFromBuyback() view returns (uint256)",
+      "function totalBiggiReceivedFromEcosystem() view returns (uint256)",
       "function totalPolReceivedFromDistributor() view returns (uint256)",
+      "function ecosystemBiggiCallers(address) view returns (bool)",
     ]);
     const distributor = await safe("TREASURY.distributor", () => treasury.distributor());
     const buybackAgent = await safe("TREASURY.buybackAgent", () => treasury.buybackAgent());
@@ -631,10 +927,18 @@ async function main() {
     const dripDistributor = await safe("TREASURY.dripDistributor", () => treasury.dripDistributor());
     await safe("TREASURY.totalBiggiReceived", () => treasury.totalBiggiReceived());
     await safe("TREASURY.totalPolReceived", () => treasury.totalPolReceived());
+    await safe("TREASURY.totalPolReceivedFromBuyback", () => treasury.totalPolReceivedFromBuyback());
     await safe("TREASURY.biggiBalance", () => treasury.biggiBalance());
     await safe("TREASURY.polBalance", () => treasury.polBalance());
     await safe("TREASURY.totalBiggiReceivedFromBuyback", () => treasury.totalBiggiReceivedFromBuyback());
+    await safe("TREASURY.totalBiggiReceivedFromEcosystem", () => treasury.totalBiggiReceivedFromEcosystem());
     await safe("TREASURY.totalPolReceivedFromDistributor", () => treasury.totalPolReceivedFromDistributor());
+    const ticketHubCaller = isAddress(addresses.TICKET_HUB)
+      ? await safe("TREASURY.ecosystemCaller[ticketHub]", () => treasury.ecosystemBiggiCallers(addresses.TICKET_HUB))
+      : null;
+    const main2Caller = isAddress(addresses.MAIN2)
+      ? await safe("TREASURY.ecosystemCaller[main2]", () => treasury.ecosystemBiggiCallers(addresses.MAIN2))
+      : null;
 
     if (isAddress(addresses.DISTRIBUTOR)) {
       expectAddressMatch("TREASURY.distributor == DISTRIBUTOR", distributor, addresses.DISTRIBUTOR, issues);
@@ -650,6 +954,10 @@ async function main() {
     }
     if (isAddress(addresses.DRIP_DISTRIBUTOR)) {
       expectAddressMatch("TREASURY.dripDistributor == DRIP_DISTRIBUTOR", dripDistributor, addresses.DRIP_DISTRIBUTOR, issues);
+    }
+    if (strict) {
+      if (isAddress(addresses.TICKET_HUB)) expectBool("TREASURY.ecosystemCaller[ticketHub]", ticketHubCaller, true, issues);
+      if (isAddress(addresses.MAIN2)) expectBool("TREASURY.ecosystemCaller[main2]", main2Caller, true, issues);
     }
   });
 
@@ -841,6 +1149,7 @@ async function main() {
       "function treasury() view returns (address)",
       "function policy() view returns (address)",
       "function dripLM() view returns (address)",
+      "function distributor() view returns (address)",
       "function keeper() view returns (address)",
       "function lastBuybackAt() view returns (uint256)",
       "function totalNativeReceived() view returns (uint256)",
@@ -859,6 +1168,7 @@ async function main() {
     const treasury = await safe("BUYBACK.treasury", () => buyback.treasury());
     const policy = await safe("BUYBACK.policy", () => buyback.policy());
     const dripLm = await safe("BUYBACK.dripLM", () => buyback.dripLM());
+    const distributor = await safe("BUYBACK.distributor", () => buyback.distributor());
     await safe("BUYBACK.keeper", () => buyback.keeper());
     await safe("BUYBACK.lastBuybackAt", () => buyback.lastBuybackAt());
     await safe("BUYBACK.totalNativeReceived", () => buyback.totalNativeReceived());
@@ -883,6 +1193,9 @@ async function main() {
     if (isAddress(addresses.DRIP_LM)) {
       expectAddressMatch("BUYBACK.dripLM == DRIP_LM", dripLm, addresses.DRIP_LM, issues);
     }
+    if (isAddress(addresses.DISTRIBUTOR)) {
+      expectAddressMatch("BUYBACK.distributor == DISTRIBUTOR", distributor, addresses.DISTRIBUTOR, issues);
+    }
 
     const expFallbackSlip = envIntOpt("BUYBACK_FALLBACK_SLIPPAGE_BPS");
     const expFallbackDeadline = envIntOpt("BUYBACK_FALLBACK_DEADLINE_SEC");
@@ -901,6 +1214,7 @@ async function main() {
       "function maxDailyBuybackNative() view returns (uint256)",
       "function usedToday() view returns (uint256)",
       "function dayIndex() view returns (uint64)",
+      "function buybackAgent() view returns (address)",
     ]);
     const slip = await safe("POLICY.swapSlippageBps", () => policy.swapSlippageBps());
     const deadline = await safe("POLICY.txDeadlineSec", () => policy.txDeadlineSec());
@@ -909,6 +1223,7 @@ async function main() {
     const maxDaily = await safe("POLICY.maxDailyBuybackNative", () => policy.maxDailyBuybackNative());
     await safe("POLICY.usedToday", () => policy.usedToday());
     await safe("POLICY.dayIndex", () => policy.dayIndex());
+    const buybackAgent = await safe("POLICY.buybackAgent", () => policy.buybackAgent());
 
     const expSlip = envIntOpt("POLICY_SWAP_SLIPPAGE_BPS");
     const expDeadline = envIntOpt("POLICY_TX_DEADLINE_SEC");
@@ -921,6 +1236,9 @@ async function main() {
     if (expMinInterval != null) expectNumberMatch("POLICY.minBuybackInterval", minInterval, expMinInterval, issues);
     if (expPaused != null) expectBool("POLICY.buybacksPaused", paused_, expPaused, issues);
     if (expMaxDaily != null) expectBigNumberishMatch("POLICY.maxDailyBuybackNative", maxDaily, expMaxDaily, issues);
+    if (isAddress(addresses.BUYBACK_AGENT)) {
+      expectAddressMatch("POLICY.buybackAgent == BUYBACK_AGENT", buybackAgent, addresses.BUYBACK_AGENT, issues);
+    }
   });
 
   await section("COMMUNITY_CENTER", addresses.COMMUNITY_CENTER, requireCode, issues, async () => {
@@ -1027,6 +1345,7 @@ async function main() {
     let hubCaller = null;
     let main2Caller = null;
     let distCaller = null;
+    let treasuryCaller = null;
     if (isAddress(addresses.TICKET_HUB)) {
       hubCaller = await safe("RESERVE.notifyCaller[ticketHub]", () => reserve.notifyCallers(addresses.TICKET_HUB));
     }
@@ -1035,6 +1354,9 @@ async function main() {
     }
     if (isAddress(addresses.DISTRIBUTOR)) {
       distCaller = await safe("RESERVE.notifyCaller[distributor]", () => reserve.notifyCallers(addresses.DISTRIBUTOR));
+    }
+    if (isAddress(addresses.TREASURY)) {
+      treasuryCaller = await safe("RESERVE.notifyCaller[treasury]", () => reserve.notifyCallers(addresses.TREASURY));
     }
     await safe("RESERVE.availableForDexRefill", () => reserve.availableForDexRefill());
     await safe("RESERVE.biggiBalance", () => reserve.biggiBalance());
@@ -1056,6 +1378,9 @@ async function main() {
     if (isAddress(addresses.DISTRIBUTOR) && strictNotifyEnabled != null) {
       expectBool("RESERVE.notifyCaller[distributor]", distCaller, true, issues);
     }
+    if (isAddress(addresses.TREASURY) && strictNotifyEnabled != null) {
+      expectBool("RESERVE.notifyCaller[treasury]", treasuryCaller, true, issues);
+    }
   });
 
   await section("TOKEN_REWARDS", addresses.TOKEN_REWARDS, requireCode, issues, async () => {
@@ -1066,6 +1391,8 @@ async function main() {
       "function isRegistryModeEnabled() view returns (bool)",
       "function registry() view returns (address)",
       "function treasure() view returns (address)",
+      "function emissionController() view returns (address)",
+      "function emissionControllerEnabled() view returns (bool)",
       "function isAllowedCollection(address) view returns (bool)",
     ]);
     await safe("TOKEN_REWARDS.rewardsStats", () => rewards.rewardsStats());
@@ -1074,6 +1401,11 @@ async function main() {
     const registryMode = await safe("TOKEN_REWARDS.registryMode", () => rewards.isRegistryModeEnabled());
     const registryAddr = await safe("TOKEN_REWARDS.registry", () => rewards.registry());
     const treasureAddr = await safe("TOKEN_REWARDS.treasure", () => rewards.treasure());
+    const emissionControllerAddr = await safe("TOKEN_REWARDS.emissionController", () => rewards.emissionController());
+    const emissionControllerEnabled = await safe(
+      "TOKEN_REWARDS.emissionControllerEnabled",
+      () => rewards.emissionControllerEnabled()
+    );
     const mainAllowed = isAddress(addresses.MAIN)
       ? await safe("TOKEN_REWARDS.allowed[main]", () => rewards.isAllowedCollection(addresses.MAIN))
       : null;
@@ -1111,6 +1443,15 @@ async function main() {
     if (isAddress(addresses.TREASURY)) {
       expectAddressMatch("TOKEN_REWARDS.treasure == TREASURY", treasureAddr, addresses.TREASURY, issues);
     }
+    if (isAddress(addresses.TOKEN_REWARDS_EMISSION_CONTROLLER)) {
+      expectAddressMatch(
+        "TOKEN_REWARDS.emissionController == TOKEN_REWARDS_EMISSION_CONTROLLER",
+        emissionControllerAddr,
+        addresses.TOKEN_REWARDS_EMISSION_CONTROLLER,
+        issues
+      );
+      if (strict) expectBool("TOKEN_REWARDS.emissionControllerEnabled", emissionControllerEnabled, true, issues);
+    }
     if (regMainAllowed != null && mainAllowed != null) {
       expectBool("TOKEN_REWARDS.allowed[main] follows REGISTRY", mainAllowed, regMainAllowed, issues);
     }
@@ -1119,6 +1460,56 @@ async function main() {
     }
     if (strict && ticketHubAllowed != null) {
       expectBool("TOKEN_REWARDS.allowed[ticketHub]", ticketHubAllowed, false, issues);
+    }
+  });
+
+  await section("TOKEN_REWARDS_EMISSION_CONTROLLER", addresses.TOKEN_REWARDS_EMISSION_CONTROLLER, requireCode, issues, async () => {
+    const emission = viewContract(addresses.TOKEN_REWARDS_EMISSION_CONTROLLER, [
+      "function tokenRewards() view returns (address)",
+      "function treasury() view returns (address)",
+      "function targetWeeklyUnits() view returns (uint256)",
+      "function minWeeklyBudget() view returns (uint256)",
+      "function maxWeeklyBudget() view returns (uint256)",
+      "function balanceBudgetBps() view returns (uint256)",
+      "function weakInflowThreshold() view returns (uint256)",
+      "function strongInflowThreshold() view returns (uint256)",
+      "function currentWeek() view returns (uint64)",
+      "function previewWeek(uint64) view returns (tuple(bool initialized,uint256 observedBiggiInflow,uint256 tokenRewardsBalance,uint256 budget,uint256 paid,uint256 unitReward))",
+    ]);
+    const tokenRewardsAddr = await safe("TOKEN_REWARDS_EMISSION_CONTROLLER.tokenRewards", () => emission.tokenRewards());
+    const treasuryAddr = await safe("TOKEN_REWARDS_EMISSION_CONTROLLER.treasury", () => emission.treasury());
+    const targetWeeklyUnits = await safe(
+      "TOKEN_REWARDS_EMISSION_CONTROLLER.targetWeeklyUnits",
+      () => emission.targetWeeklyUnits()
+    );
+    await safe("TOKEN_REWARDS_EMISSION_CONTROLLER.minWeeklyBudget", () => emission.minWeeklyBudget());
+    await safe("TOKEN_REWARDS_EMISSION_CONTROLLER.maxWeeklyBudget", () => emission.maxWeeklyBudget());
+    await safe("TOKEN_REWARDS_EMISSION_CONTROLLER.balanceBudgetBps", () => emission.balanceBudgetBps());
+    await safe("TOKEN_REWARDS_EMISSION_CONTROLLER.weakInflowThreshold", () => emission.weakInflowThreshold());
+    await safe("TOKEN_REWARDS_EMISSION_CONTROLLER.strongInflowThreshold", () => emission.strongInflowThreshold());
+    const currentWeek = await safe("TOKEN_REWARDS_EMISSION_CONTROLLER.currentWeek", () => emission.currentWeek());
+    if (currentWeek != null) {
+      await safe("TOKEN_REWARDS_EMISSION_CONTROLLER.previewWeek(current)", () => emission.previewWeek(currentWeek));
+    }
+
+    if (isAddress(addresses.TOKEN_REWARDS)) {
+      expectAddressMatch(
+        "TOKEN_REWARDS_EMISSION_CONTROLLER.tokenRewards == TOKEN_REWARDS",
+        tokenRewardsAddr,
+        addresses.TOKEN_REWARDS,
+        issues
+      );
+    }
+    if (isAddress(addresses.TREASURY)) {
+      expectAddressMatch(
+        "TOKEN_REWARDS_EMISSION_CONTROLLER.treasury == TREASURY",
+        treasuryAddr,
+        addresses.TREASURY,
+        issues
+      );
+    }
+    if (strict && targetWeeklyUnits != null && targetWeeklyUnits.isZero && targetWeeklyUnits.isZero()) {
+      issues.push("TOKEN_REWARDS_EMISSION_CONTROLLER.targetWeeklyUnits is zero");
     }
   });
 
@@ -1162,6 +1553,254 @@ async function main() {
     if (strict && main2Allowed != null) {
       expectBool("NFT_REWARDS.allowedMain[main2]", main2Allowed, true, issues);
     }
+  });
+
+  await section("NFT_REWARDS_READER", addresses.NFT_REWARDS_READER, requireCode, issues, async () => {
+    const reader = viewContract(addresses.NFT_REWARDS_READER, [
+      "function nftRewards() view returns (address)",
+      "function getStatus() view returns (tuple(address nftRewards,address main,address vrfRouter,address owner,address registry,uint256 nextEventId,uint256 nextRewardId,uint256 totalRewardsCreated,string name,string symbol))",
+    ]);
+    const nftRewardsAddr = await safe("NFT_REWARDS_READER.nftRewards", () => reader.nftRewards());
+    const status = await safe("NFT_REWARDS_READER.status", () => reader.getStatus());
+
+    if (isAddress(addresses.NFT_REWARDS)) {
+      expectAddressMatch("NFT_REWARDS_READER.nftRewards == NFT_REWARDS", nftRewardsAddr, addresses.NFT_REWARDS, issues);
+      if (status) {
+        expectAddressMatch("NFT_REWARDS_READER.status.nftRewards == NFT_REWARDS", status.nftRewards, addresses.NFT_REWARDS, issues);
+      }
+    }
+    if (status && isAddress(addresses.MAIN)) {
+      expectAddressMatch("NFT_REWARDS_READER.status.main == MAIN", status.main, addresses.MAIN, issues);
+    }
+    if (status && isAddress(addresses.REGISTRY)) {
+      expectAddressMatch("NFT_REWARDS_READER.status.registry == REGISTRY", status.registry, addresses.REGISTRY, issues);
+    }
+  });
+
+  await section("RESERVE_TREASURY_READER", addresses.RESERVE_TREASURY_READER, requireCode, issues, async () => {
+    const reader = viewContract(addresses.RESERVE_TREASURY_READER, [
+      "function reserve() view returns (address)",
+      "function treasury() view returns (address)",
+      "function reserveSnapshot() view returns (uint256,uint256,uint256,uint256,uint256)",
+      "function treasurySnapshot() view returns (uint256,uint256,uint256,uint256,uint256)",
+      "function wiringSnapshot() view returns (tuple(address reserve,address treasury,address reserveLiquidityManager,address reserveDistributor,address treasuryDistributor,address treasuryBuybackAgent,address treasuryTokenRewards,address treasuryReserveRecipient,address treasuryDripDistributor,bool reserveBucketConsistent))",
+      "function ecosystemBiggiRouteSnapshot(address,address,address,address) view returns (tuple(address treasury,address reserve,address ticketHub,address publicCollection,address tokenRewards,address reserveRecipient,address dripDistributor,bool ticketHubAllowed,bool publicCollectionAllowed,bool reserveNotifyTreasuryAllowed,bool reserveNotifyCheckEnabled,bool splitRecipientsConfigured,bool routeReady))",
+    ]);
+    const reserveAddr = await safe("RESERVE_TREASURY_READER.reserve", () => reader.reserve());
+    const treasuryAddr = await safe("RESERVE_TREASURY_READER.treasury", () => reader.treasury());
+    await safe("RESERVE_TREASURY_READER.reserveSnapshot", () => reader.reserveSnapshot());
+    await safe("RESERVE_TREASURY_READER.treasurySnapshot", () => reader.treasurySnapshot());
+    const wiring = await safe("RESERVE_TREASURY_READER.wiringSnapshot", () => reader.wiringSnapshot());
+    const ecosystemRoute = await safe(
+      "RESERVE_TREASURY_READER.ecosystemBiggiRoute",
+      () => reader.ecosystemBiggiRouteSnapshot(
+        addresses.TICKET_HUB || ZERO,
+        addresses.MAIN2 || ZERO,
+        addresses.TOKEN_REWARDS || ZERO,
+        addresses.DRIP_DISTRIBUTOR || ZERO
+      )
+    );
+    expectAddressMatch("RESERVE_TREASURY_READER.reserve == RESERVE", reserveAddr, addresses.RESERVE, issues);
+    expectAddressMatch("RESERVE_TREASURY_READER.treasury == TREASURY", treasuryAddr, addresses.TREASURY, issues);
+    if (wiring && strict) {
+      expectBool("RESERVE_TREASURY_READER.wiring.reserveBucketConsistent", wiring.reserveBucketConsistent, true, issues);
+    }
+    if (ecosystemRoute && strict) {
+      expectBool("RESERVE_TREASURY_READER.ecosystemBiggiRoute.routeReady", ecosystemRoute.routeReady, true, issues);
+    }
+  });
+
+  await section("SUPPLY_CONTROLLER_READER", addresses.SUPPLY_CONTROLLER_READER, requireCode, issues, async () => {
+    const reader = viewContract(addresses.SUPPLY_CONTROLLER_READER, [
+      "function controller() view returns (address)",
+      "function previewMaintenance() view returns (bool,bool,uint256,uint256)",
+    ]);
+    const controllerAddr = await safe("SUPPLY_CONTROLLER_READER.controller", () => reader.controller());
+    await safe("SUPPLY_CONTROLLER_READER.previewMaintenance", () => reader.previewMaintenance());
+    expectAddressMatch("SUPPLY_CONTROLLER_READER.controller == SUPPLY_CONTROLLER", controllerAddr, addresses.SUPPLY_CONTROLLER, issues);
+  });
+
+  await section("SUPPLY_GUARDIAN_READER", addresses.SUPPLY_GUARDIAN_READER, requireCode, issues, async () => {
+    const reader = viewContract(addresses.SUPPLY_GUARDIAN_READER, [
+      "function guardian() view returns (address)",
+      "function getStatus() view returns (tuple(address guardian,address owner,address controller,bool guardianIsKeeperOnController,bool guardianIsAllowedCallerOnController))",
+    ]);
+    const guardianAddr = await safe("SUPPLY_GUARDIAN_READER.guardian", () => reader.guardian());
+    const status = await safe("SUPPLY_GUARDIAN_READER.status", () => reader.getStatus());
+    expectAddressMatch("SUPPLY_GUARDIAN_READER.guardian == SUPPLY_GUARDIAN", guardianAddr, addresses.SUPPLY_GUARDIAN, issues);
+    if (status && isAddress(addresses.SUPPLY_CONTROLLER)) {
+      expectAddressMatch("SUPPLY_GUARDIAN_READER.status.controller == SUPPLY_CONTROLLER", status.controller, addresses.SUPPLY_CONTROLLER, issues);
+    }
+  });
+
+  await section("DEX_RESERVE_GUARD_READER", addresses.DEX_RESERVE_GUARD_READER, requireCode, issues, async () => {
+    const reader = viewContract(addresses.DEX_RESERVE_GUARD_READER, [
+      "function guard() view returns (address)",
+      "function getStatus() view returns (tuple(address guard,address owner,bool paused,address pair,address token,address quoteToken,uint256 baselineReserve,uint256 minReserveRatioBps,uint256 minAllowedReserve,uint256 refillAmount,uint256 cooldown,uint256 lastRefillAt,bool autoRefreshBaselineOnRefill,bool priceCheckEnabled,uint256 maxPriceDeviationBps,uint256 lastGoodDexPriceE18,uint256 currentTokenReserve,uint256 currentQuoteReserve,uint256 currentDexPriceE18,bool refillNeeded,string refillReason))",
+    ]);
+    const guardAddr = await safe("DEX_RESERVE_GUARD_READER.guard", () => reader.guard());
+    const status = await safe("DEX_RESERVE_GUARD_READER.status", () => reader.getStatus());
+    expectAddressMatch("DEX_RESERVE_GUARD_READER.guard == DEX_RESERVE_GUARD", guardAddr, addresses.DEX_RESERVE_GUARD, issues);
+    if (status && isAddress(addresses.PAIR)) {
+      expectAddressMatch("DEX_RESERVE_GUARD_READER.status.pair == PAIR", status.pair, addresses.PAIR, issues);
+    }
+  });
+
+  await section("SYSTEM_READER", addresses.SYSTEM_READER, requireCode, issues, async () => {
+    const reader = viewContract(addresses.SYSTEM_READER, [
+      "function token() view returns (address)",
+      "function controller() view returns (address)",
+      "function guardian() view returns (address)",
+    ]);
+    const tokenAddr = await safe("SYSTEM_READER.token", () => reader.token());
+    const controllerAddr = await safe("SYSTEM_READER.controller", () => reader.controller());
+    const guardianAddr = await safe("SYSTEM_READER.guardian", () => reader.guardian());
+    expectAddressMatch("SYSTEM_READER.token == BIGGI_TOKEN", tokenAddr, addresses.BIGGI_TOKEN, issues);
+    expectAddressMatch("SYSTEM_READER.controller == SUPPLY_CONTROLLER", controllerAddr, addresses.SUPPLY_CONTROLLER, issues);
+    expectAddressMatch("SYSTEM_READER.guardian == SUPPLY_GUARDIAN", guardianAddr, addresses.SUPPLY_GUARDIAN, issues);
+  });
+
+  await section("TOKENOMICS_SYSTEM_ADDON_READER", addresses.TOKENOMICS_SYSTEM_ADDON_READER, requireCode, issues, async () => {
+    const reader = viewContract(addresses.TOKENOMICS_SYSTEM_ADDON_READER, [
+      "function masterConfig() view returns (address)",
+      "function token() view returns (address)",
+      "function getStatus() view returns (tuple(address masterConfig,address token,tuple(address biggi,address reserve,address treasury,address distributor) core,tuple(address collectionRewards,address tokenRewards,address nftRewards,address communityCenter) rewards,tuple(address buybackAgent,address dripLM,address dripDistributor,address policy) pump,tuple(address liquidityManager,address liquidityVault,address router,address factory,address weth) liquidity,tuple(address collection1,address collection2,address rewardsReader,address distributor) collections,address supplyController,address supplyGuardian,address dexReserveGuard,bool tokenPaused,bool guardianMintPaused,bool controllerPaused,uint256 guardianDexMinted,uint256 guardianRewardsMinted,uint256 baselineReserve,uint256 currentPairReserve))",
+    ]);
+    const masterConfigAddr = await safe("TOKENOMICS_SYSTEM_ADDON_READER.masterConfig", () => reader.masterConfig());
+    const tokenAddr = await safe("TOKENOMICS_SYSTEM_ADDON_READER.token", () => reader.token());
+    const status = await safe("TOKENOMICS_SYSTEM_ADDON_READER.status", () => reader.getStatus());
+    expectAddressMatch("TOKENOMICS_SYSTEM_ADDON_READER.masterConfig == MASTER_CONFIG", masterConfigAddr, addresses.MASTER_CONFIG, issues);
+    expectAddressMatch("TOKENOMICS_SYSTEM_ADDON_READER.token == BIGGI_TOKEN", tokenAddr, addresses.BIGGI_TOKEN, issues);
+    if (status && isAddress(addresses.SUPPLY_CONTROLLER)) {
+      expectAddressMatch("TOKENOMICS_SYSTEM_ADDON_READER.status.supplyController == SUPPLY_CONTROLLER", status.supplyController, addresses.SUPPLY_CONTROLLER, issues);
+    }
+    if (status && isAddress(addresses.TREASURY)) {
+      expectAddressMatch("TOKENOMICS_SYSTEM_ADDON_READER.status.core.treasury == TREASURY", status.core.treasury, addresses.TREASURY, issues);
+    }
+    if (status && isAddress(addresses.TOKEN_REWARDS)) {
+      expectAddressMatch("TOKENOMICS_SYSTEM_ADDON_READER.status.rewards.tokenRewards == TOKEN_REWARDS", status.rewards.tokenRewards, addresses.TOKEN_REWARDS, issues);
+    }
+    if (status && isAddress(addresses.MAIN2)) {
+      expectAddressMatch("TOKENOMICS_SYSTEM_ADDON_READER.status.collections.collection2 == MAIN2", status.collections.collection2, addresses.MAIN2, issues);
+    }
+    if (status && isAddress(addresses.SUPPLY_GUARDIAN)) {
+      expectAddressMatch("TOKENOMICS_SYSTEM_ADDON_READER.status.supplyGuardian == SUPPLY_GUARDIAN", status.supplyGuardian, addresses.SUPPLY_GUARDIAN, issues);
+    }
+    if (status && isAddress(addresses.DEX_RESERVE_GUARD)) {
+      expectAddressMatch("TOKENOMICS_SYSTEM_ADDON_READER.status.dexReserveGuard == DEX_RESERVE_GUARD", status.dexReserveGuard, addresses.DEX_RESERVE_GUARD, issues);
+    }
+  });
+
+  await section("TOKEN_REWARDS_READER", addresses.TOKEN_REWARDS_READER, requireCode, issues, async () => {
+    const reader = viewContract(addresses.TOKEN_REWARDS_READER, [
+      "function tokenRewards() view returns (address)",
+      "function getBlockWeights() view returns (uint8[11])",
+      "function preview(uint256[] tokenIds) view returns (uint256 units,uint256 amount)",
+    ]);
+    const tokenRewardsAddr = await safe("TOKEN_REWARDS_READER.tokenRewards", () => reader.tokenRewards());
+    await safe("TOKEN_REWARDS_READER.blockWeights", () => reader.getBlockWeights());
+    await safe("TOKEN_REWARDS_READER.preview(empty)", () => reader.preview([]));
+    expectAddressMatch("TOKEN_REWARDS_READER.tokenRewards == TOKEN_REWARDS", tokenRewardsAddr, addresses.TOKEN_REWARDS, issues);
+  });
+
+  await section("BUYBACK_READER", addresses.BUYBACK_READER, requireCode, issues, async () => {
+    const reader = viewContract(addresses.BUYBACK_READER, [
+      "function agent() view returns (address)",
+      "function treasury() view returns (address)",
+      "function policy() view returns (address)",
+      "function keeperProxy() view returns (address)",
+    ]);
+    const agentAddr = await safe("BUYBACK_READER.agent", () => reader.agent());
+    const treasuryAddr = await safe("BUYBACK_READER.treasury", () => reader.treasury());
+    const policyAddr = await safe("BUYBACK_READER.policy", () => reader.policy());
+    const keeperProxyAddr = await safe("BUYBACK_READER.keeperProxy", () => reader.keeperProxy());
+    expectAddressMatch("BUYBACK_READER.agent == BUYBACK_AGENT", agentAddr, addresses.BUYBACK_AGENT, issues);
+    expectAddressMatch("BUYBACK_READER.treasury == TREASURY", treasuryAddr, addresses.TREASURY, issues);
+    if (isAddress(addresses.POLICY)) {
+      expectAddressMatch("BUYBACK_READER.policy == POLICY", policyAddr, addresses.POLICY, issues);
+    }
+    if (isAddress(addresses.BUYBACK_UPKEEP_PROXY)) {
+      expectAddressMatch("BUYBACK_READER.keeperProxy == BUYBACK_UPKEEP_PROXY", keeperProxyAddr, addresses.BUYBACK_UPKEEP_PROXY, issues);
+    }
+  });
+
+  await section("LIQUIDITY_BRANCH_READER", addresses.LIQUIDITY_BRANCH_READER, requireCode, issues, async () => {
+    const reader = viewContract(addresses.LIQUIDITY_BRANCH_READER, [
+      "function reserve() view returns (address)",
+      "function lm() view returns (address)",
+      "function vault() view returns (address)",
+      "function wiringSnapshot() view returns (bool,address,address,address,address)",
+    ]);
+    const reserveAddr = await safe("LIQUIDITY_BRANCH_READER.reserve", () => reader.reserve());
+    const lmAddr = await safe("LIQUIDITY_BRANCH_READER.lm", () => reader.lm());
+    const vaultAddr = await safe("LIQUIDITY_BRANCH_READER.vault", () => reader.vault());
+    const wiring = await safe("LIQUIDITY_BRANCH_READER.wiringSnapshot", () => reader.wiringSnapshot());
+    expectAddressMatch("LIQUIDITY_BRANCH_READER.reserve == RESERVE", reserveAddr, addresses.RESERVE, issues);
+    expectAddressMatch("LIQUIDITY_BRANCH_READER.lm == LIQUIDITY_MANAGER", lmAddr, addresses.LIQUIDITY_MANAGER, issues);
+    expectAddressMatch("LIQUIDITY_BRANCH_READER.vault == LIQUIDITY_VAULT", vaultAddr, addresses.LIQUIDITY_VAULT, issues);
+    if (strict && wiring && wiring[0] !== true) {
+      issues.push("LIQUIDITY_BRANCH_READER.wiringSnapshot wiredOk=false");
+    }
+  });
+
+  await section("LIQUIDITY_HELPER_READER", addresses.LIQUIDITY_HELPER_READER, requireCode, issues, async () => {
+    const reader = viewContract(addresses.LIQUIDITY_HELPER_READER, [
+      "function reserve() view returns (address)",
+      "function lm() view returns (address)",
+      "function vault() view returns (address)",
+      "function router() view returns (address)",
+      "function routerInfo() view returns (address routerAddr,address factory,address weth)",
+    ]);
+    const reserveAddr = await safe("LIQUIDITY_HELPER_READER.reserve", () => reader.reserve());
+    const lmAddr = await safe("LIQUIDITY_HELPER_READER.lm", () => reader.lm());
+    const vaultAddr = await safe("LIQUIDITY_HELPER_READER.vault", () => reader.vault());
+    const routerAddr = await safe("LIQUIDITY_HELPER_READER.router", () => reader.router());
+    await safe("LIQUIDITY_HELPER_READER.routerInfo", () => reader.routerInfo());
+    expectAddressMatch("LIQUIDITY_HELPER_READER.reserve == RESERVE", reserveAddr, addresses.RESERVE, issues);
+    expectAddressMatch("LIQUIDITY_HELPER_READER.lm == LIQUIDITY_MANAGER", lmAddr, addresses.LIQUIDITY_MANAGER, issues);
+    expectAddressMatch("LIQUIDITY_HELPER_READER.vault == LIQUIDITY_VAULT", vaultAddr, addresses.LIQUIDITY_VAULT, issues);
+    expectAddressMatch("LIQUIDITY_HELPER_READER.router == ROUTER", routerAddr, addresses.ROUTER, issues);
+  });
+
+  await section("BIGGI_TOKENOMICS_READER", addresses.BIGGI_TOKENOMICS_READER, requireCode, issues, async () => {
+    const reader = viewContract(addresses.BIGGI_TOKENOMICS_READER, [
+      "function TOKEN() view returns (address)",
+      "function ROUTER() view returns (address)",
+      "function PAIR() view returns (address)",
+      "function DISTRIBUTOR() view returns (address)",
+      "function BUYBACK() view returns (address)",
+      "function RESERVE() view returns (address)",
+      "function LIQUIDITY_MANAGER() view returns (address)",
+      "function LIQUIDITY_VAULT() view returns (address)",
+      "function DRIP_DISTRIBUTOR() view returns (address)",
+      "function TOKEN_REWARDS() view returns (address)",
+    ]);
+    const tokenAddr = await safe("BIGGI_TOKENOMICS_READER.TOKEN", () => reader.TOKEN());
+    const routerAddr = await safe("BIGGI_TOKENOMICS_READER.ROUTER", () => reader.ROUTER());
+    const pairAddr = await safe("BIGGI_TOKENOMICS_READER.PAIR", () => reader.PAIR());
+    const distributorAddr = await safe("BIGGI_TOKENOMICS_READER.DISTRIBUTOR", () => reader.DISTRIBUTOR());
+    const buybackAddr = await safe("BIGGI_TOKENOMICS_READER.BUYBACK", () => reader.BUYBACK());
+    const reserveAddr = await safe("BIGGI_TOKENOMICS_READER.RESERVE", () => reader.RESERVE());
+    const lmAddr = await safe("BIGGI_TOKENOMICS_READER.LIQUIDITY_MANAGER", () => reader.LIQUIDITY_MANAGER());
+    const vaultAddr = await safe("BIGGI_TOKENOMICS_READER.LIQUIDITY_VAULT", () => reader.LIQUIDITY_VAULT());
+    const dripAddr = await safe("BIGGI_TOKENOMICS_READER.DRIP_DISTRIBUTOR", () => reader.DRIP_DISTRIBUTOR());
+    const tokenRewardsAddr = await safe("BIGGI_TOKENOMICS_READER.TOKEN_REWARDS", () => reader.TOKEN_REWARDS());
+    expectAddressMatch("BIGGI_TOKENOMICS_READER.TOKEN == BIGGI_TOKEN", tokenAddr, addresses.BIGGI_TOKEN, issues);
+    expectAddressMatch("BIGGI_TOKENOMICS_READER.ROUTER == ROUTER", routerAddr, addresses.ROUTER, issues);
+    expectAddressMatch("BIGGI_TOKENOMICS_READER.PAIR == PAIR", pairAddr, addresses.PAIR, issues);
+    expectAddressMatch("BIGGI_TOKENOMICS_READER.DISTRIBUTOR == DISTRIBUTOR", distributorAddr, addresses.DISTRIBUTOR, issues);
+    if (isAddress(addresses.BUYBACK_AGENT_EFFECTIVE)) {
+      expectAddressMatch("BIGGI_TOKENOMICS_READER.BUYBACK == BUYBACK_AGENT_EFFECTIVE", buybackAddr, addresses.BUYBACK_AGENT_EFFECTIVE, issues);
+    }
+    expectAddressMatch("BIGGI_TOKENOMICS_READER.RESERVE == RESERVE", reserveAddr, addresses.RESERVE, issues);
+    if (isAddress(addresses.LIQUIDITY_MANAGER)) {
+      expectAddressMatch("BIGGI_TOKENOMICS_READER.LIQUIDITY_MANAGER == LIQUIDITY_MANAGER", lmAddr, addresses.LIQUIDITY_MANAGER, issues);
+    }
+    if (isAddress(addresses.LIQUIDITY_VAULT)) {
+      expectAddressMatch("BIGGI_TOKENOMICS_READER.LIQUIDITY_VAULT == LIQUIDITY_VAULT", vaultAddr, addresses.LIQUIDITY_VAULT, issues);
+    }
+    expectAddressMatch("BIGGI_TOKENOMICS_READER.DRIP_DISTRIBUTOR == DRIP_DISTRIBUTOR", dripAddr, addresses.DRIP_DISTRIBUTOR, issues);
+    expectAddressMatch("BIGGI_TOKENOMICS_READER.TOKEN_REWARDS == TOKEN_REWARDS", tokenRewardsAddr, addresses.TOKEN_REWARDS, issues);
   });
 
   await section("MASTER_CONFIG", addresses.MASTER_CONFIG, requireCode, issues, async () => {
@@ -1322,6 +1961,10 @@ async function main() {
       "function priceCheckEnabled() view returns (bool)",
       "function maxPriceDeviationBps() view returns (uint256)",
       "function quoteOracle() view returns (address)",
+      "function quoteToken() view returns (address)",
+      "function maxOracleStaleness() view returns (uint256)",
+      "function requireQuoteOracleForPriceCheck() view returns (bool)",
+      "function quoteOracleStatus() view returns (bool,bool,bool,uint256,uint256,bool,bool)",
       "function refillNeeded() view returns (bool,string)",
       "function pair() view returns (address)",
       "function supplyController() view returns (address)",
@@ -1336,11 +1979,16 @@ async function main() {
     const priceCheckEnabled = await safe("DEX_GUARD.priceCheckEnabled", () => guard.priceCheckEnabled());
     const maxPriceDeviationBps = await safe("DEX_GUARD.maxPriceDeviationBps", () => guard.maxPriceDeviationBps());
     const quoteOracle = await safe("DEX_GUARD.quoteOracle", () => guard.quoteOracle());
+    const quoteToken = await safe("DEX_GUARD.quoteToken", () => guard.quoteToken());
+    const maxOracleStaleness = await safe("DEX_GUARD.maxOracleStaleness", () => guard.maxOracleStaleness());
+    const requireQuoteOracle = await safe("DEX_GUARD.requireQuoteOracleForPriceCheck", () => guard.requireQuoteOracleForPriceCheck());
+    const quoteOracleStatus = await safe("DEX_GUARD.quoteOracleStatus", () => guard.quoteOracleStatus());
     await safe("DEX_GUARD.refillNeeded", () => guard.refillNeeded());
     const guardPair = await safe("DEX_GUARD.pair", () => guard.pair());
     const guardController = await safe("DEX_GUARD.supplyController", () => guard.supplyController());
 
     expectAddressMatch("DEX_GUARD.pair == PAIR", guardPair, addresses.PAIR, issues);
+    expectAddressMatch("DEX_GUARD.quoteToken == QUOTE_TOKEN", quoteToken, addresses.QUOTE_TOKEN, issues);
     expectAddressMatch(
       "DEX_GUARD.supplyController == SUPPLY_CONTROLLER",
       guardController,
@@ -1355,6 +2003,8 @@ async function main() {
     const expPriceCheckEnabled = envBoolOpt("DEX_GUARD_PRICE_CHECK_ENABLED");
     const expMaxDeviationBps = envIntOpt("DEX_GUARD_MAX_DEVIATION_BPS");
     const expQuoteOracle = process.env.DEX_GUARD_QUOTE_ORACLE;
+    const expMaxOracleStaleness = envIntOpt("DEX_GUARD_MAX_ORACLE_STALENESS_SEC");
+    const expRequireQuoteOracle = envBoolOpt("DEX_GUARD_REQUIRE_QUOTE_ORACLE");
 
     if (expMinReserveRatioBps != null) expectNumberMatch("DEX_GUARD.minReserveRatioBps", minReserveRatioBps, expMinReserveRatioBps, issues);
     if (expRefillAmount != null) expectBigNumberishMatch("DEX_GUARD.refillAmount", refillAmount, expRefillAmount, issues);
@@ -1362,8 +2012,17 @@ async function main() {
     if (expAutoRefreshBaseline != null) expectBool("DEX_GUARD.autoRefreshBaselineOnRefill", autoRefreshBaseline, expAutoRefreshBaseline, issues);
     if (expPriceCheckEnabled != null) expectBool("DEX_GUARD.priceCheckEnabled", priceCheckEnabled, expPriceCheckEnabled, issues);
     if (expMaxDeviationBps != null) expectNumberMatch("DEX_GUARD.maxPriceDeviationBps", maxPriceDeviationBps, expMaxDeviationBps, issues);
+    if (expMaxOracleStaleness != null) expectNumberMatch("DEX_GUARD.maxOracleStaleness", maxOracleStaleness, expMaxOracleStaleness, issues);
+    if (expRequireQuoteOracle != null) expectBool("DEX_GUARD.requireQuoteOracleForPriceCheck", requireQuoteOracle, expRequireQuoteOracle, issues);
     if (expQuoteOracle && isAddress(expQuoteOracle)) {
       expectAddressMatch("DEX_GUARD.quoteOracle", quoteOracle, expQuoteOracle, issues);
+    }
+    if (expRequireQuoteOracle === true && quoteOracleStatus) {
+      const stale = Boolean(quoteOracleStatus[5]);
+      const valid = Boolean(quoteOracleStatus[6]);
+      if (!valid || stale) {
+        issues.push(`DEX_GUARD.quoteOracleStatus invalid for required oracle: valid=${valid}, stale=${stale}`);
+      }
     }
   });
 
@@ -1536,6 +2195,9 @@ async function main() {
 
   if (expectedLiquidityPath === "keeper_proxy") {
     expectAddressSet("LIQ_PATH keeper_proxy address", addresses.LIQUIDITY_KEEPER_PROXY, issues);
+    if (hasAutomation) {
+      issues.push(`LIQ_PATH keeper_proxy expected, but LIQUIDITY_AUTOMATION is also set: ${addresses.LIQUIDITY_AUTOMATION}`);
+    }
     if (hasLmKeeper && hasOrchestratorAddress) {
       expectAddressMatch(
         "LIQ_PATH LM.keeper == LIQUIDITY_ORCHESTRATOR",
@@ -1554,6 +2216,9 @@ async function main() {
     }
   } else if (expectedLiquidityPath === "automation") {
     expectAddressSet("LIQ_PATH automation address", addresses.LIQUIDITY_AUTOMATION, issues);
+    if (hasKeeperProxy) {
+      issues.push(`LIQ_PATH automation expected, but LIQUIDITY_KEEPER_PROXY is also set: ${addresses.LIQUIDITY_KEEPER_PROXY}`);
+    }
     if (hasLmKeeper && hasAutomation) {
       expectAddressMatch(
         "LIQ_PATH LM.keeper == LIQUIDITY_AUTOMATION",
@@ -1563,6 +2228,12 @@ async function main() {
       );
     }
   } else if (expectedLiquidityPath === "none") {
+    if (hasKeeperProxy) {
+      issues.push(`LIQ_PATH expected none, but LIQUIDITY_KEEPER_PROXY is set: ${addresses.LIQUIDITY_KEEPER_PROXY}`);
+    }
+    if (hasAutomation) {
+      issues.push(`LIQ_PATH expected none, but LIQUIDITY_AUTOMATION is set: ${addresses.LIQUIDITY_AUTOMATION}`);
+    }
     if (hasLmKeeper) {
       issues.push(`LIQ_PATH expected none, but LM.keeper is set: ${observedLiquidityKeeper}`);
     }
@@ -1594,9 +2265,9 @@ async function main() {
       );
     }
     if (hasKeeperProxy && hasAutomation) {
-      console.log(
-        "WARN LIQ_PATH: both LIQUIDITY_KEEPER_PROXY and LIQUIDITY_AUTOMATION are configured. " +
-          "Set EXPECT_LIQUIDITY_PATH to enforce one active path."
+      issues.push(
+        "LIQ_PATH(auto): both LIQUIDITY_KEEPER_PROXY and LIQUIDITY_AUTOMATION are configured. " +
+          "Set EXPECT_LIQUIDITY_PATH and keep only one active path."
       );
     }
   }
@@ -1707,6 +2378,7 @@ async function main() {
     ["TREASURY", addresses.TREASURY],
     ["DRIP_DISTRIBUTOR", addresses.DRIP_DISTRIBUTOR],
     ["TOKEN_REWARDS", addresses.TOKEN_REWARDS],
+    ["TOKEN_REWARDS_EMISSION_CONTROLLER", addresses.TOKEN_REWARDS_EMISSION_CONTROLLER],
     ["NFT_REWARDS", addresses.NFT_REWARDS],
     ["BUYBACK_AGENT", addresses.BUYBACK_AGENT],
     ["POLICY", addresses.POLICY],
@@ -1725,14 +2397,21 @@ async function main() {
 
   for (const [name, addr] of ownershipTargets) {
     await section(`OWNER_${name}`, addr, requireCode, issues, async () => {
-      const c = viewContract(addr, ["function owner() view returns (address)"]);
+      const c = viewContract(addr, [
+        "function owner() view returns (address)",
+        "function pendingOwner() view returns (address)",
+      ]);
       const ownerAddr = await safe(`${name}.owner`, () => c.owner());
+      const pendingOwner = await safe(`${name}.pendingOwner`, () => c.pendingOwner());
       if (!isAddress(ownerAddr)) {
         if (strict) issues.push(`${name}.owner invalid or not set`);
         return;
       }
       if (expectedOwner !== ZERO) {
         expectAddressMatch(`${name}.owner == EXPECT_OWNER`, ownerAddr, expectedOwner, issues);
+        if (!eqAddress(ownerAddr, expectedOwner) && isAddress(pendingOwner) && eqAddress(pendingOwner, expectedOwner)) {
+          issues.push(`${name}.owner still old owner; acceptOwnership() is still pending for EXPECT_OWNER`);
+        }
       }
     });
   }

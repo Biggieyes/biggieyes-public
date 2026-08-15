@@ -1,7 +1,7 @@
 // Redeploy immutable dashboard readers against the active runtime stack.
 //
 // Run:
-//   npx hardhat run scripts/redeployDashboardReaders.js --network amoy
+//   npx hardhat run scripts/redeployDashboardReaders.js --network polygon
 
 const fs = require("fs");
 const path = require("path");

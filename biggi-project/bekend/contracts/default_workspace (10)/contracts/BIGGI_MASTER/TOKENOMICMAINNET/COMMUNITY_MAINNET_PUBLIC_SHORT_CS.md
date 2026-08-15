@@ -1,8 +1,8 @@
 # BIGGI Mainnet Update - kratka public verze
 
-Datum: 2026-03-20
+Datum: 2026-06-03
 
-Co se na mainnetu meni oproti testnetu:
+Co se meni pro mainnet release:
 1. Core a tokenomika jsou jasne oddelene, aby byl provoz stabilnejsi.
 2. Pridany jsou ochranne vrstvy pro kriticke scenare:
    - SupplyController

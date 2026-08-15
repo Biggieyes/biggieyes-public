@@ -61,6 +61,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "OraclePriceStale",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -80,6 +85,11 @@
       }
     ],
     "name": "OwnableUnauthorizedAccount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "PairTokenMismatch",
     "type": "error"
   },
   {
@@ -228,6 +238,25 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "maxOracleStaleness",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "requireQuoteOracleForPriceCheck",
+        "type": "bool"
+      }
+    ],
+    "name": "QuoteOracleConfigSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "oracle",
@@ -235,6 +264,19 @@
       }
     ],
     "name": "QuoteOracleSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "quoteToken",
+        "type": "address"
+      }
+    ],
+    "name": "QuoteTokenSet",
     "type": "event"
   },
   {
@@ -463,6 +505,19 @@
   },
   {
     "inputs": [],
+    "name": "maxOracleStaleness",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "maxPriceDeviationBps",
     "outputs": [
       {
@@ -577,9 +632,52 @@
     "name": "quoteOracle",
     "outputs": [
       {
-        "internalType": "contract IAggregatorLike",
+        "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "quoteOracleStatus",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "configured",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "roundDataSupported",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "legacyAnswerSupported",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "answerE18",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "updatedAt",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "stale",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "valid",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -641,6 +739,19 @@
     "name": "renounceOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "requireQuoteOracleForPriceCheck",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -727,6 +838,37 @@
       }
     ],
     "name": "setQuoteOracle",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "maxStalenessSec",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "requireOracle",
+        "type": "bool"
+      }
+    ],
+    "name": "setQuoteOracleConfig",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "quoteToken_",
+        "type": "address"
+      }
+    ],
+    "name": "setQuoteToken",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

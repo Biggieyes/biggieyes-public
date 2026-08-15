@@ -10,21 +10,34 @@
 //   SALE_CAP, MARKETING_CAP, SERIES_NAME
 //   VRF_COORDINATOR, VRF_KEY_HASH, VRF_SUB_ID, VRF_ROUTER
 //   PAIR, QUOTE_TOKEN (required on non-local unless DEPLOY_MOCK_PAIR=1)
+//   ALLOW_PENDING_PAIR (1 allows tokenomics deploy before final DEX pair exists)
 //   CIRCUIT_BREAKER_ENABLED, CB_DEX_CRITICAL_FLOOR, CB_REWARDS_CRITICAL_FLOOR
 //   SUPPLY_DEX_RESERVE_DROP_BPS, SUPPLY_DEX_REFILL_AMOUNT, SUPPLY_DEX_COOLDOWN_SEC, SUPPLY_MIN_RESERVE_FLOOR, SUPPLY_AUTO_REFRESH_BASELINE
 //   SUPPLY_REWARDS_THRESHOLD, SUPPLY_REWARDS_REFILL_AMOUNT, SUPPLY_REWARDS_COOLDOWN_SEC
+//   TOKEN_REWARDS_EMISSION_CONTROLLER, DEPLOY_TOKEN_REWARDS_EMISSION_CONTROLLER, TOKEN_REWARDS_EMISSION_ENABLED
+//   TOKEN_REWARDS_TARGET_WEEKLY_UNITS, TOKEN_REWARDS_MIN_WEEKLY_BUDGET, TOKEN_REWARDS_WEAK_WEEKLY_BUDGET
+//   TOKEN_REWARDS_NORMAL_WEEKLY_BUDGET, TOKEN_REWARDS_STRONG_WEEKLY_BUDGET, TOKEN_REWARDS_EMERGENCY_WEEKLY_BUDGET
+//   TOKEN_REWARDS_MAX_WEEKLY_BUDGET, TOKEN_REWARDS_BALANCE_BUDGET_BPS, TOKEN_REWARDS_WEAK_INFLOW_THRESHOLD
+//   TOKEN_REWARDS_STRONG_INFLOW_THRESHOLD
 //   DEX_GUARD_MIN_RESERVE_RATIO_BPS, DEX_GUARD_REFILL_AMOUNT, DEX_GUARD_COOLDOWN_SEC, DEX_GUARD_AUTO_REFRESH_BASELINE
 //   DEX_GUARD_PRICE_CHECK_ENABLED, DEX_GUARD_MAX_DEVIATION_BPS, DEX_GUARD_QUOTE_ORACLE
+//   DEX_GUARD_MAX_ORACLE_STALENESS_SEC, DEX_GUARD_REQUIRE_QUOTE_ORACLE
 //   POLICY_SWAP_SLIPPAGE_BPS, POLICY_TX_DEADLINE_SEC, POLICY_MIN_BUYBACK_INTERVAL_SEC, POLICY_BUYBACKS_PAUSED, POLICY_MAX_DAILY_BUYBACK_NATIVE
 //   BUYBACK_FALLBACK_SLIPPAGE_BPS, BUYBACK_FALLBACK_DEADLINE_SEC, BUYBACK_FALLBACK_COOLDOWN_SEC
-//   MARKETING_SUPPORT
+//   MARKETING_SUPPORT, DEV_WALLET
 //   NFT_REWARDS, DEPLOY_NFT_REWARDS
-//   DRIP_LM, BUYBACK_AGENT, BUYBACK_ROUTER, COMMUNITY_CENTER, POLICY
-//   DEPLOY_BUYBACK_BRANCH, DEPLOY_BUYBACK_AGENT, DEPLOY_BUYBACK_ROUTER, DEPLOY_COMMUNITY_CENTER, DEPLOY_POLICY
+//   DRIP_LM, MODERATOR_CENTER, BUYBACK_AGENT, BUYBACK_ROUTER, COMMUNITY_CENTER, POLICY
+//   DEPLOY_BUYBACK_BRANCH, DEPLOY_DRIP_LM, DEPLOY_MODERATOR_CENTER, DEPLOY_BUYBACK_AGENT, DEPLOY_BUYBACK_ROUTER, DEPLOY_COMMUNITY_CENTER, DEPLOY_POLICY
 //   ALLOW_DISTRIBUTOR_RECIPIENT_FALLBACK (default 1; local fallback BUYBACK/COMMUNITY -> TREASURY)
 //   LIQUIDITY_MANAGER, LIQUIDITY_VAULT, ROUTER, FACTORY, WETH
-//   MULTI_COLLECTION_READER, CHAPTER_SERIES_READER, MULTICALL
-//   DEPLOY_MULTI_COLLECTION_READER, DEPLOY_CHAPTER_SERIES_READER, DEPLOY_MULTICALL
+//   LIQUIDITY_PATH (keeper_proxy|automation|none; fallback EXPECT_LIQUIDITY_PATH, default keeper_proxy)
+//   MAIN_READER, MULTI_COLLECTION_READER, CHAPTER_SERIES_READER, NFT_REWARDS_READER, MULTICALL
+//   RESERVE_TREASURY_READER, BUYBACK_READER, LIQUIDITY_BRANCH_READER, LIQUIDITY_HELPER_READER
+//   SUPPLY_CONTROLLER_READER, SUPPLY_GUARDIAN_READER, DEX_RESERVE_GUARD_READER
+//   SYSTEM_READER, TOKENOMICS_SYSTEM_ADDON_READER, BIGGI_TOKENOMICS_READER, TOKEN_REWARDS_READER
+//   DEPLOY_MAIN_READER, DEPLOY_MULTI_COLLECTION_READER, DEPLOY_CHAPTER_SERIES_READER, DEPLOY_NFT_REWARDS_READER, DEPLOY_MULTICALL
+//   DEPLOY_TOKENOMIC_READERS or individual DEPLOY_*_READER flags for the tokenomic reader layer
+//   SEED_MAIN_METADATA (default 1 on local networks, 0 otherwise)
 //
 // Output:
 //   ./addresses.master.json
@@ -119,6 +132,47 @@ async function deploy(name, args = [], options = undefined) {
   return contract;
 }
 
+async function seedFullMainMetadata(main) {
+  let nextIndex = 1;
+  let indices = [];
+  let backgrounds = [];
+  let blocks = [];
+  let mainIds = [];
+
+  async function flush() {
+    if (indices.length === 0) return;
+    await (await main.batchSetNFTBackgroundAndBlock(indices, backgrounds, blocks, mainIds)).wait();
+    indices = [];
+    backgrounds = [];
+    blocks = [];
+    mainIds = [];
+  }
+
+  for (let blockIdx = 1; blockIdx <= 10; blockIdx += 1) {
+    const backgroundCount = 11 - blockIdx;
+    const minMainId = (blockIdx - 1) * 10 + 1;
+    const maxMainId = blockIdx * 10;
+    for (let mainId = minMainId; mainId <= maxMainId; mainId += 1) {
+      for (let background = 1; background <= backgroundCount; background += 1) {
+        indices.push(nextIndex);
+        backgrounds.push(background);
+        blocks.push(blockIdx);
+        mainIds.push(mainId);
+        nextIndex += 1;
+        if (indices.length === 55) {
+          await flush();
+        }
+      }
+    }
+  }
+
+  await flush();
+  const [configuredCount, fullyConfigured, rewardMatrixConsistent] = await main.metadataConsistency();
+  console.log(
+    `BiggiEyesMain metadata: configured=${configuredCount.toString()} fully=${fullyConfigured} rewards=${rewardMatrixConsistent}`
+  );
+}
+
 async function contractAddrOrZero(label, addr) {
   if (addr === ZERO) return ZERO;
   const code = await ethers.provider.getCode(addr);
@@ -141,8 +195,8 @@ async function main() {
   console.log("Network:", network.name);
   console.log("Deployer:", deployer.address);
 
-  const saleCap = asInt("SALE_CAP", 550);
-  const marketingCap = asInt("MARKETING_CAP", 0);
+  const saleCap = asInt("SALE_CAP", 500);
+  const marketingCap = asInt("MARKETING_CAP", 50);
   const totalCap = 550;
   const circuitBreakerEnabled = process.env.CIRCUIT_BREAKER_ENABLED !== "0";
   const cbDexCriticalFloor = asTokenAmount("CB_DEX_CRITICAL_FLOOR", "500");
@@ -155,6 +209,17 @@ async function main() {
   const supplyRewardsThreshold = asTokenAmount("SUPPLY_REWARDS_THRESHOLD", "5000000");
   const supplyRewardsRefillAmount = asTokenAmount("SUPPLY_REWARDS_REFILL_AMOUNT", "200000000");
   const supplyRewardsCooldownSec = asInt("SUPPLY_REWARDS_COOLDOWN_SEC", 43200);
+  const tokenRewardsEmissionEnabled = asBool("TOKEN_REWARDS_EMISSION_ENABLED", true);
+  const tokenRewardsTargetWeeklyUnits = asInt("TOKEN_REWARDS_TARGET_WEEKLY_UNITS", 100000);
+  const tokenRewardsMinWeeklyBudget = asTokenAmount("TOKEN_REWARDS_MIN_WEEKLY_BUDGET", "50000");
+  const tokenRewardsWeakWeeklyBudget = asTokenAmount("TOKEN_REWARDS_WEAK_WEEKLY_BUDGET", "100000");
+  const tokenRewardsNormalWeeklyBudget = asTokenAmount("TOKEN_REWARDS_NORMAL_WEEKLY_BUDGET", "500000");
+  const tokenRewardsStrongWeeklyBudget = asTokenAmount("TOKEN_REWARDS_STRONG_WEEKLY_BUDGET", "1000000");
+  const tokenRewardsEmergencyWeeklyBudget = asTokenAmount("TOKEN_REWARDS_EMERGENCY_WEEKLY_BUDGET", "25000");
+  const tokenRewardsMaxWeeklyBudget = asTokenAmount("TOKEN_REWARDS_MAX_WEEKLY_BUDGET", "1000000");
+  const tokenRewardsBalanceBudgetBps = asInt("TOKEN_REWARDS_BALANCE_BUDGET_BPS", 100);
+  const tokenRewardsWeakInflowThreshold = asTokenAmount("TOKEN_REWARDS_WEAK_INFLOW_THRESHOLD", "10000");
+  const tokenRewardsStrongInflowThreshold = asTokenAmount("TOKEN_REWARDS_STRONG_INFLOW_THRESHOLD", "200000");
 
   const dexGuardMinReserveRatioBps = asInt("DEX_GUARD_MIN_RESERVE_RATIO_BPS", 5000);
   const dexGuardRefillAmount = asTokenAmount("DEX_GUARD_REFILL_AMOUNT", "20000000");
@@ -163,6 +228,9 @@ async function main() {
   const dexGuardPriceCheckEnabled = asBool("DEX_GUARD_PRICE_CHECK_ENABLED", false);
   const dexGuardMaxDeviationBps = asInt("DEX_GUARD_MAX_DEVIATION_BPS", 2000);
   const dexGuardQuoteOracle = envAddr("DEX_GUARD_QUOTE_ORACLE");
+  const dexGuardMaxOracleStalenessSec = asInt("DEX_GUARD_MAX_ORACLE_STALENESS_SEC", 86400);
+  const dexGuardRequireQuoteOracle = asBool("DEX_GUARD_REQUIRE_QUOTE_ORACLE", false);
+  const dexGuardRefreshPriceAnchor = asBool("DEX_GUARD_REFRESH_PRICE_ANCHOR", dexGuardPriceCheckEnabled);
 
   const policySwapSlippageBps = asInt("POLICY_SWAP_SLIPPAGE_BPS", 500);
   const policyTxDeadlineSec = asInt("POLICY_TX_DEADLINE_SEC", 600);
@@ -178,9 +246,44 @@ async function main() {
   if (saleCap + marketingCap !== totalCap) {
     throw new Error(`Invalid caps: sale(${saleCap}) + marketing(${marketingCap}) must equal ${totalCap}`);
   }
+  if (tokenRewardsTargetWeeklyUnits <= 0) {
+    throw new Error("TOKEN_REWARDS_TARGET_WEEKLY_UNITS must be greater than zero.");
+  }
+  if (tokenRewardsBalanceBudgetBps > 10000) {
+    throw new Error("TOKEN_REWARDS_BALANCE_BUDGET_BPS must be in range 0..10000.");
+  }
+  if (
+    tokenRewardsMinWeeklyBudget.isZero() ||
+    tokenRewardsWeakWeeklyBudget.isZero() ||
+    tokenRewardsNormalWeeklyBudget.isZero() ||
+    tokenRewardsStrongWeeklyBudget.isZero() ||
+    tokenRewardsEmergencyWeeklyBudget.isZero() ||
+    tokenRewardsMaxWeeklyBudget.isZero()
+  ) {
+    throw new Error("TOKEN_REWARDS weekly budgets must be greater than zero.");
+  }
+  if (tokenRewardsWeakInflowThreshold.gt(tokenRewardsStrongInflowThreshold)) {
+    throw new Error("TOKEN_REWARDS_WEAK_INFLOW_THRESHOLD must be <= TOKEN_REWARDS_STRONG_INFLOW_THRESHOLD.");
+  }
+  if (tokenRewardsMinWeeklyBudget.gt(tokenRewardsMaxWeeklyBudget)) {
+    throw new Error("TOKEN_REWARDS_MIN_WEEKLY_BUDGET must be <= TOKEN_REWARDS_MAX_WEEKLY_BUDGET.");
+  }
+  if (tokenRewardsEmergencyWeeklyBudget.gt(tokenRewardsMaxWeeklyBudget)) {
+    throw new Error("TOKEN_REWARDS_EMERGENCY_WEEKLY_BUDGET must be <= TOKEN_REWARDS_MAX_WEEKLY_BUDGET.");
+  }
 
   const seriesName = process.env.SERIES_NAME || "BIGGI MASTER Series";
   const deployMockPair = process.env.DEPLOY_MOCK_PAIR === "1" || isLocalNetwork();
+  const allowPendingPair = asBool("ALLOW_PENDING_PAIR", false);
+  const liquidityPath = String(
+    process.env.LIQUIDITY_PATH || process.env.EXPECT_LIQUIDITY_PATH || "keeper_proxy"
+  )
+    .trim()
+    .toLowerCase();
+  const seedMainMetadata = asBool("SEED_MAIN_METADATA", isLocalNetwork());
+  if (!["keeper_proxy", "automation", "none"].includes(liquidityPath)) {
+    throw new Error(`Invalid LIQUIDITY_PATH: ${liquidityPath}. Use keeper_proxy|automation|none.`);
+  }
 
   const namesLib = await deploy("BiggiNamesLib");
   const namesLib2 = await deploy("BiggiNamesLib2");
@@ -196,6 +299,9 @@ async function main() {
   const mainCollection = await mainFactory.deploy(deployer.address);
   await mainCollection.deployed();
   console.log(`BiggiEyesMain: ${mainCollection.address}`);
+  if (seedMainMetadata) {
+    await seedFullMainMetadata(mainCollection);
+  }
 
   const main2Factory = await ethers.getContractFactory("BiggiEyesMain2", {
     libraries: { BiggiNamesLib2: namesLib2.address },
@@ -206,6 +312,17 @@ async function main() {
 
   const ticketHub = await deploy("BiggiTicketHub", [deployer.address, mainCollection.address]);
   const collectionRewards = await deploy("BiggiCollectionRewards", [mainCollection.address, deployer.address]);
+  const devWalletConfigured = envOrHintAddr(
+    "DEV_WALLET",
+    addressHints,
+    "DEV_WALLET",
+    "SAFE",
+    "OWNER",
+    "MULTISIG"
+  );
+  const devWalletFinal = devWalletConfigured !== ZERO ? devWalletConfigured : deployer.address;
+  await (await publicCollection.setDevWallet(devWalletFinal)).wait();
+  await (await ticketHub.setDevWallet(devWalletFinal)).wait();
 
   let vrfRouter = null;
   let vrfRouterAddress = await contractAddrOrZero(
@@ -222,20 +339,16 @@ async function main() {
     console.log("VRF env not fully set. Skipping BiggiVRFRouter deploy.");
   }
 
+  if (vrfRouterAddress === ZERO && !isLocalNetwork()) {
+    throw new Error("VRF_ROUTER or full VRF_COORDINATOR + VRF_KEY_HASH + VRF_SUB_ID is required on non-local networks.");
+  }
+
   if (vrfRouterAddress !== ZERO) {
     try {
       const vrfRouterCtl = vrfRouter || (await ethers.getContractAt("BiggiVRFRouter", vrfRouterAddress));
       const currentMain = await vrfRouterCtl.main();
       if (!sameAddress(currentMain, mainCollection.address)) {
         await (await vrfRouterCtl.setMain(mainCollection.address)).wait();
-      }
-      try {
-        await (await vrfRouterCtl.setMainApproval(publicCollection.address, true)).wait();
-      } catch (e) {
-        const msg = String(e && e.message ? e.message : e);
-        if (!msg.toLowerCase().includes("already")) {
-          console.warn(`WARN: cannot set VRF main2 approval on ${vrfRouterAddress}: ${msg}`);
-        }
       }
     } catch (e) {
       console.warn(`WARN: VRF_ROUTER wiring skipped for ${vrfRouterAddress}: ${e.message}`);
@@ -252,6 +365,52 @@ async function main() {
     biggiToken.address,
     deployer.address,
   ]);
+  const shouldDeployTokenRewardsEmissionController = asBool("DEPLOY_TOKEN_REWARDS_EMISSION_CONTROLLER", true);
+  let tokenRewardsEmissionController = await contractAddrOrZero(
+    "TOKEN_REWARDS_EMISSION_CONTROLLER",
+    envOrHintAddr(
+      "TOKEN_REWARDS_EMISSION_CONTROLLER",
+      addressHints,
+      "TOKEN_REWARDS_EMISSION_CONTROLLER",
+      "TOKEN_REWARDS_CONTROLLER",
+      "EMISSION_CONTROLLER"
+    )
+  );
+  if (tokenRewardsEmissionController === ZERO && shouldDeployTokenRewardsEmissionController) {
+    tokenRewardsEmissionController = (
+      await deploy("BiggiTokenRewardsEmissionController", [
+        tokenRewards.address,
+        treasury.address,
+        biggiToken.address,
+        deployer.address,
+      ])
+    ).address;
+  }
+  if (tokenRewardsEmissionController !== ZERO) {
+    const emissionController = await ethers.getContractAt(
+      "BiggiTokenRewardsEmissionController",
+      tokenRewardsEmissionController
+    );
+    await (await emissionController.setTargetWeeklyUnits(tokenRewardsTargetWeeklyUnits)).wait();
+    await (
+      await emissionController.setBudgetConfig(
+        tokenRewardsMinWeeklyBudget,
+        tokenRewardsWeakWeeklyBudget,
+        tokenRewardsNormalWeeklyBudget,
+        tokenRewardsStrongWeeklyBudget,
+        tokenRewardsEmergencyWeeklyBudget,
+        tokenRewardsMaxWeeklyBudget,
+        tokenRewardsBalanceBudgetBps
+      )
+    ).wait();
+    await (
+      await emissionController.setInflowThresholds(
+        tokenRewardsWeakInflowThreshold,
+        tokenRewardsStrongInflowThreshold
+      )
+    ).wait();
+    await (await tokenRewards.setEmissionController(tokenRewardsEmissionController, tokenRewardsEmissionEnabled)).wait();
+  }
   const masterConfig = await deploy("BiggiMasterTokenomicsConfig", [deployer.address]);
 
   let pairAddress = envOrHintAddr("PAIR", addressHints, "PAIR");
@@ -272,15 +431,18 @@ async function main() {
   }
 
   if (pairAddress === ZERO) {
-    if (!deployMockPair) {
+    if (allowPendingPair) {
+      console.warn("WARN: ALLOW_PENDING_PAIR=1; deploying DEX-sensitive contracts with PAIR unset. Activate later with a real pair and baseline.");
+    } else if (!deployMockPair) {
       throw new Error("PAIR is required on non-local network. Or set DEPLOY_MOCK_PAIR=1.");
+    } else {
+      mockQuote = await deploy("MockERC20", ["Wrapped Native", "WNATIVE", 18]);
+      quoteTokenAddress = mockQuote.address;
+      mockPair = await deploy("MockLpToken");
+      pairAddress = mockPair.address;
+      await (await mockPair.setPairTokens(biggiToken.address, quoteTokenAddress)).wait();
+      await (await mockPair.setReserves(ethers.utils.parseEther("1000000"), ethers.utils.parseEther("1000000"))).wait();
     }
-    mockQuote = await deploy("MockERC20", ["Wrapped Native", "WNATIVE", 18]);
-    quoteTokenAddress = mockQuote.address;
-    mockPair = await deploy("MockLpToken");
-    pairAddress = mockPair.address;
-    await (await mockPair.setPairTokens(biggiToken.address, quoteTokenAddress)).wait();
-    await (await mockPair.setReserves(ethers.utils.parseEther("1000000"), ethers.utils.parseEther("1000000"))).wait();
   } else {
     const pairReader = await ethers.getContractAt(
       ["function token0() external view returns (address)", "function token1() external view returns (address)"],
@@ -340,6 +502,9 @@ async function main() {
   await (await dexReserveGuard.setCooldown(dexGuardCooldownSec)).wait();
   await (await dexReserveGuard.setAutoRefreshBaselineOnRefill(dexGuardAutoRefreshBaseline)).wait();
   await (await dexReserveGuard.setPriceCheckConfig(dexGuardPriceCheckEnabled, dexGuardMaxDeviationBps)).wait();
+  await (
+    await dexReserveGuard.setQuoteOracleConfig(dexGuardMaxOracleStalenessSec, dexGuardRequireQuoteOracle)
+  ).wait();
   if (dexGuardQuoteOracle !== ZERO) {
     await (await dexReserveGuard.setQuoteOracle(dexGuardQuoteOracle)).wait();
   }
@@ -349,9 +514,13 @@ async function main() {
   await (await ticketHub.setDistributor(distributor.address)).wait();
   await (await ticketHub.setMainCollection(mainCollection.address)).wait();
   await (await ticketHub.setTicketCaps(saleCap, marketingCap)).wait();
+  await (await ticketHub.setBiggiToken(biggiToken.address)).wait();
+  await (await ticketHub.setReserveAddress(reserve.address)).wait();
 
   await (await publicCollection.setDistributor(distributor.address)).wait();
   await (await publicCollection.setPriceProvider(mainCollection.address)).wait();
+  await (await publicCollection.setBiggiToken(biggiToken.address)).wait();
+  await (await publicCollection.setReserveAddress(reserve.address)).wait();
 
   await (await registry.createSeries(seriesName)).wait();
   await (await registry.createChapter(1)).wait();
@@ -395,9 +564,22 @@ async function main() {
   );
   const marketingSupportFinal = marketingSupport === ZERO ? treasury.address : marketingSupport;
   let communityCenter = envOrHintAddr("COMMUNITY_CENTER", addressHints, "COMMUNITY_CENTER", "COMMUNITY", "COMMUNITYCENTER");
+  let moderatorCenter = envOrHintAddr(
+    "MODERATOR_CENTER",
+    addressHints,
+    "MODERATOR_CENTER",
+    "MODERATORCENTER",
+    "BIGGI_MODERATOR_CENTER",
+    "BIGGIMODERATORCENTER"
+  );
   let policy = envOrHintAddr("POLICY", addressHints, "POLICY");
   const deployLiquidityBranch = process.env.DEPLOY_LIQUIDITY_BRANCH === "1" || isLocalNetwork();
   const deployBuybackBranch = process.env.DEPLOY_BUYBACK_BRANCH === "1" || isLocalNetwork();
+  const shouldDeployDripLm =
+    process.env.DEPLOY_DRIP_LM === "1" || (deployBuybackBranch && process.env.DEPLOY_DRIP_LM !== "0");
+  const shouldDeployModeratorCenter =
+    process.env.DEPLOY_MODERATOR_CENTER === "1" ||
+    (deployBuybackBranch && process.env.DEPLOY_MODERATOR_CENTER !== "0");
   const shouldDeployBuybackAgent =
     process.env.DEPLOY_BUYBACK_AGENT === "1" || (deployBuybackBranch && process.env.DEPLOY_BUYBACK_AGENT !== "0");
   const shouldDeployPolicy =
@@ -422,8 +604,10 @@ async function main() {
   let mockLiquidityFactory = null;
   let mockBuybackRouter = null;
 
+  let dripLm = envOrHintAddr("DRIP_LM", addressHints, "DRIP_LM");
   let dripKeeperProxy = envOrHintAddr("DRIP_KEEPER_PROXY", addressHints, "DRIP_KEEPER_PROXY");
   let buybackUpkeepProxy = envOrHintAddr("BUYBACK_UPKEEP_PROXY", addressHints, "BUYBACK_UPKEEP_PROXY", "UPKEEP_PROXY");
+  let mainReader = envOrHintAddr("MAIN_READER", addressHints, "MAIN_READER", "READER");
   let multiCollectionReader = envOrHintAddr(
     "MULTI_COLLECTION_READER",
     addressHints,
@@ -438,6 +622,60 @@ async function main() {
     "CHAPTER_READER",
     "SERIES_READER"
   );
+  let nftRewardsReader = envOrHintAddr("NFT_REWARDS_READER", addressHints, "NFT_REWARDS_READER");
+  let reserveTreasuryReader = envOrHintAddr(
+    "RESERVE_TREASURY_READER",
+    addressHints,
+    "RESERVE_TREASURY_READER",
+    "TREASURY_READER"
+  );
+  let buybackReader = envOrHintAddr("BUYBACK_READER", addressHints, "BUYBACK_READER", "BIGGI_BUYBACK_READER");
+  let liquidityBranchReader = envOrHintAddr(
+    "LIQUIDITY_BRANCH_READER",
+    addressHints,
+    "LIQUIDITY_BRANCH_READER",
+    "LIQUIDITY_BRANCH_USER_READER"
+  );
+  let liquidityHelperReader = envOrHintAddr(
+    "LIQUIDITY_HELPER_READER",
+    addressHints,
+    "LIQUIDITY_HELPER_READER"
+  );
+  let supplyControllerReader = envOrHintAddr(
+    "SUPPLY_CONTROLLER_READER",
+    addressHints,
+    "SUPPLY_CONTROLLER_READER"
+  );
+  let supplyGuardianReader = envOrHintAddr(
+    "SUPPLY_GUARDIAN_READER",
+    addressHints,
+    "SUPPLY_GUARDIAN_READER"
+  );
+  let dexReserveGuardReader = envOrHintAddr(
+    "DEX_RESERVE_GUARD_READER",
+    addressHints,
+    "DEX_RESERVE_GUARD_READER"
+  );
+  let systemReader = envOrHintAddr("SYSTEM_READER", addressHints, "SYSTEM_READER", "BIGGI_SYSTEM_READER");
+  let tokenomicsSystemAddonReader = envOrHintAddr(
+    "TOKENOMICS_SYSTEM_ADDON_READER",
+    addressHints,
+    "TOKENOMICS_SYSTEM_ADDON_READER",
+    "TOKENOMIC_SYSTEM_ADDON_READER"
+  );
+  let biggiTokenomicsReader = envOrHintAddr(
+    "BIGGI_TOKENOMICS_READER",
+    addressHints,
+    "BIGGI_TOKENOMICS_READER",
+    "BIGGI_TOKENOMIK_READER",
+    "TOKENOMICS_READER",
+    "TOKENOMIK_READER"
+  );
+  let tokenRewardsReader = envOrHintAddr(
+    "TOKEN_REWARDS_READER",
+    addressHints,
+    "TOKEN_REWARDS_READER"
+  );
   let multicall = envOrHintAddr("MULTICALL", addressHints, "MULTICALL", "MULTICALL2");
 
   liquidityManager = await contractAddrOrZero("LIQUIDITY_MANAGER", liquidityManager);
@@ -451,11 +689,29 @@ async function main() {
   buybackAgent = await contractAddrOrZero("BUYBACK_AGENT", buybackAgent);
   buybackRouter = await contractAddrOrZero("BUYBACK_ROUTER", buybackRouter);
   communityCenter = await contractAddrOrZero("COMMUNITY_CENTER", communityCenter);
+  moderatorCenter = await contractAddrOrZero("MODERATOR_CENTER", moderatorCenter);
   policy = await contractAddrOrZero("POLICY", policy);
+  dripLm = await contractAddrOrZero("DRIP_LM", dripLm);
   dripKeeperProxy = await contractAddrOrZero("DRIP_KEEPER_PROXY", dripKeeperProxy);
   buybackUpkeepProxy = await contractAddrOrZero("BUYBACK_UPKEEP_PROXY", buybackUpkeepProxy);
+  mainReader = await contractAddrOrZero("MAIN_READER", mainReader);
   multiCollectionReader = await contractAddrOrZero("MULTI_COLLECTION_READER", multiCollectionReader);
   chapterSeriesReader = await contractAddrOrZero("CHAPTER_SERIES_READER", chapterSeriesReader);
+  nftRewardsReader = await contractAddrOrZero("NFT_REWARDS_READER", nftRewardsReader);
+  reserveTreasuryReader = await contractAddrOrZero("RESERVE_TREASURY_READER", reserveTreasuryReader);
+  buybackReader = await contractAddrOrZero("BUYBACK_READER", buybackReader);
+  liquidityBranchReader = await contractAddrOrZero("LIQUIDITY_BRANCH_READER", liquidityBranchReader);
+  liquidityHelperReader = await contractAddrOrZero("LIQUIDITY_HELPER_READER", liquidityHelperReader);
+  supplyControllerReader = await contractAddrOrZero("SUPPLY_CONTROLLER_READER", supplyControllerReader);
+  supplyGuardianReader = await contractAddrOrZero("SUPPLY_GUARDIAN_READER", supplyGuardianReader);
+  dexReserveGuardReader = await contractAddrOrZero("DEX_RESERVE_GUARD_READER", dexReserveGuardReader);
+  systemReader = await contractAddrOrZero("SYSTEM_READER", systemReader);
+  tokenomicsSystemAddonReader = await contractAddrOrZero(
+    "TOKENOMICS_SYSTEM_ADDON_READER",
+    tokenomicsSystemAddonReader
+  );
+  biggiTokenomicsReader = await contractAddrOrZero("BIGGI_TOKENOMICS_READER", biggiTokenomicsReader);
+  tokenRewardsReader = await contractAddrOrZero("TOKEN_REWARDS_READER", tokenRewardsReader);
   multicall = await contractAddrOrZero("MULTICALL", multicall);
   nftRewards = await contractAddrOrZero("NFT_REWARDS", nftRewards);
 
@@ -479,6 +735,14 @@ async function main() {
   }
   if (buybackAgent === ZERO && shouldDeployBuybackAgent) {
     buybackAgent = (await deploy("BiggiBuybackAgent", [biggiToken.address, deployer.address])).address;
+  }
+  if (liquidityPath === "keeper_proxy") {
+    liquidityAutomation = ZERO;
+  } else if (liquidityPath === "automation") {
+    liquidityKeeperProxy = ZERO;
+  } else {
+    liquidityKeeperProxy = ZERO;
+    liquidityAutomation = ZERO;
   }
   const allowDistributorRecipientFallback = process.env.ALLOW_DISTRIBUTOR_RECIPIENT_FALLBACK !== "0";
   const fallbackDistributorRecipient = isLocalNetwork() && allowDistributorRecipientFallback ? treasury.address : ZERO;
@@ -554,36 +818,42 @@ async function main() {
         ])
       ).address;
     }
-    if (liquidityOrchestrator === ZERO) {
-      liquidityOrchestrator = (
-        await deploy("BiggiLiquidityOrchestrator", [reserve.address, liquidityManager, deployer.address])
-      ).address;
-    }
-    if (liquidityKeeperProxy === ZERO) {
-      liquidityKeeperProxy = (
-        await deploy("BiggiLiquidityKeeperProxy", [liquidityOrchestrator, reserve.address, deployer.address])
-      ).address;
-    }
-    if (liquidityAutomation === ZERO) {
-      const autoMinPol = asTokenAmount("LIQ_AUTO_MIN_POL_WEI", "0.5");
-      const autoMaxPol = asTokenAmount("LIQ_AUTO_MAX_POL_WEI", "2");
-      const autoMinInterval = asInt("LIQ_AUTO_MIN_INTERVAL_SEC", 900);
-      liquidityAutomation = (
-        await deploy("LiquidityAutomation", [
-          liquidityManager,
-          biggiToken.address,
-          autoMinPol,
-          autoMaxPol,
-          autoMinInterval,
-          deployer.address,
-        ])
-      ).address;
+    const useKeeperProxyLiquidity = liquidityPath === "keeper_proxy";
+    const useAutomationLiquidity = liquidityPath === "automation";
+    const autoMinPol = asTokenAmount("LIQ_AUTO_MIN_POL_WEI", "0.5");
+    const autoMaxPol = asTokenAmount("LIQ_AUTO_MAX_POL_WEI", "2");
+    const autoMinInterval = asInt("LIQ_AUTO_MIN_INTERVAL_SEC", 900);
+
+    if (useKeeperProxyLiquidity) {
+      if (liquidityOrchestrator === ZERO) {
+        liquidityOrchestrator = (
+          await deploy("BiggiLiquidityOrchestrator", [reserve.address, liquidityManager, deployer.address])
+        ).address;
+      }
+      if (liquidityKeeperProxy === ZERO) {
+        liquidityKeeperProxy = (
+          await deploy("BiggiLiquidityKeeperProxy", [liquidityOrchestrator, reserve.address, deployer.address])
+        ).address;
+      }
+      liquidityAutomation = ZERO;
+    } else if (useAutomationLiquidity) {
+      if (liquidityAutomation === ZERO) {
+        liquidityAutomation = (
+          await deploy("LiquidityAutomation", [
+            liquidityManager,
+            biggiToken.address,
+            autoMinPol,
+            autoMaxPol,
+            autoMinInterval,
+            deployer.address,
+          ])
+        ).address;
+      }
+      liquidityKeeperProxy = ZERO;
     }
 
     const lm = await ethers.getContractAt("BiggiLiquidityManager", liquidityManager);
     const vault = await ethers.getContractAt("LiquidityVault", liquidityVault);
-    const orchestrator = await ethers.getContractAt("BiggiLiquidityOrchestrator", liquidityOrchestrator);
-    const keeperProxy = await ethers.getContractAt("BiggiLiquidityKeeperProxy", liquidityKeeperProxy);
 
     await (await reserve.setLiquidityManager(liquidityManager)).wait();
     await (await vault.setLiquidityManager(liquidityManager)).wait();
@@ -597,39 +867,53 @@ async function main() {
     await (await lm.setFactory(factory)).wait();
     await (await lm.setReserve(reserve.address)).wait();
     await (await lm.setLiquidityVault(liquidityVault)).wait();
-    await (await lm.setKeeper(liquidityOrchestrator)).wait();
     await (await lm.setTokenPct(asInt("LIQ_TOKEN_PCT", 100))).wait();
     await (await lm.setSlippageBps(asInt("LIQ_SLIPPAGE_BPS", 300))).wait();
     await (await lm.setTxDeadlineSec(asInt("LIQ_DEADLINE_SEC", 600))).wait();
 
-    await (await orchestrator.setReserve(reserve.address)).wait();
-    await (await orchestrator.setLM(liquidityManager)).wait();
-    await (await orchestrator.setKeeper(liquidityKeeperProxy)).wait();
-    await (
-      await orchestrator.setLimits(
-        asTokenAmount("LIQ_ORCH_MIN_POL_PER_TX", "0.5"),
-        asTokenAmount("LIQ_ORCH_MAX_POL_PER_TX", "50"),
-        asTokenAmount("LIQ_ORCH_MIN_DEX_REFILL_BIGGI", "1"),
-        asInt("LIQ_ORCH_COOLDOWN_SEC", 3600),
-        asTokenAmount("LIQ_ORCH_DAILY_QUOTA_POL", "0")
-      )
-    ).wait();
+    if (useKeeperProxyLiquidity) {
+      const orchestrator = await ethers.getContractAt("BiggiLiquidityOrchestrator", liquidityOrchestrator);
+      const keeperProxy = await ethers.getContractAt("BiggiLiquidityKeeperProxy", liquidityKeeperProxy);
 
-    await (
-      await keeperProxy.setStrategy(
-        asInt("LIQ_KEEPER_MODE", 1),
-        asTokenAmount("LIQ_KEEPER_FIXED_POL", "0.5"),
-        asInt("LIQ_KEEPER_PERCENT_BPS", 500)
-      )
-    ).wait();
-    await (
-      await keeperProxy.setLimits(
-        asInt("LIQ_KEEPER_MIN_INTERVAL_SEC", 900),
-        asTokenAmount("LIQ_KEEPER_MIN_RESERVE_POL", "1"),
-        asTokenAmount("LIQ_KEEPER_MAX_PER_TX", "20"),
-        asTokenAmount("LIQ_KEEPER_MIN_DEX_REFILL_BIGGI", "1")
-      )
-    ).wait();
+      await (await lm.setKeeper(liquidityOrchestrator)).wait();
+      await (await orchestrator.setReserve(reserve.address)).wait();
+      await (await orchestrator.setLM(liquidityManager)).wait();
+      await (await orchestrator.setKeeper(liquidityKeeperProxy)).wait();
+      await (
+        await orchestrator.setLimits(
+          asTokenAmount("LIQ_ORCH_MIN_POL_PER_TX", "0.5"),
+          asTokenAmount("LIQ_ORCH_MAX_POL_PER_TX", "50"),
+          asTokenAmount("LIQ_ORCH_MIN_DEX_REFILL_BIGGI", "1"),
+          asInt("LIQ_ORCH_COOLDOWN_SEC", 3600),
+          asTokenAmount("LIQ_ORCH_DAILY_QUOTA_POL", "0")
+        )
+      ).wait();
+
+      await (
+        await keeperProxy.setStrategy(
+          asInt("LIQ_KEEPER_MODE", 1),
+          asTokenAmount("LIQ_KEEPER_FIXED_POL", "0.5"),
+          asInt("LIQ_KEEPER_PERCENT_BPS", 500)
+        )
+      ).wait();
+      await (
+        await keeperProxy.setLimits(
+          asInt("LIQ_KEEPER_MIN_INTERVAL_SEC", 900),
+          asTokenAmount("LIQ_KEEPER_MIN_RESERVE_POL", "1"),
+          asTokenAmount("LIQ_KEEPER_MAX_PER_TX", "20"),
+          asTokenAmount("LIQ_KEEPER_MIN_DEX_REFILL_BIGGI", "1")
+        )
+      ).wait();
+    } else if (useAutomationLiquidity) {
+      const automation = await ethers.getContractAt("LiquidityAutomation", liquidityAutomation);
+
+      await (await lm.setKeeper(liquidityAutomation)).wait();
+      await (await automation.setLM(liquidityManager)).wait();
+      await (await automation.setLimits(autoMinPol, autoMaxPol)).wait();
+      await (await automation.setMinInterval(autoMinInterval)).wait();
+    } else {
+      await (await lm.setKeeper(ZERO)).wait();
+    }
   } else {
     await (await reserve.setLiquidityManager(liquidityManager === ZERO ? deployer.address : liquidityManager)).wait();
   }
@@ -637,6 +921,7 @@ async function main() {
   await (await reserve.setNotifyCaller(ticketHub.address, true)).wait();
   await (await reserve.setNotifyCaller(publicCollection.address, true)).wait();
   await (await reserve.setNotifyCaller(distributor.address, true)).wait();
+  await (await reserve.setNotifyCaller(treasury.address, true)).wait();
   const strictNotify = process.env.STRICT_NOTIFY_CALLERS !== "0";
   if (strictNotify) {
     await (await reserve.setNotifyCallerCheck(true)).wait();
@@ -647,18 +932,17 @@ async function main() {
   await (await treasury.setTokenRewards(tokenRewards.address)).wait();
   await (await treasury.setReserve(reserve.address)).wait();
   await (await treasury.setDripDistributor(dripDistributor.address)).wait();
+  await (await treasury.setEcosystemBiggiCaller(ticketHub.address, true)).wait();
+  await (await treasury.setEcosystemBiggiCaller(publicCollection.address, true)).wait();
+
+  await (await ticketHub.setTokenSink(treasury.address, 10_000)).wait();
+  await (await ticketHub.setTokenSinkDepositMode(true)).wait();
+  await (await publicCollection.setTokenSink(treasury.address, 10_000)).wait();
+  await (await publicCollection.setTokenSinkDepositMode(true)).wait();
 
   await (await dripDistributor.setTreasury(treasury.address)).wait();
-  let dripLm = envOrHintAddr("DRIP_LM", addressHints, "DRIP_LM");
-  dripLm = await contractAddrOrZero("DRIP_LM", dripLm);
-  if (dripLm !== ZERO) {
-    await (await dripDistributor.setDripLM(dripLm)).wait();
-    try {
-      await (await dripDistributor.setTokensPerMintOperator(dripLm)).wait();
-    } catch (e) {
-      console.warn(`WARN: DRIP_DISTRIBUTOR.setTokensPerMintOperator skipped: ${e.message}`);
-    }
-  }
+  await (await dripDistributor.setCollection(mainCollection.address, true)).wait();
+  await (await dripDistributor.setCollection(publicCollection.address, true)).wait();
 
   if (buybackRouter === ZERO && router !== ZERO && (!mockLiquidityRouter || !sameAddress(router, mockLiquidityRouter.address))) {
     buybackRouter = router;
@@ -678,6 +962,52 @@ async function main() {
         console.warn(`WARN: funding mock buyback router skipped: ${e.message}`);
       }
     }
+  }
+
+  if (moderatorCenter === ZERO && shouldDeployModeratorCenter) {
+    moderatorCenter = (await deploy("ModeratorCenter", [deployer.address])).address;
+  }
+
+  const dripLmRouter = buybackRouter !== ZERO ? buybackRouter : router;
+  if (dripLm === ZERO && shouldDeployDripLm) {
+    if (dripLmRouter === ZERO) {
+      throw new Error("Cannot deploy DRIP_LM: missing BUYBACK_ROUTER/ROUTER.");
+    }
+    dripLm = (await deploy("BiggiDripLMToModerator", [biggiToken.address, dripLmRouter, deployer.address])).address;
+  }
+
+  if (dripLm !== ZERO) {
+    const dripLmContract = await ethers.getContractAt("BiggiDripLMToModerator", dripLm);
+    await (await dripDistributor.setDripLM(dripLm)).wait();
+    try {
+      await (await dripDistributor.setTokensPerMintOperator(dripLm)).wait();
+    } catch (e) {
+      console.warn(`WARN: DRIP_DISTRIBUTOR.setTokensPerMintOperator skipped: ${e.message}`);
+    }
+    if (dripLmRouter !== ZERO) {
+      await (await dripLmContract.setRouter(dripLmRouter)).wait();
+    } else {
+      console.warn("WARN: DRIP_LM router not set (BUYBACK_ROUTER/ROUTER missing or invalid).");
+    }
+    await (await dripLmContract.setDripDistributor(dripDistributor.address)).wait();
+    await (await dripLmContract.setReserve(reserve.address)).wait();
+    if (buybackAgent !== ZERO) {
+      await (await dripLmContract.setBuybackAgent(buybackAgent)).wait();
+    }
+    if (moderatorCenter !== ZERO) {
+      await (await dripLmContract.setModeratorCenter(moderatorCenter)).wait();
+      const moderatorContract = await ethers.getContractAt("ModeratorCenter", moderatorCenter);
+      await (await moderatorContract.setMultiCollection(dripLm)).wait();
+    }
+    await (await dripLmContract.setSellPct(asInt("DRIP_LM_SELL_PCT", 70))).wait();
+    await (await dripLmContract.setSlippageBps(asInt("DRIP_LM_SLIPPAGE_BPS", asInt("LIQ_SLIPPAGE_BPS", 300)))).wait();
+    await (await dripLmContract.setTxDeadlineSec(asInt("DRIP_LM_TX_DEADLINE_SEC", buybackFallbackDeadlineSec))).wait();
+    await (
+      await dripLmContract.setShares(
+        asInt("DRIP_LM_RESERVE_SHARE_BPS", 5000),
+        asInt("DRIP_LM_MODERATOR_SHARE_BPS", 5000)
+      )
+    ).wait();
   }
 
   if (buybackAgent !== ZERO) {
@@ -704,6 +1034,11 @@ async function main() {
           console.warn(`WARN: BUYBACK_AGENT.setPolicy skipped: ${e.message}`);
         }
       }
+      try {
+        await (await buybackContract.setDistributor(distributor.address)).wait();
+      } catch (e) {
+        console.warn(`WARN: BUYBACK_AGENT.setDistributor skipped: ${e.message}`);
+      }
       if (dripLm !== ZERO) {
         try {
           await (await buybackContract.setDripLM(dripLm)).wait();
@@ -724,6 +1059,14 @@ async function main() {
       }
     } catch (e) {
       console.warn(`WARN: BUYBACK_AGENT wiring skipped for ${buybackAgent}: ${e.message}`);
+    }
+  }
+  if (buybackAgent !== ZERO && policy !== ZERO) {
+    try {
+      const policyContract = await ethers.getContractAt("BiggiPolicy", policy);
+      await (await policyContract.setBuybackAgent(buybackAgent)).wait();
+    } catch (e) {
+      console.warn(`WARN: POLICY.setBuybackAgent skipped: ${e.message}`);
     }
   }
 
@@ -749,29 +1092,12 @@ async function main() {
     const upkeepProxy = await ethers.getContractAt("BiggiBuybackUpkeepProxy", buybackUpkeepProxy);
     if (buybackAgent !== ZERO) {
       await (await upkeepProxy.setAgent(buybackAgent)).wait();
+      const buybackContract = await ethers.getContractAt("BiggiBuybackAgent", buybackAgent);
+      await (await buybackContract.setKeeper(buybackUpkeepProxy)).wait();
       const threshold = process.env.BUYBACK_MIN_NATIVE_WEI || ethers.utils.parseEther("0.5").toString();
       await (await upkeepProxy.setThreshold(threshold)).wait();
     }
     await (await upkeepProxy.setPaused(false)).wait();
-  }
-
-  const shouldDeployMultiCollectionReader = process.env.DEPLOY_MULTI_COLLECTION_READER === "1" || isLocalNetwork();
-  if (multiCollectionReader === ZERO && shouldDeployMultiCollectionReader) {
-    multiCollectionReader = (
-      await deploy("BiggiMultiCollectionDistributorReaderV2", [distributor.address])
-    ).address;
-  }
-
-  const shouldDeployChapterSeriesReader = process.env.DEPLOY_CHAPTER_SERIES_READER === "1" || isLocalNetwork();
-  if (chapterSeriesReader === ZERO && shouldDeployChapterSeriesReader) {
-    chapterSeriesReader = (
-      await deploy("BiggiChapterSeriesReader", [chapterController.address, registry.address])
-    ).address;
-  }
-
-  const shouldDeployMulticall = process.env.DEPLOY_MULTICALL === "1" || isLocalNetwork();
-  if (multicall === ZERO && shouldDeployMulticall) {
-    multicall = (await deploy("Multicall2")).address;
   }
 
   const shouldDeployNftRewards = process.env.DEPLOY_NFT_REWARDS === "1" || isLocalNetwork();
@@ -792,6 +1118,12 @@ async function main() {
         } catch (e) {
           console.warn(`WARN: NFT_REWARDS.setVrfRouter skipped: ${e.message}`);
         }
+        try {
+          const vrfRouterContract = await ethers.getContractAt("BiggiVRFRouter", vrfRouterAddress);
+          await (await vrfRouterContract.setRewardConsumerApproval(nftRewards, true)).wait();
+        } catch (e) {
+          console.warn(`WARN: VRF_ROUTER.setRewardConsumerApproval skipped: ${e.message}`);
+        }
       }
       try {
         await (await nftRewardsContract.setRegistry(registry.address)).wait();
@@ -808,6 +1140,120 @@ async function main() {
     }
   }
 
+  const shouldDeployMainReader = process.env.DEPLOY_MAIN_READER === "1" || isLocalNetwork();
+  if (mainReader === ZERO && shouldDeployMainReader) {
+    mainReader = (
+      await deploy("BiggiMainReader", [mainCollection.address, ticketHub.address, collectionRewards.address])
+    ).address;
+  }
+
+  const shouldDeployMultiCollectionReader = process.env.DEPLOY_MULTI_COLLECTION_READER === "1" || isLocalNetwork();
+  if (multiCollectionReader === ZERO && shouldDeployMultiCollectionReader) {
+    multiCollectionReader = (
+      await deploy("BiggiMultiCollectionDistributorReaderV2", [distributor.address])
+    ).address;
+  }
+
+  const shouldDeployChapterSeriesReader = process.env.DEPLOY_CHAPTER_SERIES_READER === "1" || isLocalNetwork();
+  if (chapterSeriesReader === ZERO && shouldDeployChapterSeriesReader) {
+    chapterSeriesReader = (
+      await deploy("BiggiChapterSeriesReader", [chapterController.address, registry.address])
+    ).address;
+  }
+
+  const shouldDeployNftRewardsReader = process.env.DEPLOY_NFT_REWARDS_READER === "1" || isLocalNetwork();
+  if (nftRewardsReader === ZERO && shouldDeployNftRewardsReader && nftRewards !== ZERO) {
+    nftRewardsReader = (await deploy("BiggiNftRewardsReader", [nftRewards])).address;
+  }
+
+  const shouldDeployTokenomicReaders = process.env.DEPLOY_TOKENOMIC_READERS === "1" || isLocalNetwork();
+  const wantsTokenomicReader = (envName) => process.env[envName] === "1" || shouldDeployTokenomicReaders;
+
+  if (reserveTreasuryReader === ZERO && wantsTokenomicReader("DEPLOY_RESERVE_TREASURY_READER")) {
+    reserveTreasuryReader = (await deploy("BiggiReserveTreasuryReader", [reserve.address, treasury.address])).address;
+  }
+  if (supplyControllerReader === ZERO && wantsTokenomicReader("DEPLOY_SUPPLY_CONTROLLER_READER")) {
+    supplyControllerReader = (await deploy("BiggiSupplyControllerReader", [supplyController.address])).address;
+  }
+  if (supplyGuardianReader === ZERO && wantsTokenomicReader("DEPLOY_SUPPLY_GUARDIAN_READER")) {
+    supplyGuardianReader = (await deploy("BiggiSupplyGuardianReader", [supplyGuardian.address])).address;
+  }
+  if (dexReserveGuardReader === ZERO && wantsTokenomicReader("DEPLOY_DEX_RESERVE_GUARD_READER")) {
+    dexReserveGuardReader = (await deploy("BiggiDexReserveGuardReader", [dexReserveGuard.address])).address;
+  }
+  if (systemReader === ZERO && wantsTokenomicReader("DEPLOY_SYSTEM_READER")) {
+    systemReader = (
+      await deploy("BiggiSystemReader", [biggiToken.address, supplyController.address, supplyGuardian.address])
+    ).address;
+  }
+  if (
+    tokenomicsSystemAddonReader === ZERO &&
+    wantsTokenomicReader("DEPLOY_TOKENOMICS_SYSTEM_ADDON_READER")
+  ) {
+    tokenomicsSystemAddonReader = (
+      await deploy("BiggiTokenomicsSystemAddonReader", [masterConfig.address, biggiToken.address])
+    ).address;
+  }
+  if (tokenRewardsReader === ZERO && wantsTokenomicReader("DEPLOY_TOKEN_REWARDS_READER")) {
+    tokenRewardsReader = (await deploy("BiggiTokenRewardsReader", [tokenRewards.address])).address;
+  }
+  if (
+    buybackReader === ZERO &&
+    wantsTokenomicReader("DEPLOY_BUYBACK_READER") &&
+    buybackAgent !== ZERO
+  ) {
+    buybackReader = (
+      await deploy("BiggiBuybackReader", [buybackAgent, treasury.address, policy, buybackUpkeepProxy])
+    ).address;
+  }
+  if (
+    liquidityBranchReader === ZERO &&
+    wantsTokenomicReader("DEPLOY_LIQUIDITY_BRANCH_READER") &&
+    liquidityManager !== ZERO &&
+    liquidityVault !== ZERO
+  ) {
+    liquidityBranchReader = (
+      await deploy("BiggiLiquidityBranchUserReader", [reserve.address, liquidityManager, liquidityVault])
+    ).address;
+  }
+  if (
+    liquidityHelperReader === ZERO &&
+    wantsTokenomicReader("DEPLOY_LIQUIDITY_HELPER_READER") &&
+    liquidityManager !== ZERO &&
+    liquidityVault !== ZERO &&
+    router !== ZERO
+  ) {
+    liquidityHelperReader = (
+      await deploy("BiggiLiquidityHelperReader", [reserve.address, liquidityManager, liquidityVault, router])
+    ).address;
+  }
+  if (
+    biggiTokenomicsReader === ZERO &&
+    wantsTokenomicReader("DEPLOY_BIGGI_TOKENOMICS_READER") &&
+    router !== ZERO &&
+    pairAddress !== ZERO
+  ) {
+    biggiTokenomicsReader = (
+      await deploy("BiggiTokenomikReader", [
+        biggiToken.address,
+        router,
+        pairAddress,
+        distributor.address,
+        buybackAgentEffective,
+        reserve.address,
+        liquidityManager,
+        liquidityVault,
+        dripDistributor.address,
+        tokenRewards.address,
+      ])
+    ).address;
+  }
+
+  const shouldDeployMulticall = process.env.DEPLOY_MULTICALL === "1" || isLocalNetwork();
+  if (multicall === ZERO && shouldDeployMulticall) {
+    multicall = (await deploy("Multicall2")).address;
+  }
+
   await (await tokenRewards.setRegistry(registry.address)).wait();
   await (await tokenRewards.setTreasure(treasury.address)).wait();
 
@@ -821,6 +1267,13 @@ async function main() {
     await (await dexReserveGuard.snapshotBaseline()).wait();
   } catch (e) {
     console.warn("WARN: dexReserveGuard.snapshotBaseline() skipped:", e.message);
+  }
+  if (dexGuardRefreshPriceAnchor && pairAddress !== ZERO) {
+    try {
+      await (await dexReserveGuard.refreshPriceAnchor()).wait();
+    } catch (e) {
+      console.warn("WARN: dexReserveGuard.refreshPriceAnchor() skipped:", e.message);
+    }
   }
 
   await (await masterConfig.setCore(biggiToken.address, reserve.address, treasury.address, distributor.address)).wait();
@@ -872,9 +1325,11 @@ async function main() {
     RESERVE: reserve.address,
     TREASURY: treasury.address,
     MARKETING_SUPPORT: marketingSupportFinal,
+    DEV_WALLET: devWalletFinal,
     DRIP_DISTRIBUTOR: dripDistributor.address,
     DRIP_LM: dripLm,
     TOKEN_REWARDS: tokenRewards.address,
+    TOKEN_REWARDS_EMISSION_CONTROLLER: tokenRewardsEmissionController,
     NFT_REWARDS: nftRewards,
     BUYBACK_AGENT: buybackAgent,
     BUYBACK_ROUTER: buybackRouter,
@@ -882,6 +1337,7 @@ async function main() {
     POLICY: policy,
     COMMUNITY_CENTER: communityCenter,
     COMMUNITY_CENTER_EFFECTIVE: communityCenterEffective,
+    MODERATOR_CENTER: moderatorCenter,
     SUPPLY_CONTROLLER: supplyController.address,
     SUPPLY_GUARDIAN: supplyGuardian.address,
     DEX_RESERVE_GUARD: dexReserveGuard.address,
@@ -891,10 +1347,25 @@ async function main() {
     LIQUIDITY_ORCHESTRATOR: liquidityOrchestrator,
     LIQUIDITY_KEEPER_PROXY: liquidityKeeperProxy,
     LIQUIDITY_AUTOMATION: liquidityAutomation,
+    LIQUIDITY_PATH: liquidityPath,
     DRIP_KEEPER_PROXY: dripKeeperProxy,
     BUYBACK_UPKEEP_PROXY: buybackUpkeepProxy,
+    MAIN_READER: mainReader,
     MULTI_COLLECTION_READER: multiCollectionReader,
     CHAPTER_SERIES_READER: chapterSeriesReader,
+    NFT_REWARDS_READER: nftRewardsReader,
+    RESERVE_TREASURY_READER: reserveTreasuryReader,
+    BUYBACK_READER: buybackReader,
+    LIQUIDITY_BRANCH_READER: liquidityBranchReader,
+    LIQUIDITY_HELPER_READER: liquidityHelperReader,
+    SUPPLY_CONTROLLER_READER: supplyControllerReader,
+    SUPPLY_GUARDIAN_READER: supplyGuardianReader,
+    DEX_RESERVE_GUARD_READER: dexReserveGuardReader,
+    SYSTEM_READER: systemReader,
+    TOKENOMICS_SYSTEM_ADDON_READER: tokenomicsSystemAddonReader,
+    BIGGI_TOKENOMICS_READER: biggiTokenomicsReader,
+    BIGGI_TOKENOMIK_READER: biggiTokenomicsReader,
+    TOKEN_REWARDS_READER: tokenRewardsReader,
     MULTICALL: multicall,
     ROUTER: router,
     FACTORY: factory,
@@ -920,6 +1391,18 @@ async function main() {
       SUPPLY_REWARDS_REFILL_AMOUNT: supplyRewardsRefillAmount.toString(),
       SUPPLY_REWARDS_COOLDOWN_SEC: supplyRewardsCooldownSec,
 
+      TOKEN_REWARDS_EMISSION_ENABLED: tokenRewardsEmissionEnabled,
+      TOKEN_REWARDS_TARGET_WEEKLY_UNITS: tokenRewardsTargetWeeklyUnits,
+      TOKEN_REWARDS_MIN_WEEKLY_BUDGET: tokenRewardsMinWeeklyBudget.toString(),
+      TOKEN_REWARDS_WEAK_WEEKLY_BUDGET: tokenRewardsWeakWeeklyBudget.toString(),
+      TOKEN_REWARDS_NORMAL_WEEKLY_BUDGET: tokenRewardsNormalWeeklyBudget.toString(),
+      TOKEN_REWARDS_STRONG_WEEKLY_BUDGET: tokenRewardsStrongWeeklyBudget.toString(),
+      TOKEN_REWARDS_EMERGENCY_WEEKLY_BUDGET: tokenRewardsEmergencyWeeklyBudget.toString(),
+      TOKEN_REWARDS_MAX_WEEKLY_BUDGET: tokenRewardsMaxWeeklyBudget.toString(),
+      TOKEN_REWARDS_BALANCE_BUDGET_BPS: tokenRewardsBalanceBudgetBps,
+      TOKEN_REWARDS_WEAK_INFLOW_THRESHOLD: tokenRewardsWeakInflowThreshold.toString(),
+      TOKEN_REWARDS_STRONG_INFLOW_THRESHOLD: tokenRewardsStrongInflowThreshold.toString(),
+
       DEX_GUARD_MIN_RESERVE_RATIO_BPS: dexGuardMinReserveRatioBps,
       DEX_GUARD_REFILL_AMOUNT: dexGuardRefillAmount.toString(),
       DEX_GUARD_COOLDOWN_SEC: dexGuardCooldownSec,
@@ -927,6 +1410,10 @@ async function main() {
       DEX_GUARD_PRICE_CHECK_ENABLED: dexGuardPriceCheckEnabled,
       DEX_GUARD_MAX_DEVIATION_BPS: dexGuardMaxDeviationBps,
       DEX_GUARD_QUOTE_ORACLE: dexGuardQuoteOracle,
+      DEX_GUARD_MAX_ORACLE_STALENESS_SEC: dexGuardMaxOracleStalenessSec,
+      DEX_GUARD_REQUIRE_QUOTE_ORACLE: dexGuardRequireQuoteOracle,
+      DEX_GUARD_REFRESH_PRICE_ANCHOR: dexGuardRefreshPriceAnchor,
+      ALLOW_PENDING_PAIR: allowPendingPair,
 
       POLICY_SWAP_SLIPPAGE_BPS: policySwapSlippageBps,
       POLICY_TX_DEADLINE_SEC: policyTxDeadlineSec,

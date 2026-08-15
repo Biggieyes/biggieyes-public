@@ -11,6 +11,45 @@
     "type": "constructor"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "units",
+        "type": "uint256"
+      }
+    ],
+    "name": "emissionPreview",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "weeklyBudget",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "weeklyPaid",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "unitRewardForWeek",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "getBlockWeights",
     "outputs": [
@@ -53,6 +92,16 @@
             "internalType": "uint256",
             "name": "unitReward",
             "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "emissionController",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "emissionControllerEnabled",
+            "type": "bool"
           },
           {
             "internalType": "uint8[11]",

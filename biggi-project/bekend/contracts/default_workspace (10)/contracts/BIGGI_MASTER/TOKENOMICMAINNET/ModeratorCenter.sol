@@ -5,9 +5,6 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-/**
- * ModeratorCenter (upravené pro MultiCollection allocations)
- */
 contract ModeratorCenter is Ownable, ReentrancyGuard {
     using Address for address payable;
 
@@ -27,8 +24,8 @@ contract ModeratorCenter is Ownable, ReentrancyGuard {
 
     mapping(address => bool) public reporters;
 
-    uint256 public leaderCoefBps = 100;    // 1.00%
-    uint256 public moderatorCoefBps = 30;  // 0.30%
+    uint256 public leaderCoefBps = 100;
+    uint256 public moderatorCoefBps = 30;
     uint256 public saleBoostBpsPerTicket = 10;
 
     uint256 public milestone100 = 0;
@@ -42,11 +39,11 @@ contract ModeratorCenter is Ownable, ReentrancyGuard {
     mapping(uint256 => mapping(address => bool)) public usedThisWeekGlobally;
     mapping(uint8 => mapping(uint256 => bool)) public milestonePaid;
 
-    // ---- NEW: MultiCollection integration ----
-    address public multiCollection; // adresa MultiCollection (trusted)
-    mapping(uint256 => uint256) public weekAllocated; // week => allocated wei from MultiCollection
+    address public multiCollection;
+    mapping(uint256 => uint256) public weekAllocated;
+    mapping(uint256 => uint256) public weekDistributed;
+    uint256 public totalAllocatedOutstanding;
 
-    // ---- events ----
     event SlotConfigured(uint8 indexed slotId, address payout, bool isLeader);
     event PasswordSet(uint8 indexed slotId);
     event ReferralSet(uint8 indexed slotId, bytes32 referralHash);
@@ -59,9 +56,9 @@ contract ModeratorCenter is Ownable, ReentrancyGuard {
     event MilestoneSet(uint256 m100, uint256 m500, uint256 m1000);
     event GlobalUniquePerWeekSet(bool enabled);
     event PayoutWithdrawn(address indexed to, uint256 amount);
-
     event MultiCollectionSet(address indexed oldAddr, address indexed newAddr);
     event AllocationReceived(uint256 indexed week, uint256 amount);
+    event WeekAllocationConsumed(uint256 indexed week, uint256 amount, uint256 totalWeekDistributed, uint256 totalOutstanding);
 
     modifier validSlot(uint8 slotId) {
         require(slotId < TOTAL_SLOTS, "bad slot");
@@ -73,9 +70,7 @@ contract ModeratorCenter is Ownable, ReentrancyGuard {
         _;
     }
 
-    constructor(address initialOwner) Ownable(initialOwner) { }
-
-    /* ========== OWNER SETTERS ========== */
+    constructor(address initialOwner) Ownable(initialOwner) {}
 
     function configureSlot(uint8 slotId, bool enabled, bool isLeader, address payout) external onlyOwner validSlot(slotId) {
         slots[slotId].enabled = enabled;
@@ -105,17 +100,17 @@ contract ModeratorCenter is Ownable, ReentrancyGuard {
         emit ReporterSet(reporter, enabled);
     }
 
-    function setCoefs(uint256 _leaderBps, uint256 _moderatorBps, uint256 _saleBoostBpsPerTicket) external onlyOwner {
+    function setCoefs(uint256 leaderBps, uint256 moderatorBps, uint256 saleBoostBpsPerTicket_) external onlyOwner {
         require(
-            _leaderBps <= BPS_DENOM &&
-            _moderatorBps <= BPS_DENOM &&
-            _saleBoostBpsPerTicket <= BPS_DENOM,
+            leaderBps <= BPS_DENOM &&
+            moderatorBps <= BPS_DENOM &&
+            saleBoostBpsPerTicket_ <= BPS_DENOM,
             "bad coefs"
         );
-        leaderCoefBps = _leaderBps;
-        moderatorCoefBps = _moderatorBps;
-        saleBoostBpsPerTicket = _saleBoostBpsPerTicket;
-        emit CoefsUpdated(_leaderBps, _moderatorBps, _saleBoostBpsPerTicket);
+        leaderCoefBps = leaderBps;
+        moderatorCoefBps = moderatorBps;
+        saleBoostBpsPerTicket = saleBoostBpsPerTicket_;
+        emit CoefsUpdated(leaderBps, moderatorBps, saleBoostBpsPerTicket_);
     }
 
     function setMilestones(uint256 m100, uint256 m500, uint256 m1000) external onlyOwner {
@@ -130,21 +125,18 @@ contract ModeratorCenter is Ownable, ReentrancyGuard {
         emit GlobalUniquePerWeekSet(enabled);
     }
 
-    /* ---- MultiCollection setter ---- */
     function setMultiCollection(address mc) external onlyOwner {
         require(mc != address(0), "mc=0");
         emit MultiCollectionSet(multiCollection, mc);
         multiCollection = mc;
     }
 
-    /* ========== USER / FRONTEND FUNCTIONS ========== */
-
     function registerReferral(bytes32 referralHash) external nonReentrant {
         require(referralHash != bytes32(0), "zero referral");
         uint8 slotId = _slotForReferral(referralHash);
         require(slots[slotId].enabled, "slot disabled");
 
-        uint256 week = block.timestamp / 1 weeks;
+        uint256 week = _currentWeek();
 
         if (globalUniquePerWeek) {
             require(!usedThisWeekGlobally[week][msg.sender], "addr used globally this week");
@@ -158,8 +150,6 @@ contract ModeratorCenter is Ownable, ReentrancyGuard {
         emit ReferralRegistered(slotId, msg.sender, week);
     }
 
-    /* ========== REPORTER (trusted) FUNCTIONS ========== */
-
     function recordTicketSale(bytes32 referralHash, address buyer) external nonReentrant {
         require(reporters[msg.sender], "not reporter");
         require(referralHash != bytes32(0), "zero referral");
@@ -167,7 +157,7 @@ contract ModeratorCenter is Ownable, ReentrancyGuard {
         uint8 slotId = _slotForReferral(referralHash);
         require(slots[slotId].enabled, "slot disabled");
 
-        uint256 week = block.timestamp / 1 weeks;
+        uint256 week = _currentWeek();
 
         weekTicketCount[week][slotId] += 1;
         slots[slotId].cumulativeTicketSales += 1;
@@ -188,36 +178,44 @@ contract ModeratorCenter is Ownable, ReentrancyGuard {
         _tryPayMilestones(slotId);
     }
 
-    /* ========== MULTICOLLECTION ALLOCATION ========== */
-
-    /// @notice MultiCollection volá tuto payable funkci a posílá allocated native pro moderatorský pool
-    /// msg.value se zapíše do weekAllocated[week] a zůstane na kontraktu (takže distribute použije tuto alokaci)
     function notifyAllocation() external payable onlyMultiCollection {
         require(msg.value > 0, "zero value");
-        uint256 week = block.timestamp / 1 weeks;
+        uint256 week = _currentWeek();
         weekAllocated[week] += msg.value;
+        totalAllocatedOutstanding += msg.value;
         emit AllocationReceived(week, msg.value);
     }
 
-    /* ========== DISTRIBUTION ========== */
-
     function distributeWeekRewards() external nonReentrant onlyOwner {
-        uint256 week = block.timestamp / 1 weeks;
+        _distributeWeekRewards(_currentWeek());
+    }
 
+    function distributeWeekRewardsForWeek(uint256 week) external nonReentrant onlyOwner {
+        _distributeWeekRewards(week);
+    }
+
+    function _distributeWeekRewards(uint256 week) internal {
         uint256 allocated = weekAllocated[week];
-        uint256 balance = address(this).balance;
+        uint256 alreadyDistributed = weekDistributed[week];
+        require(allocated > alreadyDistributed, "no funds to distribute");
+        require(address(this).balance >= totalAllocatedOutstanding, "allocated imbalance");
 
-        // prefer allocated amount if set and actually present on contract
-        uint256 pool = allocated > 0 ? (allocated <= balance ? allocated : balance) : balance;
+        uint256 pool = allocated - alreadyDistributed;
         require(pool > 0, "no funds to distribute");
 
         uint256 totalWeight = 0;
         uint256[TOTAL_SLOTS] memory weights;
         for (uint8 i = 0; i < TOTAL_SLOTS; i++) {
-            if (!slots[i].enabled) { weights[i] = 0; continue; }
+            if (!slots[i].enabled) {
+                weights[i] = 0;
+                continue;
+            }
             uint256 uniqueCount = weekUniqueCount[week][i];
             uint256 ticketCount = weekTicketCount[week][i];
-            if (uniqueCount == 0) { weights[i] = 0; continue; }
+            if (uniqueCount == 0) {
+                weights[i] = 0;
+                continue;
+            }
 
             uint256 baseCoef = slots[i].isLeader ? leaderCoefBps : moderatorCoefBps;
             uint256 effectiveCoef = baseCoef + (saleBoostBpsPerTicket * ticketCount);
@@ -225,7 +223,7 @@ contract ModeratorCenter is Ownable, ReentrancyGuard {
             totalWeight += weights[i];
         }
 
-        if (totalWeight == 0) revert("no eligible moderators this week");
+        require(totalWeight > 0, "no eligible moderators this week");
 
         uint256 distributed = 0;
         for (uint8 i = 0; i < TOTAL_SLOTS; i++) {
@@ -236,24 +234,15 @@ contract ModeratorCenter is Ownable, ReentrancyGuard {
             to.sendValue(share);
         }
 
-        // mark allocated as used (subtract distributed from weekAllocated) -- keep leftover if any
-        if (allocated > 0) {
-            if (distributed >= weekAllocated[week]) {
-                weekAllocated[week] = 0;
-            } else {
-                weekAllocated[week] -= distributed;
-            }
-        }
-
+        weekDistributed[week] += distributed;
+        totalAllocatedOutstanding -= distributed;
+        emit WeekAllocationConsumed(week, distributed, weekDistributed[week], totalAllocatedOutstanding);
         emit WeeklyDistributed(week, distributed);
 
-        // pay milestones if funds remain
         for (uint8 i = 0; i < TOTAL_SLOTS; i++) {
             _tryPayMilestones(i);
         }
     }
-
-    /* ========== INTERNALS & HELPERS ========== */
 
     function _slotForReferral(bytes32 referralHash) internal view returns (uint8) {
         for (uint8 i = 0; i < TOTAL_SLOTS; i++) {
@@ -282,41 +271,52 @@ contract ModeratorCenter is Ownable, ReentrancyGuard {
     }
 
     function _payToSlot(uint8 slotId, uint256 amount) internal {
-        uint256 bal = address(this).balance;
-        if (amount == 0 || bal == 0) return;
-        uint256 toSend = amount <= bal ? amount : bal;
+        uint256 freeBalance = unallocatedBalance();
+        if (amount == 0 || freeBalance == 0) return;
+        uint256 toSend = amount <= freeBalance ? amount : freeBalance;
         address payable to = payable(slots[slotId].payout == address(0) ? owner() : slots[slotId].payout);
         to.sendValue(toSend);
     }
 
-    /* ========== VIEW HELPERS ========== */
+    function _currentWeek() internal view returns (uint256) {
+        return block.timestamp / 1 weeks;
+    }
 
-    function getSlotInfo(uint8 slotId) external view validSlot(slotId) returns (
-        bool enabled,
-        bool isLeader,
-        address payout,
-        bytes32 referralHash,
-        uint256 cumulativeSales
-    ) {
+    function allocatedBalanceForWeek(uint256 week) external view returns (uint256 allocated, uint256 distributed, uint256 remaining) {
+        allocated = weekAllocated[week];
+        distributed = weekDistributed[week];
+        remaining = allocated > distributed ? allocated - distributed : 0;
+    }
+
+    function unallocatedBalance() public view returns (uint256) {
+        uint256 balance = address(this).balance;
+        return balance > totalAllocatedOutstanding ? balance - totalAllocatedOutstanding : 0;
+    }
+
+    function getSlotInfo(uint8 slotId)
+        external
+        view
+        validSlot(slotId)
+        returns (bool enabled, bool isLeader, address payout, bytes32 referralHash, uint256 cumulativeSales)
+    {
         Slot storage s = slots[slotId];
         return (s.enabled, s.isLeader, s.payout, s.referralHash, s.cumulativeTicketSales);
     }
 
-    function getWeekStats(uint256 week, uint8 slotId) external view validSlot(slotId) returns (
-        uint256 uniqueRefs,
-        uint256 ticketSales,
-        uint256 allocatedWei
-    ) {
+    function getWeekStats(uint256 week, uint8 slotId)
+        external
+        view
+        validSlot(slotId)
+        returns (uint256 uniqueRefs, uint256 ticketSales, uint256 allocatedWei)
+    {
         uniqueRefs = weekUniqueCount[week][slotId];
         ticketSales = weekTicketCount[week][slotId];
         allocatedWei = weekAllocated[week];
     }
 
-    /* ========== OWNER UTILITIES ========== */
-
     function withdrawToOwner(uint256 amount) external onlyOwner {
-        uint256 bal = address(this).balance;
-        require(amount <= bal, "insufficient");
+        uint256 freeBalance = unallocatedBalance();
+        require(amount <= freeBalance, "insufficient");
         payable(owner()).sendValue(amount);
         emit PayoutWithdrawn(owner(), amount);
     }

@@ -7,8 +7,8 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 
-import "./Library/BiggiErrorsLib.sol";
-import "./Library/BiggiCapsLib.sol";
+import "./TOKENOMIC_LIBRARY/BiggiErrorsLib.sol";
+import "./TOKENOMIC_LIBRARY/BiggiCapsLib.sol";
 
 /// @notice Účetní kontrakt držící BIGGI pro DripLM.
 /// - CAP nezávislý na treasury (DRIP_DISTRIBUTOR_CAP)

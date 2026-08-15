@@ -16,6 +16,107 @@
     "type": "constructor"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "ticketHub",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "publicCollection",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "expectedTokenRewards",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "expectedDripDistributor",
+        "type": "address"
+      }
+    ],
+    "name": "ecosystemBiggiRouteSnapshot",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "treasury",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "reserve",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "ticketHub",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "publicCollection",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "tokenRewards",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "reserveRecipient",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "dripDistributor",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "ticketHubAllowed",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "publicCollectionAllowed",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "reserveNotifyTreasuryAllowed",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "reserveNotifyCheckEnabled",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "splitRecipientsConfigured",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "routeReady",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct BiggiReserveTreasuryReader.EcosystemBiggiRouteSnapshot",
+        "name": "s",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "reserve",
     "outputs": [
@@ -95,8 +196,78 @@
       },
       {
         "internalType": "uint256",
+        "name": "totalBiggiFromEcosystem",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
         "name": "totalPolFromDistributor",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "wiringSnapshot",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "reserve",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "treasury",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "reserveLiquidityManager",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "reserveDistributor",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "treasuryDistributor",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "treasuryBuybackAgent",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "treasuryTokenRewards",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "treasuryReserveRecipient",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "treasuryDripDistributor",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "reserveBucketConsistent",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct BiggiReserveTreasuryReader.WiringSnapshot",
+        "name": "s",
+        "type": "tuple"
       }
     ],
     "stateMutability": "view",

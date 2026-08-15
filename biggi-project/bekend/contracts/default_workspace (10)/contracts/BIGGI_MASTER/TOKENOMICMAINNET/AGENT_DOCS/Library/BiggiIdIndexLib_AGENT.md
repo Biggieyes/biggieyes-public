@@ -1,4 +1,4 @@
-# Agent documentation — Library/BiggiIdIndexLib.sol
+# Agent documentation — TOKENOMIC_LIBRARY/BiggiIdIndexLib.sol
 
 **Role:** ID/index translation library
 

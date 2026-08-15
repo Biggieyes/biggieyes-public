@@ -1,5 +1,6 @@
 require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-waffle");
+require("@nomicfoundation/hardhat-verify");
 
 const { resolve } = require("path");
 require("dotenv").config({ path: resolve(__dirname, ".env") });
@@ -11,24 +12,33 @@ if (process.env.FORK_BLOCK_NUMBER && !Number.isInteger(forkBlockNumber)) {
 
 const hardhatNetwork = process.env.FORK_URL
   ? {
+      chainId: 137,
       forking: {
         url: process.env.FORK_URL,
         ...(Number.isInteger(forkBlockNumber) ? { blockNumber: forkBlockNumber } : {}),
       },
+      chains: {
+        137: {
+          // Polygon PoS is a custom chain from Hardhat's perspective. The
+          // fork uses the latest EDR execution rules. Block 1 avoids EDR's
+          // zero-activation edge case for custom hardfork histories.
+          hardforkHistory: { prague: 1 },
+        },
+      },
     }
   : {};
+
+const explorerApiKey =
+  process.env.ETHERSCAN_API_KEY ||
+  process.env.EXPLORER_API_KEY ||
+  "";
 
 module.exports = {
   defaultNetwork: "hardhat",
   networks: {
     hardhat: hardhatNetwork,
-    amoy: {
-      url: process.env.AMOY_RPC_URL || "https://polygon-amoy-bor.publicnode.com",
-      chainId: 80002,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-    },
     polygon: {
-      url: process.env.POLYGON_RPC_URL || "https://polygon-rpc.com",
+      url: process.env.POLYGON_RPC_URL || "https://polygon.drpc.org",
       chainId: 137,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
@@ -52,5 +62,12 @@ module.exports = {
   },
   mocha: {
     timeout: 300000,
+  },
+  etherscan: {
+    enabled: explorerApiKey !== "",
+    apiKey: explorerApiKey,
+  },
+  sourcify: {
+    enabled: true,
   },
 };

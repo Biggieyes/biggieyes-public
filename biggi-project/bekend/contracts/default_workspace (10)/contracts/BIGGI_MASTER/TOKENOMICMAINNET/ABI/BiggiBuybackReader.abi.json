@@ -166,6 +166,11 @@
             "internalType": "uint256",
             "name": "totalBiggiReceived",
             "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalBiggiFromEcosystem",
+            "type": "uint256"
           }
         ],
         "internalType": "struct BiggiBuybackReader.TreasurySnapshot",

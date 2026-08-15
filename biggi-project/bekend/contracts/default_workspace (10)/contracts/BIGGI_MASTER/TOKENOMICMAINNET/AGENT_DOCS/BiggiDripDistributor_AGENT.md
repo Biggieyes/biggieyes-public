@@ -15,8 +15,8 @@ Custodies drip BIGGI inventory, tracks available tokens, and serves Drip LM / tr
 - `@openzeppelin/contracts/utils/ReentrancyGuard.sol`
 - `@openzeppelin/contracts/access/Ownable.sol`
 - `@openzeppelin/contracts/utils/Pausable.sol`
-- `./Library/BiggiErrorsLib.sol`
-- `./Library/BiggiCapsLib.sol`
+- `./TOKENOMIC_LIBRARY/BiggiErrorsLib.sol`
+- `./TOKENOMIC_LIBRARY/BiggiCapsLib.sol`
 
 ## Key public state to inspect
 - `immutable`

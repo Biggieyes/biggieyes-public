@@ -1,28 +1,51 @@
-﻿# BiggiLiquidityOrchestrator Mainnet Dossier
+# BiggiLiquidityOrchestrator Mainnet Dossier
 
 ## Source of truth
-- Source: $(@{Name=BiggiLiquidityOrchestrator; Source=BiggiLiquidityOrchestrator.sol; Abi=ABI/BiggiLiquidityOrchestrator.abi.json; Role=Rule layer that decides when liquidity manager should execute add/refill operations.; Delta=Mainnet profile adds keeper-oriented orchestration and anti-duplication with alternate automation branch.; Integrations=System.Object[]; Privileged=System.Object[]; Focus=System.Object[]}.Source)
-- ABI package source: $(@{Name=BiggiLiquidityOrchestrator; Source=BiggiLiquidityOrchestrator.sol; Abi=ABI/BiggiLiquidityOrchestrator.abi.json; Role=Rule layer that decides when liquidity manager should execute add/refill operations.; Delta=Mainnet profile adds keeper-oriented orchestration and anti-duplication with alternate automation branch.; Integrations=System.Object[]; Privileged=System.Object[]; Focus=System.Object[]}.Abi)
 
-## Role
-Rule layer that decides when liquidity manager should execute add/refill operations.
+- Source file: `../../BiggiLiquidityOrchestrator.sol`
+- Frozen ABI: `./ABI.json`
+- Canonical manifest: `biggi-project/bekend/addresses.master.json` plus phase-specific Polygon manifests.
 
-## Mainnet delta vs testnet
-Mainnet profile adds keeper-oriented orchestration and anti-duplication with alternate automation branch.
+## Constructor
 
-## Critical integrations
-- BiggiLiquidityManager
-- BiggiLiquidityKeeperProxy
-- BiggiLiquidityAutomation
-- BiggiMainReader
+`constructor(address reserve_, address lm_, address owner_)`
 
-## Privileged actions
-- Owner sets keeper and thresholds
-- Keeper triggers scheduled orchestration
-- Owner can reconfigure limits
+## Runtime role
 
-## Mainnet readiness gates
-1. Final owner or multisig ownership transfer completed.
-2. Final production addresses and parameters loaded.
-3. Smoke tests and reader consistency checks pass.
-4. Explorer verification and ABI freeze completed.
+`BiggiLiquidityOrchestrator` is the policy and rate-limit layer above `BiggiLiquidityManager`.
+
+It does not custody funds. It enforces:
+
+- min and max POL per pairing run
+- minimum BIGGI refill threshold
+- cooldown between runs
+- optional daily POL quota
+- reserve/LM/vault wiring consistency checks
+
+## Owner/admin surface
+
+- `setKeeper(address)`
+- `setReserve(address)`
+- `setLM(address)`
+- `setLimits(uint256,uint256,uint256,uint256,uint256)`
+- `pauseAll()`
+- `unpauseAll()`
+
+## Main write paths
+
+- `triggerPairing(uint256)`
+- `requestReserveTopUp()`
+
+## Integration map
+
+- reads reserve balances from `BiggiReserveV4`
+- triggers execution on `BiggiLiquidityManager`
+- checks downstream vault wiring before allowing a run
+
+## Canonical Polygon Mainnet Address
+
+| Key | Address |
+| --- | --- |
+| `LIQUIDITY_ORCHESTRATOR` | `0xC72DB11941d8Ab76baF84B1af9dB43E09060b681` |
+
+Canonical manifests: `addresses.master.json`, phase-specific Polygon manifests, and `MAINNET_DEPLOYMENT_MANIFEST_POLYGON.json`.

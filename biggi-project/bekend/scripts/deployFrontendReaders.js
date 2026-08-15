@@ -1,4 +1,4 @@
-// Deploy helper readers for frontend (Amoy)
+// Deploy helper readers for frontend (Polygon mainnet)
 const hre = require("hardhat");
 const addresses = require("../addresses.json");
 

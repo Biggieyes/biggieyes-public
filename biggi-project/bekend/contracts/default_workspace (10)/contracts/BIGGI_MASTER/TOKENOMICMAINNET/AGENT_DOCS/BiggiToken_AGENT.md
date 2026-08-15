@@ -17,7 +17,7 @@ Core token with initial distribution, caps, pausability, and guardian/controller
 - `@openzeppelin/contracts/access/Ownable.sol`
 - `@openzeppelin/contracts/token/ERC20/IERC20.sol`
 - `@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol`
-- `./Library/BiggiCapsLib.sol`
+- `./TOKENOMIC_LIBRARY/BiggiCapsLib.sol`
 
 ## Key public state to inspect
 - `constant`
@@ -54,6 +54,7 @@ Core token with initial distribution, caps, pausability, and guardian/controller
 
 ## Integration points
 - Core source of truth for BIGGI balances, mint budgets, pause state, and initial distribution.
+- `refillRewardsIfBelow()` is an optional rewards-operator helper and now consumes the same `guardianRewardsMinted` / `GUARDIAN_REWARDS_MINT_CAP` budget as `mintToTokenRewards()`.
 
 ## Safe-edit guidance for agents
 - Preserve storage layout unless a migration is explicitly planned.
@@ -63,6 +64,7 @@ Core token with initial distribution, caps, pausability, and guardian/controller
 
 ## Known risks / review notes
 - Guardian/controller refill model changes tokenomics from fully-static post-launch supply into capped dynamic refill budgets. Audit messaging/docs should reflect that clearly.
+- Mainnet deploy should leave `rewardsOperator` unset unless there is a deliberate operator process for that helper.
 
 ## Agent checklist before modifying
 - Confirm who owns/controls this contract in deployment scripts.

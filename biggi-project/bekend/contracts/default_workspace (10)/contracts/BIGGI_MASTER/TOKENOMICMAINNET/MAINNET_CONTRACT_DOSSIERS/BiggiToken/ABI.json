@@ -475,6 +475,19 @@
       {
         "indexed": true,
         "internalType": "address",
+        "name": "reserve",
+        "type": "address"
+      }
+    ],
+    "name": "ReserveLocked",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "oldAddr",
         "type": "address"
       },
@@ -1138,6 +1151,19 @@
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "reserveLocked",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",

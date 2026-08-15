@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "./Library/BiggiCapsLib.sol";
+import "./TOKENOMIC_LIBRARY/BiggiCapsLib.sol";
 
 interface IBiggiDripDistributorNotify {
     function notifyTokenMint(uint256 amount) external;
@@ -29,6 +29,7 @@ contract BiggiToken is ERC20, ERC20Burnable, ERC20Permit, Pausable, Ownable {
     address public supplyGuardian; // optional manual guardian helper; same authority class as controller
 
     bool public distributed;
+    bool public reserveLocked;
     bool public guardianMintPaused;
 
     uint256 public guardianDexMinted;
@@ -52,6 +53,7 @@ contract BiggiToken is ERC20, ERC20Burnable, ERC20Permit, Pausable, Ownable {
     event SupplyControllerSet(address indexed oldController, address indexed newController);
     event SupplyGuardianSet(address indexed oldGuardian, address indexed newGuardian);
     event GuardianMintPauseSet(bool paused);
+    event ReserveLocked(address indexed reserve);
     event RewardsRefilled(uint256 beforeBal, uint256 afterBal, uint256 minted);
     event RescueERC20(address token, address to, uint256 amount);
     event ReserveTransfer(address indexed to, uint256 amount, address indexed caller);
@@ -66,6 +68,7 @@ contract BiggiToken is ERC20, ERC20Burnable, ERC20Permit, Pausable, Ownable {
 
     function setReserve(address _reserve) external onlyOwner {
         require(_reserve != address(0), "reserve=0");
+        require(!reserveLocked || reserveAddr == _reserve, "reserve locked");
         emit ReserveSet(reserveAddr, _reserve);
         reserveAddr = _reserve;
     }
@@ -139,6 +142,8 @@ contract BiggiToken is ERC20, ERC20Burnable, ERC20Permit, Pausable, Ownable {
         _mint(marketingSupportAddr, marketingAmt);
 
         distributed = true;
+        reserveLocked = true;
+        emit ReserveLocked(reserveAddr);
         emit InitialDistribution(
             reserveAddr,
             dripDistributorAddr,
@@ -162,6 +167,7 @@ contract BiggiToken is ERC20, ERC20Burnable, ERC20Permit, Pausable, Ownable {
 
     function refillRewardsIfBelow(uint256 minBalance, uint256 targetBalance) external {
         require(msg.sender == rewardsOperator, "only rewardsOperator");
+        require(!guardianMintPaused, "guardian mint paused");
         require(tokenRewardsAddr != address(0), "tokenRewards not set");
         require(targetBalance > minBalance, "bad targets");
 
@@ -172,17 +178,21 @@ contract BiggiToken is ERC20, ERC20Burnable, ERC20Permit, Pausable, Ownable {
         }
 
         uint256 toMint = targetBalance - balBefore;
+        require(guardianRewardsMinted + toMint <= BiggiCapsLib.GUARDIAN_REWARDS_MINT_CAP, "REWARDS_CAP");
         require(totalSupply() + toMint <= CAP, "cap exceeded");
+        guardianRewardsMinted += toMint;
         _mint(tokenRewardsAddr, toMint);
         emit RewardsRefilled(balBefore, balanceOf(tokenRewardsAddr), toMint);
     }
 
     function mint(address to, uint256 amount) external onlyOwner {
+        require(amount > 0, "zero amount");
         require(totalSupply() + amount <= CAP, "cap exceeded");
         _mint(to, amount);
     }
 
     function mintToDripDistributor(uint256 amount) external onlySupplyAuthority {
+        require(amount > 0, "zero amount");
         require(!guardianMintPaused, "guardian mint paused");
         require(dripDistributorAddr != address(0), "drip not set");
         require(guardianDexMinted + amount <= BiggiCapsLib.GUARDIAN_DEX_MINT_CAP, "DEX_CAP");
@@ -194,6 +204,7 @@ contract BiggiToken is ERC20, ERC20Burnable, ERC20Permit, Pausable, Ownable {
     }
 
     function mintToTokenRewards(uint256 amount) external onlySupplyAuthority {
+        require(amount > 0, "zero amount");
         require(!guardianMintPaused, "guardian mint paused");
         require(tokenRewardsAddr != address(0), "tokenRewards not set");
         require(guardianRewardsMinted + amount <= BiggiCapsLib.GUARDIAN_REWARDS_MINT_CAP, "REWARDS_CAP");

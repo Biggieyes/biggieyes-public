@@ -3,7 +3,7 @@
     "contract": "BiggiBuybackAgent",
     "output": "BiggiBuybackAgent.abi.json",
     "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiBuybackAgent.sol/BiggiBuybackAgent.json",
-    "abiLength": 74
+    "abiLength": 82
   },
   {
     "contract": "BiggiBuybackDripSetup",
@@ -14,7 +14,7 @@
   {
     "contract": "BiggiBuybackReader",
     "output": "BiggiBuybackReader.abi.json",
-    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiBuybackReader.sol/BiggiBuybackReader.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiBuybackReader.sol/BiggiBuybackReader.json",
     "abiLength": 6
   },
   {
@@ -30,15 +30,21 @@
     "abiLength": 57
   },
   {
+    "contract": "BiggiCREAutomationReceiver",
+    "output": "BiggiCREAutomationReceiver.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiCREAutomationReceiver.sol/BiggiCREAutomationReceiver.json",
+    "abiLength": 43
+  },
+  {
     "contract": "BiggiDexReserveGuard",
     "output": "BiggiDexReserveGuard.abi.json",
     "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiDexReserveGuard.sol/BiggiDexReserveGuard.json",
-    "abiLength": 65
+    "abiLength": 74
   },
   {
     "contract": "BiggiDexReserveGuardReader",
     "output": "BiggiDexReserveGuardReader.abi.json",
-    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiDexReserveGuardReader.sol/BiggiDexReserveGuardReader.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiDexReserveGuardReader.sol/BiggiDexReserveGuardReader.json",
     "abiLength": 4
   },
   {
@@ -56,19 +62,19 @@
   {
     "contract": "BiggiChapterSeriesReader",
     "output": "BiggiChapterSeriesReader.abi.json",
-    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiChapterSeriesReader.sol/BiggiChapterSeriesReader.json",
-    "abiLength": 8
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_READERS/BiggiChapterSeriesReader.sol/BiggiChapterSeriesReader.json",
+    "abiLength": 10
   },
   {
     "contract": "BiggiLiquidityBranchUserReader",
     "output": "BiggiLiquidityBranchUserReader.abi.json",
-    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiLiquidityBranchUserReader.sol/BiggiLiquidityBranchUserReader.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiLiquidityBranchUserReader.sol/BiggiLiquidityBranchUserReader.json",
     "abiLength": 13
   },
   {
     "contract": "BiggiLiquidityHelperReader",
     "output": "BiggiLiquidityHelperReader.abi.json",
-    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiLiquidityHelperReader.sol/BiggiLiquidityHelperReader.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiLiquidityHelperReader.sol/BiggiLiquidityHelperReader.json",
     "abiLength": 9
   },
   {
@@ -93,13 +99,13 @@
     "contract": "BiggiLpPriceFeed",
     "output": "BiggiLpPriceFeed.abi.json",
     "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiLpPriceFeed.sol/BiggiLpPriceFeed.json",
-    "abiLength": 30
+    "abiLength": 31
   },
   {
     "contract": "BiggiMainReader",
     "output": "BiggiMainReader.abi.json",
-    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiMainReader.sol/BiggiMainReader.json",
-    "abiLength": 11
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_READERS/BiggiMainReader.sol/BiggiMainReader.json",
+    "abiLength": 12
   },
   {
     "contract": "BiggiMasterTokenomicsConfig",
@@ -110,32 +116,32 @@
   {
     "contract": "BiggiMultiCollectionDistributorReaderV2",
     "output": "BiggiMultiCollectionDistributorReaderV2.abi.json",
-    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiMultiCollectionDistributorReaderV2.sol/BiggiMultiCollectionDistributorReaderV2.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_READERS/BiggiMultiCollectionDistributorReaderV2.sol/BiggiMultiCollectionDistributorReaderV2.json",
     "abiLength": 6
   },
   {
     "contract": "BiggiNftRewardsReader",
     "output": "BiggiNftRewardsReader.abi.json",
-    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiNftRewardsReader.sol/BiggiNftRewardsReader.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_READERS/BiggiNftRewardsReader.sol/BiggiNftRewardsReader.json",
     "abiLength": 8
   },
   {
     "contract": "BiggiPolicy",
     "output": "BiggiPolicy.abi.json",
     "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiPolicy.sol/BiggiPolicy.json",
-    "abiLength": 29
+    "abiLength": 33
   },
   {
     "contract": "BiggiReserveTreasuryReader",
     "output": "BiggiReserveTreasuryReader.abi.json",
-    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiReserveTreasuryReader.sol/BiggiReserveTreasuryReader.json",
-    "abiLength": 5
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiReserveTreasuryReader.sol/BiggiReserveTreasuryReader.json",
+    "abiLength": 7
   },
   {
     "contract": "BiggiReserveV4",
     "output": "BiggiReserveV4.abi.json",
     "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiReserveV4.sol/BiggiReserveV4.json",
-    "abiLength": 60
+    "abiLength": 65
   },
   {
     "contract": "BiggiSupplyController",
@@ -146,7 +152,7 @@
   {
     "contract": "BiggiSupplyControllerReader",
     "output": "BiggiSupplyControllerReader.abi.json",
-    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiSupplyControllerReader.sol/BiggiSupplyControllerReader.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiSupplyControllerReader.sol/BiggiSupplyControllerReader.json",
     "abiLength": 6
   },
   {
@@ -158,44 +164,50 @@
   {
     "contract": "BiggiSupplyGuardianReader",
     "output": "BiggiSupplyGuardianReader.abi.json",
-    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiSupplyGuardianReader.sol/BiggiSupplyGuardianReader.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiSupplyGuardianReader.sol/BiggiSupplyGuardianReader.json",
     "abiLength": 3
   },
   {
     "contract": "BiggiSystemReader",
     "output": "BiggiSystemReader.abi.json",
-    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiSystemReader.sol/BiggiSystemReader.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiSystemReader.sol/BiggiSystemReader.json",
     "abiLength": 5
   },
   {
     "contract": "BiggiToken",
     "output": "BiggiToken.abi.json",
     "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiToken.sol/BiggiToken.json",
-    "abiLength": 90
+    "abiLength": 92
   },
   {
     "contract": "BiggiTokenomicsSystemAddonReader",
     "output": "BiggiTokenomicsSystemAddonReader.abi.json",
-    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiTokenomicsSystemAddonReader.sol/BiggiTokenomicsSystemAddonReader.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiTokenomicsSystemAddonReader.sol/BiggiTokenomicsSystemAddonReader.json",
     "abiLength": 4
   },
   {
     "contract": "BiggiTokenomikReader",
     "output": "BiggiTokenomikReader.abi.json",
-    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiTokenomikReader.sol/BiggiTokenomikReader.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiTokenomikReader.sol/BiggiTokenomikReader.json",
     "abiLength": 13
+  },
+  {
+    "contract": "BiggiTokenRewardsEmissionController",
+    "output": "BiggiTokenRewardsEmissionController.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiTokenRewardsEmissionController.sol/BiggiTokenRewardsEmissionController.json",
+    "abiLength": 54
   },
   {
     "contract": "BiggiTokenRewardsReader",
     "output": "BiggiTokenRewardsReader.abi.json",
-    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiTokenRewardsReader.sol/BiggiTokenRewardsReader.json",
-    "abiLength": 10
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_READERS/BiggiTokenRewardsReader.sol/BiggiTokenRewardsReader.json",
+    "abiLength": 11
   },
   {
     "contract": "BiggiTreasury",
     "output": "BiggiTreasury.abi.json",
     "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiTreasury.sol/BiggiTreasury.json",
-    "abiLength": 47
+    "abiLength": 60
   },
   {
     "contract": "DripKeeperProxy",
@@ -225,12 +237,42 @@
     "contract": "ModeratorCenter",
     "output": "ModeratorCenter.abi.json",
     "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/ModeratorCenter.sol/ModeratorCenter.json",
-    "abiLength": 60
+    "abiLength": 66
   },
   {
     "contract": "Multicall2",
     "output": "Multicall2.abi.json",
     "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/Multicall2.sol/Multicall2.json",
     "abiLength": 1
+  },
+  {
+    "contract": "BiggiBpsLib",
+    "output": "BiggiBpsLib.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_LIBRARY/BiggiBpsLib.sol/BiggiBpsLib.json",
+    "abiLength": 0
+  },
+  {
+    "contract": "BiggiCapsLib",
+    "output": "BiggiCapsLib.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_LIBRARY/BiggiCapsLib.sol/BiggiCapsLib.json",
+    "abiLength": 9
+  },
+  {
+    "contract": "BiggiErrorsLib",
+    "output": "BiggiErrorsLib.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_LIBRARY/BiggiErrorsLib.sol/BiggiErrorsLib.json",
+    "abiLength": 26
+  },
+  {
+    "contract": "BiggiIdIndexLib",
+    "output": "BiggiIdIndexLib.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_LIBRARY/BiggiIdIndexLib.sol/BiggiIdIndexLib.json",
+    "abiLength": 0
+  },
+  {
+    "contract": "BiggiSwapLib",
+    "output": "BiggiSwapLib.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/TOKENOMIC_LIBRARY/BiggiSwapLib.sol/BiggiSwapLib.json",
+    "abiLength": 0
   }
 ]

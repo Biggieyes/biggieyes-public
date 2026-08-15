@@ -2,64 +2,54 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./Library/BiggiErrorsLib.sol";
+import "./TOKENOMIC_LIBRARY/BiggiErrorsLib.sol";
 
-/// @title BiggiPolicy — centrální nastavení pro buyback / limity
-/// @notice Používá ho BiggiBuybackAgent přes IBiggiPolicy rozhraní.
+/// @title BiggiPolicy
+/// @notice Central policy config for buyback limits and swap parameters.
 contract BiggiPolicy is Ownable {
-    /// @notice chyba pro překročení denního limitu buybacku
+    /// @notice Raised when daily buyback quota would be exceeded.
     error DailyQuotaExceeded();
 
-    // ===== Parametry pro DEX swapy =====
-
-    /// @notice povolený slippage v BPS (1% = 100 bps, max 10000)
+    // ===== DEX swap parameters =====
     uint256 public swapSlippageBps;
-
-    /// @notice platnost transakce v sekundách (deadline pro router)
     uint256 public txDeadlineSec;
 
-    // ===== Throttling buybacku =====
-
-    /// @notice minimální čas mezi dvěma buybacky (v sekundách)
+    // ===== Buyback throttling =====
     uint256 public minBuybackInterval;
-
-    /// @notice globální pauza buybacků (pokud true, buybacky se nemají provádět)
     bool public buybacksPaused;
-
-    /// @notice maximální denní objem buybacku v nativním tokenu (0 = bez limitu)
     uint256 public maxDailyBuybackNative;
-
-    /// @notice kolik nativu už bylo „spotřebováno“ daný den
     uint256 public usedToday;
-
-    /// @notice index dne (block.timestamp / 1 days), ke kterému se vztahuje usedToday
     uint64 public dayIndex;
 
-    // ===== Události =====
+    /// @notice Authorized caller for consumeDailyBuybackQuota (typically BiggiBuybackAgent).
+    address public buybackAgent;
 
+    // ===== Events =====
     event SwapSlippageBpsSet(uint256 oldVal, uint256 newVal);
     event TxDeadlineSecSet(uint256 oldVal, uint256 newVal);
     event MinBuybackIntervalSet(uint256 oldVal, uint256 newVal);
     event BuybacksPausedSet(bool oldVal, bool newVal);
     event MaxDailyBuybackNativeSet(uint256 oldVal, uint256 newVal);
     event DailyQuotaConsumed(uint256 dayIndex, uint256 usedToday, uint256 added);
+    event BuybackAgentSet(address indexed oldAgent, address indexed newAgent);
 
     constructor(address initialOwner) Ownable(initialOwner) {
         if (initialOwner == address(0)) revert BiggiErrorsLib.ZeroAddress();
 
-        // rozumné defaulty pro testnet (můžeš kdykoliv přepsat setterem)
-        swapSlippageBps = 500;          // 5 %
-        txDeadlineSec   = 600;          // 10 min
-        minBuybackInterval = 300;       // 5 min
-        buybacksPaused  = false;
-        maxDailyBuybackNative = 0;      // 0 = bez denního limitu
+        swapSlippageBps = 500;      // 5%
+        txDeadlineSec = 600;        // 10 min
+        minBuybackInterval = 300;   // 5 min
+        buybacksPaused = false;
+        maxDailyBuybackNative = 0;  // 0 = unlimited
         dayIndex = uint64(block.timestamp / 1 days);
+
+        // Safe default until explicit wiring is done.
+        buybackAgent = initialOwner;
     }
 
-    // ===== Settery (onlyOwner) =====
-
+    // ===== Setters (onlyOwner) =====
     function setSwapSlippageBps(uint256 newBps) external onlyOwner {
-        if (newBps > 10_000) revert BiggiErrorsLib.AmountZero(); // reuse, nebo si případně uděláš vlastní error
+        if (newBps > 10_000) revert BiggiErrorsLib.AmountZero();
         emit SwapSlippageBpsSet(swapSlippageBps, newBps);
         swapSlippageBps = newBps;
     }
@@ -81,34 +71,36 @@ contract BiggiPolicy is Ownable {
         buybacksPaused = paused_;
     }
 
-    /// @notice Nastavení denního limitu pro buyback v nativním tokenu (0 = bez limitu)
     function setMaxDailyBuybackNative(uint256 newMax) external onlyOwner {
         emit MaxDailyBuybackNativeSet(maxDailyBuybackNative, newMax);
         maxDailyBuybackNative = newMax;
     }
 
-    // ===== Kvóta pro buyback (volá BiggiBuybackAgent) =====
+    function setBuybackAgent(address agent) external onlyOwner {
+        if (agent == address(0)) revert BiggiErrorsLib.ZeroAddress();
+        emit BuybackAgentSet(buybackAgent, agent);
+        buybackAgent = agent;
+    }
 
-    /// @notice Zkonzumuje část denního limitu. Pokud by byl limit překročen, revertuje.
-    /// @dev Pokud je maxDailyBuybackNative == 0, funguje jako no-op (bez limitu).
+    // ===== Quota consumption =====
+    /// @notice Consumes portion of daily buyback quota.
+    /// @dev If maxDailyBuybackNative == 0, quota is unlimited but accounting is still tracked.
     function consumeDailyBuybackQuota(uint256 nativeAmount) external {
         if (nativeAmount == 0) revert BiggiErrorsLib.AmountZero();
+        if (msg.sender != buybackAgent && msg.sender != owner()) revert BiggiErrorsLib.NotBuybackAgent();
 
-        // roll den, pokud je nový den
         uint64 today = uint64(block.timestamp / 1 days);
         if (today != dayIndex) {
             dayIndex = today;
             usedToday = 0;
         }
 
-        // pokud není nastaven žádný limit, jen trackujeme (volitelné)
         if (maxDailyBuybackNative == 0) {
             usedToday += nativeAmount;
             emit DailyQuotaConsumed(today, usedToday, nativeAmount);
             return;
         }
 
-        // hlídání limitu
         if (usedToday + nativeAmount > maxDailyBuybackNative) {
             revert DailyQuotaExceeded();
         }

@@ -1,6 +1,6 @@
 // Retries pending buyback share from MultiCollectionDistributor to BuybackAgent
 // Usage: `node scripts/retryPendingToBuyback.js`
-// Requires PRIVATE_KEY (owner of distributor) and AMOY_RPC_URL in scripts/.env
+// Requires PRIVATE_KEY (owner of distributor) and POLYGON_RPC_URL in scripts/.env
 
 require("dotenv").config({ path: require("path").join(__dirname, ".env") });
 const { ethers } = require("ethers");
@@ -18,8 +18,8 @@ const ABI = [
 
 async function main() {
   if (!process.env.PRIVATE_KEY) throw new Error("PRIVATE_KEY missing in .env");
-  const rpc = process.env.AMOY_RPC_URL || "https://polygon-amoy-bor.publicnode.com";
-  const provider = new ethers.providers.JsonRpcProvider(rpc, { name: "amoy", chainId: 80002 });
+  const rpc = process.env.POLYGON_RPC_URL || "https://polygon.drpc.org";
+  const provider = new ethers.providers.JsonRpcProvider(rpc, { name: "polygon", chainId: 137 });
   const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
   const gasPrio = ethers.utils.parseUnits(process.env.GAS_PRIORITY_GWEI || "40", "gwei");

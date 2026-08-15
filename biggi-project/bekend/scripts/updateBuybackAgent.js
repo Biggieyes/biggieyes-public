@@ -1,7 +1,7 @@
 // scripts/updateBuybackAgent.js
-// Spusť: `npx hardhat run scripts/updateBuybackAgent.js --network amoy`
+// Spusť: `npx hardhat run scripts/updateBuybackAgent.js --network polygon`
 // Potřebné env proměnné:
-//  - AMOY_RPC_URL, PRIVATE_KEY
+//  - POLYGON_RPC_URL, PRIVATE_KEY
 //  - NEW_BUYBACK_AGENT=0xB775Bd018053264033f9e8305DcF3BD7cf205F8e
 //  - Volitelně adresy cílů, které má skript přenastavit (pokud nejsou, krok se přeskočí):
 //      TREASURY, DRIP_LM, DISTRIBUTOR, UPKEEP_PROXY, MASTER_CONFIG, DRIP_DISTRIBUTOR, POLICY

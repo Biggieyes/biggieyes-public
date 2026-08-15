@@ -1,4 +1,4 @@
-# Agent documentation — Library/BiggiCapsLib.sol
+# Agent documentation — TOKENOMIC_LIBRARY/BiggiCapsLib.sol
 
 **Role:** Tokenomics cap constants library
 

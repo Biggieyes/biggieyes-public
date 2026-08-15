@@ -3,7 +3,7 @@
 **Role:** LP price estimation helper
 
 ## Purpose
-Reads pair reserves / supply to expose LP-token price-like metrics for UI/ops.
+Reads pair reserves to expose a BIGGI/quote price feed for UI/ops and DEX guard validation.
 
 ## Top-level declarations
 - Contracts/libraries: BiggiLpPriceFeed
@@ -27,6 +27,7 @@ Reads pair reserves / supply to expose LP-token price-like metrics for UI/ops.
 - `token0()`
 - `token1()`
 - `decimals()`
+- `latestAnswer()`
 - `latestRoundData()`
 - `readReserves()`
 - `setPair()`
@@ -36,6 +37,8 @@ Reads pair reserves / supply to expose LP-token price-like metrics for UI/ops.
 - `_requirePairMatchesTokens()`
 
 ## Integration points
+- `BiggiDexReserveGuard` can use this feed through Chainlink-like `latestRoundData()` or legacy `latestAnswer()`.
+- `updateFromReserves()` must be called after real pair liquidity exists before the feed is treated as valid.
 - Review file-local interfaces and imports before changing any external call patterns.
 
 ## Safe-edit guidance for agents
@@ -45,7 +48,8 @@ Reads pair reserves / supply to expose LP-token price-like metrics for UI/ops.
 - Prefer additive changes with explicit events over implicit behavior changes.
 
 ## Known risks / review notes
-- No file-specific issue flagged in this pass beyond standard tokenomics/change-management caution.
+- This is reserve-derived and owner-updated; it is not a decentralized independent market oracle.
+- Do not rely on it as the only production price source unless operational update cadence and manipulation risk are explicitly accepted.
 
 ## Agent checklist before modifying
 - Confirm who owns/controls this contract in deployment scripts.
