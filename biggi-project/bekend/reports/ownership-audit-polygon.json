@@ -1,0 +1,434 @@
+{
+  "network": "polygon",
+  "chainId": 137,
+  "createdAt": "2026-06-27T01:21:42.705Z",
+  "manifestFiles": [
+    "addresses.master.json",
+    "addresses.visibility.polygon.json",
+    "addresses.tokenomics.phase1.polygon.json",
+    "addresses.tokenomics.phase2.polygon.json"
+  ],
+  "uniqueAddressCandidates": 57,
+  "addressesWithCode": 55,
+  "ownableContracts": 32,
+  "owners": {
+    "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B": 30,
+    "0x53bC8B33F9Fd9cf5323b260CC078967cC3f30297": 1,
+    "0x1E0166613594883337B971d4A594ebEbF75382EB": 1
+  },
+  "contracts": [
+    {
+      "address": "0xda07a5fDee4d6d491cF31368F00e2aD584bB033D",
+      "keys": [
+        "addresses.master.json.BIGGI_MODERATOR_CENTER",
+        "addresses.master.json.MODERATOR_CENTER",
+        "addresses.tokenomics.phase1.polygon.json.BIGGI_MODERATOR_CENTER",
+        "addresses.tokenomics.phase1.polygon.json.MODERATOR_CENTER",
+        "addresses.tokenomics.phase2.polygon.json.BIGGI_MODERATOR_CENTER",
+        "addresses.tokenomics.phase2.polygon.json.MODERATOR_CENTER",
+        "addresses.visibility.polygon.json.BIGGI_MODERATOR_CENTER",
+        "addresses.visibility.polygon.json.MODERATOR_CENTER"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
+      "keys": [
+        "addresses.master.json.BIGGI_TOKEN",
+        "addresses.tokenomics.phase1.polygon.json.BIGGI_TOKEN",
+        "addresses.tokenomics.phase2.polygon.json.BIGGI_TOKEN",
+        "addresses.visibility.polygon.json.BIGGI_TOKEN"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x5A77E90c467576C82B8d0E74eD112B829C625BB4",
+      "keys": [
+        "addresses.master.json.BUYBACK_AGENT",
+        "addresses.master.json.BUYBACK_AGENT_EFFECTIVE",
+        "addresses.tokenomics.phase1.polygon.json.BUYBACK_AGENT",
+        "addresses.tokenomics.phase1.polygon.json.BUYBACK_AGENT_EFFECTIVE",
+        "addresses.tokenomics.phase2.polygon.json.BUYBACK_AGENT",
+        "addresses.tokenomics.phase2.polygon.json.BUYBACK_AGENT_EFFECTIVE",
+        "addresses.visibility.polygon.json.BUYBACK_AGENT",
+        "addresses.visibility.polygon.json.BUYBACK_AGENT_EFFECTIVE"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875",
+      "keys": [
+        "addresses.master.json.BUYBACK_UPKEEP_PROXY",
+        "addresses.master.json.UPKEEP_PROXY",
+        "addresses.tokenomics.phase1.polygon.json.BUYBACK_UPKEEP_PROXY",
+        "addresses.tokenomics.phase1.polygon.json.UPKEEP_PROXY",
+        "addresses.tokenomics.phase2.polygon.json.BUYBACK_UPKEEP_PROXY",
+        "addresses.tokenomics.phase2.polygon.json.UPKEEP_PROXY",
+        "addresses.visibility.polygon.json.BUYBACK_UPKEEP_PROXY",
+        "addresses.visibility.polygon.json.UPKEEP_PROXY"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x5d1273070c9133381C570009768621762F024FB8",
+      "keys": [
+        "addresses.master.json.COLLECTION_REWARDS",
+        "addresses.tokenomics.phase1.polygon.json.COLLECTION_REWARDS",
+        "addresses.tokenomics.phase2.polygon.json.COLLECTION_REWARDS",
+        "addresses.visibility.polygon.json.COLLECTION_REWARDS"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x81C6E90a991d7D210c43B00B7EB1a5450cc372Ae",
+      "keys": [
+        "addresses.master.json.COMMUNITY_CENTER",
+        "addresses.master.json.COMMUNITY_CENTER_EFFECTIVE",
+        "addresses.tokenomics.phase1.polygon.json.COMMUNITY_CENTER",
+        "addresses.tokenomics.phase1.polygon.json.COMMUNITY_CENTER_EFFECTIVE",
+        "addresses.tokenomics.phase2.polygon.json.COMMUNITY_CENTER",
+        "addresses.tokenomics.phase2.polygon.json.COMMUNITY_CENTER_EFFECTIVE",
+        "addresses.visibility.polygon.json.COMMUNITY_CENTER",
+        "addresses.visibility.polygon.json.COMMUNITY_CENTER_EFFECTIVE"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x76c9cf548b4179F8901cda1f8623568b58215E62",
+      "keys": [
+        "addresses.master.json.CRE_KEYSTONE_FORWARDER"
+      ],
+      "owner": "0x53bC8B33F9Fd9cf5323b260CC078967cC3f30297",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x350370c248495758b80Ea1C564Df1290cA76588B",
+      "keys": [
+        "addresses.master.json.DEX_RESERVE_GUARD",
+        "addresses.tokenomics.phase1.polygon.json.DEX_RESERVE_GUARD",
+        "addresses.tokenomics.phase2.polygon.json.DEX_RESERVE_GUARD",
+        "addresses.visibility.polygon.json.DEX_RESERVE_GUARD"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0xCE892698159D8D799D5eF7f0dF0111487511fD22",
+      "keys": [
+        "addresses.master.json.DISTRIBUTOR",
+        "addresses.tokenomics.phase1.polygon.json.DISTRIBUTOR",
+        "addresses.tokenomics.phase2.polygon.json.DISTRIBUTOR",
+        "addresses.visibility.polygon.json.DISTRIBUTOR"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x2E4677729cb8a02aDd752Bcbd2637809C20CBAf3",
+      "keys": [
+        "addresses.master.json.DRIP_DISTRIBUTOR",
+        "addresses.tokenomics.phase1.polygon.json.DRIP_DISTRIBUTOR",
+        "addresses.tokenomics.phase2.polygon.json.DRIP_DISTRIBUTOR",
+        "addresses.visibility.polygon.json.DRIP_DISTRIBUTOR"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0xf71b3B9E64bf48E1EC8F9195c3420464fe767cCc",
+      "keys": [
+        "addresses.master.json.DRIP_KEEPER_PROXY",
+        "addresses.tokenomics.phase1.polygon.json.DRIP_KEEPER_PROXY",
+        "addresses.tokenomics.phase2.polygon.json.DRIP_KEEPER_PROXY",
+        "addresses.visibility.polygon.json.DRIP_KEEPER_PROXY"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0xE258843bca54803a366413571b3B4d6a28eAF2eC",
+      "keys": [
+        "addresses.master.json.DRIP_LM",
+        "addresses.tokenomics.phase1.polygon.json.DRIP_LM",
+        "addresses.tokenomics.phase2.polygon.json.DRIP_LM",
+        "addresses.visibility.polygon.json.DRIP_LM"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x6bf341647C9592eFEadE43a3f396DB616B11f7E7",
+      "keys": [
+        "addresses.master.json.CHAPTER_CONTROLLER",
+        "addresses.tokenomics.phase1.polygon.json.CHAPTER_CONTROLLER",
+        "addresses.tokenomics.phase2.polygon.json.CHAPTER_CONTROLLER",
+        "addresses.visibility.polygon.json.CHAPTER_CONTROLLER"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x4fC6EaD8CC6451e1A5EA7Ceaf6a072e18f91F04c",
+      "keys": [
+        "addresses.master.json.KEEPER_PROXY",
+        "addresses.master.json.LIQUIDITY_KEEPER_PROXY",
+        "addresses.tokenomics.phase1.polygon.json.KEEPER_PROXY",
+        "addresses.tokenomics.phase1.polygon.json.LIQUIDITY_KEEPER_PROXY",
+        "addresses.tokenomics.phase2.polygon.json.KEEPER_PROXY",
+        "addresses.tokenomics.phase2.polygon.json.LIQUIDITY_KEEPER_PROXY",
+        "addresses.visibility.polygon.json.KEEPER_PROXY",
+        "addresses.visibility.polygon.json.LIQUIDITY_KEEPER_PROXY"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": true
+    },
+    {
+      "address": "0xfb770C5A5AC6e41C85f076DB7C3434eAcd8e0F19",
+      "keys": [
+        "addresses.master.json.LIQUIDITY_MANAGER",
+        "addresses.master.json.LM",
+        "addresses.tokenomics.phase1.polygon.json.LIQUIDITY_MANAGER",
+        "addresses.tokenomics.phase1.polygon.json.LM",
+        "addresses.tokenomics.phase2.polygon.json.LIQUIDITY_MANAGER",
+        "addresses.tokenomics.phase2.polygon.json.LM",
+        "addresses.visibility.polygon.json.LIQUIDITY_MANAGER",
+        "addresses.visibility.polygon.json.LM"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0xC72DB11941d8Ab76baF84B1af9dB43E09060b681",
+      "keys": [
+        "addresses.master.json.LIQUIDITY_ORCHESTRATOR",
+        "addresses.tokenomics.phase1.polygon.json.LIQUIDITY_ORCHESTRATOR",
+        "addresses.tokenomics.phase2.polygon.json.LIQUIDITY_ORCHESTRATOR",
+        "addresses.visibility.polygon.json.LIQUIDITY_ORCHESTRATOR"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": true
+    },
+    {
+      "address": "0xFe234394845B601B2c671c0dD631fA6290c02bb9",
+      "keys": [
+        "addresses.master.json.LIQUIDITY_VAULT",
+        "addresses.master.json.LM_VAULT",
+        "addresses.tokenomics.phase1.polygon.json.LIQUIDITY_VAULT",
+        "addresses.tokenomics.phase1.polygon.json.LM_VAULT",
+        "addresses.tokenomics.phase2.polygon.json.LIQUIDITY_VAULT",
+        "addresses.tokenomics.phase2.polygon.json.LM_VAULT",
+        "addresses.visibility.polygon.json.LIQUIDITY_VAULT",
+        "addresses.visibility.polygon.json.LM_VAULT"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+      "keys": [
+        "addresses.master.json.MAIN",
+        "addresses.tokenomics.phase1.polygon.json.MAIN",
+        "addresses.tokenomics.phase2.polygon.json.MAIN",
+        "addresses.visibility.polygon.json.MAIN"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634",
+      "keys": [
+        "addresses.master.json.MAIN2",
+        "addresses.tokenomics.phase1.polygon.json.MAIN2",
+        "addresses.tokenomics.phase2.polygon.json.MAIN2",
+        "addresses.visibility.polygon.json.MAIN2"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x4125DA806c7B0AaD6c443b7BD368e45ed123687C",
+      "keys": [
+        "addresses.master.json.MASTER_CONFIG",
+        "addresses.tokenomics.phase1.polygon.json.MASTER_CONFIG",
+        "addresses.tokenomics.phase2.polygon.json.MASTER_CONFIG",
+        "addresses.visibility.polygon.json.MASTER_CONFIG"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x939Df533b80943298E15ad4c8F188102954f34FF",
+      "keys": [
+        "addresses.master.json.NFT_REWARDS",
+        "addresses.tokenomics.phase1.polygon.json.NFT_REWARDS",
+        "addresses.tokenomics.phase2.polygon.json.NFT_REWARDS",
+        "addresses.visibility.polygon.json.NFT_REWARDS"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x50485231A0602DE7a7b64e2760EF21133c77a43C",
+      "keys": [
+        "addresses.master.json.POLICY",
+        "addresses.tokenomics.phase1.polygon.json.POLICY",
+        "addresses.tokenomics.phase2.polygon.json.POLICY",
+        "addresses.visibility.polygon.json.POLICY"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013",
+      "keys": [
+        "addresses.master.json.REGISTRY",
+        "addresses.tokenomics.phase1.polygon.json.REGISTRY",
+        "addresses.tokenomics.phase2.polygon.json.REGISTRY",
+        "addresses.visibility.polygon.json.REGISTRY"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x2786e46e01a5d229118fEdC102267217C7e94574",
+      "keys": [
+        "addresses.master.json.RESERVE",
+        "addresses.master.json.RESERVE_ADDRESS",
+        "addresses.tokenomics.phase1.polygon.json.RESERVE",
+        "addresses.tokenomics.phase1.polygon.json.RESERVE_ADDRESS",
+        "addresses.tokenomics.phase2.polygon.json.RESERVE",
+        "addresses.tokenomics.phase2.polygon.json.RESERVE_ADDRESS",
+        "addresses.visibility.polygon.json.RESERVE",
+        "addresses.visibility.polygon.json.RESERVE_ADDRESS"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": true
+    },
+    {
+      "address": "0x810ba27C98aAB09737e3988a3C1b10D6CadaB8E8",
+      "keys": [
+        "addresses.master.json.SUPPLY_CONTROLLER",
+        "addresses.tokenomics.phase1.polygon.json.SUPPLY_CONTROLLER",
+        "addresses.tokenomics.phase2.polygon.json.SUPPLY_CONTROLLER",
+        "addresses.visibility.polygon.json.SUPPLY_CONTROLLER"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0xdCA0bEda4c96eCE2E23e30f6Aa95697106d99B49",
+      "keys": [
+        "addresses.master.json.SUPPLY_GUARDIAN",
+        "addresses.tokenomics.phase1.polygon.json.SUPPLY_GUARDIAN",
+        "addresses.tokenomics.phase2.polygon.json.SUPPLY_GUARDIAN",
+        "addresses.visibility.polygon.json.SUPPLY_GUARDIAN"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0xe6d742D7DC66fA63434E6794C69798A5272e9873",
+      "keys": [
+        "addresses.master.json.TICKET_HUB",
+        "addresses.tokenomics.phase1.polygon.json.TICKET_HUB",
+        "addresses.tokenomics.phase2.polygon.json.TICKET_HUB",
+        "addresses.visibility.polygon.json.TICKET_HUB"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0xA455775BBe0BC863f644516147b95Ef5103b29FA",
+      "keys": [
+        "addresses.master.json.TOKEN_REWARDS",
+        "addresses.tokenomics.phase1.polygon.json.TOKEN_REWARDS",
+        "addresses.tokenomics.phase2.polygon.json.TOKEN_REWARDS",
+        "addresses.visibility.polygon.json.TOKEN_REWARDS"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0xA7B71DFEBF89481b37d803dD0765E3612f29Ffb9",
+      "keys": [
+        "addresses.master.json.TOKEN_REWARDS_EMISSION_CONTROLLER",
+        "addresses.tokenomics.phase1.polygon.json.TOKEN_REWARDS_EMISSION_CONTROLLER",
+        "addresses.tokenomics.phase2.polygon.json.TOKEN_REWARDS_EMISSION_CONTROLLER",
+        "addresses.visibility.polygon.json.TOKEN_REWARDS_EMISSION_CONTROLLER"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x35EE9523D20fFfe47c62dCcF01fA0136424A05e7",
+      "keys": [
+        "addresses.master.json.TREASURY",
+        "addresses.tokenomics.phase1.polygon.json.TREASURY",
+        "addresses.tokenomics.phase2.polygon.json.TREASURY",
+        "addresses.visibility.polygon.json.TREASURY"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0xec0Ed46f36576541C75739E915ADbCb3DE24bD77",
+      "keys": [
+        "addresses.master.json.VRF_COORDINATOR",
+        "addresses.tokenomics.phase1.polygon.json.VRF_COORDINATOR",
+        "addresses.tokenomics.phase2.polygon.json.VRF_COORDINATOR",
+        "addresses.visibility.polygon.json.VRF_COORDINATOR"
+      ],
+      "owner": "0x1E0166613594883337B971d4A594ebEbF75382EB",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F",
+      "keys": [
+        "addresses.master.json.VRF_ROUTER",
+        "addresses.tokenomics.phase1.polygon.json.VRF_ROUTER",
+        "addresses.tokenomics.phase2.polygon.json.VRF_ROUTER",
+        "addresses.visibility.polygon.json.VRF_ROUTER"
+      ],
+      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    }
+  ]
+}

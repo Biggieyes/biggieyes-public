@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-02-24T05:21:29.976Z",
+  "mode": "cli",
+  "workflowPath": "cre/workflows/biggieyes-vrf-postredeem.workflow.yaml",
+  "workflowSha256": "3dc7a860ad1dc4bc7189adee48c4a958c6d8deb60ca0ff0363e81f7be247ef06",
+  "status": "cli_simulation_failed",
+  "commandTried": "cre workflow simulate --workflow C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\cre\\workflows\\biggieyes-vrf-postredeem.workflow.yaml --json",
+  "exitCode": 1,
+  "stdout": "",
+  "stderr": "Usage:\n  cre workflow simulate <workflow-folder-path> [flags]\n\nExamples:\ncre workflow simulate ./my-workflow\n\nFlags:\n      --broadcast             Broadcast transactions to the EVM (default: false)\n  -g, --engine-logs           Enable non-fatal engine logging\n      --evm-event-index int   EVM trigger log index (0-based) (default -1)\n      --evm-tx-hash string    EVM trigger transaction hash (0x...)\n  -h, --help                  help for simulate\n      --http-payload string   HTTP trigger payload as JSON string or path to JSON file (with or without @ prefix)\n      --non-interactive       Run without prompts; requires --trigger-index and inputs for the selected trigger type\n      --trigger-index int     Index of the trigger to run (0-based) (default -1)\n\nGlobal Flags:\n  -e, --env string            Path to .env file which contains sensitive info (default \".env\")\n  -R, --project-root string   Path to the project root\n  -T, --target string         Use target settings from YAML config\n  -v, --verbose               Run command in VERBOSE mode\n\n✗ unknown flag: --workflow\n",
+  "notes": []
+}

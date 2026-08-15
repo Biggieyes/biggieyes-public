@@ -1,0 +1,86 @@
+# Logs
+logs
+*.log
+*.err.log
+hs_err_pid*.log
+replay_pid*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencies and build output
+node_modules
+dist
+dist-ssr
+coverage
+.cache
+cache
+cache-*
+
+# Temporary files
+tmp
+tmp-*
+tmp_*
+temp
+temp_*
+*.tmp
+*.pid
+.tmp-*
+*.bak.*
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment files: ignore local/production env files, keep examples
+.env
+.env.local
+.env.*
+.envrc
+.env.bak
+.env.backup
+.env.development
+.env.production
+.env.test
+.env.staging
+!*.env.example
+!.env.example
+
+# Secrets
+passwords.txt
+**/secrets.yaml
+**/secrets.yml
+!**/secrets.example.yaml
+!**/secrets.example.yml
+
+# Local Netlify data
+.netlify
+.netlify-appdata
+
+# Local visual/debug captures
+reports/visual-smoke/
+reports/*.png
+tmp-*.png
+tmp_*.png
+*-debug.png
+
+# Build artifacts and local chain caches
+biggi-project/kendt/cache*/
+biggi-project/kendt/artifacts/
+biggi-project/kendt/artifacts-master/
+biggi-project/kendt/artifacts-*/
+biggi-project/bekend/tmp-*.json
+
+# CRE local build outputs
+**/.cre_build_tmp.js
+**/binary.wasm
+**/*.wasm
+**/bun.lockb

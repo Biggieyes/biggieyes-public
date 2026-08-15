@@ -1,0 +1,256 @@
+@import "../../Common/components/StatCard.css";
+
+.liquidity-tab {
+  border-radius: 24px;
+  border: 1px solid rgba(67, 104, 86, 0.34);
+  background:
+    radial-gradient(circle at top left, rgba(108, 239, 91, 0.16), transparent 32%),
+    radial-gradient(circle at top right, rgba(79, 180, 255, 0.12), transparent 36%),
+    linear-gradient(180deg, rgba(7, 15, 28, 0.98), rgba(4, 9, 18, 0.96));
+  box-shadow: inset 0 1px 0 rgba(137, 214, 120, 0.08), 0 24px 60px rgba(0, 0, 0, 0.28);
+  padding: 26px 26px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.liquidity-tab__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 56rem) minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+}
+
+.liquidity-tab__headline {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  max-width: 56rem;
+  width: 100%;
+  align-items: center;
+  justify-self: center;
+  text-align: center;
+}
+
+.liquidity-tab__header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+}
+
+.liquidity-tab__headline p {
+  margin: 0;
+  color: #8ea0bd;
+  font-size: 0.92rem;
+  max-width: 50rem;
+  line-height: 1.55;
+}
+
+.liquidity-tab__header-meta {
+  grid-column: 3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  justify-self: end;
+  max-width: 100%;
+}
+
+.liquidity-tab__badge,
+.liquidity-tab__timestamp,
+.liquidity-tab__refresh {
+  border-radius: 999px;
+  border: 1px solid rgba(93, 117, 156, 0.28);
+  background: rgba(9, 17, 32, 0.82);
+  padding: 8px 12px;
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.liquidity-tab__badge {
+  color: #dbe7ff;
+}
+
+.liquidity-tab__badge--active {
+  border-color: rgba(74, 222, 128, 0.34);
+  color: #86efac;
+}
+
+.liquidity-tab__badge--warning {
+  border-color: rgba(250, 204, 21, 0.32);
+  color: #fde68a;
+}
+
+.liquidity-tab__badge--paused {
+  border-color: rgba(248, 113, 113, 0.32);
+  color: #fda4af;
+}
+
+.liquidity-tab__badge--idle {
+  border-color: rgba(125, 143, 173, 0.28);
+  color: #c8d4eb;
+}
+
+.liquidity-tab__timestamp {
+  color: #90a4c4;
+}
+
+.liquidity-tab__refresh {
+  color: #d6f5de;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.liquidity-tab__refresh:hover {
+  border-color: rgba(111, 243, 134, 0.38);
+  background: rgba(13, 28, 21, 0.92);
+  transform: translateY(-1px);
+}
+
+.liquidity-tab__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+  grid-auto-rows: 1fr;
+}
+
+.liquidity-tab__charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+  grid-auto-rows: 1fr;
+}
+
+.liquidity-tab__chart {
+  border-radius: 18px;
+  border: 1px solid rgba(55, 75, 109, 0.34);
+  background:
+    linear-gradient(180deg, rgba(10, 18, 32, 0.96), rgba(5, 11, 22, 0.9));
+  padding: 18px;
+  box-shadow: inset 0 1px 0 rgba(129, 151, 188, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 252px;
+  height: 100%;
+}
+
+.liquidity-tab__chart h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #f4f7ff;
+}
+
+.liquidity-tab__chart p {
+  margin: 6px 0 12px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #7f92b0;
+}
+
+.liquidity-tab__chart .line-chart {
+  flex: 1;
+  min-height: 0;
+}
+
+.liquidity-tab__chart .line-chart__svg {
+  min-height: 172px;
+}
+
+.liquidity-tab .stat-card {
+  min-height: 124px;
+  border-radius: 18px;
+  border-color: rgba(56, 74, 110, 0.38);
+  background:
+    linear-gradient(180deg, rgba(9, 17, 31, 0.98), rgba(6, 11, 21, 0.92));
+  box-shadow: inset 0 1px 0 rgba(143, 169, 211, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.liquidity-tab .stat-card__label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.74rem;
+}
+
+.liquidity-tab .stat-card__value {
+  font-size: 1.5rem;
+  line-height: 1.08;
+}
+
+.liquidity-tab .stat-card__hint {
+  color: #7f92b0;
+}
+
+.liquidity-tab .stat-card--native {
+  border-color: rgba(67, 201, 255, 0.28);
+  background:
+    linear-gradient(180deg, rgba(8, 24, 35, 0.96), rgba(7, 15, 24, 0.9));
+}
+
+.liquidity-tab .stat-card--native .stat-card__value {
+  color: #8be7ff;
+}
+
+.liquidity-tab .stat-card--token {
+  border-color: rgba(111, 243, 134, 0.26);
+  background:
+    linear-gradient(180deg, rgba(11, 28, 19, 0.96), rgba(8, 18, 13, 0.9));
+}
+
+.liquidity-tab .stat-card--token .stat-card__value {
+  color: #8ef0a1;
+}
+
+.liquidity-tab--error {
+  border-color: #7f1d1d;
+  color: #fecaca;
+}
+
+@media (max-width: 900px) {
+  .liquidity-tab {
+    padding: 18px 18px 16px;
+  }
+
+  .liquidity-tab__header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .liquidity-tab__headline {
+    grid-column: auto;
+    width: 100%;
+    align-items: flex-start;
+    justify-self: auto;
+    text-align: left;
+  }
+
+  .liquidity-tab__header-meta {
+    grid-column: auto;
+    width: 100%;
+    justify-self: auto;
+    justify-content: flex-start;
+  }
+
+  .liquidity-tab__badge,
+  .liquidity-tab__timestamp,
+  .liquidity-tab__refresh {
+    width: fit-content;
+  }
+}

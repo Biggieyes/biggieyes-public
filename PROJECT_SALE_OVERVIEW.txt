@@ -1,0 +1,195 @@
+PROJECT: BIGGIEYES / BIGGINFTWEB
+VERSION: Sale Overview (2026-01-31)
+
+EXECUTIVE SUMMARY
+BiggiEyes is an on-chain NFT ecosystem built around verifiable randomness (VRF), dynamic pricing, and a transparent tokenomics dashboard. It combines a ticket -> VRF -> NFT flow, IPFS-hosted assets, and a full ecosystem UI (stats, rewards, liquidity, treasury, buyback, DRIP) into a production-ready front-end. The system is designed for trust: live prices, mint counts, and reward metrics are read directly from contracts and shown in real time.
+
+MARKETING / INVESTOR NARRATIVE
+- Fairness: VRF makes outcomes provably random.
+- Transparency: live on-chain stats show the real state of the economy.
+- Momentum: dynamic pricing rewards early participation and signals demand.
+- Utility: buyback, DRIP, and LM create a full ecosystem loop.
+- Expansion: modular architecture supports rapid new features and markets.
+
+PRODUCT OVERVIEW
+- VRF-based NFT minting where the final NFT is selected randomly from IPFS.
+- Dynamic block pricing that rises with mint activity and background influence.
+- A complete, unified interface for minting, redeeming, rewards, liquidity, and tokenomics.
+
+CORE USER FLOW (END-TO-END)
+1) Ticket Mint
+   - User mints a ticket.
+   - Ticket price is on-chain and surfaced live.
+
+2) Ticket Redeem -> VRF
+   - Ticket is redeemed to trigger a VRF request.
+   - VRF selects the final NFT from IPFS.
+   - Full status and history are shown in the VRF panel.
+
+3) NFT Delivery
+   - On fulfillment, the NFT is minted and appears in the user gallery.
+   - UI auto-refreshes stats, rewards, and mint history.
+
+DYNAMIC PRICING MODEL (LIVE VS BASE)
+- Base price: a starting reference (1-10 POL) per block.
+- Live price: on-chain price that rises with mint demand.
+- Matching background color increases the same block price.
+- Users always see both reference and live pricing for transparency.
+
+TOKENOMICS AND ECONOMY (DEEP DIVE)
+Token Layer
+- Biggi token is integrated across the ecosystem panels.
+- Live token price uses on-chain feeds and DEX pricing fallbacks.
+- LP price and reserve/treasury balances are visible in Live Stats.
+
+Distribution Layer
+- A Multi-Collection Distributor routes value to rewards pools and ecosystem wallets.
+- Community and collection allocations are tracked on-chain.
+- Claimable rewards are displayed with real-time snapshots.
+
+Buyback Engine
+- Buyback Agent contract executes market buybacks.
+- Policy-controlled slippage and deadlines protect execution quality.
+- Totals and wallet flows are visible in the tokenomics dashboard.
+
+DRIP System
+- DRIP Distributor and DRIP Keeper enable continuous reward flow.
+- DRIP LM provides liquidity incentives tied to the ecosystem.
+- DRIP caps, availability, and claims are read directly from contracts.
+
+Liquidity Management (LM)
+- Liquidity Manager and Liquidity Automation contracts are integrated.
+- Router/Factory/Pair references allow live DEX pricing and LP health checks.
+- Liquidity previews give real-time transparency of pool status.
+
+Reserve & Treasury
+- Reserve and Treasury modules track total received, balances, and allocations.
+- Snapshots include reserve balances, waiting amounts, and refill metrics.
+- These values are surfaced in the ecosystem dashboard for full transparency.
+
+TECHNICAL STACK (DETAILED)
+Front-end
+- React + Vite architecture (fast builds, modular UI)
+- Ethers v6 for contract reads/writes
+- Componentized panels: Live Stats, Tokenomics, VRF Mint, Rewards, User
+- Auto-refresh logic after VRF fulfillment and on-chain events
+- Responsive layout and mobile-ready UI
+
+On-chain Integration
+- Polygon mainnet configured by default (chainId 137)
+- Contract factories for main, reader, rewards, token, liquidity, treasury
+- Multiple RPC endpoints with fallback for reliability
+- Read-only RPC + wallet-injected providers for accuracy and speed
+
+Data & Assets
+- NFTs stored on IPFS with block-based preview folders
+- Live pricing and mint counts align to on-chain state
+- NFT traits enriched via VRF fulfillment metadata
+
+DEPLOYMENT & OPS
+- Netlify-ready configuration for one-click deployment
+- Environment-based RPC and address configuration
+- Static build output with CDN delivery
+- Logs and dev tooling included for monitoring and troubleshooting
+
+TECHNICAL DETAILS (CONTRACT MODULES)
+Core
+- Main / Main2: minting, VRF flow, block pricing, background influence
+- Reader: fast on-chain snapshot (frontend lite)
+
+Rewards & Distribution
+- Multi-Collection Distributor: routes value to collections and community pools
+- Collection Rewards: claimable NFT reward logic
+
+Liquidity & Market Layer
+- Liquidity Manager: LM operations and pool health
+- Liquidity Automation: automated maintenance and balancing
+- Router / Factory / Pair: DEX price discovery and LP visibility
+
+Tokenomics Layer
+- Buyback Agent: market buyback execution
+- Treasury: treasury balances and inflows
+- Reserve: reserve balances, waiting funds, refill flow
+
+DRIP Layer
+- DRIP Distributor: continuous emission logic
+- DRIP Keeper: automation and upkeep
+- DRIP LM: liquidity incentive pathways
+
+CONTRACT INVENTORY (ALL ABIs)
+- BiggiBuybackAgent: executes market buybacks and buyback logic.
+- BiggiBuybackDripSetup: setup/config contract for buyback + DRIP linkage.
+- BiggiBuybackReader: read-only helper for buyback stats and state.
+- BiggiCollectionRewards: NFT collection rewards distribution contract.
+- BiggiCommunityCenter: community fund / community wallet logic.
+- BiggiCompute: compute/helper contract for shared calculations.
+- BiggiDRIPDistributor: distributes DRIP rewards over time.
+- BiggiDRIPKeeper: automation/keeper for DRIP upkeep.
+- BiggiDRIPLM: liquidity mining module tied to DRIP incentives.
+- BiggiLiquidityBranchUserReader: read-only liquidity/user snapshot helper.
+- BiggiLiquidityHelperReader: read-only liquidity helper/aggregator.
+- BiggiLiquidityManager: core liquidity management contract.
+- BiggiLiquidityOrchestrator: orchestrates complex liquidity operations.
+- BiggiLpPriceFeed: LP token price feed/oracle.
+- BiggiMain: core minting, VRF flow, block pricing.
+- BiggiMain2: core minting, VRF flow, block pricing (v2).
+- BiggiMainReader: read-only snapshot for main contract data.
+- BiggiMasterTokenomicsConfig: central tokenomics configuration.
+- BiggiMultiCollectionDistributor: routes rewards for multiple collections.
+- BiggiMultiCollectionDistributorReader: read-only distributor snapshot.
+- BiggiMultiCollectionDistributorReaderV2: read-only distributor snapshot (v2).
+- BiggiNftRewards: NFT rewards and claims.
+- BiggiNftRewardsReader: read-only NFT rewards snapshot.
+- BiggiPolicy: policy parameters, limits, and safety controls.
+- BiggiReserveTreasuryReader: read-only reserve/treasury snapshots.
+- BiggiReserveV4: reserve vault for ecosystem funds.
+- BiggiToken: ERC20 token contract (Biggi).
+- BiggiTokenomikReader: read-only tokenomics snapshot helper.
+- BiggiTokenRewards: token rewards distribution/claims.
+- BiggiTokenRewardsReader: read-only token rewards snapshot.
+- BiggiTreasury: treasury vault for ecosystem allocations.
+- BiggiUpkeeperProxy: upkeep/automation proxy contract.
+- BiggiVRFRouter: VRF integration router/adapter.
+- LiquidityAutomation: automated liquidity maintenance.
+- LiquidityKeeperProxy: keeper proxy for liquidity automation.
+- LiquiditySetup: initial liquidity setup/config contract.
+- LiquidityVault: vault holding liquidity funds.
+- ModeratorCenter: moderator/admin control center.
+- UniswapV2Factory: DEX factory (pair creation).
+- UniswapV2Pair: DEX pair contract.
+- UniswapV2Router02: DEX router for swaps and liquidity.
+- WETH9: wrapped native token (WETH/POL wrapper).
+
+USER VALUE
+- Fair randomness: VRF eliminates bias in NFT selection.
+- Transparent price evolution: users see why prices move in real time.
+- Tokenomics visibility: buyback, DRIP, liquidity, treasury, and reserves are visible.
+- Clean UX: mint, redeem, claim, and track all in one interface.
+
+WHY INVEST / WHY BUY
+- Strong narrative: fairness + dynamic pricing + on-chain transparency
+- Modular, expandable architecture supports rapid new utilities
+- Monetizable flows: ticket mints, dynamic pricing, ecosystem activity
+- Tokenomics instruments (buyback, DRIP, LM) support a complete economy loop
+- High trust factor due to on-chain transparency and verifiable randomness
+
+RISK NOTES (TRANSPARENT)
+- No promise of price appreciation or returns.
+- Liquidity depends on market participation.
+- Tokenomics outcomes are subject to market behavior and adoption.
+
+COMPETITIVE EDGE
+- VRF-driven selection instead of static rarity pulls
+- Live block pricing tied to actual mint behavior
+- Full tokenomics dashboard (buyback, DRIP, LM, treasury, reserve)
+- All in one: mint, redeem, rewards, and ecosystem stats
+
+POTENTIAL EXTENSIONS
+- Mainnet deployment with production RPCs
+- Staking / loyalty utilities
+- Expanded community incentives and gamified rewards
+- Enhanced analytics dashboards and API integrations
+
+CONTACT / HANDOVER
+Delivered as a complete front-end repository with contract integrations.
+Ready for production deployment with minimal configuration changes.

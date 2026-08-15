@@ -1,0 +1,21 @@
+{
+  "chainSelectorName": "polygon-mainnet",
+  "schedule": "0 */5 * * * *",
+  "token": "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
+  "wpol": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+  "pair": "0x59C7B17B3ACD48979B25215a0c477dF6FFFF3e90",
+  "pairWpolIsToken0": true,
+  "reserve": "0x2786e46e01a5d229118fEdC102267217C7e94574",
+  "treasury": "0x35EE9523D20fFfe47c62dCcF01fA0136424A05e7",
+  "buybackAgent": "0x5A77E90c467576C82B8d0E74eD112B829C625BB4",
+  "dripDistributor": "0x2E4677729cb8a02aDd752Bcbd2637809C20CBAf3",
+  "dripLM": "0xE258843bca54803a366413571b3B4d6a28eAF2eC",
+  "liquidityManager": "0xfb770C5A5AC6e41C85f076DB7C3434eAcd8e0F19",
+  "liquidityVault": "0xFe234394845B601B2c671c0dD631fA6290c02bb9",
+  "policy": {
+    "minPairWpolReserveWei": "1",
+    "minPairBiggiReserveWei": "1",
+    "maxDripBpsOfPairReserve": 25,
+    "maxBuybackBpsOfPairReserve": 50
+  }
+}

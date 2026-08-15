@@ -1,0 +1,1118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-S49TZ90XND"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-S49TZ90XND");
+    </script>
+    <title>BiggiEyes NFT Ticket VRF | Tradable Reveal Ecosystem</title>
+    <meta
+      name="description"
+      content="BiggiEyes is a Web3 NFT project on Polygon: mint tradable ticket entries, redeem with VRF, and collect tradable rarity-based NFTs across five chapters."
+    />
+    <meta
+      name="robots"
+      content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"
+    />
+    <link rel="canonical" href="https://biggieyes.com/" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="BiggiEyes" />
+    <meta
+      property="og:title"
+      content="BiggiEyes NFT Ticket VRF | Tradable Reveal Ecosystem"
+    />
+    <meta
+      property="og:description"
+      content="Web3 NFT ticket ecosystem on Polygon: mint tradable ticket entries, redeem with VRF, and collect tradable rarity-based NFTs across five chapters."
+    />
+    <meta property="og:url" content="https://biggieyes.com/" />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:image"
+      content="https://biggieyes.com/og/og-biggieyes.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="BiggiEyes VRF ticket reveal ecosystem preview"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="BiggiEyes NFT Ticket VRF | Tradable Reveal Ecosystem"
+    />
+    <meta
+      name="twitter:description"
+      content="Mint tradable ticket entries, redeem with VRF, reveal tradable NFTs, and follow the five-chapter BiggiEyes ecosystem."
+    />
+    <meta name="twitter:url" content="https://biggieyes.com/" />
+    <meta
+      name="twitter:image"
+      content="https://biggieyes.com/og/og-biggieyes.png"
+    />
+    <meta
+      name="twitter:image:alt"
+      content="BiggiEyes VRF ticket reveal ecosystem preview"
+    />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="/images/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://biggieyes.com/#organization",
+            "name": "BiggiEyes",
+            "url": "https://biggieyes.com/",
+            "logo": "https://biggieyes.com/apple-touch-icon.png",
+            "sameAs": [
+              "https://x.com/EyesBiggi",
+              "https://www.linkedin.com/in/biggi-eyes-660639398/",
+              "https://github.com/Biggieyes/biggieyes-public"
+            ]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://biggieyes.com/#website",
+            "name": "BiggiEyes",
+            "url": "https://biggieyes.com/",
+            "description": "BiggiEyes Web3 ticket-to-reveal ecosystem on Polygon.",
+            "publisher": { "@id": "https://biggieyes.com/#organization" },
+            "inLanguage": "en"
+          },
+          {
+            "@type": "Project",
+            "@id": "https://biggieyes.com/#project",
+            "name": "BiggiEyes",
+            "url": "https://biggieyes.com/",
+            "description": "Web3 Ticket-to-Reveal project with verifiable randomness and tradable NFTs.",
+            "image": "https://biggieyes.com/og/og-biggieyes.png",
+            "creator": { "@id": "https://biggieyes.com/#organization" },
+            "keywords": ["Web3", "NFT", "VRF", "Polygon", "Ticket to Reveal"]
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://biggieyes.com/app/#webapp",
+            "name": "BiggiEyes App",
+            "url": "https://biggieyes.com/app/",
+            "description": "Mint, redeem, and trade BiggiEyes tickets and NFTs on Polygon.",
+            "applicationCategory": "FinanceApplication",
+            "operatingSystem": "Web",
+            "publisher": { "@id": "https://biggieyes.com/#organization" },
+            "isPartOf": { "@id": "https://biggieyes.com/#project" }
+          }
+        ]
+      }
+    </script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0a1022;
+        --card: #101a36;
+        --text: #f6f7fb;
+        --muted: #bbcae9;
+        --accent: #ffe800;
+        --accent-2: #61d9ff;
+        --frame-gold: rgba(255, 232, 0, 0.42);
+        --frame-cyan: rgba(97, 217, 255, 0.4);
+        --frame-red: rgba(255, 102, 102, 0.42);
+        --frame-green: rgba(123, 255, 178, 0.42);
+        --frame-violet: rgba(197, 140, 255, 0.42);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background:
+          radial-gradient(circle at 20% 10%, rgba(97, 217, 255, 0.2), transparent 40%),
+          radial-gradient(circle at 80% 0%, rgba(255, 232, 0, 0.18), transparent 36%),
+          linear-gradient(180deg, rgba(5, 10, 22, 0.62), rgba(5, 10, 22, 0.84)),
+          url("/images/panels/community.png") center top / cover no-repeat fixed,
+          var(--bg);
+        color: var(--text);
+        line-height: 1.55;
+      }
+
+      main {
+        max-width: 1220px;
+        margin: 0 auto;
+        padding: 0 20px 64px;
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 236px;
+        gap: 24px;
+        align-items: start;
+      }
+
+      main > section {
+        grid-column: 1;
+        min-width: 0;
+      }
+
+      .powered-by-rail {
+        grid-column: 2;
+        grid-row: 1;
+        width: min(100%, 236px);
+        margin: 0;
+        padding: 22px 18px 24px;
+        min-height: 880px;
+        border-radius: 18px;
+        border: 1px solid rgba(97, 217, 255, 0.24);
+        background:
+          linear-gradient(180deg, rgba(8, 13, 27, 0.8), rgba(5, 10, 22, 0.88)),
+          url("/images/panels/ecosystem.png") center center / cover no-repeat,
+          rgba(10, 16, 34, 0.92);
+        box-shadow:
+          0 18px 34px rgba(0, 0, 0, 0.2),
+          0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+        position: sticky;
+        top: 0;
+      }
+
+      .powered-by__label {
+        margin: 0 0 12px;
+        color: var(--accent-2);
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        text-align: center;
+      }
+
+      .powered-by__logos {
+        display: grid;
+        gap: 24px;
+        align-content: start;
+      }
+
+      .powered-by__logo-card {
+        appearance: none;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100px;
+        padding: 18px 16px;
+        border-radius: 14px;
+        border: 2px solid rgba(97, 217, 255, 0.34);
+        background: transparent;
+        box-shadow:
+          0 10px 22px rgba(0, 0, 0, 0.1),
+          0 0 0 1px rgba(97, 217, 255, 0.12) inset;
+        cursor: zoom-in;
+        transition:
+          transform 180ms ease,
+          min-height 180ms ease,
+          box-shadow 180ms ease,
+          border-color 180ms ease,
+          background 180ms ease;
+      }
+
+      .powered-by__logo-card--feature {
+        min-height: 176px;
+      }
+
+      .powered-by__logo-card:hover {
+        transform: translateY(-1px);
+        border-color: rgba(97, 217, 255, 0.62);
+        box-shadow:
+          0 14px 28px rgba(0, 0, 0, 0.2),
+          0 0 18px rgba(97, 217, 255, 0.16),
+          0 0 0 1px rgba(97, 217, 255, 0.18) inset;
+      }
+
+      .powered-by__logo-card.is-expanded {
+        min-height: 188px;
+        background: transparent;
+        border-color: rgba(255, 232, 0, 0.62);
+        box-shadow:
+          0 14px 30px rgba(0, 0, 0, 0.24),
+          0 0 18px rgba(255, 232, 0, 0.14),
+          0 0 0 1px rgba(255, 232, 0, 0.22) inset;
+        transform: scale(1.055);
+        cursor: zoom-out;
+      }
+
+      .powered-by__logo-card--feature.is-expanded {
+        min-height: 258px;
+      }
+
+      .powered-by__logo-card img {
+        display: block;
+        max-width: 100%;
+        max-height: 40px;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        transition: max-height 180ms ease, transform 180ms ease;
+      }
+
+      .powered-by__logo-card--feature img {
+        max-height: 108px;
+      }
+
+      .powered-by__logo-card--polygon img {
+        max-height: 54px;
+      }
+
+      .powered-by__logo-card--alchemy img {
+        max-height: 52px;
+      }
+
+      .powered-by__logo-card.is-expanded img {
+        max-height: 86px;
+        transform: scale(1.12);
+      }
+
+      .powered-by__logo-card--feature.is-expanded img {
+        max-height: 164px;
+      }
+
+      .powered-by__logo-card--polygon.is-expanded img {
+        max-height: 104px;
+      }
+
+      .powered-by__logo-card--alchemy.is-expanded img {
+        max-height: 108px;
+      }
+
+      .hero {
+        grid-row: 1;
+        display: grid;
+        gap: 16px;
+        border: 1px solid var(--frame-gold);
+        border-radius: 18px;
+        background:
+          linear-gradient(180deg, rgba(9, 16, 34, 0.8), rgba(5, 10, 22, 0.88)),
+          url("/images/panels/ecosystem.png") center center / cover no-repeat,
+          linear-gradient(180deg, rgba(16, 26, 54, 0.95), rgba(10, 16, 34, 0.95));
+        padding: 26px;
+        box-shadow:
+          0 22px 40px rgba(0, 0, 0, 0.18),
+          0 0 0 1px rgba(97, 217, 255, 0.12) inset;
+        backdrop-filter: blur(10px);
+      }
+
+      main > section:not(.hero) {
+        margin-top: 24px;
+        padding: 22px;
+        border-radius: 18px;
+        background: linear-gradient(180deg, rgba(16, 26, 54, 0.92), rgba(10, 16, 34, 0.96));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 18px 34px rgba(0, 0, 0, 0.14);
+      }
+
+      main > section:nth-of-type(2) {
+        border-color: var(--frame-cyan);
+      }
+
+      main > section:nth-of-type(3) {
+        border-color: var(--frame-violet);
+      }
+
+      main > section:nth-of-type(4) {
+        border-color: var(--frame-gold);
+      }
+
+      main > section:nth-of-type(5) {
+        border-color: var(--frame-cyan);
+      }
+
+      main > section:nth-of-type(6) {
+        border-color: var(--frame-red);
+      }
+
+      main > section:nth-of-type(7) {
+        border-color: var(--frame-violet);
+      }
+
+      main > section:nth-of-type(8) {
+        border-color: var(--frame-green);
+      }
+
+      main > section:nth-of-type(9) {
+        border-color: var(--frame-cyan);
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(1.9rem, 3.5vw, 2.7rem);
+        line-height: 1.06;
+        color: var(--accent);
+      }
+
+      h2 {
+        margin: 30px 0 12px;
+        font-size: clamp(1.2rem, 2.2vw, 1.55rem);
+        color: var(--accent);
+      }
+
+      p {
+        margin: 0 0 14px;
+        color: var(--muted);
+      }
+
+      .cta-row {
+        margin-top: 18px;
+        display: flex;
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .btn {
+        display: inline-block;
+        text-decoration: none;
+        border-radius: 10px;
+        padding: 11px 16px;
+        border: 1px solid rgba(255, 232, 0, 0.45);
+        color: #091020;
+        background: var(--accent);
+        font-weight: 700;
+      }
+
+      .hero p {
+        max-width: 720px;
+        color: #dfe8ff;
+        font-size: 1rem;
+        line-height: 1.68;
+      }
+
+      .hero .cta-row .btn {
+        position: relative;
+        width: 100%;
+        padding: 16px 22px;
+        border-radius: 16px;
+        text-align: left;
+        font-size: 1.05rem;
+        letter-spacing: 0.04em;
+        border-color: rgba(125, 212, 255, 0.72);
+        background:
+          radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.24), transparent 26%),
+          linear-gradient(135deg, #9eeeff 0%, #4ebcff 44%, #1b6fff 100%);
+        box-shadow:
+          0 22px 44px rgba(27, 111, 255, 0.26),
+          0 0 38px rgba(97, 217, 255, 0.24),
+          0 0 0 1px rgba(125, 212, 255, 0.26) inset;
+      }
+
+      .hero .cta-row .btn::after {
+        content: "Enter App";
+        position: absolute;
+        right: 22px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.76rem;
+        font-weight: 900;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: rgba(5, 17, 31, 0.82);
+      }
+
+      .btn.secondary {
+        color: var(--text);
+        background: transparent;
+      }
+
+      .links-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 18px;
+      }
+
+      .links-list li {
+        margin: 0;
+        color: var(--muted);
+        position: relative;
+        padding-left: 14px;
+      }
+
+      .links-list li::before {
+        content: "•";
+        position: absolute;
+        left: 0;
+        top: 0;
+        color: var(--accent-2);
+      }
+
+      .links-list a {
+        color: var(--accent-2);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 14px;
+        margin-top: 8px;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid rgba(97, 217, 255, 0.22);
+        border-radius: 12px;
+        padding: 14px;
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+      }
+
+      .live-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+      }
+
+      .landing-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 12px;
+      }
+
+      .landing-gallery__item {
+        margin: 0;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid rgba(97, 217, 255, 0.28);
+        background: rgba(16, 26, 54, 0.8);
+      }
+
+      .landing-gallery__item:nth-child(odd) {
+        border-color: var(--frame-cyan);
+      }
+
+      .landing-gallery__item:nth-child(even) {
+        border-color: var(--frame-violet);
+      }
+
+      .landing-gallery__item img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+      }
+
+      .live-card {
+        background: linear-gradient(180deg, rgba(16, 26, 54, 0.9), rgba(10, 16, 34, 0.95));
+        border: 1px solid rgba(97, 217, 255, 0.24);
+        border-radius: 12px;
+        padding: 14px;
+        backdrop-filter: blur(10px);
+      }
+
+      .live-grid .live-card:nth-child(1) {
+        border-color: var(--frame-gold);
+        box-shadow: 0 10px 22px rgba(255, 232, 0, 0.08);
+      }
+
+      .live-grid .live-card:nth-child(2) {
+        border-color: var(--frame-red);
+        box-shadow: 0 10px 22px rgba(255, 102, 102, 0.08);
+      }
+
+      .panel-link:nth-child(1) {
+        background: linear-gradient(135deg, #ffe800, #ffbf00);
+        border-color: rgba(255, 232, 0, 0.68);
+        color: #221900;
+        box-shadow: 0 14px 28px rgba(255, 232, 0, 0.18);
+      }
+
+      .panel-link:nth-child(2) {
+        background: linear-gradient(135deg, #61d9ff, #2f8fff);
+        border-color: rgba(97, 217, 255, 0.72);
+        color: #041321;
+        box-shadow: 0 14px 28px rgba(47, 143, 255, 0.18);
+      }
+
+      .panel-link:nth-child(3) {
+        background: linear-gradient(135deg, #ff7a7a, #ff3b3b);
+        border-color: rgba(255, 102, 102, 0.76);
+        color: #250707;
+        box-shadow: 0 14px 28px rgba(255, 59, 59, 0.18);
+      }
+
+      .panel-link:nth-child(4) {
+        background: linear-gradient(135deg, #7bffb2, #22d3a6);
+        border-color: rgba(123, 255, 178, 0.68);
+        color: #051b15;
+        box-shadow: 0 14px 28px rgba(34, 211, 166, 0.18);
+      }
+
+      .panel-link:nth-child(5) {
+        background: linear-gradient(135deg, #7db7ff, #4f7cff);
+        border-color: rgba(125, 183, 255, 0.72);
+        color: #061427;
+        box-shadow: 0 14px 28px rgba(79, 124, 255, 0.18);
+      }
+
+      .panel-link:nth-child(6) {
+        background: linear-gradient(135deg, #c58cff, #8f63ff);
+        border-color: rgba(197, 140, 255, 0.72);
+        color: #140724;
+        box-shadow: 0 14px 28px rgba(143, 99, 255, 0.18);
+      }
+
+      .live-label {
+        margin: 0 0 10px;
+        padding-bottom: 8px;
+        position: relative;
+        color: var(--accent-2);
+        font-size: 0.92rem;
+        font-weight: 700;
+      }
+
+      .live-label::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 1px;
+        background: linear-gradient(90deg, rgba(97, 217, 255, 0.42), rgba(255, 255, 255, 0.08));
+      }
+
+      .live-value {
+        font-size: 1.45rem;
+        font-weight: 700;
+        color: #ff2b2b;
+      }
+
+      .live-meta {
+        margin-top: 6px;
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+
+      .live-status {
+        margin-top: 10px;
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+
+      .panel-grid {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+      }
+
+      .panel-link {
+        text-align: center;
+        flex: 1 0 0;
+        min-width: 118px;
+        padding: 8px 8px;
+        font-size: 0.72rem;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+      }
+
+      @media (max-width: 760px) {
+        .links-list {
+          grid-template-columns: 1fr;
+        }
+
+        .hero .cta-row .btn {
+          text-align: center;
+          padding: 16px 18px;
+        }
+
+        .hero .cta-row .btn::after {
+          display: none;
+        }
+      }
+
+      @media (max-width: 1120px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+
+        .hero,
+        .powered-by-rail {
+          grid-row: auto;
+        }
+
+        .powered-by-rail {
+          grid-column: 1;
+          position: static;
+          width: min(100%, 320px);
+          margin: 0 auto 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <aside class="powered-by-rail" aria-label="Powered by partner logos">
+        <p class="powered-by__label">Powered by</p>
+        <div class="powered-by__logos">
+          <button
+            type="button"
+            class="powered-by__logo-card powered-by__logo-card--feature"
+            data-powered-logo
+            aria-pressed="false"
+          >
+            <img src="/images/PwrdByLogos/email-header-2.png" alt="Powered by ecosystem banner" />
+          </button>
+          <button type="button" class="powered-by__logo-card" data-powered-logo aria-pressed="false">
+            <img src="/images/PwrdByLogos/Chainlink-Logo-Blue.png" alt="Chainlink logo" />
+          </button>
+          <button
+            type="button"
+            class="powered-by__logo-card powered-by__logo-card--alchemy"
+            data-powered-logo
+            aria-pressed="false"
+          >
+            <img src="/images/PwrdByLogos/alchemy-banner-2.jpg" alt="Alchemy logo" />
+          </button>
+          <button type="button" class="powered-by__logo-card" data-powered-logo aria-pressed="false">
+            <img src="/images/PwrdByLogos/light.png" alt="Partner ecosystem logo" />
+          </button>
+          <button type="button" class="powered-by__logo-card" data-powered-logo aria-pressed="false">
+            <img
+              src="/images/PwrdByLogos/Metamask-Financial-Services-Logo-PNG-thumb.png"
+              alt="MetaMask logo"
+            />
+          </button>
+          <button
+            type="button"
+            class="powered-by__logo-card powered-by__logo-card--polygon"
+            data-powered-logo
+            aria-pressed="false"
+          >
+            <img src="/images/PwrdByLogos/Polygon_Icon_White_Purple_Rn-4.webp" alt="Polygon logo" />
+          </button>
+        </div>
+      </aside>
+
+      <section class="hero">
+        <h1>BiggiEyes — VRF Ticket › Reveal Ecosystem</h1>
+        <p>
+          BiggiEyes combines tradable Tickets, verifiable randomness (VRF), and
+          reveal-driven NFT rarity into one on-chain flow.
+        </p>
+        <div class="cta-row">
+          <a class="btn" href="/app/">Open App</a>
+        </div>
+      </section>
+
+      <section id="live-stats">
+        <h2>Live On-Chain Stats</h2>
+        <p>
+          These values are fetched live from Polygon mainnet contracts used by the app.
+          They are not hardcoded marketing numbers.
+        </p>
+        <div class="live-grid">
+          <article class="live-card">
+            <p class="live-label">Current Ticket Price</p>
+            <div class="live-value" id="stat-ticket-price">Loading...</div>
+            <div class="live-meta">Source: BiggiMain `getTicketPrice()`</div>
+          </article>
+          <article class="live-card">
+            <p class="live-label">Current BIGGI Token Price</p>
+            <div class="live-value" id="stat-biggi-price">Loading...</div>
+            <div class="live-meta">Source: BIGGI price feed / DEX fallback</div>
+          </article>
+        </div>
+        <div class="live-status" id="stat-updated">Waiting for first update...</div>
+      </section>
+
+      <section id="landing-gallery">
+        <h2>Landing Preview</h2>
+        <p>
+          Visual preview from the latest landing assets shown before entering the
+          dashboard.
+        </p>
+        <div class="landing-gallery">
+          <figure class="landing-gallery__item">
+            <img src="/images/tolanding/Snímek obrazovky 2026-03-01 030413.png" alt="BiggiEyes landing preview 1" loading="lazy" decoding="async" />
+          </figure>
+          <figure class="landing-gallery__item">
+            <img src="/images/tolanding/Snímek obrazovky 2026-03-01 030455.png" alt="BiggiEyes landing preview 2" loading="lazy" decoding="async" />
+          </figure>
+          <figure class="landing-gallery__item">
+            <img src="/images/tolanding/Snímek obrazovky 2026-03-01 030601.png" alt="BiggiEyes landing preview 3" loading="lazy" decoding="async" />
+          </figure>
+          <figure class="landing-gallery__item">
+            <img src="/images/tolanding/Snímek obrazovky 2026-03-01 030655.png" alt="BiggiEyes landing preview 4" loading="lazy" decoding="async" />
+          </figure>
+          <figure class="landing-gallery__item">
+            <img src="/images/tolanding/Snímek obrazovky 2026-03-01 034817.png" alt="BiggiEyes landing preview 5" loading="lazy" decoding="async" />
+          </figure>
+        </div>
+      </section>
+
+      <section>
+        <h2>How it works</h2>
+        <p>
+          Ticket -&gt; Redeem -&gt; VRF -&gt; NFT. You mint a Ticket first, then redeem it.
+          VRF selects the final mutation, and the Ticket turns into the final NFT.
+        </p>
+      </section>
+
+      <section>
+        <h2>Five Chapters</h2>
+        <p>
+          The series has five chapters. Each chapter starts with a VRF phase of
+          550 Tickets. Public mint opens only after that VRF set sells out. Public
+          pricing follows the block prices formed by the VRF outcome.
+        </p>
+      </section>
+
+      <section>
+        <h2>Tradable Tickets &amp; NFTs</h2>
+        <p>
+          Tickets are tradable before redeem, and revealed NFTs are tradable after
+          redeem. Tickets do not grant extra perks or weekly rewards. Ticket price
+          increases after each mint, and value can also rise from reveal potential
+          when collectors seek missing pieces for Collection Rewards.
+        </p>
+      </section>
+
+      <section>
+        <h2>Last Episode</h2>
+        <p>
+          The finale includes a $500,000 meta reward and allocates part of proceeds
+          to a transparent charity account supporting children with visual
+          impairments.
+        </p>
+      </section>
+
+      <section>
+        <h2>On-Chain Economics And Verification</h2>
+        <p>
+          BiggiEyes is built around a ticket-first model: every mint starts as a
+          tradable Ticket, then becomes a final NFT after VRF redeem. Ticket pricing
+          is read from smart contracts and updates with protocol activity, so users
+          can verify how entry cost changes over time.
+        </p>
+        <p>
+          The revealed NFT state is not decided manually. VRF randomness and on-chain
+          data decide final block/background outcomes, and those outcomes are reused
+          by other mechanics such as rarity weighting and rewards. This makes the
+          ecosystem deterministic from contract state and auditable in explorers.
+        </p>
+        <p>
+          BIGGI token flows, reserve/treasury balances, and panel-level statistics are
+          part of the same public state. The landing page exposes live entry metrics,
+          and the app panels provide deeper operational views for REWARDS, COLLECTION,
+          VRF, BIGGI ECOSYSTEM, USERS, and COMMUNITY CENTER.
+        </p>
+      </section>
+
+      <section>
+        <h2>Open Specific App Panel</h2>
+        <p>
+          Choose a panel directly from landing. Each button opens the app with that
+          panel selected first.
+        </p>
+        <div class="panel-grid">
+          <a class="btn secondary panel-link" href="/app/?panel=REWARDS">REWARDS</a>
+          <a class="btn secondary panel-link" href="/app/?panel=COLLECTION">COLLECTION</a>
+          <a class="btn secondary panel-link" href="/app/?panel=VRF%20MINT">VRF MINT</a>
+          <a class="btn secondary panel-link" href="/app/?panel=BIGGI%20ECOSYSTEM">BIGGI ECOSYSTEM</a>
+          <a class="btn secondary panel-link" href="/app/?panel=USERS">USERS</a>
+          <a class="btn secondary panel-link" href="/app/?panel=COMMUNITY%20CENTER">COMMUNITY CENTER</a>
+        </div>
+      </section>
+
+      <section>
+        <h2>Open Biggi Links</h2>
+        <ul class="links-list">
+          <li><a href="https://x.com/EyesBiggi" rel="noopener noreferrer" target="_blank">X (Twitter)</a></li>
+          <li><a href="https://www.linkedin.com/in/biggi-eyes-660639398/" rel="noopener noreferrer" target="_blank">LinkedIn</a></li>
+          <li><a href="https://discord.com/channels/1405985959815942175/1405985961006858282" rel="noopener noreferrer" target="_blank">Discord</a></li>
+          <li><a href="https://github.com/Biggieyes/biggieyes-public" rel="noopener noreferrer" target="_blank">GitHub</a></li>
+        </ul>
+      </section>
+    </main>
+
+    <script>
+      (function () {
+        const RPC_ENDPOINTS = [
+          "https://polygon.drpc.org",
+          "https://polygon-bor-rpc.publicnode.com",
+          "https://polygon.drpc.org",
+        ];
+
+        const ADDR = {
+          MAIN: "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+          TICKET_HUB: "0xe6d742D7DC66fA63434E6794C69798A5272e9873",
+          BIGGI: "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
+          PAIR: "0x59C7B17B3ACD48979B25215a0c477dF6FFFF3e90",
+          PRICE_ORACLE: "0x0000000000000000000000000000000000000000",
+        };
+
+        const SIG = {
+          getTicketPrice: "0x87bb7ae0",
+          ticketPrice: "0x1209b1f6",
+          latestRoundData: "0xfeaf968c",
+          decimals: "0x313ce567",
+          token0: "0x0dfe1681",
+          token1: "0xd21220a7",
+          getReserves: "0x0902f1ac",
+        };
+
+        const ticketNode = document.getElementById("stat-ticket-price");
+        const biggiNode = document.getElementById("stat-biggi-price");
+        const updatedNode = document.getElementById("stat-updated");
+
+        let activeRpc = null;
+
+        const strip0x = (v) => String(v || "").replace(/^0x/i, "");
+        const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+        const hasAddress = (addr) =>
+          /^0x[0-9a-fA-F]{40}$/.test(String(addr || "")) &&
+          String(addr).toLowerCase() !== ZERO_ADDRESS;
+
+        const withTimeout = async (promise, ms) => {
+          let timer = null;
+          try {
+            return await Promise.race([
+              promise,
+              new Promise((_, reject) => {
+                timer = setTimeout(() => reject(new Error("RPC timeout")), ms);
+              }),
+            ]);
+          } finally {
+            if (timer) clearTimeout(timer);
+          }
+        };
+
+        const decodeWord = (hexData, index) => {
+          const clean = strip0x(hexData);
+          const start = index * 64;
+          const end = start + 64;
+          if (clean.length < end) throw new Error("Invalid ABI word length");
+          return clean.slice(start, end);
+        };
+
+        const decodeUintWord = (hexData, index) =>
+          BigInt("0x" + decodeWord(hexData, index));
+
+        const decodeIntWord = (hexData, index) => {
+          const raw = decodeUintWord(hexData, index);
+          const maxInt = (1n << 255n) - 1n;
+          return raw > maxInt ? raw - (1n << 256n) : raw;
+        };
+
+        const decodeAddressWord = (hexData, index) =>
+          ("0x" + decodeWord(hexData, index).slice(24)).toLowerCase();
+
+        const formatUnits = (value, decimals, maxFractionDigits) => {
+          const d = Math.max(0, Number(decimals || 0));
+          const maxFrac = Math.max(0, Number(maxFractionDigits || 0));
+          const negative = value < 0n;
+          const abs = negative ? -value : value;
+          const base = 10n ** BigInt(d);
+          const whole = abs / base;
+          const frac = abs % base;
+          let fracStr = frac.toString().padStart(d, "0");
+          if (maxFrac < d) fracStr = fracStr.slice(0, maxFrac);
+          fracStr = fracStr.replace(/0+$/, "");
+          return `${negative ? "-" : ""}${whole.toString()}${fracStr ? "." + fracStr : ""}`;
+        };
+
+        const formatAdaptive = (value, symbol) => {
+          const n = Number(value);
+          if (!Number.isFinite(n)) return `${value} ${symbol}`;
+          const digits = n >= 1 ? 3 : 6;
+          return `${n.toFixed(digits)} ${symbol}`;
+        };
+
+        const rpc = async (method, params) => {
+          const ordered = activeRpc
+            ? [activeRpc, ...RPC_ENDPOINTS.filter((u) => u !== activeRpc)]
+            : RPC_ENDPOINTS.slice();
+
+          let lastError = null;
+          for (const url of ordered) {
+            try {
+              const response = await withTimeout(
+                fetch(url, {
+                  method: "POST",
+                  headers: { "content-type": "application/json" },
+                  body: JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: Date.now(),
+                    method,
+                    params,
+                  }),
+                }),
+                12000,
+              );
+              if (!response.ok) throw new Error(`HTTP ${response.status}`);
+              const payload = await response.json();
+              if (payload.error) throw new Error(payload.error.message || "RPC error");
+              activeRpc = url;
+              return payload.result;
+            } catch (err) {
+              lastError = err;
+            }
+          }
+          throw lastError || new Error("No RPC endpoint available");
+        };
+
+        const ethCall = (to, data) => rpc("eth_call", [{ to, data }, "latest"]);
+
+        const readTicketPrice = async () => {
+          const candidates = [SIG.getTicketPrice, SIG.ticketPrice];
+          const targets = [ADDR.TICKET_HUB, ADDR.MAIN].filter(hasAddress);
+          for (const target of targets) {
+            for (const selector of candidates) {
+              try {
+                const raw = await ethCall(target, selector);
+                const wei = decodeUintWord(raw, 0);
+                if (wei > 0n) return wei;
+              } catch (_err) {
+                // try next selector
+              }
+            }
+          }
+          throw new Error("Ticket price unavailable");
+        };
+
+        const readBiggiFromOracle = async () => {
+          if (!hasAddress(ADDR.PRICE_ORACLE)) throw new Error("Oracle not configured");
+          const [roundRaw, decRaw] = await Promise.all([
+            ethCall(ADDR.PRICE_ORACLE, SIG.latestRoundData),
+            ethCall(ADDR.PRICE_ORACLE, SIG.decimals),
+          ]);
+          const answer = decodeIntWord(roundRaw, 1);
+          const decimals = Number(decodeUintWord(decRaw, 0));
+          if (answer <= 0n) throw new Error("Oracle answer invalid");
+          return formatUnits(answer, decimals, 8);
+        };
+
+        const readTokenDecimals = async (tokenAddr) => {
+          const raw = await ethCall(tokenAddr, SIG.decimals);
+          return Number(decodeUintWord(raw, 0));
+        };
+
+        const readBiggiFromPair = async () => {
+          const [token0Raw, token1Raw, reservesRaw] = await Promise.all([
+            ethCall(ADDR.PAIR, SIG.token0),
+            ethCall(ADDR.PAIR, SIG.token1),
+            ethCall(ADDR.PAIR, SIG.getReserves),
+          ]);
+
+          const token0 = decodeAddressWord(token0Raw, 0);
+          const token1 = decodeAddressWord(token1Raw, 0);
+          const reserve0 = decodeUintWord(reservesRaw, 0);
+          const reserve1 = decodeUintWord(reservesRaw, 1);
+          if (reserve0 <= 0n || reserve1 <= 0n) throw new Error("Pair reserves empty");
+
+          const [dec0, dec1] = await Promise.all([
+            readTokenDecimals(token0),
+            readTokenDecimals(token1),
+          ]);
+
+          const biggiAddr = ADDR.BIGGI.toLowerCase();
+          const scale = 1_000_000n;
+
+          if (token0 === biggiAddr) {
+            const num = reserve1 * (10n ** BigInt(dec0)) * scale;
+            const den = reserve0 * (10n ** BigInt(dec1));
+            if (den <= 0n) throw new Error("Invalid pair denominator");
+            return formatUnits(num / den, 6, 6);
+          }
+
+          if (token1 === biggiAddr) {
+            const num = reserve0 * (10n ** BigInt(dec1)) * scale;
+            const den = reserve1 * (10n ** BigInt(dec0));
+            if (den <= 0n) throw new Error("Invalid pair denominator");
+            return formatUnits(num / den, 6, 6);
+          }
+
+          throw new Error("BIGGI not found in configured pair");
+        };
+
+        const setLoading = () => {
+          if (ticketNode) ticketNode.textContent = "Loading...";
+          if (biggiNode) biggiNode.textContent = "Loading...";
+        };
+
+        const setUpdated = (message) => {
+          if (!updatedNode) return;
+          updatedNode.textContent = message;
+        };
+
+        const refreshStats = async () => {
+          setLoading();
+          try {
+            const ticketWei = await readTicketPrice();
+            const ticket = formatUnits(ticketWei, 18, 8);
+            if (ticketNode) ticketNode.textContent = formatAdaptive(ticket, "POL");
+
+            let biggi = null;
+            let source = "oracle";
+            try {
+              biggi = await readBiggiFromOracle();
+            } catch (_oracleErr) {
+              biggi = await readBiggiFromPair();
+              source = "pair fallback";
+            }
+
+            if (biggiNode) biggiNode.textContent = formatAdaptive(biggi, "POL");
+
+            const now = new Date();
+            const stamp = now.toLocaleString("en-GB", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: false,
+            });
+            setUpdated(`Updated: ${stamp} | source: ${source} | rpc: ${activeRpc || "n/a"}`);
+          } catch (err) {
+            if (ticketNode) ticketNode.textContent = "Unavailable";
+            if (biggiNode) biggiNode.textContent = "Unavailable";
+            setUpdated(`Live stats unavailable: ${err.message || err}`);
+          }
+        };
+
+        refreshStats();
+        setInterval(refreshStats, 60000);
+      })();
+
+      (function () {
+        const logos = Array.from(document.querySelectorAll("[data-powered-logo]"));
+        if (!logos.length) return;
+
+        logos.forEach((logo) => {
+          logo.addEventListener("click", function () {
+            const willExpand = !logo.classList.contains("is-expanded");
+
+            logos.forEach((item) => {
+              item.classList.remove("is-expanded");
+              item.setAttribute("aria-pressed", "false");
+            });
+
+            if (willExpand) {
+              logo.classList.add("is-expanded");
+              logo.setAttribute("aria-pressed", "true");
+            }
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>
+
+

@@ -1,0 +1,11 @@
+{
+  "network": "polygon",
+  "signer": "0x64ADb3e4B5BE8567c599bA8e050F7016C3D51eD0",
+  "oldMain": "0x3430f378032Cead7A82f38047e906C1E3cAFc703",
+  "newMain": "0x3287521E6F3d56CD161831dDa62dd1D66c15F102",
+  "newMainReader": "0x6E109A52338ac7f37dDA45D4ee692117Ed0cd36c",
+  "newCollectionRewardsMainAdapter": "0x8984EFc3a4916e5C59D71480F4931326cfF7e552",
+  "vrfRouter": "0x53cC9F2BD094f10D2cB477caE44aCBa32175db0B",
+  "collectionRewards": "0xa708E016dEC7B6a5b3da640c0d995895979cE332",
+  "tokenRewards": "0x5Fc30c88CeA11f397ccc73d6bec020e7779D9cca"
+}

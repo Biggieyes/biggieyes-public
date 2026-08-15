@@ -1,0 +1,97 @@
+.tokenomics-panel {
+  background: #05080f;
+  border-radius: 20px;
+  border: 1px solid #1a1f2c;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tokenomics-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.tokenomics-panel__header h2 {
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+.tokenomics-panel__eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.65rem;
+  color: #7c88a7;
+  margin: 0 0 4px;
+}
+
+.tokenomics-panel__ts {
+  font-size: 0.85rem;
+  color: #6c748b;
+}
+
+.tokenomics-panel__tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tokenomics-panel__tab {
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: #0a0f1b;
+  color: #c3cbdc;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background 0.2s ease;
+  min-height: 40px;
+}
+
+.tokenomics-panel__tab.is-active {
+  border-color: #4ad2ff;
+  background: linear-gradient(130deg, rgba(74, 210, 255, 0.12), transparent);
+  color: #ffffff;
+}
+
+.tokenomics-panel__tab:focus-visible {
+  outline: 2px solid #4ad2ff;
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  .tokenomics-panel {
+    padding: 18px;
+    gap: 12px;
+  }
+
+  .tokenomics-panel__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tokenomics-panel__header h2 {
+    font-size: 1.35rem;
+  }
+
+  .tokenomics-panel__tabs {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tokenomics-panel__tab {
+    font-size: 0.85rem;
+    padding: 7px 12px;
+  }
+
+  .tokenomics-panel__ts {
+    font-size: 0.8rem;
+  }
+}

@@ -1,0 +1,32 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="260" viewBox="0 0 1200 260">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,3 L0,6 Z" fill="#333" />
+    </marker>
+  </defs>
+  <rect x="20" y="60" width="200" height="80" rx="10" fill="#f9f2d0" stroke="#333" />
+  <text x="120" y="105" font-family="Arial" font-size="16" text-anchor="middle">Mint Ticket</text>
+
+  <rect x="250" y="60" width="200" height="80" rx="10" fill="#e6f7ff" stroke="#333" />
+  <text x="350" y="105" font-family="Arial" font-size="16" text-anchor="middle">Redeem Ticket</text>
+
+  <rect x="480" y="60" width="200" height="80" rx="10" fill="#e9f5e9" stroke="#333" />
+  <text x="580" y="105" font-family="Arial" font-size="16" text-anchor="middle">VRF Request</text>
+
+  <rect x="710" y="60" width="200" height="80" rx="10" fill="#f3e9ff" stroke="#333" />
+  <text x="810" y="95" font-family="Arial" font-size="16" text-anchor="middle">NFT Minted</text>
+  <text x="810" y="118" font-family="Arial" font-size="12" text-anchor="middle">(random block/background)</text>
+
+  <rect x="940" y="60" width="230" height="80" rx="10" fill="#ffe9e9" stroke="#333" />
+  <text x="1055" y="95" font-family="Arial" font-size="16" text-anchor="middle">Tokenomics Update</text>
+  <text x="1055" y="118" font-family="Arial" font-size="12" text-anchor="middle">(reserve/buyback/rewards)</text>
+
+  <line x1="220" y1="100" x2="250" y2="100" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+  <line x1="450" y1="100" x2="480" y2="100" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+  <line x1="680" y1="100" x2="710" y2="100" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+  <line x1="910" y1="100" x2="940" y2="100" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+
+  <text x="600" y="200" font-family="Arial" font-size="14" text-anchor="middle" fill="#555">
+    Ticket -> VRF -> NFT -> Economy loop (all on-chain)
+  </text>
+</svg>

@@ -1,0 +1,142 @@
+[
+  {
+    "type": "constructor",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "name": "tokenRewards_", "type": "address", "internalType": "address" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getStatus",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "s",
+        "type": "tuple",
+        "components": [
+          { "name": "tokenRewards", "type": "address" },
+          { "name": "token", "type": "address" },
+          { "name": "main", "type": "address" },
+          { "name": "main2", "type": "address" },
+          { "name": "unitReward", "type": "uint256" },
+          { "name": "blockWeights", "type": "uint8[11]" },
+          { "name": "rewardsCap", "type": "uint256" },
+          { "name": "rewardsMinted", "type": "uint256" },
+          { "name": "rewardsCapRemaining", "type": "uint256" },
+          { "name": "tokenRemainingMintable", "type": "uint256" },
+          { "name": "rewardBalance", "type": "uint256" },
+          { "name": "totalDistributed", "type": "uint256" },
+          { "name": "distributedThisWeek", "type": "uint256" },
+          { "name": "lastWeekDistributed", "type": "uint256" },
+          { "name": "currentWeek", "type": "uint64" },
+          { "name": "lastRecordedWeek", "type": "uint64" }
+        ]
+      },
+      {
+        "name": "meta",
+        "type": "tuple",
+        "components": [
+          { "name": "name_", "type": "string" },
+          { "name": "symbol_", "type": "string" },
+          { "name": "decimals_", "type": "uint8" }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getBlockWeights",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [
+      { "name": "w", "type": "uint8[11]" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getTokenMeta",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "meta",
+        "type": "tuple",
+        "components": [
+          { "name": "name_", "type": "string" },
+          { "name": "symbol_", "type": "string" },
+          { "name": "decimals_", "type": "uint8" }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "preview",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "tokenIds", "type": "uint256[]" }
+    ],
+    "outputs": [
+      { "name": "units", "type": "uint256" },
+      { "name": "amount", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "previewFor",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "collections", "type": "address[]" },
+      { "name": "tokenIds", "type": "uint256[]" }
+    ],
+    "outputs": [
+      { "name": "units", "type": "uint256" },
+      { "name": "amount", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "nextClaimWeekFor",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "tokenId", "type": "uint256" }
+    ],
+    "outputs": [
+      { "name": "", "type": "uint64" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "nextClaimWeekForCollection",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "collection", "type": "address" },
+      { "name": "tokenId", "type": "uint256" }
+    ],
+    "outputs": [
+      { "name": "", "type": "uint64" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "isAllowedCollection",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "coll", "type": "address" }
+    ],
+    "outputs": [
+      { "name": "", "type": "bool" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "tokenRewards",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [
+      { "name": "", "type": "address" }
+    ]
+  }
+]

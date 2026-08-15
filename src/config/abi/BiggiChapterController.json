@@ -1,0 +1,457 @@
+﻿[
+    {
+        "inputs":  [
+                       {
+                           "internalType":  "address",
+                           "name":  "initialOwner",
+                           "type":  "address"
+                       },
+                       {
+                           "internalType":  "address",
+                           "name":  "registry_",
+                           "type":  "address"
+                       }
+                   ],
+        "stateMutability":  "nonpayable",
+        "type":  "constructor"
+    },
+    {
+        "inputs":  [
+
+                   ],
+        "name":  "ChapterControllerCapMismatch",
+        "type":  "error"
+    },
+    {
+        "inputs":  [
+
+                   ],
+        "name":  "ChapterControllerHubCapsMismatch",
+        "type":  "error"
+    },
+    {
+        "inputs":  [
+
+                   ],
+        "name":  "ChapterControllerInvalidChapter",
+        "type":  "error"
+    },
+    {
+        "inputs":  [
+
+                   ],
+        "name":  "ChapterControllerOwnerZero",
+        "type":  "error"
+    },
+    {
+        "inputs":  [
+
+                   ],
+        "name":  "ChapterControllerRegistryMismatch",
+        "type":  "error"
+    },
+    {
+        "inputs":  [
+
+                   ],
+        "name":  "ChapterControllerStackMismatch",
+        "type":  "error"
+    },
+    {
+        "inputs":  [
+
+                   ],
+        "name":  "ChapterControllerZeroAddress",
+        "type":  "error"
+    },
+    {
+        "inputs":  [
+                       {
+                           "internalType":  "address",
+                           "name":  "owner",
+                           "type":  "address"
+                       }
+                   ],
+        "name":  "OwnableInvalidOwner",
+        "type":  "error"
+    },
+    {
+        "inputs":  [
+                       {
+                           "internalType":  "address",
+                           "name":  "account",
+                           "type":  "address"
+                       }
+                   ],
+        "name":  "OwnableUnauthorizedAccount",
+        "type":  "error"
+    },
+    {
+        "anonymous":  false,
+        "inputs":  [
+                       {
+                           "indexed":  true,
+                           "internalType":  "uint256",
+                           "name":  "chapterId",
+                           "type":  "uint256"
+                       },
+                       {
+                           "indexed":  true,
+                           "internalType":  "uint256",
+                           "name":  "seriesId",
+                           "type":  "uint256"
+                       },
+                       {
+                           "indexed":  true,
+                           "internalType":  "address",
+                           "name":  "vrfCollection",
+                           "type":  "address"
+                       },
+                       {
+                           "indexed":  false,
+                           "internalType":  "address",
+                           "name":  "publicCollection",
+                           "type":  "address"
+                       },
+                       {
+                           "indexed":  false,
+                           "internalType":  "address",
+                           "name":  "ticketHub",
+                           "type":  "address"
+                       },
+                       {
+                           "indexed":  false,
+                           "internalType":  "uint16",
+                           "name":  "saleCap",
+                           "type":  "uint16"
+                       },
+                       {
+                           "indexed":  false,
+                           "internalType":  "uint16",
+                           "name":  "marketingCap",
+                           "type":  "uint16"
+                       },
+                       {
+                           "indexed":  false,
+                           "internalType":  "uint16",
+                           "name":  "totalCap",
+                           "type":  "uint16"
+                       }
+                   ],
+        "name":  "ChapterConfigured",
+        "type":  "event"
+    },
+    {
+        "anonymous":  false,
+        "inputs":  [
+                       {
+                           "indexed":  true,
+                           "internalType":  "address",
+                           "name":  "previousOwner",
+                           "type":  "address"
+                       },
+                       {
+                           "indexed":  true,
+                           "internalType":  "address",
+                           "name":  "newOwner",
+                           "type":  "address"
+                       }
+                   ],
+        "name":  "OwnershipTransferred",
+        "type":  "event"
+    },
+    {
+        "inputs":  [
+                       {
+                           "internalType":  "uint256",
+                           "name":  "",
+                           "type":  "uint256"
+                       }
+                   ],
+        "name":  "chapterConfig",
+        "outputs":  [
+                        {
+                            "internalType":  "bool",
+                            "name":  "exists",
+                            "type":  "bool"
+                        },
+                        {
+                            "internalType":  "uint16",
+                            "name":  "saleCap",
+                            "type":  "uint16"
+                        },
+                        {
+                            "internalType":  "uint16",
+                            "name":  "marketingCap",
+                            "type":  "uint16"
+                        },
+                        {
+                            "internalType":  "uint16",
+                            "name":  "totalCap",
+                            "type":  "uint16"
+                        }
+                    ],
+        "stateMutability":  "view",
+        "type":  "function"
+    },
+    {
+        "inputs":  [
+                       {
+                           "internalType":  "uint256",
+                           "name":  "chapterId",
+                           "type":  "uint256"
+                       }
+                   ],
+        "name":  "chapterMintProgress",
+        "outputs":  [
+                        {
+                            "internalType":  "uint256",
+                            "name":  "saleMinted_",
+                            "type":  "uint256"
+                        },
+                        {
+                            "internalType":  "uint256",
+                            "name":  "marketingMinted_",
+                            "type":  "uint256"
+                        },
+                        {
+                            "internalType":  "uint256",
+                            "name":  "totalMinted_",
+                            "type":  "uint256"
+                        },
+                        {
+                            "internalType":  "uint256",
+                            "name":  "saleCap_",
+                            "type":  "uint256"
+                        },
+                        {
+                            "internalType":  "uint256",
+                            "name":  "marketingCap_",
+                            "type":  "uint256"
+                        },
+                        {
+                            "internalType":  "uint256",
+                            "name":  "totalCap_",
+                            "type":  "uint256"
+                        },
+                        {
+                            "internalType":  "bool",
+                            "name":  "publicUnlocked",
+                            "type":  "bool"
+                        }
+                    ],
+        "stateMutability":  "view",
+        "type":  "function"
+    },
+    {
+        "inputs":  [
+                       {
+                           "internalType":  "uint256",
+                           "name":  "chapterId",
+                           "type":  "uint256"
+                       },
+                       {
+                           "internalType":  "uint256",
+                           "name":  "seriesId",
+                           "type":  "uint256"
+                       },
+                       {
+                           "internalType":  "address",
+                           "name":  "vrfCollection",
+                           "type":  "address"
+                       },
+                       {
+                           "internalType":  "address",
+                           "name":  "publicCollection",
+                           "type":  "address"
+                       },
+                       {
+                           "internalType":  "address",
+                           "name":  "ticketHub",
+                           "type":  "address"
+                       },
+                       {
+                           "internalType":  "uint16",
+                           "name":  "saleCap_",
+                           "type":  "uint16"
+                       },
+                       {
+                           "internalType":  "uint16",
+                           "name":  "marketingCap_",
+                           "type":  "uint16"
+                       },
+                       {
+                           "internalType":  "uint16",
+                           "name":  "totalCap_",
+                           "type":  "uint16"
+                       }
+                   ],
+        "name":  "configureChapter",
+        "outputs":  [
+
+                    ],
+        "stateMutability":  "nonpayable",
+        "type":  "function"
+    },
+    {
+        "inputs":  [
+                       {
+                           "internalType":  "uint256",
+                           "name":  "chapterId",
+                           "type":  "uint256"
+                       }
+                   ],
+        "name":  "getChapterCollections",
+        "outputs":  [
+                        {
+                            "internalType":  "address",
+                            "name":  "vrfCollection",
+                            "type":  "address"
+                        },
+                        {
+                            "internalType":  "address",
+                            "name":  "publicCollection",
+                            "type":  "address"
+                        },
+                        {
+                            "internalType":  "address",
+                            "name":  "ticketHub",
+                            "type":  "address"
+                        }
+                    ],
+        "stateMutability":  "view",
+        "type":  "function"
+    },
+    {
+        "inputs":  [
+                       {
+                           "internalType":  "uint256",
+                           "name":  "chapterId",
+                           "type":  "uint256"
+                       }
+                   ],
+        "name":  "getChapterPriceProvider",
+        "outputs":  [
+                        {
+                            "internalType":  "address",
+                            "name":  "",
+                            "type":  "address"
+                        }
+                    ],
+        "stateMutability":  "view",
+        "type":  "function"
+    },
+    {
+        "inputs":  [
+                       {
+                           "internalType":  "uint256",
+                           "name":  "chapterId",
+                           "type":  "uint256"
+                       }
+                   ],
+        "name":  "isChapterCapConsistent",
+        "outputs":  [
+                        {
+                            "internalType":  "bool",
+                            "name":  "",
+                            "type":  "bool"
+                        }
+                    ],
+        "stateMutability":  "view",
+        "type":  "function"
+    },
+    {
+        "inputs":  [
+                       {
+                           "internalType":  "uint256",
+                           "name":  "chapterId",
+                           "type":  "uint256"
+                       }
+                   ],
+        "name":  "isChapterStackConsistent",
+        "outputs":  [
+                        {
+                            "internalType":  "bool",
+                            "name":  "",
+                            "type":  "bool"
+                        }
+                    ],
+        "stateMutability":  "view",
+        "type":  "function"
+    },
+    {
+        "inputs":  [
+                       {
+                           "internalType":  "uint256",
+                           "name":  "chapterId",
+                           "type":  "uint256"
+                       }
+                   ],
+        "name":  "isPublicMintUnlocked",
+        "outputs":  [
+                        {
+                            "internalType":  "bool",
+                            "name":  "",
+                            "type":  "bool"
+                        }
+                    ],
+        "stateMutability":  "view",
+        "type":  "function"
+    },
+    {
+        "inputs":  [
+
+                   ],
+        "name":  "owner",
+        "outputs":  [
+                        {
+                            "internalType":  "address",
+                            "name":  "",
+                            "type":  "address"
+                        }
+                    ],
+        "stateMutability":  "view",
+        "type":  "function"
+    },
+    {
+        "inputs":  [
+
+                   ],
+        "name":  "registry",
+        "outputs":  [
+                        {
+                            "internalType":  "contract BiggiSeriesRegistry",
+                            "name":  "",
+                            "type":  "address"
+                        }
+                    ],
+        "stateMutability":  "view",
+        "type":  "function"
+    },
+    {
+        "inputs":  [
+
+                   ],
+        "name":  "renounceOwnership",
+        "outputs":  [
+
+                    ],
+        "stateMutability":  "nonpayable",
+        "type":  "function"
+    },
+    {
+        "inputs":  [
+                       {
+                           "internalType":  "address",
+                           "name":  "newOwner",
+                           "type":  "address"
+                       }
+                   ],
+        "name":  "transferOwnership",
+        "outputs":  [
+
+                    ],
+        "stateMutability":  "nonpayable",
+        "type":  "function"
+    }
+]

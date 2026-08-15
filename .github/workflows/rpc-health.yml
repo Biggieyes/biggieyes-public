@@ -1,0 +1,34 @@
+name: RPC Health
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install deps
+        run: npm ci
+      - name: Check RPC health
+        run: node scripts/check-rpc-health.mjs
+        env:
+          VITE_JSON_RPC_URL: ${{ secrets.VITE_JSON_RPC_URL }}
+          VITE_AMOY_RPC_URL: ${{ secrets.VITE_AMOY_RPC_URL }}
+          VITE_RPC_URL_AMOY: ${{ secrets.VITE_RPC_URL_AMOY }}
+          VITE_MOD_CHAIN_RPC: ${{ secrets.VITE_MOD_CHAIN_RPC }}
+          VITE_ADDITIONAL_RPC_URLS: ${{ secrets.VITE_ADDITIONAL_RPC_URLS }}
+          VITE_ARCHIVE_RPC_URL: ${{ secrets.VITE_ARCHIVE_RPC_URL }}
+          VITE_AMOY_ARCHIVE_RPC_URL: ${{ secrets.VITE_AMOY_ARCHIVE_RPC_URL }}
+          VITE_ARCHIVE_RPC_URLS: ${{ secrets.VITE_ARCHIVE_RPC_URLS }}
+          VITE_RPC_HEALTH_TIMEOUT_MS: ${{ secrets.VITE_RPC_HEALTH_TIMEOUT_MS }}
+          VITE_RPC_MAX_STALE_BLOCKS: ${{ secrets.VITE_RPC_MAX_STALE_BLOCKS }}
+          RPC_EXPECTED_CHAIN_ID: ${{ secrets.RPC_EXPECTED_CHAIN_ID }}
+          RPC_HEALTH_STRICT: ${{ secrets.RPC_HEALTH_STRICT }}
+          RPC_HEALTH_INCLUDE_ARCHIVE: ${{ secrets.RPC_HEALTH_INCLUDE_ARCHIVE }}

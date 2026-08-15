@@ -1,0 +1,221 @@
+// src/components/gallery/ZoomModal.jsx
+import * as React from "react";
+import Modal from "../../../components/common/Modal";
+
+export default function ZoomModal({
+  open = false,
+  onClose,
+  src = "/images/Biggi.png",
+  alt = "NFT zoom",
+  anchorRect = null,
+  className = "nft-modal-img-zoom",
+  style = {},
+}) {
+  const [imgSrc, setImgSrc] = React.useState(src || "/images/Biggi.png");
+  const [imgLoaded, setImgLoaded] = React.useState(false);
+  const [imgFailed, setImgFailed] = React.useState(false);
+  const [isOffline, setIsOffline] = React.useState(
+    typeof navigator !== "undefined" ? !navigator.onLine : false,
+  );
+  const [viewport, setViewport] = React.useState(() => ({
+    width: typeof window !== "undefined" ? window.innerWidth : 0,
+    height: typeof window !== "undefined" ? window.innerHeight : 0,
+  }));
+
+  React.useEffect(() => {
+    setImgSrc(src || "/images/Biggi.png");
+    setImgLoaded(false);
+    setImgFailed(false);
+  }, [src]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleStatus = () => setIsOffline(!navigator.onLine);
+    window.addEventListener("online", handleStatus);
+    window.addEventListener("offline", handleStatus);
+    handleStatus();
+    return () => {
+      window.removeEventListener("online", handleStatus);
+      window.removeEventListener("offline", handleStatus);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const updateViewport = () => {
+      setViewport({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
+
+  const isIpfsSrc = React.useMemo(() => {
+    const raw = String(src || "").toLowerCase();
+    return (
+      raw.includes("ipfs://") ||
+      raw.includes("/ipfs/") ||
+      raw.includes("ipns://") ||
+      raw.includes("/ipns/") ||
+      raw.includes("pinata") ||
+      raw.includes("mypinata") ||
+      raw.includes("ipfs")
+    );
+  }, [src]);
+
+  const showFallback =
+    isIpfsSrc && (imgFailed || (!imgLoaded && isOffline));
+
+  const popupPosition = React.useMemo(() => {
+    const safeW = Math.max(320, Number(viewport.width) || 0);
+    const safeH = Math.max(320, Number(viewport.height) || 0);
+    const isMobile = safeW <= 760;
+    const margin = 10;
+
+    const desiredWidth = Math.min(isMobile ? safeW * 0.72 : safeW * 0.36, 460);
+    const desiredHeight = Math.min(isMobile ? safeH * 0.38 : safeH * 0.44, 440);
+
+    const centered = {
+      left: `${safeW / 2}px`,
+      top: `${safeH / 2}px`,
+      transform: "translate(-50%, -50%)",
+      maxWidth: `${Math.max(180, Math.round(desiredWidth))}px`,
+      maxHeight: `${Math.max(140, Math.round(desiredHeight))}px`,
+    };
+
+    if (!anchorRect || !Number.isFinite(Number(anchorRect?.left))) return centered;
+
+    const top = Number(anchorRect.top) || 0;
+    const bottom =
+      Number(anchorRect.bottom) ||
+      top + (Number(anchorRect.height) || 0);
+    const centerX =
+      (Number(anchorRect.left) || 0) + (Number(anchorRect.width) || 0) / 2;
+
+    const spaceAbove = Math.max(0, top - margin);
+    const spaceBelow = Math.max(0, safeH - bottom - margin);
+    const placeAbove = spaceAbove >= 120 || spaceAbove >= spaceBelow;
+    const availableHeight = placeAbove ? spaceAbove : spaceBelow;
+
+    const maxHeight = Math.max(
+      Math.min(availableHeight, desiredHeight),
+      Math.min(96, availableHeight),
+    );
+    const maxWidth = Math.max(
+      160,
+      Math.min(desiredWidth, safeW - margin * 2),
+    );
+
+    const halfWidth = maxWidth / 2;
+    const leftBound = margin + halfWidth;
+    const rightBound = safeW - margin - halfWidth;
+    const clampedX =
+      leftBound > rightBound
+        ? safeW / 2
+        : Math.min(rightBound, Math.max(leftBound, centerX));
+
+    const topPx = placeAbove ? top - 8 : bottom + 8;
+
+    return {
+      left: `${Math.round(clampedX)}px`,
+      top: `${Math.round(topPx)}px`,
+      transform: placeAbove ? "translate(-50%, -100%)" : "translate(-50%, 0)",
+      maxWidth: `${Math.round(maxWidth)}px`,
+      maxHeight: `${Math.max(96, Math.round(maxHeight))}px`,
+    };
+  }, [anchorRect, viewport]);
+
+  React.useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape" && open) onClose?.();
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      alignTop={false}
+      preventScroll
+      closeOnEsc
+      windowClassName="zoom-modal-window"
+      overlayClassName="zoom-modal-overlay"
+    >
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          pointerEvents: "none",
+        }}
+      >
+        <div
+          style={{
+            position: "fixed",
+            left: popupPosition.left,
+            top: popupPosition.top,
+            transform: popupPosition.transform,
+            padding: 8,
+            pointerEvents: "auto",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div style={{ position: "relative" }}>
+            <img
+              src={imgSrc}
+              alt={alt}
+              className={className}
+              loading="lazy"
+              decoding="async"
+              onLoad={() => setImgLoaded(true)}
+              onError={() => {
+                setImgFailed(true);
+                setImgSrc("/images/Biggi.png");
+              }}
+              style={{
+                maxWidth: popupPosition.maxWidth,
+                maxHeight: popupPosition.maxHeight,
+                objectFit: "contain",
+                borderRadius: 16,
+                boxShadow: "0 6px 24px rgba(0,0,0,0.5)",
+                transition: "transform 0.2s ease",
+                ...style,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+            {showFallback && (
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textAlign: "center",
+                  padding: 12,
+                  background: "rgba(6, 10, 20, 0.72)",
+                  color: "#9adfff",
+                  fontWeight: 700,
+                  fontSize: 12,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  pointerEvents: "none",
+                  borderRadius: 16,
+                }}
+              >
+                IPFS image offline
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+

@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-02-24T05:10:01.780Z",
+  "mode": "dry-run",
+  "workflowPath": "cre/workflows/biggieyes-vrf-postredeem.workflow.yaml",
+  "workflowSha256": "3dc7a860ad1dc4bc7189adee48c4a958c6d8deb60ca0ff0363e81f7be247ef06",
+  "status": "dry_run_completed",
+  "commandTried": null,
+  "exitCode": null,
+  "stdout": "",
+  "stderr": "",
+  "notes": [
+    "No CRE CLI was executed. This run validates workflow file presence and records a reproducible evidence artifact."
+  ]
+}
