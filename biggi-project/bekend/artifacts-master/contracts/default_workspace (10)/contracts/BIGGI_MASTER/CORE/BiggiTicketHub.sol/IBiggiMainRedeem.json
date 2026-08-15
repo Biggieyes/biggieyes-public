@@ -1,0 +1,34 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IBiggiMainRedeem",
+  "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiTicketHub.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "ticketId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "ticketPriceSnapshot",
+          "type": "uint256"
+        }
+      ],
+      "name": "redeemFromTicketHub",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

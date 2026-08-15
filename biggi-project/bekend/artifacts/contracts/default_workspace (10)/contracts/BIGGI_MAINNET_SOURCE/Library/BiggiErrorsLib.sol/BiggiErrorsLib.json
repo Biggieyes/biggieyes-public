@@ -1,0 +1,136 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "BiggiErrorsLib",
+  "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MAINNET_SOURCE/Library/BiggiErrorsLib.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "AmountZero",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "BadPath",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "BuybackAborted",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "BuybacksPaused",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CapExceeded",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "Cooldown",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NoBiggi",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NoneAvailable",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotBuybackAgent",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotCommunityAdmin",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotDistributor",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotLiquidityManager",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotPolicy",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotWhitelistedCollection",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OnlyDripLM",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OnlyToken",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OnlyTreasury",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "PolicyNotSet",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ReserveNotSet",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "RewardsNotSet",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "RouterNotSet",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ToZero",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "TokenNotSet",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "TreasuryNotSet",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroAddress",
+      "type": "error"
+    }
+  ],
+  "bytecode": "0x60566037600b82828239805160001a607314602a57634e487b7160e01b600052600060045260246000fd5b30600052607381538281f3fe73000000000000000000000000000000000000000030146080604052600080fdfea2646970667358221220c5e9ec850defa634aa454ecb42823946fb0fc671b3abf4c89c0acf3fc77bfbdc64736f6c63430008180033",
+  "deployedBytecode": "0x73000000000000000000000000000000000000000030146080604052600080fdfea2646970667358221220c5e9ec850defa634aa454ecb42823946fb0fc671b3abf4c89c0acf3fc77bfbdc64736f6c63430008180033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

@@ -1,0 +1,126 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IBiggiChapterControllerReaderView",
+  "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_READERS/BiggiChapterSeriesReader.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "chapterId",
+          "type": "uint256"
+        }
+      ],
+      "name": "chapterConfig",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "exists",
+          "type": "bool"
+        },
+        {
+          "internalType": "uint16",
+          "name": "saleCap",
+          "type": "uint16"
+        },
+        {
+          "internalType": "uint16",
+          "name": "marketingCap",
+          "type": "uint16"
+        },
+        {
+          "internalType": "uint16",
+          "name": "totalCap",
+          "type": "uint16"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "chapterId",
+          "type": "uint256"
+        }
+      ],
+      "name": "chapterMintProgress",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "saleMinted_",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "marketingMinted_",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "totalMinted_",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "saleCap_",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "marketingCap_",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "totalCap_",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "publicUnlocked",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "chapterId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getChapterPriceProvider",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "registry",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

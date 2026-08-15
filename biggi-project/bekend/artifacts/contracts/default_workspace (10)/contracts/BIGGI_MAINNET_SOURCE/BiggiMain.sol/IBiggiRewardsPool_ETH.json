@@ -1,0 +1,18 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IBiggiRewardsPool_ETH",
+  "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MAINNET_SOURCE/BiggiMain.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "receiveMintShare",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

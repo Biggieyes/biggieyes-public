@@ -1,0 +1,10 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "BiggiIdIndexLib",
+  "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_LIBRARY/BiggiIdIndexLib.sol",
+  "abi": [],
+  "bytecode": "0x60808060405234601757603a9081601d823930815050f35b600080fdfe600080fdfea2646970667358221220d2373851cd369e525bb3a474a92ec6520deebf2a4c54c63d25ca6ba9cd1ef72c64736f6c63430008180033",
+  "deployedBytecode": "0x600080fdfea2646970667358221220d2373851cd369e525bb3a474a92ec6520deebf2a4c54c63d25ca6ba9cd1ef72c64736f6c63430008180033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

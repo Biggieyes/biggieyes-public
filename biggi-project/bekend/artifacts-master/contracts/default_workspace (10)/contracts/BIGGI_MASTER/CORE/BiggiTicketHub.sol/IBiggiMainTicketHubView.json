@@ -1,0 +1,24 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IBiggiMainTicketHubView",
+  "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiTicketHub.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "ticketHub",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

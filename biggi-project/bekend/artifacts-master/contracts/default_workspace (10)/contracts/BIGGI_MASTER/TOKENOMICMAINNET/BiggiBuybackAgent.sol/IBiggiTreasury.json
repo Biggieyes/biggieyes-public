@@ -15,6 +15,13 @@
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "receiveBuybackFallback",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
     }
   ],
   "bytecode": "0x",

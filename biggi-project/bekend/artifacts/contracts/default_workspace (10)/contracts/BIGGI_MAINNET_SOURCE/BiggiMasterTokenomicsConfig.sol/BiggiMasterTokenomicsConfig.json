@@ -1,0 +1,711 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "BiggiMasterTokenomicsConfig",
+  "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MAINNET_SOURCE/BiggiMasterTokenomicsConfig.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "initialOwner",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnableInvalidOwner",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "OwnableUnauthorizedAccount",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "collection1",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "collection2",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "rewardsReader",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "distributor",
+              "type": "address"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct BiggiMasterTokenomicsConfig.CollectionsBundle",
+          "name": "bundle",
+          "type": "tuple"
+        }
+      ],
+      "name": "CollectionsSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "biggi",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "reserve",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "treasury",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "distributor",
+              "type": "address"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct BiggiMasterTokenomicsConfig.CoreBundle",
+          "name": "bundle",
+          "type": "tuple"
+        }
+      ],
+      "name": "CoreSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "liquidityManager",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "liquidityVault",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "router",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "factory",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "weth",
+              "type": "address"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct BiggiMasterTokenomicsConfig.LiquidityBundle",
+          "name": "bundle",
+          "type": "tuple"
+        }
+      ],
+      "name": "LiquiditySet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "buybackAgent",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "dripLM",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "dripDistributor",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "policy",
+              "type": "address"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct BiggiMasterTokenomicsConfig.PumpBundle",
+          "name": "bundle",
+          "type": "tuple"
+        }
+      ],
+      "name": "PumpSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "collectionRewards",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "tokenRewards",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "nftRewards",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "communityCenter",
+              "type": "address"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct BiggiMasterTokenomicsConfig.RewardsBundle",
+          "name": "bundle",
+          "type": "tuple"
+        }
+      ],
+      "name": "RewardsSet",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "collections",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "collection1",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "collection2",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "rewardsReader",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "distributor",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "collectionsBundle",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "core",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "biggi",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "reserve",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "treasury",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "distributor",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "coreBundle",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "liquidity",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "liquidityManager",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "liquidityVault",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "router",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "factory",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "weth",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "liquidityBundle",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pump",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "buybackAgent",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "dripLM",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "dripDistributor",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "policy",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pumpBundle",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "rewards",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "collectionRewards",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "tokenRewards",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "nftRewards",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "communityCenter",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "rewardsBundle",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "collection1",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "collection2",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "rewardsReader",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "distributor",
+          "type": "address"
+        }
+      ],
+      "name": "setCollections",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "biggi",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "reserve",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "treasury",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "distributor",
+          "type": "address"
+        }
+      ],
+      "name": "setCore",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "liquidityManager",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "liquidityVault",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "router",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "factory",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "weth",
+          "type": "address"
+        }
+      ],
+      "name": "setLiquidityBranch",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "buybackAgent",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "dripLM",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "dripDistributor",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "policy",
+          "type": "address"
+        }
+      ],
+      "name": "setPumpBranch",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "collectionRewards",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "tokenRewards",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "nftRewards",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "communityCenter",
+          "type": "address"
+        }
+      ],
+      "name": "setRewards",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x608060405234801561001057600080fd5b50604051610a5d380380610a5d83398101604081905261002f916100be565b806001600160a01b03811661005e57604051631e4fbdf760e01b81526000600482015260240160405180910390fd5b6100678161006e565b50506100ee565b600080546001600160a01b038381166001600160a01b0319831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b6000602082840312156100d057600080fd5b81516001600160a01b03811681146100e757600080fd5b9392505050565b610960806100fd6000396000f3fe608060405234801561001057600080fd5b50600436106101165760003560e01c80638da5cb5b116100a2578063ca5c5eb211610071578063ca5c5eb2146102fb578063e1f8f94f14610321578063e562dfd61461034e578063f2f4eb2614610374578063f2fde38b1461039a57600080fd5b80638da5cb5b146102945780639ec5a894146102af578063a030dbbf146102d5578063b150c551146102e857600080fd5b80634c095565116100e95780634c0955651461021a5780634df68fe514610240578063570be5a114610253578063715018a61461026657806375a935541461026e57600080fd5b80630f841af61461011b5780631a68650214610130578063395ea61b1461019b5780633cb05efe146101f4575b600080fd5b61012e610129366004610814565b6103ad565b005b600d54600e54600f5460105460115461015c946001600160a01b03908116948116938116928116911685565b604080516001600160a01b03968716815294861660208601529285169284019290925283166060830152909116608082015260a0015b60405180910390f35b600954600a54600b54600c546101c1936001600160a01b03908116938116928116911684565b604080516001600160a01b0395861681529385166020850152918416918301919091529091166060820152608001610192565b600954600a54600b54600c546001600160a01b03938416939283169291821691166101c1565b6012546013546014546015546001600160a01b03938416939283169291821691166101c1565b61012e61024e366004610879565b610482565b61012e610261366004610879565b610535565b61012e6105da565b6001546002546003546004546001600160a01b03938416939283169291821691166101c1565b6000546040516001600160a01b039091168152602001610192565b6005546006546007546008546101c1936001600160a01b03908116938116928116911684565b61012e6102e3366004610879565b6105ee565b61012e6102f6366004610879565b610693565b6005546006546007546008546001600160a01b03938416939283169291821691166101c1565b600d54600e54600f546010546011546001600160a01b03948516949384169392831692918216911661015c565b6012546013546014546015546101c1936001600160a01b03908116938116928116911684565b6001546002546003546004546101c1936001600160a01b03908116938116928116911684565b61012e6103a83660046108cd565b610738565b6103b561077b565b6040805160a080820183526001600160a01b0388811680845288821660208086018290528984168688018190528985166060808901829052958a166080988901819052600d80546001600160a01b03199081168817909155600e8054821687179055600f805482168517905560108054821684179055601180549091168217905589519586529285019390935283880152928201529283015291517fffc87fd4c3de8886cbf7644a6dfa521270fb797084c72e3ddccf556393f1cb61929181900390910190a15050505050565b61048a61077b565b604080516080810182526001600160a01b03808716808352868216602084018190528683168486018190529286166060909401849052601280546001600160a01b031990811690931781556013805484169092179091556014805483169093179092556015805490911690921790915590517ff495cddb0ef2fc9007c115c9b25f69f1af4ccebcbd6960cb24855ba67de9c1a091610527916108ef565b60405180910390a150505050565b61053d61077b565b604080516080810182526001600160a01b03808716808352868216602084018190528683168486018190529286166060909401849052600580546001600160a01b031990811690931781556006805484169092179091556007805483169093179092556008805490911690921790915590517f89a60159752d4f749d82af2767337f5c659b5fc937102af6fe962f95cf317d4d91610527916108ef565b6105e261077b565b6105ec60006107a8565b565b6105f661077b565b604080516080810182526001600160a01b03808716808352868216602084018190528683168486018190529286166060909401849052600980546001600160a01b03199081169093178155600a80548416909217909155600b80548316909317909255600c805490911690921790915590517fd53af22b5aa3dfb98ff3e8a5815b8e789467c90deba35160a90749c7673fe95a91610527916108ef565b61069b61077b565b604080516080810182526001600160a01b03808716808352868216602084018190528683168486018190529286166060909401849052600180546001600160a01b031990811690931781556002805484169092179091556003805483169093179092556004805490911690921790915590517f2fb1b84b377e6fee7570d47867bae15efa368ab9d3e8672e7e1c610966adff9c91610527916108ef565b61074061077b565b6001600160a01b03811661076f57604051631e4fbdf760e01b8152600060048201526024015b60405180910390fd5b610778816107a8565b50565b6000546001600160a01b031633146105ec5760405163118cdaa760e01b8152336004820152602401610766565b600080546001600160a01b038381166001600160a01b0319831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b80356001600160a01b038116811461080f57600080fd5b919050565b600080600080600060a0868803121561082c57600080fd5b610835866107f8565b9450610843602087016107f8565b9350610851604087016107f8565b925061085f606087016107f8565b915061086d608087016107f8565b90509295509295909350565b6000806000806080858703121561088f57600080fd5b610898856107f8565b93506108a6602086016107f8565b92506108b4604086016107f8565b91506108c2606086016107f8565b905092959194509250565b6000602082840312156108df57600080fd5b6108e8826107f8565b9392505050565b81546001600160a01b03908116825260018301548116602083015260028301548116604083015260039092015490911660608201526080019056fea26469706673582212201583f77aa7c425b03beba5f5af548c9473599d66673dd3fd4b9540db3c0d79fa64736f6c63430008180033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b50600436106101165760003560e01c80638da5cb5b116100a2578063ca5c5eb211610071578063ca5c5eb2146102fb578063e1f8f94f14610321578063e562dfd61461034e578063f2f4eb2614610374578063f2fde38b1461039a57600080fd5b80638da5cb5b146102945780639ec5a894146102af578063a030dbbf146102d5578063b150c551146102e857600080fd5b80634c095565116100e95780634c0955651461021a5780634df68fe514610240578063570be5a114610253578063715018a61461026657806375a935541461026e57600080fd5b80630f841af61461011b5780631a68650214610130578063395ea61b1461019b5780633cb05efe146101f4575b600080fd5b61012e610129366004610814565b6103ad565b005b600d54600e54600f5460105460115461015c946001600160a01b03908116948116938116928116911685565b604080516001600160a01b03968716815294861660208601529285169284019290925283166060830152909116608082015260a0015b60405180910390f35b600954600a54600b54600c546101c1936001600160a01b03908116938116928116911684565b604080516001600160a01b0395861681529385166020850152918416918301919091529091166060820152608001610192565b600954600a54600b54600c546001600160a01b03938416939283169291821691166101c1565b6012546013546014546015546001600160a01b03938416939283169291821691166101c1565b61012e61024e366004610879565b610482565b61012e610261366004610879565b610535565b61012e6105da565b6001546002546003546004546001600160a01b03938416939283169291821691166101c1565b6000546040516001600160a01b039091168152602001610192565b6005546006546007546008546101c1936001600160a01b03908116938116928116911684565b61012e6102e3366004610879565b6105ee565b61012e6102f6366004610879565b610693565b6005546006546007546008546001600160a01b03938416939283169291821691166101c1565b600d54600e54600f546010546011546001600160a01b03948516949384169392831692918216911661015c565b6012546013546014546015546101c1936001600160a01b03908116938116928116911684565b6001546002546003546004546101c1936001600160a01b03908116938116928116911684565b61012e6103a83660046108cd565b610738565b6103b561077b565b6040805160a080820183526001600160a01b0388811680845288821660208086018290528984168688018190528985166060808901829052958a166080988901819052600d80546001600160a01b03199081168817909155600e8054821687179055600f805482168517905560108054821684179055601180549091168217905589519586529285019390935283880152928201529283015291517fffc87fd4c3de8886cbf7644a6dfa521270fb797084c72e3ddccf556393f1cb61929181900390910190a15050505050565b61048a61077b565b604080516080810182526001600160a01b03808716808352868216602084018190528683168486018190529286166060909401849052601280546001600160a01b031990811690931781556013805484169092179091556014805483169093179092556015805490911690921790915590517ff495cddb0ef2fc9007c115c9b25f69f1af4ccebcbd6960cb24855ba67de9c1a091610527916108ef565b60405180910390a150505050565b61053d61077b565b604080516080810182526001600160a01b03808716808352868216602084018190528683168486018190529286166060909401849052600580546001600160a01b031990811690931781556006805484169092179091556007805483169093179092556008805490911690921790915590517f89a60159752d4f749d82af2767337f5c659b5fc937102af6fe962f95cf317d4d91610527916108ef565b6105e261077b565b6105ec60006107a8565b565b6105f661077b565b604080516080810182526001600160a01b03808716808352868216602084018190528683168486018190529286166060909401849052600980546001600160a01b03199081169093178155600a80548416909217909155600b80548316909317909255600c805490911690921790915590517fd53af22b5aa3dfb98ff3e8a5815b8e789467c90deba35160a90749c7673fe95a91610527916108ef565b61069b61077b565b604080516080810182526001600160a01b03808716808352868216602084018190528683168486018190529286166060909401849052600180546001600160a01b031990811690931781556002805484169092179091556003805483169093179092556004805490911690921790915590517f2fb1b84b377e6fee7570d47867bae15efa368ab9d3e8672e7e1c610966adff9c91610527916108ef565b61074061077b565b6001600160a01b03811661076f57604051631e4fbdf760e01b8152600060048201526024015b60405180910390fd5b610778816107a8565b50565b6000546001600160a01b031633146105ec5760405163118cdaa760e01b8152336004820152602401610766565b600080546001600160a01b038381166001600160a01b0319831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b80356001600160a01b038116811461080f57600080fd5b919050565b600080600080600060a0868803121561082c57600080fd5b610835866107f8565b9450610843602087016107f8565b9350610851604087016107f8565b925061085f606087016107f8565b915061086d608087016107f8565b90509295509295909350565b6000806000806080858703121561088f57600080fd5b610898856107f8565b93506108a6602086016107f8565b92506108b4604086016107f8565b91506108c2606086016107f8565b905092959194509250565b6000602082840312156108df57600080fd5b6108e8826107f8565b9392505050565b81546001600160a01b03908116825260018301548116602083015260028301548116604083015260039092015490911660608201526080019056fea26469706673582212201583f77aa7c425b03beba5f5af548c9473599d66673dd3fd4b9540db3c0d79fa64736f6c63430008180033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
