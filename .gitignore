@@ -73,8 +73,10 @@ tmp_*.png
 *-debug.png
 
 # Build artifacts and local chain caches
-biggi-project/bekend/cache*/
-biggi-project/bekend/artifacts*/build-info/
+biggi-project/kendt/cache*/
+biggi-project/kendt/artifacts/
+biggi-project/kendt/artifacts-master/
+biggi-project/kendt/artifacts-*/
 biggi-project/bekend/tmp-*.json
 
 # CRE local build outputs
