@@ -55,6 +55,10 @@ temp_*
 
 # Secrets
 passwords.txt
+**/secrets.yaml
+**/secrets.yml
+!**/secrets.example.yaml
+!**/secrets.example.yml
 
 # Local Netlify data
 .netlify
