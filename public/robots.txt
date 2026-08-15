@@ -1,7 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /.netlify/
-Disallow: /api/
-Disallow: /functions/
-
-Sitemap: https://biggieyes.com/sitemap.xml
