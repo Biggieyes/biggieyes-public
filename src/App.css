@@ -516,8 +516,7 @@ body.loading-locked .full-bg {
   transform: translateZ(0) translateY(-40px) scale(1);
 }
 .top-bar.desktop .left-logo {
-  /* Shift the main logo slightly left (~2cm @ 96DPI) without touching the animation transforms. */
-  margin-left: -146px;
+  margin-left: -52px;
 }
 .mint-btn-img,
 .redeem-btn-img,
@@ -645,19 +644,16 @@ body.loading-locked .full-bg {
   display: flex;
   align-items: flex-start;
   gap: 38px;
-  margin-left: -68px;
+  margin-left: -94px;
   margin-right: 0;
   flex-shrink: 0;
-  margin-top: 29px;
+  margin-top: 22px;
 }
 .panel-nav {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 0.5cm;
-}
-.panel-nav .icon-row {
-  margin: 0;
+  justify-content: center;
+  margin-top: 0.25cm;
 }
 .top-bar.mobile .panel-nav {
   justify-content: center;
@@ -8609,12 +8605,19 @@ canvas {
   margin-left: 0 !important;
 }
 
-/* Align right logo + info panel under wallet buttons */
 .right-logo-group {
-  transform: translateX(113px);
+  transform: translateX(24px);
+}
+@media (min-width: 901px) {
+  .widget-center-wrapper {
+    transform: translateX(28px);
+  }
 }
 @media (max-width: 900px) {
   .right-logo-group {
+    transform: none;
+  }
+  .widget-center-wrapper {
     transform: none;
   }
 }
@@ -8976,5 +8979,47 @@ canvas {
   .live-stats-main-flex {
     align-items: center !important;
     justify-content: center !important;
+  }
+}
+
+/* Generic compact policy for tall table surfaces inside app panels. */
+.stats-table-wrapper,
+.blocks-table-outer,
+.backgrounds-table-outer,
+.collection-grid__info-column,
+.panel-info-modal__body,
+.liquidity-vault-table {
+  max-height: min(52vh, 520px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.stats-table-wrapper::-webkit-scrollbar,
+.blocks-table-outer::-webkit-scrollbar,
+.backgrounds-table-outer::-webkit-scrollbar,
+.collection-grid__info-column::-webkit-scrollbar,
+.liquidity-vault-table::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+.stats-table-wrapper::-webkit-scrollbar-thumb,
+.blocks-table-outer::-webkit-scrollbar-thumb,
+.backgrounds-table-outer::-webkit-scrollbar-thumb,
+.collection-grid__info-column::-webkit-scrollbar-thumb,
+.liquidity-vault-table::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255, 232, 0, 0.42);
+}
+
+@media (max-width: 700px) {
+  .stats-table-wrapper,
+  .blocks-table-outer,
+  .backgrounds-table-outer,
+  .collection-grid__info-column,
+  .panel-info-modal__body,
+  .liquidity-vault-table {
+    max-height: min(58vh, 430px);
   }
 }

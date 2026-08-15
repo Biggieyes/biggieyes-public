@@ -160,6 +160,26 @@ function KV({ items = [], colors = VRF_COLORS }) {
   );
 }
 
+function normalizeComparable(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function resolveMatchState(liveValue, expectedValue, explicitMatch) {
+  if (typeof explicitMatch === "boolean") {
+    return explicitMatch ? "ok" : "warn";
+  }
+  if (!liveValue || !expectedValue) return "dim";
+  return normalizeComparable(liveValue) === normalizeComparable(expectedValue)
+    ? "ok"
+    : "warn";
+}
+
+function wiringBadgeLabel(state) {
+  if (state === "ok") return "OK";
+  if (state === "warn") return "CHECK";
+  return "CONFIG";
+}
+
 const QuickStat = React.memo(function VRFQuickStat({
   label,
   value,
@@ -200,7 +220,7 @@ export default function VRFPanel({
   walletAddress = "",
   onRequestRandomness = () => {},
   onRefresh = null,
-  onCancelPending = () => {},
+  onCancelPending = null,
   onOpenExplorer = () => {},
   autoOpenInfo = false,
 }) {
@@ -216,7 +236,7 @@ export default function VRFPanel({
       { key: "requests", label: "Requests" },
       { key: "history", label: "History" },
       { key: "orchestration", label: "Post-Redeem" },
-      { key: "engine", label: "CRE Engine" },
+      { key: "engine", label: "VRF Health" },
       { key: "proof", label: "Proof Log" },
     ],
     [],
@@ -243,9 +263,9 @@ export default function VRFPanel({
       },
       engine: {
         kicker: "MONITOR",
-        title: "CRE Engine Signals",
+        title: "VRF Health Signals",
         description:
-          "Read-only health indicators used by Reserve / Buyback / DRIP logic.",
+          "Read-only Chainlink VRF configuration, request health, and mainnet wiring checks.",
       },
       proof: {
         kicker: "AUDIT",
@@ -290,9 +310,9 @@ export default function VRFPanel({
         ],
       },
       {
-        label: "CRE ENGINE",
+        label: "VRF HEALTH",
         description: [
-          "Read-only monitoring layer for Reserve / Buyback / DRIP decisions.",
+          "Read-only monitoring layer for Chainlink VRF request health and mainnet wiring.",
           "No transactions are executed from this panel.",
         ],
       },
@@ -306,7 +326,7 @@ export default function VRFPanel({
       {
         label: "ACTIONS",
         description: [
-          "Redeem triggers a new VRF request from BiggiEyesMain.",
+          "TicketHub redeem submits a request through the VRF collection and router.",
           "Refresh pulls the latest VRF status from on-chain history.",
         ],
       },
@@ -318,12 +338,12 @@ export default function VRFPanel({
       {
         label: "Panel sections",
         description:
-          "Requests, History, Post-Redeem, CRE Engine, and Proof Log are shown as separate read views over one VRF data model.",
+          "Requests, History, Post-Redeem, VRF Health, and Proof Log are shown as separate read views over one VRF data model.",
       },
       {
         label: "Contract path",
         description:
-          "Wallet redeem/request tx goes to BiggiEyesMain, then to Chainlink VRF coordinator, then callback fulfillment updates request status.",
+          "Wallet redeem goes to TicketHub, then the VRF collection requests randomness through BiggiVRFRouter and the Chainlink VRF coordinator; callback fulfillment updates request status.",
       },
       {
         label: "Read path",
@@ -408,11 +428,8 @@ export default function VRFPanel({
     const id = Number(viewData.networkId ?? viewData.chainId);
     const map = {
       1: "Ethereum",
-      5: "Goerli",
       10: "Optimism",
-      137: "Polygon",
-      80001: "Polygon Mumbai",
-      80002: "Polygon Amoy",
+      137: "Polygon mainnet",
       8453: "Base",
       42161: "Arbitrum",
     };
@@ -436,6 +453,7 @@ export default function VRFPanel({
         requestId: L.requestId || fulfilled.requestId || "",
         status: "fulfilled",
         requestedAt: L.requestedAt || fulfilled.time || "",
+        requestedAtMs: L.requestedAtMs ?? null,
         txHash: fulfilled.tx || L.txHash || "",
         blockNumber:
           typeof fulfilled.blockNumber === "number"
@@ -445,6 +463,7 @@ export default function VRFPanel({
           Array.isArray(fulfilled.randomWords) && fulfilled.randomWords.length
             ? fulfilled.randomWords
             : L.randomWords || [],
+        pendingTicketId: L.pendingTicketId || "",
       };
     }
     if ((!L.requestId || L.requestId === "0") && fulfilled) {
@@ -452,9 +471,11 @@ export default function VRFPanel({
         requestId: fulfilled.requestId || "",
         status: "fulfilled",
         requestedAt: fulfilled.time || "",
+        requestedAtMs: null,
         txHash: fulfilled.tx || "",
         blockNumber: fulfilled.blockNumber,
         randomWords: fulfilled.randomWords || [],
+        pendingTicketId: "",
       };
     }
     return L;
@@ -476,13 +497,68 @@ export default function VRFPanel({
     return Number.isFinite(n) ? n : null;
   }, []);
 
-  const pendingAgeMinutes = React.useMemo(() => {
+  const pendingAgeMs = React.useMemo(() => {
     if (String(effectiveLast.status).toLowerCase() !== "pending") return null;
+    const numericTs = Number(effectiveLast.requestedAtMs);
+    if (Number.isFinite(numericTs) && numericTs > 0) {
+      return Math.max(0, Date.now() - numericTs);
+    }
     const ts = parseToEpoch(effectiveLast.requestedAt);
     if (!ts) return null;
-    const diff = Math.max(0, Date.now() - ts);
-    return Math.round(diff / 60000);
-  }, [effectiveLast.status, effectiveLast.requestedAt, parseToEpoch]);
+    return Math.max(0, Date.now() - ts);
+  }, [
+    effectiveLast.status,
+    effectiveLast.requestedAt,
+    effectiveLast.requestedAtMs,
+    parseToEpoch,
+  ]);
+
+  const pendingAgeMinutes = React.useMemo(() => {
+    if (pendingAgeMs == null) return null;
+    return Math.round(pendingAgeMs / 60000);
+  }, [pendingAgeMs]);
+
+  const pendingRetryDelaySec = React.useMemo(() => {
+    const raw = Number(params?.pendingRetryDelaySec ?? 0);
+    return Number.isFinite(raw) && raw > 0 ? Math.round(raw) : 0;
+  }, [params?.pendingRetryDelaySec]);
+
+  const retryRemainingSeconds = React.useMemo(() => {
+    if (
+      String(effectiveLast.status).toLowerCase() !== "pending" ||
+      pendingRetryDelaySec <= 0 ||
+      pendingAgeMs == null
+    ) {
+      return 0;
+    }
+    return Math.max(
+      0,
+      Math.ceil((pendingRetryDelaySec * 1000 - pendingAgeMs) / 1000),
+    );
+  }, [effectiveLast.status, pendingRetryDelaySec, pendingAgeMs]);
+
+  const formatRetryCountdown = React.useCallback((seconds) => {
+    const safeSeconds = Math.max(0, Math.ceil(Number(seconds) || 0));
+    const minutes = Math.floor(safeSeconds / 60);
+    const remainder = safeSeconds % 60;
+    if (minutes > 0 && remainder > 0) return `${minutes}m ${remainder}s`;
+    if (minutes > 0) return `${minutes}m`;
+    return `${safeSeconds}s`;
+  }, []);
+
+  const pendingRetryReady =
+    String(effectiveLast.status).toLowerCase() === "pending" &&
+    (pendingRetryDelaySec <= 0 ||
+      pendingAgeMs == null ||
+      retryRemainingSeconds === 0);
+
+  const pendingActionLabel = pendingRetryReady
+    ? "Retry Pending"
+    : `Retry in ${formatRetryCountdown(retryRemainingSeconds)}`;
+
+  const pendingActionTitle = pendingRetryReady
+    ? "Submit a fresh VRF request for the current pending ticket."
+    : `Retry becomes available in ${formatRetryCountdown(retryRemainingSeconds)}.`;
 
   const latestFulfilled = React.useMemo(
     () => hist.find((h) => String(h.status).toLowerCase() === "fulfilled") || null,
@@ -533,12 +609,109 @@ export default function VRFPanel({
     ];
   }, [effectiveLast, hist, latestFulfilled]);
 
+  const wiringSignals = React.useMemo(() => {
+    const subscription = viewData.subscription || {};
+    const keyHashLive = params?.keyHashLive || "";
+    const keyHashDisplay = keyHashLive || params?.keyHash || "";
+    const coordinatorLive = params?.coordinatorLive || "";
+    const coordinatorDisplay = coordinatorLive || params?.coordinator || "";
+    const keyHashState = resolveMatchState(
+      keyHashLive,
+      params?.expectedKeyHash,
+      params?.keyHashMatches,
+    );
+    const coordinatorState = resolveMatchState(
+      coordinatorLive,
+      params?.expectedCoordinator,
+      params?.coordinatorMatches,
+    );
+    const subscriptionState = resolveMatchState(
+      subscription?.matches === null ? "" : subscription?.id,
+      subscription?.expectedId,
+      subscription?.matches,
+    );
+
+    return [
+      {
+        key: "collection",
+        label: "Collection VRF",
+        detail: params?.collection ? short(params.collection) : "Missing collection address",
+        title: params?.collection || "",
+        state: params?.collection ? "ok" : "warn",
+      },
+      {
+        key: "ticketHub",
+        label: "TicketHub",
+        detail: params?.ticketHub ? short(params.ticketHub) : "Missing TicketHub address",
+        title: params?.ticketHub || "",
+        state: params?.ticketHub ? "ok" : "warn",
+      },
+      {
+        key: "router",
+        label: "VRF Router",
+        detail: params?.vrfRouter ? short(params.vrfRouter) : "Missing VRF router address",
+        title: params?.vrfRouter || "",
+        state: params?.vrfRouter ? "ok" : "warn",
+      },
+      {
+        key: "coordinator",
+        label: "Coordinator",
+        detail: coordinatorDisplay
+          ? `${short(coordinatorDisplay)}${
+              params?.expectedCoordinator
+                ? ` / expected ${short(params.expectedCoordinator)}`
+                : ""
+            }`
+          : "Coordinator not loaded",
+        title: coordinatorDisplay || params?.expectedCoordinator || "",
+        state: coordinatorState,
+      },
+      {
+        key: "keyHash",
+        label: "KeyHash",
+        detail: keyHashDisplay
+          ? `${short(keyHashDisplay)}${
+              params?.expectedKeyHash
+                ? ` / expected ${short(params.expectedKeyHash)}`
+                : ""
+            }`
+          : "KeyHash not loaded",
+        title: keyHashDisplay || params?.expectedKeyHash || "",
+        state: keyHashState,
+      },
+      {
+        key: "subscription",
+        label: "Subscription",
+        detail: subscription?.id
+          ? `${short(String(subscription.id))}${
+              subscription?.expectedId
+                ? ` / expected ${short(String(subscription.expectedId))}`
+                : ""
+            }`
+          : "Subscription not loaded",
+        title: subscription?.id || subscription?.expectedId || "",
+        state: subscriptionState,
+      },
+    ];
+  }, [params, short, viewData.subscription]);
+
   const engineSignals = React.useMemo(() => {
     const pendingRows = hist.filter((row) => String(row.status).toLowerCase() === "pending").length;
     const hasFulfilled = Boolean(latestFulfilled);
     const latestWordCount = Array.isArray(effectiveLast.randomWords)
       ? effectiveLast.randomWords.length
       : 0;
+    const hasMainnetWiring = Boolean(
+      params?.collection &&
+        params?.ticketHub &&
+        params?.vrfRouter &&
+        (params?.keyHash || params?.expectedKeyHash) &&
+        (params?.coordinator || params?.expectedCoordinator),
+    );
+    const hasMismatch =
+      params?.keyHashMatches === false ||
+      params?.coordinatorMatches === false ||
+      viewData.subscription?.matches === false;
     return [
       {
         key: "mode",
@@ -569,11 +742,24 @@ export default function VRFPanel({
       {
         key: "params",
         label: "VRF params loaded",
-        detail: params?.keyHash ? "keyHash + coordinator available" : "Incomplete VRF config",
-        state: params?.keyHash ? "ok" : "dim",
+        detail:
+          params?.keyHash && params?.coordinator
+            ? "keyHash + coordinator available"
+            : "Incomplete VRF config",
+        state: params?.keyHash && params?.coordinator ? "ok" : "dim",
+      },
+      {
+        key: "wiring",
+        label: "Mainnet wiring",
+        detail: hasMismatch
+          ? "One or more live values differ from configured mainnet data"
+          : hasMainnetWiring
+            ? "Collection, TicketHub, router, coordinator and keyHash configured"
+            : "Mainnet wiring incomplete",
+        state: hasMismatch ? "warn" : hasMainnetWiring ? "ok" : "dim",
       },
     ];
-  }, [hist, latestFulfilled, effectiveLast.randomWords, pendingAgeMinutes, params?.keyHash]);
+  }, [hist, latestFulfilled, effectiveLast.randomWords, pendingAgeMinutes, params, viewData.subscription]);
 
   const proofRows = React.useMemo(() => {
     const rows = hist.length
@@ -666,7 +852,7 @@ export default function VRFPanel({
             <h2 className="rewards-grid__title">VRF Dashboard</h2>
             <p className="rewards-grid__subtitle">
               Observe the full Chainlink VRF lifecycle on {netLabel}: request
-              creation, fulfillment timing, random words, CRE signals, and
+              creation, fulfillment timing, random words, health signals, and
               proof checks. Every state is sourced from on-chain data for
               transparent redeem auditing.
             </p>
@@ -676,9 +862,15 @@ export default function VRFPanel({
               {isRefreshing ? "Refreshing..." : "Refresh"}
             </GhostBtn>
             {String(effectiveLast.status).toLowerCase() === "pending" &&
-              effectiveLast.requestId && (
-                <GhostBtn onClick={() => onCancelPending(effectiveLast.requestId)}>
-                  Cancel Pending
+              effectiveLast.requestId &&
+              params?.retryPendingSupported === true &&
+              typeof onCancelPending === "function" && (
+                <GhostBtn
+                  onClick={() => onCancelPending(effectiveLast.requestId)}
+                  disabled={!pendingRetryReady}
+                  title={pendingActionTitle}
+                >
+                  {pendingActionLabel}
                 </GhostBtn>
               )}
             {!!effectiveLast.txHash && (
@@ -689,7 +881,7 @@ export default function VRFPanel({
             <GhostBtn
               tone="accent"
               onClick={() => onRequestRandomness()}
-              title="Request randomness for your wallet"
+              title="Redeem a ticket and request Chainlink VRF"
             >
               Redeem / Request
             </GhostBtn>
@@ -983,13 +1175,54 @@ export default function VRFPanel({
                       k: "Subscription",
                       v: viewData.subscription?.id || "-",
                       mono: true,
-                      tone: "cool",
+                      tone:
+                        viewData.subscription?.matches === false
+                          ? "pink"
+                          : "cool",
+                      title: viewData.subscription?.expectedId
+                        ? `Expected: ${viewData.subscription.expectedId}`
+                        : viewData.subscription?.id || "",
+                    },
+                    {
+                      k: "Collection VRF",
+                      v: params?.collection ? short(params.collection) : "-",
+                      title: params?.collection || "",
+                      mono: true,
+                      tone: params?.collection ? "cool" : "pink",
+                    },
+                    {
+                      k: "TicketHub",
+                      v: params?.ticketHub ? short(params.ticketHub) : "-",
+                      title: params?.ticketHub || "",
+                      mono: true,
+                      tone: params?.ticketHub ? "cool" : "pink",
+                    },
+                    {
+                      k: "VRF Router",
+                      v: params?.vrfRouter ? short(params.vrfRouter) : "-",
+                      title: params?.vrfRouter || "",
+                      mono: true,
+                      tone: params?.vrfRouter ? "cool" : "pink",
                     },
                     {
                       k: "Coordinator",
                       v: params?.coordinator ? short(params.coordinator) : "-",
                       title: params?.coordinator || "",
                       mono: true,
+                      tone:
+                        params?.coordinatorMatches === false
+                          ? "pink"
+                          : "neutral",
+                    },
+                    {
+                      k: "KeyHash",
+                      v: params?.keyHash ? short(params.keyHash) : "-",
+                      title: params?.keyHash || "",
+                      mono: true,
+                      tone:
+                        params?.keyHashMatches === false
+                          ? "pink"
+                          : "neutral",
                     },
                   ]}
                 />
@@ -1003,20 +1236,20 @@ export default function VRFPanel({
             <div className="vrf-grid">
               <div className="vrf-card">
                 <div className="vrf-card__head">
-                  <h3>CRE Decision Engine</h3>
+                  <h3>VRF Health Monitor</h3>
                   <Badge tone="dim">READ ONLY</Badge>
                 </div>
                 <p className="vrf-muted">
-                  Reserve / Buyback / DRIP engine is displayed here as a monitor
-                  layer. It evaluates protocol signals and exposes auditable status.
+                  Chainlink request state, fulfillment proof, and mainnet
+                  wiring are displayed here as a read-only monitor.
                 </p>
                 <div className="vrf-chip-list">
                   {[
                     "VRF events",
                     "Request history",
-                    "Chain params",
+                    "Chainlink params",
                     "Proof checks",
-                    "Dashboard alerts",
+                    "Mainnet wiring",
                   ].map((label) => (
                     <span key={label} className="vrf-chip">
                       {label}
@@ -1057,6 +1290,38 @@ export default function VRFPanel({
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+
+            <div className="vrf-card vrf-card--full">
+              <div className="vrf-card__head">
+                <h3>Mainnet Wiring</h3>
+                <Badge tone="info">POLYGON</Badge>
+              </div>
+              <div className="vrf-steps vrf-steps--grid">
+                {wiringSignals.map((signal) => (
+                  <div
+                    key={signal.key}
+                    className={`vrf-step vrf-step--${signal.state}`}
+                    title={signal.title}
+                  >
+                    <div className="vrf-step__meta">
+                      <span className="vrf-step__label">{signal.label}</span>
+                      <span className="vrf-step__detail">{signal.detail}</span>
+                    </div>
+                    <Badge
+                      tone={
+                        signal.state === "ok"
+                          ? "ok"
+                          : signal.state === "warn"
+                            ? "warn"
+                            : "dim"
+                      }
+                    >
+                      {wiringBadgeLabel(signal.state)}
+                    </Badge>
+                  </div>
+                ))}
               </div>
             </div>
 

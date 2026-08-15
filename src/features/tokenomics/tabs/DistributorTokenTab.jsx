@@ -5,6 +5,13 @@ import AddressLine from "../components/AddressLine.jsx";
 import { explorerLink } from "../utils/format.js";
 import styles from "../styles/BiggiToken.module.css";
 import { ADDR } from "@/shared/utils/addresses.js";
+import {
+  formatAmountDisplay,
+  formatNativeDisplay,
+  formatTokenDisplay,
+  isRealAddress,
+  toDisplayNumber,
+} from "../utils/amountFormatting.js";
 import "./DistributorTokenTab.css";
 
 const MISSING_DISPLAY = new Set(["", "--", "N/A", "NaN"]);
@@ -15,8 +22,7 @@ const hasValue = (value) => {
   return text ? !MISSING_DISPLAY.has(text) : false;
 };
 
-const isAddress = (value) =>
-  typeof value === "string" && /^0x[0-9a-fA-F]{40}$/.test(value);
+const isAddress = isRealAddress;
 
 const normalizeAddress = (value) =>
   isAddress(value) ? value.toLowerCase() : null;
@@ -34,24 +40,16 @@ const shortAddress = (value) =>
 const pickAddress = (...values) => values.find((value) => isAddress(value)) ?? null;
 
 const toNumber = (value) => {
-  if (value == null) return null;
-  if (typeof value === "number") return Number.isFinite(value) ? value : null;
-  const cleaned = String(value).replace(/[^\d.-]/g, "");
-  if (!cleaned) return null;
-  const num = Number(cleaned);
-  return Number.isFinite(num) ? num : null;
+  return toDisplayNumber(value);
 };
 
 const formatMaybeAmount = (value, unit, digits = 2) => {
-  const num = toNumber(value);
-  if (num != null) {
-    return `${num.toLocaleString("en-US", {
-      maximumFractionDigits: digits,
-    })} ${unit}`.trim();
-  }
-  if (!hasValue(value)) return "--";
-  const raw = String(value).trim();
-  return unit && raw.includes(unit) ? raw : `${raw} ${unit}`.trim();
+  if (unit === "POL" || unit === "MATIC") return formatNativeDisplay(value, digits);
+  if (unit === "BIGGI") return formatTokenDisplay(value, 18, digits);
+  return formatAmountDisplay(value, {
+    unit,
+    maximumFractionDigits: digits,
+  });
 };
 
 const formatShareHint = (part, total) => {

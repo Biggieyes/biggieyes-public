@@ -1,7 +1,7 @@
 // src/components/ImportNftButton.jsx
 import * as React from "react";
 import { ADDR } from "@/shared/utils/addresses.js";
-import { AMOY } from "@/shared/utils/contract";
+import { ACTIVE_CHAIN } from "@/shared/utils/contract";
 import { addNftToMetaMask } from "../lib/addNftToMetaMask";
 
 const STORE_KEY = "biggi_imported_nfts_simple_v1";
@@ -209,7 +209,7 @@ export default function ImportNftButton({
       const added = await addNftToMetaMask({
         contractAddress: normalizedAddress,
         tokenId: String(tokenId),
-        chainId: AMOY?.hex ?? "0x13882",
+        chainId: ACTIVE_CHAIN?.hex ?? "0x89",
         trySwitchChain: true,
         assetOptions: {
           name: name && name.trim().length ? name : undefined,

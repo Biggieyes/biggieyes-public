@@ -1,13 +1,16 @@
 import { Contract, isAddress, ZeroAddress } from "ethers";
 import { getProvider } from "@/web3/provider";
-import {
-  BiggiMultiCollectionDistributor,
-  BiggiMultiCollectionDistributorReader,
-} from "@/config/abi/index.js";
+import { BiggiMultiCollectionDistributor } from "@/config/abi/index.js";
 import { getMCDReaderV2RO } from "@/shared/utils/contract";
 import { getAddresses } from "@/config/addresses/index.js";
 import { multicallReadContract } from "@/shared/utils/multicall.js";
-import { unwrapDistributorSnapshot } from "./distributor.snapshot.js";
+import {
+  getDistributorGlobalSnapshot,
+  getDistributorPendingCommunity,
+  getDistributorPendingOf,
+} from "./distributorReaderCompat.js";
+
+const COMMUNITY_VIEW_ABI = ["function poolBalance() view returns (uint256)"];
 
 async function _callOptional(fn, fallback = null) {
   if (typeof fn !== "function") return fallback;
@@ -22,10 +25,7 @@ async function _callOptional(fn, fallback = null) {
 let _skipReader = false;
 const _ENABLE_READER = (() => {
   try {
-    if (
-      typeof import.meta !== "undefined" &&
-      import.meta.env
-    ) {
+    if (typeof import.meta !== "undefined" && import.meta.env) {
       const raw = String(import.meta.env.VITE_ENABLE_MCD_READER || "")
         .trim()
         .toLowerCase();
@@ -91,7 +91,10 @@ export async function fetchDistributorSnapshot({ chainId, provider } = {}) {
   let snapshotSource = "Direct distributor";
 
   if (_ENABLE_READER && reader && !_skipReader) {
-    globalSnap = await _callReader(() => reader.globalSnapshot?.(), null);
+    globalSnap = await _callReader(
+      () => getDistributorGlobalSnapshot(reader),
+      null,
+    );
     if (!_skipReader) {
       distributorAddr = await _callReader(() => reader.distributor?.(), null);
     }
@@ -104,32 +107,7 @@ export async function fetchDistributorSnapshot({ chainId, provider } = {}) {
     reader = null;
     readerOk = false;
   }
-
-  // Fallback to Reader V1 (core()) if V2 call failed or ABI mismatch.
-  if (_ENABLE_READER && !globalSnap && readerAddr && !_skipReader) {
-    try {
-      const readerV1 = new Contract(
-        readerAddr,
-        BiggiMultiCollectionDistributorReader,
-        signerOrProvider,
-      );
-      globalSnap = await _callReader(() => readerV1.core?.(), null);
-      if (!distributorAddr) {
-        distributorAddr = await _callReader(
-          () => readerV1.distributor?.(),
-          null,
-        );
-      }
-      if (globalSnap) {
-        readerOk = true;
-        snapshotSource = "MCD Reader V1";
-      }
-    } catch (error) {
-      console.warn("Distributor reader V1 fallback failed", error);
-    }
-  }
-
-  let snap = unwrapDistributorSnapshot(globalSnap);
+  let snap = globalSnap;
   let directDistributor = null;
 
   // Fallback to direct distributor contract if reader snapshots fail.
@@ -164,42 +142,33 @@ export async function fetchDistributorSnapshot({ chainId, provider } = {}) {
         collectionRewards:
           directMulti?.collectionRewards ??
           (await _callOptional(
-          () => directDistributor.collectionRewards?.(),
-          null,
-        )),
+            () => directDistributor.collectionRewards?.(),
+            null,
+          )),
         reserve:
           directMulti?.reserve ??
           (await _callOptional(() => directDistributor.reserve?.(), null)),
         buybackAgent:
           directMulti?.buybackAgent ??
-          (await _callOptional(
-          () => directDistributor.buybackAgent?.(),
-          null,
-        )),
+          (await _callOptional(() => directDistributor.buybackAgent?.(), null)),
         treasury:
           directMulti?.treasury ??
-          (await _callOptional(
-          () => directDistributor.treasury?.(),
-          null,
-        )),
+          (await _callOptional(() => directDistributor.treasury?.(), null)),
         communityCenter:
           directMulti?.communityCenter ??
           (await _callOptional(
-          () => directDistributor.communityCenter?.(),
-          null,
-        )),
+            () => directDistributor.communityCenter?.(),
+            null,
+          )),
         totalPending:
           directMulti?.totalPending ??
-          (await _callOptional(
-          () => directDistributor.totalPending?.(),
-          null,
-        )),
+          (await _callOptional(() => directDistributor.totalPending?.(), null)),
         totalReceived:
           directMulti?.totalReceived ??
           (await _callOptional(
-          () => directDistributor.totalReceived?.(),
-          null,
-        )),
+            () => directDistributor.totalReceived?.(),
+            null,
+          )),
       };
       distributorAddr = distributorFallback;
     } catch (error) {
@@ -226,13 +195,9 @@ export async function fetchDistributorSnapshot({ chainId, provider } = {}) {
   const pendingTargets = normalizedTargets.filter(Boolean);
   const pendingMap = new Map();
 
-  if (
-    pendingTargets.length &&
-    readerOk &&
-    typeof reader?.pendingOf === "function"
-  ) {
+  if (pendingTargets.length && readerOk && typeof reader === "object") {
     const pendingValues = await _callReader(
-      () => reader.pendingOf(pendingTargets),
+      () => getDistributorPendingOf(reader, pendingTargets),
       [],
     );
     pendingTargets.forEach((addr, idx) => {
@@ -250,9 +215,10 @@ export async function fetchDistributorSnapshot({ chainId, provider } = {}) {
       "direct pendingOf",
     );
     const pendingValues = await Promise.all(
-      pendingTargets.map((addr, idx) =>
-        directPendingMulti?.[`pending_${idx}`] ??
-        _callOptional(() => directDistributor.pendingOf?.(addr), null),
+      pendingTargets.map(
+        (addr, idx) =>
+          directPendingMulti?.[`pending_${idx}`] ??
+          _callOptional(() => directDistributor.pendingOf?.(addr), null),
       ),
     );
     pendingTargets.forEach((addr, idx) => {
@@ -260,10 +226,9 @@ export async function fetchDistributorSnapshot({ chainId, provider } = {}) {
     });
   }
 
-  const pendingCommunity =
-    readerOk && typeof reader?.pendingCommunity === "function"
-      ? await _callReader(() => reader.pendingCommunity?.(), null)
-      : null;
+  const pendingCommunity = readerOk
+    ? await _callReader(() => getDistributorPendingCommunity(reader), null)
+    : null;
 
   const getPending = (addr, fallback = null) => {
     const normalized = normalizeAddress(addr);
@@ -276,7 +241,8 @@ export async function fetchDistributorSnapshot({ chainId, provider } = {}) {
   const fallbackReserve = normalizeAddress(addrs?.RESERVE) || null;
   const fallbackTreasury = normalizeAddress(addrs?.TREASURY) || null;
   const fallbackBuyback = normalizeAddress(addrs?.BUYBACK_AGENT) || null;
-  const fallbackCollection = normalizeAddress(addrs?.COLLECTION_REWARDS) || null;
+  const fallbackCollection =
+    normalizeAddress(addrs?.COLLECTION_REWARDS) || null;
   const fallbackCommunity = normalizeAddress(addrs?.COMMUNITY_CENTER) || null;
   const fallbackDRIP =
     normalizeAddress(addrs?.DRIPDistributor) ||
@@ -284,10 +250,22 @@ export async function fetchDistributorSnapshot({ chainId, provider } = {}) {
     null;
   const resolvedCommunity =
     normalizeAddress(communityCenter) || fallbackCommunity;
-  const communityPoolBalance =
-    readProvider?.getBalance && resolvedCommunity
-      ? await _callOptional(() => readProvider.getBalance(resolvedCommunity), null)
-      : null;
+  const communityView = resolvedCommunity
+    ? new Contract(resolvedCommunity, COMMUNITY_VIEW_ABI, signerOrProvider)
+    : null;
+  let communityPoolBalance = null;
+  if (resolvedCommunity) {
+    communityPoolBalance = await _callOptional(
+      () => communityView?.poolBalance?.(),
+      null,
+    );
+    if (communityPoolBalance == null && readProvider?.getBalance) {
+      communityPoolBalance = await _callOptional(
+        () => readProvider.getBalance(resolvedCommunity),
+        null,
+      );
+    }
+  }
 
   const ts = Date.now();
   return {
@@ -297,7 +275,8 @@ export async function fetchDistributorSnapshot({ chainId, provider } = {}) {
     reserve: normalizeAddress(reserve) || fallbackReserve,
     BUYBACKAgent: normalizeAddress(buybackAgent) || fallbackBuyback,
     treasury: normalizeAddress(treasury) || fallbackTreasury,
-    COLLECTIONREWARDS: normalizeAddress(collectionRewards) || fallbackCollection,
+    COLLECTIONREWARDS:
+      normalizeAddress(collectionRewards) || fallbackCollection,
     COMMUNITYCENTER: normalizeAddress(communityCenter) || fallbackCommunity,
     DRIPDistributor: fallbackDRIP,
     snapshotSource,

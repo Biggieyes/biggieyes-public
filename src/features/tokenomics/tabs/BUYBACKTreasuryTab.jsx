@@ -5,9 +5,13 @@ import AddressLine from "../components/AddressLine.jsx";
 import styles from "../styles/BiggiToken.module.css";
 import "./BUYBACKTreasuryTab.css";
 import {
+  formatNativeDisplay,
+  formatTokenDisplay,
+  pickFormatted,
+} from "../utils/amountFormatting.js";
+import {
   formatTokenAmount,
   pickAddress,
-  pickDisplay,
 } from "../utils/panelFormatting.js";
 
 const hasValue = (value) =>
@@ -62,26 +66,40 @@ function BUYBACKTreasuryTab({
   const downstreamRows = [
     {
       label: "Treasury BIGGI live",
-      value: pickDisplay(treasury.biggiBalance),
+      value: formatTokenDisplay(treasury.biggiBalance, tokenDecimals),
+    },
+    {
+      label: "Treasury BIGGI from ecosystem",
+      value: formatTokenDisplay(treasury.totalBiggiFromEcosystem, tokenDecimals),
+    },
+    {
+      label: "Treasury POL from distributor",
+      value: formatNativeDisplay(
+        treasury.totalMaticFromDistributor ?? treasury.totalMaticReceived,
+      ),
     },
     {
       label: "Reserve BIGGI live",
-      value: pickDisplay(
+      value: pickFormatted(
+        (value) => formatTokenDisplay(value, tokenDecimals),
+        flowSnapshot?.liveBalances?.token?.reserve,
         liquiditySnapshot?.reserve?.biggiBalance,
         formatTokenAmount(flowSnapshot?.liveBalances?.token?.reserve, tokenDecimals),
       ),
     },
     {
       label: "Reserve waiting",
-      value: pickDisplay(liquiditySnapshot?.reserve?.waitingBiggi),
+      value: formatTokenDisplay(liquiditySnapshot?.reserve?.waitingBiggi, tokenDecimals),
     },
     {
       label: "Reserve DEX refill",
-      value: pickDisplay(liquiditySnapshot?.reserve?.dexRefillBiggi),
+      value: formatTokenDisplay(liquiditySnapshot?.reserve?.dexRefillBiggi, tokenDecimals),
     },
     {
       label: "DRIP distributor live",
-      value: pickDisplay(
+      value: pickFormatted(
+        (value) => formatTokenDisplay(value, tokenDecimals),
+        tokenDexSnapshot?.token?.balances?.DRIPDistributor,
         dripSnapshot?.distributor?.balance,
         dripSnapshot?.distributor?.tokenBalance,
         formatTokenAmount(
@@ -92,7 +110,9 @@ function BUYBACKTreasuryTab({
     },
     {
       label: "TokenRewards live",
-      value: pickDisplay(
+      value: pickFormatted(
+        (value) => formatTokenDisplay(value, tokenDecimals),
+        tokenDexSnapshot?.token?.balances?.tokenREWARDS,
         formatTokenAmount(
           tokenDexSnapshot?.token?.balances?.tokenREWARDS,
           tokenDecimals,
@@ -101,7 +121,7 @@ function BUYBACKTreasuryTab({
     },
     {
       label: "DEX pair BIGGI tradable",
-      value: formatTokenAmount(
+      value: formatTokenDisplay(
         tokenDexSnapshot?.dex?.pair?.reserves?.token,
         tokenDecimals,
       ),
@@ -111,32 +131,32 @@ function BUYBACKTreasuryTab({
   const stats = [
     {
       label: "Total spent",
-      value: buy.totalNativeSpent,
+      value: formatNativeDisplay(buy.totalNativeSpent),
       hint: derived.statusLabel,
       tone: "native",
     },
     {
       label: "BUYBACK BIGGI",
-      value: buy.totalBiggiAcquired,
+      value: formatTokenDisplay(buy.totalBiggiAcquired, tokenDecimals),
       hint: buy.lastBUYBACKLabel,
       tone: "token",
     },
     {
       label: "Total received",
-      value: buy.totalNativeReceived,
+      value: formatNativeDisplay(buy.totalNativeReceived),
       hint: buy.shortAddress,
       tone: "native",
     },
     {
       label: "BIGGI Treasury",
-      value: treasury.totalBiggiReceived,
+      value: formatTokenDisplay(treasury.totalBiggiReceived, tokenDecimals),
       hint: treasury.shortAddress,
       tone: "token",
     },
     {
       label: "Treasury native",
-      value: treasury.maticBalance,
-      hint: treasury.totalMaticReceived,
+      value: formatNativeDisplay(treasury.maticBalance),
+      hint: formatNativeDisplay(treasury.totalMaticReceived),
       tone: "native",
     },
   ];
@@ -201,10 +221,7 @@ function BUYBACKTreasuryTab({
     },
     {
       label: "Keeper threshold",
-      value:
-        hasValue(buy.keeperThreshold)
-          ? `${buy.keeperThreshold} POL`
-          : "--",
+      value: formatNativeDisplay(buy.keeperThreshold),
     },
   ];
 

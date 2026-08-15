@@ -39,6 +39,7 @@ export default function ActionButtons({
   onInfoGateComplete,
   onInfoButtonRect,
   forceInfoOpenTick = 0,
+  mintDisabledReason = "",
 }) {
   const lockRef = React.useRef(false);
   const [infoOpen, setInfoOpen] = React.useState(false);
@@ -47,6 +48,7 @@ export default function ActionButtons({
   const gateActive = Boolean(infoGateActive);
   const redeemDisabled = Boolean(isRedeeming || VRFPending || performing || gateActive);
   const actionDisabled = Boolean(performing || gateActive);
+  const mintDisabled = Boolean(actionDisabled || mintDisabledReason);
 
   React.useEffect(() => {
     if (forceInfoOpenTick > 0) setInfoOpen(true);
@@ -128,6 +130,7 @@ export default function ActionButtons({
       wrapperClassName,
       wrapperStyle,
       wrapperRef,
+      disabledReason = "",
     } = options;
     const resolvedImage =
       typeof image === "string" ? { src: image, fallbackSrc: "" } : image;
@@ -177,7 +180,9 @@ export default function ActionButtons({
           type="button"
           onClick={onClick}
           disabled={isDisabled}
+          aria-label={isDisabled && disabledReason ? `${alt}: ${disabledReason}` : alt}
           aria-disabled={isDisabled || undefined}
+          title={isDisabled && disabledReason ? `${alt}: ${disabledReason}` : alt}
           style={{
             background: "transparent",
             border: "none",
@@ -270,9 +275,10 @@ export default function ActionButtons({
         {buttonWrapper(
           BUTTON_IMAGE_SOURCES.mint,
           "Mint Ticket",
-          runOnce(onMint, actionDisabled),
+          runOnce(onMint, mintDisabled),
           {
-            isDisabled: actionDisabled,
+            isDisabled: mintDisabled,
+            disabledReason: mintDisabledReason,
             variant: "mint",
             borderColor: "#26f7d1",
             glow: "rgba(38, 247, 209, 0.55)",
@@ -326,7 +332,7 @@ export default function ActionButtons({
         )}
       </div>
 
-      {(performing || errorText) && (
+      {(mintDisabledReason || performing || errorText) && (
         <div
           style={{
             marginTop: 10,
@@ -336,6 +342,9 @@ export default function ActionButtons({
             maxWidth: 320,
           }}
         >
+          {mintDisabledReason && !performing && (
+            <div>Mint: {mintDisabledReason}</div>
+          )}
           {performing && (
             <div>{performingLabel || "Processing transaction..."}</div>
           )}

@@ -4,14 +4,14 @@ import * as React from "react";
 import { BrowserProvider } from "ethers";
 
 import {
-  AMOY,
+  ACTIVE_CHAIN,
   clearInjectedProvider,
-  ensureAmoy,
+  ensurePolygon,
   getInjectedProvider,
   getROProvider,
   hasInjectedProviderOverride,
   setInjectedProvider,
-  syncAmoyRpcIfNeeded,
+  syncPolygonRpcIfNeeded,
 } from "@/shared/utils/contract";
 import {
   getInjectedProviderCandidates,
@@ -19,10 +19,6 @@ import {
   isLikelyMetaMaskSdkProvider,
   startInjectedProviderDiscovery,
 } from "@/shared/utils/injectedProviders";
-import {
-  getWalletConnectMobileLinks,
-  shouldUseMetaMaskMobileFallback,
-} from "@/shared/utils/mobileWallet";
 import {
   clearWalletConnectResumeExpected,
   getWalletConnectResumeExpected,
@@ -38,14 +34,6 @@ async function loadWalletConnectModule() {
     walletConnectModulePromise = import("@/wallet/wc.js");
   }
   return walletConnectModulePromise;
-}
-
-async function connectWithWalletConnectLazy(options) {
-  const mod = await loadWalletConnectModule();
-  if (typeof mod?.connectWithWalletConnect !== "function") {
-    throw new Error("WalletConnect module is unavailable");
-  }
-  return mod.connectWithWalletConnect(options);
 }
 
 async function clearWalletConnectSessionLazy(options) {
@@ -136,7 +124,7 @@ export function Web3Provider({ children }) {
         setProvider(roProvider);
         setSigner(null);
         setAccount("");
-        setChainId(AMOY.chainId);
+        setChainId(ACTIVE_CHAIN.chainId);
       } catch {
         setProvider(null);
         setSigner(null);
@@ -182,7 +170,7 @@ export function Web3Provider({ children }) {
         setSigner(restoredSession.signer || null);
         setProvider(restoredSession.ethersProvider || null);
         setAccount(restoredSession.address || "");
-        setChainId(restoredSession.chainId || AMOY.chainId);
+        setChainId(restoredSession.chainId || ACTIVE_CHAIN.chainId);
       })
       .finally(() => {
         if (!cancelled) setIsConnecting(false);
@@ -193,15 +181,15 @@ export function Web3Provider({ children }) {
     };
   }, []);
 
-  /** Switch/add the target chain. Uses ensureAmoy for Amoy. */
+  /** Switch/add the target chain. Uses ensurePolygon for Polygon mainnet. */
   const ensureChain = React.useCallback(
-    async (targetId = AMOY.chainId) => {
+    async (targetId = ACTIVE_CHAIN.chainId) => {
       const eth = pickInjectedProvider();
       if (!eth) return;
-      const wantsAmoy = Number(targetId) === AMOY.chainId;
+      const wantsPolygonMainnet = Number(targetId) === ACTIVE_CHAIN.chainId;
       try {
-        if (wantsAmoy) {
-          await ensureAmoy(eth);
+        if (wantsPolygonMainnet) {
+          await ensurePolygon(eth);
         } else {
           const hex = "0x" + Number(targetId).toString(16);
           await eth.request({
@@ -210,13 +198,13 @@ export function Web3Provider({ children }) {
           });
         }
       } catch (e) {
-        // If it fails and target is Amoy, try adding and switching again
-        if (wantsAmoy) {
+        // If it fails and target is Polygon mainnet, try adding and switching again
+        if (wantsPolygonMainnet) {
           try {
-            await syncAmoyRpcIfNeeded(eth, { force: true });
+            await syncPolygonRpcIfNeeded(eth, { force: true });
             await eth.request({
               method: "wallet_switchEthereumChain",
-              params: [{ chainId: AMOY.hex }],
+              params: [{ chainId: ACTIVE_CHAIN.hex }],
             });
           } catch {
             // ignore, refresh state below
@@ -231,6 +219,7 @@ export function Web3Provider({ children }) {
 
   /** Primary connect for MetaMask/injected. */
   const connectMetaMask = React.useCallback(async () => {
+    clearWalletConnectResumeExpected();
     const metaMaskCandidates = getInjectedProviderCandidates({
       preferred: getInjectedProvider(),
       metaMaskOnly: true,
@@ -249,26 +238,6 @@ export function Web3Provider({ children }) {
     setIsConnecting(true);
     try {
       if (!candidates.length) {
-        if (shouldUseMetaMaskMobileFallback()) {
-          setWalletConnectResumeExpected(true);
-          const {
-            provider: wcProvider,
-            ethersProvider,
-            signer: wcSigner,
-            address,
-            chainId: connectedChainId,
-          } = await connectWithWalletConnectLazy({
-            forceNewSession: true,
-            mobileLinks: getWalletConnectMobileLinks({ preferMetaMask: true }),
-          });
-          explicitConnectionRef.current = true;
-          setInjectedProvider(wcProvider);
-          setSigner(wcSigner);
-          setProvider(ethersProvider);
-          setAccount(address || "");
-          setChainId(connectedChainId || AMOY.chainId);
-          return Boolean(address);
-        }
         console.warn(
           "Web3Provider.connectMetaMask: no direct MetaMask extension provider candidates found",
           {
@@ -319,26 +288,6 @@ export function Web3Provider({ children }) {
         }
       }
       if (!eth) {
-        if (shouldUseMetaMaskMobileFallback()) {
-          setWalletConnectResumeExpected(true);
-          const {
-            provider: wcProvider,
-            ethersProvider,
-            signer: wcSigner,
-            address,
-            chainId: connectedChainId,
-          } = await connectWithWalletConnectLazy({
-            forceNewSession: true,
-            mobileLinks: getWalletConnectMobileLinks({ preferMetaMask: true }),
-          });
-          explicitConnectionRef.current = true;
-          setInjectedProvider(wcProvider);
-          setSigner(wcSigner);
-          setProvider(ethersProvider);
-          setAccount(address || "");
-          setChainId(connectedChainId || AMOY.chainId);
-          return Boolean(address);
-        }
         return false;
       }
 
@@ -346,7 +295,7 @@ export function Web3Provider({ children }) {
       clearWalletConnectResumeExpected();
       setInjectedProvider(eth);
       try {
-        await syncAmoyRpcIfNeeded(eth);
+        await syncPolygonRpcIfNeeded(eth);
       } catch {
         // non-fatal: continue connect flow even if chain metadata update is skipped
       }
@@ -357,8 +306,8 @@ export function Web3Provider({ children }) {
         typeof chainHex === "string"
           ? Number.parseInt(chainHex, 16)
           : undefined;
-      if (currentId !== AMOY.chainId) {
-        await ensureChain(AMOY.chainId);
+      if (currentId !== ACTIVE_CHAIN.chainId) {
+        await ensureChain(ACTIVE_CHAIN.chainId);
       } else {
         await refresh();
       }
@@ -382,7 +331,7 @@ export function Web3Provider({ children }) {
     clearWalletConnectSessionLazy().catch(() => {});
     try {
       setProvider(getROProvider());
-      setChainId(AMOY.chainId);
+      setChainId(ACTIVE_CHAIN.chainId);
     } catch {
       setProvider(null);
       setChainId(undefined);

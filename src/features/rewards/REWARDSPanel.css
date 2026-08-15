@@ -91,6 +91,98 @@
   color: #ff5da2;
 }
 
+.rewards-panel__source-pill--dim {
+  background: rgba(130, 148, 180, 0.12);
+  border-color: rgba(130, 148, 180, 0.35);
+  color: #c6d4ec;
+}
+
+.rewards-panel__mainnet-rail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(188px, 1fr));
+  gap: 10px;
+  margin: 8px 0 4px;
+  width: 100%;
+  max-height: clamp(164px, 26vh, 280px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-width: thin;
+}
+
+.rewards-panel__mainnet-item {
+  min-width: 0;
+  min-height: 76px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 13px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 232, 0, 0.2);
+  background:
+    linear-gradient(180deg, rgba(13, 17, 27, 0.9), rgba(7, 10, 16, 0.9));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.rewards-panel__mainnet-item--ok {
+  border-color: rgba(107, 238, 91, 0.3);
+}
+
+.rewards-panel__mainnet-item--warn {
+  border-color: rgba(255, 93, 162, 0.34);
+}
+
+.rewards-panel__mainnet-item--dim {
+  border-color: rgba(130, 148, 180, 0.28);
+}
+
+.rewards-panel__mainnet-label {
+  color: #aeb8ce;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.rewards-panel__mainnet-value {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  color: #f6f7fb;
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.rewards-panel__mainnet-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(93, 220, 255, 0.24);
+  background: rgba(14, 30, 44, 0.82);
+  color: #77e4ff;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  font-size: 0.66rem;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.rewards-panel__mainnet-link:hover {
+  border-color: rgba(93, 220, 255, 0.5);
+  color: #b7f4ff;
+}
+
 .rewards-grid__section-header {
   display: flex;
   align-items: center;
@@ -443,6 +535,11 @@
   gap: 10px;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   width: 100%;
+  max-height: min(46vh, 430px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-width: thin;
 }
 
 .rewards-panel__status {
@@ -493,7 +590,7 @@
     grid-template-columns: 1fr;
   }
   .collection-table .rewards-panel__claim-list {
-    max-height: none;
+    max-height: min(58vh, 480px);
     padding-right: 0;
   }
   .collection-table .rewards-panel__claim-row {
@@ -563,6 +660,11 @@
 .rewards-panel__address-grid {
   display: grid;
   gap: 10px;
+  max-height: min(48vh, 460px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-width: thin;
 }
 
 .rewards-panel__address-row {
@@ -2004,6 +2106,11 @@
 .nft-rewards__status-list {
   display: grid;
   gap: 10px;
+  max-height: min(46vh, 460px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-width: thin;
 }
 
 .nft-rewards__status-row {
@@ -2059,6 +2166,11 @@
 .nft-rewards__leaderboard-grid {
   display: grid;
   gap: 10px;
+  max-height: min(46vh, 460px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-width: thin;
 }
 
 .nft-rewards__leaderboard-row {
@@ -3037,5 +3149,30 @@
 
   .rewards-grid__diagram-image {
     max-height: 68vh;
+  }
+}
+
+/* Keep long rewards tables readable without making the panel vertically huge. */
+.nft-rewards__table-card .biggi-card__body,
+.rewards-grid__table {
+  display: block;
+  max-height: min(52vh, 520px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.nft-rewards__table th,
+.rewards-grid__table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgba(18, 23, 34, 0.98);
+}
+
+@media (max-width: 700px) {
+  .nft-rewards__table-card .biggi-card__body,
+  .rewards-grid__table {
+    max-height: min(58vh, 430px);
   }
 }

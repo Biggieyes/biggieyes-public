@@ -10,7 +10,7 @@ const ARTIFACT_ROOT = path.join(
   "contracts",
   "default_workspace (10)",
   "contracts",
-  "BIGGIEYESOFFICIALTESTNET",
+  "BIGGI_MAINNET_SOURCE",
 );
 const OUT_DIR = path.join(ROOT, "src", "config", "abi");
 

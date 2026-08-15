@@ -1,5 +1,5 @@
 import { JsonRpcProvider, Network, parseUnits } from "ethers";
-import { AMOY, getPrimaryRpcUrl, getROProvider } from "./contract";
+import { ACTIVE_CHAIN, getPrimaryRpcUrl, getROProvider } from "./contract";
 
 const DEFAULT_MIN_PRIORITY_FEE_GWEI = 25;
 const TRUE_VALUES = new Set(["1", "true", "yes", "y", "on"]);
@@ -130,7 +130,7 @@ function resolveFeeProvider(provider) {
   const url = getPrimaryRpcUrl();
   if (url) {
     try {
-      const network = Network.from({ chainId: AMOY.chainId, name: AMOY.name });
+      const network = Network.from({ chainId: ACTIVE_CHAIN.chainId, name: ACTIVE_CHAIN.name });
       const options = { staticNetwork: network };
       const fromEnv = parsePositiveNumber(env("VITE_RPC_BATCH_MAX_COUNT"));
       if (fromEnv != null) {
@@ -138,7 +138,7 @@ function resolveFeeProvider(provider) {
       } else {
         try {
           const host = new URL(String(url)).hostname.toLowerCase();
-          if (host === "polygon-amoy.drpc.org" || host.endsWith(".drpc.org")) {
+          if (host.endsWith(".drpc.org")) {
             options.batchMaxCount = 3;
           }
         } catch {

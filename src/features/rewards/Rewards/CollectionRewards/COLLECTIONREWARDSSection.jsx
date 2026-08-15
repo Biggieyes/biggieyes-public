@@ -165,6 +165,7 @@ function COLLECTIONREWARDSSection({
   stats = null,
   statusRows = [],
   formatDecimal,
+  formatNativeAmount,
   rewardPool = null,
   collectionBalance = null,
   blockPaid = [],
@@ -198,6 +199,13 @@ function COLLECTIONREWARDSSection({
                 maximumFractionDigits: digits,
               })
             : String(value);
+  const formatNativeValue = (value, digits = 2) => {
+    if (typeof formatNativeAmount === "function") {
+      return formatNativeAmount(value, digits);
+    }
+    const formatted = formatValue(value, digits);
+    return formatted === WAITING_VALUE ? WAITING_VALUE : `${formatted} POL`;
+  };
   const formattedMetadata = metadataRows.length
     ? metadataRows
     : [
@@ -219,33 +227,33 @@ function COLLECTIONREWARDSSection({
     {
       label: "Block reward",
       value: hasStats
-        ? `${formatValue(stats.blockReward, 3)} POL`
+        ? formatNativeValue(stats.blockReward, 3)
         : WAITING_VALUE,
     },
     {
       label: "Orange reward",
       value: hasStats
-        ? `${formatValue(stats.orangeReward, 3)} POL`
+        ? formatNativeValue(stats.orangeReward, 3)
         : WAITING_VALUE,
     },
     {
       label: "Rainbow reward",
       value: hasStats
-        ? `${formatValue(stats.rainbowReward, 3)} POL`
+        ? formatNativeValue(stats.rainbowReward, 3)
         : WAITING_VALUE,
     },
     {
       label: "Native pool",
       value:
         rewardPool != null
-          ? `${formatValue(rewardPool, 2)} POL`
+          ? formatNativeValue(rewardPool, 2)
           : WAITING_VALUE,
     },
     {
       label: "Contract balance",
       value:
         collectionBalance != null
-          ? `${formatValue(collectionBalance, 2)} POL`
+          ? formatNativeValue(collectionBalance, 2)
           : WAITING_VALUE,
     },
   ];

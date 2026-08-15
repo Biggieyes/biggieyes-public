@@ -1,38 +1,10 @@
-import * as ethers from "ethers";
+import { formatMappedNative, formatMappedToken } from "./amountFormatters.js";
 
 const DECIMALS = 18;
 const PLACEHOLDER = "--";
 
-function _normalizeBigNumberish(value) {
-  if (value == null) return value;
-  if (
-    typeof value === "bigint" ||
-    typeof value === "number" ||
-    typeof value === "string"
-  ) {
-    return value;
-  }
-  if (value?._isBigNumber || value?.type === "BigNumber") {
-    return value.toString();
-  }
-  if (typeof value?.toString === "function") return value.toString();
-  return value;
-}
-
 function _formatAmount(raw, decimals = DECIMALS) {
-  if (raw === undefined || raw === null)
-    return { display: PLACEHOLDER, numeric: null };
-  try {
-    const formatted = ethers.formatUnits(_normalizeBigNumberish(raw), decimals);
-    const numeric = Number(formatted);
-    const display = Number.isFinite(numeric)
-      ? numeric.toLocaleString("en-US", { maximumFractionDigits: 2 })
-      : formatted;
-    return { display, numeric: Number.isFinite(numeric) ? numeric : null };
-  } catch (error) {
-    console.warn("DRIP mapper formatter failed", error);
-    return { display: PLACEHOLDER, numeric: null };
-  }
+  return formatMappedToken(raw, decimals, 2, PLACEHOLDER);
 }
 
 function _shortAddress(address = "") {
@@ -83,9 +55,17 @@ export function mapDRIPSnapshotToUI(raw) {
   );
   const biggiBalance = _formatAmount(distributorRaw.tokenBalance);
 
-  const nativeBalance = _formatAmount(DRIPLMRaw.nativeBalance);
+  const nativeBalance = formatMappedNative(
+    DRIPLMRaw.nativeBalance,
+    4,
+    PLACEHOLDER,
+  );
   const lmBiggiBalance = _formatAmount(DRIPLMRaw.biggiBalance);
-  const totalNativeForwarded = _formatAmount(DRIPLMRaw.totalNativeForwarded);
+  const totalNativeForwarded = formatMappedNative(
+    DRIPLMRaw.totalNativeForwarded,
+    4,
+    PLACEHOLDER,
+  );
   const totalSoldTokens = _formatAmount(DRIPLMRaw.totalSoldTokens);
 
   const capNumeric = cap.numeric ?? null;
@@ -255,7 +235,8 @@ export function mapDRIPSnapshotToFLOWRows(snapshot) {
     },
     {
       label: "DRIPLM → Reserve (native)",
-      value: snapshot.DRIPLM.totalNativeForwarded || snapshot.DRIPLM.nativeBalance,
+      value:
+        snapshot.DRIPLM.totalNativeForwarded || snapshot.DRIPLM.nativeBalance,
       hint: snapshot.DRIPLM.reserveShort,
       segment: "DRIPLM",
     },
@@ -274,6 +255,3 @@ export function mapDRIPHistoryToChartPoints(history = [], accessor) {
         typeof point.value === "number" && Number.isFinite(point.value),
     );
 }
-
-
-

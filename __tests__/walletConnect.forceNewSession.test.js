@@ -8,12 +8,12 @@ const mocks = vi.hoisted(() => {
   const browserProvider = {
     pollingInterval: 0,
     getSigner: vi.fn().mockResolvedValue(signer),
-    getNetwork: vi.fn().mockResolvedValue({ chainId: 80002n }),
+    getNetwork: vi.fn().mockResolvedValue({ chainId: 137n }),
   };
 
   const staleProvider = {
     session: { topic: "stale-session" },
-    chainId: 80002,
+    chainId: 137,
     enable: vi.fn(),
     connect: vi.fn(),
     disconnect: vi.fn().mockResolvedValue(undefined),
@@ -21,13 +21,13 @@ const mocks = vi.hoisted(() => {
   };
   const freshProvider = {
     session: null,
-    chainId: 80002,
+    chainId: 137,
     enable: vi.fn(),
     connect: vi.fn().mockResolvedValue(undefined),
     disconnect: vi.fn(),
     request: vi.fn(async ({ method }) => {
       if (method === "eth_accounts") return [address];
-      if (method === "eth_chainId") return "0x13882";
+      if (method === "eth_chainId") return "0x89";
       return null;
     }),
   };
@@ -61,17 +61,17 @@ vi.mock("@walletconnect/ethereum-provider", () => ({
 }));
 
 vi.mock("@/shared/utils/contract", () => ({
-  AMOY: {
-    chainId: 80002,
-    hex: "0x13882",
-    name: "Polygon Amoy",
+  ACTIVE_CHAIN: {
+    chainId: 137,
+    hex: "0x89",
+    name: "Polygon mainnet",
     currency: { name: "POL", symbol: "POL", decimals: 18 },
-    explorer: "https://amoy.polygonscan.com",
-    rpcUrl: "https://rpc-amoy.example",
+    explorer: "https://polygonscan.com",
+    rpcUrl: "https://polygon-rpc.example",
   },
-  PUBLIC_AMOY_RPCS: ["https://rpc-amoy.example"],
-  getPrimaryRpcUrl: vi.fn().mockReturnValue("https://rpc-amoy.example"),
-  getWalletRpcUrls: vi.fn().mockReturnValue(["https://rpc-amoy.example"]),
+  PUBLIC_POLYGON_RPCS: ["https://polygon-rpc.example"],
+  getPrimaryRpcUrl: vi.fn().mockReturnValue("https://polygon-rpc.example"),
+  getWalletRpcUrls: vi.fn().mockReturnValue(["https://polygon-rpc.example"]),
 }));
 
 vi.mock("@/shared/utils/mobileWallet", () => ({
@@ -88,7 +88,7 @@ describe("connectWithWalletConnect", () => {
       return mocks.browserProvider;
     });
     mocks.browserProvider.getSigner.mockResolvedValue(mocks.signer);
-    mocks.browserProvider.getNetwork.mockResolvedValue({ chainId: 80002n });
+    mocks.browserProvider.getNetwork.mockResolvedValue({ chainId: 137n });
     mocks.init
       .mockResolvedValueOnce(mocks.staleProvider)
       .mockResolvedValueOnce(mocks.freshProvider);

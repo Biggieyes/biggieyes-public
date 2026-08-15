@@ -15,11 +15,13 @@ import { buildBlockImagePath } from "@/shared/utils/images";
  * - pouÄąÄľÄ‚Â­vÄ‚Ë‡ÄąË‡ svÄ‚Â© factories: getMain/getROProvider/getReaderRO atd.
  */
 import {
-  AMOY,
+  ACTIVE_CHAIN,
   clearInjectedProvider,
-  ensureAmoy,
+  ensurePolygon,
   getReadOnlyMain as getReadOnlyContract,
   getMainRW,
+  getReadOnlyTicketHub,
+  getTicketHub,
   getLMRO as getReadOnlyLiquidityContract,
   getLM as getLiquidityContract,
   getFrontendSnapshotLiteActive,
@@ -34,7 +36,7 @@ import {
   setInjectedProvider,
   getVRFRO,
   resetROProvider,
-  syncAmoyRpcIfNeeded,
+  syncPolygonRpcIfNeeded,
 } from "@/shared/utils/contract";
 import {
   clearPreferredRpc,
@@ -82,10 +84,7 @@ import {
   isLikelyMetaMaskSdkProvider,
   startInjectedProviderDiscovery,
 } from "@/shared/utils/injectedProviders";
-import {
-  getWalletConnectMobileLinks,
-  shouldUseMetaMaskMobileFallback,
-} from "@/shared/utils/mobileWallet";
+import { shouldUseMetaMaskMobileFallback } from "@/shared/utils/mobileWallet";
 
 import "./styles/biggi-token.skin.css";
 
@@ -221,6 +220,75 @@ const bgNameFromIdx = (val) => {
   return idx == null ? null : BACKGROUND_NAMES[idx];
 };
 
+const resolvePanelAltFromRaw = (raw) => {
+  const key = String(raw || "")
+    .trim()
+    .toLowerCase();
+  if (!key) return null;
+  if (["rewards", "reward", "weekly"].includes(key)) return "REWARDS";
+  if (["collection", "blocks", "nft"].includes(key)) return "COLLECTION";
+  if (["vrf", "mint", "vrf-mint", "vrf mint"].includes(key))
+    return "VRF MINT";
+  if (
+    [
+      "ecosystem",
+      "biggi ecosystem",
+      "token",
+      "tokenomics",
+      "biggi",
+    ].includes(key)
+  )
+    return "BIGGI ECOSYSTEM";
+  if (["users", "user", "wallet"].includes(key)) return "USERS";
+  if (
+    [
+      "community",
+      "community center",
+      "community-center",
+      "communitycenter",
+      "expansion",
+    ].includes(key)
+  ) {
+    return "COMMUNITY CENTER";
+  }
+  return null;
+};
+
+const readPanelStateFromHref = (href) => {
+  if (!href) return { panelAlt: null, wantsInfo: false };
+
+  try {
+    const url = new URL(href);
+    const params = new URLSearchParams(url.search);
+    const rawHash = url.hash ? String(url.hash) : "";
+    const hash = rawHash.replace(/^#/, "");
+
+    if (hash.includes("?")) {
+      const query = hash.split("?")[1];
+      if (query) {
+        for (const [key, value] of new URLSearchParams(query)) {
+          params.set(key, value);
+        }
+      }
+    } else if (hash && !hash.startsWith("/")) {
+      for (const [key, value] of new URLSearchParams(hash)) {
+        params.set(key, value);
+      }
+    }
+
+    const panelAlt = resolvePanelAltFromRaw(params.get("panel") || params.get("p"));
+    const wantsInfo = ["1", "true", "yes", "open"].includes(
+      String(params.get("info") || params.get("i") || "")
+        .trim()
+        .toLowerCase(),
+    );
+
+    return { panelAlt, wantsInfo };
+  } catch {
+    return { panelAlt: null, wantsInfo: false };
+  }
+};
+
 const bgNameFromCode = (val) => {
   if (!val) return null;
   const code = String(val).toUpperCase();
@@ -269,6 +337,17 @@ const requestWithTimeout = (promise, ms, timeoutMessage = "REQUEST_TIMEOUT") =>
       .catch(reject)
       .finally(() => clearTimeout(t));
   });
+
+const formatRetryDelay = (totalSeconds) => {
+  const safeSeconds = Math.max(0, Math.ceil(Number(totalSeconds) || 0));
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+  if (minutes > 0 && seconds > 0) return `${minutes}m ${seconds}s`;
+  if (minutes > 0) return `${minutes}m`;
+  return `${seconds}s`;
+};
+
+const RETRY_PENDING_MINT_SELECTOR = "e0230165";
 
 const parseNftInfo = (info) => {
   if (!info) return null;
@@ -399,15 +478,28 @@ const LAST_MINTED_DEDUPE_MS = 10_000;
 const FULL_HISTORY = isFullHistoryEnabled();
 
 const WALLET_CACHE_TTL = 5 * 60 * 1000;
-const WALLET_CACHE_VERSION = "v5";
-const TOP_FIRST_CACHE_VERSION = "v1";
-const LAST_MINTED_CACHE_VERSION = "v1";
+const WALLET_CACHE_VERSION = "v6-mainnet";
+const TOP_FIRST_CACHE_VERSION = "v2-mainnet";
+const LAST_MINTED_CACHE_VERSION = "v2-mainnet";
 const PENDING_REFERRAL_CACHE_VERSION = "v1";
 const PENDING_REFERRAL_TTL = 30 * 24 * 60 * 60 * 1000;
 const CONSUMED_REFERRAL_CACHE_VERSION = "v1";
 
+function activeCacheChainId() {
+  return Number(ADDR?.CHAIN_ID || ACTIVE_CHAIN?.chainId || 137) || 137;
+}
+
+function activeCacheMainContract() {
+  return String(ADDR?.COLLECTION_VRF || ADDR?.MAIN || "").toLowerCase();
+}
+
+function activeCacheScope() {
+  const contract = activeCacheMainContract();
+  return `${activeCacheChainId()}_${contract || "main"}`;
+}
+
 function walletCacheKey(addr) {
-  return `biggi_wallet_${WALLET_CACHE_VERSION}_${String(addr || "").toLowerCase()}`;
+  return `biggi_wallet_${WALLET_CACHE_VERSION}_${activeCacheScope()}_${String(addr || "").toLowerCase()}`;
 }
 function loadWalletCache(addr) {
   try {
@@ -443,7 +535,7 @@ function clearWalletCache(addr) {
 }
 
 function topFirstCacheKey(addr) {
-  return `biggi_top_first_${TOP_FIRST_CACHE_VERSION}_${String(addr || "").toLowerCase()}`;
+  return `biggi_top_first_${TOP_FIRST_CACHE_VERSION}_${activeCacheScope()}_${String(addr || "").toLowerCase()}`;
 }
 
 function loadTopFirstCache(addr) {
@@ -477,7 +569,7 @@ function saveTopFirstCache(addr, tokenId) {
 }
 
 function lastMintedCacheKey() {
-  return `biggi_last_minted_${LAST_MINTED_CACHE_VERSION}`;
+  return `biggi_last_minted_${LAST_MINTED_CACHE_VERSION}_${activeCacheScope()}`;
 }
 
 function pendingReferralCacheKey() {
@@ -569,6 +661,16 @@ function normalizeLastMintedPayload(payload) {
   };
 }
 
+function scopeLastMintedPayload(payload) {
+  const normalized = normalizeLastMintedPayload(payload);
+  if (!normalized) return null;
+  return {
+    ...normalized,
+    chainId: activeCacheChainId(),
+    contractAddress: activeCacheMainContract(),
+  };
+}
+
 function isUsableLastMintedImage(image) {
   const normalized = String(image || "").trim();
   if (!normalized) return false;
@@ -590,15 +692,27 @@ function isCompleteLastMintedPayload(payload) {
   );
 }
 
+function isCurrentScopedLastMintedPayload(payload) {
+  if (!isCompleteLastMintedPayload(payload)) return false;
+  if (Number(payload?.chainId) !== activeCacheChainId()) return false;
+  const expectedContract = activeCacheMainContract();
+  if (
+    expectedContract &&
+    String(payload?.contractAddress || "").toLowerCase() !== expectedContract
+  ) {
+    return false;
+  }
+  return true;
+}
+
 function loadLastMintedCache() {
   try {
     if (typeof window === "undefined" || !window.localStorage) return null;
     const raw = window.localStorage.getItem(lastMintedCacheKey());
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    const normalized = normalizeLastMintedPayload(parsed);
-    if (!isCompleteLastMintedPayload(normalized)) return null;
-    return normalized;
+    if (!isCurrentScopedLastMintedPayload(parsed)) return null;
+    return scopeLastMintedPayload(parsed);
   } catch {
     return null;
   }
@@ -611,7 +725,7 @@ function saveLastMintedCache(payload) {
     if (typeof window === "undefined" || !window.localStorage) return;
     window.localStorage.setItem(
       lastMintedCacheKey(),
-      JSON.stringify(normalized),
+      JSON.stringify(scopeLastMintedPayload(normalized)),
     );
   } catch {
     // ignore
@@ -652,6 +766,25 @@ function toNumEth(v) {
   } catch {
     return null;
   }
+}
+
+function toNumInt(v) {
+  try {
+    if (v == null) return null;
+    if (typeof v === "bigint") return Number(v);
+    if (typeof v === "number") return Number.isFinite(v) ? Math.trunc(v) : null;
+    if (typeof v === "string") {
+      const n = Number(v);
+      return Number.isFinite(n) ? Math.trunc(n) : null;
+    }
+    if (typeof v?.toString === "function") {
+      const n = Number(v.toString());
+      return Number.isFinite(n) ? Math.trunc(n) : null;
+    }
+  } catch {
+    return null;
+  }
+  return null;
 }
 
 function safeLogArg(args, key, index) {
@@ -1039,6 +1172,8 @@ const ICONS = [
     src: "/images/icons/rewards.optimized.png",
     fallbackSrc: "/images/icons/rewards.fallback.png",
     alt: "REWARDS",
+    title: "Rewards: token, NFT, and collection rewards",
+    ariaLabel: "Open Rewards: token, NFT, and collection rewards",
     modalText: MODAL_TEXTS.REWARDS || "",
     eager: true,
   },
@@ -1046,6 +1181,8 @@ const ICONS = [
     src: "/images/icons/collection.optimized.png",
     fallbackSrc: "/images/icons/collection.fallback.png",
     alt: "COLLECTION",
+    title: "Collections: VRF and public collection status",
+    ariaLabel: "Open Collections: VRF and public collection status",
     modalText: MODAL_TEXTS.COLLECTION || "",
     eager: true,
   },
@@ -1053,6 +1190,8 @@ const ICONS = [
     src: "/images/icons/mint.optimized.png",
     fallbackSrc: "/images/icons/mint.fallback.png",
     alt: "VRF MINT",
+    title: "VRF Mint: ticket redeem, randomness, and reveal status",
+    ariaLabel: "Open VRF Mint: ticket redeem, randomness, and reveal status",
     modalText: MODAL_TEXTS.mint || "",
     eager: true,
   },
@@ -1060,6 +1199,9 @@ const ICONS = [
     src: "/images/icons/token.optimized.png",
     fallbackSrc: "/images/icons/token.fallback.png",
     alt: "BIGGI ECOSYSTEM",
+    title: "BIGGI Ecosystem: tokenomics, treasury, buyback, drip, and liquidity",
+    ariaLabel:
+      "Open BIGGI Ecosystem: tokenomics, treasury, buyback, drip, and liquidity",
     modalText: MODAL_TEXTS.chance || "",
     eager: true,
   },
@@ -1067,6 +1209,8 @@ const ICONS = [
     src: "/images/icons/users.optimized.png",
     fallbackSrc: "/images/icons/users.fallback.png",
     alt: "USERS",
+    title: "User panel: wallet NFTs, tickets, rewards, and transactions",
+    ariaLabel: "Open User panel: wallet NFTs, tickets, rewards, and transactions",
     modalText: "",
     eager: true,
   },
@@ -1074,6 +1218,8 @@ const ICONS = [
     src: "/images/icons/expansion.optimized.png",
     fallbackSrc: "/images/icons/expansion.fallback.png",
     alt: "COMMUNITY CENTER",
+    title: "Community Center: events, voting, moderation, and claims",
+    ariaLabel: "Open Community Center: events, voting, moderation, and claims",
     modalText: MODAL_TEXTS.COMMUNITYCENTER || MODAL_TEXTS.expansion || "",
     eager: true,
   },
@@ -1300,10 +1446,40 @@ async function assertContractDeployed(contract, provider, label = "Contract") {
   }
   if (!code || code === "0x" || code === "0x0") {
     throw new Error(
-      `${label} not found on current network (address ${addr}). Switch to Polygon Amoy (chainId 80002) or update addresses.`,
+      `${label} not found on current network (address ${addr}). Switch to Polygon mainnet (chainId 137) or update addresses.`,
     );
   }
   return addr;
+}
+
+async function contractSupportsFunctionSelector(
+  contract,
+  provider,
+  selector,
+) {
+  const addr = await resolveContractAddress(contract);
+  if (!addr || !provider || typeof provider.getCode !== "function") {
+    return false;
+  }
+  const needle = String(selector || "")
+    .replace(/^0x/i, "")
+    .toLowerCase();
+  if (!needle) return false;
+
+  let code = "";
+  try {
+    code = await provider.getCode(addr);
+  } catch (err) {
+    if (!isRateLimitedRpcError(err)) return false;
+    resetROProvider();
+    const fallbackProvider = getContractCheckProvider(provider);
+    if (!fallbackProvider || typeof fallbackProvider.getCode !== "function") {
+      return false;
+    }
+    code = await fallbackProvider.getCode(addr).catch(() => "");
+  }
+
+  return String(code || "").toLowerCase().includes(needle);
 }
 
 function isMissingRevertDataError(err) {
@@ -1661,7 +1837,13 @@ function decodeKnownCustomError(err) {
 export default function AppCore() {
   const isMobile = useIsMobile(700);
 
-  const [openNavIdx, setOpenNavIdx] = React.useState(null);
+  const [openNavIdx, setOpenNavIdx] = React.useState(() => {
+    if (typeof window === "undefined") return null;
+    const { panelAlt } = readPanelStateFromHref(window.location.href);
+    if (!panelAlt) return null;
+    const idx = ICONS.findIndex((icon) => icon.alt === panelAlt);
+    return idx >= 0 ? idx : null;
+  });
   const [rewardsPanelHeader, setRewardsPanelHeader] = React.useState({
     title: "TOKEN REWARDS",
     accent: "#ffe800",
@@ -1674,7 +1856,11 @@ export default function AppCore() {
     title: "FLOW",
     accent: "#ffe800",
   });
-  const [autoOpenInfoPanel, setAutoOpenInfoPanel] = React.useState(null);
+  const [autoOpenInfoPanel, setAutoOpenInfoPanel] = React.useState(() => {
+    if (typeof window === "undefined") return null;
+    const { panelAlt, wantsInfo } = readPanelStateFromHref(window.location.href);
+    return wantsInfo && panelAlt ? panelAlt : null;
+  });
   const [walletAddress, setWalletAddress] = React.useState("");
   const [pendingReferral, setPendingReferral] = React.useState(() =>
     loadPendingReferralCache(),
@@ -1689,6 +1875,14 @@ export default function AppCore() {
 
   const [ticketMinted, setTicketMinted] = React.useState(0);
   const [maxTickets] = React.useState(550);
+  const [ticketHubStatus, setTicketHubStatus] = React.useState({
+    saleCap: null,
+    marketingCap: null,
+    saleMinted: null,
+    marketingMinted: null,
+    paused: null,
+    distributor: "",
+  });
 
   const [blockMintCounts, setBlockMintCounts] = React.useState(
     new Array(10).fill(0),
@@ -1760,6 +1954,10 @@ export default function AppCore() {
   const referralRegisterInFlightRef = React.useRef("");
   const latestWalletItemsRef = React.useRef([]);
   const lastRedeemTicketIdRef = React.useRef(null);
+  const retryPendingSupportRef = React.useRef({
+    address: "",
+    supported: null,
+  });
   const walletConnectResumeAllowedRef = React.useRef(false);
   React.useEffect(() => {
     latestVRFUIDataRef.current = VRFUIData;
@@ -1770,6 +1968,33 @@ export default function AppCore() {
   React.useEffect(() => {
     walletAddressRef.current = String(walletAddress || "");
   }, [walletAddress]);
+
+  const resolveRetryPendingSupport = React.useCallback(
+    async (contract, provider) => {
+      const addr = await resolveContractAddress(contract);
+      const addrKey = String(addr || "").toLowerCase();
+      const cached = retryPendingSupportRef.current;
+      if (
+        addrKey &&
+        cached?.supported != null &&
+        String(cached.address || "").toLowerCase() === addrKey
+      ) {
+        return Boolean(cached.supported);
+      }
+
+      const supported = await contractSupportsFunctionSelector(
+        contract,
+        provider,
+        RETRY_PENDING_MINT_SELECTOR,
+      );
+      retryPendingSupportRef.current = {
+        address: addrKey,
+        supported,
+      };
+      return supported;
+    },
+    [],
+  );
   React.useEffect(() => {
     latestWalletItemsRef.current = Array.isArray(myNFTs) ? myNFTs : [];
   }, [myNFTs]);
@@ -1881,30 +2106,6 @@ export default function AppCore() {
     };
   }, []);
 
-  const resolvePanelAlt = React.useCallback((raw) => {
-    const key = String(raw || "")
-      .trim()
-      .toLowerCase();
-    if (!key) return null;
-    if (["rewards", "reward", "weekly"].includes(key)) return "REWARDS";
-    if (["collection", "blocks", "nft"].includes(key)) return "COLLECTION";
-    if (["vrf", "mint", "vrf-mint", "vrf mint"].includes(key))
-      return "VRF MINT";
-    if (["ecosystem", "token", "tokenomics", "biggi"].includes(key))
-      return "BIGGI ECOSYSTEM";
-    if (["users", "user", "wallet"].includes(key)) return "USERS";
-    if (
-      [
-        "community",
-        "community-center",
-        "communitycenter",
-        "expansion",
-      ].includes(key)
-    )
-      return "COMMUNITY CENTER";
-    return null;
-  }, []);
-
   const hasSeenInfoGate = React.useCallback(() => {
     if (typeof window === "undefined") return false;
     try {
@@ -2011,35 +2212,13 @@ export default function AppCore() {
     if (typeof window === "undefined") return undefined;
 
     const parseInfoLink = () => {
-      const url = new URL(window.location.href);
-      const params = new URLSearchParams(url.search);
-      const rawHash = url.hash ? String(url.hash) : "";
-      const hash = rawHash.replace(/^#/, "");
-
-      if (hash.includes("?")) {
-        const q = hash.split("?")[1];
-        if (q) {
-          for (const [k, v] of new URLSearchParams(q)) params.set(k, v);
-        }
-      } else if (hash && !hash.startsWith("/")) {
-        for (const [k, v] of new URLSearchParams(hash)) params.set(k, v);
-      }
-
-      const panelRaw = params.get("panel") || params.get("p");
-      if (!panelRaw) return;
-
-      const alt = resolvePanelAlt(panelRaw);
+      const { panelAlt: alt, wantsInfo } = readPanelStateFromHref(
+        window.location.href,
+      );
       if (!alt) return;
 
       const idx = ICONS.findIndex((icon) => icon.alt === alt);
       if (idx >= 0) openPanelAtIndex(idx);
-
-      const infoRaw = params.get("info") || params.get("i");
-      const wantsInfo = ["1", "true", "yes", "open"].includes(
-        String(infoRaw || "")
-          .trim()
-          .toLowerCase(),
-      );
       if (wantsInfo) setAutoOpenInfoPanel(alt);
     };
 
@@ -2050,12 +2229,25 @@ export default function AppCore() {
       window.removeEventListener("hashchange", parseInfoLink);
       window.removeEventListener("popstate", parseInfoLink);
     };
-  }, [openPanelAtIndex, resolvePanelAlt]);
+  }, [openPanelAtIndex]);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
 
     const url = new URL(window.location.href);
+    const locationState = readPanelStateFromHref(window.location.href);
+
+    // Keep deep-link query params intact until the app state catches up.
+    if (locationState.panelAlt && locationState.panelAlt !== navAlt) return;
+    if (
+      locationState.wantsInfo &&
+      locationState.panelAlt &&
+      locationState.panelAlt === navAlt &&
+      autoOpenInfoPanel !== navAlt
+    ) {
+      return;
+    }
+
     const params = new URLSearchParams(url.search);
 
     if (navAlt) {
@@ -2106,6 +2298,48 @@ export default function AppCore() {
     },
     [],
   );
+
+  const readTicketHubStatus = React.useCallback(async (ticketHubArg = null) => {
+    const ticketHub = ticketHubArg || getReadOnlyTicketHub();
+    if (!ticketHub) return null;
+
+    const read = async (methodName) => {
+      const fn = ticketHub?.[methodName];
+      if (typeof fn !== "function") return null;
+      try {
+        return await fn();
+      } catch {
+        return null;
+      }
+    };
+
+    const [
+      saleCap,
+      marketingCap,
+      saleMinted,
+      marketingMinted,
+      paused,
+      distributor,
+    ] = await Promise.all([
+      read("saleCap"),
+      read("marketingCap"),
+      read("saleMinted"),
+      read("marketingMinted"),
+      read("paused"),
+      read("distributor"),
+    ]);
+
+    const next = {
+      saleCap: toNumInt(saleCap),
+      marketingCap: toNumInt(marketingCap),
+      saleMinted: toNumInt(saleMinted),
+      marketingMinted: toNumInt(marketingMinted),
+      paused: paused == null ? null : Boolean(paused),
+      distributor: String(distributor || ""),
+    };
+    setTicketHubStatus(next);
+    return next;
+  }, []);
 
   const recoverRpcConnectivity = React.useCallback(async (context = "rpc") => {
     clearPreferredRpc();
@@ -2250,11 +2484,11 @@ export default function AppCore() {
             rotatePreferredRpc({ preferPublicFirst: true });
             const injected = getInjectedProvider();
             if (injected) {
-              await syncAmoyRpcIfNeeded(injected, {
+              await syncPolygonRpcIfNeeded(injected, {
                 force: true,
                 preferPublicFirst: true,
               });
-              await ensureAmoy(injected);
+              await ensurePolygon(injected);
               walletRpcResyncedAtRef.current = Date.now();
             }
           } catch (rpcErr) {
@@ -2284,7 +2518,7 @@ export default function AppCore() {
       if (recentlyResynced) {
         return "MetaMask RPC is rate-limited (429). Wallet RPC endpoints were refreshed automatically; wait a few seconds and retry.";
       }
-      return "MetaMask RPC is rate-limited (429). Wait a few seconds and retry; if it persists, switch Polygon Amoy RPC in MetaMask.";
+      return "MetaMask RPC is rate-limited (429). Wait a few seconds and retry; if it persists, switch Polygon mainnet RPC in MetaMask.";
     }
 
     const lowerMsg = String(
@@ -2792,6 +3026,8 @@ export default function AppCore() {
     // This prevents stale/misaligned reader arrays from freezing dynamic prices.
     try {
       const main = contractRef.current || getReadOnlyContract();
+      const ticketHub = getReadOnlyTicketHub();
+      readTicketHubStatus(ticketHub).catch(() => {});
 
       if (!snapshotUsed) {
         const priceCandidates = [
@@ -2802,7 +3038,7 @@ export default function AppCore() {
         ];
         let priceWei = null;
         for (const fn of priceCandidates) {
-          const f = main?.[fn];
+          const f = ticketHub?.[fn] || main?.[fn];
           if (typeof f !== "function") continue;
           try {
             const v = await f();
@@ -2815,7 +3051,7 @@ export default function AppCore() {
         if (priceWei != null) setTicketPrice(toNumEth(priceWei));
 
         try {
-          const tm = await main.ticketMinted?.();
+          const tm = await ticketHub.ticketMinted?.();
           setTicketMinted(Number(tm ?? 0));
         } catch {}
         try {
@@ -2844,6 +3080,7 @@ export default function AppCore() {
     }
   }, [
     readMainBlockStats,
+    readTicketHubStatus,
     isRpcBackoffActive,
     engageRpcBackoff,
     recoverRpcConnectivity,
@@ -3010,6 +3247,7 @@ export default function AppCore() {
   /* ====================================================================== */
 
   const resolveTicketPriceWei = React.useCallback(async () => {
+    const ticketHub = getReadOnlyTicketHub();
     const c = contractRef.current || getReadOnlyContract();
     const candidates = [
       "getTicketPrice",
@@ -3017,6 +3255,16 @@ export default function AppCore() {
       "getTicketPriceWei",
       "ticketPriceWei",
     ];
+
+    for (const n of candidates) {
+      const f = ticketHub?.[n];
+      if (typeof f === "function") {
+        try {
+          const v = await f();
+          if (v != null) return v;
+        } catch {}
+      }
+    }
 
     for (const n of candidates) {
       const f = c?.[n];
@@ -3251,7 +3499,7 @@ export default function AppCore() {
   const fetchMyTickets = React.useCallback(
     async (addr) => {
       try {
-        const contract = contractRef.current || getReadOnlyContract();
+        const contract = getReadOnlyTicketHub();
         const reader = getCachedReaderInstance("main");
         const provider = getProviderFor(contract);
         const metaReadParallelism = getRpcReadParallelism(provider, 4);
@@ -5137,12 +5385,7 @@ export default function AppCore() {
         } catch {}
 
         if (total != null && total <= 0) {
-          setLastMinted((prev) => {
-            if (isCompleteLastMintedPayload(prev)) return prev;
-            const cached = loadLastMintedCache();
-            if (cached) return cached;
-            return { ...EMPTY_LAST_MINTED };
-          });
+          setLastMinted({ ...EMPTY_LAST_MINTED });
           return;
         }
 
@@ -5540,7 +5783,7 @@ export default function AppCore() {
 
         if (!tokenId || tokenId === "0") {
           setLastMinted((prev) => {
-            if (isCompleteLastMintedPayload(prev)) return prev;
+            if (isCurrentScopedLastMintedPayload(prev)) return prev;
             const cached = loadLastMintedCache();
             if (cached) return cached;
             return { ...EMPTY_LAST_MINTED };
@@ -5577,7 +5820,7 @@ export default function AppCore() {
           }
           if (looksLikeTicketMeta(meta)) {
             setLastMinted((prev) => {
-              if (isCompleteLastMintedPayload(prev)) return prev;
+              if (isCurrentScopedLastMintedPayload(prev)) return prev;
               const cached = loadLastMintedCache();
               if (cached) return cached;
               return { ...EMPTY_LAST_MINTED };
@@ -5807,8 +6050,10 @@ export default function AppCore() {
               backgroundName: nextBackground,
             };
             const nextComplete = isCompleteLastMintedPayload(nextCandidate);
-            const prevComplete = isCompleteLastMintedPayload(prev);
-            if (nextComplete) return nextCandidate;
+            const prevComplete = isCurrentScopedLastMintedPayload(prev);
+            if (nextComplete) {
+              return scopeLastMintedPayload(nextCandidate) || nextCandidate;
+            }
             // Never replace a complete LiveStats card with partial/blank data.
             if (prevComplete) return prev;
             const cached = loadLastMintedCache();
@@ -5878,7 +6123,14 @@ export default function AppCore() {
           }
         }
 
-        setLastMinted({ tokenId, image, blockName, backgroundName });
+        setLastMinted(
+          scopeLastMintedPayload({ tokenId, image, blockName, backgroundName }) || {
+            tokenId,
+            image,
+            blockName,
+            backgroundName,
+          },
+        );
       } catch (e) {
         const msg = String(e?.message || "");
         if (/invalid block range params/i.test(msg)) {
@@ -6252,13 +6504,19 @@ export default function AppCore() {
       const provider = getProviderFor(c);
       if (!provider) throw new Error("Provider not available");
       const net = await provider.getNetwork();
+      const retryPendingSupported = await resolveRetryPendingSupport(
+        c,
+        provider,
+      ).catch(() => false);
 
       let params = {};
       let subId = "";
+      let subIdMatches = null;
 
       try {
         const vrf = getVRFRO(provider);
-        const [keyHash, conf, numWords, gas, sub, coord] = await Promise.all([
+        const [keyHash, conf, numWords, gas, sub, coord, retryDelay] =
+          await Promise.all([
           vrf?.keyHash
             ? vrf.keyHash().catch(() => "")
             : c.keyHash().catch(() => ""),
@@ -6273,16 +6531,49 @@ export default function AppCore() {
             ? vrf.subId().catch(() => "")
             : (c.s_subscriptionId?.().catch?.(() => "") ?? ""),
           vrf?.coordinator ? vrf.coordinator().catch(() => "") : "",
+          c.pendingRetryDelay?.().catch?.(() => 0) ?? 0,
         ]);
 
+        const expectedKeyHash = ADDR.VRF_KEY_HASH || "";
+        const expectedCoordinator = ADDR.VRF_COORDINATOR || "";
+        const expectedSubId = ADDR.VRF_SUB_ID || "";
+        const liveKeyHash = keyHash || "";
+        const liveCoordinator = coord || "";
+        const liveSubId = sub?.toString?.() || "";
+        const keyHashMatches =
+          liveKeyHash && expectedKeyHash
+            ? String(liveKeyHash).toLowerCase() ===
+              String(expectedKeyHash).toLowerCase()
+            : null;
+        const coordinatorMatches =
+          liveCoordinator && expectedCoordinator
+            ? String(liveCoordinator).toLowerCase() ===
+              String(expectedCoordinator).toLowerCase()
+            : null;
+
         params = {
-          keyHash: keyHash || "",
+          keyHash: liveKeyHash || expectedKeyHash,
+          keyHashLive: liveKeyHash,
+          expectedKeyHash,
+          keyHashMatches,
           confirmations: Number(conf ?? 3),
           numWords: Number(numWords ?? 1),
           callbackGasLimit: Number(gas ?? 300000),
-          coordinator: coord || "",
+          coordinator: liveCoordinator || expectedCoordinator,
+          coordinatorLive: liveCoordinator,
+          expectedCoordinator,
+          coordinatorMatches,
+          collection: ADDR.COLLECTION_VRF || ADDR.MAIN || "",
+          ticketHub: ADDR.TICKET_HUB || "",
+          vrfRouter: ADDR.VRF_ROUTER || "",
+          pendingRetryDelaySec: Number(retryDelay ?? 0),
+          retryPendingSupported,
         };
-        subId = sub?.toString?.() || "";
+        subId = liveSubId || expectedSubId;
+        subIdMatches =
+          liveSubId && expectedSubId
+            ? String(liveSubId) === String(expectedSubId)
+            : null;
       } catch {}
 
       let last = {
@@ -6322,19 +6613,40 @@ export default function AppCore() {
 
           if (hasPendingOnchain) {
             let ts = "";
+            let requestedAtMs = null;
+            let resolvedPendingTicketId = "";
             try {
               const tsBN = await c.pendingRequestedAt(pendingReqIdBN);
               const tsNum = Number(tsBN?.toString?.() || 0);
-              if (tsNum) ts = new Date(tsNum * 1000).toLocaleString();
+              if (tsNum) {
+                requestedAtMs = tsNum * 1000;
+                ts = new Date(requestedAtMs).toLocaleString();
+              }
+            } catch {}
+
+            try {
+              if (typeof c.pendingTicketId === "function") {
+                const pendingTicket =
+                  await c.pendingTicketId(pendingReqIdBN);
+                const pendingTicketStr = pendingTicket?.toString?.() || "";
+                if (pendingTicketStr && pendingTicketStr !== "0") {
+                  resolvedPendingTicketId = pendingTicketStr;
+                  setPendingTicketId(pendingTicketStr);
+                  pendingTicketIdRef.current = pendingTicketStr;
+                }
+              }
             } catch {}
 
             last = {
               requestId: ridStr,
               status: "pending",
               requestedAt: ts,
+              requestedAtMs,
               txHash: "",
               blockNumber: undefined,
               randomWords: [],
+              pendingTicketId:
+                resolvedPendingTicketId || pendingTicketIdRef.current || "",
             };
           } else if (history.length) {
             const fulfilled = history.find((h) => h.status === "fulfilled");
@@ -6362,7 +6674,11 @@ export default function AppCore() {
           : `chainId ${net.chainId}`,
         chainId: Number(net?.chainId),
         userAddress: walletAddress || "",
-        subscription: { id: subId },
+        subscription: {
+          id: subId,
+          expectedId: ADDR.VRF_SUB_ID || "",
+          matches: subIdMatches,
+        },
         params,
         last,
         history,
@@ -6383,6 +6699,7 @@ export default function AppCore() {
     isTransientRpcReadError,
     engageRpcBackoff,
     recoverRpcConnectivity,
+    resolveRetryPendingSupport,
   ]);
 
   /* ====================================================================== */
@@ -6504,7 +6821,7 @@ export default function AppCore() {
           walletAddressRef.current = a;
           setWalletAddress(a);
           setLastMinted((prev) => {
-            if (isCompleteLastMintedPayload(prev)) return prev;
+            if (isCurrentScopedLastMintedPayload(prev)) return prev;
             const cached = loadLastMintedCache();
             if (cached) return cached;
             return { ...EMPTY_LAST_MINTED };
@@ -6608,7 +6925,7 @@ export default function AppCore() {
         setWalletAddress(addr);
         walletAddressRef.current = addr;
         setLastMinted((prev) => {
-          if (isCompleteLastMintedPayload(prev)) return prev;
+          if (isCurrentScopedLastMintedPayload(prev)) return prev;
           const cached = loadLastMintedCache();
           if (cached) return cached;
           return { ...EMPTY_LAST_MINTED };
@@ -6651,6 +6968,7 @@ export default function AppCore() {
   const connectMetaMask = React.useCallback(async () => {
     if (connectInFlightRef.current) return;
     connectInFlightRef.current = true;
+    walletConnectResumeAllowedRef.current = false;
     try {
       startInjectedProviderDiscovery();
       const metaMaskCandidates = getInjectedProviderCandidates({
@@ -6670,13 +6988,6 @@ export default function AppCore() {
       );
 
       if (!candidates.length) {
-        if (shouldUseMetaMaskMobileFallback()) {
-          await connectViaWalletConnect({
-            mobileLinks: getWalletConnectMobileLinks({ preferMetaMask: true }),
-            startInfo: true,
-          });
-          return;
-        }
         console.warn(
           "connectMetaMask: no direct MetaMask extension provider candidates found",
           {
@@ -6771,13 +7082,6 @@ export default function AppCore() {
       }
 
       if (!eth || !addr) {
-        if (shouldUseMetaMaskMobileFallback()) {
-          await connectViaWalletConnect({
-            mobileLinks: getWalletConnectMobileLinks({ preferMetaMask: true }),
-            startInfo: true,
-          });
-          return;
-        }
         console.warn(
           "connectMetaMask: candidate attempts failed",
           candidates.map(describeInjectedProvider),
@@ -6789,28 +7093,28 @@ export default function AppCore() {
       walletConnectResumeAllowedRef.current = false;
       setInjectedProvider(eth);
       try {
-        await syncAmoyRpcIfNeeded(eth);
+        await syncPolygonRpcIfNeeded(eth);
       } catch {
         // non-fatal: continue connect flow even when chain metadata sync fails
       }
 
       const injectedProvider = new BrowserProvider(eth, "any");
       const net = await injectedProvider.getNetwork().catch(() => null);
-      let amoyReady = Number(net?.chainId) === 80002;
-      if (!amoyReady) {
+      let polygonReady = Number(net?.chainId) === ACTIVE_CHAIN.chainId;
+      if (!polygonReady) {
         try {
-          await ensureAmoy(eth);
-          amoyReady = true;
+          await ensurePolygon(eth);
+          polygonReady = true;
         } catch (switchErr) {
-          console.warn("connectMetaMask: ensureAmoy failed", switchErr);
-          amoyReady = false;
+          console.warn("connectMetaMask: ensurePolygon failed", switchErr);
+          polygonReady = false;
         }
       }
 
       setWalletAddress(addr);
       walletAddressRef.current = addr;
       setLastMinted((prev) => {
-        if (isCompleteLastMintedPayload(prev)) return prev;
+        if (isCurrentScopedLastMintedPayload(prev)) return prev;
         const cached = loadLastMintedCache();
         if (cached) return cached;
         return { ...EMPTY_LAST_MINTED };
@@ -6830,9 +7134,9 @@ export default function AppCore() {
 
       attachEventListeners(addr);
 
-      if (!amoyReady) {
+      if (!polygonReady) {
         alert(
-          "Your wallet is connected, but the network did not switch to Polygon Amoy. Switch it manually in MetaMask.",
+          "Your wallet is connected, but the network did not switch to Polygon mainnet. Switch it manually in MetaMask.",
         );
       }
     } catch (err) {
@@ -6883,7 +7187,6 @@ export default function AppCore() {
     fetchLastMinted,
     refreshVRFPanel,
     attachEventListeners,
-    connectViaWalletConnect,
     restoreTopFirstForAddress,
     startInfoGate,
   ]);
@@ -6952,7 +7255,7 @@ export default function AppCore() {
       walletAddressRef.current = "";
       setWalletAddress("");
       setLastMinted((prev) => {
-        if (isCompleteLastMintedPayload(prev)) return prev;
+        if (isCurrentScopedLastMintedPayload(prev)) return prev;
         const cached = loadLastMintedCache();
         if (cached) return cached;
         return { ...EMPTY_LAST_MINTED };
@@ -6984,7 +7287,7 @@ export default function AppCore() {
       walletAddressRef.current = nextWallet;
       setWalletAddress(nextWallet);
       setLastMinted((prev) => {
-        if (isCompleteLastMintedPayload(prev)) return prev;
+        if (isCurrentScopedLastMintedPayload(prev)) return prev;
         const cached = loadLastMintedCache();
         if (cached) return cached;
         return { ...EMPTY_LAST_MINTED };
@@ -7016,12 +7319,75 @@ export default function AppCore() {
     restoreTopFirstForAddress,
   ]);
 
+  const topPanelStatus = React.useMemo(() => {
+    const saleCap = ticketHubStatus.saleCap;
+    const saleMinted = ticketHubStatus.saleMinted;
+    const marketingCap = ticketHubStatus.marketingCap;
+    const marketingMinted = ticketHubStatus.marketingMinted;
+    const distributor = String(ticketHubStatus.distributor || "");
+    const distributorConfigured =
+      /^0x[a-fA-F0-9]{40}$/.test(distributor) &&
+      distributor.toLowerCase() !== ZeroAddress.toLowerCase();
+    const saleRemaining =
+      Number.isFinite(saleCap) && Number.isFinite(saleMinted)
+        ? Math.max(0, saleCap - saleMinted)
+        : null;
+    const publicMintActive =
+      ticketHubStatus.paused === false &&
+      distributorConfigured &&
+      Number.isFinite(saleRemaining) &&
+      saleRemaining > 0;
+    const publicMintReason = ticketHubStatus.paused
+      ? "Mint paused"
+      : !distributorConfigured
+        ? "Launch pending"
+        : Number.isFinite(saleRemaining) && saleRemaining <= 0
+          ? "Launch pending"
+          : "";
+
+    return {
+      networkLabel: "Polygon mainnet",
+      chainId: ACTIVE_CHAIN.chainId,
+      ticketPrice,
+      ticketMinted,
+      maxTickets,
+      biggiMinted,
+      maxSupply,
+      rewardPool,
+      myClaimable,
+      saleCap,
+      saleMinted,
+      saleRemaining,
+      marketingCap,
+      marketingMinted,
+      publicMintActive,
+      publicMintReason,
+    };
+  }, [
+    ticketHubStatus,
+    ticketPrice,
+    ticketMinted,
+    maxTickets,
+    biggiMinted,
+    maxSupply,
+    rewardPool,
+    myClaimable,
+  ]);
+
+  const mintDisabledReason =
+    topPanelStatus.publicMintActive === false
+      ? topPanelStatus.publicMintReason
+      : "";
+
   /* ====================================================================== */
   /* ============================ MINT / REDEEM / CLAIM ===================== */
   /* ====================================================================== */
 
   const mintTicket = React.useCallback(async () => {
     if (!walletAddress) return showUserAlert("Please connect MetaMask first.");
+    if (mintDisabledReason) {
+      return showUserAlert(mintDisabledReason, "mint-not-open", 5000);
+    }
     if (isDelegatedInflightActive()) {
       return showUserAlert(
         delegatedInflightMessage,
@@ -7038,15 +7404,15 @@ export default function AppCore() {
     setIsMinting(true);
 
     try {
-      await ensureAmoy();
+      await ensurePolygon();
 
       const roContract = contractRef.current || getReadOnlyContract();
       const roProvider = getProviderFor(roContract);
       if (!roProvider) throw new Error("Provider not available");
       const net = await roProvider.getNetwork();
-      if (Number(net?.chainId) !== 80002) await ensureAmoy();
+      if (Number(net?.chainId) !== ACTIVE_CHAIN.chainId) await ensurePolygon();
       let netAfter = await roProvider.getNetwork().catch(() => net);
-      let chainId = Number(netAfter?.chainId) || AMOY.chainId;
+      let chainId = Number(netAfter?.chainId) || ACTIVE_CHAIN.chainId;
       await assertContractDeployed(
         roContract,
         getContractCheckProvider(roProvider),
@@ -7103,15 +7469,15 @@ export default function AppCore() {
         // ignore balance precheck errors
       }
 
-      const contract = await getMainRW();
+      const contract = await getTicketHub();
       const writeProvider = getProviderFor(contract) || roProvider;
       if (writeProvider) {
         const writeNet = await writeProvider.getNetwork().catch(() => netAfter);
-        if (Number(writeNet?.chainId) !== 80002) await ensureAmoy();
+        if (Number(writeNet?.chainId) !== ACTIVE_CHAIN.chainId) await ensurePolygon();
         netAfter = await writeProvider
           .getNetwork()
           .catch(() => writeNet || netAfter);
-        chainId = Number(netAfter?.chainId) || AMOY.chainId;
+        chainId = Number(netAfter?.chainId) || ACTIVE_CHAIN.chainId;
       }
 
       const estimateMint =
@@ -7204,6 +7570,7 @@ export default function AppCore() {
     acquireWriteTxLock,
     delegatedInflightMessage,
     hasPendingAccountTransaction,
+    mintDisabledReason,
     walletAddress,
     ticketMinted,
     maxTickets,
@@ -7247,22 +7614,28 @@ export default function AppCore() {
     let roProvider = null;
 
     try {
-      await ensureAmoy();
+      await ensurePolygon();
 
       readContract = contractRef.current || getReadOnlyContract();
       roProvider = getProviderFor(readContract);
       if (!roProvider) throw new Error("Provider not available");
       const net = await roProvider.getNetwork();
-      if (Number(net?.chainId) !== 80002) await ensureAmoy();
+      if (Number(net?.chainId) !== ACTIVE_CHAIN.chainId) await ensurePolygon();
       let netAfter = await roProvider.getNetwork().catch(() => net);
-      let chainId = Number(netAfter?.chainId) || AMOY.chainId;
+      let chainId = Number(netAfter?.chainId) || ACTIVE_CHAIN.chainId;
       await assertContractDeployed(
         readContract,
         getContractCheckProvider(roProvider),
         "MAIN",
       );
+      const ticketHubRead = getReadOnlyTicketHub(roProvider);
+      await assertContractDeployed(
+        ticketHubRead,
+        getContractCheckProvider(roProvider),
+        "TICKET_HUB",
+      );
 
-      const isPaused =
+      const mainPaused =
         typeof readContract.paused === "function"
           ? await callReadWithProviderFallback(
               readContract,
@@ -7271,7 +7644,16 @@ export default function AppCore() {
               roProvider,
             )
           : false;
-      if (isPaused === true) {
+      const ticketHubPaused =
+        typeof ticketHubRead.paused === "function"
+          ? await callReadWithProviderFallback(
+              ticketHubRead,
+              "paused",
+              [],
+              roProvider,
+            )
+          : false;
+      if (mainPaused === true || ticketHubPaused === true) {
         return showUserAlert("Redeem is paused.");
       }
 
@@ -7332,10 +7714,10 @@ export default function AppCore() {
             tickets = tickets ? [tickets] : [];
           }
           if (!tickets.length) {
-            tickets = await findTicketsViaLogs(readContract, walletAddress);
+            tickets = await findTicketsViaLogs(ticketHubRead, walletAddress);
           }
         } catch {
-          tickets = await findTicketsViaLogs(readContract, walletAddress);
+          tickets = await findTicketsViaLogs(ticketHubRead, walletAddress);
         }
       }
 
@@ -7398,21 +7780,21 @@ export default function AppCore() {
       }
       const ticketIdStr = ticketIdBN.toString();
 
-      const writeContract = await getMainRW();
+      const writeContract = await getTicketHub();
       const writeProvider = getProviderFor(writeContract) || roProvider;
       if (writeProvider) {
         const writeNet = await writeProvider.getNetwork().catch(() => netAfter);
-        if (Number(writeNet?.chainId) !== 80002) await ensureAmoy();
+        if (Number(writeNet?.chainId) !== ACTIVE_CHAIN.chainId) await ensurePolygon();
         netAfter = await writeProvider
           .getNetwork()
           .catch(() => writeNet || netAfter);
-        chainId = Number(netAfter?.chainId) || AMOY.chainId;
+        chainId = Number(netAfter?.chainId) || ACTIVE_CHAIN.chainId;
       }
 
-      const redeemFn = writeContract?.redeemTicketAndMintNFT;
+      const redeemFn = writeContract?.redeemTicket;
       if (typeof redeemFn !== "function") {
         throw new Error(
-          "Redeem function not available on MAIN contract. Check MAIN/ABI configuration.",
+          "Redeem function not available on TICKET_HUB contract. Check TICKET_HUB/ABI configuration.",
         );
       }
       try {
@@ -7437,8 +7819,8 @@ export default function AppCore() {
         // ignore pending request probe failures
       }
       try {
-        if (!usedLocalTickets && typeof readContract.ownerOf === "function") {
-          const owner = await readContract.ownerOf(ticketIdBN);
+        if (!usedLocalTickets && typeof ticketHubRead.ownerOf === "function") {
+          const owner = await ticketHubRead.ownerOf(ticketIdBN);
           if (
             owner &&
             String(owner).toLowerCase?.() !==
@@ -7456,7 +7838,7 @@ export default function AppCore() {
       }
 
       const estimateRedeem =
-        writeContract?.estimateGas?.redeemTicketAndMintNFT ||
+        writeContract?.estimateGas?.redeemTicket ||
         redeemFn?.estimateGas;
       let redeemGasOverride = null;
       try {
@@ -7615,6 +7997,227 @@ export default function AppCore() {
     showUserAlert,
   ]);
 
+  const retryPendingMint = React.useCallback(async () => {
+    if (!walletAddress) return showUserAlert("Please connect MetaMask first.");
+    if (isRedeeming) return;
+    if (isDelegatedInflightActive()) {
+      return showUserAlert(
+        delegatedInflightMessage,
+        "delegated-inflight",
+        5000,
+      );
+    }
+    if (!acquireWriteTxLock("retryPendingMint")) {
+      return showUserAlert(
+        "Another transaction is already being prepared or confirmed. Please wait for MetaMask to finish the current one.",
+        "tx-lock",
+      );
+    }
+
+    setIsRedeeming(true);
+
+    try {
+      await ensurePolygon();
+
+      const readContract = contractRef.current || getReadOnlyContract();
+      const roProvider = getProviderFor(readContract);
+      if (!roProvider) throw new Error("Provider not available");
+      const net = await roProvider.getNetwork();
+      if (Number(net?.chainId) !== ACTIVE_CHAIN.chainId) await ensurePolygon();
+      let netAfter = await roProvider.getNetwork().catch(() => net);
+      let chainId = Number(netAfter?.chainId) || ACTIVE_CHAIN.chainId;
+
+      await assertContractDeployed(
+        readContract,
+        getContractCheckProvider(roProvider),
+        "MAIN",
+      );
+
+      const retrySupported = await resolveRetryPendingSupport(
+        readContract,
+        roProvider,
+      );
+      if (!retrySupported) {
+        const message =
+          "This deployed MAIN contract does not support retryPendingMint().";
+        setRedeemMsg(message);
+        setTimeout(() => {
+          setRedeemMsg((current) => (current === message ? "" : current));
+        }, 3200);
+        return showUserAlert(message, "vrf-retry-unsupported", 5000);
+      }
+
+      const pendingReq =
+        typeof readContract.pendingMintRequest === "function"
+          ? await readContract.pendingMintRequest(walletAddress)
+          : 0n;
+      const pendingReqId = pendingReq?.toString?.() || "0";
+
+      if (pendingReqId === "0") {
+        setVRFPending(false);
+        setRedeemMsg("");
+        await refreshVRFPanel();
+        return showUserAlert("No pending VRF request was found for this wallet.");
+      }
+
+      let retryRemainingSec = 0;
+      try {
+        const [retryDelayRaw, requestedAtRaw, pendingTicketRaw] =
+          await Promise.all([
+            readContract.pendingRetryDelay?.().catch?.(() => 0) ?? 0,
+            readContract.pendingRequestedAt?.(pendingReq).catch?.(() => 0) ?? 0,
+            readContract.pendingTicketId?.(pendingReq).catch?.(() => 0) ?? 0,
+          ]);
+        const retryDelaySec = Number(retryDelayRaw?.toString?.() || 0);
+        const requestedAtSec = Number(requestedAtRaw?.toString?.() || 0);
+        const pendingTicketStr = pendingTicketRaw?.toString?.() || "";
+
+        if (pendingTicketStr && pendingTicketStr !== "0") {
+          setPendingTicketId(pendingTicketStr);
+          pendingTicketIdRef.current = pendingTicketStr;
+        }
+
+        if (retryDelaySec > 0 && requestedAtSec > 0) {
+          const nowSec = Math.floor(Date.now() / 1000);
+          retryRemainingSec = Math.max(
+            0,
+            requestedAtSec + retryDelaySec - nowSec,
+          );
+        }
+      } catch {
+        retryRemainingSec = 0;
+      }
+
+      if (retryRemainingSec > 0) {
+        const message = `Pending VRF retry will be available in ${formatRetryDelay(
+          retryRemainingSec,
+        )}.`;
+        setRedeemMsg(message);
+        setTimeout(() => {
+          setRedeemMsg((current) => (current === message ? "" : current));
+        }, 2600);
+        return showUserAlert(message, "vrf-retry-too-early", 3200);
+      }
+
+      const writeContract = await getMainRW();
+      const writeProvider = getProviderFor(writeContract) || roProvider;
+      if (writeProvider) {
+        const writeNet = await writeProvider.getNetwork().catch(() => netAfter);
+        if (Number(writeNet?.chainId) !== ACTIVE_CHAIN.chainId) await ensurePolygon();
+        netAfter = await writeProvider
+          .getNetwork()
+          .catch(() => writeNet || netAfter);
+        chainId = Number(netAfter?.chainId) || ACTIVE_CHAIN.chainId;
+      }
+
+      const retryFn = writeContract?.retryPendingMint;
+      if (typeof retryFn !== "function") {
+        throw new Error(
+          "retryPendingMint not available on MAIN contract. Check MAIN/ABI configuration.",
+        );
+      }
+
+      setRedeemMsg("Please confirm retry in your wallet...");
+      updateTxStatus({ type: "redeem", stage: "wallet", hash: "", chainId });
+
+      const feeOverrides = await buildFeeOverrides(
+        writeProvider || roProvider,
+        {
+          forceLegacy: true,
+        },
+      );
+
+      const tx = await sendWriteWithRpcRetry(
+        () => retryFn({ ...feeOverrides }),
+        "retryPendingMint",
+      );
+
+      updateTxStatus({
+        type: "redeem",
+        stage: "pending",
+        hash: tx?.hash,
+        chainId,
+      });
+      setRedeemMsg("Retry transaction submitted. Waiting for confirmation...");
+
+      await tx.wait();
+
+      setVRFPending(true);
+      setRedeemStartedAt(Date.now());
+      try {
+        const startBlock = await getBlockNumberWithFallback(roProvider);
+        setRedeemStartBlock(startBlock);
+      } catch {
+        // ignore block-number refresh failures
+      }
+      setRedeemMsg("Retry confirmed. Waiting for VRF reveal...");
+
+      scheduleRefreshVRF(700, refreshVRFPanel);
+      setTimeout(() => {
+        const refreshTasks = [Promise.resolve(refreshVRFPanel?.())];
+        if (walletAddress) {
+          refreshTasks.push(fetchWalletAssets(walletAddress));
+        }
+        Promise.allSettled(refreshTasks).catch(() => {});
+      }, 1200);
+    } catch (err) {
+      clearTxStatus("redeem");
+
+      if (isRateLimitedRpcError(err)) {
+        engageRpcBackoff();
+        recoverRpcConnectivity("retryPendingMint").catch(() => {});
+      }
+
+      try {
+        const readContract = contractRef.current || getReadOnlyContract();
+        if (typeof readContract.pendingMintRequest === "function") {
+          const pendingReqAfter =
+            await readContract.pendingMintRequest(walletAddress);
+          const stillPending = pendingReqAfter?.toString?.() !== "0";
+          setVRFPending(stillPending);
+        }
+      } catch {
+        // ignore best-effort resync failures
+      }
+
+      if (isUserRejectedAction(err)) {
+        setRedeemMsg("Retry cancelled in wallet.");
+        setTimeout(() => setRedeemMsg(""), 2200);
+        console.info("retryPendingMint cancelled in wallet");
+        return;
+      }
+
+      showUserAlert(
+        "Retry failed: " + prettyError(err),
+        isRateLimitedRpcError(err)
+          ? "vrf-retry-rate-limit"
+          : "vrf-retry-failed",
+      );
+      console.error("retryPendingMint", err);
+    } finally {
+      releaseWriteTxLock();
+      setIsRedeeming(false);
+    }
+  }, [
+    acquireWriteTxLock,
+    delegatedInflightMessage,
+    walletAddress,
+    isRedeeming,
+    fetchWalletAssets,
+    prettyError,
+    refreshVRFPanel,
+    clearTxStatus,
+    isDelegatedInflightActive,
+    updateTxStatus,
+    engageRpcBackoff,
+    recoverRpcConnectivity,
+    releaseWriteTxLock,
+    resolveRetryPendingSupport,
+    scheduleRefreshVRF,
+    sendWriteWithRpcRetry,
+    showUserAlert,
+  ]);
+
   const claimREWARDS = React.useCallback(async () => {
     if (!walletAddress) return showUserAlert("Please connect MetaMask first.");
     if (isDelegatedInflightActive()) {
@@ -7633,7 +8236,7 @@ export default function AppCore() {
     setIsClaiming(true);
 
     try {
-      await ensureAmoy();
+      await ensurePolygon();
 
       const roBrl = getReadOnlyLiquidityContract();
       const rewardScope = await resolveRewardCollectionScope(roBrl);
@@ -7654,7 +8257,7 @@ export default function AppCore() {
       const claimNet = roClaimProvider
         ? await roClaimProvider.getNetwork().catch(() => null)
         : null;
-      let chainId = Number(claimNet?.chainId) || AMOY.chainId;
+      let chainId = Number(claimNet?.chainId) || ACTIVE_CHAIN.chainId;
       if (await hasPendingAccountTransaction(roClaimProvider, walletAddress)) {
         console.warn(
           "claimREWARDS: pending nonce detected on RPC precheck; continuing and letting wallet enforce nonce flow",
@@ -8291,7 +8894,7 @@ export default function AppCore() {
 
   const txExplorerLink = React.useMemo(() => {
     if (!txStatus?.hash) return "";
-    const base = explorerBaseFor(txStatus.chainId || AMOY.chainId);
+    const base = explorerBaseFor(txStatus.chainId || ACTIVE_CHAIN.chainId);
     return base ? `${base}/tx/${txStatus.hash}` : "";
   }, [txStatus]);
 
@@ -8339,6 +8942,7 @@ export default function AppCore() {
             walletAddress={walletAddress}
             onRequestRandomness={redeemTicket}
             onRefresh={refreshVRFPanel}
+            onCancelPending={retryPendingMint}
             autoOpenInfo={autoOpenInfoPanel === "VRF MINT"}
             onOpenExplorer={(hash) => {
               const base = explorerBaseFor(VRFUIData?.chainId);
@@ -8427,6 +9031,7 @@ export default function AppCore() {
     VRFUIData,
     VRFPending,
     redeemTicket,
+    retryPendingMint,
     refreshVRFPanel,
     mintTicket,
     claimREWARDS,
@@ -8547,6 +9152,7 @@ export default function AppCore() {
         onInfoGateComplete={completeInfoGate}
         onInfoButtonRect={handleInfoButtonRect}
         forceInfoOpenTick={infoGateOpenTick}
+        mintDisabledReason={mintDisabledReason}
       />
 
       {infoGateActive ? (

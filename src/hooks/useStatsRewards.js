@@ -2,6 +2,7 @@ import * as React from "react";
 import { formatEther } from "ethers";
 import {
   getReadOnlyMain,
+  getReadOnlyTicketHub,
   getReaderRO,
   getFrontendSnapshotLiteActive,
 } from "@/shared/utils/contract";
@@ -103,14 +104,15 @@ export function useStatsREWARDS(options = {}) {
     // 2) Fallback to direct contract calls
     try {
       const main = getReadOnlyMain();
+      const ticketHub = getReadOnlyTicketHub();
       if (!main) return null;
 
       const priceWei = await safeCall(() =>
-        main.getTicketPrice?.().catch(() => main.ticketPrice?.()),
+        ticketHub.getTicketPrice?.().catch(() => ticketHub.ticketPrice?.()),
       );
       applySetter(setTicketPrice, toNumEth(priceWei));
 
-      const tm = await safeCall(() => main.ticketMinted?.(), null);
+      const tm = await safeCall(() => ticketHub.ticketMinted?.(), null);
       const bm = await safeCall(() => main.biggiMinted?.(), null);
       applySetter(setTicketMinted, tm != null ? Number(tm) : null);
       applySetter(setBiggiMinted, bm != null ? Number(bm) : null);

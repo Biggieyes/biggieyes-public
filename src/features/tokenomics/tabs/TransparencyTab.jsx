@@ -1,44 +1,33 @@
 import * as React from "react";
-import { formatEther, formatUnits } from "ethers";
 import Card from "../components/Card.jsx";
 import { fmtVal } from "../utils/format.js";
 import styles from "../styles/BiggiToken.module.css";
+import {
+  formatNativeDisplay,
+  formatTokenDisplay,
+  toDisplayNumber,
+} from "../utils/amountFormatting.js";
 
 const fmtNum = (value, digits = 4) => {
-  if (value == null) return "--";
-  const num = Number(value);
+  const num = toDisplayNumber(value);
   if (!Number.isFinite(num)) return "--";
   return num.toLocaleString("en-US", { maximumFractionDigits: digits });
 };
 
 const toNativeNumber = (value) => {
-  if (value == null) return null;
-  if (typeof value === "number") return Number.isFinite(value) ? value : null;
-  try {
-    return Number(formatEther(value));
-  } catch {
-    return null;
-  }
+  return toDisplayNumber(value, 18);
 };
 
 const toTokenNumber = (value, decimals = 18) => {
-  if (value == null) return null;
-  if (typeof value === "number") return Number.isFinite(value) ? value : null;
-  try {
-    return Number(formatUnits(value, decimals));
-  } catch {
-    return null;
-  }
+  return toDisplayNumber(value, decimals);
 };
 
 const formatNative = (value) => {
-  const num = toNativeNumber(value);
-  return num == null ? "--" : `${num.toFixed(4)} POL`;
+  return formatNativeDisplay(value, 4);
 };
 
 const formatToken = (value, decimals = 18) => {
-  const num = toTokenNumber(value, decimals);
-  return num == null ? "--" : `${num.toFixed(4)} BIGGI`;
+  return formatTokenDisplay(value, decimals, 4);
 };
 
 const toCsv = (rows) => {
@@ -81,9 +70,17 @@ const buildTimeline = ({
       tsLabel: entry.tsLabel || "--",
       type: "BUYBACK",
       metricA: "Spent POL",
-      valueA: fmtNum(entry?.BUYBACK?.totalNativeSpentNumeric ?? entry?.BUYBACK?.totalNativeSpent, 4),
+      valueA: fmtNum(
+        entry?.BUYBACK?.totalNativeSpentNumeric ??
+          entry?.BUYBACK?.totalNativeSpent,
+        4,
+      ),
       metricB: "Acquired BIGGI",
-      valueB: fmtNum(entry?.BUYBACK?.totalBiggiAcquiredNumeric ?? entry?.BUYBACK?.totalBiggiAcquired, 4),
+      valueB: fmtNum(
+        entry?.BUYBACK?.totalBiggiAcquiredNumeric ??
+          entry?.BUYBACK?.totalBiggiAcquired,
+        4,
+      ),
     });
   });
 
@@ -93,9 +90,16 @@ const buildTimeline = ({
       tsLabel: entry.tsLabel || "--",
       type: "DRIP",
       metricA: "Available BIGGI",
-      valueA: fmtNum(entry?.distributor?.availableNumeric ?? entry?.distributor?.availableTokens, 4),
+      valueA: fmtNum(
+        entry?.distributor?.availableNumeric ??
+          entry?.distributor?.availableTokens,
+        4,
+      ),
       metricB: "LM POL",
-      valueB: fmtNum(entry?.DRIPLM?.nativeBalanceNumeric ?? entry?.DRIPLM?.nativeBalance, 4),
+      valueB: fmtNum(
+        entry?.DRIPLM?.nativeBalanceNumeric ?? entry?.DRIPLM?.nativeBalance,
+        4,
+      ),
     });
   });
 
@@ -105,9 +109,15 @@ const buildTimeline = ({
       tsLabel: entry.tsLabel || "--",
       type: "LIQUIDITY",
       metricA: "LP Locked",
-      valueA: fmtNum(entry?.vault?.totalLpLockedNumeric ?? entry?.vault?.totalLpLocked, 4),
+      valueA: fmtNum(
+        entry?.vault?.totalLpLockedNumeric ?? entry?.vault?.totalLpLocked,
+        4,
+      ),
       metricB: "Reserve POL",
-      valueB: fmtNum(entry?.reserve?.maticBalanceNumeric ?? entry?.reserve?.maticBalance, 4),
+      valueB: fmtNum(
+        entry?.reserve?.maticBalanceNumeric ?? entry?.reserve?.maticBalance,
+        4,
+      ),
     });
   });
 
@@ -129,9 +139,16 @@ const buildTimeline = ({
       tsLabel: entry.tsLabel || "--",
       type: "DEX",
       metricA: "POL / BIGGI",
-      valueA: fmtNum(entry?.derived?.priceNativePerToken ?? entry?.derived?.priceNativePerTokenNumeric, 6),
+      valueA: fmtNum(
+        entry?.derived?.priceNativePerToken ??
+          entry?.derived?.priceNativePerTokenNumeric,
+        6,
+      ),
       metricB: "LP Supply",
-      valueB: fmtNum(entry?.dex?.pair?.lpTotalSupply ?? entry?.dex?.pair?.totalSupplyNumeric, 2),
+      valueB: fmtNum(
+        entry?.dex?.pair?.lpTotalSupply ?? entry?.dex?.pair?.totalSupplyNumeric,
+        2,
+      ),
     });
   });
 
@@ -141,8 +158,17 @@ const buildTimeline = ({
 const buildAllocationRows = (flowSnapshot, distributorSnapshot) => {
   const splits = flowSnapshot?.intendedSplits?.nativeFromMint || {};
   const bpsDenom = Number(flowSnapshot?.splitConfig?.bpsDenom ?? 10000);
-  const total = distributorSnapshot?.totalReceivedNumeric ?? null;
-  if (total == null || !Object.keys(splits).length || !Number.isFinite(bpsDenom) || bpsDenom <= 0) {
+  const total = toNativeNumber(
+    distributorSnapshot?.totalReceivedNumeric ??
+      distributorSnapshot?.totalReceived ??
+      null,
+  );
+  if (
+    total == null ||
+    !Object.keys(splits).length ||
+    !Number.isFinite(bpsDenom) ||
+    bpsDenom <= 0
+  ) {
     return [];
   }
 
@@ -203,7 +229,13 @@ export default function TransparencyTab({
         distributorHistory,
         tokenDexHistory,
       }),
-    [buybackHistory, dripHistory, liquidityHistory, distributorHistory, tokenDexHistory],
+    [
+      buybackHistory,
+      dripHistory,
+      liquidityHistory,
+      distributorHistory,
+      tokenDexHistory,
+    ],
   );
 
   const allocationRows = React.useMemo(
@@ -228,10 +260,7 @@ export default function TransparencyTab({
           liquiditySnapshot?.reserve?.maticBalanceNumeric ??
           nativeLive.reserve ??
           null,
-        token:
-          tokenBalances.reserveNumeric ??
-          tokenLive.reserve ??
-          null,
+        token: tokenBalances.reserveNumeric ?? tokenLive.reserve ?? null,
       },
       {
         label: "Treasury",
@@ -270,9 +299,7 @@ export default function TransparencyTab({
         label: "Token Rewards",
         native: null,
         token:
-          tokenBalances.tokenREWARDSNumeric ??
-          tokenLive.tokenRewards ??
-          null,
+          tokenBalances.tokenREWARDSNumeric ?? tokenLive.tokenRewards ?? null,
       },
       {
         label: "DRIP Distributor",
@@ -323,7 +350,14 @@ export default function TransparencyTab({
       liquidity: liquiditySnapshot || null,
       tokenDex: tokenDexSnapshot || null,
     }),
-    [flowSnapshot, distributorSnapshot, buybackSnapshot, dripSnapshot, liquiditySnapshot, tokenDexSnapshot],
+    [
+      flowSnapshot,
+      distributorSnapshot,
+      buybackSnapshot,
+      dripSnapshot,
+      liquiditySnapshot,
+      tokenDexSnapshot,
+    ],
   );
 
   return (
@@ -403,14 +437,16 @@ export default function TransparencyTab({
             <div key={row.label} className={styles.ecoTableRow}>
               <span className={styles.ecoTableLabel}>{row.label}</span>
               <span className={styles.ecoTableValue}>
-                {formatNative(row.native)} · {formatToken(row.token, balanceSheet.tokenDecimals)}
+                {formatNative(row.native)} ·{" "}
+                {formatToken(row.token, balanceSheet.tokenDecimals)}
               </span>
             </div>
           ))}
           <div className={styles.ecoTableRow}>
             <span className={styles.ecoTableLabel}>Total</span>
             <span className={styles.ecoTableValue}>
-              {fmtVal(balanceSheet.totals.native, "POL")} · {fmtVal(balanceSheet.totals.token, "BIGGI")}
+              {fmtVal(balanceSheet.totals.native, "POL")} ·{" "}
+              {fmtVal(balanceSheet.totals.token, "BIGGI")}
             </span>
           </div>
         </div>
@@ -429,13 +465,16 @@ export default function TransparencyTab({
               <div key={row.bucket} className={styles.ecoTableRow}>
                 <span className={styles.ecoTableLabel}>{row.bucket}</span>
                 <span className={styles.ecoTableValue}>
-                  Target {fmtVal(row.target, "POL")} · Pending {fmtVal(row.actual, "POL")}
+                  Target {fmtVal(row.target, "POL")} · Pending{" "}
+                  {fmtVal(row.actual, "POL")}
                 </span>
               </div>
             ))
           ) : (
             <div className={styles.ecoTableRow}>
-              <span className={styles.ecoTableLabel}>No distributor totals yet</span>
+              <span className={styles.ecoTableLabel}>
+                No distributor totals yet
+              </span>
               <span className={styles.ecoTableValue}>--</span>
             </div>
           )}
@@ -444,7 +483,13 @@ export default function TransparencyTab({
           <button
             className="biggi-button"
             type="button"
-            onClick={() => download("allocation-vs-actual.csv", toCsv(allocationExport), "text/csv")}
+            onClick={() =>
+              download(
+                "allocation-vs-actual.csv",
+                toCsv(allocationExport),
+                "text/csv",
+              )
+            }
           >
             Export CSV
           </button>
@@ -452,7 +497,11 @@ export default function TransparencyTab({
             className="biggi-button"
             type="button"
             onClick={() =>
-              download("ecosystem-snapshot.json", JSON.stringify(snapshotExport, null, 2), "application/json")
+              download(
+                "ecosystem-snapshot.json",
+                JSON.stringify(snapshotExport, null, 2),
+                "application/json",
+              )
             }
           >
             Export Snapshot JSON
@@ -460,12 +509,18 @@ export default function TransparencyTab({
         </div>
       </Card>
 
-      <Card title="FUNDS FLOW TIMELINE" subtitle="Recent on-chain snapshots merged across subsystems">
+      <Card
+        title="FUNDS FLOW TIMELINE"
+        subtitle="Recent on-chain snapshots merged across subsystems"
+      >
         <div className={styles.ecoTable}>
           <div className={styles.ecoTableHeader}>Latest updates</div>
           {timeline.length ? (
             timeline.map((row, idx) => (
-              <div key={`${row.type}-${row.ts}-${idx}`} className={styles.ecoTableRow}>
+              <div
+                key={`${row.type}-${row.ts}-${idx}`}
+                className={styles.ecoTableRow}
+              >
                 <span className={styles.ecoTableLabel}>
                   {row.tsLabel} · {row.type}
                 </span>

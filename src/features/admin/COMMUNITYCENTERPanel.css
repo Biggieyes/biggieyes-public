@@ -73,6 +73,27 @@
 .community-center__stack {
   display: grid;
   gap: 16px;
+  max-height: min(58vh, 620px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-width: thin;
+}
+
+.community-center__snapshot-card .biggi-card__body {
+  display: grid;
+  gap: 16px;
+}
+
+.community-center__snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  max-height: min(42vh, 420px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-width: thin;
 }
 
 .community-center__copy {

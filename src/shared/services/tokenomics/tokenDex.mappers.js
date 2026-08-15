@@ -1,4 +1,9 @@
-import { formatUnits } from "ethers";
+import {
+  formatMappedAmount,
+  formatMappedLp,
+  formatMappedNative,
+  formatMappedToken,
+} from "./amountFormatters.js";
 
 const DEFAULT_DECIMALS = 18;
 const PLACEHOLDER = "N/A";
@@ -20,23 +25,12 @@ function _normalizeBigNumberish(value) {
 }
 
 function _formatAmount(raw, decimals = DEFAULT_DECIMALS, options = {}) {
-  if (raw == null) return { display: PLACEHOLDER, numeric: null };
-  try {
-    const formatted = formatUnits(_normalizeBigNumberish(raw), decimals);
-    const numeric = Number(formatted);
-    const display = Number.isFinite(numeric)
-      ? numeric.toLocaleString("en-US", {
-          maximumFractionDigits: options.maximumFractionDigits ?? 2,
-        })
-      : formatted;
-    return {
-      display,
-      numeric: Number.isFinite(numeric) ? numeric : null,
-    };
-  } catch (error) {
-    console.warn("TokenDex mapper _formatAmount failed", error);
-    return { display: PLACEHOLDER, numeric: null };
-  }
+  return formatMappedAmount(_normalizeBigNumberish(raw), {
+    decimals,
+    maximumFractionDigits: options.maximumFractionDigits ?? 2,
+    placeholder: PLACEHOLDER,
+    unit: options.unit ?? "",
+  });
 }
 
 function _shortAddress(address = "") {
@@ -55,6 +49,8 @@ function _safeDivide(numerator, denominator) {
 
 function _resolvePairReserves(pair = {}, tokenAddress = "", wethAddress = "") {
   const reserves = pair?.reserves || {};
+  const directBiggi = reserves.token ?? reserves.biggi ?? null;
+  const directNative = reserves.native ?? null;
   const reserve0 = reserves.reserve0 || null;
   const reserve1 = reserves.reserve1 || null;
   const token0 = pair?.token0?.toLowerCase();
@@ -64,21 +60,21 @@ function _resolvePairReserves(pair = {}, tokenAddress = "", wethAddress = "") {
   let biggiRaw = null;
   let nativeRaw = null;
 
-  if (biggiAddr && token0 === biggiAddr) biggiRaw = reserve0;
-  if (biggiAddr && token1 === biggiAddr) biggiRaw = reserve1;
-  if (wethAddr && token0 === wethAddr) nativeRaw = reserve0;
-  if (wethAddr && token1 === wethAddr) nativeRaw = reserve1;
+  if (directBiggi != null) biggiRaw = directBiggi;
+  if (directNative != null) nativeRaw = directNative;
 
-  if (biggiRaw == null || nativeRaw == null) {
-    if (biggiRaw == null && nativeRaw == null) {
-      biggiRaw = reserve0;
-      nativeRaw = reserve1;
-    } else if (biggiRaw == null) {
-      biggiRaw = nativeRaw;
-      nativeRaw = reserve1 ?? reserve0;
-    } else if (nativeRaw == null) {
-      nativeRaw = biggiRaw;
-    }
+  if (biggiRaw == null && biggiAddr && token0 === biggiAddr)
+    biggiRaw = reserve0;
+  if (biggiRaw == null && biggiAddr && token1 === biggiAddr)
+    biggiRaw = reserve1;
+  if (nativeRaw == null && wethAddr && token0 === wethAddr)
+    nativeRaw = reserve0;
+  if (nativeRaw == null && wethAddr && token1 === wethAddr)
+    nativeRaw = reserve1;
+
+  if (biggiRaw == null && nativeRaw == null) {
+    biggiRaw = reserve0;
+    nativeRaw = reserve1;
   }
 
   return {
@@ -106,44 +102,67 @@ export function mapRawSnapshotToUI(raw) {
 
   const totalSupply = _formatAmount(tokenRaw.totalSupply, tokenDecimals, {
     maximumFractionDigits: 0,
+    unit: "BIGGI",
   });
   const cap = _formatAmount(tokenRaw.cap, tokenDecimals, {
     maximumFractionDigits: 0,
+    unit: "BIGGI",
   });
   const remainingMintable = _formatAmount(
     tokenRaw.remainingMintable,
     tokenDecimals,
-    { maximumFractionDigits: 0 },
+    { maximumFractionDigits: 0, unit: "BIGGI" },
   );
 
-  const reserveBalance = _formatAmount(
+  const reserveBalance = formatMappedToken(
     tokenRaw.balances?.reserve,
     tokenDecimals,
+    2,
+    PLACEHOLDER,
   );
-  const vaultBalance = _formatAmount(
+  const vaultBalance = formatMappedToken(
     tokenRaw.balances?.liquidityVault,
     tokenDecimals,
+    2,
+    PLACEHOLDER,
   );
-  const treasuryBalance = _formatAmount(
+  const treasuryBalance = formatMappedToken(
     tokenRaw.balances?.treasury,
     tokenDecimals,
+    2,
+    PLACEHOLDER,
   );
-  const DRIPBalance = _formatAmount(
+  const DRIPBalance = formatMappedToken(
     tokenRaw.balances?.DRIPDistributor,
     tokenDecimals,
+    2,
+    PLACEHOLDER,
   );
-  const REWARDSBalance = _formatAmount(
+  const REWARDSBalance = formatMappedToken(
     tokenRaw.balances?.tokenREWARDS,
     tokenDecimals,
+    2,
+    PLACEHOLDER,
   );
 
-  const pairBiggiReserve = _formatAmount(pairRes.biggiRaw, tokenDecimals);
-  const pairNativeReserve = _formatAmount(pairRes.nativeRaw, DEFAULT_DECIMALS);
-  const lpSupply = _formatAmount(pairRaw.totalSupply, DEFAULT_DECIMALS);
+  const pairBiggiReserve = formatMappedToken(
+    pairRes.biggiRaw,
+    tokenDecimals,
+    2,
+    PLACEHOLDER,
+  );
+  const pairNativeReserve = formatMappedNative(
+    pairRes.nativeRaw,
+    4,
+    PLACEHOLDER,
+  );
+  const lpSupply = formatMappedLp(pairRaw.totalSupply, 4, PLACEHOLDER);
 
-  const routerNative = _formatAmount(dexRaw.routerNativeOut, DEFAULT_DECIMALS, {
-    maximumFractionDigits: 6,
-  });
+  const routerNative = formatMappedNative(
+    dexRaw.routerNativeOut,
+    6,
+    PLACEHOLDER,
+  );
   const routerBiggiPerNativeNumeric = routerNative.numeric
     ? 1 / routerNative.numeric
     : null;
@@ -197,13 +216,10 @@ export function mapRawSnapshotToUI(raw) {
       ? `${tvlNativeNumeric.toLocaleString("en-US", { maximumFractionDigits: 2 })} POL`
       : PLACEHOLDER;
 
-  const liquidityDepthNumeric =
-    (pairNativeReserve.numeric ?? 0) + (pairBiggiReserve.numeric ?? 0);
+  const liquidityDepthNumeric = pairNativeReserve.numeric ?? null;
   const liquidityDepthDisplay =
-    liquidityDepthNumeric > 0
-      ? liquidityDepthNumeric.toLocaleString("en-US", {
-          maximumFractionDigits: 2,
-        })
+    pairNativeReserve.display !== PLACEHOLDER
+      ? pairNativeReserve.display
       : PLACEHOLDER;
 
   const priceImpactNumeric =
@@ -214,8 +230,13 @@ export function mapRawSnapshotToUI(raw) {
         ) * 100
       : null;
   const priceImpactDisplay =
-    typeof priceImpactNumeric === "number"
-      ? `${priceImpactNumeric.toFixed(2)}%`
+    typeof priceImpactNumeric === "number" &&
+    Number.isFinite(priceImpactNumeric)
+      ? priceImpactNumeric > 1_000_000
+        ? "> 1,000,000%"
+        : `${priceImpactNumeric.toLocaleString("en-US", {
+            maximumFractionDigits: 2,
+          })}%`
       : PLACEHOLDER;
 
   let marketHealth = "Thin";
@@ -246,7 +267,8 @@ export function mapRawSnapshotToUI(raw) {
       name: tokenRaw.name,
       symbol: tokenRaw.symbol,
       decimals: tokenDecimals,
-      rewardsOperator: tokenRaw.REWARDSOperator ?? tokenRaw.rewardsOperator ?? null,
+      rewardsOperator:
+        tokenRaw.REWARDSOperator ?? tokenRaw.rewardsOperator ?? null,
       totalSupply: totalSupply.display,
       totalSupplyNumeric: totalSupply.numeric,
       cap: cap.display,

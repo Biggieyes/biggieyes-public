@@ -5,10 +5,33 @@
         "internalType": "address",
         "name": "mainContract",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "ticketHub_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "collectionRewards_",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "collectionRewards",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
     "inputs": [
@@ -189,6 +212,19 @@
     "outputs": [
       {
         "internalType": "contract IBiggiMainMinimal",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ticketHub",
+    "outputs": [
+      {
+        "internalType": "address",
         "name": "",
         "type": "address"
       }

@@ -1,142 +1,350 @@
 [
   {
-    "type": "constructor",
-    "stateMutability": "nonpayable",
     "inputs": [
-      { "name": "tokenRewards_", "type": "address", "internalType": "address" }
-    ]
+      {
+        "internalType": "address",
+        "name": "tokenRewards_",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
   },
   {
-    "type": "function",
-    "name": "getStatus",
-    "stateMutability": "view",
-    "inputs": [],
-    "outputs": [
+    "inputs": [
       {
-        "name": "s",
-        "type": "tuple",
-        "components": [
-          { "name": "tokenRewards", "type": "address" },
-          { "name": "token", "type": "address" },
-          { "name": "main", "type": "address" },
-          { "name": "main2", "type": "address" },
-          { "name": "unitReward", "type": "uint256" },
-          { "name": "blockWeights", "type": "uint8[11]" },
-          { "name": "rewardsCap", "type": "uint256" },
-          { "name": "rewardsMinted", "type": "uint256" },
-          { "name": "rewardsCapRemaining", "type": "uint256" },
-          { "name": "tokenRemainingMintable", "type": "uint256" },
-          { "name": "rewardBalance", "type": "uint256" },
-          { "name": "totalDistributed", "type": "uint256" },
-          { "name": "distributedThisWeek", "type": "uint256" },
-          { "name": "lastWeekDistributed", "type": "uint256" },
-          { "name": "currentWeek", "type": "uint64" },
-          { "name": "lastRecordedWeek", "type": "uint64" }
-        ]
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
       },
       {
-        "name": "meta",
-        "type": "tuple",
-        "components": [
-          { "name": "name_", "type": "string" },
-          { "name": "symbol_", "type": "string" },
-          { "name": "decimals_", "type": "uint8" }
-        ]
+        "internalType": "uint256",
+        "name": "units",
+        "type": "uint256"
       }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "getBlockWeights",
-    "stateMutability": "view",
-    "inputs": [],
-    "outputs": [
-      { "name": "w", "type": "uint8[11]" }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "getTokenMeta",
-    "stateMutability": "view",
-    "inputs": [],
+    ],
+    "name": "emissionPreview",
     "outputs": [
       {
-        "name": "meta",
-        "type": "tuple",
-        "components": [
-          { "name": "name_", "type": "string" },
-          { "name": "symbol_", "type": "string" },
-          { "name": "decimals_", "type": "uint8" }
-        ]
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "weeklyBudget",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "weeklyPaid",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "unitRewardForWeek",
+        "type": "uint256"
       }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "preview",
-    "stateMutability": "view",
-    "inputs": [
-      { "name": "tokenIds", "type": "uint256[]" }
     ],
-    "outputs": [
-      { "name": "units", "type": "uint256" },
-      { "name": "amount", "type": "uint256" }
-    ]
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    "type": "function",
-    "name": "previewFor",
-    "stateMutability": "view",
-    "inputs": [
-      { "name": "collections", "type": "address[]" },
-      { "name": "tokenIds", "type": "uint256[]" }
-    ],
-    "outputs": [
-      { "name": "units", "type": "uint256" },
-      { "name": "amount", "type": "uint256" }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "nextClaimWeekFor",
-    "stateMutability": "view",
-    "inputs": [
-      { "name": "tokenId", "type": "uint256" }
-    ],
-    "outputs": [
-      { "name": "", "type": "uint64" }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "nextClaimWeekForCollection",
-    "stateMutability": "view",
-    "inputs": [
-      { "name": "collection", "type": "address" },
-      { "name": "tokenId", "type": "uint256" }
-    ],
-    "outputs": [
-      { "name": "", "type": "uint64" }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "isAllowedCollection",
-    "stateMutability": "view",
-    "inputs": [
-      { "name": "coll", "type": "address" }
-    ],
-    "outputs": [
-      { "name": "", "type": "bool" }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "tokenRewards",
-    "stateMutability": "view",
     "inputs": [],
+    "name": "getBlockWeights",
     "outputs": [
-      { "name": "", "type": "address" }
-    ]
+      {
+        "internalType": "uint8[11]",
+        "name": "w",
+        "type": "uint8[11]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getStatus",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "tokenRewards",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "main",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "main2",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "unitReward",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "emissionController",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "emissionControllerEnabled",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint8[11]",
+            "name": "blockWeights",
+            "type": "uint8[11]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardsCap",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardsMinted",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardsCapRemaining",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenRemainingMintable",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardBalance",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalDistributed",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "distributedThisWeek",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lastWeekDistributed",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint64",
+            "name": "currentWeek",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "lastRecordedWeek",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct BiggiTokenRewardsReader.RewardsStatus",
+        "name": "s",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "name_",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "symbol_",
+            "type": "string"
+          },
+          {
+            "internalType": "uint8",
+            "name": "decimals_",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct BiggiTokenRewardsReader.TokenMeta",
+        "name": "meta",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getTokenMeta",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "name_",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "symbol_",
+            "type": "string"
+          },
+          {
+            "internalType": "uint8",
+            "name": "decimals_",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct BiggiTokenRewardsReader.TokenMeta",
+        "name": "meta",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "coll",
+        "type": "address"
+      }
+    ],
+    "name": "isAllowedCollection",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "nextClaimWeekFor",
+    "outputs": [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "collection",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "nextClaimWeekForCollection",
+    "outputs": [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "tokenIds",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "preview",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "units",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "collections",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "tokenIds",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "previewFor",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "units",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokenRewards",
+    "outputs": [
+      {
+        "internalType": "contract IBiggiTokenRewards",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   }
 ]

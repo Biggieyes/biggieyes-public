@@ -44,7 +44,7 @@ const rowStyle = {
 const FlowRow = ({ from, to }) => (
   <div style={rowStyle}>
     <div style={nodeStyle}>{from}</div>
-    <div style={arrowStyle}>›</div>
+    <div style={arrowStyle}>to</div>
     <div style={nodeStyle}>{to}</div>
   </div>
 );
@@ -62,8 +62,10 @@ export default function TokenomicsFlow() {
             justifyItems: "center",
           }}
         >
-          <div style={nodeStyle}>Mint</div>
-          <div style={arrowStyle}>¡</div>
+          <div style={nodeStyle}>Ticket mint</div>
+          <div style={arrowStyle}>v</div>
+          <div style={nodeStyle}>TicketHub</div>
+          <div style={arrowStyle}>v</div>
           <div style={nodeStyle}>Distributor</div>
         </div>
 
@@ -72,11 +74,12 @@ export default function TokenomicsFlow() {
           <FlowRow from="Distributor" to="Buyback" />
           <FlowRow from="Distributor" to="Treasury" />
           <FlowRow from="Distributor" to="CollectionRewards" />
+          <FlowRow from="Distributor" to="CommunityCenter" />
         </div>
 
         <div style={{ display: "grid", gap: 6 }}>
           <FlowRow from="Buyback" to="Treasury" />
-          <FlowRow from="Treasury" to="TokenRewards + Reserve" />
+          <FlowRow from="Treasury" to="TokenRewards + Reserve + DRIP" />
           <FlowRow from="Reserve" to="LiquidityManager" />
           <FlowRow from="LiquidityManager" to="LiquidityVault" />
         </div>

@@ -6,7 +6,7 @@ const FULL_STATUS_TYPES_CURRENT = [
   "tuple(address buybackAgent,uint256 nativeBalance,uint256 biggiBalance,uint256 totalNativeReceived,uint256 totalNativeSpent,uint256 totalBiggiAcquired,bool autoBuybackEnabled,bool paused,uint256 lastBuybackAt,address router,address wrappedNative,address treasury)",
   "tuple(address reserve,uint256 polBalance,uint256 waitingBiggi,uint256 dexRefillBiggi,address liquidityManager,address keeper,address liquidityVault,bool pairWhitelisted,uint256 lpBalanceInVault)",
   "tuple(address dripDistributor,uint256 availableTokens,uint256 totalReceived,uint256 totalClaimed,uint256 totalNotified,uint256 tokensPerMint,address dripLM,address dripReserve,address dripModeratorCenter,uint16 reserveShareBps,uint16 moderatorShareBps,uint8 sellPct,uint256 slippageBps,uint256 txDeadlineSec,address dripRouter,address dripBuyback)",
-  "tuple(address tokenRewards,uint256 rewardsCap,uint256 rewardsMinted,uint256 balance,uint256 unitReward,uint8[11] blockWeights,address token)",
+  "tuple(address tokenRewards,uint256 rewardsCap,uint256 rewardsMinted,uint256 balance,uint256 unitReward,address emissionController,bool emissionControllerEnabled,uint8[11] blockWeights,address token)",
 ];
 
 const FULL_STATUS_TYPES_LEGACY_V2 = [
@@ -61,11 +61,26 @@ function normalizeCoreTuple(coreRaw) {
     pair: pickDefined(coreRaw?.pair, coreRaw?.[3]),
     token0: pickDefined(coreRaw?.token0, hasTokenPair ? coreRaw?.[4] : null),
     token1: pickDefined(coreRaw?.token1, hasTokenPair ? coreRaw?.[5] : null),
-    reserveNative: pickDefined(coreRaw?.reserveNative, coreRaw?.[reserveNativeIndex]),
-    reserveBiggi: pickDefined(coreRaw?.reserveBiggi, coreRaw?.[reserveBiggiIndex]),
-    lpTotalSupply: pickDefined(coreRaw?.lpTotalSupply, coreRaw?.[lpTotalSupplyIndex]),
-    biggiPerNative: pickDefined(coreRaw?.biggiPerNative, coreRaw?.[biggiPerNativeIndex]),
-    nativePerBiggi: pickDefined(coreRaw?.nativePerBiggi, coreRaw?.[nativePerBiggiIndex]),
+    reserveNative: pickDefined(
+      coreRaw?.reserveNative,
+      coreRaw?.[reserveNativeIndex],
+    ),
+    reserveBiggi: pickDefined(
+      coreRaw?.reserveBiggi,
+      coreRaw?.[reserveBiggiIndex],
+    ),
+    lpTotalSupply: pickDefined(
+      coreRaw?.lpTotalSupply,
+      coreRaw?.[lpTotalSupplyIndex],
+    ),
+    biggiPerNative: pickDefined(
+      coreRaw?.biggiPerNative,
+      coreRaw?.[biggiPerNativeIndex],
+    ),
+    nativePerBiggi: pickDefined(
+      coreRaw?.nativePerBiggi,
+      coreRaw?.[nativePerBiggiIndex],
+    ),
   };
 }
 
@@ -260,7 +275,10 @@ function normalizeDripTuple(dripRaw) {
       dripRaw?.moderatorShareBps,
       usesCurrentOrder ? dripRaw?.[10] : null,
     ),
-    sellPct: pickDefined(dripRaw?.sellPct, usesCurrentOrder ? dripRaw?.[11] : null),
+    sellPct: pickDefined(
+      dripRaw?.sellPct,
+      usesCurrentOrder ? dripRaw?.[11] : null,
+    ),
     slippageBps: pickDefined(
       dripRaw?.slippageBps,
       usesCurrentOrder ? dripRaw?.[12] : null,
@@ -282,6 +300,10 @@ function normalizeDripTuple(dripRaw) {
 
 function normalizeTokenRewardsTuple(trRaw) {
   if (!trRaw) return null;
+  const usesCurrentOrder =
+    trRaw?.emissionController !== undefined ||
+    trRaw?.emissionControllerEnabled !== undefined ||
+    Array.isArray(trRaw?.[7]);
   const tokenRewards = pickDefined(
     trRaw?.tokenRewards,
     trRaw?.tokenREWARDS,
@@ -308,8 +330,22 @@ function normalizeTokenRewardsTuple(trRaw) {
     REWARDSMinted: rewardsMinted,
     balance: pickDefined(trRaw?.balance, trRaw?.[3]),
     unitReward: pickDefined(trRaw?.unitReward, trRaw?.[4]),
-    blockWeights: pickDefined(trRaw?.blockWeights, trRaw?.[5]),
-    token: pickDefined(trRaw?.token, trRaw?.[6]),
+    emissionController: pickDefined(
+      trRaw?.emissionController,
+      usesCurrentOrder ? trRaw?.[5] : null,
+    ),
+    emissionControllerEnabled: pickDefined(
+      trRaw?.emissionControllerEnabled,
+      usesCurrentOrder ? trRaw?.[6] : null,
+    ),
+    blockWeights: pickDefined(
+      trRaw?.blockWeights,
+      usesCurrentOrder ? trRaw?.[7] : trRaw?.[5],
+    ),
+    token: pickDefined(
+      trRaw?.token,
+      usesCurrentOrder ? trRaw?.[8] : trRaw?.[6],
+    ),
   };
 }
 
@@ -318,7 +354,14 @@ export function normalizeTokenomicsFullStatus(decoded) {
 
   const tuples = Array.isArray(decoded)
     ? decoded
-    : [decoded?.core, decoded?.dist, decoded?.buy, decoded?.res, decoded?.drip, decoded?.tr];
+    : [
+        decoded?.core,
+        decoded?.dist,
+        decoded?.buy,
+        decoded?.res,
+        decoded?.drip,
+        decoded?.tr,
+      ];
 
   const [coreRaw, distRaw, buyRaw, resRaw, dripRaw, trRaw] = tuples;
 
@@ -390,9 +433,3 @@ export async function getFullStatusSafe(reader) {
     throw err;
   }
 }
-
-
-
-
-
-

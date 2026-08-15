@@ -150,6 +150,7 @@ async function runSmoke(baseUrl) {
     const fatalConsoleErrors = [];
     const networkConsoleErrors = [];
     const consoleErrors = [];
+    const httpErrorResponses = [];
 
     page.on("pageerror", (err) => {
       pageErrors.push(err?.message || String(err));
@@ -161,6 +162,11 @@ async function runSmoke(baseUrl) {
       consoleErrors.push(text);
       if (isFatalConsoleError(text)) fatalConsoleErrors.push(text);
       if (isNetworkConsoleError(text)) networkConsoleErrors.push(text);
+    });
+
+    page.on("response", (res) => {
+      const status = res.status();
+      if (status >= 400) httpErrorResponses.push(`${status} ${res.url()}`);
     });
 
     const appUrl = new URL("/app/", baseUrl).toString();
@@ -193,7 +199,11 @@ async function runSmoke(baseUrl) {
     console.log("[smoke] live stats flow ok");
 
     // Token rewards claim status smoke in REWARDS panel.
-    const rewardsNavButton = page.locator('button[aria-label="REWARDS"]').first();
+    const rewardsNavButton = page
+      .getByRole("button", {
+        name: /Open Rewards: token, NFT, and collection rewards/i,
+      })
+      .first();
     await rewardsNavButton.waitFor({ state: "visible", timeout: 20_000 });
     await rewardsNavButton.click();
     const rewardsPanel = page.locator("section.rewards-grid");
@@ -240,6 +250,19 @@ async function runSmoke(baseUrl) {
     console.log("Runtime smoke passed.");
     if (consoleErrors.length) {
       console.log(`Non-fatal console errors observed: ${consoleErrors.length}`);
+      const nonFatalConsoleErrors = consoleErrors.filter(
+        (text) =>
+          !fatalConsoleErrors.includes(text) &&
+          !networkConsoleErrors.includes(text),
+      );
+      if (nonFatalConsoleErrors.length) {
+        const sample = nonFatalConsoleErrors.slice(0, 10).join("\n- ");
+        console.log(`Non-fatal console error sample:\n- ${sample}`);
+      }
+    }
+    if (httpErrorResponses.length) {
+      const sample = [...new Set(httpErrorResponses)].slice(0, 10).join("\n- ");
+      console.log(`HTTP error response sample:\n- ${sample}`);
     }
   } finally {
     await browser.close().catch(() => {});

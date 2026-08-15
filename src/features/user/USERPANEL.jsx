@@ -5,19 +5,27 @@ import { useWeb3 } from "@/providers/Web3Provider";
 import { useContracts } from "@/providers/ContractsProvider";
 import { chainNameFor, explorerBaseFor } from "@/config/chains.js";
 import { ADDR } from "@/shared/utils/addresses";
+import useCommunityCenterUserSnapshot from "@/hooks/useCommunityCenterUserSnapshot.js";
+import {
+  formatNativeDisplay,
+  formatTokenDisplay,
+  isRealAddress,
+} from "@/features/tokenomics/utils/amountFormatting.js";
 import PanelInfoModal from "@/components/common/PanelInfoModal";
 import PanelInfoButton from "@/components/common/PanelInfoButton";
 import "./USERPANEL.css";
 
 function shortAddress(addr) {
-  if (!addr) return "--";
+  if (!isRealAddress(addr)) return "--";
   const s = String(addr);
   return `${s.slice(0, 6)}...${s.slice(-4)}`;
 }
 
 function ExplorerLink({ address, chainId, label }) {
-  if (!address) return <span className="muted">--</span>;
-  const base = explorerBaseFor(chainId) || "https://etherscan.io";
+  if (!isRealAddress(address)) return <span className="muted">--</span>;
+  const base =
+    explorerBaseFor(chainId || ADDR.CHAIN_ID || 137) ||
+    "https://polygonscan.com";
   const href = `${base}/address/${address}`;
   return (
     <a
@@ -38,6 +46,14 @@ function formatValue(value, digits = 4) {
   return num.toLocaleString("en-US", {
     maximumFractionDigits: digits,
   });
+}
+
+function formatNative(value, digits = 4) {
+  return formatNativeDisplay(value, digits);
+}
+
+function formatToken(value, digits = 4) {
+  return formatTokenDisplay(value, 18, digits, "BIGGI");
 }
 
 function countFromResult(value) {
@@ -138,6 +154,15 @@ export default function USERPANEL({
     useWeb3();
   const contracts = useContracts();
   const activeAccount = account || walletAddress || address || "";
+  const {
+    snapshot: communitySnapshot,
+    loading: communityLoading,
+    error: communityError,
+    refresh: refreshCommunitySnapshot,
+  } = useCommunityCenterUserSnapshot({
+    walletAddress: activeAccount,
+    includePolls: true,
+  });
   const handleConnect = onConnect || connectMetaMask;
   const [copied, setCopied] = React.useState(false);
   const [infoOpen, setInfoOpen] = React.useState(false);
@@ -200,6 +225,13 @@ export default function USERPANEL({
         ],
       },
       {
+        label: "COMMUNITY CENTER",
+        description: [
+          "Shows wallet-specific event assignments and claimable community prizes.",
+          "Uses the same mainnet Community Center contract as the community panel.",
+        ],
+      },
+      {
         label: "COPY REFERRAL",
         description: [
           "Copies your referral link to share with friends.",
@@ -217,11 +249,8 @@ export default function USERPANEL({
     [],
   );
 
-  const baseUrl =
-    typeof window !== "undefined" ? window.location.origin : "";
-  const referralLink = activeAccount
-    ? `${baseUrl}?ref=${activeAccount}`
-    : "";
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const referralLink = activeAccount ? `${baseUrl}?ref=${activeAccount}` : "";
   const connected = Boolean(activeAccount);
   const connectionPct = connected ? 100 : 0;
   const referralPct = referralLink ? 100 : 0;
@@ -260,8 +289,7 @@ export default function USERPANEL({
   );
 
   const previewItems = React.useMemo(() => {
-    const sourceItems =
-      Array.isArray(myNFTs) && myNFTs.length ? myNFTs : items;
+    const sourceItems = Array.isArray(myNFTs) && myNFTs.length ? myNFTs : items;
     const list = Array.isArray(sourceItems) ? sourceItems : [];
     const filtered = list.filter((item) => item && !item.isPending);
     const sorted = filtered.slice().sort((a, b) => {
@@ -314,8 +342,7 @@ export default function USERPANEL({
     }
     setOverview((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      const balanceProvider =
-        provider || contracts?._effectiveROProvider?.();
+      const balanceProvider = provider || contracts?._effectiveROProvider?.();
       const main = contracts?.mainRead?.();
       const token = contracts?.tokenRead?.();
       const reader = contracts?.readerRead?.();
@@ -396,21 +423,18 @@ export default function USERPANEL({
     { label: "Token", address: ADDR.BIGGI },
     { label: "Token REWARDS", address: ADDR.TOKEN_REWARDS },
     { label: "Collection REWARDS", address: ADDR.COLLECTION_REWARDS },
+    { label: "Community Center", address: ADDR.COMMUNITY_CENTER },
     { label: "VRF Router", address: ADDR.VRF_ROUTER },
   ];
   const canRedeem =
-    Number.isFinite(Number(overview.tickets)) &&
-    Number(overview.tickets) > 0;
+    Number.isFinite(Number(overview.tickets)) && Number(overview.tickets) > 0;
   const hasNFTs =
-    Number.isFinite(Number(overview.nfts)) &&
-    Number(overview.nfts) > 0;
+    Number.isFinite(Number(overview.nfts)) && Number(overview.nfts) > 0;
   const claimableValue = Number(claimable);
   const claimableKnown = Number.isFinite(claimableValue);
   const canClaim =
     connected &&
-    (claimableKnown
-      ? claimableValue > 0
-      : hasNFTs || previewItems.length > 0);
+    (claimableKnown ? claimableValue > 0 : hasNFTs || previewItems.length > 0);
   const actionBusy = isMinting || isRedeeming || isClaiming || VRFPending;
   const statusText = (() => {
     if (actionStatusLabel) return actionStatusLabel;
@@ -426,13 +450,13 @@ export default function USERPANEL({
       if (txStatus?.stage === "pending")
         return "Claim: pending confirmation...";
     }
-    return connected ? "Ready for your next action." : "Connect wallet to start.";
+    return connected
+      ? "Ready for your next action."
+      : "Connect wallet to start.";
   })();
   const latestTxLink =
     txExplorerLink ||
-    (txStatus?.hash
-      ? buildTxLink(txStatus.hash, txStatus.chainId)
-      : "");
+    (txStatus?.hash ? buildTxLink(txStatus.hash, txStatus.chainId) : "");
   const activityRows =
     activity.length > 0
       ? activity
@@ -448,14 +472,22 @@ export default function USERPANEL({
           ]
         : [];
   const ticketPriceLabel =
-    ticketPrice != null ? `${formatValue(ticketPrice, 4)} POL` : "--";
-  const claimableLabel = claimableKnown
-    ? `${formatValue(claimableValue, 4)} POL`
-    : "--";
+    ticketPrice != null ? formatNative(ticketPrice, 4) : "--";
+  const claimableLabel = claimableKnown ? formatToken(claimableValue, 4) : "--";
   const rewardPoolLabel =
-    rewardPool != null ? `${formatValue(rewardPool, 4)} POL` : "--";
+    rewardPool != null ? formatNative(rewardPool, 4) : "--";
   const mintVolumeLabel =
-    mintVolumeMatic != null ? `${formatValue(mintVolumeMatic, 4)} POL` : "--";
+    mintVolumeMatic != null ? formatNative(mintVolumeMatic, 4) : "--";
+  const communityClaimableLabel = formatNative(
+    communitySnapshot.claimableAmount,
+    4,
+  );
+  const communityAssignedLabel = formatNative(
+    communitySnapshot.assignedAmount,
+    4,
+  );
+  const communityPoolLabel = formatNative(communitySnapshot.poolBalance, 4);
+  const communityLockedLabel = formatNative(communitySnapshot.totalLocked, 4);
   const supplyLabel =
     minted != null && maxSupply != null
       ? `${formatValue(minted, 0)} / ${formatValue(maxSupply, 0)}`
@@ -469,18 +501,11 @@ export default function USERPANEL({
       ? "Redeeming..."
       : "Redeem ticket";
   const claimLabel = isClaiming ? "Claiming..." : "Claim rewards";
-  const mintDisabled =
-    !connected || actionBusy || typeof onMint !== "function";
+  const mintDisabled = !connected || actionBusy || typeof onMint !== "function";
   const redeemDisabled =
-    !connected ||
-    actionBusy ||
-    !canRedeem ||
-    typeof onRedeem !== "function";
+    !connected || actionBusy || !canRedeem || typeof onRedeem !== "function";
   const claimDisabled =
-    !connected ||
-    actionBusy ||
-    !canClaim ||
-    typeof onClaim !== "function";
+    !connected || actionBusy || !canClaim || typeof onClaim !== "function";
   const lastUpdatedLabel = overview.updatedAt
     ? new Date(overview.updatedAt).toLocaleTimeString()
     : "--";
@@ -714,7 +739,9 @@ export default function USERPANEL({
               </button>
             </div>
             <div
-              className={actionBusy ? "user-panel__alert" : "user-panel__status"}
+              className={
+                actionBusy ? "user-panel__alert" : "user-panel__status"
+              }
             >
               {statusText}
             </div>
@@ -739,11 +766,11 @@ export default function USERPANEL({
             </p>
             <div className="user-panel__statline">
               <span>POL balance</span>
-              <strong>{formatValue(overview.native, 4)}</strong>
+              <strong>{formatNative(overview.native, 4)}</strong>
             </div>
             <div className="user-panel__statline">
               <span>BIGGI balance</span>
-              <strong>{formatValue(overview.biggi, 4)}</strong>
+              <strong>{formatToken(overview.biggi, 4)}</strong>
             </div>
             <div className="user-panel__statline">
               <span>Total tokens</span>
@@ -781,6 +808,89 @@ export default function USERPANEL({
             <div className="user-panel__muted">
               Last update: {lastUpdatedLabel}
             </div>
+          </div>
+
+          <div className="user-panel__card user-panel__card--community">
+            <h3>Community Center</h3>
+            <p className="user-panel__muted">
+              Wallet-specific community event rewards and voting status from the
+              Polygon mainnet Community Center.
+            </p>
+            <div className="user-panel__statline">
+              <span>Contract</span>
+              <ExplorerLink
+                address={communitySnapshot.address}
+                chainId={ADDR.CHAIN_ID || chainId}
+                label={shortAddress(communitySnapshot.address)}
+              />
+            </div>
+            <div className="user-panel__statline">
+              <span>Status</span>
+              <strong>
+                {communitySnapshot.configured
+                  ? communitySnapshot.paused
+                    ? "Paused"
+                    : "Live"
+                  : "Missing"}
+              </strong>
+            </div>
+            <div className="user-panel__statline">
+              <span>Events tracked</span>
+              <strong>{formatValue(communitySnapshot.eventsCount, 0)}</strong>
+            </div>
+            <div className="user-panel__statline">
+              <span>Assigned events</span>
+              <strong>
+                {formatValue(communitySnapshot.assignedEvents, 0)}
+              </strong>
+            </div>
+            <div className="user-panel__statline">
+              <span>Claimable events</span>
+              <strong>
+                {formatValue(communitySnapshot.claimableEvents, 0)}
+              </strong>
+            </div>
+            <div className="user-panel__statline">
+              <span>Claimable POL</span>
+              <strong>{communityClaimableLabel}</strong>
+            </div>
+            <div className="user-panel__statline">
+              <span>Assigned POL</span>
+              <strong>{communityAssignedLabel}</strong>
+            </div>
+            <div className="user-panel__statline">
+              <span>Pool / locked</span>
+              <strong>
+                {communityPoolLabel} / {communityLockedLabel}
+              </strong>
+            </div>
+            <div className="user-panel__statline">
+              <span>Live polls</span>
+              <strong>{formatValue(communitySnapshot.livePolls, 0)}</strong>
+            </div>
+            <div
+              className={
+                communitySnapshot.claimableEvents > 0
+                  ? "user-panel__status"
+                  : "user-panel__alert"
+              }
+            >
+              {!connected
+                ? "Connect wallet to see Community Center assignments."
+                : communityError
+                  ? "Community snapshot fallback is active."
+                  : communitySnapshot.claimableEvents > 0
+                    ? "Community prize is ready to claim in Community Center."
+                    : "No community prize claimable for this wallet right now."}
+            </div>
+            <button
+              type="button"
+              className="user-panel__btn user-panel__btn--ghost user-panel__btn--wide"
+              onClick={refreshCommunitySnapshot}
+              disabled={communityLoading}
+            >
+              {communityLoading ? "Refreshing..." : "Refresh Community Center"}
+            </button>
           </div>
 
           <div className="user-panel__card">
@@ -935,9 +1045,7 @@ export default function USERPANEL({
             <span className="user-panel__stat-icon">Chain</span>
             <div>
               <span className="user-panel__stat-label">Chain ID</span>
-              <span className="user-panel__stat-value">
-                {chainId || "--"}
-              </span>
+              <span className="user-panel__stat-value">{chainId || "--"}</span>
             </div>
           </div>
           <div className="user-panel__stat-card">

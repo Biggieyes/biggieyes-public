@@ -49,13 +49,21 @@ function resolvePanelAlt(raw) {
   if (["rewards", "reward", "weekly"].includes(key)) return "REWARDS";
   if (["collection", "blocks", "nft"].includes(key)) return "COLLECTION";
   if (["vrf", "mint", "vrf-mint", "vrf mint"].includes(key)) return "VRF MINT";
-  if (["ecosystem", "token", "tokenomics", "biggi"].includes(key))
+  if (
+    ["ecosystem", "biggi ecosystem", "token", "tokenomics", "biggi"].includes(
+      key,
+    )
+  )
     return "BIGGI ECOSYSTEM";
   if (["users", "user", "wallet"].includes(key)) return "USERS";
   if (
-    ["community", "community-center", "communitycenter", "expansion"].includes(
-      key,
-    )
+    [
+      "community",
+      "community center",
+      "community-center",
+      "communitycenter",
+      "expansion",
+    ].includes(key)
   ) {
     return "COMMUNITY CENTER";
   }

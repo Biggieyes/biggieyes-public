@@ -6,6 +6,19 @@ import "./InfoTables.css";
 const MOBILE_BREAKPOINT = 700;
 const ANIMATION_DURATION = 2.8;
 
+const DEFAULT_BLOCK_NAMES = [
+  "ORANGE",
+  "BLACK",
+  "WHITE",
+  "BROWN",
+  "BLUE",
+  "GREEN",
+  "VIOLET",
+  "RED",
+  "PINK",
+  "RAINBOW",
+];
+
 const BLOCK_MAX_SUPPLY = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10];
 
 const BLOCK_COLORS = {
@@ -66,8 +79,8 @@ const getBlockColor = (name) => {
     padding: "6px 4px",
     textAlign: "center",
     whiteSpace: "nowrap",
-    overFLOW: "hidden",
-    textOverFLOW: "ellipsis",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
     transition: "all 0.3s ease",
     minWidth: "80px",
   };
@@ -78,8 +91,8 @@ const cellBase = {
   padding: "6px 4px",
   fontWeight: 700,
   whiteSpace: "nowrap",
-  overFLOW: "hidden",
-  textOverFLOW: "ellipsis",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
   textShadow: "none",
   borderBottom: "1px solid rgba(255,255,255,0.06)",
 };
@@ -117,7 +130,7 @@ const fmt2 = (n) =>
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }).format(n)
-    : "0,00";
+    : "--";
 
 const BackgroundsWidget = ({
   blockNames = [],
@@ -156,14 +169,22 @@ const BackgroundsWidget = ({
 
   const { countByName, priceByName, maxSupplyByName, normalizedNames } =
     React.useMemo(() => {
-      const namesUC = blockNames.map((n) => String(n || "").toUpperCase());
+      const namesUC = (Array.isArray(blockNames) && blockNames.length
+        ? blockNames
+        : DEFAULT_BLOCK_NAMES
+      )
+        .map((n) => String(n || "").trim().toUpperCase())
+        .filter(Boolean);
       const countMap = {};
       const priceMap = {};
       const supplyMap = {};
       namesUC.forEach((N, i) => {
-        countMap[N] = Number(backgroundMintCounts[i] ?? 0);
-        priceMap[N] = Number(blockPrices[i] ?? 0);
-        supplyMap[N] = Number(BLOCK_MAX_SUPPLY[i] ?? 0);
+        const count = Number(backgroundMintCounts[i] ?? 0);
+        const price = Number(blockPrices[i] ?? 0);
+        const supply = Number(BLOCK_MAX_SUPPLY[i] ?? 0);
+        countMap[N] = Number.isFinite(count) ? count : 0;
+        priceMap[N] = Number.isFinite(price) ? price : 0;
+        supplyMap[N] = Number.isFinite(supply) ? supply : 0;
       });
       return {
         countByName: countMap,
@@ -177,10 +198,10 @@ const BackgroundsWidget = ({
     "Background",
     "Minted",
     "Linked Block",
-    "BG Inc",
-    "Mint %",
+    "BG Bonus",
+    "Block Growth",
     "Max Supply",
-    "Block Price Δ",
+    "Block Price Delta",
   ];
 
   const normalizedLastBlock = String(lastRedeemedBlock || "")
@@ -360,16 +381,17 @@ const BackgroundsWidget = ({
                     </td>
                   </tr>
                   <tr className="info-row--bonus">
-                    <td className="bgw-k">BG Inc</td>
+                    <td className="bgw-k">BG Bonus</td>
                     <td className="bgw-v">
-                      One-off bonus applied to the current block price (5–50%).
+                      One-time background bonus stored with the NFT metadata and
+                      final mint price context (5-50%).
                     </td>
                   </tr>
                   <tr className="info-row--mint">
-                    <td className="bgw-k">Mint %</td>
+                    <td className="bgw-k">Block Growth</td>
                     <td className="bgw-v">
-                      Derived helper percentage based on the background index
-                      (1..10).
+                      Permanent price growth used by the linked block when
+                      background mints increase that block price.
                     </td>
                   </tr>
                   <tr className="info-row--supply">
@@ -379,7 +401,7 @@ const BackgroundsWidget = ({
                     </td>
                   </tr>
                   <tr className="info-row--delta">
-                    <td className="bgw-k">Block Price Δ</td>
+                    <td className="bgw-k">Block Price Delta</td>
                     <td className="bgw-v">
                       Current block price minus base block price.
                     </td>

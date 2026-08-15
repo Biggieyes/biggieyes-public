@@ -108,7 +108,7 @@ const HAS_ARCHIVE_ENV = (() => {
       const env = import.meta.env;
       return Boolean(
         env.VITE_ARCHIVE_RPC_URL ||
-          env.VITE_AMOY_ARCHIVE_RPC_URL ||
+          env.VITE_ACTIVE_CHAIN_ARCHIVE_RPC_URL ||
           env.VITE_ARCHIVE_RPC_URLS,
       );
     }
@@ -165,14 +165,15 @@ const PRUNED_LOOKBACK = (() => {
   return PRUNED_LOOKBACK_DEFAULT;
 })();
 let prunedWarned = false;
-const WALLET_CACHE_VERSION = "v2";
+const WALLET_CACHE_VERSION = "v3-mainnet";
 export const WALLET_CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 export function walletCacheKey(addr, contractAddr) {
   const wallet = String(addr || "").toLowerCase();
   const contract = String(contractAddr || "").toLowerCase();
+  const chainId = Number(ADDR?.CHAIN_ID || 137) || 137;
   const suffix = contract ? `_c_${contract}` : "";
-  return `biggi_wallet_${WALLET_CACHE_VERSION}_${wallet}${suffix}`;
+  return `biggi_wallet_${WALLET_CACHE_VERSION}_${chainId}_${wallet}${suffix}`;
 }
 
 export function loadWalletCache(addr, options = {}, contractAddr) {

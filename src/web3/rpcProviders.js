@@ -1,7 +1,7 @@
 // import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress } from "ethers";
 import { FallbackProvider, JsonRpcProvider, Network } from "ethers";
 import {
-  AMOY,
+  ACTIVE_CHAIN,
   getRpcUrls as getConfiguredRpcUrls,
   getArchiveRpcUrls,
 } from "../shared/utils/rpcConfig.js";
@@ -44,8 +44,8 @@ function shouldUseEthersFallbackProvider() {
   return raw === "1" || raw === "true";
 }
 
-function makeStaticProvider(url, chainId = AMOY.chainId) {
-  const network = Network.from({ chainId, name: AMOY.name });
+function makeStaticProvider(url, chainId = ACTIVE_CHAIN.chainId) {
+  const network = Network.from({ chainId, name: ACTIVE_CHAIN.name });
   // staticNetwork avoids repeated chainId detection on flaky/public RPCs
   // ethers v6 expects a Network object for staticNetwork (not boolean)
   const batchMaxCount = resolveBatchMaxCount(url);
@@ -55,25 +55,25 @@ function makeStaticProvider(url, chainId = AMOY.chainId) {
 }
 
 // Helper to create a provider with dynamic healthy endpoint selection
-export function createJsonRpcProvider(rpcUrl, chainId = AMOY.chainId) {
+export function createJsonRpcProvider(rpcUrl, chainId = ACTIVE_CHAIN.chainId) {
   // Synchronous provider creation for compatibility with FallbackProvider
   if (!rpcUrl) {
     const urls = getConfiguredRpcUrls();
     if (!urls.length)
       throw new Error(
-        "No RPC URL configured (set VITE_JSON_RPC_URL or VITE_AMOY_RPC_URL)",
+        "No RPC URL configured (set VITE_JSON_RPC_URL or VITE_POLYGON_RPC_URL)",
       );
     rpcUrl = urls[0];
   }
   return makeStaticProvider(rpcUrl, chainId);
 }
 
-export function createFallbackProvider(urls, chainId = AMOY.chainId) {
+export function createFallbackProvider(urls, chainId = ACTIVE_CHAIN.chainId) {
   const list =
     Array.isArray(urls) && urls.length ? urls : getConfiguredRpcUrls();
   if (!list.length)
     throw new Error(
-      "No RPC URLs configured (set VITE_JSON_RPC_URL or VITE_AMOY_RPC_URL)",
+      "No RPC URLs configured (set VITE_JSON_RPC_URL or VITE_POLYGON_RPC_URL)",
     );
   if (list.length === 1) return createJsonRpcProvider(list[0], chainId);
   if (!shouldUseEthersFallbackProvider())
@@ -97,7 +97,7 @@ export function createFallbackProvider(urls, chainId = AMOY.chainId) {
   }
 }
 
-export function createArchiveProvider(urls, chainId = AMOY.chainId) {
+export function createArchiveProvider(urls, chainId = ACTIVE_CHAIN.chainId) {
   const list = Array.isArray(urls) && urls.length ? urls : [];
   if (!list.length) return null;
   if (list.length === 1) return createJsonRpcProvider(list[0], chainId);

@@ -13,13 +13,17 @@ export function getTokenDexContracts(chainId, provider) {
   const {
     biggiToken,
     router,
+    buybackRouter,
     factory,
     weth,
+    wpol,
+    quoteToken,
     pairAddress,
     lpPriceFeed,
     reserve,
     liquidityVault,
     treasury,
+    multicall,
   } = getTokenDexAddresses(chainId);
 
   const validAddr = (addr) =>
@@ -51,13 +55,17 @@ export function getTokenDexContracts(chainId, provider) {
     addrs: {
       biggiToken,
       router,
+      buybackRouter,
       factory,
       weth,
+      wpol,
+      quoteToken,
       pairAddress,
       lpPriceFeed,
       reserve,
       liquidityVault,
       treasury,
+      multicall,
     },
   };
 }

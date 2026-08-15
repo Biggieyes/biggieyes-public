@@ -252,3 +252,9 @@
 .rw-head tbody td:last-child {
   padding-right: 18px;
 }
+
+.rw-table-wrapper {
+  max-height: min(50vh, 500px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}

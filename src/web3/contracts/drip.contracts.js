@@ -1,8 +1,8 @@
 import { Contract, ZeroAddress } from "ethers";
 import {
-  BiggiDRIPDistributor as ABI_BiggiDRIPDistributor,
-  BiggiDRIPKeeper as ABI_BiggiDRIPKeeper,
-  BiggiDRIPLM as ABI_BiggiDRIPLM,
+  BiggiDripDistributor as ABI_BiggiDripDistributor,
+  DripKeeperProxy as ABI_DripKeeperProxy,
+  BiggiDripLMToModerator as ABI_BiggiDripLMToModerator,
   BiggiToken as ABI_BiggiToken,
 } from "@/config/abi/index.js";
 import { getDRIPAddresses } from "../../config/addresses/index.js";
@@ -20,12 +20,12 @@ export function getDRIPContracts(chainId, provider) {
 
   const DRIPDistributor = new Contract(
     distributorAddress,
-    ABI_BiggiDRIPDistributor,
+    ABI_BiggiDripDistributor,
     signerOrProvider,
   );
-  const DRIPLM = new Contract(lmAddress, ABI_BiggiDRIPLM, signerOrProvider);
+  const DRIPLM = new Contract(lmAddress, ABI_BiggiDripLMToModerator, signerOrProvider);
   const DRIPKeeper = dripKeeperAddress
-    ? new Contract(dripKeeperAddress, ABI_BiggiDRIPKeeper, signerOrProvider)
+    ? new Contract(dripKeeperAddress, ABI_DripKeeperProxy, signerOrProvider)
     : null;
   const token = new Contract(tokenAddress, ABI_BiggiToken, signerOrProvider);
 

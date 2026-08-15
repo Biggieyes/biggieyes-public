@@ -51,10 +51,12 @@ const IGNORE_METHODS = new Set([
   "removeAllListeners",
   "listenerCount",
   "getBalance",
+  "getAddress",
   "getNetwork",
   "getSigner",
   "listAccounts",
   "send",
+  "connect",
   "getBlockNumber",
   "trim",
   "replace",
@@ -73,6 +75,9 @@ const RUNTIME_HELPER_METHODS = new Set([
   "routerInfo",
   "getSwapPath",
   "liquidityPreview",
+  "tokensOfOwner",
+  "walletOfOwner",
+  "tokenOfOwnerByIndex",
 ]);
 
 const CONTRACT_FACTORY_RE =
@@ -196,7 +201,7 @@ function resolveAbiSetFromArg(arg, abiImportMap, abiByFile) {
 
 function readJsonSafe(filePath) {
   try {
-    const raw = fs.readFileSync(filePath, "utf8");
+    const raw = fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, "");
     return JSON.parse(raw);
   } catch {
     return null;

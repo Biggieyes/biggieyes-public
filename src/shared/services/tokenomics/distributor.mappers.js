@@ -1,4 +1,4 @@
-import * as ethers from "ethers";
+import { formatMappedNative } from "./amountFormatters.js";
 
 const DECIMALS = 18;
 const PLACEHOLDER = "--";
@@ -14,21 +14,13 @@ function _normalizeBigNumberish(raw) {
 }
 
 function _formatAmount(raw, decimals = DECIMALS) {
-  if (raw === undefined || raw === null)
-    return { display: PLACEHOLDER, numeric: null };
-  try {
-    const normalized = _normalizeBigNumberish(raw);
-    if (normalized == null) return { display: PLACEHOLDER, numeric: null };
-    const formatted = ethers.formatUnits(normalized, decimals);
-    const numeric = Number(formatted);
-    const display = Number.isFinite(numeric)
-      ? numeric.toLocaleString("en-US", { maximumFractionDigits: 2 })
-      : formatted;
-    return { display, numeric: Number.isFinite(numeric) ? numeric : null };
-  } catch (error) {
-    console.warn("Distributor mapper format failed", error);
-    return { display: PLACEHOLDER, numeric: null };
-  }
+  const normalized = _normalizeBigNumberish(raw);
+  if (normalized == null) return { display: PLACEHOLDER, numeric: null };
+  return formatMappedNative(
+    normalized,
+    decimals === DECIMALS ? 2 : decimals,
+    PLACEHOLDER,
+  );
 }
 
 export function mapDistributorSnapshotToUI(raw) {
@@ -44,7 +36,9 @@ export function mapDistributorSnapshotToUI(raw) {
   const totalReceived = _formatAmount(raw.totalReceived);
   const totalPending = _formatAmount(raw.totalPending);
   const pendingReserve = _formatAmount(raw.pendingReserve);
-  const pendingBUYBACK = _formatAmount(raw.pendingBUYBACK ?? raw.pendingBUYBACKAgent);
+  const pendingBUYBACK = _formatAmount(
+    raw.pendingBUYBACK ?? raw.pendingBUYBACKAgent,
+  );
   const pendingTreasury = _formatAmount(raw.pendingTreasury);
   const pendingCOLLECTIONREWARDS = _formatAmount(raw.pendingCOLLECTIONREWARDS);
   const pendingCOMMUNITYCENTER = _formatAmount(

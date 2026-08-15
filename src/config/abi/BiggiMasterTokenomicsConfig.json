@@ -106,6 +106,19 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
+        "internalType": "address",
+        "name": "dexReserveGuard",
+        "type": "address"
+      }
+    ],
+    "name": "DexReserveGuardSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "components": [
           {
             "internalType": "address",
@@ -232,6 +245,32 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "supplyController",
+        "type": "address"
+      }
+    ],
+    "name": "SupplyControllerSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "supplyGuardian",
+        "type": "address"
+      }
+    ],
+    "name": "SupplyGuardianSet",
+    "type": "event"
+  },
+  {
     "inputs": [],
     "name": "collections",
     "outputs": [
@@ -334,6 +373,19 @@
         "name": "",
         "type": "address"
       },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "dexReserveGuard",
+    "outputs": [
       {
         "internalType": "address",
         "name": "",
@@ -601,6 +653,19 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "dexReserveGuard_",
+        "type": "address"
+      }
+    ],
+    "name": "setDexReserveGuard",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "liquidityManager",
         "type": "address"
       },
@@ -684,6 +749,58 @@
     "name": "setRewards",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "supplyController_",
+        "type": "address"
+      }
+    ],
+    "name": "setSupplyController",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "supplyGuardian_",
+        "type": "address"
+      }
+    ],
+    "name": "setSupplyGuardian",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "supplyController",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "supplyGuardian",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

@@ -34,11 +34,8 @@ export default function RedeemOverlay({
         const id = idHex ? parseInt(idHex, 16) : null;
         const map = {
           1: "Ethereum",
-          5: "Goerli",
           10: "Optimism",
-          137: "Polygon",
-          80001: "Polygon Mumbai",
-          80002: "Polygon Amoy", // current testnet
+          137: "Polygon mainnet",
           8453: "Base",
           42161: "Arbitrum",
         };

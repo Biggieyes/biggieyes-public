@@ -40,7 +40,7 @@ import useWeeklyCountdown from "../hooks/useWeeklyCountdown";
 import "./LiveStatsPools.css";
 import "./InfoTables.css";
 
-const OKLINK_BASE = "https://www.oklink.com/amoy/address/";
+const OKLINK_BASE = "https://www.oklink.com/polygon/address/";
 
 const BlocksWidget = React.lazy(() => import("./BlocksWidget"));
 const BackgroundsWidget = React.lazy(() => import("./BackgroundsWidget"));
@@ -333,7 +333,7 @@ const isUsableLiveStatsImage = (raw) => {
 const LAST_IMAGE_TOKEN_CACHE_LIMIT = 64;
 const liveStatsImageByToken = new Map();
 const LIVE_STATS_IMAGE_CACHE_VERSION = "v2";
-const LIVE_STATS_CACHE_CHAIN_ID = Number(ADDR?.CHAIN_ID || 80002) || 80002;
+const LIVE_STATS_CACHE_CHAIN_ID = Number(ADDR?.CHAIN_ID || 137) || 137;
 const LIVE_STATS_CACHE_CONTRACT = String(ADDR?.MAIN || ADDR?.COLLECTION_VRF || "")
   .trim()
   .toLowerCase();
@@ -4181,7 +4181,7 @@ function LiveStats({
                     <th>Minted</th>
                     <th>Base</th>
                     <th>Live</th>
-                    <th>Δ</th>
+                    <th>Delta</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -4200,7 +4200,7 @@ function LiveStats({
                           ? formatMaybe(row.live, 2)
                           : formatMaybe(row.base, 2)}
                       </td>
-                      <td data-label="Δ">{formatSigned(row.delta, 2)}</td>
+                      <td data-label="Delta">{formatSigned(row.delta, 2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -4221,7 +4221,7 @@ function LiveStats({
                     <th>Background</th>
                     <th>Minted</th>
                     <th>Bonus</th>
-                    <th>Block Δ</th>
+                    <th>Block Delta</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -4235,7 +4235,7 @@ function LiveStats({
                       </td>
                       <td data-label="Minted">{row.minted}</td>
                       <td data-label="Bonus">{row.bonus}%</td>
-                      <td data-label="Block Δ">
+                      <td data-label="Block Delta">
                         {formatSigned(row.delta, 2)}
                       </td>
                     </tr>

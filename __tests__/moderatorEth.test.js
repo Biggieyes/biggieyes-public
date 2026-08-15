@@ -1,6 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { readSlotInfo } from "../src/shared/utils/eth.js";
+import { getConfig, readSlotInfo } from "../src/shared/utils/eth.js";
+import { ADDR } from "../src/shared/utils/addresses.js";
+
+describe("Moderator Center mainnet config", () => {
+  it("uses the deployed mainnet moderator contract and filtered RPC config", () => {
+    const cfg = getConfig();
+
+    expect(cfg.contractAddress).toBe(ADDR.BIGGI_MODERATOR_CENTER);
+    expect(cfg.ownerAddress).toBe(ADDR.OWNER);
+    expect(cfg.chainRpc).toMatch(/^https?:\/\//);
+    expect(cfg.chainRpc).not.toContain("polygon-rpc.com");
+    expect(cfg.abiReady).toBe(true);
+  });
+});
 
 describe("readSlotInfo", () => {
   it("merges getSlotInfo with slots mapping fields from the ModeratorCenter ABI", async () => {

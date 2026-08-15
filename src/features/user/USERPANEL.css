@@ -407,6 +407,11 @@
 .user-panel__activity-list {
   display: grid;
   gap: 10px;
+  max-height: min(44vh, 420px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-width: thin;
 }
 
 .user-panel__activity-row {
@@ -465,6 +470,11 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
   gap: 10px;
+  max-height: min(44vh, 420px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-width: thin;
 }
 
 .user-panel__nft-item {
@@ -483,7 +493,9 @@
   object-fit: cover;
   border-radius: 8px;
   border: 1px solid var(--user-accent-soft);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .user-panel__nft-item:hover .user-panel__nft-image {
@@ -510,10 +522,25 @@
 
 .user-panel__grid--secondary {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  max-height: min(44vh, 420px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-width: thin;
 }
 
 .user-panel__grid--stats {
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.user-panel__card--community {
+  background:
+    radial-gradient(
+      120% 120% at 0% 0%,
+      rgba(93, 220, 255, 0.1),
+      transparent 60%
+    ),
+    linear-gradient(135deg, rgba(255, 232, 0, 0.07), rgba(12, 15, 22, 0.88));
 }
 
 .user-panel__card {
@@ -660,7 +687,12 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+}
+
+.user-panel__stat-card > div {
+  min-width: 0;
 }
 
 .user-panel__stat-icon {
@@ -691,6 +723,8 @@
   font-weight: 700;
   color: #f6f7fb;
   font-size: 1rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .user-panel__alert,
@@ -822,7 +856,7 @@
   }
 
   .user-panel__grid--stats {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .user-panel__action-row {

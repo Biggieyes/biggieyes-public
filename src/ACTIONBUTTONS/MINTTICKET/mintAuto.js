@@ -1,7 +1,7 @@
 import {
-  getMainRW,
+  getTicketHub,
   resolveTicketPriceWeiFromHub,
-  ensureAmoy,
+  ensurePolygon,
 } from "@/shared/utils/contract";
 
 function pickMintName(c) {
@@ -29,17 +29,17 @@ function pickMintName(c) {
 
 /**
  * Mint qty items.
- * - ensure POL Amoy
+ * - ensure Polygon mainnet
  * - send value = priceWei * qty when payable
  * - try call without param and with qty
  */
 export async function mintAuto(qty = 1) {
   if (!Number.isFinite(qty) || qty <= 0) qty = 1;
 
-  // switch/add POL Amoy before getting signer contract
-  await ensureAmoy();
+  // switch/add Polygon mainnet before getting signer contract
+  await ensurePolygon();
 
-  const c = await getMainRW();
+  const c = await getTicketHub();
   const fn = pickMintName(c);
   if (!fn)
     throw new Error("Contract does not expose a recognized mint function.");
@@ -98,4 +98,3 @@ export async function mintAutoAndWait(qty = 1) {
   const tx = await mintAuto(qty);
   return await tx.wait();
 }
-

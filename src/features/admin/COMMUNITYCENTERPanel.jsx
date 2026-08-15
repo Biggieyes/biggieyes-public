@@ -1,8 +1,10 @@
 import * as React from "react";
-import { Contract, formatEther } from "ethers";
+import { Contract } from "ethers";
 
 import { useWeb3 } from "@/providers/Web3Provider";
 import { BiggiCommunityCenter as COMMUNITYCENTERAbi } from "@/config/abi/index.js";
+import useCommunityCenterUserSnapshot from "@/hooks/useCommunityCenterUserSnapshot.js";
+import { formatNativeDisplay } from "@/features/tokenomics/utils/amountFormatting.js";
 import PanelInfoModal from "@/components/common/PanelInfoModal";
 import PanelInfoButton from "@/components/common/PanelInfoButton";
 import { getROProvider, ADDR } from "@/shared/utils/contract";
@@ -33,8 +35,12 @@ function isAddress(value) {
 
 function sameAddress(a, b) {
   return (
-    String(a || "").trim().toLowerCase() ===
-    String(b || "").trim().toLowerCase()
+    String(a || "")
+      .trim()
+      .toLowerCase() ===
+    String(b || "")
+      .trim()
+      .toLowerCase()
   );
 }
 
@@ -83,21 +89,7 @@ function shorten(value, start = 6, end = 4) {
 }
 
 function formatPol(value) {
-  try {
-    const amount = Number(formatEther(value ?? 0n));
-    if (!Number.isFinite(amount)) return "--";
-    if (amount === 0) return "0 POL";
-    if (amount >= 1000) {
-      return `${amount.toLocaleString(undefined, {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-      })} POL`;
-    }
-    if (amount >= 1) return `${amount.toFixed(2)} POL`;
-    return `${amount.toFixed(4)} POL`;
-  } catch {
-    return "--";
-  }
+  return formatNativeDisplay(value ?? 0n, 4);
 }
 
 function formatDateTime(seconds) {
@@ -283,6 +275,14 @@ export default function COMMUNITYCENTERPanel({
   const autoInfoOpened = React.useRef(false);
   const { signer, account } = useWeb3();
   const activeWallet = account || walletAddress || "";
+  const {
+    snapshot: userCommunitySnapshot,
+    loading: userCommunityLoading,
+    refresh: refreshUserCommunitySnapshot,
+  } = useCommunityCenterUserSnapshot({
+    walletAddress: activeWallet,
+    includePolls: true,
+  });
   const [eventsLoading, setEventsLoading] = React.useState(true);
   const [eventsError, setEventsError] = React.useState("");
   const [pollsLoading, setPollsLoading] = React.useState(true);
@@ -324,9 +324,7 @@ export default function COMMUNITYCENTERPanel({
         COMMUNITY_CENTER_ABI,
         provider,
       );
-      const [
-        eventIds,
-      ] = await Promise.all([
+      const [eventIds] = await Promise.all([
         contract.getEvents().catch(() => []),
       ]);
 
@@ -338,8 +336,12 @@ export default function COMMUNITYCENTERPanel({
             await Promise.all([
               contract.getEventWinners(eventId).catch(() => [[], [], []]),
               safeReadMetadata(event.ipfsHash),
-              activeWallet ? contract.userStatus(eventId, activeWallet).catch(() => null) : Promise.resolve(null),
-              activeWallet ? contract.canClaim(eventId, activeWallet).catch(() => null) : Promise.resolve(null),
+              activeWallet
+                ? contract.userStatus(eventId, activeWallet).catch(() => null)
+                : Promise.resolve(null),
+              activeWallet
+                ? contract.canClaim(eventId, activeWallet).catch(() => null)
+                : Promise.resolve(null),
             ]);
           const tuple = Array.isArray(winnerTuple) ? winnerTuple : [[], [], []];
           return {
@@ -380,9 +382,7 @@ export default function COMMUNITYCENTERPanel({
       setPolls(Array.isArray(json?.polls) ? json.polls : []);
     } catch (nextError) {
       setPolls([]);
-      setPollsError(
-        nextError?.message || "Failed to load community voting.",
-      );
+      setPollsError(nextError?.message || "Failed to load community voting.");
     } finally {
       setPollsLoading(false);
     }
@@ -391,6 +391,10 @@ export default function COMMUNITYCENTERPanel({
   const loadData = React.useCallback(async () => {
     await Promise.allSettled([loadEvents(), loadPolls()]);
   }, [loadEvents, loadPolls]);
+
+  const refreshAllData = React.useCallback(async () => {
+    await Promise.allSettled([loadData(), refreshUserCommunitySnapshot()]);
+  }, [loadData, refreshUserCommunitySnapshot]);
 
   React.useEffect(() => {
     loadData().catch((nextError) => {
@@ -407,11 +411,18 @@ export default function COMMUNITYCENTERPanel({
       setClaimingEventId(eventId);
       setClaimMessage("");
       try {
-        const contract = new Contract(communityAddress, COMMUNITY_CENTER_ABI, signer);
+        const contract = new Contract(
+          communityAddress,
+          COMMUNITY_CENTER_ABI,
+          signer,
+        );
         const tx = await contract.claim(eventId);
         await tx.wait();
         setClaimMessage(`Claim for event #${eventId} confirmed.`);
-        await loadEvents();
+        await Promise.allSettled([
+          loadEvents(),
+          refreshUserCommunitySnapshot(),
+        ]);
       } catch (nextError) {
         setClaimMessage(
           nextError?.shortMessage || nextError?.message || "Claim failed.",
@@ -420,7 +431,13 @@ export default function COMMUNITYCENTERPanel({
         setClaimingEventId(null);
       }
     },
-    [activeWallet, communityAddress, loadEvents, signer],
+    [
+      activeWallet,
+      communityAddress,
+      loadEvents,
+      refreshUserCommunitySnapshot,
+      signer,
+    ],
   );
 
   const handleVote = React.useCallback(
@@ -450,14 +467,20 @@ export default function COMMUNITYCENTERPanel({
           signature,
         });
         setVoteMessage(`Vote recorded for poll ${pollId}.`);
-        await loadPolls();
+        await Promise.allSettled([loadPolls(), refreshUserCommunitySnapshot()]);
       } catch (nextError) {
         setVoteMessage(nextError?.message || "Vote failed.");
       } finally {
         setVotingPollId("");
       }
     },
-    [activeWallet, loadPolls, signer, voteSelections],
+    [
+      activeWallet,
+      loadPolls,
+      refreshUserCommunitySnapshot,
+      signer,
+      voteSelections,
+    ],
   );
 
   const infoItems = React.useMemo(
@@ -512,14 +535,39 @@ export default function COMMUNITYCENTERPanel({
           : "Visible after wallet connection",
       },
       {
+        label: "Claimable POL",
+        value: activeWallet
+          ? userCommunityLoading
+            ? "Syncing..."
+            : formatPol(userCommunitySnapshot.claimableAmount)
+          : "--",
+        hint: "Wallet prize total from the Community Center contract",
+      },
+      {
         label: "Live polls",
         value: pollsLoading ? "Syncing..." : String(livePolls),
         hint: pollsLoading
           ? "Refreshing community voting feed"
           : "Wallet-signed community votes",
       },
+      {
+        label: "Pool locked",
+        value: userCommunityLoading
+          ? "Syncing..."
+          : formatPol(userCommunitySnapshot.totalLocked),
+        hint: "Total locked community event payouts",
+      },
     ];
-  }, [activeWallet, events, eventsLoading, polls, pollsLoading]);
+  }, [
+    activeWallet,
+    events,
+    eventsLoading,
+    polls,
+    pollsLoading,
+    userCommunityLoading,
+    userCommunitySnapshot.claimableAmount,
+    userCommunitySnapshot.totalLocked,
+  ]);
 
   return (
     <section
@@ -540,16 +588,20 @@ export default function COMMUNITYCENTERPanel({
                 {hasConfig ? "Contract ready" : "Contract missing"}
               </span>
               <span className="rewards-grid__pill">
-                {activeWallet ? `Wallet ${shorten(activeWallet, 6, 4)}` : "Wallet disconnected"}
+                {activeWallet
+                  ? `Wallet ${shorten(activeWallet, 6, 4)}`
+                  : "Wallet disconnected"}
               </span>
             </div>
             <div className="rewards-grid__header-actions community-center__header-actions">
               <button
                 type="button"
                 className="biggi-btn biggi-btn--ghost"
-                onClick={() => loadData()}
+                onClick={refreshAllData}
               >
-                Refresh
+                {userCommunityLoading || eventsLoading || pollsLoading
+                  ? "Refreshing..."
+                  : "Refresh"}
               </button>
               <button
                 type="button"
@@ -577,7 +629,10 @@ export default function COMMUNITYCENTERPanel({
 
         <div className="biggi-hero community-center__hero">
           {heroItems.map((item) => (
-            <article key={item.label} className="biggi-hero__card biggi-hero__stat">
+            <article
+              key={item.label}
+              className="biggi-hero__card biggi-hero__stat"
+            >
               <span className="biggi-hero__label">{item.label}</span>
               <strong className="biggi-hero__value">{item.value}</strong>
               <span className="biggi-hero__hint">{item.hint}</span>
@@ -593,8 +648,9 @@ export default function COMMUNITYCENTERPanel({
             className="community-center__alert-card"
           >
             <p className="muted community-center__copy">
-              Configure the contract address in <code>src/shared/utils/addresses.js</code>
-              {" "}and ensure the ABI export is present.
+              Configure the contract address in{" "}
+              <code>src/shared/utils/addresses.js</code> and ensure the ABI
+              export is present.
             </p>
           </Card>
         ) : null}
@@ -609,6 +665,103 @@ export default function COMMUNITYCENTERPanel({
             <p className="community-center__copy">{eventsError}</p>
           </Card>
         ) : null}
+
+        <Card
+          title="My Community Snapshot"
+          subtitle="Wallet-level event reward and voting summary from the Polygon mainnet Community Center."
+          tone="c"
+          className="community-center__snapshot-card"
+          action={
+            <button
+              type="button"
+              className="biggi-btn biggi-btn--ghost"
+              onClick={refreshAllData}
+              disabled={userCommunityLoading || eventsLoading || pollsLoading}
+            >
+              {userCommunityLoading ? "Refreshing..." : "Refresh snapshot"}
+            </button>
+          }
+        >
+          <div className="community-center__snapshot-grid">
+            <ValueRow
+              label="Wallet"
+              value={
+                activeWallet ? shorten(activeWallet, 8, 4) : "Not connected"
+              }
+              mono
+            />
+            <ValueRow
+              label="Contract"
+              value={
+                userCommunitySnapshot.address
+                  ? shorten(userCommunitySnapshot.address, 8, 4)
+                  : "--"
+              }
+              mono
+            />
+            <ValueRow
+              label="Status"
+              value={
+                userCommunitySnapshot.configured
+                  ? userCommunitySnapshot.paused
+                    ? "Paused"
+                    : "Live"
+                  : "Missing"
+              }
+            />
+            <ValueRow
+              label="Events tracked"
+              value={String(userCommunitySnapshot.eventsCount)}
+            />
+            <ValueRow
+              label="Assigned events"
+              value={String(userCommunitySnapshot.assignedEvents)}
+            />
+            <ValueRow
+              label="Claimable events"
+              value={String(userCommunitySnapshot.claimableEvents)}
+            />
+            <ValueRow
+              label="Assigned POL"
+              value={formatPol(userCommunitySnapshot.assignedAmount)}
+            />
+            <ValueRow
+              label="Claimable POL"
+              value={formatPol(userCommunitySnapshot.claimableAmount)}
+            />
+            <ValueRow
+              label="Pool balance"
+              value={formatPol(userCommunitySnapshot.poolBalance)}
+            />
+            <ValueRow
+              label="Total locked"
+              value={formatPol(userCommunitySnapshot.totalLocked)}
+            />
+            <ValueRow
+              label="Live polls"
+              value={String(userCommunitySnapshot.livePolls)}
+            />
+            <ValueRow
+              label="My votes"
+              value={String(userCommunitySnapshot.myVotes)}
+            />
+          </div>
+          <div
+            className={
+              userCommunitySnapshot.claimableEvents > 0
+                ? "community-center__feedback"
+                : "community-center__notice"
+            }
+          >
+            <p className="muted community-center__copy">
+              {!activeWallet
+                ? "Connect a wallet to load wallet-specific assignments and votes."
+                : userCommunitySnapshot.claimableEvents > 0
+                  ? "This wallet has a Community Center prize ready to claim."
+                  : "No Community Center prize is claimable for this wallet right now."}
+            </p>
+          </div>
+        </Card>
 
         <div className="community-center__content">
           <Card
@@ -625,8 +778,8 @@ export default function COMMUNITYCENTERPanel({
               {!activeWallet ? (
                 <div className="community-center__notice">
                   <p className="muted community-center__copy">
-                    Connect a wallet to see whether a prize is assigned to your address
-                    and to claim on-chain payouts.
+                    Connect a wallet to see whether a prize is assigned to your
+                    address and to claim on-chain payouts.
                   </p>
                   <div className="community-center__actions">
                     <button
@@ -650,7 +803,9 @@ export default function COMMUNITYCENTERPanel({
                 <div className="community-center__feedback">{claimMessage}</div>
               ) : null}
               {!events.length && !eventsLoading ? (
-                <div className="community-center__empty">No events found on-chain.</div>
+                <div className="community-center__empty">
+                  No events found on-chain.
+                </div>
               ) : null}
               {events.map((event) => {
                 const claimLabel = event.claim
@@ -666,23 +821,36 @@ export default function COMMUNITYCENTERPanel({
                       {event.image ? (
                         <img
                           src={event.image}
-                          alt={event.metadata?.title || event.title || `Event ${event.id}`}
+                          alt={
+                            event.metadata?.title ||
+                            event.title ||
+                            `Event ${event.id}`
+                          }
                           className="community-center__thumb"
                         />
                       ) : null}
                       <div className="community-center__entry-copy">
                         <div className="community-center__entry-head">
-                          <strong>{event.metadata?.title || event.title || `Event #${event.id}`}</strong>
+                          <strong>
+                            {event.metadata?.title ||
+                              event.title ||
+                              `Event #${event.id}`}
+                          </strong>
                           <span
                             className="community-center__status-chip"
-                            style={{ "--community-tone": toneColor(event.schedule) }}
+                            style={{
+                              "--community-tone": toneColor(event.schedule),
+                            }}
                           >
                             {event.schedule}
                           </span>
                           {event.claim?.ok ? (
                             <span
                               className="community-center__status-chip"
-                              style={{ "--community-tone": toneColor("Claim available") }}
+                              style={{
+                                "--community-tone":
+                                  toneColor("Claim available"),
+                              }}
                             >
                               Claim available
                             </span>
@@ -694,10 +862,22 @@ export default function COMMUNITYCENTERPanel({
                           </p>
                         ) : null}
                         <ValueRow label="Event ID" value={String(event.id)} />
-                        <ValueRow label="Prize total" value={formatPol(event.totalPrize)} />
-                        <ValueRow label="Start" value={formatDateTime(event.start)} />
-                        <ValueRow label="End" value={formatDateTime(event.end)} />
-                        <ValueRow label="Winners" value={String(event.winners.length)} />
+                        <ValueRow
+                          label="Prize total"
+                          value={formatPol(event.totalPrize)}
+                        />
+                        <ValueRow
+                          label="Start"
+                          value={formatDateTime(event.start)}
+                        />
+                        <ValueRow
+                          label="End"
+                          value={formatDateTime(event.end)}
+                        />
+                        <ValueRow
+                          label="Winners"
+                          value={String(event.winners.length)}
+                        />
                         {event.metadataUri ? (
                           <a
                             href={event.metadataUri}
@@ -727,10 +907,14 @@ export default function COMMUNITYCENTERPanel({
                           <button
                             type="button"
                             className="biggi-btn biggi-btn--accent"
-                            disabled={!event.claim?.ok || claimingEventId === event.id}
+                            disabled={
+                              !event.claim?.ok || claimingEventId === event.id
+                            }
                             onClick={() => handleClaim(event.id)}
                           >
-                            {claimingEventId === event.id ? "Claiming..." : "Claim prize"}
+                            {claimingEventId === event.id
+                              ? "Claiming..."
+                              : "Claim prize"}
                           </button>
                         </div>
                       </div>
@@ -764,7 +948,8 @@ export default function COMMUNITYCENTERPanel({
               {!activeWallet ? (
                 <div className="community-center__notice">
                   <p className="muted community-center__copy">
-                    Connect a wallet to cast one vote on each live community poll.
+                    Connect a wallet to cast one vote on each live community
+                    poll.
                   </p>
                   <div className="community-center__actions">
                     <button
@@ -798,7 +983,9 @@ export default function COMMUNITYCENTERPanel({
                 ).trim();
                 const totalVotes = Number(poll.totalVotes || 0);
                 const myVote = Array.isArray(poll.options)
-                  ? poll.options.find((option) => option.id === poll.myVoteOptionId)
+                  ? poll.options.find(
+                      (option) => option.id === poll.myVoteOptionId,
+                    )
                   : null;
                 const canVote =
                   Boolean(activeWallet) &&
@@ -817,7 +1004,9 @@ export default function COMMUNITYCENTERPanel({
                           {poll.status}
                         </span>
                         {poll.linkedEventId != null ? (
-                          <span className="muted">Event #{poll.linkedEventId}</span>
+                          <span className="muted">
+                            Event #{poll.linkedEventId}
+                          </span>
                         ) : null}
                       </div>
                       {poll.description ? (
@@ -825,47 +1014,60 @@ export default function COMMUNITYCENTERPanel({
                           {poll.description}
                         </p>
                       ) : null}
-                      <ValueRow label="Opens" value={formatIsoDateTime(poll.startsAt)} />
-                      <ValueRow label="Closes" value={formatIsoDateTime(poll.endsAt)} />
-                      <ValueRow label="Total votes" value={String(totalVotes)} />
-                      {myVote ? <ValueRow label="Your vote" value={myVote.label} /> : null}
+                      <ValueRow
+                        label="Opens"
+                        value={formatIsoDateTime(poll.startsAt)}
+                      />
+                      <ValueRow
+                        label="Closes"
+                        value={formatIsoDateTime(poll.endsAt)}
+                      />
+                      <ValueRow
+                        label="Total votes"
+                        value={String(totalVotes)}
+                      />
+                      {myVote ? (
+                        <ValueRow label="Your vote" value={myVote.label} />
+                      ) : null}
                     </div>
 
                     <div className="community-center__options">
-                      {(Array.isArray(poll.options) ? poll.options : []).map((option) => {
-                        const optionVotes = Number(option.votes || 0);
-                        const percent = totalVotes
-                          ? `${Math.round((optionVotes / totalVotes) * 100)}%`
-                          : "0%";
-                        const isSelected = selectedOptionId === option.id;
-                        return (
-                          <label
-                            key={`${poll.id}-${option.id}`}
-                            className={`community-center__option${isSelected ? " is-selected" : ""}${canVote ? "" : " is-disabled"}`}
-                          >
-                            <input
-                              type="radio"
-                              name={`poll-${poll.id}`}
-                              checked={isSelected}
-                              disabled={!canVote}
-                              onChange={() =>
-                                setVoteSelections((prev) => ({
-                                  ...prev,
-                                  [poll.id]: option.id,
-                                }))
-                              }
-                            />
-                            <div className="community-center__option-copy">
-                              <div className="community-center__option-row">
-                                <span>{option.label}</span>
-                                <span className="muted">
-                                  {optionVotes} votes ({percent})
-                                </span>
+                      {(Array.isArray(poll.options) ? poll.options : []).map(
+                        (option) => {
+                          const optionVotes = Number(option.votes || 0);
+                          const percent = totalVotes
+                            ? `${Math.round((optionVotes / totalVotes) * 100)}%`
+                            : "0%";
+                          const isSelected = selectedOptionId === option.id;
+                          return (
+                            <label
+                              key={`${poll.id}-${option.id}`}
+                              className={`community-center__option${isSelected ? " is-selected" : ""}${canVote ? "" : " is-disabled"}`}
+                            >
+                              <input
+                                type="radio"
+                                name={`poll-${poll.id}`}
+                                checked={isSelected}
+                                disabled={!canVote}
+                                onChange={() =>
+                                  setVoteSelections((prev) => ({
+                                    ...prev,
+                                    [poll.id]: option.id,
+                                  }))
+                                }
+                              />
+                              <div className="community-center__option-copy">
+                                <div className="community-center__option-row">
+                                  <span>{option.label}</span>
+                                  <span className="muted">
+                                    {optionVotes} votes ({percent})
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                          </label>
-                        );
-                      })}
+                            </label>
+                          );
+                        },
+                      )}
                     </div>
 
                     <div className="community-center__actions">
@@ -874,7 +1076,8 @@ export default function COMMUNITYCENTERPanel({
                           type="button"
                           className="biggi-btn biggi-btn--accent"
                           disabled={
-                            !selectedOptionId || String(votingPollId) === String(poll.id)
+                            !selectedOptionId ||
+                            String(votingPollId) === String(poll.id)
                           }
                           onClick={() => handleVote(poll.id)}
                         >
@@ -901,26 +1104,26 @@ export default function COMMUNITYCENTERPanel({
           </Card>
         </div>
 
-      <PanelInfoModal
-        open={infoOpen}
-        title="Community Center"
-        items={infoItems}
-        onClose={() => setInfoOpen(false)}
-      />
-
-      <FullscreenPanel
-        open={moderatorOpen}
-        title="Moderator Center"
-        onClose={() => setModeratorOpen(false)}
-        preventScroll
-      >
-        <MODERATORCENTERPanel
-          compact={compact}
-          walletAddress={activeWallet}
-          onConnectMetaMask={onConnectMetaMask}
-          onConnectWalletConnect={onConnectWalletConnect}
+        <PanelInfoModal
+          open={infoOpen}
+          title="Community Center"
+          items={infoItems}
+          onClose={() => setInfoOpen(false)}
         />
-      </FullscreenPanel>
+
+        <FullscreenPanel
+          open={moderatorOpen}
+          title="Moderator Center"
+          onClose={() => setModeratorOpen(false)}
+          preventScroll
+        >
+          <MODERATORCENTERPanel
+            compact={compact}
+            walletAddress={activeWallet}
+            onConnectMetaMask={onConnectMetaMask}
+            onConnectWalletConnect={onConnectWalletConnect}
+          />
+        </FullscreenPanel>
       </div>
     </section>
   );

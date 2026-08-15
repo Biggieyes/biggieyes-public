@@ -2,16 +2,10 @@ import * as React from "react";
 import Card from "../components/Card.jsx";
 import styles from "../styles/BiggiToken.module.css";
 import { fmtVal } from "../utils/format.js";
+import { toDisplayNumber } from "../utils/amountFormatting.js";
 
 const toNumberLoose = (value) => {
-  if (value == null) return null;
-  if (typeof value === "number")
-    return Number.isFinite(value) ? value : null;
-  if (typeof value === "bigint") return Number(value);
-  const cleaned = String(value).replace(/[^\d.-]/g, "");
-  if (!cleaned) return null;
-  const num = Number(cleaned);
-  return Number.isFinite(num) ? num : null;
+  return toDisplayNumber(value);
 };
 
 const fmt = (value, symbol, digits = 4) => {

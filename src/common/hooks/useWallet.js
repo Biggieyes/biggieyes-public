@@ -1,11 +1,12 @@
 import * as React from "react";
 import * as WC from "../../wallet/wc";
 import {
-  ensureAmoy,
+  ACTIVE_CHAIN,
+  ensurePolygon,
   getContract,
   getInjectedProvider,
   setInjectedProvider,
-  syncAmoyRpcIfNeeded,
+  syncPolygonRpcIfNeeded,
 } from "@/shared/utils/contract";
 import { isLikelyMetaMaskSdkProvider } from "@/shared/utils/injectedProviders";
 
@@ -52,7 +53,7 @@ export function useWallet({ onConnected } = {}) {
       const addr = accounts?.[0];
       if (!addr) throw new Error("No account returned from wallet.");
       try {
-        await syncAmoyRpcIfNeeded(eth);
+        await syncPolygonRpcIfNeeded(eth);
       } catch {
         // non-fatal: wallet can still connect without metadata sync
       }
@@ -64,8 +65,8 @@ export function useWallet({ onConnected } = {}) {
         typeof chainHex === "string"
           ? Number.parseInt(chainHex, 16)
           : undefined;
-      if (currentId !== 80002) {
-        await ensureAmoy(eth);
+      if (currentId !== ACTIVE_CHAIN.chainId) {
+        await ensurePolygon(eth);
       }
 
       setWalletAddress(addr);

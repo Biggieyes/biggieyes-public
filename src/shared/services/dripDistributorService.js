@@ -2,7 +2,7 @@
 // Ethers v6 service wrapper for DRIPDistributor-like contract
 import * as ethers from "ethers";
 import { multicallAggregate } from "../utils/multicall";
-import { BiggiDRIPDistributor as ABI } from "@/config/abi/index.js";
+import { BiggiDripDistributor as ABI } from "@/config/abi/index.js";
 
 /**
  * DRIPDistributorService

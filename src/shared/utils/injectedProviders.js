@@ -30,6 +30,7 @@ export const isLikelyMetaMaskSdkProvider = (provider) => {
   const info = providerInfoByRef.get(provider);
   const rdns = normalizeRdns(info?.rdns);
   if (rdns.includes("mmsdk") || rdns.includes("metamask-sdk")) return true;
+  if (rdns.includes("metamask")) return false;
   if (isLikelyMobileWalletRuntime()) return false;
   // Avoid direct reads from `ethereum._metamask`:
   // MetaMask logs a warning when that experimental field is accessed.

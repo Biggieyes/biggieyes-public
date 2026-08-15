@@ -6,20 +6,34 @@ import {
   getSafeDeployBlock,
   isFullHistoryEnabled,
 } from "../shared/utils/shared";
-import { getProviderForContract } from "../shared/utils/contract";
+import {
+  ensurePolygon,
+  getProviderForContract,
+  getReadOnlyTicketHub,
+  getTicketHub,
+} from "../shared/utils/contract";
 import { buildFeeOverrides } from "../shared/utils/txFees";
+import { ADDR } from "../shared/utils/addresses.js";
 
 const Ctx = React.createContext(null);
 const FULL_HISTORY = isFullHistoryEnabled();
 
 export function VRFProvider({ children }) {
-  const { mainRO, mainRW, biggiMainReaderRead, readerRead } = useContracts();
+  const { mainRO, biggiMainReaderRead, readerRead } = useContracts();
 
   const [params, setParams] = React.useState({
     keyHash: "",
+    expectedKeyHash: ADDR.VRF_KEY_HASH || "",
+    keyHashMatches: null,
     confirmations: 3,
     numWords: 1,
     callbackGasLimit: 300000,
+    coordinator: ADDR.VRF_COORDINATOR || "",
+    expectedCoordinator: ADDR.VRF_COORDINATOR || "",
+    coordinatorMatches: null,
+    collection: ADDR.COLLECTION_VRF || ADDR.MAIN || "",
+    ticketHub: ADDR.TICKET_HUB || "",
+    vrfRouter: ADDR.VRF_ROUTER || "",
   });
   const [subscriptionId, setSubscriptionId] = React.useState("");
   const [last, setLast] = React.useState({
@@ -67,6 +81,14 @@ export function VRFProvider({ children }) {
     async (userAddr = "") => {
       try {
         const c = await mainRO();
+        const provider = getProviderForContract(c);
+        const net = await provider?.getNetwork?.().catch(() => null);
+        let nextParams = params;
+        let nextSubscriptionId = subscriptionId;
+        let nextSubscriptionMatches = null;
+        let nextHistory = [];
+        let nextLast = last;
+
         // params
         try {
           const [kh, conf, n, gas, sub] = await Promise.all([
@@ -76,18 +98,43 @@ export function VRFProvider({ children }) {
             c.callbackGasLimit().catch(() => 300000),
             c.s_subscriptionId?.().catch?.(() => "") ?? "",
           ]);
-          setParams({
-            keyHash: kh || "",
+          const expectedKeyHash = ADDR.VRF_KEY_HASH || "";
+          const expectedCoordinator = ADDR.VRF_COORDINATOR || "";
+          const expectedSubId = ADDR.VRF_SUB_ID || "";
+          const liveKeyHash = kh || "";
+          const liveSubId = sub?.toString?.() || "";
+          const keyHashMatches =
+            liveKeyHash && expectedKeyHash
+              ? String(liveKeyHash).toLowerCase() ===
+                String(expectedKeyHash).toLowerCase()
+              : null;
+          nextParams = {
+            keyHash: liveKeyHash || expectedKeyHash,
+            keyHashLive: liveKeyHash,
+            expectedKeyHash,
+            keyHashMatches,
             confirmations: Number(conf ?? 3),
             numWords: Number(n ?? 1),
             callbackGasLimit: Number(gas ?? 300000),
-          });
-          setSubscriptionId(sub?.toString?.() || "");
+            coordinator: expectedCoordinator,
+            coordinatorLive: "",
+            expectedCoordinator,
+            coordinatorMatches: null,
+            collection: ADDR.COLLECTION_VRF || ADDR.MAIN || "",
+            ticketHub: ADDR.TICKET_HUB || "",
+            vrfRouter: ADDR.VRF_ROUTER || "",
+          };
+          nextSubscriptionId = liveSubId || expectedSubId;
+          nextSubscriptionMatches =
+            liveSubId && expectedSubId
+              ? String(liveSubId) === String(expectedSubId)
+              : null;
+          setParams(nextParams);
+          setSubscriptionId(nextSubscriptionId);
         } catch {}
 
         // history (simplified: only fulfilled/pending for the user)
         if (userAddr) {
-          const provider = getProviderForContract(c);
           if (!provider || typeof provider.getBlockNumber !== "function")
             throw new Error("Provider not available");
           const latest = await provider.getBlockNumber();
@@ -133,22 +180,87 @@ export function VRFProvider({ children }) {
             });
           }
           rows.sort((a, b) => a.blockNumber - b.blockNumber);
-          setHistory(rows.slice(-25).reverse());
+          nextHistory = rows.slice(-25).reverse();
+          const fulfilled = nextHistory.find(
+            (row) => String(row.status).toLowerCase() === "fulfilled",
+          );
+          if (fulfilled) {
+            nextLast = {
+              requestId: fulfilled.requestId || "",
+              status: "fulfilled",
+              requestedAt: fulfilled.time || "",
+              txHash: fulfilled.tx || "",
+              blockNumber: fulfilled.blockNumber,
+              randomWords: fulfilled.randomWords || [],
+            };
+          }
+          setHistory(nextHistory);
+          setLast(nextLast);
         }
+
+        return {
+          network: net?.name
+            ? `${net.name} (${net.chainId})`
+            : net?.chainId
+              ? `chainId ${net.chainId}`
+              : "EVM",
+          chainId: net?.chainId != null ? Number(net.chainId) : undefined,
+          userAddress: userAddr || "",
+          subscription: {
+            id: nextSubscriptionId,
+            expectedId: ADDR.VRF_SUB_ID || "",
+            matches: nextSubscriptionMatches,
+          },
+          params: nextParams,
+          last: nextLast,
+          history: nextHistory,
+        };
       } catch (e) {
         console.error("VRFProvider.refresh", e);
+        return null;
       }
     },
-    [mainRO],
+    [last, mainRO, params, subscriptionId],
   );
 
   const requestRedeem = React.useCallback(
     async (userAddr = "") => {
       try {
-        const c = await mainRW();
-        const provider = getProviderForContract(c);
+        await ensurePolygon();
+        const main = await mainRO();
+        const mainProvider = getProviderForContract(main);
+        const ticketHubRead = getReadOnlyTicketHub(mainProvider);
+        const ticketHubWrite = await getTicketHub();
+        const provider =
+          getProviderForContract(ticketHubWrite) ||
+          getProviderForContract(ticketHubRead) ||
+          mainProvider;
         setIsRedeeming(true);
         setRedeemMsg("Submitting redeem...");
+
+        const mainPaused =
+          typeof main?.paused === "function"
+            ? await main.paused().catch(() => false)
+            : false;
+        const ticketHubPaused =
+          typeof ticketHubRead?.paused === "function"
+            ? await ticketHubRead.paused().catch(() => false)
+            : false;
+        if (mainPaused || ticketHubPaused) {
+          throw new Error("Redeem is paused.");
+        }
+
+        if (typeof main?.pendingMintRequest === "function") {
+          const pendingReq = await main
+            .pendingMintRequest(userAddr)
+            .catch(() => 0n);
+          if (String(pendingReq || "0") !== "0") {
+            setVRFPending(true);
+            setRedeemMsg("VRF pending...");
+            setIsRedeeming(false);
+            return null;
+          }
+        }
 
         // find the first ticket (prefer reader, fallback to logs)
         let tickets = [];
@@ -160,14 +272,20 @@ export function VRFProvider({ children }) {
             (typeof readerRead === "function" ? readerRead() : null);
           if (reader && typeof reader.findTicket === "function") {
             tickets = await reader.findTicket(userAddr);
-          } else if (typeof c.findTicket === "function") {
-            tickets = await c.findTicket(userAddr);
+          } else if (typeof ticketHubRead.findTicket === "function") {
+            tickets = await ticketHubRead.findTicket(userAddr);
           }
         } catch {}
+        if (!Array.isArray(tickets)) tickets = tickets ? [tickets] : [];
+
+        if (!tickets.length && typeof ticketHubRead.findTicket === "function") {
+          tickets = await ticketHubRead.findTicket(userAddr).catch(() => []);
+          if (!Array.isArray(tickets)) tickets = tickets ? [tickets] : [];
+        }
 
         if (!tickets?.length) {
           try {
-            tickets = await findTicketsViaLogs(c, userAddr);
+            tickets = await findTicketsViaLogs(ticketHubRead, userAddr);
           } catch {
             tickets = [];
           }
@@ -194,26 +312,51 @@ export function VRFProvider({ children }) {
           throw new Error("Unable to read ticket ID");
         }
 
-        const redeemFn = c?.redeemTicketAndMintNFT;
+        try {
+          if (typeof ticketHubRead?.ownerOf === "function") {
+            const owner = await ticketHubRead.ownerOf(id);
+            if (
+              owner &&
+              String(owner).toLowerCase() !== String(userAddr).toLowerCase()
+            ) {
+              throw new Error("Ticket is not owned by the connected wallet.");
+            }
+          }
+        } catch (ownershipErr) {
+          if (
+            String(ownershipErr?.message || "").includes(
+              "connected wallet",
+            )
+          ) {
+            throw ownershipErr;
+          }
+        }
+
+        const redeemFn = ticketHubWrite?.redeemTicket;
         if (typeof redeemFn !== "function") {
-          throw new Error("Redeem function not available on MAIN contract.");
+          throw new Error("Redeem function not available on TICKET_HUB contract.");
         }
         const estimate =
-          c?.estimateGas?.redeemTicketAndMintNFT ||
+          ticketHubWrite?.estimateGas?.redeemTicket ||
           redeemFn?.estimateGas ||
           null;
         if (estimate) await estimate(id);
         if (redeemFn?.staticCall) await redeemFn.staticCall(id);
-        if (c?.callStatic?.redeemTicketAndMintNFT)
-          await c.callStatic.redeemTicketAndMintNFT(id);
+        if (ticketHubWrite?.callStatic?.redeemTicket) {
+          await ticketHubWrite.callStatic.redeemTicket(id);
+        }
         setRedeemMsg("Confirm in wallet...");
-        const feeOverrides = await buildFeeOverrides(provider);
+        const feeOverrides = await buildFeeOverrides(provider, {
+          forceLegacy: true,
+        });
         const tx = await redeemFn(id, { ...feeOverrides });
         setRedeemMsg("Waiting for confirmation...");
         await tx.wait();
 
         setVRFPending(true);
+        setIsRedeeming(false);
         setRedeemMsg("VRF pending...");
+        return tx;
       } catch (e) {
         setIsRedeeming(false);
         setVRFPending(false);
@@ -221,7 +364,7 @@ export function VRFProvider({ children }) {
         throw e;
       }
     },
-    [mainRW],
+    [biggiMainReaderRead, findTicketsViaLogs, mainRO, readerRead],
   );
 
   const checkResolution = React.useCallback(
@@ -260,6 +403,7 @@ export function VRFProvider({ children }) {
         refresh,
         requestRedeem,
         checkResolution,
+        refreshVRFPanel: refresh,
       }}
     >
       {children}

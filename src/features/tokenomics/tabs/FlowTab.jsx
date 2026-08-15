@@ -1,5 +1,4 @@
 import * as React from "react";
-import { formatEther, formatUnits } from "ethers";
 
 import Card from "../components/Card";
 import Line from "../components/Line";
@@ -7,33 +6,23 @@ import AddressLine from "../components/AddressLine";
 import styles from "../styles/BiggiToken.module.css";
 import { explorerLink } from "../utils/format";
 import {
-  formatNativeAmount,
-  formatTokenAmount,
   isAddress,
   pickAddress,
-  pickDisplay,
   shortAddress,
   summarizeAddresses,
 } from "../utils/panelFormatting.js";
+import {
+  formatNativeDisplay,
+  formatTokenDisplay,
+  pickFormatted,
+} from "../utils/amountFormatting.js";
 
-function formatNative(value) {
-  if (value == null) return "--";
-  try {
-    const formatted = formatEther(value);
-    return `${Number(formatted).toFixed(4)} POL`;
-  } catch {
-    return "--";
-  }
+export function formatFlowNative(value) {
+  return formatNativeDisplay(value, 4);
 }
 
-function formatToken(value, decimals = 18) {
-  if (value == null) return "--";
-  try {
-    const formatted = formatUnits(value, decimals);
-    return `${Number(formatted).toFixed(4)} BIGGI`;
-  } catch {
-    return "--";
-  }
+export function formatFlowToken(value, decimals = 18) {
+  return formatTokenDisplay(value, decimals, 4);
 }
 
 function buildAddressCheck(label, addresses = []) {
@@ -87,7 +76,8 @@ function FlowTab({
   const meta = snapshot?.tokenMeta || {};
   const live = snapshot?.liveBalances || {};
   const native = live?.native || {};
-  const tokenDecimals = tokenDexSnapshot?.token?.decimals ?? meta?.decimals ?? 18;
+  const tokenDecimals =
+    tokenDexSnapshot?.token?.decimals ?? meta?.decimals ?? 18;
   const distributorAddress =
     addrs?.distributor ||
     addrs?.MULTI_COLLECTION_DISTRIBUTOR ||
@@ -100,7 +90,9 @@ function FlowTab({
     buybackSnapshot?.BUYBACK?.address ||
     dripSnapshot?.DRIPLM?.buybackAgent;
   const communityDisplay =
-    native?.communityEffective ?? native?.communityCenter;
+    native?.communityPoolBalance ??
+    native?.communityEffective ??
+    native?.communityCenter;
   const buy = buybackSnapshot?.BUYBACK || {};
   const treasury = buybackSnapshot?.treasury || {};
   const dripDistributor = dripSnapshot?.distributor || {};
@@ -141,9 +133,13 @@ function FlowTab({
     tokenDexSnapshot?.dex?.pair?.address,
     tokenDexSnapshot?.dex?.pairAddress,
   );
+  const pickTokenDisplay = (...values) =>
+    pickFormatted((value) => formatFlowToken(value, tokenDecimals), ...values);
+  const pickNativeDisplay = (...values) =>
+    pickFormatted(formatFlowNative, ...values);
 
-  const pairBiggiDisplay = formatTokenAmount(pairReserves?.token, tokenDecimals);
-  const pairNativeDisplay = formatNativeAmount(pairReserves?.native);
+  const pairBiggiDisplay = pickTokenDisplay(pairReserves?.token);
+  const pairNativeDisplay = pickNativeDisplay(pairReserves?.native);
   const tradableSummary = [
     { label: "Pair BIGGI", value: pairBiggiDisplay },
     { label: "Pair POL", value: pairNativeDisplay },
@@ -153,101 +149,89 @@ function FlowTab({
   const standbySummary = [
     {
       label: "Reserve waiting",
-      value: pickDisplay(reserve.waitingBiggi),
+      value: pickTokenDisplay(reserve.waitingBiggi),
     },
     {
       label: "DEX refill",
-      value: pickDisplay(reserve.dexRefillBiggi),
+      value: pickTokenDisplay(reserve.dexRefillBiggi),
     },
     {
       label: "Reserve BIGGI",
-      value: pickDisplay(
-        reserve.biggiBalance,
-        formatToken(live?.token?.reserve, tokenDecimals),
-      ),
+      value: pickTokenDisplay(live?.token?.reserve, reserve.biggiBalance),
     },
   ];
 
   const treasurySummary = [
     {
       label: "BIGGI acquired",
-      value: pickDisplay(buy.totalBiggiAcquired),
+      value: pickTokenDisplay(buy.totalBiggiAcquired),
     },
     {
       label: "Treasury BIGGI",
-      value: pickDisplay(
-        treasury.biggiBalance,
-        formatToken(live?.token?.treasury, tokenDecimals),
-      ),
+      value: pickTokenDisplay(live?.token?.treasury, treasury.biggiBalance),
     },
     {
       label: "Treasury POL",
-      value: pickDisplay(
-        treasury.maticBalance,
-        formatNative(native?.treasury),
-      ),
+      value: pickNativeDisplay(native?.treasury, treasury.maticBalance),
     },
   ];
 
   const dripSummary = [
     {
       label: "Distributor BIGGI",
-      value: pickDisplay(
+      value: pickTokenDisplay(
+        live?.token?.dripDistributor,
         dripDistributor.balance,
         dripDistributor.tokenBalance,
-        formatToken(live?.token?.dripDistributor, tokenDecimals),
       ),
     },
     {
       label: "Sold on DEX",
-      value: pickDisplay(dripLm.totalSoldTokens),
+      value: pickTokenDisplay(dripLm.totalSoldTokens),
     },
     {
       label: "Native forwarded",
-      value: pickDisplay(dripLm.totalNativeForwarded, dripLm.nativeBalance),
+      value: pickNativeDisplay(
+        dripLm.totalNativeForwarded,
+        dripLm.nativeBalance,
+      ),
     },
   ];
 
   const biggiLifecycleRows = [
     {
       label: "BUYBACK acquired",
-      value: pickDisplay(buy.totalBiggiAcquired),
+      value: pickTokenDisplay(buy.totalBiggiAcquired),
     },
     {
       label: "Treasury BIGGI live",
-      value: pickDisplay(
-        treasury.biggiBalance,
-        formatToken(live?.token?.treasury, tokenDecimals),
-      ),
+      value: pickTokenDisplay(live?.token?.treasury, treasury.biggiBalance),
     },
     {
       label: "Reserve BIGGI live",
-      value: pickDisplay(
-        reserve.biggiBalance,
-        formatToken(live?.token?.reserve, tokenDecimals),
-      ),
+      value: pickTokenDisplay(live?.token?.reserve, reserve.biggiBalance),
     },
     {
       label: "Reserve waiting",
-      value: pickDisplay(reserve.waitingBiggi),
+      value: pickTokenDisplay(reserve.waitingBiggi),
     },
     {
       label: "Reserve DEX refill",
-      value: pickDisplay(reserve.dexRefillBiggi),
+      value: pickTokenDisplay(reserve.dexRefillBiggi),
     },
     {
       label: "DRIP distributor live",
-      value: pickDisplay(
+      value: pickTokenDisplay(
+        live?.token?.dripDistributor,
         dripDistributor.balance,
         dripDistributor.tokenBalance,
-        formatToken(live?.token?.dripDistributor, tokenDecimals),
       ),
     },
     {
       label: "TokenRewards live",
-      value: pickDisplay(
-        formatTokenAmount(tokenDexSnapshot?.token?.balances?.tokenREWARDS, tokenDecimals),
-        formatToken(live?.token?.tokenRewards, tokenDecimals),
+      value: pickTokenDisplay(
+        live?.token?.tokenRewards,
+        tokenDexSnapshot?.token?.balances?.tokenREWARDS,
       ),
     },
     {
@@ -259,34 +243,34 @@ function FlowTab({
   const nativeLifecycleRows = [
     {
       label: "BUYBACK native in",
-      value: pickDisplay(
+      value: pickNativeDisplay(
+        native?.buybackTotalReceived,
         buy.totalNativeReceived,
-        formatNative(native?.buybackTotalReceived),
       ),
     },
     {
       label: "BUYBACK native spent",
-      value: pickDisplay(buy.totalNativeSpent),
+      value: pickNativeDisplay(buy.totalNativeSpent),
     },
     {
       label: "Treasury POL live",
-      value: pickDisplay(treasury.maticBalance, formatNative(native?.treasury)),
+      value: pickNativeDisplay(native?.treasury, treasury.maticBalance),
     },
     {
       label: "Reserve POL live",
-      value: pickDisplay(reserve.maticBalance, formatNative(native?.reserve)),
+      value: pickNativeDisplay(native?.reserve, reserve.maticBalance),
     },
     {
       label: "Reserve POL total in",
-      value: pickDisplay(reserve.totalMaticReceived),
+      value: pickNativeDisplay(reserve.totalMaticReceived),
     },
     {
       label: "DRIPLM native forwarded",
-      value: pickDisplay(dripLm.totalNativeForwarded),
+      value: pickNativeDisplay(dripLm.totalNativeForwarded),
     },
     {
       label: "DRIPLM native live",
-      value: pickDisplay(dripLm.nativeBalance),
+      value: pickNativeDisplay(dripLm.nativeBalance),
     },
     {
       label: "DEX pair POL tradable",
@@ -339,30 +323,53 @@ function FlowTab({
         subtitle="Current on-chain balances and routed native totals of the key contracts"
       >
         {loading ? <div className="biggi-muted">Loading...</div> : null}
-        {error ? <div className="biggi-muted">{String(error?.message || error)}</div> : null}
+        {error ? (
+          <div className="biggi-muted">{String(error?.message || error)}</div>
+        ) : null}
         <div className={styles.ecoFlowTwoCols}>
           <div>
             <div className={styles.ecoMiniTitle}>Native (POL)</div>
-            <Line label="Reserve" value={formatNative(native?.reserve)} />
+            <Line label="Reserve" value={formatFlowNative(native?.reserve)} />
             <Line
               label="Buyback total in"
-              value={formatNative(native?.buybackTotalReceived)}
+              value={formatFlowNative(native?.buybackTotalReceived)}
             />
-            <Line label="Treasury" value={formatNative(native?.treasury)} />
-            <Line label="Community" value={formatNative(communityDisplay)} />
+            <Line label="Treasury" value={formatFlowNative(native?.treasury)} />
+            <Line
+              label="Community"
+              value={formatFlowNative(communityDisplay)}
+            />
             <Line
               label="CollectionRewards"
-              value={formatNative(native?.collectionRewards)}
+              value={formatFlowNative(native?.collectionRewards)}
             />
           </div>
 
           <div>
             <div className={styles.ecoMiniTitle}>BIGGI</div>
-            <Line label="Reserve" value={formatToken(live?.token?.reserve, tokenDecimals)} />
-            <Line label="TokenRewards" value={formatToken(live?.token?.tokenRewards, tokenDecimals)} />
-            <Line label="DRIP Distributor" value={formatToken(live?.token?.dripDistributor, tokenDecimals)} />
-            <Line label="Treasury" value={formatToken(live?.token?.treasury, tokenDecimals)} />
-            <Line label="Buyback" value={formatToken(live?.token?.buyback, tokenDecimals)} />
+            <Line
+              label="Reserve"
+              value={formatFlowToken(live?.token?.reserve, tokenDecimals)}
+            />
+            <Line
+              label="TokenRewards"
+              value={formatFlowToken(live?.token?.tokenRewards, tokenDecimals)}
+            />
+            <Line
+              label="DRIP Distributor"
+              value={formatFlowToken(
+                live?.token?.dripDistributor,
+                tokenDecimals,
+              )}
+            />
+            <Line
+              label="Treasury"
+              value={formatFlowToken(live?.token?.treasury, tokenDecimals)}
+            />
+            <Line
+              label="Buyback"
+              value={formatFlowToken(live?.token?.buyback, tokenDecimals)}
+            />
           </div>
         </div>
       </Card>
@@ -435,22 +442,66 @@ function FlowTab({
       </Card>
 
       <Card title="CONTRACTS" subtitle="Addresses used in this panel">
-        <AddressLine label="BIGGI Token" address={meta?.address} href={explorerLink(meta?.address)} />
+        <AddressLine
+          label="BIGGI Token"
+          address={meta?.address}
+          href={explorerLink(meta?.address)}
+        />
         <AddressLine
           label="Distributor"
           address={distributorAddress}
           href={explorerLink(distributorAddress)}
         />
-        <AddressLine label="Reserve" address={reserveAddress} href={explorerLink(reserveAddress)} />
-        <AddressLine label="Buyback" address={buybackAddress} href={explorerLink(buybackAddress)} />
-        <AddressLine label="Treasury" address={treasuryAddress} href={explorerLink(treasuryAddress)} />
-        <AddressLine label="Community" address={addrs?.communityCenter} href={explorerLink(addrs?.communityCenter)} />
-        <AddressLine label="CollectionRewards" address={addrs?.collectionRewards} href={explorerLink(addrs?.collectionRewards)} />
-        <AddressLine label="TokenRewards" address={tokenRewardsAddress} href={explorerLink(tokenRewardsAddress)} />
-        <AddressLine label="DRIP Distributor" address={dripDistributorAddress} href={explorerLink(dripDistributorAddress)} />
-        <AddressLine label="DRIPLM" address={dripLm.address} href={explorerLink(dripLm.address)} />
-        <AddressLine label="Router" address={routerAddress} href={explorerLink(routerAddress)} />
-        <AddressLine label="DEX Pair" address={pairAddress} href={explorerLink(pairAddress)} />
+        <AddressLine
+          label="Reserve"
+          address={reserveAddress}
+          href={explorerLink(reserveAddress)}
+        />
+        <AddressLine
+          label="Buyback"
+          address={buybackAddress}
+          href={explorerLink(buybackAddress)}
+        />
+        <AddressLine
+          label="Treasury"
+          address={treasuryAddress}
+          href={explorerLink(treasuryAddress)}
+        />
+        <AddressLine
+          label="Community"
+          address={addrs?.communityCenter}
+          href={explorerLink(addrs?.communityCenter)}
+        />
+        <AddressLine
+          label="CollectionRewards"
+          address={addrs?.collectionRewards}
+          href={explorerLink(addrs?.collectionRewards)}
+        />
+        <AddressLine
+          label="TokenRewards"
+          address={tokenRewardsAddress}
+          href={explorerLink(tokenRewardsAddress)}
+        />
+        <AddressLine
+          label="DRIP Distributor"
+          address={dripDistributorAddress}
+          href={explorerLink(dripDistributorAddress)}
+        />
+        <AddressLine
+          label="DRIPLM"
+          address={dripLm.address}
+          href={explorerLink(dripLm.address)}
+        />
+        <AddressLine
+          label="Router"
+          address={routerAddress}
+          href={explorerLink(routerAddress)}
+        />
+        <AddressLine
+          label="DEX Pair"
+          address={pairAddress}
+          href={explorerLink(pairAddress)}
+        />
       </Card>
     </div>
   );

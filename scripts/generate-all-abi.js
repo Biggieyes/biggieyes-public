@@ -1,5 +1,5 @@
 // generate-all-abi.js
-// Node.js skript pro generování ABI ze všech .sol souborů (kromě SETTER* a BiggiMain) ve složce BIGGIEYESOFFICIALTESTNET
+// Node.js skript pro generování ABI ze všech .sol souborů (kromě SETTER* a BiggiMain) ve složce BIGGI_MAINNET_SOURCE
 // Vyžaduje: npm install solc glob
 
 
@@ -10,7 +10,7 @@ import solc from "solc";
 
 
 const SOL_DIRS = [
-  "biggi-project/bekend/contracts/default_workspace (10)/contracts/BIGGIEYESOFFICIALTESTNET",
+  "biggi-project/bekend/contracts/default_workspace (10)/contracts/BIGGI_MAINNET_SOURCE",
 ];
 const ABI_DIR = "src/utils/abi";
 const REPORT_PATH = "abi_diff_report.md";

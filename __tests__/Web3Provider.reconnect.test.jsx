@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => {
   };
   const browserProviderInstance = {
     getSigner: vi.fn().mockResolvedValue(signer),
-    getNetwork: vi.fn().mockResolvedValue({ chainId: 80002n }),
+    getNetwork: vi.fn().mockResolvedValue({ chainId: 137n }),
   };
 
   return {
@@ -25,12 +25,12 @@ const mocks = vi.hoisted(() => {
         return browserProviderInstance;
       }),
     clearInjectedProvider: vi.fn(),
-    ensureAmoy: vi.fn().mockResolvedValue(undefined),
+    ensurePolygon: vi.fn().mockResolvedValue(undefined),
     getInjectedProvider: vi.fn().mockReturnValue(null),
     getROProvider: vi.fn().mockReturnValue(roProvider),
     hasInjectedProviderOverride: vi.fn().mockReturnValue(false),
     setInjectedProvider: vi.fn(),
-    syncAmoyRpcIfNeeded: vi.fn().mockResolvedValue(undefined),
+    syncPolygonRpcIfNeeded: vi.fn().mockResolvedValue(undefined),
     getInjectedProviderCandidates: vi.fn().mockReturnValue([]),
     isMetaMaskExtensionMissingError: vi.fn().mockReturnValue(false),
     isLikelyMetaMaskSdkProvider: vi.fn().mockReturnValue(false),
@@ -48,14 +48,14 @@ vi.mock("ethers", () => ({
 }));
 
 vi.mock("@/shared/utils/contract", () => ({
-  AMOY: { chainId: 80002, hex: "0x13882" },
+  ACTIVE_CHAIN: { chainId: 137, hex: "0x89" },
   clearInjectedProvider: mocks.clearInjectedProvider,
-  ensureAmoy: mocks.ensureAmoy,
+  ensurePolygon: mocks.ensurePolygon,
   getInjectedProvider: mocks.getInjectedProvider,
   getROProvider: mocks.getROProvider,
   hasInjectedProviderOverride: mocks.hasInjectedProviderOverride,
   setInjectedProvider: mocks.setInjectedProvider,
-  syncAmoyRpcIfNeeded: mocks.syncAmoyRpcIfNeeded,
+  syncPolygonRpcIfNeeded: mocks.syncPolygonRpcIfNeeded,
 }));
 
 vi.mock("@/shared/utils/injectedProviders", () => ({
@@ -108,7 +108,7 @@ describe("Web3Provider reconnect policy", () => {
       return mocks.browserProviderInstance;
     });
     mocks.browserProviderInstance.getSigner.mockResolvedValue(mocks.signer);
-    mocks.browserProviderInstance.getNetwork.mockResolvedValue({ chainId: 80002n });
+    mocks.browserProviderInstance.getNetwork.mockResolvedValue({ chainId: 137n });
   });
 
   it("does not silently reconnect an injected wallet on mount", async () => {
@@ -142,7 +142,7 @@ describe("Web3Provider reconnect policy", () => {
       isMetaMask: true,
       request: vi.fn(async ({ method }) => {
         if (method === "eth_requestAccounts") return [mocks.address];
-        if (method === "eth_chainId") return "0x13882";
+        if (method === "eth_chainId") return "0x89";
         return null;
       }),
       on: vi.fn(),
@@ -171,6 +171,26 @@ describe("Web3Provider reconnect policy", () => {
     expect(mocks.browserProviderInstance.getSigner).toHaveBeenCalled();
   });
 
+  it("does not open WalletConnect from the MetaMask action", async () => {
+    mocks.getInjectedProviderCandidates.mockReturnValue([]);
+    mocks.shouldUseMetaMaskMobileFallback.mockReturnValue(true);
+
+    render(
+      <Web3Provider>
+        <Probe />
+      </Web3Provider>,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /connect/i }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("account")).toHaveTextContent("empty");
+    });
+
+    expect(mocks.connectWithWalletConnect).not.toHaveBeenCalled();
+    expect(mocks.setInjectedProvider).not.toHaveBeenCalled();
+  });
+
   it("restores a persisted WalletConnect session on mount", async () => {
     const restoredProvider = {
       request: vi.fn(),
@@ -185,7 +205,7 @@ describe("Web3Provider reconnect policy", () => {
       ethersProvider: restoredEthersProvider,
       signer: mocks.signer,
       address: mocks.address,
-      chainId: 80002,
+      chainId: 137,
     });
 
     render(

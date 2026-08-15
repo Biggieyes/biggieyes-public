@@ -1,9 +1,11 @@
 import * as React from "react";
 import { ZeroAddress } from "ethers";
 import {
+  ACTIVE_CHAIN,
   getReadOnlyContract,
   getLiquidityContract,
-  getMainRW,
+  getReadOnlyTicketHub,
+  getTicketHub,
   getProviderForContract,
 } from "@/shared/utils/contract";
 import { queryLogsBatched, getSafeDeployBlock } from "@/shared/utils/shared";
@@ -16,7 +18,7 @@ import { readJsonFromURI, resolveImageUrl } from "../../services/ipfs";
  */
 export function useNFTs({
   walletAddress,
-  ensureAmoy,
+  ensurePolygon,
   prettyError,
   fetchStats,
   fetchREWARDS,
@@ -65,7 +67,7 @@ export function useNFTs({
   const fetchWalletAssets = React.useCallback(
     async (addr) => {
       if (!addr) return;
-      const contract = getReadOnlyContract();
+      const contract = getReadOnlyTicketHub();
       try {
         const ids = await findTicketsViaLogs(contract, addr);
         const metas = await Promise.all(
@@ -100,14 +102,14 @@ export function useNFTs({
     setPerforming(true);
     setError(null);
     try {
-      await ensureAmoy();
-      const contract = await getMainRW();
+      await ensurePolygon();
+      const contract = await getTicketHub();
       const provider = getProviderForContract(contract);
       if (!provider) throw new Error("Provider not available");
       const net = await provider.getNetwork();
       const chainId =
         typeof net?.chainId === "bigint" ? Number(net.chainId) : net?.chainId;
-      if (chainId !== 80002) await ensureAmoy();
+      if (chainId !== ACTIVE_CHAIN.chainId) await ensurePolygon();
 
       if (await contract.paused()) return alert("Mint is paused.");
 
@@ -135,7 +137,7 @@ export function useNFTs({
     fetchWalletAssets,
     fetchStats,
     fetchREWARDS,
-    ensureAmoy,
+    ensurePolygon,
     prettyError,
   ]);
 
@@ -146,8 +148,8 @@ export function useNFTs({
     setPerforming(true);
     setError(null);
     try {
-      await ensureAmoy();
-      const contract = await getMainRW();
+      await ensurePolygon();
+      const contract = await getTicketHub();
       if (typeof contract.paused === "function" && (await contract.paused())) {
         return alert("Redeem is paused.");
       }
@@ -185,12 +187,12 @@ export function useNFTs({
         return alert("Unable to read your ticket ID.");
       }
 
-      const redeemFn = contract?.redeemTicketAndMintNFT;
+      const redeemFn = contract?.redeemTicket;
       if (typeof redeemFn !== "function") {
-        throw new Error("Redeem function not available on MAIN contract.");
+        throw new Error("Redeem function not available on TICKET_HUB contract.");
       }
       const estimateRedeem =
-        contract?.estimateGas?.redeemTicketAndMintNFT || redeemFn?.estimateGas;
+        contract?.estimateGas?.redeemTicket || redeemFn?.estimateGas;
       if (estimateRedeem) await estimateRedeem(ticketId);
       if (redeemFn?.staticCall) await redeemFn.staticCall(ticketId);
       setRedeemMsg("Please confirm in your wallet...");
@@ -223,7 +225,7 @@ export function useNFTs({
     fetchWalletAssets,
     fetchStats,
     fetchREWARDS,
-    ensureAmoy,
+    ensurePolygon,
     findTicketsViaLogs,
     prettyError,
   ]);
@@ -234,7 +236,7 @@ export function useNFTs({
     setPerforming(true);
     setError(null);
     try {
-      await ensureAmoy();
+      await ensurePolygon();
       const ids = myNFTs
         .filter((x) => !x.isTicket)
         .map((x) => BigInt(x.tokenId));
@@ -261,7 +263,7 @@ export function useNFTs({
     myNFTs,
     fetchREWARDS,
     fetchStats,
-    ensureAmoy,
+    ensurePolygon,
     prettyError,
   ]);
 

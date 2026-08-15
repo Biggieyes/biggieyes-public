@@ -112,6 +112,63 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "pair",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "baselineSnapshotted",
+        "type": "bool"
+      }
+    ],
+    "name": "SupplyControllerPairConfigured",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "supplyController",
+        "type": "address"
+      }
+    ],
+    "name": "SupplyControllerWired",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "supplyController",
+        "type": "address"
+      }
+    ],
+    "name": "SupplyTargetsSet",
+    "type": "event"
+  },
+  {
     "inputs": [],
     "name": "buybackAgent",
     "outputs": [
@@ -176,6 +233,24 @@
       }
     ],
     "name": "configureDripLMParams",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "pair",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "snapshotBaseline_",
+        "type": "bool"
+      }
+    ],
+    "name": "configureSupplyControllerPair",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -337,6 +412,102 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "buybackPath",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "buybackSlipBps",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "buybackDeadline",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "buybackCooldown",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "autoEnable",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint8",
+        "name": "dripSellPct",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "dripSlippage",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "dripDeadline",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "treasuryForDrip",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokensPerMint",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenForSupply",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "supplyController_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "pairForSupply",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "snapshotSupplyBaseline",
+        "type": "bool"
+      }
+    ],
+    "name": "runAllAndWireSupply",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "supplyController_",
+        "type": "address"
+      }
+    ],
+    "name": "setSupplyTargets",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "setupBuybackCore",
     "outputs": [],
@@ -366,6 +537,39 @@
     "name": "setupDripLMCore",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "setupSupplyControllerCore",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "supplyController",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokenAddr",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

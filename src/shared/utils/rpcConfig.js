@@ -76,7 +76,7 @@ export async function checkRpcHealth(url, options = {}) {
     const expectedChainId =
       typeof options.expectedChainId === "number"
         ? options.expectedChainId
-        : AMOY.chainId;
+        : ACTIVE_CHAIN.chainId;
     const chainIdRaw =
       typeof network?.chainId !== "undefined" ? network.chainId : null;
     const chainId =
@@ -110,28 +110,16 @@ export async function ensurePreferredRpc() {
   else clearPreferredRpc();
   return healthy;
 }
-const LOCAL_STORAGE_RPC_PREF_KEY = "biggi_last_amoy_rpc_v2";
-const LEGACY_RPC_PREF_KEYS = ["biggi_last_amoy_rpc_v1"];
+const LOCAL_STORAGE_RPC_PREF_KEY = "biggi_last_polygon_rpc_v2";
+const LEGACY_RPC_PREF_KEYS = [];
 const RPC_RATE_LIMIT_MEMORY_MS = 10 * 60 * 1000;
 const BAD_RPC_SUBSTRINGS = ["tenderly"];
-const BAD_CORS_RPCS = ["rpc-amoy.polygon.technology"];
-// Disabled endpoints for frontend runtime:
-// - dRPC polygon root endpoint resolves inconsistent data for Amoy contract reads
-// - onfinality public endpoint shows frequent log-query timeouts under wallet gallery load
-const BAD_CHAIN_RPCS = [
-  "polygon.drpc.org",
-  "polygon-amoy.drpc.org",
-  "polygon-amoy.api.onfinality.io",
-];
-const UNSTABLE_AMOY_RPC_HOSTS = [
-  // These hosts have shown prolonged 503/empty-node responses for Amoy.
-  "polygon-amoy-bor-rpc.publicnode.com",
-  "polygon-amoy-bor.publicnode.com",
-  "polygon-amoy.publicnode.com",
-];
-const RATE_LIMITED_AMOY_RPC_HOSTS = [
-  // Public onfinality endpoint is frequently rate-limited in browser workloads.
-  "polygon-amoy.api.onfinality.io",
+const BAD_CORS_RPCS = [];
+const BAD_CHAIN_RPCS = [];
+const UNSTABLE_POLYGON_RPC_HOSTS = [];
+const RATE_LIMITED_POLYGON_RPC_HOSTS = [
+  // This public endpoint currently returns 401 in browser workloads.
+  "polygon-rpc.com",
 ];
 const rateLimitedRpcMarks = new Map();
 
@@ -150,10 +138,21 @@ function env(key) {
   return undefined;
 }
 
+function resolveActiveChainId() {
+  const raw =
+    env("VITE_CHAIN_ID") ||
+    env("VITE_EXPECTED_CHAIN_ID") ||
+    env("VITE_DEFAULT_CHAIN_ID") ||
+    137;
+  const chainId = Number(raw);
+  return Number.isFinite(chainId) && chainId > 0 ? Math.trunc(chainId) : 137;
+}
+
+const ACTIVE_CHAIN_ID = resolveActiveChainId();
+
 function normalizeInfuraNetwork(value) {
   const raw = String(value || "").trim().toLowerCase();
-  if (!raw) return "polygon-amoy";
-  if (raw.includes("amoy")) return "polygon-amoy";
+  if (!raw) return "polygon-mainnet";
   if (raw.includes("polygon")) return "polygon-mainnet";
   return raw.replace(/\s+/g, "-");
 }
@@ -212,49 +211,49 @@ function prioritizeHealthyRpcs(urls) {
   return [...healthy, ...degraded];
 }
 
-export const AMOY_RPC = [
-  "https://rpc-amoy.polygon.technology",
-  "https://polygon-amoy-bor-rpc.publicnode.com",
+export const POLYGON_RPC = [
+  "https://polygon.drpc.org",
+  "https://polygon-bor-rpc.publicnode.com",
 ];
 
-export const PUBLIC_AMOY_RPCS = [...AMOY_RPC];
+export const PUBLIC_POLYGON_RPCS = [...POLYGON_RPC];
 
 const INFURA_RPC_URL = getInfuraRpcUrl();
 const INFURA_RPC_CANDIDATES = uniq([INFURA_RPC_URL]);
 
-const EXPLICIT_AMOY_RPCS = uniq([
+const EXPLICIT_POLYGON_RPCS = uniq([
   env("VITE_JSON_RPC_URL"),
   env("VITE_MOD_CHAIN_RPC"),
-  env("VITE_AMOY_RPC_URL"),
-  env("VITE_RPC_URL_AMOY"),
+  env("VITE_POLYGON_RPC_URL"),
+  env("VITE_RPC_URL_POLYGON"),
+  env("VITE_MAINNET_RPC_URL"),
   ...splitCsv(env("VITE_ADDITIONAL_RPC_URLS")),
 ]);
 
-const AMOY_RPC_CANDIDATES = uniq([
-  ...EXPLICIT_AMOY_RPCS,
-  ...PUBLIC_AMOY_RPCS,
+const POLYGON_RPC_CANDIDATES = uniq([
+  ...EXPLICIT_POLYGON_RPCS,
+  ...PUBLIC_POLYGON_RPCS,
   ...INFURA_RPC_CANDIDATES,
 ]);
 
 const ARCHIVE_RPC_CANDIDATES = uniq([
   env("VITE_ARCHIVE_RPC_URL"),
-  env("VITE_AMOY_ARCHIVE_RPC_URL"),
   ...splitCsv(env("VITE_ARCHIVE_RPC_URLS")),
 ]);
 
-const AMOY_INFO = getChainInfo(80002) || {
-  chainId: 80002,
-  hex: "0x13882",
-  name: "Polygon Amoy",
-  explorer: "https://amoy.polygonscan.com",
+const ACTIVE_CHAIN_INFO = getChainInfo(ACTIVE_CHAIN_ID) || {
+  chainId: ACTIVE_CHAIN_ID,
+  hex: `0x${ACTIVE_CHAIN_ID.toString(16)}`,
+  name: ACTIVE_CHAIN_ID === 137 ? "Polygon" : `Chain ${ACTIVE_CHAIN_ID}`,
+  explorer: ACTIVE_CHAIN_ID === 137 ? "https://polygonscan.com" : "",
   currency: { name: "POL", symbol: "POL", decimals: 18 },
 };
 
-export const AMOY = {
-  ...AMOY_INFO,
-  rpcUrls: AMOY_RPC_CANDIDATES,
-  rpcUrl: AMOY_RPC_CANDIDATES[0] || PUBLIC_AMOY_RPCS[0],
-  currency: AMOY_INFO.currency || { name: "POL", symbol: "POL", decimals: 18 },
+export const ACTIVE_CHAIN = {
+  ...ACTIVE_CHAIN_INFO,
+  rpcUrls: POLYGON_RPC_CANDIDATES,
+  rpcUrl: POLYGON_RPC_CANDIDATES[0] || PUBLIC_POLYGON_RPCS[0],
+  currency: ACTIVE_CHAIN_INFO.currency || { name: "POL", symbol: "POL", decimals: 18 },
 };
 
 export function getPreferredRpc() {
@@ -320,7 +319,7 @@ function filterOutBadRpcs(urls) {
   const allowUnstablePublicRpcs =
     env("VITE_ALLOW_UNSTABLE_PUBLIC_RPCS") !== "0";
   const allowRateLimitedPublicRpcs =
-    env("VITE_ALLOW_RATE_LIMITED_PUBLIC_RPCS") !== "0";
+    env("VITE_ALLOW_RATE_LIMITED_PUBLIC_RPCS") === "1";
   const isBrowser = typeof window !== "undefined";
   return (urls || []).filter((u) => {
     if (!u) return false;
@@ -345,20 +344,20 @@ function filterOutBadRpcs(urls) {
     }
     if (
       !allowUnstablePublicRpcs &&
-      UNSTABLE_AMOY_RPC_HOSTS.some((x) => host === x)
+      UNSTABLE_POLYGON_RPC_HOSTS.some((x) => host === x)
     ) {
       return false;
     }
     if (
       !allowRateLimitedPublicRpcs &&
-      RATE_LIMITED_AMOY_RPC_HOSTS.some((x) => host === x)
+      RATE_LIMITED_POLYGON_RPC_HOSTS.some((x) => host === x)
     ) {
       return false;
     }
-    // Ankr requires an API key for stable access; plain /polygon_amoy endpoint
-    // returns Unauthorized and causes noisy fallback churn.
-    if (host === "rpc.ankr.com" && path === "/polygon_amoy") return false;
     if (BAD_CHAIN_RPCS.some((x) => host === x)) return false;
+    // Ankr requires an API key for stable access; plain /polygon endpoint
+    // returns Unauthorized and causes noisy fallback churn.
+    if (host === "rpc.ankr.com" && path === "/polygon") return false;
     if (isBrowser && BAD_CORS_RPCS.some((x) => lower.includes(x))) return false;
     return true;
   });
@@ -370,19 +369,19 @@ export function getArchiveRpcUrls() {
 }
 
 export function getRpcUrls() {
-  const explicit = filterOutBadRpcs(EXPLICIT_AMOY_RPCS);
+  const explicit = filterOutBadRpcs(EXPLICIT_POLYGON_RPCS);
   const infura = filterOutBadRpcs(INFURA_RPC_CANDIDATES);
   const preferInfura = env("VITE_PREFER_INFURA_RPC") === "1";
   const allowPublic = env("VITE_ALLOW_PUBLIC_RPCS") !== "0";
   const preferPublicFirst = env("VITE_PREFER_PUBLIC_RPC_FIRST") !== "0";
   const primaryList = preferInfura
     ? allowPublic
-      ? uniq([...infura, ...explicit, ...PUBLIC_AMOY_RPCS])
+      ? uniq([...infura, ...explicit, ...PUBLIC_POLYGON_RPCS])
       : uniq([...infura, ...explicit])
     : allowPublic
       ? preferPublicFirst
-        ? uniq([...PUBLIC_AMOY_RPCS, ...explicit, ...infura])
-        : uniq([...explicit, ...PUBLIC_AMOY_RPCS, ...infura])
+        ? uniq([...PUBLIC_POLYGON_RPCS, ...explicit, ...infura])
+        : uniq([...explicit, ...PUBLIC_POLYGON_RPCS, ...infura])
       : uniq([...explicit, ...infura]);
   const filtered = filterOutBadRpcs(primaryList);
   if (!filtered.length && primaryList.length) {
@@ -395,14 +394,14 @@ export function getRpcUrls() {
   if (prioritized.length) return prioritized;
 
   const fallback = [];
-  if (AMOY.rpcUrl) fallback.push(AMOY.rpcUrl);
-  if (allowPublic) fallback.push(...PUBLIC_AMOY_RPCS);
+  if (ACTIVE_CHAIN.rpcUrl) fallback.push(ACTIVE_CHAIN.rpcUrl);
+  if (allowPublic) fallback.push(...PUBLIC_POLYGON_RPCS);
   fallback.push(...infura);
   return prioritizeHealthyRpcs(rankRpcUrls(filterOutBadRpcs(fallback)));
 }
 
 export function getWalletRpcUrls({ preferPublicFirst = null } = {}) {
-  const explicit = filterOutBadRpcs(EXPLICIT_AMOY_RPCS);
+  const explicit = filterOutBadRpcs(EXPLICIT_POLYGON_RPCS);
   const infura = filterOutBadRpcs(INFURA_RPC_CANDIDATES);
   const allowPublicFallback = env("VITE_WALLET_PUBLIC_RPC_FALLBACK") !== "0";
   const preferPublicByDefault =
@@ -414,10 +413,10 @@ export function getWalletRpcUrls({ preferPublicFirst = null } = {}) {
 
   const ordered = usePublicFirst
     ? allowPublicFallback
-      ? uniq([...PUBLIC_AMOY_RPCS, ...explicit, ...infura])
+      ? uniq([...PUBLIC_POLYGON_RPCS, ...explicit, ...infura])
       : uniq([...explicit, ...infura])
     : allowPublicFallback
-      ? uniq([...explicit, ...PUBLIC_AMOY_RPCS, ...infura])
+      ? uniq([...explicit, ...PUBLIC_POLYGON_RPCS, ...infura])
       : uniq([...explicit, ...infura]);
 
   const filtered = filterOutBadRpcs(ordered);
@@ -426,8 +425,8 @@ export function getWalletRpcUrls({ preferPublicFirst = null } = {}) {
   if (prioritized.length) return prioritized;
 
   const fallback = [];
-  if (AMOY.rpcUrl) fallback.push(AMOY.rpcUrl);
-  if (allowPublicFallback) fallback.push(...PUBLIC_AMOY_RPCS);
+  if (ACTIVE_CHAIN.rpcUrl) fallback.push(ACTIVE_CHAIN.rpcUrl);
+  if (allowPublicFallback) fallback.push(...PUBLIC_POLYGON_RPCS);
   fallback.push(...infura);
   return prioritizeHealthyRpcs(rankRpcUrls(filterOutBadRpcs(fallback)));
 }

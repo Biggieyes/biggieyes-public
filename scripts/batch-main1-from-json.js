@@ -27,7 +27,7 @@ const mode = hasFlag("--send")
     ? "calldata"
     : "print";
 
-const rpcUrl = getArg("--rpc", process.env.RPC_URL || process.env.VITE_RPC_URL_AMOY);
+const rpcUrl = getArg("--rpc", process.env.RPC_URL || process.env.VITE_RPC_URL_POLYGON);
 const privateKey = process.env.PRIVATE_KEY;
 const mainAddress =
   getArg("--main", null) ||
@@ -141,7 +141,7 @@ if (mode === "calldata") {
 }
 
 if (!rpcUrl) {
-  console.error("Missing RPC URL. Use --rpc or set RPC_URL/VITE_RPC_URL_AMOY.");
+  console.error("Missing RPC URL. Use --rpc or set RPC_URL/VITE_RPC_URL_POLYGON.");
   process.exit(1);
 }
 if (!privateKey) {

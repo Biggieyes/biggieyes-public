@@ -1,34 +1,35 @@
 import * as React from "react";
-import { formatUnits } from "ethers";
 import StatCard from "../../Common/components/StatCard.jsx";
 import LineChart from "../../Charts/charts/LineChart.jsx";
 import DexLiquidityChart from "../../../components/TOKEN/DexLiquidityChart.jsx";
 import AddressLine from "../components/AddressLine.jsx";
+import MainnetDataRail from "../components/MainnetDataRail.jsx";
 import { explorerLink, fmtDate, fmtVal, shortAddr } from "../utils/format.js";
 import styles from "../styles/BiggiToken.module.css";
+import { ADDR } from "@/shared/utils/addresses.js";
 import { mapRawSnapshotToUI } from "@/shared/services/tokenomics/tokenDex.mappers";
+import {
+  formatTokenDisplay,
+  isRealAddress,
+  toDisplayNumber,
+} from "../utils/amountFormatting.js";
 import "./TokenDexTab.css";
 
-const isAddress = (value) =>
-  typeof value === "string" && /^0x[0-9a-fA-F]{40}$/.test(value);
+const isAddress = isRealAddress;
 
 const hasValue = (value) => {
   if (value === null || value === undefined) return false;
   if (typeof value === "string") {
     const trimmed = value.trim();
-    return trimmed !== "" && trimmed !== "--" && trimmed.toUpperCase() !== "N/A";
+    return (
+      trimmed !== "" && trimmed !== "--" && trimmed.toUpperCase() !== "N/A"
+    );
   }
   return true;
 };
 
 const toNumberLoose = (value) => {
-  if (value == null) return null;
-  if (typeof value === "number")
-    return Number.isFinite(value) ? value : null;
-  if (typeof value === "bigint") return Number(value);
-  const cleaned = String(value).replace(/,/g, "");
-  const num = Number(cleaned);
-  return Number.isFinite(num) ? num : null;
+  return toDisplayNumber(value);
 };
 
 const pickValue = (...values) => values.find(hasValue) ?? "--";
@@ -52,27 +53,43 @@ const formatNumber = (value, digits = 2, suffix = "") => {
   })}${suffix ? ` ${suffix}` : ""}`;
 };
 
-const formatReaderToken = (value, decimals = 18, digits = 2) => {
-  if (value == null) return "--";
-  try {
-    const formatted = formatUnits(value, decimals);
-    const num = Number(formatted);
-    return Number.isFinite(num)
-      ? num.toLocaleString("en-US", { maximumFractionDigits: digits })
-      : formatted;
-  } catch {
-    return value?.toString?.() ?? "--";
+const formatPercent = (value, digits = 2) => {
+  const num = toNumberLoose(value);
+  if (num == null) return "--";
+  if (Math.abs(num) > 1_000_000) {
+    return num < 0 ? "< -1,000,000%" : "> 1,000,000%";
   }
+  return `${num.toLocaleString("en-US", {
+    maximumFractionDigits: digits,
+  })}%`;
+};
+
+const safePercentDisplay = (numericValue, displayValue) => {
+  const formatted = formatPercent(numericValue);
+  if (formatted !== "--") return formatted;
+
+  const text = String(displayValue ?? "").trim();
+  if (!hasValue(text)) return "--";
+  if (/\b\d+(?:\.\d+)?e[+-]\d+\b/i.test(text)) {
+    return text.includes("-") ? "< -1,000,000%" : "> 1,000,000%";
+  }
+  return text;
+};
+
+const formatBlockWeights = (weights) => {
+  if (!Array.isArray(weights) || !weights.length) return "--";
+  const activeWeights = weights.length >= 11 ? weights.slice(1, 11) : weights;
+  return activeWeights
+    .map((weight, index) => `Block ${index + 1}: ${String(weight)}`)
+    .join(", ");
+};
+
+const formatReaderToken = (value, decimals = 18, digits = 2) => {
+  return formatTokenDisplay(value, decimals, digits);
 };
 
 const formatReaderNumber = (value, decimals = 18) => {
-  if (value == null) return null;
-  try {
-    const num = Number(formatUnits(value, decimals));
-    return Number.isFinite(num) ? num : null;
-  } catch {
-    return null;
-  }
+  return toDisplayNumber(value, decimals);
 };
 
 const mapTone = (tone) => {
@@ -93,7 +110,9 @@ function TokenDexTab({
   tokenDexSnapshot,
   readerStatus,
 }) {
-  const display = tokenDexSnapshot ? mapRawSnapshotToUI(tokenDexSnapshot) : null;
+  const display = tokenDexSnapshot
+    ? mapRawSnapshotToUI(tokenDexSnapshot)
+    : null;
 
   if (tabBusy && !tokenDexSnapshot) {
     return <div className="token-dex-tab">Loading Token / DEX snapshot...</div>;
@@ -108,7 +127,9 @@ function TokenDexTab({
   }
 
   if (!tokenDexSnapshot) {
-    return <div className="token-dex-tab">Waiting for Token / DEX snapshot...</div>;
+    return (
+      <div className="token-dex-tab">Waiting for Token / DEX snapshot...</div>
+    );
   }
 
   const historyBundle = Array.isArray(dexHistory)
@@ -148,7 +169,10 @@ function TokenDexTab({
   const tvlNativeDisplay = pickValue(
     display?.dex?.derived?.tvlNative,
     formatNumber(
-      pickNumber(display?.dex?.derived?.tvlNativeNumeric, reserveNative != null ? reserveNative * 2 : null),
+      pickNumber(
+        display?.dex?.derived?.tvlNativeNumeric,
+        reserveNative != null ? reserveNative * 2 : null,
+      ),
       2,
       "POL",
     ),
@@ -157,9 +181,9 @@ function TokenDexTab({
     display?.dex?.derived?.liquidityDepth,
     formatNumber(display?.dex?.derived?.liquidityDepthNumeric),
   );
-  const priceImpactDisplay = pickValue(
+  const priceImpactDisplay = safePercentDisplay(
+    display?.dex?.derived?.priceImpactNumeric,
     display?.dex?.derived?.priceImpact,
-    formatNumber(display?.dex?.derived?.priceImpactNumeric, 2, "%"),
   );
   const feedPriceDisplay = pickValue(
     display?.dex?.price?.feed?.price,
@@ -169,8 +193,12 @@ function TokenDexTab({
       6,
     ),
   );
-  const feedUpdated = tokenDexSnapshot?.dex?.priceFeed?.latestRoundData?.updatedAt;
-  const priceSource = pickValue(display?.dex?.price?.source, nativePerBiggi != null ? "Pair reserves" : "N/A");
+  const feedUpdated =
+    tokenDexSnapshot?.dex?.priceFeed?.latestRoundData?.updatedAt;
+  const priceSource = pickValue(
+    display?.dex?.price?.source,
+    nativePerBiggi != null ? "Pair reserves" : "N/A",
+  );
   const marketHealth = pickValue(display?.dex?.derived?.marketHealth, "--");
   const marketTone = mapTone(display?.dex?.derived?.marketHealthTone);
 
@@ -186,11 +214,18 @@ function TokenDexTab({
   );
   const remainingMintableDisplay = pickValue(
     display?.token?.remainingMintable,
-    formatReaderToken(tokenDexSnapshot?.token?.remainingMintable, tokenDecimals, 0),
+    formatReaderToken(
+      tokenDexSnapshot?.token?.remainingMintable,
+      tokenDecimals,
+      0,
+    ),
   );
   const reserveBalanceDisplay = pickValue(
     display?.token?.balances?.reserve,
-    formatReaderToken(tokenDexSnapshot?.token?.balances?.reserve, tokenDecimals),
+    formatReaderToken(
+      tokenDexSnapshot?.token?.balances?.reserve,
+      tokenDecimals,
+    ),
   );
   const reserveWaitingDisplay = hasValue(liquidity?.waitingBiggi)
     ? fmtVal(liquidity?.waitingBiggi, "BIGGI")
@@ -200,19 +235,31 @@ function TokenDexTab({
     : "--";
   const vaultBalanceDisplay = pickValue(
     display?.token?.balances?.liquidityVault,
-    formatReaderToken(tokenDexSnapshot?.token?.balances?.liquidityVault, tokenDecimals),
+    formatReaderToken(
+      tokenDexSnapshot?.token?.balances?.liquidityVault,
+      tokenDecimals,
+    ),
   );
   const treasuryBalanceDisplay = pickValue(
     display?.token?.balances?.treasury,
-    formatReaderToken(tokenDexSnapshot?.token?.balances?.treasury, tokenDecimals),
+    formatReaderToken(
+      tokenDexSnapshot?.token?.balances?.treasury,
+      tokenDecimals,
+    ),
   );
   const dripBalanceDisplay = pickValue(
     display?.token?.balances?.DRIPDistributor,
-    formatReaderToken(tokenDexSnapshot?.token?.balances?.DRIPDistributor, tokenDecimals),
+    formatReaderToken(
+      tokenDexSnapshot?.token?.balances?.DRIPDistributor,
+      tokenDecimals,
+    ),
   );
   const tokenRewardsBalanceDisplay = pickValue(
     display?.token?.balances?.tokenREWARDS,
-    formatReaderToken(tokenDexSnapshot?.token?.balances?.tokenREWARDS, tokenDecimals),
+    formatReaderToken(
+      tokenDexSnapshot?.token?.balances?.tokenREWARDS,
+      tokenDecimals,
+    ),
   );
 
   const rewardsCapDisplay = formatReaderToken(
@@ -237,11 +284,16 @@ function TokenDexTab({
     tokenDecimals,
   );
   const rewardsCoverageDisplay =
-    rewardsCapNumeric != null && rewardsCapNumeric > 0 && rewardsMintedNumeric != null
-      ? `${((rewardsMintedNumeric / rewardsCapNumeric) * 100).toFixed(2)}%`
+    rewardsCapNumeric != null &&
+    rewardsCapNumeric > 0 &&
+    rewardsMintedNumeric != null
+      ? formatPercent((rewardsMintedNumeric / rewardsCapNumeric) * 100)
       : "--";
 
-  const tokenAddress = pickAddress(tok?.address, tokenDexSnapshot?.token?.address);
+  const tokenAddress = pickAddress(
+    tok?.address,
+    tokenDexSnapshot?.token?.address,
+  );
   const routerAddress = pickAddress(
     router?.address,
     router?.routerAddress,
@@ -281,18 +333,36 @@ function TokenDexTab({
   );
   const vaultAddress = pickAddress(tokenDexSnapshot?.addresses?.liquidityVault);
   const treasuryAddress = pickAddress(tokenDexSnapshot?.addresses?.treasury);
-  const dripAddress = pickAddress(tokenDexSnapshot?.token?.DRIPDistributorAddress);
-  const tokenRewardsAddress = pickAddress(tokenDexSnapshot?.token?.tokenREWARDSAddress);
+  const dripAddress = pickAddress(
+    tokenDexSnapshot?.token?.DRIPDistributorAddress,
+  );
+  const tokenRewardsAddress = pickAddress(
+    tokenDexSnapshot?.token?.tokenREWARDSAddress,
+  );
   const rewardsOperatorAddress = pickAddress(
     tokenDexSnapshot?.token?.REWARDSOperator,
     tokenDexSnapshot?.token?.rewardsOperator,
   );
+  const quoteTokenAddress = pickAddress(ADDR.QUOTE_TOKEN, wrappedNativeAddress);
+  const buybackRouterAddress = pickAddress(ADDR.BUYBACK_ROUTER, routerAddress);
+  const tokenomicsReaderAddress = pickAddress(
+    ADDR.BIGGI_TOKENOMICS_READER,
+    ADDR.TOKENOMIK_READER,
+  );
+  const tokenRewardsReaderAddress = pickAddress(ADDR.TOKEN_REWARDS_READER);
+  const multicallAddress = pickAddress(ADDR.MULTICALL2, ADDR.MULTICALL);
+  const dexGuardAddress = pickAddress(ADDR.DEX_RESERVE_GUARD);
+  const dexGuardReaderAddress = pickAddress(ADDR.DEX_RESERVE_GUARD_READER);
+  const supplyControllerAddress = pickAddress(ADDR.SUPPLY_CONTROLLER);
+  const supplyGuardianAddress = pickAddress(ADDR.SUPPLY_GUARDIAN);
 
   const contractRows = [
     { label: "BIGGI Token", address: tokenAddress },
     { label: "DEX Router", address: routerAddress },
+    { label: "BUYBACK Router", address: buybackRouterAddress },
     { label: "DEX Factory", address: factoryAddress },
     { label: "Wrapped Native", address: wrappedNativeAddress },
+    { label: "Quote Token", address: quoteTokenAddress },
     { label: "DEX Pair", address: pairAddress },
     { label: "LP Price Feed", address: priceFeedAddress },
     { label: "Reserve", address: reserveAddress },
@@ -300,7 +370,14 @@ function TokenDexTab({
     { label: "Treasury", address: treasuryAddress },
     { label: "DRIP Distributor", address: dripAddress },
     { label: "Token Rewards", address: tokenRewardsAddress },
+    { label: "Token Rewards Reader", address: tokenRewardsReaderAddress },
     { label: "Rewards Operator", address: rewardsOperatorAddress },
+    { label: "Tokenomics Reader", address: tokenomicsReaderAddress },
+    { label: "DEX Guard", address: dexGuardAddress },
+    { label: "DEX Guard Reader", address: dexGuardReaderAddress },
+    { label: "Supply Controller", address: supplyControllerAddress },
+    { label: "Supply Guardian", address: supplyGuardianAddress },
+    { label: "Multicall", address: multicallAddress },
   ];
   const linkedContracts = contractRows.filter((row) => row.address).length;
   const wiringTone =
@@ -315,6 +392,24 @@ function TokenDexTab({
     shortAddr(tokenDexSnapshot?.dex?.pair?.token1),
   ].join(" / ");
   const readerLabel = rewardsStatus ? "Reader live" : "Snapshot only";
+  const mainnetItems = [
+    {
+      label: "Network",
+      value: `Polygon mainnet / chainId ${ADDR.CHAIN_ID || 137}`,
+      tone: "ok",
+    },
+    {
+      label: "Snapshot",
+      value: display?.tsLabel || tokenDexSnapshot?.tsLabel || "--",
+      tone: display?.tsLabel || tokenDexSnapshot?.tsLabel ? "ok" : "warn",
+    },
+    { label: "BIGGI", address: tokenAddress },
+    { label: "DEX pair", address: pairAddress },
+    { label: "Router", address: routerAddress },
+    { label: "Tokenomics status reader", address: tokenomicsReaderAddress },
+    { label: "Token rewards reader", address: tokenRewardsReaderAddress },
+    { label: "Multicall", address: multicallAddress },
+  ];
   const pricePoints = historyBundle?.pricePoints || [];
   const reservePoints = historyBundle?.reservePoints || [];
   const biggiReservePoints = historyBundle?.biggiReservePoints || [];
@@ -343,7 +438,9 @@ function TokenDexTab({
     {
       label: "BIGGI / POL",
       value: formatNumber(biggiPerNative, 2),
-      hint: hasValue(feedPriceDisplay) ? `Feed ${feedPriceDisplay}` : "Inverse pair price",
+      hint: hasValue(feedPriceDisplay)
+        ? `Feed ${feedPriceDisplay}`
+        : "Inverse pair price",
       tone: "token",
     },
     {
@@ -411,10 +508,8 @@ function TokenDexTab({
     { label: "Emission usage", value: rewardsCoverageDisplay },
     { label: "Unit reward", value: unitRewardDisplay },
     {
-      label: "Block weights",
-      value: Array.isArray(rewardsStatus?.blockWeights)
-        ? rewardsStatus.blockWeights.join(", ")
-        : "--",
+      label: "Block weights (1-10)",
+      value: formatBlockWeights(rewardsStatus?.blockWeights),
     },
     { label: "LP feed price", value: feedPriceDisplay },
     { label: "Feed updated", value: feedUpdated ? fmtDate(feedUpdated) : "--" },
@@ -426,21 +521,27 @@ function TokenDexTab({
         <div className="token-dex-tab__headline">
           <h3>Token / DEX</h3>
           <p>
-            BIGGI supply, pair reserves, pricing diagnostics, and contract wiring
-            for the current trading stack.
+            BIGGI supply, pair reserves, pricing diagnostics, and contract
+            wiring for the current trading stack.
           </p>
         </div>
         <div className="token-dex-tab__header-meta">
-          <span className={`token-dex-tab__badge token-dex-tab__badge--${marketTone}`}>
+          <span
+            className={`token-dex-tab__badge token-dex-tab__badge--${marketTone}`}
+          >
             {marketHealth}
           </span>
           <span className="token-dex-tab__badge token-dex-tab__badge--idle">
             {priceSource}
           </span>
-          <span className={`token-dex-tab__badge token-dex-tab__badge--${wiringTone}`}>
+          <span
+            className={`token-dex-tab__badge token-dex-tab__badge--${wiringTone}`}
+          >
             Wiring {linkedContracts}/{contractRows.length}
           </span>
-          <span className={`token-dex-tab__badge token-dex-tab__badge--${rewardsStatus ? "active" : "idle"}`}>
+          <span
+            className={`token-dex-tab__badge token-dex-tab__badge--${rewardsStatus ? "active" : "idle"}`}
+          >
             {readerLabel}
           </span>
           <span className="token-dex-tab__timestamp">
@@ -458,6 +559,8 @@ function TokenDexTab({
         </div>
       </header>
 
+      <MainnetDataRail title="Token DEX mainnet data" items={mainnetItems} />
+
       <div className="token-dex-tab__stats">
         {stats.map((stat, idx) => (
           <StatCard key={`${stat.label}-${idx}`} {...stat} />
@@ -467,17 +570,25 @@ function TokenDexTab({
       <div className="token-dex-tab__charts">
         <div className="token-dex-tab__chart token-dex-tab__chart--wide">
           <h4>DEX liquidity overview</h4>
-          <p>Combined view of pair reserves and live price movement over recent snapshots.</p>
+          <p>
+            Combined view of pair reserves and live price movement over recent
+            snapshots.
+          </p>
           <DexLiquidityChart data={dexSeries} height={220} />
         </div>
         <div className="token-dex-tab__chart">
           <h4>Price trend</h4>
-          <p>POL quoted per 1 BIGGI based on the live pair and router fallback.</p>
+          <p>
+            POL quoted per 1 BIGGI based on the live pair and router fallback.
+          </p>
           <LineChart points={pricePoints} height={160} />
         </div>
         <div className="token-dex-tab__chart">
           <h4>Pair BIGGI reserve</h4>
-          <p>Token-side depth in the active pair, usually more responsive than flat LP supply.</p>
+          <p>
+            Token-side depth in the active pair, usually more responsive than
+            flat LP supply.
+          </p>
           <LineChart points={biggiReservePoints} height={160} />
         </div>
         <div className="token-dex-tab__chart">

@@ -53,11 +53,28 @@ const tokenUriCache = new Map();
 const metadataCache = new Map();
 const imageCache = new Map();
 
-const SESSION_CACHE_VERSION = "v2";
-const makeSessionKey = (prefix, value) =>
-  `${prefix}:${SESSION_CACHE_VERSION}:${encodeURIComponent(
-    String(value || "")
-  )}`;
+const SESSION_CACHE_VERSION = "v3-mainnet";
+const getGalleryContractCacheAddress = (contractLike = null) =>
+  String(
+    contractLike?.target ||
+      contractLike?.address ||
+      ADDR?.COLLECTION_VRF ||
+      ADDR?.MAIN ||
+      "",
+  )
+    .trim()
+    .toLowerCase();
+const makeSessionKey = (prefix, value, contractAddress = "") => {
+  const chainId = Number(ADDR?.CHAIN_ID || 137) || 137;
+  const contract =
+    String(contractAddress || "").trim().toLowerCase() ||
+    getGalleryContractCacheAddress();
+  return `${prefix}:${SESSION_CACHE_VERSION}:${chainId}:${
+    contract || "main"
+  }:${encodeURIComponent(String(value || ""))}`;
+};
+const makeMemoryCacheKey = (contractAddress, value) =>
+  `${String(contractAddress || "main").toLowerCase()}:${String(value || "")}`;
 
 const RARITY_TIERS = ["legendary", "epic", "rare", "uncommon", "common"];
 const RARITY_TIER_RANK = {
@@ -586,6 +603,7 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
  */
 async function hydrateTokens(mainContract, reader, tokenIds) {
   if (!mainContract || !tokenIds.length) return [];
+  const contractCacheAddress = getGalleryContractCacheAddress(mainContract);
   let ticketBaseUri = null;
   try {
     if (typeof mainContract.ticketBaseURI === "function") {
@@ -607,11 +625,19 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
         try {
           // normalize id
           const idStr = String(id?.toString ? id.toString() : id);
+          const tokenMemoryKey = makeMemoryCacheKey(
+            contractCacheAddress,
+            idStr,
+          );
           // tokenURI může revertovat pro některé tokeny — ošetříme to try/catch
           let uri = null;
           let metaUriUsed = null;
-          const uriCacheKey = makeSessionKey("biggi_token_uri", idStr);
-          uri = tokenUriCache.get(idStr) || loadSessionJson(uriCacheKey);
+          const uriCacheKey = makeSessionKey(
+            "biggi_token_uri",
+            idStr,
+            contractCacheAddress,
+          );
+          uri = tokenUriCache.get(tokenMemoryKey) || loadSessionJson(uriCacheKey);
           if (!uri) {
             try {
               if (typeof mainContract.tokenURI === "function") {
@@ -621,7 +647,7 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
               uri = null;
             }
             if (uri) {
-              tokenUriCache.set(idStr, uri);
+              tokenUriCache.set(tokenMemoryKey, uri);
               saveSessionJson(uriCacheKey, uri);
             }
           }
@@ -629,12 +655,18 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
           let meta = null;
           let image = null;
           if (uri) {
-            const metaCacheKey = makeSessionKey("biggi_meta", uri);
-            meta = metadataCache.get(uri) || loadSessionJson(metaCacheKey);
+            const metaMemoryKey = makeMemoryCacheKey(contractCacheAddress, uri);
+            const metaCacheKey = makeSessionKey(
+              "biggi_meta",
+              uri,
+              contractCacheAddress,
+            );
+            meta =
+              metadataCache.get(metaMemoryKey) || loadSessionJson(metaCacheKey);
             if (!meta) {
               meta = await readJsonFromURI(uri).catch(() => null);
               if (meta) {
-                metadataCache.set(uri, meta);
+                metadataCache.set(metaMemoryKey, meta);
                 saveSessionJson(metaCacheKey, meta);
               }
             }
@@ -642,7 +674,11 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
               metaUriUsed = uri;
               const imgCandidate = meta.image || meta.image_url;
               if (imgCandidate) {
-                const imgCacheKey = makeSessionKey("biggi_img", imgCandidate);
+                const imgCacheKey = makeSessionKey(
+                  "biggi_img",
+                  imgCandidate,
+                  contractCacheAddress,
+                );
                 image =
                   imageCache.get(imgCandidate) ||
                   loadSessionJson(imgCacheKey);
@@ -712,7 +748,7 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
               const freshUri = await mainContract.tokenURI(id).catch(() => null);
               if (freshUri && freshUri !== uri) {
                 uri = freshUri;
-                tokenUriCache.set(idStr, uri);
+                tokenUriCache.set(tokenMemoryKey, uri);
                 saveSessionJson(uriCacheKey, uri);
               }
             } catch {
@@ -720,12 +756,18 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
             }
 
             if (uri) {
-              const metaCacheKey = makeSessionKey("biggi_meta", uri);
-              meta = metadataCache.get(uri) || loadSessionJson(metaCacheKey);
+              const metaMemoryKey = makeMemoryCacheKey(contractCacheAddress, uri);
+              const metaCacheKey = makeSessionKey(
+                "biggi_meta",
+                uri,
+                contractCacheAddress,
+              );
+              meta =
+                metadataCache.get(metaMemoryKey) || loadSessionJson(metaCacheKey);
               if (!meta) {
                 meta = await readJsonFromURI(uri).catch(() => null);
                 if (meta) {
-                  metadataCache.set(uri, meta);
+                  metadataCache.set(metaMemoryKey, meta);
                   saveSessionJson(metaCacheKey, meta);
                 }
               }
@@ -736,6 +778,7 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
                   const imgCacheKey = makeSessionKey(
                     "biggi_img",
                     imgCandidate,
+                    contractCacheAddress,
                   );
                   image =
                     imageCache.get(imgCandidate) ||
@@ -764,8 +807,15 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
                 if (fresh) {
                   meta = fresh;
                   metaUriUsed = uri;
-                  metadataCache.set(uri, fresh);
-                  saveSessionJson(makeSessionKey("biggi_meta", uri), fresh);
+                  const metaMemoryKey = makeMemoryCacheKey(
+                    contractCacheAddress,
+                    uri,
+                  );
+                  metadataCache.set(metaMemoryKey, fresh);
+                  saveSessionJson(
+                    makeSessionKey("biggi_meta", uri, contractCacheAddress),
+                    fresh,
+                  );
                   metaLooksTicket = looksLikeTicketMeta(meta);
                   metaLooksNft = looksLikeNftMeta(meta);
                 }

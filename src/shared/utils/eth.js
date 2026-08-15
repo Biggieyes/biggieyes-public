@@ -15,19 +15,45 @@ import { ADDR } from "./addresses";
 import {
   getSharedFallbackProvider,
   createJsonRpcProvider,
+  getRpcUrls,
 } from "../../web3/rpcProviders";
 
-const MOD_REWARDS_ADDRESS =
-  import.meta.env.VITE_MOD_REWARDS_CONTRACT ||
-  import.meta.env.VITE_MOD_REWARDS_ADDRESS ||
-  ADDR.BIGGI_MODERATOR_CENTER ||
-  "";
-const CHAIN_RPC_URL =
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+function firstNonZeroAddress(...values) {
+  for (const value of values) {
+    const raw = String(value || "").trim();
+    if (!raw || raw.toLowerCase() === ZERO_ADDRESS) continue;
+    return raw;
+  }
+  return "";
+}
+
+const MOD_REWARDS_ADDRESS = firstNonZeroAddress(
+  import.meta.env.VITE_MOD_REWARDS_CONTRACT,
+  import.meta.env.VITE_MOD_REWARDS_ADDRESS,
+  ADDR.BIGGI_MODERATOR_CENTER,
+);
+const RAW_CHAIN_RPC_URL =
   import.meta.env.VITE_MOD_CHAIN_RPC ||
-  import.meta.env.VITE_RPC_URL_AMOY ||
+  import.meta.env.VITE_RPC_URL_ACTIVE_CHAIN ||
   import.meta.env.VITE_JSON_RPC_URL ||
   "";
-const OWNER_ADDRESS = import.meta.env.VITE_MOD_OWNER_ADDRESS || "";
+
+function resolveChainRpcUrl() {
+  try {
+    return getRpcUrls()?.[0] || RAW_CHAIN_RPC_URL;
+  } catch {
+    return RAW_CHAIN_RPC_URL;
+  }
+}
+
+const CHAIN_RPC_URL = resolveChainRpcUrl();
+const OWNER_ADDRESS = firstNonZeroAddress(
+  import.meta.env.VITE_MOD_OWNER_ADDRESS,
+  ADDR.OWNER,
+  ADDR.EXPECT_OWNER,
+);
 
 export const getConfig = () => ({
   contractAddress: MOD_REWARDS_ADDRESS,

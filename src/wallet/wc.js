@@ -2,8 +2,8 @@
 import { BrowserProvider } from "ethers";
 import { EthereumProvider } from "@walletconnect/ethereum-provider";
 import {
-  AMOY,
-  PUBLIC_AMOY_RPCS,
+  ACTIVE_CHAIN,
+  PUBLIC_POLYGON_RPCS,
   getPrimaryRpcUrl,
   getWalletRpcUrls,
 } from "@/shared/utils/contract";
@@ -13,16 +13,16 @@ const BIGGIEYES_PUBLIC_SITE_URL = "https://biggieyes.com/";
 const BIGGIEYES_PUBLIC_APP_URL = "https://biggieyes.com/app/";
 const BIGGIEYES_NATIVE_REDIRECT = "com.biggieyes.app://walletconnect";
 
-// Public RPC fallback for Amoy. Prefer your own infra in production.
-const DEFAULT_AMOY_RPC =
-  getPrimaryRpcUrl() || AMOY?.rpcUrl || PUBLIC_AMOY_RPCS[0];
-const DEFAULT_AMOY_RPC_URLS = getWalletRpcUrls({ preferPublicFirst: true });
+// Public RPC fallback for Polygon mainnet. Prefer your own infra in production.
+const DEFAULT_POLYGON_RPC =
+  getPrimaryRpcUrl() || ACTIVE_CHAIN?.rpcUrl || PUBLIC_POLYGON_RPCS[0];
+const DEFAULT_POLYGON_RPC_URLS = getWalletRpcUrls({ preferPublicFirst: true });
 
 const RPC_MAP = {
-  80002: DEFAULT_AMOY_RPC, // Polygon Amoy
-  137: "https://polygon-rpc.com", // Polygon Mainnet
+  [ACTIVE_CHAIN.chainId]: DEFAULT_POLYGON_RPC,
   1: "https://cloudflare-eth.com", // Ethereum Mainnet
 };
+if (ACTIVE_CHAIN.chainId !== 137) RPC_MAP[137] = "https://polygon.drpc.org";
 
 function normalizeWalletAddress(value) {
   const raw = String(value || "").trim();
@@ -141,8 +141,10 @@ async function initWalletConnectProvider(options = {}) {
 
   return await EthereumProvider.init({
     projectId: getWalletConnectProjectId(),
-    chains: [80002],
-    optionalChains: [137, 1],
+    chains: [ACTIVE_CHAIN.chainId],
+    optionalChains: Array.from(
+      new Set([137, 1].filter((id) => id !== ACTIVE_CHAIN.chainId)),
+    ),
     rpcMap: RPC_MAP,
     showQrModal,
     qrModalOptions: {
@@ -177,8 +179,8 @@ async function buildWalletConnectSessionResult(wc) {
   }
 
   const chainId = await resolveChainId(wc);
-  if (chainId && chainId !== AMOY.chainId) {
-    await ensureAmoy(wc);
+  if (chainId && chainId !== ACTIVE_CHAIN.chainId) {
+    await ensurePolygon(wc);
   }
 
   const resolvedAccounts = await resolveWalletConnectAccounts(wc);
@@ -284,8 +286,8 @@ export async function clearWalletConnectSession(options = {}) {
 
 /* ---------------- Helpers ---------------- */
 
-async function ensureAmoy(wc) {
-  const CHAIN_HEX = AMOY?.hex || "0x13882";
+async function ensurePolygon(wc) {
+  const CHAIN_HEX = ACTIVE_CHAIN?.hex || "0x89";
   try {
     await wc.request({
       method: "wallet_switchEthereumChain",
@@ -297,17 +299,17 @@ async function ensureAmoy(wc) {
       params: [
         {
           chainId: CHAIN_HEX,
-          chainName: AMOY?.name || "Polygon Amoy",
-          nativeCurrency: AMOY?.currency || {
+          chainName: ACTIVE_CHAIN?.name || "Polygon",
+          nativeCurrency: ACTIVE_CHAIN?.currency || {
             name: "POL",
             symbol: "POL",
             decimals: 18,
           },
           rpcUrls:
-            Array.isArray(DEFAULT_AMOY_RPC_URLS) && DEFAULT_AMOY_RPC_URLS.length
-              ? DEFAULT_AMOY_RPC_URLS
-              : [DEFAULT_AMOY_RPC],
-          blockExplorerUrls: [AMOY?.explorer].filter(Boolean),
+            Array.isArray(DEFAULT_POLYGON_RPC_URLS) && DEFAULT_POLYGON_RPC_URLS.length
+              ? DEFAULT_POLYGON_RPC_URLS
+              : [DEFAULT_POLYGON_RPC],
+          blockExplorerUrls: [ACTIVE_CHAIN?.explorer].filter(Boolean),
         },
       ],
     });

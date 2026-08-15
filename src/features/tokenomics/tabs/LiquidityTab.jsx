@@ -2,21 +2,22 @@ import * as React from "react";
 import StatCard from "../../Common/components/StatCard.jsx";
 import LineChart from "../../Charts/charts/LineChart.jsx";
 import AddressLine from "../components/AddressLine.jsx";
+import MainnetDataRail from "../components/MainnetDataRail.jsx";
 import { explorerLink, fmtDate, fmtLp, fmtVal, shortAddr } from "../utils/format.js";
 import styles from "../styles/BiggiToken.module.css";
+import { ADDR } from "@/shared/utils/addresses.js";
+import { isRealAddress, toDisplayNumber } from "../utils/amountFormatting.js";
 import "./LiquidityTab.css";
 
 const hasValue = (value) =>
   value !== null && value !== undefined && value !== "";
 
+const isAddress = isRealAddress;
+
+const pickAddress = (...values) => values.find((value) => isAddress(value)) ?? null;
+
 const toNumberLoose = (value) => {
-  if (value == null) return null;
-  if (typeof value === "number") return Number.isFinite(value) ? value : null;
-  if (typeof value === "bigint") return Number(value);
-  const cleaned = String(value).replace(/[^\d.-]/g, "");
-  if (!cleaned) return null;
-  const num = Number(cleaned);
-  return Number.isFinite(num) ? num : null;
+  return toDisplayNumber(value);
 };
 
 const formatRange = (min, max, symbol = "POL") => {
@@ -328,6 +329,48 @@ function LiquidityTab({
     waitingSeries.length > 0
       ? "BIGGI queued inside reserve before the next liquidity move."
       : "BIGGI set aside to refill the DEX pair when needed.";
+  const reserveAddress = pickAddress(reserve?.reserveAddress, ADDR.RESERVE);
+  const managerAddress = pickAddress(lmAddress, reserve?.liquidityManager, ADDR.LM);
+  const vaultAddress = pickAddress(lmVaultAddress, ADDR.LIQUIDITY_VAULT);
+  const keeperAddress = pickAddress(lmKeeperAddress, ADDR.LIQUIDITY_KEEPER_PROXY);
+  const orchestratorAddress = pickAddress(
+    automation?.address,
+    ADDR.LIQUIDITY_ORCHESTRATOR,
+  );
+  const branchReaderAddress = pickAddress(
+    branchReader?.address,
+    ADDR.LIQUIDITY_BRANCH_READER,
+    ADDR.LIQUIDITY_BRANCH_USER_READER,
+  );
+  const reserveReaderAddress = pickAddress(
+    ADDR.RESERVE_TREASURY_READER,
+    ADDR.RESERVE_READER,
+  );
+  const helperReaderAddress = pickAddress(
+    ADDR.LIQUIDITY_HELPER_READER,
+    ADDR.LIQ_HELPER_READER,
+  );
+  const routerAddress = pickAddress(manager?.router, ADDR.ROUTER);
+  const factoryAddress = pickAddress(manager?.factory, ADDR.FACTORY);
+  const pairAddress = pickAddress(manager?.pair, ADDR.PAIR);
+  const mainnetItems = [
+    {
+      label: "Network",
+      value: `Polygon mainnet / chainId ${ADDR.CHAIN_ID || 137}`,
+      tone: Number(chainStatus?.chainId || ADDR.CHAIN_ID || 137) === 137 ? "ok" : "warn",
+    },
+    {
+      label: "Snapshot",
+      value: snapshotTsLabel || "--",
+      tone: snapshotTsLabel ? "ok" : "warn",
+    },
+    { label: "Reserve", address: reserveAddress },
+    { label: "Liquidity manager", address: managerAddress },
+    { label: "Liquidity vault", address: vaultAddress },
+    { label: "Keeper proxy", address: keeperAddress },
+    { label: "Reserve reader", address: reserveReaderAddress },
+    { label: "Helper reader", address: helperReaderAddress },
+  ];
 
   return (
     <section className="liquidity-tab">
@@ -369,6 +412,8 @@ function LiquidityTab({
           ) : null}
         </div>
       </header>
+
+      <MainnetDataRail title="Reserve LM mainnet data" items={mainnetItems} />
 
       <div className="liquidity-tab__stats">
         {stats.map((stat, idx) => (
@@ -431,43 +476,58 @@ function LiquidityTab({
           <div className={styles.ecoTableHeader}>Contract wiring</div>
           <AddressLine
             label="Reserve"
-            address={reserve?.reserveAddress}
-            href={explorerLink(reserve?.reserveAddress)}
+            address={reserveAddress}
+            href={explorerLink(reserveAddress)}
           />
           <AddressLine
             label="Liquidity Manager"
-            address={lmAddress}
-            href={explorerLink(lmAddress)}
+            address={managerAddress}
+            href={explorerLink(managerAddress)}
           />
           <AddressLine
             label="Liquidity Vault"
-            address={lmVaultAddress}
-            href={explorerLink(lmVaultAddress)}
+            address={vaultAddress}
+            href={explorerLink(vaultAddress)}
           />
           <AddressLine
-            label="Keeper"
-            address={lmKeeperAddress}
-            href={explorerLink(lmKeeperAddress)}
+            label="Keeper proxy"
+            address={keeperAddress}
+            href={explorerLink(keeperAddress)}
           />
           <AddressLine
             label="Orchestrator"
-            address={automation?.address}
-            href={explorerLink(automation?.address)}
+            address={orchestratorAddress}
+            href={explorerLink(orchestratorAddress)}
           />
           <AddressLine
             label="Router"
-            address={manager?.router}
-            href={explorerLink(manager?.router)}
+            address={routerAddress}
+            href={explorerLink(routerAddress)}
           />
           <AddressLine
             label="Factory"
-            address={manager?.factory}
-            href={explorerLink(manager?.factory)}
+            address={factoryAddress}
+            href={explorerLink(factoryAddress)}
+          />
+          <AddressLine
+            label="DEX Pair"
+            address={pairAddress}
+            href={explorerLink(pairAddress)}
           />
           <AddressLine
             label="Branch reader"
-            address={branchReader?.address}
-            href={explorerLink(branchReader?.address)}
+            address={branchReaderAddress}
+            href={explorerLink(branchReaderAddress)}
+          />
+          <AddressLine
+            label="Reserve reader"
+            address={reserveReaderAddress}
+            href={explorerLink(reserveReaderAddress)}
+          />
+          <AddressLine
+            label="Helper reader"
+            address={helperReaderAddress}
+            href={explorerLink(helperReaderAddress)}
           />
         </div>
 

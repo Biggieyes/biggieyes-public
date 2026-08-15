@@ -118,8 +118,8 @@ const ModalTopbar = React.memo(
             letterSpacing: 0.5,
             color: colors.accent,
             whiteSpace: "nowrap",
-            overFLOW: "hidden",
-            textOverFLOW: "ellipsis",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
             maxWidth: isPhone ? "58vw" : "55vw",
             fontSize: isPhone ? 15 : 18,
             lineHeight: 1.2,
@@ -136,8 +136,8 @@ const ModalTopbar = React.memo(
               color: colors.text,
               opacity: 0.7,
               whiteSpace: "nowrap",
-              overFLOW: "hidden",
-              textOverFLOW: "ellipsis",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
               maxWidth: isPhone ? "58vw" : "55vw",
             }}
             aria-label={typeof subtitle === "string" ? subtitle : undefined}

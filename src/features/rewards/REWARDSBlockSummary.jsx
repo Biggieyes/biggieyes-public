@@ -1,10 +1,11 @@
 import * as React from "react";
-import { Contract, formatEther, parseEther } from "ethers";
+import { Contract, parseEther } from "ethers";
 import {
   ADDR,
   getROProvider,
   getTokenREWARDSRO,
 } from "@/shared/utils/contract";
+import { formatTokenDisplay } from "@/features/tokenomics/utils/amountFormatting.js";
 
 const DEFAULT_WEIGHTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const DEFAULT_UNIT_REWARD = parseEther("1");
@@ -143,13 +144,13 @@ export default function REWARDSBlockSummary({
       const weight = Number(effectiveWeights[blockIdx] ?? blockIdx);
       const units = count * weight;
       const biggiWei = BigInt(unitRewardWei) * BigInt(units);
-      const biggi = Number(formatEther(biggiWei));
       return {
         name: blockNames[i] || `Block ${blockIdx}`,
         count,
         weight,
         units,
-        biggi,
+        biggiWei,
+        biggiDisplay: formatTokenDisplay(biggiWei, 18, 4, "BIGGI"),
       };
     });
   }, [counts, effectiveWeights, unitRewardWei, blockNames]);
@@ -160,10 +161,10 @@ export default function REWARDSBlockSummary({
         (acc, row) => {
           acc.count += row.count;
           acc.units += row.units;
-          acc.biggi += row.biggi;
+          acc.biggiWei += row.biggiWei;
           return acc;
         },
-        { count: 0, units: 0, biggi: 0 },
+        { count: 0, units: 0, biggiWei: 0n },
       ),
     [rows],
   );
@@ -226,7 +227,7 @@ export default function REWARDSBlockSummary({
                   textShadow: "0 0 8px #5ddcff44",
                 }}
               >
-                {Number.isFinite(row.biggi) ? row.biggi : "-"}
+                {row.biggiDisplay === "--" ? "-" : row.biggiDisplay}
               </td>
             </tr>
           ))}
@@ -273,7 +274,7 @@ export default function REWARDSBlockSummary({
                 borderTop: "2px solid #ffe800",
               }}
             >
-              {Number.isFinite(totals.biggi) ? totals.biggi : "-"}
+              {formatTokenDisplay(totals.biggiWei, 18, 4, "BIGGI")}
             </td>
           </tr>
         </tfoot>

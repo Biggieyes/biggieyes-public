@@ -1869,3 +1869,10 @@ BIGGI ECOSYSTEM – SKIN (scoped)
     color: var(--text-dim) !important;
   }
 }
+
+.biggi-skin .liquidity-vault-table {
+  max-height: min(50vh, 500px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}

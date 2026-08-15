@@ -10,7 +10,7 @@ type AssetOptions = {
 type AddSingleParams = {
   contractAddress: string;
   tokenId: string | number;
-  chainId?: HexChainId; // např. "0x1" (Ethereum), "0xaa36a7" (Sepolia), "0x13882" (Polygon Amoy)
+  chainId?: HexChainId; // např. "0x1" (Ethereum), "0x89" (Polygon mainnet)
   trySwitchChain?: boolean; // default: true
   assetOptions?: AssetOptions;
 };

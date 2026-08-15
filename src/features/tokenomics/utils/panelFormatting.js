@@ -1,4 +1,8 @@
-import { formatEther, formatUnits } from "ethers";
+import {
+  formatNativeDisplay,
+  formatTokenDisplay,
+  isRealAddress,
+} from "./amountFormatting.js";
 
 const MISSING_DISPLAY = new Set(["", "--", "N/A", "NaN"]);
 
@@ -20,54 +24,15 @@ export function formatTokenAmount(
   decimals = 18,
   maximumFractionDigits = 2,
 ) {
-  if (value == null) return "--";
-  if (typeof value === "string" && /[a-zA-Z]/.test(value)) return value;
-
-  try {
-    const normalized =
-      typeof value === "string" ? value.replace(/,/g, "") : value;
-    const formatted = formatUnits(
-      typeof normalized === "bigint" ? normalized : BigInt(normalized),
-      decimals,
-    );
-    const numeric = Number(formatted);
-    return Number.isFinite(numeric)
-      ? numeric.toLocaleString("en-US", { maximumFractionDigits })
-      : formatted;
-  } catch {
-    if (typeof value === "number" && Number.isFinite(value)) {
-      return value.toLocaleString("en-US", { maximumFractionDigits });
-    }
-    const text = String(value).trim();
-    return text || "--";
-  }
+  return formatTokenDisplay(value, decimals, maximumFractionDigits);
 }
 
 export function formatNativeAmount(value, maximumFractionDigits = 4) {
-  if (value == null) return "--";
-  if (typeof value === "string" && /[a-zA-Z]/.test(value)) return value;
-
-  try {
-    const normalized =
-      typeof value === "string" ? value.replace(/,/g, "") : value;
-    const formatted = formatEther(
-      typeof normalized === "bigint" ? normalized : BigInt(normalized),
-    );
-    const numeric = Number(formatted);
-    return Number.isFinite(numeric)
-      ? `${numeric.toLocaleString("en-US", { maximumFractionDigits })} POL`
-      : formatted;
-  } catch {
-    if (typeof value === "number" && Number.isFinite(value)) {
-      return `${value.toLocaleString("en-US", { maximumFractionDigits })} POL`;
-    }
-    const text = String(value).trim();
-    return text || "--";
-  }
+  return formatNativeDisplay(value, maximumFractionDigits);
 }
 
 export function isAddress(address) {
-  return typeof address === "string" && /^0x[0-9a-fA-F]{40}$/.test(address);
+  return isRealAddress(address);
 }
 
 export function pickAddress(...addresses) {

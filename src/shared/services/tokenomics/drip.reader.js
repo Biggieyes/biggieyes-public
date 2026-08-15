@@ -7,10 +7,10 @@ import {
   getROProvider,
   getTokenRO,
 } from "@/shared/utils/contract";
-import { getArchiveRpcUrls, getRpcUrls } from "@/shared/utils/rpcConfig";
-import DRIPLM_ABI from "@/config/abi/BiggiDRIPLM.json";
+import { getArchiveRpcUrls } from "@/shared/utils/rpcConfig";
+import DRIPLM_ABI from "@/config/abi/BiggiDripLMToModerator.json";
 
-const DRIP_EVENT_SCAN_CHUNK = 50_000;
+const DRIP_EVENT_SCAN_CHUNK = 5_000;
 const DRIP_EVENT_CACHE_PREFIX = "biggi:drip-event-totals:v1";
 const DRIP_EVENT_DEPLOY_BLOCK = Number(ADDR.DEPLOY_BLOCK) || 0;
 const DRIP_EVENT_PRUNED_RETRY_MS = 2 * 60 * 1000;
@@ -111,6 +111,25 @@ function _looksLikeLogProvider(provider) {
   );
 }
 
+function _envFlag(name) {
+  return Boolean(
+    typeof import.meta !== "undefined" && import.meta.env?.[name] === "1",
+  );
+}
+
+function _isPublicDripLogRpc(url) {
+  try {
+    const host = new URL(String(url || "")).hostname.toLowerCase();
+    return (
+      host === "polygon.drpc.org" ||
+      host === "polygon-rpc.com" ||
+      host === "polygon-bor-rpc.publicnode.com"
+    );
+  } catch {
+    return true;
+  }
+}
+
 function _extractRpcErrorInfo(error) {
   const rawCodes = [
     error?.code,
@@ -178,19 +197,26 @@ function _clearPrunedRetry(address) {
 
 function _buildLogProviderCandidates(baseProvider) {
   const out = [];
-  if (_looksLikeLogProvider(baseProvider)) out.push(baseProvider);
-
   const seenUrls = new Set();
-  const urls = [...getArchiveRpcUrls(), ...getRpcUrls()];
+  const urls = getArchiveRpcUrls();
+  const allowPublicLogProvider = _envFlag("VITE_DRIP_ALLOW_PUBLIC_LOG_PROVIDER");
   for (const url of urls) {
     const normalized = String(url || "").trim();
     if (!normalized || seenUrls.has(normalized)) continue;
+    if (_isPublicDripLogRpc(normalized) && !allowPublicLogProvider) continue;
     seenUrls.add(normalized);
     try {
       out.push(new JsonRpcProvider(normalized));
     } catch {
       // ignore invalid fallback RPC
     }
+  }
+
+  if (!out.length && _looksLikeLogProvider(baseProvider)) {
+    // Event totals require historical log scans. Public Polygon RPCs often
+    // reject those ranges with HTTP 400, so use the caller provider only when
+    // it is explicitly supplied as an archive-capable provider by the runtime.
+    if (_envFlag("VITE_DRIP_ALLOW_CALLER_LOG_PROVIDER")) out.push(baseProvider);
   }
 
   return out;
@@ -213,10 +239,21 @@ async function _scanDripEventTotals(address, provider) {
     return cachedPersisted;
   }
 
+  const candidates = _buildLogProviderCandidates(provider);
+  if (!candidates.length) {
+    if (!dripEventPrunedWarned) {
+      dripEventPrunedWarned = true;
+      console.warn(
+        "DRIP event totals require VITE_ARCHIVE_RPC_URL; using cached values and live balances.",
+      );
+    }
+    return cachedPersisted;
+  }
+
   let lastError = null;
   let prunedErrorDetected = false;
 
-  for (const candidate of _buildLogProviderCandidates(provider)) {
+  for (const candidate of candidates) {
     try {
       const latestBlock = await candidate.getBlockNumber();
       const nextFromBlock = Math.max(

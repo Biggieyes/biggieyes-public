@@ -1,4 +1,8 @@
-import { formatUnits } from "ethers";
+import {
+  formatMappedLp,
+  formatMappedNative,
+  formatMappedToken,
+} from "./amountFormatters.js";
 
 const PLACEHOLDER = "N/A";
 const DECIMALS = 18;
@@ -20,25 +24,6 @@ function _formatTimestamp(seconds) {
     hour: "2-digit",
     minute: "2-digit",
   });
-}
-
-function _formatAmount(raw, decimals = DECIMALS) {
-  if (raw === undefined || raw === null)
-    return { display: PLACEHOLDER, numeric: null };
-  try {
-    const formatted = formatUnits(
-      typeof raw === 'bigint' ? raw : BigInt(raw),
-      decimals,
-    );
-    const numeric = Number(formatted);
-    const display = Number.isFinite(numeric)
-      ? numeric.toLocaleString("en-US", { maximumFractionDigits: 2 })
-      : formatted;
-    return { display, numeric: Number.isFinite(numeric) ? numeric : null };
-  } catch (error) {
-    console.warn("Failed to format amount", error);
-    return { display: PLACEHOLDER, numeric: null };
-  }
 }
 
 function _shortAddress(address = "") {
@@ -65,27 +50,110 @@ export function mapRawSnapshotToUI(raw) {
   const keeperProxy = raw.keeperProxy || {};
   const branchReader = raw.branchReader || {};
 
-  const reserveMatic = _formatAmount(reserve.maticBalance);
-  const reserveBiggi = _formatAmount(reserve.biggiBalance);
-  const reserveWaiting = _formatAmount(reserve.waitingBiggi);
-  const reserveDexRefill = _formatAmount(reserve.dexRefillBiggi);
-  const reserveTotalMaticReceived = _formatAmount(reserve.totalMaticReceived);
-  const vaultLp = _formatAmount(vault.totalLpLocked);
-  const treasuryNative = _formatAmount(treasury.nativeBalance);
-  const treasuryToken = _formatAmount(treasury.tokenBalance);
-  const automationReservePol = _formatAmount(automation.reservePol);
-  const automationDexRefill = _formatAmount(automation.reserveDexRefillBiggi);
-  const automationMinPolPerTx = _formatAmount(automation.minPolPerTx);
-  const automationMaxPolPerTx = _formatAmount(automation.maxPolPerTx);
-  const automationMinDexRefill = _formatAmount(automation.minDexRefillBiggi);
-  const automationDailyQuota = _formatAmount(automation.dailyQuotaPol);
-  const automationUsedToday = _formatAmount(automation.usedToday);
-  const keeperMinReservePol = _formatAmount(keeperProxy.minReservePol);
-  const keeperMaxPerTx = _formatAmount(keeperProxy.maxPerTx);
-  const keeperMinDexRefill = _formatAmount(keeperProxy.minDexRefillBiggi);
-  const keeperComputedAmount = _formatAmount(keeperProxy.computedAmount);
-  const keeperComputedReserve = _formatAmount(keeperProxy.computedReservePol);
-  const keeperFixedAmount = _formatAmount(keeperProxy.fixedAmount);
+  const reserveMatic = formatMappedNative(reserve.maticBalance, 4, PLACEHOLDER);
+  const reserveBiggi = formatMappedToken(
+    reserve.biggiBalance,
+    DECIMALS,
+    2,
+    PLACEHOLDER,
+  );
+  const reserveWaiting = formatMappedToken(
+    reserve.waitingBiggi,
+    DECIMALS,
+    2,
+    PLACEHOLDER,
+  );
+  const reserveDexRefill = formatMappedToken(
+    reserve.dexRefillBiggi,
+    DECIMALS,
+    2,
+    PLACEHOLDER,
+  );
+  const reserveTotalMaticReceived = formatMappedNative(
+    reserve.totalMaticReceived,
+    4,
+    PLACEHOLDER,
+  );
+  const vaultLp = formatMappedLp(vault.totalLpLocked, 4, PLACEHOLDER);
+  const treasuryNative = formatMappedNative(
+    treasury.nativeBalance,
+    4,
+    PLACEHOLDER,
+  );
+  const treasuryToken = formatMappedToken(
+    treasury.tokenBalance,
+    DECIMALS,
+    2,
+    PLACEHOLDER,
+  );
+  const automationReservePol = formatMappedNative(
+    automation.reservePol,
+    4,
+    PLACEHOLDER,
+  );
+  const automationDexRefill = formatMappedToken(
+    automation.reserveDexRefillBiggi,
+    DECIMALS,
+    2,
+    PLACEHOLDER,
+  );
+  const automationMinPolPerTx = formatMappedNative(
+    automation.minPolPerTx,
+    4,
+    PLACEHOLDER,
+  );
+  const automationMaxPolPerTx = formatMappedNative(
+    automation.maxPolPerTx,
+    4,
+    PLACEHOLDER,
+  );
+  const automationMinDexRefill = formatMappedToken(
+    automation.minDexRefillBiggi,
+    DECIMALS,
+    2,
+    PLACEHOLDER,
+  );
+  const automationDailyQuota = formatMappedNative(
+    automation.dailyQuotaPol,
+    4,
+    PLACEHOLDER,
+  );
+  const automationUsedToday = formatMappedNative(
+    automation.usedToday,
+    4,
+    PLACEHOLDER,
+  );
+  const keeperMinReservePol = formatMappedNative(
+    keeperProxy.minReservePol,
+    4,
+    PLACEHOLDER,
+  );
+  const keeperMaxPerTx = formatMappedNative(
+    keeperProxy.maxPerTx,
+    4,
+    PLACEHOLDER,
+  );
+  const keeperMinDexRefill = formatMappedToken(
+    keeperProxy.minDexRefillBiggi,
+    DECIMALS,
+    2,
+    PLACEHOLDER,
+  );
+  const keeperComputedAmount = formatMappedNative(
+    keeperProxy.computedAmount,
+    4,
+    PLACEHOLDER,
+  );
+  const keeperComputedReserve = formatMappedNative(
+    keeperProxy.computedReservePol,
+    4,
+    PLACEHOLDER,
+  );
+  const keeperFixedAmount = formatMappedNative(
+    keeperProxy.fixedAmount,
+    4,
+    PLACEHOLDER,
+  );
 
   return {
     ts,

@@ -54,60 +54,153 @@ const buttonStyle = {
   fontWeight: 700,
 };
 
-const explorerBase = "https://amoy.polygonscan.com/address/";
+const explorerBase = "https://polygonscan.com/address/";
+
+function isAddressLike(addr) {
+  return /^0x[a-fA-F0-9]{40}$/.test(String(addr || ""));
+}
+
+function pickAddress(...values) {
+  return values.find(isAddressLike) || "";
+}
 
 const contracts = [
   {
-    name: "BiggiMainVRF",
-    address: ADDR.COLLECTION_VRF || ADDR.MAIN,
+    name: "BiggiMain VRF",
+    address: pickAddress(ADDR.COLLECTION_VRF, ADDR.MAIN),
     role: "VRF mint controller",
   },
   {
+    name: "BiggiMain Public",
+    address: pickAddress(ADDR.COLLECTION_PUBLIC, ADDR.MAIN2),
+    role: "Public collection controller",
+  },
+  {
+    name: "TicketHub",
+    address: pickAddress(ADDR.TICKET_HUB),
+    role: "Ticket mint and redeem hub",
+  },
+  {
+    name: "MainReader",
+    address: pickAddress(ADDR.MAIN_READER, ADDR.READER),
+    role: "Core frontend snapshot reader",
+  },
+  {
+    name: "ChapterSeriesReader",
+    address: pickAddress(ADDR.CHAPTER_SERIES_READER),
+    role: "Series and chapter visibility reader",
+  },
+  {
+    name: "VRFRouter",
+    address: pickAddress(ADDR.VRF_ROUTER),
+    role: "Chainlink VRF coordinator adapter",
+  },
+  {
     name: "BiggiToken",
-    address: ADDR.BIGGI_TOKEN || ADDR.BIGGI,
+    address: pickAddress(ADDR.BIGGI_TOKEN, ADDR.BIGGI),
     role: "ERC-20 token",
   },
   {
     name: "Reserve",
-    address: ADDR.RESERVE,
+    address: pickAddress(ADDR.RESERVE),
     role: "Reserve bucket",
   },
   {
     name: "LiquidityManager",
-    address: ADDR.LM || ADDR.LIQUIDITY_MANAGER,
+    address: pickAddress(ADDR.LM, ADDR.LIQUIDITY_MANAGER),
     role: "LP manager",
   },
   {
     name: "LiquidityVault",
-    address: ADDR.LIQUIDITY_VAULT,
+    address: pickAddress(ADDR.LIQUIDITY_VAULT),
     role: "LP custody vault",
   },
   {
     name: "Treasury",
-    address: ADDR.TREASURY,
+    address: pickAddress(ADDR.TREASURY),
     role: "Treasury wallet",
   },
   {
     name: "BuybackAgent",
-    address: ADDR.BUYBACK_AGENT,
+    address: pickAddress(ADDR.BUYBACK_AGENT),
     role: "Buyback executor",
   },
   {
     name: "DripDistributor",
-    address: ADDR.DRIP_DISTRIBUTOR,
+    address: pickAddress(ADDR.DRIP_DISTRIBUTOR),
     role: "DRIP emission",
   },
   {
+    name: "DripLM",
+    address: pickAddress(ADDR.DRIP_LM),
+    role: "DRIP sell and routing logic",
+  },
+  {
     name: "TokenRewards",
-    address: ADDR.TOKEN_REWARDS,
+    address: pickAddress(ADDR.TOKEN_REWARDS),
     role: "Token rewards",
   },
   {
+    name: "NFTRewards",
+    address: pickAddress(ADDR.NFT_REWARDS),
+    role: "NFT reward layer",
+  },
+  {
+    name: "CollectionRewards",
+    address: pickAddress(ADDR.COLLECTION_REWARDS),
+    role: "Collection reward bucket",
+  },
+  {
     name: "MultiCollectionDistributor",
-    address: ADDR.MULTI_COLLECTION_DISTRIBUTOR,
+    address: pickAddress(ADDR.MULTI_COLLECTION_DISTRIBUTOR, ADDR.DISTRIBUTOR),
     role: "Multi-collection distribution",
   },
-];
+  {
+    name: "MCDReaderV2",
+    address: pickAddress(ADDR.MCD_READER_V2, ADDR.MULTI_COLLECTION_READER),
+    role: "Distributor frontend reader",
+  },
+  {
+    name: "TokenomicsStatusReader",
+    address: pickAddress(ADDR.BIGGI_TOKENOMICS_READER, ADDR.TOKENOMIK_READER),
+    role: "Aggregated tokenomics status reader",
+  },
+  {
+    name: "TokenomicsAddonReader",
+    address: pickAddress(ADDR.TOKENOMICS_SYSTEM_ADDON_READER),
+    role: "Extended ecosystem reader",
+  },
+  {
+    name: "TokenRewardsReader",
+    address: pickAddress(ADDR.TOKEN_REWARDS_READER),
+    role: "Token rewards reader",
+  },
+  {
+    name: "ReserveTreasuryReader",
+    address: pickAddress(ADDR.RESERVE_TREASURY_READER),
+    role: "Reserve and treasury reader",
+  },
+  {
+    name: "BuybackReader",
+    address: pickAddress(ADDR.BUYBACK_READER),
+    role: "Buyback reader",
+  },
+  {
+    name: "LiquidityHelperReader",
+    address: pickAddress(ADDR.LIQUIDITY_HELPER_READER, ADDR.LIQ_HELPER_READER),
+    role: "Liquidity helper reader",
+  },
+  {
+    name: "DEX Pair",
+    address: pickAddress(ADDR.PAIR),
+    role: "BIGGI/WPOL pair",
+  },
+  {
+    name: "DEX Router",
+    address: pickAddress(ADDR.ROUTER),
+    role: "QuickSwap/UniswapV2 router",
+  },
+].filter((row) => isAddressLike(row.address));
 
 function shortAddr(addr) {
   if (!addr) return "-";
@@ -180,7 +273,7 @@ export default function ContractsTable() {
                       style={{ color: "#8fd3ff", textDecoration: "none" }}
                       aria-label={`Open ${row.name} on explorer`}
                     >
-                      ?
+                      Open
                     </a>
                   ) : (
                     "-"

@@ -1110,11 +1110,11 @@ export default function NftCard({
     if (metaUrl) return metaUrl;
 
     if (!contractAddress || !tokenId) return "";
-    const chainIdCandidate = Number(nft?.chainId || metadata?.chainId || 80002);
+    const chainIdCandidate = Number(nft?.chainId || metadata?.chainId || 137);
     const explorerBase =
       explorerBaseFor(chainIdCandidate) ||
-      explorerBaseFor(80002) ||
-      "https://amoy.polygonscan.com";
+      explorerBaseFor(137) ||
+      "https://polygonscan.com";
     if (!explorerBase) return "";
 
     const token = encodeURIComponent(String(tokenId));

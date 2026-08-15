@@ -761,8 +761,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
-  align-items: stretch;
-  grid-auto-rows: 1fr;
+  align-items: start;
+  grid-auto-rows: auto;
 }
 
 .ecoTable {
@@ -773,9 +773,31 @@
   box-shadow: 0 12px 26px rgba(0, 0, 0, 0.32);
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: auto;
+  max-height: clamp(260px, 42vh, 430px);
   min-width: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+
+.ecoTable::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ecoTable::-webkit-scrollbar-track {
+  background: rgba(255, 232, 0, 0.04);
+  border-radius: 999px;
+}
+
+.ecoTable::-webkit-scrollbar-thumb {
+  background: rgba(255, 232, 0, 0.24);
+  border-radius: 999px;
+}
+
+.ecoTable::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 232, 0, 0.38);
 }
 
 .ecoTableHeader {
@@ -784,6 +806,11 @@
   text-transform: uppercase;
   color: rgba(255, 232, 0, 0.8);
   margin-bottom: 6px;
+  position: sticky;
+  top: -14px;
+  z-index: 1;
+  padding: 0 0 8px;
+  background: linear-gradient(160deg, rgba(15, 17, 24, 0.98), rgba(8, 10, 16, 0.99));
 }
 
 .ecoTableRow {

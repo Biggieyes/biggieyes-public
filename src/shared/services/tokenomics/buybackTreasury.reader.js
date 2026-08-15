@@ -22,6 +22,20 @@ function _shortAddr(addr) {
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 }
 
+export function normalizeReserveTreasurySnapshot(snapshot) {
+  if (!snapshot) return null;
+  return {
+    treasuryPol: snapshot?.treasuryPol ?? snapshot?.[0] ?? null,
+    treasuryBiggi: snapshot?.treasuryBiggi ?? snapshot?.[1] ?? null,
+    totalBiggiFromBuyback:
+      snapshot?.totalBiggiFromBuyback ?? snapshot?.[2] ?? null,
+    totalBiggiFromEcosystem:
+      snapshot?.totalBiggiFromEcosystem ?? snapshot?.[3] ?? null,
+    totalPolFromDistributor:
+      snapshot?.totalPolFromDistributor ?? snapshot?.[4] ?? null,
+  };
+}
+
 async function _readTreasurySnapshot(signerOrProvider) {
   const readerAddress =
     ADDR.RESERVE_TREASURY_READER || ADDR.TREASURY_READER || null;
@@ -33,15 +47,7 @@ async function _readTreasurySnapshot(signerOrProvider) {
       signerOrProvider,
     );
     const snapshot = await reader.treasurySnapshot();
-    if (!snapshot) return null;
-    return {
-      treasuryPol: snapshot?.treasuryPol ?? snapshot?.[0] ?? null,
-      treasuryBiggi: snapshot?.treasuryBiggi ?? snapshot?.[1] ?? null,
-      totalBiggiFromBuyback:
-        snapshot?.totalBiggiFromBuyback ?? snapshot?.[2] ?? null,
-      totalPolFromDistributor:
-        snapshot?.totalPolFromDistributor ?? snapshot?.[3] ?? null,
-    };
+    return normalizeReserveTreasurySnapshot(snapshot);
   } catch {
     return null;
   }
@@ -89,6 +95,10 @@ async function _readBuybackReaderSnapshot(signerOrProvider) {
           treasurySnapshot?.totalPolReceived ?? treasurySnapshot?.[2] ?? null,
         totalBiggiReceived:
           treasurySnapshot?.totalBiggiReceived ?? treasurySnapshot?.[3] ?? null,
+        totalBiggiFromEcosystem:
+          treasurySnapshot?.totalBiggiFromEcosystem ??
+          treasurySnapshot?.[4] ??
+          null,
       },
       policy: {
         swapSlippageBps:
@@ -290,9 +300,14 @@ export async function fetchBUYBACKTreasurySnapshot({ chainId, provider } = {}) {
       maticBalance: treasuryNative,
       biggiBalance: treasuryBiggi,
       totalMaticReceived,
+      totalMaticReceivedFromDistributor: totalMaticReceived,
       totalBiggiReceived:
         buybackReaderSnapshot?.treasury?.totalBiggiReceived ??
         treasurySnapshot?.totalBiggiFromBuyback ??
+        null,
+      totalBiggiReceivedFromEcosystem:
+        buybackReaderSnapshot?.treasury?.totalBiggiFromEcosystem ??
+        treasurySnapshot?.totalBiggiFromEcosystem ??
         null,
     },
     derived,

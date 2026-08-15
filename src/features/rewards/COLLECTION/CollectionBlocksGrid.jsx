@@ -4,6 +4,7 @@ import "./COLLECTIONBlocksGrid.css";
 
 import useIsMobile from "../../../hooks/useIsMobile";
 import useIsTouch from "../../../hooks/useIsTouch";
+import useChapterSeriesReader from "../../../hooks/useChapterSeriesReader";
 import { useStatsREWARDS } from "../../../hooks/useStatsRewards";
 import {
   DEFAULT_BLOCKS,
@@ -22,7 +23,7 @@ import {
 } from "../../../utils/images";
 import { useContracts } from "../../../providers/ContractsProvider";
 import {
-  ensureAmoy,
+  ensurePolygon,
   getCOLLECTIONPublicRO,
   getCOLLECTIONVRFRO,
   getROProvider,
@@ -58,6 +59,7 @@ import PanelInfoModal from "@/components/common/PanelInfoModal";
 import PanelInfoButton from "@/components/common/PanelInfoButton";
 import COLLECTION1Panel from "./CollectionBlocksGrid.Collection1Panel";
 import COLLECTION2Panel from "./CollectionBlocksGrid.Collection2Panel";
+import ChapterSeriesPanel from "./CollectionBlocksGrid.ChapterSeriesPanel";
 import FutureCollectionsModal from "./CollectionBlocksGrid.FutureCollectionsModal";
 import ModalPortal from "../../../components/common/ModalPortal";
 
@@ -138,6 +140,14 @@ const COLLECTION_SECTION_META = {
     accentSoft: "rgba(181, 132, 255, 0.22)",
     accentGlow: "rgba(181, 132, 255, 0.38)",
   },
+  chapterSeries: {
+    title: "CHAPTER / SERIES",
+    subtitle:
+      "Verify ChapterSeriesReader wiring, collection eligibility, and the active VRF/Public pair from Polygon mainnet.",
+    accent: "#27d9d2",
+    accentSoft: "rgba(39, 217, 210, 0.2)",
+    accentGlow: "rgba(39, 217, 210, 0.32)",
+  },
 };
 
 function COLLECTIONBlocksGrid({
@@ -172,6 +182,12 @@ function COLLECTIONBlocksGrid({
     () => getFutureCollectionStats(),
     [],
   );
+  const {
+    data: chapterSeriesData,
+    loading: chapterSeriesLoading,
+    error: chapterSeriesError,
+    refresh: refreshChapterSeries,
+  } = useChapterSeriesReader();
 
   const isMobile = useIsMobile(MOBILE_BREAKPOINT);
   const isTouch = useIsTouch();
@@ -762,6 +778,13 @@ function COLLECTIONBlocksGrid({
         ],
       },
       {
+        label: "CHAPTER / SERIES",
+        description: [
+          "Live ChapterSeriesReader wiring for the current VRF/Public pair.",
+          "Shows registry, controller, chapter caps, mint progress, and reward eligibility.",
+        ],
+      },
+      {
         label: "FUTURE COLLECTIONS",
         description: [
           "Preview the mainnet-ready collection roadmap.",
@@ -843,15 +866,15 @@ function COLLECTIONBlocksGrid({
     }
   };
 
-  const handleEnsureAmoy = React.useCallback(async () => {
+  const handleEnsurePolygon = React.useCallback(async () => {
     try {
-      await ensureAmoy();
+      await ensurePolygon();
       // try reload data after switching
       setOnchainUnavailable(false);
       setReloadCounter((c) => c + 1);
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error("ensureAmoy failed:", err);
+      console.error("ensurePolygon failed:", err);
     }
   }, []);
 
@@ -934,6 +957,23 @@ function COLLECTIONBlocksGrid({
     </section>
   );
 
+  const renderChapterSeriesPanel = React.useCallback(
+    () => (
+      <ChapterSeriesPanel
+        chapterSeries={chapterSeriesData}
+        loading={chapterSeriesLoading}
+        error={chapterSeriesError}
+        onRefresh={refreshChapterSeries}
+      />
+    ),
+    [
+      chapterSeriesData,
+      chapterSeriesLoading,
+      chapterSeriesError,
+      refreshChapterSeries,
+    ],
+  );
+
   const renderCOLLECTIONOne = React.useCallback(
     () => (
       <COLLECTION1Panel
@@ -966,6 +1006,8 @@ function COLLECTIONBlocksGrid({
       ? renderCOLLECTIONTwo()
       : effectiveActive === "expansion"
         ? renderExpansionPanel()
+        : effectiveActive === "chapterSeries"
+          ? renderChapterSeriesPanel()
         : renderCOLLECTIONOne();
 
   return (
@@ -1013,6 +1055,13 @@ function COLLECTIONBlocksGrid({
               </button>
               <button
                 type="button"
+                className={`collection-grid__tab${effectiveActive === "chapterSeries" ? " is-active" : ""}`}
+                onClick={() => handleSwitchCOLLECTION("chapterSeries")}
+              >
+                Chapter / Series
+              </button>
+              <button
+                type="button"
                 className="collection-grid__tab collection-grid__tab--future"
                 onClick={() => setFutureOpen(true)}
               >
@@ -1042,16 +1091,16 @@ function COLLECTIONBlocksGrid({
           >
             <div className="collection-grid__onchain-message">
               On-chain data is unavailable. Switch MetaMask to{" "}
-              <strong>Polygon Amoy</strong> or try again.
+              <strong>Polygon mainnet</strong> or try again.
             </div>
             <div className="collection-grid__onchain-actions">
               <button
                 type="button"
                 className="collection-grid__btn"
-                onClick={handleEnsureAmoy}
-                aria-label="Switch MetaMask to Polygon Amoy"
+                onClick={handleEnsurePolygon}
+                aria-label="Switch MetaMask to Polygon mainnet"
               >
-                Switch to Amoy
+                Switch to Polygon
               </button>
               <button
                 type="button"

@@ -161,6 +161,11 @@
   gap: 10px;
 }
 
+.vrf-steps--grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
 .vrf-step {
   display: flex;
   align-items: center;
@@ -246,7 +251,12 @@
 }
 
 .vrf-table-wrap {
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
   border-radius: 12px;
 }
 

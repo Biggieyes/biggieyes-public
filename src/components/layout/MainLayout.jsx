@@ -3,7 +3,7 @@ import HeaderControls from "./HeaderControls";
 import StatusBanner from "@/shared/components/StatusBanner";
 import useHashRouting from "@/shared/hooks/useHashRouting";
 import { useWeb3 } from "@/providers/Web3Provider";
-import { AMOY } from "@/shared/utils/contract";
+import { ACTIVE_CHAIN } from "@/shared/utils/contract";
 import { chainNameFor } from "@/config/chains.js";
 import Button from "@/components/ui/Button.jsx";
 
@@ -114,12 +114,13 @@ function MainLayout({
   onInfoGateComplete,
   onInfoButtonRect,
   forceInfoOpenTick = 0,
+  mintDisabledReason = "",
 }) {
   const { anchor, scrollToAnchor } = useHashRouting("/");
   const { chainId, ensureChain, account } = useWeb3();
-  const expectedChainId = AMOY.chainId;
+  const expectedChainId = ACTIVE_CHAIN.chainId;
   const expectedChainLabel =
-    AMOY?.name || chainNameFor(expectedChainId) || "Polygon Amoy";
+    ACTIVE_CHAIN?.name || chainNameFor(expectedChainId) || "Polygon mainnet";
   const currentChainLabel =
     chainNameFor(chainId) || (chainId ? `chainId ${chainId}` : "unknown");
   const isWrongNetwork =
@@ -167,8 +168,9 @@ function MainLayout({
         infoGateActive={infoGateActive}
         onInfoGateComplete={onInfoGateComplete}
         onInfoButtonRect={onInfoButtonRect}
-        forceInfoOpenTick={forceInfoOpenTick}
-      />
+          forceInfoOpenTick={forceInfoOpenTick}
+          mintDisabledReason={mintDisabledReason}
+        />
 
       <main className="dashboard-shell" id="top">
         <div className="dashboard-shell__inner">

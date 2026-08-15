@@ -1,5 +1,5 @@
 import { parseEther } from "ethers";
-import { ensureAmoy, getMainRW, getVRF } from "./contract";
+import { ensurePolygon, getMainRW, getVRF } from "./contract";
 
 export const parseEth = (n) => {
   const num = Number(n);
@@ -23,7 +23,7 @@ export const writeTx = async (fn, ...args) => {
 };
 
 export const writeFirst = async (targets, names, ...args) => {
-  await ensureAmoy();
+  await ensurePolygon();
   for (const get of targets) {
     let c;
     try {
@@ -100,7 +100,7 @@ export const setVRFAllOrPartial = async (VRF) => {
   const trySet = async (name, ...a) => {
     if (typeof c[name] === "function") await writeTx(c[name].bind(c), ...a);
   };
-  await ensureAmoy();
+  await ensurePolygon();
   try {
     await trySet("setKeyHash", VRF.keyHash);
   } catch {

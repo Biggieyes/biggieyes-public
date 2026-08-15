@@ -1,5 +1,5 @@
 import {
-  AMOY,
+  ACTIVE_CHAIN,
   checkRpcHealth,
   getArchiveRpcUrls,
   getRpcUrls,
@@ -20,7 +20,7 @@ const expectedChainIdRaw =
 const expectedChainId =
   expectedChainIdRaw != null && expectedChainIdRaw !== ""
     ? Number(expectedChainIdRaw)
-    : AMOY.chainId;
+    : ACTIVE_CHAIN.chainId;
 const maxStaleBlocks =
   Number(env("VITE_RPC_MAX_STALE_BLOCKS")) > 0
     ? Number(env("VITE_RPC_MAX_STALE_BLOCKS"))

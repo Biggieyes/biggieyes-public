@@ -45,6 +45,7 @@ function TopBar({
   onInfoGateComplete,
   onInfoButtonRect,
   forceInfoOpenTick = 0,
+  mintDisabledReason = "",
 }) {
   return (
     <div className={`top-bar ${isMobile ? "mobile" : "desktop"}`}>
@@ -81,6 +82,7 @@ function TopBar({
               onInfoGateComplete={onInfoGateComplete}
               onInfoButtonRect={onInfoButtonRect}
               forceInfoOpenTick={forceInfoOpenTick}
+              mintDisabledReason={mintDisabledReason}
             />
           </div>
 
@@ -142,6 +144,7 @@ function TopBar({
               onInfoGateComplete={onInfoGateComplete}
               onInfoButtonRect={onInfoButtonRect}
               forceInfoOpenTick={forceInfoOpenTick}
+              mintDisabledReason={mintDisabledReason}
             />
           </div>
         </>

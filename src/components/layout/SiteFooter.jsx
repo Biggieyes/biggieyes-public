@@ -5,7 +5,7 @@ const PROJECT_NAME = "BiggiEyes";
 const FAQ_ITEMS = [
   "Mint a ticket, then redeem it to trigger VRF reveal.",
   "Rewards are calculated from owned NFTs and weekly pool rules.",
-  "Use Polygon Amoy network in wallet for all on-chain actions.",
+  "Use Polygon mainnet in wallet for all on-chain actions.",
 ];
 
 const LINKS = [

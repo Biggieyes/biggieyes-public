@@ -204,7 +204,7 @@ const ProjectInfoModal = ({
           <>
             <Heading>Two-minute overview</Heading>
             <p>
-              BiggiEyes is an on-chain NFT economy on Polygon Amoy (testnet).
+              BiggiEyes is an on-chain NFT economy on Polygon mainnet.
               You mint a ticket, redeem it, and Chainlink VRF assigns a block
               and background before the NFT is minted to your wallet. Blocks
               act as rarity tiers, and backgrounds plus block state drive
@@ -287,10 +287,10 @@ Reserve to LiquidityManager to LiquidityVault`}
               <li>Use explorer links to verify any transaction.</li>
             </ul>
 
-            <Heading>Testnet note</Heading>
+            <Heading>Mainnet note</Heading>
             <p style={{ marginTop: 6 }}>
-              Network: Polygon Amoy (chainId 80002). Keep a small POL balance for
-              gas. Testnet tokens have no real-world value.
+              Network: Polygon mainnet (chainId 137). Keep a small POL balance
+              for gas and confirm every wallet transaction carefully.
             </p>
           </>
         )}
@@ -393,9 +393,9 @@ Reserve to LiquidityManager to LiquidityVault`}
           <>
             <Heading>Roadmap</Heading>
             <ul style={{ marginLeft: 18 }}>
-              <li>Testnet validation and monitoring (current focus).</li>
+              <li>Mainnet monitoring and launch hardening (current focus).</li>
               <li>Security review and audit planning.</li>
-              <li>Mainnet launch after validation and review.</li>
+              <li>Public mint launch after validation and review.</li>
               <li>Episodes, community events, and marketplace integrations.</li>
             </ul>
 
@@ -408,7 +408,7 @@ Reserve to LiquidityManager to LiquidityVault`}
             <Heading>Legal</Heading>
             <ul style={{ marginLeft: 18 }}>
               <li>Not financial advice; use at your own risk.</li>
-              <li>Testnet tokens have no real-world value.</li>
+              <li>Mainnet transactions use real assets and are irreversible.</li>
               <li>Terms and privacy policy apply where provided.</li>
             </ul>
           </>
@@ -419,7 +419,7 @@ Reserve to LiquidityManager to LiquidityVault`}
             <Heading>Common issues</Heading>
             <ul style={{ marginLeft: 18 }}>
               <li>Wallet not connected: connect MetaMask or WalletConnect.</li>
-              <li>Wrong network: switch to Polygon Amoy (chainId 80002).</li>
+              <li>Wrong network: switch to Polygon mainnet (chainId 137).</li>
               <li>RPC errors: retry or switch to another RPC.</li>
               <li>Pending tx: wait, or speed up/cancel in wallet.</li>
               <li>NFT not showing: wait for VRF, then refresh metadata.</li>

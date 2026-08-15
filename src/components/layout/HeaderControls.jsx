@@ -21,6 +21,7 @@ export default function HeaderControls({
   onInfoGateComplete,
   onInfoButtonRect,
   forceInfoOpenTick = 0,
+  mintDisabledReason = "",
 }) {
   const verifiedWalletAddress = String(walletAddress || "").trim();
   const hasVerifiedConnection = Boolean(verifiedWalletAddress);
@@ -113,6 +114,7 @@ export default function HeaderControls({
           onInfoGateComplete={onInfoGateComplete}
           onInfoButtonRect={onInfoButtonRect}
           forceInfoOpenTick={forceInfoOpenTick}
+          mintDisabledReason={mintDisabledReason}
         />
       </div>
     </header>

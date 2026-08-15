@@ -1,5 +1,4 @@
 import * as React from "react";
-import { formatUnits } from "ethers";
 import StatCard from "../../Common/components/StatCard.jsx";
 import LineChart from "../../Charts/charts/LineChart.jsx";
 import AddressLine from "../components/AddressLine.jsx";
@@ -7,10 +6,13 @@ import { explorerLink } from "../utils/format.js";
 import styles from "../styles/BiggiToken.module.css";
 import "./DRIPTab.css";
 import {
-  formatNativeAmount,
-  formatTokenAmount,
+  formatNativeDisplay,
+  formatTokenDisplay,
+  pickFormatted,
+  toDisplayNumber,
+} from "../utils/amountFormatting.js";
+import {
   pickAddress,
-  pickDisplay,
   sameAddress,
 } from "../utils/panelFormatting.js";
 
@@ -18,37 +20,11 @@ const hasValue = (value) =>
   value !== null && value !== undefined && value !== "";
 
 const toNumberLoose = (value) => {
-  if (value == null) return null;
-  if (typeof value === "number") return Number.isFinite(value) ? value : null;
-  if (typeof value === "bigint") return Number(value);
-  const cleaned = String(value).replace(/[^\d.-]/g, "");
-  if (!cleaned) return null;
-  const num = Number(cleaned);
-  return Number.isFinite(num) ? num : null;
+  return toDisplayNumber(value);
 };
 
 const formatTokenValue = (value, decimals = 18, digits = 2) => {
-  if (value == null) return "--";
-  try {
-    if (typeof value === "string" && /[a-zA-Z]/.test(value)) return value;
-    const numericText =
-      typeof value === "string" && value.includes(",")
-        ? value.replace(/,/g, "")
-        : value;
-    const formatted = formatUnits(
-      typeof numericText === "bigint" ? numericText : BigInt(numericText),
-      decimals,
-    );
-    const num = Number(formatted);
-    return Number.isFinite(num)
-      ? num.toLocaleString("en-US", { maximumFractionDigits: digits })
-      : formatted;
-  } catch {
-    const fallback = toNumberLoose(value);
-    return fallback != null
-      ? fallback.toLocaleString("en-US", { maximumFractionDigits: digits })
-      : String(value ?? "--");
-  }
+  return formatTokenDisplay(value, decimals, digits);
 };
 
 const buildMetric = (display, numeric, hint) => ({
@@ -122,42 +98,44 @@ function DRIPTab({
   const routeRows = [
     {
       label: "Distributor BIGGI live",
-      value: pickDisplay(
+      value: pickFormatted(
+        (value) => formatTokenDisplay(value, tokenDecimals),
+        flowSnapshot?.liveBalances?.token?.dripDistributor,
         dist.balance,
         dist.tokenBalance,
-        formatTokenAmount(flowSnapshot?.liveBalances?.token?.dripDistributor, tokenDecimals),
       ),
     },
     {
       label: "DRIPLM BIGGI live",
-      value: pickDisplay(lm.biggiBalance),
+      value: formatTokenDisplay(lm.biggiBalance, tokenDecimals),
     },
     {
       label: "BIGGI sold on DEX",
-      value: pickDisplay(lm.totalSoldTokens),
+      value: formatTokenDisplay(lm.totalSoldTokens, tokenDecimals),
     },
     {
       label: "Native forwarded",
-      value: pickDisplay(lm.totalNativeForwarded),
+      value: formatNativeDisplay(lm.totalNativeForwarded),
     },
     {
       label: "LM native live",
-      value: pickDisplay(lm.nativeBalance),
+      value: formatNativeDisplay(lm.nativeBalance),
     },
     {
       label: "Reserve POL live",
-      value: pickDisplay(
+      value: pickFormatted(
+        formatNativeDisplay,
+        flowSnapshot?.liveBalances?.native?.reserve,
         liquiditySnapshot?.reserve?.maticBalance,
-        formatNativeAmount(flowSnapshot?.liveBalances?.native?.reserve),
       ),
     },
     {
       label: "Reserve DEX refill",
-      value: pickDisplay(liquiditySnapshot?.reserve?.dexRefillBiggi),
+      value: formatTokenDisplay(liquiditySnapshot?.reserve?.dexRefillBiggi, tokenDecimals),
     },
     {
       label: "BUYBACK agent BIGGI",
-      value: pickDisplay(buybackSnapshot?.BUYBACK?.biggiBalance),
+      value: formatTokenDisplay(buybackSnapshot?.BUYBACK?.biggiBalance, tokenDecimals),
     },
   ];
   const routeChecks = [

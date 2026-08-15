@@ -143,7 +143,7 @@ function NftREWARDSSection({
                 {formattedAddress}
               </span>
               <span className="nft-rewards__summary-hint">
-                Polygon Amoy deployment
+                Polygon mainnet deployment
               </span>
               <button
                 type="button"

@@ -27,6 +27,7 @@ import EcosystemErrorBoundary from "./components/EcosystemErrorBoundary.jsx";
 import HeroStats from "./HeroStats.jsx";
 import TabsBar from "./TabsBar.jsx";
 import Card from "./components/Card.jsx";
+import MainnetDataRail from "./components/MainnetDataRail.jsx";
 import { shortAddr, explorerLink, isAddress } from "./utils/format";
 import { ADDR } from "@/shared/utils/addresses.js";
 import PanelInfoModal from "@/components/common/PanelInfoModal";
@@ -578,6 +579,53 @@ export default function EcosystemPanel({
     distributor.snapshot,
   ]);
 
+  const mainnetRailItems = React.useMemo(() => {
+    const pickAddr = (...values) =>
+      values.find((val) => typeof val === "string" && isAddress(val)) || null;
+    const activeChainId = Number(chainId || ADDR.CHAIN_ID || 137);
+
+    return [
+      {
+        label: "Network",
+        value: `Polygon mainnet / chainId ${ADDR.CHAIN_ID || 137}`,
+        tone: activeChainId === 137 ? "ok" : "warn",
+      },
+      {
+        label: "Wallet",
+        value: account ? shortAddr(account) : "Viewer mode",
+        tone: account ? "ok" : "idle",
+      },
+      {
+        label: "Core reader",
+        address: pickAddr(ADDR.MAIN_READER, ADDR.READER),
+      },
+      {
+        label: "Tokenomics status reader",
+        address: pickAddr(ADDR.BIGGI_TOKENOMICS_READER, ADDR.TOKENOMIK_READER),
+      },
+      {
+        label: "Rewards reader",
+        address: pickAddr(
+          ADDR.BIGGI_REWARDS_READER,
+          ADDR.COLLECTION_REWARDS_READER,
+        ),
+      },
+      {
+        label: "DEX pair",
+        address: pickAddr(
+          tokenDex.snapshot?.dex?.pair?.address,
+          tokenDex.snapshot?.dex?.pairAddress,
+          ADDR.PAIR,
+        ),
+      },
+      {
+        label: "Last snapshot",
+        value: lastUpdatedLabel || "Waiting for live data",
+        tone: lastUpdatedLabel ? "ok" : "warn",
+      },
+    ];
+  }, [account, chainId, lastUpdatedLabel, tokenDex.snapshot]);
+
   const wiringGroups = React.useMemo(() => {
     if (!wiringOpen) return [];
     const pickAddr = (...values) =>
@@ -779,6 +827,11 @@ export default function EcosystemPanel({
               </div>
             </div>
           </header>
+
+          <MainnetDataRail
+            title="Tokenomics mainnet data"
+            items={mainnetRailItems}
+          />
 
           <HeroStats items={heroStats} className={styles.ecoHeroStats} />
           <div

@@ -35,8 +35,8 @@ export default function TrustPanel() {
       <FounderBox />
 
       <section style={disclaimerStyle}>
-        THIS IS TESTNET. TOKENS HAVE NO REAL VALUE. MAINNET DEPLOYMENT AFTER
-        VALIDATION.
+        MAINNET DEPLOYMENT. TRANSACTIONS USE REAL POL AND MUST BE CHECKED IN
+        THE WALLET BEFORE CONFIRMATION.
       </section>
     </div>
   );

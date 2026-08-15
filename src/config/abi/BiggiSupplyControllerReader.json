@@ -1,0 +1,217 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "controller_",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "controller",
+    "outputs": [
+      {
+        "internalType": "contract IBiggiSupplyControllerView",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getStatus",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "controller",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "owner",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "dripDistributor",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "tokenRewards",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "pair",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "paused",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "autoRefreshBaselineOnDexRefill",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "baselineReserve",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minimumReserveFloor",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "currentReserve",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "reserveDropBps",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "dexRefillAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "dexCooldown",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lastDexRefill",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardsThreshold",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardsRefillAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardsCooldown",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lastRewardsRefill",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "dexNeeded",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "rewardsNeeded",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardsBalance",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct BiggiSupplyControllerReader.SupplyStatus",
+        "name": "s",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      }
+    ],
+    "name": "isAllowedCaller",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "keeper",
+        "type": "address"
+      }
+    ],
+    "name": "isKeeper",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "previewMaintenance",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "dexNeeded",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "rewardsNeeded",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "currentReserve",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rewardsBalance",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

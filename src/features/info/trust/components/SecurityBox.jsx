@@ -42,16 +42,16 @@ export default function SecurityBox() {
     <section style={cardStyle}>
       <h3 style={titleStyle}>Security</h3>
       <ul style={listStyle}>
-        <li>? Contracts verified</li>
-        <li>? Chainlink VRF randomness</li>
-        <li>? Supply caps enforced</li>
-        <li>? Reserve bucket accounting</li>
-        <li>? LP stored in Vault</li>
-        <li>? Pausable enabled</li>
-        <li>? Owner roles visible on-chain</li>
+        <li>OK - Contracts verified</li>
+        <li>OK - Chainlink VRF randomness</li>
+        <li>OK - Supply caps enforced</li>
+        <li>OK - Reserve bucket accounting</li>
+        <li>OK - LP stored in Vault</li>
+        <li>OK - Pausable controls enabled where supported</li>
+        <li>OK - Owner roles visible on-chain</li>
       </ul>
       <div style={warningStyle}>
-        ? External audit not completed (testnet phase)
+        External audit not completed
       </div>
     </section>
   );

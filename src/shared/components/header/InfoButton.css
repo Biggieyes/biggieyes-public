@@ -244,9 +244,9 @@
   }
 }
 
-/* Shift the 2x2 action buttons cluster left on desktop only (~3cm @ 96DPI). */
+/* Keep the 2x2 action cluster below the logo without pushing it off-screen. */
 .top-bar.desktop .action-buttons-stack {
-  transform: translate(-113px, 2cm);
+  transform: translate(-84px, 2cm);
 }
 
 .action-buttons-heading {

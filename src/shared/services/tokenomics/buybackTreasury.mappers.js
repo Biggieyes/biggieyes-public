@@ -1,25 +1,10 @@
 import * as ethers from "ethers";
 import { explorerBaseFor } from "../../utils/explorer";
+import { formatMappedNative, formatMappedToken } from "./amountFormatters.js";
 
 const DECIMALS = 18;
 const PLACEHOLDER = "--";
-const EXPLORER_BASE = explorerBaseFor(80002) || "https://amoy.polygonscan.com";
-
-function _formatAmount(raw, decimals = DECIMALS) {
-  if (raw === undefined || raw === null)
-    return { display: PLACEHOLDER, numeric: null };
-  try {
-    const formatted = ethers.formatUnits(raw, decimals);
-    const numeric = Number(formatted);
-    const display = Number.isFinite(numeric)
-      ? numeric.toLocaleString("en-US", { maximumFractionDigits: 2 })
-      : formatted;
-    return { display, numeric: Number.isFinite(numeric) ? numeric : null };
-  } catch (error) {
-    console.warn("BUYBACK mapper format failed", error);
-    return { display: PLACEHOLDER, numeric: null };
-  }
-}
+const EXPLORER_BASE = explorerBaseFor(137) || "https://polygonscan.com";
 
 function _shortAddress(address = "") {
   if (!address) return PLACEHOLDER;
@@ -49,23 +34,85 @@ export function mapBUYBACKSnapshotToUI(raw) {
   const BUYBACKRaw = raw.BUYBACK || {};
   const treasuryRaw = raw.treasury || {};
 
-  const nativeBalance = _formatAmount(BUYBACKRaw.nativeBalance);
-  const biggiBalance = _formatAmount(BUYBACKRaw.biggiBalance);
-  const totalNativeSpent = _formatAmount(BUYBACKRaw.totalNativeSpent);
-  const totalNativeReceived = _formatAmount(BUYBACKRaw.totalNativeReceived);
-  const totalBiggiAcquired = _formatAmount(BUYBACKRaw.totalBiggiAcquired);
-  const tokenBalance = _formatAmount(BUYBACKRaw.tokenBalance);
-  const keeperThreshold = _formatAmount(BUYBACKRaw.keeperThreshold);
-
-  const treasuryBiggi = _formatAmount(treasuryRaw.biggiBalance);
-  const treasuryMatic = _formatAmount(treasuryRaw.maticBalance);
-  const treasuryTokenBalance = _formatAmount(treasuryRaw.tokenBalance);
-  const treasuryTotalReceived = _formatAmount(
-    treasuryRaw.totalBiggiReceived || treasuryRaw.totalBiggiReceivedFromBUYBACK,
+  const nativeBalance = formatMappedNative(
+    BUYBACKRaw.nativeBalance,
+    4,
+    PLACEHOLDER,
   );
-  const treasuryMaticReceived = _formatAmount(treasuryRaw.totalMaticReceived);
-  const treasuryMaticFromDistributor = _formatAmount(
+  const biggiBalance = formatMappedToken(
+    BUYBACKRaw.biggiBalance,
+    DECIMALS,
+    2,
+    PLACEHOLDER,
+  );
+  const totalNativeSpent = formatMappedNative(
+    BUYBACKRaw.totalNativeSpent,
+    4,
+    PLACEHOLDER,
+  );
+  const totalNativeReceived = formatMappedNative(
+    BUYBACKRaw.totalNativeReceived,
+    4,
+    PLACEHOLDER,
+  );
+  const totalBiggiAcquired = formatMappedToken(
+    BUYBACKRaw.totalBiggiAcquired,
+    DECIMALS,
+    2,
+    PLACEHOLDER,
+  );
+  const tokenBalance = formatMappedToken(
+    BUYBACKRaw.tokenBalance,
+    DECIMALS,
+    2,
+    PLACEHOLDER,
+  );
+  const keeperThreshold = formatMappedNative(
+    BUYBACKRaw.keeperThreshold,
+    4,
+    PLACEHOLDER,
+  );
+
+  const treasuryBiggi = formatMappedToken(
+    treasuryRaw.biggiBalance,
+    DECIMALS,
+    2,
+    PLACEHOLDER,
+  );
+  const treasuryMatic = formatMappedNative(
+    treasuryRaw.maticBalance,
+    4,
+    PLACEHOLDER,
+  );
+  const treasuryTokenBalance = formatMappedToken(
+    treasuryRaw.tokenBalance,
+    DECIMALS,
+    2,
+    PLACEHOLDER,
+  );
+  const treasuryTotalReceived = formatMappedToken(
+    treasuryRaw.totalBiggiReceived || treasuryRaw.totalBiggiReceivedFromBUYBACK,
+    DECIMALS,
+    2,
+    PLACEHOLDER,
+  );
+  const treasuryEcosystemReceived = formatMappedToken(
+    treasuryRaw.totalBiggiReceivedFromEcosystem ||
+      treasuryRaw.totalBiggiFromEcosystem ||
+      treasuryRaw.totalEcosystemBiggiReceived,
+    DECIMALS,
+    2,
+    PLACEHOLDER,
+  );
+  const treasuryMaticReceived = formatMappedNative(
+    treasuryRaw.totalMaticReceived,
+    4,
+    PLACEHOLDER,
+  );
+  const treasuryMaticFromDistributor = formatMappedNative(
     treasuryRaw.totalMaticReceivedFromDistributor,
+    4,
+    PLACEHOLDER,
   );
 
   const lastBUYBACKTs = Number(BUYBACKRaw.lastBUYBACK || 0);
@@ -146,9 +193,12 @@ export function mapBUYBACKSnapshotToUI(raw) {
       maticBalanceNumeric: treasuryMatic.numeric,
       totalBiggiReceived: treasuryTotalReceived.display,
       totalBiggiReceivedNumeric: treasuryTotalReceived.numeric,
+      totalBiggiFromEcosystem: treasuryEcosystemReceived.display,
+      totalBiggiFromEcosystemNumeric: treasuryEcosystemReceived.numeric,
       totalMaticReceived: treasuryMaticReceived.display,
       totalMaticReceivedNumeric: treasuryMaticReceived.numeric,
       totalMaticFromDistributor: treasuryMaticFromDistributor.display,
+      totalMaticFromDistributorNumeric: treasuryMaticFromDistributor.numeric,
       tokenBalance: treasuryTokenBalance.display,
       BUYBACKAgent: treasuryRaw.BUYBACKAgent,
       reserve: treasuryRaw.reserve,
@@ -207,9 +257,3 @@ export function mapBUYBACKHistoryToChartPoints(history = [], accessor) {
         typeof point.value === "number" && Number.isFinite(point.value),
     );
 }
-
-
-
-
-
-

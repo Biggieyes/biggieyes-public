@@ -1581,7 +1581,7 @@ export default function AdminPanel({
               lineHeight: 1.35,
             }}
           >
-            Configure testnet tokenomics, monitor live contract state, and run
+            Configure mainnet tokenomics, monitor live contract state, and run
             guarded admin actions from one control surface.
           </p>
         </div>

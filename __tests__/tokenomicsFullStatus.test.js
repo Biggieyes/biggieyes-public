@@ -89,6 +89,36 @@ describe("normalizeTokenomicsFullStatus", () => {
     expect(normalized.drip.DRIPLM).toBe(addr(20));
     expect(normalized.drip.reserveShareBps).toBe(560);
     expect(normalized.tr.REWARDSCap).toBe(61n);
+    expect(normalized.tr.blockWeights).toEqual([1, 2, 3]);
+  });
+
+  it("keeps TokenRewardsStatus aligned for the current mainnet reader tuple", () => {
+    const normalized = normalizeTokenomicsFullStatus([
+      null,
+      null,
+      null,
+      null,
+      null,
+      [
+        addr(31),
+        61n,
+        62n,
+        63n,
+        64n,
+        addr(32),
+        true,
+        [0, 0, 0, 0, 0, 1, 0, 10, 20, 30, 40],
+        addr(33),
+      ],
+    ]);
+
+    expect(normalized.tr.tokenRewards).toBe(addr(31));
+    expect(normalized.tr.emissionController).toBe(addr(32));
+    expect(normalized.tr.emissionControllerEnabled).toBe(true);
+    expect(normalized.tr.blockWeights).toEqual([
+      0, 0, 0, 0, 0, 1, 0, 10, 20, 30, 40,
+    ]);
+    expect(normalized.tr.token).toBe(addr(33));
   });
 
   it("normalizes the legacy reader shape", () => {
@@ -106,16 +136,7 @@ describe("normalizeTokenomicsFullStatus", () => {
         14n,
         15n,
       ],
-      [
-        addr(7),
-        21n,
-        22n,
-        addr(8),
-        addr(9),
-        addr(10),
-        addr(11),
-        addr(12),
-      ],
+      [addr(7), 21n, 22n, addr(8), addr(9), addr(10), addr(11), addr(12)],
       [
         addr(13),
         31n,
@@ -130,35 +151,9 @@ describe("normalizeTokenomicsFullStatus", () => {
         addr(15),
         addr(16),
       ],
-      [
-        addr(17),
-        41n,
-        42n,
-        43n,
-        addr(18),
-        true,
-        44n,
-        addr(19),
-        addr(20),
-      ],
-      [
-        addr(21),
-        51n,
-        52n,
-        53n,
-        54n,
-        55n,
-        addr(22),
-      ],
-      [
-        addr(23),
-        61n,
-        62n,
-        63n,
-        64n,
-        [1, 2, 3],
-        addr(24),
-      ],
+      [addr(17), 41n, 42n, 43n, addr(18), true, 44n, addr(19), addr(20)],
+      [addr(21), 51n, 52n, 53n, 54n, 55n, addr(22)],
+      [addr(23), 61n, 62n, 63n, 64n, [1, 2, 3], addr(24)],
     ]);
 
     expect(normalized.core.token0).toBe(addr(5));

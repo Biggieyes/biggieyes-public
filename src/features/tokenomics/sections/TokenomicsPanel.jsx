@@ -2,15 +2,10 @@ import * as React from "react";
 import LiquidityTab from "../tabs/LiquidityTab.jsx";
 import TokenDexTab from "../tabs/TokenDexTab.jsx";
 import { toNumberSafe } from "@/hooks/tokenomics/_utils";
+import { toDisplayNumber } from "../utils/amountFormatting.js";
 
 const toNumberLoose = (value) => {
-  if (value == null) return null;
-  if (typeof value === "number")
-    return Number.isFinite(value) ? value : null;
-  if (typeof value === "bigint") return Number(value);
-  const cleaned = String(value).replace(/,/g, "");
-  const num = Number(cleaned);
-  return Number.isFinite(num) ? num : null;
+  return toDisplayNumber(value);
 };
 
 function TokenomicsPanel({
@@ -35,7 +30,9 @@ function TokenomicsPanel({
 
   const tokenDecimals = React.useMemo(
     () =>
-      typeof tokenDex?.token?.decimals === "number" ? tokenDex.token.decimals : 18,
+      typeof tokenDex?.token?.decimals === "number"
+        ? tokenDex.token.decimals
+        : 18,
     [tokenDex?.token?.decimals],
   );
 
@@ -102,10 +99,7 @@ function TokenomicsPanel({
         tokenBalances.liquidityManager,
         tokenDecimals,
       ),
-      liquidityVault: toNumberSafe(
-        tokenBalances.liquidityVault,
-        tokenDecimals,
-      ),
+      liquidityVault: toNumberSafe(tokenBalances.liquidityVault, tokenDecimals),
     };
   }, [tokenBalances, tokenDecimals]);
 
@@ -129,7 +123,9 @@ function TokenomicsPanel({
       next.push("Liquidity orchestrator wiring mismatch.");
     }
     if (branchReader?.isStale) {
-      next.push("Legacy branch reader is wired to previous reserve/LM addresses.");
+      next.push(
+        "Legacy branch reader is wired to previous reserve/LM addresses.",
+      );
     }
     return next;
   }, [

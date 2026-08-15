@@ -109,11 +109,17 @@ export default class NFTREWARDSService {
   }
 
   // VRF / helpers
+  async vrfRequestToEvent(reqId) {
+    return await this.contract.vrfRequestToEvent(reqId);
+  }
   async VRFRequestToEvent(reqId) {
-    return await this.contract.VRFRequestToEvent(reqId);
+    return await this.vrfRequestToEvent(reqId);
+  }
+  async vrfRouter() {
+    return await this.contract.vrfRouter();
   }
   async VRFRouter() {
-    return await this.contract.VRFRouter();
+    return await this.vrfRouter();
   }
   async mainContract() {
     return await this.contract.mainContract();
@@ -177,7 +183,7 @@ export default class NFTREWARDSService {
       this.symbol(),
       this.nextEventId(),
       this.nextRewardId(),
-      this.VRFRouter(),
+      this.vrfRouter(),
       this.mainContract(),
       this.owner(),
     ];
@@ -186,7 +192,7 @@ export default class NFTREWARDSService {
       symbol,
       nextEventId,
       nextRewardId,
-      VRFRouter,
+      vrfRouter,
       mainContract,
       owner,
     ] = await Promise.all(calls);
@@ -195,7 +201,8 @@ export default class NFTREWARDSService {
       symbol,
       nextEventId,
       nextRewardId,
-      VRFRouter,
+      vrfRouter,
+      VRFRouter: vrfRouter,
       mainContract,
       owner,
     };
