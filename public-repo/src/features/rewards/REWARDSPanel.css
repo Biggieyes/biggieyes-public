@@ -9,6 +9,9 @@
   color: #f6f7fb;
   min-height: 100vh;
   --rewards-border: rgba(255, 232, 0, 0.28);
+  --rewards-active-accent: #ffe800;
+  --rewards-active-accent-soft: rgba(255, 232, 0, 0.22);
+  --rewards-active-accent-glow: rgba(255, 232, 0, 0.38);
   --panel-border: rgba(255, 232, 0, 0.24);
   --panel-border-strong: rgba(255, 232, 0, 0.5);
   --panel-surface-grad: linear-gradient(
@@ -86,6 +89,98 @@
   background: rgba(255, 93, 162, 0.14);
   border-color: rgba(255, 93, 162, 0.45);
   color: #ff5da2;
+}
+
+.rewards-panel__source-pill--dim {
+  background: rgba(130, 148, 180, 0.12);
+  border-color: rgba(130, 148, 180, 0.35);
+  color: #c6d4ec;
+}
+
+.rewards-panel__mainnet-rail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(188px, 1fr));
+  gap: 10px;
+  margin: 8px 0 4px;
+  width: 100%;
+  max-height: clamp(164px, 26vh, 280px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-width: thin;
+}
+
+.rewards-panel__mainnet-item {
+  min-width: 0;
+  min-height: 76px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 13px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 232, 0, 0.2);
+  background:
+    linear-gradient(180deg, rgba(13, 17, 27, 0.9), rgba(7, 10, 16, 0.9));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.rewards-panel__mainnet-item--ok {
+  border-color: rgba(107, 238, 91, 0.3);
+}
+
+.rewards-panel__mainnet-item--warn {
+  border-color: rgba(255, 93, 162, 0.34);
+}
+
+.rewards-panel__mainnet-item--dim {
+  border-color: rgba(130, 148, 180, 0.28);
+}
+
+.rewards-panel__mainnet-label {
+  color: #aeb8ce;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.rewards-panel__mainnet-value {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  color: #f6f7fb;
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.rewards-panel__mainnet-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(93, 220, 255, 0.24);
+  background: rgba(14, 30, 44, 0.82);
+  color: #77e4ff;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  font-size: 0.66rem;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.rewards-panel__mainnet-link:hover {
+  border-color: rgba(93, 220, 255, 0.5);
+  color: #b7f4ff;
 }
 
 .rewards-grid__section-header {
@@ -257,15 +352,51 @@
 }
 
 .collection-table {
-  border-radius: 16px;
-  border: 1px solid rgba(255, 232, 0, 0.16);
-  background: rgba(9, 11, 18, 0.92);
+  position: relative;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 232, 0, 0.22);
+  background:
+    linear-gradient(180deg, rgba(12, 15, 23, 0.95), rgba(7, 10, 16, 0.98)),
+    radial-gradient(
+      140% 120% at 90% -15%,
+      rgba(255, 232, 0, 0.08),
+      transparent 65%
+    );
   padding: 16px;
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.55);
+  box-shadow:
+    0 18px 34px rgba(0, 0, 0, 0.52),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02);
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-width: 0;
+  overflow: hidden;
+}
+
+.collection-table::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 232, 0, 0.95),
+    rgba(93, 220, 255, 0.7)
+  );
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.collection-table--orange::before {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 152, 76, 0.95),
+    rgba(255, 232, 0, 0.75)
+  );
+}
+
+.rewards-panel__card--claims .biggi-card__body {
+  gap: 14px;
 }
 
 .collection-table__header {
@@ -273,6 +404,8 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed rgba(255, 232, 0, 0.2);
 }
 
 .collection-table__title {
@@ -284,10 +417,11 @@
 }
 
 .collection-table__hint {
-  font-size: 0.7rem;
-  color: #b7badd;
+  font-size: 0.72rem;
+  color: #b7c1d7;
   display: block;
-  margin-top: 4px;
+  margin-top: 5px;
+  line-height: 1.4;
 }
 
 .rewards-panel__card {
@@ -358,11 +492,54 @@
   margin-top: 12px;
 }
 
+.rewards-grid__diagram-wrap {
+  margin-top: 16px;
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 232, 0, 0.24);
+  background:
+    radial-gradient(
+      120% 120% at 8% 0%,
+      rgba(39, 217, 210, 0.12),
+      transparent 62%
+    ),
+    radial-gradient(
+      120% 120% at 92% 0%,
+      rgba(255, 232, 0, 0.1),
+      transparent 62%
+    ),
+    rgba(8, 11, 18, 0.92);
+  box-shadow:
+    0 14px 28px rgba(0, 0, 0, 0.38),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.rewards-grid__diagram-info-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
+}
+
+.rewards-grid__diagram-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 80vh;
+  object-fit: contain;
+}
+
 .rewards-panel__status-grid {
   display: grid;
   gap: 10px;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   width: 100%;
+  max-height: min(46vh, 430px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-width: thin;
 }
 
 .rewards-panel__status {
@@ -411,6 +588,19 @@
   }
   .collection-claims-layout--two {
     grid-template-columns: 1fr;
+  }
+  .collection-table .rewards-panel__claim-list {
+    max-height: min(58vh, 480px);
+    padding-right: 0;
+  }
+  .collection-table .rewards-panel__claim-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "plate plate"
+      "info action";
+  }
+  .collection-table .rewards-panel__claim-plate {
+    min-height: 86px;
   }
 }
 .rewards-panel__status-grid--collection {
@@ -470,6 +660,11 @@
 .rewards-panel__address-grid {
   display: grid;
   gap: 10px;
+  max-height: min(48vh, 460px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-width: thin;
 }
 
 .rewards-panel__address-row {
@@ -529,13 +724,17 @@
 }
 .rewards-panel__chip {
   justify-self: end;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(255, 232, 0, 0.14);
-  border: 1px solid rgba(255, 232, 0, 0.28);
+  background: rgba(255, 232, 0, 0.18);
+  border: 1px solid rgba(255, 232, 0, 0.42);
   color: #ffe800;
   font-weight: 800;
   font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.32),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .rewards-panel__claim-list {
@@ -554,8 +753,31 @@
   padding: 12px;
   border-radius: 12px;
   border: 1px solid rgba(255, 232, 0, 0.16);
-  background: rgba(12, 14, 22, 0.9);
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
+  background: linear-gradient(
+    165deg,
+    rgba(15, 18, 28, 0.95),
+    rgba(9, 11, 18, 0.96)
+  );
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.3);
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.rewards-panel__claim-row:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 232, 0, 0.34);
+  box-shadow:
+    0 14px 24px rgba(0, 0, 0, 0.35),
+    inset 0 0 12px rgba(255, 232, 0, 0.08);
+}
+
+.rewards-panel__claim-row:focus-within {
+  border-color: rgba(93, 220, 255, 0.55);
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(93, 220, 255, 0.32);
 }
 .rewards-panel__claim-plate {
   flex-shrink: 0;
@@ -684,9 +906,119 @@
   background: rgba(115, 255, 198, 0.12);
 }
 .rewards-panel__claim-row .pill.is-claimed {
-  color: #ff9fab;
-  border-color: rgba(255, 140, 156, 0.35);
-  background: rgba(255, 140, 156, 0.14);
+  color: #ffe89d;
+  border-color: rgba(255, 232, 0, 0.38);
+  background: rgba(255, 232, 0, 0.14);
+}
+.rewards-panel__claim-row .pill.is-locked {
+  color: #9ea8bf;
+  border-color: rgba(158, 168, 191, 0.36);
+  background: rgba(158, 168, 191, 0.13);
+}
+.rewards-panel__claim-row .pill.is-loading {
+  color: #ffd580;
+  border-color: rgba(255, 213, 128, 0.42);
+  background: rgba(255, 213, 128, 0.12);
+}
+
+.rewards-panel__claim-row.row-open {
+  border-color: rgba(115, 255, 198, 0.35);
+}
+
+.rewards-panel__claim-row.row-claimed {
+  border-color: rgba(255, 232, 0, 0.3);
+  background: linear-gradient(
+    165deg,
+    rgba(22, 19, 10, 0.94),
+    rgba(11, 10, 7, 0.96)
+  );
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.34),
+    inset 0 0 14px rgba(255, 232, 0, 0.08);
+}
+
+.rewards-panel__claim-row.row-locked {
+  border-color: rgba(145, 154, 178, 0.34);
+}
+
+.rewards-panel__claim-row.row-loading {
+  border-style: dashed;
+  border-color: rgba(255, 213, 128, 0.4);
+}
+
+.collection-table .rewards-panel__claim-list {
+  max-height: clamp(340px, 52vh, 560px);
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.collection-table .rewards-panel__claim-list::-webkit-scrollbar {
+  width: 7px;
+}
+
+.collection-table .rewards-panel__claim-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 232, 0, 0.36);
+  border-radius: 999px;
+}
+
+.collection-table .rewards-panel__claim-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+}
+
+.collection-table .rewards-panel__claim-row {
+  grid-template-columns: minmax(180px, 1.8fr) minmax(128px, 1fr) auto;
+  grid-template-areas: "plate info action";
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+}
+
+.collection-table .rewards-panel__claim-row:nth-child(even) {
+  background: linear-gradient(
+    165deg,
+    rgba(14, 17, 26, 0.96),
+    rgba(8, 10, 16, 0.97)
+  );
+}
+
+.collection-table .rewards-panel__claim-plate {
+  min-height: 72px;
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow:
+    0 12px 22px rgba(0, 0, 0, 0.4),
+    inset 0 0 26px rgba(255, 232, 0, 0.08);
+}
+
+.collection-table .rewards-panel__claim-thumbnail-row {
+  height: 56px;
+  gap: 6px;
+}
+
+.collection-table .rewards-panel__claim-thumbnail-row img {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+}
+
+.collection-table .rewards-panel__claim-info {
+  gap: 4px;
+  justify-content: center;
+}
+
+.collection-table .rewards-panel__claim-row .label {
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+}
+
+.collection-table .rewards-panel__claim-row .pill {
+  margin-top: 0;
+}
+
+.collection-table .rewards-panel__claim-row .biggi-btn {
+  min-width: 108px;
 }
 
 .rewards-panel__meta {
@@ -829,6 +1161,14 @@
   }
   .rewards-panel__cta-row {
     flex-direction: column;
+  }
+  .collection-table .rewards-panel__claim-row {
+    gap: 9px;
+  }
+  .collection-table .rewards-panel__claim-row .biggi-btn {
+    width: 100%;
+    min-width: 0;
+    justify-self: stretch;
   }
 }
 .nft-rewards__stat-grid {
@@ -980,7 +1320,7 @@
   border-radius: 18px 18px 0 0;
   background:
     linear-gradient(135deg, rgba(10, 12, 18, 0.5), rgba(6, 8, 14, 0.42)),
-    url("/images/panels/rewards.png");
+    url("/images/panels/rewards.optimized.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -996,22 +1336,22 @@
 .panel-header--rewards {
   background-image:
     linear-gradient(135deg, rgba(10, 12, 18, 0.5), rgba(6, 8, 14, 0.42)),
-    url("/images/panels/ecosystem.png");
+    url("/images/panels/ecosystem.optimized.jpg");
 }
 .panel-header--vrf {
   background-image:
     linear-gradient(135deg, rgba(10, 12, 18, 0.5), rgba(6, 8, 14, 0.42)),
-    url("/images/panels/ecosystem.png");
+    url("/images/panels/ecosystem.optimized.jpg");
 }
 .panel-header--community {
   background-image:
     linear-gradient(135deg, rgba(10, 12, 18, 0.5), rgba(6, 8, 14, 0.42)),
-    url("/images/panels/ecosystem.png");
+    url("/images/panels/ecosystem.optimized.jpg");
 }
 .panel-header--ecosystem {
   background-image:
     linear-gradient(135deg, rgba(10, 12, 18, 0.5), rgba(6, 8, 14, 0.42)),
-    url("/images/panels/ecosystem.png");
+    url("/images/panels/ecosystem.optimized.jpg");
 }
 
 .rewards-grid__header::before {
@@ -1021,7 +1361,7 @@
   background:
     radial-gradient(
       120% 90% at 12% 10%,
-      rgba(255, 232, 0, 0.24),
+      var(--rewards-active-accent-soft),
       transparent 58%
     ),
     radial-gradient(
@@ -1085,18 +1425,38 @@
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #ffe800;
-  text-shadow: 0 0 6px rgba(255, 232, 0, 0.3);
+  color: var(--rewards-active-accent);
+  text-shadow: 0 0 6px var(--rewards-active-accent-glow);
   position: relative;
   z-index: 1;
 }
 
+.rewards-grid.biggi-skin .view-tabs .tab-button.active {
+  color: var(--rewards-active-accent) !important;
+  background:
+    linear-gradient(
+      145deg,
+      var(--rewards-active-accent-soft),
+      rgba(255, 255, 255, 0.08)
+    ) !important;
+  border-color: var(--rewards-active-accent) !important;
+  box-shadow:
+    0 10px 24px var(--rewards-active-accent-glow),
+    0 0 20px var(--rewards-active-accent-soft) !important;
+}
+
+.rewards-grid.biggi-skin .view-tabs .tab-button.active:hover {
+  color: var(--rewards-active-accent) !important;
+  border-color: var(--rewards-active-accent) !important;
+}
+
 .rewards-grid__subtitle {
-  margin: 6px 0 0;
+  margin: 8px 0 0;
   color: var(--panel-text-dim);
-  font-size: 0.95rem;
-  max-width: 520px;
-  line-height: 1.5;
+  font-size: 1rem;
+  max-width: 760px;
+  line-height: 1.65;
+  letter-spacing: 0.01em;
   text-align: center;
   position: relative;
   z-index: 1;
@@ -1746,6 +2106,11 @@
 .nft-rewards__status-list {
   display: grid;
   gap: 10px;
+  max-height: min(46vh, 460px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-width: thin;
 }
 
 .nft-rewards__status-row {
@@ -1801,6 +2166,11 @@
 .nft-rewards__leaderboard-grid {
   display: grid;
   gap: 10px;
+  max-height: min(46vh, 460px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-width: thin;
 }
 
 .nft-rewards__leaderboard-row {
@@ -2753,15 +3123,56 @@
   }
 
   .rewards-grid__info-toggle {
-    width: 100px;
-    height: 100px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
     padding: 0;
-    border-radius: 14px;
-    font-size: 1rem;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    letter-spacing: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
     align-self: center;
+  }
+
+  .rewards-grid__diagram-wrap {
+    border-radius: 14px;
+  }
+
+  .rewards-grid__diagram-info-btn {
+    top: 8px;
+    right: 8px;
+  }
+
+  .rewards-grid__diagram-image {
+    max-height: 68vh;
+  }
+}
+
+/* Keep long rewards tables readable without making the panel vertically huge. */
+.nft-rewards__table-card .biggi-card__body,
+.rewards-grid__table {
+  display: block;
+  max-height: min(52vh, 520px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.nft-rewards__table th,
+.rewards-grid__table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgba(18, 23, 34, 0.98);
+}
+
+@media (max-width: 700px) {
+  .nft-rewards__table-card .biggi-card__body,
+  .rewards-grid__table {
+    max-height: min(58vh, 430px);
   }
 }

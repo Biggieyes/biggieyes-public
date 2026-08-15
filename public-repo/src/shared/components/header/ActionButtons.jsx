@@ -15,12 +15,14 @@ export default function ActionButtons({
   performing = false,
   actionError = null,
   isMobile = false,
+  mintDisabledReason = "",
 }) {
   const lockRef = React.useRef(false);
   const [infoOpen, setInfoOpen] = React.useState(false);
 
   const redeemDisabled = Boolean(isRedeeming || VRFPending || performing);
   const actionDisabled = Boolean(performing);
+  const mintDisabled = Boolean(actionDisabled || mintDisabledReason);
 
   const errorText = React.useMemo(() => {
     if (!actionError) return "";
@@ -66,6 +68,7 @@ export default function ActionButtons({
       borderColor = "#1abc9c",
       glow = "rgba(26, 188, 156, 0.6)",
       variant,
+      disabledReason = "",
     } = options;
 
     const hoverGlow = glow.replace(/([0-9]*\.?[0-9]+)\s*\)$/g, (_, alpha) => {
@@ -109,7 +112,9 @@ export default function ActionButtons({
           type="button"
           onClick={onClick}
           disabled={isDisabled}
+          aria-label={isDisabled && disabledReason ? `${alt}: ${disabledReason}` : alt}
           aria-disabled={isDisabled || undefined}
+          title={isDisabled && disabledReason ? `${alt}: ${disabledReason}` : alt}
           style={{
             background: "transparent",
             border: "none",
@@ -171,8 +176,9 @@ export default function ActionButtons({
           maxWidth: rowMaxWidth,
         }}
       >
-        {buttonWrapper("/images/mint.png", "Mint Ticket", runOnce(onMint, actionDisabled), {
-          isDisabled: actionDisabled,
+        {buttonWrapper("/images/mint.png", "Mint Ticket", runOnce(onMint, mintDisabled), {
+          isDisabled: mintDisabled,
+          disabledReason: mintDisabledReason,
           variant: "mint",
           borderColor: "#26f7d1",
           glow: "rgba(38, 247, 209, 0.55)",
@@ -213,7 +219,7 @@ export default function ActionButtons({
         })}
       </div>
 
-      {(performing || errorText) && (
+      {(mintDisabledReason || performing || errorText) && (
         <div
           style={{
             marginTop: 10,
@@ -223,6 +229,9 @@ export default function ActionButtons({
             maxWidth: 320,
           }}
         >
+          {mintDisabledReason && !performing && (
+            <div>Mint: {mintDisabledReason}</div>
+          )}
           {performing && <div>Processing transaction...</div>}
           {errorText && (
             <div role="alert" style={{ color: "#ff7b7b" }}>

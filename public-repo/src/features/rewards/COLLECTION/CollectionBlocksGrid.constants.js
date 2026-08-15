@@ -88,7 +88,7 @@ export const ERROR_MESSAGES = {
 export const COLLECTION_STATUSES = {
   LIVE: "Live",
   PAUSED: "Paused",
-  NETWORK: "Polygon Amoy",
+  NETWORK: "Polygon mainnet",
 };
 
 // Future COLLECTIONs configuration

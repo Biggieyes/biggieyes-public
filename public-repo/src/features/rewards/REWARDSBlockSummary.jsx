@@ -1,35 +1,54 @@
-// src/components/REWARDSBlockSummary.jsx
 import * as React from "react";
-import { Contract } from "ethers";
-import { parseEther, formatEther } from "ethers";
-import { ADDR, getROProvider, getTokenREWARDSRO } from "@/shared/utils/contract";
+import { Contract, parseEther } from "ethers";
+import {
+  ADDR,
+  getROProvider,
+  getTokenREWARDSRO,
+} from "@/shared/utils/contract";
+import { formatTokenDisplay } from "@/features/tokenomics/utils/amountFormatting.js";
 
-const DEFAULT_WEIGHTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // index = blockIdx (1..10)
-const DEFAULT_UNIT_REWARD = parseEther("1"); // 1 BIGGI (wei)
+const DEFAULT_WEIGHTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const DEFAULT_UNIT_REWARD = parseEther("1");
 
 const FALLBACK_ABI = [
   "function getBlockWeights() view returns (uint8[11])",
   "function unitReward() view returns (uint256)",
 ];
 
+function normalizeBlockIdxFromName(value, blockNames = []) {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  const upper = raw.toUpperCase();
+
+  const directIndex = blockNames.findIndex(
+    (name) => String(name || "").toUpperCase() === upper,
+  );
+  if (directIndex !== -1) return directIndex + 1;
+
+  const partialIndex = blockNames.findIndex((name) =>
+    upper.includes(String(name || "").toUpperCase()),
+  );
+  return partialIndex !== -1 ? partialIndex + 1 : null;
+}
+
 export default function REWARDSBlockSummary({
   items = [],
   blockNames = [],
   weights = DEFAULT_WEIGHTS,
 }) {
-  const [onChainWeights, setOnChainWeights] = React.useState(null); // array number[11]
+  const [onChainWeights, setOnChainWeights] = React.useState(null);
   const [unitRewardWei, setUnitRewardWei] = React.useState(DEFAULT_UNIT_REWARD);
   const [providerError, setProviderError] = React.useState(null);
 
   React.useEffect(() => {
     let mounted = true;
+
     (async () => {
       try {
-        // provider: use shared RO provider (injected or RPC fallback)
         let provider = null;
         try {
           provider = getROProvider();
-        } catch (err) {
+        } catch {
           provider = null;
         }
         if (!provider) {
@@ -42,111 +61,113 @@ export default function REWARDSBlockSummary({
           contract = getTokenREWARDSRO(provider);
         } catch {
           if (!ADDR?.TOKEN_REWARDS) return;
-          contract = new Contract(
-            ADDR.TOKEN_REWARDS,
-            FALLBACK_ABI,
-            provider,
-          );
+          contract = new Contract(ADDR.TOKEN_REWARDS, FALLBACK_ABI, provider);
         }
-        // Load weights and unit reward
-        const w = await contract.getBlockWeights();
-        const u = await contract.unitReward();
+
+        const [w, u] = await Promise.all([
+          contract.getBlockWeights(),
+          contract.unitReward(),
+        ]);
         if (!mounted) return;
 
-        // convert uint8[11] to JS number array
-        const wnums = Array.from(w).map((n) => Number(n));
-        setOnChainWeights(wnums);
+        setOnChainWeights(Array.from(w).map((n) => Number(n)));
         setUnitRewardWei(BigInt(u));
       } catch (err) {
-        // pokud cokoliv selže, nech fallback (props.weights)
         console.warn("REWARDSBlockSummary: on-chain load failed:", err);
         setProviderError(String(err?.message || err));
       }
     })();
+
     return () => {
       mounted = false;
     };
   }, []);
 
-  // spočítej, kolik Biggi NFT (ne tikety) má uživatel v jednotlivých blocích (1..10)
   const counts = React.useMemo(() => {
     const arr = new Array(10).fill(0);
 
-    const parseBlockIdx = (meta = {}) => {
-      const attrs = Array.isArray(meta.attributes) ? meta.attributes : [];
+    const parseBlockIdx = (item = {}) => {
+      const directBlock = normalizeBlockIdxFromName(
+        item?.blockName || item?.dynamicTraits?.blockName,
+        blockNames,
+      );
+      if (directBlock != null) return directBlock;
+
+      const meta = item?.meta || {};
+      const attrs = Array.isArray(meta?.attributes) ? meta.attributes : [];
+
       const blockIdAttr = attrs.find((a) =>
-        ["block", "block id", "block id", "block/eye color"].includes(
+        ["block", "block id", "block/eye color"].includes(
           String(a?.trait_type || a?.traitType || "").toLowerCase(),
         ),
       );
-      if (blockIdAttr && blockIdAttr.value != null) {
-        const n = Number(blockIdAttr.value);
-        if (!Number.isNaN(n) && n >= 1 && n <= 10) return n;
-        const name = String(blockIdAttr.value).trim().toUpperCase();
-        const i = blockNames.findIndex((n) => String(n).toUpperCase() === name);
-        if (i !== -1) return i + 1;
+      if (blockIdAttr?.value != null) {
+        const numeric = Number(blockIdAttr.value);
+        if (!Number.isNaN(numeric) && numeric >= 1 && numeric <= 10) {
+          return numeric;
+        }
+        const named = normalizeBlockIdxFromName(blockIdAttr.value, blockNames);
+        if (named != null) return named;
       }
+
       const eyeAttr = attrs.find((a) =>
         ["eye color", "eyes", "block/eye color"].includes(
           String(a?.trait_type || a?.traitType || "").toLowerCase(),
         ),
       );
-      if (eyeAttr?.value) {
-        const name = String(eyeAttr.value).trim().toUpperCase();
-        const i = blockNames.findIndex((n) => String(n).toUpperCase() === name);
-        if (i !== -1) return i + 1;
+      if (eyeAttr?.value != null) {
+        return normalizeBlockIdxFromName(eyeAttr.value, blockNames);
       }
+
       return null;
     };
 
-    for (const it of items) {
-      if (!it || it.isTicket) continue; // počítáme jen NFT, ne tikety
-      const idx = parseBlockIdx(it.meta || {});
+    for (const item of items) {
+      if (!item || item.isTicket) continue;
+      const idx = parseBlockIdx(item);
       if (idx && idx >= 1 && idx <= 10) arr[idx - 1] += 1;
     }
+
     return arr;
   }, [items, blockNames]);
 
-  // vybereme váhy: on-chain pokud dostupné, jinak props
   const effectiveWeights = React.useMemo(() => {
     if (Array.isArray(onChainWeights) && onChainWeights.length >= 11) {
-      // contract returns index 0..10, we use 1..10 (index 0 is placeholder)
       return onChainWeights;
     }
     return weights;
   }, [onChainWeights, weights]);
 
-  // rows a totals (biggi počítáme přes unitRewardWei)
   const rows = React.useMemo(() => {
-    const rowsArr = counts.map((cnt, i) => {
-      const blkIdx = i + 1;
-      const weight = Number(effectiveWeights[blkIdx] ?? blkIdx);
-      const units = cnt * weight;
-      // biggi amount (string) = units * unitRewardWei (in wei) => formatEther
+    return counts.map((count, i) => {
+      const blockIdx = i + 1;
+      const weight = Number(effectiveWeights[blockIdx] ?? blockIdx);
+      const units = count * weight;
       const biggiWei = BigInt(unitRewardWei) * BigInt(units);
-      const biggi = Number(formatEther(biggiWei)); // number for display
       return {
-        name: blockNames[i] || `Block ${blkIdx}`,
-        count: cnt,
+        name: blockNames[i] || `Block ${blockIdx}`,
+        count,
         weight,
         units,
-        biggi,
+        biggiWei,
+        biggiDisplay: formatTokenDisplay(biggiWei, 18, 4, "BIGGI"),
       };
     });
-    return rowsArr;
   }, [counts, effectiveWeights, unitRewardWei, blockNames]);
 
-  const totals = React.useMemo(() => {
-    return rows.reduce(
-      (acc, r) => {
-        acc.count += r.count;
-        acc.units += r.units;
-        acc.biggi += r.biggi;
-        return acc;
-      },
-      { count: 0, units: 0, biggi: 0 },
-    );
-  }, [rows]);
+  const totals = React.useMemo(
+    () =>
+      rows.reduce(
+        (acc, row) => {
+          acc.count += row.count;
+          acc.units += row.units;
+          acc.biggiWei += row.biggiWei;
+          return acc;
+        },
+        { count: 0, units: 0, biggiWei: 0n },
+      ),
+    [rows],
+  );
 
   return (
     <div style={{ width: "100%" }}>
@@ -155,7 +176,7 @@ export default function REWARDSBlockSummary({
           width: "100%",
           borderCollapse: "separate",
           borderSpacing: 0,
-          overFLOW: "hidden",
+          overflow: "hidden",
           borderRadius: 12,
           border: "2px solid #ffe800",
           background:
@@ -175,9 +196,9 @@ export default function REWARDSBlockSummary({
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, index) => (
+          {rows.map((row, index) => (
             <tr
-              key={r.name}
+              key={row.name}
               style={{
                 background:
                   index % 2 === 0
@@ -194,10 +215,10 @@ export default function REWARDSBlockSummary({
                   textShadow: "0 0 8px #ffe80044",
                 }}
               >
-                {r.name}
+                {row.name}
               </td>
-              <td style={tdStyle}>{r.count}</td>
-              <td style={tdStyle}>{r.weight}</td>
+              <td style={tdStyle}>{row.count}</td>
+              <td style={tdStyle}>{row.weight}</td>
               <td
                 style={{
                   ...tdStyle,
@@ -206,7 +227,7 @@ export default function REWARDSBlockSummary({
                   textShadow: "0 0 8px #5ddcff44",
                 }}
               >
-                {Number.isFinite(r.biggi) ? r.biggi : "-"}
+                {row.biggiDisplay === "--" ? "-" : row.biggiDisplay}
               </td>
             </tr>
           ))}
@@ -253,7 +274,7 @@ export default function REWARDSBlockSummary({
                 borderTop: "2px solid #ffe800",
               }}
             >
-              {Number.isFinite(totals.biggi) ? totals.biggi : "-"}
+              {formatTokenDisplay(totals.biggiWei, 18, 4, "BIGGI")}
             </td>
           </tr>
         </tfoot>
@@ -266,8 +287,8 @@ export default function REWARDSBlockSummary({
           textAlign: "center",
         }}
       >
-        * Výpočet používá on-chain block weights & unit reward pokud jsou
-        dostupné. Pokud ne, použije lokální fallback.
+        * Uses on-chain block weights and unit reward when available. Falls back
+        to local defaults otherwise.
         {providerError ? ` (on-chain load error: ${providerError})` : null}
       </div>
     </div>
@@ -295,7 +316,3 @@ const tdStyle = {
   fontSize: "0.95em",
   fontWeight: 600,
 };
-
-
-
-

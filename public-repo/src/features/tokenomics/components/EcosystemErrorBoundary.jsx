@@ -23,7 +23,9 @@ class EcosystemErrorBoundary extends React.Component {
               <div className="rewards-grid__headline">
                 <h2 className="rewards-grid__title">BIGGI ECOSYSTEM</h2>
                 <p className="rewards-grid__subtitle">
-                  Panel spadl na chybe. Zkuste refresh nebo overit RPC.
+                  Ecosystem panel hit a runtime error. Refresh this view or
+                  verify RPC connectivity, then reload to recover the latest
+                  tokenomics snapshot.
                 </p>
               </div>
             </header>

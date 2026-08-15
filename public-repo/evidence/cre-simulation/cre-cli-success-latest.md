@@ -1,4 +1,4 @@
-﻿# CRE CLI Simulation Success
+# CRE CLI Simulation Success
 
 - Timestamp: 2026-02-24T05:43:12Z
 - Command: `cre workflow simulate biggieyes-vrf-postredeem --non-interactive --trigger-index 0`
@@ -10,4 +10,4 @@
 ## Notes
 - CRE account authenticated (`cre whoami` succeeded).
 - Go toolchain installed (`go version go1.26.0 windows/amd64`).
-- RPC updated in `biggieeyes/project.yaml` to `https://ethereum-sepolia-rpc.publicnode.com`.
+- RPC updated in `biggieeyes/project.yaml` to `https://polygon.drpc.org`.

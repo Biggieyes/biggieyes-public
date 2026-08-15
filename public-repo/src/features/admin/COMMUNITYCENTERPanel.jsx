@@ -1,241 +1,261 @@
-﻿// src/components/panels/COMMUNITYCENTERPanel.jsx
 import * as React from "react";
 import { Contract } from "ethers";
-import { formatEther } from "ethers";
+
+import { useWeb3 } from "@/providers/Web3Provider";
+import { BiggiCommunityCenter as COMMUNITYCENTERAbi } from "@/config/abi/index.js";
+import useCommunityCenterUserSnapshot from "@/hooks/useCommunityCenterUserSnapshot.js";
+import { formatNativeDisplay } from "@/features/tokenomics/utils/amountFormatting.js";
+import PanelInfoModal from "@/components/common/PanelInfoModal";
+import PanelInfoButton from "@/components/common/PanelInfoButton";
 import { getROProvider, ADDR } from "@/shared/utils/contract";
+import {
+  httpFromIpfs,
+  readJsonFromURI,
+  resolveImageUrl,
+} from "@/shared/services/ipfs.js";
+import {
+  fetchCommunityPolls,
+  submitCommunityVote,
+} from "@/shared/services/communityVotingApi.js";
+
+import FullscreenPanel from "../../components/common/FullscreenPanel.jsx";
+import MODERATORCENTERPanel from "./MODERATORCENTER/MODERATORCENTERPanel.jsx";
 import "../rewards/REWARDSPanel.css";
 import "../../styles/biggi-token.skin.css";
-import { BiggiCommunityCenter as COMMUNITYCENTERAbi } from "@/config/abi/index.js";
-import FullscreenPanel from "../../components/common/FullscreenPanel.jsx";
-import MODERATORCENTERPanel from "../ModeratorCenter/MODERATORCENTER/ModeratorPanel.jsx";
-import PanelInfoModal from "@/components/common/PanelInfoModal";
+import "./COMMUNITYCENTERPanel.css";
+
 const COMMUNITY_CENTER_ABI = Array.isArray(COMMUNITYCENTERAbi)
   ? COMMUNITYCENTERAbi
   : [];
-
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 function isAddress(value) {
   return typeof value === "string" && /^0x[0-9a-fA-F]{40}$/.test(value.trim());
 }
 
+function sameAddress(a, b) {
+  return (
+    String(a || "")
+      .trim()
+      .toLowerCase() ===
+    String(b || "")
+      .trim()
+      .toLowerCase()
+  );
+}
+
 function resolveCOMMUNITYCENTERAddress() {
   const candidates = [];
   try {
     if (typeof import.meta !== "undefined" && import.meta.env) {
-      const env = import.meta.env;
-      candidates.push(env.VITE_ADDR_COMMUNITY_CENTER);
-      candidates.push(env.VITE_ADDR_COMMUNITY);
-      candidates.push(env.VITE_ADDR_COMMUNITYCENTRE);
+      candidates.push(import.meta.env.VITE_ADDR_COMMUNITY_CENTER);
+      candidates.push(import.meta.env.VITE_ADDR_COMMUNITY);
     }
   } catch {}
   try {
     if (typeof process !== "undefined" && process.env) {
-      const env = process.env;
-      candidates.push(env.VITE_ADDR_COMMUNITY_CENTER);
-      candidates.push(env.VITE_ADDR_COMMUNITY);
+      candidates.push(process.env.VITE_ADDR_COMMUNITY_CENTER);
+      candidates.push(process.env.VITE_ADDR_COMMUNITY);
     }
   } catch {}
-  try {
-    candidates.push(
-      ADDR?.COMMUNITY_CENTER,
-      ADDR?.COMMUNITYCENTER,
-      ADDR?.BIGGI_COMMUNITY_CENTER,
-      ADDR?.BiggiCOMMUNITYCENTER,
-      ADDR?.COMMUNITY,
-    );
-  } catch {}
-
-  for (const candidate of candidates) {
-    if (isAddress(candidate) && candidate !== ZERO_ADDRESS) {
-      return candidate;
-    }
-  }
-  return null;
+  candidates.push(
+    ADDR?.COMMUNITY_CENTER,
+    ADDR?.COMMUNITYCENTER,
+    ADDR?.BIGGI_COMMUNITY_CENTER,
+    ADDR?.COMMUNITY,
+  );
+  return (
+    candidates.find(
+      (value) => isAddress(value) && !sameAddress(value, ZERO_ADDRESS),
+    ) || null
+  );
 }
 
-function bnToNumber(value) {
-  if (value == null) return 0;
+function toNumber(value) {
   try {
-    return Number(BigInt(value).toString());
+    if (typeof value === "bigint") return Number(value);
+    const next = Number(value?.toString?.() ?? value);
+    return Number.isFinite(next) ? next : 0;
   } catch {
-    const num = Number(value);
-    return Number.isFinite(num) ? num : 0;
+    return 0;
   }
 }
 
-function formatVotes(value) {
-  const num = bnToNumber(value);
-  if (!Number.isFinite(num)) return "--";
-  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
-  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}k`;
-  return num.toLocaleString();
+function shorten(value, start = 6, end = 4) {
+  const text = String(value || "");
+  if (!text) return "--";
+  if (text.length <= start + end + 3) return text;
+  return `${text.slice(0, start)}...${text.slice(-end)}`;
 }
 
-function formatDeposit(value) {
-  try {
-    const numeric = Number(formatEther(value ?? 0));
-    if (!Number.isFinite(numeric)) return "--";
-    if (numeric === 0) return "0 POL";
-    if (numeric >= 1) return `${numeric.toFixed(2)} POL`;
-    return `${numeric.toFixed(4)} POL`;
-  } catch {
-    return "--";
-  }
+function formatPol(value) {
+  return formatNativeDisplay(value ?? 0n, 4);
 }
 
-function formatNative(value) {
-  try {
-    const numeric = Number(formatEther(value ?? 0));
-    if (!Number.isFinite(numeric)) return "--";
-    if (numeric === 0) return "0 POL";
-    if (numeric >= 1) return `${numeric.toFixed(2)} POL`;
-    return `${numeric.toFixed(4)} POL`;
-  } catch {
-    return "--";
-  }
-}
-
-function formatPercent(value) {
-  if (value == null) return "n/a";
-  const num = bnToNumber(value);
-  if (!Number.isFinite(num)) return "n/a";
-  return `${num}%`;
-}
-
-function formatThreshold(value) {
-  if (value == null) return "n/a";
-  const num = bnToNumber(value);
-  if (!Number.isFinite(num) || num <= 0) return "n/a";
-  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
-  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}k`;
-  return num.toLocaleString();
-}
-
-function formatDuration(seconds) {
-  const value = bnToNumber(seconds);
-  if (!Number.isFinite(value) || value <= 0) return "n/a";
-  if (value % 86400 === 0) {
-    const days = value / 86400;
-    return `${days} day${days === 1 ? "" : "s"}`;
-  }
-  if (value % 3600 === 0) {
-    const hours = value / 3600;
-    return `${hours} hour${hours === 1 ? "" : "s"}`;
-  }
-  if (value % 60 === 0) {
-    const mins = value / 60;
-    return `${mins} min`;
-  }
-  return `${value} sec`;
-}
-
-function formatDate(seconds) {
-  const ts = bnToNumber(seconds);
-  if (!Number.isFinite(ts) || ts <= 0) return "Not scheduled";
+function formatDateTime(seconds) {
+  const ts = toNumber(seconds);
+  if (!ts) return "Not scheduled";
   const date = new Date(ts * 1000);
   if (Number.isNaN(date.getTime())) return "Not scheduled";
   return date.toLocaleString();
 }
 
-function shorten(text, max = 20) {
-  if (!text || typeof text !== "string") return "";
-  if (text.length <= max) return text;
-  const prefix = text.slice(0, Math.max(4, max - 8));
-  const suffix = text.slice(-4);
-  return `${prefix}...${suffix}`;
-}
-
-async function safeContractCall(contract, method, args = [], fallback = null) {
-  try {
-    if (!contract || typeof contract[method] !== "function") return fallback;
-    const result = await contract[method](...args);
-    return result ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function parseProposal(raw, fallbackId) {
-  const arr = Array.isArray(raw) ? raw : [];
-  return {
-    id: bnToNumber(raw?.pid ?? raw?.id ?? arr[0] ?? fallbackId ?? 0),
-    proposer: raw?.proposer ?? arr[1] ?? ZERO_ADDRESS,
-    ipfs: raw?.ipfs ?? arr[2] ?? "",
-    start: bnToNumber(raw?.start ?? arr[3]),
-    end: bnToNumber(raw?.end ?? arr[4]),
-    forVotes: bnToNumber(raw?.forV ?? raw?.forVotes ?? arr[5]),
-    againstVotes: bnToNumber(raw?.againstV ?? arr[6]),
-    abstainVotes: bnToNumber(raw?.abstainV ?? arr[7]),
-    executed: Boolean(raw?.executed ?? arr[8]),
-    canceled: Boolean(raw?.canceled ?? arr[9]),
-  };
+function formatIsoDateTime(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "Not scheduled";
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return "Not scheduled";
+  return date.toLocaleString();
 }
 
 function parseEvent(raw, fallbackId) {
   const arr = Array.isArray(raw) ? raw : [];
   return {
-    id: bnToNumber(raw?.eid ?? raw?.id ?? fallbackId ?? 0),
-    title: raw?.title ?? arr[0] ?? "",
-    ipfs: raw?.ipfsHash ?? raw?.ipfs ?? arr[1] ?? "",
-    start: bnToNumber(raw?.start ?? arr[2]),
-    end: bnToNumber(raw?.end ?? arr[3]),
-    totalPrize: raw?.totalPrize_ ?? raw?.totalPrize ?? arr[4] ?? 0,
-    locked: raw?.locked ?? arr[5] ?? 0,
+    id: toNumber(fallbackId),
+    title: String(raw?.title ?? arr[0] ?? "").trim(),
+    ipfsHash: String(raw?.ipfsHash ?? raw?.ipfs ?? arr[1] ?? "").trim(),
+    start: toNumber(raw?.start ?? arr[2]),
+    end: toNumber(raw?.end ?? arr[3]),
+    totalPrize: raw?.totalPrize_ ?? raw?.totalPrize ?? arr[4] ?? 0n,
+    locked: raw?.locked ?? arr[5] ?? 0n,
     exists: Boolean(raw?.exists ?? arr[6]),
   };
 }
 
-function nowSeconds() {
-  return Math.floor(Date.now() / 1000);
+function parseUserStatus(raw) {
+  const arr = Array.isArray(raw) ? raw : [];
+  return {
+    amount: raw?.amount ?? arr[0] ?? 0n,
+    claimed: Boolean(raw?.claimed ?? arr[1]),
+    exists: Boolean(raw?.exists ?? arr[2]),
+  };
 }
 
-function computeProposalStatus(proposal) {
-  if (proposal.canceled) return "Canceled";
-  if (proposal.executed) return "Executed";
-  const now = nowSeconds();
-  if (now < proposal.start) return "Pending";
-  if (now > proposal.end) return "Finalizing";
-  return "Voting live";
+function parseCanClaim(raw) {
+  const arr = Array.isArray(raw) ? raw : [];
+  return {
+    ok: Boolean(raw?.ok ?? arr[0]),
+    reason: toNumber(raw?.reason ?? arr[1]),
+    amount: raw?.amount ?? arr[2] ?? 0n,
+  };
 }
 
-function computeEventStatus(event) {
+function claimReasonLabel(reason) {
+  switch (toNumber(reason)) {
+    case 0:
+      return "Claim available";
+    case 1:
+      return "Event does not exist";
+    case 2:
+      return "Wallet is not a winner";
+    case 3:
+      return "Prize already claimed";
+    case 4:
+      return "Contract is paused";
+    default:
+      return "Claim unavailable";
+  }
+}
+
+function scheduleStatus(event) {
+  const now = Math.floor(Date.now() / 1000);
   if (!event?.exists) return "Missing";
-  const now = nowSeconds();
-  if (now < event.start) return "Upcoming";
-  if (now > event.end) return "Finished";
+  if (event.start && now < event.start) return "Upcoming";
+  if (event.end && now > event.end) return "Finished";
   return "Live";
 }
 
-const Card = ({ title, subtitle, tone = "y", children }) => {
-  const toneClass = tone ? ` biggi-card--${tone}` : "";
-  return (
-    <article className={`rewards-grid__card biggi-card${toneClass}`}>
-      <div className="biggi-card__glow" aria-hidden />
-      <div className="rewards-grid__card-header biggi-card__header">
-        <div className="biggi-card__heading">
-          {title ? <h3>{title}</h3> : null}
-          {subtitle ? <p>{subtitle}</p> : null}
-        </div>
-      </div>
-      <div className="biggi-card__body">{children}</div>
-    </article>
-  );
-};
+function normalizeMetadataUri(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (
+    /^https?:\/\//i.test(raw) ||
+    /^ipfs:\/\//i.test(raw) ||
+    /^ipns:\/\//i.test(raw) ||
+    /^\/ipfs\//i.test(raw) ||
+    /^\/ipns\//i.test(raw)
+  ) {
+    return raw;
+  }
+  return `ipfs://${raw}`;
+}
 
-const KeyValueGrid = ({ items = [] }) => (
-  <div className="biggi-grid">
-    {items.map(({ k, v, tone, mono }, idx) => (
-      <div key={`${k}-${idx}`} className="biggi-line">
-        <span className="muted">{k}</span>
-        <span
-          className={`biggi-value${mono ? " mono" : ""}`}
-          style={tone ? { borderColor: `${tone}55`, color: tone } : undefined}
-        >
-          {v ?? "--"}
-        </span>
+function tryParseInlineMetadata(value) {
+  const raw = String(value || "").trim();
+  if (!raw || !raw.startsWith("{")) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+async function safeReadMetadata(uri) {
+  const inlineMetadata = tryParseInlineMetadata(uri);
+  if (inlineMetadata) {
+    const image = inlineMetadata?.image
+      ? await resolveImageUrl(inlineMetadata.image, "").catch(() => {
+          const raw = String(inlineMetadata.image || "").trim();
+          return raw || null;
+        })
+      : null;
+    return {
+      uri: "",
+      metadata: inlineMetadata,
+      image,
+    };
+  }
+
+  const normalized = normalizeMetadataUri(uri);
+  if (!normalized) return { uri: "", metadata: null, image: null };
+  const metadata = await readJsonFromURI(normalized).catch(() => null);
+  const image = metadata?.image
+    ? await resolveImageUrl(metadata.image, normalized).catch(() => null)
+    : null;
+  return {
+    uri: httpFromIpfs(normalized),
+    metadata,
+    image,
+  };
+}
+
+function toneColor(label) {
+  if (label === "Live" || label === "Claim available") return "#5ddcff";
+  if (label === "Upcoming") return "#ffe800";
+  if (label === "Finished" || label === "Closed") return "#f6f7fb";
+  return "#ffb3b3";
+}
+
+const Card = ({
+  title,
+  subtitle,
+  tone = "c",
+  action = null,
+  className = "",
+  children,
+}) => (
+  <article
+    className={`rewards-grid__card biggi-card biggi-card--${tone} ${className}`.trim()}
+  >
+    <div className="biggi-card__glow" aria-hidden />
+    <div className="rewards-grid__card-header biggi-card__header">
+      <div className="biggi-card__heading">
+        <h3>{title}</h3>
+        {subtitle ? <p>{subtitle}</p> : null}
       </div>
-    ))}
+      {action ? <div className="biggi-card__actions">{action}</div> : null}
+    </div>
+    <div className="biggi-card__body">{children}</div>
+  </article>
+);
+
+const ValueRow = ({ label, value, mono = false }) => (
+  <div className="biggi-line" style={{ justifyContent: "space-between" }}>
+    <span className="muted">{label}</span>
+    <span style={mono ? { fontFamily: "monospace" } : undefined}>
+      {value || "--"}
+    </span>
   </div>
 );
 
@@ -246,257 +266,343 @@ export default function COMMUNITYCENTERPanel({
   onConnectWalletConnect,
   isAdmin = false,
   onOpenAdmin,
+  autoOpenInfo = false,
 }) {
-  const [address, setAddress] = React.useState(() =>
-    resolveCOMMUNITYCENTERAddress(),
+  const communityAddress = React.useMemo(
+    () => resolveCOMMUNITYCENTERAddress(),
+    [],
   );
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState(null);
-  const [moderatorOpen, setModeratorOpen] = React.useState(false);
-  const [infoOpen, setInfoOpen] = React.useState(false);
-  const [summary, setSummary] = React.useState({
-    proposalCount: 0,
-    eventCount: 0,
-    quorumPercent: null,
-    proposalThreshold: null,
-    votingDuration: null,
+  const autoInfoOpened = React.useRef(false);
+  const { signer, account } = useWeb3();
+  const activeWallet = account || walletAddress || "";
+  const {
+    snapshot: userCommunitySnapshot,
+    loading: userCommunityLoading,
+    refresh: refreshUserCommunitySnapshot,
+  } = useCommunityCenterUserSnapshot({
+    walletAddress: activeWallet,
+    includePolls: true,
   });
-  const [proposals, setProposals] = React.useState([]);
+  const [eventsLoading, setEventsLoading] = React.useState(true);
+  const [eventsError, setEventsError] = React.useState("");
+  const [pollsLoading, setPollsLoading] = React.useState(true);
+  const [pollsError, setPollsError] = React.useState("");
+  const [infoOpen, setInfoOpen] = React.useState(false);
+  const [moderatorOpen, setModeratorOpen] = React.useState(false);
+  const [claimingEventId, setClaimingEventId] = React.useState(null);
+  const [claimMessage, setClaimMessage] = React.useState("");
   const [events, setEvents] = React.useState([]);
-  const [poolBalance, setPoolBalance] = React.useState(null);
+  const [polls, setPolls] = React.useState([]);
+  const [voteSelections, setVoteSelections] = React.useState({});
+  const [votingPollId, setVotingPollId] = React.useState("");
+  const [voteMessage, setVoteMessage] = React.useState("");
+
+  const hasConfig = Boolean(communityAddress && COMMUNITY_CENTER_ABI.length);
+  const canOpenAdmin = Boolean(onOpenAdmin) && Boolean(isAdmin);
+
+  React.useEffect(() => {
+    if (autoOpenInfo && !autoInfoOpened.current) {
+      autoInfoOpened.current = true;
+      setInfoOpen(true);
+    }
+    if (!autoOpenInfo) autoInfoOpened.current = false;
+  }, [autoOpenInfo]);
+
+  const loadEvents = React.useCallback(async () => {
+    if (!hasConfig) {
+      setEvents([]);
+      setEventsLoading(false);
+      setEventsError("Community Center contract address or ABI is missing.");
+      return;
+    }
+    setEventsLoading(true);
+    setEventsError("");
+    try {
+      const provider = getROProvider();
+      const contract = new Contract(
+        communityAddress,
+        COMMUNITY_CENTER_ABI,
+        provider,
+      );
+      const [eventIds] = await Promise.all([
+        contract.getEvents().catch(() => []),
+      ]);
+
+      const detailed = await Promise.all(
+        (Array.isArray(eventIds) ? eventIds : []).map(async (eventId) => {
+          const eventRaw = await contract.getEvent(eventId).catch(() => null);
+          const event = parseEvent(eventRaw, eventId);
+          const [winnerTuple, metadataPayload, userStatusRaw, canClaimRaw] =
+            await Promise.all([
+              contract.getEventWinners(eventId).catch(() => [[], [], []]),
+              safeReadMetadata(event.ipfsHash),
+              activeWallet
+                ? contract.userStatus(eventId, activeWallet).catch(() => null)
+                : Promise.resolve(null),
+              activeWallet
+                ? contract.canClaim(eventId, activeWallet).catch(() => null)
+                : Promise.resolve(null),
+            ]);
+          const tuple = Array.isArray(winnerTuple) ? winnerTuple : [[], [], []];
+          return {
+            ...event,
+            winners: (tuple[0] || []).map((winner, index) => ({
+              address: winner,
+              amount: tuple[1]?.[index] ?? 0n,
+              claimed: Boolean(tuple[2]?.[index]),
+            })),
+            schedule: scheduleStatus(event),
+            metadataUri: metadataPayload.uri,
+            metadata: metadataPayload.metadata,
+            image: metadataPayload.image,
+            walletStatus: userStatusRaw ? parseUserStatus(userStatusRaw) : null,
+            claim: canClaimRaw ? parseCanClaim(canClaimRaw) : null,
+          };
+        }),
+      );
+
+      detailed.sort((a, b) => b.id - a.id);
+      setEvents(detailed);
+    } catch (nextError) {
+      setEventsError(
+        nextError?.shortMessage ||
+          nextError?.message ||
+          "Failed to load Community Center.",
+      );
+    } finally {
+      setEventsLoading(false);
+    }
+  }, [activeWallet, communityAddress, hasConfig]);
+
+  const loadPolls = React.useCallback(async () => {
+    setPollsLoading(true);
+    setPollsError("");
+    try {
+      const json = await fetchCommunityPolls({ walletAddress: activeWallet });
+      setPolls(Array.isArray(json?.polls) ? json.polls : []);
+    } catch (nextError) {
+      setPolls([]);
+      setPollsError(nextError?.message || "Failed to load community voting.");
+    } finally {
+      setPollsLoading(false);
+    }
+  }, [activeWallet]);
+
+  const loadData = React.useCallback(async () => {
+    await Promise.allSettled([loadEvents(), loadPolls()]);
+  }, [loadEvents, loadPolls]);
+
+  const refreshAllData = React.useCallback(async () => {
+    await Promise.allSettled([loadData(), refreshUserCommunitySnapshot()]);
+  }, [loadData, refreshUserCommunitySnapshot]);
+
+  React.useEffect(() => {
+    loadData().catch((nextError) => {
+      setEventsError(nextError?.message || "Failed to load Community Center.");
+    });
+  }, [loadData]);
+
+  const handleClaim = React.useCallback(
+    async (eventId) => {
+      if (!signer || !activeWallet) {
+        setClaimMessage("Connect your wallet first.");
+        return;
+      }
+      setClaimingEventId(eventId);
+      setClaimMessage("");
+      try {
+        const contract = new Contract(
+          communityAddress,
+          COMMUNITY_CENTER_ABI,
+          signer,
+        );
+        const tx = await contract.claim(eventId);
+        await tx.wait();
+        setClaimMessage(`Claim for event #${eventId} confirmed.`);
+        await Promise.allSettled([
+          loadEvents(),
+          refreshUserCommunitySnapshot(),
+        ]);
+      } catch (nextError) {
+        setClaimMessage(
+          nextError?.shortMessage || nextError?.message || "Claim failed.",
+        );
+      } finally {
+        setClaimingEventId(null);
+      }
+    },
+    [
+      activeWallet,
+      communityAddress,
+      loadEvents,
+      refreshUserCommunitySnapshot,
+      signer,
+    ],
+  );
+
+  const handleVote = React.useCallback(
+    async (pollId) => {
+      const selectedOptionId = String(voteSelections[pollId] || "").trim();
+      if (!selectedOptionId) {
+        setVoteMessage("Select an option first.");
+        return;
+      }
+      if (!signer || !activeWallet) {
+        setVoteMessage("Connect your wallet first.");
+        return;
+      }
+
+      setVotingPollId(pollId);
+      setVoteMessage("");
+      try {
+        const payload = JSON.stringify({
+          pollId,
+          optionId: selectedOptionId,
+          timestamp: Date.now(),
+        });
+        const signature = await signer.signMessage(`community-vote|${payload}`);
+        await submitCommunityVote({
+          address: activeWallet,
+          payload,
+          signature,
+        });
+        setVoteMessage(`Vote recorded for poll ${pollId}.`);
+        await Promise.allSettled([loadPolls(), refreshUserCommunitySnapshot()]);
+      } catch (nextError) {
+        setVoteMessage(nextError?.message || "Vote failed.");
+      } finally {
+        setVotingPollId("");
+      }
+    },
+    [
+      activeWallet,
+      loadPolls,
+      refreshUserCommunitySnapshot,
+      signer,
+      voteSelections,
+    ],
+  );
 
   const infoItems = React.useMemo(
     () => [
       {
-        label: "MODERATOR CENTER",
-        description: [
-          "Opens moderator tools for community updates and controls.",
-          "Includes proposals, events, and live turnout stats.",
-        ],
+        label: "Contract scope",
+        description:
+          "The contract manages owner-created events, pre-assigned winners, and winner claims. Community voting is a separate wallet-signed off-chain layer, because the current contract does not implement proposals or on-chain voting.",
       },
       {
-        label: "ADMIN PANEL",
-        description: [
-          "Admin-only configuration panel for advanced contract operations.",
-          "Restricted to authorized wallets only.",
-        ],
+        label: "What users see",
+        description:
+          "Community Center now shows only event cards and voting cards. Owner operations stay in Admin Panel, and Moderator Center opens separately.",
+      },
+      {
+        label: "User actions",
+        description:
+          "Users can connect a wallet, check whether a wallet has a prize assigned on an event, claim payouts, and cast one wallet-signed vote on each live poll.",
       },
     ],
     [],
   );
 
-  const counts = React.useMemo(() => {
-    const statusCounts = proposals.reduce(
-      (acc, p) => {
-        const status = computeProposalStatus(p);
-        acc[status] = (acc[status] || 0) + 1;
-        return acc;
-      },
-      { Pending: 0, "Voting live": 0, Finalizing: 0, Executed: 0, Canceled: 0 },
-    );
+  const heroItems = React.useMemo(() => {
+    const livePolls = polls.filter((poll) => poll.status === "Live").length;
+    const claimableEvents = events.filter((event) => event.claim?.ok).length;
 
-    const eventCounts = events.reduce(
-      (acc, e) => {
-        const status = computeEventStatus(e);
-        acc[status] = (acc[status] || 0) + 1;
-        return acc;
-      },
-      { Upcoming: 0, Live: 0, Finished: 0, Missing: 0 },
-    );
-
-    return { statusCounts, eventCounts, liveTurnout: 0 };
-  }, [proposals, events]);
-
-  const voteBars = React.useMemo(() => {
-    return proposals.slice(0, 4).map((proposal) => {
-      const total =
-        proposal.forVotes + proposal.againstVotes + proposal.abstainVotes;
-      const pct =
-        total > 0 ? Math.min(100, (proposal.forVotes / total) * 100) : 0;
-      return {
-        id: proposal.id,
-        label: `#${proposal.id}`,
-        pct,
-        total,
-        status: computeProposalStatus(proposal),
-      };
-    });
-  }, [proposals]);
-
-  React.useEffect(() => {
-    let cancelled = false;
-    const setPlaceholder = () => {
-      if (cancelled) return;
-      setSummary({
-        proposalCount: 0,
-        eventCount: 0,
-        quorumPercent: null,
-        proposalThreshold: null,
-        votingDuration: null,
-      });
-      setProposals([]);
-      setEvents([]);
-      setPoolBalance(null);
-      setError(null);
-      setLoading(false);
-    };
-
-    async function load() {
-      const resolvedAddress = resolveCOMMUNITYCENTERAddress();
-      if (!cancelled) setAddress(resolvedAddress);
-
-      if (!resolvedAddress) {
-        setPlaceholder();
-        return;
-      }
-
-      if (
-        !Array.isArray(COMMUNITY_CENTER_ABI) ||
-        COMMUNITY_CENTER_ABI.length === 0
-      ) {
-        setPlaceholder();
-        return;
-      }
-
-      try {
-        if (!cancelled) {
-          setLoading(true);
-          setError(null);
-        }
-
-        const provider = getROProvider();
-        if (!provider) {
-          setPlaceholder();
-          return;
-        }
-
-        const contract = new Contract(
-          resolvedAddress,
-          COMMUNITY_CENTER_ABI,
-          provider,
-        );
-
-        const [nextEventIdBn, eventsList, poolBalanceBn, nativeBalanceBn] =
-          await Promise.all([
-            safeContractCall(contract, "nextEventId", [], BigInt(0)),
-            safeContractCall(contract, "getEvents", [], []),
-            safeContractCall(contract, "poolBalance", [], null),
-            provider.getBalance(resolvedAddress).catch(() => null),
-          ]);
-
-        const eventCount = Array.isArray(eventsList)
-          ? eventsList.length
-          : bnToNumber(nextEventIdBn);
-        const proposalCount = 0;
-        const fetchedProposals = [];
-
-        const eventIds = Array.isArray(eventsList) && eventsList.length
-          ? eventsList.map((id) => bnToNumber(id)).filter((id) => id >= 0)
-          : Array.from({ length: eventCount }, (_, i) => i);
-
-        const fetchedEvents = [];
-        for (
-          let idx = eventIds.length - 1;
-          idx >= 0 && fetchedEvents.length < 5;
-          idx -= 1
-        ) {
-          const id = eventIds[idx];
-          const raw = await safeContractCall(contract, "getEvent", [id], null);
-          if (!raw) continue;
-          fetchedEvents.push(parseEvent(raw, id));
-        }
-
-        if (!cancelled) {
-          setSummary({
-            proposalCount,
-            eventCount,
-            quorumPercent: null,
-            proposalThreshold: null,
-            votingDuration: null,
-          });
-          setProposals(fetchedProposals);
-          setEvents(fetchedEvents);
-          setPoolBalance(poolBalanceBn ?? nativeBalanceBn);
-        }
-      } catch (err) {
-        if (!cancelled)
-          setError(err?.message || "Failed to load community center data.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const summaryItems = React.useMemo(
-    () => [
+    return [
       {
-        k: "Proposals",
-        v: loading ? "..." : summary.proposalCount.toLocaleString(),
-        tone: "#FFE800",
-        mono: true,
+        label: "Wallet",
+        value: activeWallet ? shorten(activeWallet, 8, 4) : "Not connected",
+        hint: activeWallet
+          ? "Eligible claims and live voting unlocked"
+          : "Connect a wallet for claims and voting",
       },
       {
-        k: "Events",
-        v: loading ? "..." : summary.eventCount.toLocaleString(),
-        tone: "#5DDCFF",
-        mono: true,
+        label: "Events tracked",
+        value: eventsLoading ? "Syncing..." : String(events.length),
+        hint: eventsLoading
+          ? "Reading Community Center contract"
+          : "Owner-created on-chain event cards",
       },
       {
-        k: "Quorum",
-        v: loading ? "..." : formatPercent(summary.quorumPercent),
-        tone: "#9B7BFF",
+        label: "Claimable",
+        value: activeWallet
+          ? eventsLoading
+            ? "Syncing..."
+            : String(claimableEvents)
+          : "--",
+        hint: activeWallet
+          ? "Events where your wallet can claim now"
+          : "Visible after wallet connection",
       },
       {
-        k: "Threshold",
-        v: loading ? "..." : formatThreshold(summary.proposalThreshold),
-        tone: "#27D9D2",
-        mono: true,
+        label: "Claimable POL",
+        value: activeWallet
+          ? userCommunityLoading
+            ? "Syncing..."
+            : formatPol(userCommunitySnapshot.claimableAmount)
+          : "--",
+        hint: "Wallet prize total from the Community Center contract",
       },
       {
-        k: "Voting window",
-        v: loading ? "..." : formatDuration(summary.votingDuration),
-        tone: "#FFE800",
+        label: "Live polls",
+        value: pollsLoading ? "Syncing..." : String(livePolls),
+        hint: pollsLoading
+          ? "Refreshing community voting feed"
+          : "Wallet-signed community votes",
       },
       {
-        k: "Pool balance",
-        v: loading ? "..." : formatNative(poolBalance),
-        tone: "#FFE800",
+        label: "Pool locked",
+        value: userCommunityLoading
+          ? "Syncing..."
+          : formatPol(userCommunitySnapshot.totalLocked),
+        hint: "Total locked community event payouts",
       },
-    ],
-    [loading, summary, poolBalance],
-  );
+    ];
+  }, [
+    activeWallet,
+    events,
+    eventsLoading,
+    polls,
+    pollsLoading,
+    userCommunityLoading,
+    userCommunitySnapshot.claimableAmount,
+    userCommunitySnapshot.totalLocked,
+  ]);
+
   return (
-    <>
-      <section
-        className={`rewards-grid biggi-skin${compact ? " is-compact" : ""}`}
-      >
-        <div className="rewards-grid__surface biggi-token-surface">
-          <div
-            aria-hidden
-            style={{
-              position: "absolute",
-              inset: 0,
-              pointerEvents: "none",
-              background:
-                "radial-gradient(900px 360px at 82% -15%, rgba(95,219,255,0.16), transparent 70%)",
-              mixBlendMode: "screen",
-            }}
-          />
-
-          <header className="rewards-grid__header biggi-header panel-header panel-header--community">
-            <div className="rewards-grid__headline">
-              <h2 className="rewards-grid__title">Community Center</h2>
-              <p className="rewards-grid__subtitle">
-                Governance proposals, community events, and participation
-                telemetry.
-              </p>
+    <section
+      className={`community-center rewards-grid biggi-skin${compact ? " is-compact" : ""}`}
+    >
+      <div className="rewards-grid__surface biggi-token-surface community-center__surface">
+        <header className="rewards-grid__header biggi-header panel-header panel-header--community community-center__header">
+          <div className="rewards-grid__headline">
+            <h2 className="rewards-grid__title">Community Center</h2>
+            <p className="rewards-grid__subtitle">
+              User-facing hub for event rewards, claim status, and wallet-signed
+              community voting in one place.
+            </p>
+          </div>
+          <div className="community-center__header-side">
+            <div className="community-center__header-meta">
+              <span className="rewards-grid__pill">
+                {hasConfig ? "Contract ready" : "Contract missing"}
+              </span>
+              <span className="rewards-grid__pill">
+                {activeWallet
+                  ? `Wallet ${shorten(activeWallet, 6, 4)}`
+                  : "Wallet disconnected"}
+              </span>
             </div>
-            <div className="rewards-grid__header-actions">
+            <div className="rewards-grid__header-actions community-center__header-actions">
+              <button
+                type="button"
+                className="biggi-btn biggi-btn--ghost"
+                onClick={refreshAllData}
+              >
+                {userCommunityLoading || eventsLoading || pollsLoading
+                  ? "Refreshing..."
+                  : "Refresh"}
+              </button>
               <button
                 type="button"
                 className="biggi-btn biggi-btn--ghost"
@@ -504,374 +610,521 @@ export default function COMMUNITYCENTERPanel({
               >
                 Moderator Center
               </button>
-              <button
-                type="button"
-                className="biggi-btn biggi-btn--accent"
-                onClick={onOpenAdmin}
-                disabled={!isAdmin || !onOpenAdmin}
-                title={
-                  !isAdmin
-                    ? "Admin only"
-                    : !onOpenAdmin
-                      ? "Admin panel unavailable"
-                      : "Open admin panel"
-                }
-              >
-                Admin Panel
-              </button>
-              <span
-                className="rewards-grid__subtitle"
-                style={{ fontSize: "0.78rem", color: "#c8cae3" }}
-              >
-                {address
-                  ? `Contract ${shorten(address, 24)}`
-                  : "Contract address missing"}
-              </span>
-              <button
-                type="button"
-                className="panel-info-btn biggi-btn biggi-btn--ghost"
+              {canOpenAdmin ? (
+                <button
+                  type="button"
+                  className="biggi-btn biggi-btn--ghost"
+                  onClick={() => onOpenAdmin?.()}
+                >
+                  Admin Panel
+                </button>
+              ) : null}
+              <PanelInfoButton
                 onClick={() => setInfoOpen(true)}
-                aria-label="Community Center buttons info"
-              >
-                <span>i</span>
-              </button>
+                ariaLabel="Community center panel info"
+              />
             </div>
-          </header>
+          </div>
+        </header>
 
-          {!error && (
-            <div className="biggi-hero">
-              <div className="biggi-hero__card">
-                <span className="biggi-hero__label">Live Participation</span>
-                <strong className="biggi-hero__value">
-                  {loading ? "..." : formatVotes(counts.liveTurnout)}
-                </strong>
-                <span className="biggi-hero__hint">
-                  Votes across live proposals
-                </span>
-              </div>
-              <div className="biggi-hero__card">
-                <span className="biggi-hero__label">Proposals</span>
-                <strong className="biggi-hero__value">
-                  {loading ? "..." : summary.proposalCount}
-                </strong>
-                <span className="biggi-hero__hint">
-                  {counts.statusCounts["Voting live"] || 0} live /{" "}
-                  {counts.statusCounts.Pending || 0} pending
-                </span>
-              </div>
-              <div className="biggi-hero__card">
-                <span className="biggi-hero__label">Events</span>
-                <strong className="biggi-hero__value">
-                  {loading ? "..." : summary.eventCount}
-                </strong>
-                <span className="biggi-hero__hint">
-                  {counts.eventCounts.Live || 0} live /{" "}
-                  {counts.eventCounts.Upcoming || 0} upcoming
-                </span>
-              </div>
-              <div className="biggi-hero__card">
-                <span className="biggi-hero__label">Quorum Target</span>
-                <strong className="biggi-hero__value">
-                  {loading ? "..." : formatPercent(summary.quorumPercent)}
-                </strong>
-                <span className="biggi-hero__hint">
-                  Threshold {formatThreshold(summary.proposalThreshold)}
-                </span>
-              </div>
-              <div className="biggi-hero__card">
-                <span className="biggi-hero__label">Pool Balance</span>
-                <strong className="biggi-hero__value">
-                  {loading ? "..." : formatNative(poolBalance)}
-                </strong>
-                <span className="biggi-hero__hint">
-                  Community pool in native
-                </span>
-              </div>
-            </div>
-          )}
+        <div className="biggi-hero community-center__hero">
+          {heroItems.map((item) => (
+            <article
+              key={item.label}
+              className="biggi-hero__card biggi-hero__stat"
+            >
+              <span className="biggi-hero__label">{item.label}</span>
+              <strong className="biggi-hero__value">{item.value}</strong>
+              <span className="biggi-hero__hint">{item.hint}</span>
+            </article>
+          ))}
+        </div>
 
-          {error ? null : (
-            <>
-              <section className="rewards-grid__cards-panel">
-                <div className="rewards-grid__cards">
-                  <Card
-                    title="Community snapshot"
-                    subtitle="Key governance metrics"
-                    tone="y"
-                  >
-                    <KeyValueGrid items={summaryItems} />
-                  </Card>
+        {!hasConfig ? (
+          <Card
+            title="Configuration Missing"
+            subtitle="Event cards cannot load without address and ABI."
+            tone="v"
+            className="community-center__alert-card"
+          >
+            <p className="muted community-center__copy">
+              Configure the contract address in{" "}
+              <code>src/shared/utils/addresses.js</code> and ensure the ABI
+              export is present.
+            </p>
+          </Card>
+        ) : null}
 
-                  <Card
-                    title="Participation heat"
-                    subtitle="For-votes share on latest proposals"
-                    tone="c"
-                  >
-                    {loading ? (
-                      <p className="muted">Loading participation...</p>
-                    ) : voteBars.length ? (
-                      <div className="biggi-bars">
-                        {voteBars.map((bar) => (
-                          <div key={bar.id} className="biggi-bar">
-                            <div className="biggi-bar__meta">
-                              <span className="biggi-value mono">
-                                {bar.label}
-                              </span>
-                              <span className="muted">{bar.status}</span>
-                              <span className="muted">
-                                {formatVotes(bar.total)} votes
-                              </span>
-                            </div>
-                            <div className="biggi-bar__track">
-                              <span
-                                className="biggi-bar__fill"
-                                style={{ width: `${bar.pct}%` }}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="muted">No participation data yet.</p>
-                    )}
-                  </Card>
+        {eventsError && hasConfig ? (
+          <Card
+            title="Load Error"
+            subtitle="Read-only contract fetch failed."
+            tone="v"
+            className="community-center__alert-card"
+          >
+            <p className="community-center__copy">{eventsError}</p>
+          </Card>
+        ) : null}
 
-                  <Card
-                    title="Recent proposals"
-                    subtitle="Voting tallies & timeline"
-                    tone="c"
-                  >
-                    {loading ? (
-                      <p className="muted">Loading proposals...</p>
-                    ) : proposals.length ? (
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 14,
-                        }}
-                      >
-                        {proposals.map((proposal) => (
-                          <div
-                            key={proposal.id}
-                            style={{
-                              borderRadius: 12,
-                              border: "1px solid rgba(95, 219, 255, 0.16)",
-                              background: "rgba(17, 17, 24, 0.55)",
-                              padding: 12,
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 6,
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                gap: 12,
-                              }}
-                            >
-                              <span className="biggi-value mono">
-                                #{proposal.id}
-                              </span>
-                              <span className="muted">
-                                {computeProposalStatus(proposal)}
-                              </span>
-                            </div>
-                            <div
-                              className="muted"
-                              style={{ fontSize: "0.8rem" }}
-                            >
-                              {proposal.ipfs
-                                ? shorten(proposal.ipfs, 28)
-                                : "No metadata (IPFS)"}
-                            </div>
-                            <div className="biggi-grid" style={{ gap: 4 }}>
-                              <div className="biggi-line">
-                                <span className="muted">For</span>
-                                <span className="biggi-value mono">
-                                  {formatVotes(proposal.forVotes)}
-                                </span>
-                              </div>
-                              <div className="biggi-line">
-                                <span className="muted">Against</span>
-                                <span className="biggi-value mono">
-                                  {formatVotes(proposal.againstVotes)}
-                                </span>
-                              </div>
-                              <div className="biggi-line">
-                                <span className="muted">Abstain</span>
-                                <span className="biggi-value mono">
-                                  {formatVotes(proposal.abstainVotes)}
-                                </span>
-                              </div>
-                            </div>
-                            <div
-                              className="muted"
-                              style={{ fontSize: "0.75rem" }}
-                            >
-                              {formatDate(proposal.start)} -{" "}
-                              {formatDate(proposal.end)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="muted">No proposals recorded yet.</p>
-                    )}
-                  </Card>
+        <Card
+          title="My Community Snapshot"
+          subtitle="Wallet-level event reward and voting summary from the Polygon mainnet Community Center."
+          tone="c"
+          className="community-center__snapshot-card"
+          action={
+            <button
+              type="button"
+              className="biggi-btn biggi-btn--ghost"
+              onClick={refreshAllData}
+              disabled={userCommunityLoading || eventsLoading || pollsLoading}
+            >
+              {userCommunityLoading ? "Refreshing..." : "Refresh snapshot"}
+            </button>
+          }
+        >
+          <div className="community-center__snapshot-grid">
+            <ValueRow
+              label="Wallet"
+              value={
+                activeWallet ? shorten(activeWallet, 8, 4) : "Not connected"
+              }
+              mono
+            />
+            <ValueRow
+              label="Contract"
+              value={
+                userCommunitySnapshot.address
+                  ? shorten(userCommunitySnapshot.address, 8, 4)
+                  : "--"
+              }
+              mono
+            />
+            <ValueRow
+              label="Status"
+              value={
+                userCommunitySnapshot.configured
+                  ? userCommunitySnapshot.paused
+                    ? "Paused"
+                    : "Live"
+                  : "Missing"
+              }
+            />
+            <ValueRow
+              label="Events tracked"
+              value={String(userCommunitySnapshot.eventsCount)}
+            />
+            <ValueRow
+              label="Assigned events"
+              value={String(userCommunitySnapshot.assignedEvents)}
+            />
+            <ValueRow
+              label="Claimable events"
+              value={String(userCommunitySnapshot.claimableEvents)}
+            />
+            <ValueRow
+              label="Assigned POL"
+              value={formatPol(userCommunitySnapshot.assignedAmount)}
+            />
+            <ValueRow
+              label="Claimable POL"
+              value={formatPol(userCommunitySnapshot.claimableAmount)}
+            />
+            <ValueRow
+              label="Pool balance"
+              value={formatPol(userCommunitySnapshot.poolBalance)}
+            />
+            <ValueRow
+              label="Total locked"
+              value={formatPol(userCommunitySnapshot.totalLocked)}
+            />
+            <ValueRow
+              label="Live polls"
+              value={String(userCommunitySnapshot.livePolls)}
+            />
+            <ValueRow
+              label="My votes"
+              value={String(userCommunitySnapshot.myVotes)}
+            />
+          </div>
+          <div
+            className={
+              userCommunitySnapshot.claimableEvents > 0
+                ? "community-center__feedback"
+                : "community-center__notice"
+            }
+          >
+            <p className="muted community-center__copy">
+              {!activeWallet
+                ? "Connect a wallet to load wallet-specific assignments and votes."
+                : userCommunitySnapshot.claimableEvents > 0
+                  ? "This wallet has a Community Center prize ready to claim."
+                  : "No Community Center prize is claimable for this wallet right now."}
+            </p>
+          </div>
+        </Card>
+
+        <div className="community-center__content">
+          <Card
+            title="Events"
+            subtitle={
+              eventsLoading
+                ? "Loading on-chain events..."
+                : "Owner-created event cards backed by the Community Center contract."
+            }
+            tone="c"
+            className="community-center__section-card"
+          >
+            <div className="community-center__stack">
+              {!activeWallet ? (
+                <div className="community-center__notice">
+                  <p className="muted community-center__copy">
+                    Connect a wallet to see whether a prize is assigned to your
+                    address and to claim on-chain payouts.
+                  </p>
+                  <div className="community-center__actions">
+                    <button
+                      type="button"
+                      className="biggi-btn biggi-btn--ghost"
+                      onClick={onConnectMetaMask}
+                    >
+                      Connect MetaMask
+                    </button>
+                    <button
+                      type="button"
+                      className="biggi-btn biggi-btn--ghost"
+                      onClick={onConnectWalletConnect}
+                    >
+                      WalletConnect
+                    </button>
+                  </div>
                 </div>
-              </section>
-
-              <section className="rewards-grid__cards-panel">
-                <div className="rewards-grid__cards">
-                  <Card
-                    title="Latest events"
-                    subtitle="Community gatherings & RSVP stats"
-                    tone="b"
-                  >
-                    {loading ? (
-                      <p className="muted">Loading events...</p>
-                    ) : events.length ? (
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 14,
-                        }}
-                      >
-                        {events.map((event) => (
-                          <div
-                            key={event.id}
+              ) : null}
+              {claimMessage ? (
+                <div className="community-center__feedback">{claimMessage}</div>
+              ) : null}
+              {!events.length && !eventsLoading ? (
+                <div className="community-center__empty">
+                  No events found on-chain.
+                </div>
+              ) : null}
+              {events.map((event) => {
+                const claimLabel = event.claim
+                  ? claimReasonLabel(event.claim.reason)
+                  : activeWallet
+                    ? "No wallet status"
+                    : "Connect wallet";
+                return (
+                  <article key={event.id} className="community-center__entry">
+                    <div
+                      className={`community-center__entry-top${event.image ? " has-thumb" : ""}`}
+                    >
+                      {event.image ? (
+                        <img
+                          src={event.image}
+                          alt={
+                            event.metadata?.title ||
+                            event.title ||
+                            `Event ${event.id}`
+                          }
+                          className="community-center__thumb"
+                        />
+                      ) : null}
+                      <div className="community-center__entry-copy">
+                        <div className="community-center__entry-head">
+                          <strong>
+                            {event.metadata?.title ||
+                              event.title ||
+                              `Event #${event.id}`}
+                          </strong>
+                          <span
+                            className="community-center__status-chip"
                             style={{
-                              borderRadius: 12,
-                              border: "1px solid rgba(155, 123, 255, 0.18)",
-                              background: "rgba(17, 17, 24, 0.55)",
-                              padding: 12,
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 6,
+                              "--community-tone": toneColor(event.schedule),
                             }}
                           >
-                            <div
+                            {event.schedule}
+                          </span>
+                          {event.claim?.ok ? (
+                            <span
+                              className="community-center__status-chip"
                               style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                gap: 12,
+                                "--community-tone":
+                                  toneColor("Claim available"),
                               }}
                             >
-                              <span className="biggi-value mono">
-                                Event #{event.id}
-                              </span>
-                              <span className="muted">
-                                {computeEventStatus(event)}
-                              </span>
-                            </div>
-                            <div
-                              className="muted"
-                              style={{ fontSize: "0.8rem" }}
-                            >
-                              {event.ipfs
-                                ? shorten(event.ipfs, 28)
-                                : "No metadata (IPFS)"}
-                            </div>
-                            <div className="biggi-grid" style={{ gap: 4 }}>
-                              <div className="biggi-line">
-                                <span className="muted">Capacity</span>
-                                <span className="biggi-value mono">
-                                  {event.capacity
-                                    ? `${event.attendeeCount}/${event.capacity}`
-                                    : `${event.attendeeCount}`}
-                                </span>
-                              </div>
-                              <div className="biggi-line">
-                                <span className="muted">Deposit</span>
-                                <span className="biggi-value mono">
-                                  {formatDeposit(event.depositWei)}
-                                </span>
-                              </div>
-                            </div>
-                            <div
-                              className="muted"
-                              style={{ fontSize: "0.75rem" }}
-                            >
-                              {formatDate(event.start)} -{" "}
-                              {formatDate(event.end)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="muted">
-                        No community events scheduled yet.
-                      </p>
-                    )}
-                  </Card>
-
-                  <Card
-                    title="Contract details"
-                    subtitle="Runtime diagnostics"
-                    tone="p"
-                  >
-                    <div className="biggi-grid">
-                      <div className="biggi-line">
-                        <span className="muted">Contract</span>
-                        <span className="biggi-value mono">
-                          {address ? shorten(address, 28) : "Not set"}
-                        </span>
-                      </div>
-                      <div className="biggi-line">
-                        <span className="muted">ABI entries</span>
-                        <span className="biggi-value mono">
-                          {COMMUNITY_CENTER_ABI.length
-                            ? COMMUNITY_CENTER_ABI.length
-                            : "None"}
-                        </span>
-                      </div>
-                      <div className="biggi-line">
-                        <span className="muted">Provider</span>
-                        <span className="biggi-value">Read-only</span>
+                              Claim available
+                            </span>
+                          ) : null}
+                        </div>
+                        {event.metadata?.description ? (
+                          <p className="muted community-center__copy">
+                            {event.metadata.description}
+                          </p>
+                        ) : null}
+                        <ValueRow label="Event ID" value={String(event.id)} />
+                        <ValueRow
+                          label="Prize total"
+                          value={formatPol(event.totalPrize)}
+                        />
+                        <ValueRow
+                          label="Start"
+                          value={formatDateTime(event.start)}
+                        />
+                        <ValueRow
+                          label="End"
+                          value={formatDateTime(event.end)}
+                        />
+                        <ValueRow
+                          label="Winners"
+                          value={String(event.winners.length)}
+                        />
+                        {event.metadataUri ? (
+                          <a
+                            href={event.metadataUri}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="muted community-center__meta-link"
+                          >
+                            Open metadata
+                          </a>
+                        ) : null}
                       </div>
                     </div>
-                  </Card>
+
+                    {activeWallet && event.walletStatus?.exists ? (
+                      <div className="community-center__wallet-status">
+                        <strong>My status</strong>
+                        <ValueRow
+                          label="Assigned amount"
+                          value={formatPol(event.walletStatus.amount)}
+                        />
+                        <ValueRow label="Claim state" value={claimLabel} />
+                        <ValueRow
+                          label="Already claimed"
+                          value={event.walletStatus.claimed ? "Yes" : "No"}
+                        />
+                        <div className="community-center__actions">
+                          <button
+                            type="button"
+                            className="biggi-btn biggi-btn--accent"
+                            disabled={
+                              !event.claim?.ok || claimingEventId === event.id
+                            }
+                            onClick={() => handleClaim(event.id)}
+                          >
+                            {claimingEventId === event.id
+                              ? "Claiming..."
+                              : "Claim prize"}
+                          </button>
+                        </div>
+                      </div>
+                    ) : activeWallet ? (
+                      <div className="community-center__feedback">
+                        This wallet is not assigned to the event payout list.
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+          </Card>
+
+          <Card
+            title="Voting"
+            subtitle={
+              pollsLoading
+                ? "Loading community polls..."
+                : "Wallet-signed off-chain voting for the community."
+            }
+            tone="y"
+            className="community-center__section-card"
+          >
+            <div className="community-center__stack">
+              {pollsError ? (
+                <div className="community-center__feedback community-center__feedback--error">
+                  {pollsError}
                 </div>
-              </section>
-            </>
-          )}
+              ) : null}
+              {!activeWallet ? (
+                <div className="community-center__notice">
+                  <p className="muted community-center__copy">
+                    Connect a wallet to cast one vote on each live community
+                    poll.
+                  </p>
+                  <div className="community-center__actions">
+                    <button
+                      type="button"
+                      className="biggi-btn biggi-btn--ghost"
+                      onClick={onConnectMetaMask}
+                    >
+                      Connect MetaMask
+                    </button>
+                    <button
+                      type="button"
+                      className="biggi-btn biggi-btn--ghost"
+                      onClick={onConnectWalletConnect}
+                    >
+                      WalletConnect
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+              {voteMessage ? (
+                <div className="community-center__feedback">{voteMessage}</div>
+              ) : null}
+              {!polls.length && !pollsLoading ? (
+                <div className="community-center__empty">
+                  No community polls available right now.
+                </div>
+              ) : null}
+              {polls.map((poll) => {
+                const selectedOptionId = String(
+                  voteSelections[poll.id] || poll.myVoteOptionId || "",
+                ).trim();
+                const totalVotes = Number(poll.totalVotes || 0);
+                const myVote = Array.isArray(poll.options)
+                  ? poll.options.find(
+                      (option) => option.id === poll.myVoteOptionId,
+                    )
+                  : null;
+                const canVote =
+                  Boolean(activeWallet) &&
+                  poll.status === "Live" &&
+                  !poll.myVoteOptionId;
+
+                return (
+                  <article key={poll.id} className="community-center__entry">
+                    <div className="community-center__entry-copy">
+                      <div className="community-center__entry-head">
+                        <strong>{poll.title || poll.id}</strong>
+                        <span
+                          className="community-center__status-chip"
+                          style={{ "--community-tone": toneColor(poll.status) }}
+                        >
+                          {poll.status}
+                        </span>
+                        {poll.linkedEventId != null ? (
+                          <span className="muted">
+                            Event #{poll.linkedEventId}
+                          </span>
+                        ) : null}
+                      </div>
+                      {poll.description ? (
+                        <p className="muted community-center__copy">
+                          {poll.description}
+                        </p>
+                      ) : null}
+                      <ValueRow
+                        label="Opens"
+                        value={formatIsoDateTime(poll.startsAt)}
+                      />
+                      <ValueRow
+                        label="Closes"
+                        value={formatIsoDateTime(poll.endsAt)}
+                      />
+                      <ValueRow
+                        label="Total votes"
+                        value={String(totalVotes)}
+                      />
+                      {myVote ? (
+                        <ValueRow label="Your vote" value={myVote.label} />
+                      ) : null}
+                    </div>
+
+                    <div className="community-center__options">
+                      {(Array.isArray(poll.options) ? poll.options : []).map(
+                        (option) => {
+                          const optionVotes = Number(option.votes || 0);
+                          const percent = totalVotes
+                            ? `${Math.round((optionVotes / totalVotes) * 100)}%`
+                            : "0%";
+                          const isSelected = selectedOptionId === option.id;
+                          return (
+                            <label
+                              key={`${poll.id}-${option.id}`}
+                              className={`community-center__option${isSelected ? " is-selected" : ""}${canVote ? "" : " is-disabled"}`}
+                            >
+                              <input
+                                type="radio"
+                                name={`poll-${poll.id}`}
+                                checked={isSelected}
+                                disabled={!canVote}
+                                onChange={() =>
+                                  setVoteSelections((prev) => ({
+                                    ...prev,
+                                    [poll.id]: option.id,
+                                  }))
+                                }
+                              />
+                              <div className="community-center__option-copy">
+                                <div className="community-center__option-row">
+                                  <span>{option.label}</span>
+                                  <span className="muted">
+                                    {optionVotes} votes ({percent})
+                                  </span>
+                                </div>
+                              </div>
+                            </label>
+                          );
+                        },
+                      )}
+                    </div>
+
+                    <div className="community-center__actions">
+                      {canVote ? (
+                        <button
+                          type="button"
+                          className="biggi-btn biggi-btn--accent"
+                          disabled={
+                            !selectedOptionId ||
+                            String(votingPollId) === String(poll.id)
+                          }
+                          onClick={() => handleVote(poll.id)}
+                        >
+                          {String(votingPollId) === String(poll.id)
+                            ? "Submitting vote..."
+                            : "Vote now"}
+                        </button>
+                      ) : (
+                        <span className="muted">
+                          {!activeWallet
+                            ? "Connect a wallet to vote."
+                            : poll.myVoteOptionId
+                              ? "This wallet already voted on the poll."
+                              : poll.status === "Upcoming"
+                                ? "Voting opens when the poll starts."
+                                : "Voting is closed."}
+                        </span>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </Card>
         </div>
-      </section>
 
-      <PanelInfoModal
-        open={infoOpen}
-        onClose={() => setInfoOpen(false)}
-        title="Community Center"
-        items={infoItems}
-      />
-
-      <FullscreenPanel
-        open={moderatorOpen}
-        title="Moderator Center"
-        onClose={() => setModeratorOpen(false)}
-        onPrev={undefined}
-        onNext={undefined}
-        containerStyle={{
-          background: "transparent",
-          border: "none",
-          boxShadow: "none",
-          padding: 0,
-          width: "min(1200px, 94vw)",
-          whiteSpace: "normal",
-          lineHeight: "normal",
-        }}
-        contentStyle={{ padding: 0 }}
-      >
-        <MODERATORCENTERPanel
-          compact={compact}
-          walletAddress={walletAddress}
-          onConnectMetaMask={onConnectMetaMask}
-          onConnectWalletConnect={onConnectWalletConnect}
+        <PanelInfoModal
+          open={infoOpen}
+          title="Community Center"
+          items={infoItems}
+          onClose={() => setInfoOpen(false)}
         />
-      </FullscreenPanel>
-    </>
+
+        <FullscreenPanel
+          open={moderatorOpen}
+          title="Moderator Center"
+          onClose={() => setModeratorOpen(false)}
+          preventScroll
+        >
+          <MODERATORCENTERPanel
+            compact={compact}
+            walletAddress={activeWallet}
+            onConnectMetaMask={onConnectMetaMask}
+            onConnectWalletConnect={onConnectWalletConnect}
+          />
+        </FullscreenPanel>
+      </div>
+    </section>
   );
 }

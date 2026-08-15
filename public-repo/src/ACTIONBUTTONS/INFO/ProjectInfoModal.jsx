@@ -4,17 +4,20 @@ import * as ReactDOM from "react-dom";
 import "../../components/CollectionBlocksGrid.css";
 import "../../features/rewards/REWARDSPanel.css";
 import "../../styles/biggi-token.skin.css";
+import TrustPanel from "../../features/info/trust/TrustPanel.jsx";
 
 const SECTIONS = [
-  { id: "overview", label: "Overview & How It Works", icon: "📘" },
-  { id: "pricing", label: "Pricing, Blocks & Mechanics", icon: "💰" },
-  { id: "transparency", label: "Transparency & On-Chain Proofs", icon: "🔗" },
-  { id: "trading", label: "Trading & User Experience", icon: "🧭" },
-  { id: "roadmap", label: "Roadmap, Community & Legal", icon: "🗺️" },
-  { id: "faq", label: "FAQ", icon: "❓" },
-  { id: "token", label: "BIGGI ECOSYSTEM & Weekly REWARDS", icon: "🎁" },
-  { id: "liquidity", label: "Liquidity, Router & LP Controls", icon: "🌊" },
-  { id: "videos", label: "Video Manual", icon: "🎬" },
+  { id: "overview", label: "Overview & How It Works", icon: "O" },
+  { id: "guide", label: "User Guide", icon: "U" },
+  { id: "pricing", label: "Pricing, Blocks & Mechanics", icon: "$" },
+  { id: "transparency", label: "Transparency & On-Chain Proofs", icon: "#" },
+  { id: "trust", label: "Trust", icon: "T" },
+  { id: "trading", label: "Trading & User Experience", icon: "X" },
+  { id: "roadmap", label: "Roadmap, Community & Legal", icon: "R" },
+  { id: "troubleshooting", label: "Troubleshooting", icon: "!" },
+  { id: "faq", label: "FAQ", icon: "?" },
+  { id: "token", label: "BIGGI Ecosystem & Weekly Rewards", icon: "B" },
+  { id: "liquidity", label: "Liquidity, Router & LP Controls", icon: "L" },
 ];
 
 const COLORS = {
@@ -80,43 +83,6 @@ const Heading = ({ children }) => (
 
 const Divider = ({ tone = COLORS.v }) => (
   <hr style={{ border: "none", height: 1, opacity: 0.18, background: tone }} />
-);
-
-const VideoPill = ({ index, tone }) => (
-  <button
-    type="button"
-    aria-disabled="true"
-    title={`Video ${index} (coming soon)`}
-    className="biggi-ghost-btn"
-    style={{
-      display: "inline-flex",
-      alignItems: "center",
-      gap: 8,
-      padding: "8px 12px",
-      borderRadius: 12,
-      border: `1px solid ${tone}66`,
-      background: "#1a1d24",
-      color: COLORS.text,
-      cursor: "default",
-    }}
-  >
-    <span
-      aria-hidden
-      style={{
-        width: 24,
-        height: 24,
-        borderRadius: "50%",
-        border: `1px solid ${tone}66`,
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 13,
-      }}
-    >
-      ▶
-    </span>
-    <span style={{ fontSize: 12 }}>{`Video ${index}`}</span>
-  </button>
 );
 
 const ArrowButton = ({ onClick, title, children }) => (
@@ -236,119 +202,235 @@ const ProjectInfoModal = ({
       >
         {active === "overview" && (
           <>
-            <Heading>How it works — 3 steps</Heading>
-            <ol style={{ marginLeft: 18 }}>
+            <Heading>Two-minute overview</Heading>
+            <p>
+              BiggiEyes is an on-chain NFT economy on Polygon mainnet.
+              You mint a ticket, redeem it, and Chainlink VRF assigns a block
+              and background before the NFT is minted to your wallet. Blocks
+              act as rarity tiers, and backgrounds plus block state drive
+              dynamic pricing.
+            </p>
+
+            <Heading>Collections and episodes</Heading>
+            <ul style={{ marginLeft: 18 }}>
+              <li>VRF Collection: ticket to redeem to VRF to NFT.</li>
               <li>
-                <strong>Mint ticket:</strong> pay in ETH or BIGGI.
+                Public Collection: direct mint by id when enabled, shown as a
+                separate collection in the dashboard.
               </li>
               <li>
-                <strong>Redeem:</strong> redeem the ticket and request
-                randomness via Chainlink VRF.
+                Episodes (seasonal phases) group drops and rewards; when active,
+                the UI highlights the current episode.
               </li>
-              <li>
-                <strong>Mint NFT:</strong> VRF assigns block, background and
-                mainId, and the NFT is minted immediately.
-              </li>
-            </ol>
+            </ul>
 
             <Divider />
 
-            <Heading>Pricing in a nutshell</Heading>
+            <Heading>On-chain flow (high level)</Heading>
+            <p>
+              Mint revenue is routed on-chain through the protocol flow
+              (Distributor to Reserve to Liquidity to Rewards to Buyback).
+              Exact splits are defined by contracts and are verifiable on-chain.
+            </p>
+            <div
+              style={{
+                fontFamily:
+                  'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                fontSize: 13,
+                lineHeight: 1.6,
+                whiteSpace: "pre-wrap",
+                opacity: 0.9,
+              }}
+            >
+{`Mint to Ticket NFT
+Mint fees to Distributor
+Distributor to Reserve | Buyback | Treasury | CollectionRewards
+Buyback to Treasury
+Treasury to TokenRewards + Reserve
+Reserve to LiquidityManager to LiquidityVault`}
+            </div>
+
+            <Divider />
+
+            <Heading>Why it matters</Heading>
             <ul style={{ marginLeft: 18 }}>
-              <li>
-                <strong>Permanent background effect:</strong> each background
-                permanently increases the price of its own block.
-              </li>
-              <li>
-                <strong>Final price:</strong> current price of the block at mint
-                time plus background bonus.
-              </li>
-              <li>
-                We store three values: <code>ticketPrice</code>,{" "}
-                <code>blockPrice</code> and <code>finalPrice</code>.
-              </li>
+              <li>All critical state is on-chain and verifiable.</li>
+              <li>Randomness is provable via Chainlink VRF.</li>
+              <li>The dashboard is a read-only window into live data.</li>
             </ul>
+          </>
+        )}
+
+        {active === "guide" && (
+          <>
+            <Heading>Quick start</Heading>
+            <ol style={{ marginLeft: 18 }}>
+              <li>Connect your wallet (MetaMask or WalletConnect).</li>
+              <li>Mint a ticket with the native coin (POL).</li>
+              <li>Redeem the ticket to request Chainlink VRF.</li>
+              <li>Wait for VRF fulfillment and NFT mint confirmation.</li>
+              <li>Track rarity in the gallery (block and background).</li>
+              <li>Claim weekly BIGGI if your NFTs are eligible.</li>
+            </ol>
+
+            <Heading>Rarity and tracking</Heading>
+            <ul style={{ marginLeft: 18 }}>
+              <li>Rarity is driven by block tier and background.</li>
+              <li>Use filters and search to find specific traits.</li>
+              <li>Ticket items are not eligible for rewards until redeemed.</li>
+            </ul>
+
+            <Heading>Dashboard tips</Heading>
+            <ul style={{ marginLeft: 18 }}>
+              <li>Live stats show prices, supply, and pool balances.</li>
+              <li>Status banners show pending, success, or errors.</li>
+              <li>Use explorer links to verify any transaction.</li>
+            </ul>
+
+            <Heading>Mainnet note</Heading>
+            <p style={{ marginTop: 6 }}>
+              Network: Polygon mainnet (chainId 137). Keep a small POL balance
+              for gas and confirm every wallet transaction carefully.
+            </p>
           </>
         )}
 
         {active === "pricing" && (
           <>
-            <Heading>Core principles</Heading>
+            <Heading>Blocks and rarity tiers</Heading>
             <ul style={{ marginLeft: 18 }}>
-              <li>
-                Each mint stores <code>ticketPrice</code>,{" "}
-                <code>blockPrice</code> (current block price at mint) and{" "}
-                <code>finalPrice</code>.
-              </li>
-              <li>
-                Backgrounds permanently raise the price of their own block.
-              </li>
-              <li>
-                Ticket price increases independently on every mint (~0.33%).
-              </li>
+              <li>The collection is split into blocks (rarity tiers).</li>
+              <li>Each block has a base price, current price, and max supply.</li>
+              <li>Block weights also drive weekly reward amounts.</li>
             </ul>
 
-            <Heading>Order of calculation</Heading>
-            <ol style={{ marginLeft: 18 }}>
-              <li>Apply the permanent background increase.</li>
-              <li>Use the current price of the minted block as base.</li>
-              <li>Add the one-time background bonus to get the final price.</li>
-            </ol>
+            <Heading>Dynamic pricing</Heading>
+            <ul style={{ marginLeft: 18 }}>
+              <li>Ticket price increases gradually over time.</li>
+              <li>Each mint applies a permanent background increase to its block.</li>
+              <li>Final price = current block price + one-time background bonus.</li>
+              <li>Redeem finalizes the mint and applies pricing on-chain.</li>
+            </ul>
+
+            <Heading>VRF vs Public collection</Heading>
+            <ul style={{ marginLeft: 18 }}>
+              <li>VRF collection uses ticket to redeem to random assignment.</li>
+              <li>Public collection enables direct mint by id when active.</li>
+              <li>Both collections use the same block and background pricing model.</li>
+            </ul>
+
+            <Heading>Episodes</Heading>
+            <p>
+              Episodes (seasonal phases) group drops and rewards. When an episode
+              is active, the dashboard highlights it and surfaces its rules and
+              progress.
+            </p>
           </>
         )}
 
         {active === "transparency" && (
           <>
-            <Heading>On-chain data</Heading>
+            <Heading>On-chain proofs</Heading>
             <ul style={{ marginLeft: 18 }}>
-              <li>Live ticket price, block prices, minted/remaining supply.</li>
-              <li>
-                Background increases, reward pool balance, claim eligibility.
-              </li>
-              <li>
-                Per NFT: <code>ticketPrice</code>, <code>blockPrice</code>,{" "}
-                <code>finalPrice</code>.
-              </li>
+              <li>VRF requests and fulfillments are visible on the explorer.</li>
+              <li>All mints, redeems, and claims emit on-chain events.</li>
+              <li>Reserve, rewards, liquidity, and buyback balances are public.</li>
             </ul>
 
-            <Heading>Provably fair randomness</Heading>
-            <p>Chainlink VRF requests and fulfillments are fully auditable.</p>
+            <Heading>What the UI shows</Heading>
+            <ul style={{ marginLeft: 18 }}>
+              <li>Live ticket price and block prices.</li>
+              <li>Minted supply by block and remaining capacity.</li>
+              <li>Reward pool balance and claim eligibility.</li>
+              <li>NFT metadata stores ticketPrice, blockPrice, and finalPrice.</li>
+            </ul>
+
+            <Heading>How to verify</Heading>
+            <ul style={{ marginLeft: 18 }}>
+              <li>Open the Trust tab for contract addresses.</li>
+              <li>Use explorer links to audit transactions and balances.</li>
+              <li>Snapshots are read-only and refreshed from chain data.</li>
+            </ul>
+          </>
+        )}
+
+        {active === "trust" && (
+          <>
+            <p>
+              Trust is built on verifiable contracts. Administrative roles are
+              explicit on-chain, and all parameter changes are recorded in
+              transactions. The UI never holds keys or funds.
+            </p>
+            <TrustPanel />
           </>
         )}
 
         {active === "trading" && (
           <>
-            <Heading>UX elements</Heading>
+            <Heading>Secondary markets</Heading>
             <ul style={{ marginLeft: 18 }}>
-              <li>
-                Gallery with filters by block/background/mainId and search.
-              </li>
-              <li>Live redeem/VRF state and detailed mint price breakdown.</li>
-              <li>
-                Claim preview with exact reasons why an NFT is (not) claimable.
-              </li>
+              <li>NFTs are standard tokens and can be transferred or listed.</li>
+              <li>Metadata and traits appear after VRF fulfillment.</li>
+              <li>Use wallet approvals only when you intend to trade.</li>
             </ul>
+
+            <Heading>User experience</Heading>
+            <ul style={{ marginLeft: 18 }}>
+              <li>Status banners explain pending, success, or error states.</li>
+              <li>IPFS images can load slowly on first view.</li>
+              <li>Use the dashboard to track prices, rarity, and rewards.</li>
+            </ul>
+
+            <Heading>Recommended workflow</Heading>
+            <p>
+              Mint ticket to Redeem to Wait for VRF to View NFT to Claim weekly
+              rewards.
+            </p>
           </>
         )}
 
         {active === "roadmap" && (
           <>
-            <Heading>Roadmap (status: live)</Heading>
+            <Heading>Roadmap</Heading>
             <ul style={{ marginLeft: 18 }}>
-              <li>Expanded frontend, full claim centre, VRF view, timeline.</li>
-              <li>Liquidity tools, LP overview, historical snapshots.</li>
-              <li>
-                Token utilities: sink routing, conversion controls, guides.
-              </li>
+              <li>Mainnet monitoring and launch hardening (current focus).</li>
+              <li>Security review and audit planning.</li>
+              <li>Public mint launch after validation and review.</li>
+              <li>Episodes, community events, and marketplace integrations.</li>
             </ul>
 
-            <Heading>Community & Legal</Heading>
+            <Heading>Community</Heading>
             <ul style={{ marginLeft: 18 }}>
-              <li>Moderated community space with verified addresses.</li>
-              <li>Crypto/NFT risks apply; nothing is financial advice.</li>
-              <li>
-                Using the app implies acceptance of Terms & Privacy POLICY.
-              </li>
+              <li>Use official links listed in the app.</li>
+              <li>Beware of impersonators and verify addresses.</li>
+            </ul>
+
+            <Heading>Legal</Heading>
+            <ul style={{ marginLeft: 18 }}>
+              <li>Not financial advice; use at your own risk.</li>
+              <li>Mainnet transactions use real assets and are irreversible.</li>
+              <li>Terms and privacy policy apply where provided.</li>
+            </ul>
+          </>
+        )}
+
+        {active === "troubleshooting" && (
+          <>
+            <Heading>Common issues</Heading>
+            <ul style={{ marginLeft: 18 }}>
+              <li>Wallet not connected: connect MetaMask or WalletConnect.</li>
+              <li>Wrong network: switch to Polygon mainnet (chainId 137).</li>
+              <li>RPC errors: retry or switch to another RPC.</li>
+              <li>Pending tx: wait, or speed up/cancel in wallet.</li>
+              <li>NFT not showing: wait for VRF, then refresh metadata.</li>
+              <li>Claim failed: not eligible or already claimed this week.</li>
+            </ul>
+
+            <Heading>Quick checks</Heading>
+            <ul style={{ marginLeft: 18 }}>
+              <li>Verify on-chain status with the explorer link.</li>
+              <li>Keep enough POL for gas.</li>
+              <li>Do not resend a tx unless it is dropped on explorer.</li>
             </ul>
           </>
         )}
@@ -356,157 +438,66 @@ const ProjectInfoModal = ({
         {active === "faq" && (
           <>
             <Heading>FAQ</Heading>
-            <p>
-              Coming soon — we will cover claims, pricing, metadata,
-              transactions and wallets.
-            </p>
+            <ul style={{ marginLeft: 18 }}>
+              <li><strong>What is VRF?</strong> Verifiable randomness from Chainlink.</li>
+              <li><strong>How do rewards work?</strong> Weekly, based on block weight.</li>
+              <li><strong>What is BIGGI?</strong> The rewards token of the protocol.</li>
+              <li><strong>How many NFTs exist?</strong> Fixed max per block, shown in the UI.</li>
+              <li><strong>What if something fails?</strong> Check the explorer and retry.</li>
+            </ul>
           </>
         )}
 
         {active === "token" && (
           <>
-            <Heading>Token overview</Heading>
+            <Heading>BIGGI token</Heading>
             <ul style={{ marginLeft: 18 }}>
-              <li>
-                BIGGI is the REWARDS token; the app shows address, meta and
-                remaining emission.
-              </li>
+              <li>BIGGI is the rewards token for the ecosystem.</li>
+              <li>Supply, balances, and emissions are on-chain and verifiable.</li>
+              <li>Rewards are distributed through the weekly claim system.</li>
             </ul>
 
-            <Heading>Weekly REWARDS</Heading>
+            <Heading>Weekly rewards</Heading>
             <ul style={{ marginLeft: 18 }}>
-              <li>
-                Each NFT can claim once per week based on block weight (1–10).
-              </li>
-              <li>
-                The interface highlights the current reward week and next
-                eligible claim date.
-              </li>
+              <li>Each NFT can claim once per week.</li>
+              <li>Claim amount depends on block weight (rarity tier).</li>
+              <li>Eligibility and totals are shown in the claim center.</li>
+            </ul>
+
+            <Heading>Why NFTs create value</Heading>
+            <ul style={{ marginLeft: 18 }}>
+              <li>Mint activity routes value to rewards and liquidity.</li>
+              <li>Rarity impacts rewards, creating long-term incentives.</li>
             </ul>
           </>
         )}
 
         {active === "liquidity" && (
           <>
-            <Heading>Router & path</Heading>
+            <Heading>Core roles</Heading>
             <ul style={{ marginLeft: 18 }}>
-              <li>
-                Shows DEX router, wrapped native token and swap path (typically
-                WNATIVE → BIGGI).
-              </li>
+              <li>Reserve holds protocol balances on-chain.</li>
+              <li>Liquidity Manager handles swaps and LP actions.</li>
+              <li>LP Vault holds LP tokens for long-term liquidity.</li>
+              <li>Buyback can acquire BIGGI from the market.</li>
+              <li>Drip Distributor releases tokens or rewards over time.</li>
             </ul>
 
-            <Heading>LP workFLOW</Heading>
+            <Heading>Router and LP controls</Heading>
             <ul style={{ marginLeft: 18 }}>
-              <li>
-                <code>bootstrapLiquidity</code> creates the pool and mints LP
-                tokens.
-              </li>
-              <li>
-                <code>addLiquidityFromBalance</code> swaps part to BIGGI, keeps
-                part in native and deposits both.
-              </li>
+              <li>Router and swap path are configurable on-chain.</li>
+              <li>Slippage and balance usage are controlled by parameters.</li>
+            </ul>
+
+            <Heading>Protections</Heading>
+            <ul style={{ marginLeft: 18 }}>
+              <li>Emergency actions exist for exceptional cases.</li>
+              <li>All changes are on-chain and visible in the Trust tab.</li>
             </ul>
           </>
         )}
 
-        {active === "videos" && (
-          <>
-            <Heading>Video manuals</Heading>
-            <div style={{ display: "grid", gap: 12 }}>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "auto 1fr",
-                  gap: 12,
-                  padding: 12,
-                  borderRadius: 12,
-                  border: `1px solid ${COLORS.y}33`,
-                  background: "#1a1d24",
-                }}
-              >
-                <VideoPill index={1} tone={COLORS.y} />
-                <div>
-                  <strong>Mint / Redeem:</strong> buying tickets, redeem FLOW
-                  and VRF fulfillment.
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "auto 1fr",
-                  gap: 12,
-                  padding: 12,
-                  borderRadius: 12,
-                  border: `1px solid ${COLORS.p}33`,
-                  background: "#1a1d24",
-                }}
-              >
-                <VideoPill index={2} tone={COLORS.p} />
-                <div>
-                  <strong>Blocks / Backgrounds:</strong> permanent block
-                  increases and one-off background bonuses.
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "auto 1fr",
-                  gap: 12,
-                  padding: 12,
-                  borderRadius: 12,
-                  border: `1px solid ${COLORS.v}33`,
-                  background: "#1a1d24",
-                }}
-              >
-                <VideoPill index={3} tone={COLORS.v} />
-                <div>
-                  <strong>VRF:</strong> provably fair randomness,
-                  request/fulfill and auditing on explorer.
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "auto 1fr",
-                  gap: 12,
-                  padding: 12,
-                  borderRadius: 12,
-                  border: `1px solid ${COLORS.c}33`,
-                  background: "#1a1d24",
-                }}
-              >
-                <VideoPill index={4} tone={COLORS.c} />
-                <div>
-                  <strong>Liquidity:</strong> router, pair,
-                  bootstrap/add-liquidity and LP token FLOW.
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "auto 1fr",
-                  gap: 12,
-                  padding: 12,
-                  borderRadius: 12,
-                  border: `1px solid ${COLORS.g}33`,
-                  background: "#1a1d24",
-                }}
-              >
-                <VideoPill index={5} tone={COLORS.g} />
-                <div>
-                  <strong>Users:</strong> wallet connection, NFT import, gallery
-                  and REWARDS claim.
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
+        </div>
     </Card>
   );
 
@@ -603,7 +594,7 @@ const ProjectInfoModal = ({
               }}
             >
               <img
-                src="/schema-biggi.png"
+                src="/diagrams/tokenomics-map.png"
                 alt="Project schema – end-to-end FLOW from mint to tokenomics"
                 style={{ width: "100%", height: "100%", objectFit: "contain" }}
               />
@@ -705,4 +696,3 @@ const ProjectInfoModal = ({
 };
 
 export default ProjectInfoModal;
-

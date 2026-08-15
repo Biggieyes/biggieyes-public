@@ -4,7 +4,7 @@ This project is designed for static hosting plus serverless functions.
 
 ## Prereqs
 - Node 18.18+ and npm.
-- A Polygon Amoy RPC endpoint (or mainnet if you deploy there).
+- A Polygon mainnet RPC endpoint (or mainnet if you deploy there).
 - Supabase project for chat (optional).
 - Pinata account for IPFS pinning (optional).
 
@@ -20,7 +20,7 @@ This project is designed for static hosting plus serverless functions.
 ## Environment variables
 
 Client (public, Vite)
-- VITE_AMOY_RPC_URL or VITE_JSON_RPC_URL
+- VITE_POLYGON_RPC_URL or VITE_JSON_RPC_URL
 - VITE_WC_PROJECT_ID
 - VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
 - VITE_CHAT_API_BASE (if using external API)

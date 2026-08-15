@@ -15,7 +15,7 @@ import { readJsonFromURI, resolveImageUrl } from "../../services/ipfs";
  */
 export function useNFTs({
   walletAddress,
-  ensureAmoy,
+  ensurePolygon,
   prettyError,
   fetchStats,
   fetchREWARDS,
@@ -99,14 +99,14 @@ export function useNFTs({
     setPerforming(true);
     setError(null);
     try {
-      await ensureAmoy();
+      await ensurePolygon();
       const contract = await getMainRW();
       const provider = getProviderForContract(contract);
       if (!provider) throw new Error("Provider not available");
       const net = await provider.getNetwork();
       const chainId =
         typeof net?.chainId === "bigint" ? Number(net.chainId) : net?.chainId;
-      if (chainId !== 80002) await ensureAmoy();
+      if (chainId !== 137) await ensurePolygon();
 
       if (await contract.paused()) return alert("Mint is paused.");
 
@@ -133,7 +133,7 @@ export function useNFTs({
     fetchWalletAssets,
     fetchStats,
     fetchREWARDS,
-    ensureAmoy,
+    ensurePolygon,
     prettyError,
   ]);
 
@@ -144,7 +144,7 @@ export function useNFTs({
     setPerforming(true);
     setError(null);
     try {
-      await ensureAmoy();
+      await ensurePolygon();
       const contract = await getMainRW();
       if (typeof contract.paused === "function" && (await contract.paused())) {
         return alert("Redeem is paused.");
@@ -219,7 +219,7 @@ export function useNFTs({
     fetchWalletAssets,
     fetchStats,
     fetchREWARDS,
-    ensureAmoy,
+    ensurePolygon,
     findTicketsViaLogs,
     prettyError,
   ]);
@@ -230,7 +230,7 @@ export function useNFTs({
     setPerforming(true);
     setError(null);
     try {
-      await ensureAmoy();
+      await ensurePolygon();
       const ids = myNFTs
         .filter((x) => !x.isTicket)
         .map((x) => BigInt(x.tokenId));
@@ -255,7 +255,7 @@ export function useNFTs({
     myNFTs,
     fetchREWARDS,
     fetchStats,
-    ensureAmoy,
+    ensurePolygon,
     prettyError,
   ]);
 

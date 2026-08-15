@@ -8,6 +8,19 @@ const ANIMATION_DURATION = 2.8;
 
 const BLOCK_MAX_SUPPLY = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10];
 const BASE_PRICES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const BG_GROWTH_PCT = [5, 2, 2, 3, 3, 4, 4, 5, 5, 10];
+const DEFAULT_BLOCK_NAMES = [
+  "ORANGE",
+  "BLACK",
+  "WHITE",
+  "BROWN",
+  "BLUE",
+  "GREEN",
+  "VIOLET",
+  "RED",
+  "PINK",
+  "RAINBOW",
+];
 
 const BLOCK_COLORS = {
   ORANGE: "#ff9000",
@@ -50,8 +63,8 @@ const getBlockColor = (name) => {
     padding: "6px 4px",
     textAlign: "center",
     whiteSpace: "nowrap",
-    overFLOW: "hidden",
-    textOverFLOW: "ellipsis",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
     transition: "all 0.3s ease",
     minWidth: "80px",
   };
@@ -62,8 +75,8 @@ const cellBase = {
   padding: "6px 4px",
   fontWeight: 700,
   whiteSpace: "nowrap",
-  overFLOW: "hidden",
-  textOverFLOW: "ellipsis",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
   textShadow: "none",
   borderBottom: "1px solid rgba(255,255,255,0.06)",
 };
@@ -93,7 +106,31 @@ const fmtPrice = (value) => {
   }).format(n);
 };
 
-const BlocksWidget = ({ blockNames, blockMintCounts, blockPrices, onBack }) => {
+const safeNumber = (value, fallback = 0) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+const derivePriceFromBgMints = (basePrice, bgMinted, growthPct) => {
+  const base = Number(basePrice);
+  const mints = Number(bgMinted);
+  const growth = Number(growthPct);
+  if (!Number.isFinite(base) || base <= 0) return null;
+  if (!Number.isFinite(mints) || mints <= 0) return base;
+  if (!Number.isFinite(growth) || growth <= 0) return base;
+  return base * Math.pow(1 + growth / 100, mints);
+};
+
+const BlocksWidget = ({
+  blockNames = [],
+  blockMintCounts = [],
+  blockPrices = [],
+  backgroundMintCounts = [],
+  lastRedeemedTokenId = "",
+  lastRedeemedBlock = "",
+  lastRedeemedBackground = "",
+  onBack,
+}) => {
   const [infoVisible, setInfoVisible] = React.useState(false);
   const [isPhone, setIsPhone] = React.useState(() =>
     typeof window !== "undefined"
@@ -125,21 +162,49 @@ const BlocksWidget = ({ blockNames, blockMintCounts, blockPrices, onBack }) => {
     "Linked BG",
     "Max Supply",
     "Base Price",
-    "Current Price",
+    "Live Price",
   ];
 
-  const handleRowHoverEnter = React.useCallback((e) => {
-    e.currentTarget.style.background = "rgba(158,229,255,0.14)";
+  const normalizedLastBlock = String(lastRedeemedBlock || "")
+    .trim()
+    .toUpperCase();
+  const normalizedLastBg = String(lastRedeemedBackground || "")
+    .trim()
+    .toUpperCase();
+  const normalizedLastToken = String(lastRedeemedTokenId || "").trim();
+
+  const headerLastRedeemedId = normalizedLastToken
+    ? `NFT #${normalizedLastToken} (${normalizedLastBlock || "-"}/${normalizedLastBg || "-"})`
+    : "";
+  const headerLastRedeemedLabel = headerLastRedeemedId
+    ? `Last redeem: ${headerLastRedeemedId}`
+    : "";
+
+  const getRowBaseBackground = React.useCallback((index, isLastRedeemed) => {
+    if (isLastRedeemed) {
+      return "linear-gradient(135deg, rgba(109,255,138,0.24), rgba(71,255,154,0.12))";
+    }
+    return index % 2 === 0 ? "rgba(255,232,0,0.05)" : "rgba(255,232,0,0.02)";
   }, []);
 
-  const handleRowHoverLeave = React.useCallback((e) => {
-    e.currentTarget.style.background = "";
-  }, []);
+  const displayBlockNames = React.useMemo(() => {
+    const names = Array.isArray(blockNames)
+      ? blockNames
+          .map((name) => String(name || "").trim().toUpperCase())
+          .filter(Boolean)
+      : [];
+    return names.length ? names : DEFAULT_BLOCK_NAMES;
+  }, [blockNames]);
 
   return (
     <div className="bw-container">
       <div className="bw-header">
         <span className="bw-header-text">EYES COLOR</span>
+        {headerLastRedeemedId ? (
+          <span className="bw-header-last-id" title={headerLastRedeemedLabel}>
+            {headerLastRedeemedId}
+          </span>
+        ) : null}
         <button
           className={`bw-info-button ${isPhone ? "bw-info-button--phone" : ""}`}
           onClick={() => setInfoVisible(!infoVisible)}
@@ -177,44 +242,66 @@ const BlocksWidget = ({ blockNames, blockMintCounts, blockPrices, onBack }) => {
             </tr>
           </thead>
           <tbody>
-            {blockNames.map((name, i) => (
-              <tr
-                key={name}
-                style={{
-                  transition: "all 0.2s ease",
-                  background:
-                    i % 2 === 0
-                      ? "rgba(255,232,0,0.05)"
-                      : "rgba(255,232,0,0.02)",
-                }}
-                onMouseEnter={handleRowHoverEnter}
-                onMouseLeave={(e) => handleRowHoverLeave(e, i)}
-              >
-                <td style={getBlockColor(name)} data-label={headerTitles[0]}>
-                  {name}
-                </td>
-                <td style={mintedStyle} data-label={headerTitles[1]}>
-                  {blockMintCounts[i]}
-                </td>
-                <td style={cellStyle} data-label={headerTitles[2]}>
-                  {LINKED_BG[name.toUpperCase()] || "-"}
-                </td>
-                <td style={cellStyle} data-label={headerTitles[3]}>
-                  {BLOCK_MAX_SUPPLY[i]}
-                </td>
-                <td style={cellStyle} data-label={headerTitles[4]}>
-                  {BASE_PRICES[i]}
-                </td>
-                <td style={priceStyle} data-label={headerTitles[5]}>
-                  {fmtPrice(
-                    Number.isFinite(Number(blockPrices[i]))
-                      ? Number(blockPrices[i])
-                      : BASE_PRICES[i],
-                  )}{" "}
-                  POL
-                </td>
-              </tr>
-            ))}
+            {displayBlockNames.map((name, i) => {
+              const isLastRedeemed =
+                String(name || "").trim().toUpperCase() === normalizedLastBlock;
+              const minted = safeNumber(blockMintCounts?.[i], 0);
+              const linkedBg = LINKED_BG[String(name || "").toUpperCase()] || "-";
+              return (
+                <tr
+                  key={name}
+                  style={{
+                    transition: "all 0.2s ease",
+                    background: getRowBaseBackground(i, isLastRedeemed),
+                    boxShadow: isLastRedeemed
+                      ? "inset 0 0 0 1px rgba(109,255,138,0.85), 0 0 16px rgba(71,255,154,0.32)"
+                      : "none",
+                  }}
+                >
+                  <td style={getBlockColor(name)} data-label={headerTitles[0]}>
+                    {name}
+                  </td>
+                  <td style={mintedStyle} data-label={headerTitles[1]}>
+                    {minted}
+                  </td>
+                  <td style={cellStyle} data-label={headerTitles[2]}>
+                    {linkedBg}
+                  </td>
+                  <td style={cellStyle} data-label={headerTitles[3]}>
+                    {BLOCK_MAX_SUPPLY[i]}
+                  </td>
+                  <td style={cellStyle} data-label={headerTitles[4]}>
+                    {BASE_PRICES[i]}
+                  </td>
+                  <td style={priceStyle} data-label={headerTitles[5]}>
+                    {(() => {
+                      const base = safeNumber(BASE_PRICES[i], i + 1);
+                      const live = safeNumber(blockPrices?.[i], 0);
+                      const bgMinted = safeNumber(backgroundMintCounts?.[i], 0);
+                      const growth = safeNumber(BG_GROWTH_PCT[i], 0);
+                      const derived = derivePriceFromBgMints(
+                        base,
+                        bgMinted,
+                        growth,
+                      );
+
+                      let resolved =
+                        Number.isFinite(live) && live > 0 ? live : base;
+                      // If upstream RPC data is stale at base while bg mints exist, use derived value.
+                      if (
+                        bgMinted > 0 &&
+                        Number.isFinite(derived) &&
+                        resolved <= base + 1e-9
+                      ) {
+                        resolved = derived;
+                      }
+                      return fmtPrice(resolved);
+                    })()}{" "}
+                    POL
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -250,45 +337,47 @@ const BlocksWidget = ({ blockNames, blockMintCounts, blockPrices, onBack }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
+                  <tr className="info-row--core">
                     <td className="bw-k">Eyes Color</td>
                     <td className="bw-v">
                       Block name (NFT eye color). Example:{" "}
-                      <span className="bw-chip">BLUE</span>,{" "}
-                      <span className="bw-chip">GREEN</span>.
+                      <span className="bw-chip info-chip info-chip--block">BLUE</span>,{" "}
+                      <span className="bw-chip info-chip info-chip--mint">GREEN</span>.
                     </td>
                   </tr>
-                  <tr>
+                  <tr className="info-row--mint">
                     <td className="bw-k">Minted Eyes</td>
                     <td className="bw-v">
                       Number of NFTs already minted in this block.
                     </td>
                   </tr>
-                  <tr>
+                  <tr className="info-row--link">
                     <td className="bw-k">Linked BG</td>
                     <td className="bw-v">
                       Abbreviation of the background linked to the block (e.g.,{" "}
-                      <span className="bw-chip bw-mono">BL</span>,{" "}
-                      <span className="bw-chip bw-mono">G</span>).
+                      <span className="bw-chip bw-mono info-chip info-chip--link">BL</span>,{" "}
+                      <span className="bw-chip bw-mono info-chip info-chip--link">G</span>).
                     </td>
                   </tr>
-                  <tr>
+                  <tr className="info-row--supply">
                     <td className="bw-k">Max Supply</td>
                     <td className="bw-v">
                       Maximum number of NFTs in this block.
                     </td>
                   </tr>
-                  <tr>
+                  <tr className="info-row--base">
                     <td className="bw-k">Base Price</td>
                     <td className="bw-v">
                       Starting price of the block before any increases.
                     </td>
                   </tr>
-                  <tr>
-                    <td className="bw-k">Current Price</td>
+                  <tr className="info-row--live">
+                    <td className="bw-k">Live Price</td>
                     <td className="bw-v">
-                      Live price after increases driven solely by background
-                      mints (<span className="bw-chip">BG Inc</span>).
+                      Live block price from the mainnet reader. If the RPC returns
+                      a stale base value while background mints are already present,
+                      the UI derives the same displayed price from background mint
+                      count and block growth.
                     </td>
                   </tr>
                 </tbody>

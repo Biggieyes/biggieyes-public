@@ -76,3 +76,11 @@
     margin-left: 0;
   }
 }
+
+.destinations-table__list {
+  max-height: min(48vh, 460px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}

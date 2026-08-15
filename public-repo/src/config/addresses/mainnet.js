@@ -1,5 +1,5 @@
 // Canonical network addresses (Polygon Mainnet)
-// Currently mirrors AMOY mappings; replace with mainnet deployment addresses when ready.
+// Source: shared/utils/addresses.js with the active Polygon mainnet deployment.
 
 import { ADDR } from "../../shared/utils/addresses.js";
 

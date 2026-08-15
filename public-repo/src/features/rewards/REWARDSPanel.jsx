@@ -8,26 +8,60 @@ import useNFTREWARDS from "../../hooks/useNFTRewards";
 import useTokenRewardsReader from "../../hooks/useTokenRewardsReader";
 import useNftRewardsReader from "../../hooks/useNftRewardsReader";
 import useREWARDSReader from "../../hooks/useRewardsReader";
-import { ADDR } from "../../utils/addresses";
+import { ADDR } from "@/shared/utils/addresses.js";
 import { getROProvider, getSignerProvider, ABI_REWARDS_READER } from "@/shared/utils/contract";
 import { explorerBaseFor } from "@/config/chains.js";
+import {
+  formatNativeDisplay,
+  formatTokenDisplay,
+  isRealAddress,
+} from "@/features/tokenomics/utils/amountFormatting.js";
 import PanelInfoModal from "@/components/common/PanelInfoModal";
+import PanelInfoButton from "@/components/common/PanelInfoButton";
 import COLLECTIONREWARDSSection from "./Rewards/CollectionRewards/COLLECTIONREWARDSSection";
 import NftREWARDSTab from "./Rewards/NFTRewards/tabs/NftREWARDSTab";
 import useWeeklyCountdown from "../../hooks/useWeeklyCountdown";
 import FullscreenPanel from "../../components/common/FullscreenPanel";
 import REWARDSBlockSummary from "./REWARDSBlockSummary.jsx";
+import { buildRewardClaimPayload } from "@/shared/utils/assetIdentity.js";
 import "./REWARDSPanel.css";
 import "../../styles/biggi-token.skin.css";
 
 const TAB_ORDER = [
-  { id: "token", label: "Token REWARDS" },
+  { id: "token", label: "TOKEN REWARDS" },
   { id: "COLLECTION", label: "COLLECTION REWARDS" },
   { id: "nft", label: "NFT REWARDS" },
 ];
 
+const SECTION_META = {
+  token: {
+    title: "TOKEN REWARDS",
+    subtitle:
+      "Track weekly token payouts, preview your live claim, and verify the contract rails behind every reward route.",
+    accent: "#ffe800",
+    accentSoft: "rgba(255, 232, 0, 0.22)",
+    accentGlow: "rgba(255, 232, 0, 0.38)",
+  },
+  COLLECTION: {
+    title: "COLLECTION REWARDS",
+    subtitle:
+      "Check block, orange, and rainbow collection rewards in one view and claim each unlocked collection drop from the same panel.",
+    accent: "#5ddcff",
+    accentSoft: "rgba(93, 220, 255, 0.22)",
+    accentGlow: "rgba(93, 220, 255, 0.38)",
+  },
+  nft: {
+    title: "NFT REWARDS",
+    subtitle:
+      "Review character, leaderboard, and mystery NFT reward status, metadata rails, and explorer links for every reward contract output.",
+    accent: "#b584ff",
+    accentSoft: "rgba(181, 132, 255, 0.22)",
+    accentGlow: "rgba(181, 132, 255, 0.38)",
+  },
+};
+
 const NFT_RANGE = Array.from({ length: 10 }, (_, idx) => idx + 1);
-const DEFAULT_EXPLORER_BASE = "https://amoy.polygonscan.com";
+const DEFAULT_EXPLORER_BASE = "https://polygonscan.com";
 const explorerBaseForChain = (chainId) =>
   explorerBaseFor(chainId) || DEFAULT_EXPLORER_BASE;
 
@@ -63,15 +97,31 @@ const formatDecimal = (value, digits = 2) => {
   }
 };
 
+const formatRewardToken = (
+  value,
+  digits = 2,
+  symbol = "BIGGI",
+  decimals = 18,
+) => {
+  const formatted = formatTokenDisplay(value, decimals, digits, symbol);
+  return formatted === "--" ? "\u2014" : formatted;
+};
+
+const formatRewardNative = (value, digits = 2) => {
+  const formatted = formatNativeDisplay(value, digits);
+  return formatted === "--" ? "\u2014" : formatted;
+};
+
 const formatInteger = (value) => {
   if (value === null || value === undefined || value === "") return "\u2014";
+  if (typeof value === "bigint") return value.toLocaleString();
   const candidate = Number(value);
   if (!Number.isFinite(candidate)) return String(value);
   return Math.round(candidate).toLocaleString();
 };
 
 const shortAddress = (value) => {
-  if (!value) return "\u2014";
+  if (!isRealAddress(value)) return "\u2014";
   const normalized = String(value);
   return `${normalized.slice(0, 6)}...${normalized.slice(-4)}`;
 };
@@ -102,6 +152,8 @@ function REWARDSPanel({
   claimable = null,
   rewardPool = null,
   onClaim,
+  autoOpenInfo = false,
+  onActiveSectionChange,
 }) {
   const [activeTab, setActiveTab] = React.useState("token");
   const [claimPreview, setClaimPreview] = React.useState(null);
@@ -110,8 +162,22 @@ function REWARDSPanel({
   const [claiming, setClaiming] = React.useState(false);
   const [claimMessage, setClaimMessage] = React.useState("");
   const [infoOpen, setInfoOpen] = React.useState(false);
+  const [diagramInfoOpen, setDiagramInfoOpen] = React.useState(false);
   const [blockSummaryOpen, setBlockSummaryOpen] = React.useState(false);
   const [explorerBase, setExplorerBase] = React.useState(DEFAULT_EXPLORER_BASE);
+  const autoInfoOpened = React.useRef(false);
+  const activeSectionMeta = SECTION_META[activeTab] || SECTION_META.token;
+
+  React.useEffect(() => {
+    onActiveSectionChange?.(activeSectionMeta);
+  }, [activeSectionMeta, onActiveSectionChange]);
+
+  React.useEffect(() => {
+    if (autoOpenInfo && !autoInfoOpened.current) {
+      setInfoOpen(true);
+      autoInfoOpened.current = true;
+    }
+  }, [autoOpenInfo]);
   const [COLLECTIONClaiming, setCOLLECTIONClaiming] = React.useState({
     block: null,
     orange: null,
@@ -150,6 +216,27 @@ function REWARDSPanel({
           "Pulls the latest on-chain values and updates the panels.",
           "Use if you just minted or redeemed.",
         ],
+      },
+    ],
+    [],
+  );
+
+  const diagramInfoItems = React.useMemo(
+    () => [
+      {
+        label: "Read layer",
+        description:
+          "REWARDS readers provide read-only snapshots and feed UI stats without sending transactions.",
+      },
+      {
+        label: "Write layer",
+        description:
+          "Claim transactions are signed by the wallet and executed against TOKEN, COLLECTION, and NFT reward contracts.",
+      },
+      {
+        label: "Value flow",
+        description:
+          "BIGGI token and native POL rewards flow from reward pools to the wallet; NFT rewards flow as minted/distributed NFT outputs.",
       },
     ],
     [],
@@ -209,6 +296,10 @@ function REWARDSPanel({
 
   const tokenRewardsReaderAddr = ADDR.TOKEN_REWARDS_READER;
   const nftRewardsReaderAddr = ADDR.NFT_REWARDS_READER;
+  const collectionRewardsReaderAddr =
+    readerAddresses?.reader ||
+    ADDR.COLLECTION_REWARDS_READER ||
+    ADDR.BIGGI_REWARDS_READER;
 
   const { data: tokenStatsRaw, refresh: refreshTokenStats } =
     useTokenREWARDS(readProvider, tokenRewardsAddr);
@@ -222,6 +313,23 @@ function REWARDSPanel({
     useNftRewardsReader(readProvider, nftRewardsReaderAddr);
 
   const tokenStats = tokenStatsReader || tokenStatsRaw;
+  const rewardClaimPayload = React.useMemo(
+    () =>
+      buildRewardClaimPayload(items, {
+        maxSupply: 550,
+        primaryCollectionAddress:
+          tokenStats?.mainNFT || tokenStats?.main || ADDR.COLLECTION_VRF || ADDR.MAIN,
+        allowedCollectionAddresses: [
+          tokenStats?.mainNFT,
+          tokenStats?.main2NFT,
+          tokenStats?.main,
+          tokenStats?.main2,
+          ADDR.COLLECTION_VRF || ADDR.MAIN,
+          ADDR.MAIN2 || ADDR.COLLECTION_PUBLIC,
+        ],
+      }),
+    [items, tokenStats],
+  );
 
   React.useEffect(() => {
     let cancelled = false;
@@ -280,17 +388,8 @@ function REWARDSPanel({
   }, [readProvider, collectionRewardsAddr]);
 
   const eligibleTokenIds = React.useMemo(() => {
-    return (items || [])
-      .filter((token) => token && token.tokenId && !token.isTicket)
-      .map((token) => {
-        try {
-          return BigInt(String(token.tokenId));
-        } catch {
-          return null;
-        }
-      })
-      .filter(Boolean);
-  }, [items]);
+    return rewardClaimPayload.tokenIds;
+  }, [rewardClaimPayload]);
 
   const loadClaimPreview = React.useCallback(
     async (signal = {}) => {
@@ -308,8 +407,15 @@ function REWARDSPanel({
       }
       setPreviewLoading(true);
       try {
-        const [units, amount] =
-          await tokenService.claimablePreview(eligibleTokenIds);
+        const useCollectionAware =
+          rewardClaimPayload.shouldUseCollectionAware &&
+          typeof tokenService?.claimablePreviewFor === "function";
+        const [units, amount] = useCollectionAware
+          ? await tokenService.claimablePreviewFor(
+              rewardClaimPayload.collections,
+              eligibleTokenIds,
+            )
+          : await tokenService.claimablePreview(eligibleTokenIds);
         if (signal.aborted) return;
         const decimals =
           Number(
@@ -326,7 +432,7 @@ function REWARDSPanel({
         if (!signal.aborted) setPreviewLoading(false);
       }
     },
-    [eligibleTokenIds, tokenService, tokenStats],
+    [eligibleTokenIds, rewardClaimPayload, tokenService, tokenStats],
   );
 
   React.useEffect(() => {
@@ -399,6 +505,9 @@ function REWARDSPanel({
     tokenStats?.tokenMeta?.symbol ??
     tokenStats?.tokenSymbol ??
     "BIGGI";
+  const tokenDecimals =
+    Number(tokenStats?.tokenMeta?.decimals_ ?? tokenStats?.tokenDecimals ?? 18) ||
+    18;
 
   const handleClaimBlockReward = React.useCallback(
     async (blockIdx) => {
@@ -484,15 +593,14 @@ function REWARDSPanel({
     const previewUnits = claimPreview?.units;
 
     const formatTokenValue = (raw, digits = 2) => {
-      if (raw === null || raw === undefined || raw === "") return "\u2014";
-      return formatDecimal(raw, digits);
+      return formatRewardToken(raw, digits, symbol, tokenDecimals);
     };
 
     return [
       {
         label: "Token pool",
         value: tokenStats
-          ? `${formatTokenValue(tokenStats.REWARDSCap, 0)} ${symbol}`
+          ? formatTokenValue(tokenStats.REWARDSCap, 0)
           : "--",
         hint: "Treasury cap",
         tone: "token",
@@ -500,7 +608,7 @@ function REWARDSPanel({
       {
         label: "Unit reward",
         value: tokenStats
-          ? `${formatTokenValue(tokenStats.unitReward, 4)} ${symbol}`
+          ? formatTokenValue(tokenStats.unitReward, 4)
           : "\u2014",
         hint: "Per block weight",
         tone: "token",
@@ -508,7 +616,7 @@ function REWARDSPanel({
       {
         label: "Distributed total",
         value: tokenStats
-          ? `${formatTokenValue(tokenStats.totalDistributed, 2)} ${symbol}`
+          ? formatTokenValue(tokenStats.totalDistributed, 2)
           : "\u2014",
         hint: "Since launch",
         tone: "token",
@@ -516,7 +624,7 @@ function REWARDSPanel({
       {
         label: "This week",
         value: tokenStats
-          ? `${formatTokenValue(tokenStats.distributedThisWeek, 2)} ${symbol}`
+          ? formatTokenValue(tokenStats.distributedThisWeek, 2)
           : "\u2014",
         hint: `Week ${tokenStats?.currentWeek ?? "\u2014"}`,
         tone: "native",
@@ -524,7 +632,7 @@ function REWARDSPanel({
       {
         label: "My preview",
         value: previewAmount
-          ? `${formatTokenValue(previewAmount, 4)} ${symbol}`
+          ? formatTokenValue(previewAmount, 4)
           : "\u2014",
         hint: previewUnits
           ? `${formatInteger(previewUnits)} units tracked`
@@ -532,7 +640,7 @@ function REWARDSPanel({
         tone: "token",
       },
     ];
-  }, [tokenSymbol, tokenStats, claimPreview]);
+  }, [tokenDecimals, tokenSymbol, tokenStats, claimPreview]);
 
   const tokenStatusGrid = React.useMemo(() => {
     const weightsRaw = tokenStats?.blockWeights;
@@ -571,11 +679,16 @@ function REWARDSPanel({
 
   const claimableLabel = walletAddress
     ? claimable != null
-      ? `${formatDecimal(claimable, 4)} ${tokenSymbol}`
+      ? formatRewardToken(claimable, 4, tokenSymbol, tokenDecimals)
       : "Syncing..."
     : "Connect wallet";
   const claimPreviewLabel = claimPreview?.amount
-    ? `${formatDecimal(claimPreview.amount, 4)} ${tokenSymbol} / ${claimPreview.units} units`
+    ? `${formatRewardToken(
+        claimPreview.amount,
+        4,
+        tokenSymbol,
+        tokenDecimals,
+      )} / ${claimPreview.units} units`
     : "No tokens tracked yet.";
 
   const COLLECTIONStatus = React.useMemo(() => {
@@ -621,12 +734,16 @@ function REWARDSPanel({
   );
 
   const blockPaid = COLLECTIONStats?.blockPaid ?? [];
+  const blockClaimability = COLLECTIONStats?.blockClaimability ?? [];
   const orangeMainIdPaid = COLLECTIONStats?.orangeMainIdPaid ?? [];
+  const orangeClaimability = COLLECTIONStats?.orangeClaimability ?? [];
   const rainbowClaimed = Boolean(
     COLLECTIONStats?.rainbowClaimed ??
       COLLECTIONStats?.rainbowRewardClaimedGlobal,
   );
-  const claimedOrange = Boolean(COLLECTIONStats?.claimedOrange);
+  const rainbowClaimability =
+    COLLECTIONStats?.rainbowClaimability ??
+    { ok: null, reason: null, resolved: false };
   const metadataRows = [
     { label: "Distributor", value: COLLECTIONStats?.distributor },
     { label: "Eyes main", value: COLLECTIONStats?.main },
@@ -635,10 +752,10 @@ function REWARDSPanel({
 
   const rewardsSource = React.useMemo(() => {
     const hasRewardsReader = Boolean(
-      readerAddresses?.reader && ABI_REWARDS_READER?.length,
+      isRealAddress(readerAddresses?.reader) && ABI_REWARDS_READER?.length,
     );
-    const hasTokenReader = Boolean(tokenRewardsReaderAddr);
-    const hasNftReader = Boolean(nftRewardsReaderAddr);
+    const hasTokenReader = isRealAddress(tokenRewardsReaderAddr);
+    const hasNftReader = isRealAddress(nftRewardsReaderAddr);
     const hasReader = hasRewardsReader || hasTokenReader || hasNftReader;
     if (readerLoading) return { label: "Source: loading", tone: "dim" };
     if (readerError) return { label: "Source: fallback", tone: "warn" };
@@ -652,6 +769,44 @@ function REWARDSPanel({
     tokenRewardsReaderAddr,
     nftRewardsReaderAddr,
   ]);
+
+  const rewardsMainnetRows = React.useMemo(
+    () => [
+      {
+        label: "Network",
+        value: `Polygon mainnet / chainId ${ADDR.CHAIN_ID || 137}`,
+        tone: "ok",
+      },
+      {
+        label: "Data source",
+        value: readerLoading
+          ? "Syncing readers"
+          : readerError
+            ? "Fallback reads"
+            : rewardsSource.label.replace("Source: ", ""),
+        tone: readerError ? "warn" : readerLoading ? "dim" : "ok",
+      },
+      { label: "MCD reader", addr: collectionRewardsReaderAddr },
+      { label: "Token reader", addr: tokenRewardsReaderAddr },
+      { label: "NFT reader", addr: nftRewardsReaderAddr },
+      { label: "Token rewards", addr: tokenRewardsAddr },
+      { label: "Collection rewards", addr: collectionRewardsAddr },
+      { label: "NFT rewards", addr: nftRewardsAddr },
+      { label: "Core reader", addr: ADDR.MAIN_READER || ADDR.READER },
+      { label: "Multicall", addr: ADDR.MULTICALL2 || ADDR.MULTICALL },
+    ],
+    [
+      collectionRewardsAddr,
+      collectionRewardsReaderAddr,
+      nftRewardsAddr,
+      nftRewardsReaderAddr,
+      readerError,
+      readerLoading,
+      rewardsSource.label,
+      tokenRewardsAddr,
+      tokenRewardsReaderAddr,
+    ],
+  );
 
   const padTime = (value) => String(value).padStart(2, "0");
 
@@ -699,7 +854,10 @@ function REWARDSPanel({
 
   const tokenTab = (
     <section className="rewards-panel__section">
-      <SectionHeader label="Token REWARDS" accent="#ffe800" />
+      <SectionHeader
+        label="TOKEN REWARDS"
+        accent={SECTION_META.token.accent}
+      />
       {heroSection}
       <SectionHeader label="Claims & rails" accent="#9b7bff" />
       <div className="rewards-panel__grid">
@@ -731,7 +889,12 @@ function REWARDSPanel({
                 <span className="label">Remaining pool</span>
                 <span className="value">
                   {tokenStats
-                    ? `${formatDecimal(tokenStats.remainingCap, 2)} ${tokenSymbol}`
+                    ? formatRewardToken(
+                        tokenStats.remainingCap,
+                        2,
+                        tokenSymbol,
+                        tokenDecimals,
+                      )
                     : "--"}
                 </span>
               </div>
@@ -817,29 +980,39 @@ function REWARDSPanel({
           <div className="rewards-panel__address-grid">
             {[
               { label: "Token REWARDS", addr: tokenRewardsAddr },
+              { label: "Token reader", addr: tokenRewardsReaderAddr },
               { label: "COLLECTION REWARDS", addr: collectionRewardsAddr },
+              { label: "Collection reader", addr: collectionRewardsReaderAddr },
               { label: "NFT REWARDS", addr: nftRewardsAddr },
-            ].map((row) => (
-              <div className="rewards-panel__address-row" key={row.label}>
-                <div>
-                  <div className="label">{row.label}</div>
-                  <div className="value">{shortAddress(row.addr)}</div>
+              { label: "NFT reader", addr: nftRewardsReaderAddr },
+              { label: "Core reader", addr: ADDR.MAIN_READER || ADDR.READER },
+              { label: "Multicall", addr: ADDR.MULTICALL2 || ADDR.MULTICALL },
+            ].map((row) => {
+              const liveAddress = isRealAddress(row.addr);
+              return (
+                <div className="rewards-panel__address-row" key={row.label}>
+                  <div>
+                    <div className="label">{row.label}</div>
+                    <div className="value">{shortAddress(row.addr)}</div>
+                  </div>
+                  <button
+                    type="button"
+                    className="biggi-btn biggi-btn--ghost rewards-panel__address-btn"
+                    disabled={!liveAddress}
+                    onClick={() => {
+                      if (!liveAddress || typeof window === "undefined") return;
+                      window.open(
+                        `${explorerBase}/address/${row.addr}`,
+                        "_blank",
+                        "noopener,noreferrer",
+                      );
+                    }}
+                  >
+                    Explorer
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className="biggi-btn biggi-btn--ghost rewards-panel__address-btn"
-                  onClick={() => {
-                    const url = row.addr
-                      ? `${explorerBase}/address/${row.addr}`
-                      : null;
-                    if (!url || typeof window === "undefined") return;
-                    window.open(url, "_blank", "noopener,noreferrer");
-                  }}
-                >
-                  Explorer
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </article>
       </div>
@@ -848,17 +1021,23 @@ function REWARDSPanel({
 
   const COLLECTIONTab = (
     <section className="rewards-panel__section">
-      <SectionHeader label="COLLECTION REWARDS" accent="#ffe800" />
+      <SectionHeader
+        label="COLLECTION REWARDS"
+        accent={SECTION_META.COLLECTION.accent}
+      />
       <COLLECTIONREWARDSSection
         stats={COLLECTIONStats}
         statusRows={COLLECTIONStatus}
         formatDecimal={formatDecimal}
+        formatNativeAmount={formatRewardNative}
         rewardPool={rewardPool}
         collectionBalance={collectionBalance}
         blockPaid={blockPaid}
+        blockClaimability={blockClaimability}
         orangeMainIdPaid={orangeMainIdPaid}
+        orangeClaimability={orangeClaimability}
         rainbowClaimed={rainbowClaimed}
-        claimedOrange={claimedOrange}
+        rainbowClaimability={rainbowClaimability}
         canClaimCOLLECTION={canClaimCOLLECTION}
         claimState={COLLECTIONClaiming}
         onClaimBlockReward={handleClaimBlockReward}
@@ -873,7 +1052,7 @@ function REWARDSPanel({
 
   const nftTab = (
     <section className="rewards-panel__section rewards-grid__section--nft">
-      <SectionHeader label="NFT REWARDS" accent="#27d9d2" />
+      <SectionHeader label="NFT REWARDS" accent={SECTION_META.nft.accent} />
       <NftREWARDSTab
         data={nftData}
         range={NFT_RANGE}
@@ -899,6 +1078,11 @@ function REWARDSPanel({
   return (
     <section
       className={`rewards-grid biggi-skin${compact ? " is-compact" : ""}`}
+      style={{
+        "--rewards-active-accent": activeSectionMeta.accent,
+        "--rewards-active-accent-soft": activeSectionMeta.accentSoft,
+        "--rewards-active-accent-glow": activeSectionMeta.accentGlow,
+      }}
     >
       <FullscreenPanel
         open={blockSummaryOpen}
@@ -922,10 +1106,9 @@ function REWARDSPanel({
       <div className="rewards-grid__surface biggi-token-surface">
         <header className="rewards-grid__header biggi-header panel-header panel-header--rewards">
           <div className="rewards-grid__headline">
-            <h2 className="rewards-grid__title">Biggi REWARDS</h2>
+            <h2 className="rewards-grid__title">{activeSectionMeta.title}</h2>
             <p className="rewards-grid__subtitle">
-              Token, COLLECTION and NFT claims are grouped by contract. The
-              token view highlights pool stats and your personal claim preview.
+              {activeSectionMeta.subtitle}
             </p>
           </div>
           <div className="rewards-panel__header-meta">
@@ -934,26 +1117,13 @@ function REWARDSPanel({
             >
               {rewardsSource.label}
             </span>
-            {readerAddresses?.reader ? (
-              <span className="rewards-grid__pill rewards-panel__source-pill rewards-panel__source-pill--mono">
-                Reader: {shortAddress(readerAddresses.reader)}
-              </span>
-            ) : null}
-            {tokenRewardsReaderAddr ? (
-              <span className="rewards-grid__pill rewards-panel__source-pill rewards-panel__source-pill--mono">
-                TokenReader: {shortAddress(tokenRewardsReaderAddr)}
-              </span>
-            ) : null}
-            {nftRewardsReaderAddr ? (
-              <span className="rewards-grid__pill rewards-panel__source-pill rewards-panel__source-pill--mono">
-                NftReader: {shortAddress(nftRewardsReaderAddr)}
-              </span>
-            ) : null}
-            {tokenRewardsAddr ? (
-              <span className="rewards-grid__pill rewards-panel__source-pill rewards-panel__source-pill--mono">
-                Token: {shortAddress(tokenRewardsAddr)}
-              </span>
-            ) : null}
+            <span className="rewards-grid__pill rewards-panel__source-pill">
+              {weeklyLoading
+                ? "Weekly claim window: syncing"
+                : weeklyDisplayed.status === "claimable"
+                  ? "Weekly claim window: OPEN"
+                  : "Weekly claim window: pending"}
+            </span>
           </div>
         </header>
         <PanelInfoModal
@@ -962,6 +1132,46 @@ function REWARDSPanel({
           title="Rewards Panel"
           items={infoItems}
         />
+        <PanelInfoModal
+          open={diagramInfoOpen}
+          onClose={() => setDiagramInfoOpen(false)}
+          title="Rewards diagram info"
+          items={diagramInfoItems}
+        />
+        <section
+          className="rewards-panel__mainnet-rail"
+          aria-label="Rewards mainnet data"
+        >
+          {rewardsMainnetRows.map((row) => {
+            const liveAddress = isRealAddress(row.addr);
+            const href = liveAddress ? `${explorerBase}/address/${row.addr}` : null;
+            return (
+              <div
+                className={`rewards-panel__mainnet-item rewards-panel__mainnet-item--${row.tone || (liveAddress ? "ok" : "warn")}`}
+                key={row.label}
+              >
+                <span className="rewards-panel__mainnet-label">{row.label}</span>
+                <span className="rewards-panel__mainnet-value">
+                  <span title={liveAddress ? row.addr : undefined}>
+                    {liveAddress
+                      ? shortAddress(row.addr)
+                      : row.value || (row.addr ? "Not configured" : "\u2014")}
+                  </span>
+                  {href ? (
+                    <a
+                      className="rewards-panel__mainnet-link"
+                      href={href}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Explorer
+                    </a>
+                  ) : null}
+                </span>
+              </div>
+            );
+          })}
+        </section>
         <div className="view-tabs rewards-panel__tabs" role="tablist">
           {TAB_ORDER.map((tab) => (
             <button
@@ -981,16 +1191,28 @@ function REWARDSPanel({
           >
             {refreshing ? "Refreshing..." : "Refresh stats"}
           </button>
-          <button
-            type="button"
-            className="panel-info-btn biggi-btn biggi-btn--ghost"
+          <PanelInfoButton
             onClick={() => setInfoOpen(true)}
-            aria-label="REWARDS buttons info"
-          >
-            <span>i</span>
-          </button>
+            ariaLabel="REWARDS buttons info"
+          />
         </div>
         {renderTab()}
+        <SectionHeader label="Rewards Diagram" accent="#27d9d2" />
+        <section className="rewards-grid__diagram-wrap">
+          <PanelInfoButton
+            className="rewards-grid__diagram-info-btn"
+            onClick={() => setDiagramInfoOpen(true)}
+            ariaLabel="Open rewards diagram info"
+            title="Rewards diagram info"
+          />
+          <img
+            className="rewards-grid__diagram-image"
+            src="/images/schemas/rewards-flow-diagram.png?v=20260224c"
+            alt="Rewards diagram showing reward contracts, readers, and native or token flows to wallet claims."
+            loading="lazy"
+            decoding="async"
+          />
+        </section>
       </div>
     </section>
   );

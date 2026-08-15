@@ -1,10 +1,10 @@
 import * as React from "react";
-import { formatEther } from "ethers";
 
 import Card from "../components/Card";
 import Line from "../components/Line";
 import AddressLine from "../components/AddressLine";
 import { explorerLink } from "../utils/format";
+import { formatNativeDisplay } from "../utils/amountFormatting.js";
 
 function formatBps(bps) {
   if (bps == null) return "--";
@@ -23,16 +23,10 @@ function formatSeconds(sec) {
 }
 
 function formatNative(value) {
-  if (value == null) return "--";
-  try {
-    const formatted = formatEther(value);
-    return `${Number(formatted).toFixed(4)} POL`;
-  } catch {
-    return "--";
-  }
+  return formatNativeDisplay(value, 4);
 }
 
-export default function PolicyTab({ snapshot, loading, error }) {
+function PolicyTab({ snapshot, loading, error }) {
   const p = snapshot?.policy;
 
   const dailyCap = p?.maxDailyBuybackNative;
@@ -73,3 +67,5 @@ export default function PolicyTab({ snapshot, loading, error }) {
     </div>
   );
 }
+
+export default React.memo(PolicyTab);

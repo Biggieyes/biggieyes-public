@@ -21,8 +21,8 @@ The app surfaces live data for:
 - On-chain snapshots via reader contracts.
 
 ## Network
-- Default: Polygon Amoy testnet (chainId 80002).
-- Mainnet support can be enabled by updating address configs.
+- Active network: Polygon mainnet (chainId 137).
+- Mainnet addresses and RPC configuration are wired through the shared registry.
 
 ## Trust signals
 - Open source client and serverless code.

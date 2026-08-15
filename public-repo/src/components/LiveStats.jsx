@@ -12,24 +12,51 @@ import {
   getTokenREWARDSRO,
   getDistributorRO,
   getROProvider,
+  getReaderRO,
+  getReadOnlyMain,
+  resetROProvider,
   getPairRO,
   getReadOnlyLiquidityContract,
   getTokenRO,
   getInjectedProvider,
   ADDR,
 } from "@/shared/utils/contract";
+import { toMainNftIndexFromTokenId } from "@/shared/utils/biggiIdIndex";
+import {
+  getPreferredRpc,
+  getRpcUrls,
+  markRpcRateLimited,
+  setPreferredRpc,
+} from "@/shared/utils/rpcConfig";
+import { isRateLimitedRpcError } from "@/shared/utils/rpcErrors";
 import { fetchDistributorSnapshot } from "@/shared/services/tokenomics/distributor.reader";
+import { httpFromIpfs, readJsonFromURI, resolveImageUrl } from "@/shared/services/ipfs";
+import { buildBlockImagePath } from "@/shared/utils/images";
 import { DEFAULT_BLOCKS, BASE_PRICES } from "@/shared/blocks";
+import { getCachedPriceAttrs } from "@/shared/utils/metadata";
 import ModalPortal from "./common/ModalPortal";
 import WeeklyCountdown from "./WeeklyCountdown";
 import useWeeklyCountdown from "../hooks/useWeeklyCountdown";
 import "./LiveStatsPools.css";
+import "./InfoTables.css";
 
-const OKLINK_BASE = "https://www.oklink.com/amoy/address/";
+const OKLINK_BASE = "https://www.oklink.com/polygon/address/";
 
 const BlocksWidget = React.lazy(() => import("./BlocksWidget"));
 const BackgroundsWidget = React.lazy(() => import("./BackgroundsWidget"));
-const LiveChatPanel = React.lazy(() => import("./LiveChatPanel"));
+const LiveChatLoadError = () => (
+  <section className="live-chat-panel">
+    <div className="live-chat-panel__error">
+      Live Chat module failed to load. Refresh the page or restart `dev:netlify`.
+    </div>
+  </section>
+);
+const LiveChatPanel = React.lazy(() =>
+  import("./LiveChatPanel").catch((error) => {
+    console.error("LiveStats: failed to load LiveChatPanel module", error);
+    return { default: LiveChatLoadError };
+  }),
+);
 
 // ---- minimal ABI for write ops ----
 const TOKEN_REWARDS_MIN_ABI = [
@@ -40,6 +67,50 @@ const TOKEN_REWARDS_MIN_ABI = [
 ];
 
 const BACKGROUND_BONUSES = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50];
+const COLLECTION_INFO_ROWS = [
+  {
+    concept: "Total minted / Tickets minted",
+    detail:
+      "Core supply counters for revealed NFTs and mint tickets in the current collection.",
+    tone: "mint",
+  },
+  {
+    concept: "Ticket price / Reward pool / Mint volume",
+    detail:
+      "Live economic values in POL that summarize ticket cost, reward funding, and aggregate mint flow.",
+    tone: "core",
+  },
+  {
+    concept: "Avg / Highest / Lowest block price",
+    detail:
+      "Distribution snapshot of current block prices derived from on-chain block pricing state.",
+    tone: "live",
+  },
+  {
+    concept: "Blocks minted / BG minted",
+    detail:
+      "Counts of minted outcomes by eye-block and by background dimension used in pricing mechanics.",
+    tone: "link",
+  },
+  {
+    concept: "Block prices table",
+    detail:
+      "Per-block comparison of Base vs Live price and Delta to make dynamic price movement transparent.",
+    tone: "base",
+  },
+  {
+    concept: "Background bonuses table",
+    detail:
+      "Per-background minted counts, one-time bonus percentage, and corresponding block price delta.",
+    tone: "bonus",
+  },
+  {
+    concept: "My weekly BIGGI",
+    detail:
+      "Wallet-specific estimate of weekly BIGGI units from owned NFTs and current on-chain reward settings.",
+    tone: "supply",
+  },
+];
 
 // ===== ethers v5/v6 safe helpers =====
 const isBigNumber = (value) =>
@@ -87,6 +158,310 @@ const _bn = (v) => {
 };
 const _mul = (a, b) => _bn(a) * _bn(b);
 
+const looksLikeTicketMeta = (meta) => {
+  if (!meta) return false;
+  const name = String(meta?.name || "").toLowerCase();
+  const desc = String(meta?.description || "").toLowerCase();
+  return name.includes("ticket") || desc.includes("ticket");
+};
+
+const looksLikeNftMeta = (meta) => {
+  if (!meta) return false;
+  const attrs = Array.isArray(meta?.attributes) ? meta.attributes : [];
+  return attrs.some((a) => {
+    const t = String(a?.trait_type || "").toLowerCase();
+    return t.includes("background") || t.includes("block") || t.includes("eye");
+  });
+};
+
+const traitValueFromMeta = (meta, names) => {
+  const attrs = Array.isArray(meta?.attributes) ? meta.attributes : [];
+  for (const attr of attrs) {
+    const key = String(attr?.trait_type || "").toLowerCase();
+    if (names.includes(key)) {
+      const value = String(attr?.value ?? "").trim();
+      if (value) return value;
+    }
+  }
+  return "";
+};
+
+const parsePriceNumber = (value) => {
+  if (value == null) return null;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value > 0 ? value : null;
+  }
+  if (typeof value === "bigint") {
+    const formatted = Number(_formatEther(value));
+    return Number.isFinite(formatted) && formatted > 0 ? formatted : null;
+  }
+  if (isBigNumber(value)) {
+    const formatted = Number(_formatEther(value));
+    return Number.isFinite(formatted) && formatted > 0 ? formatted : null;
+  }
+  if (typeof value === "string") {
+    const raw = value.trim();
+    if (!raw) return null;
+    if (/^\d{10,}$/.test(raw)) {
+      const formatted = Number(_formatEther(raw));
+      if (Number.isFinite(formatted) && formatted > 0) return formatted;
+    }
+    const match = raw.match(/([0-9]+(?:\.[0-9]+)?)/);
+    if (!match) return null;
+    const parsed = Number(match[1]);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }
+  if (typeof value?.toString === "function") {
+    return parsePriceNumber(value.toString());
+  }
+  return null;
+};
+
+const readPriceFromMeta = (meta, traitNames = [], directValues = []) => {
+  const normalizedNames = traitNames.map((name) =>
+    String(name || "").trim().toLowerCase(),
+  );
+  const attrValue = traitValueFromMeta(meta, normalizedNames);
+  const fromAttr = parsePriceNumber(attrValue);
+  if (fromAttr != null) return fromAttr;
+
+  for (const candidate of directValues) {
+    const parsed = parsePriceNumber(candidate);
+    if (parsed != null) return parsed;
+  }
+  return null;
+};
+
+const toDisplayLastMinted = (payload) => {
+  const tokenId = String(payload?.tokenId ?? payload?.id ?? "").trim() || "-";
+  const image = String(payload?.image || "").trim();
+  const blockName = String(payload?.blockName || "").trim() || "-";
+  const backgroundName = String(payload?.backgroundName || "").trim() || "-";
+  return { tokenId, image, blockName, backgroundName };
+};
+
+const normalizeLiveStatsImage = (raw) => {
+  const input = String(raw || "").trim();
+  if (!input) return "";
+  try {
+    const normalized = httpFromIpfs(input);
+    return String(normalized || input).trim();
+  } catch {
+    return input;
+  }
+};
+
+const BACKGROUND_CODE_BY_NAME = Object.freeze({
+  ORANGE: "O",
+  BLACK: "B",
+  WHITE: "W",
+  BROWN: "BR",
+  BLUE: "BL",
+  GREEN: "G",
+  VIOLET: "V",
+  RED: "R",
+  PINK: "P",
+  RAINBOW: "RB",
+});
+
+const BLOCK_IMAGE_BASES = Object.freeze({
+  ORANGE:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeihs2zmll4beazspdqf5cr4hufmcqlby2cdwkwjfd4kyhl2rp27ohq/",
+  BLACK:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeiexwu2aiocaw4jh4yihywdkabbp2u7v2vf7wydhqcgehcispvjhfy/",
+  WHITE:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeicqja4j6wmdm2jbomtloggwafe4kluokgp5qhdr2pkrgxju6tpyl4/",
+  BROWN:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeibbqjofkkvldzfmmi5tfzucrmbd56ba3i5pfivywqb7g25wa7677m/",
+  BLUE:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeieuk5o3mktitbutdzyymacz27me5zntkybk3zhndjvsfuqa6osj4m/",
+  GREEN:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeihgbvpuomieigi3eenho6fzbbtwpvw7lfqbpbriojenvutufn6opa/",
+  VIOLET:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeibs3xyn3wdsssxubow5wqh4vyg4dkumshqza6ppssiqqrbo4chq3a/",
+  RED:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeifuhvp33jihz2xzr45vwme2drg7uxe5sukabttx4eqqupdbfmmebi/",
+  PINK:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeihkz72p25huca3b463o7q7yp4xnv2l4lejyzckodolqij6m5ofw2a/",
+  RAINBOW:
+    "https://biggieyes.mypinata.cloud/ipfs/bafybeibda5h7lwnalrugm4fek63pqsndvm4nyesm3t77tuegziloqgna3i/",
+});
+
+const trimSlash = (val) => String(val || "").replace(/\/+$/, "");
+
+const normalizeBgCode = (value) => {
+  const raw = String(value || "").trim().toUpperCase();
+  if (!raw) return "";
+  if (BACKGROUND_CODE_BY_NAME[raw]) return BACKGROUND_CODE_BY_NAME[raw];
+  const allowed = new Set(Object.values(BACKGROUND_CODE_BY_NAME));
+  if (allowed.has(raw)) return raw;
+  return "";
+};
+
+const normalizeBackgroundName = (value) => {
+  const raw = String(value || "").trim().toUpperCase();
+  if (!raw || raw === "-") return "";
+  if (BACKGROUND_CODE_BY_NAME[raw]) return raw;
+  const byCode = Object.entries(BACKGROUND_CODE_BY_NAME).find(
+    ([, code]) => code === raw,
+  );
+  if (byCode?.[0]) return byCode[0];
+  return raw;
+};
+
+const normalizeBlockForImage = (value) => {
+  const raw = String(value || "").trim().toUpperCase();
+  if (!raw || raw === "-") return "";
+  if (DEFAULT_BLOCKS.includes(raw)) return raw;
+  return raw;
+};
+
+const stripRetryParam = (url) =>
+  String(url || "")
+    .replace(/([?&])r=\d+(&?)/g, "$1")
+    .replace(/[?&]$/, "");
+
+const isUsableLiveStatsImage = (raw) => {
+  const normalized = normalizeLiveStatsImage(raw);
+  if (!normalized) return false;
+  const lowered = normalized.toLowerCase();
+  if (lowered === "/images/biggi.png") return false;
+  if (lowered.includes("biggi_random_mint_ticket")) return false;
+  return true;
+};
+
+const LAST_IMAGE_TOKEN_CACHE_LIMIT = 64;
+const liveStatsImageByToken = new Map();
+const LIVE_STATS_IMAGE_CACHE_VERSION = "v2";
+const LIVE_STATS_CACHE_CHAIN_ID = Number(ADDR?.CHAIN_ID || 137) || 137;
+const LIVE_STATS_CACHE_CONTRACT = String(ADDR?.MAIN || ADDR?.COLLECTION_VRF || "")
+  .trim()
+  .toLowerCase();
+const LIVE_STATS_CACHE_SCOPE = `${LIVE_STATS_IMAGE_CACHE_VERSION}_${LIVE_STATS_CACHE_CHAIN_ID}${
+  LIVE_STATS_CACHE_CONTRACT ? `_${LIVE_STATS_CACHE_CONTRACT}` : ""
+}`;
+const LIVE_STATS_IMAGE_CACHE_PREFIX = `biggi_live_stats_image_${LIVE_STATS_CACHE_SCOPE}_`;
+const LIVE_STATS_IMAGE_LAST_KEY = `biggi_live_stats_image_last_${LIVE_STATS_CACHE_SCOPE}`;
+
+const canUseLiveStatsStorage = () =>
+  typeof window !== "undefined" && Boolean(window.localStorage);
+
+const persistLiveStatsImageForToken = (tokenId, image) => {
+  try {
+    if (!canUseLiveStatsStorage()) return;
+    const key = String(tokenId || "").trim();
+    const src = String(image || "").trim();
+    if (!key || key === "-" || !src) return;
+    window.localStorage.setItem(`${LIVE_STATS_IMAGE_CACHE_PREFIX}${key}`, src);
+    window.localStorage.setItem(
+      LIVE_STATS_IMAGE_LAST_KEY,
+      JSON.stringify({ tokenId: key, image: src }),
+    );
+  } catch {
+    // ignore storage errors
+  }
+};
+
+const readPersistedLiveStatsImageForToken = (tokenId) => {
+  try {
+    if (!canUseLiveStatsStorage()) return "";
+    const key = String(tokenId || "").trim();
+    if (!key || key === "-") return "";
+    const raw = window.localStorage.getItem(`${LIVE_STATS_IMAGE_CACHE_PREFIX}${key}`);
+    const normalized = normalizeLiveStatsImage(raw);
+    return isUsableLiveStatsImage(normalized) ? normalized : "";
+  } catch {
+    return "";
+  }
+};
+
+const readPersistedLastLiveStatsImage = () => {
+  try {
+    if (!canUseLiveStatsStorage()) return { tokenId: "", image: "" };
+    const raw = window.localStorage.getItem(LIVE_STATS_IMAGE_LAST_KEY);
+    if (!raw) return { tokenId: "", image: "" };
+    const parsed = JSON.parse(raw);
+    const tokenId = String(parsed?.tokenId || "").trim();
+    const image = normalizeLiveStatsImage(parsed?.image);
+    if (!tokenId || !isUsableLiveStatsImage(image)) {
+      return { tokenId: "", image: "" };
+    }
+    return { tokenId, image };
+  } catch {
+    return { tokenId: "", image: "" };
+  }
+};
+
+const cacheLiveStatsImageForToken = (tokenId, rawImage) => {
+  const key = String(tokenId || "").trim();
+  if (!key || key === "-") return;
+  if (!isUsableLiveStatsImage(rawImage)) return;
+  const image = normalizeLiveStatsImage(rawImage);
+  if (!image) return;
+  if (liveStatsImageByToken.has(key)) liveStatsImageByToken.delete(key);
+  liveStatsImageByToken.set(key, image);
+  while (liveStatsImageByToken.size > LAST_IMAGE_TOKEN_CACHE_LIMIT) {
+    const oldest = liveStatsImageByToken.keys().next().value;
+    if (oldest == null) break;
+    liveStatsImageByToken.delete(oldest);
+  }
+  persistLiveStatsImageForToken(key, image);
+};
+
+const getCachedLiveStatsImageForToken = (tokenId) => {
+  const key = String(tokenId || "").trim();
+  if (!key || key === "-") return "";
+  const hit = liveStatsImageByToken.get(key);
+  const inMemory = String(hit || "").trim();
+  if (inMemory) return inMemory;
+  const persisted = readPersistedLiveStatsImageForToken(key);
+  if (!persisted) return "";
+  if (liveStatsImageByToken.has(key)) liveStatsImageByToken.delete(key);
+  liveStatsImageByToken.set(key, persisted);
+  return persisted;
+};
+
+const buildLastMintedImageCandidates = ({
+  primaryImage,
+  tokenId,
+  blockName,
+  backgroundName,
+}) => {
+  const out = [];
+  const push = (raw) => {
+    const normalized = normalizeLiveStatsImage(raw);
+    if (!isUsableLiveStatsImage(normalized)) return;
+    const key = stripRetryParam(normalized).toLowerCase();
+    if (!key) return;
+    if (out.some((item) => stripRetryParam(item).toLowerCase() === key)) return;
+    out.push(normalized);
+  };
+
+  push(primaryImage);
+
+  const token = String(tokenId || "").trim();
+  const block = normalizeBlockForImage(blockName);
+  const bgCode = normalizeBgCode(backgroundName);
+  if (/^\d+$/.test(token) && block && bgCode) {
+    const fileName = `Biggi_${token}_${block}_${bgCode}.png`;
+    const remoteBase = trimSlash(BLOCK_IMAGE_BASES[block] || "");
+    if (remoteBase) push(`${remoteBase}/${fileName}`);
+    push(buildBlockImagePath(block, fileName));
+  }
+
+  return out;
+};
+
+const parseTokenUriPartsForImage = (uri) => {
+  const m = String(uri || "").match(/Biggi_(\d+)_([A-Z]+)_([A-Z]+)\.json/i);
+  if (!m) return null;
+  return {
+    mainId: m[1],
+    blockName: String(m[2] || "").toUpperCase(),
+    bgCode: String(m[3] || "").toUpperCase(),
+  };
+};
+
 function LiveStats({
   lastImage,
   lastNftId,
@@ -115,9 +490,369 @@ function LiveStats({
   weekSeconds = 7 * 24 * 60 * 60,
   fetchChainNowTs = null,
   lastFinalPrice = null,
+  compact = false,
   // lpPrice,
   // setLpPrice,
 }) {
+  const normalizedItems = React.useMemo(() => {
+    const arr = Array.isArray(items) ? items : [];
+    if (!arr.length) return arr;
+    return arr.map((it) => {
+      if (!it) return it;
+      const meta = it?.meta;
+      const metaLooksTicket = looksLikeTicketMeta(meta);
+      const metaLooksNft = looksLikeNftMeta(meta);
+      let isTicket = it?.isTicket;
+      if (metaLooksNft) {
+        isTicket = false;
+      } else if ((isTicket == null) && metaLooksTicket && !metaLooksNft) {
+        isTicket = true;
+      } else if (isTicket != null) {
+        isTicket = Boolean(isTicket);
+      }
+      if (
+        isTicket === it?.isTicket ||
+        (it?.isTicket == null && isTicket == null)
+      ) {
+        return it;
+      }
+      return { ...it, isTicket };
+    });
+  }, [items]);
+
+  const walletLastMintedFallback = React.useMemo(() => {
+    const arr = Array.isArray(normalizedItems) ? normalizedItems : [];
+    const nftItems = arr.filter((it) => it && !it.isTicket && !it.isPending);
+    if (!nftItems.length) return null;
+
+    const isUsableImage = (raw) => {
+      const image = String(raw || "").trim();
+      if (!image) return false;
+      const lowered = image.toLowerCase();
+      if (lowered === "/images/biggi.png") return false;
+      if (lowered.includes("biggi_random_mint_ticket")) return false;
+      return true;
+    };
+
+    // Prefer the UI order provided by AppCore (already reconciled around latest redeem),
+    // and only then fall back to "first available NFT with usable image".
+    const fallbackItem =
+      nftItems.find((item) => isUsableImage(item?.image)) || nftItems[0];
+    const blockName =
+      String(fallbackItem?.blockName || "").trim() ||
+      traitValueFromMeta(fallbackItem?.meta, [
+        "eye color",
+        "eyes",
+        "block/eye color",
+        "block",
+        "block id",
+        "linked block",
+        "block name",
+      ]) ||
+      "-";
+    const backgroundName =
+      String(fallbackItem?.backgroundName || "").trim() ||
+      traitValueFromMeta(fallbackItem?.meta, ["background", "background color"]) ||
+      "-";
+
+    return toDisplayLastMinted({
+      tokenId: fallbackItem?.tokenId ?? fallbackItem?.id,
+      image: fallbackItem?.image,
+      blockName,
+      backgroundName,
+    });
+  }, [normalizedItems]);
+
+  const walletNftByTokenId = React.useMemo(() => {
+    const out = new Map();
+    const arr = Array.isArray(normalizedItems) ? normalizedItems : [];
+    for (const item of arr) {
+      if (!item || item.isTicket || item.isPending) continue;
+      const tokenId = String(item?.tokenId ?? item?.id ?? "").trim();
+      if (!tokenId) continue;
+      out.set(tokenId, item);
+    }
+    return out;
+  }, [normalizedItems]);
+
+  const chainLastMinted = React.useMemo(
+    () =>
+      toDisplayLastMinted({
+        image: lastImage,
+        tokenId: lastNftId,
+        blockName: lastBlockName,
+        backgroundName: lastBackgroundName,
+      }),
+    [lastImage, lastNftId, lastBlockName, lastBackgroundName],
+  );
+
+  const chainTokenWalletFallback = React.useMemo(() => {
+    const chainTokenId = String(chainLastMinted.tokenId || "").trim();
+    if (!chainTokenId || chainTokenId === "-") return null;
+    const item = walletNftByTokenId.get(chainTokenId);
+    if (!item) return null;
+
+    const blockName =
+      String(item?.blockName || "").trim() ||
+      traitValueFromMeta(item?.meta, [
+        "eye color",
+        "eyes",
+        "block/eye color",
+        "block",
+        "block id",
+        "linked block",
+        "block name",
+      ]) ||
+      "-";
+    const backgroundName =
+      String(item?.backgroundName || "").trim() ||
+      traitValueFromMeta(item?.meta, ["background", "background color"]) ||
+      "-";
+
+    return toDisplayLastMinted({
+      tokenId: chainTokenId,
+      image: item?.image,
+      blockName,
+      backgroundName,
+    });
+  }, [chainLastMinted.tokenId, walletNftByTokenId]);
+
+  const effectiveLastMinted = React.useMemo(() => {
+    const chainImageRaw = String(chainLastMinted.image || "").trim();
+    const chainImageLower = chainImageRaw.toLowerCase();
+    const chainHasImage =
+      Boolean(chainImageRaw) &&
+      chainImageLower !== "/images/biggi.png" &&
+      !chainImageLower.includes("biggi_random_mint_ticket");
+    const chainHasTraits =
+      chainLastMinted.blockName !== "-" &&
+      chainLastMinted.backgroundName !== "-";
+    const chainHasToken = chainLastMinted.tokenId !== "-";
+    const chainComplete = chainHasImage && chainHasTraits && chainHasToken;
+
+    if (chainComplete) return chainLastMinted;
+
+    if (chainTokenWalletFallback) {
+      return {
+        tokenId: chainLastMinted.tokenId,
+        image: chainHasImage
+          ? chainLastMinted.image
+          : chainTokenWalletFallback.image || "",
+        blockName:
+          chainLastMinted.blockName !== "-"
+            ? chainLastMinted.blockName
+            : chainTokenWalletFallback.blockName,
+        backgroundName:
+          chainLastMinted.backgroundName !== "-"
+            ? chainLastMinted.backgroundName
+            : chainTokenWalletFallback.backgroundName,
+      };
+    }
+
+    if (walletLastMintedFallback) return walletLastMintedFallback;
+    return chainLastMinted;
+  }, [chainLastMinted, chainTokenWalletFallback, walletLastMintedFallback]);
+
+  const normalizedLastImage = React.useMemo(
+    () => normalizeLiveStatsImage(effectiveLastMinted.image),
+    [effectiveLastMinted.image],
+  );
+  const [resolvedLastImage, setResolvedLastImage] = React.useState("");
+  React.useEffect(() => {
+    setResolvedLastImage("");
+  }, [effectiveLastMinted.tokenId]);
+
+  React.useEffect(() => {
+    const tokenId = String(effectiveLastMinted.tokenId || "").trim();
+    if (!tokenId || tokenId === "-" || !/^\d+$/.test(tokenId)) return;
+    if (normalizedLastImage) return;
+    if (resolvedLastImage) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const provider = getROProvider();
+        const mainAddr = ADDR?.MAIN;
+        if (!provider || !mainAddr) return;
+        const contract = new Contract(
+          mainAddr,
+          ["function tokenURI(uint256 tokenId) view returns (string)"],
+          provider,
+        );
+        const uri = await contract.tokenURI(tokenId).catch(() => null);
+        if (!uri) return;
+
+        const meta = await readJsonFromURI(uri).catch(() => null);
+        const imgField = meta?.image || meta?.image_url || "";
+        let resolved =
+          (await resolveImageUrl(imgField, uri).catch(() => null)) ||
+          normalizeLiveStatsImage(httpFromIpfs(imgField));
+
+        if (!resolved) {
+          const parsed = parseTokenUriPartsForImage(uri);
+          if (parsed?.mainId && parsed?.blockName && parsed?.bgCode) {
+            const fileName = `Biggi_${parsed.mainId}_${parsed.blockName}_${parsed.bgCode}.png`;
+            const remoteBase = trimSlash(BLOCK_IMAGE_BASES[parsed.blockName] || "");
+            if (remoteBase) {
+              resolved = `${remoteBase}/${fileName}`;
+            } else {
+              resolved = buildBlockImagePath(parsed.blockName, fileName);
+            }
+          }
+        }
+
+        const normalized = normalizeLiveStatsImage(resolved);
+        if (!cancelled && normalized) {
+          setResolvedLastImage(normalized);
+        }
+      } catch {
+        // ignore best-effort image resolve failures
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveLastMinted.tokenId, normalizedLastImage, resolvedLastImage]);
+
+  const effectivePrimaryImage = normalizedLastImage || resolvedLastImage;
+  const lastImageCandidates = React.useMemo(
+    () =>
+      buildLastMintedImageCandidates({
+        primaryImage: effectivePrimaryImage,
+        tokenId: effectiveLastMinted.tokenId,
+        blockName: effectiveLastMinted.blockName,
+        backgroundName: effectiveLastMinted.backgroundName,
+      }),
+    [
+      effectivePrimaryImage,
+      effectiveLastMinted.tokenId,
+      effectiveLastMinted.blockName,
+      effectiveLastMinted.backgroundName,
+    ],
+  );
+
+  const [lastImageSrc, setLastImageSrc] = React.useState(
+    lastImageCandidates[0] || "",
+  );
+  const [lastImageLoaded, setLastImageLoaded] = React.useState(false);
+  const [lastImageFailed, setLastImageFailed] = React.useState(false);
+  const lastImageRetryRef = React.useRef(0);
+  const persistedStableRef = React.useRef(readPersistedLastLiveStatsImage());
+  const lastStableImageRef = React.useRef(persistedStableRef.current.image || "");
+  const lastStableTokenRef = React.useRef(persistedStableRef.current.tokenId || "");
+  const lastPrimaryBaseRef = React.useRef("");
+  const lastPrimaryTokenRef = React.useRef("");
+  const [isOffline, setIsOffline] = React.useState(
+    typeof navigator !== "undefined" ? !navigator.onLine : false,
+  );
+
+  React.useEffect(() => {
+    const next = String(lastImageCandidates[0] || "").trim();
+    if (!next) return;
+    const nextBase = stripRetryParam(next).toLowerCase();
+    const tokenId = String(effectiveLastMinted.tokenId || "").trim();
+    const prevBase = String(lastPrimaryBaseRef.current || "").toLowerCase();
+    const prevToken = String(lastPrimaryTokenRef.current || "").trim();
+    if (prevBase === nextBase && prevToken === tokenId) return;
+    lastPrimaryBaseRef.current = nextBase;
+    lastPrimaryTokenRef.current = tokenId;
+    lastImageRetryRef.current = 0;
+    setLastImageSrc(next);
+    setLastImageLoaded(false);
+    setLastImageFailed(false);
+  }, [lastImageCandidates, effectiveLastMinted.tokenId]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleStatus = () => setIsOffline(!navigator.onLine);
+    window.addEventListener("online", handleStatus);
+    window.addEventListener("offline", handleStatus);
+    handleStatus();
+    return () => {
+      window.removeEventListener("online", handleStatus);
+      window.removeEventListener("offline", handleStatus);
+    };
+  }, []);
+
+  const effectiveTokenId = String(effectiveLastMinted.tokenId || "").trim();
+  const displayLastImageSrc = React.useMemo(() => {
+    const direct = String(lastImageSrc || "").trim();
+    if (direct) return direct;
+
+    const stableToken = String(lastStableTokenRef.current || "").trim();
+    const stableSrc = String(lastStableImageRef.current || "").trim();
+    if (
+      stableSrc &&
+      effectiveTokenId &&
+      effectiveTokenId !== "-" &&
+      stableToken === effectiveTokenId
+    ) {
+      return stableSrc;
+    }
+
+    const cached = getCachedLiveStatsImageForToken(effectiveTokenId);
+    if (cached) return cached;
+
+    const firstCandidate = String(lastImageCandidates[0] || "").trim();
+    if (stableSrc && !firstCandidate) {
+      return stableSrc;
+    }
+
+    if (firstCandidate) return firstCandidate;
+
+    return String(lastImageCandidates[0] || "").trim();
+  }, [effectiveTokenId, lastImageCandidates, lastImageSrc]);
+
+  React.useEffect(() => {
+    if (!effectiveTokenId || effectiveTokenId === "-") return;
+    const primary = String(lastImageCandidates[0] || "").trim();
+    if (!primary) return;
+    cacheLiveStatsImageForToken(effectiveTokenId, primary);
+  }, [effectiveTokenId, lastImageCandidates]);
+
+  const lastImageIsIpfs = React.useMemo(() => {
+    const raw =
+      `${String(normalizedLastImage || "")} ${String(displayLastImageSrc || "")}`
+        .toLowerCase();
+    return (
+      raw.includes("ipfs://") ||
+      raw.includes("/ipfs/") ||
+      raw.includes("ipns://") ||
+      raw.includes("/ipns/") ||
+      raw.includes("pinata") ||
+      raw.includes("mypinata") ||
+      raw.includes("ipfs")
+    );
+  }, [displayLastImageSrc, normalizedLastImage]);
+
+  const showLastImageFallback =
+    lastImageIsIpfs &&
+    (lastImageFailed || (!lastImageLoaded && isOffline));
+  const hasLastImage = Boolean(displayLastImageSrc);
+  const hasLastToken = effectiveTokenId !== "-";
+
+  React.useEffect(() => {
+    if (!lastImageFailed || !lastImageIsIpfs) return;
+    if (lastImageRetryRef.current >= 2) return;
+    const base = String(displayLastImageSrc || lastImageCandidates[0] || "").trim();
+    if (!base) return;
+    const timer = setTimeout(() => {
+      lastImageRetryRef.current += 1;
+      const withoutRetry = stripRetryParam(base);
+      const sep = withoutRetry.includes("?") ? "&" : "?";
+      setLastImageSrc(`${withoutRetry}${sep}r=${Date.now()}`);
+      setLastImageFailed(false);
+      setLastImageLoaded(false);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [
+    displayLastImageSrc,
+    lastImageCandidates,
+    lastImageFailed,
+    lastImageIsIpfs,
+  ]);
+
   // LP price state
   const [lpPrice, setLpPrice] = React.useState(null);
   // Fetch LP price from on-chain feed
@@ -151,11 +886,17 @@ function LiveStats({
   const [showBlocks, setShowBlocks] = React.useState(false);
   const [showBgStats, setShowBgStats] = React.useState(false);
   const [showREWARDS, setShowREWARDS] = React.useState(false);
+  const [showCollectionInfo, setShowCollectionInfo] = React.useState(false);
   const [weeklyOpen, setWeeklyOpen] = React.useState(false);
   const weeklyBtnRef = React.useRef(null);
 
   const [poolsOpen, setPoolsOpen] = React.useState(false);
   const [chatOpen, setChatOpen] = React.useState(false);
+  const [modalViewportTop, setModalViewportTop] = React.useState(0);
+  const [modalViewportHeight, setModalViewportHeight] = React.useState(() =>
+    typeof window !== "undefined" ? window.innerHeight || 0 : 0,
+  );
+  const modalViewportTopRef = React.useRef(0);
   const [pools, setPools] = React.useState(null);
   const weekDuration = weekSeconds || 7 * 24 * 60 * 60;
   const {
@@ -172,42 +913,71 @@ function LiveStats({
     weekSeconds,
   });
 
-  const [isPhone, setIsPhone] = React.useState(() =>
-    typeof window !== "undefined"
-      ? window.matchMedia("(max-width: 700px)").matches
-      : false,
-  );
+  const computePhoneViewport = React.useCallback(() => {
+    if (typeof window === "undefined") return Boolean(compact);
+
+    const narrowViewport = window.matchMedia("(max-width: 700px)").matches;
+    if (narrowViewport) return true;
+
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    const touchPoints = Number(window.navigator?.maxTouchPoints || 0);
+    const likelyPhoneOrTablet = coarsePointer || touchPoints > 0;
+    const width = Number(window.innerWidth) || 0;
+    const height = Number(window.innerHeight) || 0;
+    const landscape = width > height;
+    const shortLandscapeViewport = height > 0 && height <= 500;
+
+    return Boolean(compact) || (likelyPhoneOrTablet && landscape && shortLandscapeViewport);
+  }, [compact]);
+
+  const [isPhone, setIsPhone] = React.useState(() => computePhoneViewport());
   const [isTiny, setIsTiny] = React.useState(() =>
     typeof window !== "undefined"
       ? window.matchMedia("(max-width: 480px)").matches
       : false,
   );
+  const desktopFullscreen = !isPhone;
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     const mq700 = window.matchMedia("(max-width: 700px)");
     const mq480 = window.matchMedia("(max-width: 480px)");
-    const on700 = (e) => setIsPhone(e.matches);
-    const on480 = (e) => setIsTiny(e.matches);
+    const mqPointer = window.matchMedia("(pointer: coarse)");
+    const updateViewportFlags = () => {
+      setIsPhone(computePhoneViewport());
+      setIsTiny(mq480.matches);
+    };
 
-    try {
-      mq700.addEventListener("change", on700);
-      mq480.addEventListener("change", on480);
-    } catch {
-      mq700.addListener(on700);
-      mq480.addListener(on480);
-    }
-    setIsPhone(mq700.matches);
-    setIsTiny(mq480.matches);
-    return () => {
+    const addMqlListener = (mql, listener) => {
       try {
-        mq700.removeEventListener("change", on700);
-        mq480.removeEventListener("change", on480);
+        mql.addEventListener("change", listener);
       } catch {
-        mq700.removeListener(on700);
-        mq480.removeListener(on480);
+        mql.addListener(listener);
       }
     };
-  }, []);
+
+    const removeMqlListener = (mql, listener) => {
+      try {
+        mql.removeEventListener("change", listener);
+      } catch {
+        mql.removeListener(listener);
+      }
+    };
+
+    addMqlListener(mq700, updateViewportFlags);
+    addMqlListener(mq480, updateViewportFlags);
+    addMqlListener(mqPointer, updateViewportFlags);
+    window.addEventListener("resize", updateViewportFlags);
+    window.addEventListener("orientationchange", updateViewportFlags);
+
+    updateViewportFlags();
+    return () => {
+      removeMqlListener(mq700, updateViewportFlags);
+      removeMqlListener(mq480, updateViewportFlags);
+      removeMqlListener(mqPointer, updateViewportFlags);
+      window.removeEventListener("resize", updateViewportFlags);
+      window.removeEventListener("orientationchange", updateViewportFlags);
+    };
+  }, [computePhoneViewport]);
 
   // Additional on-chain-derived state (contract-focused changes only)
   const [poolFromContract, setPoolFromContract] = React.useState(null);
@@ -219,6 +989,281 @@ function LiveStats({
   // new: read some potentially useful derived chain values if available
   const [lastFinalFromChain, setLastFinalFromChain] = React.useState(null);
   const [blockPricesFromChain, setBlockPricesFromChain] = React.useState(null);
+  const [lastMintPriceData, setLastMintPriceData] = React.useState({
+    ticketPrice: null,
+    blockPrice: null,
+    finalPrice: null,
+  });
+  const readRpcRotateAtRef = React.useRef(0);
+
+  const handleReadRpcFailure = React.useCallback((err, scope = "LiveStats") => {
+    const isRateLimited = isRateLimitedRpcError(err);
+    const status = Number(
+      err?.status ??
+        err?.data?.httpStatus ??
+        err?.error?.data?.httpStatus ??
+        err?.info?.error?.data?.httpStatus ??
+        0,
+    );
+    const msg = String(
+      err?.reason ||
+        err?.shortMessage ||
+        err?.message ||
+        err?.error?.message ||
+        err?.info?.error?.message ||
+        "",
+    ).toLowerCase();
+    const transientNetwork =
+      msg.includes("failed to fetch") ||
+      msg.includes("network error") ||
+      msg.includes("request failed") ||
+      msg.includes("timed out") ||
+      msg.includes("timeout") ||
+      [408, 425, 429, 500, 502, 503, 504].includes(status);
+    if (!isRateLimited && !transientNetwork) return false;
+
+    const now = Date.now();
+    // Avoid rotate storms when multiple effects fail in the same render frame.
+    if (now - Number(readRpcRotateAtRef.current || 0) < 4_000) return true;
+    readRpcRotateAtRef.current = now;
+
+    const toHost = (url) => {
+      const raw = String(url || "").trim();
+      if (!raw) return "";
+      try {
+        return new URL(raw).host || raw;
+      } catch {
+        return raw;
+      }
+    };
+
+    let current = null;
+    let next = null;
+    try {
+      current = getPreferredRpc();
+      if (current) markRpcRateLimited(current);
+      const urls = getRpcUrls();
+      if (Array.isArray(urls) && urls.length) {
+        const idx = current ? urls.indexOf(current) : -1;
+        next = idx >= 0 ? urls[(idx + 1) % urls.length] : urls[0];
+        if (next) setPreferredRpc(next);
+      }
+    } catch {
+      // ignore rpc-rotation helper failures
+    }
+
+    try {
+      resetROProvider();
+    } catch {
+      // ignore provider reset failures
+    }
+
+    const fromHost = toHost(current);
+    const toHostName = toHost(next);
+    const routeInfo =
+      fromHost || toHostName
+        ? ` (rpc ${fromHost || "?"} -> ${toHostName || "?"})`
+        : "";
+    const reasonLabel = isRateLimited ? "rate-limited" : "network-failure";
+    console.warn(`${scope}: RPC ${reasonLabel}, rotating read RPC${routeInfo}.`);
+    return true;
+  }, []);
+
+  React.useEffect(() => {
+    const tokenId = String(effectiveLastMinted.tokenId || "").trim();
+    if (!tokenId || tokenId === "-" || !/^\d+$/.test(tokenId)) {
+      setLastMintPriceData({
+        ticketPrice: null,
+        blockPrice: null,
+        finalPrice: null,
+      });
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        let next = {
+          ticketPrice: null,
+          blockPrice: null,
+          finalPrice: null,
+        };
+
+        const cachedAttrs = getCachedPriceAttrs(tokenId);
+        if (Array.isArray(cachedAttrs) && cachedAttrs.length) {
+          const cachedMeta = { attributes: cachedAttrs };
+          next = {
+            ticketPrice: readPriceFromMeta(cachedMeta, ["ticket price"]),
+            blockPrice: readPriceFromMeta(cachedMeta, ["block price"]),
+            finalPrice: readPriceFromMeta(cachedMeta, ["final price"]),
+          };
+        }
+
+        const provider = (() => {
+          try {
+            return getROProvider();
+          } catch {
+            return null;
+          }
+        })();
+
+        const reader = provider
+          ? (() => {
+              try {
+                return getReaderRO(provider);
+              } catch {
+                return null;
+              }
+            })()
+          : null;
+        const main = provider
+          ? (() => {
+              try {
+                return getReadOnlyMain(provider);
+              } catch {
+                return null;
+              }
+            })()
+          : null;
+
+        const mergeMintData = (res) => {
+          if (!res) return;
+          const ticketPrice = parsePriceNumber(res?.[0] ?? null);
+          const blockPrice = parsePriceNumber(res?.[1] ?? null);
+          const finalPrice = parsePriceNumber(res?.[2] ?? null);
+          if (ticketPrice != null) next.ticketPrice = ticketPrice;
+          if (blockPrice != null) next.blockPrice = blockPrice;
+          if (finalPrice != null) next.finalPrice = finalPrice;
+        };
+        const mainIndex = toMainNftIndexFromTokenId(tokenId, {
+          maxSupply: Number(maxSupply) || 550,
+          allowLegacy: true,
+        });
+        const tokenIdArg = BigInt(tokenId);
+        const mainIndexArg = mainIndex != null ? BigInt(mainIndex) : null;
+
+        if (reader && typeof reader.getMintDataByTokenId === "function") {
+          mergeMintData(
+            await reader.getMintDataByTokenId(tokenIdArg).catch(() => null),
+          );
+        }
+
+        if (
+          (next.ticketPrice == null ||
+            next.blockPrice == null ||
+            next.finalPrice == null) &&
+          reader &&
+          typeof reader.getMintData === "function"
+        ) {
+          mergeMintData(
+            await reader
+              .getMintData(mainIndexArg != null ? mainIndexArg : tokenIdArg)
+              .catch(() => null),
+          );
+        }
+
+        if (
+          (next.ticketPrice == null ||
+            next.blockPrice == null ||
+            next.finalPrice == null) &&
+          main &&
+          typeof main.getMintData === "function"
+        ) {
+          mergeMintData(
+            await main
+              .getMintData(mainIndexArg != null ? mainIndexArg : tokenIdArg)
+              .catch(() => null),
+          );
+        }
+
+        if (next.blockPrice == null && main) {
+          const blockPriceCandidates = [
+            "getCurrentBlockPriceByTokenId",
+            "currentBlockPriceByTokenId",
+          ];
+          for (const fn of blockPriceCandidates) {
+            if (typeof main?.[fn] !== "function") continue;
+            const parsed = parsePriceNumber(
+              await main[fn](tokenId).catch(() => null),
+            );
+            if (parsed != null) {
+              next.blockPrice = parsed;
+              break;
+            }
+          }
+        }
+
+        if (
+          (next.ticketPrice == null ||
+            next.blockPrice == null ||
+            next.finalPrice == null) &&
+          main &&
+          typeof main.tokenURI === "function"
+        ) {
+          const uri = await main.tokenURI(tokenId).catch(() => null);
+          const meta = uri ? await readJsonFromURI(uri).catch(() => null) : null;
+          if (meta) {
+            if (next.ticketPrice == null) {
+              next.ticketPrice = readPriceFromMeta(
+                meta,
+                ["ticket price", "current ticket price"],
+                [
+                  meta?.ticketPrice,
+                  meta?.ticket_price,
+                  meta?.mintTicket,
+                  meta?.mint?.ticketPrice,
+                  meta?.mint?.ticket_price,
+                ],
+              );
+            }
+            if (next.blockPrice == null) {
+              next.blockPrice = readPriceFromMeta(
+                meta,
+                ["block price"],
+                [
+                  meta?.blockPrice,
+                  meta?.block_price,
+                  meta?.mintBlock,
+                  meta?.mint?.blockPrice,
+                  meta?.mint?.block_price,
+                ],
+              );
+            }
+            if (next.finalPrice == null) {
+              next.finalPrice = readPriceFromMeta(
+                meta,
+                ["final price"],
+                [
+                  meta?.finalPrice,
+                  meta?.final_price,
+                  meta?.mintFinal,
+                  meta?.mint?.finalPrice,
+                  meta?.mint?.final_price,
+                ],
+              );
+            }
+          }
+        }
+
+        if (next.finalPrice == null && next.blockPrice != null) {
+          next.finalPrice = next.blockPrice;
+        }
+
+        if (!cancelled) {
+          setLastMintPriceData(next);
+        }
+      } catch (err) {
+        const handled = handleReadRpcFailure(err, "LiveStats last mint prices");
+        if (!handled) {
+          console.warn("LiveStats: failed reading last mint prices", err);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveLastMinted.tokenId, handleReadRpcFailure]);
 
   const effectiveBlockPrices = React.useMemo(() => {
     const normalize = (arr) =>
@@ -230,7 +1275,7 @@ function LiveStats({
         : [];
     const hasAnyValue = (arr) =>
       Array.isArray(arr) &&
-      arr.some((v) => Number.isFinite(Number(v)));
+      arr.some((v) => Number.isFinite(Number(v)) && Number(v) > 0);
 
     // Prefer prices coming from MAIN/snapshot props.
     // Liquidity-derived array is only a last-resort fallback.
@@ -245,14 +1290,16 @@ function LiveStats({
   const safeBlockNames = Array.isArray(blockNames) ? blockNames : [];
 
   const onlyTickets = React.useMemo(() => {
-    const arr = Array.isArray(items) ? items : [];
+    const arr = Array.isArray(normalizedItems) ? normalizedItems : [];
     return arr.length > 0 && arr.every((it) => it?.isTicket);
-  }, [items]);
+  }, [normalizedItems]);
+  const hasConnectedWallet = Boolean(String(walletAddress || "").trim());
 
   const resetAll = React.useCallback(() => {
     setShowBlocks(false);
     setShowBgStats(false);
     setShowREWARDS(false);
+    setShowCollectionInfo(false);
   }, []);
 
   const openBlocks = React.useCallback(() => {
@@ -271,11 +1318,18 @@ function LiveStats({
   }, [resetAll]);
 
   React.useEffect(() => {
+    if (!showREWARDS) setShowCollectionInfo(false);
+  }, [showREWARDS]);
+
+  React.useEffect(() => {
     if (typeof window === "undefined") return undefined;
     const handleEscapeBack = (event) => {
       if (event.key !== "Escape") return;
       let handled = false;
-      if (showBlocks || showBgStats || showREWARDS) {
+      if (showCollectionInfo) {
+        setShowCollectionInfo(false);
+        handled = true;
+      } else if (showBlocks || showBgStats || showREWARDS) {
         resetAll();
         handled = true;
       } else if (weeklyOpen) {
@@ -296,6 +1350,7 @@ function LiveStats({
     window.addEventListener("keydown", handleEscapeBack);
     return () => window.removeEventListener("keydown", handleEscapeBack);
   }, [
+    showCollectionInfo,
     showBlocks,
     showBgStats,
     showREWARDS,
@@ -377,13 +1432,19 @@ function LiveStats({
         if (Number.isFinite(Number(dec))) setTokenDecimals(Number(dec));
       } catch (e) {
         // silent fallback — not critical
-        console.warn("LiveStats: failed reading token REWARDS metadata", e);
+        const handled = handleReadRpcFailure(
+          e,
+          "LiveStats token REWARDS metadata",
+        );
+        if (!handled) {
+          console.warn("LiveStats: failed reading token REWARDS metadata", e);
+        }
       }
     })();
     return () => {
       alive = false;
     };
-  }, []);
+  }, [handleReadRpcFailure]);
 
   const WEIGHTS = React.useMemo(() => {
     if (
@@ -746,7 +1807,10 @@ function LiveStats({
           }));
         }
       } catch (err) {
-        console.warn("refreshPools: token balances failed", err);
+        const handled = handleReadRpcFailure(err, "refreshPools token balances");
+        if (!handled) {
+          console.warn("refreshPools: token balances failed", err);
+        }
       }
 
       try {
@@ -786,7 +1850,10 @@ function LiveStats({
           };
         }
       } catch (err) {
-        console.warn("refreshPools: LP stats failed", err);
+        const handled = handleReadRpcFailure(err, "refreshPools LP stats");
+        if (!handled) {
+          console.warn("refreshPools: LP stats failed", err);
+        }
       }
 
       setPools({
@@ -802,10 +1869,13 @@ function LiveStats({
         lpStats,
       });
     } catch (e) {
-      console.error("refreshPools error", e);
-      setPools(null);
+      const handled = handleReadRpcFailure(e, "refreshPools");
+      if (!handled) {
+        console.error("refreshPools error", e);
+        setPools(null);
+      }
     }
-  }, [tokenDecimals, tokenSymbol]);
+  }, [tokenDecimals, tokenSymbol, handleReadRpcFailure]);
 
   // BIGGI ECOSYSTEM METRICS (unchanged intent, contract reads robustified)
   const [biggiPrice, setBiggiPrice] = React.useState(null);
@@ -813,9 +1883,10 @@ function LiveStats({
   const [biggiChange24h, setBiggiChange24h] = React.useState(null);
   const [biggiSupply, setBiggiSupply] = React.useState(null);
   const [circulatingSupply, setCirculatingSupply] = React.useState(null);
+  const [tradableSupply, setTradableSupply] = React.useState(null);
   const biggiMcap = React.useMemo(() => {
     const supplyForMarketCap =
-      typeof circulatingSupply === "number" ? circulatingSupply : biggiSupply;
+      typeof circulatingSupply === "number" ? circulatingSupply : null;
     if (
       typeof biggiPrice === "number" &&
       typeof supplyForMarketCap === "number"
@@ -823,7 +1894,7 @@ function LiveStats({
       return biggiPrice * supplyForMarketCap;
     }
     return null;
-  }, [biggiPrice, biggiSupply, circulatingSupply]);
+  }, [biggiPrice, circulatingSupply]);
 
   React.useEffect(() => {
     let alive = true;
@@ -890,13 +1961,16 @@ function LiveStats({
           // setBiggiChange24h(xxx);
         }
       } catch (e) {
-        console.warn("LiveStats: failed reading token metrics", e);
+        const handled = handleReadRpcFailure(e, "LiveStats token metrics");
+        if (!handled) {
+          console.warn("LiveStats: failed reading token metrics", e);
+        }
       }
     })();
     return () => {
       alive = false;
     };
-  }, []);
+  }, [handleReadRpcFailure]);
 
   React.useEffect(() => {
     let alive = true;
@@ -961,14 +2035,20 @@ function LiveStats({
         if (!alive) return;
         setCirculatingSupply(circulating);
       } catch (err) {
-        console.warn("LiveStats: failed to compute circulating supply", err);
+        const handled = handleReadRpcFailure(
+          err,
+          "LiveStats circulating supply",
+        );
+        if (!handled) {
+          console.warn("LiveStats: failed to compute circulating supply", err);
+        }
       }
     })();
 
     return () => {
       alive = false;
     };
-  }, [biggiSupply, tokenDecimals]);
+  }, [biggiSupply, tokenDecimals, handleReadRpcFailure]);
 
   // DEX price fallback (robust contract usage) - computes price against any quote token, respects decimals, updates quote symbol
   React.useEffect(() => {
@@ -1024,9 +2104,13 @@ function LiveStats({
         };
 
         let price = null;
+        let dexTradable = null;
         if (addr0 === biggiAddr) {
           const base = Number(_formatUnits(r0, m0.decimals));
           const quote = Number(_formatUnits(r1, m1.decimals));
+          if (Number.isFinite(base) && base >= 0) {
+            dexTradable = base;
+          }
           if (
             Number.isFinite(base) &&
             base > 0 &&
@@ -1039,6 +2123,9 @@ function LiveStats({
         } else if (addr1 === biggiAddr) {
           const base = Number(_formatUnits(r1, m1.decimals));
           const quote = Number(_formatUnits(r0, m0.decimals));
+          if (Number.isFinite(base) && base >= 0) {
+            dexTradable = base;
+          }
           if (
             Number.isFinite(base) &&
             base > 0 &&
@@ -1050,17 +2137,28 @@ function LiveStats({
           }
         }
 
-        if (!cancel && Number.isFinite(price) && price > 0) {
-          setBiggiPrice(price);
+        if (!cancel) {
+          if (Number.isFinite(dexTradable) && dexTradable >= 0) {
+            setTradableSupply(dexTradable);
+          } else {
+            setTradableSupply(null);
+          }
+          if (Number.isFinite(price) && price > 0) {
+            setBiggiPrice(price);
+          }
         }
       } catch (e) {
-        console.warn("LiveStats: failed reading DEX price", e);
+        const handled = handleReadRpcFailure(e, "LiveStats DEX price");
+        if (!handled) {
+          console.warn("LiveStats: failed reading DEX price", e);
+          if (!cancel) setTradableSupply(null);
+        }
       }
     })();
     return () => {
       cancel = true;
     };
-  }, []);
+  }, [handleReadRpcFailure]);
 
   // Layout
   const BOX = isPhone ? (isTiny ? 110 : 130) : 150;
@@ -1069,10 +2167,14 @@ function LiveStats({
       ? "14px 12px 12px 12px"
       : "24px 16px 18px 16px"
     : "38px 44px 32px 44px";
-  const boxFontSize = isTiny ? "0.75em" : isPhone ? "0.85em" : "0.95em";
-  const boxBigFontSize = isTiny ? "1.0em" : isPhone ? "1.15em" : "1.3em";
-  const infoCardFontSize = isTiny ? "0.7em" : isPhone ? "0.8em" : "0.9em";
-  const infoCardBigFontSize = isTiny ? "0.95em" : isPhone ? "1.05em" : "1.2em";
+  const boxFontSize = isTiny ? "0.78em" : isPhone ? "0.9em" : "1.02em";
+  const boxBigFontSize = isTiny ? "1.06em" : isPhone ? "1.22em" : "1.42em";
+  const infoCardFontSize = isTiny ? "0.54em" : isPhone ? "0.64em" : "0.74em";
+  const infoCardBigFontSize = isTiny ? "0.96em" : isPhone ? "1.12em" : "1.24em";
+  const tokenomicsLabelFontSize = isTiny ? "0.68em" : isPhone ? "0.78em" : "0.86em";
+  const marketCapBoxLabelFontSize = isTiny ? "0.6em" : isPhone ? "0.7em" : "0.78em";
+  const marketCapBoxValueFontSize = isTiny ? "0.72em" : isPhone ? "0.82em" : "0.92em";
+  const marketCapBoxBigValueFontSize = isTiny ? "0.92em" : isPhone ? "1.04em" : "1.16em";
   const mobileMaxWidth = isPhone ? (isTiny ? 320 : 420) : undefined;
   const statsBoxWidth = isPhone ? (isTiny ? "100%" : "calc(50% - 6px)") : BOX;
   const statsBoxHeight = isPhone ? "auto" : BOX;
@@ -1172,6 +2274,43 @@ function LiveStats({
   };
 
   const titleStyle = { color: "#fff", fontWeight: 700, fontSize: boxFontSize };
+  const metricLabelStyle = {
+    ...titleStyle,
+    alignSelf: "center",
+    textAlign: "center",
+    lineHeight: 1.25,
+  };
+  const tokenomicsLabelStyle = {
+    ...metricLabelStyle,
+    fontSize: tokenomicsLabelFontSize,
+    lineHeight: 1.15,
+  };
+  const metricValueRowStyle = {
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    flexWrap: "wrap",
+    columnGap: isPhone ? 4 : 6,
+    rowGap: 2,
+    textAlign: "center",
+    lineHeight: 1.2,
+    overflowWrap: "anywhere",
+    wordBreak: "break-word",
+  };
+  const infoRowStyle = {
+    width: "100%",
+    color: "#fff",
+    textTransform: "uppercase",
+    fontSize: infoCardFontSize,
+    textAlign: "center",
+    lineHeight: 1.3,
+    overflowWrap: "normal",
+    wordBreak: "normal",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  };
 
   const thBase = {
     position: "sticky",
@@ -1212,7 +2351,8 @@ function LiveStats({
 
   const collectTokenIds = () => {
     const out = [];
-    for (const it of Array.isArray(items) ? items : []) {
+    for (const it of Array.isArray(normalizedItems) ? normalizedItems : []) {
+      if (it?.isTicket || it?.isPending) continue;
       const raw = it?.tokenId ?? it?.id;
       if (raw == null) continue;
       const s = String(raw);
@@ -1222,7 +2362,10 @@ function LiveStats({
     return out;
   };
 
-  const canClaim = React.useMemo(() => collectTokenIds().length > 0, [items]);
+  const canClaim = React.useMemo(
+    () => collectTokenIds().length > 0,
+    [normalizedItems],
+  );
 
   const handleClaim = async () => {
     if (claimBusy) return;
@@ -1323,11 +2466,34 @@ function LiveStats({
     [actionBtnBase],
   );
 
-  const modalOverlayStyle = React.useMemo(
-    () => ({
+  const modalOverlayStyle = React.useMemo(() => {
+    if (desktopFullscreen) {
+      return {
+        position: "absolute",
+        top: modalViewportTop,
+        left: 0,
+        right: 0,
+        zIndex: 10060,
+        width: "100vw",
+        height:
+          modalViewportHeight > 0 ? `${modalViewportHeight}px` : "100vh",
+        display: "flex",
+        justifyContent: "stretch",
+        alignItems: "stretch",
+        pointerEvents: "auto",
+        padding: 0,
+        overflow: "hidden",
+        overscrollBehavior: "none",
+        backgroundColor: "rgba(0,0,0,0.75)",
+        backdropFilter: "blur(6px)",
+        isolation: "isolate",
+      };
+    }
+
+    return {
       position: "fixed",
       inset: 0,
-      zIndex: 999,
+      zIndex: 10060,
       width: "100vw",
       height: "100vh",
       display: "flex",
@@ -1335,33 +2501,34 @@ function LiveStats({
       alignItems: "center",
       pointerEvents: "auto",
       padding: 0,
-      overFLOW: "hidden",
+      overflow: "hidden",
+      overscrollBehavior: "none",
       backgroundColor: "rgba(0,0,0,0.75)",
       backdropFilter: "blur(6px)",
-    }),
-    [],
-  );
+      isolation: "isolate",
+    };
+  }, [desktopFullscreen, modalViewportHeight, modalViewportTop]);
 
   const fullscreenModalFrameStyle = React.useMemo(
     () => ({
       width: "100%",
       height: "100%",
       display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: desktopFullscreen ? "stretch" : "center",
+      alignItems: desktopFullscreen ? "stretch" : "center",
       padding: 0,
     }),
-    [],
+    [desktopFullscreen],
   );
 
   const fullscreenModalCardStyle = React.useMemo(() => {
-    const padding = isPhone ? 12 : 28;
     return {
       width: "100vw",
       height: "100vh",
       maxWidth: "100vw",
       maxHeight: "100vh",
-      overFLOWY: "auto",
+      overflowX: "hidden",
+      overflowY: desktopFullscreen ? "hidden" : "auto",
       borderRadius: 0,
       border: "2px solid #ffe800",
       boxShadow: "none",
@@ -1370,12 +2537,60 @@ function LiveStats({
       backgroundSize: "cover, cover",
       backgroundPosition: "center, center",
       backgroundRepeat: "no-repeat, no-repeat",
-      padding,
+      padding: 0,
       display: "flex",
       flexDirection: "column",
       boxSizing: "border-box",
+      overscrollBehavior: desktopFullscreen ? "none" : "contain",
     };
-  }, [isPhone]);
+  }, [desktopFullscreen]);
+
+  const tokenomicsModalBodyStyle = React.useMemo(
+    () => ({
+      flex: 1,
+      minHeight: 0,
+      overflowY: isPhone ? "auto" : "hidden",
+      overflowX: "hidden",
+      WebkitOverflowScrolling: "touch",
+      overscrollBehavior: isPhone ? "contain" : "none",
+      touchAction: isPhone ? "pan-y" : "none",
+      padding: isPhone ? 8 : 12,
+      boxSizing: "border-box",
+    }),
+    [isPhone],
+  );
+
+  const tokenomicsModalGridStyle = React.useMemo(
+    () =>
+      desktopFullscreen
+        ? {
+            marginTop: 0,
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            gridTemplateRows: "minmax(0, 1fr) minmax(0, 1fr)",
+            gap: 10,
+            height: "100%",
+            minHeight: 0,
+            alignItems: "stretch",
+          }
+        : {
+            marginTop: isPhone ? 6 : 10,
+            display: "grid",
+            gap: isPhone ? 8 : 12,
+          },
+    [desktopFullscreen, isPhone],
+  );
+
+  const chatModalContentStyle = React.useMemo(
+    () => ({
+      flex: 1,
+      minHeight: 0,
+      overflow: desktopFullscreen ? "hidden" : "auto",
+      padding: isPhone ? 8 : 14,
+      boxSizing: "border-box",
+    }),
+    [desktopFullscreen, isPhone],
+  );
 
   const modalHeaderStyle = React.useMemo(
     () => ({
@@ -1393,19 +2608,128 @@ function LiveStats({
     [isPhone],
   );
 
-  const handleToggleWeekly = React.useCallback(() => {
-    setWeeklyOpen((v) => !v);
+  const captureModalViewport = React.useCallback(() => {
+    if (typeof window !== "undefined") {
+      const nextTop = window.scrollY || window.pageYOffset || 0;
+      modalViewportTopRef.current = nextTop;
+      setModalViewportTop(nextTop);
+      setModalViewportHeight(window.innerHeight || 0);
+    }
+    if (typeof document !== "undefined") {
+      const active = document.activeElement;
+      if (active instanceof HTMLElement) active.blur();
+    }
   }, []);
+
+  const restoreModalViewport = React.useCallback(() => {
+    if (!desktopFullscreen || typeof window === "undefined") return;
+    const nextTop = modalViewportTopRef.current || 0;
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        window.scrollTo(0, nextTop);
+      });
+    });
+  }, [desktopFullscreen]);
+
+  const closeWeeklyModal = React.useCallback(() => {
+    setWeeklyOpen(false);
+    restoreModalViewport();
+  }, [restoreModalViewport]);
+
+  const closePoolsModal = React.useCallback(() => {
+    setPoolsOpen(false);
+    restoreModalViewport();
+  }, [restoreModalViewport]);
+
+  const closeChatModal = React.useCallback(() => {
+    setChatOpen(false);
+    restoreModalViewport();
+  }, [restoreModalViewport]);
+
+  const handleToggleWeekly = React.useCallback(() => {
+    setWeeklyOpen((v) => {
+      const next = !v;
+      if (next) captureModalViewport();
+      return next;
+    });
+  }, [captureModalViewport]);
 
   const handlePoolsButtonClick = React.useCallback(async () => {
     const next = !poolsOpen;
+    if (next) captureModalViewport();
     setPoolsOpen(next);
     if (next) await refreshPools();
-  }, [poolsOpen, refreshPools]);
+  }, [captureModalViewport, poolsOpen, refreshPools]);
 
   const handleChatButtonClick = React.useCallback(() => {
-    setChatOpen((v) => !v);
-  }, []);
+    setChatOpen((v) => {
+      const next = !v;
+      if (next) captureModalViewport();
+      return next;
+    });
+  }, [captureModalViewport]);
+
+  React.useEffect(() => {
+    if (!desktopFullscreen) return undefined;
+    if (!(weeklyOpen || poolsOpen || chatOpen)) return undefined;
+    if (typeof document === "undefined") return undefined;
+    const preventScroll = (event) => {
+      event.preventDefault();
+    };
+    const preventScrollKeys = (event) => {
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const tag = String(target.tagName || "").toUpperCase();
+        const isEditable =
+          target.isContentEditable ||
+          tag === "INPUT" ||
+          tag === "TEXTAREA" ||
+          tag === "SELECT";
+        if (isEditable) return;
+      }
+
+      const key = String(event.key || "");
+      const code = String(event.code || "");
+      const scrollKeys = new Set([
+        " ",
+        "Space",
+        "Spacebar",
+        "PageUp",
+        "PageDown",
+        "Home",
+        "End",
+        "ArrowUp",
+        "ArrowDown",
+      ]);
+      if (scrollKeys.has(key) || scrollKeys.has(code)) {
+        event.preventDefault();
+      }
+    };
+
+    document.addEventListener("wheel", preventScroll, {
+      passive: false,
+      capture: true,
+    });
+    document.addEventListener("touchmove", preventScroll, {
+      passive: false,
+      capture: true,
+    });
+    document.addEventListener("keydown", preventScrollKeys, {
+      capture: true,
+    });
+
+    return () => {
+      document.removeEventListener("wheel", preventScroll, {
+        capture: true,
+      });
+      document.removeEventListener("touchmove", preventScroll, {
+        capture: true,
+      });
+      document.removeEventListener("keydown", preventScrollKeys, {
+        capture: true,
+      });
+    };
+  }, [chatOpen, desktopFullscreen, poolsOpen, weeklyOpen]);
 
   React.useEffect(() => {
     if (!weeklyOpen) return;
@@ -1444,29 +2768,16 @@ function LiveStats({
     >
       {menuButtons.map((btn) => (
         <button
+          type="button"
           key={btn.label}
           onClick={btn.onClick}
+          aria-pressed={btn.active}
+          className={`live-menu-btn live-menu-btn--legacy ${btn.active ? "is-active" : ""}`}
           style={{
             ...menuBtnBase,
-            background: "#000",
-            color: "#ffe800",
-            border: "2px solid #08ffe6",
-            boxShadow: "0 0 14px rgba(255,232,0,0.25)",
-            transition: "transform 0.2s ease, box-shadow 0.2s ease",
-            willChange: "transform",
             ...(isPhone
               ? { flex: "1 1 0%", minWidth: 0, textAlign: "center" }
               : { minWidth: 180 }),
-          }}
-          onMouseEnter={(event) => {
-            event.currentTarget.style.transform = "translateY(-2px)";
-            event.currentTarget.style.boxShadow =
-              "0 0 20px rgba(255,232,0,0.4)";
-          }}
-          onMouseLeave={(event) => {
-            event.currentTarget.style.transform = "none";
-            event.currentTarget.style.boxShadow =
-              "0 0 14px rgba(255,232,0,0.25)";
           }}
         >
           {btn.label}
@@ -1478,16 +2789,22 @@ function LiveStats({
   // current block price for the last minted block (fallback to base if missing)
   const currentBlockPrice = React.useMemo(() => {
     const idx =
-      Array.isArray(safeBlockNames) && lastBlockName
-        ? safeBlockNames.indexOf(String(lastBlockName).toUpperCase())
+      Array.isArray(safeBlockNames) &&
+      effectiveLastMinted.blockName &&
+      effectiveLastMinted.blockName !== "-"
+        ? safeBlockNames.indexOf(
+            String(effectiveLastMinted.blockName).toUpperCase(),
+          )
         : -1;
     const live =
       idx >= 0 ? Number(effectiveBlockPrices?.[idx]) : Number.NaN;
-    if (Number.isFinite(live)) return live;
+    if (Number.isFinite(live) && live > 0) return live;
     const key =
       idx >= 0
-        ? String(safeBlockNames[idx] || lastBlockName || "").toUpperCase()
-        : String(lastBlockName || "").toUpperCase();
+        ? String(
+            safeBlockNames[idx] || effectiveLastMinted.blockName || "",
+          ).toUpperCase()
+        : String(effectiveLastMinted.blockName || "").toUpperCase();
     const base =
       typeof BASE_PRICES?.[key] === "number"
         ? BASE_PRICES[key]
@@ -1495,7 +2812,103 @@ function LiveStats({
           ? idx + 1
           : null;
     return Number.isFinite(Number(base)) ? Number(base) : null;
-  }, [safeBlockNames, lastBlockName, effectiveBlockPrices]);
+  }, [safeBlockNames, effectiveLastMinted.blockName, effectiveBlockPrices]);
+
+  const normalizedLastRedeemedBlock = React.useMemo(
+    () => String(effectiveLastMinted.blockName || "").trim().toUpperCase(),
+    [effectiveLastMinted.blockName],
+  );
+
+  const normalizedLastRedeemedBackground = React.useMemo(
+    () => normalizeBackgroundName(effectiveLastMinted.backgroundName),
+    [effectiveLastMinted.backgroundName],
+  );
+
+  const lastRedeemedBackgroundBonusPct = React.useMemo(() => {
+    if (!normalizedLastRedeemedBackground) return null;
+    const namesSource =
+      Array.isArray(safeBlockNames) && safeBlockNames.length
+        ? safeBlockNames
+        : DEFAULT_BLOCKS;
+    const names = namesSource.map((n) => String(n || "").trim().toUpperCase());
+    const idx = names.indexOf(normalizedLastRedeemedBackground);
+    if (idx < 0) return null;
+    const bonus = Number(BACKGROUND_BONUSES[idx]);
+    return Number.isFinite(bonus) ? bonus : null;
+  }, [safeBlockNames, normalizedLastRedeemedBackground]);
+
+  const lastRedeemedBackgroundBonusValue = React.useMemo(() => {
+    const base = Number(currentBlockPrice);
+    const pct = Number(lastRedeemedBackgroundBonusPct);
+    if (!Number.isFinite(base) || !Number.isFinite(pct)) return null;
+    return (base * pct) / 100;
+  }, [currentBlockPrice, lastRedeemedBackgroundBonusPct]);
+
+  const computedLastFinalPrice = React.useMemo(() => {
+    const base = Number(currentBlockPrice);
+    const bonus = Number(lastRedeemedBackgroundBonusValue);
+    if (!Number.isFinite(base)) return null;
+    if (!Number.isFinite(bonus)) return base;
+    return base + bonus;
+  }, [currentBlockPrice, lastRedeemedBackgroundBonusValue]);
+
+  const resolvedLastMintBlockPrice = React.useMemo(() => {
+    const blockPrice = Number(lastMintPriceData?.blockPrice);
+    return Number.isFinite(blockPrice) && blockPrice > 0 ? blockPrice : null;
+  }, [lastMintPriceData?.blockPrice]);
+
+  const resolvedLastMintFinalPrice = React.useMemo(() => {
+    const finalPrice = Number(lastMintPriceData?.finalPrice);
+    return Number.isFinite(finalPrice) && finalPrice > 0 ? finalPrice : null;
+  }, [lastMintPriceData?.finalPrice]);
+
+  const effectiveDisplayedBlockPrice = React.useMemo(() => {
+    if (resolvedLastMintBlockPrice != null) return resolvedLastMintBlockPrice;
+    const current = Number(currentBlockPrice);
+    return Number.isFinite(current) && current > 0 ? current : null;
+  }, [resolvedLastMintBlockPrice, currentBlockPrice]);
+
+  const effectiveDisplayedBgBonusValue = React.useMemo(() => {
+    if (
+      resolvedLastMintFinalPrice != null &&
+      resolvedLastMintBlockPrice != null &&
+      resolvedLastMintFinalPrice >= resolvedLastMintBlockPrice
+    ) {
+      return resolvedLastMintFinalPrice - resolvedLastMintBlockPrice;
+    }
+    const fallback = Number(lastRedeemedBackgroundBonusValue);
+    return Number.isFinite(fallback) && fallback > 0 ? fallback : null;
+  }, [
+    resolvedLastMintFinalPrice,
+    resolvedLastMintBlockPrice,
+    lastRedeemedBackgroundBonusValue,
+  ]);
+
+  const effectiveLastFinalPrice = React.useMemo(() => {
+    if (resolvedLastMintFinalPrice != null) return resolvedLastMintFinalPrice;
+    const computed = Number(computedLastFinalPrice);
+    if (Number.isFinite(computed) && computed > 0) return computed;
+    const fromProp = Number(lastFinalPrice);
+    if (Number.isFinite(fromProp) && fromProp > 0) return fromProp;
+    const fromChain = Number(lastFinalFromChain);
+    if (Number.isFinite(fromChain) && fromChain > 0) return fromChain;
+    return null;
+  }, [
+    resolvedLastMintFinalPrice,
+    computedLastFinalPrice,
+    lastFinalPrice,
+    lastFinalFromChain,
+  ]);
+
+  const hasCurrentBlockPrice = Number.isFinite(
+    Number(effectiveDisplayedBlockPrice),
+  );
+  const hasLastRedeemedBgBonusPct = Number.isFinite(
+    Number(lastRedeemedBackgroundBonusPct),
+  );
+  const hasLastRedeemedBgBonusValue = Number.isFinite(
+    Number(effectiveDisplayedBgBonusValue),
+  );
 
   const formatMaybe = React.useCallback((value, digits = 2) => {
     if (value == null || !Number.isFinite(Number(value))) return "--";
@@ -1556,9 +2969,9 @@ function LiveStats({
   );
 
   const ownedNftCount = React.useMemo(() => {
-    const arr = Array.isArray(items) ? items : [];
+    const arr = Array.isArray(normalizedItems) ? normalizedItems : [];
     return arr.filter((it) => it && !it.isTicket && !it.isPending).length;
-  }, [items]);
+  }, [normalizedItems]);
 
   const collectionBlockRows = React.useMemo(() => {
     return collectionBlockNames.map((name, idx) => {
@@ -1603,7 +3016,7 @@ function LiveStats({
 
   const userBlockCounts = React.useMemo(() => {
     const counts = new Array(10).fill(0);
-    const arr = Array.isArray(items) ? items : [];
+    const arr = Array.isArray(normalizedItems) ? normalizedItems : [];
     for (const it of arr) {
       if (!it || it.isTicket) continue;
       const attrs = Array.isArray(it.meta?.attributes)
@@ -1632,7 +3045,7 @@ function LiveStats({
       if (idx >= 0 && idx < 10) counts[idx] += 1;
     }
     return counts;
-  }, [items, safeBlockNames]);
+  }, [normalizedItems, safeBlockNames]);
 
   const userUnitsByBlock = React.useMemo(
     () => userBlockCounts.map((c, i) => c * WEIGHTS[i]),
@@ -1698,9 +3111,21 @@ function LiveStats({
     };
   }, [pools, tokenDecimals, tokenSymbol]);
 
+  const visibleTokenBalanceEntries = React.useMemo(() => {
+    const entries = (pools?.tokenBalances || []).filter((entry) => entry?.balance != null);
+    return desktopFullscreen ? entries.slice(0, 4) : entries.slice(0, 6);
+  }, [desktopFullscreen, pools]);
+
+  const visibleLpHolderEntries = React.useMemo(() => {
+    const entries = Array.isArray(pools?.lpStats?.balances)
+      ? pools.lpStats.balances
+      : [];
+    return desktopFullscreen ? entries.slice(0, 2) : entries.slice(0, 3);
+  }, [desktopFullscreen, pools]);
+
   const mainStats = (
     <div className="live-stats-main-flex" style={statsMainFlex}>
-      {onlyTickets && (
+      {onlyTickets && !hasConnectedWallet && (
         <div
           style={{
             width: "100%",
@@ -1752,29 +3177,142 @@ function LiveStats({
             boxShadow: "0 6px 20px rgba(0,0,0,0.6), 0 0 12px #ffe800",
             border: "1px solid rgba(255, 232, 0,0.5)",
             padding: isPhone ? "8px" : "10px",
+            position: "relative",
           }}
         >
-          <img
-            src={lastImage}
-            alt="Last Minted NFT"
-            style={{
-              maxWidth: "100%",
-              maxHeight: "100%",
-              borderRadius: 12,
-              boxShadow: "0 4px 14px rgba(0,0,0,0.6)",
-              transition: "all 0.3s ease",
-              cursor: "pointer",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "scale(1.05)";
-              e.currentTarget.style.boxShadow =
-                "0 6px 25px rgba(0,0,0,0.7), 0 0 18px #ffe800";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "scale(1)";
-              e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,0,0,0.6)";
-            }}
-          />
+          {hasLastImage ? (
+            <img
+              src={displayLastImageSrc}
+              alt="Last Minted NFT"
+              style={{
+                maxWidth: "100%",
+                maxHeight: "100%",
+                borderRadius: 12,
+                boxShadow: "0 4px 14px rgba(0,0,0,0.6)",
+                transition: "all 0.3s ease",
+                cursor: "pointer",
+              }}
+              onLoad={(e) => {
+                setLastImageLoaded(true);
+                setLastImageFailed(false);
+                const loadedSrc = String(
+                  e?.currentTarget?.currentSrc || displayLastImageSrc || "",
+                ).trim();
+                const tokenId = String(effectiveLastMinted.tokenId || "").trim();
+                if (loadedSrc && tokenId && tokenId !== "-") {
+                  lastStableImageRef.current = loadedSrc;
+                  lastStableTokenRef.current = tokenId;
+                  cacheLiveStatsImageForToken(tokenId, loadedSrc);
+                }
+              }}
+              onError={() => {
+                setLastImageFailed(true);
+                setLastImageLoaded(false);
+
+                const currentKey = stripRetryParam(displayLastImageSrc).toLowerCase();
+                const currentIdx = lastImageCandidates.findIndex(
+                  (candidate) =>
+                    stripRetryParam(candidate).toLowerCase() === currentKey,
+                );
+                if (
+                  currentIdx >= 0 &&
+                  currentIdx < lastImageCandidates.length - 1
+                ) {
+                  setLastImageSrc(lastImageCandidates[currentIdx + 1]);
+                  setLastImageFailed(false);
+                  setLastImageLoaded(false);
+                  return;
+                }
+
+                // Keep retry flow for IPFS URLs. If retries are exhausted,
+                // try the last stable image for the same token and avoid collapsing
+                // to the "No wallet NFT yet" placeholder.
+                if (!lastImageIsIpfs || lastImageRetryRef.current >= 2) {
+                  const tokenId = String(effectiveLastMinted.tokenId || "").trim();
+                  const cachedSrc = getCachedLiveStatsImageForToken(tokenId);
+                  if (
+                    cachedSrc &&
+                    stripRetryParam(cachedSrc).toLowerCase() !== currentKey
+                  ) {
+                    setLastImageSrc(cachedSrc);
+                    setLastImageFailed(false);
+                    setLastImageLoaded(false);
+                    return;
+                  }
+                  const stableTokenId = String(lastStableTokenRef.current || "").trim();
+                  const stableSrc = String(lastStableImageRef.current || "").trim();
+                  if (
+                    stableSrc &&
+                    tokenId &&
+                    tokenId !== "-" &&
+                    stableTokenId === tokenId &&
+                    stableSrc !== displayLastImageSrc
+                  ) {
+                    setLastImageSrc(stableSrc);
+                    setLastImageFailed(false);
+                    setLastImageLoaded(true);
+                    return;
+                  }
+
+                  // Final global fallback: keep the last known good image even when
+                  // current token metadata is incomplete or temporarily broken.
+                  if (
+                    stableSrc &&
+                    stripRetryParam(stableSrc).toLowerCase() !== currentKey
+                  ) {
+                    setLastImageSrc(stableSrc);
+                    setLastImageFailed(false);
+                    setLastImageLoaded(true);
+                  }
+                }
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "scale(1.05)";
+                e.currentTarget.style.boxShadow =
+                  "0 6px 25px rgba(0,0,0,0.7), 0 0 18px #ffe800";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "scale(1)";
+                e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,0,0,0.6)";
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                color: "rgba(255, 232, 0, 0.9)",
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                fontSize: 12,
+                textAlign: "center",
+                padding: "0 10px",
+              }}
+            >
+              {hasLastToken ? "Last NFT image unavailable" : "No wallet NFT yet"}
+            </div>
+          )}
+          {showLastImageFallback && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                textAlign: "center",
+                padding: 10,
+                background: "rgba(6, 10, 20, 0.72)",
+                color: "#9adfff",
+                fontWeight: 700,
+                fontSize: 12,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                pointerEvents: "none",
+              }}
+            >
+              IPFS image offline
+            </div>
+          )}
         </div>
 
         <div
@@ -1793,65 +3331,72 @@ function LiveStats({
           }}
         >
           <div
-            style={{
-              color: "#fff",
-              textTransform: "uppercase",
-              fontSize: infoCardFontSize,
-            }}
+            style={infoRowStyle}
           >
             LAST NFT:&nbsp;
             <span className="highlight" style={{ color: "#ff0000" }}>
-              #{lastNftId}
+              #{effectiveLastMinted.tokenId}
             </span>
           </div>
-          <div
-            style={{
-              color: "#fff",
-              textTransform: "uppercase",
-              fontSize: infoCardFontSize,
-            }}
-          >
+          <div style={infoRowStyle}>
             BLOCK:&nbsp;
             <span className="highlight">
-              {String(lastBlockName || "-").toUpperCase()}
+              {String(effectiveLastMinted.blockName || "-").toUpperCase()}
+            </span>
+          </div>
+          <div style={infoRowStyle}>
+            BACKGROUND:&nbsp;
+            <span className="highlight">
+              {String(effectiveLastMinted.backgroundName || "-").toUpperCase()}
             </span>
           </div>
           <div
             style={{
-              color: "#fff",
-              textTransform: "uppercase",
-              fontSize: infoCardFontSize,
+              ...infoRowStyle,
+              color: "#9ee5ff",
+              marginTop: isPhone ? 1 : 2,
             }}
           >
-            BACKGROUND:&nbsp;
-            <span className="highlight">
-              {String(lastBackgroundName || "-").toUpperCase()}
-            </span>
+            FINAL PRICE
           </div>
-          <div>
+          <div style={metricValueRowStyle}>
             <span
               className="highlight"
               style={{
                 color: "#5ddcff",
                 fontSize: infoCardBigFontSize,
                 fontWeight: 800,
-                whiteSpace: "nowrap",
               }}
             >
-              {currentBlockPrice != null
-                ? `${formatMaybe(currentBlockPrice, 2)} POL`
+              {effectiveLastFinalPrice != null
+                ? `${formatMaybe(effectiveLastFinalPrice, 2)} POL`
                 : "-"}
             </span>
+          </div>
+          <div
+            style={{
+              ...infoRowStyle,
+              color: "#9ee5ff",
+              textTransform: "none",
+              fontSize: isTiny ? "0.48em" : isPhone ? "0.58em" : "0.64em",
+            }}
+          >
+            {hasCurrentBlockPrice
+              ? `Base ${formatMaybe(effectiveDisplayedBlockPrice, 2)} POL`
+              : "Base -"}
+            {hasLastRedeemedBgBonusValue
+              ? ` + BG bonus ${formatMaybe(effectiveDisplayedBgBonusValue, 2)} POL (${hasLastRedeemedBgBonusPct ? formatSigned(lastRedeemedBackgroundBonusPct, 0) : "--"}%)`
+              : ""}
           </div>
         </div>
       </div>
 
       <div style={statsGroupStyle}>
         <div style={statsTable}>
-          <div className="widget-title" style={titleStyle}>
+          <div className="widget-title" style={metricLabelStyle}>
             TICKETS LEFT
           </div>
-          <div style={{ fontSize: boxFontSize }}>
+          <div style={{ ...metricValueRowStyle, fontSize: boxFontSize }}>
             <span className="highlight" style={{ color: "#ffe800" }}>
               {Math.max(0, (maxTickets || 0) - (ticketMinted || 0))}
             </span>{" "}
@@ -1859,11 +3404,11 @@ function LiveStats({
           </div>
           <div
             className="widget-title"
-            style={{ ...titleStyle, marginTop: isPhone ? 6 : 8 }}
+            style={{ ...metricLabelStyle, marginTop: isPhone ? 6 : 8 }}
           >
             NFT MINTED
           </div>
-          <div style={{ fontSize: boxFontSize }}>
+          <div style={{ ...metricValueRowStyle, fontSize: boxFontSize }}>
             <span className="highlight" style={{ color: "#ffe800" }}>
               {biggiMinted}
             </span>{" "}
@@ -1872,10 +3417,10 @@ function LiveStats({
         </div>
 
         <div style={ticketPriceTable}>
-          <div className="widget-title" style={titleStyle}>
+          <div className="widget-title" style={metricLabelStyle}>
             TICKET PRICE
           </div>
-          <div>
+          <div style={metricValueRowStyle}>
             <span
               className="highlight"
               style={{
@@ -1894,10 +3439,10 @@ function LiveStats({
 
       <div style={statsGroupStyle}>
         <div style={statsTable}>
-          <div className="widget-title" style={titleStyle}>
+          <div className="widget-title" style={tokenomicsLabelStyle}>
             BIGGI PRICE
           </div>
-          <div style={{ fontSize: boxFontSize }}>
+          <div style={{ ...metricValueRowStyle, fontSize: boxFontSize }}>
             <span
               className="highlight"
               style={{
@@ -1913,12 +3458,13 @@ function LiveStats({
           </div>
           <div
             className="widget-title"
-            style={{ ...titleStyle, marginTop: isPhone ? 6 : 8 }}
+            style={{ ...tokenomicsLabelStyle, marginTop: isPhone ? 4 : 6 }}
           >
             24H CHANGE
           </div>
           <div
             style={{
+              ...metricValueRowStyle,
               fontWeight: 900,
               color:
                 biggiChange24h == null
@@ -1935,15 +3481,29 @@ function LiveStats({
           </div>
         </div>
 
-        <div style={ticketPriceTable}>
-          <div className="widget-title" style={titleStyle}>
-            SUPPLY
+        <div
+          style={{
+            ...ticketPriceTable,
+            gap: isPhone ? 2 : 4,
+            padding: isPhone ? "8px 10px" : "12px 14px",
+          }}
+        >
+          <div
+            className="widget-title"
+            style={{ ...tokenomicsLabelStyle, fontSize: marketCapBoxLabelFontSize }}
+          >
+            TRADEABLE SUPPLY
           </div>
           <div
-            style={{ fontSize: boxFontSize, color: "#ffe800", fontWeight: 900 }}
+            style={{
+              ...metricValueRowStyle,
+              fontSize: marketCapBoxValueFontSize,
+              color: "#ffe800",
+              fontWeight: 900,
+            }}
           >
-            {typeof biggiSupply === "number"
-              ? biggiSupply.toLocaleString(undefined, {
+            {typeof tradableSupply === "number"
+              ? tradableSupply.toLocaleString(undefined, {
                   maximumFractionDigits: 2,
                 })
               : "-"}{" "}
@@ -1951,16 +3511,20 @@ function LiveStats({
           </div>
           <div
             className="widget-title"
-            style={{ ...titleStyle, marginTop: isPhone ? 6 : 8 }}
+            style={{
+              ...tokenomicsLabelStyle,
+              fontSize: marketCapBoxLabelFontSize,
+              marginTop: isPhone ? 2 : 4,
+            }}
           >
             MARKET CAP
           </div>
           <div
             style={{
+              ...metricValueRowStyle,
               color: "#5ddcff",
               fontWeight: 900,
-              fontSize: boxBigFontSize,
-              whiteSpace: "nowrap",
+              fontSize: marketCapBoxBigValueFontSize,
             }}
           >
             {typeof biggiMcap === "number"
@@ -1990,76 +3554,37 @@ function LiveStats({
             }}
           >
             <button
+              type="button"
               ref={weeklyBtnRef}
               onClick={handleToggleWeekly}
+              aria-pressed={weeklyOpen}
+              className={`live-menu-btn live-menu-btn--legacy live-menu-btn--cyan ${weeklyOpen ? "is-active" : ""}`}
               style={{
                 ...actionBtnBase,
-                background: "#000",
-                color: "#ffe800",
-                border: "2px solid #08ffe6",
-                boxShadow: "0 0 14px rgba(8,223,255,0.25)",
-                transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                willChange: "transform",
-              }}
-              onMouseEnter={(event) => {
-                event.currentTarget.style.transform = "translateY(-2px)";
-                event.currentTarget.style.boxShadow =
-                  "0 0 20px rgba(8,223,255,0.4)";
-              }}
-              onMouseLeave={(event) => {
-                event.currentTarget.style.transform = "none";
-                event.currentTarget.style.boxShadow =
-                  "0 0 14px rgba(8,223,255,0.25)";
               }}
             >
               BIGGI WEEKLY
             </button>
 
             <button
+              type="button"
               onClick={handlePoolsButtonClick}
+              aria-pressed={poolsOpen}
+              className={`live-menu-btn live-menu-btn--legacy live-menu-btn--gold ${poolsOpen ? "is-active" : ""}`}
               style={{
                 ...actionBtnBase,
-                background: "#000",
-                color: "#ffe800",
-                border: "2px solid #08ffe6",
-                boxShadow: "0 0 14px rgba(255,232,0,0.25)",
-                transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                willChange: "transform",
-              }}
-              onMouseEnter={(event) => {
-                event.currentTarget.style.transform = "translateY(-2px)";
-                event.currentTarget.style.boxShadow =
-                  "0 0 20px rgba(255,232,0,0.4)";
-              }}
-              onMouseLeave={(event) => {
-                event.currentTarget.style.transform = "none";
-                event.currentTarget.style.boxShadow =
-                  "0 0 14px rgba(255,232,0,0.25)";
               }}
             >
               TOKENOMICS
             </button>
 
             <button
+              type="button"
               onClick={handleChatButtonClick}
+              aria-pressed={chatOpen}
+              className={`live-menu-btn live-menu-btn--legacy live-menu-btn--pink ${chatOpen ? "is-active" : ""}`}
               style={{
                 ...actionBtnBase,
-                background: "#000",
-                color: "#ffe800",
-                border: "2px solid #08ffe6",
-                boxShadow: "0 0 14px rgba(255,232,0,0.25)",
-                transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                willChange: "transform",
-              }}
-              onMouseEnter={(event) => {
-                event.currentTarget.style.transform = "translateY(-2px)";
-                event.currentTarget.style.boxShadow =
-                  "0 0 20px rgba(255,232,0,0.4)";
-              }}
-              onMouseLeave={(event) => {
-                event.currentTarget.style.transform = "none";
-                event.currentTarget.style.boxShadow =
-                  "0 0 14px rgba(255,232,0,0.25)";
               }}
             >
               LIVE CHAT
@@ -2073,17 +3598,19 @@ function LiveStats({
                 <div style={{ ...fullscreenModalFrameStyle, padding: 0 }}>
                   <div
                     style={fullscreenModalCardStyle}
-                    className="wc-fullscreen-shell"
+                    className={`wc-fullscreen-shell${desktopFullscreen ? " wc-fullscreen-shell--desktop" : ""}`}
                   >
                     <button
                       type="button"
                       className="wc-fullscreen-close"
-                      onClick={() => setWeeklyOpen(false)}
+                      onClick={closeWeeklyModal}
                       aria-label="Close weekly panel"
                     >
                       Close
                     </button>
-                    <div className="wc-fullscreen-wrapper">
+                    <div
+                      className={`wc-fullscreen-wrapper${desktopFullscreen ? " wc-fullscreen-wrapper--desktop" : ""}`}
+                    >
                       <WeeklyCountdown
                         info={weeklyCountdownInfo}
                         isClaiming={weeklyIsClaiming}
@@ -2099,16 +3626,19 @@ function LiveStats({
           )}
           {/* TOKENOMICS MODAL */}
           {poolsOpen && (
-            <ModalPortal lockScroll={true}>
+            <ModalPortal lockScroll={false}>
               <div style={modalOverlayStyle}>
                 <div style={fullscreenModalFrameStyle}>
-                  <div style={{ ...fullscreenModalCardStyle, padding: 0 }}>
+                  <div
+                    style={{ ...fullscreenModalCardStyle, padding: 0 }}
+                    className={desktopFullscreen ? "ls-fullscreen-tokenomics" : undefined}
+                  >
                     <div style={modalHeaderStyle}>
                       <div style={{ color: "#ffe800", fontWeight: 900 }}>
                         TOKENOMICS
                       </div>
                       <button
-                        onClick={() => setPoolsOpen(false)}
+                        onClick={closePoolsModal}
                         aria-label="Close pools"
                         title="Close"
                         style={{
@@ -2126,21 +3656,18 @@ function LiveStats({
                     </div>
 
                     <div
+                      className={desktopFullscreen ? "ls-tokenomics-modal__content" : undefined}
                       style={{
-                        flex: 1,
-                        minHeight: 0,
-                        overflow: "hidden",
-                        padding: isPhone ? 8 : 14,
+                        ...tokenomicsModalBodyStyle,
                       }}
                     >
                       <div
+                        className={desktopFullscreen ? "ls-tokenomics-modal__grid" : undefined}
                         style={{
-                          marginTop: isPhone ? 6 : 10,
-                          display: "grid",
-                          gap: isPhone ? 8 : 12,
+                          ...tokenomicsModalGridStyle,
                         }}
                       >
-                        <div className="pools-card collection-stats-card">
+                        <div className="pools-card collection-stats-card ls-tokenomics-modal__section ls-tokenomics-modal__section--overview">
                           <div className="pools-card__header">
                             <div className="collection-section-title">
                               TOKEN OVERVIEW
@@ -2181,22 +3708,12 @@ function LiveStats({
                               </div>
                             )}
                             <div className="collection-stat-card">
-                              <div className="collection-stat-label">Supply</div>
-                              <div className="collection-stat-value">
-                                {typeof biggiSupply === "number"
-                                  ? `${biggiSupply.toLocaleString(undefined, {
-                                      maximumFractionDigits: 2,
-                                    })} ${resolvedTokenMeta.symbol}`
-                                  : "-"}
-                              </div>
-                            </div>
-                            <div className="collection-stat-card">
                               <div className="collection-stat-label">
-                                Circulating
+                                Tradeable supply
                               </div>
                               <div className="collection-stat-value">
-                                {typeof circulatingSupply === "number"
-                                  ? `${circulatingSupply.toLocaleString(
+                                {typeof tradableSupply === "number"
+                                  ? `${tradableSupply.toLocaleString(
                                       undefined,
                                       { maximumFractionDigits: 2 },
                                     )} ${resolvedTokenMeta.symbol}`
@@ -2233,7 +3750,7 @@ function LiveStats({
                             </div>
                           </div>
                         </div>
-                      <div className="pools-card collection-stats-card">
+                      <div className="pools-card collection-stats-card ls-tokenomics-modal__section ls-tokenomics-modal__section--allocation">
                         <div className="pools-card__header">
                           <div className="collection-section-title">
                             POOLS & ALLOCATION
@@ -2286,9 +3803,10 @@ function LiveStats({
                                       {balDisplay}
                                     </div>
                                     <div
+                                      className="ls-tokenomics-modal__meta"
                                       style={{
                                         color: "#9ee5ff",
-                                        fontSize: "0.68rem",
+                                        fontSize: desktopFullscreen ? "0.62rem" : "0.68rem",
                                         fontWeight: 700,
                                         letterSpacing: "0.08em",
                                         textTransform: "uppercase",
@@ -2305,7 +3823,7 @@ function LiveStats({
                       </div>
 
                       {!isPhone && (
-                        <div className="pools-card collection-stats-card">
+                        <div className="pools-card collection-stats-card ls-tokenomics-modal__section ls-tokenomics-modal__section--contracts">
                           <div className="pools-card__header">
                             <div className="collection-section-title">
                               BIGGI IN CONTRACTS
@@ -2314,11 +3832,7 @@ function LiveStats({
                           <div className="pools-card__body">
                             <div className="collection-stats-grid">
                               {(() => {
-                                const entries = (pools?.tokenBalances || []).filter(
-                                  (t) => t?.balance != null
-                                );
-                                const visible = entries.slice(0, 6);
-                                if (!visible.length) {
+                                if (!visibleTokenBalanceEntries.length) {
                                   return (
                                     <div className="collection-stat-card">
                                       <div className="collection-stat-label">
@@ -2328,7 +3842,7 @@ function LiveStats({
                                     </div>
                                   );
                                 }
-                                return visible.map((t) => {
+                                return visibleTokenBalanceEntries.map((t) => {
                                   const bal = fmtToken(
                                     t.balance,
                                     resolvedTokenMeta.decimals,
@@ -2357,7 +3871,7 @@ function LiveStats({
                         </div>
                       )}
 
-                      <div className="pools-card collection-stats-card">
+                      <div className="pools-card collection-stats-card ls-tokenomics-modal__section ls-tokenomics-modal__section--lp">
                         <div className="pools-card__header">
                           <div className="collection-section-title">
                             LP TOKENS
@@ -2399,8 +3913,7 @@ function LiveStats({
                               </div>
                             </div>
                             {!isPhone &&
-                              (pools?.lpStats?.balances || [])
-                                .slice(0, 3)
+                              visibleLpHolderEntries
                                 .map((t) => {
                                   const bal =
                                     t.balance != null && pools?.lpStats
@@ -2443,13 +3956,16 @@ function LiveStats({
             <ModalPortal lockScroll={false}>
               <div style={modalOverlayStyle}>
                 <div style={fullscreenModalFrameStyle}>
-                  <div style={fullscreenModalCardStyle}>
+                  <div
+                    style={fullscreenModalCardStyle}
+                    className={desktopFullscreen ? "ls-fullscreen-chat" : undefined}
+                  >
                     <div style={modalHeaderStyle}>
                       <div style={{ color: "#ffe800", fontWeight: 900 }}>
                         LIVE CHAT
                       </div>
                       <button
-                        onClick={() => setChatOpen(false)}
+                        onClick={closeChatModal}
                         aria-label="Close live chat"
                         title="Close"
                         style={{
@@ -2465,7 +3981,12 @@ function LiveStats({
                         Close
                       </button>
                     </div>
-                    <div style={{ flex: 1, minHeight: 0 }}>
+                    <div
+                      className={desktopFullscreen ? "ls-fullscreen-chat__content" : undefined}
+                      style={{
+                        ...chatModalContentStyle,
+                      }}
+                    >
                       <React.Suspense fallback={null}>
                         <LiveChatPanel walletAddress={walletAddress} />
                       </React.Suspense>
@@ -2484,6 +4005,10 @@ function LiveStats({
             blockNames={safeBlockNames}
             blockMintCounts={effectiveBlockMintCounts}
             blockPrices={effectiveBlockPrices}
+            backgroundMintCounts={effectiveBackgroundMintCounts}
+            lastRedeemedTokenId={effectiveLastMinted.tokenId}
+            lastRedeemedBlock={effectiveLastMinted.blockName}
+            lastRedeemedBackground={effectiveLastMinted.backgroundName}
             onBack={resetAll}
           />
         </React.Suspense>
@@ -2495,12 +4020,16 @@ function LiveStats({
             blockNames={safeBlockNames}
             backgroundMintCounts={effectiveBackgroundMintCounts}
             blockPrices={effectiveBlockPrices}
+            lastRedeemedTokenId={effectiveLastMinted.tokenId}
+            lastRedeemedBlock={effectiveLastMinted.blockName}
+            lastRedeemedBackground={effectiveLastMinted.backgroundName}
             onBack={resetAll}
           />
         </React.Suspense>
       )}
 
       {showREWARDS && (
+        <>
         <div
           className="pools-card collection-stats-card"
           style={{
@@ -2510,8 +4039,20 @@ function LiveStats({
           }}
         >
           <div className="pools-card__header">
-            <div style={{ color: "#ffe800", fontWeight: 900 }}>
-              COLLECTION STATS
+            <div className="collection-stats-header-title">
+              <div style={{ color: "#ffe800", fontWeight: 900 }}>
+                COLLECTION STATS
+              </div>
+              <button
+                type="button"
+                className="live-info-button"
+                onClick={() => setShowCollectionInfo((v) => !v)}
+                aria-label="Open collection stats information"
+                aria-expanded={showCollectionInfo ? "true" : "false"}
+                title="Info"
+              >
+                i
+              </button>
             </div>
             <button
               onClick={resetAll}
@@ -2640,7 +4181,7 @@ function LiveStats({
                     <th>Minted</th>
                     <th>Base</th>
                     <th>Live</th>
-                    <th>Δ</th>
+                    <th>Delta</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2659,7 +4200,7 @@ function LiveStats({
                           ? formatMaybe(row.live, 2)
                           : formatMaybe(row.base, 2)}
                       </td>
-                      <td data-label="Δ">{formatSigned(row.delta, 2)}</td>
+                      <td data-label="Delta">{formatSigned(row.delta, 2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -2680,7 +4221,7 @@ function LiveStats({
                     <th>Background</th>
                     <th>Minted</th>
                     <th>Bonus</th>
-                    <th>Block Δ</th>
+                    <th>Block Delta</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2694,7 +4235,7 @@ function LiveStats({
                       </td>
                       <td data-label="Minted">{row.minted}</td>
                       <td data-label="Bonus">{row.bonus}%</td>
-                      <td data-label="Block Δ">
+                      <td data-label="Block Delta">
                         {formatSigned(row.delta, 2)}
                       </td>
                     </tr>
@@ -2704,6 +4245,52 @@ function LiveStats({
             </div>
           </div>
         </div>
+        {showCollectionInfo && (
+          <div
+            className="ls-info-modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ls-collection-info-title"
+            onClick={() => setShowCollectionInfo(false)}
+          >
+            <div
+              className="ls-info-modal-content"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="ls-info-modal-header" id="ls-collection-info-title">
+                Collection Stats Info
+              </div>
+              <div className="ls-info-modal-body">
+                <table className="rw-info-table">
+                  <thead>
+                    <tr>
+                      <th>Concept</th>
+                      <th>Explanation</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {COLLECTION_INFO_ROWS.map((row) => (
+                      <tr key={row.concept} className={`info-row--${row.tone}`}>
+                        <td className="rw-k">{row.concept}</td>
+                        <td className="rw-v">{row.detail}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="ls-info-modal-footer">
+                <button
+                  type="button"
+                  className="ls-info-modal-close-button"
+                  onClick={() => setShowCollectionInfo(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        </>
       )}
     </div>
   );

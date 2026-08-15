@@ -654,10 +654,7 @@ body.loading-locked .full-bg {
 .panel-nav {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-.panel-nav .icon-row {
-  margin: 0;
+  justify-content: center;
 }
 .top-bar.mobile .panel-nav {
   justify-content: center;
@@ -8431,5 +8428,47 @@ canvas {
   }
   .live-stats-widget-new {
     margin-left: 0 !important;
+  }
+}
+
+/* Generic compact policy for tall table surfaces inside app panels. */
+.stats-table-wrapper,
+.blocks-table-outer,
+.backgrounds-table-outer,
+.collection-grid__info-column,
+.panel-info-modal__body,
+.liquidity-vault-table {
+  max-height: min(52vh, 520px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.stats-table-wrapper::-webkit-scrollbar,
+.blocks-table-outer::-webkit-scrollbar,
+.backgrounds-table-outer::-webkit-scrollbar,
+.collection-grid__info-column::-webkit-scrollbar,
+.liquidity-vault-table::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+.stats-table-wrapper::-webkit-scrollbar-thumb,
+.blocks-table-outer::-webkit-scrollbar-thumb,
+.backgrounds-table-outer::-webkit-scrollbar-thumb,
+.collection-grid__info-column::-webkit-scrollbar-thumb,
+.liquidity-vault-table::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255, 232, 0, 0.42);
+}
+
+@media (max-width: 700px) {
+  .stats-table-wrapper,
+  .blocks-table-outer,
+  .backgrounds-table-outer,
+  .collection-grid__info-column,
+  .panel-info-modal__body,
+  .liquidity-vault-table {
+    max-height: min(58vh, 430px);
   }
 }

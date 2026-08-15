@@ -16,6 +16,7 @@ export default function HeaderControls({
   icons,
   setOpenNavIdx,
   isMobile,
+  mintDisabledReason = "",
 }) {
   const showWalletRow = !(isMobile && walletAddress);
 
@@ -68,6 +69,7 @@ export default function HeaderControls({
           icons={icons}
           onIconClick={(idx) => setOpenNavIdx(idx)}
           isMobile={isMobile}
+          mintDisabledReason={mintDisabledReason}
         />
       </div>
     </header>

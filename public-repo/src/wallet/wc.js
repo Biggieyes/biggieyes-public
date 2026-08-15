@@ -1,17 +1,16 @@
 // src/wallet/wc.js
 import { BrowserProvider } from "ethers";
 import { EthereumProvider } from "@walletconnect/ethereum-provider";
-import { AMOY, PUBLIC_AMOY_RPCS, getPrimaryRpcUrl } from "@/shared/utils/contract";
+import { ACTIVE_CHAIN, PUBLIC_POLYGON_RPCS, getPrimaryRpcUrl } from "@/shared/utils/contract";
 
 const WC_PROJECT_ID = import.meta.env.VITE_WC_PROJECT_ID;
 
-// Public RPC fallback for Amoy. Prefer your own infra in production.
-const DEFAULT_AMOY_RPC =
-  getPrimaryRpcUrl() || AMOY?.rpcUrl || PUBLIC_AMOY_RPCS[0];
+// Public RPC fallback for Polygon mainnet. Prefer your own infra in production.
+const DEFAULT_POLYGON_RPC =
+  getPrimaryRpcUrl() || ACTIVE_CHAIN?.rpcUrl || PUBLIC_POLYGON_RPCS[0];
 
 const RPC_MAP = {
-  80002: DEFAULT_AMOY_RPC, // Polygon Amoy
-  137: "https://polygon-rpc.com", // Polygon Mainnet
+  [ACTIVE_CHAIN.chainId]: DEFAULT_POLYGON_RPC,
   1: "https://cloudflare-eth.com", // Ethereum Mainnet
 };
 
@@ -20,8 +19,8 @@ export async function connectWithWalletConnect() {
 
   const wc = await EthereumProvider.init({
     projectId: WC_PROJECT_ID,
-    chains: [80002],
-    optionalChains: [137, 1],
+    chains: [ACTIVE_CHAIN.chainId],
+    optionalChains: [1],
     rpcMap: RPC_MAP,
     showQrModal: true,
     qrModalOptions: {
@@ -74,8 +73,8 @@ export async function connectWithWalletConnect() {
   const signer = await ethersProvider.getSigner();
 
   const chainId = await resolveChainId(wc);
-  if (chainId && chainId !== AMOY.chainId) {
-    await ensureAmoy(wc);
+  if (chainId && chainId !== ACTIVE_CHAIN.chainId) {
+    await ensurePolygon(wc);
   }
 
   // Basic listeners
@@ -117,8 +116,8 @@ export async function connectWithWalletConnect() {
 
 /* ---------------- Helpers ---------------- */
 
-async function ensureAmoy(wc) {
-  const CHAIN_HEX = AMOY?.hex || "0x13882";
+async function ensurePolygon(wc) {
+  const CHAIN_HEX = ACTIVE_CHAIN?.hex || "0x89";
   try {
     await wc.request({
       method: "wallet_switchEthereumChain",
@@ -130,17 +129,17 @@ async function ensureAmoy(wc) {
       params: [
         {
           chainId: CHAIN_HEX,
-          chainName: AMOY?.name || "Polygon Amoy",
-          nativeCurrency: AMOY?.currency || {
+          chainName: ACTIVE_CHAIN?.name || "Polygon mainnet",
+          nativeCurrency: ACTIVE_CHAIN?.currency || {
             name: "POL",
             symbol: "POL",
             decimals: 18,
           },
           rpcUrls:
-            Array.isArray(AMOY?.rpcUrls) && AMOY.rpcUrls.length
-              ? AMOY.rpcUrls
-              : [DEFAULT_AMOY_RPC],
-          blockExplorerUrls: [AMOY?.explorer].filter(Boolean),
+            Array.isArray(ACTIVE_CHAIN?.rpcUrls) && ACTIVE_CHAIN.rpcUrls.length
+              ? ACTIVE_CHAIN.rpcUrls
+              : [DEFAULT_POLYGON_RPC],
+          blockExplorerUrls: [ACTIVE_CHAIN?.explorer].filter(Boolean),
         },
       ],
     });

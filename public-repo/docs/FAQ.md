@@ -4,7 +4,7 @@
 Yes. The client and serverless code are public.
 
 ## Which network does it use?
-Polygon Amoy testnet by default (chainId 80002). You can configure mainnet by updating addresses and RPC settings.
+Polygon mainnet by default (chainId 137). Mainnet addresses and RPC settings are already configured in the shared registry.
 
 ## Do you store private keys?
 No. All signing is done in the user's wallet.

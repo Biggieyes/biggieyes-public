@@ -23,6 +23,7 @@ The app is a React and Vite frontend that talks to:
 - Read paths use read-only providers with RPC fallback.
 - Write paths require a wallet and explicit user signature.
 - Reader contracts provide fast snapshots for dashboards.
+- The official Polygon mainnet `MULTICALL2` utility is `0x70bc315E4E5548e54F358Abf4515C1bB1551687b`; it batches frontend and analytics read calls into a single RPC request.
 
 ## IPFS flow
 - Media and metadata are served from IPFS.

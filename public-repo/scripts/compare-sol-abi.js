@@ -4,7 +4,7 @@ import process from "process";
 import { globSync } from "glob";
 
 const DEFAULT_SOL_DIR =
-  "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGIEYESOFFICIALTESTNET";
+  "C:\\Users\\biggi\\OneDrive\\Obrázky\\Desktop\\FRONTEND\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MAINNET_SOURCE";
 const SOL_DIR = process.argv[2] || DEFAULT_SOL_DIR;
 const ABI_DIR = process.argv[3] || "src/utils/abi";
 const SKIP_SOL = new Set(["biggimain"]);

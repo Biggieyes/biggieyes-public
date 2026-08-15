@@ -1,4 +1,4 @@
-﻿# BiggiEyes Submission Checklist
+# BiggiEyes Submission Checklist
 
 Last updated: 2026-02-24
 
@@ -24,11 +24,11 @@ Last updated: 2026-02-24
 - Workflow integrates blockchain + external API/system/LLM/AI and demonstrates successful CRE simulation or live deployment: `DONE (SIMULATION)`
   - Simulated trigger: `cron-trigger@1.0.0`
   - External API in workflow run: `https://api.real-time-reserves.verinumus.io/v1/chainlink/proof-of-reserves/TrueUSD`
-  - Blockchain interaction in simulation: `ethereum-testnet-sepolia` via EVM capability
+  - Blockchain interaction in simulation: `polygon-mainnet` via EVM capability
 
 ## Runbook for evidence generation
 1. Configure env vars:
-   - `AMOY_RPC_URL`
+   - `POLYGON_RPC_URL`
    - `VRF_ROUTER_ADDRESS`
    - `EXTERNAL_SIGNAL_URL`
 2. Dry-run evidence:

@@ -16,8 +16,8 @@ BiggiEyes is a gamified on-chain NFT experience with verifiable randomness, dyna
 - Optional live chat with moderation tools.
 
 ## Status and networks
-- Default network: Polygon Amoy testnet (chainId 80002).
-- Mainnet support can be added by updating addresses and RPC config.
+- Active network: Polygon mainnet (chainId 137).
+- Mainnet addresses and RPC configuration are already wired through the shared registry.
 - No financial advice. Read legal/TERMS.md and docs/RISK_DISCLOSURE.md.
 
 ## Quickstart

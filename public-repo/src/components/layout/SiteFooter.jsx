@@ -57,8 +57,8 @@ const CONTRACTS = [
 
 const RPC_URL =
   import.meta.env.VITE_JSON_RPC_URL ||
-  import.meta.env.VITE_AMOY_RPC_URL ||
-  import.meta.env.VITE_RPC_URL_AMOY ||
+  import.meta.env.VITE_POLYGON_RPC_URL ||
+  import.meta.env.VITE_RPC_URL_ACTIVE_CHAIN ||
   "";
 
 const safeRpcLabel = (url) => {
@@ -78,8 +78,8 @@ const shortAddr = (addr) => {
 };
 
 const explorerUrl = (addr) =>
-  addr ? `https://amoy.polygonscan.com/address/${addr}` : "#";
-const EXPLORER_BASE = "https://amoy.polygonscan.com";
+  addr ? `https://polygonscan.com/address/${addr}` : "#";
+const EXPLORER_BASE = "https://polygonscan.com";
 
 export default function SiteFooter() {
   return (
@@ -90,7 +90,7 @@ export default function SiteFooter() {
             <div className="site-footer__title">{PROJECT_NAME}</div>
             <div className="site-footer__tagline">{TAGLINE}</div>
             <div className="site-footer__badges">
-              <span className="site-footer__pill">Polygon Amoy</span>
+              <span className="site-footer__pill">Polygon mainnet</span>
               <span className="site-footer__pill">Chain {DEFAULT_CHAIN_ID}</span>
               <span className="site-footer__pill">VRF Reveal</span>
               <span className="site-footer__pill">Weekly Rewards</span>
@@ -177,7 +177,7 @@ export default function SiteFooter() {
             <h4>Status</h4>
             <ul className="site-footer__list">
               <li>
-                <span className="site-footer__muted">Network:</span> Polygon Amoy
+                <span className="site-footer__muted">Network:</span> Polygon mainnet
               </li>
               <li>
                 <span className="site-footer__muted">Chain ID:</span>{" "}
@@ -190,7 +190,7 @@ export default function SiteFooter() {
               <li>
                 <span className="site-footer__muted">Explorer:</span>{" "}
                 <a className="site-footer__link" href={EXPLORER_BASE} target="_blank" rel="noreferrer">
-                  amoy.polygonscan.com
+                  polygonscan.com
                 </a>
               </li>
               <li>

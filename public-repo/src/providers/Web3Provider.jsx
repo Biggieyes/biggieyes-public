@@ -4,12 +4,12 @@ import * as React from "react";
 import { BrowserProvider } from "ethers";
 
 import {
-  AMOY,
-  ensureAmoy,
+  ACTIVE_CHAIN,
+  ensurePolygon,
   getInjectedProvider,
   getROProvider,
   setInjectedProvider,
-  syncAmoyRpcIfNeeded,
+  syncPolygonRpcIfNeeded,
 } from "@/shared/utils/contract";
 
 const Ctx = React.createContext(null);
@@ -42,7 +42,7 @@ export function Web3Provider({ children }) {
         setProvider(roProvider);
         setSigner(null);
         setAccount("");
-        setChainId(AMOY.chainId);
+        setChainId(ACTIVE_CHAIN.chainId);
       } catch {
         setProvider(null);
         setSigner(null);
@@ -71,15 +71,15 @@ export function Web3Provider({ children }) {
     }
   }, []);
 
-  /** Switch/add the target chain. Uses ensureAmoy for Amoy. */
+  /** Switch/add the target chain. Uses ensurePolygon for Polygon mainnet. */
   const ensureChain = React.useCallback(
-    async (targetId = AMOY.chainId) => {
+    async (targetId = ACTIVE_CHAIN.chainId) => {
       const eth = pickInjectedProvider();
       if (!eth) return;
-      const wantsAmoy = Number(targetId) === AMOY.chainId;
+      const wantsPolygonMainnet = Number(targetId) === ACTIVE_CHAIN.chainId;
       try {
-        if (wantsAmoy) {
-          await ensureAmoy(eth);
+        if (wantsPolygonMainnet) {
+          await ensurePolygon(eth);
         } else {
           const hex = "0x" + Number(targetId).toString(16);
           await eth.request({
@@ -88,13 +88,13 @@ export function Web3Provider({ children }) {
           });
         }
       } catch (e) {
-        // If it fails and target is Amoy, try adding and switching again
-        if (wantsAmoy) {
+        // If it fails and target is Polygon mainnet, try adding and switching again
+        if (wantsPolygonMainnet) {
           try {
-            await syncAmoyRpcIfNeeded(eth, { force: true });
+            await syncPolygonRpcIfNeeded(eth, { force: true });
             await eth.request({
               method: "wallet_switchEthereumChain",
-              params: [{ chainId: AMOY.hex }],
+              params: [{ chainId: ACTIVE_CHAIN.hex }],
             });
           } catch {
             // ignore, refresh state below
@@ -122,8 +122,8 @@ export function Web3Provider({ children }) {
         typeof chainHex === "string"
           ? Number.parseInt(chainHex, 16)
           : undefined;
-      if (currentId !== AMOY.chainId) {
-        await ensureChain(AMOY.chainId);
+      if (currentId !== ACTIVE_CHAIN.chainId) {
+        await ensureChain(ACTIVE_CHAIN.chainId);
       } else {
         await refresh();
       }

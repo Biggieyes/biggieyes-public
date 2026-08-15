@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -700,7 +700,7 @@
       </aside>
 
       <section class="hero">
-        <h1>BiggiEyes — VRF Ticket → Reveal Ecosystem</h1>
+        <h1>BiggiEyes — VRF Ticket › Reveal Ecosystem</h1>
         <p>
           BiggiEyes combines tradable Tickets, verifiable randomness (VRF), and
           reveal-driven NFT rarity into one on-chain flow.
@@ -713,7 +713,7 @@
       <section id="live-stats">
         <h2>Live On-Chain Stats</h2>
         <p>
-          These values are fetched live from Polygon Amoy contracts used by the app.
+          These values are fetched live from Polygon mainnet contracts used by the app.
           They are not hardcoded marketing numbers.
         </p>
         <div class="live-grid">
@@ -844,16 +844,17 @@
     <script>
       (function () {
         const RPC_ENDPOINTS = [
-          "https://rpc-amoy.polygon.technology",
-          "https://polygon-amoy-bor-rpc.publicnode.com",
-          "https://polygon-amoy.drpc.org",
+          "https://polygon.drpc.org",
+          "https://polygon-bor-rpc.publicnode.com",
+          "https://polygon.drpc.org",
         ];
 
         const ADDR = {
-          MAIN: "0x3430f378032Cead7A82f38047e906C1E3cAFc703",
-          BIGGI: "0xD4D0fa17f2955Eb3fF8D03ea0cD7A2f0a06E6d0E",
-          PAIR: "0x210d5aE3e0E954836D237363Eea2674bD36e9b63",
-          PRICE_ORACLE: "0xDc259aC37b8A1B33AB8B5093A6A9F21D0892F533",
+          MAIN: "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+          TICKET_HUB: "0xe6d742D7DC66fA63434E6794C69798A5272e9873",
+          BIGGI: "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
+          PAIR: "0x59C7B17B3ACD48979B25215a0c477dF6FFFF3e90",
+          PRICE_ORACLE: "0x0000000000000000000000000000000000000000",
         };
 
         const SIG = {
@@ -873,6 +874,10 @@
         let activeRpc = null;
 
         const strip0x = (v) => String(v || "").replace(/^0x/i, "");
+        const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+        const hasAddress = (addr) =>
+          /^0x[0-9a-fA-F]{40}$/.test(String(addr || "")) &&
+          String(addr).toLowerCase() !== ZERO_ADDRESS;
 
         const withTimeout = async (promise, ms) => {
           let timer = null;
@@ -966,19 +971,23 @@
 
         const readTicketPrice = async () => {
           const candidates = [SIG.getTicketPrice, SIG.ticketPrice];
-          for (const selector of candidates) {
-            try {
-              const raw = await ethCall(ADDR.MAIN, selector);
-              const wei = decodeUintWord(raw, 0);
-              if (wei > 0n) return wei;
-            } catch (_err) {
-              // try next selector
+          const targets = [ADDR.TICKET_HUB, ADDR.MAIN].filter(hasAddress);
+          for (const target of targets) {
+            for (const selector of candidates) {
+              try {
+                const raw = await ethCall(target, selector);
+                const wei = decodeUintWord(raw, 0);
+                if (wei > 0n) return wei;
+              } catch (_err) {
+                // try next selector
+              }
             }
           }
           throw new Error("Ticket price unavailable");
         };
 
         const readBiggiFromOracle = async () => {
+          if (!hasAddress(ADDR.PRICE_ORACLE)) throw new Error("Oracle not configured");
           const [roundRaw, decRaw] = await Promise.all([
             ethCall(ADDR.PRICE_ORACLE, SIG.latestRoundData),
             ethCall(ADDR.PRICE_ORACLE, SIG.decimals),

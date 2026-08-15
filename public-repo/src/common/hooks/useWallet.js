@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as WC from "../../wallet/wc";
 import {
-  ensureAmoy,
+  ensurePolygon,
   getContract,
   getInjectedProvider,
   setInjectedProvider,
@@ -50,8 +50,8 @@ export function useWallet({ onConnected } = {}) {
         typeof chainHex === "string"
           ? Number.parseInt(chainHex, 16)
           : undefined;
-      if (currentId !== 80002) {
-        await ensureAmoy(eth);
+      if (currentId !== 137) {
+        await ensurePolygon(eth);
       }
 
       setWalletAddress(addr);

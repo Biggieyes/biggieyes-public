@@ -2,8 +2,8 @@ import * as React from "react";
 import { Contract } from "ethers";
 import { ADDR } from "@/shared/utils/addresses";
 import { getROProvider, ABI_REWARDS_READER } from "@/shared/utils/contract";
-
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+import { getDistributorRecipients } from "@/shared/services/tokenomics/distributorReaderCompat.js";
+import { isRealAddress } from "@/features/tokenomics/utils/amountFormatting.js";
 
 const resolveReaderAddress = () =>
   ADDR.BIGGI_REWARDS_READER || ADDR.COLLECTION_REWARDS_READER || null;
@@ -16,11 +16,6 @@ const buildFallback = () => ({
   treasury: ADDR.TREASURY || null,
   reserve: ADDR.RESERVE || null,
 });
-
-const isValidAddr = (addr) =>
-  typeof addr === "string" &&
-  /^0x[0-9a-fA-F]{40}$/.test(addr) &&
-  addr !== ZERO_ADDRESS;
 
 const safeCall = async (fn, fallback) => {
   if (typeof fn !== "function") return fallback;
@@ -62,29 +57,24 @@ export default function useRewardsReader() {
         ABI_REWARDS_READER,
         provider,
       );
-      const [tokenRewards, collectionRewards, nftRewards, treasury, reserve] =
-        await Promise.all([
-          safeCall(() => contract["tokenRewards"]?.(), fallback.tokenRewards),
-          safeCall(
-            () => contract.collectionRewards?.(),
-            fallback.collectionRewards,
-          ),
-          safeCall(() => contract["nftRewards"]?.(), fallback.nftRewards),
-          safeCall(() => contract.treasury?.(), fallback.treasury),
-          safeCall(() => contract.reserve?.(), fallback.reserve),
-        ]);
+      const recipients = await safeCall(
+        () => getDistributorRecipients(contract),
+        null,
+      );
+      const collectionRewards =
+        recipients?.collectionRewards ?? fallback.collectionRewards;
+      const treasury = recipients?.treasury ?? fallback.treasury;
+      const reserve = recipients?.reserve ?? fallback.reserve;
 
       const next = {
         reader: fallback.reader,
-        tokenRewards: isValidAddr(tokenRewards)
-          ? tokenRewards
-          : fallback.tokenRewards,
-        collectionRewards: isValidAddr(collectionRewards)
+        tokenRewards: fallback.tokenRewards,
+        collectionRewards: isRealAddress(collectionRewards)
           ? collectionRewards
           : fallback.collectionRewards,
-        nftRewards: isValidAddr(nftRewards) ? nftRewards : fallback.nftRewards,
-        treasury: isValidAddr(treasury) ? treasury : fallback.treasury,
-        reserve: isValidAddr(reserve) ? reserve : fallback.reserve,
+        nftRewards: fallback.nftRewards,
+        treasury: isRealAddress(treasury) ? treasury : fallback.treasury,
+        reserve: isRealAddress(reserve) ? reserve : fallback.reserve,
       };
 
       setReaderAddresses(next);

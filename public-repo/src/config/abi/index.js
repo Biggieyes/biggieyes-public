@@ -1,4 +1,4 @@
-// ABI exporty - aktuální stack na Polygon Amoy
+// ABI exporty - aktuální stack na Polygon mainnet
 import BiggiBuybackAgent from "./BiggiBuybackAgent.json";
 import BiggiBuybackDripSetup from "./BiggiBuybackDripSetup.json";
 import BiggiBuybackReader from "./BiggiBuybackReader.json";

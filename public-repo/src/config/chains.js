@@ -6,13 +6,6 @@ export const CHAINS = {
     explorer: "https://etherscan.io",
     currency: { name: "ETH", symbol: "ETH", decimals: 18 },
   },
-  5: {
-    chainId: 5,
-    hex: "0x5",
-    name: "Goerli",
-    explorer: "https://goerli.etherscan.io",
-    currency: { name: "ETH", symbol: "ETH", decimals: 18 },
-  },
   10: {
     chainId: 10,
     hex: "0xa",
@@ -25,20 +18,6 @@ export const CHAINS = {
     hex: "0x89",
     name: "Polygon",
     explorer: "https://polygonscan.com",
-    currency: { name: "POL", symbol: "POL", decimals: 18 },
-  },
-  80001: {
-    chainId: 80001,
-    hex: "0x13881",
-    name: "Polygon Mumbai",
-    explorer: "https://mumbai.polygonscan.com",
-    currency: { name: "MATIC", symbol: "MATIC", decimals: 18 },
-  },
-  80002: {
-    chainId: 80002,
-    hex: "0x13882",
-    name: "Polygon Amoy",
-    explorer: "https://amoy.polygonscan.com",
     currency: { name: "POL", symbol: "POL", decimals: 18 },
   },
   8453: {

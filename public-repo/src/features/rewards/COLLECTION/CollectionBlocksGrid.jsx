@@ -4,6 +4,7 @@ import "./COLLECTIONBlocksGrid.css";
 
 import useIsMobile from "../../../hooks/useIsMobile";
 import useIsTouch from "../../../hooks/useIsTouch";
+import useChapterSeriesReader from "../../../hooks/useChapterSeriesReader";
 import { useStatsREWARDS } from "../../../hooks/useStatsRewards";
 import {
   DEFAULT_BLOCKS,
@@ -18,9 +19,16 @@ import {
   getBlockImages,
   getBlockThumb,
   buildBlockImagePath,
+  buildBlockThumbPath,
 } from "../../../utils/images";
 import { useContracts } from "../../../providers/ContractsProvider";
-import { ensureAmoy, getCOLLECTIONPublicRO, getROProvider } from "@/shared/utils/contract";
+import {
+  ensurePolygon,
+  getCOLLECTIONPublicRO,
+  getCOLLECTIONVRFRO,
+  getROProvider,
+} from "@/shared/utils/contract";
+import { coerceBool } from "@/shared/utils/boolean";
 import { formatEther } from "ethers";
 
 // Import constants a utilities
@@ -31,7 +39,7 @@ import {
   COLLECTION_TABS,
   FALLBACK_VALUE,
   COLLECTION_STATUSES,
-  FUTURE_COLLECTIONS,
+  getFutureCollectionStats,
 } from "./COLLECTIONBlocksGrid.constants";
 import {
   parseCount,
@@ -48,8 +56,10 @@ import {
 // Import sub-komponenty
 import BlockCard from "./CollectionBlocksGrid.BlockCard";
 import PanelInfoModal from "@/components/common/PanelInfoModal";
+import PanelInfoButton from "@/components/common/PanelInfoButton";
 import COLLECTION1Panel from "./CollectionBlocksGrid.Collection1Panel";
 import COLLECTION2Panel from "./CollectionBlocksGrid.Collection2Panel";
+import ChapterSeriesPanel from "./CollectionBlocksGrid.ChapterSeriesPanel";
 import FutureCollectionsModal from "./CollectionBlocksGrid.FutureCollectionsModal";
 import ModalPortal from "../../../components/common/ModalPortal";
 
@@ -57,6 +67,43 @@ const ExpansionPanelLazy = React.lazy(
   () => import("../../../components/expansion/ExpansionPanel.jsx"),
 );
 const NOOP = () => {};
+const BACKGROUND_CODES = ["O", "B", "W", "BR", "BL", "G", "V", "R", "P", "RB"];
+const MODAL_FILE_PATTERN = /^Biggi_(\d+)_([A-Z]+)_([A-Z]+)\.png$/i;
+const DEFAULT_MODAL_SCAN_SUPPLY = 550;
+const MODAL_SCAN_CHUNK = 32;
+
+const parseModalImageFile = (fileName) => {
+  const match = String(fileName || "").match(MODAL_FILE_PATTERN);
+  if (!match) return null;
+  return {
+    mainId: String(Number(match[1])),
+    blockName: String(match[2] || "").toUpperCase(),
+    bgCode: String(match[3] || "").toUpperCase(),
+  };
+};
+
+const blockNameFromInfoIndex = (value) => {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "";
+  if (n >= 1 && n <= DEFAULT_BLOCKS.length) return DEFAULT_BLOCKS[n - 1];
+  if (n >= 0 && n < DEFAULT_BLOCKS.length) return DEFAULT_BLOCKS[n];
+  return "";
+};
+
+const bgCodeFromInfoIndex = (value) => {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "";
+  if (n >= 1 && n <= BACKGROUND_CODES.length) return BACKGROUND_CODES[n - 1];
+  if (n >= 0 && n < BACKGROUND_CODES.length) return BACKGROUND_CODES[n];
+  return "";
+};
+
+const buildMintedModalKey = (mainId, bgCode) => {
+  const idRaw = String(mainId || "").trim();
+  const bg = String(bgCode || "").trim().toUpperCase();
+  if (!/^\d+$/.test(idRaw) || !bg) return "";
+  return `${String(Number(idRaw))}:${bg}`;
+};
 
 const resolveButtonStyle = (name) => {
   const variant = BTN_STYLES[safeBlockFolder(name)] || FALLBACK_BTN_STYLE;
@@ -68,6 +115,41 @@ const resolveButtonStyle = (name) => {
   };
 };
 
+const COLLECTION_SECTION_META = {
+  COLLECTION1: {
+    title: "VRF COLLECTION",
+    subtitle:
+      "Live VRF collection view with block pricing, background impact, and rarity-linked supply signals across the first collection layer.",
+    accent: "#ffe800",
+    accentSoft: "rgba(255, 232, 0, 0.22)",
+    accentGlow: "rgba(255, 232, 0, 0.38)",
+  },
+  COLLECTION2: {
+    title: "PUBLIC COLLECTION",
+    subtitle:
+      "Track public mint pricing, availability, and mint setup inputs for the second collection layer in one control view.",
+    accent: "#5ddcff",
+    accentSoft: "rgba(93, 220, 255, 0.22)",
+    accentGlow: "rgba(93, 220, 255, 0.38)",
+  },
+  expansion: {
+    title: "EXPANSION",
+    subtitle:
+      "Inspect the expansion roadmap and ecosystem-linked telemetry gathered inside the collection hub.",
+    accent: "#b584ff",
+    accentSoft: "rgba(181, 132, 255, 0.22)",
+    accentGlow: "rgba(181, 132, 255, 0.38)",
+  },
+  chapterSeries: {
+    title: "CHAPTER / SERIES",
+    subtitle:
+      "Verify ChapterSeriesReader wiring, collection eligibility, and the active VRF/Public pair from Polygon mainnet.",
+    accent: "#27d9d2",
+    accentSoft: "rgba(39, 217, 210, 0.2)",
+    accentGlow: "rgba(39, 217, 210, 0.32)",
+  },
+};
+
 function COLLECTIONBlocksGrid({
   blockNames = [], // nepovinné override
   blockPrices: blockPricesProp, // nepovinné override
@@ -75,10 +157,13 @@ function COLLECTIONBlocksGrid({
   additionalText = "",
   activeCOLLECTION: activeCOLLECTIONProp = "COLLECTION1",
   onCOLLECTIONChange = () => {},
+  autoOpenInfo = false,
+  onActiveSectionChange,
 }) {
   const [openBlock, setOpenBlock] = React.useState(null);
   const [hoveredBlock, setHoveredBlock] = React.useState(null);
   const [infoOpen, setInfoOpen] = React.useState(false);
+  const autoInfoOpened = React.useRef(false);
   const [futureOpen, setFutureOpen] = React.useState(false);
   const [selectedBlock, setSelectedBlock] = React.useState(1);
   const [selectedBackground, setSelectedBackground] = React.useState(1);
@@ -86,18 +171,37 @@ function COLLECTIONBlocksGrid({
   const [COLLECTIONMeta, setCOLLECTIONMeta] = React.useState({});
   const [onchainUnavailable, setOnchainUnavailable] = React.useState(false);
   const [reloadCounter, setReloadCounter] = React.useState(0);
+  const [localActive, setLocalActive] = React.useState(activeCOLLECTIONProp);
+  const [modalMintedLoading, setModalMintedLoading] = React.useState(false);
+  const [modalMintedKeys, setModalMintedKeys] = React.useState(() => new Set());
+  const modalMintedCacheRef = React.useRef({
+    snapshotKey: "",
+    byBlock: {},
+  });
   const futureStats = React.useMemo(
-    () => ({
-      totalCOLLECTIONs: 0,
-      totalItems: 0,
-      avgMintPrice: 0,
-      highProgress: 0,
-    }),
+    () => getFutureCollectionStats(),
     [],
   );
+  const {
+    data: chapterSeriesData,
+    loading: chapterSeriesLoading,
+    error: chapterSeriesError,
+    refresh: refreshChapterSeries,
+  } = useChapterSeriesReader();
 
   const isMobile = useIsMobile(MOBILE_BREAKPOINT);
   const isTouch = useIsTouch();
+
+  React.useEffect(() => {
+    if (autoOpenInfo && !autoInfoOpened.current) {
+      setInfoOpen(true);
+      autoInfoOpened.current = true;
+    }
+  }, [autoOpenInfo]);
+
+  React.useEffect(() => {
+    setLocalActive(activeCOLLECTIONProp);
+  }, [activeCOLLECTIONProp]);
 
   const [fallbackPrices, setFallbackPrices] = React.useState(
     Array(MAX_BLOCKS).fill(null),
@@ -132,6 +236,28 @@ function COLLECTIONBlocksGrid({
     contracts = null;
   }
 
+  const activeCollectionKey =
+    localActive === "COLLECTION2" ? "COLLECTION2" : "COLLECTION1";
+
+  const getCollectionReadContract = React.useCallback(() => {
+    const readPublic = activeCollectionKey === "COLLECTION2";
+    try {
+      const roProvider = getROProvider();
+      return readPublic
+        ? getCOLLECTIONPublicRO(roProvider)
+        : getCOLLECTIONVRFRO(roProvider);
+    } catch {
+      try {
+        if (readPublic) {
+          return contracts?.COLLECTIONPublicRead?.() || contracts?.main2Read?.() || null;
+        }
+        return contracts?.COLLECTIONVRFRead?.() || contracts?.mainRead?.() || null;
+      } catch {
+        return null;
+      }
+    }
+  }, [contracts, activeCollectionKey]);
+
   // ==== on-chain zdroje ====
   const [livePrices, setLivePrices] = React.useState(
     Array(MAX_BLOCKS).fill(null),
@@ -151,14 +277,7 @@ function COLLECTIONBlocksGrid({
       if (inFlight) return;
       inFlight = true;
       try {
-        if (!contracts) return;
-        let coll = null;
-        try {
-          const roProvider = getROProvider();
-          coll = getCOLLECTIONPublicRO(roProvider);
-        } catch {
-          coll = contracts?.COLLECTIONPublicRead?.();
-        }
+        const coll = getCollectionReadContract();
         if (!coll) return;
 
         const pausedVal = await safeAsyncCall(() => coll.paused?.());
@@ -167,7 +286,7 @@ function COLLECTIONBlocksGrid({
           maxTickets: await safeAsyncCall(() => coll.MAX_TICKETS?.()),
           ticketMinted: await safeAsyncCall(() => coll.ticketMinted?.()),
           biggiMinted: await safeAsyncCall(() => coll.biggiMinted?.()),
-          paused: pausedVal === true || pausedVal === 1,
+          paused: coerceBool(pausedVal),
         };
 
         meta.maxSupply = meta.maxSupply != null ? Number(meta.maxSupply) : null;
@@ -303,8 +422,8 @@ function COLLECTIONBlocksGrid({
           setLivePrices(prices);
           setLiveMinted(minted);
           setCOLLECTIONMeta(meta);
-          // if we reached here and previously flagged unavailable, clear the flag
-          if (onchainUnavailable) setOnchainUnavailable(false);
+          // if we reached here, clear unavailable flag
+          setOnchainUnavailable(false);
         }
       } catch (error) {
         console.error("Failed to load COLLECTION data:", error);
@@ -326,7 +445,7 @@ function COLLECTIONBlocksGrid({
       cancelled = true;
       clearInterval(interval);
     };
-  }, [contracts, reloadCounter]);
+  }, [getCollectionReadContract, reloadCounter]);
 
   React.useEffect(() => {
     const missingPrices =
@@ -398,6 +517,9 @@ function COLLECTIONBlocksGrid({
         const minted = normalizedMintCounts[index];
         const basePrice =
           typeof BASE_PRICES[folder] === "number" ? BASE_PRICES[folder] : null;
+        const blockFiles = getBlockImages(name);
+        const thumbFallback =
+          blockFiles.length > 0 ? buildBlockImagePath(blockFiles[0]) : "";
 
         return {
           id: `${folder || "BLOCK"}-${index}`,
@@ -408,6 +530,7 @@ function COLLECTIONBlocksGrid({
           basePrice,
           diff: computeDiff(currentPrice ?? NaN, basePrice ?? NaN),
           thumb: getBlockThumb(name),
+          thumbFallback,
           hasData: Boolean(name && name !== "-"),
           buttonStyle: resolveButtonStyle(name),
         };
@@ -520,6 +643,103 @@ function COLLECTIONBlocksGrid({
     () => (openBlock ? getBlockImages(openBlock) : []),
     [openBlock],
   );
+  const mintSnapshotKey = React.useMemo(
+    () =>
+      `${activeCollectionKey}|${normalizedMintCounts
+        .map((value) => (Number.isFinite(value) ? Math.round(value) : 0))
+        .join(",")}`,
+    [activeCollectionKey, normalizedMintCounts],
+  );
+
+  React.useEffect(() => {
+    if (!openBlock) {
+      setModalMintedLoading(false);
+      setModalMintedKeys(new Set());
+      return;
+    }
+
+    const targetBlock = safeBlockFolder(openBlock);
+    const cached = modalMintedCacheRef.current;
+    if (cached.snapshotKey === mintSnapshotKey) {
+      setModalMintedKeys(new Set(cached.byBlock?.[targetBlock] || []));
+      setModalMintedLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setModalMintedLoading(true);
+
+    const loadMintedMatrix = async () => {
+      try {
+        const coll = getCollectionReadContract();
+        if (!coll || typeof coll.nftInfo !== "function") {
+          if (!cancelled) {
+            modalMintedCacheRef.current = {
+              snapshotKey: mintSnapshotKey,
+              byBlock: {},
+            };
+            setModalMintedKeys(new Set());
+          }
+          return;
+        }
+
+        const maxSupplyRaw = await safeAsyncCall(
+          () => coll.MAX_SUPPLY?.(),
+          DEFAULT_MODAL_SCAN_SUPPLY,
+        );
+        const maxSupply = Math.max(
+          1,
+          Number(maxSupplyRaw) || DEFAULT_MODAL_SCAN_SUPPLY,
+        );
+
+        const byBlock = {};
+        for (const name of DEFAULT_BLOCKS) byBlock[name] = new Set();
+
+        for (let start = 1; start <= maxSupply; start += MODAL_SCAN_CHUNK) {
+          const chunkLength = Math.min(MODAL_SCAN_CHUNK, maxSupply - start + 1);
+          const indices = Array.from(
+            { length: chunkLength },
+            (_, offset) => start + offset,
+          );
+          const infos = await Promise.all(
+            indices.map((idx) => safeAsyncCall(() => coll.nftInfo(idx), null)),
+          );
+          if (cancelled) return;
+
+          for (const info of infos) {
+            if (!info) continue;
+            const minted = coerceBool(info?.minted ?? info?.[0]);
+            if (!minted) continue;
+
+            const blockName = blockNameFromInfoIndex(
+              info?.blockIdx ?? info?.[2],
+            );
+            const bgCode = bgCodeFromInfoIndex(info?.background ?? info?.[1]);
+            const key = buildMintedModalKey(info?.mainId ?? info?.[3], bgCode);
+
+            if (!blockName || !key) continue;
+            if (!byBlock[blockName]) byBlock[blockName] = new Set();
+            byBlock[blockName].add(key);
+          }
+        }
+
+        if (cancelled) return;
+        modalMintedCacheRef.current = {
+          snapshotKey: mintSnapshotKey,
+          byBlock,
+        };
+        setModalMintedKeys(new Set(byBlock[targetBlock] || []));
+      } finally {
+        if (!cancelled) setModalMintedLoading(false);
+      }
+    };
+
+    loadMintedMatrix();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [openBlock, mintSnapshotKey, getCollectionReadContract]);
 
   const highestPriceName =
     stats.highestPrice &&
@@ -553,15 +773,22 @@ function COLLECTIONBlocksGrid({
       {
         label: "EXPANSION",
         description: [
-          "Expansion collection blocks and preview grids.",
-          "Shows upcoming content tied to the ecosystem loop.",
+          "Expansion collection blocks and roadmap previews.",
+          "Shows the mainnet-ready roadmap tied to the ecosystem loop.",
+        ],
+      },
+      {
+        label: "CHAPTER / SERIES",
+        description: [
+          "Live ChapterSeriesReader wiring for the current VRF/Public pair.",
+          "Shows registry, controller, chapter caps, mint progress, and reward eligibility.",
         ],
       },
       {
         label: "FUTURE COLLECTIONS",
         description: [
-          "Preview upcoming collections and planned releases.",
-          "No on-chain data yet, informational only.",
+          "Preview the mainnet-ready collection roadmap.",
+          "Informational view for upcoming releases and supply targets.",
         ],
       },
     ],
@@ -615,14 +842,14 @@ function COLLECTIONBlocksGrid({
   ];
 
   // --- nový lokální stav pro fallback řízení activeCOLLECTION ---
-  const [localActive, setLocalActive] = React.useState(activeCOLLECTIONProp);
-  React.useEffect(() => {
-    setLocalActive(activeCOLLECTIONProp);
-  }, [activeCOLLECTIONProp]);
+  const effectiveActive = localActive;
+  const activeSectionMeta =
+    COLLECTION_SECTION_META[effectiveActive] ||
+    COLLECTION_SECTION_META.COLLECTION1;
 
-  // effectiveActive: pokud rodič prop zadá a aktualizuje, bude použit; jinak lokalní fallback
-  const effectiveActive =
-    typeof activeCOLLECTIONProp === "string" ? localActive : localActive;
+  React.useEffect(() => {
+    onActiveSectionChange?.(activeSectionMeta);
+  }, [activeSectionMeta, onActiveSectionChange]);
 
   const handleSwitchCOLLECTION = (key) => {
     // aktualizuj lokálně (zajistí zobrazení i když parent nekontroluje)
@@ -639,15 +866,15 @@ function COLLECTIONBlocksGrid({
     }
   };
 
-  const handleEnsureAmoy = React.useCallback(async () => {
+  const handleEnsurePolygon = React.useCallback(async () => {
     try {
-      await ensureAmoy();
+      await ensurePolygon();
       // try reload data after switching
       setOnchainUnavailable(false);
       setReloadCounter((c) => c + 1);
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error("ensureAmoy failed:", err);
+      console.error("ensurePolygon failed:", err);
     }
   }, []);
 
@@ -710,7 +937,7 @@ function COLLECTIONBlocksGrid({
   );
 
   const renderExpansionPanel = () => (
-    <section className="collection-grid__panel">
+    <section className="collection-grid__panel collection-grid__panel--expansion">
       <header className="collection-grid__panel-header">
         <h3>Expansion overview</h3>
         <p>Protocol telemetry moved into the COLLECTION hub.</p>
@@ -728,6 +955,23 @@ function COLLECTIONBlocksGrid({
         </React.Suspense>
       </div>
     </section>
+  );
+
+  const renderChapterSeriesPanel = React.useCallback(
+    () => (
+      <ChapterSeriesPanel
+        chapterSeries={chapterSeriesData}
+        loading={chapterSeriesLoading}
+        error={chapterSeriesError}
+        onRefresh={refreshChapterSeries}
+      />
+    ),
+    [
+      chapterSeriesData,
+      chapterSeriesLoading,
+      chapterSeriesError,
+      refreshChapterSeries,
+    ],
   );
 
   const renderCOLLECTIONOne = React.useCallback(
@@ -762,18 +1006,27 @@ function COLLECTIONBlocksGrid({
       ? renderCOLLECTIONTwo()
       : effectiveActive === "expansion"
         ? renderExpansionPanel()
+        : effectiveActive === "chapterSeries"
+          ? renderChapterSeriesPanel()
         : renderCOLLECTIONOne();
 
   return (
-    <section className="collection-grid">
+    <section
+      className="collection-grid"
+      style={{
+        "--collection-active-accent": activeSectionMeta.accent,
+        "--collection-active-accent-soft": activeSectionMeta.accentSoft,
+        "--collection-active-accent-glow": activeSectionMeta.accentGlow,
+      }}
+    >
       <div
         className={`collection-grid__surface${isMobile ? " is-mobile" : ""}`}
       >
         <header className="collection-grid__header panel-header panel-header--collection">
           <div>
-            <h2 className="collection-grid__title">Biggi COLLECTION</h2>
+            <h2 className="collection-grid__title">{activeSectionMeta.title}</h2>
             <p className="collection-grid__subtitle">
-              COLLECTIONs hub - live on-chain stats
+              {activeSectionMeta.subtitle}
             </p>
           </div>
 
@@ -802,19 +1055,23 @@ function COLLECTIONBlocksGrid({
               </button>
               <button
                 type="button"
+                className={`collection-grid__tab${effectiveActive === "chapterSeries" ? " is-active" : ""}`}
+                onClick={() => handleSwitchCOLLECTION("chapterSeries")}
+              >
+                Chapter / Series
+              </button>
+              <button
+                type="button"
                 className="collection-grid__tab collection-grid__tab--future"
                 onClick={() => setFutureOpen(true)}
               >
                 Future COLLECTIONs
               </button>
-              <button
-                type="button"
-                className="panel-info-btn biggi-btn biggi-btn--ghost"
+              <PanelInfoButton
+                className="panel-info-btn--transparent"
                 onClick={() => setInfoOpen(true)}
-                aria-label="COLLECTION buttons info"
-              >
-                <span>i</span>
-              </button>
+                ariaLabel="COLLECTION buttons info"
+              />
             </div>
           </div>
         </header>
@@ -834,16 +1091,16 @@ function COLLECTIONBlocksGrid({
           >
             <div className="collection-grid__onchain-message">
               On-chain data is unavailable. Switch MetaMask to{" "}
-              <strong>Polygon Amoy</strong> or try again.
+              <strong>Polygon mainnet</strong> or try again.
             </div>
             <div className="collection-grid__onchain-actions">
               <button
                 type="button"
                 className="collection-grid__btn"
-                onClick={handleEnsureAmoy}
-                aria-label="Switch MetaMask to Polygon Amoy"
+                onClick={handleEnsurePolygon}
+                aria-label="Switch MetaMask to Polygon mainnet"
               >
-                Switch to Amoy
+                Switch to Polygon
               </button>
               <button
                 type="button"
@@ -890,7 +1147,14 @@ function COLLECTIONBlocksGrid({
               onClick={(e) => e.stopPropagation()}
             >
               <div className="collection-grid__modal-header">
-                <h3>{safeBlockFolder(openBlock)} block preview</h3>
+                <div className="collection-grid__modal-title-wrap">
+                  <h3>{safeBlockFolder(openBlock)} block preview</h3>
+                  {modalMintedLoading ? (
+                    <span className="collection-grid__modal-sync">
+                      Syncing minted markers...
+                    </span>
+                  ) : null}
+                </div>
                 <button
                   type="button"
                   className="collection-grid__close-btn"
@@ -909,25 +1173,40 @@ function COLLECTIONBlocksGrid({
                     const isColumnStart = index % modalRows === 0;
                     const columnNumber = Math.floor(index / modalRows) + 1;
                     const imagePath = buildBlockImagePath(file);
+                    const thumbPath = buildBlockThumbPath(file);
+                    const parsed = parseModalImageFile(file);
+                    const modalKey = parsed
+                      ? buildMintedModalKey(parsed.mainId, parsed.bgCode)
+                      : "";
+                    const isMinted =
+                      modalKey && modalMintedKeys.has(modalKey);
                     return (
                       <div
                         key={`${file}-${index}`}
-                        className="collection-grid__modal-item"
+                        className={`collection-grid__modal-item${isMinted ? " is-minted" : ""}`}
                       >
                         {isColumnStart && !isMobile && (
                           <div className="collection-grid__badge">
                             ID {safeBlockFolder(openBlock)} #{columnNumber}
                           </div>
                         )}
-                        <img
-                          src={imagePath}
-                          alt={`${safeBlockFolder(openBlock)} NFT ${index + 1}`}
-                          width={PREVIEW_SIZE}
-                          height={PREVIEW_SIZE}
-                          loading="React.lazy"
-                          decoding="async"
-                          onError={handleImageError}
-                        />
+                        <div className="collection-grid__modal-image-wrap">
+                          {isMinted ? (
+                            <span className="collection-grid__minted-pill">
+                              Minted
+                            </span>
+                          ) : null}
+                          <img
+                            src={thumbPath}
+                            data-fallback-src={imagePath}
+                            alt={`${safeBlockFolder(openBlock)} NFT ${index + 1}`}
+                            width={PREVIEW_SIZE}
+                            height={PREVIEW_SIZE}
+                            loading="lazy"
+                            decoding="async"
+                            onError={handleImageError}
+                          />
+                        </div>
                         <span className="collection-grid__modal-name">
                           {file.replace(/\.\w+$/, "")}
                         </span>

@@ -15,7 +15,7 @@ const MOD_REWARDS_ADDRESS =
   "";
 const CHAIN_RPC_URL =
   import.meta.env.VITE_MOD_CHAIN_RPC ||
-  import.meta.env.VITE_RPC_URL_AMOY ||
+  import.meta.env.VITE_RPC_URL_ACTIVE_CHAIN ||
   import.meta.env.VITE_JSON_RPC_URL ||
   "";
 const OWNER_ADDRESS = import.meta.env.VITE_MOD_OWNER_ADDRESS || "";

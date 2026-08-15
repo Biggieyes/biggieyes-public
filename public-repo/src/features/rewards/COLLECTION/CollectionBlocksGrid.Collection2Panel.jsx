@@ -305,7 +305,7 @@ const COLLECTION2Panel = React.memo(
                 {COLLECTIONTotals.paused ? "Paused" : "Live"}
               </span>
               <span className="collection-grid__stat-sub">Network</span>
-              <span className="collection-grid__stat-foot">Polygon Amoy</span>
+              <span className="collection-grid__stat-foot">Polygon mainnet</span>
             </div>
           </div>
         </div>

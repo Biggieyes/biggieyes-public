@@ -27,7 +27,7 @@ import { buildBlockImagePath } from "@/shared/utils/images";
  * - používáš své factories: getMain/getROProvider/getReaderRO atd.
  */
 import {
-  ensureAmoy,
+  ensurePolygon,
   getReadOnlyMain as getReadOnlyContract,
   getMainRW,
   getLMRO as getReadOnlyLiquidityContract,
@@ -245,10 +245,23 @@ const LOGS_BATCH = 2_000;
 const FULL_HISTORY = isFullHistoryEnabled();
 
 const WALLET_CACHE_TTL = 5 * 60 * 1000;
-const WALLET_CACHE_VERSION = "v4";
+const WALLET_CACHE_VERSION = "v5-mainnet";
+
+function activeCacheChainId() {
+  return Number(ADDR?.CHAIN_ID || 137) || 137;
+}
+
+function activeCacheMainContract() {
+  return String(ADDR?.COLLECTION_VRF || ADDR?.MAIN || "").toLowerCase();
+}
+
+function activeCacheScope() {
+  const contract = activeCacheMainContract();
+  return `${activeCacheChainId()}_${contract || "main"}`;
+}
 
 function walletCacheKey(addr) {
-  return `biggi_wallet_${WALLET_CACHE_VERSION}_${String(addr || "").toLowerCase()}`;
+  return `biggi_wallet_${WALLET_CACHE_VERSION}_${activeCacheScope()}_${String(addr || "").toLowerCase()}`;
 }
 function loadWalletCache(addr) {
   try {
@@ -651,7 +664,7 @@ async function assertContractDeployed(contract, provider, label = "Contract") {
   const code = await provider.getCode(addr);
   if (!code || code === "0x" || code === "0x0") {
     throw new Error(
-      `${label} not found on current network (address ${addr}). Switch to Polygon Amoy (chainId 80002) or update addresses.`,
+      `${label} not found on current network (address ${addr}). Switch to Polygon mainnet (chainId 137) or update addresses.`,
     );
   }
   return addr;
@@ -2994,7 +3007,7 @@ export default function AppCore() {
 
       const injectedProvider = new BrowserProvider(eth, "any");
       const net = await injectedProvider.getNetwork().catch(() => null);
-      if (Number(net?.chainId) !== 80002) await ensureAmoy(eth);
+      if (Number(net?.chainId) !== 137) await ensurePolygon(eth);
 
       setWalletAddress(addr);
 
@@ -3057,13 +3070,13 @@ export default function AppCore() {
     if (!walletAddress) return alert("Please connect MetaMask first.");
 
     try {
-      await ensureAmoy();
+      await ensurePolygon();
 
       const contract = await getMainRW();
       const provider = getProviderFor(contract);
       if (!provider) throw new Error("Provider not available");
       const net = await provider.getNetwork();
-      if (Number(net?.chainId) !== 80002) await ensureAmoy();
+      if (Number(net?.chainId) !== 137) await ensurePolygon();
       await assertContractDeployed(contract, provider, "MAIN");
 
       if (typeof contract.paused === "function" && (await contract.paused())) {
@@ -3165,13 +3178,13 @@ export default function AppCore() {
     if (isRedeeming || VRFPending) return;
 
     try {
-      await ensureAmoy();
+      await ensurePolygon();
 
       const contract = await getMainRW();
       const provider = getProviderFor(contract);
       if (!provider) throw new Error("Provider not available");
       const net = await provider.getNetwork();
-      if (Number(net?.chainId) !== 80002) await ensureAmoy();
+      if (Number(net?.chainId) !== 137) await ensurePolygon();
       await assertContractDeployed(contract, provider, "MAIN");
 
       if (typeof contract.paused === "function" && (await contract.paused())) {
@@ -3367,7 +3380,7 @@ export default function AppCore() {
     if (!walletAddress) return alert("Please connect MetaMask first.");
 
     try {
-      await ensureAmoy();
+      await ensurePolygon();
 
       const toBigIntTokenId = (raw) => {
         try {

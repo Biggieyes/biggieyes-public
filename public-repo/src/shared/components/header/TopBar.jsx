@@ -24,6 +24,7 @@ function TopBar({
   actionError,
   icons = [], // ✅ fallback, kdyby ještě nebyly k dispozici
   onIconClick,
+  mintDisabledReason = "",
   isMobile = false, // ⬅️ přijmeme od Appu
 }) {
   return (
@@ -46,6 +47,7 @@ function TopBar({
               performing={actionPerforming}
               actionError={actionError}
               isMobile={isMobile}
+              mintDisabledReason={mintDisabledReason}
             />
           </div>
 
@@ -92,6 +94,7 @@ function TopBar({
               performing={actionPerforming}
               actionError={actionError}
               isMobile
+              mintDisabledReason={mintDisabledReason}
             />
           </div>
         </>

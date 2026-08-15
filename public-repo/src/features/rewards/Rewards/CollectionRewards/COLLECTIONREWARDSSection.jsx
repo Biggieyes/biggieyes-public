@@ -3,16 +3,51 @@ import {
   BLOCK_INDICES,
   ORANGE_MAIN_IDS,
 } from "../../../../services/collectionRewardsService.js";
-import { ADDR } from "../../../../utils/addresses";
+import { ADDR } from "@/shared/utils/addresses.js";
+import { handleImageError } from "../../../../utils/images.ts";
 
 const FEEDBACK_CLASS = {
   success: "is-success",
   error: "is-error",
 };
 const WAITING_VALUE = "--";
+const CLAIM_REASON_LABELS = {
+  block: {
+    1: "Reward off",
+    2: "Limit reached",
+    3: "Invalid block",
+    4: "Paid",
+    5: "Already claimed",
+    6: "Need full block",
+    7: "Pool low",
+  },
+  orange: {
+    1: "Reward off",
+    2: "Limit reached",
+    3: "Invalid Main ID",
+    4: "Paid",
+    5: "Need orange set",
+    6: "Pool low",
+  },
+  rainbow: {
+    1: "Reward off",
+    2: "Paid",
+    3: "Need block 10",
+    4: "Pool low",
+  },
+};
 
 const thumbnailPath = (segments) => {
-  return `/images/${segments.join("/")}`;
+  const originalPath = `/images/${segments.join("/")}`;
+  const thumbRelative = segments.slice(1).join("/");
+  const thumbPath = `/images/rewards-thumb/${thumbRelative}`.replace(
+    /\.png$/i,
+    ".jpg",
+  );
+  return {
+    src: thumbPath,
+    fallback: originalPath,
+  };
 };
 
 const orangeThumbnailsForId = (mainId) => {
@@ -43,30 +78,102 @@ const renderThumbnailPlate = (paths = [], label = "Preview") => {
   }
   return (
     <div className="rewards-panel__claim-thumbnail-row" aria-label={label}>
-      {paths.map((src) => (
-        <img
-          key={src}
-          src={src}
-          alt={`${label} preview`}
-          loading="React.lazy"
-          width="56"
-          height="56"
-        />
-      ))}
+      {paths.map((item, index) => {
+        const src = typeof item === "string" ? item : item?.src;
+        if (!src) return null;
+        const fallback =
+          typeof item === "string" ? undefined : item?.fallback || undefined;
+        return (
+          <img
+            key={`${src}-${index}`}
+            src={src}
+            data-fallback-src={fallback}
+            alt={`${label} preview`}
+            loading="lazy"
+            decoding="async"
+            width={56}
+            height={56}
+            onError={handleImageError}
+          />
+        );
+      })}
     </div>
   );
+};
+
+const getClaimReasonLabel = (kind, reason) => {
+  if (reason == null) return "Locked";
+  return CLAIM_REASON_LABELS[kind]?.[reason] || "Locked";
+};
+
+const resolveClaimPresentation = ({
+  kind,
+  paid = false,
+  loading = false,
+  canClaim = false,
+  claimability = null,
+}) => {
+  if (loading) {
+    return {
+      label: "Loading...",
+      tone: "is-loading",
+      rowTone: "row-loading",
+      disabled: true,
+    };
+  }
+  if (paid) {
+    return {
+      label: "Paid",
+      tone: "is-claimed",
+      rowTone: "row-claimed",
+      disabled: true,
+    };
+  }
+  if (!canClaim) {
+    return {
+      label: "Wallet needed",
+      tone: "is-locked",
+      rowTone: "row-locked",
+      disabled: true,
+    };
+  }
+  if (claimability?.ok === false) {
+    return {
+      label: getClaimReasonLabel(kind, claimability.reason),
+      tone: "is-locked",
+      rowTone: "row-locked",
+      disabled: true,
+    };
+  }
+  if (claimability?.resolved === false) {
+    return {
+      label: "Check wallet",
+      tone: "is-available",
+      rowTone: "row-open",
+      disabled: false,
+    };
+  }
+  return {
+    label: "Open",
+    tone: "is-available",
+    rowTone: "row-open",
+    disabled: false,
+  };
 };
 
 function COLLECTIONREWARDSSection({
   stats = null,
   statusRows = [],
   formatDecimal,
+  formatNativeAmount,
   rewardPool = null,
   collectionBalance = null,
   blockPaid = [],
+  blockClaimability = [],
   orangeMainIdPaid = [],
+  orangeClaimability = [],
   rainbowClaimed = false,
-  claimedOrange = false,
+  rainbowClaimability = { ok: null, reason: null, resolved: false },
   canClaimCOLLECTION = false,
   claimState = { block: null, orange: null, rainbow: false },
   onClaimBlockReward,
@@ -92,6 +199,13 @@ function COLLECTIONREWARDSSection({
                 maximumFractionDigits: digits,
               })
             : String(value);
+  const formatNativeValue = (value, digits = 2) => {
+    if (typeof formatNativeAmount === "function") {
+      return formatNativeAmount(value, digits);
+    }
+    const formatted = formatValue(value, digits);
+    return formatted === WAITING_VALUE ? WAITING_VALUE : `${formatted} POL`;
+  };
   const formattedMetadata = metadataRows.length
     ? metadataRows
     : [
@@ -113,33 +227,33 @@ function COLLECTIONREWARDSSection({
     {
       label: "Block reward",
       value: hasStats
-        ? `${formatValue(stats.blockReward, 3)} POL`
+        ? formatNativeValue(stats.blockReward, 3)
         : WAITING_VALUE,
     },
     {
       label: "Orange reward",
       value: hasStats
-        ? `${formatValue(stats.orangeReward, 3)} POL`
+        ? formatNativeValue(stats.orangeReward, 3)
         : WAITING_VALUE,
     },
     {
       label: "Rainbow reward",
       value: hasStats
-        ? `${formatValue(stats.rainbowReward, 3)} POL`
+        ? formatNativeValue(stats.rainbowReward, 3)
         : WAITING_VALUE,
     },
     {
       label: "Native pool",
       value:
         rewardPool != null
-          ? `${formatValue(rewardPool, 2)} POL`
+          ? formatNativeValue(rewardPool, 2)
           : WAITING_VALUE,
     },
     {
       label: "Contract balance",
       value:
         collectionBalance != null
-          ? `${formatValue(collectionBalance, 2)} POL`
+          ? formatNativeValue(collectionBalance, 2)
           : WAITING_VALUE,
     },
   ];
@@ -151,6 +265,12 @@ function COLLECTIONREWARDSSection({
     ? `${Math.max(ORANGE_MAIN_IDS.length - orangeClaimedCount, 0)} open / ${orangeClaimedCount} claimed`
     : "Syncing...";
   const rainbowBadgeLabel = rainbowClaimed ? "Claimed" : "1 drop";
+  const rainbowPresentation = resolveClaimPresentation({
+    kind: "rainbow",
+    paid: rainbowClaimed,
+    canClaim: canClaimCOLLECTION,
+    claimability: rainbowClaimability,
+  });
 
   return (
     <section className="rewards-panel__section rewards-panel__section--collection">
@@ -200,7 +320,9 @@ function COLLECTIONREWARDSSection({
             </div>
             <div className="biggi-card__body">
               <div className="rewards-panel__claim-list">
-                <div className="rewards-panel__claim-row">
+                <div
+                  className={`rewards-panel__claim-row ${rainbowPresentation.rowTone}`.trim()}
+                >
                   <div className="rewards-panel__claim-plate">
                     {renderThumbnailPlate(
                       rainbowThumbnails(),
@@ -209,10 +331,8 @@ function COLLECTIONREWARDSSection({
                   </div>
                   <div className="rewards-panel__claim-info">
                     <div className="label">Rainbow reward</div>
-                    <div
-                      className={`pill ${rainbowClaimed ? "is-claimed" : "is-available"}`}
-                    >
-                      {rainbowClaimed ? "Paid" : "Open"}
+                    <div className={`pill ${rainbowPresentation.tone}`}>
+                      {rainbowPresentation.label}
                     </div>
                   </div>
                   <button
@@ -220,9 +340,7 @@ function COLLECTIONREWARDSSection({
                     className="biggi-btn biggi-btn--ghost"
                     onClick={onClaimRainbowReward}
                     disabled={
-                      rainbowClaimed ||
-                      claimState.rainbow ||
-                      !canClaimCOLLECTION
+                      rainbowPresentation.disabled || claimState.rainbow
                     }
                   >
                     {claimState.rainbow ? "Sending..." : "Claim"}
@@ -247,25 +365,28 @@ function COLLECTIONREWARDSSection({
                 <div className="collection-table__header">
                   <div>
                     <div className="collection-table__title">Block REWARDS</div>
-                    <small>Claim if you hold all 10 Main IDs in a block.</small>
+                    <small className="collection-table__hint">
+                      Claim if you hold all 10 Main IDs in a block.
+                    </small>
                   </div>
                   <span className="rewards-panel__chip">{blockBadgeLabel}</span>
                 </div>
                 <div className="rewards-panel__claim-list">
                   {BLOCK_INDICES.map((blockIdx) => {
                     const idx = blockIdx - 1;
-                    const paid = blockPaid[idx];
-                    const available = blockStatusesLoaded && !paid;
-                    const statusLabel = blockStatusesLoaded
-                      ? paid
-                        ? "Paid"
-                        : "Open"
-                      : "Loading...";
+                    const claimability = blockClaimability[idx] || null;
+                    const presentation = resolveClaimPresentation({
+                      kind: "block",
+                      paid: blockPaid[idx],
+                      loading: !blockStatusesLoaded,
+                      canClaim: canClaimCOLLECTION,
+                      claimability,
+                    });
                     const blockThumbs = blockThumbnailsForId(blockIdx);
                     return (
                       <div
                         key={`block-${blockIdx}`}
-                        className="rewards-panel__claim-row"
+                        className={`rewards-panel__claim-row ${presentation.rowTone}`}
                       >
                         <div className="rewards-panel__claim-plate">
                           {renderThumbnailPlate(
@@ -275,10 +396,8 @@ function COLLECTIONREWARDSSection({
                         </div>
                         <div className="rewards-panel__claim-info">
                           <div className="label">Block {blockIdx}</div>
-                          <div
-                            className={`pill ${paid ? "is-claimed" : "is-available"}`}
-                          >
-                            {statusLabel}
+                          <div className={`pill ${presentation.tone}`}>
+                            {presentation.label}
                           </div>
                         </div>
                         <button
@@ -286,9 +405,8 @@ function COLLECTIONREWARDSSection({
                           className="biggi-btn biggi-btn--ghost"
                           onClick={() => onClaimBlockReward?.(blockIdx)}
                           disabled={
-                            !available ||
-                            claimState.block === blockIdx ||
-                            !canClaimCOLLECTION
+                            presentation.disabled ||
+                            claimState.block === blockIdx
                           }
                         >
                           {claimState.block === blockIdx
@@ -304,7 +422,9 @@ function COLLECTIONREWARDSSection({
                 <div className="collection-table__header">
                   <div>
                     <div className="collection-table__title">Orange drop</div>
-                    <small>Each Main ID (1-10) can mint once.</small>
+                    <small className="collection-table__hint">
+                      Each Main ID (1-10) can mint once.
+                    </small>
                   </div>
                   <span className="rewards-panel__chip">
                     {orangeBadgeLabel}
@@ -313,22 +433,19 @@ function COLLECTIONREWARDSSection({
                 <div className="rewards-panel__claim-list">
                   {ORANGE_MAIN_IDS.map((mainId) => {
                     const idx = mainId - 1;
-                    const paid = orangeMainIdPaid[idx];
-                    const statusLabel = paid
-                      ? "Paid"
-                      : claimedOrange
-                        ? "Already claimed"
-                        : "Open";
-                    const disabled =
-                      paid ||
-                      claimedOrange ||
-                      claimState.orange === mainId ||
-                      !canClaimCOLLECTION;
+                    const claimability = orangeClaimability[idx] || null;
+                    const presentation = resolveClaimPresentation({
+                      kind: "orange",
+                      paid: orangeMainIdPaid[idx],
+                      loading: !orangeStatusesLoaded,
+                      canClaim: canClaimCOLLECTION,
+                      claimability,
+                    });
                     const orangeThumbs = orangeThumbnailsForId(mainId);
                     return (
                       <div
                         key={`orange-${mainId}`}
-                        className="rewards-panel__claim-row"
+                        className={`rewards-panel__claim-row ${presentation.rowTone}`}
                       >
                         <div className="rewards-panel__claim-plate">
                           {renderThumbnailPlate(
@@ -338,17 +455,18 @@ function COLLECTIONREWARDSSection({
                         </div>
                         <div className="rewards-panel__claim-info">
                           <div className="label">Main ID {mainId}</div>
-                          <div
-                            className={`pill ${paid ? "is-claimed" : "is-available"}`}
-                          >
-                            {statusLabel}
+                          <div className={`pill ${presentation.tone}`}>
+                            {presentation.label}
                           </div>
                         </div>
                         <button
                           type="button"
                           className="biggi-btn biggi-btn--ghost"
                           onClick={() => onClaimOrangeReward?.(mainId)}
-                          disabled={disabled}
+                          disabled={
+                            presentation.disabled ||
+                            claimState.orange === mainId
+                          }
                         >
                           {claimState.orange === mainId
                             ? "Sending..."
