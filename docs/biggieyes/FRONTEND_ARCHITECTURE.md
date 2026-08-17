@@ -1,17 +1,22 @@
 # Frontend Architecture
 
-Last verified: 2026-06-16
+Last verified: 2026-08-17
 
 This document describes the current frontend architecture in this repository. It reflects the Polygon mainnet deployment and the validation runs performed after the mainnet migration.
 
 ## Verified State
 
 - Active chain: Polygon mainnet, `chainId 137`.
+- Unsupported chain IDs are rejected; they never fall back to Polygon contract addresses.
 - Canonical frontend registry: `src/shared/utils/addresses.js`.
+- `CORE_CHAPTERS` exposes all five deployed VRF/Public pairs; `useChapterSeriesReader` reads all five chapters and enriches them with the live `TicketHub.chapterActive(chapterId)` state.
+- Deployed/registered does not mean available. Ticket minting fails closed unless exactly one chapter is active, then calls `TicketHub.mintTicketForChapter(chapterId)`.
+- Wallet assets read tickets from the central Hub and NFT balances from all ten chapter collection contracts. Asset identity is always `contractAddress + tokenId`.
+- VRF diagnostics, redeem pending state, collection statistics, and LiveStats follow the single live active chapter; previously minted NFT remain visible after the next chapter opens.
 - Backend address mirror: `biggi-project/bekend/addresses.json`.
 - ABI exports: `src/config/abi/index.js`.
-- ABI inventory check: `npm run check:abis` reports 58 ABI files and 745 functions.
-- Address mirror check: `npm run check:contracts` reports 150 frontend keys and 150 backend keys.
+- ABI inventory check: `npm run check:abis` reports 58 ABI files and 801 functions.
+- Address mirror check: `npm run check:contracts` reports 161 runtime frontend/backend keys plus five chapter/CORE ABI comparisons. Backend-only `OLD_TICKET_HUB` is intentionally excluded from runtime.
 - Runtime smoke: `npm run smoke:runtime` passes gallery, LiveStats, and Rewards panel flows.
 
 ## Stack
@@ -51,7 +56,7 @@ Selected live mainnet values at the last verification:
 | --- | --- |
 | `MAIN` / `COLLECTION_VRF` | `0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4` |
 | `MAIN2` / `COLLECTION_PUBLIC` | `0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634` |
-| `TICKET_HUB` | `0xe6d742D7DC66fA63434E6794C69798A5272e9873` |
+| `TICKET_HUB` | `0x7b7e561173f498C8274b821090Da64E8ee653f6A` |
 | `VRF_ROUTER` | `0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F` |
 | `BIGGI` | `0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD` |
 | `DISTRIBUTOR` | `0xCE892698159D8D799D5eF7f0dF0111487511fD22` |
@@ -68,7 +73,7 @@ Current mainnet readers:
 
 | Reader key | Address |
 | --- | --- |
-| `MAIN_READER` | `0x5B5b422D0Db094550B626749EE4F982A301F8471` |
+| `MAIN_READER` | `0x4937CdcF1668255Cb46c78E19547ea96C94391Ef` |
 | `MCD_READER_V2` | `0xa65B4e88E37F085B9009295eA0AcF05e18a82884` |
 | `NFT_REWARDS_READER` | `0x430376b1f4F12ce2D641CC28f2968297aA2b0c12` |
 | `TOKEN_REWARDS_READER` | `0xB558137Ce8a2e065de09f7ef7cF24911E49A9972` |
@@ -100,9 +105,9 @@ Mainnet cache scoping is explicit:
 
 - gallery metadata/image cache is scoped by chain ID and collection contract
 - LiveStats last-minted/top-first cache is scoped by chain ID and active collection address
-- stale testnet caches are ignored by versioned cache keys
+- cache payloads with a different chain/contract scope are ignored
 
-This prevents old Amoy/Mumbai/testnet metadata from being displayed in the mainnet UI.
+This prevents data from any unsupported network or obsolete contract address from being displayed in the mainnet UI.
 
 ## Security Boundaries
 
@@ -111,6 +116,7 @@ This prevents old Amoy/Mumbai/testnet metadata from being displayed in the mainn
 - Wallet chain enforcement targets Polygon mainnet.
 - Server-only secrets must not use `VITE_` or `NEXT_PUBLIC_` prefixes.
 - Pinata, Supabase service-role, and private deployment keys must stay in local/server environment only.
+- Missing optional public Supabase values must disable chat/moderator storage without crashing the application.
 
 ## Key Files
 

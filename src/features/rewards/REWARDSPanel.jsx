@@ -8,8 +8,12 @@ import useNFTREWARDS from "../../hooks/useNFTRewards";
 import useTokenRewardsReader from "../../hooks/useTokenRewardsReader";
 import useNftRewardsReader from "../../hooks/useNftRewardsReader";
 import useREWARDSReader from "../../hooks/useRewardsReader";
-import { ADDR } from "@/shared/utils/addresses.js";
-import { getROProvider, getSignerProvider, ABI_REWARDS_READER } from "@/shared/utils/contract";
+import { ADDR, CORE_CHAPTERS } from "@/shared/utils/addresses.js";
+import {
+  getROProvider,
+  getSignerProvider,
+  ABI_REWARDS_READER,
+} from "@/shared/utils/contract";
 import { explorerBaseFor } from "@/config/chains.js";
 import {
   formatNativeDisplay,
@@ -301,16 +305,22 @@ function REWARDSPanel({
     ADDR.COLLECTION_REWARDS_READER ||
     ADDR.BIGGI_REWARDS_READER;
 
-  const { data: tokenStatsRaw, refresh: refreshTokenStats } =
-    useTokenREWARDS(readProvider, tokenRewardsAddr);
+  const { data: tokenStatsRaw, refresh: refreshTokenStats } = useTokenREWARDS(
+    readProvider,
+    tokenRewardsAddr,
+  );
   const { data: tokenStatsReader, refresh: refreshTokenReader } =
     useTokenRewardsReader(readProvider, tokenRewardsReaderAddr);
   const { data: COLLECTIONStats, refresh: refreshCOLLECTIONStats } =
     useCOLLECTIONREWARDS(walletAddress, readProvider, collectionRewardsAddr);
-  const { data: nftSummary, refresh: refreshNftStats } =
-    useNFTREWARDS(readProvider, nftRewardsAddr);
-  const { data: nftReader, refresh: refreshNftReader } =
-    useNftRewardsReader(readProvider, nftRewardsReaderAddr);
+  const { data: nftSummary, refresh: refreshNftStats } = useNFTREWARDS(
+    readProvider,
+    nftRewardsAddr,
+  );
+  const { data: nftReader, refresh: refreshNftReader } = useNftRewardsReader(
+    readProvider,
+    nftRewardsReaderAddr,
+  );
 
   const tokenStats = tokenStatsReader || tokenStatsRaw;
   const rewardClaimPayload = React.useMemo(
@@ -318,14 +328,16 @@ function REWARDSPanel({
       buildRewardClaimPayload(items, {
         maxSupply: 550,
         primaryCollectionAddress:
-          tokenStats?.mainNFT || tokenStats?.main || ADDR.COLLECTION_VRF || ADDR.MAIN,
+          tokenStats?.mainNFT ||
+          tokenStats?.main ||
+          ADDR.COLLECTION_VRF ||
+          ADDR.MAIN,
         allowedCollectionAddresses: [
           tokenStats?.mainNFT,
           tokenStats?.main2NFT,
           tokenStats?.main,
           tokenStats?.main2,
-          ADDR.COLLECTION_VRF || ADDR.MAIN,
-          ADDR.MAIN2 || ADDR.COLLECTION_PUBLIC,
+          ...CORE_CHAPTERS.flatMap((chapter) => [chapter.main, chapter.main2]),
         ],
       }),
     [items, tokenStats],
@@ -377,10 +389,7 @@ function REWARDSPanel({
   const COLLECTIONService = React.useMemo(() => {
     if (!readProvider) return null;
     try {
-      return new COLLECTIONREWARDSService(
-        collectionRewardsAddr,
-        readProvider,
-      );
+      return new COLLECTIONREWARDSService(collectionRewardsAddr, readProvider);
     } catch (err) {
       console.error("REWARDSPanel: COLLECTION service init failed", err);
       return null;
@@ -452,9 +461,9 @@ function REWARDSPanel({
     () =>
       Boolean(
         walletAddress &&
-          writeProvider &&
-          typeof writeProvider.getSigner === "function" &&
-          COLLECTIONService,
+        writeProvider &&
+        typeof writeProvider.getSigner === "function" &&
+        COLLECTIONService,
       ),
     [walletAddress, writeProvider, COLLECTIONService],
   );
@@ -506,8 +515,9 @@ function REWARDSPanel({
     tokenStats?.tokenSymbol ??
     "BIGGI";
   const tokenDecimals =
-    Number(tokenStats?.tokenMeta?.decimals_ ?? tokenStats?.tokenDecimals ?? 18) ||
-    18;
+    Number(
+      tokenStats?.tokenMeta?.decimals_ ?? tokenStats?.tokenDecimals ?? 18,
+    ) || 18;
 
   const handleClaimBlockReward = React.useCallback(
     async (blockIdx) => {
@@ -599,9 +609,7 @@ function REWARDSPanel({
     return [
       {
         label: "Token pool",
-        value: tokenStats
-          ? formatTokenValue(tokenStats.REWARDSCap, 0)
-          : "--",
+        value: tokenStats ? formatTokenValue(tokenStats.REWARDSCap, 0) : "--",
         hint: "Treasury cap",
         tone: "token",
       },
@@ -631,9 +639,7 @@ function REWARDSPanel({
       },
       {
         label: "My preview",
-        value: previewAmount
-          ? formatTokenValue(previewAmount, 4)
-          : "\u2014",
+        value: previewAmount ? formatTokenValue(previewAmount, 4) : "\u2014",
         hint: previewUnits
           ? `${formatInteger(previewUnits)} units tracked`
           : "Sync to compute",
@@ -657,7 +663,9 @@ function REWARDSPanel({
       }
       try {
         const asString =
-          typeof value?.toString === "function" ? value.toString() : String(value);
+          typeof value?.toString === "function"
+            ? value.toString()
+            : String(value);
         const parsed = Number(asString);
         return Number.isFinite(parsed) ? parsed : null;
       } catch {
@@ -695,7 +703,7 @@ function REWARDSPanel({
     if (!COLLECTIONStats) return [];
     const rainbowClaimed = Boolean(
       COLLECTIONStats.rainbowClaimed ??
-        COLLECTIONStats.rainbowRewardClaimedGlobal,
+      COLLECTIONStats.rainbowRewardClaimedGlobal,
     );
     return [
       {
@@ -739,11 +747,13 @@ function REWARDSPanel({
   const orangeClaimability = COLLECTIONStats?.orangeClaimability ?? [];
   const rainbowClaimed = Boolean(
     COLLECTIONStats?.rainbowClaimed ??
-      COLLECTIONStats?.rainbowRewardClaimedGlobal,
+    COLLECTIONStats?.rainbowRewardClaimedGlobal,
   );
-  const rainbowClaimability =
-    COLLECTIONStats?.rainbowClaimability ??
-    { ok: null, reason: null, resolved: false };
+  const rainbowClaimability = COLLECTIONStats?.rainbowClaimability ?? {
+    ok: null,
+    reason: null,
+    resolved: false,
+  };
   const metadataRows = [
     { label: "Distributor", value: COLLECTIONStats?.distributor },
     { label: "Eyes main", value: COLLECTIONStats?.main },
@@ -854,10 +864,7 @@ function REWARDSPanel({
 
   const tokenTab = (
     <section className="rewards-panel__section">
-      <SectionHeader
-        label="TOKEN REWARDS"
-        accent={SECTION_META.token.accent}
-      />
+      <SectionHeader label="TOKEN REWARDS" accent={SECTION_META.token.accent} />
       {heroSection}
       <SectionHeader label="Claims & rails" accent="#9b7bff" />
       <div className="rewards-panel__grid">
@@ -1144,13 +1151,17 @@ function REWARDSPanel({
         >
           {rewardsMainnetRows.map((row) => {
             const liveAddress = isRealAddress(row.addr);
-            const href = liveAddress ? `${explorerBase}/address/${row.addr}` : null;
+            const href = liveAddress
+              ? `${explorerBase}/address/${row.addr}`
+              : null;
             return (
               <div
                 className={`rewards-panel__mainnet-item rewards-panel__mainnet-item--${row.tone || (liveAddress ? "ok" : "warn")}`}
                 key={row.label}
               >
-                <span className="rewards-panel__mainnet-label">{row.label}</span>
+                <span className="rewards-panel__mainnet-label">
+                  {row.label}
+                </span>
                 <span className="rewards-panel__mainnet-value">
                   <span title={liveAddress ? row.addr : undefined}>
                     {liveAddress

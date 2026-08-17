@@ -6,13 +6,20 @@ import {
   getSafeDeployBlock,
   isFullHistoryEnabled,
 } from "../shared/utils/shared";
-import { getProviderForContract } from "../shared/utils/contract";
+import {
+  getProviderForContract,
+  getReadOnlyTicketHub,
+  getTicketHub,
+} from "../shared/utils/contract";
+import { CORE_CHAPTERS } from "../shared/utils/addresses.js";
+import { resolveRedeemableTicketForActiveChapter } from "../shared/utils/ticketChapters.js";
 
 const Ctx = React.createContext(null);
 const FULL_HISTORY = isFullHistoryEnabled();
 
 export function VRFProvider({ children }) {
-  const { mainRO, mainRW, biggiMainReaderRead, readerRead } = useContracts();
+  const { mainRO, chapterMainRead, biggiMainReaderRead, readerRead } =
+    useContracts();
 
   const [params, setParams] = React.useState({
     keyHash: "",
@@ -31,6 +38,7 @@ export function VRFProvider({ children }) {
   const [VRFPending, setVRFPending] = React.useState(false);
   const [isRedeeming, setIsRedeeming] = React.useState(false);
   const [redeemMsg, setRedeemMsg] = React.useState("");
+  const [pendingChapterId, setPendingChapterId] = React.useState(null);
 
   const findTicketsViaLogs = React.useCallback(async (contract, addr) => {
     if (!contract || !addr) return [];
@@ -144,7 +152,10 @@ export function VRFProvider({ children }) {
   const requestRedeem = React.useCallback(
     async (userAddr = "") => {
       try {
-        const c = await mainRW();
+        const main = await mainRO();
+        const provider = getProviderForContract(main);
+        const ticketHubRead = getReadOnlyTicketHub(provider);
+        const ticketHubWrite = await getTicketHub();
         setIsRedeeming(true);
         setRedeemMsg("Submitting redeem...");
 
@@ -158,14 +169,14 @@ export function VRFProvider({ children }) {
             (typeof readerRead === "function" ? readerRead() : null);
           if (reader && typeof reader.findTicket === "function") {
             tickets = await reader.findTicket(userAddr);
-          } else if (typeof c.findTicket === "function") {
-            tickets = await c.findTicket(userAddr);
+          } else if (typeof ticketHubRead.findTicket === "function") {
+            tickets = await ticketHubRead.findTicket(userAddr);
           }
         } catch {}
 
         if (!tickets?.length) {
           try {
-            tickets = await findTicketsViaLogs(c, userAddr);
+            tickets = await findTicketsViaLogs(ticketHubRead, userAddr);
           } catch {
             tickets = [];
           }
@@ -177,39 +188,47 @@ export function VRFProvider({ children }) {
           throw new Error("No ticket");
         }
 
-        const id = (() => {
-          const raw = tickets[0];
-          if (raw == null) return null;
-          if (typeof raw === "bigint") return raw;
-          if (typeof raw === "number") return BigInt(raw);
-          if (typeof raw === "string") return BigInt(raw);
-          if (typeof raw?.toString === "function") return BigInt(raw.toString());
-          return null;
-        })();
-        if (id == null) {
-          setIsRedeeming(false);
-          setRedeemMsg("");
-          throw new Error("Unable to read ticket ID");
+        const activeTicket = await resolveRedeemableTicketForActiveChapter(
+          ticketHubRead,
+          tickets,
+        );
+        const id = activeTicket.ticketId;
+        const activeMain =
+          typeof chapterMainRead === "function"
+            ? chapterMainRead(activeTicket.chapterId)
+            : main;
+        if (typeof activeMain?.pendingMintRequest === "function") {
+          const pendingRequest = await activeMain
+            .pendingMintRequest(userAddr)
+            .catch(() => 0n);
+          if (String(pendingRequest || "0") !== "0") {
+            setPendingChapterId(activeTicket.chapterId);
+            setVRFPending(true);
+            setRedeemMsg("VRF pending...");
+            setIsRedeeming(false);
+            return null;
+          }
         }
 
-        const redeemFn = c?.redeemTicketAndMintNFT;
+        const redeemFn = ticketHubWrite?.redeemTicket;
         if (typeof redeemFn !== "function") {
-          throw new Error("Redeem function not available on MAIN contract.");
+          throw new Error("Redeem function not available on TICKET_HUB contract.");
         }
         const estimate =
-          c?.estimateGas?.redeemTicketAndMintNFT ||
+          ticketHubWrite?.estimateGas?.redeemTicket ||
           redeemFn?.estimateGas ||
           null;
         if (estimate) await estimate(id);
         if (redeemFn?.staticCall) await redeemFn.staticCall(id);
-        if (c?.callStatic?.redeemTicketAndMintNFT)
-          await c.callStatic.redeemTicketAndMintNFT(id);
+        if (ticketHubWrite?.callStatic?.redeemTicket)
+          await ticketHubWrite.callStatic.redeemTicket(id);
         setRedeemMsg("Confirm in wallet...");
         const tx = await redeemFn(id);
         setRedeemMsg("Waiting for confirmation...");
         await tx.wait();
 
         setVRFPending(true);
+        setPendingChapterId(activeTicket.chapterId);
         setRedeemMsg("VRF pending...");
       } catch (e) {
         setIsRedeeming(false);
@@ -218,22 +237,38 @@ export function VRFProvider({ children }) {
         throw e;
       }
     },
-    [mainRW],
+    [
+      biggiMainReaderRead,
+      chapterMainRead,
+      findTicketsViaLogs,
+      mainRO,
+      readerRead,
+    ],
   );
 
   const checkResolution = React.useCallback(
     async (userAddr = "") => {
       try {
         if (!userAddr) return;
-        const c = await mainRO();
-        const rid = await c
-          .pendingMintRequest(userAddr)
-          .catch(() => BigInt(0));
-        const isZero =
-          rid && typeof rid.isZero === "function"
-            ? rid === 0n
-            : String(rid || "0") === "0";
-        if (isZero) {
+        const chapterIds = pendingChapterId
+          ? [pendingChapterId]
+          : CORE_CHAPTERS.map((chapter) => chapter.chapterId);
+        const requests = await Promise.all(
+          chapterIds.map(async (chapterId) => {
+            const contract =
+              typeof chapterMainRead === "function"
+                ? chapterMainRead(chapterId)
+                : await mainRO();
+            return contract
+              .pendingMintRequest(userAddr)
+              .catch(() => BigInt(0));
+          }),
+        );
+        const hasPending = requests.some(
+          (requestId) => String(requestId || "0") !== "0",
+        );
+        if (!hasPending) {
+          setPendingChapterId(null);
           setVRFPending(false);
           setIsRedeeming(false);
           setRedeemMsg("Reveal complete!");
@@ -241,7 +276,7 @@ export function VRFProvider({ children }) {
         }
       } catch {}
     },
-    [mainRO],
+    [chapterMainRead, mainRO, pendingChapterId],
   );
 
   return (
@@ -269,5 +304,3 @@ export function useVRF() {
   if (!v) throw new Error("useVRF must be used inside <VRFProvider>");
   return v;
 }
-
-

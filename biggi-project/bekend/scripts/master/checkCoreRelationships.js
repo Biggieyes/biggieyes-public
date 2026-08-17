@@ -314,10 +314,13 @@ async function checkTicketHub(addresses, opts, recorder) {
 
   const hub = contractAt(addresses.TICKET_HUB, [
     "function mainCollection() view returns (address)",
+    "function chapterMainCollection(uint256) view returns (address)",
     "function distributor() view returns (address)",
     "function devWallet() view returns (address)",
     "function saleCap() view returns (uint16)",
     "function marketingCap() view returns (uint16)",
+    "function chapterSaleCap(uint256) view returns (uint16)",
+    "function chapterMarketingCap(uint256) view returns (uint16)",
     "function MAX_TICKETS() view returns (uint16)",
     "function ticketMinted() view returns (uint16)",
     "function saleMinted() view returns (uint16)",
@@ -337,6 +340,19 @@ async function checkTicketHub(addresses, opts, recorder) {
   const saleCap = await readValue(recorder, "TICKET_HUB.saleCap", () => hub.saleCap());
   const marketingCap = await readValue(recorder, "TICKET_HUB.marketingCap", () => hub.marketingCap());
   const maxTickets = await readValue(recorder, "TICKET_HUB.MAX_TICKETS", () => hub.MAX_TICKETS());
+  const chapterId = addresses.CHAPTER_ID == null ? 1 : Number(addresses.CHAPTER_ID);
+  let effectiveMainCollection = mainCollection;
+  let effectiveSaleCap = saleCap;
+  let effectiveMarketingCap = marketingCap;
+  if (chapterId !== 1) {
+    effectiveMainCollection = await readValue(recorder, "TICKET_HUB.chapterMainCollection", () =>
+      hub.chapterMainCollection(chapterId)
+    );
+    effectiveSaleCap = await readValue(recorder, "TICKET_HUB.chapterSaleCap", () => hub.chapterSaleCap(chapterId));
+    effectiveMarketingCap = await readValue(recorder, "TICKET_HUB.chapterMarketingCap", () =>
+      hub.chapterMarketingCap(chapterId)
+    );
+  }
   await readValue(recorder, "TICKET_HUB.ticketMinted", () => hub.ticketMinted());
   await readValue(recorder, "TICKET_HUB.saleMinted", () => hub.saleMinted());
   await readValue(recorder, "TICKET_HUB.marketingMinted", () => hub.marketingMinted());
@@ -348,19 +364,21 @@ async function checkTicketHub(addresses, opts, recorder) {
   await readValue(recorder, "TICKET_HUB.tokenSinkDepositMode", () => hub.tokenSinkDepositMode());
   const reserveAddress = await readValue(recorder, "TICKET_HUB.reserveAddress", () => hub.reserveAddress());
 
-  expectAddress(recorder, "TICKET_HUB.mainCollection == MAIN", mainCollection, addresses.MAIN);
+  expectAddress(recorder, "TICKET_HUB chapter main == MAIN", effectiveMainCollection, addresses.MAIN);
   expectNonZero(recorder, "TICKET_HUB.distributor is configured", distributor);
   if (isAddress(addresses.DISTRIBUTOR)) {
     expectAddress(recorder, "TICKET_HUB.distributor == DISTRIBUTOR", distributor, addresses.DISTRIBUTOR);
   }
   if (isAddress(addresses.OWNER)) expectAddress(recorder, "TICKET_HUB.devWallet == OWNER/DEV_WALLET", devWallet, addresses.OWNER);
-  if (addresses.SALE_CAP != null) expectNumber(recorder, "TICKET_HUB.saleCap == manifest SALE_CAP", saleCap, addresses.SALE_CAP);
+  if (addresses.SALE_CAP != null) {
+    expectNumber(recorder, "TICKET_HUB.saleCap == manifest SALE_CAP", effectiveSaleCap, addresses.SALE_CAP);
+  }
   if (addresses.MARKETING_CAP != null) {
-    expectNumber(recorder, "TICKET_HUB.marketingCap == manifest MARKETING_CAP", marketingCap, addresses.MARKETING_CAP);
+    expectNumber(recorder, "TICKET_HUB.marketingCap == manifest MARKETING_CAP", effectiveMarketingCap, addresses.MARKETING_CAP);
   }
 
-  const sale = saleCap == null ? 0 : Number(saleCap);
-  const marketing = marketingCap == null ? 0 : Number(marketingCap);
+  const sale = effectiveSaleCap == null ? 0 : Number(effectiveSaleCap);
+  const marketing = effectiveMarketingCap == null ? 0 : Number(effectiveMarketingCap);
   const max = maxTickets == null ? 550 : Number(maxTickets);
   if (sale + marketing === max) {
     recorder.ok("TICKET_HUB saleCap + marketingCap == MAX_TICKETS", { actual: sale + marketing, expected: max });
@@ -410,8 +428,27 @@ async function checkVrf(addresses, opts, recorder) {
   await readValue(recorder, "VRF_ROUTER.callbackGasLimit", () => router.callbackGasLimit());
   await readValue(recorder, "VRF_ROUTER.requestConfirmations", () => router.requestConfirmations());
 
-  expectAddress(recorder, "VRF_ROUTER.main == MAIN", main, addresses.MAIN);
-  if (approved != null) expectBool(recorder, "VRF_ROUTER.approvedMains[MAIN] == true", approved, true);
+  if (isAddress(addresses.MAIN)) {
+    const directMainOk = eqAddress(main, addresses.MAIN);
+    const approvedMainOk = approved === true;
+    if (directMainOk || approvedMainOk) {
+      recorder.ok("VRF_ROUTER routes MAIN", {
+        main: valueToString(main),
+        expected: addresses.MAIN,
+        approved: String(approvedMainOk),
+      });
+    } else {
+      recorder.issue(
+        "VRF_ROUTER routes MAIN",
+        "router must either have main == MAIN or approvedMains[MAIN] == true",
+        {
+          main: valueToString(main),
+          expected: addresses.MAIN,
+          approved: String(approvedMainOk),
+        }
+      );
+    }
+  }
 
   if (isAddress(addresses.NFT_REWARDS)) {
     const approvedRewards = await readValue(
@@ -448,6 +485,7 @@ async function checkChapterStack(addresses, opts, recorder, chapterId) {
     "function chapterByCollection(address) view returns (uint256)",
     "function getChapterCollections(uint256) view returns (address vrfCollection,address publicCollection,address ticketHub)",
     "function getChapterMeta(uint256) view returns (uint256 seriesId,uint256 chapterNumber)",
+    "function isTicketHubForChapter(address ticketHub,uint256 chapterId) view returns (bool)",
     "function isTokenRewardsCollection(address) view returns (bool)",
     "function isCollectionRewardsCollection(address) view returns (bool)",
   ]);
@@ -469,10 +507,17 @@ async function checkChapterStack(addresses, opts, recorder, chapterId) {
     ? await readValue(recorder, "REGISTRY.chapterByCollection[MAIN2]", () => registry.chapterByCollection(addresses.MAIN2))
     : null;
   const hubChapter = await readValue(recorder, "REGISTRY.chapterByCollection[TICKET_HUB]", () => registry.chapterByCollection(addresses.TICKET_HUB));
+  const hubForChapter = await readValue(recorder, "REGISTRY.isTicketHubForChapter[TICKET_HUB, CHAPTER_ID]", () =>
+    registry.isTicketHubForChapter(addresses.TICKET_HUB, chapterId)
+  );
 
   expectNumber(recorder, "REGISTRY MAIN chapter == CHAPTER_ID", mainChapter, chapterId);
   if (main2Chapter != null) expectNumber(recorder, "REGISTRY MAIN2 chapter == CHAPTER_ID", main2Chapter, chapterId);
-  expectNumber(recorder, "REGISTRY TICKET_HUB chapter == CHAPTER_ID", hubChapter, chapterId);
+  if (hubForChapter != null) {
+    expectBool(recorder, "REGISTRY TICKET_HUB belongs to CHAPTER_ID", hubForChapter, true);
+  } else if (hubChapter != null) {
+    expectNumber(recorder, "REGISTRY TICKET_HUB chapter == CHAPTER_ID", hubChapter, chapterId);
+  }
 
   const collections = await readValue(recorder, "REGISTRY.getChapterCollections", () => registry.getChapterCollections(chapterId));
   if (collections) {

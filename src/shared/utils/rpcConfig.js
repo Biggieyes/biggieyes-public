@@ -138,30 +138,12 @@ function env(key) {
   return undefined;
 }
 
-function resolveActiveChainId() {
-  const raw =
-    env("VITE_CHAIN_ID") ||
-    env("VITE_EXPECTED_CHAIN_ID") ||
-    env("VITE_DEFAULT_CHAIN_ID") ||
-    137;
-  const chainId = Number(raw);
-  return Number.isFinite(chainId) && chainId > 0 ? Math.trunc(chainId) : 137;
-}
-
-const ACTIVE_CHAIN_ID = resolveActiveChainId();
-
-function normalizeInfuraNetwork(value) {
-  const raw = String(value || "").trim().toLowerCase();
-  if (!raw) return "polygon-mainnet";
-  if (raw.includes("polygon")) return "polygon-mainnet";
-  return raw.replace(/\s+/g, "-");
-}
+const ACTIVE_CHAIN_ID = 137;
 
 function getInfuraRpcUrl() {
   const projectId = env("VITE_INFURA_PROJECT_ID");
   if (!projectId) return null;
-  const network = normalizeInfuraNetwork(env("VITE_INFURA_NETWORK"));
-  return `https://${network}.infura.io/v3/${projectId}`;
+  return `https://polygon-mainnet.infura.io/v3/${projectId}`;
 }
 
 function splitCsv(value) {
@@ -226,6 +208,7 @@ const EXPLICIT_POLYGON_RPCS = uniq([
   env("VITE_MOD_CHAIN_RPC"),
   env("VITE_POLYGON_RPC_URL"),
   env("VITE_RPC_URL_POLYGON"),
+  env("VITE_RPC_URL_ACTIVE_CHAIN"),
   env("VITE_MAINNET_RPC_URL"),
   ...splitCsv(env("VITE_ADDITIONAL_RPC_URLS")),
 ]);
@@ -243,9 +226,9 @@ const ARCHIVE_RPC_CANDIDATES = uniq([
 
 const ACTIVE_CHAIN_INFO = getChainInfo(ACTIVE_CHAIN_ID) || {
   chainId: ACTIVE_CHAIN_ID,
-  hex: `0x${ACTIVE_CHAIN_ID.toString(16)}`,
-  name: ACTIVE_CHAIN_ID === 137 ? "Polygon" : `Chain ${ACTIVE_CHAIN_ID}`,
-  explorer: ACTIVE_CHAIN_ID === 137 ? "https://polygonscan.com" : "",
+  hex: "0x89",
+  name: "Polygon mainnet",
+  explorer: "https://polygonscan.com",
   currency: { name: "POL", symbol: "POL", decimals: 18 },
 };
 
@@ -430,4 +413,3 @@ export function getWalletRpcUrls({ preferPublicFirst = null } = {}) {
   fallback.push(...infura);
   return prioritizeHealthyRpcs(rankRpcUrls(filterOutBadRpcs(fallback)));
 }
-

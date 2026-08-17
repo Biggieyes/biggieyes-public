@@ -426,15 +426,12 @@ export default function VRFPanel({
 
   const netLabel = React.useMemo(() => {
     const id = Number(viewData.networkId ?? viewData.chainId);
-    const map = {
-      1: "Ethereum",
-      10: "Optimism",
-      137: "Polygon mainnet",
-      8453: "Base",
-      42161: "Arbitrum",
-    };
-    if (Number.isFinite(id)) return `${map[id] || "EVM"} (${id})`;
-    return viewData.network || "EVM";
+    if (Number.isFinite(id)) {
+      return id === 137
+        ? "Polygon mainnet (137)"
+        : `Unsupported chain (${id})`;
+    }
+    return viewData.network || "Not connected";
   }, [viewData.networkId, viewData.chainId, viewData.network]);
 
   const effectiveLast = React.useMemo(() => {

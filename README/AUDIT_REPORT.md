@@ -1,6 +1,6 @@
 # Frontend / Mainnet Integration Audit Report
 
-Last verified: 2026-06-16
+Last verified: 2026-08-17
 
 This report replaces the old January report that contained historical deployed addresses and missing-reader notes. It reflects the current Polygon mainnet frontend state.
 
@@ -24,7 +24,7 @@ Selected live values:
 | --- | --- |
 | `MAIN` / `COLLECTION_VRF` | `0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4` |
 | `MAIN2` / `COLLECTION_PUBLIC` | `0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634` |
-| `TICKET_HUB` | `0xe6d742D7DC66fA63434E6794C69798A5272e9873` |
+| `TICKET_HUB` | `0x7b7e561173f498C8274b821090Da64E8ee653f6A` |
 | `VRF_ROUTER` | `0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F` |
 | `BIGGI` | `0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD` |
 | `DISTRIBUTOR` | `0xCE892698159D8D799D5eF7f0dF0111487511fD22` |
@@ -40,7 +40,7 @@ Selected live values:
 
 | Key | Address |
 | --- | --- |
-| `MAIN_READER` | `0x5B5b422D0Db094550B626749EE4F982A301F8471` |
+| `MAIN_READER` | `0x4937CdcF1668255Cb46c78E19547ea96C94391Ef` |
 | `MCD_READER_V2` | `0xa65B4e88E37F085B9009295eA0AcF05e18a82884` |
 | `NFT_REWARDS_READER` | `0x430376b1f4F12ce2D641CC28f2968297aA2b0c12` |
 | `TOKEN_REWARDS_READER` | `0xB558137Ce8a2e065de09f7ef7cF24911E49A9972` |
@@ -60,9 +60,9 @@ Latest checked state:
 - `npm run lint`: passed
 - `npm run typecheck`: passed
 - `npm run build`: passed
-- `npm test`: passed, 20 files / 43 tests
-- `npm run check:contracts`: passed, 150 frontend keys / 150 backend keys
-- `npm run check:abis`: passed, 58 ABI files / 745 functions
+- `npm test`: passed, 32 files / 72 tests
+- `npm run check:contracts`: passed, 161 runtime frontend/backend keys, five chapters and seven canonical CORE ABI comparisons; historical `OLD_TICKET_HUB` is backend-only
+- `npm run check:abis`: passed, 58 ABI files / 801 functions
 - `npm run check:rpc`: passed, 2/2 healthy RPC endpoints
 - `npm run smoke:runtime`: passed Gallery, LiveStats, and Rewards
 

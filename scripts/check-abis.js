@@ -563,6 +563,7 @@ function main() {
   if (!missingAll.length) {
      
     console.log("No missing ABI methods found (heuristic).");
+    if (parseErrors) process.exitCode = 1;
     return;
   }
 
@@ -580,6 +581,7 @@ function main() {
       `- ${formatLoc(entry)} ${entry.base}.${entry.method} (hint: ${entry.abiHint})`,
     );
   }
+  process.exitCode = 1;
 }
 
 main();

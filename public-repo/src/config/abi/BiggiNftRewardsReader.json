@@ -1,100 +1,238 @@
 [
   {
-    "type": "constructor",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "nftRewards_",
+        "type": "address"
+      }
+    ],
     "stateMutability": "nonpayable",
-    "inputs": [
-      { "name": "nftRewards_", "type": "address", "internalType": "address" }
-    ]
+    "type": "constructor"
   },
   {
-    "type": "function",
-    "name": "getStatus",
-    "stateMutability": "view",
-    "inputs": [],
-    "outputs": [
+    "inputs": [
       {
-        "name": "s",
-        "type": "tuple",
-        "components": [
-          { "name": "nftRewards", "type": "address" },
-          { "name": "main", "type": "address" },
-          { "name": "vrfRouter", "type": "address" },
-          { "name": "owner", "type": "address" },
-          { "name": "nextEventId", "type": "uint256" },
-          { "name": "nextRewardId", "type": "uint256" },
-          { "name": "totalRewardsCreated", "type": "uint256" },
-          { "name": "name", "type": "string" },
-          { "name": "symbol", "type": "string" }
-        ]
+        "internalType": "uint256",
+        "name": "eventId",
+        "type": "uint256"
       }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "getEvent",
-    "stateMutability": "view",
-    "inputs": [
-      { "name": "eventId", "type": "uint256" }
     ],
-    "outputs": [
-      {
-        "name": "ev",
-        "type": "tuple",
-        "components": [
-          { "name": "kind", "type": "uint8" },
-          { "name": "creator", "type": "address" },
-          { "name": "rewardStartId", "type": "uint256" },
-          { "name": "rewardCount", "type": "uint256" },
-          { "name": "randomnessRequested", "type": "bool" },
-          { "name": "finished", "type": "bool" },
-          { "name": "vrfRequestId", "type": "uint256" }
-        ]
-      }
-    ]
-  },
-  {
-    "type": "function",
-    "name": "rewardInfo",
-    "stateMutability": "view",
-    "inputs": [
-      { "name": "rewardId", "type": "uint256" }
-    ],
-    "outputs": [
-      { "name": "assigned", "type": "address" },
-      { "name": "isClaimed", "type": "bool" },
-      { "name": "uri", "type": "string" }
-    ]
-  },
-  {
-    "type": "function",
     "name": "eventEligibleCount",
-    "stateMutability": "view",
-    "inputs": [
-      { "name": "eventId", "type": "uint256" }
-    ],
     "outputs": [
-      { "name": "", "type": "uint256" }
-    ]
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    "type": "function",
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "eventId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "idx",
+        "type": "uint256"
+      }
+    ],
     "name": "getEligibleAt",
-    "stateMutability": "view",
-    "inputs": [
-      { "name": "eventId", "type": "uint256" },
-      { "name": "idx", "type": "uint256" }
-    ],
     "outputs": [
-      { "name": "", "type": "address" }
-    ]
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    "type": "function",
-    "name": "nftRewards",
-    "stateMutability": "view",
-    "inputs": [],
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "eventId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getEvent",
     "outputs": [
-      { "name": "", "type": "address" }
-    ]
+      {
+        "components": [
+          {
+            "internalType": "uint8",
+            "name": "kind",
+            "type": "uint8"
+          },
+          {
+            "internalType": "address",
+            "name": "creator",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardStartId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardCount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "randomnessRequested",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "finished",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "vrfRequestId",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct BiggiNftRewardsReader.RewardEvent",
+        "name": "ev",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getStatus",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "nftRewards",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "main",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "vrfRouter",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "owner",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "registry",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nextEventId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nextRewardId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalRewardsCreated",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "symbol",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct BiggiNftRewardsReader.RewardsStatus",
+        "name": "s",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "collection",
+        "type": "address"
+      }
+    ],
+    "name": "isAllowedMainCollection",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "allowed",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nftRewards",
+    "outputs": [
+      {
+        "internalType": "contract IBiggiNftRewards",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "rewardId",
+        "type": "uint256"
+      }
+    ],
+    "name": "rewardInfo",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "assigned",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "isClaimed",
+        "type": "bool"
+      },
+      {
+        "internalType": "string",
+        "name": "uri",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   }
 ]

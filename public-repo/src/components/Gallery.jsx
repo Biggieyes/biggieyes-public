@@ -7,6 +7,10 @@ import { formatEther } from "ethers";
 import { ADDR } from "../utils/addresses.js";
 import { getProviderForContract } from "../shared/utils/contract";
 import {
+  getAssetIdentity,
+  getAssetTokenId,
+} from "../shared/utils/assetIdentity.js";
+import {
   queryLogsBatched,
   getSafeDeployBlock,
   loadWalletCache,
@@ -122,10 +126,7 @@ const isTicketUri = (uri, base) => {
 };
 
 function toIdString(item) {
-  if (!item) return "";
-  if (item.tokenId != null) return String(item.tokenId);
-  if (item.id != null) return String(item.id);
-  return "";
+  return getAssetTokenId(item);
 }
 
 
@@ -899,12 +900,23 @@ export default function Gallery({
         return;
       setFetching(true);
       try {
-        // contracts may expose factory functions or actual instances
-        const main = contracts.mainRead?.();
-        const main2 = contracts.main2Read?.();
         const reader = contracts.readerRead?.();
+        let collectionEntries = [];
+        try {
+          collectionEntries = contracts.chapterCollectionsRead?.() || [];
+        } catch {
+          collectionEntries = [];
+        }
+        if (!collectionEntries.length) {
+          const main = contracts.mainRead?.();
+          const main2 = contracts.main2Read?.();
+          collectionEntries = [
+            { contract: main, label: "MAIN", chapterId: 1 },
+            { contract: main2, label: "MAIN2", chapterId: 1 },
+          ].filter((entry) => entry.contract);
+        }
 
-        if (!main && !main2) {
+        if (!collectionEntries.length) {
           console.warn("Gallery: main contracts not available");
           if (!cancelled) setHydratedItems([]);
           return;
@@ -912,30 +924,29 @@ export default function Gallery({
 
         const tokensOut = [];
 
-        if (main) {
-          const provider = getProviderForContract(main);
-          if (!provider || typeof provider.getBlockNumber !== "function") {
-            console.warn("Gallery: provider not available on MAIN contract");
-          } else {
-            const tokenIds = await resolveHeldTokenIds(main, address, reader);
-            if (tokenIds.length) {
-              const tokens = await hydrateTokens(main, reader, tokenIds);
-              tokensOut.push(...tokens);
-            }
-          }
-        }
-
-        if (main2) {
-          const provider = getProviderForContract(main2);
-          if (!provider || typeof provider.getBlockNumber !== "function") {
-            console.warn("Gallery: provider not available on MAIN2 contract");
-          } else {
-            const tokenIds2 = await resolveHeldTokenIds(main2, address, reader);
-            if (tokenIds2.length) {
-              const tokens2 = await hydrateTokens(main2, reader, tokenIds2);
-              tokensOut.push(...tokens2);
-            }
-          }
+        for (let offset = 0; offset < collectionEntries.length; offset += 2) {
+          const chunk = collectionEntries.slice(offset, offset + 2);
+          const results = await Promise.all(
+            chunk.map(async (entry) => {
+              const provider = getProviderForContract(entry.contract);
+              if (!provider || typeof provider.getBlockNumber !== "function") {
+                console.warn(
+                  `Gallery: provider not available on ${entry.label || entry.collectionType || "collection"} contract`,
+                );
+                return [];
+              }
+              const contractReader = entry.chapterId === 1 ? reader : null;
+              const tokenIds = await resolveHeldTokenIds(
+                entry.contract,
+                address,
+                contractReader,
+              );
+              return tokenIds.length
+                ? hydrateTokens(entry.contract, contractReader, tokenIds)
+                : [];
+            }),
+          );
+          results.forEach((tokens) => tokensOut.push(...tokens));
         }
 
         if (!cancelled) {
@@ -1121,10 +1132,10 @@ export default function Gallery({
         )}
         {pagedItems.map((item, index) => {
           const tokenId = toIdString(item);
-          const dynamic = dynamicTraitsById[tokenId] || {};
-          const key =
-            tokenId ||
-            `${String(item?.contractAddress || mainContractAddress || "unknown")}:${index}`;
+          const assetKey = getAssetIdentity(item, mainContractAddress);
+          const dynamic =
+            dynamicTraitsById[assetKey] || dynamicTraitsById[tokenId] || {};
+          const key = assetKey || `${mainContractAddress || "unknown"}:${index}`;
           return (
             <NftCard
               key={key}

@@ -1,6 +1,6 @@
 # Frontend Audit - Current Mainnet State
 
-Last verified: 2026-06-16
+Last verified: 2026-08-17
 
 This document is the active frontend audit note for the repository. It supersedes the old January analysis that referenced pre-mainnet reader gaps and historical branches.
 
@@ -18,8 +18,9 @@ This document is the active frontend audit note for the repository. It supersede
 - Canonical address map: `src/shared/utils/addresses.js`.
 - Backend mirror: `biggi-project/bekend/addresses.json`.
 - ABI export entry: `src/config/abi/index.js`.
-- ABI inventory: 58 ABI files, 745 functions.
-- Address sync: 150 frontend keys and 150 backend keys.
+- ABI inventory: 58 ABI files, 801 functions.
+- Address sync: 161 runtime frontend/backend keys; historical `OLD_TICKET_HUB` remains backend-only.
+- CORE sync: five chapter pairs and seven critical ABI snapshots match backend canonical sources.
 - Runtime smoke: Gallery, LiveStats, and Rewards passed.
 
 ## Current Reader Coverage
@@ -27,6 +28,7 @@ This document is the active frontend audit note for the repository. It supersede
 Configured reader keys used by the frontend:
 
 - `MAIN_READER`
+- `CHAPTER_SERIES_READER`
 - `MCD_READER_V2`
 - `NFT_REWARDS_READER`
 - `TOKEN_REWARDS_READER`

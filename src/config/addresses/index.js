@@ -1,29 +1,30 @@
-// Canonical address exports for all networks
+// Canonical address exports for the only supported production network.
 import MAINNET from "./mainnet.js";
-import LOCAL from "./local.js";
 
-export { MAINNET, LOCAL };
+export { MAINNET };
 
 export const ADDRESSES = {
   mainnet: MAINNET,
-  local: LOCAL,
 };
 
 export const CHAIN_KEYS_BY_ID = {
   137: "mainnet",
-  31337: "local",
 };
 
 export function resolveChainKey(chainKeyOrId = "mainnet") {
-  if (typeof chainKeyOrId === "number") return CHAIN_KEYS_BY_ID[chainKeyOrId] || "mainnet";
+  if (chainKeyOrId == null || chainKeyOrId === "") return "mainnet";
+  if (typeof chainKeyOrId === "number") return CHAIN_KEYS_BY_ID[chainKeyOrId] || null;
   const asNum = Number(chainKeyOrId);
-  if (!Number.isNaN(asNum)) return CHAIN_KEYS_BY_ID[asNum] || "mainnet";
-  return String(chainKeyOrId || "mainnet").toLowerCase();
+  if (!Number.isNaN(asNum)) return CHAIN_KEYS_BY_ID[asNum] || null;
+  const normalized = String(chainKeyOrId).trim().toLowerCase();
+  return normalized === "mainnet" || normalized === "polygon"
+    ? "mainnet"
+    : null;
 }
 
 export function getAddresses(chainKeyOrId = "mainnet") {
   const key = resolveChainKey(chainKeyOrId);
-  return ADDRESSES[key] || ADDRESSES.mainnet;
+  return key ? ADDRESSES[key] || null : null;
 }
 
 // Legacy / compatibility exports (tokenomics readers still import these)

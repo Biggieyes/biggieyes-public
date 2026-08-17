@@ -1,7 +1,7 @@
 // src/utils/contract.js
 // Ethers v6 helpers and contract factories
 import { BrowserProvider, Contract, FallbackProvider, JsonRpcProvider, Network, parseEther, formatEther } from "ethers";
-import { ADDR } from "./addresses.js";
+import { ADDR, CORE_CHAPTERS, getCoreChapter } from "./addresses.js";
 import {
   POLYGON_RPC,
   ACTIVE_CHAIN,
@@ -637,6 +637,21 @@ export const getReadOnlyMain = (provider) =>
 export const getMain = async (signerOverride) =>
   _mkRW(MAIN_ADDR_ACTIVE, ABI_MAIN_ACTIVE, signerOverride);
 
+function _requireCoreChapter(chapterId) {
+  const chapter = getCoreChapter(chapterId);
+  if (!chapter) throw new Error(`Unknown CORE chapter: ${chapterId}`);
+  return chapter;
+}
+
+export const getReadOnlyChapterMain = (chapterId, provider) =>
+  _mkRO(_requireCoreChapter(chapterId).main, ABI_MAIN, provider);
+export const getChapterMain = async (chapterId, signerOverride) =>
+  _mkRW(_requireCoreChapter(chapterId).main, ABI_MAIN, signerOverride);
+export const getReadOnlyChapterMain2 = (chapterId, provider) =>
+  _mkRO(_requireCoreChapter(chapterId).main2, ABI_MAIN2, provider);
+export const getChapterMain2 = async (chapterId, signerOverride) =>
+  _mkRW(_requireCoreChapter(chapterId).main2, ABI_MAIN2, signerOverride);
+
 export const getReadOnlyTicketHub = (provider) =>
   _mkRO(ADDR.TICKET_HUB, ABI_TICKET_HUB, provider);
 export const getTicketHub = async (signerOverride) =>
@@ -881,11 +896,33 @@ export const getReaderRO = (provider) => {
 
 export async function getFrontendSnapshotLiteActive(readerOverride) {
   const reader = readerOverride || getReaderRO();
-  const useMain2 =
-    _sameAddr(ADDR.MAIN, ADDR.MAIN2) ||
-    _sameAddr(ADDR.MAIN, ADDR.COLLECTION_PUBLIC);
-  const targetMain = ADDR.COLLECTION_VRF || ADDR.MAIN || null;
-  const targetPublic = ADDR.COLLECTION_PUBLIC || ADDR.MAIN2 || null;
+  const ticketHub = getReadOnlyTicketHub();
+  const chapterStates = await Promise.all(
+    CORE_CHAPTERS.map(async (chapter) => {
+      try {
+        return {
+          chapterId: chapter.chapterId,
+          active: Boolean(await ticketHub.chapterActive(chapter.chapterId)),
+        };
+      } catch {
+        return { chapterId: chapter.chapterId, active: null };
+      }
+    }),
+  );
+  if (chapterStates.some((chapter) => chapter.active == null)) {
+    throw new Error("Stats unavailable because CORE chapter state could not be read.");
+  }
+  const activeChapterIds = chapterStates
+    .filter((chapter) => chapter.active)
+    .map((chapter) => chapter.chapterId);
+  if (activeChapterIds.length > 1) {
+    throw new Error(
+      `Stats unavailable because multiple CORE chapters are active: ${activeChapterIds.join(", ")}`,
+    );
+  }
+  const selectedChapterId = activeChapterIds[0] || CORE_CHAPTERS[0].chapterId;
+  const selectedChapter = getCoreChapter(selectedChapterId);
+  const targetMain = selectedChapter?.main || null;
 
   const tryCall = async (fn, ...args) => {
     try {
@@ -895,21 +932,6 @@ export async function getFrontendSnapshotLiteActive(readerOverride) {
     }
   };
 
-  if (useMain2 && typeof reader.getFrontendSnapshotLiteMain2 === "function") {
-    const res = await tryCall(reader.getFrontendSnapshotLiteMain2.bind(reader));
-    if (!res?.__error) return res;
-  }
-  if (
-    useMain2 &&
-    typeof reader.getFrontendSnapshotLiteFor === "function" &&
-    targetPublic
-  ) {
-    const res = await tryCall(
-      reader.getFrontendSnapshotLiteFor.bind(reader),
-      targetPublic,
-    );
-    if (!res?.__error) return res;
-  }
   if (typeof reader.getFrontendSnapshotLiteFor === "function" && targetMain) {
     const res = await tryCall(
       reader.getFrontendSnapshotLiteFor.bind(reader),
@@ -917,21 +939,23 @@ export async function getFrontendSnapshotLiteActive(readerOverride) {
     );
     if (!res?.__error) return res;
   }
-  if (typeof reader.getFrontendSnapshotLite === "function") {
+  if (
+    selectedChapterId === CORE_CHAPTERS[0].chapterId &&
+    typeof reader.getFrontendSnapshotLite === "function"
+  ) {
     const res = await tryCall(reader.getFrontendSnapshotLite.bind(reader));
     if (!res?.__error) return res;
   }
 
   // Fallback: build snapshot directly from main contract to avoid reader reverts.
-  const main = getReadOnlyMain();
-  const ticketHub = getReadOnlyTicketHub();
+  const main = getReadOnlyChapterMain(selectedChapterId);
   const safeBn = (v) =>
     typeof v === "bigint" ? v : BigInt(v || 0);
   const [ticketPriceWei, ticketMinted_, biggiMinted_] = await Promise.all([
     ticketHub
       .getTicketPrice?.()
       .catch(() => ticketHub.ticketPrice?.().catch(() => 0n)),
-    ticketHub.ticketMinted?.().catch(() => 0n),
+    ticketHub.chapterTicketMinted?.(selectedChapterId).catch(() => 0n),
     main.biggiMinted?.().catch(() => 0n),
   ]);
 
@@ -1234,35 +1258,35 @@ export function getReadOnlyContract(
     ticket: { addr: () => ADDR.TICKET_HUB, abi: ABI_TICKET_HUB },
     token: { addr: () => ADDR.BIGGI, abi: ABI_TOKEN },
     biggi: { addr: () => ADDR.BIGGI, abi: ABI_TOKEN },
-    VRF: { addr: () => ADDR.VRF_ROUTER, abi: ABI_VRF },
+    vrf: { addr: () => ADDR.VRF_ROUTER, abi: ABI_VRF },
     distributor: { addr: () => ADDR.DISTRIBUTOR, abi: ABI_DISTRIBUTOR },
     reserve: { addr: () => ADDR.RESERVE, abi: ABI_RESERVE },
     treasury: { addr: () => ADDR.TREASURY, abi: ABI_TREASURY },
-    BUYBACK: { addr: () => ADDR.BUYBACK_AGENT, abi: ABI_BUYBACK },
-    BUYBACKagent: { addr: () => ADDR.BUYBACK_AGENT, abi: ABI_BUYBACK },
-    POLICY: { addr: () => ADDR.POLICY, abi: ABI_POLICY },
+    buyback: { addr: () => ADDR.BUYBACK_AGENT, abi: ABI_BUYBACK },
+    buybackagent: { addr: () => ADDR.BUYBACK_AGENT, abi: ABI_BUYBACK },
+    policy: { addr: () => ADDR.POLICY, abi: ABI_POLICY },
     liquidityautomation: {
       addr: () => ADDR.LIQUIDITY_AUTOMATION,
       abi: ABI_LIQUIDITY_AUTOMATION,
     },
-    DRIPdistributor: {
+    dripdistributor: {
       addr: () => ADDR.DRIP_DISTRIBUTOR,
       abi: ABI_DRIP_DISTRIBUTOR,
     },
-    DRIPlm: {
+    driplm: {
       addr: () => ADDR.DRIP_LM || ADDR.DRIPLM || ADDR.DRIP_LIQUIDITY_MANAGER,
       abi: ABI_DRIPLM,
     },
-    DRIPkeeper: {
+    dripkeeper: {
       addr: () => ADDR.DRIP_KEEPER_PROXY || ADDR.DRIP_KEEPER,
       abi: ABI_DRIP_KEEPER,
     },
-    tokenREWARDS: { addr: () => ADDR.TOKEN_REWARDS, abi: ABI_TOKEN_REWARDS },
-    COLLECTIONREWARDS: {
+    tokenrewards: { addr: () => ADDR.TOKEN_REWARDS, abi: ABI_TOKEN_REWARDS },
+    collectionrewards: {
       addr: () => ADDR.COLLECTION_REWARDS,
       abi: ABI_COLLECTION_REWARDS,
     },
-    nftREWARDS: {
+    nftrewards: {
       addr: () => ADDR.NFT_REWARDS,
       abi:
         Array.isArray(ABI_NFTREWARDS) && ABI_NFTREWARDS.length
@@ -1299,11 +1323,11 @@ export function getReadOnlyContract(
       addr: () => ADDR.TOKENOMICS_SYSTEM_ADDON_READER,
       abi: ABI_BiggiTokenomicsSystemAddonReader || ABI_READER,
     },
-    biggiREWARDSreader: {
+    biggirewardsreader: {
       addr: () => ADDR.BIGGI_REWARDS_READER || ADDR.COLLECTION_REWARDS_READER,
       abi: ABI_BiggiREWARDSReader || ABI_READER,
     },
-    REWARDSreader: {
+    rewardsreader: {
       addr: () => ADDR.BIGGI_REWARDS_READER || ADDR.COLLECTION_REWARDS_READER,
       abi: ABI_BiggiREWARDSReader || ABI_READER,
     },

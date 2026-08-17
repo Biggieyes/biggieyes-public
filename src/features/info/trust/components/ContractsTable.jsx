@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ADDR } from "@/shared/utils/addresses";
+import { ADDR, CORE_CHAPTERS } from "@/shared/utils/addresses";
 
 const cardStyle = {
   background: "#12141a",
@@ -39,7 +39,8 @@ const tdStyle = {
 };
 
 const mono = {
-  fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+  fontFamily:
+    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   fontSize: 12,
 };
 
@@ -64,17 +65,21 @@ function pickAddress(...values) {
   return values.find(isAddressLike) || "";
 }
 
+const chapterContracts = CORE_CHAPTERS.flatMap((chapter) => [
+  {
+    name: `Chapter ${chapter.chapterId} ${chapter.displayName} VRF`,
+    address: pickAddress(chapter.main),
+    role: `Series ${chapter.seriesId} VRF collection`,
+  },
+  {
+    name: `Chapter ${chapter.chapterId} ${chapter.displayName} Public`,
+    address: pickAddress(chapter.main2),
+    role: `Series ${chapter.seriesId} public collection`,
+  },
+]);
+
 const contracts = [
-  {
-    name: "BiggiMain VRF",
-    address: pickAddress(ADDR.COLLECTION_VRF, ADDR.MAIN),
-    role: "VRF mint controller",
-  },
-  {
-    name: "BiggiMain Public",
-    address: pickAddress(ADDR.COLLECTION_PUBLIC, ADDR.MAIN2),
-    role: "Public collection controller",
-  },
+  ...chapterContracts,
   {
     name: "TicketHub",
     address: pickAddress(ADDR.TICKET_HUB),
@@ -252,7 +257,9 @@ export default function ContractsTable() {
               <tr key={row.name}>
                 <td style={tdStyle}>{row.name}</td>
                 <td style={tdStyle}>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <div
+                    style={{ display: "flex", gap: 8, alignItems: "center" }}
+                  >
                     <span style={mono}>{shortAddr(row.address)}</span>
                     <button
                       type="button"
@@ -280,7 +287,9 @@ export default function ContractsTable() {
                   )}
                 </td>
                 <td style={tdStyle}>
-                  <span style={{ color: "#9ef0a1", fontWeight: 700 }}>true</span>
+                  <span style={{ color: "#9ef0a1", fontWeight: 700 }}>
+                    true
+                  </span>
                 </td>
                 <td style={tdStyle}>{row.role}</td>
               </tr>

@@ -1,6 +1,6 @@
 # BIGGI_MASTER Mainnet Contract Address Records
 
-Last documentation sync: 2026-06-16.
+Last documentation sync: 2026-08-17.
 
 ## Canonical Polygon Mainnet Deployment
 
@@ -27,20 +27,34 @@ Canonical manifests:
 | --- | --- |
 | `BIGGI_NAMES_LIB` | `0xFEfB6Cd04879715bb63E8a51811e68EC85D9dB78` |
 | `BIGGI_NAMES_LIB2` | `0xBd3C8f5A8A936071585e909d9ab5c1Df3D7EB78a` |
-| `REGISTRY` | `0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013` |
-| `CHAPTER_CONTROLLER` | `0x6bf341647C9592eFEadE43a3f396DB616B11f7E7` |
+| `REGISTRY` | `0x09f3728e8607e1B951A6396DcEE4EC134C5e4058` |
+| `CHAPTER_CONTROLLER` | `0x9c084D89c0CB6c8424652d1fa82E83aD9c098288` |
 | `COMPUTE` | `0x0A09261631496B4aad9A5c2A82b62666249d773f` |
 | `VRF_ROUTER` | `0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F` |
 | `MAIN` | `0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4` |
 | `MAIN2` | `0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634` |
-| `TICKET_HUB` | `0xe6d742D7DC66fA63434E6794C69798A5272e9873` |
+| `TICKET_HUB` | `0x7b7e561173f498C8274b821090Da64E8ee653f6A` |
 | `DISTRIBUTOR` | `0xCE892698159D8D799D5eF7f0dF0111487511fD22` |
 | `COLLECTION_REWARDS` | `0x5d1273070c9133381C570009768621762F024FB8` |
 | `NFT_REWARDS` | `0x939Df533b80943298E15ad4c8F188102954f34FF` |
-| `MAIN_READER` | `0x5B5b422D0Db094550B626749EE4F982A301F8471` |
+| `MAIN_READER` | `0x4937CdcF1668255Cb46c78E19547ea96C94391Ef` |
 | `MULTI_COLLECTION_READER` | `0xa65B4e88E37F085B9009295eA0AcF05e18a82884` |
-| `CHAPTER_SERIES_READER` | `0x79f39f2344B51e292cfa346c264E549098728900` |
+| `CHAPTER_SERIES_READER` | `0x421c8ed70fC893517481315aC62f4c95331e647f` |
 | `NFT_REWARDS_READER` | `0x430376b1f4F12ce2D641CC28f2968297aA2b0c12` |
+
+## Registered Chapters
+
+| Chapter | VRF collection | Public collection | Marketing tickets | Status |
+| --- | --- | --- | ---: | --- |
+| 1 - Original BIGGI | `0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4` | `0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634` | 50 | inactive |
+| 2 - Universe | `0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036` | `0xce4dF4eFc703fb0D9827aAacDB28c90405aB57D0` | 50 | inactive |
+| 3 - Mutant | `0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2` | `0x4bB7a55Ba690Fc38653f5889E2262316A049a1D9` | 50 | inactive |
+| 4 - Apocalipse | `0x8E862D9071120D69517D3F7Db0c101175E911115` | `0x43b4C220aD039C0272153cF4B43Eaee68de09b00` | 50 | inactive |
+| 5 - Super Hero | `0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38` | `0xcA168A6e391a54de4F664397eE17328280305A75` | 50 | inactive |
+
+Every VRF chapter uses the same 550-position block-color, tier, rarity, and game-logic matrix as Chapter 1. Chapter-specific images and NFT metadata are configured later, before that chapter is activated. Public collection pricing is derived from its paired VRF collection.
+
+Current verification: `204/204` on-chain relationship checks and `13/13` PolygonScan source verifications passed. All 250 marketing tickets are minted, transferable, and not redeemable while their chapters remain inactive.
 
 ## Live Tokenomics Write Contracts
 
@@ -100,10 +114,11 @@ Canonical manifests:
 | Check | Current value |
 | --- | --- |
 | Pair reserves | `0/0` until initial liquidity |
-| `BiggiToken.totalSupply` | `0` until `initialDistribute()` |
-| `BiggiToken.distributed` | `false` |
-| `TicketHub.saleCap` | `0` until public launch activation |
+| `BiggiToken.totalSupply` | `1,200,000,000 BIGGI` |
+| `BiggiToken.distributed` | `true`; reserve lock is active |
+| `TicketHub.saleCap / marketingCap` | `500 / 50` per chapter |
 | `TicketHub.ticketPrice` | `1 POL` |
+| Chapter activation | all five chapters `active=false` |
 | `BiggiLiquidityManager.autoTopUpEnabled` | `false` |
 | `BiggiLiquidityKeeperProxy.paused` | `true` |
 | `BiggiLiquidityOrchestrator.paused` | `true` |

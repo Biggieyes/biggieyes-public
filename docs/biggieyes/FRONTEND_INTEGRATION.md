@@ -1,8 +1,8 @@
 # Frontend Integration
 
-Last verified: 2026-06-16
+Last verified: 2026-08-17
 
-This document records how the frontend is currently wired to the Polygon mainnet protocol. It intentionally avoids planned or historical testnet behavior.
+This document records how the frontend is currently wired to the Polygon mainnet protocol.
 
 ## Active Network
 
@@ -10,7 +10,7 @@ This document records how the frontend is currently wired to the Polygon mainnet
 - Required chain ID: `137`.
 - Native currency label in UI: `POL`.
 - Explorer: `https://polygonscan.com`.
-- Testnet address files and Amoy/Mumbai/Sepolia references are not part of the active frontend path.
+- Any chain ID other than `137` is rejected and receives no contract address mapping.
 
 ## Wallet Connection
 
@@ -62,6 +62,7 @@ VITE_ENABLE_ETHERS_FALLBACK_PROVIDER=1
 The frontend prefers reader contracts and snapshot services:
 
 - `MAIN_READER` for ticket and collection state
+- `CHAPTER_SERIES_READER` for all five deployed series/chapter pairs
 - `MCD_READER_V2` for distributor/rewards routing state
 - `TOKEN_REWARDS_READER` and token rewards service for claim preview
 - `NFT_REWARDS_READER` and NFT rewards service for assigned reward state
@@ -78,28 +79,33 @@ Current user-facing write paths:
 
 | User action | Contract path used by frontend |
 | --- | --- |
-| Mint ticket with native token | `BiggiTicketHub.mintTicket` |
-| Mint ticket with BIGGI | `BiggiTicketHub.mintTicketWithBiggi` where supported |
-| Redeem ticket | `BiggiTicketHub.redeemTicket` |
+| Mint ticket with native token | Read all `chapterActive` gates, require exactly one active chapter, then `BiggiTicketHub.mintTicketForChapter(chapterId)` |
+| Mint ticket with BIGGI | The same single-active-chapter gate, then `BiggiTicketHub.mintTicketWithBiggiForChapter(chapterId)` where supported |
+| Redeem ticket | Resolve the only active chapter, select an owned ticket with matching `ticketChapterId`, then `BiggiTicketHub.redeemTicket` |
 | Mint public NFT | `BiggiMain2.mintPublic` |
 | Mint public NFT with BIGGI | `BiggiMain2.mintPublicWithBiggi` |
 | Claim weekly token rewards | `BiggiTokenRewards.claim` or `claimWithCollections` |
+
 | Claim collection block reward | `BiggiCollectionRewards.claimBlockReward` |
 | Claim collection orange reward | `BiggiCollectionRewards.claimOrangeReward` |
 | Claim collection rainbow reward | `BiggiCollectionRewards.claimRainbowReward` |
 | Claim assigned NFT reward | `BiggiNftRewards.claim` |
 | Claim community event reward | `BiggiCommunityCenter.claim` |
 
+All chapter pairs may be displayed for transparency, but only the single chapter whose live `TicketHub.chapterActive(chapterId)` value is true is available for paid minting and ticket redemption.
+
 Write logic must stay behind explicit UI actions. Components should receive callbacks from the app shell/services rather than instantiating write contracts ad hoc.
 
 ## Gallery And Metadata
 
-The gallery is mainnet-scoped:
+The gallery is mainnet and CORE-series scoped:
 
-- session cache includes chain ID and contract address
-- memory cache is split for `MAIN` and `MAIN2`
+- tickets are loaded from the central `TicketHub`
+- NFT ownership is read across all five VRF and five Public collection contracts
+- equal token IDs remain separate through the composite key `contractAddress + tokenId`
+- session cache includes chain ID and the central CORE scope
 - token URI, metadata, and image caches are versioned after mainnet migration
-- old testnet cache payloads are ignored
+- payloads from a different chain or obsolete contract address are ignored
 
 Primary file: `src/components/Gallery.jsx`.
 
@@ -107,8 +113,8 @@ Primary file: `src/components/Gallery.jsx`.
 
 LiveStats reads current mainnet data and avoids stale fallback images:
 
-- active cache scope includes chain ID and collection contract
-- last minted cache is accepted only when chain ID and contract address match the current deployment
+- active cache scope includes chain ID, central CORE scope, collection contract, and token ID
+- diagnostics and mint data use the single active chapter collection
 - if on-chain supply is zero or unavailable, the UI uses placeholders instead of old cached NFT metadata
 
 Primary file: `src/components/LiveStats.jsx`.

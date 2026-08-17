@@ -2,7 +2,7 @@
   {
     "output": "BiggiEyesMain.abi.json",
     "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiMain.sol/BiggiEyesMain.json",
-    "abiLength": 134
+    "abiLength": 138
   },
   {
     "output": "BiggiEyesMain2.abi.json",
@@ -12,12 +12,12 @@
   {
     "output": "BiggiTicketHub.abi.json",
     "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiTicketHub.sol/BiggiTicketHub.json",
-    "abiLength": 130
+    "abiLength": 165
   },
   {
     "output": "BiggiSeriesRegistry.abi.json",
     "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiSeriesRegistry.sol/BiggiSeriesRegistry.json",
-    "abiLength": 29
+    "abiLength": 30
   },
   {
     "output": "BiggiChapterController.abi.json",
@@ -52,7 +52,7 @@
   {
     "output": "BiggiMultiCollectionDistributor.abi.json",
     "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiMultiCollectionDistributor.sol/BiggiMultiCollectionDistributor.json",
-    "abiLength": 67
+    "abiLength": 70
   },
   {
     "output": "BiggiMainReader.abi.json",
@@ -62,7 +62,7 @@
   {
     "output": "BiggiChapterSeriesReader.abi.json",
     "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_READERS/BiggiChapterSeriesReader.sol/BiggiChapterSeriesReader.json",
-    "abiLength": 10
+    "abiLength": 11
   },
   {
     "output": "BiggiMultiCollectionDistributorReaderV2.abi.json",

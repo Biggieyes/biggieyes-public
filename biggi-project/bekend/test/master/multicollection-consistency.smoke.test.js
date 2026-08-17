@@ -180,6 +180,50 @@ describe("BIGGI_MASTER: multicollection + rewards consistency smoke", function (
     expect(distributedSum).to.equal(value);
   });
 
+  it("attributes central TicketHub native mints to the explicit chapter", async () => {
+    const [owner, alice] = await ethers.getSigners();
+
+    const registry = await deploy("BiggiSeriesRegistry", owner.address);
+    const main1 = await deploy("MockCollectionMainView");
+    const main2 = await deploy("MockCollectionMainView");
+    const public1 = await deploy("MockMintShareReceiver");
+    const public2 = await deploy("MockMintShareReceiver");
+    const ticketHub = await deploy("BiggiTicketHub", owner.address, main1.address);
+    const distributor = await deploy("BiggiMultiCollectionDistributor", owner.address);
+    const collectionRewards = await deploy("MockMintShareReceiver");
+    const reserve = await deploy("MockMintShareReceiver");
+    const buyback = await deploy("MockMintShareReceiver");
+    const treasury = await deploy("MockMintShareReceiver");
+    const community = await deploy("MockMintShareReceiver");
+
+    await (await registry.createSeries("MASTER")).wait();
+    await (await registry.createChapter(1)).wait();
+    await (await registry.createChapter(1)).wait();
+    await (await registry.setChapterCollections(1, main1.address, public1.address, ticketHub.address)).wait();
+    await (await registry.setChapterCollections(2, main2.address, public2.address, ticketHub.address)).wait();
+
+    await (await distributor.setRegistry(registry.address)).wait();
+    await (await distributor.setCollectionRewards(collectionRewards.address)).wait();
+    await (await distributor.setReserve(reserve.address)).wait();
+    await (await distributor.setBuybackAgent(buyback.address)).wait();
+    await (await distributor.setTreasury(treasury.address)).wait();
+    await (await distributor.setCommunityCenter(community.address)).wait();
+    await (await distributor.addCollection(ticketHub.address)).wait();
+
+    await (await ticketHub.configureChapter(2, main2.address, 500, 50, "ipfs://chapter-2/")).wait();
+    await (await ticketHub.setDistributor(distributor.address)).wait();
+    await (await ticketHub.setChapterActive(2, true)).wait();
+
+    const ticketPrice = await ticketHub.ticketPrice();
+    const distributed = ticketPrice.mul(6000).div(10000);
+    await (await ticketHub.connect(alice).mintTicketForChapter(2, { value: ticketPrice })).wait();
+
+    expect(await distributor.receivedByCollection(ticketHub.address)).to.equal(distributed);
+    expect(await distributor.receivedByChapter(1)).to.equal(0);
+    expect(await distributor.receivedByChapter(2)).to.equal(distributed);
+    expect(await distributor.receivedBySeries(1)).to.equal(distributed);
+  });
+
   it("does not block native distribution when optional registry attribution is misconfigured", async () => {
     const [owner] = await ethers.getSigners();
 

@@ -56,31 +56,6 @@ function formatToken(value, digits = 4) {
   return formatTokenDisplay(value, 18, digits, "BIGGI");
 }
 
-function countFromResult(value) {
-  if (value == null) return null;
-  if (Array.isArray(value)) {
-    return value.filter((v) => {
-      if (v == null) return false;
-      if (typeof v === "bigint") return v !== 0n;
-      if (typeof v === "number") return v !== 0;
-      if (typeof v === "string") return v !== "" && v !== "0";
-      if (typeof v?.toString === "function") {
-        const s = v.toString();
-        return s && s !== "0";
-      }
-      return Boolean(v);
-    }).length;
-  }
-  if (typeof value === "bigint") return value === 0n ? 0 : 1;
-  if (typeof value === "number") return value === 0 ? 0 : 1;
-  if (typeof value === "string") return value === "" || value === "0" ? 0 : 1;
-  if (typeof value?.toString === "function") {
-    const s = value.toString();
-    return s && s !== "0" ? 1 : 0;
-  }
-  return value ? 1 : 0;
-}
-
 const ACTIVITY_MAX = 5;
 
 function toBigIntSafe(value) {
@@ -343,9 +318,9 @@ export default function USERPANEL({
     setOverview((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const balanceProvider = provider || contracts?._effectiveROProvider?.();
-      const main = contracts?.mainRead?.();
+      const collections = contracts?.chapterCollectionsRead?.() || [];
+      const ticketHub = contracts?.ticketHubRead?.();
       const token = contracts?.tokenRead?.();
-      const reader = contracts?.readerRead?.();
 
       let native = null;
       if (balanceProvider?.getBalance) {
@@ -367,24 +342,27 @@ export default function USERPANEL({
       }
 
       let totalTokens = null;
-      if (main?.balanceOf) {
-        const bal = await main.balanceOf(activeAccount).catch(() => null);
-        if (bal != null) totalTokens = Number(bal);
+      if (collections.length) {
+        const balances = await Promise.all(
+          collections.map(({ contract }) =>
+            contract?.balanceOf?.(activeAccount).catch(() => 0n),
+          ),
+        );
+        totalTokens = balances.reduce(
+          (sum, balance) => sum + Number(balance || 0),
+          0,
+        );
       }
 
       let tickets = null;
-      if (reader?.findTicket) {
-        const res = await reader.findTicket(activeAccount).catch(() => null);
-        tickets = countFromResult(res);
-      } else if (main?.findTicket) {
-        const res = await main.findTicket(activeAccount).catch(() => null);
-        tickets = countFromResult(res);
+      if (ticketHub?.balanceOf) {
+        const balance = await ticketHub
+          .balanceOf(activeAccount)
+          .catch(() => null);
+        if (balance != null) tickets = Number(balance);
       }
 
-      let nfts = null;
-      if (totalTokens != null && tickets != null) {
-        nfts = Math.max(0, Number(totalTokens) - Number(tickets));
-      }
+      const nfts = totalTokens;
 
       setOverview({
         loading: false,
@@ -419,7 +397,8 @@ export default function USERPANEL({
   );
 
   const contractLinks = [
-    { label: "Main", address: ADDR.MAIN },
+    { label: "Ticket Hub", address: ADDR.TICKET_HUB },
+    { label: "Chapter 1 VRF", address: ADDR.MAIN },
     { label: "Token", address: ADDR.BIGGI },
     { label: "Token REWARDS", address: ADDR.TOKEN_REWARDS },
     { label: "Collection REWARDS", address: ADDR.COLLECTION_REWARDS },
@@ -773,7 +752,7 @@ export default function USERPANEL({
               <strong>{formatToken(overview.biggi, 4)}</strong>
             </div>
             <div className="user-panel__statline">
-              <span>Total tokens</span>
+              <span>NFTs across chapters</span>
               <strong>
                 {overview.totalTokens != null
                   ? formatValue(overview.totalTokens, 0)

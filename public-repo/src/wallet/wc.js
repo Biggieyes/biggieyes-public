@@ -11,7 +11,6 @@ const DEFAULT_POLYGON_RPC =
 
 const RPC_MAP = {
   [ACTIVE_CHAIN.chainId]: DEFAULT_POLYGON_RPC,
-  1: "https://cloudflare-eth.com", // Ethereum Mainnet
 };
 
 export async function connectWithWalletConnect() {
@@ -20,7 +19,6 @@ export async function connectWithWalletConnect() {
   const wc = await EthereumProvider.init({
     projectId: WC_PROJECT_ID,
     chains: [ACTIVE_CHAIN.chainId],
-    optionalChains: [1],
     rpcMap: RPC_MAP,
     showQrModal: true,
     qrModalOptions: {

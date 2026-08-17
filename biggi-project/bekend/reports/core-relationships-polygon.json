@@ -1,7 +1,7 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "checkedAt": "2026-07-20T19:30:44.094Z",
+  "checkedAt": "2026-08-17T22:02:29.252Z",
   "checks": [
     {
       "status": "ok",
@@ -11,7 +11,7 @@
     {
       "status": "ok",
       "label": "MAIN.ticketHub",
-      "actual": "0xe6d742D7DC66fA63434E6794C69798A5272e9873"
+      "actual": "0x7b7e561173f498C8274b821090Da64E8ee653f6A"
     },
     {
       "status": "ok",
@@ -35,8 +35,8 @@
     {
       "status": "ok",
       "label": "MAIN.ticketHub == TICKET_HUB",
-      "actual": "0xe6d742D7DC66fA63434E6794C69798A5272e9873",
-      "expected": "0xe6d742D7DC66fA63434E6794C69798A5272e9873"
+      "actual": "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
+      "expected": "0x7b7e561173f498C8274b821090Da64E8ee653f6A"
     },
     {
       "status": "ok",
@@ -60,7 +60,7 @@
     {
       "status": "ok",
       "label": "TICKET_HUB.code",
-      "address": "0xe6d742D7DC66fA63434E6794C69798A5272e9873"
+      "address": "0x7b7e561173f498C8274b821090Da64E8ee653f6A"
     },
     {
       "status": "ok",
@@ -95,7 +95,7 @@
     {
       "status": "ok",
       "label": "TICKET_HUB.ticketMinted",
-      "actual": "0"
+      "actual": "50"
     },
     {
       "status": "ok",
@@ -105,7 +105,7 @@
     {
       "status": "ok",
       "label": "TICKET_HUB.marketingMinted",
-      "actual": "0"
+      "actual": "50"
     },
     {
       "status": "ok",
@@ -144,7 +144,7 @@
     },
     {
       "status": "ok",
-      "label": "TICKET_HUB.mainCollection == MAIN",
+      "label": "TICKET_HUB chapter main == MAIN",
       "actual": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
       "expected": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4"
     },
@@ -225,15 +225,10 @@
     },
     {
       "status": "ok",
-      "label": "VRF_ROUTER.main == MAIN",
-      "actual": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
-      "expected": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4"
-    },
-    {
-      "status": "ok",
-      "label": "VRF_ROUTER.approvedMains[MAIN] == true",
-      "actual": true,
-      "expected": true
+      "label": "VRF_ROUTER routes MAIN",
+      "main": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+      "expected": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+      "approved": "true"
     },
     {
       "status": "ok",
@@ -243,23 +238,23 @@
     {
       "status": "ok",
       "label": "REGISTRY.code",
-      "address": "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013"
+      "address": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058"
     },
     {
       "status": "ok",
       "label": "CHAPTER_CONTROLLER.code",
-      "address": "0x6bf341647C9592eFEadE43a3f396DB616B11f7E7"
+      "address": "0x9c084D89c0CB6c8424652d1fa82E83aD9c098288"
     },
     {
       "status": "ok",
       "label": "CHAPTER_CONTROLLER.registry",
-      "actual": "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013"
+      "actual": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058"
     },
     {
       "status": "ok",
       "label": "CHAPTER_CONTROLLER.registry == REGISTRY",
-      "actual": "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013",
-      "expected": "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013"
+      "actual": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
+      "expected": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058"
     },
     {
       "status": "ok",
@@ -274,7 +269,12 @@
     {
       "status": "ok",
       "label": "REGISTRY.chapterByCollection[TICKET_HUB]",
-      "actual": "1"
+      "actual": "0"
+    },
+    {
+      "status": "ok",
+      "label": "REGISTRY.isTicketHubForChapter[TICKET_HUB, CHAPTER_ID]",
+      "actual": "true"
     },
     {
       "status": "ok",
@@ -290,9 +290,9 @@
     },
     {
       "status": "ok",
-      "label": "REGISTRY TICKET_HUB chapter == CHAPTER_ID",
-      "actual": 1,
-      "expected": 1
+      "label": "REGISTRY TICKET_HUB belongs to CHAPTER_ID",
+      "actual": true,
+      "expected": true
     },
     {
       "status": "ok",
@@ -300,7 +300,7 @@
       "actual": [
         "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
         "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634",
-        "0xe6d742D7DC66fA63434E6794C69798A5272e9873"
+        "0x7b7e561173f498C8274b821090Da64E8ee653f6A"
       ]
     },
     {
@@ -318,8 +318,8 @@
     {
       "status": "ok",
       "label": "REGISTRY.chapter.ticketHub == TICKET_HUB",
-      "actual": "0xe6d742D7DC66fA63434E6794C69798A5272e9873",
-      "expected": "0xe6d742D7DC66fA63434E6794C69798A5272e9873"
+      "actual": "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
+      "expected": "0x7b7e561173f498C8274b821090Da64E8ee653f6A"
     },
     {
       "status": "ok",
@@ -379,8 +379,8 @@
       "label": "CHAPTER_CONTROLLER.chapterMintProgress",
       "actual": [
         "0",
-        "0",
-        "0",
+        "50",
+        "50",
         "500",
         "50",
         "550",
@@ -426,7 +426,7 @@
     {
       "status": "ok",
       "label": "MAIN2.chapterController",
-      "actual": "0x6bf341647C9592eFEadE43a3f396DB616B11f7E7"
+      "actual": "0x9c084D89c0CB6c8424652d1fa82E83aD9c098288"
     },
     {
       "status": "ok",
@@ -460,8 +460,8 @@
     {
       "status": "ok",
       "label": "MAIN2.chapterController == CHAPTER_CONTROLLER",
-      "actual": "0x6bf341647C9592eFEadE43a3f396DB616B11f7E7",
-      "expected": "0x6bf341647C9592eFEadE43a3f396DB616B11f7E7"
+      "actual": "0x9c084D89c0CB6c8424652d1fa82E83aD9c098288",
+      "expected": "0x9c084D89c0CB6c8424652d1fa82E83aD9c098288"
     },
     {
       "status": "ok",
@@ -522,7 +522,7 @@
     {
       "status": "ok",
       "label": "DISTRIBUTOR.registry",
-      "actual": "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013"
+      "actual": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058"
     },
     {
       "status": "ok",
@@ -557,8 +557,8 @@
     {
       "status": "ok",
       "label": "DISTRIBUTOR.registry == REGISTRY",
-      "actual": "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013",
-      "expected": "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013"
+      "actual": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
+      "expected": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058"
     },
     {
       "status": "ok",
@@ -595,7 +595,7 @@
     {
       "status": "ok",
       "label": "COLLECTION_REWARDS.registry",
-      "actual": "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013"
+      "actual": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058"
     },
     {
       "status": "ok",
@@ -611,8 +611,8 @@
     {
       "status": "ok",
       "label": "COLLECTION_REWARDS.registry == REGISTRY",
-      "actual": "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013",
-      "expected": "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013"
+      "actual": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
+      "expected": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058"
     },
     {
       "status": "ok",
@@ -638,7 +638,7 @@
     {
       "status": "ok",
       "label": "NFT_REWARDS.registry",
-      "actual": "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013"
+      "actual": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058"
     },
     {
       "status": "ok",
@@ -655,8 +655,8 @@
     {
       "status": "ok",
       "label": "NFT_REWARDS.registry == REGISTRY",
-      "actual": "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013",
-      "expected": "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013"
+      "actual": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
+      "expected": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058"
     },
     {
       "status": "ok",
@@ -666,7 +666,7 @@
     {
       "status": "ok",
       "label": "MAIN_READER.code",
-      "address": "0x5B5b422D0Db094550B626749EE4F982A301F8471"
+      "address": "0x4937CdcF1668255Cb46c78E19547ea96C94391Ef"
     },
     {
       "status": "ok",
@@ -682,13 +682,13 @@
     {
       "status": "ok",
       "label": "MAIN_READER.ticketHub",
-      "actual": "0xe6d742D7DC66fA63434E6794C69798A5272e9873"
+      "actual": "0x7b7e561173f498C8274b821090Da64E8ee653f6A"
     },
     {
       "status": "ok",
       "label": "MAIN_READER.ticketHub expected",
-      "actual": "0xe6d742D7DC66fA63434E6794C69798A5272e9873",
-      "expected": "0xe6d742D7DC66fA63434E6794C69798A5272e9873"
+      "actual": "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
+      "expected": "0x7b7e561173f498C8274b821090Da64E8ee653f6A"
     },
     {
       "status": "ok",
@@ -704,29 +704,29 @@
     {
       "status": "ok",
       "label": "CHAPTER_SERIES_READER.code",
-      "address": "0x79f39f2344B51e292cfa346c264E549098728900"
+      "address": "0x421c8ed70fC893517481315aC62f4c95331e647f"
     },
     {
       "status": "ok",
       "label": "CHAPTER_SERIES_READER.chapterController",
-      "actual": "0x6bf341647C9592eFEadE43a3f396DB616B11f7E7"
+      "actual": "0x9c084D89c0CB6c8424652d1fa82E83aD9c098288"
     },
     {
       "status": "ok",
       "label": "CHAPTER_SERIES_READER.chapterController expected",
-      "actual": "0x6bf341647C9592eFEadE43a3f396DB616B11f7E7",
-      "expected": "0x6bf341647C9592eFEadE43a3f396DB616B11f7E7"
+      "actual": "0x9c084D89c0CB6c8424652d1fa82E83aD9c098288",
+      "expected": "0x9c084D89c0CB6c8424652d1fa82E83aD9c098288"
     },
     {
       "status": "ok",
       "label": "CHAPTER_SERIES_READER.registry",
-      "actual": "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013"
+      "actual": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058"
     },
     {
       "status": "ok",
       "label": "CHAPTER_SERIES_READER.registry expected",
-      "actual": "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013",
-      "expected": "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013"
+      "actual": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
+      "expected": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058"
     },
     {
       "status": "ok",
@@ -771,7 +771,7 @@
     }
   ],
   "issues": [],
-  "addressesFile": "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\addresses.visibility.polygon.json",
+  "addressesFile": "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\addresses.master.json",
   "strict": false,
   "requireCode": false,
   "expectPaidNative": false,

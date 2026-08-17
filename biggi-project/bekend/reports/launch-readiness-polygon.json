@@ -1,7 +1,7 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "createdAt": "2026-07-20T19:30:44.809Z",
+  "createdAt": "2026-08-17T20:11:42.226Z",
   "okForDeployOnly": true,
   "okForPublicLaunch": false,
   "checks": [
@@ -23,7 +23,7 @@
     {
       "name": "Code exists: TICKET_HUB",
       "ok": true,
-      "value": "0xe6d742D7DC66fA63434E6794C69798A5272e9873"
+      "value": "0x7b7e561173f498C8274b821090Da64E8ee653f6A"
     },
     {
       "name": "Code exists: VRF_ROUTER",
@@ -184,7 +184,7 @@
         "configuredCount": "550",
         "fullyConfigured": true,
         "rewardMatrixConsistent": true,
-        "ticketHub": "0xe6d742D7DC66fA63434E6794C69798A5272e9873",
+        "ticketHub": "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
         "compute": "0x0A09261631496B4aad9A5c2A82b62666249d773f",
         "vrfRouter": "0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F",
         "paused": false
@@ -286,7 +286,7 @@
       "saleCap": 500,
       "marketingCap": 50,
       "saleMinted": 0,
-      "marketingMinted": 0,
+      "marketingMinted": 50,
       "ticketPrice": "1000000000000000000",
       "devWallet": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "tokenSink": "0x35EE9523D20fFfe47c62dCcF01fA0136424A05e7",
@@ -297,7 +297,7 @@
       "configuredCount": "550",
       "fullyConfigured": true,
       "rewardMatrixConsistent": true,
-      "ticketHub": "0xe6d742D7DC66fA63434E6794C69798A5272e9873",
+      "ticketHub": "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
       "compute": "0x0A09261631496B4aad9A5c2A82b62666249d773f",
       "vrfRouter": "0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F",
       "paused": false

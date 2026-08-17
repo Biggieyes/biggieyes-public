@@ -1,6 +1,6 @@
 # Project Analysis - Current Frontend State
 
-Last verified: 2026-06-16
+Last verified: 2026-08-17
 
 This document summarizes the current frontend architecture, dependencies, environment requirements, troubleshooting paths, and operational checks for the BiggiEyes Polygon mainnet application.
 
@@ -27,7 +27,7 @@ The app is a React/Vite Web3 frontend for NFT ticket minting, VRF redemption, co
 - Native currency label in UI: `POL`.
 - Explorer: `https://polygonscan.com`.
 
-The active frontend path does not use Amoy, Mumbai, Sepolia, or any other testnet.
+The active frontend supports only Polygon mainnet; any other chain ID is rejected without an address fallback.
 
 ## Contract And ABI Sources
 
@@ -39,8 +39,8 @@ The active frontend path does not use Amoy, Mumbai, Sepolia, or any other testne
 
 Current checks:
 
-- `npm run check:contracts`: 150 frontend keys and 150 backend keys.
-- `npm run check:abis`: 58 ABI files and 745 functions.
+- `npm run check:contracts`: 161 runtime frontend/backend keys, five chapters and seven canonical CORE ABI comparisons; historical `OLD_TICKET_HUB` is excluded.
+- `npm run check:abis`: 58 ABI files and 801 functions.
 
 ## External Services
 

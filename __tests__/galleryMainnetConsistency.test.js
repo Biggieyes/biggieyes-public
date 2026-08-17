@@ -5,6 +5,7 @@ import {
   mergeGalleryLists,
 } from "../src/shared/services/gallery/gallery.merge.js";
 import { buildRewardClaimPayload } from "../src/shared/utils/assetIdentity.js";
+import { CORE_CHAPTERS } from "../src/shared/utils/addresses.js";
 
 const MAIN = "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4";
 const MAIN2 = "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634";
@@ -64,11 +65,19 @@ describe("gallery mainnet consistency", () => {
 
     expect(merged).toHaveLength(2);
     expect(
-      merged.map((item) => `${item.contractAddress.toLowerCase()}::${item.tokenId}`),
-    ).toEqual(expect.arrayContaining([`${MAIN.toLowerCase()}::7`, `${MAIN2.toLowerCase()}::7`]));
+      merged.map(
+        (item) => `${item.contractAddress.toLowerCase()}::${item.tokenId}`,
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        `${MAIN.toLowerCase()}::7`,
+        `${MAIN2.toLowerCase()}::7`,
+      ]),
+    );
   });
 
   it("builds collection-aware token rewards payload for multi-collection NFT claims", () => {
+    const chapterFiveMain = CORE_CHAPTERS[4].main;
     const payload = buildRewardClaimPayload(
       [
         {
@@ -79,6 +88,11 @@ describe("gallery mainnet consistency", () => {
         {
           tokenId: "7",
           contractAddress: MAIN2,
+          isTicket: false,
+        },
+        {
+          tokenId: "7",
+          contractAddress: chapterFiveMain,
           isTicket: false,
         },
         {
@@ -94,14 +108,25 @@ describe("gallery mainnet consistency", () => {
       ],
       {
         primaryCollectionAddress: MAIN,
-        allowedCollectionAddresses: [MAIN, MAIN2],
+        allowedCollectionAddresses: CORE_CHAPTERS.flatMap((chapter) => [
+          chapter.main,
+          chapter.main2,
+        ]),
         maxSupply: 550,
       },
     );
 
-    expect(payload.trackedCount).toBe(2);
-    expect(payload.tokenIds.map((id) => id.toString())).toEqual(["7", "7"]);
-    expect(payload.collections).toEqual([MAIN.toLowerCase(), MAIN2.toLowerCase()]);
+    expect(payload.trackedCount).toBe(3);
+    expect(payload.tokenIds.map((id) => id.toString())).toEqual([
+      "7",
+      "7",
+      "7",
+    ]);
+    expect(payload.collections).toEqual([
+      MAIN.toLowerCase(),
+      MAIN2.toLowerCase(),
+      chapterFiveMain.toLowerCase(),
+    ]);
     expect(payload.hasTokenIdCollisions).toBe(true);
     expect(payload.shouldUseCollectionAware).toBe(true);
   });

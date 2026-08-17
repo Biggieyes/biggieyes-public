@@ -32,6 +32,7 @@ interface IBiggiVRFView {
 
 interface IBiggiTicketHubMainView {
     function mainCollection() external view returns (address);
+    function chapterMainCollection(uint256 chapterId) external view returns (address);
 }
 
 /* -------- Custom errors -------- */
@@ -62,6 +63,7 @@ error OnlyVrfRouter();
 error NoConfiguredMintableIndex();
 error MetadataConfigurationIncomplete();
 error RewardMatrixInconsistent();
+error InvalidChapter();
 
 contract BiggiEyesMain is ERC721, Ownable, Pausable, ReentrancyGuard {
     using BiggiIdIndexLib for uint256;
@@ -76,6 +78,7 @@ contract BiggiEyesMain is ERC721, Ownable, Pausable, ReentrancyGuard {
     IBiggiVRFRouter public vrfRouter;
     IBiggiVRFView   public vrfView;
     address public ticketHub;
+    uint256 public chapterId = 1;
 
     /* ---- Statistiky ---- */
     uint16 public biggiMinted;
@@ -113,6 +116,7 @@ contract BiggiEyesMain is ERC721, Ownable, Pausable, ReentrancyGuard {
     event VRFRouterSet(address router);
     event ComputeSet(address compute);
     event TicketHubSet(address indexed oldHub, address indexed newHub);
+    event ChapterIdSet(uint256 indexed oldChapterId, uint256 indexed newChapterId);
     event PendingRetryDelaySet(uint64 oldDelaySec, uint64 newDelaySec);
     event PendingMintRetried(address indexed user, uint256 indexed oldRequestId, uint256 indexed newRequestId, uint256 ticketId);
     event ContractURISet(string oldUri, string newUri);
@@ -159,13 +163,18 @@ contract BiggiEyesMain is ERC721, Ownable, Pausable, ReentrancyGuard {
 
     function setTicketHub(address hub) external onlyOwner {
         if (hub == address(0)) revert TicketHubZero();
-        try IBiggiTicketHubMainView(hub).mainCollection() returns (address configuredMain) {
-            if (configuredMain != address(0) && configuredMain != address(this)) revert TicketHubBindingMismatch();
-        } catch {
-            revert TicketHubBindingMismatch();
-        }
+        if (!_isTicketHubBoundToThisChapter(hub, chapterId)) revert TicketHubBindingMismatch();
         emit TicketHubSet(ticketHub, hub);
         ticketHub = hub;
+    }
+
+    function setChapterId(uint256 chapterId_) external onlyOwner {
+        if (chapterId_ == 0) revert InvalidChapter();
+        if (ticketHub != address(0) && !_isTicketHubBoundToThisChapter(ticketHub, chapterId_)) {
+            revert TicketHubBindingMismatch();
+        }
+        emit ChapterIdSet(chapterId, chapterId_);
+        chapterId = chapterId_;
     }
 
     function setPendingRetryDelay(uint64 delaySec) external onlyOwner {
@@ -308,6 +317,19 @@ contract BiggiEyesMain is ERC721, Ownable, Pausable, ReentrancyGuard {
     function _vrfViewOrRevert() internal view returns (IBiggiVRFView) {
         if (address(vrfView) == address(0)) revert VRFRouterNotSet();
         return vrfView;
+    }
+
+    function _isTicketHubBoundToThisChapter(address hub, uint256 chapterId_) internal view returns (bool) {
+        try IBiggiTicketHubMainView(hub).chapterMainCollection(chapterId_) returns (address configuredMain) {
+            return configuredMain == address(this);
+        } catch {
+            if (chapterId_ != 1) return false;
+            try IBiggiTicketHubMainView(hub).mainCollection() returns (address configuredMain) {
+                return configuredMain == address(0) || configuredMain == address(this);
+            } catch {
+                return false;
+            }
+        }
     }
 
     function keyHash() external view returns (bytes32) { return _vrfViewOrRevert().keyHash(); }

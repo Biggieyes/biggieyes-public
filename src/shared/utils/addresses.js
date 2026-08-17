@@ -41,18 +41,29 @@ const BASE_ADDR = {
   MAIN2: "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634",
   COLLECTION_VRF: "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
   COLLECTION_PUBLIC: "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634",
-  TICKET_HUB: "0xe6d742D7DC66fA63434E6794C69798A5272e9873",
+  TICKET_HUB: "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
   VRF_ROUTER: "0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F",
-  REGISTRY: "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013",
-  SERIES_REGISTRY: "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013",
-  CHAPTER_CONTROLLER: "0x6bf341647C9592eFEadE43a3f396DB616B11f7E7",
+  REGISTRY: "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
+  SERIES_REGISTRY: "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
+  CHAPTER_CONTROLLER: "0x9c084D89c0CB6c8424652d1fa82E83aD9c098288",
+  CHAPTER_COUNT: 5,
+  CHAPTER_1_MAIN: "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+  CHAPTER_1_MAIN2: "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634",
+  CHAPTER_2_MAIN: "0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036",
+  CHAPTER_2_MAIN2: "0xce4dF4eFc703fb0D9827aAacDB28c90405aB57D0",
+  CHAPTER_3_MAIN: "0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2",
+  CHAPTER_3_MAIN2: "0x4bB7a55Ba690Fc38653f5889E2262316A049a1D9",
+  CHAPTER_4_MAIN: "0x8E862D9071120D69517D3F7Db0c101175E911115",
+  CHAPTER_4_MAIN2: "0x43b4C220aD039C0272153cF4B43Eaee68de09b00",
+  CHAPTER_5_MAIN: "0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38",
+  CHAPTER_5_MAIN2: "0xcA168A6e391a54de4F664397eE17328280305A75",
   DEPLOY_BLOCK: 88274808,
   CHAIN_ID: 137,
   chainId: 137,
   network: "polygon",
   deployer: "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
-  OWNER: "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
-  EXPECT_OWNER: "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+  OWNER: "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  EXPECT_OWNER: "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
   SERIES_ID: 1,
   CHAPTER_ID: 1,
 
@@ -75,8 +86,8 @@ const BASE_ADDR = {
   COMMUNITY_CENTER_EFFECTIVE: "0x81C6E90a991d7D210c43B00B7EB1a5450cc372Ae",
   BIGGI_MODERATOR_CENTER: "0xda07a5fDee4d6d491cF31368F00e2aD584bB033D",
   MODERATOR_CENTER: "0xda07a5fDee4d6d491cF31368F00e2aD584bB033D",
-  MARKETING_SUPPORT: "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
-  DEV_WALLET: "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+  MARKETING_SUPPORT: "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  DEV_WALLET: "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
 
   // Drip (disabled)
   DRIP_DISTRIBUTOR: "0x2E4677729cb8a02aDd752Bcbd2637809C20CBAf3",
@@ -131,15 +142,15 @@ const BASE_ADDR = {
   LM_READER: "0x1879b76c3a923d58970a90e3D004bD067c272a22",
   LIQUIDITY_BRANCH_READER: "0xC04FC52560fe5A8fcEf16a3ADE7126e83Da0D4f5",
   LIQUIDITY_BRANCH_USER_READER: "0xC04FC52560fe5A8fcEf16a3ADE7126e83Da0D4f5",
-  MAIN_READER: "0x5B5b422D0Db094550B626749EE4F982A301F8471",
-  CHAPTER_SERIES_READER: "0x79f39f2344B51e292cfa346c264E549098728900",
+  MAIN_READER: "0x4937CdcF1668255Cb46c78E19547ea96C94391Ef",
+  CHAPTER_SERIES_READER: "0x421c8ed70fC893517481315aC62f4c95331e647f",
   SYSTEM_READER: "0x5C918B2E610BAF3E9f77B0b7dE456D63B7F8bD55",
   TOKENOMICS_SYSTEM_ADDON_READER: "0x28D73361F9E7778362cac9fEBe1c8E0a2B1121ea",
   BIGGI_TOKENOMICS_READER: "0x868640D9fd873AE3ecFCAbCbB458413A70D6f468",
   BIGGI_TOKENOMIK_READER: "0x868640D9fd873AE3ecFCAbCbB458413A70D6f468",
   TOKENOMIK_READER: "0x868640D9fd873AE3ecFCAbCbB458413A70D6f468",
   BIGGI_TOKEN_READER: "",
-  READER: "0x5B5b422D0Db094550B626749EE4F982A301F8471",
+  READER: "0x4937CdcF1668255Cb46c78E19547ea96C94391Ef",
   LIQ_HELPER_READER: "0x1879b76c3a923d58970a90e3D004bD067c272a22",
   LIQUIDITY_HELPER_READER: "0x1879b76c3a923d58970a90e3D004bD067c272a22",
   RESERVE_TREASURY_READER: "0xb379bB928f3B683528C209C28A95F4D2854EC407",
@@ -204,8 +215,8 @@ const BASE_ADDR = {
   TOKEN_SINK: ZERO_ADDRESS,
   TOKEN_SINK_BPS: 10000,
   TOKEN_SINK_DEPOSIT_MODE: false,
-  SALE_CAP: 0,
-  MARKETING_CAP: 550,
+  SALE_CAP: 500,
+  MARKETING_CAP: 50,
   SERIES_NAME: "BIGGI MASTER Core Launch",
   VRF_COORDINATOR: "0xec0Ed46f36576541C75739E915ADbCb3DE24bD77",
   VRF_KEY_HASH:
@@ -242,6 +253,16 @@ const OVERRIDABLE_KEYS = [
   "REGISTRY",
   "SERIES_REGISTRY",
   "CHAPTER_CONTROLLER",
+  "CHAPTER_1_MAIN",
+  "CHAPTER_1_MAIN2",
+  "CHAPTER_2_MAIN",
+  "CHAPTER_2_MAIN2",
+  "CHAPTER_3_MAIN",
+  "CHAPTER_3_MAIN2",
+  "CHAPTER_4_MAIN",
+  "CHAPTER_4_MAIN2",
+  "CHAPTER_5_MAIN",
+  "CHAPTER_5_MAIN2",
   "CHAIN_ID",
   "OWNER",
   "EXPECT_OWNER",
@@ -422,6 +443,69 @@ ADDR.RESERVE_ADDRESS = ADDR.RESERVE_ADDRESS || ADDR.RESERVE;
 
 const DEFAULT_CHAIN_ID = Number(ADDR.CHAIN_ID || 137) || 137;
 
+export const CORE_CHAPTERS = Object.freeze([
+  {
+    chapterId: 1,
+    seriesId: 1,
+    seriesName: "BIGGI MASTER Core Launch",
+    displayName: "Original",
+    main: ADDR.CHAPTER_1_MAIN,
+    main2: ADDR.CHAPTER_1_MAIN2,
+    active: false,
+  },
+  {
+    chapterId: 2,
+    seriesId: 2,
+    seriesName: "BIGGI Universe",
+    displayName: "Universe",
+    main: ADDR.CHAPTER_2_MAIN,
+    main2: ADDR.CHAPTER_2_MAIN2,
+    active: false,
+  },
+  {
+    chapterId: 3,
+    seriesId: 3,
+    seriesName: "BIGGI Mutant",
+    displayName: "Mutant",
+    main: ADDR.CHAPTER_3_MAIN,
+    main2: ADDR.CHAPTER_3_MAIN2,
+    active: false,
+  },
+  {
+    chapterId: 4,
+    seriesId: 4,
+    seriesName: "BIGGI Apocalipse",
+    displayName: "Apocalipse",
+    main: ADDR.CHAPTER_4_MAIN,
+    main2: ADDR.CHAPTER_4_MAIN2,
+    active: false,
+  },
+  {
+    chapterId: 5,
+    seriesId: 5,
+    seriesName: "BIGGI Super Hero",
+    displayName: "Super Hero",
+    main: ADDR.CHAPTER_5_MAIN,
+    main2: ADDR.CHAPTER_5_MAIN2,
+    active: false,
+  },
+]);
+
+export function getCoreChapter(chapterId) {
+  const id = Number(chapterId);
+  return CORE_CHAPTERS.find((chapter) => chapter.chapterId === id) || null;
+}
+
+function _resolveSupportedChainId(chainId) {
+  if (chainId == null || chainId === "") return DEFAULT_CHAIN_ID;
+  const normalized = String(chainId).trim().toLowerCase();
+  if (normalized === "mainnet" || normalized === "polygon") {
+    return DEFAULT_CHAIN_ID;
+  }
+  const resolvedId = Number(chainId);
+  return resolvedId === DEFAULT_CHAIN_ID ? DEFAULT_CHAIN_ID : null;
+}
+
 function _baseAddresses() {
   return {
     reserve: ADDR.RESERVE,
@@ -481,23 +565,18 @@ const BUYBACK_CHAIN_ADDRESSES = {
 };
 
 export function getLiquidityAddresses(chainId) {
-  const resolvedId = Number(chainId) || DEFAULT_CHAIN_ID;
-  return CHAIN_ADDRESSES[resolvedId] || CHAIN_ADDRESSES[DEFAULT_CHAIN_ID];
+  const resolvedId = _resolveSupportedChainId(chainId);
+  return resolvedId == null ? null : CHAIN_ADDRESSES[resolvedId] || null;
 }
 
 export function getDRIPAddresses(chainId) {
-  const resolvedId = Number(chainId) || DEFAULT_CHAIN_ID;
-  return (
-    DRIP_CHAIN_ADDRESSES[resolvedId] || DRIP_CHAIN_ADDRESSES[DEFAULT_CHAIN_ID]
-  );
+  const resolvedId = _resolveSupportedChainId(chainId);
+  return resolvedId == null ? null : DRIP_CHAIN_ADDRESSES[resolvedId] || null;
 }
 
 export function getBUYBACKAddresses(chainId) {
-  const resolvedId = Number(chainId) || DEFAULT_CHAIN_ID;
-  return (
-    BUYBACK_CHAIN_ADDRESSES[resolvedId] ||
-    BUYBACK_CHAIN_ADDRESSES[DEFAULT_CHAIN_ID]
-  );
+  const resolvedId = _resolveSupportedChainId(chainId);
+  return resolvedId == null ? null : BUYBACK_CHAIN_ADDRESSES[resolvedId] || null;
 }
 
 function _tokenDexAddresses() {
@@ -523,11 +602,8 @@ const TOKEN_DEX_CHAIN_ADDRESSES = {
 };
 
 export function getTokenDexAddresses(chainId) {
-  const resolvedId = Number(chainId) || DEFAULT_CHAIN_ID;
-  return (
-    TOKEN_DEX_CHAIN_ADDRESSES[resolvedId] ||
-    TOKEN_DEX_CHAIN_ADDRESSES[DEFAULT_CHAIN_ID]
-  );
+  const resolvedId = _resolveSupportedChainId(chainId);
+  return resolvedId == null ? null : TOKEN_DEX_CHAIN_ADDRESSES[resolvedId] || null;
 }
 
 export {
@@ -639,4 +715,3 @@ export const ADDRESSES = {
   CHAIN_ID: ADDR.CHAIN_ID,
   DEPLOY_BLOCK: ADDR.DEPLOY_BLOCK,
 };
-

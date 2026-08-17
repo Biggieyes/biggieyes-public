@@ -1,9 +1,9 @@
-# BiggiMainReader - Mainnet Prep Dossier
+# BiggiMainReader - Mainnet Dossier
 
 ## Source of truth
 - Source file: `CORE_READERS/BiggiMainReader.sol`
 - Frozen ABI: `./ABI.json`
-- Deployment status: live on Polygon mainnet as of 2026-06-16.
+- Deployment status: current TicketHub-aware reader live and verified on Polygon mainnet as of 2026-08-17.
 - Canonical manifest: `biggi-project/bekend/addresses.master.json` plus phase-specific Polygon manifests.
 
 ## Constructor
@@ -35,6 +35,6 @@ findTicket(address owner)
 
 | Key | Address |
 | --- | --- |
-| `MAIN_READER` | `0x5B5b422D0Db094550B626749EE4F982A301F8471` |
+| `MAIN_READER` | `0x4937CdcF1668255Cb46c78E19547ea96C94391Ef` |
 
 Canonical manifests: `addresses.master.json`, phase-specific Polygon manifests, and `MAINNET_DEPLOYMENT_MANIFEST_POLYGON.json`.

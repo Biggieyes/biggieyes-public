@@ -6,11 +6,12 @@ This branch contains the BIGGI token, reserve, treasury, drip, buyback, liquidit
 
 ## Current Verification
 
-Last verified: 2026-07-05.
+Last verified: 2026-08-17.
 
 - `npm run compile:master` passed.
-- `npm run test:master` passed with `74 passing`.
-- Polygon deployment manifest passed with `50/50` project deployments containing bytecode and verified source code.
+- `npm run test:master` passed with `79 passing`.
+- Polygon deployment manifest passed with `58/58` unique project deployments containing bytecode and verified source code.
+- Five chapter pairs, the central TicketHub/registry/controller and CORE readers passed `204/204` live relationship checks.
 - `npm run gate:master:local` passed with `Final gate local: OK`.
 - Strict local status check returned `Consistency checks: OK`.
 - `ABI/` contains 46 contract ABI files plus `index.json` and matches current `artifacts-master`.
@@ -26,7 +27,7 @@ Dynamic TokenRewards emission update on 2026-06-10:
 - If a claim exceeds the remaining weekly budget, it reverts instead of partially paying and marking all NFTs claimed.
 - `BiggiTokenRewardsReader` and `BiggiTokenomikReader` expose controller address/enabled status; `BiggiTokenRewardsReader.emissionPreview(user, units)` exposes live budget preview data.
 - `deployMasterStack.js`, `configureMasterEssence.js`, and `checkMasterStatus.js` now understand `TOKEN_REWARDS_EMISSION_CONTROLLER`.
-- Verification passed: `npm run compile:master`, `npm run test:master` with 74 passing, deployment manifest 50/50 verified, tokenomic ABI compare with 46 contracts / 0 issues, ABI-to-source compare with 25 contracts / 0 issues.
+- Latest full verification passed: `npm run compile:master`, `npm run test:master` with 79 passing, deployment manifest 58/58 verified, tokenomic ABI compare with 46 contracts / 0 issues, and five-series CORE verification 204/204.
 
 Focused hardening recheck on 2026-06-07:
 

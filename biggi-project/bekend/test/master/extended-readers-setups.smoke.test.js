@@ -308,6 +308,7 @@ describe("BIGGI_MASTER: extended readers + setup wrappers smoke", function () {
     await (await ticketHub.setTokenSink(treasury.address, 10_000)).wait();
     await (await ticketHub.setTokenSinkDepositMode(true)).wait();
     await (await treasury.setEcosystemBiggiCaller(ticketHub.address, true)).wait();
+    await (await ticketHub.setChapterActive(1, true)).wait();
 
     const ticketPrice = await ticketHub.ticketPrice();
     await (await ticketHub.connect(alice).mintTicket({ value: ticketPrice })).wait();
@@ -448,7 +449,11 @@ describe("BIGGI_MASTER: extended readers + setup wrappers smoke", function () {
     ]);
     expect(allSnaps.length).to.equal(3);
     expect(allSnaps[1].isPublicCollection).to.equal(true);
-    expect(allSnaps[2].isTicketHubCollection).to.equal(true);
+    expect(allSnaps[2].isTicketHubCollection).to.equal(false);
+
+    const hubSnap = await chapterSeriesReader.ticketHubSnapshot(ticketHub.address, 1);
+    expect(hubSnap.chapterId).to.equal(1);
+    expect(hubSnap.isTicketHubCollection).to.equal(true);
     await chapterSeriesReader.chapterPaymentSnapshot(1, owner.address);
   });
 });

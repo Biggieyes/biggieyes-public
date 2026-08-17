@@ -46,11 +46,6 @@
     "type": "error"
   },
   {
-    "inputs": [],
-    "name": "OnlyToken",
-    "type": "error"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
@@ -298,6 +293,49 @@
   },
   {
     "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "bucket",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "bucketBalance",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "totalBucketed",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "realBalance",
+        "type": "uint256"
+      }
+    ],
+    "name": "ReserveNotifyReceived",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
     "inputs": [],
     "name": "TopUpRequested",
     "type": "event"
@@ -389,6 +427,32 @@
   },
   {
     "inputs": [],
+    "name": "bucketDifference",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "bucketedTotal",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "dexRefillBiggi",
     "outputs": [
       {
@@ -421,6 +485,19 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "isBucketConsistent",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -612,6 +689,19 @@
   },
   {
     "inputs": [],
+    "name": "realBiggiBalance",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "receiveMintShare",
     "outputs": [],
     "stateMutability": "payable",
@@ -629,6 +719,39 @@
     "name": "requestTopUpToLM",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "reserveConsistency",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "waitingBucket",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "dexRefillBucket",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "bucketed",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "realBalance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "difference",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

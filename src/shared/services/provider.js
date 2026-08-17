@@ -6,8 +6,8 @@ export function getROProvider() {
   return getROProviderImpl();
 }
 
-export function explorerBaseForChain(chainId = 1) {
-  const base = explorerBaseFor(chainId) || "https://etherscan.io";
+export function explorerBaseForChain(chainId = 137) {
+  const base = explorerBaseFor(chainId) || explorerBaseFor(137);
   return `${base}/address/`;
 }
 

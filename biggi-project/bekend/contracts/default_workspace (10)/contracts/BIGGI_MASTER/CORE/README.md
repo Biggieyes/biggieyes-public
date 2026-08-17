@@ -2,7 +2,9 @@
 
 This folder contains the core collection, ticket, registry, rewards, VRF, reader, library, and distribution contracts moved out of the `BIGGI_MASTER` root for a cleaner layout.
 
-Current deployment status: live on Polygon mainnet as of 2026-06-16. Address references are canonical when they match `addresses.master.json`, phase-specific Polygon manifests, or `MAINNET_DEPLOYMENT_MANIFEST_POLYGON.json`.
+Current deployment status (verified 2026-08-17): five series/chapter pairs and one shared chapter-aware `BiggiTicketHub` are deployed on Polygon mainnet. Address references are canonical only when they match `addresses.master.json`, `CORE_MAINNET_REAL_DATA.md`, or `MAINNET_DEPLOYMENT_MANIFEST_POLYGON.json`.
+
+The deployed order is Original, Universe, Mutant, Apocalipse, and Super Hero. All five chapters are inactive; each has 50 already minted marketing tickets and a separate VRF/Public collection pair. The registry/controller design remains scalable beyond these five chapters.
 
 Supporting dependencies:
 - `CORE_LIBRARY/` for shared BIGGI core libraries

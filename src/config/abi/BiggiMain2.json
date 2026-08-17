@@ -185,6 +185,11 @@
   },
   {
     "inputs": [],
+    "name": "InvalidBiggiRate",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidBlock",
     "type": "error"
   },
@@ -289,6 +294,11 @@
   {
     "inputs": [],
     "name": "ZeroAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroTokenPayment",
     "type": "error"
   },
   {

@@ -84,12 +84,8 @@ contract BiggiSeriesRegistry is Ownable {
         if (mappedVrf != 0 && mappedVrf != chapterId) revert CollectionAssignedToOtherChapter();
         uint256 mappedPublic = chapterByCollection[publicCollection];
         if (mappedPublic != 0 && mappedPublic != chapterId) revert CollectionAssignedToOtherChapter();
-        uint256 mappedHub = chapterByCollection[ticketHub];
-        if (mappedHub != 0 && mappedHub != chapterId) revert CollectionAssignedToOtherChapter();
-
         if (ch.vrfCollection != address(0)) chapterByCollection[ch.vrfCollection] = 0;
         if (ch.publicCollection != address(0)) chapterByCollection[ch.publicCollection] = 0;
-        if (ch.ticketHub != address(0)) chapterByCollection[ch.ticketHub] = 0;
 
         ch.vrfCollection = vrfCollection;
         ch.publicCollection = publicCollection;
@@ -97,7 +93,6 @@ contract BiggiSeriesRegistry is Ownable {
 
         chapterByCollection[vrfCollection] = chapterId;
         chapterByCollection[publicCollection] = chapterId;
-        chapterByCollection[ticketHub] = chapterId;
 
         emit ChapterCollectionsSet(chapterId, vrfCollection, publicCollection, ticketHub);
     }
@@ -120,6 +115,11 @@ contract BiggiSeriesRegistry is Ownable {
         ChapterInfo storage ch = chapterInfo[chapterId];
         if (!ch.exists) revert InvalidChapter();
         return (ch.vrfCollection, ch.publicCollection, ch.ticketHub);
+    }
+
+    function isTicketHubForChapter(address ticketHub, uint256 chapterId) external view returns (bool) {
+        ChapterInfo storage ch = chapterInfo[chapterId];
+        return ch.exists && ch.ticketHub == ticketHub;
     }
 
     function getChapterMeta(uint256 chapterId) external view returns (uint256 seriesId, uint256 chapterNumber) {

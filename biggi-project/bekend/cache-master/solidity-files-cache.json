@@ -2865,8 +2865,8 @@
       ]
     },
     "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\CORE\\BiggiTicketHub.sol": {
-      "lastModificationDate": 1780858792658,
-      "contentHash": "e9c56035fd65ac085fc2c4f0c52bf6d8",
+      "lastModificationDate": 1786987827977,
+      "contentHash": "65899e7d36da2d3a66ac006d824f381e",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiTicketHub.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -2909,6 +2909,7 @@
       ],
       "artifacts": [
         "BiggiTicketHub",
+        "IBiggiChapterMintShareDistributor",
         "IBiggiDistributor",
         "IBiggiEcosystemTokenSink",
         "IBiggiMainRedeem",
@@ -3162,8 +3163,8 @@
       ]
     },
     "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\CORE\\BiggiMain.sol": {
-      "lastModificationDate": 1779736662226,
-      "contentHash": "8eeb731e0e9d1f9cf8511c09095ff986",
+      "lastModificationDate": 1786822256349,
+      "contentHash": "6b52f9a0b6c84c2dc59c928ce0c64516",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiMain.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -3508,8 +3509,8 @@
       ]
     },
     "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\CORE\\BiggiMultiCollectionDistributor.sol": {
-      "lastModificationDate": 1780858714071,
-      "contentHash": "a74d4666f623a21e6e89e258c325f33b",
+      "lastModificationDate": 1786822104283,
+      "contentHash": "538fec2d622e1c5059d9bd502aaea014",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiMultiCollectionDistributor.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -3872,8 +3873,8 @@
       ]
     },
     "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\CORE\\BiggiSeriesRegistry.sol": {
-      "lastModificationDate": 1778619570776,
-      "contentHash": "58fc91e8d13220377b174058390a1438",
+      "lastModificationDate": 1786822089195,
+      "contentHash": "2fee413935b0f89539d0d235911d31b2",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiSeriesRegistry.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -3911,8 +3912,8 @@
       ]
     },
     "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\CORE\\BiggiChapterController.sol": {
-      "lastModificationDate": 1778619570731,
-      "contentHash": "46e1f0ef50cff002826303bc92341b33",
+      "lastModificationDate": 1786822076203,
+      "contentHash": "6e40500b04e60e8ea9878ce6edd16bb9",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiChapterController.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -4106,8 +4107,8 @@
       ]
     },
     "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\CORE\\CORE_READERS\\BiggiChapterSeriesReader.sol": {
-      "lastModificationDate": 1780516245902,
-      "contentHash": "f42790ac1a70c42a833217fbf1bc7ff1",
+      "lastModificationDate": 1786822128915,
+      "contentHash": "5bf46d22c77244a7260a6dadf3f7895b",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_READERS/BiggiChapterSeriesReader.sol",
       "solcConfig": {
         "version": "0.8.24",

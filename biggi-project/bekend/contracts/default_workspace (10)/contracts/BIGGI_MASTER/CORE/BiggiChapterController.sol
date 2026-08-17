@@ -12,6 +12,13 @@ interface IBiggiTicketHubChapterView {
     function totalMinted() external view returns (uint256);
     function totalCap() external view returns (uint16);
     function mainCollection() external view returns (address);
+    function chapterSaleMinted(uint256 chapterId) external view returns (uint16);
+    function chapterMarketingMinted(uint256 chapterId) external view returns (uint16);
+    function chapterSaleCap(uint256 chapterId) external view returns (uint16);
+    function chapterMarketingCap(uint256 chapterId) external view returns (uint16);
+    function chapterTotalMinted(uint256 chapterId) external view returns (uint256);
+    function chapterTotalCap(uint256 chapterId) external view returns (uint16);
+    function chapterMainCollection(uint256 chapterId) external view returns (address);
 }
 
 interface IBiggiMainChapterView {
@@ -72,8 +79,8 @@ contract BiggiChapterController is Ownable {
         if (regSeriesId != seriesId || regVrf != vrfCollection || regPublic != publicCollection || regTicketHub != ticketHub) {
             revert ChapterControllerRegistryMismatch();
         }
-        if (!_isDirectStackBound(vrfCollection, ticketHub)) revert ChapterControllerStackMismatch();
-        if (!_doHubCapsMatch(ticketHub, saleCap_, marketingCap_, totalCap_)) revert ChapterControllerHubCapsMismatch();
+        if (!_isDirectStackBound(chapterId, vrfCollection, ticketHub)) revert ChapterControllerStackMismatch();
+        if (!_doHubCapsMatch(chapterId, ticketHub, saleCap_, marketingCap_, totalCap_)) revert ChapterControllerHubCapsMismatch();
 
         chapterConfig[chapterId] = ChapterConfig({
             exists: true,
@@ -105,8 +112,8 @@ contract BiggiChapterController is Ownable {
 
         (address vrfCollection, , address ticketHub) = registry.getChapterCollections(chapterId);
         if (!_isChapterStackConsistent(chapterId, vrfCollection)) return false;
-        if (!_doHubCapsMatch(ticketHub, cfg.saleCap, cfg.marketingCap, cfg.totalCap)) return false;
-        (bool ok, uint256 saleMinted_, uint256 marketingMinted_, uint256 totalMinted_) = _readHubMintProgress(ticketHub);
+        if (!_doHubCapsMatch(chapterId, ticketHub, cfg.saleCap, cfg.marketingCap, cfg.totalCap)) return false;
+        (bool ok, uint256 saleMinted_, uint256 marketingMinted_, uint256 totalMinted_) = _readHubMintProgress(chapterId, ticketHub);
         if (!ok) return false;
         return
             saleMinted_ == cfg.saleCap &&
@@ -130,7 +137,7 @@ contract BiggiChapterController is Ownable {
         ChapterConfig storage cfg = chapterConfig[chapterId];
         if (!cfg.exists) revert ChapterControllerInvalidChapter();
         (address vrfCollection, , address ticketHub) = registry.getChapterCollections(chapterId);
-        (bool ok, uint256 saleMintedValue, uint256 marketingMintedValue, uint256 totalMintedValue) = _readHubMintProgress(ticketHub);
+        (bool ok, uint256 saleMintedValue, uint256 marketingMintedValue, uint256 totalMintedValue) = _readHubMintProgress(chapterId, ticketHub);
         saleMinted_ = ok ? saleMintedValue : 0;
         marketingMinted_ = ok ? marketingMintedValue : 0;
         totalMinted_ = ok ? totalMintedValue : 0;
@@ -140,7 +147,7 @@ contract BiggiChapterController is Ownable {
         publicUnlocked =
             ok &&
             _isChapterStackConsistent(chapterId, vrfCollection) &&
-            _doHubCapsMatch(ticketHub, cfg.saleCap, cfg.marketingCap, cfg.totalCap) &&
+            _doHubCapsMatch(chapterId, ticketHub, cfg.saleCap, cfg.marketingCap, cfg.totalCap) &&
             saleMinted_ == saleCap_ &&
             marketingMinted_ == marketingCap_ &&
             totalMinted_ == totalCap_;
@@ -157,18 +164,17 @@ contract BiggiChapterController is Ownable {
         ChapterConfig storage cfg = chapterConfig[chapterId];
         if (!cfg.exists) revert ChapterControllerInvalidChapter();
         (, , address ticketHub) = registry.getChapterCollections(chapterId);
-        return _doHubCapsMatch(ticketHub, cfg.saleCap, cfg.marketingCap, cfg.totalCap);
+        return _doHubCapsMatch(chapterId, ticketHub, cfg.saleCap, cfg.marketingCap, cfg.totalCap);
     }
 
     function _isChapterStackConsistent(uint256 chapterId, address vrfCollection) internal view returns (bool) {
         (, , address ticketHub) = registry.getChapterCollections(chapterId);
-        return _isDirectStackBound(vrfCollection, ticketHub);
+        return _isDirectStackBound(chapterId, vrfCollection, ticketHub);
     }
 
-    function _isDirectStackBound(address vrfCollection, address ticketHub) internal view returns (bool) {
-        try IBiggiTicketHubChapterView(ticketHub).mainCollection() returns (address configuredMain) {
-            if (configuredMain != vrfCollection) return false;
-        } catch {
+    function _isDirectStackBound(uint256 chapterId, address vrfCollection, address ticketHub) internal view returns (bool) {
+        (bool okMain, address configuredMain) = _readHubMainCollection(chapterId, ticketHub);
+        if (!okMain || configuredMain != vrfCollection) {
             return false;
         }
 
@@ -179,50 +185,101 @@ contract BiggiChapterController is Ownable {
         }
     }
 
-    function _doHubCapsMatch(address ticketHub, uint16 saleCap_, uint16 marketingCap_, uint16 totalCap_) internal view returns (bool) {
-        uint16 hubSaleCap;
-        uint16 hubMarketingCap;
-        uint16 hubTotalCap;
-
-        try IBiggiTicketHubChapterView(ticketHub).saleCap() returns (uint16 value) {
-            hubSaleCap = value;
-        } catch {
-            return false;
-        }
-        try IBiggiTicketHubChapterView(ticketHub).marketingCap() returns (uint16 value) {
-            hubMarketingCap = value;
-        } catch {
-            return false;
-        }
-        try IBiggiTicketHubChapterView(ticketHub).totalCap() returns (uint16 value) {
-            hubTotalCap = value;
-        } catch {
-            return false;
-        }
-
+    function _doHubCapsMatch(uint256 chapterId, address ticketHub, uint16 saleCap_, uint16 marketingCap_, uint16 totalCap_) internal view returns (bool) {
+        (bool ok, uint16 hubSaleCap, uint16 hubMarketingCap, uint16 hubTotalCap) = _readHubCaps(chapterId, ticketHub);
+        if (!ok) return false;
         return hubSaleCap == saleCap_ && hubMarketingCap == marketingCap_ && hubTotalCap == totalCap_;
     }
 
-    function _readHubMintProgress(address ticketHub)
+    function _readHubMintProgress(uint256 chapterId, address ticketHub)
         internal
         view
         returns (bool ok, uint256 saleMinted_, uint256 marketingMinted_, uint256 totalMinted_)
     {
-        try IBiggiTicketHubChapterView(ticketHub).saleMinted() returns (uint16 value) {
+        try IBiggiTicketHubChapterView(ticketHub).chapterSaleMinted(chapterId) returns (uint16 value) {
             saleMinted_ = value;
         } catch {
-            return (false, 0, 0, 0);
+            if (chapterId != 1) return (false, 0, 0, 0);
+            try IBiggiTicketHubChapterView(ticketHub).saleMinted() returns (uint16 value) {
+                saleMinted_ = value;
+            } catch {
+                return (false, 0, 0, 0);
+            }
         }
-        try IBiggiTicketHubChapterView(ticketHub).marketingMinted() returns (uint16 value) {
+        try IBiggiTicketHubChapterView(ticketHub).chapterMarketingMinted(chapterId) returns (uint16 value) {
             marketingMinted_ = value;
         } catch {
-            return (false, 0, 0, 0);
+            if (chapterId != 1) return (false, 0, 0, 0);
+            try IBiggiTicketHubChapterView(ticketHub).marketingMinted() returns (uint16 value) {
+                marketingMinted_ = value;
+            } catch {
+                return (false, 0, 0, 0);
+            }
         }
-        try IBiggiTicketHubChapterView(ticketHub).totalMinted() returns (uint256 value) {
+        try IBiggiTicketHubChapterView(ticketHub).chapterTotalMinted(chapterId) returns (uint256 value) {
             totalMinted_ = value;
         } catch {
-            return (false, 0, 0, 0);
+            if (chapterId != 1) return (false, 0, 0, 0);
+            try IBiggiTicketHubChapterView(ticketHub).totalMinted() returns (uint256 value) {
+                totalMinted_ = value;
+            } catch {
+                return (false, 0, 0, 0);
+            }
         }
         return (true, saleMinted_, marketingMinted_, totalMinted_);
+    }
+
+    function _readHubMainCollection(uint256 chapterId, address ticketHub) internal view returns (bool ok, address configuredMain) {
+        try IBiggiTicketHubChapterView(ticketHub).chapterMainCollection(chapterId) returns (address value) {
+            return (true, value);
+        } catch {
+            if (chapterId != 1) return (false, address(0));
+            try IBiggiTicketHubChapterView(ticketHub).mainCollection() returns (address value) {
+                return (true, value);
+            } catch {
+                return (false, address(0));
+            }
+        }
+    }
+
+    function _readHubCaps(uint256 chapterId, address ticketHub)
+        internal
+        view
+        returns (bool ok, uint16 hubSaleCap, uint16 hubMarketingCap, uint16 hubTotalCap)
+    {
+        try IBiggiTicketHubChapterView(ticketHub).chapterSaleCap(chapterId) returns (uint16 value) {
+            hubSaleCap = value;
+        } catch {
+            if (chapterId != 1) return (false, 0, 0, 0);
+            try IBiggiTicketHubChapterView(ticketHub).saleCap() returns (uint16 value) {
+                hubSaleCap = value;
+            } catch {
+                return (false, 0, 0, 0);
+            }
+        }
+
+        try IBiggiTicketHubChapterView(ticketHub).chapterMarketingCap(chapterId) returns (uint16 value) {
+            hubMarketingCap = value;
+        } catch {
+            if (chapterId != 1) return (false, 0, 0, 0);
+            try IBiggiTicketHubChapterView(ticketHub).marketingCap() returns (uint16 value) {
+                hubMarketingCap = value;
+            } catch {
+                return (false, 0, 0, 0);
+            }
+        }
+
+        try IBiggiTicketHubChapterView(ticketHub).chapterTotalCap(chapterId) returns (uint16 value) {
+            hubTotalCap = value;
+        } catch {
+            if (chapterId != 1) return (false, 0, 0, 0);
+            try IBiggiTicketHubChapterView(ticketHub).totalCap() returns (uint16 value) {
+                hubTotalCap = value;
+            } catch {
+                return (false, 0, 0, 0);
+            }
+        }
+
+        return (true, hubSaleCap, hubMarketingCap, hubTotalCap);
     }
 }

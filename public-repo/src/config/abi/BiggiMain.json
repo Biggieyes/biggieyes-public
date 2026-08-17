@@ -17,11 +17,6 @@
   },
   {
     "inputs": [],
-    "name": "AllTicketsMinted",
-    "type": "error"
-  },
-  {
-    "inputs": [],
     "name": "AlreadyPending",
     "type": "error"
   },
@@ -32,12 +27,7 @@
   },
   {
     "inputs": [],
-    "name": "BiggiTokenNotSet",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "DevPaymentFailed",
+    "name": "ComputeNotSet",
     "type": "error"
   },
   {
@@ -155,11 +145,6 @@
   },
   {
     "inputs": [],
-    "name": "InsufficientPayment",
-    "type": "error"
-  },
-  {
-    "inputs": [],
     "name": "InvalidBg",
     "type": "error"
   },
@@ -175,12 +160,12 @@
   },
   {
     "inputs": [],
-    "name": "InvalidIndex",
+    "name": "InvalidChapter",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "InvalidReserve",
+    "name": "InvalidIndex",
     "type": "error"
   },
   {
@@ -190,7 +175,17 @@
   },
   {
     "inputs": [],
-    "name": "MaxPerWallet",
+    "name": "MetadataConfigurationIncomplete",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "MetadataNotInitialized",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoConfiguredMintableIndex",
     "type": "error"
   },
   {
@@ -205,7 +200,7 @@
   },
   {
     "inputs": [],
-    "name": "NoTicketToRedeem",
+    "name": "NoPendingMint",
     "type": "error"
   },
   {
@@ -215,12 +210,12 @@
   },
   {
     "inputs": [],
-    "name": "NotTicket",
+    "name": "OnlyTicketHub",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "NotTicketOwner",
+    "name": "OnlyVrfRouter",
     "type": "error"
   },
   {
@@ -252,28 +247,42 @@
   },
   {
     "inputs": [],
+    "name": "PendingRetryDelayZero",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "PendingRetryTooEarly",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "PendingStateCorrupted",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "ReentrancyGuardReentrantCall",
     "type": "error"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "SafeERC20FailedOperation",
+    "inputs": [],
+    "name": "RewardMatrixInconsistent",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "SoldOut",
+    "name": "TicketHubBindingMismatch",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "TokenSinkBpsTooHigh",
+    "name": "TicketHubZero",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "VRFRouterNotSet",
     "type": "error"
   },
   {
@@ -324,63 +333,6 @@
       }
     ],
     "name": "ApprovalForAll",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "from",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "routedToSink",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "forwardedToReserve",
-        "type": "uint256"
-      }
-    ],
-    "name": "BiggiCollected",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "biggiPerEth",
-        "type": "uint256"
-      }
-    ],
-    "name": "BiggiRateUpdated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "BiggiTokenSet",
     "type": "event"
   },
   {
@@ -443,6 +395,25 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "oldChapterId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "newChapterId",
+        "type": "uint256"
+      }
+    ],
+    "name": "ChapterIdSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": false,
         "internalType": "address",
         "name": "compute",
@@ -457,12 +428,18 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "address",
-        "name": "distributor",
-        "type": "address"
+        "internalType": "string",
+        "name": "oldUri",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "newUri",
+        "type": "string"
       }
     ],
-    "name": "DistributorSet",
+    "name": "ContractURISet",
     "type": "event"
   },
   {
@@ -545,63 +522,31 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "oldBps",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "newBps",
-        "type": "uint256"
-      }
-    ],
-    "name": "PriceIncreasePerMintSet",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
         "indexed": true,
         "internalType": "address",
-        "name": "oldAddr",
+        "name": "user",
         "type": "address"
       },
       {
         "indexed": true,
-        "internalType": "address",
-        "name": "newAddr",
-        "type": "address"
-      }
-    ],
-    "name": "ReserveAddressSet",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
         "internalType": "uint256",
-        "name": "oldPrice",
+        "name": "requestId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "resolvedIndex",
         "type": "uint256"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "newPrice",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "bps",
+        "name": "tokenId",
         "type": "uint256"
       }
     ],
-    "name": "TicketPriceIncreased",
+    "name": "PendingMintEmergencyResolved",
     "type": "event"
   },
   {
@@ -610,17 +555,23 @@
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "oldPrice",
+        "name": "requestId",
         "type": "uint256"
       },
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "newPrice",
+        "name": "requestedIndex",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "resolvedIndex",
         "type": "uint256"
       }
     ],
-    "name": "TicketPriceSet",
+    "name": "PendingMintFallbackSelected",
     "type": "event"
   },
   {
@@ -633,13 +584,25 @@
         "type": "address"
       },
       {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "oldRequestId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "newRequestId",
+        "type": "uint256"
+      },
+      {
         "indexed": false,
         "internalType": "uint256",
         "name": "ticketId",
         "type": "uint256"
       }
     ],
-    "name": "TicketRedeemed",
+    "name": "PendingMintRetried",
     "type": "event"
   },
   {
@@ -647,18 +610,37 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "address",
-        "name": "sink",
-        "type": "address"
+        "internalType": "uint64",
+        "name": "oldDelaySec",
+        "type": "uint64"
       },
       {
         "indexed": false,
-        "internalType": "uint256",
-        "name": "bps",
-        "type": "uint256"
+        "internalType": "uint64",
+        "name": "newDelaySec",
+        "type": "uint64"
       }
     ],
-    "name": "TokenSinkUpdated",
+    "name": "PendingRetryDelaySet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "oldHub",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newHub",
+        "type": "address"
+      }
+    ],
+    "name": "TicketHubSet",
     "type": "event"
   },
   {
@@ -789,32 +771,6 @@
   },
   {
     "inputs": [],
-    "name": "BIGGI",
-    "outputs": [
-      {
-        "internalType": "contract IERC20",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "DEV_WALLET",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "MAX_BATCH",
     "outputs": [
       {
@@ -829,19 +785,6 @@
   {
     "inputs": [],
     "name": "MAX_SUPPLY",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "MAX_TICKETS",
     "outputs": [
       {
         "internalType": "uint256",
@@ -868,6 +811,19 @@
     "name": "approve",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "assertMetadataConsistency",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -944,19 +900,6 @@
         "internalType": "uint16",
         "name": "",
         "type": "uint16"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "biggiPerEth",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -1055,12 +998,12 @@
   },
   {
     "inputs": [],
-    "name": "buybackBps",
+    "name": "callbackGasLimit",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint32",
         "name": "",
-        "type": "uint256"
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -1068,12 +1011,12 @@
   },
   {
     "inputs": [],
-    "name": "callbackGasLimit",
+    "name": "chapterId",
     "outputs": [
       {
-        "internalType": "uint32",
+        "internalType": "uint256",
         "name": "",
-        "type": "uint32"
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -1126,15 +1069,57 @@
   },
   {
     "inputs": [],
-    "name": "distributor",
+    "name": "contractMetadataURI",
     "outputs": [
       {
-        "internalType": "contract IBiggiDistributor",
+        "internalType": "string",
         "name": "",
-        "type": "address"
+        "type": "string"
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "contractURI",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "preferredIndex",
+        "type": "uint256"
+      }
+    ],
+    "name": "emergencyResolvePendingMint",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "resolvedIndex",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -1274,13 +1259,53 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "getTicketPrice",
-    "outputs": [
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "internalType": "uint16",
+        "name": "blk",
+        "type": "uint16"
+      },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "mainId",
         "type": "uint256"
+      }
+    ],
+    "name": "hasAllBackgroundsForMainIdInBlock",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "internalType": "uint16",
+        "name": "blk",
+        "type": "uint16"
+      }
+    ],
+    "name": "hasAllTenMainIdsInBlock",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -1311,18 +1336,25 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "isTicket",
+    "inputs": [],
+    "name": "isMetadataFullyConfigured",
     "outputs": [
       {
         "internalType": "bool",
-        "name": "",
+        "name": "fullyConfigured",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "isRewardMatrixConsistent",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "rewardMatrixConsistent",
         "type": "bool"
       }
     ],
@@ -1344,16 +1376,38 @@
   },
   {
     "inputs": [],
-    "name": "mintTicket",
-    "outputs": [],
-    "stateMutability": "payable",
+    "name": "metadataConfiguredCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "configuredCount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
-    "name": "mintTicketWithBiggi",
-    "outputs": [],
-    "stateMutability": "nonpayable",
+    "name": "metadataConsistency",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "configuredCount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "fullyConfigured",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "rewardMatrixConsistent",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -1464,6 +1518,25 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "ownerRetryPendingMint",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "newRequestId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "pause",
     "outputs": [],
@@ -1542,7 +1615,26 @@
   },
   {
     "inputs": [],
-    "name": "priceIncreasePerMint",
+    "name": "pendingRetryDelay",
+    "outputs": [
+      {
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "pendingTicketId",
     "outputs": [
       {
         "internalType": "uint256",
@@ -1557,11 +1649,40 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "ticketId",
+        "name": "",
         "type": "uint256"
       }
     ],
-    "name": "redeemTicketAndMintNFT",
+    "name": "pendingTicketPrice",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "ticketId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "ticketPriceSnapshot",
+        "type": "uint256"
+      }
+    ],
+    "name": "redeemFromTicketHub",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1588,15 +1709,15 @@
   },
   {
     "inputs": [],
-    "name": "reserveAddress",
+    "name": "retryPendingMint",
     "outputs": [
       {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
+        "internalType": "uint256",
+        "name": "newRequestId",
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -1607,32 +1728,6 @@
         "internalType": "string",
         "name": "",
         "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "rewardsBps",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "rewardsPoolETH",
-    "outputs": [
-      {
-        "internalType": "contract IBiggiRewardsPool_ETH",
-        "name": "",
-        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -1723,32 +1818,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_biggiPerEth",
-        "type": "uint256"
-      }
-    ],
-    "name": "setBiggiRate",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "setBiggiToken",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "uint16",
         "name": "blockIdx",
         "type": "uint16"
@@ -1767,12 +1836,25 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "dist",
-        "type": "address"
+        "internalType": "uint256",
+        "name": "chapterId_",
+        "type": "uint256"
       }
     ],
-    "name": "setDistributor",
+    "name": "setChapterId",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "newUri",
+        "type": "string"
+      }
+    ],
+    "name": "setContractURI",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1798,12 +1880,12 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_priceIncreasePerMint",
-        "type": "uint256"
+        "internalType": "uint64",
+        "name": "delaySec",
+        "type": "uint64"
       }
     ],
-    "name": "setPriceIncreasePerMint",
+    "name": "setPendingRetryDelay",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1812,42 +1894,11 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_reserve",
+        "name": "hub",
         "type": "address"
       }
     ],
-    "name": "setReserveAddress",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_ticketPrice",
-        "type": "uint256"
-      }
-    ],
-    "name": "setTicketPrice",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "sink",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "bps",
-        "type": "uint256"
-      }
-    ],
-    "name": "setTokenSink",
+    "name": "setTicketHub",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1909,83 +1960,12 @@
   },
   {
     "inputs": [],
-    "name": "ticketBaseURI",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "ticketCount",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "ticketMinted",
-    "outputs": [
-      {
-        "internalType": "uint16",
-        "name": "",
-        "type": "uint16"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "ticketPrice",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "tokenSink",
+    "name": "ticketHub",
     "outputs": [
       {
         "internalType": "address",
         "name": "",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "tokenSinkBps",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -2044,19 +2024,6 @@
     "name": "transferOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "treasuryBps",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {

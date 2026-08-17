@@ -103,8 +103,7 @@ export async function checkRpcHealth(url, options = {}) {
 }
 export async function ensurePreferredRpc() {
   if (typeof window === "undefined") return null;
-  const ignorePreferred =
-    env("VITE_FORCE_RPC") === "1" || env("VITE_IGNORE_RPC_PREFERENCE") === "1";
+  const ignorePreferred = env("VITE_IGNORE_RPC_PREFERENCE") === "1";
   if (ignorePreferred) return null;
   const healthy = await getHealthyRpcUrl();
   if (healthy) setPreferredRpc(healthy);
@@ -112,20 +111,17 @@ export async function ensurePreferredRpc() {
   return healthy;
 }
 const LOCAL_STORAGE_RPC_PREF_KEY = "biggi_last_polygon_rpc_v2";
+const LEGACY_RPC_PREF_KEYS = [];
+const RPC_RATE_LIMIT_MEMORY_MS = 10 * 60 * 1000;
 const BAD_RPC_SUBSTRINGS = ["tenderly"];
-// Browser CORS support for rpc-mainnet was historically flaky, but currently works.
-// Keep this empty so explicit env-configured endpoints are not filtered out.
 const BAD_CORS_RPCS = [];
-const UNSTABLE_POLYGON_RPC_HOSTS = [
-  // These hosts have shown prolonged 503/empty-node responses for Polygon mainnet.
-  "polygon-bor-rpc.publicnode.com",
-  "polygon-bor-rpc.publicnode.com",
-  "polygon-bor-rpc.publicnode.com",
-];
+const BAD_CHAIN_RPCS = [];
+const UNSTABLE_POLYGON_RPC_HOSTS = [];
 const RATE_LIMITED_POLYGON_RPC_HOSTS = [
-  // Public onfinality endpoint is frequently rate-limited in browser workloads.
+  // This public endpoint currently returns 401 in browser workloads.
   "polygon-rpc.com",
 ];
+const rateLimitedRpcMarks = new Map();
 
 function env(key) {
   try {
@@ -142,19 +138,12 @@ function env(key) {
   return undefined;
 }
 
-function normalizeInfuraNetwork(value) {
-  const raw = String(value || "").trim().toLowerCase();
-  if (!raw) return "polygon-mainnet";
-  if (raw.includes("mainnet")) return "polygon-mainnet";
-  if (raw.includes("polygon")) return "polygon-mainnet";
-  return raw.replace(/\s+/g, "-");
-}
+const ACTIVE_CHAIN_ID = 137;
 
 function getInfuraRpcUrl() {
   const projectId = env("VITE_INFURA_PROJECT_ID");
   if (!projectId) return null;
-  const network = normalizeInfuraNetwork(env("VITE_INFURA_NETWORK"));
-  return `https://${network}.infura.io/v3/${projectId}`;
+  return `https://polygon-mainnet.infura.io/v3/${projectId}`;
 }
 
 function splitCsv(value) {
@@ -177,35 +166,66 @@ function uniq(values) {
   return out;
 }
 
-export const PUBLIC_POLYGON_RPCS = [
-  // Keep this set conservative; optional providers can be added via env.
+function cleanupRateLimitedRpcMarks(now = Date.now()) {
+  for (const [url, ts] of rateLimitedRpcMarks.entries()) {
+    if (now - Number(ts || 0) > RPC_RATE_LIMIT_MEMORY_MS) {
+      rateLimitedRpcMarks.delete(url);
+    }
+  }
+}
+
+function isRecentlyRateLimited(url, now = Date.now()) {
+  if (!url) return false;
+  cleanupRateLimitedRpcMarks(now);
+  const ts = rateLimitedRpcMarks.get(String(url));
+  if (!ts) return false;
+  return now - Number(ts) <= RPC_RATE_LIMIT_MEMORY_MS;
+}
+
+function prioritizeHealthyRpcs(urls) {
+  const now = Date.now();
+  const healthy = [];
+  const degraded = [];
+  for (const url of Array.isArray(urls) ? urls : []) {
+    if (isRecentlyRateLimited(url, now)) degraded.push(url);
+    else healthy.push(url);
+  }
+  return [...healthy, ...degraded];
+}
+
+export const POLYGON_RPC = [
   "https://polygon.drpc.org",
+  "https://polygon-bor-rpc.publicnode.com",
 ];
 
+export const PUBLIC_POLYGON_RPCS = [...POLYGON_RPC];
+
 const INFURA_RPC_URL = getInfuraRpcUrl();
+const INFURA_RPC_CANDIDATES = uniq([INFURA_RPC_URL]);
 
 const EXPLICIT_POLYGON_RPCS = uniq([
   env("VITE_JSON_RPC_URL"),
   env("VITE_MOD_CHAIN_RPC"),
   env("VITE_POLYGON_RPC_URL"),
+  env("VITE_RPC_URL_POLYGON"),
   env("VITE_RPC_URL_ACTIVE_CHAIN"),
+  env("VITE_MAINNET_RPC_URL"),
   ...splitCsv(env("VITE_ADDITIONAL_RPC_URLS")),
-  INFURA_RPC_URL,
 ]);
 
 const POLYGON_RPC_CANDIDATES = uniq([
   ...EXPLICIT_POLYGON_RPCS,
   ...PUBLIC_POLYGON_RPCS,
+  ...INFURA_RPC_CANDIDATES,
 ]);
 
 const ARCHIVE_RPC_CANDIDATES = uniq([
   env("VITE_ARCHIVE_RPC_URL"),
-  env("VITE_ACTIVE_CHAIN_ARCHIVE_RPC_URL"),
   ...splitCsv(env("VITE_ARCHIVE_RPC_URLS")),
 ]);
 
-const ACTIVE_CHAIN_INFO = getChainInfo(137) || {
-  chainId: 137,
+const ACTIVE_CHAIN_INFO = getChainInfo(ACTIVE_CHAIN_ID) || {
+  chainId: ACTIVE_CHAIN_ID,
   hex: "0x89",
   name: "Polygon mainnet",
   explorer: "https://polygonscan.com",
@@ -222,6 +242,13 @@ export const ACTIVE_CHAIN = {
 export function getPreferredRpc() {
   try {
     if (typeof window !== "undefined" && window.localStorage) {
+      for (const legacyKey of LEGACY_RPC_PREF_KEYS) {
+        try {
+          window.localStorage.removeItem(legacyKey);
+        } catch {
+          // ignore legacy key cleanup errors
+        }
+      }
       return window.localStorage.getItem(LOCAL_STORAGE_RPC_PREF_KEY) || null;
     }
   } catch {
@@ -251,11 +278,16 @@ export function clearPreferredRpc() {
   }
 }
 
+export function markRpcRateLimited(url) {
+  const normalized = String(url || "").trim();
+  if (!normalized) return;
+  rateLimitedRpcMarks.set(normalized, Date.now());
+}
+
 function rankRpcUrls(urls) {
   const deduped = uniq((urls || []).filter(Boolean));
   if (!deduped.length) return deduped;
-  const ignorePreferred =
-    env("VITE_FORCE_RPC") === "1" || env("VITE_IGNORE_RPC_PREFERENCE") === "1";
+  const ignorePreferred = env("VITE_IGNORE_RPC_PREFERENCE") === "1";
   const preferred = ignorePreferred ? null : getPreferredRpc();
   if (ignorePreferred) clearPreferredRpc();
   if (preferred && deduped.includes(preferred)) {
@@ -267,7 +299,8 @@ function rankRpcUrls(urls) {
 
 function filterOutBadRpcs(urls) {
   const allowTenderly = env("VITE_ALLOW_TENDERLY_RPC") === "1";
-  const allowUnstablePublicRpcs = env("VITE_ALLOW_UNSTABLE_PUBLIC_RPCS") === "1";
+  const allowUnstablePublicRpcs =
+    env("VITE_ALLOW_UNSTABLE_PUBLIC_RPCS") !== "0";
   const allowRateLimitedPublicRpcs =
     env("VITE_ALLOW_RATE_LIMITED_PUBLIC_RPCS") === "1";
   const isBrowser = typeof window !== "undefined";
@@ -304,6 +337,7 @@ function filterOutBadRpcs(urls) {
     ) {
       return false;
     }
+    if (BAD_CHAIN_RPCS.some((x) => host === x)) return false;
     // Ankr requires an API key for stable access; plain /polygon endpoint
     // returns Unauthorized and causes noisy fallback churn.
     if (host === "rpc.ankr.com" && path === "/polygon") return false;
@@ -319,11 +353,19 @@ export function getArchiveRpcUrls() {
 
 export function getRpcUrls() {
   const explicit = filterOutBadRpcs(EXPLICIT_POLYGON_RPCS);
-  const allowPublic =
-    explicit.length === 0 || env("VITE_ALLOW_PUBLIC_RPCS") === "1";
-  const primaryList = allowPublic
-    ? uniq([...explicit, ...PUBLIC_POLYGON_RPCS])
-    : explicit;
+  const infura = filterOutBadRpcs(INFURA_RPC_CANDIDATES);
+  const preferInfura = env("VITE_PREFER_INFURA_RPC") === "1";
+  const allowPublic = env("VITE_ALLOW_PUBLIC_RPCS") !== "0";
+  const preferPublicFirst = env("VITE_PREFER_PUBLIC_RPC_FIRST") !== "0";
+  const primaryList = preferInfura
+    ? allowPublic
+      ? uniq([...infura, ...explicit, ...PUBLIC_POLYGON_RPCS])
+      : uniq([...infura, ...explicit])
+    : allowPublic
+      ? preferPublicFirst
+        ? uniq([...PUBLIC_POLYGON_RPCS, ...explicit, ...infura])
+        : uniq([...explicit, ...PUBLIC_POLYGON_RPCS, ...infura])
+      : uniq([...explicit, ...infura]);
   const filtered = filterOutBadRpcs(primaryList);
   if (!filtered.length && primaryList.length) {
     // preferred RPC was filtered out; clear stored preference to avoid stale picks
@@ -331,11 +373,43 @@ export function getRpcUrls() {
   }
 
   const rankedFiltered = rankRpcUrls(filtered);
-  if (rankedFiltered.length) return rankedFiltered;
+  const prioritized = prioritizeHealthyRpcs(rankedFiltered);
+  if (prioritized.length) return prioritized;
 
   const fallback = [];
   if (ACTIVE_CHAIN.rpcUrl) fallback.push(ACTIVE_CHAIN.rpcUrl);
   if (allowPublic) fallback.push(...PUBLIC_POLYGON_RPCS);
-  return rankRpcUrls(filterOutBadRpcs(fallback));
+  fallback.push(...infura);
+  return prioritizeHealthyRpcs(rankRpcUrls(filterOutBadRpcs(fallback)));
 }
 
+export function getWalletRpcUrls({ preferPublicFirst = null } = {}) {
+  const explicit = filterOutBadRpcs(EXPLICIT_POLYGON_RPCS);
+  const infura = filterOutBadRpcs(INFURA_RPC_CANDIDATES);
+  const allowPublicFallback = env("VITE_WALLET_PUBLIC_RPC_FALLBACK") !== "0";
+  const preferPublicByDefault =
+    env("VITE_WALLET_PREFER_PUBLIC_RPC_FIRST") !== "0";
+  const usePublicFirst =
+    typeof preferPublicFirst === "boolean"
+      ? preferPublicFirst
+      : preferPublicByDefault;
+
+  const ordered = usePublicFirst
+    ? allowPublicFallback
+      ? uniq([...PUBLIC_POLYGON_RPCS, ...explicit, ...infura])
+      : uniq([...explicit, ...infura])
+    : allowPublicFallback
+      ? uniq([...explicit, ...PUBLIC_POLYGON_RPCS, ...infura])
+      : uniq([...explicit, ...infura]);
+
+  const filtered = filterOutBadRpcs(ordered);
+  const ranked = rankRpcUrls(filtered);
+  const prioritized = prioritizeHealthyRpcs(ranked);
+  if (prioritized.length) return prioritized;
+
+  const fallback = [];
+  if (ACTIVE_CHAIN.rpcUrl) fallback.push(ACTIVE_CHAIN.rpcUrl);
+  if (allowPublicFallback) fallback.push(...PUBLIC_POLYGON_RPCS);
+  fallback.push(...infura);
+  return prioritizeHealthyRpcs(rankRpcUrls(filterOutBadRpcs(fallback)));
+}

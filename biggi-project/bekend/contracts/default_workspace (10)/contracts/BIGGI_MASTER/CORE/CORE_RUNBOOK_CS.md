@@ -1,6 +1,6 @@
 # CORE runbook
 
-Status 2026-06-16: `BIGGI_MASTER/CORE` is deployed on Polygon mainnet. This runbook is now for post-deploy wiring, launch checks, metadata readiness, and public mint activation.
+Status 2026-08-17: chapter-aware `BIGGI_MASTER/CORE` je nasazeny na Polygon mainnetu pro pet series. Tento runbook je pro kontrolu wiring, metadata readiness a postupnou aktivaci jednotlivych chapteru.
 
 Tento dokument popisuje praktický postup po deployi `CORE` kontraktů.
 
@@ -33,17 +33,17 @@ Po deployi:
 
 Wiring:
 
-1. `BiggiTicketHub.setMainCollection(BiggiMain)`
+1. pro kapitolu 1 `BiggiTicketHub.setMainCollection(BiggiMain)`, pro dalsi kapitoly `BiggiTicketHub.configureChapter(chapterId, BiggiMain, saleCap, marketingCap, ticketBaseURI)`
 2. `BiggiMain.setModules(BiggiCompute, BiggiVRFRouter)`
-3. `BiggiMain.setTicketHub(BiggiTicketHub)`
-4. `BiggiVRFRouter.setMain(BiggiMain)`
+3. pro dalsi kapitoly nejdriv `BiggiMain.setChapterId(chapterId)`, potom `BiggiMain.setTicketHub(BiggiTicketHub)`
+4. pro prvni/default VRF collection `BiggiVRFRouter.setMain(BiggiMain)`, pro dalsi VRF collections `BiggiVRFRouter.setMainApproval(BiggiMain, true)`
 
 Kontrola:
 
-- `BiggiTicketHub.mainCollection() == BiggiMain`
+- pro kapitolu 1 `BiggiTicketHub.mainCollection() == BiggiMain`
+- pro dalsi kapitoly `BiggiTicketHub.chapterMainCollection(chapterId) == BiggiMain`
 - `BiggiMain.ticketHub() == BiggiTicketHub`
-- `BiggiVRFRouter.main() == BiggiMain`
-- `BiggiVRFRouter.approvedMains(BiggiMain) == true`
+- pro default collection `BiggiVRFRouter.main() == BiggiMain`, pro dalsi VRF collections staci `BiggiVRFRouter.approvedMains(BiggiMain) == true`
 - na mainnetu nesmi final strict check bezet s prazdnym nebo nulovym `VRF_ROUTER`
 
 ## 3. Fáze B: metadata seed pro BiggiMain
@@ -128,7 +128,34 @@ Kontrola:
 - `BiggiChapterController.getChapterPriceProvider(chapterId) == BiggiMain`
 - `BiggiSeriesRegistry.chapterByCollection(BiggiMain) == chapterId`
 - `BiggiSeriesRegistry.chapterByCollection(BiggiMain2) == chapterId`
-- `BiggiSeriesRegistry.chapterByCollection(BiggiTicketHub) == chapterId`
+- `BiggiSeriesRegistry.isTicketHubForChapter(BiggiTicketHub, chapterId) == true`
+
+### 5.1 Aktualni 5-series CORE model
+
+Aktualni canonical poradi je:
+
+- series 1 -> chapter 1 -> Original
+- series 2 -> chapter 2 -> Universe
+- series 3 -> chapter 3 -> Mutant
+- series 4 -> chapter 4 -> Apocalipse
+- series 5 -> chapter 5 -> Super Hero
+- jeden sdileny `BiggiTicketHub` pro vsech pet chapteru; stejnym postupem lze pridat dalsi
+
+Postup pro dalsi chapter bez finalnich obrazku:
+
+1. nasadit `BiggiMain` a `BiggiMain2` pro chapter
+2. `BiggiMain.setChapterId(chapterId)`
+3. `BiggiTicketHub.configureChapter(chapterId, BiggiMain, 500, 50, ticketBaseURI)`
+4. `BiggiMain.setTicketHub(BiggiTicketHub)`
+5. `BiggiVRFRouter.setMainApproval(BiggiMain, true)`
+6. vytvorit samostatnou series a jeji jediny chapter v registry
+7. `BiggiSeriesRegistry.setChapterCollections(chapterId, BiggiMain, BiggiMain2, BiggiTicketHub)`
+8. `BiggiChapterController.configureChapter(chapterId, seriesId, BiggiMain, BiggiMain2, BiggiTicketHub, 500, 50, 550)`
+9. `BiggiMain2.setChapterController(BiggiChapterController, chapterId)`
+10. owner mintne 50 marketing ticketu pres batch nebo jednotlive `mintMarketingTicketForChapter(chapterId, to)`
+11. chapter zustane neaktivni az do skutecneho startu prodeje
+
+Kazdy chapter musi mit vlastni `ticketBaseURI` s vlastnim ticket obrazkem. Chapters 1-5 jsou uz nasazene, maji po 50 marketing ticketech a zustavaji neaktivni. Marketing tickety jsou obchodovatelne, ale redeem je blokovany. Finalni obrazky/metadata VRF a Public NFT lze doplnit pozdeji, ale pred `setChapterActive(chapterId, true)` musi projit metadata a wiring gate pro konkretni chapter.
 
 ## 6. Fáze E: public branch nastavení
 

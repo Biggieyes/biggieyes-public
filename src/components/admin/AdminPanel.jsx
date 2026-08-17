@@ -7,7 +7,7 @@ import {
   parseEther,
   isAddress,
 } from "ethers";
-import { ADDR } from "@/shared/utils/addresses.js";
+import { ADDR, CORE_CHAPTERS } from "@/shared/utils/addresses.js";
 import { getROProvider } from "@/shared/utils/contract";
 import { BiggiCommunityCenter } from "@/config/abi/index.js";
 import AdminDashboard from "@/components/AdminDashboard";
@@ -15,7 +15,7 @@ import {
   fetchCommunityPolls,
   submitCommunityPollAdminAction,
 } from "@/shared/services/communityVotingApi.js";
-import { supabase } from "../../services/chatClient";
+import { supabase, supabaseReady } from "../../services/chatClient";
 
 const COMMUNITY_CENTER_ABI = Array.isArray(BiggiCommunityCenter)
   ? BiggiCommunityCenter
@@ -944,6 +944,10 @@ export default function AdminPanel({
     setChatLoading(true);
     setChatError("");
     try {
+      if (!supabaseReady || !supabase) {
+        setChatError("Chat storage is not configured.");
+        return;
+      }
       const [rulesRes, msgsRes] = await Promise.all([
         supabase
           .from("rules")
@@ -1295,8 +1299,18 @@ export default function AdminPanel({
   const healthTargets = React.useMemo(() => {
     const items = [
       { key: "BIGGI TOKEN", label: "BIGGI TOKEN", address: ADDR.BIGGI },
-      { key: "COLLECTION", label: "COLLECTION", address: ADDR.MAIN },
-      { key: "COLLECTION2", label: "COLLECTION2", address: ADDR.MAIN2 },
+      ...CORE_CHAPTERS.flatMap((chapter) => [
+        {
+          key: `CHAPTER_${chapter.chapterId}_VRF`,
+          label: `${chapter.displayName} VRF`,
+          address: chapter.main,
+        },
+        {
+          key: `CHAPTER_${chapter.chapterId}_PUBLIC`,
+          label: `${chapter.displayName} PUBLIC`,
+          address: chapter.main2,
+        },
+      ]),
       {
         key: "COLLECTION_REWARDS",
         label: "COLLECTION_REWARDS",

@@ -1,8 +1,11 @@
 import * as React from "react";
 import { Contract } from "ethers";
 import { BiggiChapterSeriesReader as ABI } from "@/config/abi/index.js";
-import { ADDR } from "@/shared/utils/addresses.js";
-import { getROProvider } from "@/shared/utils/contract.js";
+import { ADDR, CORE_CHAPTERS } from "@/shared/utils/addresses.js";
+import {
+  getReadOnlyTicketHub,
+  getROProvider,
+} from "@/shared/utils/contract.js";
 import { isRealAddress } from "@/features/tokenomics/utils/amountFormatting.js";
 
 const toStringValue = (value) => {
@@ -118,11 +121,14 @@ export default function useChapterSeriesReader() {
   const refresh = React.useCallback(async () => {
     const fallback = buildFallback();
     const readerAddress = ADDR.CHAPTER_SERIES_READER;
-    const collectionAddresses = [
-      ADDR.COLLECTION_VRF || ADDR.MAIN,
-      ADDR.COLLECTION_PUBLIC || ADDR.MAIN2,
-      ADDR.TICKET_HUB,
-    ].filter(isRealAddress);
+    const collectionAddresses = Array.from(
+      new Set(
+        [
+          ...CORE_CHAPTERS.flatMap((chapter) => [chapter.main, chapter.main2]),
+          ADDR.TICKET_HUB,
+        ].filter(isRealAddress),
+      ),
+    );
 
     if (!provider || !isRealAddress(readerAddress) || !Array.isArray(ABI)) {
       setData(fallback);
@@ -134,10 +140,14 @@ export default function useChapterSeriesReader() {
     setError(null);
     try {
       const reader = new Contract(readerAddress, ABI, provider);
+      const ticketHub = getReadOnlyTicketHub(provider);
       const [globalRaw, batchRaw] = await Promise.all([
         safeCall(() => reader.globalSnapshot(), null),
         collectionAddresses.length
-          ? safeCall(() => reader.batchCollectionSnapshot(collectionAddresses), null)
+          ? safeCall(
+              () => reader.batchCollectionSnapshot(collectionAddresses),
+              null,
+            )
           : Promise.resolve(null),
       ]);
 
@@ -155,20 +165,24 @@ export default function useChapterSeriesReader() {
           );
 
       const chapterIds = uniqIds([
-        ADDR.CHAPTER_ID,
+        ...CORE_CHAPTERS.map((chapter) => chapter.chapterId),
         ...collections.map((item) => item.chapterId),
       ]);
       const seriesIds = uniqIds([
-        ADDR.SERIES_ID,
+        ...CORE_CHAPTERS.map((chapter) => chapter.seriesId),
         ...collections.map((item) => item.seriesId),
       ]);
 
       const chapters = await Promise.all(
-        chapterIds.map(async (chapterId) =>
-          chapterSnapshotFrom(
+        chapterIds.map(async (chapterId) => {
+          const snapshot = chapterSnapshotFrom(
             await safeCall(() => reader.chapterSnapshot(chapterId), {}),
-          ),
-        ),
+          );
+          snapshot.active = toBool(
+            await safeCall(() => ticketHub.chapterActive(chapterId), null),
+          );
+          return snapshot;
+        }),
       );
       const series = await Promise.all(
         seriesIds.map(async (seriesId) =>

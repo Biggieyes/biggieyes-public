@@ -1,19 +1,24 @@
 # Mainnet post-deploy activation runbook
 
+Aktualizovano 2026-08-17 podle live Polygon stavu a petikapitoloveho CORE. Kanonicke adresy jsou v `MAINNET_CONTRACT_RECORDS.md` a `CORE/CORE_MAINNET_REAL_DATA.md`.
+
 Tento dokument popisuje bezpecny postup po nasazeni kontraktu na Polygon mainnet. Cilem je mit vse pripraveno, ale nespustit ekonomicke procesy drive, nez existuje realna pocatecni likvidita.
 
-## Stav po deployi
+## Aktualni stav po deployi
 
 Po deployi mohou byt kontrakty spravne nasazene a verifikovane, ale protokol jeste nemusi byt verejne aktivni.
 
-Bezpecny deploy-only stav:
+Aktualni bezpecny deploy-only stav:
 
-- `BIGGI_TOKEN.totalSupply() == 0`
-- `BIGGI_TOKEN.distributed() == false`
-- `PAIR` existuje, ale muze mit rezervy `0/0`
+- `BIGGI_TOKEN.totalSupply() == 1,200,000,000 BIGGI`
+- `BIGGI_TOKEN.distributed() == true`
+- `BIGGI_TOKEN.reserveLocked() == true`
+- `PAIR` existuje, ale ma rezervy `0/0`; public launch je proto blokovany
 - buyback, drip keeper, liquidity keeper a orchestrator zustavaji vypnute nebo paused
-- `TicketHub.saleCap` muze byt `0`, dokud se nema otevrit mint
-- metadata mohou byt doplnena az pred public mintem
+- centralni `BiggiTicketHub` obsluhuje chaptery 1-5
+- kazdy chapter ma `saleCap=500`, `marketingCap=50`, 50 marketing ticketu a `active=false`
+- chapter 1 `MAIN` ma metadata `550/550`; chapter 1 `MAIN2` ani budouci collection metadata jeste nejsou launch-ready
+- marketing ticket metadata jsou oddelena po chapterech; NFT metadata je nutne doplnit pred aktivaci konkretniho chapteru
 
 ## Nove bezpecne skripty
 
@@ -54,7 +59,9 @@ LAUNCH_PREFLIGHT_STRICT=1 npm run preflight:launch:polygon
 
 Strict rezim ma projit az tesne pred verejnym mintem.
 
-## 2. Initial BIGGI distribution
+## 2. Initial BIGGI distribution - dokonceno
+
+`BiggiToken.initialDistribute()` uz na mainnetu probehlo. Nasledujici prikazy zustavaji pouze jako historicka reference a nesmi se znovu poustet s execute flagy.
 
 Dry-run:
 
@@ -157,22 +164,23 @@ Vytvori:
 
 Manifest je pro archivaci live adres, bytecode stavu, verification stavu a creation transakci podle exploreru.
 
-## 6. Poradi pred public mintem
+## 6. Aktualni poradi pred public mintem
 
 1. `npm run preflight:launch:polygon`
-2. `npm run prepare:initial-distribution:polygon` dry-run
-3. `EXECUTE_INITIAL_DISTRIBUTION=1 I_UNDERSTAND_INITIAL_DISTRIBUTION_LOCKS_RESERVE=1 npm run prepare:initial-distribution:polygon`
-4. vlozit pocatecni likviditu pres `prepare:initial-liquidity:polygon`
+2. potvrdit finalni `DEV_WALLET`, owner/Safe a VRF subscription/consumer wiring
+3. doplnit chapter 1 `MAIN2` metadata a proverit metadata obou collection kontraktu
+4. vlozit pocatecni BIGGI/WPOL likviditu pres `prepare:initial-liquidity:polygon`
 5. znovu `npm run preflight:launch:polygon`
-6. dry-run `npm run activate:tokenomics:polygon`
-7. execute aktivace jen tech keeper vetvi, ktere maji byt opravdu live
-8. doplnit metadata a zkontrolovat `MAIN.metadataConsistency()`
-9. nastavit finalni `TicketHub.saleCap`, `ticketPrice`, distributor a otevrit mint
-10. strict kontrola `LAUNCH_PREFLIGHT_STRICT=1 npm run preflight:launch:polygon`
+6. provest kontrolovany end-to-end mint/redeem test chapteru 1
+7. ziskat CRE Deploy Access, workflow ID a workflow ownera; receiver ponechat do finalniho gate paused
+8. dry-run `npm run activate:tokenomics:polygon`
+9. aktivovat pouze `LIQUIDITY_KEEPER_PROXY` cestu a schvalene CRE vetve; nepoustet paralelne `LIQUIDITY_AUTOMATION`
+10. nastavit `BiggiTicketHub.setChapterActive(1, true)` az jako vedomy public-mint krok
+11. strict kontrola `LAUNCH_PREFLIGHT_STRICT=1 npm run preflight:launch:polygon`
 
 ## 7. Co nespoustet omylem
 
-- `initialDistribute()` pred potvrzenim finalni reserve adresy
+- znovu volat `initialDistribute()`; distribuce uz probehla a reserve je locknuta
 - aktivaci keeperu pred prvni likviditou
 - auto-buyback pred treasury/reserve/drip wiring kontrolou
 - public mint pred VRF consumer nastavenim a metadata consistency kontrolou

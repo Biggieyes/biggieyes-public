@@ -20,9 +20,7 @@ const DEFAULT_POLYGON_RPC_URLS = getWalletRpcUrls({ preferPublicFirst: true });
 
 const RPC_MAP = {
   [ACTIVE_CHAIN.chainId]: DEFAULT_POLYGON_RPC,
-  1: "https://cloudflare-eth.com", // Ethereum Mainnet
 };
-if (ACTIVE_CHAIN.chainId !== 137) RPC_MAP[137] = "https://polygon.drpc.org";
 
 function normalizeWalletAddress(value) {
   const raw = String(value || "").trim();
@@ -142,9 +140,6 @@ async function initWalletConnectProvider(options = {}) {
   return await EthereumProvider.init({
     projectId: getWalletConnectProjectId(),
     chains: [ACTIVE_CHAIN.chainId],
-    optionalChains: Array.from(
-      new Set([137, 1].filter((id) => id !== ACTIVE_CHAIN.chainId)),
-    ),
     rpcMap: RPC_MAP,
     showQrModal,
     qrModalOptions: {

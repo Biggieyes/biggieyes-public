@@ -1,9 +1,9 @@
-# BiggiSeriesRegistry - Mainnet Prep Dossier
+# BiggiSeriesRegistry - Mainnet Dossier
 
 ## Source of truth
 - Source file: `BiggiSeriesRegistry.sol`
 - Frozen ABI: `./ABI.json`
-- Deployment status: live on Polygon mainnet as of 2026-06-16.
+- Deployment status: current shared-hub registry live and verified on Polygon mainnet as of 2026-08-17.
 - Canonical manifest: `biggi-project/bekend/addresses.master.json` plus phase-specific Polygon manifests.
 
 ## Constructor
@@ -29,6 +29,6 @@ setRewardsEligibility(uint256 chapterId, bool tokenRewardsVRF, bool tokenRewards
 
 | Key | Address |
 | --- | --- |
-| `REGISTRY` | `0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013` |
+| `REGISTRY` | `0x09f3728e8607e1B951A6396DcEE4EC134C5e4058` |
 
 Canonical manifests: `addresses.master.json`, phase-specific Polygon manifests, and `MAINNET_DEPLOYMENT_MANIFEST_POLYGON.json`.

@@ -387,6 +387,30 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "ticketHub",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "chapterId",
+        "type": "uint256"
+      }
+    ],
+    "name": "isTicketHubForChapter",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "collection",
         "type": "address"
       }

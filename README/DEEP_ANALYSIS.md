@@ -1,6 +1,6 @@
 # Deep Technical Analysis - Current Frontend State
 
-Last verified: 2026-06-16
+Last verified: 2026-08-17
 
 This document captures the current technical state of the BiggiEyes frontend after the Polygon mainnet migration. It replaces the old January analysis that referenced historical configuration and missing reader setup.
 
@@ -62,7 +62,7 @@ The reader layer is configured and validated by runtime smoke checks.
 
 ## Cache Policy
 
-On-chain and metadata caches must be scoped by active chain and contract address. Current cache keys include mainnet context so old testnet metadata is not reused in the mainnet UI.
+On-chain and metadata caches must be scoped by active chain and contract address. Current cache keys include Polygon mainnet and contract context, so unrelated deployment data is not reused.
 
 ## Security Notes
 

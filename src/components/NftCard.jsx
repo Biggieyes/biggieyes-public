@@ -384,7 +384,8 @@ export default function NftCard({
     if (nft?.contractAddress) return nft.contractAddress;
     if (fallbackContractAddress) return fallbackContractAddress;
     try {
-      return contracts?.mainRead?.()?.address ?? null;
+      const main = contracts?.mainRead?.();
+      return main?.target ?? main?.address ?? null;
     } catch {
       return null;
     }
@@ -392,6 +393,12 @@ export default function NftCard({
 
   const metadataContract = React.useMemo(() => {
     if (!contracts) return null;
+    try {
+      const resolved = contracts?.collectionReadByAddress?.(contractAddress);
+      if (resolved) return resolved;
+    } catch {
+      // Fall back to the original chapter contracts below.
+    }
     let main = null;
     let main2 = null;
     try {
@@ -408,9 +415,15 @@ export default function NftCard({
       ? String(contractAddress).toLowerCase()
       : "";
     if (target) {
-      if (main && String(main.address || "").toLowerCase() === target)
+      if (
+        main &&
+        String(main.target || main.address || "").toLowerCase() === target
+      )
         return main;
-      if (main2 && String(main2.address || "").toLowerCase() === target)
+      if (
+        main2 &&
+        String(main2.target || main2.address || "").toLowerCase() === target
+      )
         return main2;
     }
     return main || main2 || null;
@@ -487,7 +500,7 @@ export default function NftCard({
 
       let info = null;
       if (typeof main.nftInfo === "function") {
-        info = await main.nftInfo(tokenId).catch(() => null);
+        info = await main.nftInfo(displayTokenId).catch(() => null);
       }
       if (!info) return;
 
@@ -564,6 +577,7 @@ export default function NftCard({
     };
   }, [
     tokenId,
+    displayTokenId,
     image,
     imageFailed,
     metadata,
@@ -697,7 +711,7 @@ export default function NftCard({
     let cancelled = false;
     const fetchMintData = async () => {
       if (!tokenId) return;
-      const reader = contracts?.readerRead?.();
+      const reader = metadataContract ? null : contracts?.readerRead?.();
       const main = metadataContract || contracts?.mainRead?.();
       try {
         setLoadingMint(true);
@@ -717,7 +731,7 @@ export default function NftCard({
 
         // Some deployments expose per-index mint data only.
         if (ticketPrice == null && reader && typeof reader.getMintData === "function") {
-          const res = await reader.getMintData(tokenId).catch(() => null);
+          const res = await reader.getMintData(displayTokenId).catch(() => null);
           if (res) {
             const tp = fmtEtherNum(res?.[0] ?? 0);
             if (isPositivePrice(tp)) ticketPrice = tp;
@@ -727,7 +741,7 @@ export default function NftCard({
         }
 
         if (ticketPrice == null && main && typeof main.getMintData === "function") {
-          const res = await main.getMintData(tokenId).catch(() => null);
+          const res = await main.getMintData(displayTokenId).catch(() => null);
           if (res) {
             const tp = fmtEtherNum(res?.[0] ?? 0);
             if (isPositivePrice(tp)) ticketPrice = tp;
@@ -784,7 +798,7 @@ export default function NftCard({
     return () => {
       cancelled = true;
     };
-  }, [contracts, metadataContract, tokenId]);
+  }, [contracts, metadataContract, tokenId, displayTokenId]);
 
   /* === Current block price (on-chain now) === */
   const blockIdFromTraits = React.useMemo(() => {
@@ -826,8 +840,8 @@ export default function NftCard({
         );
         return;
       }
-      const reader = contracts?.readerRead?.();
-      const main = contracts?.mainRead?.();
+      const reader = metadataContract ? null : contracts?.readerRead?.();
+      const main = metadataContract || contracts?.mainRead?.();
 
       try {
         setLoadingBlockNow(true);
@@ -918,6 +932,7 @@ export default function NftCard({
     };
   }, [
     contracts,
+    metadataContract,
     tokenId,
     blockIdFromTraits,
     mintData?.blockPrice,

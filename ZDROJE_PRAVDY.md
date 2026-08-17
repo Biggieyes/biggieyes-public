@@ -1,6 +1,6 @@
 # Sources Of Truth - BiggiNFT Web
 
-Last verified: 2026-06-16
+Last verified: 2026-08-17
 
 This document defines the authoritative configuration and data sources used by the frontend. Do not duplicate live values in feature components.
 
@@ -38,7 +38,7 @@ Current sync check:
 npm run check:contracts
 ```
 
-Expected current result: 150 frontend keys and 150 backend keys.
+Expected current result: 161 runtime frontend/backend keys, five chapter pairs, and seven canonical CORE ABI matches in both frontend trees. Backend-only `OLD_TICKET_HUB` is historical and intentionally absent from runtime.
 
 ## 3. ABI Definitions
 
@@ -61,7 +61,7 @@ Current ABI check:
 npm run check:abis
 ```
 
-Expected current result: 58 ABI files and 745 functions.
+Expected current result: 58 ABI files and 801 functions.
 
 ## 4. Contract Metadata Registry
 
@@ -70,6 +70,8 @@ Primary source:
 - `src/config/contracts/index.js`
 
 This registry maps contract keys to address keys and ABI names. Use `getContractMeta()` instead of hand-building address/ABI pairs in UI code.
+
+All deployed chapter pairs are exposed by `CORE_CHAPTERS` / `getCoreChapter()` in `src/shared/utils/addresses.js`. `useChapterSeriesReader` must query all five current chapter IDs, not only the default `MAIN/MAIN2` pair.
 
 ## 5. RPC Configuration
 

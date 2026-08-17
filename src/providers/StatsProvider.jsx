@@ -100,6 +100,7 @@ export function StatsProvider({ children }) {
           return;
         } catch (err) {
           console.debug("StatsProvider.refresh reader snapshot failed", err);
+          throw err;
         }
       }
 

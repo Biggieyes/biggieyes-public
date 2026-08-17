@@ -23,13 +23,6 @@
     "check:contracts": "node scripts/check-contracts.js"
   },
   "dependencies": {
-    "@ethersproject/abi": "^5.0.9",
-    "@ethersproject/bignumber": "^5.8.0",
-    "@ethersproject/constants": "^5.8.0",
-    "@ethersproject/contracts": "^5.0.12",
-    "@ethersproject/providers": "^5.8.0",
-    "@ethersproject/solidity": "^5.8.0",
-    "@ethersproject/units": "^5.8.0",
     "@noble/hashes": "^2.0.1",
     "@openzeppelin/contracts": "^5.4.0",
     "@rollup/plugin-inject": "^5.0.5",
@@ -112,7 +105,11 @@
   ],
   "overrides": {
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "ws": "8.21.3",
+    "solc": {
+      "tmp": "0.2.7"
+    }
   },
   "engines": {
     "node": ">=18.18"

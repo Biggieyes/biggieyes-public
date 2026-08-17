@@ -174,7 +174,7 @@ Jakykoliv fail = `NO-GO` a zastavit release.
 1. `addresses.master.json` (final)
 2. Seznam tx hashu (deploy + wiring + ownership transfer)
 3. Verifikace kontraktu na exploreru
-   - aktualni audit 2026-07-05: `50/50` projektovych deploymentu ma bytecode a verifikovany source
+   - aktualni audit 2026-08-17: `58/58` unikatnich projektovych deploymentu ma bytecode a verifikovany source
    - canonical vystup: `../MAINNET_DEPLOYMENT_MANIFEST_POLYGON.json`
 4. Zmrazeny ABI balicek:
    - `contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_ABI`

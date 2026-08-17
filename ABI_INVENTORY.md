@@ -1,6 +1,6 @@
 # ABI Inventory
 
-Last verified: 2026-06-16
+Last verified: 2026-08-17
 
 ## Source Of Truth
 
@@ -9,7 +9,7 @@ Last verified: 2026-06-16
 - Legacy ABI copies where still required: `src/abis/*.json`
 - Validation command: `npm run check:abis`
 
-Current validation result: 58 ABI files and 745 functions.
+Current validation result: 58 ABI files and 801 functions.
 
 ## Notes
 
@@ -66,7 +66,7 @@ Current validation result: 58 ABI files and 745 functions.
 - `BiggiTokenRewardsReader.json`
 - `BiggiTreasury.json`
 - `BiggiUpkeeperProxy.json`
-- `BiggiVrfRouter.json`
+- `BiggiVRFRouter.json`
 - `DripKeeperProxy.json`
 - `LiquidityAutomation.json`
 - `LiquidityKeeperProxy.json`

@@ -88,6 +88,7 @@ describe("BIGGI_MASTER: lifecycle and consistency invariants", function () {
     await (await main.setModules(compute.address, mockVrfRouter.address)).wait();
     await (await main.setTicketHub(ticketHub.address)).wait();
     await (await ticketHub.setDistributor(distributor.address)).wait();
+    await (await ticketHub.setChapterActive(1, true)).wait();
 
     await (
       await main.batchSetNFTBackgroundAndBlock([1, 2, 3], [1, 2, 3], [1, 1, 1], [1, 2, 3])
@@ -143,6 +144,7 @@ describe("BIGGI_MASTER: lifecycle and consistency invariants", function () {
     await (await main.setTicketHub(ticketHub.address)).wait();
     await (await main.setPendingRetryDelay(60)).wait();
     await (await ticketHub.setDistributor(distributor.address)).wait();
+    await (await ticketHub.setChapterActive(1, true)).wait();
 
     const ticketPrice = await ticketHub.ticketPrice();
     await (await ticketHub.connect(alice).mintTicket({ value: ticketPrice })).wait();
@@ -181,6 +183,7 @@ describe("BIGGI_MASTER: lifecycle and consistency invariants", function () {
     await (await ticketHub.setDistributor(distributor.address)).wait();
 
     await (await ticketHub.setTicketCaps(1, 549)).wait();
+    await (await ticketHub.setChapterActive(1, true)).wait();
 
     const price = await ticketHub.ticketPrice();
     await (await ticketHub.connect(alice).mintTicket({ value: price })).wait();
@@ -192,6 +195,211 @@ describe("BIGGI_MASTER: lifecycle and consistency invariants", function () {
     expect(await ticketHub.saleMinted()).to.equal(1);
     expect(await ticketHub.marketingMinted()).to.equal(1);
     expect(await ticketHub.ticketMinted()).to.equal(2);
+  });
+
+  it("keeps TicketHub owner counts correct across ticket transfers and redemption", async () => {
+    const main = await deployMainWithLinkedLibraries(owner.address);
+    const ticketHub = await deploy("BiggiTicketHub", owner.address, main.address);
+    const compute = await deploy("BiggiCompute");
+    const mockVrfRouter = await deploy("MockVrfRouter");
+    const distributor = await deploy("MockMintShareReceiver");
+
+    await (await main.setModules(compute.address, mockVrfRouter.address)).wait();
+    await (await main.setTicketHub(ticketHub.address)).wait();
+    await (await ticketHub.setDistributor(distributor.address)).wait();
+    await (await ticketHub.setChapterActive(1, true)).wait();
+
+    const price = await ticketHub.ticketPrice();
+    await (await ticketHub.connect(alice).mintTicket({ value: price })).wait();
+    expect(await ticketHub.ticketCount(alice.address)).to.equal(1);
+    expect(await ticketHub.ticketCount(bob.address)).to.equal(0);
+
+    await (await ticketHub.connect(alice).transferFrom(alice.address, bob.address, 1)).wait();
+    expect(await ticketHub.ticketCount(alice.address)).to.equal(0);
+    expect(await ticketHub.ticketCount(bob.address)).to.equal(1);
+
+    await (await ticketHub.connect(bob).redeemTicket(1)).wait();
+    expect(await ticketHub.ticketCount(bob.address)).to.equal(0);
+    expect(await ticketHub.isTicket(1)).to.equal(false);
+  });
+
+  it("keeps prelaunch marketing tickets tradable and makes them redeemable on chapter activation", async () => {
+    const main = await deployMainWithLinkedLibraries(owner.address);
+    const ticketHub = await deploy("BiggiTicketHub", owner.address, main.address);
+    const compute = await deploy("BiggiCompute");
+    const mockVrfRouter = await deploy("MockVrfRouter");
+
+    await (await ticketHub.setTicketCaps(500, 50)).wait();
+    await (await main.setModules(compute.address, mockVrfRouter.address)).wait();
+    await (await main.setTicketHub(ticketHub.address)).wait();
+    await (await ticketHub.mintMarketingTicketForChapter(1, alice.address)).wait();
+
+    expect(await ticketHub.ticketRedeemable(1)).to.equal(false);
+    expect(await ticketHub.ticketCount(alice.address)).to.equal(1);
+
+    await (await ticketHub.connect(alice).transferFrom(alice.address, bob.address, 1)).wait();
+    expect(await ticketHub.ticketCount(alice.address)).to.equal(0);
+    expect(await ticketHub.ticketCount(bob.address)).to.equal(1);
+    await expect(ticketHub.connect(bob).redeemTicket(1)).to.be.reverted;
+
+    await (await ticketHub.setChapterActive(1, true)).wait();
+    expect(await ticketHub.ticketRedeemable(1)).to.equal(true);
+    await (await ticketHub.connect(bob).redeemTicket(1)).wait();
+    expect(await ticketHub.isTicket(1)).to.equal(false);
+    expect(await main.pendingMintRequest(bob.address)).to.not.equal(0);
+  });
+
+  it("binds one central TicketHub to multiple chapter VRF collections", async () => {
+    const registry = await deploy("BiggiSeriesRegistry", owner.address);
+    const controller = await deploy("BiggiChapterController", owner.address, registry.address);
+    const mainChapter1 = await deployMainWithLinkedLibraries(owner.address);
+    const mainChapter2 = await deployMainWithLinkedLibraries(owner.address);
+    const publicChapter1 = await deployMain2WithLinkedLibraries(owner.address);
+    const publicChapter2 = await deployMain2WithLinkedLibraries(owner.address);
+    const ticketHub = await deploy("BiggiTicketHub", owner.address, mainChapter1.address);
+    const distributor = await deploy("MockMintShareReceiver");
+
+    await (await mainChapter1.setTicketHub(ticketHub.address)).wait();
+    await (await mainChapter2.setChapterId(2)).wait();
+    await (await ticketHub.configureChapter(2, mainChapter2.address, 500, 50, "ipfs://chapter-2/")).wait();
+    await (await mainChapter2.setTicketHub(ticketHub.address)).wait();
+    await (await ticketHub.setDistributor(distributor.address)).wait();
+    await (await ticketHub.setChapterActive(2, true)).wait();
+
+    await (await registry.createSeries("Series A")).wait();
+    await (await registry.createChapter(1)).wait();
+    await (await registry.createChapter(1)).wait();
+    await (
+      await registry.setChapterCollections(1, mainChapter1.address, publicChapter1.address, ticketHub.address)
+    ).wait();
+    await (
+      await registry.setChapterCollections(2, mainChapter2.address, publicChapter2.address, ticketHub.address)
+    ).wait();
+    await (
+      await controller.configureChapter(
+        2,
+        1,
+        mainChapter2.address,
+        publicChapter2.address,
+        ticketHub.address,
+        500,
+        50,
+        550
+      )
+    ).wait();
+
+    expect(await controller.isChapterStackConsistent(2)).to.equal(true);
+    expect(await controller.isChapterCapConsistent(2)).to.equal(true);
+    expect(await ticketHub.chapterMainCollection(2)).to.equal(mainChapter2.address);
+    expect(await ticketHub.mainCollection()).to.equal(mainChapter1.address);
+    expect(await registry.chapterByCollection(ticketHub.address)).to.equal(0);
+    expect(await registry.isTicketHubForChapter(ticketHub.address, 1)).to.equal(true);
+    expect(await registry.isTicketHubForChapter(ticketHub.address, 2)).to.equal(true);
+
+    const price = await ticketHub.ticketPrice();
+    await (await ticketHub.connect(alice).mintTicketForChapter(2, { value: price })).wait();
+    expect(await ticketHub.chapterSaleMinted(2)).to.equal(1);
+    expect(await ticketHub.saleMinted()).to.equal(0);
+    expect(await ticketHub.ticketChapterId(551)).to.equal(2);
+    expect(await ticketHub.chapterTicketCount(2, alice.address)).to.equal(1);
+    expect(await ticketHub.chapterTicketCount(1, alice.address)).to.equal(0);
+    expect(await ticketHub.ticketCount(alice.address)).to.equal(1);
+    expect(await ticketHub.tokenURI(551)).to.equal("ipfs://chapter-2/Biggi_RANDOM_MINT_TICKET.json");
+  });
+
+  it("supports five one-chapter series with unique prelaunch marketing tickets", async function () {
+    this.timeout(180000);
+
+    const registry = await deploy("BiggiSeriesRegistry", owner.address);
+    const controller = await deploy("BiggiChapterController", owner.address, registry.address);
+    const ticketHub = await deploy("BiggiTicketHub", owner.address, (await deployMainWithLinkedLibraries(owner.address)).address);
+    const compute = await deploy("BiggiCompute");
+    const mockVrfRouter = await deploy("MockVrfRouter");
+    const chapters = {};
+
+    async function setupChapter(chapterId, ticketBaseURI) {
+      const main = chapterId === 1
+        ? await ethers.getContractAt("BiggiEyesMain", await ticketHub.mainCollection())
+        : await deployMainWithLinkedLibraries(owner.address);
+      const publicCollection = await deployMain2WithLinkedLibraries(owner.address);
+
+      if (chapterId === 1) {
+        await (await ticketHub.setTicketCaps(500, 50)).wait();
+        await (await ticketHub.setTicketBaseURI(ticketBaseURI)).wait();
+      } else {
+        await (await main.setChapterId(chapterId)).wait();
+        await (await ticketHub.configureChapter(chapterId, main.address, 500, 50, ticketBaseURI)).wait();
+      }
+
+      await (await main.setTicketHub(ticketHub.address)).wait();
+      await (await main.setModules(compute.address, mockVrfRouter.address)).wait();
+      await (await registry.createSeries(`Series ${chapterId}`)).wait();
+      await (await registry.createChapter(chapterId)).wait();
+      await (
+        await registry.setChapterCollections(chapterId, main.address, publicCollection.address, ticketHub.address)
+      ).wait();
+      await (
+        await controller.configureChapter(
+          chapterId,
+          chapterId,
+          main.address,
+          publicCollection.address,
+          ticketHub.address,
+          500,
+          50,
+          550
+        )
+      ).wait();
+      await (await publicCollection.setChapterController(controller.address, chapterId)).wait();
+
+      chapters[chapterId] = { main, publicCollection };
+    }
+
+    for (let chapterId = 1; chapterId <= 5; chapterId += 1) {
+      await setupChapter(chapterId, `ipfs://chapter-${chapterId}-ticket-placeholder/`);
+    }
+
+    expect(await registry.seriesCount()).to.equal(5);
+    expect(await registry.chapterCount()).to.equal(5);
+
+    for (let chapterId = 1; chapterId <= 5; chapterId += 1) {
+      const [seriesId, chapterNumber] = await registry.getChapterMeta(chapterId);
+      expect(seriesId).to.equal(chapterId);
+      expect(chapterNumber).to.equal(1);
+      expect(await registry.isTicketHubForChapter(ticketHub.address, chapterId)).to.equal(true);
+      expect(await controller.isChapterStackConsistent(chapterId)).to.equal(true);
+      expect(await controller.isChapterCapConsistent(chapterId)).to.equal(true);
+      expect(await ticketHub.chapterMainCollection(chapterId)).to.equal(chapters[chapterId].main.address);
+      expect(await ticketHub.chapterTicketBaseURI(chapterId)).to.equal(`ipfs://chapter-${chapterId}-ticket-placeholder/`);
+    }
+
+    for (let chapterId = 1; chapterId <= 5; chapterId += 1) {
+      await (await ticketHub.mintMarketingTicketsForChapter(chapterId, owner.address, 50)).wait();
+
+      expect(await ticketHub.chapterMarketingMinted(chapterId)).to.equal(50);
+      expect(await ticketHub.chapterSaleMinted(chapterId)).to.equal(0);
+      expect(await ticketHub.chapterTicketMinted(chapterId)).to.equal(50);
+      expect(await controller.isPublicMintUnlocked(chapterId)).to.equal(false);
+      await expect(
+        ticketHub.mintMarketingTicketsForChapter(chapterId, owner.address, 1)
+      ).to.be.reverted;
+
+      const firstTicketId = ((chapterId - 1) * 550) + 1;
+      expect(await ticketHub.ticketChapterId(firstTicketId)).to.equal(chapterId);
+      expect(await ticketHub.ticketRedeemable(firstTicketId)).to.equal(false);
+      expect(await ticketHub.tokenURI(firstTicketId)).to.equal(
+        `ipfs://chapter-${chapterId}-ticket-placeholder/Biggi_RANDOM_MINT_TICKET.json`
+      );
+
+      await (await ticketHub.transferFrom(owner.address, alice.address, firstTicketId)).wait();
+      expect(await ticketHub.ownerOf(firstTicketId)).to.equal(alice.address);
+      await expect(ticketHub.connect(alice).redeemTicket(firstTicketId)).to.be.reverted;
+
+      await (await ticketHub.setChapterActive(chapterId, true)).wait();
+      expect(await ticketHub.ticketRedeemable(firstTicketId)).to.equal(true);
+      await (await ticketHub.connect(alice).redeemTicket(firstTicketId)).wait();
+      expect(await ticketHub.isTicket(firstTicketId)).to.equal(false);
+    }
   });
 
   it("keeps chapter unlock strict and uses chapter VRF collection as public price provider", async () => {

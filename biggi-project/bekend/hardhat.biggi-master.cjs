@@ -1,5 +1,5 @@
 require("@nomiclabs/hardhat-ethers");
-require("@nomiclabs/hardhat-waffle");
+require("@nomicfoundation/hardhat-chai-matchers");
 require("@nomicfoundation/hardhat-verify");
 
 const { resolve } = require("path");
@@ -68,6 +68,6 @@ module.exports = {
     apiKey: explorerApiKey,
   },
   sourcify: {
-    enabled: true,
+    enabled: process.env.DISABLE_SOURCIFY_VERIFY !== "1",
   },
 };

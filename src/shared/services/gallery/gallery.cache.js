@@ -1,4 +1,4 @@
-const GALLERY_CACHE_VERSION = "v6-mainnet";
+const GALLERY_CACHE_VERSION = "v7-core-series";
 const GALLERY_CACHE_TTL = 60 * 24 * 60 * 60 * 1000;
 
 export function galleryCacheKey(addr, contractAddr) {
@@ -43,4 +43,3 @@ export function saveGalleryCache(addr, items, contractAddr) {
     // ignore
   }
 }
-

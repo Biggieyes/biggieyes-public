@@ -1,9 +1,9 @@
-# BiggiChapterController - Mainnet Prep Dossier
+# BiggiChapterController - Mainnet Dossier
 
 ## Source of truth
 - Source file: `BiggiChapterController.sol`
 - Frozen ABI: `./ABI.json`
-- Deployment status: live on Polygon mainnet as of 2026-06-16.
+- Deployment status: current five-chapter controller live and verified on Polygon mainnet as of 2026-08-17.
 - Canonical manifest: `biggi-project/bekend/addresses.master.json` plus phase-specific Polygon manifests.
 
 ## Constructor
@@ -32,6 +32,6 @@ configureChapter(...)
 
 | Key | Address |
 | --- | --- |
-| `CHAPTER_CONTROLLER` | `0x6bf341647C9592eFEadE43a3f396DB616B11f7E7` |
+| `CHAPTER_CONTROLLER` | `0x9c084D89c0CB6c8424652d1fa82E83aD9c098288` |
 
 Canonical manifests: `addresses.master.json`, phase-specific Polygon manifests, and `MAINNET_DEPLOYMENT_MANIFEST_POLYGON.json`.

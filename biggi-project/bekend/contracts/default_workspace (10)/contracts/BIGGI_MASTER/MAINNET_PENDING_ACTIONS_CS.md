@@ -1,6 +1,6 @@
 # BIGGI mainnet pending actions
 
-Stav k 2026-07-05. Tento dokument vychazi z live read-only kontrol Polygon mainnetu. Audit sam neposila zadne transakce.
+Stav k 2026-08-17. Tento dokument vychazi z aktualni live read-only kontroly Polygon mainnetu. Audit sam neposila zadne transakce.
 
 Kompletni zavazne poradi je v [MAINNET_FULL_DEPLOY_SEQUENCE_CS.md](MAINNET_FULL_DEPLOY_SEQUENCE_CS.md). Posledni launch preflight aktualne eviduje 7 blockeru a 0 warningu.
 
@@ -19,7 +19,7 @@ Zamer projektu je 550 ticketu celkem:
 - `MARKETING_CAP=50`
 - cena paid ticketu `1 POL`
 
-Live TicketHub ma `saleCap=500`, `marketingCap=50`, cenu `1 POL`, finalni distributor a novou dev wallet. CORE wiring kontrolovat pred kazdym dalsim write krokem pres `npm.cmd run check:master:core:polygon`.
+Centralni live TicketHub ma `saleCap=500`, `marketingCap=50`, cenu `1 POL`, finalni distributor a dev wallet. Je napojen na pet series/chapter paru; kazdy chapter ma 50 marketing ticketu a zustava neaktivni. CORE wiring kontrolovat pred kazdym dalsim write krokem pres `npm.cmd run verify:master:core-series:polygon` a `npm.cmd run check:master:core:polygon`.
 
 ## 3. Chainlink VRF
 

@@ -10,6 +10,11 @@ import { getProviderForContract } from "../shared/utils/contract";
 import { mergeGalleryItem } from "../shared/services/gallery/gallery.merge.js";
 import { coerceBool } from "../shared/utils/boolean";
 import {
+  getAssetIdentity,
+  getAssetTokenId,
+  isAssetReferenceMatch,
+} from "../shared/utils/assetIdentity.js";
+import {
   isCanonicalTicketTokenId,
   toMainNftIndexFromTokenId,
 } from "../shared/utils/biggiIdIndex";
@@ -273,10 +278,7 @@ const isTicketLike = (item, maxSupplyHint = 550) =>
   classifyGalleryItem(item, maxSupplyHint) === "ticket";
 
 function toIdString(item) {
-  if (!item) return "";
-  if (item.tokenId != null) return String(item.tokenId);
-  if (item.id != null) return String(item.id);
-  return "";
+  return getAssetTokenId(item);
 }
 
 function toTokenIdBigInt(value) {
@@ -917,7 +919,14 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
                 };
               } else if (typeof reader.getMintData === "function") {
                 // getMintData(index) může někdy přijít s indexem tokenId; pokusíme se bez crashu
-                const res = await reader.getMintData(id).catch(() => null);
+                const nftIndex = toMainNftIndexFromTokenId(id, {
+                  maxSupply: 550,
+                  allowLegacy: true,
+                });
+                const res =
+                  nftIndex == null
+                    ? null
+                    : await reader.getMintData(nftIndex).catch(() => null);
                 if (res) {
                   const ticketWei = res?.[0] ?? 0;
                   const blockWei = res?.[1] ?? 0;
@@ -931,6 +940,25 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
               }
             } catch {
               // ignore mint fetch errors
+            }
+          }
+
+          if (!mint && typeof mainContract?.getMintData === "function") {
+            const nftIndex = toMainNftIndexFromTokenId(id, {
+              maxSupply: 550,
+              allowLegacy: true,
+            });
+            if (nftIndex != null) {
+              const res = await mainContract
+                .getMintData(nftIndex)
+                .catch(() => null);
+              if (res) {
+                mint = {
+                  ticketPrice: Number(formatEther(res?.[0] ?? 0)),
+                  blockPrice: Number(formatEther(res?.[1] ?? 0)),
+                  finalPrice: Number(formatEther(res?.[2] ?? 0)),
+                };
+              }
             }
           }
 
@@ -1060,12 +1088,12 @@ export default function Gallery({
 
     const map = new Map();
     for (const item of providedItems) {
-      const key = toIdString(item);
+      const key = getAssetIdentity(item);
       if (!key) continue;
       map.set(key, item);
     }
     for (const item of hydratedItems) {
-      const key = toIdString(item);
+      const key = getAssetIdentity(item);
       if (!key) continue;
       const prev = map.get(key);
       map.set(key, mergeGalleryItem(prev, item));
@@ -1116,18 +1144,29 @@ export default function Gallery({
         return;
       setFetching(true);
       try {
-        // contracts may expose factory functions or actual instances
-        const main = contracts.mainRead?.();
-        const main2 = contracts.main2Read?.();
         const reader = contracts.readerRead?.();
+        let collectionEntries = [];
+        try {
+          collectionEntries = contracts.chapterCollectionsRead?.() || [];
+        } catch {
+          collectionEntries = [];
+        }
+        if (!collectionEntries.length) {
+          const main = contracts.mainRead?.();
+          const main2 = contracts.main2Read?.();
+          collectionEntries = [
+            { contract: main, label: "MAIN", chapterId: 1 },
+            { contract: main2, label: "MAIN2", chapterId: 1 },
+          ].filter((entry) => entry.contract);
+        }
 
-        if (!main && !main2) {
+        if (!collectionEntries.length) {
           console.warn("Gallery: main contracts not available");
           if (!cancelled) setHydratedItems([]);
           return;
         }
 
-        const loadForContract = async (contract, label) => {
+        const loadForContract = async (contract, label, contractReader) => {
           if (!contract) return [];
           const provider = getProviderForContract(contract);
           if (!provider || typeof provider.getBlockNumber !== "function") {
@@ -1136,20 +1175,38 @@ export default function Gallery({
           }
           return withTimeout(
             (async () => {
-              const tokenIds = await resolveHeldTokenIds(contract, address, reader);
+              const tokenIds = await resolveHeldTokenIds(
+                contract,
+                address,
+                contractReader,
+              );
               if (!tokenIds.length) return [];
-              return hydrateTokens(contract, reader, tokenIds);
+              return hydrateTokens(contract, contractReader, tokenIds);
             })(),
             CHAIN_FETCH_TIMEOUT_MS,
             `gallery ${String(label || "").toLowerCase()} fetch`,
           );
         };
 
-        const labels = ["MAIN", "MAIN2"];
-        const settled = await Promise.allSettled([
-          loadForContract(main, labels[0]),
-          loadForContract(main2, labels[1]),
-        ]);
+        const labels = collectionEntries.map(
+          (entry) =>
+            entry.label ||
+            `CHAPTER_${entry.chapterId}_${String(entry.collectionType || "collection").toUpperCase()}`,
+        );
+        const settled = [];
+        for (let offset = 0; offset < collectionEntries.length; offset += 2) {
+          const chunk = collectionEntries.slice(offset, offset + 2);
+          const chunkResults = await Promise.allSettled(
+            chunk.map((entry, index) =>
+              loadForContract(
+                entry.contract,
+                labels[offset + index],
+                entry.chapterId === 1 ? reader : null,
+              ),
+            ),
+          );
+          settled.push(...chunkResults);
+        }
 
         const tokensOut = [];
         let hadFailures = false;
@@ -1221,10 +1278,8 @@ export default function Gallery({
     const topId = topFirstId != null ? String(topFirstId) : "";
     const sorted = [...list];
     sorted.sort((a, b) => {
-      const aId = String(a?.tokenId ?? a?.id ?? "");
-      const bId = String(b?.tokenId ?? b?.id ?? "");
-      const aTop = topId && aId === topId;
-      const bTop = topId && bId === topId;
+      const aTop = topId && isAssetReferenceMatch(a, topId);
+      const bTop = topId && isAssetReferenceMatch(b, topId);
       if (aTop && !bTop) return -1;
       if (bTop && !aTop) return 1;
       const aPending = Boolean(a?.isPending);
@@ -1326,14 +1381,22 @@ export default function Gallery({
       });
     }
     if (topId) {
-      const topIndex = sorted.findIndex((item) => toIdString(item) === topId);
+      const topIndex = sorted.findIndex((item) =>
+        isAssetReferenceMatch(item, topId, mainContractAddress),
+      );
       if (topIndex > 0) {
         const [topItem] = sorted.splice(topIndex, 1);
         sorted.unshift(topItem);
       }
     }
     return sorted;
-  }, [nonTicketItemsSource, filterRarity, sortBy, pinnedTopId]);
+  }, [
+    nonTicketItemsSource,
+    filterRarity,
+    sortBy,
+    pinnedTopId,
+    mainContractAddress,
+  ]);
 
   React.useEffect(() => {
     setPage(0);
@@ -1356,7 +1419,9 @@ export default function Gallery({
       setPinnedTopId("");
       return;
     }
-    const isVisible = processedItems.some((item) => toIdString(item) === id);
+    const isVisible = processedItems.some((item) =>
+      isAssetReferenceMatch(item, id, mainContractAddress),
+    );
     const prev = topFirstVisibleRef.current;
     const becameVisible = isVisible && (prev.id !== id || !prev.visible);
     topFirstVisibleRef.current = { id, visible: isVisible };
@@ -1364,7 +1429,7 @@ export default function Gallery({
       setHighlightId(id);
       setPinnedTopId(id);
     }
-  }, [topFirstId, processedItems]);
+  }, [topFirstId, processedItems, mainContractAddress]);
 
   React.useEffect(() => {
     if (!highlightId) return;
@@ -1446,14 +1511,16 @@ export default function Gallery({
           }
         : item;
     const tokenId = toIdString(item);
-    const dynamic = dynamicTraitsById[tokenId] || {};
+    const assetKey = getAssetIdentity(item, mainContractAddress);
+    const dynamic =
+      dynamicTraitsById[assetKey] || dynamicTraitsById[tokenId] || {};
     const isHighlight =
-      highlightId && tokenId && String(tokenId) === String(highlightId);
+      highlightId &&
+      tokenId &&
+      isAssetReferenceMatch(item, highlightId, mainContractAddress);
     const isPromoted =
       inMainGrid && page === 0 && index === 0 && Boolean(isHighlight);
-    const key =
-      tokenId ||
-      `${String(item?.contractAddress || mainContractAddress || "unknown")}:${index}`;
+    const key = assetKey || `${mainContractAddress || "unknown"}:${index}`;
     return (
       <NftCard
         key={key}

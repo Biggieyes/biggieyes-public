@@ -15,7 +15,7 @@
     "name": "distributor",
     "outputs": [
       {
-        "internalType": "contract IMultiCollectionDistributorMinimal",
+        "internalType": "address",
         "name": "",
         "type": "address"
       }
@@ -24,62 +24,122 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "globalSnapshot",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "source",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "pendingRecipient",
+        "type": "address"
+      }
+    ],
+    "name": "fullSnapshot",
     "outputs": [
       {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "collectionRewards",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "reserve",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "buybackAgent",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "treasury",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "communityCenter",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "totalPending",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "totalReceived",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct BiggiMultiCollectionDistributorReaderV2.Snapshot",
-        "name": "s",
-        "type": "tuple"
+        "internalType": "uint256",
+        "name": "totalReceived_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalPending_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "pendingForRecipient",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "sourceWhitelisted",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "sourceReceived",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "sourceChapterId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "sourceChapterNumber",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "sourceSeriesId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "chapterReceived",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "seriesReceived",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "collectionRewards_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "reserve_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "buybackAgent_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "treasury_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "communityCenter_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "registry_",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "pendingCommunity",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      }
+    ],
+    "name": "pendingSnapshot",
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "recipientPending",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalPending_",
         "type": "uint256"
       }
     ],
@@ -87,19 +147,38 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address[]",
-        "name": "who",
-        "type": "address[]"
-      }
-    ],
-    "name": "pendingOf",
+    "inputs": [],
+    "name": "recipients",
     "outputs": [
       {
-        "internalType": "uint256[]",
-        "name": "out",
-        "type": "uint256[]"
+        "internalType": "address",
+        "name": "collectionRewards_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "reserve_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "buybackAgent_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "treasury_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "communityCenter_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "registry_",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -108,36 +187,47 @@
   {
     "inputs": [
       {
-        "internalType": "address[]",
-        "name": "colls",
-        "type": "address[]"
+        "internalType": "address",
+        "name": "source",
+        "type": "address"
       }
     ],
-    "name": "receivedOfCollections",
+    "name": "sourceSnapshot",
     "outputs": [
       {
-        "internalType": "uint256[]",
-        "name": "out",
-        "type": "uint256[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
+        "internalType": "bool",
+        "name": "whitelisted",
+        "type": "bool"
+      },
       {
-        "internalType": "address[]",
-        "name": "colls",
-        "type": "address[]"
-      }
-    ],
-    "name": "whitelisted",
-    "outputs": [
+        "internalType": "uint256",
+        "name": "totalForSource",
+        "type": "uint256"
+      },
       {
-        "internalType": "bool[]",
-        "name": "out",
-        "type": "bool[]"
+        "internalType": "uint256",
+        "name": "chapterId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "chapterNumber",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "seriesId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalForChapter",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalForSeries",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",

@@ -9,31 +9,40 @@ async function deploy(name, ...args) {
 }
 
 describe("BIGGI_MASTER: vrf + registry guards smoke", function () {
-  it("prevents reusing collection address across different chapters", async () => {
+  it("prevents reusing VRF/public collection addresses but allows a shared central TicketHub", async () => {
     const [owner] = await ethers.getSigners();
 
     const registry = await deploy("BiggiSeriesRegistry", owner.address);
-    const collA = await deploy("MockMintShareReceiver");
-    const collB = await deploy("MockMintShareReceiver");
-    const collC = await deploy("MockMintShareReceiver");
-    const collD = await deploy("MockMintShareReceiver");
-    const collE = await deploy("MockMintShareReceiver");
+    const vrfA = await deploy("MockMintShareReceiver");
+    const publicA = await deploy("MockMintShareReceiver");
+    const sharedTicketHub = await deploy("MockMintShareReceiver");
+    const vrfB = await deploy("MockMintShareReceiver");
+    const publicB = await deploy("MockMintShareReceiver");
+    const otherTicketHub = await deploy("MockMintShareReceiver");
 
     await (await registry.createSeries("MASTER")).wait();
     await (await registry.createChapter(1)).wait();
     await (await registry.createChapter(1)).wait();
 
-    await (await registry.setChapterCollections(1, collA.address, collB.address, collC.address)).wait();
+    await (await registry.setChapterCollections(1, vrfA.address, publicA.address, sharedTicketHub.address)).wait();
 
     await expect(
-      registry.setChapterCollections(2, collA.address, collD.address, collE.address)
+      registry.setChapterCollections(2, vrfA.address, publicB.address, otherTicketHub.address)
     ).to.be.reverted;
 
-    expect(await registry.chapterByCollection(collA.address)).to.equal(1);
-    expect(await registry.chapterByCollection(collB.address)).to.equal(1);
-    expect(await registry.chapterByCollection(collC.address)).to.equal(1);
-    expect(await registry.chapterByCollection(collD.address)).to.equal(0);
-    expect(await registry.chapterByCollection(collE.address)).to.equal(0);
+    await expect(
+      registry.setChapterCollections(2, vrfB.address, publicA.address, otherTicketHub.address)
+    ).to.be.reverted;
+
+    await (await registry.setChapterCollections(2, vrfB.address, publicB.address, sharedTicketHub.address)).wait();
+
+    expect(await registry.chapterByCollection(vrfA.address)).to.equal(1);
+    expect(await registry.chapterByCollection(publicA.address)).to.equal(1);
+    expect(await registry.chapterByCollection(vrfB.address)).to.equal(2);
+    expect(await registry.chapterByCollection(publicB.address)).to.equal(2);
+    expect(await registry.chapterByCollection(sharedTicketHub.address)).to.equal(0);
+    expect(await registry.isTicketHubForChapter(sharedTicketHub.address, 1)).to.equal(true);
+    expect(await registry.isTicketHubForChapter(sharedTicketHub.address, 2)).to.equal(true);
   });
 
   it("routes request and coordinator callback through BiggiVRFRouter", async () => {

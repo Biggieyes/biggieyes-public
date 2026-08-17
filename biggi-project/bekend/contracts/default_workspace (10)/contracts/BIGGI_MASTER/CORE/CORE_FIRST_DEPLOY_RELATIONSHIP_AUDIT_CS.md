@@ -1,5 +1,7 @@
 # CORE-first relationship audit
 
+> Historical first-deploy snapshot. The current 2026-08-17 deployment uses one chapter-aware TicketHub shared by five chapters. Current rules in `CORE_ARCHITECTURE_CS.md` and `CORE_MAINNET_REAL_DATA.md` supersede hub uniqueness/reverse-lookup statements below.
+
 Status: mainnet prep, no production addresses filled yet. This note is for the deployment mode where CORE mechanics are deployed first and tokenomics is deployed later.
 
 ## Scope
@@ -55,7 +57,7 @@ Required wiring:
 
 Contract guards:
 
-- `SeriesRegistry` prevents reusing the same collection or hub address across different chapters.
+- `SeriesRegistry` prevents reusing VRF/Public collection addresses across chapters; a chapter-aware TicketHub may be shared.
 - `ChapterController.configureChapter` requires registry mappings to match the supplied `Main`, `Main2`, and `TicketHub`.
 - `ChapterController.configureChapter` requires `saleCap + marketingCap == totalCap`.
 - `ChapterController.configureChapter` requires direct `BiggiMain <-> BiggiTicketHub` binding.
@@ -132,7 +134,7 @@ For your stated plan, the best mainnet order is:
 - `BiggiMain.assertMetadataConsistency() == true`
 - `BiggiSeriesRegistry.chapterByCollection(BiggiMain) == chapterId`
 - `BiggiSeriesRegistry.chapterByCollection(BiggiMain2) == chapterId`
-- `BiggiSeriesRegistry.chapterByCollection(BiggiTicketHub) == chapterId`
+- `BiggiSeriesRegistry.isTicketHubForChapter(BiggiTicketHub, chapterId) == true`
 - `BiggiChapterController.isChapterStackConsistent(chapterId) == true`
 - `BiggiChapterController.isChapterCapConsistent(chapterId) == true`
 - If paid native sale is open: distributor has all five recipients and `TicketHub` is whitelisted.

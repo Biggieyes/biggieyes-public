@@ -1,6 +1,6 @@
 # CORE architektura
 
-Status 2026-06-16: CORE is deployed on Polygon mainnet. Address references must match `addresses.master.json`, `addresses.visibility.polygon.json`, or `MAINNET_DEPLOYMENT_MANIFEST_POLYGON.json`.
+Status 2026-08-17: aktualni chapter-aware CORE je nasazeny na Polygon mainnetu. Canonical runtime source je `addresses.master.json`; `addresses.json` a oba frontendove mapy jsou jeho kontrolovany mirror.
 
 Tento dokument popisuje, jak funguje `BIGGI_MASTER/CORE`, jak jsou kontrakty propojené a jak se systém škáluje po chapter/series.
 
@@ -58,11 +58,12 @@ Tento dokument popisuje, jak funguje `BIGGI_MASTER/CORE`, jak jsou kontrakty pro
 
 ### 3.1 Povinné vazby pro VRF větev
 
-- `BiggiTicketHub.mainCollection -> BiggiMain`
+- `BiggiTicketHub.mainCollection -> BiggiMain` pro kapitolu 1
+- `BiggiTicketHub.chapterMainCollection(chapterId) -> BiggiMain` pro dalsi kapitoly
 - `BiggiMain.ticketHub -> BiggiTicketHub`
 - `BiggiMain.compute -> BiggiCompute`
 - `BiggiMain.vrfRouter -> BiggiVRFRouter`
-- `BiggiVRFRouter.main -> BiggiMain`
+- `BiggiVRFRouter.main -> BiggiMain` pro default collection nebo `BiggiVRFRouter.approvedMains(BiggiMain) == true` pro dalsi VRF collections
 
 ### 3.2 Povinné vazby pro chapter governance
 
@@ -86,6 +87,8 @@ Tento dokument popisuje, jak funguje `BIGGI_MASTER/CORE`, jak jsou kontrakty pro
 
 Whitelisted source collections pak posílají native mint-share do distributoru přes `receiveMintShare()`.
 
+Centralni `BiggiTicketHub` pouziva `receiveMintShareForChapter(chapterId)`, pokud ho distributor podporuje, aby zustalo presne chapter accounting.
+
 ### 3.4 Reward vazby
 
 - `BiggiCollectionRewards`
@@ -106,12 +109,12 @@ Whitelisted source collections pak posílají native mint-share do distributoru 
 Aktualni `scripts/master/checkMasterStatus.js` v strict modu kontroluje tyto prime vazby:
 
 - `BiggiMain.ticketHub == BiggiTicketHub`
-- `BiggiTicketHub.mainCollection == BiggiMain`
+- pro kapitolu 1 `BiggiTicketHub.mainCollection == BiggiMain`
+- pro dalsi kapitoly `BiggiTicketHub.chapterMainCollection(CHAPTER_ID) == BiggiMain`
 - `BiggiMain.compute == BiggiCompute`
 - `BiggiMain.vrfRouter == BiggiVRFRouter`, pokud je router v manifestu nastaven
 - na non-local siti musi byt `VRF_ROUTER` v strict checku nastaven
-- `BiggiVRFRouter.main == BiggiMain`
-- `BiggiVRFRouter.approvedMains(BiggiMain) == true`
+- `BiggiVRFRouter.main == BiggiMain` nebo `BiggiVRFRouter.approvedMains(BiggiMain) == true`
 - `BiggiVRFRouter.approvedRewardConsumers(BiggiNFTRewards) == true`, pokud je NFT rewards v manifestu
 - `BiggiMain2.chapterController == BiggiChapterController`
 - `BiggiMain2.chapterId == CHAPTER_ID`
@@ -124,7 +127,8 @@ Aktualni `scripts/master/checkMasterStatus.js` v strict modu kontroluje tyto pri
 - `BiggiChapterController.getChapterPriceProvider(CHAPTER_ID) == BiggiMain`
 - `BiggiChapterController.isChapterStackConsistent(CHAPTER_ID) == true`
 - `BiggiChapterController.isChapterCapConsistent(CHAPTER_ID) == true`
-- `BiggiSeriesRegistry.chapterByCollection(BiggiMain/Main2/TicketHub) == CHAPTER_ID`
+- `BiggiSeriesRegistry.chapterByCollection(BiggiMain/Main2) == CHAPTER_ID`
+- `BiggiSeriesRegistry.isTicketHubForChapter(BiggiTicketHub, CHAPTER_ID) == true`
 - registry eligibility: token rewards pro `BiggiMain` a `BiggiMain2`, collection rewards jen pro `BiggiMain`
 - `BiggiMultiCollectionDistributor` ma vsechny recipienty nastavene a whitelistuje `BiggiMain`, `BiggiMain2`, `BiggiTicketHub`
 - `BiggiCollectionRewards.defaultMain == BiggiMain`, `distributor == BiggiMultiCollectionDistributor`, `registry == BiggiSeriesRegistry`
@@ -169,7 +173,7 @@ Každý chapter může mít:
 
 - jednu VRF collection (`BiggiMain` instance)
 - jednu public collection (`BiggiMain2` instance)
-- jeden `BiggiTicketHub`
+- jeden `BiggiTicketHub` zaznam v registry; aktualni CORE model muze pouzit sdileny centralni hub pro vice chapters
 
 To znamená, že projekt roste po chapter bez potřeby přepisovat core reward a treasury vrstvu.
 
@@ -190,6 +194,27 @@ To snižuje počet systémových deployů při růstu kolekce.
 #### Registry-driven integrace
 
 Rewards a distributor nemusí být natvrdo svázané jen s jednou collection adresou. Přes registry lze přidávat další eligible collections bez změny samotné reward architektury.
+
+### Aktualni 5-series CORE model
+
+Aktualni Polygon deployment obsahuje:
+
+- 5 samostatnych series: Original, Universe, Mutant, Apocalipse a Super Hero
+- kazda series ma presne 1 chapter
+- kazdy chapter ma vlastni `BiggiMain` VRF collection
+- kazdy chapter ma vlastni `BiggiMain2` public collection
+- vsechny chapters sdili jeden centralni chapter-aware `BiggiTicketHub`
+- `BiggiSeriesRegistry.chapterByCollection(...)` mapuje jen VRF/Public collection adresy
+- sdileny hub se overuje pres `BiggiSeriesRegistry.isTicketHubForChapter(ticketHub, chapterId)`
+- registry/controller model dovoluje pridat dalsi series bez noveho centralniho TicketHubu
+
+Marketing tickety pro budouci chapters se razi pres:
+
+```solidity
+BiggiTicketHub.mintMarketingTicketForChapter(chapterId, to)
+```
+
+Kazdy chapter ma vlastni `ticketBaseURI` a vlastni ticket obrazek. Prvnich 50 marketing ticketu je plnohodnotnou soucasti celkoveho supply 550. Vsech pet chapteru ma techto 50 ticketu vyrazenych a zustava `active=false`; tickety jsou obchodovatelne, ale placeny mint i redeem jsou zavrene. Pri startu konkretniho chapteru owner zavola `setChapterActive(chapterId, true)`. Finalni obrazky/metadata VRF a Public NFT se doplni pred aktivaci daneho chapteru.
 
 ### Kde jsou limity
 

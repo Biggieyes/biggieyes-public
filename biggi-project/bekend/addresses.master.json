@@ -3,13 +3,13 @@
   "deployer": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
   "SERIES_ID": 1,
   "CHAPTER_ID": 1,
-  "REGISTRY": "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013",
-  "CHAPTER_CONTROLLER": "0x6bf341647C9592eFEadE43a3f396DB616B11f7E7",
+  "REGISTRY": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
+  "CHAPTER_CONTROLLER": "0x9c084D89c0CB6c8424652d1fa82E83aD9c098288",
   "COMPUTE": "0x0A09261631496B4aad9A5c2A82b62666249d773f",
   "VRF_ROUTER": "0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F",
   "MAIN": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
   "MAIN2": "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634",
-  "TICKET_HUB": "0xe6d742D7DC66fA63434E6794C69798A5272e9873",
+  "TICKET_HUB": "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
   "DISTRIBUTOR": "0xCE892698159D8D799D5eF7f0dF0111487511fD22",
   "COLLECTION_REWARDS": "0x5d1273070c9133381C570009768621762F024FB8",
   "BIGGI_TOKEN": "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
@@ -44,9 +44,9 @@
   "CRE_CHAIN_NAME": "polygon-mainnet",
   "CRE_KEYSTONE_FORWARDER": "0x76c9cf548b4179F8901cda1f8623568b58215E62",
   "CRE_AUTOMATION_RECEIVER": "0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6",
-  "MAIN_READER": "0x5B5b422D0Db094550B626749EE4F982A301F8471",
+  "MAIN_READER": "0x4937CdcF1668255Cb46c78E19547ea96C94391Ef",
   "MULTI_COLLECTION_READER": "0xa65B4e88E37F085B9009295eA0AcF05e18a82884",
-  "CHAPTER_SERIES_READER": "0x79f39f2344B51e292cfa346c264E549098728900",
+  "CHAPTER_SERIES_READER": "0x421c8ed70fC893517481315aC62f4c95331e647f",
   "NFT_REWARDS_READER": "0x430376b1f4F12ce2D641CC28f2968297aA2b0c12",
   "RESERVE_TREASURY_READER": "0xb379bB928f3B683528C209C28A95F4D2854EC407",
   "BUYBACK_READER": "0x8eD6c94e5Fb336096E6C28480f3C514c9bddFa89",
@@ -135,7 +135,7 @@
   "PUBLIC_BRANCH_ENABLED": true,
   "COLLECTION_REWARDS_ENABLED": true,
   "CORE_READERS_ENABLED": true,
-  "createdAt": "2026-06-10T22:52:45.517Z",
+  "createdAt": "2026-08-17T17:57:22.980Z",
   "source": "addresses.visibility.polygon.json",
   "syncedAt": "2026-06-10T19:03:56.714Z",
   "OWNER": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
@@ -154,5 +154,57 @@
   "TOKENOMICS_PHASE2_CREATED_AT": "2026-06-16T00:31:40.805Z",
   "CRE_RECEIVER_INITIAL_OWNER": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
   "CRE_PERFORM_UPKEEP_SELECTOR": "0x4585e33b",
-  "CRE_ROLL_CURRENT_WEEK_SELECTOR": "0x69fa508a"
+  "CRE_ROLL_CURRENT_WEEK_SELECTOR": "0x69fa508a",
+  "OLD_TICKET_HUB": "0xe6d742D7DC66fA63434E6794C69798A5272e9873",
+  "chapters": [
+    {
+      "chapterId": 1,
+      "seriesId": 1,
+      "seriesName": "BIGGI MASTER Core Launch",
+      "MAIN": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+      "MAIN2": "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634",
+      "ticketBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeid32cnhzvsmg56nwlgf2lcowqcnaqch2us7g4af6oyta6cwhkzrgu/",
+      "active": false
+    },
+    {
+      "chapterId": 2,
+      "seriesId": 2,
+      "seriesName": "BIGGI Universe",
+      "MAIN": "0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036",
+      "MAIN2": "0xce4dF4eFc703fb0D9827aAacDB28c90405aB57D0",
+      "ticketBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeigifkdov4wcyfu2hgyrwpwbi2shaitqcklxna6chi2itdhdfap7p4/",
+      "active": false
+    },
+    {
+      "chapterId": 3,
+      "seriesId": 3,
+      "seriesName": "BIGGI Mutant",
+      "MAIN": "0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2",
+      "MAIN2": "0x4bB7a55Ba690Fc38653f5889E2262316A049a1D9",
+      "ticketBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeigdkx4e4ovnr33pwir3g6f2rhlnboo65mncp6euutn5wv4pnebxf4/",
+      "active": false
+    },
+    {
+      "chapterId": 4,
+      "seriesId": 4,
+      "seriesName": "BIGGI Apocalipse",
+      "MAIN": "0x8E862D9071120D69517D3F7Db0c101175E911115",
+      "MAIN2": "0x43b4C220aD039C0272153cF4B43Eaee68de09b00",
+      "ticketBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeihqoyhcjjzj4yyw6j3c62z44ezwm3coicbefak4q7ufhiefnhqsru/",
+      "active": false
+    },
+    {
+      "chapterId": 5,
+      "seriesId": 5,
+      "seriesName": "BIGGI Super Hero",
+      "MAIN": "0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38",
+      "MAIN2": "0xcA168A6e391a54de4F664397eE17328280305A75",
+      "ticketBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeibd3pz4pvfuuasonn2va7tylapqrdtfl5zgytiiggwsemtxd3qxru/",
+      "active": false
+    }
+  ],
+  "CHAPTER_COUNT": 5,
+  "marketingTicketsMintedPerChapter": 50,
+  "CORE_ADDRESS_FILE": "addresses.core.polygon.json",
+  "updatedAt": "2026-08-17T17:57:22.984Z"
 }

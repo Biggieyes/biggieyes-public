@@ -5,7 +5,7 @@ import { MODAL_TEXTS } from "./constants/texts";
 
 import { formatEther, BrowserProvider, ZeroAddress } from "ethers";
 
-import { ADDR } from "@/shared/utils/addresses.js";
+import { ADDR, CORE_CHAPTERS } from "@/shared/utils/addresses.js";
 import { explorerBaseFor } from "@/config/chains.js";
 import { DEFAULT_BLOCKS, BASE_PRICES } from "@/shared/blocks";
 import { buildBlockImagePath } from "@/shared/utils/images";
@@ -19,6 +19,8 @@ import {
   clearInjectedProvider,
   ensurePolygon,
   getReadOnlyMain as getReadOnlyContract,
+  getReadOnlyChapterMain,
+  getReadOnlyChapterMain2,
   getMainRW,
   getReadOnlyTicketHub,
   getTicketHub,
@@ -47,6 +49,11 @@ import {
   setPreferredRpc,
 } from "@/shared/utils/rpcConfig";
 import { buildFeeOverrides } from "@/shared/utils/txFees";
+import {
+  readActiveTicketChapterIds,
+  resolveActiveTicketChapterId,
+  resolveRedeemableTicketForActiveChapter,
+} from "@/shared/utils/ticketChapters.js";
 import { isRateLimitedRpcError } from "@/shared/utils/rpcErrors";
 import { runWriteWithRpcRetry } from "@/shared/utils/writeRetry";
 import { coerceBool } from "@/shared/utils/boolean";
@@ -70,8 +77,12 @@ import {
   buildRewardClaimPayload,
   getAssetCompositeKey,
   getAssetContractAddress,
+  getAssetIdentity,
+  getAssetReference,
   getAssetTokenIdString,
+  isAssetReferenceMatch,
   normalizeAssetAddress,
+  normalizeAssetContractAddress,
 } from "@/shared/utils/assetIdentity.js";
 import {
   getArchiveProvider,
@@ -227,16 +238,11 @@ const resolvePanelAltFromRaw = (raw) => {
   if (!key) return null;
   if (["rewards", "reward", "weekly"].includes(key)) return "REWARDS";
   if (["collection", "blocks", "nft"].includes(key)) return "COLLECTION";
-  if (["vrf", "mint", "vrf-mint", "vrf mint"].includes(key))
-    return "VRF MINT";
+  if (["vrf", "mint", "vrf-mint", "vrf mint"].includes(key)) return "VRF MINT";
   if (
-    [
-      "ecosystem",
-      "biggi ecosystem",
-      "token",
-      "tokenomics",
-      "biggi",
-    ].includes(key)
+    ["ecosystem", "biggi ecosystem", "token", "tokenomics", "biggi"].includes(
+      key,
+    )
   )
     return "BIGGI ECOSYSTEM";
   if (["users", "user", "wallet"].includes(key)) return "USERS";
@@ -276,7 +282,9 @@ const readPanelStateFromHref = (href) => {
       }
     }
 
-    const panelAlt = resolvePanelAltFromRaw(params.get("panel") || params.get("p"));
+    const panelAlt = resolvePanelAltFromRaw(
+      params.get("panel") || params.get("p"),
+    );
     const wantsInfo = ["1", "true", "yes", "open"].includes(
       String(params.get("info") || params.get("i") || "")
         .trim()
@@ -402,7 +410,9 @@ async function resolveRewardCollectionScope(contract) {
     return "";
   };
 
-  const fallbackPrimary = normalizeAssetAddress(ADDR.COLLECTION_VRF || ADDR.MAIN);
+  const fallbackPrimary = normalizeAssetAddress(
+    ADDR.COLLECTION_VRF || ADDR.MAIN,
+  );
   const primaryCollectionAddress =
     (await readAddress("mainNFT", "main")) || fallbackPrimary;
   const secondaryCollectionAddress = await readAddress("main2NFT", "main2");
@@ -415,6 +425,7 @@ async function resolveRewardCollectionScope(contract) {
           primaryCollectionAddress,
           secondaryCollectionAddress,
           fallbackPrimary,
+          ...CORE_CHAPTERS.flatMap((chapter) => [chapter.main, chapter.main2]),
         ].filter(Boolean),
       ),
     ),
@@ -478,7 +489,7 @@ const LAST_MINTED_DEDUPE_MS = 10_000;
 const FULL_HISTORY = isFullHistoryEnabled();
 
 const WALLET_CACHE_TTL = 5 * 60 * 1000;
-const WALLET_CACHE_VERSION = "v6-mainnet";
+const WALLET_CACHE_VERSION = "v7-core-series";
 const TOP_FIRST_CACHE_VERSION = "v2-mainnet";
 const LAST_MINTED_CACHE_VERSION = "v2-mainnet";
 const PENDING_REFERRAL_CACHE_VERSION = "v1";
@@ -490,7 +501,7 @@ function activeCacheChainId() {
 }
 
 function activeCacheMainContract() {
-  return String(ADDR?.COLLECTION_VRF || ADDR?.MAIN || "").toLowerCase();
+  return String(ADDR?.TICKET_HUB || ADDR?.COLLECTION_VRF || "").toLowerCase();
 }
 
 function activeCacheScope() {
@@ -546,21 +557,26 @@ function loadTopFirstCache(addr) {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object") return null;
-    const id = String(parsed.tokenId || "").trim();
-    return id || null;
+    const reference = String(parsed.reference || parsed.tokenId || "").trim();
+    return reference || null;
   } catch {
     return null;
   }
 }
 
-function saveTopFirstCache(addr, tokenId) {
+function saveTopFirstCache(addr, reference) {
   try {
     if (!addr) return;
-    if (!tokenId) return;
+    if (!reference) return;
     if (typeof window === "undefined" || !window.localStorage) return;
+    const normalizedReference = String(reference).trim();
+    const tokenId = normalizedReference.includes(":")
+      ? normalizedReference.slice(normalizedReference.lastIndexOf(":") + 1)
+      : normalizedReference;
     const payload = JSON.stringify({
       ts: Date.now(),
-      tokenId: String(tokenId),
+      reference: normalizedReference,
+      tokenId,
     });
     window.localStorage.setItem(topFirstCacheKey(addr), payload);
   } catch {
@@ -579,7 +595,11 @@ function pendingReferralCacheKey() {
 function consumedReferralCacheKey(addr, ref) {
   return `biggi_registered_referral_${CONSUMED_REFERRAL_CACHE_VERSION}_${String(
     addr || "",
-  ).toLowerCase()}_${encodeURIComponent(String(ref || "").trim().toLowerCase())}`;
+  ).toLowerCase()}_${encodeURIComponent(
+    String(ref || "")
+      .trim()
+      .toLowerCase(),
+  )}`;
 }
 
 function loadPendingReferralCache() {
@@ -653,11 +673,15 @@ function normalizeLastMintedPayload(payload) {
   const image = String(payload.image || "").trim() || PLACEHOLDER_IMAGE;
   const blockName = String(payload.blockName || "").trim() || "-";
   const backgroundName = String(payload.backgroundName || "").trim() || "-";
+  const contractAddress = normalizeAssetAddress(payload.contractAddress);
+  const chapterId = Number(payload.chapterId || 0) || null;
   return {
     tokenId,
     image,
     blockName,
     backgroundName,
+    contractAddress,
+    chapterId,
   };
 }
 
@@ -667,7 +691,7 @@ function scopeLastMintedPayload(payload) {
   return {
     ...normalized,
     chainId: activeCacheChainId(),
-    contractAddress: activeCacheMainContract(),
+    scopeContractAddress: activeCacheMainContract(),
   };
 }
 
@@ -698,7 +722,8 @@ function isCurrentScopedLastMintedPayload(payload) {
   const expectedContract = activeCacheMainContract();
   if (
     expectedContract &&
-    String(payload?.contractAddress || "").toLowerCase() !== expectedContract
+    String(payload?.scopeContractAddress || "").toLowerCase() !==
+      expectedContract
   ) {
     return false;
   }
@@ -1102,10 +1127,7 @@ function useIsMobile(breakpoint = 700) {
     const height = Number(window.innerHeight) || 0;
     const landscape = width > height;
     const tallTouchDesktopViewport =
-      likelyPhoneOrTablet &&
-      !landscape &&
-      width > breakpoint &&
-      width <= 980;
+      likelyPhoneOrTablet && !landscape && width > breakpoint && width <= 980;
     const shortLandscapeViewport = height > 0 && height <= 500;
     const shortDesktopLikeViewport =
       landscape &&
@@ -1199,7 +1221,8 @@ const ICONS = [
     src: "/images/icons/token.optimized.png",
     fallbackSrc: "/images/icons/token.fallback.png",
     alt: "BIGGI ECOSYSTEM",
-    title: "BIGGI Ecosystem: tokenomics, treasury, buyback, drip, and liquidity",
+    title:
+      "BIGGI Ecosystem: tokenomics, treasury, buyback, drip, and liquidity",
     ariaLabel:
       "Open BIGGI Ecosystem: tokenomics, treasury, buyback, drip, and liquidity",
     modalText: MODAL_TEXTS.chance || "",
@@ -1210,7 +1233,8 @@ const ICONS = [
     fallbackSrc: "/images/icons/users.fallback.png",
     alt: "USERS",
     title: "User panel: wallet NFTs, tickets, rewards, and transactions",
-    ariaLabel: "Open User panel: wallet NFTs, tickets, rewards, and transactions",
+    ariaLabel:
+      "Open User panel: wallet NFTs, tickets, rewards, and transactions",
     modalText: "",
     eager: true,
   },
@@ -1452,11 +1476,7 @@ async function assertContractDeployed(contract, provider, label = "Contract") {
   return addr;
 }
 
-async function contractSupportsFunctionSelector(
-  contract,
-  provider,
-  selector,
-) {
+async function contractSupportsFunctionSelector(contract, provider, selector) {
   const addr = await resolveContractAddress(contract);
   if (!addr || !provider || typeof provider.getCode !== "function") {
     return false;
@@ -1479,7 +1499,9 @@ async function contractSupportsFunctionSelector(
     code = await fallbackProvider.getCode(addr).catch(() => "");
   }
 
-  return String(code || "").toLowerCase().includes(needle);
+  return String(code || "")
+    .toLowerCase()
+    .includes(needle);
 }
 
 function isMissingRevertDataError(err) {
@@ -1858,7 +1880,9 @@ export default function AppCore() {
   });
   const [autoOpenInfoPanel, setAutoOpenInfoPanel] = React.useState(() => {
     if (typeof window === "undefined") return null;
-    const { panelAlt, wantsInfo } = readPanelStateFromHref(window.location.href);
+    const { panelAlt, wantsInfo } = readPanelStateFromHref(
+      window.location.href,
+    );
     return wantsInfo && panelAlt ? panelAlt : null;
   });
   const [walletAddress, setWalletAddress] = React.useState("");
@@ -2003,12 +2027,15 @@ export default function AppCore() {
   }, [lastMinted]);
   React.useEffect(() => {
     if (!walletAddress || !topFirstId) return;
-    const topId = String(topFirstId);
+    const topReference = String(topFirstId);
     const topItem = (Array.isArray(myNFTs) ? myNFTs : []).find(
-      (item) => item && String(item.tokenId || "") === topId,
+      (item) => item && isAssetReferenceMatch(item, topReference),
     );
     if (!topItem || isTicketLikeItem(topItem)) return;
-    saveTopFirstCache(walletAddress, topId);
+    const exactReference = getAssetReference(topItem);
+    if (!exactReference) return;
+    saveTopFirstCache(walletAddress, exactReference);
+    if (exactReference !== topReference) setTopFirstId(exactReference);
   }, [walletAddress, topFirstId, myNFTs]);
 
   const restoreTopFirstForAddress = React.useCallback((addr) => {
@@ -2193,7 +2220,10 @@ export default function AppCore() {
     (idx) => {
       if (!Number.isInteger(idx) || idx < 0 || idx >= ICONS.length) return;
 
-      if (typeof window !== "undefined" && panelReturnScrollYRef.current == null) {
+      if (
+        typeof window !== "undefined" &&
+        panelReturnScrollYRef.current == null
+      ) {
         panelReturnScrollYRef.current =
           window.scrollY ||
           window.pageYOffset ||
@@ -2976,12 +3006,37 @@ export default function AppCore() {
     return { prices, blkCounts, bgCounts };
   }, []);
 
+  const resolveDisplayedChapterMain = React.useCallback(async () => {
+    const fallback = getReadOnlyContract();
+    const provider = getProviderFor(fallback);
+    const ticketHub = getReadOnlyTicketHub(provider);
+    const activeChapterIds = await readActiveTicketChapterIds(ticketHub).catch(
+      () => [],
+    );
+    if (activeChapterIds.length === 1) {
+      const chapterId = activeChapterIds[0];
+      return {
+        chapterId,
+        activeChapterCount: 1,
+        contract: getReadOnlyChapterMain(chapterId, provider),
+      };
+    }
+    return {
+      chapterId: 1,
+      activeChapterCount: activeChapterIds.length,
+      contract: fallback,
+    };
+  }, []);
+
   const fetchStats = React.useCallback(async () => {
     if (isRpcBackoffActive()) return;
     let snapshotUsed = false;
+    const displayedChapter = await resolveDisplayedChapterMain();
+    const displayedMain = displayedChapter.contract;
 
     // 1) Prefer reader snapshot for scalar stats
     try {
+      if (displayedChapter.chapterId !== 1) throw new Error("READER_CHAPTER_MISMATCH");
       const readerKinds = ["main", "tokenomics", "REWARDS", "generic"];
       let snap = null;
 
@@ -3014,18 +3069,22 @@ export default function AppCore() {
         snapshotUsed = true;
       }
     } catch (e) {
-      if (isRateLimitedRpcError(e)) {
+      if (e?.message === "READER_CHAPTER_MISMATCH") {
+        // The deployed MainReader is bound to chapter 1; direct reads below
+        // are authoritative for later active chapters.
+      } else if (isRateLimitedRpcError(e)) {
         engageRpcBackoff();
         recoverRpcConnectivity("fetchStats(reader)").catch(() => {});
         return;
+      } else {
+        console.warn("fetchStats(reader) failed", e);
       }
-      console.warn("fetchStats(reader) failed", e);
     }
 
     // 2) Always refresh block/bG arrays from MAIN with index-base detection.
     // This prevents stale/misaligned reader arrays from freezing dynamic prices.
     try {
-      const main = contractRef.current || getReadOnlyContract();
+      const main = displayedMain;
       const ticketHub = getReadOnlyTicketHub();
       readTicketHubStatus(ticketHub).catch(() => {});
 
@@ -3081,6 +3140,7 @@ export default function AppCore() {
   }, [
     readMainBlockStats,
     readTicketHubStatus,
+    resolveDisplayedChapterMain,
     isRpcBackoffActive,
     engageRpcBackoff,
     recoverRpcConnectivity,
@@ -3113,8 +3173,6 @@ export default function AppCore() {
   const fetchREWARDS = React.useCallback(async () => {
     if (isRpcBackoffActive()) return;
     try {
-      const main = contractRef.current || getReadOnlyContract();
-
       // mint volume
       const volumeCandidates = [
         "totalMintVolume",
@@ -3125,7 +3183,23 @@ export default function AppCore() {
         "accMintValue",
         "mintedValue",
       ];
-      const volWei = await callFirst(main, volumeCandidates);
+      const provider = getSharedROProvider();
+      const collectionContracts = CORE_CHAPTERS.flatMap((chapter) => [
+        getReadOnlyChapterMain(chapter.chapterId, provider),
+        getReadOnlyChapterMain2(chapter.chapterId, provider),
+      ]);
+      const volumeValues = await Promise.all(
+        collectionContracts.map((contract) =>
+          callFirst(contract, volumeCandidates).catch(() => null),
+        ),
+      );
+      const volWei = volumeValues.some((value) => value != null)
+        ? volumeValues.reduce(
+            (sum, value) =>
+              sum + BigInt(value?.toString?.() || "0"),
+            0n,
+          )
+        : null;
       if (volWei != null) setMintVolumeMatic(toNumEth(volWei));
       else setMintVolumeMatic(null);
 
@@ -3147,8 +3221,6 @@ export default function AppCore() {
 
       if (weeklyWei != null && !isZeroish(weeklyWei)) {
         setRewardPool(toNumEth(weeklyWei) ?? 0);
-      } else if (volWei != null) {
-        setRewardPool((toNumEth(volWei) ?? 0) * 0.22);
       } else {
         setRewardPool(0);
       }
@@ -3357,17 +3429,46 @@ export default function AppCore() {
       try {
         const tokenId = nft?.tokenId != null ? String(nft.tokenId) : "";
         if (!tokenId) return;
-        if (dynamicTraitsById[tokenId]) return;
+        const assetKey = getAssetIdentity(nft, ADDR.COLLECTION_VRF || ADDR.MAIN);
+        if (!assetKey) return;
+        if (dynamicTraitsById[assetKey] || dynamicTraitsById[tokenId]) return;
 
-        const reader =
-          getCachedReaderInstance("main") ||
-          getCachedReaderInstance("tokenomics") ||
-          getCachedReaderInstance("generic");
+        const contractAddress = normalizeAssetContractAddress(
+          nft?.contractAddress,
+        );
+        const chapter = CORE_CHAPTERS.find(
+          (item) =>
+            normalizeAssetContractAddress(item.main) === contractAddress ||
+            normalizeAssetContractAddress(item.main2) === contractAddress,
+        );
 
-        if (!reader || typeof reader.getMintDataByTokenId !== "function")
-          return;
+        let res = null;
+        if (chapter) {
+          const isVrf =
+            normalizeAssetContractAddress(chapter.main) === contractAddress;
+          const collection = isVrf
+            ? getReadOnlyChapterMain(chapter.chapterId)
+            : getReadOnlyChapterMain2(chapter.chapterId);
+          const nftIndex = toMainNftIndexFromTokenId(tokenId, {
+            maxSupply: 550,
+            allowLegacy: true,
+          });
+          if (nftIndex != null && typeof collection?.getMintData === "function") {
+            res = await collection.getMintData(nftIndex).catch(() => null);
+          }
+        }
 
-        const res = await reader.getMintDataByTokenId(BigInt(tokenId));
+        if (!res) {
+          const reader =
+            getCachedReaderInstance("main") ||
+            getCachedReaderInstance("tokenomics") ||
+            getCachedReaderInstance("generic");
+
+          if (!reader || typeof reader.getMintDataByTokenId !== "function")
+            return;
+
+          res = await reader.getMintDataByTokenId(BigInt(tokenId));
+        }
         const ticket = toNumEth(res?.[0]);
         const block = toNumEth(res?.[1]);
         const final = toNumEth(res?.[2]);
@@ -3378,7 +3479,7 @@ export default function AppCore() {
         if (final != null) next.mintFinal = final;
 
         if (Object.keys(next).length) {
-          setDynamicTraitsById((prev) => ({ ...prev, [tokenId]: next }));
+          setDynamicTraitsById((prev) => ({ ...prev, [assetKey]: next }));
         }
       } catch {
         // ignore best-effort dynamic traits
@@ -3627,8 +3728,8 @@ export default function AppCore() {
     [findTicketsViaLogs, maxSupply, isTransientRpcReadError],
   );
 
-  const fetchOwnedNFTsViaTransfers = React.useCallback(
-    async (addr) => {
+  const fetchOwnedNFTsFromCollection = React.useCallback(
+    async (addr, collection) => {
       try {
         const topicToAddress = (topic) => {
           if (!topic || typeof topic !== "string") return "";
@@ -3689,8 +3790,13 @@ export default function AppCore() {
           return out;
         };
 
+        const createCollectionContract = () =>
+          collection.collectionType === "public"
+            ? getReadOnlyChapterMain2(collection.chapterId)
+            : getReadOnlyChapterMain(collection.chapterId);
+
         const getProviderSafe = async () => {
-          let c = contractRef.current || getReadOnlyContract();
+          let c = createCollectionContract();
           let p = getProviderFor(c);
           if (!p) throw new Error("Provider not available");
           try {
@@ -3705,8 +3811,7 @@ export default function AppCore() {
               // ignore health probe failures
             }
             resetROProvider();
-            c = getReadOnlyContract();
-            contractRef.current = c;
+            c = createCollectionContract();
             p = getProviderFor(c);
             if (p) {
               const latestBlock = await p.getBlockNumber();
@@ -3766,11 +3871,15 @@ export default function AppCore() {
           return true;
         };
 
-        // Prefer reader-based owner token id queries if available (fast + avoids archive log scans).
+        // The current reader is chapter-1 VRF specific. Other collections use
+        // their own enumerable methods or Transfer logs.
         // If this returns data, we only fall back to Transfer logs when necessary.
         let tokenIdsFromReader = null;
         try {
-          const reader = getCachedReaderInstance("main");
+          const reader =
+            collection.chapterId === 1 && collection.collectionType === "vrf"
+              ? getCachedReaderInstance("main")
+              : null;
           if (reader) {
             if (typeof reader.getUserRewardTokenIds === "function") {
               const res = await reader
@@ -3989,6 +4098,9 @@ export default function AppCore() {
 
         if (!tokenIds.length) {
           const balBeforeLogs = await readBalance();
+          if (balBeforeLogs != null && !hasPositiveBalance(balBeforeLogs)) {
+            return [];
+          }
           if (hasPositiveBalance(balBeforeLogs)) {
             tokenIds = await collectOwnedViaDirectOwnerReads();
             if (
@@ -4208,7 +4320,6 @@ export default function AppCore() {
           }
         }
         if (!tokenIds.length) {
-          saveWalletCache(addr, []);
           return [];
         }
 
@@ -4230,6 +4341,8 @@ export default function AppCore() {
           },
           isTicket: false,
           contractAddress: contract?.target || contract?.address || null,
+          chapterId: collection.chapterId,
+          collectionType: collection.collectionType,
         });
         const findMetaAttrValue = (meta, names = []) => {
           const attrs = Array.isArray(meta?.attributes) ? meta.attributes : [];
@@ -4259,9 +4372,15 @@ export default function AppCore() {
             );
             const parsed = infoRead?.parsed || parseNftInfo(infoRead?.info);
             if (parsed) {
-              blockName = String(parsed.blockName || "").trim().toUpperCase();
-              backgroundName = String(parsed.bgName || "").trim().toUpperCase();
-              bgCode = String(parsed.bgCode || "").trim().toUpperCase();
+              blockName = String(parsed.blockName || "")
+                .trim()
+                .toUpperCase();
+              backgroundName = String(parsed.bgName || "")
+                .trim()
+                .toUpperCase();
+              bgCode = String(parsed.bgCode || "")
+                .trim()
+                .toUpperCase();
               mainId =
                 normalizeMainImageId(parsed.mainId, tokenId, maxSupplyHint) ||
                 displayMainId;
@@ -4275,8 +4394,12 @@ export default function AppCore() {
               const uri = await getTokenUriCached(contract, tokenId);
               const parsed = parseTokenUriParts(uri);
               if (parsed) {
-                blockName ||= String(parsed.blockName || "").trim().toUpperCase();
-                bgCode ||= String(parsed.bgCode || "").trim().toUpperCase();
+                blockName ||= String(parsed.blockName || "")
+                  .trim()
+                  .toUpperCase();
+                bgCode ||= String(parsed.bgCode || "")
+                  .trim()
+                  .toUpperCase();
                 backgroundName ||= String(
                   bgNameFromCode(parsed.bgCode) || parsed.bgCode || "",
                 )
@@ -4291,12 +4414,15 @@ export default function AppCore() {
             }
           }
 
-          const attrs = mergeAttrs(fallbackItem.meta?.attributes, [
-            blockName ? { trait_type: "Block", value: blockName } : null,
-            backgroundName
-              ? { trait_type: "Background", value: backgroundName }
-              : null,
-          ].filter(Boolean));
+          const attrs = mergeAttrs(
+            fallbackItem.meta?.attributes,
+            [
+              blockName ? { trait_type: "Block", value: blockName } : null,
+              backgroundName
+                ? { trait_type: "Background", value: backgroundName }
+                : null,
+            ].filter(Boolean),
+          );
           let image = PLACEHOLDER_IMAGE;
           if (blockName && bgCode && mainId) {
             const fileName = `Biggi_${mainId}_${blockName}_${bgCode}.png`;
@@ -4649,11 +4775,12 @@ export default function AppCore() {
                   meta,
                   isTicket: finalIsTicket,
                   blockName: finalIsTicket ? "-" : resolvedBlockName,
-                  backgroundName:
-                    finalIsTicket ? "-" : resolvedBackgroundName,
+                  backgroundName: finalIsTicket ? "-" : resolvedBackgroundName,
                   mainId: finalIsTicket ? null : resolvedMainId,
                   contractAddress:
                     contract?.target || contract?.address || null,
+                  chapterId: collection.chapterId,
+                  collectionType: collection.collectionType,
                 };
               })(),
               perTokenHydrateTimeoutMs,
@@ -4677,7 +4804,6 @@ export default function AppCore() {
           tokenIds: tokenIds.length,
           resolved: resolved.length,
         });
-        saveWalletCache(addr, resolved);
         return resolved;
       } catch (e) {
         if (isTransientRpcReadError(e)) {
@@ -4692,28 +4818,68 @@ export default function AppCore() {
     [enrichMetaWithPrices, maxSupply, isTransientRpcReadError],
   );
 
+  const fetchOwnedNFTsViaTransfers = React.useCallback(
+    async (addr) => {
+      const collections = CORE_CHAPTERS.flatMap((chapter) => [
+        {
+          chapterId: chapter.chapterId,
+          collectionType: "vrf",
+          address: chapter.main,
+        },
+        {
+          chapterId: chapter.chapterId,
+          collectionType: "public",
+          address: chapter.main2,
+        },
+      ]);
+      const batches = await mapLimit(collections, 2, async (collection) =>
+        fetchOwnedNFTsFromCollection(addr, collection),
+      );
+      const merged = new Map();
+      for (const item of batches.flat().filter(Boolean)) {
+        merged.set(getAssetCompositeKey(item), item);
+      }
+      const resolved = Array.from(merged.values());
+      saveWalletCache(addr, resolved);
+      return resolved;
+    },
+    [fetchOwnedNFTsFromCollection],
+  );
+
   const mergeWithTopFirst = React.useCallback(
     (finalList, preferredTopId = null) => {
       return setMyNFTs((prev) => {
         const pending = prev.find((x) => x.isPending);
         if (VRFPending && pending) {
-          const minted = finalList.find(
-            (x) => x.tokenId === pending.tokenId && !x.isPending && !x.isTicket,
+          const expectedCollection = normalizeAssetAddress(
+            pending.expectedCollectionAddress,
           );
+          const mintedIndex = finalList.findIndex(
+            (x) =>
+              x.tokenId === pending.tokenId &&
+              !x.isPending &&
+              !x.isTicket &&
+              (!expectedCollection ||
+                getAssetContractAddress(x) === expectedCollection),
+          );
+          const minted = mintedIndex >= 0 ? finalList[mintedIndex] : null;
           if (minted) {
-            const rest = finalList.filter((x) => x.tokenId !== pending.tokenId);
+            const rest = finalList.filter((_, index) => index !== mintedIndex);
             return [minted, ...rest];
           }
           const dedup = finalList.filter(
-            (x) => !x.isPending && x.tokenId !== pending.tokenId,
+            (x) => !x.isPending,
           );
           return [pending, ...dedup];
         }
         const targetTopId =
           preferredTopId != null ? String(preferredTopId) : topFirstId;
         if (targetTopId) {
-          const top = finalList.find((x) => x.tokenId === targetTopId);
-          const rest = finalList.filter((x) => x.tokenId !== targetTopId);
+          const topIndex = finalList.findIndex(
+            (x) => isAssetReferenceMatch(x, targetTopId),
+          );
+          const top = topIndex >= 0 ? finalList[topIndex] : null;
+          const rest = finalList.filter((_, index) => index !== topIndex);
           return top ? [top, ...rest] : finalList;
         }
         return finalList;
@@ -4758,8 +4924,7 @@ export default function AppCore() {
       }
 
       const contractForCache = contractRef.current || getReadOnlyContract();
-      const contractAddr =
-        contractForCache?.target || contractForCache?.address || null;
+      const contractAddr = ADDR.TICKET_HUB || null;
       const providerForDebug = getProviderFor(contractForCache);
       const providerRpcUrl =
         getProviderRpcUrl(providerForDebug) || getPreferredRpc() || "";
@@ -5233,18 +5398,32 @@ export default function AppCore() {
           const currentTopId = topIdForThisFetch;
           const currentTopStillVisible =
             currentTopId != null &&
-            merged.some(
-              (item) => item && String(item.tokenId || "") === currentTopId,
+            merged.some((item) =>
+              isAssetReferenceMatch(item, currentTopId),
             );
 
           let effectiveTopId = currentTopStillVisible ? currentTopId : null;
 
           if (resolvedMintedId) {
             const resolvedId = String(resolvedMintedId);
+            const pendingCollection = normalizeAssetAddress(
+              prevSnapshot.find((item) => item?.isPending)
+                ?.expectedCollectionAddress,
+            );
+            const resolvedItem = merged.find(
+              (item) =>
+                item &&
+                !isTicketLikeItem(item) &&
+                String(item.tokenId || "") === resolvedId &&
+                (!pendingCollection ||
+                  getAssetContractAddress(item) === pendingCollection),
+            );
+            const resolvedReference =
+              getAssetReference(resolvedItem) || resolvedId;
             lastRedeemTicketIdRef.current = null;
-            setTopFirstId(resolvedId);
-            saveTopFirstCache(addr, resolvedId);
-            effectiveTopId = resolvedId;
+            setTopFirstId(resolvedReference);
+            saveTopFirstCache(addr, resolvedReference);
+            effectiveTopId = resolvedReference;
           }
 
           mergeWithTopFirst(merged, effectiveTopId);
@@ -5362,330 +5541,383 @@ export default function AppCore() {
 
       const exec = (async () => {
         try {
-        const contract = contractRef.current || getReadOnlyContract();
-        const provider = getProviderFor(contract);
-        if (!provider) throw new Error("Provider not available");
-        let total = null;
-        try {
-          const totalRaw = await callFirst(contract, [
-            "biggiMinted",
-            "totalSupply",
-            "totalMinted",
-            "nftMinted",
-            "minted",
-          ]);
-          if (totalRaw != null) {
-            const totalStr =
-              typeof totalRaw?.toString === "function"
-                ? totalRaw.toString()
-                : totalRaw;
-            const totalNum = Number(totalStr);
-            if (Number.isFinite(totalNum)) total = totalNum;
+          const displayedChapter = await resolveDisplayedChapterMain();
+          const contract = displayedChapter.contract;
+          const provider = getProviderFor(contract);
+          if (!provider) throw new Error("Provider not available");
+          let total = null;
+          try {
+            const totalRaw = await callFirst(contract, [
+              "biggiMinted",
+              "totalSupply",
+              "totalMinted",
+              "nftMinted",
+              "minted",
+            ]);
+            if (totalRaw != null) {
+              const totalStr =
+                typeof totalRaw?.toString === "function"
+                  ? totalRaw.toString()
+                  : totalRaw;
+              const totalNum = Number(totalStr);
+              if (Number.isFinite(totalNum)) total = totalNum;
+            }
+          } catch {}
+
+          if (total != null && total <= 0) {
+            setLastMinted({ ...EMPTY_LAST_MINTED });
+            return;
           }
-        } catch {}
 
-        if (total != null && total <= 0) {
-          setLastMinted({ ...EMPTY_LAST_MINTED });
-          return;
-        }
+          const parsedTotal = Number(total);
+          const parsedMaxSupply = Number(maxSupply);
+          let candidateUpperBoundBase = 0;
+          if (Number.isFinite(parsedTotal) && parsedTotal > 0) {
+            candidateUpperBoundBase = Math.max(
+              candidateUpperBoundBase,
+              Math.trunc(parsedTotal),
+            );
+          }
+          if (Number.isFinite(parsedMaxSupply) && parsedMaxSupply > 0) {
+            candidateUpperBoundBase = Math.max(
+              candidateUpperBoundBase,
+              Math.trunc(parsedMaxSupply),
+            );
+          }
+          // Token IDs can be significantly higher than current minted/supply counters
+          // (historical migrations / sparse IDs). Keep a wide safety margin to reject
+          // obvious junk values while allowing valid higher IDs.
+          const candidateUpperBoundBigInt =
+            candidateUpperBoundBase > 0
+              ? BigInt(Math.max(candidateUpperBoundBase * 10_000, 1_000_000))
+              : null;
 
-        const parsedTotal = Number(total);
-        const parsedMaxSupply = Number(maxSupply);
-        let candidateUpperBoundBase = 0;
-        if (Number.isFinite(parsedTotal) && parsedTotal > 0) {
-          candidateUpperBoundBase = Math.max(
-            candidateUpperBoundBase,
-            Math.trunc(parsedTotal),
-          );
-        }
-        if (Number.isFinite(parsedMaxSupply) && parsedMaxSupply > 0) {
-          candidateUpperBoundBase = Math.max(
-            candidateUpperBoundBase,
-            Math.trunc(parsedMaxSupply),
-          );
-        }
-        // Token IDs can be significantly higher than current minted/supply counters
-        // (historical migrations / sparse IDs). Keep a wide safety margin to reject
-        // obvious junk values while allowing valid higher IDs.
-        const candidateUpperBoundBigInt =
-          candidateUpperBoundBase > 0
-            ? BigInt(Math.max(candidateUpperBoundBase * 10_000, 1_000_000))
-            : null;
+          const candidates = [];
+          let authoritativeMintLogs = false;
+          try {
+            const latest = await provider.getBlockNumber();
+            const baseFrom = await getSafeDeployBlock(provider);
+            const latestNum = Number(latest ?? 0);
+            const safeLatest =
+              Number.isFinite(latestNum) && latestNum >= 0 ? latestNum : 0;
 
-        const candidates = [];
-        let authoritativeMintLogs = false;
-        try {
-          const latest = await provider.getBlockNumber();
-          const baseFrom = await getSafeDeployBlock(provider);
-          const latestNum = Number(latest ?? 0);
-          const safeLatest =
-            Number.isFinite(latestNum) && latestNum >= 0 ? latestNum : 0;
-
-          const runLogQuery = async (
-            filter,
-            fromBlock,
-            toBlock,
-            options = {},
-          ) => {
-            try {
-              return await queryLogsBatched(
-                contract,
-                filter,
-                fromBlock,
-                toBlock,
-                LOGS_BATCH,
-                {
-                  preferArchive: options.preferArchive === true,
-                  fullHistory: options.fullHistory === true,
-                  disableLookbackClamp: options.disableLookbackClamp === true,
-                },
-              );
-            } catch (err) {
-              const msg = String(err?.message || "");
-              if (/invalid block range params/i.test(msg)) {
-                const fallbackTo = Math.max(0, safeLatest - 1);
-                const fallbackFrom = Math.max(0, fallbackTo - 8_000);
+            const runLogQuery = async (
+              filter,
+              fromBlock,
+              toBlock,
+              options = {},
+            ) => {
+              try {
                 return await queryLogsBatched(
                   contract,
                   filter,
-                  fallbackFrom,
-                  fallbackTo,
+                  fromBlock,
+                  toBlock,
                   LOGS_BATCH,
                   {
                     preferArchive: options.preferArchive === true,
                     fullHistory: options.fullHistory === true,
-                    disableLookbackClamp:
-                      options.disableLookbackClamp === true,
+                    disableLookbackClamp: options.disableLookbackClamp === true,
                   },
                 );
+              } catch (err) {
+                const msg = String(err?.message || "");
+                if (/invalid block range params/i.test(msg)) {
+                  const fallbackTo = Math.max(0, safeLatest - 1);
+                  const fallbackFrom = Math.max(0, fallbackTo - 8_000);
+                  return await queryLogsBatched(
+                    contract,
+                    filter,
+                    fallbackFrom,
+                    fallbackTo,
+                    LOGS_BATCH,
+                    {
+                      preferArchive: options.preferArchive === true,
+                      fullHistory: options.fullHistory === true,
+                      disableLookbackClamp:
+                        options.disableLookbackClamp === true,
+                    },
+                  );
+                }
+                throw err;
               }
-              throw err;
-            }
-          };
+            };
 
-          const collectFromLogs = (
-            sourceLogs,
-            { tokenIndex = 1, allowIndexFallback = false } = {},
-          ) => {
-            if (!Array.isArray(sourceLogs) || !sourceLogs.length) return 0;
-            let added = 0;
-            for (let i = sourceLogs.length - 1; i >= 0; i -= 1) {
-              const args = sourceLogs[i]?.args;
-              const tokenIdArg =
-                safeLogArg(args, "tokenId") ??
-                safeLogArg(args, "tokenID") ??
-                safeLogArg(args, "_tokenId") ??
-                safeLogArg(args, "id") ??
-                (allowIndexFallback
-                  ? safeLogArg(args, null, tokenIndex)
-                  : undefined);
-              const idBI = toTokenIdBigIntSafe(tokenIdArg);
-              if (idBI == null || idBI <= 0n) continue;
+            const collectFromLogs = (
+              sourceLogs,
+              { tokenIndex = 1, allowIndexFallback = false } = {},
+            ) => {
+              if (!Array.isArray(sourceLogs) || !sourceLogs.length) return 0;
+              let added = 0;
+              for (let i = sourceLogs.length - 1; i >= 0; i -= 1) {
+                const args = sourceLogs[i]?.args;
+                const tokenIdArg =
+                  safeLogArg(args, "tokenId") ??
+                  safeLogArg(args, "tokenID") ??
+                  safeLogArg(args, "_tokenId") ??
+                  safeLogArg(args, "id") ??
+                  (allowIndexFallback
+                    ? safeLogArg(args, null, tokenIndex)
+                    : undefined);
+                const idBI = toTokenIdBigIntSafe(tokenIdArg);
+                if (idBI == null || idBI <= 0n) continue;
+                if (
+                  candidateUpperBoundBigInt != null &&
+                  idBI > candidateUpperBoundBigInt
+                ) {
+                  continue;
+                }
+                candidates.push(idBI.toString());
+                added += 1;
+              }
+              return added;
+            };
+
+            const querySource = async ({
+              label,
+              buildFilter,
+              tokenIndex = 1,
+              allowIndexFallback = false,
+              authoritative = false,
+              fromBlock,
+              toBlock,
+              options,
+            }) => {
+              try {
+                const filter = buildFilter?.();
+                if (!filter) return 0;
+                const sourceLogs = await runLogQuery(
+                  filter,
+                  fromBlock,
+                  toBlock,
+                  options,
+                );
+                const count = collectFromLogs(sourceLogs, {
+                  tokenIndex,
+                  allowIndexFallback,
+                });
+                if (count > 0 && authoritative) authoritativeMintLogs = true;
+                return count;
+              } catch (err) {
+                if (isTransientRpcReadError(err)) {
+                  console.debug(
+                    `fetchLastMinted: ${label} log query failed`,
+                    err,
+                  );
+                } else {
+                  console.warn(
+                    `fetchLastMinted: ${label} log query failed`,
+                    err,
+                  );
+                }
+                return 0;
+              }
+            };
+
+            const eventSources = [
+              {
+                label: "NFTMinted",
+                buildFilter: () =>
+                  walletScopedAddress
+                    ? contract.filters?.NFTMinted?.(walletScopedAddress)
+                    : contract.filters?.NFTMinted?.(),
+                tokenIndex: 1,
+                allowIndexFallback: true,
+                authoritative: true,
+              },
+              {
+                label: "PublicMint",
+                buildFilter: () =>
+                  walletScopedAddress
+                    ? contract.filters?.PublicMint?.(walletScopedAddress)
+                    : contract.filters?.PublicMint?.(),
+                tokenIndex: 1,
+                allowIndexFallback: true,
+                authoritative: true,
+              },
+              {
+                label: "MintFulfilled",
+                buildFilter: () =>
+                  walletScopedAddress
+                    ? contract.filters?.MintFulfilled?.(walletScopedAddress)
+                    : contract.filters?.MintFulfilled?.(),
+                tokenIndex: 1,
+                allowIndexFallback: false,
+                authoritative: false,
+              },
+            ];
+
+            const scanRange = async (fromBlock, toBlock, options = {}) => {
+              const boundedFrom = Math.max(
+                0,
+                Math.min(Number(fromBlock) || 0, safeLatest),
+              );
+              const boundedTo = Math.max(
+                0,
+                Math.min(Number(toBlock) || safeLatest, safeLatest),
+              );
+              let finalFrom = boundedFrom;
+              let finalTo = boundedTo;
+              if (finalFrom >= finalTo && finalTo > 0) {
+                finalFrom = Math.max(0, finalTo - 1);
+              }
+              if (finalFrom > finalTo) return;
+
+              for (const source of eventSources) {
+                const count = await querySource({
+                  ...source,
+                  fromBlock: finalFrom,
+                  toBlock: finalTo,
+                  options,
+                });
+                if (count > 0) break;
+              }
+
+              if (!candidates.length) {
+                await querySource({
+                  label: "TransferMint",
+                  buildFilter: () =>
+                    contract.filters?.Transfer?.(
+                      ZERO_ADDRESS,
+                      walletScopedAddress || null,
+                      null,
+                    ),
+                  tokenIndex: 2,
+                  allowIndexFallback: true,
+                  authoritative: false,
+                  fromBlock: finalFrom,
+                  toBlock: finalTo,
+                  options,
+                });
+              }
+            };
+
+            const recentFromBase = Number(baseFrom);
+            const recentFrom =
+              Number.isFinite(recentFromBase) && recentFromBase >= 0
+                ? Math.max(
+                    Math.max(0, Math.min(recentFromBase, safeLatest)),
+                    Math.max(0, safeLatest - 60_000),
+                  )
+                : Math.max(0, safeLatest - 60_000);
+
+            await scanRange(recentFrom, safeLatest, {
+              preferArchive: false,
+              fullHistory: false,
+            });
+
+            if (!candidates.length) {
+              const historyFloor =
+                Number.isFinite(recentFromBase) && recentFromBase >= 0
+                  ? Math.max(0, Math.min(recentFromBase, safeLatest))
+                  : Math.max(0, safeLatest - 250_000);
+              let cursorTo = recentFrom > 0 ? recentFrom - 1 : -1;
+              let chunksScanned = 0;
+              while (
+                !candidates.length &&
+                cursorTo >= historyFloor &&
+                chunksScanned < 25
+              ) {
+                const cursorFrom = Math.max(
+                  historyFloor,
+                  cursorTo - LOGS_BATCH + 1,
+                );
+                await scanRange(cursorFrom, cursorTo, {
+                  preferArchive: false,
+                  fullHistory: false,
+                  disableLookbackClamp: true,
+                });
+                cursorTo = cursorFrom - 1;
+                chunksScanned += 1;
+              }
+            }
+          } catch (err) {
+            if (isTransientRpcReadError(err)) {
+              console.debug("fetchLastMinted: log scan skipped", err);
+            } else {
+              console.warn("fetchLastMinted: log scan skipped", err);
+            }
+          }
+
+          const uniqueCandidates = [...new Set(candidates)];
+
+          let ticketBaseUri = null;
+          try {
+            if (typeof contract?.ticketBaseURI === "function") {
+              const base = await contract.ticketBaseURI().catch(() => null);
+              if (base) ticketBaseUri = String(base);
+            }
+          } catch {
+            ticketBaseUri = null;
+          }
+          const normalizedTicketBase = normalizeBaseUri(ticketBaseUri);
+
+          let tokenId = "";
+          let seededUri = null;
+          let seededMeta = null;
+
+          for (const idStr of uniqueCandidates) {
+            if (!idStr || idStr === "0") continue;
+            if (walletScopedAddress && pendingId && idStr === pendingId)
+              continue;
+
+            if (authoritativeMintLogs) {
+              // Even authoritative logs can occasionally contain non-NFT IDs in this
+              // deployment layout. Accept only candidates with a non-ticket signal.
+              let isTicket = null;
+              if (typeof contract?.isTicket === "function") {
+                isTicket = await contract.isTicket(idStr).catch(() => null);
+              }
+              const isTicketFlag =
+                isTicket == null ? null : coerceBool(isTicket);
+              if (isTicketFlag === true) continue;
+              if (isTicketFlag == null && isCanonicalTicketTokenId(idStr))
+                continue;
               if (
-                candidateUpperBoundBigInt != null &&
-                idBI > candidateUpperBoundBigInt
+                !isLikelyMainCollectionNftTokenId(
+                  idStr,
+                  Number(maxSupply) || 550,
+                  isTicketFlag,
+                )
               ) {
                 continue;
               }
-              candidates.push(idBI.toString());
-              added += 1;
-            }
-            return added;
-          };
 
-          const querySource = async ({
-            label,
-            buildFilter,
-            tokenIndex = 1,
-            allowIndexFallback = false,
-            authoritative = false,
-            fromBlock,
-            toBlock,
-            options,
-          }) => {
-            try {
-              const filter = buildFilter?.();
-              if (!filter) return 0;
-              const sourceLogs = await runLogQuery(
-                filter,
-                fromBlock,
-                toBlock,
-                options,
-              );
-              const count = collectFromLogs(sourceLogs, {
-                tokenIndex,
-                allowIndexFallback,
-              });
-              if (count > 0 && authoritative) authoritativeMintLogs = true;
-              return count;
-            } catch (err) {
-              if (isTransientRpcReadError(err)) {
-                console.debug(
-                  `fetchLastMinted: ${label} log query failed`,
-                  err,
+              let uriTry = null;
+              let uriLooksTicket = false;
+              try {
+                uriTry = await getTokenUriCached(contract, idStr).catch(
+                  () => null,
                 );
-              } else {
-                console.warn(`fetchLastMinted: ${label} log query failed`, err);
+                uriLooksTicket = isTicketUri(uriTry, normalizedTicketBase);
+              } catch {
+                uriTry = null;
+                uriLooksTicket = false;
               }
-              return 0;
-            }
-          };
+              if (uriLooksTicket) continue;
 
-          const eventSources = [
-            {
-              label: "NFTMinted",
-              buildFilter: () =>
-                walletScopedAddress
-                  ? contract.filters?.NFTMinted?.(walletScopedAddress)
-                  : contract.filters?.NFTMinted?.(),
-              tokenIndex: 1,
-              allowIndexFallback: true,
-              authoritative: true,
-            },
-            {
-              label: "PublicMint",
-              buildFilter: () =>
-                walletScopedAddress
-                  ? contract.filters?.PublicMint?.(walletScopedAddress)
-                  : contract.filters?.PublicMint?.(),
-              tokenIndex: 1,
-              allowIndexFallback: true,
-              authoritative: true,
-            },
-            {
-              label: "MintFulfilled",
-              buildFilter: () =>
-                walletScopedAddress
-                  ? contract.filters?.MintFulfilled?.(walletScopedAddress)
-                  : contract.filters?.MintFulfilled?.(),
-              tokenIndex: 1,
-              allowIndexFallback: false,
-              authoritative: false,
-            },
-          ];
+              const hasStrongSignal = isTicketFlag === false || Boolean(uriTry);
+              if (!hasStrongSignal) continue;
 
-          const scanRange = async (fromBlock, toBlock, options = {}) => {
-            const boundedFrom = Math.max(
-              0,
-              Math.min(Number(fromBlock) || 0, safeLatest),
-            );
-            const boundedTo = Math.max(
-              0,
-              Math.min(Number(toBlock) || safeLatest, safeLatest),
-            );
-            let finalFrom = boundedFrom;
-            let finalTo = boundedTo;
-            if (finalFrom >= finalTo && finalTo > 0) {
-              finalFrom = Math.max(0, finalTo - 1);
-            }
-            if (finalFrom > finalTo) return;
-
-            for (const source of eventSources) {
-              const count = await querySource({
-                ...source,
-                fromBlock: finalFrom,
-                toBlock: finalTo,
-                options,
-              });
-              if (count > 0) break;
+              tokenId = idStr;
+              seededUri = uriTry;
+              if (uriTry) {
+                try {
+                  seededMeta = await readJsonFromURICached(uriTry).catch(
+                    () => null,
+                  );
+                } catch {
+                  // ignore prefetch errors; metadata is resolved later with fallbacks
+                }
+              }
+              break;
             }
 
-            if (!candidates.length) {
-              await querySource({
-                label: "TransferMint",
-                buildFilter: () =>
-                  contract.filters?.Transfer?.(
-                    ZERO_ADDRESS,
-                    walletScopedAddress || null,
-                    null,
-                  ),
-                tokenIndex: 2,
-                allowIndexFallback: true,
-                authoritative: false,
-                fromBlock: finalFrom,
-                toBlock: finalTo,
-                options,
-              });
-            }
-          };
-
-          const recentFromBase = Number(baseFrom);
-          const recentFrom =
-            Number.isFinite(recentFromBase) && recentFromBase >= 0
-              ? Math.max(
-                  Math.max(0, Math.min(recentFromBase, safeLatest)),
-                  Math.max(0, safeLatest - 60_000),
-                )
-              : Math.max(0, safeLatest - 60_000);
-
-          await scanRange(recentFrom, safeLatest, {
-            preferArchive: false,
-            fullHistory: false,
-          });
-
-          if (!candidates.length) {
-            const historyFloor =
-              Number.isFinite(recentFromBase) && recentFromBase >= 0
-                ? Math.max(0, Math.min(recentFromBase, safeLatest))
-                : Math.max(0, safeLatest - 250_000);
-            let cursorTo = recentFrom > 0 ? recentFrom - 1 : -1;
-            let chunksScanned = 0;
-            while (
-              !candidates.length &&
-              cursorTo >= historyFloor &&
-              chunksScanned < 25
-            ) {
-              const cursorFrom = Math.max(
-                historyFloor,
-                cursorTo - LOGS_BATCH + 1,
-              );
-              await scanRange(cursorFrom, cursorTo, {
-                preferArchive: false,
-                fullHistory: false,
-                disableLookbackClamp: true,
-              });
-              cursorTo = cursorFrom - 1;
-              chunksScanned += 1;
-            }
-          }
-        } catch (err) {
-          if (isTransientRpcReadError(err)) {
-            console.debug("fetchLastMinted: log scan skipped", err);
-          } else {
-            console.warn("fetchLastMinted: log scan skipped", err);
-          }
-        }
-
-        const uniqueCandidates = [...new Set(candidates)];
-
-        let ticketBaseUri = null;
-        try {
-          if (typeof contract?.ticketBaseURI === "function") {
-            const base = await contract.ticketBaseURI().catch(() => null);
-            if (base) ticketBaseUri = String(base);
-          }
-        } catch {
-          ticketBaseUri = null;
-        }
-        const normalizedTicketBase = normalizeBaseUri(ticketBaseUri);
-
-        let tokenId = "";
-        let seededUri = null;
-        let seededMeta = null;
-
-        for (const idStr of uniqueCandidates) {
-          if (!idStr || idStr === "0") continue;
-          if (walletScopedAddress && pendingId && idStr === pendingId) continue;
-
-          if (authoritativeMintLogs) {
-            // Even authoritative logs can occasionally contain non-NFT IDs in this
-            // deployment layout. Accept only candidates with a non-ticket signal.
             let isTicket = null;
             if (typeof contract?.isTicket === "function") {
               isTicket = await contract.isTicket(idStr).catch(() => null);
             }
             const isTicketFlag = isTicket == null ? null : coerceBool(isTicket);
-            if (isTicketFlag === true) continue;
             if (isTicketFlag == null && isCanonicalTicketTokenId(idStr))
               continue;
             if (
@@ -5697,128 +5929,47 @@ export default function AppCore() {
             ) {
               continue;
             }
-
             let uriTry = null;
+            let metaTry = null;
             let uriLooksTicket = false;
             try {
-              uriTry = await getTokenUriCached(contract, idStr).catch(
-                () => null,
-              );
-              uriLooksTicket = isTicketUri(uriTry, normalizedTicketBase);
-            } catch {
-              uriTry = null;
-              uriLooksTicket = false;
-            }
-            if (uriLooksTicket) continue;
-
-            const hasStrongSignal = isTicketFlag === false || Boolean(uriTry);
-            if (!hasStrongSignal) continue;
-
-            tokenId = idStr;
-            seededUri = uriTry;
-            if (uriTry) {
-              try {
-                seededMeta = await readJsonFromURICached(uriTry).catch(
+              if (normalizedTicketBase || isTicketFlag !== true) {
+                uriTry = await getTokenUriCached(contract, idStr).catch(
                   () => null,
                 );
-              } catch {
-                // ignore prefetch errors; metadata is resolved later with fallbacks
+                uriLooksTicket = isTicketUri(uriTry, normalizedTicketBase);
+                if (!uriLooksTicket && uriTry) {
+                  metaTry = await readJsonFromURICached(uriTry).catch(
+                    () => null,
+                  );
+                }
               }
+            } catch {
+              uriTry = null;
+              metaTry = null;
             }
-            break;
-          }
 
-          let isTicket = null;
-          if (typeof contract?.isTicket === "function") {
-            isTicket = await contract.isTicket(idStr).catch(() => null);
-          }
-          const isTicketFlag = isTicket == null ? null : coerceBool(isTicket);
-          if (isTicketFlag == null && isCanonicalTicketTokenId(idStr)) continue;
-          if (
-            !isLikelyMainCollectionNftTokenId(
-              idStr,
-              Number(maxSupply) || 550,
-              isTicketFlag,
-            )
-          ) {
-            continue;
-          }
-          let uriTry = null;
-          let metaTry = null;
-          let uriLooksTicket = false;
-          try {
-            if (normalizedTicketBase || isTicketFlag !== true) {
-              uriTry = await getTokenUriCached(contract, idStr).catch(
-                () => null,
-              );
-              uriLooksTicket = isTicketUri(uriTry, normalizedTicketBase);
-              if (!uriLooksTicket && uriTry) {
-                metaTry = await readJsonFromURICached(uriTry).catch(() => null);
-              }
+            if (isTicketFlag === true || uriLooksTicket) continue;
+            if (isTicketFlag === false && !uriTry) continue;
+
+            if (metaTry) {
+              const metaLooksTicket = looksLikeTicketMeta(metaTry);
+              const metaLooksNft = looksLikeNftMeta(metaTry);
+              if (metaLooksTicket || !metaLooksNft) continue;
+            } else if (isTicketFlag == null) {
+              // Unknown status without usable metadata; skip to avoid tickets.
+              continue;
             }
-          } catch {
-            uriTry = null;
-            metaTry = null;
-          }
 
-          if (isTicketFlag === true || uriLooksTicket) continue;
-          if (isTicketFlag === false && !uriTry) continue;
-
-          if (metaTry) {
-            const metaLooksTicket = looksLikeTicketMeta(metaTry);
-            const metaLooksNft = looksLikeNftMeta(metaTry);
-            if (metaLooksTicket || !metaLooksNft) continue;
-          } else if (isTicketFlag == null) {
-            // Unknown status without usable metadata; skip to avoid tickets.
-            continue;
-          }
-
-          if (isTicketFlag === false || metaTry) {
-            tokenId = idStr;
-            seededUri = uriTry;
-            seededMeta = metaTry;
-            break;
-          }
-        }
-
-        if (!tokenId || tokenId === "0") {
-          setLastMinted((prev) => {
-            if (isCurrentScopedLastMintedPayload(prev)) return prev;
-            const cached = loadLastMintedCache();
-            if (cached) return cached;
-            return { ...EMPTY_LAST_MINTED };
-          });
-          return;
-        }
-
-        let uri = null;
-        try {
-          uri = seededUri || (await getTokenUriCached(contract, tokenId));
-        } catch (err) {
-          const msg = String(err?.message || "");
-          if (/NoToken/i.test(msg)) {
-            uri = null;
-          } else {
-            console.warn("fetchLastMinted: tokenURI failed", err);
-            uri = null;
-          }
-        }
-        let meta = seededMeta || (await readJsonFromURICached(uri));
-        if (looksLikeTicketMeta(meta)) {
-          try {
-            const freshUri = await getTokenUriCached(contract, tokenId, {
-              force: true,
-            });
-            if (freshUri && freshUri !== uri) {
-              uri = freshUri;
-              meta = await readJsonFromURICached(uri, { force: true });
-            } else if (uri) {
-              meta = await readJsonFromURICached(uri, { force: true });
+            if (isTicketFlag === false || metaTry) {
+              tokenId = idStr;
+              seededUri = uriTry;
+              seededMeta = metaTry;
+              break;
             }
-          } catch {
-            // ignore refresh errors
           }
-          if (looksLikeTicketMeta(meta)) {
+
+          if (!tokenId || tokenId === "0") {
             setLastMinted((prev) => {
               if (isCurrentScopedLastMintedPayload(prev)) return prev;
               const cached = loadLastMintedCache();
@@ -5827,321 +5978,349 @@ export default function AppCore() {
             });
             return;
           }
-        }
 
-        let image =
-          (await resolveImageUrlCached(meta?.image || meta?.image_url, uri)) ||
-          PLACEHOLDER_IMAGE;
-
-        let blockName = "-";
-        let backgroundName = "-";
-
-        const attrs = Array.isArray(meta?.attributes) ? meta.attributes : [];
-        const findAttr = (names) =>
-          attrs.find((a) =>
-            names.includes(String(a?.trait_type || "").toLowerCase()),
-          );
-
-        const blockAttr =
-          findAttr([
-            "eye color",
-            "eyes",
-            "block/eye color",
-            "block",
-            "block id",
-          ]) || findAttr(["linked block", "block name"]);
-
-        if (blockAttr) blockName = blockAttr.value;
-
-        const bgAttr = findAttr(["background", "background color"]);
-
-        if (bgAttr)
-          backgroundName = canonBackgroundName(bgAttr.value) || bgAttr.value;
-
-        if (
-          image === PLACEHOLDER_IMAGE ||
-          blockName === "-" ||
-          backgroundName === "-"
-        ) {
-          const parsed = parseTokenUriParts(uri);
-          if (parsed) {
-            const { mainId: rawMainId, blockName: bName, bgCode } = parsed;
-            const mainId = normalizeMainImageId(
-              rawMainId,
-              tokenId,
-              Number(maxSupply) || 550,
-            );
-            const bgName = bgNameFromCode(bgCode) || bgCode;
-            if (image === PLACEHOLDER_IMAGE && bName && bgCode && mainId) {
-              const fileName = `Biggi_${mainId}_${bName}_${bgCode}.png`;
-              const fallbackImage = buildBlockImageUrl(bName, fileName);
-              if (fallbackImage) image = fallbackImage;
-            }
-            if (blockName === "-" && bName) blockName = bName;
-            if (backgroundName === "-" && bgName) backgroundName = bgName;
-          }
-        }
-
-        if (
-          (image === PLACEHOLDER_IMAGE ||
-            blockName === "-" ||
-            backgroundName === "-") &&
-          typeof contract?.nftInfo === "function"
-        ) {
+          let uri = null;
           try {
-            const infoRead = await readNftInfoBestEffort(
-              contract,
-              tokenId,
-              Number(maxSupply) || 550,
+            uri = seededUri || (await getTokenUriCached(contract, tokenId));
+          } catch (err) {
+            const msg = String(err?.message || "");
+            if (/NoToken/i.test(msg)) {
+              uri = null;
+            } else {
+              console.warn("fetchLastMinted: tokenURI failed", err);
+              uri = null;
+            }
+          }
+          let meta = seededMeta || (await readJsonFromURICached(uri));
+          if (looksLikeTicketMeta(meta)) {
+            try {
+              const freshUri = await getTokenUriCached(contract, tokenId, {
+                force: true,
+              });
+              if (freshUri && freshUri !== uri) {
+                uri = freshUri;
+                meta = await readJsonFromURICached(uri, { force: true });
+              } else if (uri) {
+                meta = await readJsonFromURICached(uri, { force: true });
+              }
+            } catch {
+              // ignore refresh errors
+            }
+            if (looksLikeTicketMeta(meta)) {
+              setLastMinted((prev) => {
+                if (isCurrentScopedLastMintedPayload(prev)) return prev;
+                const cached = loadLastMintedCache();
+                if (cached) return cached;
+                return { ...EMPTY_LAST_MINTED };
+              });
+              return;
+            }
+          }
+
+          let image =
+            (await resolveImageUrlCached(
+              meta?.image || meta?.image_url,
+              uri,
+            )) || PLACEHOLDER_IMAGE;
+
+          let blockName = "-";
+          let backgroundName = "-";
+
+          const attrs = Array.isArray(meta?.attributes) ? meta.attributes : [];
+          const findAttr = (names) =>
+            attrs.find((a) =>
+              names.includes(String(a?.trait_type || "").toLowerCase()),
             );
-            const parsed = infoRead?.parsed || parseNftInfo(infoRead?.info);
+
+          const blockAttr =
+            findAttr([
+              "eye color",
+              "eyes",
+              "block/eye color",
+              "block",
+              "block id",
+            ]) || findAttr(["linked block", "block name"]);
+
+          if (blockAttr) blockName = blockAttr.value;
+
+          const bgAttr = findAttr(["background", "background color"]);
+
+          if (bgAttr)
+            backgroundName = canonBackgroundName(bgAttr.value) || bgAttr.value;
+
+          if (
+            image === PLACEHOLDER_IMAGE ||
+            blockName === "-" ||
+            backgroundName === "-"
+          ) {
+            const parsed = parseTokenUriParts(uri);
             if (parsed) {
-              const {
-                blockName: bName,
-                bgCode,
-                bgName,
-                mainId: rawMainId,
-                blockIdx,
-              } = parsed;
+              const { mainId: rawMainId, blockName: bName, bgCode } = parsed;
               const mainId = normalizeMainImageId(
                 rawMainId,
                 tokenId,
                 Number(maxSupply) || 550,
               );
-              let baseUri = null;
-              if (
-                image === PLACEHOLDER_IMAGE &&
-                typeof contract?.blockBaseURIs === "function"
-              ) {
-                const candidates = [];
-                const n = Number(blockIdx);
-                if (Number.isFinite(n)) {
-                  candidates.push(n);
-                  if (n > 0) candidates.push(n - 1);
-                  candidates.push(n + 1);
-                }
-                for (const idx of candidates) {
-                  const v = await contract.blockBaseURIs(idx).catch(() => null);
-                  if (typeof v === "string" && v.trim()) {
-                    baseUri = v.trim();
-                    break;
-                  }
-                }
+              const bgName = bgNameFromCode(bgCode) || bgCode;
+              if (image === PLACEHOLDER_IMAGE && bName && bgCode && mainId) {
+                const fileName = `Biggi_${mainId}_${bName}_${bgCode}.png`;
+                const fallbackImage = buildBlockImageUrl(bName, fileName);
+                if (fallbackImage) image = fallbackImage;
               }
               if (blockName === "-" && bName) blockName = bName;
               if (backgroundName === "-" && bgName) backgroundName = bgName;
-              if (image === PLACEHOLDER_IMAGE && bName && bgCode && mainId) {
-                const fileName = `Biggi_${mainId}_${bName}_${bgCode}.png`;
-                const fallbackImage = buildBlockImageUrl(
-                  bName,
-                  fileName,
-                  baseUri,
-                );
-                if (fallbackImage) image = fallbackImage;
-              }
             }
-          } catch {
-            // ignore nftInfo fallback errors
           }
-        }
 
-        if (walletScopedAddress) {
-          const walletItems = Array.isArray(latestWalletItemsRef.current)
-            ? latestWalletItemsRef.current
-            : [];
-          const walletMatch = walletItems.find(
-            (item) =>
-              item &&
-              !item.isTicket &&
-              !item.isPending &&
-              String(item.tokenId || "") === String(tokenId || ""),
-          );
-          if (walletMatch) {
-            const walletAttrs = Array.isArray(walletMatch?.meta?.attributes)
-              ? walletMatch.meta.attributes
-              : [];
-            const findWalletAttr = (names) => {
-              const hit = walletAttrs.find((a) =>
-                names.includes(String(a?.trait_type || "").toLowerCase()),
+          if (
+            (image === PLACEHOLDER_IMAGE ||
+              blockName === "-" ||
+              backgroundName === "-") &&
+            typeof contract?.nftInfo === "function"
+          ) {
+            try {
+              const infoRead = await readNftInfoBestEffort(
+                contract,
+                tokenId,
+                Number(maxSupply) || 550,
               );
-              return hit?.value;
-            };
-
-            const walletImage = String(walletMatch?.image || "").trim();
-            const walletImageLooksTicket =
-              walletImage.includes(TICKET_IMAGE_FILE);
-            const walletImageUsable =
-              walletImage &&
-              walletImage !== PLACEHOLDER_IMAGE &&
-              !walletImageLooksTicket;
-
-            if (image === PLACEHOLDER_IMAGE && walletImageUsable) {
-              image = walletImage;
-            }
-
-            if (blockName === "-") {
-              const walletBlock =
-                walletMatch?.blockName ||
-                findWalletAttr([
-                  "eye color",
-                  "eyes",
-                  "block/eye color",
-                  "block",
-                  "block id",
-                  "linked block",
-                  "block name",
-                ]);
-              if (walletBlock) blockName = String(walletBlock);
-            }
-
-            if (backgroundName === "-") {
-              const walletBg =
-                walletMatch?.backgroundName ||
-                findWalletAttr(["background", "background color"]);
-              if (walletBg) {
-                backgroundName =
-                  canonBackgroundName(walletBg) || String(walletBg);
-              }
-            }
-          }
-        }
-
-        const imageLooksTicket = String(image || "")
-          .toLowerCase()
-          .includes(String(TICKET_IMAGE_FILE || "").toLowerCase());
-        const incomplete =
-          !isUsableLastMintedImage(image) ||
-          imageLooksTicket ||
-          blockName === "-" ||
-          backgroundName === "-";
-        if (incomplete) {
-          // Keep last known NFT in LiveStats when RPC/IPFS metadata is temporarily incomplete.
-          setLastMinted((prev) => {
-            const sameToken =
-              String(prev?.tokenId || "") === String(tokenId || "");
-            const prevImageUsable = isUsableLastMintedImage(prev?.image);
-            const nextImageUsable =
-              isUsableLastMintedImage(image) && !imageLooksTicket;
-            const nextImage = nextImageUsable
-              ? image
-              : sameToken && prevImageUsable
-                ? prev.image
-                : "";
-            const nextBlock =
-              blockName !== "-"
-                ? blockName
-                : sameToken && String(prev?.blockName || "") !== "-"
-                  ? prev.blockName
-                  : "-";
-            const nextBackground =
-              backgroundName !== "-"
-                ? backgroundName
-                : sameToken && String(prev?.backgroundName || "") !== "-"
-                  ? prev.backgroundName
-                  : "-";
-            const hasAnyResolved =
-              Boolean(String(nextImage || "").trim()) ||
-              nextBlock !== "-" ||
-              nextBackground !== "-";
-            const nextCandidate = {
-              tokenId: String(tokenId || "-"),
-              image: nextImage,
-              blockName: nextBlock,
-              backgroundName: nextBackground,
-            };
-            const nextComplete = isCompleteLastMintedPayload(nextCandidate);
-            const prevComplete = isCurrentScopedLastMintedPayload(prev);
-            if (nextComplete) {
-              return scopeLastMintedPayload(nextCandidate) || nextCandidate;
-            }
-            // Never replace a complete LiveStats card with partial/blank data.
-            if (prevComplete) return prev;
-            const cached = loadLastMintedCache();
-            if (cached) return cached;
-            if (hasAnyResolved) return nextCandidate;
-            return {
-              tokenId: "-",
-              image: PLACEHOLDER_IMAGE,
-              blockName: "-",
-              backgroundName: "-",
-            };
-          });
-          return;
-        }
-
-        if (walletScopedAddress) {
-          const mintedId = String(tokenId || "");
-          const walletItems = Array.isArray(latestWalletItemsRef.current)
-            ? latestWalletItemsRef.current
-            : [];
-          const mintedInWallet = walletItems.some(
-            (item) =>
-              item &&
-              !isTicketLikeItem(item) &&
-              !item.isPending &&
-              String(item.tokenId || "") === mintedId,
-          );
-
-          if (mintedId && mintedInWallet) {
-            const currentTopId = topFirstId != null ? String(topFirstId) : "";
-            const currentTopItem = currentTopId
-              ? walletItems.find(
-                  (item) => item && String(item.tokenId || "") === currentTopId,
-                )
-              : null;
-            const currentTopValid =
-              Boolean(currentTopItem) &&
-              !isTicketLikeItem(currentTopItem) &&
-              !Boolean(currentTopItem?.isPending);
-            const currentTopLikelyMain = currentTopValid
-              ? isLikelyMainCollectionNftTokenId(
-                  currentTopId,
+              const parsed = infoRead?.parsed || parseNftInfo(infoRead?.info);
+              if (parsed) {
+                const {
+                  blockName: bName,
+                  bgCode,
+                  bgName,
+                  mainId: rawMainId,
+                  blockIdx,
+                } = parsed;
+                const mainId = normalizeMainImageId(
+                  rawMainId,
+                  tokenId,
                   Number(maxSupply) || 550,
-                  currentTopItem?.isTicket == null
-                    ? null
-                    : Boolean(currentTopItem.isTicket),
-                )
-              : false;
-
-            const currentTopBI = toTokenIdBigIntSafe(currentTopId);
-            const mintedBI = toTokenIdBigIntSafe(mintedId);
-            const mintedIsNewer =
-              mintedBI != null &&
-              (currentTopBI == null || mintedBI > currentTopBI);
-
-            if (
-              !currentTopValid ||
-              !currentTopLikelyMain ||
-              currentTopId === String(pendingId || "") ||
-              mintedIsNewer
-            ) {
-              if (currentTopId !== mintedId) {
-                setTopFirstId(mintedId);
+                );
+                let baseUri = null;
+                if (
+                  image === PLACEHOLDER_IMAGE &&
+                  typeof contract?.blockBaseURIs === "function"
+                ) {
+                  const candidates = [];
+                  const n = Number(blockIdx);
+                  if (Number.isFinite(n)) {
+                    candidates.push(n);
+                    if (n > 0) candidates.push(n - 1);
+                    candidates.push(n + 1);
+                  }
+                  for (const idx of candidates) {
+                    const v = await contract
+                      .blockBaseURIs(idx)
+                      .catch(() => null);
+                    if (typeof v === "string" && v.trim()) {
+                      baseUri = v.trim();
+                      break;
+                    }
+                  }
+                }
+                if (blockName === "-" && bName) blockName = bName;
+                if (backgroundName === "-" && bgName) backgroundName = bgName;
+                if (image === PLACEHOLDER_IMAGE && bName && bgCode && mainId) {
+                  const fileName = `Biggi_${mainId}_${bName}_${bgCode}.png`;
+                  const fallbackImage = buildBlockImageUrl(
+                    bName,
+                    fileName,
+                    baseUri,
+                  );
+                  if (fallbackImage) image = fallbackImage;
+                }
               }
-              saveTopFirstCache(walletScopedAddress, mintedId);
+            } catch {
+              // ignore nftInfo fallback errors
             }
           }
-        }
 
-        setLastMinted(
-          scopeLastMintedPayload({ tokenId, image, blockName, backgroundName }) || {
-            tokenId,
-            image,
-            blockName,
-            backgroundName,
-          },
-        );
-      } catch (e) {
-        const msg = String(e?.message || "");
-        if (/invalid block range params/i.test(msg)) {
-          console.warn("fetchLastMinted skipped due to RPC range validation");
-          return;
-        }
-        if (isTransientRpcReadError(e)) {
-          console.debug("fetchLastMinted", e);
-          return;
-        }
-        console.error("fetchLastMinted", e);
+          if (walletScopedAddress) {
+            const walletItems = Array.isArray(latestWalletItemsRef.current)
+              ? latestWalletItemsRef.current
+              : [];
+            const walletMatch = walletItems.find(
+              (item) =>
+                item &&
+                !item.isTicket &&
+                !item.isPending &&
+                String(item.tokenId || "") === String(tokenId || ""),
+            );
+            if (walletMatch) {
+              const walletAttrs = Array.isArray(walletMatch?.meta?.attributes)
+                ? walletMatch.meta.attributes
+                : [];
+              const findWalletAttr = (names) => {
+                const hit = walletAttrs.find((a) =>
+                  names.includes(String(a?.trait_type || "").toLowerCase()),
+                );
+                return hit?.value;
+              };
+
+              const walletImage = String(walletMatch?.image || "").trim();
+              const walletImageLooksTicket =
+                walletImage.includes(TICKET_IMAGE_FILE);
+              const walletImageUsable =
+                walletImage &&
+                walletImage !== PLACEHOLDER_IMAGE &&
+                !walletImageLooksTicket;
+
+              if (image === PLACEHOLDER_IMAGE && walletImageUsable) {
+                image = walletImage;
+              }
+
+              if (blockName === "-") {
+                const walletBlock =
+                  walletMatch?.blockName ||
+                  findWalletAttr([
+                    "eye color",
+                    "eyes",
+                    "block/eye color",
+                    "block",
+                    "block id",
+                    "linked block",
+                    "block name",
+                  ]);
+                if (walletBlock) blockName = String(walletBlock);
+              }
+
+              if (backgroundName === "-") {
+                const walletBg =
+                  walletMatch?.backgroundName ||
+                  findWalletAttr(["background", "background color"]);
+                if (walletBg) {
+                  backgroundName =
+                    canonBackgroundName(walletBg) || String(walletBg);
+                }
+              }
+            }
+          }
+
+          const imageLooksTicket = String(image || "")
+            .toLowerCase()
+            .includes(String(TICKET_IMAGE_FILE || "").toLowerCase());
+          const incomplete =
+            !isUsableLastMintedImage(image) ||
+            imageLooksTicket ||
+            blockName === "-" ||
+            backgroundName === "-";
+          if (incomplete) {
+            // Keep last known NFT in LiveStats when RPC/IPFS metadata is temporarily incomplete.
+            setLastMinted((prev) => {
+              const sameToken =
+                String(prev?.tokenId || "") === String(tokenId || "");
+              const prevImageUsable = isUsableLastMintedImage(prev?.image);
+              const nextImageUsable =
+                isUsableLastMintedImage(image) && !imageLooksTicket;
+              const nextImage = nextImageUsable
+                ? image
+                : sameToken && prevImageUsable
+                  ? prev.image
+                  : "";
+              const nextBlock =
+                blockName !== "-"
+                  ? blockName
+                  : sameToken && String(prev?.blockName || "") !== "-"
+                    ? prev.blockName
+                    : "-";
+              const nextBackground =
+                backgroundName !== "-"
+                  ? backgroundName
+                  : sameToken && String(prev?.backgroundName || "") !== "-"
+                    ? prev.backgroundName
+                    : "-";
+              const hasAnyResolved =
+                Boolean(String(nextImage || "").trim()) ||
+                nextBlock !== "-" ||
+                nextBackground !== "-";
+              const nextCandidate = {
+                tokenId: String(tokenId || "-"),
+                image: nextImage,
+                blockName: nextBlock,
+                backgroundName: nextBackground,
+              };
+              const nextComplete = isCompleteLastMintedPayload(nextCandidate);
+              const prevComplete = isCurrentScopedLastMintedPayload(prev);
+              if (nextComplete) {
+                return scopeLastMintedPayload(nextCandidate) || nextCandidate;
+              }
+              // Never replace a complete LiveStats card with partial/blank data.
+              if (prevComplete) return prev;
+              const cached = loadLastMintedCache();
+              if (cached) return cached;
+              if (hasAnyResolved) return nextCandidate;
+              return {
+                tokenId: "-",
+                image: PLACEHOLDER_IMAGE,
+                blockName: "-",
+                backgroundName: "-",
+              };
+            });
+            return;
+          }
+
+          if (walletScopedAddress) {
+            const mintedId = String(tokenId || "");
+            const mintedCollection = normalizeAssetAddress(
+              contract?.target || contract?.address,
+            );
+            const walletItems = Array.isArray(latestWalletItemsRef.current)
+              ? latestWalletItemsRef.current
+              : [];
+            const mintedItem = walletItems.find(
+              (item) =>
+                item &&
+                !isTicketLikeItem(item) &&
+                !item.isPending &&
+                String(item.tokenId || "") === mintedId &&
+                (!mintedCollection ||
+                  getAssetContractAddress(item) === mintedCollection),
+            );
+
+            if (mintedId && mintedItem) {
+              const mintedReference =
+                getAssetReference(mintedItem, mintedCollection) || mintedId;
+              const currentTopReference =
+                topFirstId != null ? String(topFirstId) : "";
+              if (currentTopReference !== mintedReference) {
+                setTopFirstId(mintedReference);
+              }
+              saveTopFirstCache(walletScopedAddress, mintedReference);
+            }
+          }
+
+          setLastMinted(
+            scopeLastMintedPayload({
+              tokenId,
+              image,
+              blockName,
+              backgroundName,
+              contractAddress:
+                contract?.target || contract?.address || null,
+              chapterId: displayedChapter.chapterId,
+            }) || {
+              tokenId,
+              image,
+              blockName,
+              backgroundName,
+              contractAddress:
+                contract?.target || contract?.address || null,
+              chapterId: displayedChapter.chapterId,
+            },
+          );
+        } catch (e) {
+          const msg = String(e?.message || "");
+          if (/invalid block range params/i.test(msg)) {
+            console.warn("fetchLastMinted skipped due to RPC range validation");
+            return;
+          }
+          if (isTransientRpcReadError(e)) {
+            console.debug("fetchLastMinted", e);
+            return;
+          }
+          console.error("fetchLastMinted", e);
         }
       })();
 
@@ -6166,7 +6345,7 @@ export default function AppCore() {
         }
       }
     },
-    [walletAddress, topFirstId, maxSupply],
+    [walletAddress, topFirstId, maxSupply, resolveDisplayedChapterMain],
   );
 
   /* ====================================================================== */
@@ -6500,7 +6679,8 @@ export default function AppCore() {
   const refreshVRFPanel = React.useCallback(async () => {
     const backoffActive = isRpcBackoffActive();
     try {
-      const c = contractRef.current || getReadOnlyContract();
+      const displayedChapter = await resolveDisplayedChapterMain();
+      const c = displayedChapter.contract;
       const provider = getProviderFor(c);
       if (!provider) throw new Error("Provider not available");
       const net = await provider.getNetwork();
@@ -6517,22 +6697,22 @@ export default function AppCore() {
         const vrf = getVRFRO(provider);
         const [keyHash, conf, numWords, gas, sub, coord, retryDelay] =
           await Promise.all([
-          vrf?.keyHash
-            ? vrf.keyHash().catch(() => "")
-            : c.keyHash().catch(() => ""),
-          c.requestConfirmations?.().catch?.(() => 3) ?? 3,
-          vrf?.numWords
-            ? vrf.numWords().catch(() => 1)
-            : c.numWords().catch(() => 1),
-          vrf?.callbackGasLimit
-            ? vrf.callbackGasLimit().catch(() => 300000)
-            : c.callbackGasLimit().catch(() => 300000),
-          vrf?.subId
-            ? vrf.subId().catch(() => "")
-            : (c.s_subscriptionId?.().catch?.(() => "") ?? ""),
-          vrf?.coordinator ? vrf.coordinator().catch(() => "") : "",
-          c.pendingRetryDelay?.().catch?.(() => 0) ?? 0,
-        ]);
+            vrf?.keyHash
+              ? vrf.keyHash().catch(() => "")
+              : c.keyHash().catch(() => ""),
+            c.requestConfirmations?.().catch?.(() => 3) ?? 3,
+            vrf?.numWords
+              ? vrf.numWords().catch(() => 1)
+              : c.numWords().catch(() => 1),
+            vrf?.callbackGasLimit
+              ? vrf.callbackGasLimit().catch(() => 300000)
+              : c.callbackGasLimit().catch(() => 300000),
+            vrf?.subId
+              ? vrf.subId().catch(() => "")
+              : (c.s_subscriptionId?.().catch?.(() => "") ?? ""),
+            vrf?.coordinator ? vrf.coordinator().catch(() => "") : "",
+            c.pendingRetryDelay?.().catch?.(() => 0) ?? 0,
+          ]);
 
         const expectedKeyHash = ADDR.VRF_KEY_HASH || "";
         const expectedCoordinator = ADDR.VRF_COORDINATOR || "";
@@ -6568,6 +6748,11 @@ export default function AppCore() {
           vrfRouter: ADDR.VRF_ROUTER || "",
           pendingRetryDelaySec: Number(retryDelay ?? 0),
           retryPendingSupported,
+          activeChapterId:
+            displayedChapter.activeChapterCount === 1
+              ? displayedChapter.chapterId
+              : null,
+          activeChapterCount: displayedChapter.activeChapterCount,
         };
         subId = liveSubId || expectedSubId;
         subIdMatches =
@@ -6626,8 +6811,7 @@ export default function AppCore() {
 
             try {
               if (typeof c.pendingTicketId === "function") {
-                const pendingTicket =
-                  await c.pendingTicketId(pendingReqIdBN);
+                const pendingTicket = await c.pendingTicketId(pendingReqIdBN);
                 const pendingTicketStr = pendingTicket?.toString?.() || "";
                 if (pendingTicketStr && pendingTicketStr !== "0") {
                   resolvedPendingTicketId = pendingTicketStr;
@@ -6695,6 +6879,7 @@ export default function AppCore() {
   }, [
     walletAddress,
     buildVRFHistory,
+    resolveDisplayedChapterMain,
     isRpcBackoffActive,
     isTransientRpcReadError,
     engageRpcBackoff,
@@ -6735,6 +6920,12 @@ export default function AppCore() {
             const toL = (to || "").toLowerCase();
             const me = activeWallet.toLowerCase();
             const tid = tokenId.toString();
+            const transferCollection = normalizeAssetAddress(
+              event?.log?.address ||
+                event?.address ||
+                contract?.target ||
+                contract?.address,
+            );
 
             scheduleFetchStats(900, fetchStats);
             scheduleFetchREWARDS(900, fetchREWARDS);
@@ -6770,8 +6961,15 @@ export default function AppCore() {
                 );
                 if (isLikelyMainMint) {
                   const mintedId = String(tid);
-                  setTopFirstId(mintedId);
-                  saveTopFirstCache(activeWallet, mintedId);
+                  const mintedReference = getAssetReference({
+                    tokenId: mintedId,
+                    contractAddress: transferCollection,
+                  });
+                  setTopFirstId(mintedReference || mintedId);
+                  saveTopFirstCache(
+                    activeWallet,
+                    mintedReference || mintedId,
+                  );
                   lastRedeemTicketIdRef.current = null;
                 }
               }
@@ -6785,7 +6983,20 @@ export default function AppCore() {
             }
 
             if (fromL === me && toL !== zeroL) {
-              setMyNFTs((prev) => prev.filter((x) => x.tokenId !== tid));
+              const transferredReference = getAssetReference({
+                tokenId: tid,
+                contractAddress: transferCollection,
+              });
+              setMyNFTs((prev) =>
+                prev.filter(
+                  (item) =>
+                    !isAssetReferenceMatch(
+                      item,
+                      transferredReference || tid,
+                      transferCollection,
+                    ),
+                ),
+              );
             }
           } catch (e) {
             console.error("onTransfer", e);
@@ -7470,10 +7681,12 @@ export default function AppCore() {
       }
 
       const contract = await getTicketHub();
+      const activeChapterId = await resolveActiveTicketChapterId(contract);
       const writeProvider = getProviderFor(contract) || roProvider;
       if (writeProvider) {
         const writeNet = await writeProvider.getNetwork().catch(() => netAfter);
-        if (Number(writeNet?.chainId) !== ACTIVE_CHAIN.chainId) await ensurePolygon();
+        if (Number(writeNet?.chainId) !== ACTIVE_CHAIN.chainId)
+          await ensurePolygon();
         netAfter = await writeProvider
           .getNetwork()
           .catch(() => writeNet || netAfter);
@@ -7481,11 +7694,15 @@ export default function AppCore() {
       }
 
       const estimateMint =
-        contract?.estimateGas?.mintTicket || contract?.mintTicket?.estimateGas;
+        contract?.estimateGas?.mintTicketForChapter ||
+        contract?.mintTicketForChapter?.estimateGas;
       let gasLimitOverride = null;
       if (estimateMint) {
         try {
-          const est = await withTimeout(estimateMint({ value: price }), 1200);
+          const est = await withTimeout(
+            estimateMint(activeChapterId, { value: price }),
+            1200,
+          );
           if (est != null) {
             const buf = BigInt(est) + BigInt(est) / 5n;
             gasLimitOverride = buf;
@@ -7505,7 +7722,7 @@ export default function AppCore() {
       );
       const tx = await sendWriteWithRpcRetry(
         () =>
-          contract.mintTicket({
+          contract.mintTicketForChapter(activeChapterId, {
             value: price,
             ...(gasLimitOverride ? { gasLimit: gasLimitOverride } : {}),
             ...feeOverrides,
@@ -7635,15 +7852,6 @@ export default function AppCore() {
         "TICKET_HUB",
       );
 
-      const mainPaused =
-        typeof readContract.paused === "function"
-          ? await callReadWithProviderFallback(
-              readContract,
-              "paused",
-              [],
-              roProvider,
-            )
-          : false;
       const ticketHubPaused =
         typeof ticketHubRead.paused === "function"
           ? await callReadWithProviderFallback(
@@ -7653,7 +7861,7 @@ export default function AppCore() {
               roProvider,
             )
           : false;
-      if (mainPaused === true || ticketHubPaused === true) {
+      if (ticketHubPaused === true) {
         return showUserAlert("Redeem is paused.");
       }
 
@@ -7741,6 +7949,33 @@ export default function AppCore() {
         return showUserAlert("You don't have any ticket to redeem.");
       }
 
+      const activeTicket = await resolveRedeemableTicketForActiveChapter(
+        ticketHubRead,
+        tickets,
+      );
+      tickets = [activeTicket.ticketId];
+      readContract = getReadOnlyChapterMain(
+        activeTicket.chapterId,
+        roProvider,
+      );
+      await assertContractDeployed(
+        readContract,
+        getContractCheckProvider(roProvider),
+        `CHAPTER_${activeTicket.chapterId}_MAIN`,
+      );
+      const activeMainPaused =
+        typeof readContract.paused === "function"
+          ? await callReadWithProviderFallback(
+              readContract,
+              "paused",
+              [],
+              roProvider,
+            )
+          : false;
+      if (activeMainPaused === true) {
+        return showUserAlert("Redeem is paused for the active chapter.");
+      }
+
       try {
         if (typeof readContract.pendingMintRequest === "function") {
           const pendingReq =
@@ -7784,7 +8019,8 @@ export default function AppCore() {
       const writeProvider = getProviderFor(writeContract) || roProvider;
       if (writeProvider) {
         const writeNet = await writeProvider.getNetwork().catch(() => netAfter);
-        if (Number(writeNet?.chainId) !== ACTIVE_CHAIN.chainId) await ensurePolygon();
+        if (Number(writeNet?.chainId) !== ACTIVE_CHAIN.chainId)
+          await ensurePolygon();
         netAfter = await writeProvider
           .getNetwork()
           .catch(() => writeNet || netAfter);
@@ -7838,8 +8074,7 @@ export default function AppCore() {
       }
 
       const estimateRedeem =
-        writeContract?.estimateGas?.redeemTicket ||
-        redeemFn?.estimateGas;
+        writeContract?.estimateGas?.redeemTicket || redeemFn?.estimateGas;
       let redeemGasOverride = null;
       try {
         if (estimateRedeem) {
@@ -7890,7 +8125,9 @@ export default function AppCore() {
         },
         isTicket: true,
         isPending: true,
-        contractAddress: writeContract?.address || null,
+        contractAddress: writeContract?.target || writeContract?.address || null,
+        expectedCollectionAddress:
+          readContract?.target || readContract?.address || null,
       };
 
       setPendingTicketId(ticketIdStr);
@@ -7904,7 +8141,8 @@ export default function AppCore() {
       setMyNFTs((prev) => {
         const list = Array.isArray(prev) ? prev : [];
         const filtered = list.filter(
-          (item) => String(item?.tokenId ?? "") !== ticketIdStr,
+          (item) =>
+            !item?.isTicket || String(item?.tokenId ?? "") !== ticketIdStr,
         );
         return [pendingTicket, ...filtered];
       });
@@ -8057,7 +8295,9 @@ export default function AppCore() {
         setVRFPending(false);
         setRedeemMsg("");
         await refreshVRFPanel();
-        return showUserAlert("No pending VRF request was found for this wallet.");
+        return showUserAlert(
+          "No pending VRF request was found for this wallet.",
+        );
       }
 
       let retryRemainingSec = 0;
@@ -8103,7 +8343,8 @@ export default function AppCore() {
       const writeProvider = getProviderFor(writeContract) || roProvider;
       if (writeProvider) {
         const writeNet = await writeProvider.getNetwork().catch(() => netAfter);
-        if (Number(writeNet?.chainId) !== ACTIVE_CHAIN.chainId) await ensurePolygon();
+        if (Number(writeNet?.chainId) !== ACTIVE_CHAIN.chainId)
+          await ensurePolygon();
         netAfter = await writeProvider
           .getNetwork()
           .catch(() => writeNet || netAfter);
@@ -8319,17 +8560,14 @@ export default function AppCore() {
       const feeOverrides = await buildFeeOverrides(claimProvider, {
         forceLegacy: true,
       });
-      const tx = await sendWriteWithRpcRetry(
-        () => {
-          if (useCollectionAwareWrite) {
-            return brl.claimWithCollections(rewardPayload.collections, tokenIds, {
-              ...feeOverrides,
-            });
-          }
-          return brl.claim(tokenIds, { ...feeOverrides });
-        },
-        "claimREWARDS",
-      );
+      const tx = await sendWriteWithRpcRetry(() => {
+        if (useCollectionAwareWrite) {
+          return brl.claimWithCollections(rewardPayload.collections, tokenIds, {
+            ...feeOverrides,
+          });
+        }
+        return brl.claim(tokenIds, { ...feeOverrides });
+      }, "claimREWARDS");
       updateTxStatus({
         type: "claim",
         stage: "pending",
@@ -8709,10 +8947,7 @@ export default function AppCore() {
     if (typeof window === "undefined") return undefined;
 
     const scheduleResumeSync = () => {
-      if (
-        !walletAddressRef.current &&
-        !walletConnectResumeAllowedRef.current
-      ) {
+      if (!walletAddressRef.current && !walletConnectResumeAllowedRef.current) {
         return;
       }
       const state = walletResumeSyncRef.current;
@@ -8768,7 +9003,8 @@ export default function AppCore() {
     if (typeof window === "undefined" || !Number.isFinite(restoreY)) return;
     window.requestAnimationFrame(() => {
       window.scrollTo({ top: restoreY, left: 0, behavior: "auto" });
-      if (document.documentElement) document.documentElement.scrollTop = restoreY;
+      if (document.documentElement)
+        document.documentElement.scrollTop = restoreY;
       if (document.body) document.body.scrollTop = restoreY;
     });
   }, []);
@@ -9198,7 +9434,7 @@ export default function AppCore() {
                 ? collectionPanelHeader.title
                 : navAlt === "BIGGI ECOSYSTEM"
                   ? ecosystemPanelHeader.title
-                : navAlt
+                  : navAlt
           }
           titleColor={
             navAlt === "REWARDS"
@@ -9207,7 +9443,7 @@ export default function AppCore() {
                 ? collectionPanelHeader.accent
                 : navAlt === "BIGGI ECOSYSTEM"
                   ? ecosystemPanelHeader.accent
-                : undefined
+                  : undefined
           }
           onClose={closePanel}
           onPrev={goPrevPanel}

@@ -1,5 +1,7 @@
 # BIGGI_MASTER source of truth
 
+Aktualizovano 2026-08-17. Historicke deep-audit a visibility dokumenty jsou casove snapshoty; nesmi prepsat aktualni adresy nebo live stav.
+
 Tento soubor je navigacni vrstva pro dalsi praci na BIGGI_MASTER. Nenahrazuje
 runbooky; pouze urcuje, ktere dokumenty maji prednost pri kodu, deployi,
 wiringu a CRE automatizaci.
@@ -20,9 +22,11 @@ wiringu a CRE automatizaci.
 
 ## Aktualni zaver
 
-Core tokenomics uz neni navrh od nuly. Je nasazena a overena. Kriticka prace
-pred verejnou aktivaci je produkcni konfigurace, wiring, DEX liquidity, CRE
-activation a ownership handoff.
+Core tokenomics uz neni navrh od nuly. Je nasazena a overena. Ownership je
+preneseny. Kriticka prace pred verejnou aktivaci je DEX liquidity, metadata,
+CRE workflow identity/wiring a finalni chapter activation.
+
+Aktualni CORE ma jeden centralni chapter-aware `BiggiTicketHub`, sdileny `BiggiSeriesRegistry`, `BiggiChapterController`, pet samostatnych VRF/Public paru a 250 marketing ticketu. Canonical chapter/adresni stav je pouze v `biggi-project/bekend/addresses.master.json`, `../MAINNET_CONTRACT_RECORDS.md` a `../CORE/CORE_MAINNET_REAL_DATA.md`. Vsech pet chapteru je neaktivnich a model je skalovatelny pro dalsi series.
 
 ## Poradi zavislosti
 

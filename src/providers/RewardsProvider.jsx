@@ -7,7 +7,7 @@ import { buildFeeOverrides } from "../shared/utils/txFees";
 const Ctx = React.createContext(null);
 
 export function REWARDSProvider({ children }) {
-  const { mainRO, liqRO, liqRW } = useContracts();
+  const { chapterCollectionsRead, liqRO, liqRW } = useContracts();
   const [rewardPool, setRewardPool] = React.useState(null);
   const [myClaimable, setMyClaimable] = React.useState(null);
   const [mintVolumeMatic, setMintVolumeMatic] = React.useState(null);
@@ -15,8 +15,6 @@ export function REWARDSProvider({ children }) {
   const refresh = React.useCallback(
     async (address = "") => {
       try {
-        const c = await mainRO();
-
         // volume
         const volumeFns = [
           "totalMintVolume",
@@ -27,15 +25,23 @@ export function REWARDSProvider({ children }) {
           "accMintValue",
           "mintedValue",
         ];
-        let volWei = null;
-        for (const f of volumeFns) {
-          if (typeof c[f] === "function") {
-            try {
-              volWei = await c[f]();
-              break;
-            } catch {}
-          }
-        }
+        const volumeValues = await Promise.all(
+          chapterCollectionsRead().map(async ({ contract }) => {
+            for (const f of volumeFns) {
+              if (typeof contract[f] !== "function") continue;
+              try {
+                return await contract[f]();
+              } catch {}
+            }
+            return null;
+          }),
+        );
+        const volWei = volumeValues.some((value) => value != null)
+          ? volumeValues.reduce(
+              (sum, value) => sum + BigInt(value?.toString?.() || "0"),
+              0n,
+            )
+          : null;
         setMintVolumeMatic(
           volWei ? Number(formatEther(volWei)) : null,
         );
@@ -64,8 +70,6 @@ export function REWARDSProvider({ children }) {
         } catch {}
         if (weeklyWei != null) {
           setRewardPool(Number(formatEther(weeklyWei)));
-        } else if (volWei) {
-          setRewardPool(Number(formatEther(volWei)) * 0.22);
         } else {
           setRewardPool(0);
         }
@@ -85,7 +89,7 @@ export function REWARDSProvider({ children }) {
         console.error("REWARDSProvider.refresh", e);
       }
     },
-    [mainRO, liqRO],
+    [chapterCollectionsRead, liqRO],
   );
 
   const claim = React.useCallback(

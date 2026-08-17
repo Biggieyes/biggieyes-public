@@ -1,6 +1,6 @@
 // hardhat.config.cjs
 require("@nomiclabs/hardhat-ethers");
-require("@nomiclabs/hardhat-waffle");
+require("@nomicfoundation/hardhat-chai-matchers");
 // pokud používáš toolbox starší verzi místo těchto importů, přidej vhodné pluginy
 
 const { resolve } = require("path");
@@ -78,6 +78,5 @@ module.exports = {
     timeout: 200000,
   },
 };
-
 
 

@@ -184,31 +184,27 @@ export function Web3Provider({ children }) {
   /** Switch/add the target chain. Uses ensurePolygon for Polygon mainnet. */
   const ensureChain = React.useCallback(
     async (targetId = ACTIVE_CHAIN.chainId) => {
+      if (Number(targetId) !== ACTIVE_CHAIN.chainId) {
+        console.warn(
+          `Unsupported chain ${targetId}; BIGGI supports Polygon mainnet (${ACTIVE_CHAIN.chainId}) only.`,
+        );
+        return false;
+      }
       const eth = pickInjectedProvider();
-      if (!eth) return;
-      const wantsPolygonMainnet = Number(targetId) === ACTIVE_CHAIN.chainId;
+      if (!eth) return false;
       try {
-        if (wantsPolygonMainnet) {
-          await ensurePolygon(eth);
-        } else {
-          const hex = "0x" + Number(targetId).toString(16);
+        await ensurePolygon(eth);
+        return true;
+      } catch {
+        try {
+          await syncPolygonRpcIfNeeded(eth, { force: true });
           await eth.request({
             method: "wallet_switchEthereumChain",
-            params: [{ chainId: hex }],
+            params: [{ chainId: ACTIVE_CHAIN.hex }],
           });
-        }
-      } catch (e) {
-        // If it fails and target is Polygon mainnet, try adding and switching again
-        if (wantsPolygonMainnet) {
-          try {
-            await syncPolygonRpcIfNeeded(eth, { force: true });
-            await eth.request({
-              method: "wallet_switchEthereumChain",
-              params: [{ chainId: ACTIVE_CHAIN.hex }],
-            });
-          } catch {
-            // ignore, refresh state below
-          }
+          return true;
+        } catch {
+          return false;
         }
       } finally {
         await refresh();

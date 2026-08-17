@@ -1,6 +1,8 @@
 # MAINNET_DEPLOY_ORDER_CS
 
-Runbook pro mainnet nasazeni `BIGGI_MASTER` podle aktualniho stavu kontraktu a `scripts/master/*`.
+Historicky/genericky runbook pro uplny mainnet deploy `BIGGI_MASTER`. Aktualni produkcni stack uz je nasazeny: 58/58 manifest kontraktu ma bytecode a verifikovany source. CORE pouziva jeden centralni `BiggiTicketHub` a pet chapter paru `BiggiMain` + `BiggiMain2`; live adresy a aktualni wiring jsou v `../MAINNET_CONTRACT_RECORDS.md`, `../CORE/CORE_MAINNET_REAL_DATA.md` a `../CORE/CORE_RUNBOOK_CS.md`.
+
+Tento dokument nepouzivej jako pokyn k opakovanemu deployi nebo `initialDistribute()`. Pro dalsi chapter se nasazuje jen novy collection par a zapoji se do existujiciho Hubu, registry, controlleru, distributoru a jedne sdilene tokenomiky.
 
 Pouzivej ho spolu s:
 
@@ -96,13 +98,13 @@ Pravidla:
 2. `BiggiNamesLib2`
 3. `BiggiSeriesRegistry`
 4. `BiggiChapterController`
-5. `BiggiCompute`
-6. `BiggiMultiCollectionDistributor`
-7. `BiggiEyesMain`
-8. `BiggiEyesMain2`
-9. `BiggiTicketHub`
+5. `BiggiTicketHub` jako jediny centralni hub
+6. `BiggiCompute`
+7. `BiggiMultiCollectionDistributor`
+8. pro kazdy chapter samostatny `BiggiMain`
+9. pro kazdy chapter samostatny `BiggiMain2`
 10. `BiggiCollectionRewards`
-11. `BiggiVRFRouter` pokud je VRF aktivni nebo se pouziva existujici router
+11. `BiggiVRFRouter`; muze byt sdileny, ale kazdy `BiggiMain` musi byt explicitne schvaleny
 
 ### Faze B - tokenomics core
 
@@ -166,30 +168,32 @@ Poznamka: `scripts/master/deployMasterStack.js` umi tokenomic reader vrstvu nasa
 
 ### Collection + distributor wiring
 
+Kroky pro `TicketHub` se provadi jednou na centralnim kontraktu; kroky pro `Main` a `Main2` se opakuji pro kazdy chapter. Aktualni chaptery jsou Original, Universe, Mutant, Apocalipse a Super Hero.
+
 1. `Main.setModules(compute, vrfRouter)`
 2. `Main.setTicketHub(ticketHub)`
 3. `TicketHub.setDistributor(distributor)`
-4. `TicketHub.setMainCollection(main)`
-5. `TicketHub.setTicketCaps(saleCap, marketingCap)`
+4. pro chapter 1 `TicketHub.setMainCollection(main)`; pro dalsi chaptery `TicketHub.configureChapter(...)` nebo odpovidajici chapter settery
+5. `TicketHub.setTicketCaps(saleCap, marketingCap)` pro chapter 1 a `setChapterTicketCaps(...)` pro dalsi chaptery
 6. `TicketHub.setDevWallet(devWallet)`
 7. `Main2.setDistributor(distributor)`
 8. `Main2.setPriceProvider(main)`
 9. `Main2.setDevWallet(devWallet)`
-10. `Registry.createSeries(...)`
-11. `Registry.createChapter(1)`
+10. `Registry.createSeries(...)` pro kazdou serii
+11. `Registry.createChapter(seriesId)` pro kazdy chapter
 12. `Registry.setChapterCollections(chapterId, main, main2, ticketHub)`
 13. `ChapterController.configureChapter(...)`
 14. `Main2.setChapterController(chapterController, chapterId)`
 15. `CollectionRewards.setRegistry(registry)`
 16. `CollectionRewards.setDistributor(distributor)`
-17. `Distributor.addCollection(ticketHub)`
-18. `Distributor.addCollection(main2)`
-19. `Distributor.addCollection(main)`
+17. `Distributor.addCollection(ticketHub)` pouze jednou
+18. `Distributor.addCollection(main2)` pro kazdy chapter
+19. `Distributor.addCollection(main)` pro kazdy chapter, pokud se pouziva jeho native distribution flow
 20. `Distributor.setRegistry(registry)`
 21. `Distributor.setCollectionRewards(collectionRewards)`
 22. `Distributor.setReserve(reserve)`
 23. `Distributor.setTreasury(treasury)`
-24. `TicketHub.setTokenSink(treasury, 10000)`
+24. `TicketHub.setTokenSink(treasury, 10000)` pouze jednou na centralnim Hubu
 25. `TicketHub.setTokenSinkDepositMode(true)`
 26. `Main2.setTokenSink(treasury, 10000)`
 27. `Main2.setTokenSinkDepositMode(true)`
@@ -230,6 +234,8 @@ Tato vetev je soucast plne tokenomicke podstaty. `deployMasterStack.js` ji umi o
 17. `DripLM.setShares(DRIP_LM_RESERVE_SHARE_BPS, DRIP_LM_MODERATOR_SHARE_BPS)` default `5000/5000`
 
 ### Token initial wiring a initial distribution
+
+Na aktualnim Polygon deploymentu je tato sekce dokoncena: `distributed=true`, supply je `1,200,000,000 BIGGI` a reserve je locknuta. `initialDistribute()` znovu nevolat.
 
 1. `BiggiToken.setReserve(reserve)`
 2. `BiggiToken.setDripDistributor(dripDistributor)`

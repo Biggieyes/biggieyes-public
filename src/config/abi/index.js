@@ -50,7 +50,7 @@ import BiggiTokenomikReader from "./BiggiTokenomikReader.json";
 import BiggiTokenRewards from "./BiggiTokenRewards.json";
 import BiggiTokenRewardsReader from "./BiggiTokenRewardsReader.json";
 import BiggiTreasury from "./BiggiTreasury.json";
-import BiggiVrfRouter from "./BiggiVrfRouter.json";
+import BiggiVrfRouter from "./BiggiVRFRouter.json";
 import ModeratorCenter from "./ModeratorCenter.json";
 import Multicall2 from "./Multicall2.json";
 import UniswapV2Factory from "./UniswapV2Factory.json";

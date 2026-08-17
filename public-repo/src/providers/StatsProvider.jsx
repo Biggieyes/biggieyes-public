@@ -59,6 +59,7 @@ export function StatsProvider({ children }) {
           return;
         } catch (err) {
           console.debug("StatsProvider.refresh reader snapshot failed", err);
+          throw err;
         }
       }
 
@@ -133,4 +134,3 @@ export function useStats() {
   if (!v) throw new Error("useStats must be used inside <StatsProvider>");
   return v;
 }
-

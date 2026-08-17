@@ -37,6 +37,7 @@ import { getCachedPriceAttrs } from "@/shared/utils/metadata";
 import ModalPortal from "./common/ModalPortal";
 import WeeklyCountdown from "./WeeklyCountdown";
 import useWeeklyCountdown from "../hooks/useWeeklyCountdown";
+import { selectLiveStatsImage } from "./liveStatsImageState.js";
 import "./LiveStatsPools.css";
 import "./InfoTables.css";
 
@@ -749,7 +750,15 @@ function LiveStats({
 
   React.useEffect(() => {
     const next = String(lastImageCandidates[0] || "").trim();
-    if (!next) return;
+    if (!next) {
+      lastPrimaryBaseRef.current = "";
+      lastPrimaryTokenRef.current = "";
+      lastImageRetryRef.current = 0;
+      setLastImageSrc("");
+      setLastImageLoaded(false);
+      setLastImageFailed(false);
+      return;
+    }
     const nextBase = stripRetryParam(next).toLowerCase();
     const tokenId = String(effectiveLastMinted.tokenId || "").trim();
     const prevBase = String(lastPrimaryBaseRef.current || "").toLowerCase();
@@ -778,30 +787,19 @@ function LiveStats({
   const effectiveTokenId = String(effectiveLastMinted.tokenId || "").trim();
   const displayLastImageSrc = React.useMemo(() => {
     const direct = String(lastImageSrc || "").trim();
-    if (direct) return direct;
-
     const stableToken = String(lastStableTokenRef.current || "").trim();
     const stableSrc = String(lastStableImageRef.current || "").trim();
-    if (
-      stableSrc &&
-      effectiveTokenId &&
-      effectiveTokenId !== "-" &&
-      stableToken === effectiveTokenId
-    ) {
-      return stableSrc;
-    }
-
     const cached = getCachedLiveStatsImageForToken(effectiveTokenId);
-    if (cached) return cached;
-
     const firstCandidate = String(lastImageCandidates[0] || "").trim();
-    if (stableSrc && !firstCandidate) {
-      return stableSrc;
-    }
-
-    if (firstCandidate) return firstCandidate;
-
-    return String(lastImageCandidates[0] || "").trim();
+    return selectLiveStatsImage({
+      tokenId: effectiveTokenId,
+      directImage: direct,
+      directTokenId: lastPrimaryTokenRef.current,
+      stableImage: stableSrc,
+      stableTokenId: stableToken,
+      cachedImage: cached,
+      firstCandidate,
+    });
   }, [effectiveTokenId, lastImageCandidates, lastImageSrc]);
 
   React.useEffect(() => {
@@ -829,8 +827,9 @@ function LiveStats({
   const showLastImageFallback =
     lastImageIsIpfs &&
     (lastImageFailed || (!lastImageLoaded && isOffline));
-  const hasLastImage = Boolean(displayLastImageSrc);
   const hasLastToken = effectiveTokenId !== "-";
+  const hasLastImage =
+    hasLastToken && isUsableLiveStatsImage(displayLastImageSrc);
 
   React.useEffect(() => {
     if (!lastImageFailed || !lastImageIsIpfs) return;
@@ -3254,16 +3253,6 @@ function LiveStats({
                     return;
                   }
 
-                  // Final global fallback: keep the last known good image even when
-                  // current token metadata is incomplete or temporarily broken.
-                  if (
-                    stableSrc &&
-                    stripRetryParam(stableSrc).toLowerCase() !== currentKey
-                  ) {
-                    setLastImageSrc(stableSrc);
-                    setLastImageFailed(false);
-                    setLastImageLoaded(true);
-                  }
                 }
               }}
               onMouseEnter={(e) => {

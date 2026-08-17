@@ -10,6 +10,7 @@ import {
 } from "@/shared/utils/contract";
 import { queryLogsBatched, getSafeDeployBlock } from "@/shared/utils/shared";
 import { buildFeeOverrides } from "@/shared/utils/txFees";
+import { resolveActiveTicketChapterId } from "@/shared/utils/ticketChapters.js";
 import { readJsonFromURI, resolveImageUrl } from "../../services/ipfs";
 
 /**
@@ -113,12 +114,17 @@ export function useNFTs({
 
       if (await contract.paused()) return alert("Mint is paused.");
 
+      const activeChapterId = await resolveActiveTicketChapterId(contract);
       const price = await contract.ticketPrice();
       const estimateMint =
-        contract?.estimateGas?.mintTicket || contract?.mintTicket?.estimateGas;
-      if (estimateMint) await estimateMint({ value: price });
+        contract?.estimateGas?.mintTicketForChapter ||
+        contract?.mintTicketForChapter?.estimateGas;
+      if (estimateMint) await estimateMint(activeChapterId, { value: price });
       const feeOverrides = await buildFeeOverrides(provider);
-      const tx = await contract.mintTicket({ value: price, ...feeOverrides });
+      const tx = await contract.mintTicketForChapter(activeChapterId, {
+        value: price,
+        ...feeOverrides,
+      });
       await tx.wait();
 
       await fetchWalletAssets(walletAddress);
@@ -189,7 +195,9 @@ export function useNFTs({
 
       const redeemFn = contract?.redeemTicket;
       if (typeof redeemFn !== "function") {
-        throw new Error("Redeem function not available on TICKET_HUB contract.");
+        throw new Error(
+          "Redeem function not available on TICKET_HUB contract.",
+        );
       }
       const estimateRedeem =
         contract?.estimateGas?.redeemTicket || redeemFn?.estimateGas;

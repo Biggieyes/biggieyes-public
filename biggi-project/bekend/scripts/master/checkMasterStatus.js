@@ -422,9 +422,19 @@ async function main() {
     await safe("VRF_ROUTER.numWords", () => vrfRouter.numWords());
 
     if (isAddress(addresses.MAIN)) {
-      expectAddressMatch("VRF_ROUTER.main == MAIN", mainAddr, addresses.MAIN, issues);
+      const directMainOk = eqAddress(mainAddr, addresses.MAIN);
+      const approvedMainOk = mainApproved === true;
+      const routeOk = directMainOk || approvedMainOk;
+      console.log(
+        `${routeOk ? "OK" : "MISMATCH"} VRF_ROUTER routes MAIN: main=${mainAddr} approved=${approvedMainOk} expected=${addresses.MAIN}`
+      );
+      if (!routeOk) {
+        issues.push(
+          `VRF_ROUTER must either have main == MAIN or approvedMains[MAIN] == true: main=${mainAddr}, MAIN=${addresses.MAIN}, approved=${approvedMainOk}`
+        );
+      }
     }
-    if (strict && mainApproved != null) {
+    if (strict && mainApproved != null && !eqAddress(mainAddr, addresses.MAIN)) {
       expectBool("VRF_ROUTER.approved[main]", mainApproved, true, issues);
     }
     if (strict && nftRewardsApproved != null) {
@@ -497,6 +507,13 @@ async function main() {
       "function marketingCap() view returns (uint16)",
       "function totalCap() view returns (uint16)",
       "function mainCollection() view returns (address)",
+      "function chapterSaleMinted(uint256) view returns (uint16)",
+      "function chapterMarketingMinted(uint256) view returns (uint16)",
+      "function chapterTotalMinted(uint256) view returns (uint256)",
+      "function chapterSaleCap(uint256) view returns (uint16)",
+      "function chapterMarketingCap(uint256) view returns (uint16)",
+      "function chapterTotalCap(uint256) view returns (uint16)",
+      "function chapterMainCollection(uint256) view returns (address)",
       "function distributor() view returns (address)",
       "function devWallet() view returns (address)",
       "function BIGGI() view returns (address)",
@@ -519,9 +536,27 @@ async function main() {
     const tokenSink = await safe("TICKET_HUB.tokenSink", () => hub.tokenSink());
     const tokenSinkBps = await safe("TICKET_HUB.tokenSinkBps", () => hub.tokenSinkBps());
     const tokenSinkDepositMode = await safe("TICKET_HUB.tokenSinkDepositMode", () => hub.tokenSinkDepositMode());
+    const chapterId = addresses.CHAPTER_ID == null ? 1 : Number(addresses.CHAPTER_ID);
+    let effectiveSaleMinted = saleMinted;
+    let effectiveMarketingMinted = marketingMinted;
+    let effectiveTotalMinted = totalMinted;
+    let effectiveSaleCap = saleCap;
+    let effectiveMarketingCap = marketingCap;
+    let effectiveTotalCap = totalCap;
+    let effectiveMainCollection = mainCollection;
+
+    if (chapterId !== 1) {
+      effectiveSaleMinted = await safe("TICKET_HUB.chapterSaleMinted", () => hub.chapterSaleMinted(chapterId));
+      effectiveMarketingMinted = await safe("TICKET_HUB.chapterMarketingMinted", () => hub.chapterMarketingMinted(chapterId));
+      effectiveTotalMinted = await safe("TICKET_HUB.chapterTotalMinted", () => hub.chapterTotalMinted(chapterId));
+      effectiveSaleCap = await safe("TICKET_HUB.chapterSaleCap", () => hub.chapterSaleCap(chapterId));
+      effectiveMarketingCap = await safe("TICKET_HUB.chapterMarketingCap", () => hub.chapterMarketingCap(chapterId));
+      effectiveTotalCap = await safe("TICKET_HUB.chapterTotalCap", () => hub.chapterTotalCap(chapterId));
+      effectiveMainCollection = await safe("TICKET_HUB.chapterMainCollection", () => hub.chapterMainCollection(chapterId));
+    }
 
     if (isAddress(addresses.MAIN)) {
-      expectAddressMatch("TICKET_HUB.mainCollection == MAIN", mainCollection, addresses.MAIN, issues);
+      expectAddressMatch("TICKET_HUB chapter main == MAIN", effectiveMainCollection, addresses.MAIN, issues);
     }
     if (isAddress(addresses.DISTRIBUTOR)) {
       expectAddressMatch("TICKET_HUB.distributor == DISTRIBUTOR", distributor, addresses.DISTRIBUTOR, issues);
@@ -543,19 +578,26 @@ async function main() {
       }
     }
     if (strict) {
-      expectNumberMatch(
-        "TICKET_HUB.saleCap + marketingCap == totalCap",
-        toSafeNumber(saleCap) + toSafeNumber(marketingCap),
-        totalCap,
-        issues
-      );
-      expectNumberMatch("TICKET_HUB.totalCap == 550", totalCap, 550, issues);
-      expectNumberMatch(
-        "TICKET_HUB.totalMinted == saleMinted + marketingMinted",
-        totalMinted,
-        toSafeNumber(saleMinted) + toSafeNumber(marketingMinted),
-        issues
-      );
+      const saleCapNum = toSafeNumber(effectiveSaleCap);
+      const marketingCapNum = toSafeNumber(effectiveMarketingCap);
+      const totalCapNum = toSafeNumber(effectiveTotalCap);
+      const saleMintedNum = toSafeNumber(effectiveSaleMinted);
+      const marketingMintedNum = toSafeNumber(effectiveMarketingMinted);
+      const totalMintedNum = toSafeNumber(effectiveTotalMinted);
+      if (
+        saleCapNum == null ||
+        marketingCapNum == null ||
+        totalCapNum == null ||
+        saleMintedNum == null ||
+        marketingMintedNum == null ||
+        totalMintedNum == null
+      ) {
+        issues.push(`TICKET_HUB chapter ${chapterId} counters or caps are unavailable`);
+      } else {
+        expectNumberMatch("TICKET_HUB.saleCap + marketingCap == totalCap", saleCapNum + marketingCapNum, totalCapNum, issues);
+        expectNumberMatch("TICKET_HUB.totalCap == 550", totalCapNum, 550, issues);
+        expectNumberMatch("TICKET_HUB.totalMinted == saleMinted + marketingMinted", totalMintedNum, saleMintedNum + marketingMintedNum, issues);
+      }
     }
   });
 
@@ -628,6 +670,7 @@ async function main() {
       "function chapterByCollection(address) view returns (uint256)",
       "function getChapterCollections(uint256) view returns (address,address,address)",
       "function getChapterMeta(uint256) view returns (uint256,uint256)",
+      "function isTicketHubForChapter(address,uint256) view returns (bool)",
       "function isTokenRewardsCollection(address) view returns (bool)",
       "function isCollectionRewardsCollection(address) view returns (bool)",
     ]);
@@ -693,6 +736,11 @@ async function main() {
     }
     if (isAddress(addresses.TICKET_HUB)) {
       const hubChapter = await safe("REGISTRY.chapterByCollection[ticketHub]", () => registry.chapterByCollection(addresses.TICKET_HUB));
+      const hubForChapter = addresses.CHAPTER_ID != null
+        ? await safe("REGISTRY.isTicketHubForChapter[ticketHub]", () =>
+            registry.isTicketHubForChapter(addresses.TICKET_HUB, Number(addresses.CHAPTER_ID))
+          )
+        : null;
       const hubCollectionRewardsEligible = await safe(
         "REGISTRY.collectionRewardsEligible[ticketHub]",
         () => registry.isCollectionRewardsCollection(addresses.TICKET_HUB)
@@ -702,7 +750,11 @@ async function main() {
         () => registry.isTokenRewardsCollection(addresses.TICKET_HUB)
       );
       if (addresses.CHAPTER_ID != null) {
-        expectNumberMatch("REGISTRY.chapterByCollection[ticketHub] == CHAPTER_ID", hubChapter, addresses.CHAPTER_ID, issues);
+        if (hubForChapter != null) {
+          expectBool("REGISTRY.isTicketHubForChapter[ticketHub]", hubForChapter, true, issues);
+        } else {
+          expectNumberMatch("REGISTRY.chapterByCollection[ticketHub] == CHAPTER_ID", hubChapter, addresses.CHAPTER_ID, issues);
+        }
       }
       if (strict) {
         expectBool("REGISTRY.collectionRewardsEligible[ticketHub]", hubCollectionRewardsEligible, false, issues);
@@ -753,6 +805,7 @@ async function main() {
       "function seriesSnapshot(uint256) view returns (tuple(uint256 seriesId,bool exists,string name,uint256 chapterCount))",
       "function chapterSnapshot(uint256) view returns (tuple(uint256 chapterId,bool configured,bool chapterExists,uint256 seriesId,uint256 chapterNumber,address vrfCollection,address publicCollection,address ticketHub,uint16 saleCap,uint16 marketingCap,uint16 totalCap,uint256 saleMinted,uint256 marketingMinted,uint256 totalMinted,bool publicUnlocked,address priceProvider,bool tokenRewardsEligibleVRF,bool tokenRewardsEligiblePublic,bool collectionRewardsEligibleVRF,bool controllerRegistryMatch))",
       "function collectionSnapshot(address) view returns (tuple(address collection,uint256 chapterId,uint256 seriesId,uint256 chapterNumber,bool tokenRewardsEligible,bool collectionRewardsEligible,bool isVrfCollection,bool isPublicCollection,bool isTicketHubCollection))",
+      "function ticketHubSnapshot(address,uint256) view returns (tuple(address collection,uint256 chapterId,uint256 seriesId,uint256 chapterNumber,bool tokenRewardsEligible,bool collectionRewardsEligible,bool isVrfCollection,bool isPublicCollection,bool isTicketHubCollection))",
       "function chapterPaymentSnapshot(uint256,address) view returns (tuple(uint256 chapterId,address treasury,tuple(address collection,address biggi,address distributor,address tokenSink,uint256 tokenSinkBps,bool tokenSinkDepositMode,uint256 biggiPerEth,address reserveAddress,bool paused,bool treasuryAllowsCollection,bool paymentConfigured,bool ecosystemTreasuryRouteOk) ticketHubRoute,tuple(address collection,address biggi,address distributor,address tokenSink,uint256 tokenSinkBps,bool tokenSinkDepositMode,uint256 biggiPerEth,address reserveAddress,bool paused,bool treasuryAllowsCollection,bool paymentConfigured,bool ecosystemTreasuryRouteOk) publicCollectionRoute))",
     ]);
     const global = await safe("CHAPTER_SERIES_READER.global", () => reader.globalSnapshot());
@@ -776,9 +829,15 @@ async function main() {
     }
     if (isAddress(addresses.TICKET_HUB)) {
       hubCollection = await safe(
-        "CHAPTER_SERIES_READER.collection[ticketHub]",
-        () => reader.collectionSnapshot(addresses.TICKET_HUB)
+        "CHAPTER_SERIES_READER.ticketHubSnapshot",
+        () => reader.ticketHubSnapshot(addresses.TICKET_HUB, chapterId)
       );
+      if (!hubCollection || Number(hubCollection.chapterId || 0) === 0) {
+        hubCollection = await safe(
+          "CHAPTER_SERIES_READER.collection[ticketHub]",
+          () => reader.collectionSnapshot(addresses.TICKET_HUB)
+        );
+      }
     }
 
     if (global) {

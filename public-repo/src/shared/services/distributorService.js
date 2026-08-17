@@ -1,31 +1,36 @@
 // src/services/distributorService.js
 import { formatEther } from "ethers";
-import { ADDR } from "../utils/addresses";
+import { ADDR } from "@/shared/utils/addresses.js";
 import { getMCDReaderV2RO } from "@/shared/utils/contract";
+import {
+  getDistributorGlobalSnapshot,
+  getDistributorPendingCommunity,
+  getDistributorPendingOf,
+  getDistributorReceivedOfCollections,
+  getDistributorWhitelisted,
+} from "./tokenomics/distributorReaderCompat.js";
 
 const toEth = (v) => (v != null ? formatEther(v) : null);
 
 export async function getGlobalSnapshot() {
   const reader = getMCDReaderV2RO();
   if (!reader) throw new Error("Distributor reader not available");
-  const raw = await reader.globalSnapshot();
-  const snap = raw?.s ?? raw?.[0] ?? raw;
+  const snap = await getDistributorGlobalSnapshot(reader);
   return {
-    collectionRewards: snap?.collectionRewards ?? snap?.[0] ?? null,
-    reserve: snap?.reserve ?? snap?.[1] ?? null,
-    buybackAgent: snap?.buybackAgent ?? snap?.[2] ?? null,
-    treasury: snap?.treasury ?? snap?.[3] ?? null,
-    communityCenter:
-      snap?.communityCenter ?? snap?.[4] ?? ADDR.COMMUNITY_CENTER ?? null,
-    totalPending: toEth(snap?.totalPending ?? snap?.[5] ?? 0n),
-    totalReceived: toEth(snap?.totalReceived ?? snap?.[6] ?? 0n),
+    collectionRewards: snap?.collectionRewards ?? null,
+    reserve: snap?.reserve ?? null,
+    buybackAgent: snap?.buybackAgent ?? null,
+    treasury: snap?.treasury ?? null,
+    communityCenter: snap?.communityCenter ?? ADDR.COMMUNITY_CENTER ?? null,
+    totalPending: toEth(snap?.totalPending ?? 0n),
+    totalReceived: toEth(snap?.totalReceived ?? 0n),
   };
 }
 
 export async function getPendingCommunityEth() {
   const reader = getMCDReaderV2RO();
   if (!reader) return null;
-  const v = await reader.pendingCommunity?.().catch?.(() => null);
+  const v = await getDistributorPendingCommunity(reader).catch(() => null);
   return v != null ? toEth(v) : null;
 }
 
@@ -33,7 +38,7 @@ export async function getPendingOfEth(addresses = []) {
   if (!Array.isArray(addresses) || !addresses.length) return [];
   const reader = getMCDReaderV2RO();
   if (!reader) return [];
-  const out = await reader.pendingOf(addresses);
+  const out = await getDistributorPendingOf(reader, addresses);
   return Array.from(out || []).map((v) => toEth(v ?? 0n));
 }
 
@@ -41,7 +46,7 @@ export async function getReceivedOfCollectionsEth(addresses = []) {
   if (!Array.isArray(addresses) || !addresses.length) return [];
   const reader = getMCDReaderV2RO();
   if (!reader) return [];
-  const out = await reader.receivedOfCollections(addresses);
+  const out = await getDistributorReceivedOfCollections(reader, addresses);
   return Array.from(out || []).map((v) => toEth(v ?? 0n));
 }
 
@@ -49,7 +54,7 @@ export async function getWhitelistedCollections(addresses = []) {
   if (!Array.isArray(addresses) || !addresses.length) return [];
   const reader = getMCDReaderV2RO();
   if (!reader) return [];
-  const out = await reader.whitelisted(addresses);
+  const out = await getDistributorWhitelisted(reader, addresses);
   return Array.from(out || []);
 }
 

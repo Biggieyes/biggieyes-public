@@ -102,6 +102,7 @@ describe("BIGGI_MASTER: scaling collections smoke", function () {
     await (await main.setTicketHub(ticketHub.address)).wait();
     await (await ticketHub.setMainCollection(main.address)).wait();
     await (await ticketHub.setDistributor(distributor.address)).wait();
+    await (await ticketHub.setChapterActive(1, true)).wait();
     await (await main.batchSetNFTBackgroundAndBlock([1], [1], [1], [1])).wait();
     await (await main2.batchSetNFTBackgroundAndBlock([1], [1], [1], [1])).wait();
 
@@ -129,6 +130,7 @@ describe("BIGGI_MASTER: scaling collections smoke", function () {
     const distributor = await deploy("MockMintShareReceiver");
 
     await (await ticketHub.setDistributor(distributor.address)).wait();
+    await (await ticketHub.setChapterActive(1, true)).wait();
 
     const mintPrice = await ticketHub.ticketPrice();
     const overpay = mintPrice.mul(2);

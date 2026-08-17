@@ -29,6 +29,10 @@ temp_*
 .tmp-*
 *.bak.*
 
+# Python bytecode
+__pycache__/
+*.py[cod]
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -14,6 +14,8 @@ import {
   getROProvider,
   getReaderRO,
   getReadOnlyMain,
+  getReadOnlyChapterMain,
+  getReadOnlyChapterMain2,
   resetROProvider,
   getPairRO,
   getReadOnlyLiquidityContract,
@@ -21,6 +23,7 @@ import {
   getInjectedProvider,
   ADDR,
 } from "@/shared/utils/contract";
+import { CORE_CHAPTERS } from "@/shared/utils/addresses.js";
 import { toMainNftIndexFromTokenId } from "@/shared/utils/biggiIdIndex";
 import {
   getPreferredRpc,
@@ -37,6 +40,10 @@ import { getCachedPriceAttrs } from "@/shared/utils/metadata";
 import ModalPortal from "./common/ModalPortal";
 import WeeklyCountdown from "./WeeklyCountdown";
 import useWeeklyCountdown from "../hooks/useWeeklyCountdown";
+import {
+  buildLiveStatsAssetIdentity,
+  selectLiveStatsImage,
+} from "./liveStatsImageState.js";
 import "./LiveStatsPools.css";
 import "./InfoTables.css";
 
@@ -237,7 +244,18 @@ const toDisplayLastMinted = (payload) => {
   const image = String(payload?.image || "").trim();
   const blockName = String(payload?.blockName || "").trim() || "-";
   const backgroundName = String(payload?.backgroundName || "").trim() || "-";
-  return { tokenId, image, blockName, backgroundName };
+  const contractAddress = String(payload?.contractAddress || "")
+    .trim()
+    .toLowerCase();
+  const chapterId = Number(payload?.chapterId || 0) || null;
+  return {
+    tokenId,
+    image,
+    blockName,
+    backgroundName,
+    contractAddress,
+    chapterId,
+  };
 };
 
 const normalizeLiveStatsImage = (raw) => {
@@ -332,7 +350,7 @@ const isUsableLiveStatsImage = (raw) => {
 
 const LAST_IMAGE_TOKEN_CACHE_LIMIT = 64;
 const liveStatsImageByToken = new Map();
-const LIVE_STATS_IMAGE_CACHE_VERSION = "v2";
+const LIVE_STATS_IMAGE_CACHE_VERSION = "v3-core-series";
 const LIVE_STATS_CACHE_CHAIN_ID = Number(ADDR?.CHAIN_ID || 137) || 137;
 const LIVE_STATS_CACHE_CONTRACT = String(ADDR?.MAIN || ADDR?.COLLECTION_VRF || "")
   .trim()
@@ -467,6 +485,8 @@ function LiveStats({
   lastNftId,
   lastBlockName,
   lastBackgroundName,
+  lastContractAddress = "",
+  lastChapterId = null,
   biggiMinted,
   maxSupply,
   ticketMinted,
@@ -484,7 +504,6 @@ function LiveStats({
   currentBlockPrices,
   bgsMinted,
   mintVolumeMatic = null,
-  sharePercent = 22,
   epochStart = null,
   userLastClaimTs = null,
   weekSeconds = 7 * 24 * 60 * 60,
@@ -560,17 +579,21 @@ function LiveStats({
       image: fallbackItem?.image,
       blockName,
       backgroundName,
+      contractAddress: fallbackItem?.contractAddress,
+      chapterId: fallbackItem?.chapterId,
     });
   }, [normalizedItems]);
 
-  const walletNftByTokenId = React.useMemo(() => {
+  const walletNftsByTokenId = React.useMemo(() => {
     const out = new Map();
     const arr = Array.isArray(normalizedItems) ? normalizedItems : [];
     for (const item of arr) {
       if (!item || item.isTicket || item.isPending) continue;
       const tokenId = String(item?.tokenId ?? item?.id ?? "").trim();
       if (!tokenId) continue;
-      out.set(tokenId, item);
+      const current = out.get(tokenId) || [];
+      current.push(item);
+      out.set(tokenId, current);
     }
     return out;
   }, [normalizedItems]);
@@ -582,14 +605,35 @@ function LiveStats({
         tokenId: lastNftId,
         blockName: lastBlockName,
         backgroundName: lastBackgroundName,
+        contractAddress: lastContractAddress,
+        chapterId: lastChapterId,
       }),
-    [lastImage, lastNftId, lastBlockName, lastBackgroundName],
+    [
+      lastImage,
+      lastNftId,
+      lastBlockName,
+      lastBackgroundName,
+      lastContractAddress,
+      lastChapterId,
+    ],
   );
 
   const chainTokenWalletFallback = React.useMemo(() => {
     const chainTokenId = String(chainLastMinted.tokenId || "").trim();
     if (!chainTokenId || chainTokenId === "-") return null;
-    const item = walletNftByTokenId.get(chainTokenId);
+    const candidates = walletNftsByTokenId.get(chainTokenId) || [];
+    const chainContract = String(chainLastMinted.contractAddress || "")
+      .trim()
+      .toLowerCase();
+    const item = chainContract
+      ? candidates.find(
+          (candidate) =>
+            String(candidate?.contractAddress || "").toLowerCase() ===
+            chainContract,
+        )
+      : candidates.length === 1
+        ? candidates[0]
+        : null;
     if (!item) return null;
 
     const blockName =
@@ -614,8 +658,10 @@ function LiveStats({
       image: item?.image,
       blockName,
       backgroundName,
+      contractAddress: item?.contractAddress,
+      chapterId: item?.chapterId,
     });
-  }, [chainLastMinted.tokenId, walletNftByTokenId]);
+  }, [chainLastMinted, walletNftsByTokenId]);
 
   const effectiveLastMinted = React.useMemo(() => {
     const chainImageRaw = String(chainLastMinted.image || "").trim();
@@ -646,12 +692,23 @@ function LiveStats({
           chainLastMinted.backgroundName !== "-"
             ? chainLastMinted.backgroundName
             : chainTokenWalletFallback.backgroundName,
+        contractAddress:
+          chainLastMinted.contractAddress ||
+          chainTokenWalletFallback.contractAddress,
+        chapterId:
+          chainLastMinted.chapterId || chainTokenWalletFallback.chapterId,
       };
     }
 
     if (walletLastMintedFallback) return walletLastMintedFallback;
     return chainLastMinted;
   }, [chainLastMinted, chainTokenWalletFallback, walletLastMintedFallback]);
+
+  const effectiveTokenId = String(effectiveLastMinted.tokenId || "").trim();
+  const effectiveImageIdentity = buildLiveStatsAssetIdentity(
+    effectiveLastMinted.contractAddress,
+    effectiveTokenId,
+  );
 
   const normalizedLastImage = React.useMemo(
     () => normalizeLiveStatsImage(effectiveLastMinted.image),
@@ -660,10 +717,10 @@ function LiveStats({
   const [resolvedLastImage, setResolvedLastImage] = React.useState("");
   React.useEffect(() => {
     setResolvedLastImage("");
-  }, [effectiveLastMinted.tokenId]);
+  }, [effectiveLastMinted.contractAddress, effectiveLastMinted.tokenId]);
 
   React.useEffect(() => {
-    const tokenId = String(effectiveLastMinted.tokenId || "").trim();
+    const tokenId = effectiveImageIdentity;
     if (!tokenId || tokenId === "-" || !/^\d+$/.test(tokenId)) return;
     if (normalizedLastImage) return;
     if (resolvedLastImage) return;
@@ -672,7 +729,8 @@ function LiveStats({
     (async () => {
       try {
         const provider = getROProvider();
-        const mainAddr = ADDR?.MAIN;
+        const mainAddr =
+          effectiveLastMinted.contractAddress || ADDR?.MAIN;
         if (!provider || !mainAddr) return;
         const contract = new Contract(
           mainAddr,
@@ -713,7 +771,12 @@ function LiveStats({
     return () => {
       cancelled = true;
     };
-  }, [effectiveLastMinted.tokenId, normalizedLastImage, resolvedLastImage]);
+  }, [
+    effectiveLastMinted.contractAddress,
+    effectiveLastMinted.tokenId,
+    normalizedLastImage,
+    resolvedLastImage,
+  ]);
 
   const effectivePrimaryImage = normalizedLastImage || resolvedLastImage;
   const lastImageCandidates = React.useMemo(
@@ -749,7 +812,15 @@ function LiveStats({
 
   React.useEffect(() => {
     const next = String(lastImageCandidates[0] || "").trim();
-    if (!next) return;
+    if (!next) {
+      lastPrimaryBaseRef.current = "";
+      lastPrimaryTokenRef.current = "";
+      lastImageRetryRef.current = 0;
+      setLastImageSrc("");
+      setLastImageLoaded(false);
+      setLastImageFailed(false);
+      return;
+    }
     const nextBase = stripRetryParam(next).toLowerCase();
     const tokenId = String(effectiveLastMinted.tokenId || "").trim();
     const prevBase = String(lastPrimaryBaseRef.current || "").toLowerCase();
@@ -761,7 +832,7 @@ function LiveStats({
     setLastImageSrc(next);
     setLastImageLoaded(false);
     setLastImageFailed(false);
-  }, [lastImageCandidates, effectiveLastMinted.tokenId]);
+  }, [effectiveImageIdentity, lastImageCandidates]);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -775,41 +846,29 @@ function LiveStats({
     };
   }, []);
 
-  const effectiveTokenId = String(effectiveLastMinted.tokenId || "").trim();
   const displayLastImageSrc = React.useMemo(() => {
     const direct = String(lastImageSrc || "").trim();
-    if (direct) return direct;
-
     const stableToken = String(lastStableTokenRef.current || "").trim();
     const stableSrc = String(lastStableImageRef.current || "").trim();
-    if (
-      stableSrc &&
-      effectiveTokenId &&
-      effectiveTokenId !== "-" &&
-      stableToken === effectiveTokenId
-    ) {
-      return stableSrc;
-    }
-
-    const cached = getCachedLiveStatsImageForToken(effectiveTokenId);
-    if (cached) return cached;
-
+    const cached = getCachedLiveStatsImageForToken(effectiveImageIdentity);
     const firstCandidate = String(lastImageCandidates[0] || "").trim();
-    if (stableSrc && !firstCandidate) {
-      return stableSrc;
-    }
-
-    if (firstCandidate) return firstCandidate;
-
-    return String(lastImageCandidates[0] || "").trim();
-  }, [effectiveTokenId, lastImageCandidates, lastImageSrc]);
+    return selectLiveStatsImage({
+      tokenId: effectiveImageIdentity,
+      directImage: direct,
+      directTokenId: lastPrimaryTokenRef.current,
+      stableImage: stableSrc,
+      stableTokenId: stableToken,
+      cachedImage: cached,
+      firstCandidate,
+    });
+  }, [effectiveImageIdentity, lastImageCandidates, lastImageSrc]);
 
   React.useEffect(() => {
     if (!effectiveTokenId || effectiveTokenId === "-") return;
     const primary = String(lastImageCandidates[0] || "").trim();
     if (!primary) return;
-    cacheLiveStatsImageForToken(effectiveTokenId, primary);
-  }, [effectiveTokenId, lastImageCandidates]);
+    cacheLiveStatsImageForToken(effectiveImageIdentity, primary);
+  }, [effectiveImageIdentity, effectiveTokenId, lastImageCandidates]);
 
   const lastImageIsIpfs = React.useMemo(() => {
     const raw =
@@ -829,8 +888,9 @@ function LiveStats({
   const showLastImageFallback =
     lastImageIsIpfs &&
     (lastImageFailed || (!lastImageLoaded && isOffline));
-  const hasLastImage = Boolean(displayLastImageSrc);
   const hasLastToken = effectiveTokenId !== "-";
+  const hasLastImage =
+    hasLastToken && isUsableLiveStatsImage(displayLastImageSrc);
 
   React.useEffect(() => {
     if (!lastImageFailed || !lastImageIsIpfs) return;
@@ -1089,7 +1149,10 @@ function LiveStats({
           finalPrice: null,
         };
 
-        const cachedAttrs = getCachedPriceAttrs(tokenId);
+        const cachedAttrs = getCachedPriceAttrs(
+          tokenId,
+          effectiveLastMinted.contractAddress,
+        );
         if (Array.isArray(cachedAttrs) && cachedAttrs.length) {
           const cachedMeta = { attributes: cachedAttrs };
           next = {
@@ -1107,7 +1170,19 @@ function LiveStats({
           }
         })();
 
-        const reader = provider
+        const collection = CORE_CHAPTERS.flatMap((chapter) => [
+          { ...chapter, collectionType: "vrf", address: chapter.main },
+          { ...chapter, collectionType: "public", address: chapter.main2 },
+        ]).find(
+          (entry) =>
+            String(entry.address).toLowerCase() ===
+            String(effectiveLastMinted.contractAddress || "").toLowerCase(),
+        );
+        const reader =
+          (!collection ||
+            (collection.chapterId === 1 &&
+              collection.collectionType === "vrf")) &&
+          provider
           ? (() => {
               try {
                 return getReaderRO(provider);
@@ -1119,6 +1194,18 @@ function LiveStats({
         const main = provider
           ? (() => {
               try {
+                if (collection?.collectionType === "public") {
+                  return getReadOnlyChapterMain2(
+                    collection.chapterId,
+                    provider,
+                  );
+                }
+                if (collection?.chapterId) {
+                  return getReadOnlyChapterMain(
+                    collection.chapterId,
+                    provider,
+                  );
+                }
                 return getReadOnlyMain(provider);
               } catch {
                 return null;
@@ -1263,7 +1350,11 @@ function LiveStats({
     return () => {
       cancelled = true;
     };
-  }, [effectiveLastMinted.tokenId, handleReadRpcFailure]);
+  }, [
+    effectiveLastMinted.contractAddress,
+    effectiveLastMinted.tokenId,
+    handleReadRpcFailure,
+  ]);
 
   const effectiveBlockPrices = React.useMemo(() => {
     const normalize = (arr) =>
@@ -1374,16 +1465,8 @@ function LiveStats({
       return rewardPool;
     if (typeof poolFromContract === "number" && !Number.isNaN(poolFromContract))
       return poolFromContract;
-    if (
-      typeof mintVolumeMatic === "number" &&
-      !Number.isNaN(mintVolumeMatic) &&
-      typeof sharePercent === "number" &&
-      !Number.isNaN(sharePercent)
-    ) {
-      return mintVolumeMatic * (sharePercent / 100);
-    }
     return null;
-  }, [mintVolumeMatic, sharePercent, rewardPool, poolFromContract]);
+  }, [rewardPool, poolFromContract]);
 
   // Read token REWARDS metadata (weights, unitReward, token meta) — robust, contract-only changes
   React.useEffect(() => {
@@ -1669,11 +1752,28 @@ function LiveStats({
           typeof r.totalReceived === "function"
             ? r.totalReceived()
             : Promise.resolve(0n),
-          typeof r.receivedByAddress === "function"
-            ? r.receivedByAddress(ADDR.MAIN)
-            : typeof r.receivedByCOLLECTION === "function"
-              ? r.receivedByCOLLECTION(ADDR.MAIN)
-              : Promise.resolve(0n),
+          (async () => {
+            const readReceived =
+              typeof r.receivedByAddress === "function"
+                ? (address) => r.receivedByAddress(address)
+                : typeof r.receivedByCOLLECTION === "function"
+                  ? (address) => r.receivedByCOLLECTION(address)
+                  : null;
+            if (!readReceived) return 0n;
+            const addresses = CORE_CHAPTERS.flatMap((chapter) => [
+              chapter.main,
+              chapter.main2,
+            ]);
+            const values = await Promise.all(
+              addresses.map((address) =>
+                readReceived(address).catch(() => 0n),
+              ),
+            );
+            return values.reduce(
+              (sum, value) => sum + BigInt(value?.toString?.() || "0"),
+              0n,
+            );
+          })(),
         typeof r.reserve === "function"
           ? r.reserve()
           : Promise.resolve(ADDR.RESERVE || ZeroAddress),
@@ -3198,8 +3298,8 @@ function LiveStats({
                 const loadedSrc = String(
                   e?.currentTarget?.currentSrc || displayLastImageSrc || "",
                 ).trim();
-                const tokenId = String(effectiveLastMinted.tokenId || "").trim();
-                if (loadedSrc && tokenId && tokenId !== "-") {
+                const tokenId = effectiveImageIdentity;
+                if (loadedSrc && effectiveTokenId && effectiveTokenId !== "-") {
                   lastStableImageRef.current = loadedSrc;
                   lastStableTokenRef.current = tokenId;
                   cacheLiveStatsImageForToken(tokenId, loadedSrc);
@@ -3228,7 +3328,7 @@ function LiveStats({
                 // try the last stable image for the same token and avoid collapsing
                 // to the "No wallet NFT yet" placeholder.
                 if (!lastImageIsIpfs || lastImageRetryRef.current >= 2) {
-                  const tokenId = String(effectiveLastMinted.tokenId || "").trim();
+                  const tokenId = effectiveImageIdentity;
                   const cachedSrc = getCachedLiveStatsImageForToken(tokenId);
                   if (
                     cachedSrc &&
@@ -3243,8 +3343,8 @@ function LiveStats({
                   const stableSrc = String(lastStableImageRef.current || "").trim();
                   if (
                     stableSrc &&
-                    tokenId &&
-                    tokenId !== "-" &&
+                    effectiveTokenId &&
+                    effectiveTokenId !== "-" &&
                     stableTokenId === tokenId &&
                     stableSrc !== displayLastImageSrc
                   ) {
@@ -3254,16 +3354,6 @@ function LiveStats({
                     return;
                   }
 
-                  // Final global fallback: keep the last known good image even when
-                  // current token metadata is incomplete or temporarily broken.
-                  if (
-                    stableSrc &&
-                    stripRetryParam(stableSrc).toLowerCase() !== currentKey
-                  ) {
-                    setLastImageSrc(stableSrc);
-                    setLastImageFailed(false);
-                    setLastImageLoaded(true);
-                  }
                 }
               }}
               onMouseEnter={(e) => {

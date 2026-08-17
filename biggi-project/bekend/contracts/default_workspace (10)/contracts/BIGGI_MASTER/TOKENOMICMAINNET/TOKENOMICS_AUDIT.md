@@ -72,7 +72,7 @@ Reserve / liquidity branch audit on 2026-06-09:
 Scaling collections / tokenomics audit on 2026-06-09:
 
 - `BiggiSeriesRegistry` is the scalable source of truth for future chapters. Each chapter maps exactly one VRF collection, one public collection, and one TicketHub. Registry guards prevent reusing the same collection address across different chapters.
-- `BiggiChapterController.configureChapter(...)` hard-checks that registry collections match the supplied chapter stack, that `saleCap + marketingCap == totalCap`, that `TicketHub.mainCollection == VRF collection`, that `VRF collection.ticketHub == TicketHub`, and that hub caps match the controller caps.
+- `BiggiChapterController.configureChapter(...)` hard-checks registry collections, `saleCap + marketingCap == totalCap`, the chapter-specific TicketHub/Main binding, `VRF collection.ticketHub == TicketHub`, and chapter-specific hub caps. Chapter 1 legacy getters remain backward compatible.
 - `BiggiCollectionRewards`, `BiggiTokenRewards`, and `BiggiNFTRewards` can follow future chapter collections through `setRegistry(BiggiSeriesRegistry)`. Collection rewards eligibility is intentionally limited to the chapter VRF collection; token rewards eligibility can include both VRF and public collections according to registry flags.
 - `BiggiMultiCollectionDistributor` is scalable but intentionally allowlisted. Every new chapter source that may forward native must be added with `addCollection(...)`, typically `TicketHub`, `Main2`, and optionally `Main` if that source forwards native directly. Registry attribution is optional accounting; failed attribution does not block the split.
 - BIGGI-paid NFT purchases for every new TicketHub/Main2 must use `setTokenSink(BiggiTreasury, 10000)`, `setTokenSinkDepositMode(true)`, and `BiggiTreasury.setEcosystemBiggiCaller(source, true)`.
@@ -93,7 +93,7 @@ Dynamic TokenRewards emission audit on 2026-06-10:
 - `BiggiTokenRewardsReader` now exposes controller address/enabled status and `emissionPreview(user, units)`.
 - `BiggiTokenomikReader` now includes TokenRewards controller address/enabled status in the aggregate tokenomics status.
 - `deployMasterStack.js` can deploy and enable the controller by default; `configureMasterEssence.js` can reconcile its wiring and budget parameters; `checkMasterStatus.js` validates the live link in strict checks.
-- Current verification (2026-07-05): `npm run compile:master` OK, `npm run test:master` OK with `74 passing`, Polygon deployment manifest 50/50 verified, tokenomic ABI compare OK with 46 contracts / 0 issues, ABI-to-source compare OK with 25 contracts / 0 issues.
+- Current verification (2026-08-17): `npm run compile:master` OK, `npm run test:master` OK with `79 passing`, Polygon deployment manifest 58/58 verified, tokenomic ABI compare OK with 46 contracts / 0 issues, and five-series CORE verification 204/204.
 
 CRE automation migration update on 2026-06-26:
 

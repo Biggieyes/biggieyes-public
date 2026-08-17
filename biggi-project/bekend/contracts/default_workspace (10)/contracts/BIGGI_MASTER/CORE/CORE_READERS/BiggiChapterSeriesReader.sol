@@ -40,6 +40,7 @@ interface IBiggiSeriesRegistryReaderView {
     function chapterByCollection(address collection) external view returns (uint256);
     function isTokenRewardsCollection(address collection) external view returns (bool);
     function isCollectionRewardsCollection(address collection) external view returns (bool);
+    function isTicketHubForChapter(address ticketHub, uint256 chapterId) external view returns (bool);
 }
 
 interface IBiggiPaymentRouteReaderView {
@@ -214,7 +215,23 @@ contract BiggiChapterSeriesReader {
 
         if (s.chapterId == 0) return s;
 
-        try registry.chapterInfo(s.chapterId) returns (
+        _fillCollectionChapterFlags(s, collection, s.chapterId);
+    }
+
+    function ticketHubSnapshot(address ticketHub, uint256 chapterId) external view returns (CollectionSnapshot memory s) {
+        s.collection = ticketHub;
+        if (ticketHub == address(0) || chapterId == 0) return s;
+        try registry.isTicketHubForChapter(ticketHub, chapterId) returns (bool isHub) {
+            if (!isHub) return s;
+        } catch {
+            return s;
+        }
+        s.chapterId = chapterId;
+        _fillCollectionChapterFlags(s, ticketHub, chapterId);
+    }
+
+    function _fillCollectionChapterFlags(CollectionSnapshot memory s, address collection, uint256 chapterId) internal view {
+        try registry.chapterInfo(chapterId) returns (
             bool,
             uint256 seriesId_,
             uint256 chapterNumber_,

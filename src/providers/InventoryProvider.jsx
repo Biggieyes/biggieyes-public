@@ -1,6 +1,5 @@
 // src/context/InventoryProvider.jsx
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress } from "ethers";
 import { useContracts } from "./ContractsProvider";
 import { readJsonFromURI, resolveImageUrl } from "../services/ipfs";
 import { mergeAttrs, getCachedPriceAttrs } from "../services/prices";
@@ -54,21 +53,22 @@ async function getHeldTokenIds(c, addr) {
 }
 
 export function InventoryProvider({ children }) {
-  const { mainRO } = useContracts();
+  const { ticketHubRead, biggiMainReaderRead, chapterCollectionsRead } =
+    useContracts();
   const [items, setItems] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
 
   // Fetch tickets
   const fetchMyTickets = React.useCallback(
     async (addr) => {
-      const c = await mainRO();
+      const c = await ticketHubRead();
       let ids = [];
       try {
-        if (typeof c.findTicket === "function") {
-          ids = await c.findTicket(addr);
-        } else {
-          ids = await getHeldTokenIds(c, addr);
-        }
+        const reader = biggiMainReaderRead?.();
+        ids =
+          reader && typeof reader.findTicket === "function"
+            ? await reader.findTicket(addr)
+            : await getHeldTokenIds(c, addr);
       } catch (e) {
         console.error("Error while searching for tickets:", e);
         ids = await getHeldTokenIds(c, addr);
@@ -91,63 +91,75 @@ export function InventoryProvider({ children }) {
           } catch (e) {
             console.error(`Error while loading ticket metadata ${id}:`, e);
           }
-          let isT = false;
-          try {
-            isT = await c.isTicket(idBN);
-          } catch {}
-          if (!isT) return null;
-          return { tokenId: id, image, meta, isTicket: true };
+          return {
+            tokenId: id,
+            image,
+            meta,
+            isTicket: true,
+            contractAddress: c?.target || c?.address || null,
+          };
         }),
       );
       return metas.filter(Boolean);
     },
-    [mainRO],
+    [biggiMainReaderRead, ticketHubRead],
   );
 
   // Fetch other NFTs
   const fetchOwnedNFTs = React.useCallback(
     async (addr) => {
-      const c = await mainRO();
-      let ids = [];
-      try {
-        ids = await getHeldTokenIds(c, addr);
-      } catch (e) {
-        console.error("Error while searching for NFTs:", e);
-        return [];
-      }
-
-      const metas = await Promise.all(
-        ids.map(async (tid) => {
-          let isT = false;
+      const collections = chapterCollectionsRead();
+      const perCollection = await Promise.all(
+        collections.map(async (entry) => {
+          const c = entry.contract;
+          let ids = [];
           try {
-            isT = await c.isTicket(tid);
-          } catch {}
-          if (isT) return null;
-
-          let meta = {};
-          let image = "/images/Biggi.png";
-          try {
-            const uri = await c.tokenURI(tid);
-            const j = await readJsonFromURI(uri);
-            const contractAddr =
-              c?.target || c?.address || c?.runner?.address || null;
-            const cached = getCachedPriceAttrs(tid, contractAddr);
-            const base = j || {};
-            base.attributes = mergeAttrs(cached, base.attributes);
-            meta = base;
-            const imgUrl = j?.image || j?.image_url;
-            const resolved = await resolveImageUrl(imgUrl, uri);
-            image = resolved || image;
+            ids = await getHeldTokenIds(c, addr);
           } catch (e) {
-            console.error(`Error while loading NFT metadata ${tid}:`, e);
+            console.error(
+              `Error while searching chapter ${entry.chapterId} ${entry.collectionType} NFTs:`,
+              e,
+            );
+            return [];
           }
-          return { tokenId: String(tid), image, meta, isTicket: false };
+
+          return Promise.all(
+            ids.map(async (tid) => {
+              let meta = {};
+              let image = "/images/Biggi.png";
+              try {
+                const uri = await c.tokenURI(tid);
+                const j = await readJsonFromURI(uri);
+                const cached = getCachedPriceAttrs(tid, entry.address);
+                const base = j || {};
+                base.attributes = mergeAttrs(cached, base.attributes);
+                meta = base;
+                const imgUrl = j?.image || j?.image_url;
+                const resolved = await resolveImageUrl(imgUrl, uri);
+                image = resolved || image;
+              } catch (e) {
+                console.error(
+                  `Error while loading chapter ${entry.chapterId} NFT metadata ${tid}:`,
+                  e,
+                );
+              }
+              return {
+                tokenId: String(tid),
+                image,
+                meta,
+                isTicket: false,
+                chapterId: entry.chapterId,
+                collectionType: entry.collectionType,
+                contractAddress: entry.address,
+              };
+            }),
+          );
         }),
       );
 
-      return metas.filter(Boolean);
+      return perCollection.flat().filter(Boolean);
     },
-    [mainRO],
+    [chapterCollectionsRead],
   );
 
   // Refresh inventory
@@ -161,8 +173,10 @@ export function InventoryProvider({ children }) {
           fetchOwnedNFTs(addr),
         ]);
         const map = new Map();
-        for (const t of tickets) map.set(t.tokenId, t);
-        for (const n of nfts) map.set(n.tokenId, n);
+        for (const item of [...tickets, ...nfts]) {
+          const key = `${String(item.contractAddress || "").toLowerCase()}:${item.tokenId}`;
+          map.set(key, item);
+        }
         setItems(Array.from(map.values()));
       } catch (e) {
         console.error("Error while loading the inventory:", e);
@@ -185,4 +199,3 @@ export function InventoryProvider({ children }) {
 export const useInventory = () => {
   return React.useContext(Ctx);
 };
-

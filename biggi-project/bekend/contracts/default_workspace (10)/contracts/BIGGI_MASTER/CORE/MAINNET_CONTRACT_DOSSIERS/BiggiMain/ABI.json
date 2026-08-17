@@ -160,6 +160,11 @@
   },
   {
     "inputs": [],
+    "name": "InvalidChapter",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidIndex",
     "type": "error"
   },
@@ -384,6 +389,25 @@
       }
     ],
     "name": "BlockPriceBoosted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "oldChapterId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "newChapterId",
+        "type": "uint256"
+      }
+    ],
+    "name": "ChapterIdSet",
     "type": "event"
   },
   {
@@ -980,6 +1004,19 @@
         "internalType": "uint32",
         "name": "",
         "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "chapterId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -1792,6 +1829,19 @@
       }
     ],
     "name": "setBlockCurrentPrice",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "chapterId_",
+        "type": "uint256"
+      }
+    ],
+    "name": "setChapterId",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

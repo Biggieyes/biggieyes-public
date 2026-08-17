@@ -32,17 +32,14 @@ export default function RedeemOverlay({
           method: "eth_chainId",
         });
         const id = idHex ? parseInt(idHex, 16) : null;
-        const map = {
-          1: "Ethereum",
-          10: "Optimism",
-          137: "Polygon mainnet",
-          8453: "Base",
-          42161: "Arbitrum",
-        };
         if (alive) {
           setChainId(id);
           setNetworkLabel(
-            Number.isFinite(id) ? `${map[id] || "EVM"} (${id})` : "EVM",
+            Number.isFinite(id)
+              ? id === 137
+                ? "Polygon mainnet (137)"
+                : `Unsupported chain (${id})`
+              : "Not connected",
           );
         }
       } catch {
@@ -739,6 +736,5 @@ const styles = {
     lineHeight: 1.4,
   },
 };
-
 
 

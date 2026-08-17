@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ADDR } from "@/shared/utils/addresses.js";
+import { ADDR, CORE_CHAPTERS } from "@/shared/utils/addresses.js";
 import { explorerBaseFor } from "@/config/chains.js";
 import {
   formatNativeDisplay,
@@ -7,7 +7,8 @@ import {
 } from "@/features/tokenomics/utils/amountFormatting.js";
 import { FALLBACK_VALUE } from "./COLLECTIONBlocksGrid.constants";
 
-const explorerBase = explorerBaseFor(ADDR.CHAIN_ID || 137) || "https://polygonscan.com";
+const explorerBase =
+  explorerBaseFor(ADDR.CHAIN_ID || 137) || "https://polygonscan.com";
 
 const SectionHeader = ({ label, accent = "#ffe800" }) => (
   <div
@@ -28,13 +29,9 @@ const asNumber = (value) => {
 
 const formatInteger = (value) => {
   const numeric = asNumber(value);
-  return numeric == null ? FALLBACK_VALUE : Math.round(numeric).toLocaleString();
-};
-
-const formatBool = (value) => {
-  if (value === true) return "Yes";
-  if (value === false) return "No";
-  return FALLBACK_VALUE;
+  return numeric == null
+    ? FALLBACK_VALUE
+    : Math.round(numeric).toLocaleString();
 };
 
 const shortAddress = (value) => {
@@ -45,12 +42,22 @@ const shortAddress = (value) => {
 const explorerHref = (value) =>
   isRealAddress(value) ? `${explorerBase}/address/${value}` : null;
 
+const sameAddress = (left, right) => {
+  if (!isRealAddress(left) || !isRealAddress(right)) return null;
+  return left.toLowerCase() === right.toLowerCase();
+};
+
 const StatusPill = ({ value, trueLabel = "Live", falseLabel = "No" }) => {
-  const state =
-    value === true ? "ok" : value === false ? "warn" : "dim";
+  const state = value === true ? "ok" : value === false ? "warn" : "dim";
   return (
-    <span className={`collection-series__pill collection-series__pill--${state}`}>
-      {value === true ? trueLabel : value === false ? falseLabel : FALLBACK_VALUE}
+    <span
+      className={`collection-series__pill collection-series__pill--${state}`}
+    >
+      {value === true
+        ? trueLabel
+        : value === false
+          ? falseLabel
+          : FALLBACK_VALUE}
     </span>
   );
 };
@@ -91,19 +98,71 @@ function ChapterSeriesPanel({
   const collections = Array.isArray(data.collections) ? data.collections : [];
   const chapters = Array.isArray(data.chapters) ? data.chapters : [];
   const series = Array.isArray(data.series) ? data.series : [];
-  const primaryChapter = chapters[0] || {};
-  const primarySeries = series[0] || {};
-  const vrfSnapshot =
-    collections.find((item) => item.isVrfCollection) || collections[0] || {};
-  const publicSnapshot =
-    collections.find((item) => item.isPublicCollection) || collections[1] || {};
+  const chapterViews = React.useMemo(
+    () =>
+      CORE_CHAPTERS.map((config) => {
+        const snapshot =
+          chapters.find(
+            (item) => asNumber(item.chapterId) === config.chapterId,
+          ) || {};
+        const vrfSnapshot =
+          collections.find((item) =>
+            sameAddress(item.collection, config.main),
+          ) || {};
+        const publicSnapshot =
+          collections.find((item) =>
+            sameAddress(item.collection, config.main2),
+          ) || {};
+        const minted = asNumber(snapshot.totalMinted);
+        const cap = asNumber(snapshot.totalCap);
 
-  const mintedPct = React.useMemo(() => {
-    const minted = asNumber(primaryChapter.totalMinted);
-    const cap = asNumber(primaryChapter.totalCap);
-    if (minted == null || !cap) return null;
-    return Math.min(100, Math.max(0, (minted / cap) * 100));
-  }, [primaryChapter.totalCap, primaryChapter.totalMinted]);
+        return {
+          config,
+          snapshot,
+          vrfSnapshot,
+          publicSnapshot,
+          minted,
+          cap,
+          mintedPct:
+            minted == null || !cap
+              ? null
+              : Math.min(100, Math.max(0, (minted / cap) * 100)),
+        };
+      }),
+    [chapters, collections],
+  );
+
+  const totals = chapterViews.reduce(
+    (result, chapter) => {
+      if (chapter.minted != null) {
+        result.minted += chapter.minted;
+        result.knownMinted += 1;
+      }
+      if (chapter.cap != null) {
+        result.cap += chapter.cap;
+        result.knownCap += 1;
+      }
+      if (chapter.snapshot.publicUnlocked != null) {
+        result.knownUnlocks += 1;
+        if (chapter.snapshot.publicUnlocked) result.unlocked += 1;
+      }
+      if (chapter.snapshot.active != null) {
+        result.knownActive += 1;
+        if (chapter.snapshot.active) result.active += 1;
+      }
+      return result;
+    },
+    {
+      minted: 0,
+      cap: 0,
+      knownMinted: 0,
+      knownCap: 0,
+      unlocked: 0,
+      knownUnlocks: 0,
+      active: 0,
+      knownActive: 0,
+    },
+  );
 
   const heroCards = [
     {
@@ -114,30 +173,26 @@ function ChapterSeriesPanel({
     },
     {
       label: "Series",
-      value: primarySeries.name || `Series ${primarySeries.seriesId || ADDR.SERIES_ID || 1}`,
-      hint: `${formatInteger(primarySeries.chapterCount)} chapters`,
-      tone: primarySeries.exists ? "ok" : "warn",
+      value: formatInteger(global.seriesCount ?? series.length),
+      hint: "registered series",
+      tone: series.length === CORE_CHAPTERS.length ? "ok" : "warn",
     },
     {
-      label: "Chapter",
-      value: `#${primaryChapter.chapterNumber || ADDR.CHAPTER_ID || 1}`,
-      hint: `${formatInteger(primaryChapter.totalMinted)} / ${formatInteger(primaryChapter.totalCap)} minted`,
-      tone: primaryChapter.chapterExists ? "ok" : "warn",
+      label: "Chapters",
+      value: formatInteger(global.chapterCount ?? chapters.length),
+      hint:
+        totals.knownMinted && totals.knownCap
+          ? `${formatInteger(totals.minted)} / ${formatInteger(totals.cap)} tickets minted`
+          : "live mint totals unavailable",
+      tone: chapters.length === CORE_CHAPTERS.length ? "ok" : "warn",
     },
     {
-      label: "Public unlock",
-      value: formatBool(primaryChapter.publicUnlocked),
-      hint: "VRF completion gate",
-      tone: primaryChapter.publicUnlocked ? "ok" : "dim",
-    },
-  ];
-
-  const collectionRows = [
-    { label: "VRF collection", data: vrfSnapshot, expected: ADDR.COLLECTION_VRF || ADDR.MAIN },
-    {
-      label: "Public collection",
-      data: publicSnapshot,
-      expected: ADDR.COLLECTION_PUBLIC || ADDR.MAIN2,
+      label: "Available chapters",
+      value: totals.knownActive
+        ? `${totals.active} / ${totals.knownActive}`
+        : FALLBACK_VALUE,
+      hint: "TicketHub chapterActive gates",
+      tone: totals.knownActive > 0 && totals.active === 1 ? "ok" : "dim",
     },
   ];
 
@@ -151,8 +206,8 @@ function ChapterSeriesPanel({
           <h3>Chapter / Series wiring</h3>
         </div>
         <p className="collection-grid__panel-subtitle">
-          Live ChapterSeriesReader snapshot for the current Polygon mainnet
-          collection pair, including reward eligibility and registry wiring.
+          Live ChapterSeriesReader snapshot for all Polygon mainnet collection
+          pairs, including reward eligibility and registry wiring.
         </p>
         <div className="collection-series__actions">
           <button
@@ -190,125 +245,285 @@ function ChapterSeriesPanel({
         <article className="collection-series__card">
           <h4>Reader contracts</h4>
           <div className="collection-series__table">
-            <DataRow label="Network" value={`Polygon mainnet / chainId ${ADDR.CHAIN_ID || 137}`} tone="ok" />
-            <DataRow label="Reader" value={<AddressValue value={data.reader} />} />
-            <DataRow label="Controller" value={<AddressValue value={global.controller || ADDR.CHAPTER_CONTROLLER} />} />
-            <DataRow label="Registry" value={<AddressValue value={global.registry || ADDR.SERIES_REGISTRY || ADDR.REGISTRY} />} />
+            <DataRow
+              label="Network"
+              value={`Polygon mainnet / chainId ${ADDR.CHAIN_ID || 137}`}
+              tone="ok"
+            />
+            <DataRow
+              label="Reader"
+              value={<AddressValue value={data.reader} />}
+            />
+            <DataRow
+              label="Controller"
+              value={
+                <AddressValue
+                  value={global.controller || ADDR.CHAPTER_CONTROLLER}
+                />
+              }
+            />
+            <DataRow
+              label="Registry"
+              value={
+                <AddressValue
+                  value={
+                    global.registry || ADDR.SERIES_REGISTRY || ADDR.REGISTRY
+                  }
+                />
+              }
+            />
             <DataRow
               label="Controller registry match"
-              value={<StatusPill value={global.controllerMatchesRegistry} trueLabel="Matched" falseLabel="Mismatch" />}
+              value={
+                <StatusPill
+                  value={global.controllerMatchesRegistry}
+                  trueLabel="Matched"
+                  falseLabel="Mismatch"
+                />
+              }
             />
-            <DataRow label="Series count" value={formatInteger(global.seriesCount)} />
-            <DataRow label="Chapter count" value={formatInteger(global.chapterCount)} />
+            <DataRow
+              label="Series count"
+              value={formatInteger(global.seriesCount)}
+            />
+            <DataRow
+              label="Chapter count"
+              value={formatInteger(global.chapterCount)}
+            />
           </div>
         </article>
 
         <article className="collection-series__card">
-          <h4>Active pair</h4>
+          <h4>Central CORE contracts</h4>
           <div className="collection-series__table">
-            {collectionRows.map((row) => {
-              const snap = row.data || {};
-              const addressMatches =
-                isRealAddress(snap.collection) && isRealAddress(row.expected)
-                  ? snap.collection.toLowerCase() === row.expected.toLowerCase()
-                  : null;
-              return (
-                <React.Fragment key={row.label}>
-                  <DataRow label={row.label} value={<AddressValue value={snap.collection || row.expected} />} />
-                  <DataRow label={`${row.label} chapter`} value={formatInteger(snap.chapterNumber)} />
-                  <DataRow label={`${row.label} series`} value={formatInteger(snap.seriesId)} />
-                  <DataRow
-                    label={`${row.label} address match`}
-                    value={<StatusPill value={addressMatches} trueLabel="Matched" falseLabel="Mismatch" />}
-                  />
-                  <DataRow
-                    label={`${row.label} token rewards`}
-                    value={<StatusPill value={snap.tokenRewardsEligible} trueLabel="Eligible" falseLabel="Off" />}
-                  />
-                  <DataRow
-                    label={`${row.label} collection rewards`}
-                    value={<StatusPill value={snap.collectionRewardsEligible} trueLabel="Eligible" falseLabel="Off" />}
-                  />
-                </React.Fragment>
-              );
-            })}
+            <DataRow
+              label="Ticket hub"
+              value={<AddressValue value={ADDR.TICKET_HUB} />}
+            />
+            <DataRow
+              label="Series registry"
+              value={
+                <AddressValue value={ADDR.SERIES_REGISTRY || ADDR.REGISTRY} />
+              }
+            />
+            <DataRow
+              label="Chapter controller"
+              value={<AddressValue value={ADDR.CHAPTER_CONTROLLER} />}
+            />
+            <DataRow
+              label="Main reader"
+              value={<AddressValue value={ADDR.MAIN_READER || ADDR.READER} />}
+            />
+            <DataRow
+              label="Chapter reader"
+              value={<AddressValue value={ADDR.CHAPTER_SERIES_READER} />}
+            />
           </div>
         </article>
       </div>
 
-      <SectionHeader label="Chapter snapshot" accent="#ffe800" />
-      <article className="collection-series__card collection-series__card--wide">
-        <div className="collection-series__chapter-layout">
-          <div className="collection-series__table">
-            <DataRow label="Chapter ID" value={formatInteger(primaryChapter.chapterId)} />
-            <DataRow label="Series ID" value={formatInteger(primaryChapter.seriesId)} />
-            <DataRow label="Chapter number" value={formatInteger(primaryChapter.chapterNumber)} />
-            <DataRow
-              label="Configured"
-              value={<StatusPill value={primaryChapter.configured} trueLabel="Configured" falseLabel="Missing" />}
-            />
-            <DataRow
-              label="Exists"
-              value={<StatusPill value={primaryChapter.chapterExists} trueLabel="Exists" falseLabel="Missing" />}
-            />
-            <DataRow label="VRF collection" value={<AddressValue value={primaryChapter.vrfCollection} />} />
-            <DataRow label="Public collection" value={<AddressValue value={primaryChapter.publicCollection} />} />
-            <DataRow label="Ticket hub" value={<AddressValue value={primaryChapter.ticketHub} />} />
-            <DataRow label="Price provider" value={<AddressValue value={primaryChapter.priceProvider} />} />
-          </div>
-
-          <div className="collection-series__table">
-            <DataRow label="Sale cap" value={formatInteger(primaryChapter.saleCap)} />
-            <DataRow label="Marketing cap" value={formatInteger(primaryChapter.marketingCap)} />
-            <DataRow label="Total cap" value={formatInteger(primaryChapter.totalCap)} />
-            <DataRow label="Sale minted" value={formatInteger(primaryChapter.saleMinted)} />
-            <DataRow label="Marketing minted" value={formatInteger(primaryChapter.marketingMinted)} />
-            <DataRow label="Total minted" value={formatInteger(primaryChapter.totalMinted)} />
-            <DataRow
-              label="Public unlocked"
-              value={<StatusPill value={primaryChapter.publicUnlocked} trueLabel="Unlocked" falseLabel="Locked" />}
-            />
-            <DataRow
-              label="VRF token rewards"
-              value={<StatusPill value={primaryChapter.tokenRewardsEligibleVRF} trueLabel="Eligible" falseLabel="Off" />}
-            />
-            <DataRow
-              label="Public token rewards"
-              value={<StatusPill value={primaryChapter.tokenRewardsEligiblePublic} trueLabel="Eligible" falseLabel="Off" />}
-            />
-            <DataRow
-              label="VRF collection rewards"
-              value={<StatusPill value={primaryChapter.collectionRewardsEligibleVRF} trueLabel="Eligible" falseLabel="Off" />}
-            />
-          </div>
-        </div>
-
-        <div className="collection-series__progress">
-          <div className="collection-series__progress-head">
-            <span>Chapter mint progress</span>
-            <span>
-              {mintedPct == null ? FALLBACK_VALUE : `${mintedPct.toFixed(1)}%`}
-            </span>
-          </div>
-          <div className="collection-series__progress-track">
-            <span style={{ width: `${mintedPct ?? 0}%` }} />
-          </div>
-        </div>
-      </article>
+      <SectionHeader label="Chapter snapshots" accent="#ffe800" />
+      <div className="collection-series__grid">
+        {chapterViews.map(
+          ({ config, snapshot, vrfSnapshot, publicSnapshot, mintedPct }) => (
+            <article className="collection-series__card" key={config.chapterId}>
+              <h4>{`Chapter ${config.chapterId}: ${config.displayName}`}</h4>
+              <div className="collection-series__table">
+                <DataRow
+                  label="Series"
+                  value={`${config.seriesId} / ${config.seriesName}`}
+                />
+                <DataRow
+                  label="Configured"
+                  value={
+                    <StatusPill
+                      value={snapshot.configured}
+                      trueLabel="Configured"
+                      falseLabel="Missing"
+                    />
+                  }
+                />
+                <DataRow
+                  label="Exists"
+                  value={
+                    <StatusPill
+                      value={snapshot.chapterExists}
+                      trueLabel="Exists"
+                      falseLabel="Missing"
+                    />
+                  }
+                />
+                <DataRow
+                  label="Sale availability"
+                  value={
+                    <StatusPill
+                      value={snapshot.active}
+                      trueLabel="Available"
+                      falseLabel="Not active"
+                    />
+                  }
+                />
+                <DataRow
+                  label="VRF collection"
+                  value={
+                    <AddressValue
+                      value={snapshot.vrfCollection || config.main}
+                    />
+                  }
+                />
+                <DataRow
+                  label="VRF address match"
+                  value={
+                    <StatusPill
+                      value={sameAddress(snapshot.vrfCollection, config.main)}
+                      trueLabel="Matched"
+                      falseLabel="Mismatch"
+                    />
+                  }
+                />
+                <DataRow
+                  label="Public collection"
+                  value={
+                    <AddressValue
+                      value={snapshot.publicCollection || config.main2}
+                    />
+                  }
+                />
+                <DataRow
+                  label="Public address match"
+                  value={
+                    <StatusPill
+                      value={sameAddress(
+                        snapshot.publicCollection,
+                        config.main2,
+                      )}
+                      trueLabel="Matched"
+                      falseLabel="Mismatch"
+                    />
+                  }
+                />
+                <DataRow
+                  label="Ticket hub"
+                  value={
+                    <AddressValue
+                      value={snapshot.ticketHub || ADDR.TICKET_HUB}
+                    />
+                  }
+                />
+                <DataRow
+                  label="Price provider"
+                  value={<AddressValue value={snapshot.priceProvider} />}
+                />
+                <DataRow
+                  label="Sale minted / cap"
+                  value={`${formatInteger(snapshot.saleMinted)} / ${formatInteger(snapshot.saleCap)}`}
+                />
+                <DataRow
+                  label="Marketing minted / cap"
+                  value={`${formatInteger(snapshot.marketingMinted)} / ${formatInteger(snapshot.marketingCap)}`}
+                />
+                <DataRow
+                  label="Total minted / cap"
+                  value={`${formatInteger(snapshot.totalMinted)} / ${formatInteger(snapshot.totalCap)}`}
+                />
+                <DataRow
+                  label="Public gate"
+                  value={
+                    <StatusPill
+                      value={snapshot.publicUnlocked}
+                      trueLabel="Unlocked"
+                      falseLabel="Locked"
+                    />
+                  }
+                />
+                <DataRow
+                  label="VRF token rewards"
+                  value={
+                    <StatusPill
+                      value={
+                        vrfSnapshot.tokenRewardsEligible ??
+                        snapshot.tokenRewardsEligibleVRF
+                      }
+                      trueLabel="Eligible"
+                      falseLabel="Off"
+                    />
+                  }
+                />
+                <DataRow
+                  label="Public token rewards"
+                  value={
+                    <StatusPill
+                      value={
+                        publicSnapshot.tokenRewardsEligible ??
+                        snapshot.tokenRewardsEligiblePublic
+                      }
+                      trueLabel="Eligible"
+                      falseLabel="Off"
+                    />
+                  }
+                />
+                <DataRow
+                  label="VRF collection rewards"
+                  value={
+                    <StatusPill
+                      value={
+                        vrfSnapshot.collectionRewardsEligible ??
+                        snapshot.collectionRewardsEligibleVRF
+                      }
+                      trueLabel="Eligible"
+                      falseLabel="Off"
+                    />
+                  }
+                />
+              </div>
+              <div className="collection-series__progress">
+                <div className="collection-series__progress-head">
+                  <span>Ticket mint progress</span>
+                  <span>
+                    {mintedPct == null
+                      ? FALLBACK_VALUE
+                      : `${mintedPct.toFixed(1)}%`}
+                  </span>
+                </div>
+                <div className="collection-series__progress-track">
+                  <span style={{ width: `${mintedPct ?? 0}%` }} />
+                </div>
+              </div>
+            </article>
+          ),
+        )}
+      </div>
 
       <SectionHeader label="Series snapshot" accent="#b584ff" />
       <div className="collection-series__grid">
         {series.length ? (
           series.map((item) => (
-            <article className="collection-series__card" key={item.seriesId || item.name}>
-              <h4>{item.name || `Series ${item.seriesId || FALLBACK_VALUE}`}</h4>
+            <article
+              className="collection-series__card"
+              key={item.seriesId || item.name}
+            >
+              <h4>
+                {item.name || `Series ${item.seriesId || FALLBACK_VALUE}`}
+              </h4>
               <div className="collection-series__table">
-                <DataRow label="Series ID" value={formatInteger(item.seriesId)} />
+                <DataRow
+                  label="Series ID"
+                  value={formatInteger(item.seriesId)}
+                />
                 <DataRow
                   label="Exists"
-                  value={<StatusPill value={item.exists} trueLabel="Exists" falseLabel="Missing" />}
+                  value={
+                    <StatusPill
+                      value={item.exists}
+                      trueLabel="Exists"
+                      falseLabel="Missing"
+                    />
+                  }
                 />
-                <DataRow label="Chapter count" value={formatInteger(item.chapterCount)} />
+                <DataRow
+                  label="Chapter count"
+                  value={formatInteger(item.chapterCount)}
+                />
               </div>
             </article>
           ))
@@ -316,7 +531,10 @@ function ChapterSeriesPanel({
           <article className="collection-series__card">
             <h4>Series</h4>
             <div className="collection-series__table">
-              <DataRow label="Status" value={loading ? "Loading..." : FALLBACK_VALUE} />
+              <DataRow
+                label="Status"
+                value={loading ? "Loading..." : FALLBACK_VALUE}
+              />
             </div>
           </article>
         )}
@@ -327,12 +545,27 @@ function ChapterSeriesPanel({
         <div className="collection-series__table">
           <DataRow
             label="Ticket price"
-            value={formatNativeDisplay(ADDR.TICKET_PRICE_WEI || "1000000000000000000", 2)}
+            value={formatNativeDisplay(
+              ADDR.TICKET_PRICE_WEI || "1000000000000000000",
+              2,
+            )}
           />
-          <DataRow label="Marketing tickets" value={formatInteger(ADDR.MARKETING_CAP)} />
-          <DataRow label="Sale tickets" value={formatInteger(ADDR.SALE_CAP)} />
-          <DataRow label="Configured series id" value={formatInteger(ADDR.SERIES_ID)} />
-          <DataRow label="Configured chapter id" value={formatInteger(ADDR.CHAPTER_ID)} />
+          <DataRow
+            label="Marketing tickets / chapter"
+            value={formatInteger(ADDR.MARKETING_CAP)}
+          />
+          <DataRow
+            label="Sale tickets / chapter"
+            value={formatInteger(ADDR.SALE_CAP)}
+          />
+          <DataRow
+            label="Configured series"
+            value={formatInteger(CORE_CHAPTERS.length)}
+          />
+          <DataRow
+            label="Configured chapters"
+            value={formatInteger(CORE_CHAPTERS.length)}
+          />
         </div>
       </article>
     </section>

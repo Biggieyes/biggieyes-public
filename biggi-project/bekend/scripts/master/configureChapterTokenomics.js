@@ -30,6 +30,7 @@ const ABI = {
     "function getChapterCollections(uint256) view returns (address,address,address)",
     "function getChapterMeta(uint256) view returns (uint256,uint256)",
     "function chapterByCollection(address) view returns (uint256)",
+    "function isTicketHubForChapter(address,uint256) view returns (bool)",
     "function isTokenRewardsCollection(address) view returns (bool)",
     "function isCollectionRewardsCollection(address) view returns (bool)",
     "function setChapterCollections(uint256,address,address,address) external",
@@ -42,26 +43,36 @@ const ABI = {
     "function isChapterCapConsistent(uint256) view returns (bool)",
   ],
   main: [
+    "function chapterId() view returns (uint256)",
     "function ticketHub() view returns (address)",
+    "function setChapterId(uint256) external",
     "function setTicketHub(address) external",
   ],
   ticketHub: [
     "function mainCollection() view returns (address)",
+    "function chapterMainCollection(uint256) view returns (address)",
     "function distributor() view returns (address)",
     "function BIGGI() view returns (address)",
     "function reserveAddress() view returns (address)",
     "function saleCap() view returns (uint16)",
     "function marketingCap() view returns (uint16)",
     "function totalCap() view returns (uint16)",
+    "function chapterSaleCap(uint256) view returns (uint16)",
+    "function chapterMarketingCap(uint256) view returns (uint16)",
+    "function chapterTotalCap(uint256) view returns (uint16)",
     "function tokenSink() view returns (address)",
     "function tokenSinkBps() view returns (uint256)",
     "function tokenSinkDepositMode() view returns (bool)",
     "function devWallet() view returns (address)",
     "function setMainCollection(address) external",
+    "function setChapterMainCollection(uint256,address) external",
     "function setDistributor(address) external",
     "function setBiggiToken(address) external",
     "function setReserveAddress(address) external",
     "function setTicketCaps(uint16,uint16) external",
+    "function setChapterTicketCaps(uint256,uint16,uint16) external",
+    "function configureChapter(uint256,address,uint16,uint16,string) external",
+    "function setChapterTicketBaseURI(uint256,string) external",
     "function setTokenSink(address,uint256) external",
     "function setTokenSinkDepositMode(bool) external",
     "function setDevWallet(address) external",
@@ -219,6 +230,7 @@ async function main() {
     DRIP_DISTRIBUTOR: envAddress("DRIP_DISTRIBUTOR"),
     DEV_WALLET: envAddress("DEV_WALLET"),
     MARKETING_SUPPORT: envAddress("MARKETING_SUPPORT"),
+    TICKET_BASE_URI: env("TICKET_BASE_URI"),
   };
   const saleCap = envUint("SALE_CAP", true);
   const marketingCap = envUint("MARKETING_CAP", true);
@@ -286,6 +298,15 @@ async function main() {
     }
   }
 
+  async function ensureNumber(label, getter, expected, setter) {
+    const current = await read(label, getter);
+    if (bnToNumber(current) === Number(expected)) {
+      console.log(`[OK] ${label}`);
+    } else {
+      await tx(`${label}: ${current} -> ${expected}`, setter);
+    }
+  }
+
   async function ensureCollection(name, collection) {
     const whitelisted = await read(`${name}.collections`, () => distributor.collections(collection));
     if (whitelisted) {
@@ -327,17 +348,42 @@ async function main() {
     for (const [label, address] of [
       ["MAIN", A.MAIN],
       ["MAIN2", A.MAIN2],
-      ["TICKET_HUB", A.TICKET_HUB],
     ]) {
       const mapped = await read(`REGISTRY.chapterByCollection(${label})`, () => registry.chapterByCollection(address));
       if (bnToNumber(mapped) !== A.CHAPTER_ID) {
         throw new Error(`REGISTRY.chapterByCollection(${label}) is ${mapped}, expected ${A.CHAPTER_ID}`);
       }
     }
+
+    const hubForChapter = await read("REGISTRY.isTicketHubForChapter", () =>
+      registry.isTicketHubForChapter(A.TICKET_HUB, A.CHAPTER_ID)
+    );
+    if (hubForChapter !== true) {
+      throw new Error(`REGISTRY.isTicketHubForChapter(TICKET_HUB, ${A.CHAPTER_ID}) is false`);
+    }
+  }
+
+  let ticketHubChapterReady = true;
+  if (A.CHAPTER_ID !== 1) {
+    await ensureNumber("MAIN.chapterId", () => mainCollection.chapterId(), A.CHAPTER_ID, () => mainCollection.setChapterId(A.CHAPTER_ID));
+    try {
+      await ensureAddress(
+        "TICKET_HUB.chapterMainCollection",
+        () => ticketHub.chapterMainCollection(A.CHAPTER_ID),
+        A.MAIN,
+        () => ticketHub.setChapterMainCollection(A.CHAPTER_ID, A.MAIN)
+      );
+    } catch (e) {
+      await tx(`TICKET_HUB.configureChapter(${A.CHAPTER_ID})`, () =>
+        ticketHub.configureChapter(A.CHAPTER_ID, A.MAIN, saleCap, marketingCap, A.TICKET_BASE_URI || "")
+      );
+      ticketHubChapterReady = opts.execute;
+    }
+  } else {
+    await ensureAddress("TICKET_HUB.mainCollection", () => ticketHub.mainCollection(), A.MAIN, () => ticketHub.setMainCollection(A.MAIN));
   }
 
   await ensureAddress("MAIN.ticketHub", () => mainCollection.ticketHub(), A.TICKET_HUB, () => mainCollection.setTicketHub(A.TICKET_HUB));
-  await ensureAddress("TICKET_HUB.mainCollection", () => ticketHub.mainCollection(), A.MAIN, () => ticketHub.setMainCollection(A.MAIN));
   await ensureAddress("TICKET_HUB.distributor", () => ticketHub.distributor(), A.DISTRIBUTOR, () => ticketHub.setDistributor(A.DISTRIBUTOR));
   await ensureAddress("MAIN2.distributor", () => publicCollection.distributor(), A.DISTRIBUTOR, () => publicCollection.setDistributor(A.DISTRIBUTOR));
   await ensureAddress("MAIN2.priceProvider", () => publicCollection.priceProvider(), A.MAIN, () => publicCollection.setPriceProvider(A.MAIN));
@@ -365,16 +411,30 @@ async function main() {
     await ensureAddress("MAIN2.reserveAddress", () => publicCollection.reserveAddress(), A.RESERVE, () => publicCollection.setReserveAddress(A.RESERVE));
   }
 
-  const hubSaleCap = bnToNumber(await read("TICKET_HUB.saleCap", () => ticketHub.saleCap()));
-  const hubMarketingCap = bnToNumber(await read("TICKET_HUB.marketingCap", () => ticketHub.marketingCap()));
-  const hubTotalCap = bnToNumber(await read("TICKET_HUB.totalCap", () => ticketHub.totalCap()));
-  if (hubTotalCap !== totalCap) {
-    throw new Error(`TICKET_HUB.totalCap is ${hubTotalCap}; expected ${totalCap}. Deploy a hub with the intended total cap.`);
-  }
-  if (hubSaleCap === saleCap && hubMarketingCap === marketingCap) {
-    console.log("[OK] TICKET_HUB caps");
+  if (!ticketHubChapterReady) {
+    console.log("[SKIP] TICKET_HUB chapter caps check until configureChapter executes");
   } else {
-    await tx(`TICKET_HUB.setTicketCaps(${saleCap}, ${marketingCap})`, () => ticketHub.setTicketCaps(saleCap, marketingCap));
+    const hubSaleCap = bnToNumber(await read("TICKET_HUB.saleCap", () =>
+      A.CHAPTER_ID === 1 ? ticketHub.saleCap() : ticketHub.chapterSaleCap(A.CHAPTER_ID)
+    ));
+    const hubMarketingCap = bnToNumber(await read("TICKET_HUB.marketingCap", () =>
+      A.CHAPTER_ID === 1 ? ticketHub.marketingCap() : ticketHub.chapterMarketingCap(A.CHAPTER_ID)
+    ));
+    const hubTotalCap = bnToNumber(await read("TICKET_HUB.totalCap", () =>
+      A.CHAPTER_ID === 1 ? ticketHub.totalCap() : ticketHub.chapterTotalCap(A.CHAPTER_ID)
+    ));
+    if (hubTotalCap !== totalCap) {
+      throw new Error(`TICKET_HUB.totalCap is ${hubTotalCap}; expected ${totalCap}. Deploy a hub with the intended total cap.`);
+    }
+    if (hubSaleCap === saleCap && hubMarketingCap === marketingCap) {
+      console.log("[OK] TICKET_HUB caps");
+    } else {
+      await tx(`TICKET_HUB.setTicketCaps(${saleCap}, ${marketingCap})`, () =>
+        A.CHAPTER_ID === 1
+          ? ticketHub.setTicketCaps(saleCap, marketingCap)
+          : ticketHub.setChapterTicketCaps(A.CHAPTER_ID, saleCap, marketingCap)
+      );
+    }
   }
 
   await ensureRegistryMapping();

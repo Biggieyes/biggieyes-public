@@ -1,5 +1,7 @@
 # BIGGI MASTER: Mainnet Visibility Launch
 
+> Archivni profil: tento dokument popisuje puvodni variantu `SALE_CAP=0` / `MARKETING_CAP=550`. Aktualni live chapter-aware deployment pouziva `SALE_CAP=500`, `MARKETING_CAP=50` pro kazdy chapter. Pro aktualni stav pouzij `CORE/CORE_MAINNET_REAL_DATA.md` a `addresses.master.json`.
+
 Tento dokument je pro situaci, kdy chces:
 
 - mit `BiggiMain` NFT uz na Polygon mainnetu

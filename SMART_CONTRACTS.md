@@ -1,11 +1,16 @@
 # Smart Contracts
 
+Last verified: 2026-08-17. Canonical live addresses and chapter pairs are in `biggi-project/bekend/addresses.master.json`.
+
 ## Contract Map
 
 | Documentation Name | Implementation Name | Category |
 | --- | --- | --- |
 | `BiggiEyesMain` | `BiggiEyesMain` | NFT core |
 | `BiggiEyesMain2` | `BiggiEyesMain2` | Public NFT collection |
+| `TicketHub` | `BiggiTicketHub` | Central chapter-aware ticket mint/redeem |
+| `SeriesRegistry` | `BiggiSeriesRegistry` | Series/chapter source of truth |
+| `ChapterController` | `BiggiChapterController` | Chapter caps and public unlock |
 | `BiggiToken` | `BiggiToken` | ERC20 token |
 | `Distributor` | `MultiCollectionDistributor` | Revenue routing |
 | `Reserve` | `BiggiReserveV4` | Reserve accounting |
@@ -24,30 +29,25 @@
 
 **Purpose**
 
-Primary ERC721 collection that mints tradable tickets and converts redeemed tickets into random NFTs.
+Primary VRF ERC721 collection that converts tickets from the central `BiggiTicketHub` into random NFTs. Five independent instances are deployed, one per current chapter.
 
 **Responsibilities**
 
-- enforce ticket supply and per-wallet ticket caps
-- manage dynamic ticket pricing
+- accept chapter-bound redemption only from the configured TicketHub
 - store NFT metadata fields such as block, background, main ID, and pricing context
 - maintain pending VRF request state
 - finalize random NFT assignment
 
 **Key functions**
 
-- `mintTicket()`
-- `mintTicketWithBiggi()`
-- `redeemTicketAndMintNFT(uint256 ticketId)`
+- `redeemFromTicketHub(address user, uint256 ticketId, uint256 ticketPriceSnapshot)`
 - `fulfillRandomFromRouter(uint256 requestId, uint256 randomWord)`
 - `batchSetNFTBackgroundAndBlock(...)`
 - `setModules(address compute_, address vrfRouter_)`
 
 **Interactions**
 
-- calls `Distributor.receiveMintShare()` for native mint routing
 - calls `VRFRouter.requestRandomFor()` during redemption
-- forwards BIGGI inflows to `Reserve`
 - reads trait math from `BiggiCompute`
 
 **Security considerations**
@@ -56,7 +56,34 @@ Primary ERC721 collection that mints tradable tickets and converts redeemed tick
 - `whenNotPaused` on user entry points
 - only the configured VRF router may fulfill randomness
 - one pending redemption per wallet
-- invalid or already-burned tickets are rejected
+- only the configured TicketHub can start redemption
+
+## BiggiTicketHub
+
+**Purpose**
+
+Central ERC721 ticket mint/redeem contract shared by all chapters. Current address: `0x7b7e561173f498C8274b821090Da64E8ee653f6A`.
+
+**Responsibilities**
+
+- keep chapter-specific `500` sale / `50` marketing caps and ticket metadata
+- mint paid and marketing tickets for a selected chapter
+- preserve ticket price and chapter snapshots
+- route native mint share through the distributor and BIGGI payments through treasury
+- block paid mint and redemption while the selected chapter is inactive
+
+**Key functions**
+
+- `configureChapter(...)`
+- `mintTicketForChapter(uint256 chapterId)`
+- `mintTicketWithBiggiForChapter(uint256 chapterId)`
+- `mintMarketingTicketForChapter(uint256 chapterId, address to)`
+- `redeemTicket(uint256 ticketId)`
+- `setChapterActive(uint256 chapterId, bool active)`
+
+## Series Registry And Chapter Controller
+
+`BiggiSeriesRegistry` stores each series/chapter and its unique VRF/Public pair while allowing the central TicketHub to be shared. `BiggiChapterController` verifies chapter-specific caps and wiring, supplies the paired VRF price provider, and unlocks public mint only after all 550 chapter tickets are minted.
 
 ## BiggiEyesMain2
 
@@ -68,6 +95,7 @@ Secondary ERC721 collection for direct public minting of pre-seeded indices.
 
 - expose public mint flow for deterministic indices
 - reuse block prices from the main collection
+- bind to a chapter ID and read unlock state through `BiggiChapterController`
 - maintain its own mint counters and metadata state
 - support native and BIGGI paid public minting
 
@@ -77,10 +105,12 @@ Secondary ERC721 collection for direct public minting of pre-seeded indices.
 - `mintPublic(uint256 idx)`
 - `mintPublicWithBiggi(uint256 idx)`
 - `setPriceProvider(address provider_)`
+- `setChapterController(address controller_, uint256 chapterId_)`
 
 **Interactions**
 
-- reads block prices from `BiggiEyesMain`
+- reads block prices from its paired `BiggiEyesMain`
+- reads chapter unlock state from `BiggiChapterController`
 - routes revenue into `Distributor`
 - forwards BIGGI into `Reserve`
 
@@ -492,26 +522,27 @@ Dedicated Chainlink VRF gateway between the main collection and the VRF coordina
 
 **Responsibilities**
 
-- accept randomness requests only from the configured main contract
+- accept randomness requests only from the default or explicitly approved main collections
 - store request metadata for debug and UI support
 - forward fulfilled randomness back to the main collection
 
 **Key functions**
 
 - `setMain(address main_)`
+- `setMainApproval(address main_, bool approved)`
 - `setVrfParams(...)`
 - `requestRandomFor(address minter, uint256 ticketId)`
 - `rawFulfillRandomWords(...)`
 
 **Interactions**
 
-- receives requests from `BiggiEyesMain`
+- receives requests from approved chapter `BiggiEyesMain` instances
 - interacts with Chainlink VRF V2 Plus coordinator
 - calls back into `BiggiEyesMain.fulfillRandomFromRouter`
 
 **Security considerations**
 
-- only the main collection may request randomness
+- only the default or approved chapter collection may request randomness
 - only Chainlink coordinator may trigger fulfillment path through the base consumer logic
 
 ## Auxiliary Contracts
@@ -519,8 +550,9 @@ Dedicated Chainlink VRF gateway between the main collection and the VRF coordina
 ### Reader Contracts
 
 - `BiggiMainReader`
+- `BiggiChapterSeriesReader`
 - `BiggiTokenomikReader`
-- `BiggiMultiCollectionDistributorReader`
+- `BiggiMultiCollectionDistributorReaderV2`
 - `BiggiReserveTreasuryReader`
 - `BiggiBuybackReader`
 

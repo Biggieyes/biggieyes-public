@@ -1,102 +1,80 @@
-// src/services/main2Service.js
+import {
+  fromWei,
+  getChapterMain2,
+  getReadOnlyChapterMain2,
+} from "@/shared/utils/contract";
 
-import { fromWei, getReadOnlyMain2, getMain2 } from "@/shared/utils/contract";
-// POZN: pokud ještě nemáš getReadOnlyMain2/getMain2 v contract.js,
-// můžeš je tam jednoduše přidat jako factory na BiggiEyesMain2.
+const normalizeChapterId = (chapterId) => {
+  const normalized = Number(chapterId);
+  if (!Number.isSafeInteger(normalized) || normalized < 1) {
+    throw new Error("A valid CORE chapterId is required.");
+  }
+  return normalized;
+};
 
-/**
- * READ-ONLY ČÁST
- */
+const getReadContract = (chapterId = 1) =>
+  getReadOnlyChapterMain2(normalizeChapterId(chapterId));
 
-export async function getMaxBatch() {
-  const c = await getReadOnlyMain2();
-  const v = await c.MAX_BATCH();
-  return Number(v);
+const getWriteContract = (chapterId) =>
+  getChapterMain2(normalizeChapterId(chapterId));
+
+export async function getMaxBatch(chapterId = 1) {
+  return Number(await getReadContract(chapterId).MAX_BATCH());
 }
 
-export async function getMaxSupply() {
-  const c = await getReadOnlyMain2();
-  const v = await c.MAX_SUPPLY();
-  return Number(v);
+export async function getMaxSupply(chapterId = 1) {
+  return Number(await getReadContract(chapterId).MAX_SUPPLY());
 }
 
-export async function getBiggiTokenAddress() {
-  const c = await getReadOnlyMain2();
-  return await c.BIGGI();
+export async function getBiggiTokenAddress(chapterId = 1) {
+  return getReadContract(chapterId).BIGGI();
 }
 
-export async function getBiggiMinted() {
-  const c = await getReadOnlyMain2();
-  const v = await c.biggiMinted();
-  return Number(v);
+export async function getBiggiMinted(chapterId = 1) {
+  return Number(await getReadContract(chapterId).biggiMinted());
 }
 
-export async function getBiggiPerEthRaw() {
-  const c = await getReadOnlyMain2();
-  return await c.biggiPerEth(); // BigNumber
+export async function getBiggiPerEthRaw(chapterId = 1) {
+  return getReadContract(chapterId).biggiPerEth();
 }
 
-export async function getBiggiPerEthHuman() {
-  const raw = await getBiggiPerEthRaw();
-  // 1 ETH -> X BIGGI, tady jen převedeme na string (počítat ratio může FE)
-  return fromWei(raw);
+export async function getBiggiPerEthHuman(chapterId = 1) {
+  return fromWei(await getBiggiPerEthRaw(chapterId));
 }
 
-export async function getBlockOf(tokenId) {
-  const c = await getReadOnlyMain2();
-  const blk = await c.blockOf(tokenId);
-  return Number(blk);
+export async function getBlockOf(chapterId, tokenId) {
+  return Number(await getReadContract(chapterId).blockOf(tokenId));
 }
 
-export async function getBackgroundMintCount(bgIdx) {
-  const c = await getReadOnlyMain2();
-  const v = await c.getBackgroundMintCount(bgIdx);
-  return Number(v);
+export async function getBackgroundMintCount(chapterId, backgroundIndex) {
+  return Number(
+    await getReadContract(chapterId).getBackgroundMintCount(backgroundIndex),
+  );
 }
 
-export async function getBlockMintCount(blockIdx) {
-  const c = await getReadOnlyMain2();
-  const v = await c.getBlockMintCount(blockIdx);
-  return Number(v);
+export async function getBlockMintCount(chapterId, blockIndex) {
+  return Number(await getReadContract(chapterId).getBlockMintCount(blockIndex));
 }
 
-export async function getCurrentBlockPriceRaw(blockIdx) {
-  const c = await getReadOnlyMain2();
-  return await c.getCurrentBlockPrice(blockIdx); // BigNumber
+export async function getCurrentBlockPriceRaw(chapterId, blockIndex) {
+  return getReadContract(chapterId).getCurrentBlockPrice(blockIndex);
 }
 
-export async function getCurrentBlockPriceEth(blockIdx) {
-  const raw = await getCurrentBlockPriceRaw(blockIdx);
-  return fromWei(raw);
+export async function getCurrentBlockPriceEth(chapterId, blockIndex) {
+  return fromWei(await getCurrentBlockPriceRaw(chapterId, blockIndex));
 }
 
-/**
- * getMintData(index)
- * V kontraktu vrací 3 uint256 – nechám je genericky pojmenované,
- * ať nic netipujeme, FE si je může pojmenovat podle potřeby.
- */
-export async function getMintData(index) {
-  const c = await getReadOnlyMain2();
-  const res = await c.getMintData(index);
-  // res je [u0, u1, u2] nebo objekt s indexy
-  const a = res[0];
-  const b = res[1];
-  const c3 = res[2];
-
+export async function getMintData(chapterId, index) {
+  const result = await getReadContract(chapterId).getMintData(index);
   return {
-    a,
-    b,
-    c: c3,
+    ticketPrice: result[0],
+    blockPrice: result[1],
+    finalPrice: result[2],
   };
 }
 
-/**
- * nftInfo(index) – kompletní struct
- */
-export async function getNftInfo(index) {
-  const c = await getReadOnlyMain2();
-  const info = await c.nftInfo(index);
-
+export async function getNftInfo(chapterId, index) {
+  const info = await getReadContract(chapterId).nftInfo(index);
   return {
     minted: info.minted ?? info[0],
     background: Number(info.background ?? info[1]),
@@ -109,96 +87,61 @@ export async function getNftInfo(index) {
   };
 }
 
-/**
- * Základní adresy a stav
- */
-
-export async function getPriceProvider() {
-  const c = await getReadOnlyMain2();
-  return await c.priceProvider();
+export async function getPriceProvider(chapterId = 1) {
+  return getReadContract(chapterId).priceProvider();
 }
 
-export async function getDistributorAddress() {
-  const c = await getReadOnlyMain2();
-  return await c.distributor();
+export async function getDistributorAddress(chapterId = 1) {
+  return getReadContract(chapterId).distributor();
 }
 
-export async function getReserveAddress() {
-  const c = await getReadOnlyMain2();
-  return await c.reserveAddress();
+export async function getReserveAddress(chapterId = 1) {
+  return getReadContract(chapterId).reserveAddress();
 }
 
-export async function isPaused() {
-  const c = await getReadOnlyMain2();
-  return await c.paused();
+export async function isPaused(chapterId = 1) {
+  return getReadContract(chapterId).paused();
 }
 
-export async function getName() {
-  const c = await getReadOnlyMain2();
-  return await c.name();
+export async function getName(chapterId = 1) {
+  return getReadContract(chapterId).name();
 }
 
-export async function getSymbol() {
-  const c = await getReadOnlyMain2();
-  return await c.symbol();
+export async function getSymbol(chapterId = 1) {
+  return getReadContract(chapterId).symbol();
 }
 
-/**
- * ERC-721 základ
- */
-
-export async function getBalanceOf(owner) {
-  const c = await getReadOnlyMain2();
-  const v = await c.balanceOf(owner);
-  return v.toString();
+export async function getBalanceOf(chapterId, owner) {
+  return (await getReadContract(chapterId).balanceOf(owner)).toString();
 }
 
-export async function getOwnerOf(tokenId) {
-  const c = await getReadOnlyMain2();
-  return await c.ownerOf(tokenId);
+export async function getOwnerOf(chapterId, tokenId) {
+  return getReadContract(chapterId).ownerOf(tokenId);
 }
 
-export async function getTokenURI(tokenId) {
-  const c = await getReadOnlyMain2();
-  return await c.tokenURI(tokenId);
+export async function getTokenURI(chapterId, tokenId) {
+  return getReadContract(chapterId).tokenURI(tokenId);
 }
 
-/**
- * WRITE FUNKCE (přes signer)
- * Neměním žádnou logiku – jen zabaluju volání.
- */
-
-export async function mintPublic(idx, valueWei) {
-  const c = await getMain2();
-  // valueWei musíš spočítat/nechat spočítat mimo – service nic neodhaduje.
-  const tx = await c.mintPublic(idx, { value: valueWei });
-  return tx.wait();
+export async function mintPublic(chapterId, index, valueWei) {
+  const contract = await getWriteContract(chapterId);
+  const transaction = await contract.mintPublic(index, { value: valueWei });
+  return transaction.wait();
 }
 
-export async function mintPublicWithBiggi(idx) {
-  const c = await getMain2();
-  // Pozor: předtím musí mít kontrakt schválený allowance na BIGGI tokenu.
-  const tx = await c.mintPublicWithBiggi(idx);
-  return tx.wait();
+export async function mintPublicWithBiggi(chapterId, index) {
+  const contract = await getWriteContract(chapterId);
+  const transaction = await contract.mintPublicWithBiggi(index);
+  return transaction.wait();
 }
 
-/**
- * Optionální helper: doporučená cena pro idx (pokud getMintData vrací finální cenu v c)
- */
-export async function getSuggestedMintPriceWei(idx) {
-  const data = await getMintData(idx);
-  // typicky to bude data.c = finalPrice, ale FE si to může přepsat.
-  return data.c;
+export async function getSuggestedMintPriceWei(chapterId, index) {
+  return (await getMintData(chapterId, index)).finalPrice;
 }
 
-export async function getSuggestedMintPriceEth(idx) {
-  const wei = await getSuggestedMintPriceWei(idx);
-  return fromWei(wei);
+export async function getSuggestedMintPriceEth(chapterId, index) {
+  return fromWei(await getSuggestedMintPriceWei(chapterId, index));
 }
-
-/**
- * Default export – můžeš importovat jako objekt
- */
 
 const main2Service = {
   getMaxBatch,
@@ -230,4 +173,3 @@ const main2Service = {
 };
 
 export default main2Service;
-

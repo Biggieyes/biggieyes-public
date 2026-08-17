@@ -24,6 +24,7 @@ import "./CORE_LIBRARY/BiggiBpsLib.sol";
 interface IBiggiSeriesRegistryDistributor {
     function chapterByCollection(address collection) external view returns (uint256);
     function getChapterMeta(uint256 chapterId) external view returns (uint256 seriesId, uint256 chapterNumber);
+    function getChapterCollections(uint256 chapterId) external view returns (address vrfCollection, address publicCollection, address ticketHub);
 }
 
 contract BiggiMultiCollectionDistributor is Ownable, ReentrancyGuard, Pausable {
@@ -35,6 +36,7 @@ contract BiggiMultiCollectionDistributor is Ownable, ReentrancyGuard, Pausable {
     error PendingAmountTooHigh();
     error InsufficientFreeBalance();
     error WithdrawFailed();
+    error InvalidChapterAttribution();
 
     address public collectionRewards;
     address public reserve;
@@ -136,7 +138,21 @@ contract BiggiMultiCollectionDistributor is Ownable, ReentrancyGuard, Pausable {
         _distributeFrom(msg.sender, msg.value);
     }
 
+    function supportsChapterMintShare() external pure returns (bool) {
+        return true;
+    }
+
+    function receiveMintShareForChapter(uint256 chapterId) external payable nonReentrant whenNotPaused {
+        if (!collections[msg.sender]) revert CallerNotWhitelisted();
+        if (!_isValidChapterSource(msg.sender, chapterId)) revert InvalidChapterAttribution();
+        _distributeFromChapter(msg.sender, msg.value, chapterId);
+    }
+
     function _distributeFrom(address collection, uint256 value) internal {
+        _distributeFromChapter(collection, value, 0);
+    }
+
+    function _distributeFromChapter(address collection, uint256 value, uint256 explicitChapterId) internal {
         if (value == 0) revert NoValue();
         if (
             collectionRewards == address(0) ||
@@ -148,7 +164,7 @@ contract BiggiMultiCollectionDistributor is Ownable, ReentrancyGuard, Pausable {
 
         totalReceived += value;
         receivedByCollection[collection] += value;
-        _recordChapterAttribution(collection, value);
+        _recordChapterAttribution(collection, value, explicitChapterId);
         emit MintShareReceived(collection, value);
 
         uint256 shareCollection = BiggiBpsLib.part(value, BiggiBpsLib.DIST_COLLECTION_BPS);
@@ -171,14 +187,18 @@ contract BiggiMultiCollectionDistributor is Ownable, ReentrancyGuard, Pausable {
         _tryForwardWithFunc(communityCenter, shareCommunity);
     }
 
-    function _recordChapterAttribution(address source, uint256 amount) internal {
+    function _recordChapterAttribution(address source, uint256 amount, uint256 explicitChapterId) internal {
         if (registry == address(0)) return;
         uint256 chapterId;
-        try IBiggiSeriesRegistryDistributor(registry).chapterByCollection(source) returns (uint256 resolvedChapterId) {
-            chapterId = resolvedChapterId;
-        } catch {
-            emit ChapterAttributionFailed(source, registry, amount);
-            return;
+        if (explicitChapterId != 0) {
+            chapterId = explicitChapterId;
+        } else {
+            try IBiggiSeriesRegistryDistributor(registry).chapterByCollection(source) returns (uint256 resolvedChapterId) {
+                chapterId = resolvedChapterId;
+            } catch {
+                emit ChapterAttributionFailed(source, registry, amount);
+                return;
+            }
         }
         if (chapterId == 0) return;
 
@@ -193,6 +213,19 @@ contract BiggiMultiCollectionDistributor is Ownable, ReentrancyGuard, Pausable {
         receivedByChapter[chapterId] += amount;
         receivedBySeries[seriesId] += amount;
         emit ChapterAttributed(source, seriesId, chapterId, amount);
+    }
+
+    function _isValidChapterSource(address source, uint256 chapterId) internal view returns (bool) {
+        if (registry == address(0) || chapterId == 0) return false;
+        try IBiggiSeriesRegistryDistributor(registry).getChapterCollections(chapterId) returns (
+            address vrfCollection,
+            address publicCollection,
+            address ticketHub
+        ) {
+            return source == vrfCollection || source == publicCollection || source == ticketHub;
+        } catch {
+            return false;
+        }
     }
 
     function _tryForwardWithFunc(address recipient, uint256 amt) internal {

@@ -635,5 +635,76 @@
     ],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "ticketHub",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "chapterId",
+        "type": "uint256"
+      }
+    ],
+    "name": "ticketHubSnapshot",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "collection",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "chapterId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "seriesId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "chapterNumber",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "tokenRewardsEligible",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "collectionRewardsEligible",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "isVrfCollection",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "isPublicCollection",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "isTicketHubCollection",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct BiggiChapterSeriesReader.CollectionSnapshot",
+        "name": "s",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   }
 ]

@@ -18,7 +18,8 @@ const CHAIN_RPC_URL =
   import.meta.env.VITE_RPC_URL_ACTIVE_CHAIN ||
   import.meta.env.VITE_JSON_RPC_URL ||
   "";
-const OWNER_ADDRESS = import.meta.env.VITE_MOD_OWNER_ADDRESS || "";
+const OWNER_ADDRESS =
+  import.meta.env.VITE_MOD_OWNER_ADDRESS || ADDR.OWNER || ADDR.EXPECT_OWNER || "";
 
 export const getConfig = () => ({
   contractAddress: MOD_REWARDS_ADDRESS,
@@ -86,4 +87,3 @@ export const parseWei = (value, decimals = 18) => {
   if (value == null || value === "") return 0n;
   return parseUnits(String(value), decimals);
 };
-

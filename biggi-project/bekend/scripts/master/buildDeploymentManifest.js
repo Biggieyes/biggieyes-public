@@ -114,11 +114,22 @@ async function main() {
     "BIGGI_NAMES_LIB2",
     "CRE_AUTOMATION_RECEIVER",
   ];
+  const addressEntries = keys.map((key) => ({ key, value: A[key] }));
+  if (Array.isArray(A.chapters)) {
+    for (const chapter of A.chapters) {
+      const chapterId = Number(chapter.chapterId);
+      if (!Number.isInteger(chapterId) || chapterId <= 0) continue;
+      addressEntries.push(
+        { key: `CHAPTER_${chapterId}_MAIN`, value: chapter.MAIN },
+        { key: `CHAPTER_${chapterId}_MAIN2`, value: chapter.MAIN2 }
+      );
+    }
+  }
 
   const seen = new Set();
   const contracts = [];
-  for (const key of keys) {
-    const address = getAddress(A[key]);
+  for (const { key, value } of addressEntries) {
+    const address = getAddress(value);
     if (!isAddress(address) || seen.has(address)) continue;
     seen.add(address);
     const code = await ethers.provider.getCode(address);
@@ -142,7 +153,9 @@ async function main() {
       }
     }
     contracts.push(entry);
-    console.log(`[AUDIT ${contracts.length}/${keys.length}] ${key}: code=${entry.hasCode} verified=${entry.verified ?? "not-queried"}`);
+    console.log(
+      `[AUDIT ${contracts.length}/${addressEntries.length}] ${key}: code=${entry.hasCode} verified=${entry.verified ?? "not-queried"}`
+    );
   }
 
   const manifest = {

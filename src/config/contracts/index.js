@@ -17,6 +17,16 @@ export const CONTRACTS = {
   SERIES_REGISTRY: { addressKey: "SERIES_REGISTRY", abiName: "BiggiSeriesRegistry" },
   REGISTRY: { addressKey: "REGISTRY", abiName: "BiggiSeriesRegistry" },
   CHAPTER_CONTROLLER: { addressKey: "CHAPTER_CONTROLLER", abiName: "BiggiChapterController" },
+  CHAPTER_1_MAIN: { addressKey: "CHAPTER_1_MAIN", abiName: "BiggiMain" },
+  CHAPTER_1_MAIN2: { addressKey: "CHAPTER_1_MAIN2", abiName: "BiggiMain2" },
+  CHAPTER_2_MAIN: { addressKey: "CHAPTER_2_MAIN", abiName: "BiggiMain" },
+  CHAPTER_2_MAIN2: { addressKey: "CHAPTER_2_MAIN2", abiName: "BiggiMain2" },
+  CHAPTER_3_MAIN: { addressKey: "CHAPTER_3_MAIN", abiName: "BiggiMain" },
+  CHAPTER_3_MAIN2: { addressKey: "CHAPTER_3_MAIN2", abiName: "BiggiMain2" },
+  CHAPTER_4_MAIN: { addressKey: "CHAPTER_4_MAIN", abiName: "BiggiMain" },
+  CHAPTER_4_MAIN2: { addressKey: "CHAPTER_4_MAIN2", abiName: "BiggiMain2" },
+  CHAPTER_5_MAIN: { addressKey: "CHAPTER_5_MAIN", abiName: "BiggiMain" },
+  CHAPTER_5_MAIN2: { addressKey: "CHAPTER_5_MAIN2", abiName: "BiggiMain2" },
 
   BIGGI: { addressKey: "BIGGI", abiName: "BiggiToken" },
   BIGGI_TOKEN: { addressKey: "BIGGI_TOKEN", abiName: "BiggiToken" },
@@ -102,6 +112,9 @@ export function getContractMeta(chainKeyOrId, key) {
   }
 
   const chainKey = resolveChainKey(chainKeyOrId);
+  if (!chainKey) {
+    throw new Error(`Unsupported chain: ${chainKeyOrId}. BIGGI supports Polygon mainnet (137) only.`);
+  }
   const addresses = getAddresses(chainKey);
 
   const address = addresses?.[entry.addressKey];

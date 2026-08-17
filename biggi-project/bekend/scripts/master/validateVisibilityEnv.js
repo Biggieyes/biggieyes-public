@@ -63,6 +63,34 @@ function isHexPrivateKey(value) {
   return /^0x[0-9a-fA-F]{64}$/.test(String(value || ""));
 }
 
+function validateSigningKeys(errors, infos) {
+  if (isHexPrivateKey(env("PRIVATE_KEY"))) {
+    infos.push("Legacy PRIVATE_KEY is configured.");
+    return;
+  }
+
+  const deployerKey = env("DEPLOYER_PRIVATE_KEY");
+  const ownerKey = env("OWNER_PRIVATE_KEY");
+  if (!isHexPrivateKey(deployerKey)) {
+    errors.push("DEPLOYER_PRIVATE_KEY is missing or invalid.");
+  }
+  if (!isHexPrivateKey(ownerKey)) {
+    errors.push("OWNER_PRIVATE_KEY is missing or invalid.");
+  }
+  if (!isHexPrivateKey(deployerKey) || !isHexPrivateKey(ownerKey)) return;
+
+  const deployerAddress = new ethers.Wallet(deployerKey).address;
+  const ownerAddress = new ethers.Wallet(ownerKey).address;
+  if (isAddress(env("DEPLOYER")) && ethers.utils.getAddress(env("DEPLOYER")) !== deployerAddress) {
+    errors.push("DEPLOYER_PRIVATE_KEY does not match DEPLOYER.");
+  }
+  const expectedOwner = env("OWNER", env("EXPECT_OWNER"));
+  if (isAddress(expectedOwner) && ethers.utils.getAddress(expectedOwner) !== ownerAddress) {
+    errors.push("OWNER_PRIVATE_KEY does not match OWNER/EXPECT_OWNER.");
+  }
+  infos.push("Separate deployer and owner signing keys are configured.");
+}
+
 function parseIntStrict(name, raw, fallback, errors) {
   const value = raw == null || raw === "" ? fallback : Number(raw);
   if (!Number.isInteger(value) || value < 0) {
@@ -165,9 +193,7 @@ function main() {
   const warnings = [];
   const infos = [];
 
-  if (!isHexPrivateKey(env("PRIVATE_KEY"))) {
-    errors.push("PRIVATE_KEY is missing or invalid.");
-  }
+  validateSigningKeys(errors, infos);
 
   const rpcKey = "POLYGON_RPC_URL";
   if (!env(rpcKey)) {
@@ -260,7 +286,11 @@ function main() {
     warnings
   );
   if (mainMetadataCount === 0) {
-    warnings.push("MAIN metadata is missing; VRF redeem will not work until metadata is seeded.");
+    warnings.push(
+      env("MAIN")
+        ? "MAIN_METADATA_FILE is absent; verify the reused MAIN metadata on-chain before activation."
+        : "MAIN metadata is missing; VRF redeem will not work until metadata is seeded."
+    );
   }
 
   const ticketBaseUri = env("TICKET_BASE_URI");

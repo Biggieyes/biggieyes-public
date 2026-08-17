@@ -74,6 +74,7 @@ describe("BIGGI_MASTER: ecosystem BIGGI NFT payments", function () {
     await (await ticketHub.setTokenSink(treasury.address, 10_000)).wait();
     await (await ticketHub.setTokenSinkDepositMode(true)).wait();
     await (await treasury.setEcosystemBiggiCaller(ticketHub.address, true)).wait();
+    await (await ticketHub.setChapterActive(1, true)).wait();
 
     await (await token.mint(alice.address, price)).wait();
     await (await token.connect(alice).approve(ticketHub.address, price)).wait();
@@ -101,6 +102,7 @@ describe("BIGGI_MASTER: ecosystem BIGGI NFT payments", function () {
     await (await ticketHub.setBiggiToken(token.address)).wait();
     await (await ticketHub.setTicketPrice(1)).wait();
     await (await ticketHub.setBiggiRate(1)).wait();
+    await (await ticketHub.setChapterActive(1, true)).wait();
     await expect(ticketHub.connect(alice).mintTicketWithBiggi()).to.be.reverted;
   });
 

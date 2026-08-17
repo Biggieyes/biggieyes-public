@@ -48,7 +48,7 @@ Current deployment status: `BIGGI_MASTER/CORE` is deployed on Polygon mainnet as
 
 ## 7. Verification and release control
 
-- [x] All 50 canonical project deployments verified on Polygon explorer (Etherscan V2 manifest, 2026-07-05).
+- [x] All 58 canonical project deployments verified on Polygon explorer (deployment manifest, 2026-08-17).
 - [ ] ABI packages frozen for backend/frontend release.
 - [ ] Release tag created and deployment manifests archived.
 - [ ] Incident runbook and alerting thresholds approved.

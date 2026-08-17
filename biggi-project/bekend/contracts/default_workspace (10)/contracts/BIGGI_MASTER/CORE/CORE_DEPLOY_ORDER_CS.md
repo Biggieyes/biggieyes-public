@@ -82,23 +82,29 @@ BIGGI NFT payment routing, pokud je uz nasazena tokenomika:
 
 ### 3.1 Pridani dalsiho chapteru po mainnet deployi
 
-Sdilene tokenomics kontrakty se kvuli dalsimu chapteru nenasazuji znovu. Nasadi se novy chapter stack (`BiggiMain`, `BiggiMain2`, `BiggiTicketHub`) a potom se zapoji do existujicich registry/allowlist vrstev:
+Sdilene tokenomics kontrakty se kvuli dalsimu chapteru nenasazuji znovu. V aktualnim CORE modelu se pro dalsi chapter nasadi novy collection pair (`BiggiMain`, `BiggiMain2`) a pouzije se existujici centralni `BiggiTicketHub`:
 
-1. `BiggiMain.setTicketHub(newTicketHub)`
-2. `BiggiTicketHub.setMainCollection(newMain)`
-3. `BiggiTicketHub.setTicketCaps(saleCap, marketingCap)`
-4. `BiggiTicketHub.setDistributor(BiggiMultiCollectionDistributor)`
-5. `BiggiMain2.setDistributor(BiggiMultiCollectionDistributor)`
-6. `BiggiMain2.setPriceProvider(newMain)`
-7. `BiggiSeriesRegistry.setChapterCollections(chapterId, newMain, newMain2, newTicketHub)`
-8. `BiggiChapterController.configureChapter(chapterId, seriesId, newMain, newMain2, newTicketHub, saleCap, marketingCap, totalCap)`
-9. `BiggiMain2.setChapterController(BiggiChapterController, chapterId)`
-10. `BiggiMultiCollectionDistributor.addCollection(newTicketHub)`
-11. `BiggiMultiCollectionDistributor.addCollection(newMain2)`
-12. volitelne `BiggiMultiCollectionDistributor.addCollection(newMain)`, pokud bude VRF collection posilat native primo do distributoru
-13. `BiggiTreasury.setEcosystemBiggiCaller(newTicketHub, true)` a `BiggiTreasury.setEcosystemBiggiCaller(newMain2, true)`, pokud jsou zapnute BIGGI platby za NFT
-14. `BiggiReserveV4.setNotifyCaller(newTicketHub, true)` a `BiggiReserveV4.setNotifyCaller(newMain2, true)`, pokud je zapnuty strict notify mode
-15. `BiggiDripDistributor.setCollection(newMain, true)` a `setCollection(newMain2, true)`, pokud tyto kolekce maji ovlivnovat per-mint drip accounting
+1. `BiggiMain.setChapterId(chapterId)`
+2. `BiggiTicketHub.configureChapter(chapterId, newMain, saleCap, marketingCap, ticketBaseURI)`
+3. `BiggiMain.setTicketHub(BiggiTicketHub)`
+4. `BiggiMain.setModules(BiggiCompute, BiggiVRFRouter)`
+5. `BiggiVRFRouter.setMainApproval(newMain, true)`
+6. `BiggiMain2.setDistributor(BiggiMultiCollectionDistributor)`
+7. `BiggiMain2.setPriceProvider(newMain)`
+8. `BiggiSeriesRegistry.createSeries(seriesName)`
+9. `BiggiSeriesRegistry.createChapter(seriesId)`
+10. `BiggiSeriesRegistry.setChapterCollections(chapterId, newMain, newMain2, BiggiTicketHub)`
+11. `BiggiChapterController.configureChapter(chapterId, seriesId, newMain, newMain2, BiggiTicketHub, saleCap, marketingCap, totalCap)`
+12. `BiggiMain2.setChapterController(BiggiChapterController, chapterId)`
+13. `BiggiMultiCollectionDistributor.addCollection(BiggiTicketHub)` jen pokud jeste neni allowlisted
+14. `BiggiMultiCollectionDistributor.addCollection(newMain2)`
+15. volitelne `BiggiMultiCollectionDistributor.addCollection(newMain)`, pokud bude VRF collection posilat native primo do distributoru
+16. `BiggiTreasury.setEcosystemBiggiCaller(BiggiTicketHub, true)` jen jednou pro sdileny hub a `BiggiTreasury.setEcosystemBiggiCaller(newMain2, true)`, pokud jsou zapnute BIGGI platby za NFT
+17. `BiggiReserveV4.setNotifyCaller(BiggiTicketHub, true)` jen jednou pro sdileny hub a `BiggiReserveV4.setNotifyCaller(newMain2, true)`, pokud je zapnuty strict notify mode
+18. `BiggiDripDistributor.setCollection(newMain, true)` a `setCollection(newMain2, true)`, pokud tyto kolekce maji ovlivnovat per-mint drip accounting
+19. nastavit unikatni `ticketBaseURI` a ticket obrazek pro tento chapter
+20. pred prodejem mintnout 50 marketing ticketu pres `BiggiTicketHub.mintMarketingTicketForChapter(chapterId, to)`
+21. pri startu prodeje zavolat `BiggiTicketHub.setChapterActive(chapterId, true)`; tim se otevre placeny mint i redeem vsech 550 ticketu
 
 Operacni helper:
 

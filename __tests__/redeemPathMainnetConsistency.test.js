@@ -26,6 +26,9 @@ describe("mainnet redeem path consistency", () => {
       "src/app/AppCore.jsx",
       "src/providers/VrfProvider.jsx",
       "src/common/hooks/useNFTs.js",
+      "public-repo/src/app/AppCore.jsx",
+      "public-repo/src/providers/VrfProvider.jsx",
+      "public-repo/src/common/hooks/useNFTs.js",
     ];
     const runtimeSource = runtimeFiles.map(readText).join("\n");
 
@@ -38,11 +41,35 @@ describe("mainnet redeem path consistency", () => {
     );
   });
 
+  it("keeps ticket mint helpers on the central TicketHub", () => {
+    const runtimeFiles = [
+      "src/app/AppCore.jsx",
+      "src/common/hooks/useNFTs.js",
+      "src/lib/mintAuto.js",
+      "src/ACTIONBUTTONS/MINTTICKET/mintAuto.js",
+      "public-repo/src/app/AppCore.jsx",
+      "public-repo/src/common/hooks/useNFTs.js",
+      "public-repo/src/lib/mintAuto.js",
+      "public-repo/src/ACTIONBUTTONS/MINTTICKET/mintAuto.js",
+    ];
+    const runtimeSource = runtimeFiles.map(readText).join("\n");
+
+    expect(runtimeSource).toContain("getTicketHub");
+    expect(runtimeSource).toContain("resolveActiveTicketChapterId");
+    expect(runtimeSource).toContain("mintTicketForChapter");
+    expect(runtimeSource).not.toMatch(/\.mintTicket\s*\(/);
+    expect(runtimeSource).not.toMatch(
+      /await\s+getMainRW\(\)[\s\S]{0,500}mintTicket/,
+    );
+  });
+
   it("exposes the correct ABI functions for TicketHub -> Main VRF redeem", () => {
     const ticketHubFunctions = functionNames(
       readAbi("src/config/abi/BiggiTicketHub.json"),
     );
-    const mainFunctions = functionNames(readAbi("src/config/abi/BiggiMain.json"));
+    const mainFunctions = functionNames(
+      readAbi("src/config/abi/BiggiMain.json"),
+    );
 
     expect(ticketHubFunctions.has("redeemTicket")).toBe(true);
     expect(ticketHubFunctions.has("ownerOf")).toBe(true);

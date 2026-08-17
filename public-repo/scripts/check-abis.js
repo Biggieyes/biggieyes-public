@@ -51,6 +51,7 @@ const IGNORE_METHODS = new Set([
   "removeAllListeners",
   "listenerCount",
   "getBalance",
+  "getAddress",
   "getNetwork",
   "getSigner",
   "listAccounts",
@@ -73,6 +74,9 @@ const RUNTIME_HELPER_METHODS = new Set([
   "routerInfo",
   "getSwapPath",
   "liquidityPreview",
+  "tokensOfOwner",
+  "walletOfOwner",
+  "tokenOfOwnerByIndex",
 ]);
 
 const CONTRACT_FACTORY_RE =
@@ -196,7 +200,7 @@ function resolveAbiSetFromArg(arg, abiImportMap, abiByFile) {
 
 function readJsonSafe(filePath) {
   try {
-    const raw = fs.readFileSync(filePath, "utf8");
+    const raw = fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, "");
     return JSON.parse(raw);
   } catch {
     return null;
@@ -558,6 +562,7 @@ function main() {
   if (!missingAll.length) {
      
     console.log("No missing ABI methods found (heuristic).");
+    if (parseErrors) process.exitCode = 1;
     return;
   }
 
@@ -575,6 +580,7 @@ function main() {
       `- ${formatLoc(entry)} ${entry.base}.${entry.method} (hint: ${entry.abiHint})`,
     );
   }
+  process.exitCode = 1;
 }
 
 main();

@@ -62,6 +62,35 @@ function isHexPrivateKey(value) {
   return /^0x[0-9a-fA-F]{64}$/.test(String(value || ""));
 }
 
+function validateSigningKeys(errors, infos) {
+  const legacyKey = process.env.PRIVATE_KEY;
+  if (isHexPrivateKey(legacyKey)) {
+    infos.push("Legacy PRIVATE_KEY is configured.");
+    return;
+  }
+
+  const deployerKey = process.env.DEPLOYER_PRIVATE_KEY;
+  const ownerKey = process.env.OWNER_PRIVATE_KEY;
+  if (!isHexPrivateKey(deployerKey)) {
+    errors.push("DEPLOYER_PRIVATE_KEY is missing or invalid (must be 0x + 64 hex chars).");
+  }
+  if (!isHexPrivateKey(ownerKey)) {
+    errors.push("OWNER_PRIVATE_KEY is missing or invalid (must be 0x + 64 hex chars).");
+  }
+  if (!isHexPrivateKey(deployerKey) || !isHexPrivateKey(ownerKey)) return;
+
+  const deployerAddress = new ethers.Wallet(deployerKey).address;
+  const ownerAddress = new ethers.Wallet(ownerKey).address;
+  if (isAddress(process.env.DEPLOYER) && ethers.utils.getAddress(process.env.DEPLOYER) !== deployerAddress) {
+    errors.push("DEPLOYER_PRIVATE_KEY does not match DEPLOYER.");
+  }
+  const expectedOwner = process.env.OWNER || process.env.EXPECT_OWNER;
+  if (isAddress(expectedOwner) && ethers.utils.getAddress(expectedOwner) !== ownerAddress) {
+    errors.push("OWNER_PRIVATE_KEY does not match OWNER/EXPECT_OWNER.");
+  }
+  infos.push("Separate deployer and owner signing keys are configured.");
+}
+
 function isPlaceholder(value) {
   const s = String(value || "");
   return s.includes("YOUR_") || s.includes("your_") || s.includes("<") || s.includes(">");
@@ -134,9 +163,7 @@ function main() {
   const warnings = [];
   const infos = [];
 
-  if (!isHexPrivateKey(process.env.PRIVATE_KEY)) {
-    errors.push("PRIVATE_KEY is missing or invalid (must be 0x + 64 hex chars).");
-  }
+  validateSigningKeys(errors, infos);
 
   const rpcKey = "POLYGON_RPC_URL";
   const rpc = process.env[rpcKey];

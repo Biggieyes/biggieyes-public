@@ -1,17 +1,20 @@
 # BIGGI Polygon mainnet: finalni deploy a launch postup
 
-Stav k 2026-07-05. Tento dokument je hlavni poradi zbyvajicich kroku. Vychazi z live read-only kontrol Polygonu, lokalni kompilace a CRE simulace.
+Stav k 2026-08-17. Tento dokument je hlavni poradi zbyvajicich kroku. Vychazi z live read-only kontrol Polygonu, overeni vsech peti CORE chapteru a lokalnich testu.
 
 ## Aktualni verdikt
 
 - CORE a tokenomika jsou nasazene na Polygon mainnetu.
-- Deployment manifest eviduje 50 projektovych deploymentu: 50 ma bytecode a 50 je verifikovano pres Etherscan V2.
+- Deployment manifest eviduje 58 unikatnich projektovych deploymentu: 58 ma bytecode a 58 je verifikovano.
+- Centralni TicketHub, SeriesRegistry, ChapterController, readery a pet VRF/Public paru jsou nasazene a `204/204` live vazeb proslo.
 - `BiggiCREAutomationReceiver` je nasazeny, verifikovany a zamerne paused.
 - `okForDeployOnly=true`, ale `okForPublicLaunch=false`.
 - Posledni `npm.cmd run preflight:launch:polygon` vratil 7 blockeru a 0 warningu.
 - Ownership transfer, VRF subscription transfer, CRE receiver deploy a pocatecni distribuce BIGGI jsou hotove. Initial liquidity ani CRE aktivace zatim odeslane nebyly.
 
-## Zbyvajici POL naklady
+## Historicky odhad POL nakladu
+
+Nasledujici odhad je snapshot z 2026-06-29 a nesmi se pouzit jako aktualni gas quote. Pred kazdym write krokem je nutne cenu znovu spocitat z aktualnich Polygon dat.
 
 Live odhad k 2026-06-29, Polygon blok priblizne `89353439`:
 
@@ -39,15 +42,11 @@ VRF router pouziva native payment, callback limit `300 000 gas` a 500 gwei lane.
 
 Do chatu neposilat zadny private key ani seed phrase. Potrebne jsou pouze verejne hodnoty:
 
-1. `NEW_OWNER_ADDRESS`: nova bezpecna admin adresa, idealne Safe/multisig nebo hardware-wallet EOA.
-2. `DEV_WALLET`: prijemce dev casti native plateb pro TicketHub a Main2.
-3. `MARKETING_SUPPORT`: prijemce pocatecni alokace 200 000 000 BIGGI.
-4. `LIQ_TOKEN_AMOUNT=8000000` BIGGI pro pocatecni likviditu.
-5. `LIQ_NATIVE_AMOUNT=5000` POL pro pocatecni likviditu.
-6. `LIQ_LP_RECIPIENT=0xFe234394845B601B2c671c0dD631fA6290c02bb9` (`LiquidityVault`).
-7. Castka a zpusob financovani VRF subscription, LINK nebo native.
-8. `PUBLIC_METADATA_FILE`: kompletni 550polozkova MAIN2 metadata matice a finalni IPFS URI.
-9. Schvaleny Chainlink CRE Deploy Access.
+1. Finalni `LIQ_TOKEN_AMOUNT` a `LIQ_NATIVE_AMOUNT` pro pocatecni BIGGI/WPOL likviditu.
+2. Potvrzeni `LIQ_LP_RECIPIENT=0xFe234394845B601B2c671c0dD631fA6290c02bb9` (`LiquidityVault`).
+3. Provozni minimum a monitoring financovani VRF subscription.
+4. `PUBLIC_METADATA_FILE`: kompletni 550polozkova MAIN2 metadata matice a finalni IPFS URI pro aktivovany chapter.
+5. Schvaleny Chainlink CRE Deploy Access a z nej ziskane workflow ID/owner.
 
 ## Aktualnich 7 on-chain launch blockeru
 
@@ -116,20 +115,15 @@ node scripts/tools/compareAbiToSource.js
 
 Vse musi skoncit bez chyby. `gate:master:local` nepouzivat jako mainnet kontrolu, protoze pracuje s lokalnim deployem.
 
-### 3. Pozastavit verejne entrypointy a nakonfigurovat CORE
+### 3. Overit hotovy CORE wiring
 
-Pred nastavenim nenuloveho `saleCap` pozastavit TicketHub, MAIN a MAIN2. Jinak by zmena capu okamzite otevrel mint.
+Centralni chapter-aware CORE wiring a capy `500/50` jsou hotove. Konfiguracni execute skript bez noveho schvaleneho duvodu znovu nespoustet.
 
-Nejprve dry-run:
-
-```powershell
-npm.cmd run configure:chapter-tokenomics:polygon
-```
-
-Po kontrole vystupu provest:
+Read-only kontrola:
 
 ```powershell
-npm.cmd run configure:chapter-tokenomics:polygon:execute
+npm.cmd run verify:master:core-series:polygon
+npm.cmd run check:master:core:polygon
 ```
 
 Skript musi nastavit nebo potvrdit zejmena:
@@ -139,7 +133,7 @@ Skript musi nastavit nebo potvrdit zejmena:
 - `TicketHub.devWallet = DEV_WALLET`
 - `Main2.devWallet = DEV_WALLET`
 - `BiggiToken.marketingSupportAddr = MARKETING_SUPPORT`
-- chapter 1 / series 1 vazby
+- vsech pet series/chapter vazeb
 - Reserve notify callers pro TicketHub, Main2 a Treasury
 - rewards, registry, distributor a token sink vazby
 
@@ -344,7 +338,7 @@ npm.cmd run manifest:deployment:polygon
 ```
 
 3. `preflight:launch:polygon` musi vratit `okForPublicLaunch=true`, `blockers=0` a `warnings=0`.
-4. Teprve potom odblokovat TicketHub, MAIN a MAIN2.
+4. Teprve potom aktivovat pripraveny chapter pres `TicketHub.setChapterActive(chapterId, true)`; chapters 2-5 zustanou neaktivni, dokud nemaji vlastni metadata a launch gate.
 5. Preflight zopakovat po odblokovani.
 6. Provest jeden maly end-to-end mainnet smoke test:
    - nakup ticketu za 1 POL

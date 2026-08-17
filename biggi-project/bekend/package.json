@@ -8,6 +8,8 @@
     "compile": "npx hardhat compile",
     "clean": "npx hardhat clean",
     "compile:master": "npx hardhat compile --config hardhat.biggi-master.cjs",
+    "abi:master:core": "node scripts/tools/regenCoreAbi.js",
+    "abi:master:core:check": "node scripts/tools/compareAbiToSource.js",
     "clean:master": "npx hardhat clean --config hardhat.biggi-master.cjs",
     "test:master": "npx hardhat test --config hardhat.biggi-master.cjs",
     "test:master:fork": "node scripts/master/runForkMasterTests.js",
@@ -23,6 +25,13 @@
     "configure:chapter-tokenomics:polygon:execute": "node scripts/master/runConfigureChapterTokenomicsPolygon.js --execute",
     "deploy:master:visibility": "npx hardhat run --config hardhat.biggi-master.cjs scripts/master/deployVisibilityStack.js",
     "deploy:master:visibility:polygon": "node scripts/master/runVisibilityDeployPolygon.js",
+    "deploy:master:core:polygon": "node scripts/master/runDeploySeriesCorePolygon.js",
+    "deploy:master:core:polygon:execute": "node scripts/master/runDeploySeriesCorePolygon.js --execute",
+    "verify:master:core-series:polygon": "node scripts/master/verifySeriesCorePolygon.js",
+    "verify:master:core-series:sources:polygon": "node scripts/master/runVerifySeriesCoreContractsPolygon.js",
+    "estimate:master:ticket-marketing-gas": "npx hardhat run --config hardhat.biggi-master.cjs scripts/master/estimateTicketHubMarketingGas.js",
+    "deploy:master:core4:polygon": "node scripts/master/runDeployFourSeriesCorePolygon.js",
+    "deploy:master:core4:polygon:execute": "node scripts/master/runDeployFourSeriesCorePolygon.js --execute",
     "verify:master:visibility:polygon": "node scripts/master/runVisibilityVerifyPolygon.js",
     "deploy:master:tokenomics:phase1:polygon": "node scripts/master/runTokenomicsPhase1DeployPolygon.js",
     "verify:master:tokenomics:phase1:polygon": "node scripts/master/runTokenomicsPhase1VerifyPolygon.js",
@@ -77,15 +86,14 @@
     "dotenv": "^16.3.1"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^1.0.6",
     "@nomicfoundation/hardhat-verify": "^2.1.3",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
-    "@nomiclabs/hardhat-waffle": "^2.0.6",
     "@uniswap/v2-core": "^1.0.1",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "chai": "^4.5.0",
-    "ethereum-waffle": "^3.4.4",
     "ethers": "^5.8.0",
-    "hardhat": "^2.27.0",
+    "hardhat": "^2.29.0",
     "mocha": "^10.2.0"
   }
 }

@@ -24,10 +24,11 @@ import {
 import { useContracts } from "../../../providers/ContractsProvider";
 import {
   ensurePolygon,
-  getCOLLECTIONPublicRO,
-  getCOLLECTIONVRFRO,
+  getReadOnlyChapterMain,
+  getReadOnlyChapterMain2,
   getROProvider,
 } from "@/shared/utils/contract";
+import { CORE_CHAPTERS } from "@/shared/utils/addresses.js";
 import { coerceBool } from "@/shared/utils/boolean";
 import { formatEther } from "ethers";
 
@@ -239,24 +240,47 @@ function COLLECTIONBlocksGrid({
   const activeCollectionKey =
     localActive === "COLLECTION2" ? "COLLECTION2" : "COLLECTION1";
 
+  const activeChapterIds = React.useMemo(
+    () =>
+      (Array.isArray(chapterSeriesData?.chapters)
+        ? chapterSeriesData.chapters
+        : []
+      )
+        .filter((chapter) => chapter.active === true)
+        .map((chapter) => Number(chapter.chapterId))
+        .filter((chapterId) => Number.isSafeInteger(chapterId)),
+    [chapterSeriesData?.chapters],
+  );
+  const displayedChapter = React.useMemo(() => {
+    if (activeChapterIds.length === 1) {
+      return (
+        CORE_CHAPTERS.find(
+          (chapter) => chapter.chapterId === activeChapterIds[0],
+        ) || CORE_CHAPTERS[0]
+      );
+    }
+    return CORE_CHAPTERS[0];
+  }, [activeChapterIds]);
+  const displayedChapterIsActive = activeChapterIds.length === 1;
+
   const getCollectionReadContract = React.useCallback(() => {
     const readPublic = activeCollectionKey === "COLLECTION2";
     try {
       const roProvider = getROProvider();
       return readPublic
-        ? getCOLLECTIONPublicRO(roProvider)
-        : getCOLLECTIONVRFRO(roProvider);
+        ? getReadOnlyChapterMain2(displayedChapter.chapterId, roProvider)
+        : getReadOnlyChapterMain(displayedChapter.chapterId, roProvider);
     } catch {
       try {
         if (readPublic) {
-          return contracts?.COLLECTIONPublicRead?.() || contracts?.main2Read?.() || null;
+          return contracts?.chapterMain2Read?.(displayedChapter.chapterId) || null;
         }
-        return contracts?.COLLECTIONVRFRead?.() || contracts?.mainRead?.() || null;
+        return contracts?.chapterMainRead?.(displayedChapter.chapterId) || null;
       } catch {
         return null;
       }
     }
-  }, [contracts, activeCollectionKey]);
+  }, [contracts, activeCollectionKey, displayedChapter.chapterId]);
 
   // ==== on-chain zdroje ====
   const [livePrices, setLivePrices] = React.useState(
@@ -448,15 +472,31 @@ function COLLECTIONBlocksGrid({
   }, [getCollectionReadContract, reloadCounter]);
 
   React.useEffect(() => {
+    setLivePrices(Array(MAX_BLOCKS).fill(null));
+    setLiveMinted(Array(MAX_BLOCKS).fill(null));
+    setCOLLECTIONMeta({});
+    setFallbackPrices(Array(MAX_BLOCKS).fill(null));
+    setFallbackMinted(Array(MAX_BLOCKS).fill(null));
+    setFallbackBgMinted(Array(MAX_BLOCKS).fill(null));
+    modalMintedCacheRef.current = { snapshotKey: "", byBlock: {} };
+  }, [displayedChapter.chapterId, activeCollectionKey]);
+
+  React.useEffect(() => {
     const missingPrices =
       !Array.isArray(blockPricesProp) || blockPricesProp.length === 0;
     const missingMintCounts =
       !Array.isArray(blockMintCountsProp) || blockMintCountsProp.length === 0;
+    if (displayedChapter.chapterId !== 1) return;
     if (!missingPrices && !missingMintCounts) return;
     fetchSnapshotStats().catch((err) => {
       console.debug("COLLECTIONBlocksGrid snapshot fallback failed", err);
     });
-  }, [blockPricesProp, blockMintCountsProp, fetchSnapshotStats]);
+  }, [
+    blockPricesProp,
+    blockMintCountsProp,
+    displayedChapter.chapterId,
+    fetchSnapshotStats,
+  ]);
 
   // ====== normalizace vstupů + on-chain fallbacky ======
   const normalizedNames = React.useMemo(() => {
@@ -645,10 +685,10 @@ function COLLECTIONBlocksGrid({
   );
   const mintSnapshotKey = React.useMemo(
     () =>
-      `${activeCollectionKey}|${normalizedMintCounts
+      `${displayedChapter.chapterId}|${activeCollectionKey}|${normalizedMintCounts
         .map((value) => (Number.isFinite(value) ? Math.round(value) : 0))
         .join(",")}`,
-    [activeCollectionKey, normalizedMintCounts],
+    [displayedChapter.chapterId, activeCollectionKey, normalizedMintCounts],
   );
 
   React.useEffect(() => {
@@ -1028,6 +1068,10 @@ function COLLECTIONBlocksGrid({
             <p className="collection-grid__subtitle">
               {activeSectionMeta.subtitle}
             </p>
+            <span className="collection-grid__pill collection-grid__pill--outline">
+              Chapter {displayedChapter.chapterId}: {displayedChapter.displayName}
+              {displayedChapterIsActive ? " / Active" : " / Preview"}
+            </span>
           </div>
 
           <div className="collection-grid__header-actions collection-grid__header-actions-gap">
@@ -1228,4 +1272,3 @@ function COLLECTIONBlocksGrid({
 }
 
 export default COLLECTIONBlocksGrid;
-

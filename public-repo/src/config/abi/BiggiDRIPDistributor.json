@@ -169,6 +169,37 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "totalReceived",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "totalClaimed",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "totalNotified",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "availableTokens",
+        "type": "uint256"
+      }
+    ],
+    "name": "HistoricalStateSeeded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "coll",
@@ -581,6 +612,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "historicalStateSeeded",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -702,6 +746,34 @@
       }
     ],
     "name": "rescueNative",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "totalReceived_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalClaimed_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalNotified_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "availableTokens_",
+        "type": "uint256"
+      }
+    ],
+    "name": "seedHistoricalState",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

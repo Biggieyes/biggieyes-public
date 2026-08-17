@@ -18,6 +18,7 @@ import {
 } from "ethers";
 
 import { ADDR } from "@/addresses.js";
+import { CORE_CHAPTERS } from "@/shared/utils/addresses.js";
 import { explorerBaseFor } from "@/config/chains.js";
 import { DEFAULT_BLOCKS, BASE_PRICES } from "@/shared/blocks";
 import { buildBlockImagePath } from "@/shared/utils/images";
@@ -29,7 +30,9 @@ import { buildBlockImagePath } from "@/shared/utils/images";
 import {
   ensurePolygon,
   getReadOnlyMain as getReadOnlyContract,
-  getMainRW,
+  getReadOnlyChapterMain,
+  getReadOnlyChapterMain2,
+  getTicketHub,
   getLMRO as getReadOnlyLiquidityContract,
   getLM as getLiquidityContract,
   getFrontendSnapshotLiteActive,
@@ -49,14 +52,31 @@ import {
   getVRFRO,
   resetROProvider,
 } from "@/shared/utils/contract";
-import { clearPreferredRpc, ensurePreferredRpc } from "@/shared/utils/rpcConfig";
+import {
+  clearPreferredRpc,
+  ensurePreferredRpc,
+} from "@/shared/utils/rpcConfig";
 import {
   queryLogsBatched as queryLogsBatchedShared,
   getSafeDeployBlock as getSafeDeployBlockShared,
   isFullHistoryEnabled,
 } from "@/shared/utils/shared";
 import { setVRFAllOrPartial } from "@/shared/utils/adminActions";
-import { getArchiveProvider, resetSharedFallbackProvider } from "@/web3/provider";
+import { resolveActiveTicketChapterId } from "@/shared/utils/ticketChapters.js";
+import { toMainNftIndexFromTokenId } from "@/shared/utils/biggiIdIndex";
+import {
+  getAssetCompositeKey,
+  getAssetContractAddress,
+  getAssetIdentity,
+  getAssetReference,
+  isAssetReferenceMatch,
+  normalizeAssetAddress,
+  normalizeAssetContractAddress,
+} from "@/shared/utils/assetIdentity.js";
+import {
+  getArchiveProvider,
+  resetSharedFallbackProvider,
+} from "@/web3/provider";
 import { canPoll, getPollInterval, runWithLock } from "@/utils/polling";
 
 import "./styles/biggi-token.skin.css";
@@ -88,25 +108,27 @@ import { mergeGalleryItem } from "@/shared/services/gallery/gallery.merge.js";
 
 /* ========= LAZY LOADED HEAVY PANELS ========= */
 const ProjectInfoModal = React.lazy(
-  () => import("./ACTIONBUTTONS/INFO/ProjectInfoModal.jsx")
+  () => import("./ACTIONBUTTONS/INFO/ProjectInfoModal.jsx"),
 );
 const EcosystemPanel = React.lazy(() => import("../features/tokenomics"));
 const COLLECTIONBlocksGrid = React.lazy(
-  () => import("./components/COLLECTIONBlocksGrid")
+  () => import("./components/COLLECTIONBlocksGrid"),
 );
 const REWARDSPanel = React.lazy(
-  () => import("./panels/Rewards/REWARDSPanel.jsx")
+  () => import("./panels/Rewards/REWARDSPanel.jsx"),
 );
 const VRFPanel = React.lazy(() => import("./panels/VRF/VRFPanel.jsx"));
 const InfoPanel = React.lazy(() => import("./panels/INFO/InfoPanel.jsx"));
-const USERPANEL = React.lazy(
-  () => import("./panels/UserPanel/USERPANEL.jsx")
-);
+const USERPANEL = React.lazy(() => import("./panels/UserPanel/USERPANEL.jsx"));
 const COMMUNITYCENTERPanel = React.lazy(
-  () => import("../features/admin/COMMUNITYCENTERPanel.jsx")
+  () => import("../features/admin/COMMUNITYCENTERPanel.jsx"),
 );
-const AdminPanel = React.lazy(() => import("./components/admin/AdminPanel.jsx"));
-const ZoomModal = React.lazy(() => import("./components/gallery/ZoomModal.jsx"));
+const AdminPanel = React.lazy(
+  () => import("./components/admin/AdminPanel.jsx"),
+);
+const ZoomModal = React.lazy(
+  () => import("./components/gallery/ZoomModal.jsx"),
+);
 
 /* ======================================================================== */
 /* ============================== CONSTANTS ================================ */
@@ -141,16 +163,13 @@ const BLOCK_IMAGE_BASES = {
     "https://biggieyes.mypinata.cloud/ipfs/bafybeicqja4j6wmdm2jbomtloggwafe4kluokgp5qhdr2pkrgxju6tpyl4/",
   BROWN:
     "https://biggieyes.mypinata.cloud/ipfs/bafybeibbqjofkkvldzfmmi5tfzucrmbd56ba3i5pfivywqb7g25wa7677m/",
-  BLUE:
-    "https://biggieyes.mypinata.cloud/ipfs/bafybeieuk5o3mktitbutdzyymacz27me5zntkybk3zhndjvsfuqa6osj4m/",
+  BLUE: "https://biggieyes.mypinata.cloud/ipfs/bafybeieuk5o3mktitbutdzyymacz27me5zntkybk3zhndjvsfuqa6osj4m/",
   GREEN:
     "https://biggieyes.mypinata.cloud/ipfs/bafybeihgbvpuomieigi3eenho6fzbbtwpvw7lfqbpbriojenvutufn6opa/",
   VIOLET:
     "https://biggieyes.mypinata.cloud/ipfs/bafybeibs3xyn3wdsssxubow5wqh4vyg4dkumshqza6ppssiqqrbo4chq3a/",
-  RED:
-    "https://biggieyes.mypinata.cloud/ipfs/bafybeifuhvp33jihz2xzr45vwme2drg7uxe5sukabttx4eqqupdbfmmebi/",
-  PINK:
-    "https://biggieyes.mypinata.cloud/ipfs/bafybeihkz72p25huca3b463o7q7yp4xnv2l4lejyzckodolqij6m5ofw2a/",
+  RED: "https://biggieyes.mypinata.cloud/ipfs/bafybeifuhvp33jihz2xzr45vwme2drg7uxe5sukabttx4eqqupdbfmmebi/",
+  PINK: "https://biggieyes.mypinata.cloud/ipfs/bafybeihkz72p25huca3b463o7q7yp4xnv2l4lejyzckodolqij6m5ofw2a/",
   RAINBOW:
     "https://biggieyes.mypinata.cloud/ipfs/bafybeibda5h7lwnalrugm4fek63pqsndvm4nyesm3t77tuegziloqgna3i/",
   SPECIAL:
@@ -214,7 +233,8 @@ const parseTokenUriParts = (uri) => {
 const buildBlockImageUrl = (blockName, fileName, baseOverride) => {
   const preferred = blockBaseUrl(blockName);
   const base = trimSlash(preferred || baseOverride);
-  if (base && fileName) return `${base}/${String(fileName).replace(/^\/+/, "")}`;
+  if (base && fileName)
+    return `${base}/${String(fileName).replace(/^\/+/, "")}`;
   return buildBlockImagePath(fileName);
 };
 
@@ -270,7 +290,8 @@ function loadWalletCache(addr) {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object") return null;
-    if (parsed.ts && Date.now() - Number(parsed.ts) > WALLET_CACHE_TTL) return null;
+    if (parsed.ts && Date.now() - Number(parsed.ts) > WALLET_CACHE_TTL)
+      return null;
     return Array.isArray(parsed.items) ? parsed.items : null;
   } catch {
     return null;
@@ -386,18 +407,27 @@ async function queryLogsBatched(
   step = LOGS_BATCH,
   options,
 ) {
-  return queryLogsBatchedShared(contract, filter, fromBlock, toBlock, step, options);
+  return queryLogsBatchedShared(
+    contract,
+    filter,
+    fromBlock,
+    toBlock,
+    step,
+    options,
+  );
 }
 
 async function mapLimit(items, limit, mapper) {
   const ret = [];
   let i = 0;
-  const workers = new Array(Math.min(limit, items.length)).fill(0).map(async () => {
-    while (i < items.length) {
-      const cur = i++;
-      ret[cur] = await mapper(items[cur], cur);
-    }
-  });
+  const workers = new Array(Math.min(limit, items.length))
+    .fill(0)
+    .map(async () => {
+      while (i < items.length) {
+        const cur = i++;
+        ret[cur] = await mapper(items[cur], cur);
+      }
+    });
   await Promise.all(workers);
   return ret;
 }
@@ -547,12 +577,32 @@ function useIsMobile(breakpoint = 700) {
 /* ======================================================================== */
 
 const ICONS = [
-  { src: "/images/icons/rewards.png", alt: "REWARDS", modalText: MODAL_TEXTS.REWARDS || "" },
-  { src: "/images/icons/collection.png", alt: "COLLECTION", modalText: MODAL_TEXTS.COLLECTION || "" },
-  { src: "/images/icons/mint.png", alt: "VRF MINT", modalText: MODAL_TEXTS.mint || "" },
-  { src: "/images/icons/token.png", alt: "BIGGI ECOSYSTEM", modalText: MODAL_TEXTS.chance || "" },
+  {
+    src: "/images/icons/rewards.png",
+    alt: "REWARDS",
+    modalText: MODAL_TEXTS.REWARDS || "",
+  },
+  {
+    src: "/images/icons/collection.png",
+    alt: "COLLECTION",
+    modalText: MODAL_TEXTS.COLLECTION || "",
+  },
+  {
+    src: "/images/icons/mint.png",
+    alt: "VRF MINT",
+    modalText: MODAL_TEXTS.mint || "",
+  },
+  {
+    src: "/images/icons/token.png",
+    alt: "BIGGI ECOSYSTEM",
+    modalText: MODAL_TEXTS.chance || "",
+  },
   { src: "/images/icons/users.png", alt: "USERS", modalText: "" },
-  { src: "/images/icons/expansion.png", alt: "COMMUNITY CENTER", modalText: MODAL_TEXTS.COMMUNITYCENTER || MODAL_TEXTS.expansion || "" },
+  {
+    src: "/images/icons/expansion.png",
+    alt: "COMMUNITY CENTER",
+    modalText: MODAL_TEXTS.COMMUNITYCENTER || MODAL_TEXTS.expansion || "",
+  },
 ];
 
 /* ======================================================================== */
@@ -610,7 +660,10 @@ function getCachedReaderInstance(kind = "main") {
       }
       return readersRef.current.BiggiTokenReader;
     }
-    if (kind === "tokenomics" && typeof getBiggiTokenomicsReaderRO === "function") {
+    if (
+      kind === "tokenomics" &&
+      typeof getBiggiTokenomicsReaderRO === "function"
+    ) {
       if (!readersRef.current.BiggiTokenomicsReader) {
         readersRef.current.BiggiTokenomicsReader = getBiggiTokenomicsReaderRO();
       }
@@ -674,7 +727,9 @@ function isMissingRevertDataError(err) {
   const msg = String(err?.message || "");
   return (
     err?.code === "CALL_EXCEPTION" &&
-    (err?.data == null || /missing revert data/i.test(msg) || /internal json-rpc error/i.test(msg))
+    (err?.data == null ||
+      /missing revert data/i.test(msg) ||
+      /internal json-rpc error/i.test(msg))
   );
 }
 
@@ -782,9 +837,13 @@ export default function AppCore() {
   const [ticketMinted, setTicketMinted] = React.useState(0);
   const [maxTickets] = React.useState(550);
 
-  const [blockMintCounts, setBlockMintCounts] = React.useState(new Array(10).fill(0));
+  const [blockMintCounts, setBlockMintCounts] = React.useState(
+    new Array(10).fill(0),
+  );
   const [blockPrices, setBlockPrices] = React.useState(DEFAULT_BLOCK_PRICES);
-  const [backgroundMintCounts, setBackgroundMintCounts] = React.useState(new Array(10).fill(0));
+  const [backgroundMintCounts, setBackgroundMintCounts] = React.useState(
+    new Array(10).fill(0),
+  );
 
   const [myNFTs, setMyNFTs] = React.useState([]);
   const [galleryLoading, setGalleryLoading] = React.useState(false);
@@ -815,9 +874,21 @@ export default function AppCore() {
 
   const [VRFUIData, setVRFUIData] = React.useState({
     network: "EVM",
-    params: { keyHash: "", confirmations: 3, numWords: 1, callbackGasLimit: 300000 },
+    params: {
+      keyHash: "",
+      confirmations: 3,
+      numWords: 1,
+      callbackGasLimit: 300000,
+    },
     subscription: { id: "" },
-    last: { requestId: "", status: "idle", requestedAt: "", txHash: "", blockNumber: undefined, randomWords: [] },
+    last: {
+      requestId: "",
+      status: "idle",
+      requestedAt: "",
+      txHash: "",
+      blockNumber: undefined,
+      randomWords: [],
+    },
     history: [],
   });
 
@@ -828,6 +899,18 @@ export default function AppCore() {
   const [redeemStartedAt, setRedeemStartedAt] = React.useState(null);
   const [pendingTicketId, setPendingTicketId] = React.useState(null);
   const [topFirstId, setTopFirstId] = React.useState(null);
+
+  React.useEffect(() => {
+    if (!topFirstId) return;
+    const topItem = (Array.isArray(myNFTs) ? myNFTs : []).find((item) =>
+      isAssetReferenceMatch(item, topFirstId),
+    );
+    if (!topItem || topItem.isTicket || topItem.isPending) return;
+    const exactReference = getAssetReference(topItem);
+    if (exactReference && exactReference !== topFirstId) {
+      setTopFirstId(exactReference);
+    }
+  }, [myNFTs, topFirstId]);
 
   const [adminOpen, setAdminOpen] = React.useState(false);
   const [adminOwner, setAdminOwner] = React.useState("");
@@ -860,24 +943,30 @@ export default function AppCore() {
   /* ============================ CORE HELPERS ============================= */
   /* ====================================================================== */
 
-  const callFirst = React.useCallback(async (contract, candidates, args = []) => {
-    for (const fn of candidates) {
-      const callable = contract?.[fn];
-      if (typeof callable === "function") {
-        try {
-          return await callable(...args);
-        } catch {}
+  const callFirst = React.useCallback(
+    async (contract, candidates, args = []) => {
+      for (const fn of candidates) {
+        const callable = contract?.[fn];
+        if (typeof callable === "function") {
+          try {
+            return await callable(...args);
+          } catch {}
+        }
       }
-    }
-    return null;
-  }, []);
+      return null;
+    },
+    [],
+  );
 
   const recoverRpcConnectivity = React.useCallback(async (context = "rpc") => {
     clearPreferredRpc();
     try {
       await ensurePreferredRpc();
     } catch (err) {
-      console.warn(`${context}: ensurePreferredRpc failed`, err?.message || err);
+      console.warn(
+        `${context}: ensurePreferredRpc failed`,
+        err?.message || err,
+      );
     }
     try {
       resetROProvider();
@@ -932,7 +1021,8 @@ export default function AppCore() {
       Paused: "Contract is paused.",
       NoEligibleTokens: "No eligible NFTs to claim this week.",
       CapExceeded: "Token cap would be exceeded.",
-      NotFullyConfigured: "Contract metadata is not fully configured (owner must finish batch setup).",
+      NotFullyConfigured:
+        "Contract metadata is not fully configured (owner must finish batch setup).",
       BiggiTokenNotSet: "BIGGI token is not configured yet.",
       NoMinter: "Minter not configured.",
       NoToken: "Token not configured.",
@@ -1257,7 +1347,6 @@ export default function AppCore() {
       } else {
         setRewardPool(0);
       }
-
     } catch (e) {
       console.error("fetchREWARDS", e);
     }
@@ -1300,7 +1389,9 @@ export default function AppCore() {
       const maxReasonableTokenId = BigInt(
         Math.max((Number(maxSupply) || 550) * 1000, 1_000_000),
       );
-      const sourceItems = Array.isArray(assetsOverride) ? assetsOverride : myNFTs;
+      const sourceItems = Array.isArray(assetsOverride)
+        ? assetsOverride
+        : myNFTs;
       const tokenIds = [];
       const seen = new Set();
       for (const item of sourceItems) {
@@ -1366,7 +1457,12 @@ export default function AppCore() {
 
   const resolveTicketPriceWei = React.useCallback(async () => {
     const c = contractRef.current || getReadOnlyContract();
-    const candidates = ["getTicketPrice", "ticketPrice", "getTicketPriceWei", "ticketPriceWei"];
+    const candidates = [
+      "getTicketPrice",
+      "ticketPrice",
+      "getTicketPriceWei",
+      "ticketPriceWei",
+    ];
 
     for (const n of candidates) {
       const f = c?.[n];
@@ -1402,63 +1498,98 @@ export default function AppCore() {
   /* ======================= Metadata enrich (mint prices) ================== */
   /* ====================================================================== */
 
-  const enrichMetaWithPrices = React.useCallback(async (_contract, tokenId, meta) => {
-    try {
-      const cached = getCachedPriceAttrs(tokenId);
-      let attrs = Array.isArray(meta?.attributes) ? [...meta.attributes] : [];
-      if (cached) attrs = mergeAttrs(attrs, cached);
-
+  const enrichMetaWithPrices = React.useCallback(
+    async (_contract, tokenId, meta) => {
       try {
-        const tokenomicsReader =
-          getCachedReaderInstance("tokenomics") ||
-          getCachedReaderInstance("main") ||
-          getCachedReaderInstance("generic");
+        const cached = getCachedPriceAttrs(tokenId);
+        let attrs = Array.isArray(meta?.attributes) ? [...meta.attributes] : [];
+        if (cached) attrs = mergeAttrs(attrs, cached);
 
-        if (tokenomicsReader?.getMintDataByTokenId) {
-          const [tp, bp, fp] = await tokenomicsReader.getMintDataByTokenId(
-            BigInt(String(tokenId))
-          );
+        try {
+          const tokenomicsReader =
+            getCachedReaderInstance("tokenomics") ||
+            getCachedReaderInstance("main") ||
+            getCachedReaderInstance("generic");
 
-          const ticket = toNumEth(tp);
-          const blockP = toNumEth(bp);
-          const finalP = toNumEth(fp);
+          if (tokenomicsReader?.getMintDataByTokenId) {
+            const [tp, bp, fp] = await tokenomicsReader.getMintDataByTokenId(
+              BigInt(String(tokenId)),
+            );
 
-          const pushOrReplace = (trait_type, value) => {
-            const i = attrs.findIndex((a) => String(a?.trait_type) === trait_type);
-            const v = value != null ? `${value.toFixed(4)} POL` : "—";
-            if (i === -1) attrs.push({ trait_type, value: v });
-            else attrs[i] = { ...attrs[i], value: v };
-          };
+            const ticket = toNumEth(tp);
+            const blockP = toNumEth(bp);
+            const finalP = toNumEth(fp);
 
-          pushOrReplace("Ticket Price", ticket);
-          pushOrReplace("Block Price", blockP);
-          pushOrReplace("Final Price", finalP);
+            const pushOrReplace = (trait_type, value) => {
+              const i = attrs.findIndex(
+                (a) => String(a?.trait_type) === trait_type,
+              );
+              const v = value != null ? `${value.toFixed(4)} POL` : "—";
+              if (i === -1) attrs.push({ trait_type, value: v });
+              else attrs[i] = { ...attrs[i], value: v };
+            };
 
-          setCachedPriceAttrs(tokenId, attrs);
-        }
-      } catch {}
+            pushOrReplace("Ticket Price", ticket);
+            pushOrReplace("Block Price", blockP);
+            pushOrReplace("Final Price", finalP);
 
-      return { ...(meta || {}), attributes: attrs };
-    } catch {
-      return meta;
-    }
-  }, []);
+            setCachedPriceAttrs(tokenId, attrs);
+          }
+        } catch {}
+
+        return { ...(meta || {}), attributes: attrs };
+      } catch {
+        return meta;
+      }
+    },
+    [],
+  );
 
   const fetchDynamicTraitsFor = React.useCallback(
     async (nft) => {
       try {
         const tokenId = nft?.tokenId != null ? String(nft.tokenId) : "";
         if (!tokenId) return;
-        if (dynamicTraitsById[tokenId]) return;
+        const assetKey = getAssetIdentity(nft, ADDR.COLLECTION_VRF || ADDR.MAIN);
+        if (!assetKey) return;
+        if (dynamicTraitsById[assetKey] || dynamicTraitsById[tokenId]) return;
 
-        const reader =
-          getCachedReaderInstance("main") ||
-          getCachedReaderInstance("tokenomics") ||
-          getCachedReaderInstance("generic");
+        const contractAddress = normalizeAssetContractAddress(
+          nft?.contractAddress,
+        );
+        const chapter = CORE_CHAPTERS.find(
+          (item) =>
+            normalizeAssetContractAddress(item.main) === contractAddress ||
+            normalizeAssetContractAddress(item.main2) === contractAddress,
+        );
 
-        if (!reader || typeof reader.getMintDataByTokenId !== "function") return;
+        let res = null;
+        if (chapter) {
+          const isVrf =
+            normalizeAssetContractAddress(chapter.main) === contractAddress;
+          const collection = isVrf
+            ? getReadOnlyChapterMain(chapter.chapterId)
+            : getReadOnlyChapterMain2(chapter.chapterId);
+          const nftIndex = toMainNftIndexFromTokenId(tokenId, {
+            maxSupply: 550,
+            allowLegacy: true,
+          });
+          if (nftIndex != null && typeof collection?.getMintData === "function") {
+            res = await collection.getMintData(nftIndex).catch(() => null);
+          }
+        }
 
-        const res = await reader.getMintDataByTokenId(BigInt(tokenId));
+        if (!res) {
+          const reader =
+            getCachedReaderInstance("main") ||
+            getCachedReaderInstance("tokenomics") ||
+            getCachedReaderInstance("generic");
+
+          if (!reader || typeof reader.getMintDataByTokenId !== "function")
+            return;
+
+          res = await reader.getMintDataByTokenId(BigInt(tokenId));
+        }
         const ticket = toNumEth(res?.[0]);
         const block = toNumEth(res?.[1]);
         const final = toNumEth(res?.[2]);
@@ -1469,7 +1600,7 @@ export default function AppCore() {
         if (final != null) next.mintFinal = final;
 
         if (Object.keys(next).length) {
-          setDynamicTraitsById((prev) => ({ ...prev, [tokenId]: next }));
+          setDynamicTraitsById((prev) => ({ ...prev, [assetKey]: next }));
         }
       } catch {
         // ignore best-effort dynamic traits
@@ -1497,7 +1628,8 @@ export default function AppCore() {
         try {
           if (!logProvider || typeof logProvider.getLogs !== "function")
             return null;
-          const address = toFilter?.address || contract?.target || contract?.address;
+          const address =
+            toFilter?.address || contract?.target || contract?.address;
           const [toLogs, fromLogs] = await Promise.all([
             logProvider.getLogs({
               address,
@@ -1580,7 +1712,8 @@ export default function AppCore() {
     return onlyTickets;
   }, []);
 
-    const fetchMyTickets = React.useCallback(async (addr) => {
+  const fetchMyTickets = React.useCallback(
+    async (addr) => {
       try {
         const contract = contractRef.current || getReadOnlyContract();
         const reader = getCachedReaderInstance("main");
@@ -1600,736 +1733,50 @@ export default function AppCore() {
           ids = await findTicketsViaLogs(contract, addr);
         }
 
-      const coerceBool = (val) => {
-        if (typeof val === "boolean") return val;
-        if (typeof val === "bigint") return val !== 0n;
-        if (typeof val?.toString === "function") {
-          const s = val.toString();
-          if (s === "0") return false;
-          if (s === "1") return true;
-        }
-        return Boolean(val);
-      };
-
-      let ticketIds = ids;
-      if (typeof contract?.isTicket === "function" && Array.isArray(ids)) {
-        const filtered = [];
-        for (const id of ids) {
-          try {
-            const res = await contract.isTicket(id);
-            if (res != null && !coerceBool(res)) continue;
-          } catch {
-            // ignore isTicket failures, keep id
+        const coerceBool = (val) => {
+          if (typeof val === "boolean") return val;
+          if (typeof val === "bigint") return val !== 0n;
+          if (typeof val?.toString === "function") {
+            const s = val.toString();
+            if (s === "0") return false;
+            if (s === "1") return true;
           }
-          filtered.push(id);
-        }
-        ticketIds = filtered;
-      }
-
-      const metas = await mapLimit(ticketIds, 4, async (idBN) => {
-        const id = idBN.toString();
-        let meta = {
-          name: "Biggi Mint Ticket",
-          description: `Redeem this ticket (#${id}) to mint a BiggiEyes NFT.`,
+          return Boolean(val);
         };
-        let image = PLACEHOLDER_IMAGE;
 
-        try {
-          const uri = await getTokenUriCached(contract, idBN);
-          const j = await readJsonFromURICached(uri);
-          if (j) {
-            meta = j;
-            const imgUrl = j?.image || j?.image_url;
-            image = (await resolveImageUrlCached(imgUrl, uri)) || image;
+        let ticketIds = ids;
+        if (typeof contract?.isTicket === "function" && Array.isArray(ids)) {
+          const filtered = [];
+          for (const id of ids) {
+            try {
+              const res = await contract.isTicket(id);
+              if (res != null && !coerceBool(res)) continue;
+            } catch {
+              // ignore isTicket failures, keep id
+            }
+            filtered.push(id);
           }
-        } catch {}
-
-        if (!image || image === PLACEHOLDER_IMAGE) {
-          image = ticketImageUrl();
+          ticketIds = filtered;
         }
-        if (!meta?.name || /^\d{8,}$/.test(String(meta.name))) {
-          meta = {
-            ...(meta || {}),
+
+        const metas = await mapLimit(ticketIds, 4, async (idBN) => {
+          const id = idBN.toString();
+          let meta = {
             name: "Biggi Mint Ticket",
+            description: `Redeem this ticket (#${id}) to mint a BiggiEyes NFT.`,
           };
-        }
+          let image = PLACEHOLDER_IMAGE;
 
-        return {
-          tokenId: id,
-          image,
-          meta,
-          isTicket: true,
-          contractAddress: contract?.target || contract?.address || null,
-        };
-      });
-
-      return metas;
-    } catch (e) {
-      console.error("fetchMyTickets", e);
-      return [];
-    }
-  }, [findTicketsViaLogs]);
-
-  const fetchOwnedNFTsViaTransfers = React.useCallback(async (addr) => {
-    try {
-      const topicToAddress = (topic) => {
-        if (!topic || typeof topic !== "string") return "";
-        const hex = topic.startsWith("0x") ? topic.slice(2) : topic;
-        if (hex.length < 40) return "";
-        return `0x${hex.slice(hex.length - 40)}`;
-      };
-      const topicToBigInt = (topic) => {
-        if (!topic || typeof topic !== "string") return null;
-        try {
-          return BigInt(topic);
-        } catch {
-          return null;
-        }
-      };
-      const toTokenId = (raw) => {
-        if (raw == null) return "";
-        try {
-          if (typeof raw === "bigint") return raw.toString();
-          if (typeof raw === "number") {
-            if (!Number.isFinite(raw) || raw < 0) return "";
-            return Math.trunc(raw).toString();
-          }
-          if (typeof raw === "string") {
-            const s = raw.trim();
-            if (!s) return "";
-            if (/^\d+$/.test(s)) return s;
-            return BigInt(s).toString();
-          }
-          if (typeof raw?.toString === "function") {
-            const s = raw.toString();
-            if (!s) return "";
-            if (/^\d+$/.test(s)) return s;
-            return BigInt(s).toString();
-          }
-        } catch {
-          return "";
-        }
-        return "";
-      };
-      const hasPositiveBalance = (value) => {
-        try {
-          if (value == null) return false;
-          return BigInt(value.toString()) > 0n;
-        } catch {
-          return false;
-        }
-      };
-      const coerceBool = (val) => {
-        if (typeof val === "boolean") return val;
-        if (typeof val === "bigint") return val !== 0n;
-        if (typeof val?.toString === "function") {
-          const s = val.toString();
-          if (s === "0") return false;
-          if (s === "1") return true;
-        }
-        return Boolean(val);
-      };
-      const uniqIds = (list) => {
-        const out = [];
-        const seen = new Set();
-        for (const raw of Array.isArray(list) ? list : []) {
-          const id = toTokenId(raw);
-          if (!id || seen.has(id)) continue;
-          seen.add(id);
-          out.push(id);
-        }
-        return out;
-      };
-
-      const getProviderSafe = async () => {
-        let c = contractRef.current || getReadOnlyContract();
-        let p = getProviderFor(c);
-        if (!p) throw new Error("Provider not available");
-        try {
-          const latestBlock = await p.getBlockNumber();
-          return { contract: c, provider: p, latest: latestBlock };
-        } catch (err) {
-          // RPC failed (CORS / offline). Reset and retry once with a fresh provider.
-          clearPreferredRpc();
           try {
-            await ensurePreferredRpc();
-          } catch {
-            // ignore health probe failures
-          }
-          resetROProvider();
-          c = getReadOnlyContract();
-          contractRef.current = c;
-          p = getProviderFor(c);
-          if (p) {
-            const latestBlock = await p.getBlockNumber();
-            return { contract: c, provider: p, latest: latestBlock };
-          }
-          // Final fallback: use injected provider (MetaMask) if available.
-          try {
-            const injectedEth = getInjectedProvider();
-            if (!injectedEth) throw err;
-            const injected = new BrowserProvider(injectedEth, "any");
-            const latestBlock = await injected.getBlockNumber();
-            const injectedContract = c.connect(injected);
-            return {
-              contract: injectedContract,
-              provider: injected,
-              latest: latestBlock,
-            };
-          } catch {
-            throw err;
-          }
-        }
-      };
-
-      const { contract, provider, latest } = await getProviderSafe();
-      const me = String(addr || "").toLowerCase();
-
-      // Prefer reader-based owner token id queries if available (fast + avoids archive log scans).
-      // If this returns data, we only fall back to Transfer logs when necessary.
-      let tokenIdsFromReader = null;
-      try {
-        const reader = getCachedReaderInstance("main");
-        if (reader) {
-          if (typeof reader.getUserRewardTokenIds === "function") {
-            const res = await reader
-              .getUserRewardTokenIds(addr)
-              .catch(() => null);
-            if (Array.isArray(res) && res.length) tokenIdsFromReader = res;
-          }
-          if (
-            !tokenIdsFromReader &&
-            typeof reader.getUserTokenIds === "function"
-          ) {
-            const res = await reader.getUserTokenIds(addr).catch(() => null);
-            if (Array.isArray(res) && res.length) tokenIdsFromReader = res;
-          }
-          if (
-            !tokenIdsFromReader &&
-            typeof reader.tokensOfOwner === "function"
-          ) {
-            const res = await reader.tokensOfOwner(addr).catch(() => null);
-            if (Array.isArray(res) && res.length) tokenIdsFromReader = res;
-          }
-        }
-      } catch {
-        tokenIdsFromReader = null;
-      }
-
-      let ticketBaseUri = null;
-      try {
-        if (typeof contract.ticketBaseURI === "function") {
-          const base = await contract.ticketBaseURI().catch(() => null);
-          if (base) ticketBaseUri = String(base);
-        }
-      } catch {
-        ticketBaseUri = null;
-      }
-
-      const normalizedTicketBase = normalizeBaseUri(ticketBaseUri);
-      let tokenIds = uniqIds(tokenIdsFromReader);
-      let balance = null;
-      const readBalance = async () => {
-        if (balance != null) return balance;
-        try {
-          balance = await contract.balanceOf(addr);
-        } catch {
-          balance = null;
-        }
-        return balance;
-      };
-
-      if (!tokenIds.length) {
-        const FROM = await getSafeDeployBlock(provider);
-        const toFilter = contract.filters.Transfer(null, addr, null);
-        const fromFilter = contract.filters.Transfer(addr, null, null);
-
-        const scanLogs = async (fullHistory = false) => {
-          const logProvider = getArchiveProvider() || provider;
-          const direct = await (async () => {
-            try {
-              if (!logProvider || typeof logProvider.getLogs !== "function")
-                return null;
-              const address =
-                toFilter?.address || contract?.target || contract?.address;
-              const [toLogs, fromLogs] = await Promise.all([
-                logProvider.getLogs({
-                  address,
-                  topics: toFilter?.topics,
-                  fromBlock: FROM,
-                  toBlock: latest,
-                }),
-                logProvider.getLogs({
-                  address,
-                  topics: fromFilter?.topics,
-                  fromBlock: FROM,
-                  toBlock: latest,
-                }),
-              ]);
-              return { toLogs, fromLogs };
-            } catch {
-              return null;
+            const uri = await getTokenUriCached(contract, idBN);
+            const j = await readJsonFromURICached(uri);
+            if (j) {
+              meta = j;
+              const imgUrl = j?.image || j?.image_url;
+              image = (await resolveImageUrlCached(imgUrl, uri)) || image;
             }
-          })();
-          if (direct) return direct;
+          } catch {}
 
-          const opts = fullHistory ? { fullHistory: true } : undefined;
-          try {
-            const [toLogs, fromLogs] = await Promise.all([
-              queryLogsBatched(
-                contract,
-                toFilter,
-                FROM,
-                latest,
-                LOGS_BATCH,
-                opts,
-              ),
-              queryLogsBatched(
-                contract,
-                fromFilter,
-                FROM,
-                latest,
-                LOGS_BATCH,
-                opts,
-              ),
-            ]);
-            return { toLogs, fromLogs };
-          } catch (err) {
-            // If RO provider blocks getLogs (CORS / rate limit), fall back to injected provider.
-            const eth = getInjectedProvider();
-            if (!eth) throw err;
-            const injected = new BrowserProvider(eth, "any");
-            const injectedLatest = await injected
-              .getBlockNumber()
-              .catch(() => latest);
-            const injectedContract = contract.connect(injected);
-            const toFilterInjected = injectedContract.filters.Transfer(
-              null,
-              addr,
-              null,
-            );
-            const fromFilterInjected = injectedContract.filters.Transfer(
-              addr,
-              null,
-              null,
-            );
-            const [toLogs, fromLogs] = await Promise.all([
-              queryLogsBatched(
-                injectedContract,
-                toFilterInjected,
-                FROM,
-                injectedLatest,
-                LOGS_BATCH,
-                opts,
-              ),
-              queryLogsBatched(
-                injectedContract,
-                fromFilterInjected,
-                FROM,
-                injectedLatest,
-                LOGS_BATCH,
-                opts,
-              ),
-            ]);
-            return { toLogs, fromLogs };
-          }
-        };
-
-        let { toLogs, fromLogs } = await scanLogs(false);
-        const bal = await readBalance();
-        const hasBalance = hasPositiveBalance(bal);
-
-        if (!toLogs.length && !fromLogs.length) {
-          const shouldRetry = hasBalance || bal == null;
-          if (shouldRetry && getArchiveProvider()) {
-            ({ toLogs, fromLogs } = await scanLogs(true));
-          }
-        }
-
-        const all = [...toLogs, ...fromLogs].sort((a, b) => {
-          if (a.blockNumber !== b.blockNumber)
-            return a.blockNumber - b.blockNumber;
-          return a.logIndex - b.logIndex;
-        });
-
-        const held = new Set();
-        for (const l of all) {
-          const args = l.args;
-          const topicFrom = topicToAddress(l?.topics?.[1]);
-          const topicTo = topicToAddress(l?.topics?.[2]);
-          const topicToken = topicToBigInt(l?.topics?.[3]);
-
-          const from = String(
-            (topicFrom || safeLogArg(args, "from", 0) || "") ?? "",
-          ).toLowerCase();
-          const to = String(
-            (topicTo || safeLogArg(args, "to", 1) || "") ?? "",
-          ).toLowerCase();
-
-          const tokenId = toTokenId(topicToken ?? safeLogArg(args, "tokenId", 2));
-          if (!tokenId) continue;
-          if (to === me) held.add(tokenId);
-          if (from === me) held.delete(tokenId);
-        }
-
-        tokenIds = Array.from(held);
-
-        if (!tokenIds.length && hasBalance) {
-          const directIds = [];
-          if (typeof contract.tokensOfOwner === "function") {
-            try {
-              const res = await contract.tokensOfOwner(addr);
-              if (Array.isArray(res) && res.length) {
-                directIds.push(...res);
-              }
-            } catch {
-              // ignore tokensOfOwner errors
-            }
-          }
-          if (!directIds.length && typeof contract.walletOfOwner === "function") {
-            try {
-              const res = await contract.walletOfOwner(addr);
-              if (Array.isArray(res) && res.length) {
-                directIds.push(...res);
-              }
-            } catch {
-              // ignore walletOfOwner errors
-            }
-          }
-          if (
-            !directIds.length &&
-            typeof contract.tokenOfOwnerByIndex === "function"
-          ) {
-            try {
-              const balLocal = BigInt((await readBalance())?.toString?.() || "0");
-              for (let i = 0n; i < balLocal; i += 1n) {
-                const id = await contract.tokenOfOwnerByIndex(addr, i).catch(
-                  () => null,
-                );
-                if (id != null) directIds.push(id);
-              }
-            } catch {
-              // ignore tokenOfOwnerByIndex errors
-            }
-          }
-          tokenIds = uniqIds(directIds);
-        }
-
-        // Last-resort fallback for RPCs that reject / trim logs:
-        // scan ownerOf over known minted range (cheap here, collection is small).
-        if (!tokenIds.length && hasBalance && typeof contract.ownerOf === "function") {
-          let upperBound = 0;
-          const upperFns = [
-            "ticketMinted",
-            "biggiMinted",
-            "tokenMinted",
-            "totalSupply",
-          ];
-          for (const fn of upperFns) {
-            if (typeof contract?.[fn] !== "function") continue;
-            try {
-              const raw = await contract[fn]();
-              const id = toTokenId(raw);
-              if (!id) continue;
-              upperBound = Math.max(upperBound, Number(id));
-            } catch {
-              // ignore getter errors
-            }
-          }
-          try {
-            const balNum = Number(
-              BigInt((await readBalance())?.toString?.() || "0"),
-            );
-            if (!Number.isFinite(upperBound) || upperBound <= 0) {
-              upperBound = Math.max(50, balNum * 16);
-            }
-            upperBound = Math.max(upperBound, balNum);
-          } catch {
-            if (!Number.isFinite(upperBound) || upperBound <= 0) upperBound = 550;
-          }
-          upperBound = Math.max(1, Math.min(Math.trunc(upperBound), 2500));
-
-          const idsToProbe = Array.from({ length: upperBound }, (_, i) =>
-            String(i + 1),
-          );
-          const owned = new Set();
-          await mapLimit(idsToProbe, 16, async (id) => {
-            try {
-              const owner = await contract.ownerOf(id);
-              if (String(owner || "").toLowerCase() === me) owned.add(id);
-            } catch {
-              // token not minted or RPC rejected this id
-            }
-          });
-          tokenIds = Array.from(owned);
-        }
-      }
-
-      tokenIds = uniqIds(tokenIds);
-
-      if (tokenIds.length && typeof contract?.ownerOf === "function") {
-        const verified = await mapLimit(tokenIds, 8, async (id) => {
-          try {
-            const owner = await contract.ownerOf(id);
-            if (String(owner || "").toLowerCase() === me) return id;
-          } catch {
-            // ownerOf reverts for nonexistent/burned tokens
-          }
-          return null;
-        });
-        tokenIds = verified.filter(Boolean);
-      }
-
-      if (!tokenIds.length) {
-        const balAfter = await readBalance();
-        const hasBalanceAfter = hasPositiveBalance(balAfter);
-        if (hasBalanceAfter && typeof contract.ownerOf === "function") {
-          let upperBound = 0;
-          const upperFns = [
-            "ticketMinted",
-            "biggiMinted",
-            "tokenMinted",
-            "totalSupply",
-          ];
-          for (const fn of upperFns) {
-            if (typeof contract?.[fn] !== "function") continue;
-            try {
-              const raw = await contract[fn]();
-              const id = toTokenId(raw);
-              if (!id) continue;
-              upperBound = Math.max(upperBound, Number(id));
-            } catch {
-              // ignore getter errors
-            }
-          }
-          try {
-            const balNum = Number(
-              BigInt((balAfter)?.toString?.() || "0"),
-            );
-            if (!Number.isFinite(upperBound) || upperBound <= 0) {
-              upperBound = Math.max(50, balNum * 16);
-            }
-            upperBound = Math.max(upperBound, balNum);
-          } catch {
-            if (!Number.isFinite(upperBound) || upperBound <= 0) upperBound = 550;
-          }
-          upperBound = Math.max(1, Math.min(Math.trunc(upperBound), 2500));
-
-          const idsToProbe = Array.from({ length: upperBound }, (_, i) =>
-            String(i + 1),
-          );
-          const owned = new Set();
-          await mapLimit(idsToProbe, 16, async (id) => {
-            try {
-              const owner = await contract.ownerOf(id);
-              if (String(owner || "").toLowerCase() === me) owned.add(id);
-            } catch {
-              // token not minted or RPC rejected this id
-            }
-          });
-          tokenIds = Array.from(owned);
-        }
-      }
-      if (!tokenIds.length) {
-        saveWalletCache(addr, []);
-        return [];
-      }
-
-      const metas = await mapLimit(tokenIds, 4, async (tid) => {
-        let isT = false;
-        try {
-          if (typeof contract?.isTicket === "function") {
-            isT = coerceBool(await contract.isTicket(tid));
-          }
-        } catch {
-          isT = false;
-        }
-
-        let info = null;
-        let infoMinted = null;
-        if (typeof contract?.nftInfo === "function") {
-          try {
-            info = await contract.nftInfo(tid);
-            const mintedFlag = info?.minted ?? info?.[0];
-            infoMinted = typeof mintedFlag === "boolean" ? mintedFlag : coerceBool(mintedFlag);
-          } catch {
-            info = null;
-            infoMinted = null;
-          }
-        }
-
-        let uri = null;
-        let j = null;
-        try {
-          uri = await getTokenUriCached(contract, tid);
-          if (uri) j = await readJsonFromURICached(uri);
-        } catch {
-          uri = null;
-          j = null;
-        }
-
-        const uriLooksTicket = isTicketUri(uri, normalizedTicketBase);
-        let metaLooksTicket = looksLikeTicketMeta(j);
-        let metaLooksNft = looksLikeNftMeta(j);
-
-        if (isT && metaLooksNft) isT = false;
-        if (isT && uri && !uriLooksTicket) isT = false;
-        if (isT && infoMinted === true) isT = false;
-
-        // Ticket -> NFT transition can lag a few blocks and often keeps the same tokenId.
-        // Force refresh whenever metadata still looks like a ticket (or ticket flag is true).
-        if (isT || uriLooksTicket || metaLooksTicket) {
-          try {
-            const freshUri = await getTokenUriCached(contract, tid, {
-              force: true,
-            });
-            if (freshUri && freshUri !== uri) {
-              uri = freshUri;
-              j = await readJsonFromURICached(uri, { force: true });
-            } else if (uri) {
-              j = await readJsonFromURICached(uri, { force: true });
-            }
-          } catch {
-            // ignore forced refresh errors
-          }
-          metaLooksTicket = looksLikeTicketMeta(j);
-          metaLooksNft = looksLikeNftMeta(j);
-          if (isT && metaLooksNft) isT = false;
-        }
-
-        const finalIsTicket = Boolean(isT && !metaLooksNft);
-        if (!finalIsTicket && infoMinted === false && !uri && !j) {
-          // Keep a placeholder entry instead of dropping owned NFTs when RPC metadata fails.
-        }
-        let meta = {};
-        let image = PLACEHOLDER_IMAGE;
-        try {
-          const cached = getCachedPriceAttrs(tid);
-          const base =
-            j ||
-            (finalIsTicket
-              ? {
-                  name: `Ticket #${tid}`,
-                  description: "Redeem this ticket to mint a BiggiEyes NFT.",
-                }
-              : {
-                  name: `Biggi NFT #${tid}`,
-                  description: "Metadata is updating after redeem.",
-                });
-
-          if (!finalIsTicket && metaLooksTicket && !metaLooksNft) {
-            base.name = `Biggi NFT #${tid}`;
-            base.description = "Metadata is updating after redeem.";
-          }
-          if (finalIsTicket && !looksLikeTicketMeta(base)) {
-            base.name = `Ticket #${tid}`;
-            base.description = "Redeem this ticket to mint a BiggiEyes NFT.";
-          }
-
-          if (finalIsTicket) {
-            meta = base;
-          } else {
-            base.attributes = mergeAttrs(base.attributes, cached);
-            meta = await enrichMetaWithPrices(contract, tid, base);
-          }
-
-          const imgUrl = j?.image || j?.image_url;
-          image = (await resolveImageUrlCached(imgUrl, uri)) || image;
-          // For tickets, keep the resolved ticket image when available.
-        } catch {
-          // keep fallback
-        }
-
-        if (!finalIsTicket) {
-          let needsImageFallback = !image || image === PLACEHOLDER_IMAGE;
-          let needsAttrsFallback =
-            !meta ||
-            !Array.isArray(meta.attributes) ||
-            meta.attributes.length === 0;
-
-          if ((needsImageFallback || needsAttrsFallback) && uri) {
-            const parsed = parseTokenUriParts(uri);
-            if (parsed) {
-              const { mainId, blockName, bgCode } = parsed;
-              const bgName = bgNameFromCode(bgCode) || bgCode;
-              if (needsImageFallback && blockName && bgCode && mainId) {
-                const fileName = `Biggi_${mainId}_${blockName}_${bgCode}.png`;
-                const fallbackImage = buildBlockImageUrl(blockName, fileName);
-                if (fallbackImage) image = fallbackImage;
-              }
-              if (needsAttrsFallback && (blockName || bgName)) {
-                const attrs = mergeAttrs(meta?.attributes, [
-                  blockName
-                    ? { trait_type: "Block", value: blockName }
-                    : null,
-                  bgName
-                    ? { trait_type: "Background", value: bgName }
-                    : null,
-                ].filter(Boolean));
-                meta = { ...(meta || {}), attributes: attrs };
-              }
-              if (!meta?.name) {
-                meta = { ...(meta || {}), name: `Biggi NFT #${mainId}` };
-              }
-            }
-            needsImageFallback = !image || image === PLACEHOLDER_IMAGE;
-            needsAttrsFallback =
-              !meta ||
-              !Array.isArray(meta.attributes) ||
-              meta.attributes.length === 0;
-          }
-
-          if ((needsImageFallback || needsAttrsFallback) && info) {
-            try {
-              const parsed = parseNftInfo(info);
-              if (parsed) {
-                const { blockName, bgCode, bgName, mainId, blockIdx } = parsed;
-                let baseUri = null;
-                if (needsImageFallback && typeof contract?.blockBaseURIs === "function") {
-                  const candidates = [];
-                  const n = Number(blockIdx);
-                  if (Number.isFinite(n)) {
-                    candidates.push(n);
-                    if (n > 0) candidates.push(n - 1);
-                    candidates.push(n + 1);
-                  }
-                  for (const idx of candidates) {
-                    const v = await contract.blockBaseURIs(idx).catch(() => null);
-                    if (typeof v === "string" && v.trim()) {
-                      baseUri = v.trim();
-                      break;
-                    }
-                  }
-                }
-                if (
-                  needsImageFallback &&
-                  blockName &&
-                  bgCode &&
-                  mainId
-                ) {
-                  const fileName = `Biggi_${mainId}_${blockName}_${bgCode}.png`;
-                  const fallbackImage = buildBlockImageUrl(blockName, fileName, baseUri);
-                  if (fallbackImage) image = fallbackImage;
-                }
-                if (blockName || bgName) {
-                  const attrs = mergeAttrs(meta?.attributes, [
-                    blockName
-                      ? { trait_type: "Block", value: blockName }
-                      : null,
-                    bgName
-                      ? { trait_type: "Background", value: bgName }
-                      : null,
-                  ].filter(Boolean));
-                  meta = { ...(meta || {}), attributes: attrs };
-                }
-              }
-            } catch {
-              // ignore nftInfo fallback errors
-            }
-          }
-        }
-
-        if (finalIsTicket) {
           if (!image || image === PLACEHOLDER_IMAGE) {
             image = ticketImageUrl();
           }
@@ -2339,155 +1786,893 @@ export default function AppCore() {
               name: "Biggi Mint Ticket",
             };
           }
-        }
 
-        return {
-          tokenId: String(tid),
-          image,
-          meta,
-          isTicket: finalIsTicket,
-          contractAddress: contract?.target || contract?.address || null,
-        };
-      });
+          return {
+            tokenId: id,
+            image,
+            meta,
+            isTicket: true,
+            contractAddress: contract?.target || contract?.address || null,
+          };
+        });
 
-      const resolved = metas.filter(Boolean);
-      saveWalletCache(addr, resolved);
-      return resolved;
-    } catch (e) {
-      console.error("fetchOwnedNFTsViaTransfers", e);
-      return [];
-    }
-  }, [enrichMetaWithPrices]);
-
-  const mergeWithTopFirst = React.useCallback((finalList) => {
-    return setMyNFTs((prev) => {
-      const pending = prev.find((x) => x.isPending);
-      if (VRFPending && pending) {
-        const minted = finalList.find(
-          (x) =>
-            x.tokenId === pending.tokenId && !x.isPending && !x.isTicket,
-        );
-        if (minted) {
-          const rest = finalList.filter((x) => x.tokenId !== pending.tokenId);
-          return [minted, ...rest];
-        }
-        const dedup = finalList.filter(
-          (x) => !x.isPending && x.tokenId !== pending.tokenId,
-        );
-        return [pending, ...dedup];
+        return metas;
+      } catch (e) {
+        console.error("fetchMyTickets", e);
+        return [];
       }
-      if (topFirstId) {
-        const top = finalList.find((x) => x.tokenId === topFirstId);
-        const rest = finalList.filter((x) => x.tokenId !== topFirstId);
-        return top ? [top, ...rest] : finalList;
-      }
-      return finalList;
-    });
-  }, [VRFPending, topFirstId]);
+    },
+    [findTicketsViaLogs],
+  );
 
-  const fetchWalletAssets = React.useCallback(async (addr) => {
-    if (!addr) return [];
-    if (walletFetchRef.current.inFlight && walletFetchRef.current.addr === addr) {
-      return walletFetchRef.current.inFlight;
-    }
-
-    const contractForCache = contractRef.current || getReadOnlyContract();
-    const contractAddr =
-      contractForCache?.target || contractForCache?.address || null;
-
-    const cached = loadWalletCache(addr);
-    const galleryCached = loadGalleryCache(addr, {
-      allowExpired: true,
-      contractAddr,
-    });
-    const seed =
-      cached?.length ? cached : galleryCached?.length ? galleryCached : null;
-    if (seed?.length) mergeWithTopFirst(seed);
-
-    const showSpinner = !seed?.length;
-
-    const exec = (async () => {
-      if (showSpinner) setGalleryLoading(true);
+  const fetchOwnedNFTsViaTransfers = React.useCallback(
+    async (addr) => {
       try {
-        const tickets = await fetchMyTickets(addr);
-        const nfts = await fetchOwnedNFTsViaTransfers(addr);
-
-        const byId = new Map();
-        const upsert = (item) => {
-          if (!item?.tokenId) return;
-          const key = String(item.tokenId);
-          const prev = byId.get(key);
-          if (!prev) {
-            byId.set(key, item);
-            return;
+        const topicToAddress = (topic) => {
+          if (!topic || typeof topic !== "string") return "";
+          const hex = topic.startsWith("0x") ? topic.slice(2) : topic;
+          if (hex.length < 40) return "";
+          return `0x${hex.slice(hex.length - 40)}`;
+        };
+        const topicToBigInt = (topic) => {
+          if (!topic || typeof topic !== "string") return null;
+          try {
+            return BigInt(topic);
+          } catch {
+            return null;
           }
-
-          const prevIsTicket = Boolean(prev?.isTicket);
-          const nextIsTicket = Boolean(item?.isTicket);
-          if (prevIsTicket && !nextIsTicket) {
-            byId.set(key, item);
-            return;
+        };
+        const toTokenId = (raw) => {
+          if (raw == null) return "";
+          try {
+            if (typeof raw === "bigint") return raw.toString();
+            if (typeof raw === "number") {
+              if (!Number.isFinite(raw) || raw < 0) return "";
+              return Math.trunc(raw).toString();
+            }
+            if (typeof raw === "string") {
+              const s = raw.trim();
+              if (!s) return "";
+              if (/^\d+$/.test(s)) return s;
+              return BigInt(s).toString();
+            }
+            if (typeof raw?.toString === "function") {
+              const s = raw.toString();
+              if (!s) return "";
+              if (/^\d+$/.test(s)) return s;
+              return BigInt(s).toString();
+            }
+          } catch {
+            return "";
           }
-          if (!prevIsTicket && nextIsTicket) {
-            return;
+          return "";
+        };
+        const hasPositiveBalance = (value) => {
+          try {
+            if (value == null) return false;
+            return BigInt(value.toString()) > 0n;
+          } catch {
+            return false;
           }
-
-          const prevPending = Boolean(prev?.isPending);
-          const nextPending = Boolean(item?.isPending);
-          if (prevPending && !nextPending) {
-            byId.set(key, item);
-            return;
+        };
+        const coerceBool = (val) => {
+          if (typeof val === "boolean") return val;
+          if (typeof val === "bigint") return val !== 0n;
+          if (typeof val?.toString === "function") {
+            const s = val.toString();
+            if (s === "0") return false;
+            if (s === "1") return true;
           }
-          if (!prevPending && nextPending) {
-            return;
+          return Boolean(val);
+        };
+        const uniqIds = (list) => {
+          const out = [];
+          const seen = new Set();
+          for (const raw of Array.isArray(list) ? list : []) {
+            const id = toTokenId(raw);
+            if (!id || seen.has(id)) continue;
+            seen.add(id);
+            out.push(id);
           }
-
-          byId.set(key, item);
+          return out;
         };
 
-        for (const t of tickets) upsert(t);
-        for (const n of nfts) upsert(n);
+        const getProviderSafe = async () => {
+          let c = contractRef.current || getReadOnlyContract();
+          let p = getProviderFor(c);
+          if (!p) throw new Error("Provider not available");
+          try {
+            const latestBlock = await p.getBlockNumber();
+            return { contract: c, provider: p, latest: latestBlock };
+          } catch (err) {
+            // RPC failed (CORS / offline). Reset and retry once with a fresh provider.
+            clearPreferredRpc();
+            try {
+              await ensurePreferredRpc();
+            } catch {
+              // ignore health probe failures
+            }
+            resetROProvider();
+            c = getReadOnlyContract();
+            contractRef.current = c;
+            p = getProviderFor(c);
+            if (p) {
+              const latestBlock = await p.getBlockNumber();
+              return { contract: c, provider: p, latest: latestBlock };
+            }
+            // Final fallback: use injected provider (MetaMask) if available.
+            try {
+              const injectedEth = getInjectedProvider();
+              if (!injectedEth) throw err;
+              const injected = new BrowserProvider(injectedEth, "any");
+              const latestBlock = await injected.getBlockNumber();
+              const injectedContract = c.connect(injected);
+              return {
+                contract: injectedContract,
+                provider: injected,
+                latest: latestBlock,
+              };
+            } catch {
+              throw err;
+            }
+          }
+        };
 
-        const final = Array.from(byId.values());
-        const mergeWithCache = (fresh, cachedList) => {
-          if (!Array.isArray(cachedList) || !cachedList.length) return fresh;
-          const map = new Map(
-            cachedList
-              .map((item) => [String(item?.tokenId ?? ""), item])
-              .filter(([k]) => k),
-          );
-          return fresh.map((item) => {
-            const key = String(item?.tokenId ?? "");
-            const prev = key ? map.get(key) : null;
-            return prev ? mergeGalleryItem(prev, item) : item;
+        const { contract, provider, latest } = await getProviderSafe();
+        const me = String(addr || "").toLowerCase();
+
+        // Prefer reader-based owner token id queries if available (fast + avoids archive log scans).
+        // If this returns data, we only fall back to Transfer logs when necessary.
+        let tokenIdsFromReader = null;
+        try {
+          const reader = getCachedReaderInstance("main");
+          if (reader) {
+            if (typeof reader.getUserRewardTokenIds === "function") {
+              const res = await reader
+                .getUserRewardTokenIds(addr)
+                .catch(() => null);
+              if (Array.isArray(res) && res.length) tokenIdsFromReader = res;
+            }
+            if (
+              !tokenIdsFromReader &&
+              typeof reader.getUserTokenIds === "function"
+            ) {
+              const res = await reader.getUserTokenIds(addr).catch(() => null);
+              if (Array.isArray(res) && res.length) tokenIdsFromReader = res;
+            }
+            if (
+              !tokenIdsFromReader &&
+              typeof reader.tokensOfOwner === "function"
+            ) {
+              const res = await reader.tokensOfOwner(addr).catch(() => null);
+              if (Array.isArray(res) && res.length) tokenIdsFromReader = res;
+            }
+          }
+        } catch {
+          tokenIdsFromReader = null;
+        }
+
+        let ticketBaseUri = null;
+        try {
+          if (typeof contract.ticketBaseURI === "function") {
+            const base = await contract.ticketBaseURI().catch(() => null);
+            if (base) ticketBaseUri = String(base);
+          }
+        } catch {
+          ticketBaseUri = null;
+        }
+
+        const normalizedTicketBase = normalizeBaseUri(ticketBaseUri);
+        let tokenIds = uniqIds(tokenIdsFromReader);
+        let balance = null;
+        const readBalance = async () => {
+          if (balance != null) return balance;
+          try {
+            balance = await contract.balanceOf(addr);
+          } catch {
+            balance = null;
+          }
+          return balance;
+        };
+
+        if (!tokenIds.length) {
+          const FROM = await getSafeDeployBlock(provider);
+          const toFilter = contract.filters.Transfer(null, addr, null);
+          const fromFilter = contract.filters.Transfer(addr, null, null);
+
+          const scanLogs = async (fullHistory = false) => {
+            const logProvider = getArchiveProvider() || provider;
+            const direct = await (async () => {
+              try {
+                if (!logProvider || typeof logProvider.getLogs !== "function")
+                  return null;
+                const address =
+                  toFilter?.address || contract?.target || contract?.address;
+                const [toLogs, fromLogs] = await Promise.all([
+                  logProvider.getLogs({
+                    address,
+                    topics: toFilter?.topics,
+                    fromBlock: FROM,
+                    toBlock: latest,
+                  }),
+                  logProvider.getLogs({
+                    address,
+                    topics: fromFilter?.topics,
+                    fromBlock: FROM,
+                    toBlock: latest,
+                  }),
+                ]);
+                return { toLogs, fromLogs };
+              } catch {
+                return null;
+              }
+            })();
+            if (direct) return direct;
+
+            const opts = fullHistory ? { fullHistory: true } : undefined;
+            try {
+              const [toLogs, fromLogs] = await Promise.all([
+                queryLogsBatched(
+                  contract,
+                  toFilter,
+                  FROM,
+                  latest,
+                  LOGS_BATCH,
+                  opts,
+                ),
+                queryLogsBatched(
+                  contract,
+                  fromFilter,
+                  FROM,
+                  latest,
+                  LOGS_BATCH,
+                  opts,
+                ),
+              ]);
+              return { toLogs, fromLogs };
+            } catch (err) {
+              // If RO provider blocks getLogs (CORS / rate limit), fall back to injected provider.
+              const eth = getInjectedProvider();
+              if (!eth) throw err;
+              const injected = new BrowserProvider(eth, "any");
+              const injectedLatest = await injected
+                .getBlockNumber()
+                .catch(() => latest);
+              const injectedContract = contract.connect(injected);
+              const toFilterInjected = injectedContract.filters.Transfer(
+                null,
+                addr,
+                null,
+              );
+              const fromFilterInjected = injectedContract.filters.Transfer(
+                addr,
+                null,
+                null,
+              );
+              const [toLogs, fromLogs] = await Promise.all([
+                queryLogsBatched(
+                  injectedContract,
+                  toFilterInjected,
+                  FROM,
+                  injectedLatest,
+                  LOGS_BATCH,
+                  opts,
+                ),
+                queryLogsBatched(
+                  injectedContract,
+                  fromFilterInjected,
+                  FROM,
+                  injectedLatest,
+                  LOGS_BATCH,
+                  opts,
+                ),
+              ]);
+              return { toLogs, fromLogs };
+            }
+          };
+
+          let { toLogs, fromLogs } = await scanLogs(false);
+          const bal = await readBalance();
+          const hasBalance = hasPositiveBalance(bal);
+
+          if (!toLogs.length && !fromLogs.length) {
+            const shouldRetry = hasBalance || bal == null;
+            if (shouldRetry && getArchiveProvider()) {
+              ({ toLogs, fromLogs } = await scanLogs(true));
+            }
+          }
+
+          const all = [...toLogs, ...fromLogs].sort((a, b) => {
+            if (a.blockNumber !== b.blockNumber)
+              return a.blockNumber - b.blockNumber;
+            return a.logIndex - b.logIndex;
           });
-        };
 
-        const merged = mergeWithCache(final, seed);
-        mergeWithTopFirst(merged);
-        saveWalletCache(addr, merged);
-        saveGalleryCache(addr, merged, contractAddr);
-        await refreshClaimable(addr, merged);
-        return merged;
+          const held = new Set();
+          for (const l of all) {
+            const args = l.args;
+            const topicFrom = topicToAddress(l?.topics?.[1]);
+            const topicTo = topicToAddress(l?.topics?.[2]);
+            const topicToken = topicToBigInt(l?.topics?.[3]);
+
+            const from = String(
+              (topicFrom || safeLogArg(args, "from", 0) || "") ?? "",
+            ).toLowerCase();
+            const to = String(
+              (topicTo || safeLogArg(args, "to", 1) || "") ?? "",
+            ).toLowerCase();
+
+            const tokenId = toTokenId(
+              topicToken ?? safeLogArg(args, "tokenId", 2),
+            );
+            if (!tokenId) continue;
+            if (to === me) held.add(tokenId);
+            if (from === me) held.delete(tokenId);
+          }
+
+          tokenIds = Array.from(held);
+
+          if (!tokenIds.length && hasBalance) {
+            const directIds = [];
+            if (typeof contract.tokensOfOwner === "function") {
+              try {
+                const res = await contract.tokensOfOwner(addr);
+                if (Array.isArray(res) && res.length) {
+                  directIds.push(...res);
+                }
+              } catch {
+                // ignore tokensOfOwner errors
+              }
+            }
+            if (
+              !directIds.length &&
+              typeof contract.walletOfOwner === "function"
+            ) {
+              try {
+                const res = await contract.walletOfOwner(addr);
+                if (Array.isArray(res) && res.length) {
+                  directIds.push(...res);
+                }
+              } catch {
+                // ignore walletOfOwner errors
+              }
+            }
+            if (
+              !directIds.length &&
+              typeof contract.tokenOfOwnerByIndex === "function"
+            ) {
+              try {
+                const balLocal = BigInt(
+                  (await readBalance())?.toString?.() || "0",
+                );
+                for (let i = 0n; i < balLocal; i += 1n) {
+                  const id = await contract
+                    .tokenOfOwnerByIndex(addr, i)
+                    .catch(() => null);
+                  if (id != null) directIds.push(id);
+                }
+              } catch {
+                // ignore tokenOfOwnerByIndex errors
+              }
+            }
+            tokenIds = uniqIds(directIds);
+          }
+
+          // Last-resort fallback for RPCs that reject / trim logs:
+          // scan ownerOf over known minted range (cheap here, collection is small).
+          if (
+            !tokenIds.length &&
+            hasBalance &&
+            typeof contract.ownerOf === "function"
+          ) {
+            let upperBound = 0;
+            const upperFns = [
+              "ticketMinted",
+              "biggiMinted",
+              "tokenMinted",
+              "totalSupply",
+            ];
+            for (const fn of upperFns) {
+              if (typeof contract?.[fn] !== "function") continue;
+              try {
+                const raw = await contract[fn]();
+                const id = toTokenId(raw);
+                if (!id) continue;
+                upperBound = Math.max(upperBound, Number(id));
+              } catch {
+                // ignore getter errors
+              }
+            }
+            try {
+              const balNum = Number(
+                BigInt((await readBalance())?.toString?.() || "0"),
+              );
+              if (!Number.isFinite(upperBound) || upperBound <= 0) {
+                upperBound = Math.max(50, balNum * 16);
+              }
+              upperBound = Math.max(upperBound, balNum);
+            } catch {
+              if (!Number.isFinite(upperBound) || upperBound <= 0)
+                upperBound = 550;
+            }
+            upperBound = Math.max(1, Math.min(Math.trunc(upperBound), 2500));
+
+            const idsToProbe = Array.from({ length: upperBound }, (_, i) =>
+              String(i + 1),
+            );
+            const owned = new Set();
+            await mapLimit(idsToProbe, 16, async (id) => {
+              try {
+                const owner = await contract.ownerOf(id);
+                if (String(owner || "").toLowerCase() === me) owned.add(id);
+              } catch {
+                // token not minted or RPC rejected this id
+              }
+            });
+            tokenIds = Array.from(owned);
+          }
+        }
+
+        tokenIds = uniqIds(tokenIds);
+
+        if (tokenIds.length && typeof contract?.ownerOf === "function") {
+          const verified = await mapLimit(tokenIds, 8, async (id) => {
+            try {
+              const owner = await contract.ownerOf(id);
+              if (String(owner || "").toLowerCase() === me) return id;
+            } catch {
+              // ownerOf reverts for nonexistent/burned tokens
+            }
+            return null;
+          });
+          tokenIds = verified.filter(Boolean);
+        }
+
+        if (!tokenIds.length) {
+          const balAfter = await readBalance();
+          const hasBalanceAfter = hasPositiveBalance(balAfter);
+          if (hasBalanceAfter && typeof contract.ownerOf === "function") {
+            let upperBound = 0;
+            const upperFns = [
+              "ticketMinted",
+              "biggiMinted",
+              "tokenMinted",
+              "totalSupply",
+            ];
+            for (const fn of upperFns) {
+              if (typeof contract?.[fn] !== "function") continue;
+              try {
+                const raw = await contract[fn]();
+                const id = toTokenId(raw);
+                if (!id) continue;
+                upperBound = Math.max(upperBound, Number(id));
+              } catch {
+                // ignore getter errors
+              }
+            }
+            try {
+              const balNum = Number(BigInt(balAfter?.toString?.() || "0"));
+              if (!Number.isFinite(upperBound) || upperBound <= 0) {
+                upperBound = Math.max(50, balNum * 16);
+              }
+              upperBound = Math.max(upperBound, balNum);
+            } catch {
+              if (!Number.isFinite(upperBound) || upperBound <= 0)
+                upperBound = 550;
+            }
+            upperBound = Math.max(1, Math.min(Math.trunc(upperBound), 2500));
+
+            const idsToProbe = Array.from({ length: upperBound }, (_, i) =>
+              String(i + 1),
+            );
+            const owned = new Set();
+            await mapLimit(idsToProbe, 16, async (id) => {
+              try {
+                const owner = await contract.ownerOf(id);
+                if (String(owner || "").toLowerCase() === me) owned.add(id);
+              } catch {
+                // token not minted or RPC rejected this id
+              }
+            });
+            tokenIds = Array.from(owned);
+          }
+        }
+        if (!tokenIds.length) {
+          saveWalletCache(addr, []);
+          return [];
+        }
+
+        const metas = await mapLimit(tokenIds, 4, async (tid) => {
+          let isT = false;
+          try {
+            if (typeof contract?.isTicket === "function") {
+              isT = coerceBool(await contract.isTicket(tid));
+            }
+          } catch {
+            isT = false;
+          }
+
+          let info = null;
+          let infoMinted = null;
+          if (typeof contract?.nftInfo === "function") {
+            try {
+              info = await contract.nftInfo(tid);
+              const mintedFlag = info?.minted ?? info?.[0];
+              infoMinted =
+                typeof mintedFlag === "boolean"
+                  ? mintedFlag
+                  : coerceBool(mintedFlag);
+            } catch {
+              info = null;
+              infoMinted = null;
+            }
+          }
+
+          let uri = null;
+          let j = null;
+          try {
+            uri = await getTokenUriCached(contract, tid);
+            if (uri) j = await readJsonFromURICached(uri);
+          } catch {
+            uri = null;
+            j = null;
+          }
+
+          const uriLooksTicket = isTicketUri(uri, normalizedTicketBase);
+          let metaLooksTicket = looksLikeTicketMeta(j);
+          let metaLooksNft = looksLikeNftMeta(j);
+
+          if (isT && metaLooksNft) isT = false;
+          if (isT && uri && !uriLooksTicket) isT = false;
+          if (isT && infoMinted === true) isT = false;
+
+          // Ticket -> NFT transition can lag a few blocks and often keeps the same tokenId.
+          // Force refresh whenever metadata still looks like a ticket (or ticket flag is true).
+          if (isT || uriLooksTicket || metaLooksTicket) {
+            try {
+              const freshUri = await getTokenUriCached(contract, tid, {
+                force: true,
+              });
+              if (freshUri && freshUri !== uri) {
+                uri = freshUri;
+                j = await readJsonFromURICached(uri, { force: true });
+              } else if (uri) {
+                j = await readJsonFromURICached(uri, { force: true });
+              }
+            } catch {
+              // ignore forced refresh errors
+            }
+            metaLooksTicket = looksLikeTicketMeta(j);
+            metaLooksNft = looksLikeNftMeta(j);
+            if (isT && metaLooksNft) isT = false;
+          }
+
+          const finalIsTicket = Boolean(isT && !metaLooksNft);
+          if (!finalIsTicket && infoMinted === false && !uri && !j) {
+            // Keep a placeholder entry instead of dropping owned NFTs when RPC metadata fails.
+          }
+          let meta = {};
+          let image = PLACEHOLDER_IMAGE;
+          try {
+            const cached = getCachedPriceAttrs(tid);
+            const base =
+              j ||
+              (finalIsTicket
+                ? {
+                    name: `Ticket #${tid}`,
+                    description: "Redeem this ticket to mint a BiggiEyes NFT.",
+                  }
+                : {
+                    name: `Biggi NFT #${tid}`,
+                    description: "Metadata is updating after redeem.",
+                  });
+
+            if (!finalIsTicket && metaLooksTicket && !metaLooksNft) {
+              base.name = `Biggi NFT #${tid}`;
+              base.description = "Metadata is updating after redeem.";
+            }
+            if (finalIsTicket && !looksLikeTicketMeta(base)) {
+              base.name = `Ticket #${tid}`;
+              base.description = "Redeem this ticket to mint a BiggiEyes NFT.";
+            }
+
+            if (finalIsTicket) {
+              meta = base;
+            } else {
+              base.attributes = mergeAttrs(base.attributes, cached);
+              meta = await enrichMetaWithPrices(contract, tid, base);
+            }
+
+            const imgUrl = j?.image || j?.image_url;
+            image = (await resolveImageUrlCached(imgUrl, uri)) || image;
+            // For tickets, keep the resolved ticket image when available.
+          } catch {
+            // keep fallback
+          }
+
+          if (!finalIsTicket) {
+            let needsImageFallback = !image || image === PLACEHOLDER_IMAGE;
+            let needsAttrsFallback =
+              !meta ||
+              !Array.isArray(meta.attributes) ||
+              meta.attributes.length === 0;
+
+            if ((needsImageFallback || needsAttrsFallback) && uri) {
+              const parsed = parseTokenUriParts(uri);
+              if (parsed) {
+                const { mainId, blockName, bgCode } = parsed;
+                const bgName = bgNameFromCode(bgCode) || bgCode;
+                if (needsImageFallback && blockName && bgCode && mainId) {
+                  const fileName = `Biggi_${mainId}_${blockName}_${bgCode}.png`;
+                  const fallbackImage = buildBlockImageUrl(blockName, fileName);
+                  if (fallbackImage) image = fallbackImage;
+                }
+                if (needsAttrsFallback && (blockName || bgName)) {
+                  const attrs = mergeAttrs(
+                    meta?.attributes,
+                    [
+                      blockName
+                        ? { trait_type: "Block", value: blockName }
+                        : null,
+                      bgName
+                        ? { trait_type: "Background", value: bgName }
+                        : null,
+                    ].filter(Boolean),
+                  );
+                  meta = { ...(meta || {}), attributes: attrs };
+                }
+                if (!meta?.name) {
+                  meta = { ...(meta || {}), name: `Biggi NFT #${mainId}` };
+                }
+              }
+              needsImageFallback = !image || image === PLACEHOLDER_IMAGE;
+              needsAttrsFallback =
+                !meta ||
+                !Array.isArray(meta.attributes) ||
+                meta.attributes.length === 0;
+            }
+
+            if ((needsImageFallback || needsAttrsFallback) && info) {
+              try {
+                const parsed = parseNftInfo(info);
+                if (parsed) {
+                  const { blockName, bgCode, bgName, mainId, blockIdx } =
+                    parsed;
+                  let baseUri = null;
+                  if (
+                    needsImageFallback &&
+                    typeof contract?.blockBaseURIs === "function"
+                  ) {
+                    const candidates = [];
+                    const n = Number(blockIdx);
+                    if (Number.isFinite(n)) {
+                      candidates.push(n);
+                      if (n > 0) candidates.push(n - 1);
+                      candidates.push(n + 1);
+                    }
+                    for (const idx of candidates) {
+                      const v = await contract
+                        .blockBaseURIs(idx)
+                        .catch(() => null);
+                      if (typeof v === "string" && v.trim()) {
+                        baseUri = v.trim();
+                        break;
+                      }
+                    }
+                  }
+                  if (needsImageFallback && blockName && bgCode && mainId) {
+                    const fileName = `Biggi_${mainId}_${blockName}_${bgCode}.png`;
+                    const fallbackImage = buildBlockImageUrl(
+                      blockName,
+                      fileName,
+                      baseUri,
+                    );
+                    if (fallbackImage) image = fallbackImage;
+                  }
+                  if (blockName || bgName) {
+                    const attrs = mergeAttrs(
+                      meta?.attributes,
+                      [
+                        blockName
+                          ? { trait_type: "Block", value: blockName }
+                          : null,
+                        bgName
+                          ? { trait_type: "Background", value: bgName }
+                          : null,
+                      ].filter(Boolean),
+                    );
+                    meta = { ...(meta || {}), attributes: attrs };
+                  }
+                }
+              } catch {
+                // ignore nftInfo fallback errors
+              }
+            }
+          }
+
+          if (finalIsTicket) {
+            if (!image || image === PLACEHOLDER_IMAGE) {
+              image = ticketImageUrl();
+            }
+            if (!meta?.name || /^\d{8,}$/.test(String(meta.name))) {
+              meta = {
+                ...(meta || {}),
+                name: "Biggi Mint Ticket",
+              };
+            }
+          }
+
+          return {
+            tokenId: String(tid),
+            image,
+            meta,
+            isTicket: finalIsTicket,
+            contractAddress: contract?.target || contract?.address || null,
+          };
+        });
+
+        const resolved = metas.filter(Boolean);
+        saveWalletCache(addr, resolved);
+        return resolved;
+      } catch (e) {
+        console.error("fetchOwnedNFTsViaTransfers", e);
+        return [];
+      }
+    },
+    [enrichMetaWithPrices],
+  );
+
+  const mergeWithTopFirst = React.useCallback(
+    (finalList) => {
+      return setMyNFTs((prev) => {
+        const pending = prev.find((x) => x.isPending);
+        if (VRFPending && pending) {
+          const expectedCollection = normalizeAssetAddress(
+            pending.expectedCollectionAddress,
+          );
+          const mintedIndex = finalList.findIndex(
+            (x) =>
+              x.tokenId === pending.tokenId &&
+              !x.isPending &&
+              !x.isTicket &&
+              (!expectedCollection ||
+                getAssetContractAddress(x) === expectedCollection),
+          );
+          const minted = mintedIndex >= 0 ? finalList[mintedIndex] : null;
+          if (minted) {
+            const rest = finalList.filter((_, index) => index !== mintedIndex);
+            return [minted, ...rest];
+          }
+          const dedup = finalList.filter((x) => !x.isPending);
+          return [pending, ...dedup];
+        }
+        if (topFirstId) {
+          const topIndex = finalList.findIndex((x) =>
+            isAssetReferenceMatch(x, topFirstId),
+          );
+          const top = topIndex >= 0 ? finalList[topIndex] : null;
+          const rest = finalList.filter((_, index) => index !== topIndex);
+          return top ? [top, ...rest] : finalList;
+        }
+        return finalList;
+      });
+    },
+    [VRFPending, topFirstId],
+  );
+
+  const fetchWalletAssets = React.useCallback(
+    async (addr) => {
+      if (!addr) return [];
+      if (
+        walletFetchRef.current.inFlight &&
+        walletFetchRef.current.addr === addr
+      ) {
+        return walletFetchRef.current.inFlight;
+      }
+
+      const contractForCache = contractRef.current || getReadOnlyContract();
+      const contractAddr =
+        contractForCache?.target || contractForCache?.address || null;
+
+      const cached = loadWalletCache(addr);
+      const galleryCached = loadGalleryCache(addr, {
+        allowExpired: true,
+        contractAddr,
+      });
+      const seed = cached?.length
+        ? cached
+        : galleryCached?.length
+          ? galleryCached
+          : null;
+      if (seed?.length) mergeWithTopFirst(seed);
+
+      const showSpinner = !seed?.length;
+
+      const exec = (async () => {
+        if (showSpinner) setGalleryLoading(true);
+        try {
+          const tickets = await fetchMyTickets(addr);
+          const nfts = await fetchOwnedNFTsViaTransfers(addr);
+
+          const byId = new Map();
+          const upsert = (item) => {
+            if (!item?.tokenId) return;
+            const key = getAssetCompositeKey(item);
+            if (!key) return;
+            const prev = byId.get(key);
+            if (!prev) {
+              byId.set(key, item);
+              return;
+            }
+
+            const prevIsTicket = Boolean(prev?.isTicket);
+            const nextIsTicket = Boolean(item?.isTicket);
+            if (prevIsTicket && !nextIsTicket) {
+              byId.set(key, item);
+              return;
+            }
+            if (!prevIsTicket && nextIsTicket) {
+              return;
+            }
+
+            const prevPending = Boolean(prev?.isPending);
+            const nextPending = Boolean(item?.isPending);
+            if (prevPending && !nextPending) {
+              byId.set(key, item);
+              return;
+            }
+            if (!prevPending && nextPending) {
+              return;
+            }
+
+            byId.set(key, item);
+          };
+
+          for (const t of tickets) upsert(t);
+          for (const n of nfts) upsert(n);
+
+          const final = Array.from(byId.values());
+          const mergeWithCache = (fresh, cachedList) => {
+            if (!Array.isArray(cachedList) || !cachedList.length) return fresh;
+            const map = new Map(
+              cachedList
+                .map((item) => [getAssetCompositeKey(item), item])
+                .filter(([k]) => k),
+            );
+            return fresh.map((item) => {
+              const key = getAssetCompositeKey(item);
+              const prev = key ? map.get(key) : null;
+              return prev ? mergeGalleryItem(prev, item) : item;
+            });
+          };
+
+          const merged = mergeWithCache(final, seed);
+          mergeWithTopFirst(merged);
+          saveWalletCache(addr, merged);
+          saveGalleryCache(addr, merged, contractAddr);
+          await refreshClaimable(addr, merged);
+          return merged;
+        } finally {
+          setGalleryLoading(false);
+        }
+      })();
+
+      walletFetchRef.current = { inFlight: exec, addr };
+      try {
+        return await exec;
       } finally {
-        setGalleryLoading(false);
+        if (walletFetchRef.current.inFlight === exec) {
+          walletFetchRef.current = { inFlight: null, addr: null };
+        }
       }
-    })();
-
-    walletFetchRef.current = { inFlight: exec, addr };
-    try {
-      return await exec;
-    } finally {
-      if (walletFetchRef.current.inFlight === exec) {
-        walletFetchRef.current = { inFlight: null, addr: null };
-      }
-    }
-  }, [
-    fetchMyTickets,
-    fetchOwnedNFTsViaTransfers,
-    mergeWithTopFirst,
-    refreshClaimable,
-  ]);
+    },
+    [
+      fetchMyTickets,
+      fetchOwnedNFTsViaTransfers,
+      mergeWithTopFirst,
+      refreshClaimable,
+    ],
+  );
 
   /* ====================================================================== */
   /* ============================ LAST MINTED ============================== */
@@ -2509,7 +2694,9 @@ export default function AppCore() {
         ]);
         if (totalRaw != null) {
           const totalStr =
-            typeof totalRaw?.toString === "function" ? totalRaw.toString() : totalRaw;
+            typeof totalRaw?.toString === "function"
+              ? totalRaw.toString()
+              : totalRaw;
           const totalNum = Number(totalStr);
           if (Number.isFinite(totalNum)) total = totalNum;
         }
@@ -2531,7 +2718,8 @@ export default function AppCore() {
         const filter = contract.filters.NFTMinted();
         const baseFrom = await getSafeDeployBlock(provider);
         const latestNum = Number(latest ?? 0);
-        const safeLatest = Number.isFinite(latestNum) && latestNum >= 0 ? latestNum : 0;
+        const safeLatest =
+          Number.isFinite(latestNum) && latestNum >= 0 ? latestNum : 0;
 
         let from = Number(baseFrom);
         if (!Number.isFinite(from) || from < 0) {
@@ -2547,9 +2735,16 @@ export default function AppCore() {
         }
 
         try {
-          logs = await queryLogsBatched(contract, filter, from, to, LOGS_BATCH, {
-            preferArchive: false,
-          });
+          logs = await queryLogsBatched(
+            contract,
+            filter,
+            from,
+            to,
+            LOGS_BATCH,
+            {
+              preferArchive: false,
+            },
+          );
         } catch (err) {
           const msg = String(err?.message || "");
           if (/invalid block range params/i.test(msg)) {
@@ -2633,16 +2828,26 @@ export default function AppCore() {
         );
 
       const blockAttr =
-        findAttr(["eye color", "eyes", "block/eye color", "block", "block id"]) ||
-        findAttr(["linked block", "block name"]);
+        findAttr([
+          "eye color",
+          "eyes",
+          "block/eye color",
+          "block",
+          "block id",
+        ]) || findAttr(["linked block", "block name"]);
 
       if (blockAttr) blockName = blockAttr.value;
 
       const bgAttr = findAttr(["background", "background color"]);
 
-      if (bgAttr) backgroundName = canonBackgroundName(bgAttr.value) || bgAttr.value;
+      if (bgAttr)
+        backgroundName = canonBackgroundName(bgAttr.value) || bgAttr.value;
 
-      if (image === PLACEHOLDER_IMAGE || blockName === "-" || backgroundName === "-") {
+      if (
+        image === PLACEHOLDER_IMAGE ||
+        blockName === "-" ||
+        backgroundName === "-"
+      ) {
         const parsed = parseTokenUriParts(uri);
         if (parsed) {
           const { mainId, blockName: bName, bgCode } = parsed;
@@ -2658,16 +2863,27 @@ export default function AppCore() {
       }
 
       if (
-        (image === PLACEHOLDER_IMAGE || blockName === "-" || backgroundName === "-") &&
+        (image === PLACEHOLDER_IMAGE ||
+          blockName === "-" ||
+          backgroundName === "-") &&
         typeof contract?.nftInfo === "function"
       ) {
         try {
           const info = await contract.nftInfo(tokenId);
           const parsed = parseNftInfo(info);
           if (parsed) {
-            const { blockName: bName, bgCode, bgName, mainId, blockIdx } = parsed;
+            const {
+              blockName: bName,
+              bgCode,
+              bgName,
+              mainId,
+              blockIdx,
+            } = parsed;
             let baseUri = null;
-            if (image === PLACEHOLDER_IMAGE && typeof contract?.blockBaseURIs === "function") {
+            if (
+              image === PLACEHOLDER_IMAGE &&
+              typeof contract?.blockBaseURIs === "function"
+            ) {
               const candidates = [];
               const n = Number(blockIdx);
               if (Number.isFinite(n)) {
@@ -2685,14 +2901,13 @@ export default function AppCore() {
             }
             if (blockName === "-" && bName) blockName = bName;
             if (backgroundName === "-" && bgName) backgroundName = bgName;
-            if (
-              image === PLACEHOLDER_IMAGE &&
-              bName &&
-              bgCode &&
-              mainId
-            ) {
+            if (image === PLACEHOLDER_IMAGE && bName && bgCode && mainId) {
               const fileName = `Biggi_${mainId}_${bName}_${bgCode}.png`;
-              const fallbackImage = buildBlockImageUrl(bName, fileName, baseUri);
+              const fallbackImage = buildBlockImageUrl(
+                bName,
+                fileName,
+                baseUri,
+              );
               if (fallbackImage) image = fallbackImage;
             }
           }
@@ -2716,68 +2931,78 @@ export default function AppCore() {
   /* ============================ VRF PANEL DATA =========================== */
   /* ====================================================================== */
 
-  const buildVRFHistory = React.useCallback(async (c, address) => {
-    const provider = getProviderFor(c);
-    if (!provider) throw new Error("Provider not available");
-    const latest = await provider.getBlockNumber();
-    const safeFrom = await getSafeDeployBlock(provider);
-    const hintFrom = redeemStartBlock ? Math.max(redeemStartBlock - 2000, 0) : 0;
-    const from = FULL_HISTORY
-      ? Math.max(safeFrom, hintFrom || 0)
-      : Math.max(safeFrom, hintFrom || 0, latest - 120_000);
+  const buildVRFHistory = React.useCallback(
+    async (c, address) => {
+      const provider = getProviderFor(c);
+      if (!provider) throw new Error("Provider not available");
+      const latest = await provider.getBlockNumber();
+      const safeFrom = await getSafeDeployBlock(provider);
+      const hintFrom = redeemStartBlock
+        ? Math.max(redeemStartBlock - 2000, 0)
+        : 0;
+      const from = FULL_HISTORY
+        ? Math.max(safeFrom, hintFrom || 0)
+        : Math.max(safeFrom, hintFrom || 0, latest - 120_000);
 
-    const reqLogs = await queryLogsBatched(c, c.filters.VRFRequested(address), from, latest);
+      const reqLogs = await queryLogsBatched(
+        c,
+        c.filters.VRFRequested(address),
+        from,
+        latest,
+      );
 
-    const fulfillLogsRaw = await queryLogsBatched(
-      c,
-      c.filters.VRFFulfillStarted(),
-      from,
-      latest
-    );
+      const fulfillLogsRaw = await queryLogsBatched(
+        c,
+        c.filters.VRFFulfillStarted(),
+        from,
+        latest,
+      );
 
-    const fulfillLogs = fulfillLogsRaw.filter((l) => {
-      const m =
-        (safeLogArg(l.args, "minter", 1) || "").toLowerCase?.() || "";
-      return m === address.toLowerCase();
-    });
-
-    const fulfillByReq = new Map();
-    for (const l of fulfillLogs) {
-      const rid = safeLogArg(l.args, "requestId", 0)?.toString?.() || "";
-      const rw = safeLogArg(l.args, "randomWord", 2)?.toString?.() || "";
-      fulfillByReq.set(rid, {
-        requestId: rid,
-        tx: l.transactionHash,
-        blockNumber: l.blockNumber,
-        randomWords: rw ? [rw] : [],
+      const fulfillLogs = fulfillLogsRaw.filter((l) => {
+        const m = (safeLogArg(l.args, "minter", 1) || "").toLowerCase?.() || "";
+        return m === address.toLowerCase();
       });
-    }
 
-    const rows = [];
-    for (const rl of reqLogs) {
-      const rid = safeLogArg(rl.args, "requestId", 1)?.toString?.() || "";
-      const f = fulfillByReq.get(rid);
+      const fulfillByReq = new Map();
+      for (const l of fulfillLogs) {
+        const rid = safeLogArg(l.args, "requestId", 0)?.toString?.() || "";
+        const rw = safeLogArg(l.args, "randomWord", 2)?.toString?.() || "";
+        fulfillByReq.set(rid, {
+          requestId: rid,
+          tx: l.transactionHash,
+          blockNumber: l.blockNumber,
+          randomWords: rw ? [rw] : [],
+        });
+      }
 
-      let time = "";
-      try {
-      const block = await provider.getBlock(rl.blockNumber);
-        if (block?.timestamp) time = new Date(block.timestamp * 1000).toLocaleString();
-      } catch {}
+      const rows = [];
+      for (const rl of reqLogs) {
+        const rid = safeLogArg(rl.args, "requestId", 1)?.toString?.() || "";
+        const f = fulfillByReq.get(rid);
 
-      rows.push({
-        time,
-        requestId: rid,
-        status: f ? "fulfilled" : "pending",
-        words: f?.randomWords?.length || 0,
-        tx: f?.tx || "",
-        blockNumber: f?.blockNumber || rl.blockNumber,
-        randomWords: f?.randomWords || [],
-      });
-    }
+        let time = "";
+        try {
+          const block = await provider.getBlock(rl.blockNumber);
+          if (block?.timestamp)
+            time = new Date(block.timestamp * 1000).toLocaleString();
+        } catch {}
 
-    rows.sort((a, b) => a.blockNumber - b.blockNumber);
-    return rows.slice(-25).reverse();
-  }, [redeemStartBlock]);
+        rows.push({
+          time,
+          requestId: rid,
+          status: f ? "fulfilled" : "pending",
+          words: f?.randomWords?.length || 0,
+          tx: f?.tx || "",
+          blockNumber: f?.blockNumber || rl.blockNumber,
+          randomWords: f?.randomWords || [],
+        });
+      }
+
+      rows.sort((a, b) => a.blockNumber - b.blockNumber);
+      return rows.slice(-25).reverse();
+    },
+    [redeemStartBlock],
+  );
 
   const refreshVRFPanel = React.useCallback(async () => {
     try {
@@ -2792,13 +3017,19 @@ export default function AppCore() {
       try {
         const vrf = getVRFRO(provider);
         const [keyHash, conf, numWords, gas, sub, coord] = await Promise.all([
-          vrf?.keyHash ? vrf.keyHash().catch(() => "") : c.keyHash().catch(() => ""),
+          vrf?.keyHash
+            ? vrf.keyHash().catch(() => "")
+            : c.keyHash().catch(() => ""),
           c.requestConfirmations?.().catch?.(() => 3) ?? 3,
-          vrf?.numWords ? vrf.numWords().catch(() => 1) : c.numWords().catch(() => 1),
+          vrf?.numWords
+            ? vrf.numWords().catch(() => 1)
+            : c.numWords().catch(() => 1),
           vrf?.callbackGasLimit
             ? vrf.callbackGasLimit().catch(() => 300000)
             : c.callbackGasLimit().catch(() => 300000),
-          vrf?.subId ? vrf.subId().catch(() => "") : (c.s_subscriptionId?.().catch?.(() => "") ?? ""),
+          vrf?.subId
+            ? vrf.subId().catch(() => "")
+            : (c.s_subscriptionId?.().catch?.(() => "") ?? ""),
           vrf?.coordinator ? vrf.coordinator().catch(() => "") : "",
         ]);
 
@@ -2824,7 +3055,9 @@ export default function AppCore() {
 
       if (walletAddress) {
         try {
-          const pendingReqIdBN = await c.pendingMintRequest(walletAddress).catch(() => 0n);
+          const pendingReqIdBN = await c
+            .pendingMintRequest(walletAddress)
+            .catch(() => 0n);
           const ridStr = pendingReqIdBN?.toString?.() || "0";
 
           history = await buildVRFHistory(c, walletAddress);
@@ -2864,7 +3097,9 @@ export default function AppCore() {
       }
 
       setVRFUIData({
-        network: net?.name ? `${net.name} (${net.chainId})` : `chainId ${net.chainId}`,
+        network: net?.name
+          ? `${net.name} (${net.chainId})`
+          : `chainId ${net.chainId}`,
         chainId: Number(net?.chainId),
         userAddress: walletAddress || "",
         subscription: { id: subId },
@@ -2881,111 +3116,136 @@ export default function AppCore() {
   /* ============================ EVENT LISTENERS ========================== */
   /* ====================================================================== */
 
-  const attachEventListeners = React.useCallback((addr) => {
-    try {
-      const contract = contractRef.current || getReadOnlyContract();
-      contractRef.current = contract;
+  const attachEventListeners = React.useCallback(
+    (addr) => {
+      try {
+        const contract = contractRef.current || getReadOnlyContract();
+        contractRef.current = contract;
 
-      const zeroL = ZERO_ADDRESS.toLowerCase();
+        const zeroL = ZERO_ADDRESS.toLowerCase();
 
-      const onTransfer = async (from, to, tokenId, event) => {
-        try {
-          const fromL = (from || "").toLowerCase();
-          const toL = (to || "").toLowerCase();
-          const me = addr.toLowerCase();
-          const tid = tokenId.toString();
+        const onTransfer = async (from, to, tokenId, event) => {
+          try {
+            const fromL = (from || "").toLowerCase();
+            const toL = (to || "").toLowerCase();
+            const me = addr.toLowerCase();
+            const tid = tokenId.toString();
+            const transferCollection = normalizeAssetAddress(
+              event?.log?.address ||
+                event?.address ||
+                contract?.target ||
+                contract?.address,
+            );
 
-          scheduleFetchStats(900, fetchStats);
-          scheduleFetchREWARDS(900, fetchREWARDS);
-          refreshVRFPanel();
+            scheduleFetchStats(900, fetchStats);
+            scheduleFetchREWARDS(900, fetchREWARDS);
+            refreshVRFPanel();
 
-          if (fromL === me && toL === zeroL) {
-            setVRFPending(true);
-            setRedeemMsg("Redeem confirmed. Waiting for VRF reveal…");
-            setRedeemStartedAt((prev) => prev || Date.now());
-            if (event?.blockNumber != null) {
-              const bn = Number(event.blockNumber);
-              if (Number.isFinite(bn)) {
-                setRedeemStartBlock(bn);
+            if (fromL === me && toL === zeroL) {
+              setVRFPending(true);
+              setRedeemMsg("Redeem confirmed. Waiting for VRF reveal…");
+              setRedeemStartedAt((prev) => prev || Date.now());
+              if (event?.blockNumber != null) {
+                const bn = Number(event.blockNumber);
+                if (Number.isFinite(bn)) {
+                  setRedeemStartBlock(bn);
+                }
               }
             }
+
+            if (toL === me) {
+              setTimeout(() => fetchWalletAssets(addr).catch(() => {}), 1200);
+            }
+
+            if (fromL === me && toL !== zeroL) {
+              const transferredReference = getAssetReference({
+                tokenId: tid,
+                contractAddress: transferCollection,
+              });
+              setMyNFTs((prev) =>
+                prev.filter(
+                  (item) =>
+                    !isAssetReferenceMatch(
+                      item,
+                      transferredReference || tid,
+                      transferCollection,
+                    ),
+                ),
+              );
+            }
+          } catch (e) {
+            console.error("onTransfer", e);
           }
+        };
 
-          if (toL === me) {
-            setTimeout(() => fetchWalletAssets(addr).catch(() => {}), 1200);
+        contract.on("Transfer", onTransfer);
+
+        const onAccountsChanged = async (accs) => {
+          const a = accs?.[0] || "";
+          setWalletAddress(a);
+          setMyNFTs([]);
+          setDynamicTraitsById({});
+          setVRFPending(false);
+          setIsRedeeming(false);
+          setRedeemMsg("");
+          setTopFirstId(null);
+          setPendingTicketId(null);
+          setRedeemStartBlock(null);
+          setRedeemStartedAt(null);
+
+          if (a) {
+            await fetchStats();
+            await fetchREWARDS();
+            await fetchWalletAssets(a);
+            await fetchLastMinted();
+            await refreshVRFPanel();
           }
+        };
 
-          if (fromL === me && toL !== zeroL) {
-            setMyNFTs((prev) => prev.filter((x) => x.tokenId !== tid));
-          }
-        } catch (e) {
-          console.error("onTransfer", e);
-        }
-      };
-
-      contract.on("Transfer", onTransfer);
-
-      const onAccountsChanged = async (accs) => {
-        const a = accs?.[0] || "";
-        setWalletAddress(a);
-        setMyNFTs([]);
-        setDynamicTraitsById({});
-        setVRFPending(false);
-        setIsRedeeming(false);
-        setRedeemMsg("");
-        setTopFirstId(null);
-        setPendingTicketId(null);
-        setRedeemStartBlock(null);
-        setRedeemStartedAt(null);
-
-        if (a) {
+        const onChainChanged = async () => {
           await fetchStats();
           await fetchREWARDS();
-          await fetchWalletAssets(a);
-          await fetchLastMinted();
+          if (walletAddress) await fetchWalletAssets(walletAddress);
+          setDynamicTraitsById({});
           await refreshVRFPanel();
-        }
-      };
+        };
 
-      const onChainChanged = async () => {
-        await fetchStats();
-        await fetchREWARDS();
-        if (walletAddress) await fetchWalletAssets(walletAddress);
-        setDynamicTraitsById({});
-        await refreshVRFPanel();
-      };
+        const injectedProvider = getInjectedProvider();
+        injectedProvider?.on?.("accountsChanged", onAccountsChanged);
+        injectedProvider?.on?.("chainChanged", onChainChanged);
 
-      const injectedProvider = getInjectedProvider();
-      injectedProvider?.on?.("accountsChanged", onAccountsChanged);
-      injectedProvider?.on?.("chainChanged", onChainChanged);
-
-      const prev = unsubRef.current;
-      unsubRef.current = () => {
-        try {
-          contract.off("Transfer", onTransfer);
-        } catch {}
-        try {
-          injectedProvider?.removeListener?.("accountsChanged", onAccountsChanged);
-        } catch {}
-        try {
-          injectedProvider?.removeListener?.("chainChanged", onChainChanged);
-        } catch {}
-        prev?.();
-      };
-    } catch (e) {
-      console.error("attachEventListeners", e);
-      unsubRef.current = () => {};
-    }
-  }, [
-    fetchStats,
-    fetchREWARDS,
-    fetchWalletAssets,
-    fetchLastMinted,
-    refreshVRFPanel,
-    scheduleFetchStats,
-    scheduleFetchREWARDS,
-    walletAddress,
-  ]);
+        const prev = unsubRef.current;
+        unsubRef.current = () => {
+          try {
+            contract.off("Transfer", onTransfer);
+          } catch {}
+          try {
+            injectedProvider?.removeListener?.(
+              "accountsChanged",
+              onAccountsChanged,
+            );
+          } catch {}
+          try {
+            injectedProvider?.removeListener?.("chainChanged", onChainChanged);
+          } catch {}
+          prev?.();
+        };
+      } catch (e) {
+        console.error("attachEventListeners", e);
+        unsubRef.current = () => {};
+      }
+    },
+    [
+      fetchStats,
+      fetchREWARDS,
+      fetchWalletAssets,
+      fetchLastMinted,
+      refreshVRFPanel,
+      scheduleFetchStats,
+      scheduleFetchREWARDS,
+      walletAddress,
+    ],
+  );
 
   /* ====================================================================== */
   /* ============================ CONNECT WALLET ============================ */
@@ -3072,12 +3332,12 @@ export default function AppCore() {
     try {
       await ensurePolygon();
 
-      const contract = await getMainRW();
+      const contract = await getTicketHub();
       const provider = getProviderFor(contract);
       if (!provider) throw new Error("Provider not available");
       const net = await provider.getNetwork();
       if (Number(net?.chainId) !== 137) await ensurePolygon();
-      await assertContractDeployed(contract, provider, "MAIN");
+      await assertContractDeployed(contract, provider, "TICKET_HUB");
 
       if (typeof contract.paused === "function" && (await contract.paused())) {
         return alert("Mint is paused.");
@@ -3085,8 +3345,12 @@ export default function AppCore() {
 
       try {
         const [maxTickets, mintedTickets] = await Promise.all([
-          typeof contract.MAX_TICKETS === "function" ? contract.MAX_TICKETS() : null,
-          typeof contract.ticketMinted === "function" ? contract.ticketMinted() : null,
+          typeof contract.MAX_TICKETS === "function"
+            ? contract.MAX_TICKETS()
+            : null,
+          typeof contract.ticketMinted === "function"
+            ? contract.ticketMinted()
+            : null,
         ]);
         if (
           maxTickets != null &&
@@ -3094,22 +3358,6 @@ export default function AppCore() {
           Number(mintedTickets) >= Number(maxTickets)
         ) {
           return alert("All tickets are sold out.");
-        }
-      } catch {
-        // ignore preflight errors
-      }
-
-      try {
-        const [maxSupply, minted] = await Promise.all([
-          typeof contract.MAX_SUPPLY === "function" ? contract.MAX_SUPPLY() : null,
-          typeof contract.biggiMinted === "function" ? contract.biggiMinted() : null,
-        ]);
-        if (
-          maxSupply != null &&
-          minted != null &&
-          Number(minted) >= Number(maxSupply)
-        ) {
-          return alert("All NFTs are already minted.");
         }
       } catch {
         // ignore preflight errors
@@ -3127,13 +3375,15 @@ export default function AppCore() {
       }
 
       const price = await resolveTicketPriceWei();
+      const activeChapterId = await resolveActiveTicketChapterId(contract);
 
       const estimateMint =
-        contract?.estimateGas?.mintTicket || contract?.mintTicket?.estimateGas;
+        contract?.estimateGas?.mintTicketForChapter ||
+        contract?.mintTicketForChapter?.estimateGas;
       let gasLimitOverride = null;
       if (estimateMint) {
         try {
-          const est = await estimateMint({ value: price });
+          const est = await estimateMint(activeChapterId, { value: price });
           if (est != null) {
             const buf = BigInt(est) + BigInt(est) / 5n;
             gasLimitOverride = buf;
@@ -3143,7 +3393,7 @@ export default function AppCore() {
           gasLimitOverride = 800000n;
         }
       }
-      const tx = await contract.mintTicket({
+      const tx = await contract.mintTicketForChapter(activeChapterId, {
         value: price,
         ...(gasLimitOverride ? { gasLimit: gasLimitOverride } : {}),
       });
@@ -3180,12 +3430,12 @@ export default function AppCore() {
     try {
       await ensurePolygon();
 
-      const contract = await getMainRW();
+      const contract = await getTicketHub();
       const provider = getProviderFor(contract);
       if (!provider) throw new Error("Provider not available");
       const net = await provider.getNetwork();
       if (Number(net?.chainId) !== 137) await ensurePolygon();
-      await assertContractDeployed(contract, provider, "MAIN");
+      await assertContractDeployed(contract, provider, "TICKET_HUB");
 
       if (typeof contract.paused === "function" && (await contract.paused())) {
         return alert("Redeem is paused.");
@@ -3254,11 +3504,25 @@ export default function AppCore() {
         return alert("Unable to read your ticket ID.");
       }
       const ticketIdStr = ticketIdBN.toString();
+      let ticketChapterId = null;
+      if (typeof contract.ticketChapterId === "function") {
+        ticketChapterId = Number(
+          await contract.ticketChapterId(ticketIdBN).catch(() => 0),
+        );
+      }
+      if (!ticketChapterId) {
+        ticketChapterId = await resolveActiveTicketChapterId(contract).catch(
+          () => null,
+        );
+      }
+      const ticketChapter = CORE_CHAPTERS.find(
+        (chapter) => Number(chapter.chapterId) === Number(ticketChapterId),
+      );
 
-      const redeemFn = contract?.redeemTicketAndMintNFT;
+      const redeemFn = contract?.redeemTicket;
       if (typeof redeemFn !== "function") {
         throw new Error(
-          "Redeem function not available on MAIN contract. Check MAIN/ABI configuration.",
+          "Redeem function not available on TICKET_HUB contract. Check TICKET_HUB/ABI configuration.",
         );
       }
       try {
@@ -3279,7 +3543,7 @@ export default function AppCore() {
       }
 
       const estimateRedeem =
-        contract?.estimateGas?.redeemTicketAndMintNFT || redeemFn?.estimateGas;
+        contract?.estimateGas?.redeemTicket || redeemFn?.estimateGas;
       let redeemGasOverride = null;
       try {
         if (estimateRedeem) {
@@ -3319,7 +3583,8 @@ export default function AppCore() {
         },
         isTicket: true,
         isPending: true,
-        contractAddress: contract?.address || null,
+        contractAddress: contract?.target || contract?.address || null,
+        expectedCollectionAddress: ticketChapter?.main || null,
       };
 
       setPendingTicketId(ticketIdStr);
@@ -3333,8 +3598,10 @@ export default function AppCore() {
       ]);
 
       const byId = new Map();
-      for (const t of ticketsNow) byId.set(t.tokenId, t);
-      for (const n of nftsNow) byId.set(n.tokenId, n);
+      for (const item of [...ticketsNow, ...nftsNow]) {
+        const key = getAssetCompositeKey(item);
+        if (key) byId.set(key, item);
+      }
 
       const baseAssets = Array.from(byId.values());
       setMyNFTs([pendingTicket, ...baseAssets]);
@@ -3451,7 +3718,9 @@ export default function AppCore() {
           previewAmount = toBigIntSafe(preview?.[1] ?? preview?.amount ?? null);
         } else if (typeof brl?.claimStatus === "function") {
           const status = await brl.claimStatus(tokenIds);
-          previewAmount = toBigIntSafe(status?.[0] ?? status?.claimable ?? null);
+          previewAmount = toBigIntSafe(
+            status?.[0] ?? status?.claimable ?? null,
+          );
         }
       } catch {
         // ignore preflight call errors; claim tx path will still surface exact revert
@@ -3539,7 +3808,12 @@ export default function AppCore() {
 
     let logs = [];
     try {
-      logs = await queryLogsBatched(baseContract, filter, Math.max(0, startBlock - 3), latest);
+      logs = await queryLogsBatched(
+        baseContract,
+        filter,
+        Math.max(0, startBlock - 3),
+        latest,
+      );
     } catch {
       logs = [];
     }
@@ -3555,14 +3829,14 @@ export default function AppCore() {
       }
       if (isTicketNow === false) return true;
 
-      if (
-        isTicketNow == null &&
-        typeof baseContract?.tokenURI === "function"
-      ) {
-        const uri = await getTokenUriCached(baseContract, tid, { force: true }).catch(
-          () => null,
-        );
-        if (uri && !/RANDOM_MINT_TICKET|MINT_TICKET|TICKET/i.test(String(uri))) {
+      if (isTicketNow == null && typeof baseContract?.tokenURI === "function") {
+        const uri = await getTokenUriCached(baseContract, tid, {
+          force: true,
+        }).catch(() => null);
+        if (
+          uri &&
+          !/RANDOM_MINT_TICKET|MINT_TICKET|TICKET/i.test(String(uri))
+        ) {
           return true;
         }
       }
@@ -3619,15 +3893,21 @@ export default function AppCore() {
         let c = baseContract;
         let pendingReq = null;
         if (c && typeof c.pendingMintRequest === "function") {
-          pendingReq = await c.pendingMintRequest(walletAddress).catch(() => null);
+          pendingReq = await c
+            .pendingMintRequest(walletAddress)
+            .catch(() => null);
         }
         // If RO provider failed, fall back to injected provider for this read.
         const injectedEth = getInjectedProvider();
         if (pendingReq == null && injectedEth) {
           try {
             const injected = new BrowserProvider(injectedEth, "any");
-            c = baseContract?.connect ? baseContract.connect(injected) : baseContract;
-            pendingReq = await c.pendingMintRequest(walletAddress).catch(() => null);
+            c = baseContract?.connect
+              ? baseContract.connect(injected)
+              : baseContract;
+            pendingReq = await c
+              .pendingMintRequest(walletAddress)
+              .catch(() => null);
           } catch {
             pendingReq = null;
           }
@@ -3646,7 +3926,9 @@ export default function AppCore() {
         try {
           const baseContract = contractRef.current || getReadOnlyContract();
           if (typeof baseContract?.isTicket === "function") {
-            const isTicketNow = await baseContract.isTicket(pendingTicketId).catch(() => null);
+            const isTicketNow = await baseContract
+              .isTicket(pendingTicketId)
+              .catch(() => null);
             if (isTicketNow === false) {
               await finalizeVrf();
             }
@@ -3655,7 +3937,10 @@ export default function AppCore() {
             const uri = await getTokenUriCached(baseContract, pendingTicketId, {
               force: true,
             }).catch(() => null);
-            if (uri && !/RANDOM_MINT_TICKET|MINT_TICKET|TICKET/i.test(String(uri))) {
+            if (
+              uri &&
+              !/RANDOM_MINT_TICKET|MINT_TICKET|TICKET/i.test(String(uri))
+            ) {
               await finalizeVrf();
             }
           }
@@ -3810,9 +4095,7 @@ export default function AppCore() {
       const target = event.target;
       const tag = target?.tagName?.toLowerCase?.() || "";
       const isEditable =
-        tag === "input" ||
-        tag === "textarea" ||
-        target?.isContentEditable;
+        tag === "input" || tag === "textarea" || target?.isContentEditable;
       if (isEditable) return;
 
       if (event.key === "Escape") {
@@ -3917,7 +4200,11 @@ export default function AppCore() {
             onOpenExplorer={(hash) => {
               const base = explorerBaseFor(VRFUIData?.chainId);
               if (!base) return;
-              window.open(`${base}/tx/${hash}`, "_blank", "noopener,noreferrer");
+              window.open(
+                `${base}/tx/${hash}`,
+                "_blank",
+                "noopener,noreferrer",
+              );
             }}
           />
         </React.Suspense>

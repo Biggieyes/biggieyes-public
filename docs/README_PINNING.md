@@ -65,6 +65,22 @@ The resulting token URI is:
 ipfs://<metadataCid>
 ```
 
+## Collection metadata pipeline
+
+For BIGGI contract-compatible collection metadata, use:
+
+```
+python scripts/metadata/biggi_metadata.py --help
+```
+
+The helper generates the exact `Biggi_<mainId>_<BLOCK>_<BACKGROUND>.json`
+filenames expected by `BiggiMain`, the `PUBLIC` filenames expected by
+`BiggiMain2`, and the fixed `Biggi_RANDOM_MINT_TICKET.json` file expected by
+TicketHub. It supports prereveal placeholder metadata first, then final image
+CID replacement from a CSV/JSON map.
+
+Pinata uploads from that helper are dry-run by default and require `--execute`.
+
 ## Verify a CID
 
 - Dedicated Pinata gateway: `https://biggieyes.mypinata.cloud/ipfs/<cid>`

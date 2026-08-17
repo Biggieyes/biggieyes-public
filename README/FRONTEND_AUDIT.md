@@ -1,6 +1,6 @@
 # Frontend Audit - Current Mainnet State
 
-Last verified: 2026-06-16
+Last verified: 2026-08-17
 
 This document replaces the old January frontend audit. It reflects the current Polygon mainnet frontend wiring, ABI inventory, reader configuration, and runtime validation.
 
@@ -20,8 +20,9 @@ This is not a formal smart-contract security audit.
 - Canonical frontend address registry: `src/shared/utils/addresses.js`.
 - Backend address mirror: `biggi-project/bekend/addresses.json`.
 - ABI exports: `src/config/abi/index.js`.
-- ABI inventory: 58 ABI files, 745 exported functions.
-- Address mirror: 150 frontend keys and 150 backend keys.
+- ABI inventory: 58 JSON ABI files plus the central export index.
+- Address mirror: 161 runtime frontend/backend keys; historical `OLD_TICKET_HUB` remains backend-only.
+- CORE mirror: five chapter pairs and seven critical CORE ABIs are checked byte-for-byte against backend canonical sources.
 - Reader contracts are configured for mainnet; the old `MAIN_READER` missing warning is no longer current.
 
 ## Verified Commands
@@ -45,7 +46,7 @@ Runtime smoke verified Gallery, LiveStats, and Rewards panel flows against the c
 
 | Reader key | Address |
 | --- | --- |
-| `MAIN_READER` | `0x5B5b422D0Db094550B626749EE4F982A301F8471` |
+| `MAIN_READER` | `0x4937CdcF1668255Cb46c78E19547ea96C94391Ef` |
 | `MCD_READER_V2` | `0xa65B4e88E37F085B9009295eA0AcF05e18a82884` |
 | `NFT_REWARDS_READER` | `0x430376b1f4F12ce2D641CC28f2968297aA2b0c12` |
 | `TOKEN_REWARDS_READER` | `0xB558137Ce8a2e065de09f7ef7cF24911E49A9972` |
@@ -68,10 +69,10 @@ Active public fallbacks:
 
 ## Findings
 
-- No active frontend testnet path is documented as current.
+- Runtime network configuration supports Polygon mainnet only and rejects every unsupported chain ID.
 - Mainnet readers are configured and consumed by dashboard components.
 - Contract addresses and ABI exports are centralized; components should not duplicate addresses.
-- Cache keys include mainnet chain/contract context, so stale testnet metadata is ignored.
+- Cache keys include chain/contract context, so payloads from unsupported or obsolete deployments are ignored.
 - `public-repo` documentation now describes Polygon mainnet as active, not planned.
 
 ## Residual Risks

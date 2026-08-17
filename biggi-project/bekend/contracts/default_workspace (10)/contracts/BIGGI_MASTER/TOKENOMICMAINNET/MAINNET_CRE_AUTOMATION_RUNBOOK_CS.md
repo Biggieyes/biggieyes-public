@@ -1,6 +1,8 @@
 # BIGGI mainnet CRE automation runbook
 
-Stav k 2026-07-05. CRE nahrazuje orchestrace starych Chainlink Automation upkeepu. Nasazene tokenomicke kontrakty zustavaji execution vrstvou; novy CRE workflow cte jejich stav a zapisuje pres zabezpeceny receiver.
+Stav overen 2026-08-17. CRE nahrazuje orchestrace starych Chainlink Automation upkeepu. Nasazene tokenomicke kontrakty zustavaji execution vrstvou; novy CRE workflow cte jejich stav a zapisuje pres zabezpeceny receiver.
+
+Petikapitolovy CORE update nemeni pet tokenomickych CRE target vetvi. Receiver zustava paused a CRE workflow se nesmi deploynout ani aktivovat pred likviditou a finalnim gate. Ucet je prihlaseny, ale `Deploy Access` je stale `Not enabled`.
 
 ## Overene hodnoty
 
@@ -11,7 +13,7 @@ Stav k 2026-07-05. CRE nahrazuje orchestrace starych Chainlink Automation upkeep
 | RPC pro CRE | `https://polygon-bor-rpc.publicnode.com` |
 | KeystoneForwarder | `0x76c9cf548b4179F8901cda1f8623568b58215E62` |
 | BiggiCREAutomationReceiver | `0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6` |
-| CRE CLI | `v1.23.0` |
+| CRE CLI | `v1.30.0` (lokalne overeno prikazem `cre version`) |
 | Bun | `1.3.14` |
 | Workflow | `bekend/cre-workflows/biggi-cre/my-workflow` |
 | Deployment registry | `private` |
@@ -59,6 +61,8 @@ Pouziva se pouze `LIQUIDITY_KEEPER_PROXY`, nikoli paralelne `LIQUIDITY_AUTOMATIO
 
 ## Aktualni overeni
 
+- CRE ucet: prihlasen, organizace `My Org`, `Deploy Access: Not enabled`.
+- Bun: `1.3.14`; splnuje dokumentovane minimum `1.2.21` pro TypeScript workflow.
 - CRE TypeScript typecheck: OK.
 - Solidity master compile: OK.
 - keeper proxy smoke testy: 4/4 OK.

@@ -7,9 +7,13 @@ import {
   getReadOnlyContract,
   // explicit contracts
   getReadOnlyMain,
-  getMain,
   getReadOnlyMain2,
-  getMain2,
+  getReadOnlyChapterMain,
+  getChapterMain,
+  getReadOnlyChapterMain2,
+  getChapterMain2,
+  getReadOnlyTicketHub,
+  getTicketHub,
   getVRFRO,
   getTokenRO,
   getToken,
@@ -52,6 +56,7 @@ import {
   // read-only provider helper
   getROProvider,
 } from "@/shared/utils/contract";
+import { CORE_CHAPTERS } from "@/shared/utils/addresses.js";
 
 const Ctx = React.createContext(null);
 export const ContractsContext = Ctx;
@@ -127,7 +132,11 @@ export function ContractsProvider({ children }) {
           return getReadOnlyContract();
         }
       },
-      mainRW: rwOrRo(getMain, () => getReadOnlyContract(effectiveROProvider())),
+      mainRW: (chapterId) =>
+        rwOrRo(
+          () => getChapterMain(chapterId, signer),
+          () => getReadOnlyChapterMain(chapterId, effectiveROProvider()),
+        )(),
 
       liqRO: () => {
         try {
@@ -146,7 +155,11 @@ export function ContractsProvider({ children }) {
           return getReadOnlyMain();
         }
       },
-      mainWrite: rwOrRo(getMain, () => getReadOnlyMain(effectiveROProvider())),
+      mainWrite: (chapterId) =>
+        rwOrRo(
+          () => getChapterMain(chapterId, signer),
+          () => getReadOnlyChapterMain(chapterId, effectiveROProvider()),
+        )(),
 
       main2Read: () => {
         try {
@@ -155,8 +168,62 @@ export function ContractsProvider({ children }) {
           return getReadOnlyMain2();
         }
       },
-      main2Write: rwOrRo(getMain2, () =>
-        getReadOnlyMain2(effectiveROProvider()),
+      main2Write: (chapterId) =>
+        rwOrRo(
+          () => getChapterMain2(chapterId, signer),
+          () => getReadOnlyChapterMain2(chapterId, effectiveROProvider()),
+        )(),
+
+      chapterMainRead: (chapterId) =>
+        getReadOnlyChapterMain(chapterId, effectiveROProvider()),
+      chapterMainWrite: (chapterId) =>
+        rwOrRo(
+          () => getChapterMain(chapterId, signer),
+          () => getReadOnlyChapterMain(chapterId, effectiveROProvider()),
+        )(),
+      chapterMain2Read: (chapterId) =>
+        getReadOnlyChapterMain2(chapterId, effectiveROProvider()),
+      chapterMain2Write: (chapterId) =>
+        rwOrRo(
+          () => getChapterMain2(chapterId, signer),
+          () => getReadOnlyChapterMain2(chapterId, effectiveROProvider()),
+        )(),
+      chapterCollectionsRead: () =>
+        CORE_CHAPTERS.flatMap((chapter) => [
+          {
+            chapterId: chapter.chapterId,
+            collectionType: "vrf",
+            address: chapter.main,
+            contract: getReadOnlyChapterMain(
+              chapter.chapterId,
+              effectiveROProvider(),
+            ),
+          },
+          {
+            chapterId: chapter.chapterId,
+            collectionType: "public",
+            address: chapter.main2,
+            contract: getReadOnlyChapterMain2(
+              chapter.chapterId,
+              effectiveROProvider(),
+            ),
+          },
+        ]),
+      collectionReadByAddress: (address) => {
+        const target = String(address || "").toLowerCase();
+        const chapter = CORE_CHAPTERS.find(
+          (item) =>
+            String(item.main).toLowerCase() === target ||
+            String(item.main2).toLowerCase() === target,
+        );
+        if (!chapter) return null;
+        return String(chapter.main).toLowerCase() === target
+          ? getReadOnlyChapterMain(chapter.chapterId, effectiveROProvider())
+          : getReadOnlyChapterMain2(chapter.chapterId, effectiveROProvider());
+      },
+      ticketHubRead: () => getReadOnlyTicketHub(effectiveROProvider()),
+      ticketHubWrite: rwOrRo(getTicketHub, () =>
+        getReadOnlyTicketHub(effectiveROProvider()),
       ),
 
       VRFRead: () => {
@@ -401,8 +468,4 @@ export function useContracts() {
     throw new Error("useContracts must be used inside <ContractsProvider>");
   return context;
 }
-
-
-
-
 
