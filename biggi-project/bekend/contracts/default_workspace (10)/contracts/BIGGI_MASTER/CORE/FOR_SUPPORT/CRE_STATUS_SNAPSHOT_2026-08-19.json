@@ -1,0 +1,106 @@
+{
+  "createdAt": "2026-08-19",
+  "network": {
+    "name": "polygon",
+    "chainId": 137,
+    "creChainName": "polygon-mainnet",
+    "creChainSelector": "4051577828743386545",
+    "keystoneForwarder": "0x76c9cf548b4179F8901cda1f8623568b58215E62"
+  },
+  "creAccount": {
+    "organizationId": "org_d09xtsv4XAgGOXMi",
+    "organizationName": "My Org",
+    "deployAccess": "Not enabled",
+    "linkedOwnersFound": false,
+    "productionWorkflowsFound": false
+  },
+  "toolchain": {
+    "creCli": "v1.30.0",
+    "bun": "1.3.14",
+    "chainlinkCreSdk": "1.15.0",
+    "typescript": "5.9.3",
+    "viem": "2.34.0",
+    "zod": "3.25.76"
+  },
+  "workflow": {
+    "path": "biggi-project/bekend/cre-workflows/biggi-cre/my-workflow",
+    "productionTarget": "production-settings",
+    "productionName": "biggi-tokenomics-production",
+    "deploymentRegistry": "private",
+    "schedule": "0 */5 * * * *"
+  },
+  "receiver": {
+    "address": "0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6",
+    "paused": true,
+    "expectedWorkflowId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "expectedWorkflowOwner": "0x0000000000000000000000000000000000000000",
+    "metadataHashAllowlistCount": 0,
+    "maxReportBytes": 4096,
+    "maxCallDataBytes": 2048
+  },
+  "automationTargets": [
+    {
+      "key": "supply-controller",
+      "target": "0x810ba27C98aAB09737e3988a3C1b10D6CadaB8E8",
+      "selector": "0x4585e33b",
+      "execute": "performUpkeep(bytes)",
+      "gasLimit": 900000
+    },
+    {
+      "key": "buyback",
+      "target": "0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875",
+      "selector": "0x4585e33b",
+      "execute": "performUpkeep(bytes)",
+      "gasLimit": 1400000
+    },
+    {
+      "key": "liquidity",
+      "target": "0x4fC6EaD8CC6451e1A5EA7Ceaf6a072e18f91F04c",
+      "selector": "0x4585e33b",
+      "execute": "performUpkeep(bytes)",
+      "gasLimit": 1600000
+    },
+    {
+      "key": "dex-reserve-guard",
+      "target": "0x350370c248495758b80Ea1C564Df1290cA76588B",
+      "selector": "0x4585e33b",
+      "execute": "performUpkeep(bytes)",
+      "gasLimit": 1400000
+    },
+    {
+      "key": "rewards-week-roll",
+      "target": "0xA7B71DFEBF89481b37d803dD0765E3612f29Ffb9",
+      "selector": "0x69fa508a",
+      "execute": "rollCurrentWeek()",
+      "gasLimit": 500000
+    }
+  ],
+  "verification": {
+    "polygonScanManifest": {
+      "contracts": 58,
+      "withCode": 58,
+      "verified": 58,
+      "unverified": 0
+    },
+    "evidence": [
+      "EVIDENCE/deployment-manifest-polygon.json",
+      "EVIDENCE/core-series-source-verification-polygon.json",
+      "EVIDENCE/core-series-verification-polygon.json",
+      "EVIDENCE/cre-preflight-polygon.json",
+      "EVIDENCE/launch-readiness-polygon.json"
+    ]
+  },
+  "launchReadiness": {
+    "okForDeployOnly": true,
+    "okForPublicLaunch": false,
+    "blockers": [
+      "PAIR has no initial liquidity",
+      "MAIN2 is paused",
+      "CRE automation receiver is paused",
+      "CRE workflow ID is not locked",
+      "CRE workflow owner is not locked",
+      "LIQUIDITY_ORCHESTRATOR is paused",
+      "LIQUIDITY_KEEPER_PROXY is paused"
+    ]
+  }
+}

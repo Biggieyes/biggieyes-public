@@ -41,13 +41,15 @@ async function estimate(label, fn, actions, blockers) {
 }
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
   const chain = await ethers.provider.getNetwork();
   const root = path.resolve(__dirname, "../..");
   const addressesFile = path.resolve(root, env("MASTER_ADDRESSES_FILE", "addresses.master.json"));
   const reportFile = path.resolve(root, "reports/cre-receiver-deployment-plan-polygon.json");
   const addresses = loadJson(addressesFile);
-  const owner = address(env("CRE_RECEIVER_OWNER", env("EXPECT_OWNER", addresses.OWNER || deployer.address)));
+  const signers = await ethers.getSigners();
+  const deployer = signers[0] || null;
+  const deployerAddress = address(env("DEPLOYER", env("EXPECT_OWNER", addresses.DEPLOYER || addresses.OWNER || (deployer && deployer.address))));
+  const owner = address(env("CRE_RECEIVER_OWNER", env("EXPECT_OWNER", addresses.OWNER || deployerAddress)));
   const forwarder = address(env("CRE_KEYSTONE_FORWARDER", addresses.CRE_KEYSTONE_FORWARDER || POLYGON_FORWARDER));
   const compromised = address(env("COMPROMISED_OWNER_ADDRESS"));
   const existingReceiver = address(env("CRE_AUTOMATION_RECEIVER", addresses.CRE_AUTOMATION_RECEIVER));
@@ -59,17 +61,20 @@ async function main() {
   if (owner === ZERO) blockers.push({ label: "owner", error: "CRE receiver owner is missing" });
   if (forwarder !== ethers.utils.getAddress(POLYGON_FORWARDER)) blockers.push({ label: "forwarder", error: "Not the official Polygon production forwarder" });
   if ((await ethers.provider.getCode(forwarder)) === "0x") blockers.push({ label: "forwarder", error: "Forwarder has no bytecode" });
-  if (compromised !== ZERO && deployer.address === compromised) {
+  if (deployerAddress === ZERO) {
+    blockers.push({ label: "deployer", error: "Missing signer and DEPLOYER/EXPECT_OWNER fallback address" });
+  }
+  if (compromised !== ZERO && deployerAddress === compromised) {
     blockers.push({ label: "deployer security", error: "Deployer equals COMPROMISED_OWNER_ADDRESS" });
   }
   if (compromised !== ZERO && owner === compromised) {
     blockers.push({ label: "owner security", error: "Receiver owner equals COMPROMISED_OWNER_ADDRESS" });
   }
 
-  const pendingNonce = await ethers.provider.getTransactionCount(deployer.address, "pending");
+  const pendingNonce = deployerAddress === ZERO ? 0 : await ethers.provider.getTransactionCount(deployerAddress, "pending");
   const predictedReceiver = existingReceiver !== ZERO
     ? existingReceiver
-    : ethers.utils.getContractAddress({ from: deployer.address, nonce: pendingNonce });
+    : ethers.utils.getContractAddress({ from: deployerAddress, nonce: pendingNonce });
   let totalGas = ethers.BigNumber.from(0);
 
   if (existingReceiver === ZERO) {
@@ -77,7 +82,7 @@ async function main() {
     const deployTx = Factory.getDeployTransaction(owner, forwarder);
     totalGas = totalGas.add(await estimate(
       "Deploy BiggiCREAutomationReceiver (starts paused)",
-      () => ethers.provider.estimateGas({ from: deployer.address, data: deployTx.data }),
+      () => ethers.provider.estimateGas({ from: deployerAddress, data: deployTx.data }),
       actions,
       blockers
     ));
@@ -137,6 +142,10 @@ async function main() {
       blockers.push({ label: item.label, error: "Target missing or has no bytecode" });
       continue;
     }
+    if (!deployer) {
+      actions.push({ label: item.label, gas: "not estimated", estimate: "missing local signer" });
+      continue;
+    }
     const contract = new ethers.Contract(item.target, item.abi, deployer);
     const gas = await estimate(item.label, () => contract.estimateGas[item.method](...item.args), actions, blockers);
     totalGas = totalGas.add(gas);
@@ -153,7 +162,7 @@ async function main() {
 
   const feeData = await ethers.provider.getFeeData();
   const gasPrice = feeData.maxFeePerGas || feeData.gasPrice || ethers.BigNumber.from(0);
-  const balance = await deployer.getBalance();
+  const balance = deployerAddress === ZERO ? ethers.BigNumber.from(0) : await ethers.provider.getBalance(deployerAddress);
   const estimatedCost = totalGas.mul(gasPrice);
   const report = {
     createdAt: new Date().toISOString(),
@@ -161,7 +170,7 @@ async function main() {
     chainId: chain.chainId,
     dryRun: true,
     sendsTransactions: false,
-    deployer: deployer.address,
+    deployer: deployerAddress,
     owner,
     forwarder,
     existingReceiver,

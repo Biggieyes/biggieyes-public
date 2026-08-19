@@ -38,9 +38,11 @@ function tokens(amount) {
 }
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
   const root = path.resolve(__dirname, "../..");
   const A = loadAddresses(root);
+  const signers = await ethers.getSigners();
+  const deployer = signers[0] || null;
+  const deployerAddress = getAddress(env("DEPLOYER", env("EXPECT_OWNER", A.DEPLOYER || A.OWNER || (deployer && deployer.address))));
   const chain = await ethers.provider.getNetwork();
   if (network.name === "polygon" && chain.chainId !== 137) {
     throw new Error(`Expected Polygon chainId 137, got ${chain.chainId}`);
@@ -49,7 +51,10 @@ async function main() {
   const execute = env("EXECUTE_INITIAL_DISTRIBUTION") === "1";
   const confirmed = env("I_UNDERSTAND_INITIAL_DISTRIBUTION_LOCKS_RESERVE") === "1";
   const compromisedOwner = getAddress(env("COMPROMISED_OWNER_ADDRESS"));
-  if (execute && isAddress(compromisedOwner) && getAddress(deployer.address) === compromisedOwner) {
+  if (execute && !deployer) {
+    throw new Error("EXECUTE_INITIAL_DISTRIBUTION requires a local signer; dry-run can use DEPLOYER/EXPECT_OWNER.");
+  }
+  if (execute && isAddress(compromisedOwner) && deployerAddress === compromisedOwner) {
     throw new Error("Refusing initial distribution transaction from COMPROMISED_OWNER_ADDRESS");
   }
   const report = {
@@ -57,7 +62,7 @@ async function main() {
     chainId: chain.chainId,
     createdAt: new Date().toISOString(),
     execute,
-    deployer: deployer.address,
+    deployer: deployerAddress,
     actions: [],
     blockers: [],
     values: {},
@@ -65,7 +70,7 @@ async function main() {
 
   const token = await ethers.getContractAt("BiggiToken", A.BIGGI_TOKEN);
   const owner = await token.owner();
-  const expectedOwner = getAddress(env("EXPECT_OWNER", deployer.address));
+  const expectedOwner = getAddress(env("EXPECT_OWNER", deployerAddress));
   const totalSupply = await token.totalSupply();
   const distributed = await token.distributed();
   const reserveLocked = await token.reserveLocked();
@@ -90,8 +95,8 @@ async function main() {
     expectedMint: Object.fromEntries(Object.entries(expected).map(([k, v]) => [k, v.toString()])),
   };
 
-  if (getAddress(owner) !== getAddress(deployer.address)) {
-    report.blockers.push(`Deployer is not BIGGI owner. owner=${owner}, deployer=${deployer.address}`);
+  if (getAddress(owner) !== deployerAddress) {
+    report.blockers.push(`Deployer is not BIGGI owner. owner=${owner}, deployer=${deployerAddress}`);
   }
   if (env("EXPECT_OWNER") && getAddress(owner) !== expectedOwner) {
     report.blockers.push(`BIGGI owner does not match EXPECT_OWNER. owner=${owner}, EXPECT_OWNER=${expectedOwner}`);
@@ -103,7 +108,7 @@ async function main() {
     ["reserveAddr", A.RESERVE],
     ["dripDistributorAddr", A.DRIP_DISTRIBUTOR],
     ["tokenRewardsAddr", A.TOKEN_REWARDS],
-    ["marketingSupportAddr", A.MARKETING_SUPPORT || A.DEV_WALLET || A.OWNER || deployer.address],
+    ["marketingSupportAddr", A.MARKETING_SUPPORT || A.DEV_WALLET || A.OWNER || deployerAddress],
   ]) {
     const current = getAddress(report.values.before[label]);
     if (current !== getAddress(expectedAddress)) {

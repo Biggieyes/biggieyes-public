@@ -39,9 +39,11 @@ function loadAddresses(root) {
 }
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
   const root = path.resolve(__dirname, "../..");
   const A = loadAddresses(root);
+  const signers = await ethers.getSigners();
+  const deployer = signers[0] || null;
+  const deployerAddress = getAddress(env("DEPLOYER", env("EXPECT_OWNER", A.DEPLOYER || A.OWNER || (deployer && deployer.address))));
   const chain = await ethers.provider.getNetwork();
   if (network.name === "polygon" && chain.chainId !== 137) {
     throw new Error(`Expected Polygon chainId 137, got ${chain.chainId}`);
@@ -49,13 +51,16 @@ async function main() {
 
   const execute = envBool("EXECUTE_INITIAL_LIQUIDITY", false);
   const compromisedOwner = getAddress(env("COMPROMISED_OWNER_ADDRESS"));
-  if (execute && isAddress(compromisedOwner) && getAddress(deployer.address) === compromisedOwner) {
+  if (execute && !deployer) {
+    throw new Error("EXECUTE_INITIAL_LIQUIDITY requires a local signer; dry-run can use DEPLOYER/EXPECT_OWNER.");
+  }
+  if (execute && isAddress(compromisedOwner) && deployerAddress === compromisedOwner) {
     throw new Error("Refusing initial liquidity transaction from COMPROMISED_OWNER_ADDRESS");
   }
   const tokenAmountRaw = env("LIQ_TOKEN_AMOUNT", "");
   const nativeAmountRaw = env("LIQ_NATIVE_AMOUNT", env("LIQ_ETH_AMOUNT", ""));
   const transferFromReserve = envBool("TRANSFER_FROM_RESERVE", false);
-  const lpRecipient = getAddress(env("LIQ_LP_RECIPIENT", deployer.address));
+  const lpRecipient = getAddress(env("LIQ_LP_RECIPIENT", deployerAddress));
   const slippageBps = Number(env("LIQ_INITIAL_SLIPPAGE_BPS", "50"));
   const allowVaultRecipient = envBool("ALLOW_UNSYNCED_VAULT_LP", false);
   const requireEmptyPair = envBool("LIQ_REQUIRE_EMPTY_PAIR", true);
@@ -68,7 +73,7 @@ async function main() {
     chainId: chain.chainId,
     createdAt: new Date().toISOString(),
     execute,
-    deployer: deployer.address,
+    deployer: deployerAddress,
     actions: [],
     blockers: [],
     warnings: [],
@@ -188,9 +193,9 @@ async function main() {
   ] = await Promise.all([
     pair.getReserves(),
     pair.totalSupply(),
-    token.balanceOf(deployer.address),
+    token.balanceOf(deployerAddress),
     token.balanceOf(A.RESERVE),
-    deployer.getBalance(),
+    ethers.provider.getBalance(deployerAddress),
     token.owner(),
     token.reserveAddr(),
     router.WETH(),
@@ -236,7 +241,7 @@ async function main() {
   };
 
   if (!(await token.distributed())) report.blockers.push("BIGGI initial distribution is not executed.");
-  if (getAddress(tokenOwner) !== getAddress(deployer.address)) {
+  if (getAddress(tokenOwner) !== deployerAddress) {
     report.blockers.push("Signer is not the BiggiToken owner required for reserve transfer.");
   }
   if (getAddress(tokenReserve) !== getAddress(A.RESERVE)) report.blockers.push("BiggiToken reserveAddr mismatch.");
@@ -277,13 +282,13 @@ async function main() {
     );
   } else if (report.blockers.length === 0) {
     if (transferFromReserve) {
-      const tx = await token.transferFromReserveTo(deployer.address, amountTokenDesired);
+      const tx = await token.transferFromReserveTo(deployerAddress, amountTokenDesired);
       console.log(`[TX] transferFromReserveTo: ${tx.hash}`);
       const rc = await tx.wait();
       report.actions.push({ action: "transferFromReserveTo", tx: tx.hash, status: rc.status, blockNumber: rc.blockNumber });
     }
 
-    const allowance = await token.allowance(deployer.address, A.ROUTER);
+    const allowance = await token.allowance(deployerAddress, A.ROUTER);
     if (allowance.lt(amountTokenDesired)) {
       const tx = await token.approve(A.ROUTER, amountTokenDesired);
       console.log(`[TX] approve router: ${tx.hash}`);
@@ -310,7 +315,7 @@ async function main() {
     } catch (error) {
       report.blockers.push(`addLiquidityETH failed after reserve transfer/approval: ${error.message}`);
     } finally {
-      const remainingAllowance = await token.allowance(deployer.address, A.ROUTER);
+      const remainingAllowance = await token.allowance(deployerAddress, A.ROUTER);
       if (!remainingAllowance.isZero()) {
         const tx = await token.approve(A.ROUTER, 0);
         console.log(`[TX] revoke router allowance: ${tx.hash}`);
@@ -343,7 +348,7 @@ async function main() {
 
   const [reservesAfter, lpSupplyAfter] = await Promise.all([pair.getReserves(), pair.totalSupply()]);
   report.values.after = {
-    tokenBalance: (await token.balanceOf(deployer.address)).toString(),
+    tokenBalance: (await token.balanceOf(deployerAddress)).toString(),
     pairReserve0: reservesAfter[0].toString(),
     pairReserve1: reservesAfter[1].toString(),
     pairLpSupply: lpSupplyAfter.toString(),

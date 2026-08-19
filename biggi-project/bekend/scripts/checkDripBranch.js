@@ -2,7 +2,8 @@
 // Čte stav DripLM, DripDistributor, Treasury, Distributoru a pump bundle v MasterConfig.
 
 const path = require("path");
-require("dotenv").config({ path: path.join(__dirname, ".env") });
+require("dotenv").config({ path: path.resolve(__dirname, "../.env.core.polygon"), override: true });
+require("dotenv").config({ path: path.join(__dirname, ".env"), override: false });
 const hre = require("hardhat");
 const { ethers } = hre;
 
@@ -75,7 +76,7 @@ async function main() {
   const treasuryAddr = env.TREASURY;
   const distributorAddr = env.DISTRIBUTOR;
   const collection1 = env.COLLECTION || env.MAIN;
-  const collection2 = env.COLLECTION2 || env.MAIN2;
+  const collection2 = env.MAIN2 || env.COLLECTION2;
   if (!lmAddr || !ddAddr || !mcAddr || !treasuryAddr || !distributorAddr) {
     throw new Error("Chybí DRIP_LM / DRIP_DISTRIBUTOR / MASTER_CONFIG / TREASURY / DISTRIBUTOR v .env");
   }
@@ -239,7 +240,7 @@ async function main() {
   if (ddBalance.gt(avail)) warnings.push(`DripDistributor has ${fmt(ddBalance.sub(avail))} BIGGI above availableTokens (needs syncAvailableToBalance or treasury top-up via depositTokens).`);
   if (trPol.gt(0) && trPolFromDistributor.eq(0)) warnings.push("Treasury holds POL but totalPolReceivedFromDistributor is 0 (Distributor forwards via fallback/receiveMintShare path, not depositPolFromDistributor accounting).");
   if (collection1 && !coll1Allowed) warnings.push("COLLECTION is not whitelisted in DripDistributor.");
-  if (collection2 && !coll2Allowed) warnings.push("COLLECTION2 is not whitelisted in DripDistributor.");
+  if (collection2 && !coll2Allowed) warnings.push("MAIN2 is not whitelisted in DripDistributor.");
   if (warnings.length) {
     console.log("Warnings:");
     for (const warning of warnings) console.log("  -", warning);

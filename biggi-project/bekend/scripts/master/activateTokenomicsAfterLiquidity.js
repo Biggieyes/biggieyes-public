@@ -56,7 +56,11 @@ async function main() {
   const compromisedOwner = ethers.utils.isAddress(env("COMPROMISED_OWNER_ADDRESS"))
     ? ethers.utils.getAddress(env("COMPROMISED_OWNER_ADDRESS"))
     : ethers.constants.AddressZero;
-  const [deployer] = await ethers.getSigners();
+  const signers = await ethers.getSigners();
+  const deployer = signers[0] || null;
+  if (execute && !deployer) {
+    throw new Error("EXECUTE_TOKENOMICS_ACTIVATION requires a local signer.");
+  }
   if (execute && compromisedOwner !== ethers.constants.AddressZero && deployer.address === compromisedOwner) {
     throw new Error("Refusing tokenomics activation transaction from COMPROMISED_OWNER_ADDRESS");
   }

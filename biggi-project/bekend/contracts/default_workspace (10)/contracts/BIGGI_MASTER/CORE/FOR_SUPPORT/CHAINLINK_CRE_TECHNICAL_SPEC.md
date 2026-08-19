@@ -1,0 +1,118 @@
+# BIGGI CRE Technical Spec
+
+Date: 2026-08-19
+
+## Objective
+
+Move BIGGI tokenomics automation to Chainlink CRE while keeping all tokenomics execution inside already deployed Polygon mainnet contracts.
+
+CRE does not mint NFTs and does not own tokenomics policy. It only evaluates keeper conditions and submits signed reports for already allowed onchain execution.
+
+## Workflow Paths
+
+Canonical production write workflow:
+
+```text
+biggi-project/bekend/cre-workflows/biggi-cre/my-workflow
+```
+
+Read-only health workflow:
+
+```text
+biggi-project/bekend/cre/biggi-tokenomics-automation
+```
+
+The read-only health workflow is not the production writer.
+
+## Network
+
+- Network: Polygon mainnet
+- EIP-155 chain ID: `137`
+- CRE chain name in project config: `polygon-mainnet`
+- CRE chain selector: `4051577828743386545`
+- KeystoneForwarder: `0x76c9cf548b4179F8901cda1f8623568b58215E62`
+
+## Workflow Behavior
+
+At every cron tick:
+
+1. Read the latest finalized block number.
+2. For each configured target, run the appropriate read/check.
+3. If action is required, prepare deterministic calldata.
+4. Encode report payload as `abi.encode(address target, bytes callData)`.
+5. Submit the report through CRE EVM write capability to `BiggiCREAutomationReceiver`.
+
+The workflow must preserve deterministic behavior. It must not use Node-only APIs inside the CRE WASM runtime.
+
+## Target Execution Map
+
+| Key | Target | Check | Execute | Selector |
+| --- | --- | --- | --- | --- |
+| `supply-controller` | `0x810ba27C98aAB09737e3988a3C1b10D6CadaB8E8` | `checkUpkeep(bytes)` | `performUpkeep(bytes)` | `0x4585e33b` |
+| `buyback` | `0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875` | `checkUpkeep(bytes)` | `performUpkeep(bytes)` | `0x4585e33b` |
+| `liquidity` | `0x4fC6EaD8CC6451e1A5EA7Ceaf6a072e18f91F04c` | `checkUpkeep(bytes)` | `performUpkeep(bytes)` | `0x4585e33b` |
+| `dex-reserve-guard` | `0x350370c248495758b80Ea1C564Df1290cA76588B` | `checkUpkeep(bytes)` | `performUpkeep(bytes)` | `0x4585e33b` |
+| `rewards-week-roll` | `0xA7B71DFEBF89481b37d803dD0765E3612f29Ffb9` | week-roll condition | `rollCurrentWeek()` | `0x69fa508a` |
+
+Only `LIQUIDITY_KEEPER_PROXY` should be active for the liquidity CRE branch. Do not run a parallel legacy `LIQUIDITY_AUTOMATION` branch.
+
+## Receiver State Before Activation
+
+Receiver:
+
+```text
+0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6
+```
+
+State verified from repo-generated preflight/reporting:
+
+- Paused: `true`
+- `expectedWorkflowId`: zero bytes32
+- `expectedWorkflowOwner`: zero address
+- Target selector allowlist: closed for all five production branches
+- Metadata hash allowlist count: `0`
+- Max report bytes: `4096`
+- Max calldata bytes: `2048`
+
+This is intentional. Receiver activation must happen only after workflow deploy identity is known.
+
+## Required Activation Order
+
+1. Confirm Chainlink CRE deploy access is enabled for the organization.
+2. Confirm Polygon mainnet CRE EVM write support for the tenant.
+3. Deploy workflow to `production-settings`.
+4. Read exact workflow ID and workflow owner from the current CLI/UI.
+5. Configure receiver expected workflow ID/owner.
+6. Allowlist the five target/selector pairs.
+7. Configure target-side keeper/allowed-caller roles for the receiver where required.
+8. Keep legacy/parallel keepers paused to avoid duplicate execution.
+9. Unpause receiver only after DEX liquidity and final tokenomics launch gates are satisfied.
+10. Monitor first executions in the CRE dashboard and on PolygonScan.
+
+## Launch Gate Snapshot
+
+Evidence:
+
+```text
+EVIDENCE/launch-readiness-polygon.json
+```
+
+Current status:
+
+- `okForDeployOnly`: `true`
+- `okForPublicLaunch`: `false`
+- Blockers: `7`
+
+Known blockers:
+
+- BIGGI/WPOL pair has no initial liquidity.
+- `MAIN2` is paused.
+- CRE receiver is paused.
+- CRE workflow ID is not locked.
+- CRE workflow owner is not locked.
+- `LIQUIDITY_ORCHESTRATOR` is paused.
+- `LIQUIDITY_KEEPER_PROXY` is paused.
+
+## Chainlink Confirmation Needed
+
+The receiver currently parses workflow identity from metadata. Chainlink support should confirm the stable production metadata layout before receiver identity locking is finalized.
