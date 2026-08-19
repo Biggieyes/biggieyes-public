@@ -25,6 +25,21 @@
   status = 200
 
 [[redirects]]
+  from = "/api/chat-bootstrap"
+  to = "/.netlify/functions/chat-bootstrap"
+  status = 200
+
+[[redirects]]
+  from = "/api/communityVoting"
+  to = "/.netlify/functions/communityVoting"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin/communityVoting"
+  to = "/.netlify/functions/admin-communityVoting"
+  status = 200
+
+[[redirects]]
   from = "/api/admin/editMessage"
   to = "/.netlify/functions/admin-editMessage"
   status = 200
@@ -39,6 +54,150 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
+[[redirects]]
+  from = "/app"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/app/"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/rewards"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/rewards/"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/collection"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/collection/"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/vrf-mint"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/vrf-mint/"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/ecosystem"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/ecosystem/"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/community-center"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/community-center/"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/app/*"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/app/index.html"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/rewards/index.html"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/rewards/*"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/collection/index.html"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/collection/*"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/vrf-mint/index.html"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/vrf-mint/*"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/ecosystem/index.html"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/ecosystem/*"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/community-center/index.html"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/community-center/*"
+  to = "/"
+  status = 302
+  force = true
+
 [[headers]]
   for = "/assets/*"
   [headers.values]
@@ -51,8 +210,4 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"

@@ -1,0 +1,13 @@
+{
+  "chainSelectorName": "polygon-mainnet",
+  "receiverAddress": "0x0000000000000000000000000000000000000000",
+  "schedule": "0 */5 * * * *",
+  "dryRun": true,
+  "targets": [
+    { "name": "supply-controller", "kind": "AUTOMATION", "enabled": true, "address": "0x810ba27C98aAB09737e3988a3C1b10D6CadaB8E8", "checkData": "0x", "writeGasLimit": "900000" },
+    { "name": "buyback", "kind": "AUTOMATION", "enabled": true, "address": "0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875", "checkData": "0x", "writeGasLimit": "1400000" },
+    { "name": "liquidity", "kind": "AUTOMATION", "enabled": true, "address": "0x4fC6EaD8CC6451e1A5EA7Ceaf6a072e18f91F04c", "checkData": "0x", "writeGasLimit": "1600000" },
+    { "name": "dex-reserve-guard", "kind": "AUTOMATION", "enabled": true, "address": "0x350370c248495758b80Ea1C564Df1290cA76588B", "checkData": "0x", "writeGasLimit": "1400000" },
+    { "name": "rewards-week-roll", "kind": "WEEK_ROLL", "enabled": true, "address": "0xA7B71DFEBF89481b37d803dD0765E3612f29Ffb9", "writeGasLimit": "500000" }
+  ]
+}

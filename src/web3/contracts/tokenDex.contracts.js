@@ -7,19 +7,23 @@ import {
   BiggiLpPriceFeed as ABI_BiggiLpPriceFeed,
 } from "@/config/abi/index.js";
 import defaultProvider from "../provider";
-import { getTokenDexAddresses } from "../../config/addresses";
+import { getTokenDexAddresses } from "../../config/addresses/index.js";
 export function getTokenDexContracts(chainId, provider) {
   const signerOrProvider = provider || defaultProvider;
   const {
     biggiToken,
     router,
+    buybackRouter,
     factory,
     weth,
+    wpol,
+    quoteToken,
     pairAddress,
     lpPriceFeed,
     reserve,
     liquidityVault,
     treasury,
+    multicall,
   } = getTokenDexAddresses(chainId);
 
   const validAddr = (addr) =>
@@ -51,13 +55,17 @@ export function getTokenDexContracts(chainId, provider) {
     addrs: {
       biggiToken,
       router,
+      buybackRouter,
       factory,
       weth,
+      wpol,
+      quoteToken,
       pairAddress,
       lpPriceFeed,
       reserve,
       liquidityVault,
       treasury,
+      multicall,
     },
   };
 }

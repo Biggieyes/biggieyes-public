@@ -1,0 +1,57 @@
+{
+  "createdAt": "2026-08-19T01:38:24.200Z",
+  "network": "polygon",
+  "chainId": 137,
+  "dryRun": true,
+  "sendsTransactions": false,
+  "deployer": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+  "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "forwarder": "0x76c9cf548b4179F8901cda1f8623568b58215E62",
+  "existingReceiver": "0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6",
+  "predictedReceiver": "0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6",
+  "pendingNonce": 390,
+  "balanceWei": "32402454020167001349",
+  "balancePol": "32.402454020167001349",
+  "gasPriceWei": "502438631912",
+  "estimatedPreApprovalGas": "0",
+  "estimatedPreApprovalCostWei": "0",
+  "estimatedPreApprovalCostPol": "0.0",
+  "actions": [
+    {
+      "label": "SupplyController.setAllowedCaller(receiver,true)",
+      "gas": "not estimated",
+      "estimate": "missing local signer"
+    },
+    {
+      "label": "DexReserveGuard.setKeeper(receiver,true)",
+      "gas": "not estimated",
+      "estimate": "missing local signer"
+    },
+    {
+      "label": "TokenRewardsEmissionController.setKeeper(receiver,true)",
+      "gas": "not estimated",
+      "estimate": "missing local signer"
+    },
+    {
+      "label": "LiquidityKeeperProxy.setAllowedCaller(receiver)",
+      "gas": "not estimated",
+      "estimate": "missing local signer"
+    },
+    {
+      "label": "After CRE deploy: receiver.setExpectedWorkflowIdentity(workflowId,workflowOwner)",
+      "gas": "estimated after workflow ID is known"
+    },
+    {
+      "label": "Launch last: receiver.unpause()",
+      "gas": "estimated immediately before activation"
+    }
+  ],
+  "warnings": [
+    {
+      "label": "receiver",
+      "value": "Receiver already exists; deployment estimate omitted"
+    }
+  ],
+  "blockers": [],
+  "readyToExecute": true
+}

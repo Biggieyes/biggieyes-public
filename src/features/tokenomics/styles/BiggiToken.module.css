@@ -3,6 +3,9 @@
   --eco-border-strong: rgba(255, 232, 0, 0.5);
   --eco-accent: rgba(255, 232, 0, 0.9);
   --eco-accent-soft: rgba(255, 232, 0, 0.18);
+  --eco-active-accent: #ffe800;
+  --eco-active-accent-soft: rgba(255, 232, 0, 0.22);
+  --eco-active-accent-glow: rgba(255, 232, 0, 0.36);
   --eco-accent-cold: rgba(64, 210, 255, 0.6);
   --eco-ink: rgba(7, 9, 14, 0.92);
   --eco-surface-grad: linear-gradient(
@@ -25,39 +28,71 @@
   --eco-shadow: 0 20px 46px rgba(0, 0, 0, 0.6);
   --eco-shadow-soft: 0 12px 28px rgba(0, 0, 0, 0.48);
   --eco-text-dim: rgba(198, 207, 222, 0.9);
+  --eco-shell-gap: 18px;
+  --eco-section-gap: 22px;
+  --eco-shell-pad: 26px;
+  --eco-card-pad: 22px;
+  --eco-table-row-min: 44px;
+}
+
+.ecoHeroStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(156px, 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+
+.ecoToolbarRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+}
+
+.ecoUpdateStamp {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 232, 0, 0.2);
+  background: rgba(10, 14, 22, 0.88);
+  color: #d5def0;
+  letter-spacing: 0.06em;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.26);
+}
+
+.ecoContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--eco-shell-gap);
+  min-height: 0;
+}
+
+.ecosystem :global(.rewards-grid__surface) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--eco-shell-gap);
 }
 
 .ecosystem :global(.biggi-token-surface) {
   position: relative;
   overflow: hidden;
-  background:
-    radial-gradient(1200px 560px at 92% -20%, rgba(255, 232, 0, 0.18), transparent 60%),
-    radial-gradient(700px 420px at 10% 12%, rgba(64, 210, 255, 0.16), transparent 55%),
-    var(--eco-surface-grad),
-    url("/images/bg-tab0.png") !important;
+  background: var(--eco-surface-grad), url("/images/bg-tab0.png") !important;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  border-radius: 22px;
+  border-radius: 8px;
   border: 1px solid var(--eco-border) !important;
   box-shadow:
     var(--eco-shadow-soft),
-    0 0 26px rgba(255, 232, 0, 0.18);
+    0 0 18px rgba(255, 232, 0, 0.14);
   outline: 1px solid rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
+  backdrop-filter: none;
 }
 
 .ecosystem :global(.biggi-token-surface)::before {
-  content: "";
-  position: absolute;
-  inset: -25%;
-  background:
-    radial-gradient(closest-side, rgba(255, 232, 0, 0.12), transparent 70%),
-    radial-gradient(closest-side, rgba(64, 210, 255, 0.12), transparent 60%);
-  opacity: 0.4;
-  pointer-events: none;
-  transform: translate3d(0, 0, 0);
-  animation: ecoPulse 10s ease-in-out infinite;
+  display: none;
 }
 
 .ecosystem :global(.biggi-token-surface)::after {
@@ -73,9 +108,9 @@
       transparent 2px,
       transparent 8px
     );
-  opacity: 0.25;
+  opacity: 0.14;
   pointer-events: none;
-  mix-blend-mode: screen;
+  mix-blend-mode: normal;
 }
 
 .ecosystem :global(.biggi-token-surface) > * {
@@ -88,13 +123,46 @@
   overflow: hidden;
   background:
     linear-gradient(135deg, rgba(10, 12, 18, 0.45), rgba(6, 8, 14, 0.35)),
-    url("/images/panels/ecosystem.png") !important;
+    url("/images/panels/ecosystem.optimized.jpg") !important;
   border-radius: 18px 18px 0 0;
   border: 1px solid rgba(255, 232, 0, 0.22);
   box-shadow:
-    0 16px 32px rgba(0, 0, 0, 0.42),
-    0 0 18px rgba(255, 232, 0, 0.16);
-  backdrop-filter: blur(6px);
+    0 12px 24px rgba(0, 0, 0, 0.34),
+    0 0 14px rgba(255, 232, 0, 0.12);
+  backdrop-filter: none;
+}
+
+.ecosystem :global(.rewards-grid__header) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 58rem) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+  padding: 24px var(--eco-shell-pad) 22px;
+}
+
+.ecosystem :global(.rewards-grid__headline) {
+  grid-column: 2;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  justify-self: center;
+  text-align: center;
+}
+
+.ecosystem :global(.rewards-grid__title) {
+  margin: 0;
+  letter-spacing: 0.08em;
+  color: var(--eco-active-accent);
+  text-shadow: 0 0 12px var(--eco-active-accent-glow);
+}
+
+.ecosystem :global(.rewards-grid__subtitle) {
+  margin: 0;
+  max-width: 58rem;
+  line-height: 1.55;
+  color: var(--eco-text-dim);
 }
 
 .ecosystem :global(.biggi-header)::after {
@@ -104,17 +172,45 @@
   right: 16px;
   bottom: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--eco-accent), transparent);
-  opacity: 0.7;
-  animation: ecoGlow 6s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--eco-active-accent),
+    transparent
+  );
+  opacity: 0.55;
+  animation: none;
 }
 
-.ecosystem :global(.rewards-grid__title) {
+.ecosystem :global(.biggi-header-right) {
+  grid-column: 3;
+  display: flex;
+  justify-content: flex-end;
+  align-self: start;
+  justify-self: end;
+}
+
+.ecosystem :global(.biggi-status) {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 232, 0, 0.22);
+  background: rgba(8, 14, 23, 0.86);
+  color: #e6eefc;
+  font-size: 0.76rem;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.26);
 }
 
-.ecosystem :global(.rewards-grid__subtitle) {
-  color: var(--eco-text-dim);
+.ecosystem :global(.biggi-status-dot) {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--eco-active-accent);
+  box-shadow: 0 0 16px var(--eco-active-accent-glow);
 }
 
 .ecosystem :global(.biggi-card) {
@@ -122,26 +218,51 @@
   overflow: hidden;
   background: var(--eco-card-grad) !important;
   border: 1px solid var(--eco-border) !important;
-  border-radius: 18px;
+  border-radius: 8px;
+  padding: 0 !important;
+  gap: 0;
   box-shadow: var(--eco-shadow-soft) !important;
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  transition:
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+.ecosystem :global(.rewards-grid__card.biggi-card) {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.ecosystem :global(.biggi-card__header) {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px var(--eco-card-pad) 0;
+}
+
+.ecosystem :global(.biggi-card__heading) {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  text-align: center;
+}
+
+.ecosystem :global(.biggi-card__actions) {
+  flex-shrink: 0;
+  align-self: flex-start;
 }
 
 .ecosystem :global(.biggi-card:hover) {
-  transform: translateY(-2px);
   background: var(--eco-card-hover) !important;
   border-color: var(--eco-border-strong) !important;
-  box-shadow: var(--eco-shadow) !important;
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.42) !important;
 }
 
 .ecosystem :global(.biggi-card)::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(600px 240px at 80% -20%, rgba(255, 232, 0, 0.12), transparent 70%);
-  opacity: 0.4;
-  pointer-events: none;
-  transition: opacity 180ms ease;
+  display: none;
 }
 
 .ecosystem :global(.biggi-card:hover)::after {
@@ -161,14 +282,28 @@
 
 .ecosystem :global(.biggi-card__heading p) {
   color: rgba(188, 197, 214, 0.88);
+  max-width: 46rem;
 }
 
 .ecosystem :global(.biggi-card__body) {
   color: #d7dde9;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px var(--eco-card-pad) 22px;
+  min-height: 0;
+  margin: 0;
+}
+
+.ecosystem :global(.biggi-hero) {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
+  gap: 14px;
+  align-items: stretch;
 }
 
 .ecosystem :global(.biggi-hero__stat) {
-  border-radius: 16px;
+  border-radius: 8px;
   border: 1px solid var(--eco-border) !important;
   background: linear-gradient(
     160deg,
@@ -178,11 +313,18 @@
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.02),
     0 12px 26px rgba(0, 0, 0, 0.48);
-  transition: transform 160ms ease, border-color 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+  min-height: 82px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .ecosystem :global(.biggi-hero__stat:hover) {
-  transform: translateY(-2px);
   border-color: var(--eco-border-strong) !important;
 }
 
@@ -215,14 +357,26 @@
 
 .ecosystem :global(.biggi-hero__value) {
   text-shadow: none;
+  line-height: 1.05;
+}
+
+.ecosystem :global(.biggi-hero__sub) {
+  color: #7f92b0;
+  font-size: 0.75rem;
+  line-height: 1.45;
 }
 
 .ecosystem :global(.view-tabs) {
   background: rgba(10, 12, 18, 0.82);
-  border-radius: 20px;
+  border-radius: 8px;
   border-color: var(--eco-border);
   box-shadow: 0 12px 26px rgba(0, 0, 0, 0.38);
   gap: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 6px;
+  width: 100%;
 }
 
 .ecosystem :global(.view-tabs .tab-button) {
@@ -232,16 +386,20 @@
     rgba(0, 0, 0, 0.22)
   );
   border: 1px solid transparent;
-  border-radius: 10px !important;
+  border-radius: 6px !important;
   color: #d7dde9 !important;
   letter-spacing: 0.05em;
   font-size: 0.85rem !important;
   padding: 10px 18px !important;
   text-transform: uppercase;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ecosystem :global(.view-tabs .tab-button:hover) {
-  border-color: rgba(255, 232, 0, 0.28);
+  border-color: var(--eco-active-accent-soft);
   background: linear-gradient(
     180deg,
     rgba(255, 255, 255, 0.08),
@@ -250,39 +408,121 @@
 }
 
 .ecosystem :global(.view-tabs .tab-button.active) {
-  border-color: var(--eco-border-strong) !important;
+  border-color: var(--eco-active-accent) !important;
   background: linear-gradient(
     180deg,
-    rgba(255, 232, 0, 0.22),
-    rgba(255, 232, 0, 0.08)
+    var(--eco-active-accent-soft),
+    rgba(255, 255, 255, 0.08)
   ) !important;
-  color: #ffe800 !important;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
+  color: var(--eco-active-accent) !important;
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.35),
+    0 0 18px var(--eco-active-accent-soft);
 }
 
 .ecosystem :global(.biggi-line) {
   border-color: rgba(255, 232, 0, 0.16);
   background: rgba(12, 15, 23, 0.82);
-  border-radius: 12px;
+  border-radius: 8px;
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  margin: 0;
 }
 
 .ecosystem :global(.biggi-line-label) {
-  letter-spacing: 0.04em;
-  color: var(--eco-text-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: rgba(140, 163, 198, 0.92);
+}
+
+.ecosystem :global(.biggi-line-value) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 232, 0, 0.14);
+  background: rgba(255, 232, 0, 0.05);
+  color: #f6f9ff;
+  font-weight: 600;
+  text-align: right;
+  justify-self: end;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .ecosystem :global(.biggi-address-line) {
-  gap: 8px;
+  display: grid;
+  grid-template-columns: minmax(108px, 0.82fr) minmax(0, 1.18fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  width: 100%;
+  padding: 10px 4px;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ecoTableHeader + :global(.biggi-address-line) {
+  border-top: none;
 }
 
 .ecosystem :global(.biggi-address-label) {
-  letter-spacing: 0.06em;
-  color: #8fa1bc;
+  padding-top: 0;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(138, 161, 197, 0.9);
+}
+
+.ecosystem :global(.biggi-address-value) {
+  min-width: 0;
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  justify-self: stretch;
+  text-align: right;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(77, 163, 255, 0.16);
+  background: rgba(10, 18, 31, 0.78);
+  color: #a7ecff;
+  box-shadow: inset 0 1px 0 rgba(137, 187, 255, 0.04);
+}
+
+.ecosystem :global(.biggi-address-main) {
+  min-width: 0;
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ecosystem :global(.biggi-address-link) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(92, 208, 255, 0.22);
+  background: rgba(16, 30, 46, 0.84);
   color: #6ad4ff;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .ecosystem :global(.biggi-toolbar) {
@@ -417,6 +657,7 @@
   .ecosystem :global(.biggi-line-value) {
     justify-self: start;
     text-align: left;
+    justify-content: flex-start;
   }
 
   .ecosystem :global(.biggi-address-line) {
@@ -425,6 +666,7 @@
 
   .ecosystem :global(.biggi-address-value) {
     align-items: flex-start;
+    justify-content: flex-start;
     text-align: left;
   }
 }
@@ -436,7 +678,7 @@
 .ecoFlowGrid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
+  gap: 18px;
 }
 
 .ecoFlowDiagram {
@@ -459,7 +701,11 @@
   border: 1px solid rgba(255, 232, 0, 0.22);
   border-radius: 16px;
   padding: 12px;
-  background: linear-gradient(165deg, rgba(20, 22, 30, 0.78), rgba(8, 10, 14, 0.92));
+  background: linear-gradient(
+    165deg,
+    rgba(20, 22, 30, 0.78),
+    rgba(8, 10, 14, 0.92)
+  );
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.38);
 }
 
@@ -491,7 +737,24 @@
 .ecoFlowTwoCols {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.ecoFlowSplitCard {
+  border: 1px solid rgba(255, 232, 0, 0.2);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: linear-gradient(
+    165deg,
+    rgba(15, 17, 24, 0.86),
+    rgba(8, 10, 16, 0.96)
+  );
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.26);
+  min-height: 156px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .ecoMiniTitle {
@@ -504,16 +767,27 @@
 .ecoTables {
   margin-top: 14px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 16px;
+  align-items: stretch;
+  grid-auto-rows: auto;
 }
 
 .ecoTable {
   border: 1px solid rgba(255, 232, 0, 0.22);
   border-radius: 14px;
-  padding: 10px 12px;
-  background: linear-gradient(160deg, rgba(15, 17, 24, 0.9), rgba(8, 10, 16, 0.98));
+  padding: 14px 16px;
+  background: linear-gradient(
+    160deg,
+    rgba(15, 17, 24, 0.9),
+    rgba(8, 10, 16, 0.98)
+  );
   box-shadow: 0 12px 26px rgba(0, 0, 0, 0.32);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .ecoTableHeader {
@@ -522,14 +796,24 @@
   text-transform: uppercase;
   color: rgba(255, 232, 0, 0.8);
   margin-bottom: 6px;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  padding: 0 4px 8px;
 }
 
 .ecoTableRow {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px;
-  padding: 8px 4px;
+  grid-template-columns: minmax(108px, 0.82fr) minmax(0, 1.18fr);
+  gap: 10px;
+  padding: 10px 4px;
+  min-height: 64px;
+  align-items: center;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ecoTableRow > * {
+  min-width: 0;
 }
 
 .ecoTableRow:hover {
@@ -542,31 +826,76 @@
 }
 
 .ecoTableRowThree {
-  grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr) auto;
+  grid-template-columns: minmax(92px, 0.85fr) minmax(116px, 1.15fr) auto;
+  gap: 8px;
   align-items: center;
 }
 
 .ecoTableLabel {
-  font-size: 12px;
-  color: rgba(210, 220, 236, 0.9);
+  padding-top: 0;
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: rgba(141, 164, 197, 0.92);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .ecoTableValue {
-  font-family: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  color: #e7edf8;
+  font-family:
+    "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  color: #f7f0b3;
+  font-size: 0.84rem;
+  font-weight: 600;
   text-align: right;
   display: inline-flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 8px 10px;
   align-items: center;
   justify-content: flex-end;
+  max-width: 100%;
+  min-width: 0;
+  justify-self: stretch;
+  min-height: 42px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 232, 0, 0.13);
+  background: linear-gradient(
+    180deg,
+    rgba(14, 20, 30, 0.94),
+    rgba(10, 14, 22, 0.86)
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.ecoTableRowThree .ecoTableValue {
+  justify-content: center;
+  padding-inline: 8px;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .ecoAddrMono {
+  color: #8fe7ff;
   text-align: left;
   justify-content: flex-start;
 }
 
 .ecoTableLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(92, 208, 255, 0.22);
+  background: rgba(16, 30, 46, 0.82);
   color: #6ad4ff;
   font-size: 11px;
   text-decoration: none;
@@ -579,6 +908,8 @@
   padding: 4px 8px;
   border-radius: 999px;
   border: 1px solid transparent;
+  justify-self: end;
+  white-space: nowrap;
 }
 
 .ecoStatusDot {
@@ -603,16 +934,111 @@
 
 .ecoWiringGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   gap: 16px;
+}
+
+.ecoWiringDock {
+  position: relative;
+  margin-top: 4px;
+}
+
+.ecoWiringDock :global(.biggi-card) {
+  position: relative;
+  z-index: 2;
+}
+
+.ecoWiringDock :global(.biggi-card__body) {
+  padding-top: 12px;
+}
+
+.ecoWiringHint {
+  color: #8ea0bd;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.ecoWiringOverlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 14px);
+  z-index: 12;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 232, 0, 0.26);
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(255, 232, 0, 0.1),
+      transparent 32%
+    ),
+    linear-gradient(180deg, rgba(10, 14, 22, 0.98), rgba(5, 8, 14, 0.98));
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.56),
+    0 0 24px rgba(255, 232, 0, 0.12);
+  animation: ecoWiringLiftIn 220ms ease-out;
+}
+
+.ecoWiringOverlay::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  width: 18px;
+  height: 18px;
+  transform: translateX(-50%) rotate(45deg);
+  background: rgba(9, 13, 21, 0.98);
+  border-right: 1px solid rgba(255, 232, 0, 0.22);
+  border-bottom: 1px solid rgba(255, 232, 0, 0.22);
+  box-shadow: 8px 8px 22px rgba(0, 0, 0, 0.2);
+}
+
+.ecoWiringOverlayHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ecoWiringOverlayTitle {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 232, 0, 0.82);
+}
+
+.ecoWiringOverlaySub {
+  margin-top: 6px;
+  color: #8ea0bd;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  max-width: 42rem;
+}
+
+.ecoWiringOverlayBody {
+  max-height: min(62vh, 720px);
+  overflow: auto;
+  overflow-x: hidden;
+  padding: 18px 20px 20px;
 }
 
 .ecoWiringCard {
   border-radius: 16px;
-  padding: 12px;
-  background: linear-gradient(160deg, rgba(13, 15, 22, 0.88), rgba(7, 9, 15, 0.98));
+  padding: 14px;
+  background: linear-gradient(
+    160deg,
+    rgba(13, 15, 22, 0.88),
+    rgba(7, 9, 15, 0.98)
+  );
   border: 1px solid rgba(255, 232, 0, 0.2);
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.32);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .ecoWiringTitle {
@@ -621,10 +1047,161 @@
   font-size: 12px;
   text-transform: uppercase;
   color: rgba(255, 232, 0, 0.82);
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.ecoWiringRow {
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.ecoWiringLabel {
+  padding-top: 8px;
+}
+
+.ecoWiringValue {
+  align-items: center;
+}
+
+.ecoWiringAddressMain {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.ecoWiringStatus {
+  align-self: center;
+}
+
+.ecoWiringToggle {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.ecoWiringToggle:hover {
+  transform: translateY(-1px);
+}
+
+.ecoWiringToggleClosed {
+  border-color: rgba(111, 243, 134, 0.62) !important;
+  box-shadow:
+    0 10px 28px rgba(111, 243, 134, 0.2),
+    0 0 0 1px rgba(111, 243, 134, 0.18),
+    0 0 22px rgba(111, 243, 134, 0.14) !important;
+  animation: ecoWiringPulse 1.9s ease-in-out infinite;
+}
+
+.ecoWiringToggleClosed::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.04) 28%,
+    rgba(111, 243, 134, 0.18) 50%,
+    rgba(255, 255, 255, 0.04) 72%,
+    transparent 100%
+  );
+  transform: translateX(-130%);
+  animation: ecoWiringSweep 2.4s linear infinite;
+  pointer-events: none;
+}
+
+.ecoWiringToggleOpen {
+  border-color: rgba(255, 232, 0, 0.7) !important;
+  box-shadow:
+    0 10px 26px rgba(255, 232, 0, 0.18),
+    0 0 0 1px rgba(255, 232, 0, 0.14) !important;
+}
+
+@keyframes ecoWiringPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 10px 24px rgba(111, 243, 134, 0.16),
+      0 0 0 1px rgba(111, 243, 134, 0.14),
+      0 0 18px rgba(111, 243, 134, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 14px 32px rgba(111, 243, 134, 0.26),
+      0 0 0 1px rgba(111, 243, 134, 0.24),
+      0 0 30px rgba(111, 243, 134, 0.18);
+  }
+}
+
+@keyframes ecoWiringSweep {
+  0% {
+    transform: translateX(-130%);
+  }
+  100% {
+    transform: translateX(130%);
+  }
+}
+
+@keyframes ecoWiringLiftIn {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 1280px) {
+  .ecoWiringGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .ecoWiringRow {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .ecoWiringValue {
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .ecoWiringStatus {
+    justify-self: flex-start;
+  }
 }
 
 @media (max-width: 860px) {
+  .ecoWiringOverlayBody {
+    max-height: 44vh;
+  }
+
+  .ecoToolbarRow {
+    grid-template-columns: 1fr;
+  }
+  .ecoUpdateStamp {
+    width: 100%;
+    justify-content: center;
+  }
+  .ecosystem :global(.rewards-grid__header) {
+    grid-template-columns: 1fr;
+    align-items: start;
+    padding: 20px 18px 18px;
+  }
+  .ecosystem :global(.rewards-grid__headline),
+  .ecosystem :global(.biggi-header-right) {
+    grid-column: auto;
+    justify-self: stretch;
+  }
+  .ecosystem :global(.biggi-header-right) {
+    justify-content: flex-start;
+  }
   .ecoFlowDiagram {
     grid-template-columns: 1fr;
   }
@@ -634,9 +1211,22 @@
   .ecoFlowTwoCols {
     grid-template-columns: 1fr;
   }
+  .ecosystem :global(.biggi-card__header) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .ecosystem :global(.biggi-card__actions) {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+  }
   .ecoTableRowThree {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+  .ecoTableLabel {
+    padding-top: 0;
   }
   .ecoTableValue {
     justify-content: flex-start;
@@ -644,6 +1234,193 @@
   }
   .ecoTableStatus {
     justify-self: flex-start;
+  }
+  .ecoWiringOverlay {
+    left: -2px;
+    right: -2px;
+  }
+  .ecoWiringOverlayHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .ecoWiringOverlayBody {
+    padding: 16px;
+  }
+  .ecoWiringCard {
+    padding: 12px;
+  }
+  .ecoWiringDock :global(.biggi-card__header) {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .ecoWiringDock :global(.biggi-card__actions) {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+  .ecoWiringDock :global(.biggi-card__body) {
+    padding-top: 6px;
+  }
+  .ecoWiringHint {
+    text-align: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .ecosystem {
+    --eco-shell-gap: 14px;
+    --eco-section-gap: 16px;
+    --eco-shell-pad: 18px;
+    --eco-card-pad: 16px;
+  }
+
+  .ecoWiringOverlayBody {
+    max-height: 32vh;
+  }
+
+  .ecoHeroStats {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(158px, 70vw);
+    gap: 10px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline proximity;
+    scrollbar-width: thin;
+    padding-bottom: 4px;
+  }
+
+  .ecoUpdateStamp {
+    padding: 8px 11px;
+    font-size: 0.74rem;
+  }
+
+  .ecosystem :global(.view-tabs) {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start !important;
+    gap: 8px;
+    padding: 6px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline proximity;
+    scrollbar-width: thin;
+    touch-action: pan-x;
+  }
+
+  .ecosystem :global(.view-tabs .tab-button) {
+    width: auto;
+    flex: 0 0 auto !important;
+    min-height: 40px;
+    padding: 9px 10px !important;
+    font-size: 0.76rem !important;
+    line-height: 1.2;
+    scroll-snap-align: start;
+  }
+
+  .ecosystem :global(.biggi-hero__stat) {
+    scroll-snap-align: start;
+  }
+
+  .ecoTable {
+    padding: 12px;
+  }
+
+  .ecoTableRow {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .ecoTableValue {
+    padding: 7px 9px;
+  }
+
+  .ecosystem :global(.biggi-address-label) {
+    padding-top: 0;
+  }
+
+  .ecosystem :global(.biggi-address-value) {
+    padding: 7px 9px;
+  }
+}
+
+.ecosystem,
+.ecosystem * {
+  letter-spacing: 0 !important;
+}
+
+.ecosystem :global(.buyback-tab),
+.ecosystem :global(.drip-tab),
+.ecosystem :global(.distributor-token-tab),
+.ecosystem :global(.liquidity-tab),
+.ecosystem :global(.token-dex-tab) {
+  border-radius: 8px !important;
+  background: linear-gradient(
+    180deg,
+    rgba(7, 15, 28, 0.98),
+    rgba(4, 9, 18, 0.96)
+  ) !important;
+  padding: 20px !important;
+  gap: 18px !important;
+}
+
+.ecosystem :global(.buyback-tab__chart),
+.ecosystem :global(.drip-tab__chart),
+.ecosystem :global(.drip-tab__overview-item),
+.ecosystem :global(.distributor-token-tab__chart),
+.ecosystem :global(.liquidity-tab__chart),
+.ecosystem :global(.token-dex-tab__chart),
+.ecosystem :global(.stat-card),
+.ecoTable,
+.ecoTableValue,
+.ecoWiringCard {
+  border-radius: 8px !important;
+}
+
+@media (max-width: 640px) {
+  .ecosystem :global(.buyback-tab),
+  .ecosystem :global(.drip-tab),
+  .ecosystem :global(.distributor-token-tab),
+  .ecosystem :global(.liquidity-tab),
+  .ecosystem :global(.token-dex-tab) {
+    padding: 14px !important;
+    gap: 14px !important;
+  }
+}
+
+/* Mobile/low-power rendering path: preserve layout and values, reduce paint cost. */
+@media (max-width: 900px), (prefers-reduced-motion: reduce) {
+  .ecosystem :global(.biggi-token-surface) {
+    backdrop-filter: none;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.42);
+  }
+
+  .ecosystem :global(.biggi-token-surface)::before,
+  .ecosystem :global(.biggi-token-surface)::after {
+    display: none;
+    animation: none;
+  }
+
+  .ecosystem :global(.biggi-header) {
+    backdrop-filter: none;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.34);
+  }
+
+  .ecosystem :global(.biggi-header)::after {
+    animation: none;
+    opacity: 0.5;
+  }
+
+  .ecosystem :global(.biggi-card),
+  .ecosystem :global(.biggi-hero__stat) {
+    transition: none;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .ecosystem :global(.biggi-card:hover),
+  .ecosystem :global(.biggi-hero__stat:hover) {
+    transform: none;
   }
 }
 

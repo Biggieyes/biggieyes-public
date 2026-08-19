@@ -1,12 +1,17 @@
 import * as React from "react";
+import {
+  BACKGROUND_BONUS_PCT,
+  BACKGROUND_GROWTH_PCT,
+  BASE_PRICES,
+  DEFAULT_BLOCKS,
+  MAX_SUPPLY_BY_BLOCK,
+} from "@/shared/blocks";
 import "./BackgroundsWidget.css";
 import "./InfoTables.css";
 
 // Constants
 const MOBILE_BREAKPOINT = 700;
 const ANIMATION_DURATION = 2.8;
-
-const BLOCK_MAX_SUPPLY = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10];
 
 const BLOCK_COLORS = {
   ORANGE: "#ff9000",
@@ -20,34 +25,6 @@ const BLOCK_COLORS = {
   PINK: "#ff63c2",
   RAINBOW: "linear-gradient(90deg,#ff3,#0ff,#9f3,#f0f,#3cf,#f66,#ffe800)",
 };
-
-const BACKGROUND_INCREASES = {
-  ORANGE: "5%",
-  BLACK: "10%",
-  WHITE: "15%",
-  BROWN: "20%",
-  BLUE: "25%",
-  GREEN: "30%",
-  VIOLET: "35%",
-  RED: "40%",
-  PINK: "45%",
-  RAINBOW: "50%",
-};
-
-const BLOCK_BASE_PRICES = {
-  ORANGE: 1,
-  BLACK: 2,
-  WHITE: 3,
-  BROWN: 4,
-  BLUE: 5,
-  GREEN: 6,
-  VIOLET: 7,
-  RED: 8,
-  PINK: 9,
-  RAINBOW: 10,
-};
-
-const GROWTH_BY_BG_INDEX = [5, 2, 2, 3, 3, 4, 4, 5, 5, 10];
 
 const getBlockColor = (name) => {
   const upperName = String(name || "").toUpperCase();
@@ -66,8 +43,8 @@ const getBlockColor = (name) => {
     padding: "6px 4px",
     textAlign: "center",
     whiteSpace: "nowrap",
-    overFLOW: "hidden",
-    textOverFLOW: "ellipsis",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
     transition: "all 0.3s ease",
     minWidth: "80px",
   };
@@ -78,8 +55,8 @@ const cellBase = {
   padding: "6px 4px",
   fontWeight: 700,
   whiteSpace: "nowrap",
-  overFLOW: "hidden",
-  textOverFLOW: "ellipsis",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
   textShadow: "none",
   borderBottom: "1px solid rgba(255,255,255,0.06)",
 };
@@ -117,12 +94,21 @@ const fmt2 = (n) =>
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }).format(n)
-    : "0,00";
+    : "--";
+
+const finiteNumber = (value) => {
+  if (value == null || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+};
 
 const BackgroundsWidget = ({
   blockNames = [],
   backgroundMintCounts = [],
   blockPrices = [],
+  lastRedeemedTokenId = "",
+  lastRedeemedBlock = "",
+  lastRedeemedBackground = "",
   onBack,
 }) => {
   const [infoVisible, setInfoVisible] = React.useState(false);
@@ -153,14 +139,24 @@ const BackgroundsWidget = ({
 
   const { countByName, priceByName, maxSupplyByName, normalizedNames } =
     React.useMemo(() => {
-      const namesUC = blockNames.map((n) => String(n || "").toUpperCase());
+      const namesUC = (
+        Array.isArray(blockNames) && blockNames.length
+          ? blockNames
+          : DEFAULT_BLOCKS
+      )
+        .map((n) =>
+          String(n || "")
+            .trim()
+            .toUpperCase(),
+        )
+        .filter(Boolean);
       const countMap = {};
       const priceMap = {};
       const supplyMap = {};
       namesUC.forEach((N, i) => {
-        countMap[N] = Number(backgroundMintCounts[i] ?? 0);
-        priceMap[N] = Number(blockPrices[i] ?? 0);
-        supplyMap[N] = Number(BLOCK_MAX_SUPPLY[i] ?? 0);
+        countMap[N] = finiteNumber(backgroundMintCounts[i]);
+        priceMap[N] = finiteNumber(blockPrices[i]);
+        supplyMap[N] = finiteNumber(MAX_SUPPLY_BY_BLOCK[N]);
       });
       return {
         countByName: countMap,
@@ -174,24 +170,45 @@ const BackgroundsWidget = ({
     "Background",
     "Minted",
     "Linked Block",
-    "BG Inc",
-    "Mint %",
+    "BG Bonus",
+    "Block Growth",
     "Max Supply",
-    "Block Price Δ",
+    "Block Price Delta",
   ];
 
-  const handleRowHoverEnter = React.useCallback((e) => {
-    e.currentTarget.style.background = "rgba(158,229,255,0.14)";
-  }, []);
+  const normalizedLastBlock = String(lastRedeemedBlock || "")
+    .trim()
+    .toUpperCase();
+  const normalizedLastBg = String(lastRedeemedBackground || "")
+    .trim()
+    .toUpperCase();
+  const normalizedLastTokenRaw = String(lastRedeemedTokenId || "").trim();
+  const normalizedLastToken =
+    normalizedLastTokenRaw === "-" ? "" : normalizedLastTokenRaw;
 
-  const handleRowHoverLeave = React.useCallback((e) => {
-    e.currentTarget.style.background = "";
+  const headerLastRedeemedId = normalizedLastToken
+    ? `NFT #${normalizedLastToken} (${normalizedLastBlock || "-"}/${normalizedLastBg || "-"})`
+    : "";
+  const headerLastRedeemedLabel = headerLastRedeemedId
+    ? `Last redeem: ${headerLastRedeemedId}`
+    : "";
+
+  const getRowBaseBackground = React.useCallback((index, isLastRedeemed) => {
+    if (isLastRedeemed) {
+      return "linear-gradient(135deg, rgba(109,255,138,0.24), rgba(71,255,154,0.12))";
+    }
+    return index % 2 === 0 ? "rgba(255,232,0,0.05)" : "rgba(255,232,0,0.02)";
   }, []);
 
   return (
     <div className="bgw-container">
       <div className="bgw-header">
-        <span>BACKGROUND COLOR</span>
+        <span className="bgw-header-text">BACKGROUND COLOR</span>
+        {headerLastRedeemedId ? (
+          <span className="bgw-header-last-id" title={headerLastRedeemedLabel}>
+            {headerLastRedeemedId}
+          </span>
+        ) : null}
         <button
           className={`bgw-info-button ${isPhone ? "bgw-info-button--phone" : ""}`}
           onClick={() => setInfoVisible(!infoVisible)}
@@ -230,55 +247,61 @@ const BackgroundsWidget = ({
           </thead>
           <tbody>
             {normalizedNames.map((upper, i) => {
-              const minted = Number(countByName[upper] ?? 0);
-              const currentPrice = Number(priceByName[upper] ?? 0);
-              const basePrice = Number(BLOCK_BASE_PRICES[upper] ?? 0);
-              const safeCurrent = Number.isFinite(currentPrice)
-                ? currentPrice
-                : basePrice;
-              const rawDiff = Number.isFinite(safeCurrent - basePrice)
-                ? safeCurrent - basePrice
-                : 0;
-              const sign = rawDiff > 0 ? "+" : rawDiff < 0 ? "-" : "";
-              const priceDiff = `${sign}${fmt2(Math.abs(rawDiff))}`;
-              const maxSupply = Number(
-                maxSupplyByName[upper] ?? BLOCK_MAX_SUPPLY[i] ?? 0,
-              );
-              const growthPct = `${GROWTH_BY_BG_INDEX[i] || 0}%`;
+              const isLastRedeemed = upper === normalizedLastBg;
+              const minted = finiteNumber(countByName[upper]);
+              const currentPrice = finiteNumber(priceByName[upper]);
+              const basePrice = finiteNumber(BASE_PRICES[upper]);
+              const rawDiff =
+                currentPrice != null && basePrice != null
+                  ? currentPrice - basePrice
+                  : null;
+              const sign =
+                rawDiff == null
+                  ? ""
+                  : rawDiff > 0
+                    ? "+"
+                    : rawDiff < 0
+                      ? "-"
+                      : "";
+              const priceDiff =
+                rawDiff == null
+                  ? "--"
+                  : `${sign}${fmt2(Math.abs(rawDiff))} POL`;
+              const maxSupply = finiteNumber(maxSupplyByName[upper]);
+              const bonusPct = finiteNumber(BACKGROUND_BONUS_PCT[upper]);
+              const growthPct = finiteNumber(BACKGROUND_GROWTH_PCT[upper]);
 
               return (
                 <tr
                   key={upper}
                   style={{
                     transition: "all 0.2s ease",
-                    background:
-                      i % 2 === 0
-                        ? "rgba(255,232,0,0.05)"
-                        : "rgba(255,232,0,0.02)",
+                    background: getRowBaseBackground(i, isLastRedeemed),
+                    boxShadow: isLastRedeemed
+                      ? "inset 0 0 0 1px rgba(109,255,138,0.85), 0 0 16px rgba(71,255,154,0.32)"
+                      : "none",
                   }}
-                  onMouseEnter={(e) => handleRowHoverEnter(e, i)}
-                  onMouseLeave={(e) => handleRowHoverLeave(e, i)}
                 >
                   <td style={getBlockColor(upper)} data-label={headerTitles[0]}>
                     {upper}
                   </td>
                   <td style={mintedStyle} data-label={headerTitles[1]}>
-                    {minted}
+                    {minted ?? "--"}
                   </td>
                   <td style={linkedBlockStyle} data-label={headerTitles[2]}>
                     {pretty(upper)}
                   </td>
                   <td style={priceStyleWhite} data-label={headerTitles[3]}>
-                    {BACKGROUND_INCREASES[upper] || "-"}
+                    {bonusPct == null ? "--" : `${bonusPct}%`}
                   </td>
                   <td style={priceStyleWhite} data-label={headerTitles[4]}>
-                    {growthPct}
+                    {growthPct == null ? "--" : `${growthPct}%`}
                   </td>
                   <td style={maxSupplyStyle} data-label={headerTitles[5]}>
-                    {maxSupply}
+                    {maxSupply ?? "--"}
                   </td>
                   <td style={priceStyle} data-label={headerTitles[6]}>
-                    {priceDiff} POL
+                    {priceDiff}
                   </td>
                 </tr>
               );
@@ -318,47 +341,48 @@ const BackgroundsWidget = ({
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
+                  <tr className="info-row--core">
                     <td className="bgw-k">Background</td>
                     <td className="bgw-v">
                       Background color of the NFT; also used to determine a
                       one-time price bonus.
                     </td>
                   </tr>
-                  <tr>
+                  <tr className="info-row--mint">
                     <td className="bgw-k">Minted</td>
                     <td className="bgw-v">
                       How many NFTs with this background have been minted.
                     </td>
                   </tr>
-                  <tr>
+                  <tr className="info-row--link">
                     <td className="bgw-k">Linked Block</td>
                     <td className="bgw-v">
                       Human-readable name of the linked block (same as
                       background name).
                     </td>
                   </tr>
-                  <tr>
-                    <td className="bgw-k">BG Inc</td>
+                  <tr className="info-row--bonus">
+                    <td className="bgw-k">BG Bonus</td>
                     <td className="bgw-v">
-                      One-off bonus applied to the current block price (5–50%).
+                      One-time background bonus stored with the NFT metadata and
+                      final mint price context (5-50%).
                     </td>
                   </tr>
-                  <tr>
-                    <td className="bgw-k">Mint %</td>
+                  <tr className="info-row--mint">
+                    <td className="bgw-k">Block Growth</td>
                     <td className="bgw-v">
-                      Derived helper percentage based on the background index
-                      (1..10).
+                      Permanent price growth used by the linked block when
+                      background mints increase that block price.
                     </td>
                   </tr>
-                  <tr>
+                  <tr className="info-row--supply">
                     <td className="bgw-k">Max Supply</td>
                     <td className="bgw-v">
                       Maximum number of NFTs in that segment (informational).
                     </td>
                   </tr>
-                  <tr>
-                    <td className="bgw-k">Block Price Δ</td>
+                  <tr className="info-row--delta">
+                    <td className="bgw-k">Block Price Delta</td>
                     <td className="bgw-v">
                       Current block price minus base block price.
                     </td>
@@ -383,5 +407,3 @@ const BackgroundsWidget = ({
 };
 
 export default BackgroundsWidget;
-
-

@@ -2,29 +2,33 @@
 import * as React from "react";
 
 export default function ModeratorLogin({
-  walletAddress,
   onLogin,
-  onConnect,
   loading,
   error,
 }) {
-  const [secret, setSecret] = React.useState("");
+  const [password, setPassword] = React.useState("");
 
   return (
-    <section className="moderator-center__card">
-      <h3>Moderator access</h3>
-      <p className="muted">
-        Login uses a wallet signature + slot secret. The session token is
-        short-lived and comes from the backend API.
+    <section className="moderator-center__card moderator-center__card--focus">
+      <div className="moderator-center__card-head">
+        <h3>Sign in</h3>
+        <span className="moderator-center__chip">Password only</span>
+      </div>
+      <p className="moderator-center__copy muted">
+        Moderator login uses only the slot password. Wallet connection is
+        optional and is used only for extra on-chain context in the panel.
       </p>
 
       <div className="moderator-center__field">
-        <label>Slot secret code</label>
+        <label>Password</label>
         <input
           type="password"
-          placeholder="Enter the secret for your slot"
-          value={secret}
-          onChange={(e) => setSecret(e.target.value)}
+          placeholder="Enter your moderator password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !loading) onLogin?.(password);
+          }}
         />
       </div>
 
@@ -33,19 +37,18 @@ export default function ModeratorLogin({
       <div className="moderator-center__actions">
         <button
           type="button"
-          className="biggi-btn biggi-btn--ghost"
-          onClick={onConnect}
-        >
-          Connect wallet
-        </button>
-        <button
-          type="button"
           className="biggi-btn biggi-btn--accent"
-          disabled={!walletAddress || loading}
-          onClick={() => onLogin?.(secret)}
+          disabled={!password || loading}
+          onClick={() => onLogin?.(password)}
         >
           {loading ? "Signing in..." : "Sign in"}
         </button>
+      </div>
+
+      <div className="moderator-center__hint">
+        Use the password assigned to your moderator slot. If you do not know it,
+        the owner must set a new one in{" "}
+        <code>Admin Panel &gt; Moderator Ops</code>.
       </div>
     </section>
   );

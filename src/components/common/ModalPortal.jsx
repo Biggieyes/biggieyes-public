@@ -41,6 +41,23 @@ export default function ModalPortal({
     if (!host || !container) return undefined;
 
     if (className) container.className = className;
+    container.style.position = lockScroll ? "fixed" : "absolute";
+    if (lockScroll) {
+      container.style.inset = "0";
+      container.style.top = "0";
+      container.style.left = "0";
+      container.style.right = "0";
+      container.style.bottom = "0";
+    } else {
+      container.style.inset = "";
+      container.style.top = "0";
+      container.style.left = "0";
+      container.style.right = "auto";
+      container.style.bottom = "auto";
+    }
+    container.style.width = lockScroll ? "100vw" : "100%";
+    container.style.height = lockScroll ? "100vh" : "0";
+    container.style.zIndex = "10060";
     host.appendChild(container);
 
     if (lockScroll && typeof document !== "undefined") {

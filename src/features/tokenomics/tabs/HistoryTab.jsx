@@ -2,16 +2,10 @@ import * as React from "react";
 import Card from "../components/Card.jsx";
 import styles from "../styles/BiggiToken.module.css";
 import { fmtVal } from "../utils/format.js";
+import { toDisplayNumber } from "../utils/amountFormatting.js";
 
 const toNumberLoose = (value) => {
-  if (value == null) return null;
-  if (typeof value === "number")
-    return Number.isFinite(value) ? value : null;
-  if (typeof value === "bigint") return Number(value);
-  const cleaned = String(value).replace(/[^\d.-]/g, "");
-  if (!cleaned) return null;
-  const num = Number(cleaned);
-  return Number.isFinite(num) ? num : null;
+  return toDisplayNumber(value);
 };
 
 const fmt = (value, symbol, digits = 4) => {
@@ -19,13 +13,24 @@ const fmt = (value, symbol, digits = 4) => {
   return num == null ? "--" : fmtVal(num, symbol, digits);
 };
 
-const buildRows = (entries, mapFn, limit = 12) => {
+export const buildRows = (entries, mapFn, limit = 12) => {
   if (!Array.isArray(entries) || entries.length === 0) return [];
-  const slice = entries.slice(-limit).reverse();
-  return slice.map(mapFn).filter(Boolean);
+  const mapped = entries.map(mapFn).filter(Boolean).reverse();
+  const rows = [];
+  let previousKey = null;
+
+  for (const row of mapped) {
+    const key = `${row.a}\u0000${row.b}`;
+    if (key === previousKey) continue;
+    rows.push(row);
+    previousKey = key;
+    if (rows.length >= limit) break;
+  }
+
+  return rows;
 };
 
-export default function HistoryTab({
+function HistoryTab({
   buybackHistory = [],
   dripHistory = [],
   liquidityHistory = [],
@@ -58,8 +63,7 @@ export default function HistoryTab({
           "BIGGI",
         ),
         b: fmt(
-          entry?.DRIPLM?.nativeBalanceNumeric ??
-            entry?.DRIPLM?.nativeBalance,
+          entry?.DRIPLM?.nativeBalanceNumeric ?? entry?.DRIPLM?.nativeBalance,
           "POL",
         ),
       })),
@@ -89,7 +93,7 @@ export default function HistoryTab({
         <div key={`${row.label}-${idx}`} className={styles.ecoTableRow}>
           <span className={styles.ecoTableLabel}>{row.label}</span>
           <span className={styles.ecoTableValue}>
-            {row.a} · {row.b}
+            {row.a} / {row.b}
           </span>
         </div>
       ))
@@ -103,34 +107,36 @@ export default function HistoryTab({
   return (
     <div className={styles.ecoFlowGrid}>
       <Card
-        title="BUYBACK HISTORY"
-        subtitle="Latest buyback operations (spent vs acquired)"
+        title="BUYBACK SNAPSHOTS"
+        subtitle="Buyback totals when the observed state changed"
       >
         <div className={styles.ecoTable}>
-          <div className={styles.ecoTableHeader}>Recent buybacks</div>
+          <div className={styles.ecoTableHeader}>Recent state changes</div>
           {renderRows(buybackRows, "No buyback entries yet")}
         </div>
       </Card>
 
       <Card
-        title="LM OPERATIONS"
-        subtitle="Liquidity manager snapshots (LP locked vs reserve)"
+        title="LM SNAPSHOTS"
+        subtitle="Liquidity state changes (LP locked vs reserve)"
       >
         <div className={styles.ecoTable}>
-          <div className={styles.ecoTableHeader}>Recent LM updates</div>
+          <div className={styles.ecoTableHeader}>Recent state changes</div>
           {renderRows(liquidityRows, "No LM entries yet")}
         </div>
       </Card>
 
       <Card
-        title="DRIP OPERATIONS"
-        subtitle="Drip distributor + LM balances"
+        title="DRIP SNAPSHOTS"
+        subtitle="Distributor and LM balance changes"
       >
         <div className={styles.ecoTable}>
-          <div className={styles.ecoTableHeader}>Recent DRIP updates</div>
+          <div className={styles.ecoTableHeader}>Recent state changes</div>
           {renderRows(dripRows, "No DRIP entries yet")}
         </div>
       </Card>
     </div>
   );
 }
+
+export default React.memo(HistoryTab);

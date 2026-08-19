@@ -1,7 +1,43 @@
+import { getCached } from "../utils/fetchCache.js";
+
 // Known public IPFS gateways (first is primary, others are fallbacks)
 
 // --- helpers ---
 const LIMIT_TEXT = "THIS GATEWAY HAS REACHED ITS LIMITS";
+const DEFAULT_JSON_CACHE_TTL_MS = 60_000;
+const DEFAULT_IMAGE_CACHE_TTL_MS = 5 * 60_000;
+
+function buildCacheKey(prefix, ...parts) {
+  return `${prefix}:${parts.map((p) => String(p ?? "")).join("|")}`;
+}
+
+async function cachedOrFetch(key, fetcher, options = {}, defaultTtlMs) {
+  if (!key || options?.cache === false) return fetcher();
+  const ttlMs =
+    Number.isFinite(options?.cacheTtlMs) && options.cacheTtlMs > 0
+      ? options.cacheTtlMs
+      : defaultTtlMs;
+  const force = Boolean(options?.forceCache);
+  const cacheNull = Boolean(options?.cacheNull);
+  if (cacheNull) return getCached(key, fetcher, { ttlMs, force });
+
+  return getCached(
+    key,
+    async () => {
+      const value = await fetcher();
+      if (value == null) {
+        const err = new Error("cache-skip-null");
+        err.__skipCache = true;
+        throw err;
+      }
+      return value;
+    },
+    { ttlMs, force },
+  ).catch((err) => {
+    if (err && err.__skipCache) return null;
+    throw err;
+  });
+}
 
 function env(key) {
   try {
@@ -183,7 +219,7 @@ export function httpFromIpfs(uri) {
  * Resolve an image URL from a metadata `image` field and its metadata URI.
  * Tries all known IPFS gateways if ipfs:// or ipns://, supports relative paths.
  */
-export async function resolveImageUrl(imageField, metadataUri, options = {}) {
+async function resolveImageUrlRaw(imageField, metadataUri, options = {}) {
   const { gateways = GWS, timeout = 8000, fetchImpl = fetch } = options;
   if (!imageField) return null;
   const img = String(imageField).trim();
@@ -267,8 +303,23 @@ export async function resolveImageUrl(imageField, metadataUri, options = {}) {
   }
 }
 
+export async function resolveImageUrl(imageField, metadataUri, options = {}) {
+  if (!imageField) return null;
+  const key = buildCacheKey("ipfs:img", imageField, metadataUri);
+  try {
+    return await cachedOrFetch(
+      key,
+      () => resolveImageUrlRaw(imageField, metadataUri, options),
+      options,
+      DEFAULT_IMAGE_CACHE_TTL_MS,
+    );
+  } catch {
+    return resolveImageUrlRaw(imageField, metadataUri, options);
+  }
+}
+
 /** Read JSON from ipfs://, ipns://, /ipfs/, /ipns/ or http(s) URI, trying multiple gateways for IPFS/IPNS. */
-export async function readJsonFromURI(uri, options = {}) {
+async function readJsonFromURIRaw(uri, options = {}) {
   const { gateways = GWS, timeout = 8000, fetchImpl = fetch } = options;
   try {
     if (!uri) return null;
@@ -338,6 +389,21 @@ export async function readJsonFromURI(uri, options = {}) {
     return null;
   } catch {
     return null;
+  }
+}
+
+export async function readJsonFromURI(uri, options = {}) {
+  if (!uri) return null;
+  const key = buildCacheKey("ipfs:json", uri);
+  try {
+    return await cachedOrFetch(
+      key,
+      () => readJsonFromURIRaw(uri, options),
+      options,
+      DEFAULT_JSON_CACHE_TTL_MS,
+    );
+  } catch {
+    return readJsonFromURIRaw(uri, options);
   }
 }
 

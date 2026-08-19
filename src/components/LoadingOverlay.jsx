@@ -1,6 +1,5 @@
 // src/components/LoadingOverlay.jsx
 import * as React from "react";
-import "./LoadingOverlay.css";
 
 /**
  * Vylepšená LoadingOverlay — backward compatible:
@@ -18,6 +17,14 @@ export default function LoadingOverlay({
   onClose = null,
 }) {
   const progressRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!open || typeof document === "undefined") return undefined;
+    document.body.classList.add("loading-locked");
+    return () => {
+      document.body.classList.remove("loading-locked");
+    };
+  }, [open]);
 
   // bezpečné ošetření percent (číslo, 0..100)
   const p = Number.isFinite(percent) ? Math.floor(percent) : 0;
@@ -49,6 +56,7 @@ export default function LoadingOverlay({
       aria-modal="true"
       aria-label={title}
     >
+      <div className="loading-overlay__bg" aria-hidden />
       <div className="loading-card" role="document">
         <h1>{title}</h1>
 
@@ -71,6 +79,8 @@ export default function LoadingOverlay({
     </div>
   );
 }
+
+
 
 
 

@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { resolve } from 'node:path';
 
 export default defineConfig({
   plugins: [react()],
@@ -22,6 +23,10 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 1700,
     rollupOptions: {
+      input: {
+        landing: resolve(__dirname, 'index.html'),
+        app: resolve(__dirname, 'app/index.html'),
+      },
       onwarn(warning, warn) {
         const message = warning?.message || "";
         const id = warning?.id || warning?.loc?.file || "";
@@ -36,20 +41,26 @@ export default defineConfig({
       },
       output: {
         manualChunks(id) {
+          // Keep Vite's preload helper out of heavy vendor chunks.
+          // Otherwise app entry can import the helper from vendor-wallet
+          // and force early download of the wallet stack.
+          if (id.includes("vite/preload-helper")) {
+            return "vendor-preload";
+          }
           if (!id.includes('node_modules')) return undefined;
-          if (id.match(/node_modules\/(react|react-dom|scheduler)/)) {
+          if (id.match(/node_modules\/(?:react|react-dom|scheduler)(?:\/|$)/)) {
             return 'vendor-react';
           }
-          if (id.match(/node_modules\/(@?ethers|@ethersproject)/)) {
+          if (id.match(/node_modules\/(?:ethers|@ethersproject)(?:\/|$)/)) {
             return 'vendor-ethers';
           }
-          if (id.match(/node_modules\/(@walletconnect|walletconnect|@reown|reown|viem|wagmi|@web3modal|web3modal)/)) {
+          if (id.match(/node_modules\/(?:@walletconnect|walletconnect|@reown|reown|viem|wagmi|@web3modal|web3modal)(?:\/|$)/)) {
             return 'vendor-wallet';
           }
-          if (id.match(/node_modules\/@supabase/)) {
+          if (id.match(/node_modules\/@supabase(?:\/|$)/)) {
             return 'vendor-supabase';
           }
-          if (id.match(/node_modules\/@phosphor-icons/)) {
+          if (id.match(/node_modules\/@phosphor-icons(?:\/|$)/)) {
             return 'vendor-icons';
           }
           return 'vendor';

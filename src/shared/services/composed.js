@@ -5,7 +5,7 @@
 import reserveService from "./reserveService";
 import liquidityManagerService from "./liquidityManagerService";
 import liquidityVaultService from "./liquidityVaultService";
-import { ADDR } from "../utils/addresses";
+import { ADDR } from "@/shared/utils/addresses.js";
 import { getTokenRO, getROProvider, fromWei } from "@/shared/utils/contract";
 
 /**
@@ -110,4 +110,3 @@ export async function getBiggiBalancesAcrossReserveLmLv(provider = null) {
     },
   };
 }
-

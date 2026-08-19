@@ -48,10 +48,11 @@ const BlockCard = React.memo(
         <div className="collection-grid__thumb">
           <img
             src={entry.thumb}
+            data-fallback-src={entry.thumbFallback || undefined}
             alt={`${entry.name} thumbnail`}
             width={THUMB_SIZE}
             height={THUMB_SIZE}
-            loading="React.lazy"
+            loading="lazy"
             decoding="async"
             onError={handleImageError}
           />
@@ -67,7 +68,7 @@ const BlockCard = React.memo(
             </dd>
           </div>
           <div>
-            <dt title="Start reference price (1-10 POL). Live price can move.">
+            <dt title="Base price stored by the active chapter contract.">
               Base price
             </dt>
             <dd>
@@ -78,7 +79,7 @@ const BlockCard = React.memo(
           </div>
           <div>
             <dt>Minted</dt>
-            <dd>{formatCount(entry.minted)}</dd>
+            <dd style={{ color: "#ff3b4f" }}>{formatCount(entry.minted)}</dd>
           </div>
         </dl>
 
@@ -100,5 +101,3 @@ const BlockCard = React.memo(
 BlockCard.displayName = "BlockCard";
 
 export default BlockCard;
-
-

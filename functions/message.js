@@ -10,6 +10,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { ethers } from "ethers";
+import { captureException, initSentry } from "./_sentry.js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -29,6 +30,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST,OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type,Authorization",
 };
+
+initSentry();
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -128,6 +131,7 @@ async function handleRequest({ method, body }) {
 
   if (nonceErr) {
     console.error("nonce lookup error", nonceErr);
+    captureException(nonceErr, { stage: "nonce_lookup" });
     return jsonResponse(500, { ok: false, error: "DB error" });
   }
   if (!nonceRow) return jsonResponse(400, { ok: false, error: "Nonce not found" });
@@ -198,6 +202,7 @@ async function handleRequest({ method, body }) {
 
     if (updErr) {
       console.error("nonce update error", updErr);
+      captureException(updErr, { stage: "nonce_update" });
       return jsonResponse(500, { ok: false, error: "DB error" });
     }
     if (!updatedNonce) {
@@ -205,6 +210,7 @@ async function handleRequest({ method, body }) {
     }
   } catch (e) {
     console.error("nonce update unexpected", e);
+    captureException(e, { stage: "nonce_update" });
     return jsonResponse(500, { ok: false, error: "DB error" });
   }
 
@@ -222,12 +228,16 @@ async function handleRequest({ method, body }) {
 
     if (error || !data) {
       console.error("message insert error", error);
+      captureException(error || new Error("message insert failed"), {
+        stage: "message_insert",
+      });
       return jsonResponse(500, { ok: false, error: "Message insert failed" });
     }
 
     return jsonResponse(200, { ok: true, id: data.id });
   } catch (e) {
     console.error("message insert unexpected", e);
+    captureException(e, { stage: "message_insert" });
     return jsonResponse(500, { ok: false, error: "DB error" });
   }
 }
@@ -245,7 +255,7 @@ export default vercelHandler;
 
 /* NETLIFY / AWS LAMBDA style export */
 export const handler = async (event) => {
-  const body = event?.body ? JSON.parse(event.body) : {};
+  const body = parseBody(event);
   const result = await handleRequest({ method: event?.httpMethod, body });
   return { statusCode: result.status, headers: result.headers, body: result.body };
 };

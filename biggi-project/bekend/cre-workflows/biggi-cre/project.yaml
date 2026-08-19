@@ -1,0 +1,19 @@
+# ==========================================================================
+# CRE PROJECT SETTINGS FILE
+# ==========================================================================
+test-settings:
+  rpcs:
+    - chain-name: polygon-mainnet
+      url: https://polygon-bor-rpc.publicnode.com
+
+# ==========================================================================
+staging-settings:
+  rpcs:
+    - chain-name: polygon-mainnet
+      url: https://polygon-bor-rpc.publicnode.com
+
+# ==========================================================================
+production-settings:
+  rpcs:
+    - chain-name: polygon-mainnet
+      url: https://polygon-bor-rpc.publicnode.com

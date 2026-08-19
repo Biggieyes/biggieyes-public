@@ -3,8 +3,8 @@ import useHistoryBuffer from "./_useHistoryBuffer";
 import { toNumberSafe } from "./_utils";
 
 export default function useTokenDexHistory(snapshot, options = {}) {
-  const { limit = 30, tokenDecimals } = options;
-  const { history } = useHistoryBuffer(snapshot, { limit });
+  const { limit = 30, tokenDecimals, minIntervalMs = 0 } = options;
+  const { history } = useHistoryBuffer(snapshot, { limit, minIntervalMs });
 
   const resolvedTokenDecimals = React.useMemo(() => {
     if (typeof tokenDecimals === "number") return tokenDecimals;
@@ -28,17 +28,54 @@ export default function useTokenDexHistory(snapshot, options = {}) {
     [history],
   );
 
-  const reservePoints = React.useMemo(() => {
-    return history
-      .map((entry) => ({
-        label: entry?.tsLabel || "",
-        value: toNumberSafe(entry?.dex?.pair?.reserves?.native, 18),
-        tokenValue: toNumberSafe(
-          entry?.dex?.pair?.reserves?.token,
-          resolvedTokenDecimals,
-        ),
-      }))
-      .filter((point) => Number.isFinite(point.value));
+  const reserveBundle = React.useMemo(() => {
+    const reservePoints = [];
+    const biggiReservePoints = [];
+    const dexSeries = [];
+
+    for (const entry of history) {
+      const label = entry?.tsLabel || "";
+      const reserveNative = toNumberSafe(entry?.dex?.pair?.reserves?.native, 18);
+      const reserveBiggi = toNumberSafe(
+        entry?.dex?.pair?.reserves?.token,
+        resolvedTokenDecimals,
+      );
+      const price =
+        typeof entry?.derived?.priceNativePerToken === "number"
+          ? entry.derived.priceNativePerToken
+          : null;
+
+      if (Number.isFinite(reserveNative)) {
+        reservePoints.push({
+          label,
+          value: reserveNative,
+          tokenValue: reserveBiggi,
+        });
+      }
+
+      if (Number.isFinite(reserveBiggi)) {
+        biggiReservePoints.push({
+          label,
+          value: reserveBiggi,
+          nativeValue: reserveNative,
+        });
+      }
+
+      if (
+        Number.isFinite(reserveNative) ||
+        Number.isFinite(reserveBiggi) ||
+        Number.isFinite(price)
+      ) {
+        dexSeries.push({
+          time: label,
+          reserveNative,
+          reserveBiggi,
+          price,
+        });
+      }
+    }
+
+    return { reservePoints, biggiReservePoints, dexSeries };
   }, [history, resolvedTokenDecimals]);
 
   const lpPoints = React.useMemo(
@@ -55,7 +92,9 @@ export default function useTokenDexHistory(snapshot, options = {}) {
   return {
     history,
     pricePoints,
-    reservePoints,
+    reservePoints: reserveBundle.reservePoints,
+    biggiReservePoints: reserveBundle.biggiReservePoints,
     lpPoints,
+    dexSeries: reserveBundle.dexSeries,
   };
 }

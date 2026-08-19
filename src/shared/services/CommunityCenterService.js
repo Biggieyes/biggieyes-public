@@ -7,8 +7,7 @@
 // - bnToString helper + formatSummary
 // Neprovádím žádné změny v kontraktu.
 
-import { Contract } from "ethers";
-import { formatUnits } from "ethers";
+import { Contract, formatUnits } from "ethers";
 import { getROProvider, ADDR } from "@/shared/utils/contract";
 import { BiggiCommunityCenter as ABI } from "@/config/abi/index.js";
 

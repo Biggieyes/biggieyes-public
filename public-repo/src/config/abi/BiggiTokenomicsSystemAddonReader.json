@@ -1,0 +1,299 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "masterConfig_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "token_",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "getStatus",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "masterConfig",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "biggi",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "reserve",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "treasury",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "distributor",
+                "type": "address"
+              }
+            ],
+            "internalType": "struct BiggiTokenomicsSystemAddonReader.CoreBundle",
+            "name": "core",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "collectionRewards",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "tokenRewards",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "nftRewards",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "communityCenter",
+                "type": "address"
+              }
+            ],
+            "internalType": "struct BiggiTokenomicsSystemAddonReader.RewardsBundle",
+            "name": "rewards",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "buybackAgent",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "dripLM",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "dripDistributor",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "policy",
+                "type": "address"
+              }
+            ],
+            "internalType": "struct BiggiTokenomicsSystemAddonReader.PumpBundle",
+            "name": "pump",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "liquidityManager",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "liquidityVault",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "router",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "factory",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "weth",
+                "type": "address"
+              }
+            ],
+            "internalType": "struct BiggiTokenomicsSystemAddonReader.LiquidityBundle",
+            "name": "liquidity",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "collection1",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "collection2",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "rewardsReader",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "distributor",
+                "type": "address"
+              }
+            ],
+            "internalType": "struct BiggiTokenomicsSystemAddonReader.CollectionsBundle",
+            "name": "collections",
+            "type": "tuple"
+          },
+          {
+            "internalType": "address",
+            "name": "supplyController",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "supplyGuardian",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "dexReserveGuard",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "tokenPaused",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "guardianMintPaused",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "controllerPaused",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "guardianDexMinted",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "guardianRewardsMinted",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "baselineReserve",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "currentPairReserve",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "guardPaused",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "guardBaselineReserve",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "guardCurrentTokenReserve",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "guardPriceCheckEnabled",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "guardQuoteOracle",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "guardQuoteOracleConfigured",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "guardQuoteOracleStale",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "guardQuoteOracleValid",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct BiggiTokenomicsSystemAddonReader.AddonStatus",
+        "name": "s",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "masterConfig",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "token",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

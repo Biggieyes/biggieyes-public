@@ -1,0 +1,41 @@
+{
+  "network": "polygon",
+  "chainId": 137,
+  "createdAt": "2026-08-19T01:21:23.200Z",
+  "execute": false,
+  "deployer": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+  "actions": [
+    "DRY_RUN: would call BiggiToken.initialDistribute()."
+  ],
+  "blockers": [
+    "Deployer is not BIGGI owner. owner=0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2, deployer=0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+    "BIGGI is already distributed or totalSupply is non-zero."
+  ],
+  "values": {
+    "before": {
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "expectedOwner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "totalSupply": "1200000000000000000000000000",
+      "distributed": true,
+      "reserveLocked": true,
+      "reserveAddr": "0x2786e46e01a5d229118fEdC102267217C7e94574",
+      "dripDistributorAddr": "0x2E4677729cb8a02aDd752Bcbd2637809C20CBAf3",
+      "tokenRewardsAddr": "0xA455775BBe0BC863f644516147b95Ef5103b29FA",
+      "marketingSupportAddr": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "expectedMint": {
+        "reserve": "600000000000000000000000000",
+        "dripDistributor": "200000000000000000000000000",
+        "tokenRewards": "200000000000000000000000000",
+        "marketingSupport": "200000000000000000000000000"
+      }
+    },
+    "after": {
+      "totalSupply": "1200000000000000000000000000",
+      "distributed": true,
+      "reserveLocked": true,
+      "reserveBalance": "600000000000000000000000000",
+      "dripDistributorBalance": "200000000000000000000000000",
+      "tokenRewardsBalance": "200000000000000000000000000"
+    }
+  }
+}

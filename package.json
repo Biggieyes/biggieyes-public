@@ -8,6 +8,11 @@
     "dev:host": "vite --host --port 5173",
     "dev:netlify": "npx netlify dev",
     "build": "vite build",
+    "android:prune-assets": "node scripts/android-prune-assets.mjs",
+    "android:sync": "npx cap sync android && npm run android:prune-assets",
+    "android:run": "npm run android:sync && npx cap run android",
+    "android:build:debug": "npm run android:sync && cd android && gradlew.bat assembleDebug",
+    "android:build:release": "npm run android:sync && cd android && gradlew.bat bundleRelease",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\"",
     "lint:fix": "eslint \"src/**/*.{js,jsx,ts,tsx}\" --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css}\"",
@@ -20,28 +25,29 @@
     "preview:host": "vite preview --host --port 4173",
     "smoke:runtime": "node scripts/smoke-runtime.mjs",
     "check:abis": "node scripts/check-abis.js",
-    "check:contracts": "node scripts/check-contracts.js"
+    "check:contracts": "node scripts/check-contracts.js",
+    "check:rpc": "node scripts/check-rpc-health.mjs"
   },
   "dependencies": {
-    "@ethersproject/abi": "^5.0.9",
-    "@ethersproject/bignumber": "^5.8.0",
-    "@ethersproject/constants": "^5.8.0",
-    "@ethersproject/contracts": "^5.0.12",
-    "@ethersproject/providers": "^5.8.0",
-    "@ethersproject/solidity": "^5.8.0",
-    "@ethersproject/units": "^5.8.0",
+    "@capacitor/android": "^8.1.0",
+    "@capacitor/cli": "^8.1.0",
+    "@capacitor/core": "^8.1.0",
     "@noble/hashes": "^2.0.1",
     "@openzeppelin/contracts": "^5.4.0",
     "@rollup/plugin-inject": "^5.0.5",
+    "@sentry/node": "^7.120.4",
+    "@sentry/react": "^7.120.4",
     "@supabase/supabase-js": "^2.89.0",
     "@walletconnect/ethereum-provider": "^2.23.1",
     "@walletconnect/modal": "^2.7.0",
     "aes-js": "^4.0.0-beta.5",
     "axios": "^1.13.2",
+    "baseline-browser-mapping": "^2.10.42",
     "bech32": "^2.0.0",
     "bn.js": "^5.2.2",
     "buffer": "^6.0.3",
     "busboy": "^1.6.0",
+    "caniuse-lite": "^1.0.30001800",
     "clipboard-copy": "^4.0.1",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
@@ -63,6 +69,7 @@
     "react-is": "^19.2.3",
     "react-markdown": "^10.1.0",
     "recharts": "^3.6.0",
+    "remark-gfm": "^4.0.1",
     "scrypt-js": "^3.0.1",
     "util": "^0.12.5"
   },
@@ -99,6 +106,7 @@
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
     "solc": "^0.8.33",
+    "typescript": "^5.9.3",
     "vite": "^7.3.0",
     "vite-plugin-commonjs": "^0.10.4",
     "vite-plugin-node-polyfills": "^0.2.0",
@@ -112,12 +120,16 @@
   ],
   "overrides": {
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "ws": "8.21.3",
+    "solc": {
+      "tmp": "0.2.7"
+    }
   },
   "engines": {
     "node": ">=18.18"
   },
-  "description": "BiggiEyes frontend: a gamified on-chain NFT experience with dynamic pricing and transparent tokenomics.",
+  "description": "BiggiEyes mainnet frontend for Polygon NFT minting, rewards, and tokenomics.",
   "main": "eslint.config.js",
   "directories": {
     "doc": "docs"
@@ -127,8 +139,8 @@
     "url": "git+https://github.com/Biggieyes/a-gamified-on-chain-NFT-lottery-with-dynamic-pricing-and-integrated-DeFi-tokenomics.git"
   },
   "keywords": [],
-  "author": "BiggiEyes contributors",
-  "license": "MIT",
+  "author": "",
+  "license": "ISC",
   "bugs": {
     "url": "https://github.com/Biggieyes/a-gamified-on-chain-NFT-lottery-with-dynamic-pricing-and-integrated-DeFi-tokenomics/issues"
   },

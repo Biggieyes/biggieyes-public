@@ -1,0 +1,11 @@
+*** Begin Patch
+*** Update File: src/api/nonce.js
+@@
+-  if (req.method !== 'GET') return res.status(405).end();
+-  const address = (req.query.address || '').toLowerCase();
+-  if (!address) return res.status(400).json({ error: 'missing address' });
++  // Accept POST with JSON { address } as well as GET?address=...
++  if (req.method !== 'GET' && req.method !== 'POST' && req.method !== 'OPTIONS') return res.status(405).end();
++  const rawAddress = req.method === 'GET' ? req.query.address : req.body?.address;
++  const address = (rawAddress || '').toLowerCase();
++  if (!address) return res.status(400).json({ error: 'missing address' });

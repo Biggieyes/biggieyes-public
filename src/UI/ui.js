@@ -1,9 +1,9 @@
-import REWARDS from "/images/icons/rewards.png";
-import COLLECTION from "/images/icons/collection.png";
-import mint from "/images/icons/mint.png";
-import token from "/images/icons/token.png";
-import users from "/images/icons/users.png";
-import expansion from "/images/icons/expansion.png";
+import REWARDS from "/images/icons/rewards.optimized.png";
+import COLLECTION from "/images/icons/collection.optimized.png";
+import mint from "/images/icons/mint.optimized.png";
+import token from "/images/icons/token.optimized.png";
+import users from "/images/icons/users.optimized.png";
+import expansion from "/images/icons/expansion.optimized.png";
 
 /**
  * Top nav icons — kept 1:1 with original App.jsx.

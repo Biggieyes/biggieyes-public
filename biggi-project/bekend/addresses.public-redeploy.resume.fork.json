@@ -1,0 +1,56 @@
+{
+  "network": "hardhat-fork",
+  "chainId": 137,
+  "chapters": [
+    {
+      "chapterId": 1,
+      "oldPublic": "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634",
+      "newPublic": "0xe56cC0657A89daf10994204eD745985a61b0E36F",
+      "deployedAt": "2026-08-18T21:17:48.996Z",
+      "prepared": true,
+      "preparedAt": "2026-08-18T21:18:23.445Z",
+      "migrated": true,
+      "migratedAt": "2026-08-18T21:20:26.095Z"
+    },
+    {
+      "chapterId": 2,
+      "oldPublic": "0xce4dF4eFc703fb0D9827aAacDB28c90405aB57D0",
+      "newPublic": "0x7EaB23497085cfF00Cb2E9809b2Af0e717187356",
+      "deployedAt": "2026-08-18T21:18:23.730Z",
+      "prepared": true,
+      "preparedAt": "2026-08-18T21:18:54.840Z",
+      "migrated": true,
+      "migratedAt": "2026-08-18T21:20:27.465Z"
+    },
+    {
+      "chapterId": 3,
+      "oldPublic": "0x4bB7a55Ba690Fc38653f5889E2262316A049a1D9",
+      "newPublic": "0xda6A6f45053796d0f5edB965fe3FA47B9a35460c",
+      "deployedAt": "2026-08-18T21:18:55.128Z",
+      "prepared": true,
+      "preparedAt": "2026-08-18T21:19:25.400Z",
+      "migrated": true,
+      "migratedAt": "2026-08-18T21:20:28.870Z"
+    },
+    {
+      "chapterId": 4,
+      "oldPublic": "0x43b4C220aD039C0272153cF4B43Eaee68de09b00",
+      "newPublic": "0xecE7D61AB3FB2229C39B48380D704183532fE960",
+      "deployedAt": "2026-08-18T21:19:25.744Z",
+      "prepared": true,
+      "preparedAt": "2026-08-18T21:19:54.509Z",
+      "migrated": true,
+      "migratedAt": "2026-08-18T21:20:30.204Z"
+    },
+    {
+      "chapterId": 5,
+      "oldPublic": "0xcA168A6e391a54de4F664397eE17328280305A75",
+      "newPublic": "0x99f049279BC545469F989d8f06CD915ef4B6f1d4",
+      "deployedAt": "2026-08-18T21:19:54.717Z",
+      "prepared": true,
+      "preparedAt": "2026-08-18T21:20:24.583Z",
+      "migrated": true,
+      "migratedAt": "2026-08-18T21:20:31.671Z"
+    }
+  ]
+}

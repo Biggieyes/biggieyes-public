@@ -35,7 +35,7 @@ const ValueRow = ({
     .filter(Boolean)
     .join(" ");
 
-  const hintTitle = isPercentHint ? "Podíl z aktuálního snapshotu" : undefined;
+  const hintTitle = isPercentHint ? "Share of the current snapshot" : undefined;
 
   return (
     <div className={`value-row ${className}`}>

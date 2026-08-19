@@ -20,10 +20,27 @@ export default function ModalsLayer({
   goNextPanel,
   isMobile,
 }) {
+  const zoomSrc =
+    typeof zoomImg === "string"
+      ? zoomImg
+      : zoomImg?.src || zoomImg?.image || "/images/Biggi.png";
+  const zoomAlt =
+    typeof zoomImg === "object"
+      ? zoomImg?.alt || zoomImg?.name || "NFT zoom"
+      : "NFT zoom";
+  const zoomAnchorRect =
+    typeof zoomImg === "object" ? zoomImg?.anchorRect || null : null;
+
   return (
     <>
       <React.Suspense fallback={null}>
-        <ZoomModal open={!!zoomImg} onClose={() => setZoomImg(null)} />
+        <ZoomModal
+          open={Boolean(zoomImg)}
+          src={zoomSrc}
+          alt={zoomAlt}
+          anchorRect={zoomAnchorRect}
+          onClose={() => setZoomImg(null)}
+        />
       </React.Suspense>
 
       {/* Redeem overlay removed; status banner covers basic progress */}

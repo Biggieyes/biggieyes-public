@@ -1,5 +1,7 @@
 import * as React from "react";
 import { FALLBACK_VALUE } from "./COLLECTIONBlocksGrid.constants";
+import PanelInfoModal from "@/components/common/PanelInfoModal";
+import PanelInfoButton from "@/components/common/PanelInfoButton";
 
 const SectionHeader = ({ label, accent = "#ffe800" }) => (
   <div
@@ -28,6 +30,8 @@ const COLLECTION1Panel = React.memo(
     topMintedName,
     additionalText,
   }) => {
+    const [schemaInfoOpen, setSchemaInfoOpen] = React.useState(false);
+
     const nf0 = React.useMemo(
       () => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }),
       [],
@@ -89,84 +93,26 @@ const COLLECTION1Panel = React.memo(
       lowestPriceName,
     ]);
 
-    const rows = React.useMemo(
+    const schemaInfoItems = React.useMemo(
       () => [
         {
-          label: "Blocks configured",
-          valueNum: stats.blocksWithData,
-          value: fmt(stats.blocksWithData),
-          detail: "Cards rendered below",
+          label: "Rarity line",
+          description:
+            "Top row maps 10 block tiers from ORANGE to RAINBOW with base price, NFT count, linked block, and growth.",
         },
         {
-          label: "Total minted",
-          valueNum: stats.totalMinted,
-          value: fmt(stats.totalMinted),
-          detail: "Sum across all blocks",
+          label: "Background line",
+          description:
+            "Bottom row maps 10 backgrounds with fixed mint bonus percentages (+5% to +50%).",
         },
         {
-          label: "Average price",
-          valueNum: stats.averagePrice,
-          value: fmt(stats.averagePrice, 2),
-          suffix: "POL",
-          detail: "Based on live prices",
-        },
-        {
-          label: "Highest price",
-          valueNum: stats.highestPrice?.value,
-          value: fmt(stats.highestPrice?.value),
-          suffix: "POL",
-          detail: highestPriceName,
-        },
-        {
-          label: "Lowest price",
-          valueNum: stats.lowestPrice?.value,
-          value: fmt(stats.lowestPrice?.value),
-          suffix: "POL",
-          detail: lowestPriceName,
-        },
-        {
-          label: "Top minted block",
-          valueNum: stats.topMinted?.value,
-          value: fmt(stats.topMinted?.value),
-          detail: topMintedName,
+          label: "Mint formula",
+          description:
+            "Final Mint Price = Block Price + (Block Price x Background Bonus%).",
         },
       ],
-      [
-        fmt,
-        highestPriceName,
-        lowestPriceName,
-        stats?.averagePrice,
-        stats?.blocksWithData,
-        stats?.highestPrice?.value,
-        stats?.lowestPrice?.value,
-        stats?.topMinted?.value,
-        stats?.totalMinted,
-        topMintedName,
-      ],
+      [],
     );
-
-    const maxValueForChart = React.useMemo(() => {
-      const nums = rows.map((r) =>
-        Number.isFinite(r.valueNum) ? r.valueNum : 0,
-      );
-      return Math.max(...nums, 0);
-    }, [rows]);
-
-    const chartBars = React.useMemo(() => {
-      const safeMax = maxValueForChart || 1;
-      return rows.map((r, idx) => ({
-        label: r.label,
-        value: Number.isFinite(r.valueNum) ? r.valueNum : 0,
-        pct: Math.min(
-          100,
-          Math.max(
-            0,
-            ((Number.isFinite(r.valueNum) ? r.valueNum : 0) / safeMax) * 100,
-          ),
-        ),
-        index: idx,
-      }));
-    }, [maxValueForChart, rows]);
 
     if (!blockEntries || blockEntries.length === 0) {
       return (
@@ -201,131 +147,28 @@ const COLLECTION1Panel = React.memo(
           <div className="collection-grid__cards">{renderBlockCardsGrid()}</div>
         </section>
 
-        <SectionHeader label="Analytics" accent="#9b7bff" />
-        <section className="collection-grid__panel collection-grid__panel--inferno">
-          <header className="collection-grid__panel-header">
-            <div>
-              <h3>COLLECTION stats (live)</h3>
-              <p className="collection-grid__panel-subtitle">
-                Fresh on-chain snapshots for pricing, minting depth, and
-                headline blocks.
-              </p>
-            </div>
-          </header>
-
-          <div className="collection-grid__table-wrapper">
-            <table className="collection-grid__table">
-              <thead>
-                <tr>
-                  <th>Metric</th>
-                  <th>Value</th>
-                  <th>Scale</th>
-                  <th>Detail</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td colSpan={4}>
-                    <div
-                      className="collection-grid__chart-list"
-                      aria-hidden="true"
-                    >
-                      {chartBars.map((bar) => (
-                        <div
-                          key={bar.label}
-                          className="collection-grid__chart-row"
-                        >
-                          <div className="collection-grid__chart-row-head">
-                            <span className="collection-grid__chart-row-label">
-                              {bar.label}
-                            </span>
-                            <span className="collection-grid__chart-row-value">
-                              {Number.isFinite(bar.value)
-                                ? Math.round(bar.value)
-                                : 0}
-                            </span>
-                          </div>
-                          <div className="collection-grid__chart-row-track">
-                            <div
-                              className="collection-grid__chart-row-fill"
-                              style={{ width: `${bar.pct}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-                {rows.map((row) => {
-                  const value =
-                    row.value != null
-                      ? `${row.value}${row.suffix ? ` ${row.suffix}` : ""}`
-                      : FALLBACK_VALUE;
-                  const pct =
-                    maxValueForChart > 0 && Number.isFinite(row.valueNum)
-                      ? Math.min(
-                          100,
-                          Math.max(0, (row.valueNum / maxValueForChart) * 100),
-                        )
-                      : 0;
-                  return (
-                    <tr key={row.label}>
-                      <td>
-                        <span className="collection-grid__metric-label">
-                          <span
-                            className="collection-grid__metric-dot"
-                            aria-hidden="true"
-                          />
-                          {row.label}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="collection-grid__value-chip">
-                          <span className="collection-grid__value-number">
-                            {value}
-                          </span>
-                          {row.suffix && (
-                            <span className="collection-grid__value-unit">
-                              {row.suffix}
-                            </span>
-                          )}
-                        </span>
-                      </td>
-                      <td>
-                        <div
-                          className="collection-grid__micro-chart"
-                          aria-hidden="true"
-                        >
-                          <div className="collection-grid__micro-chart-head">
-                            <span>0</span>
-                            <span>
-                              {maxValueForChart > 0
-                                ? `${Math.round(maxValueForChart)}`
-                                : "-"}
-                            </span>
-                          </div>
-                          <div className="collection-grid__micro-chart-track">
-                            <div
-                              className="collection-grid__micro-chart-fill"
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span
-                          className={`collection-grid__detail-pill${row.detail ? "" : " is-muted"}`}
-                        >
-                          {row.detail || FALLBACK_VALUE}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+        <SectionHeader label="Structure" accent="#ff8a00" />
+        <section className="collection-grid__schema-image-wrap">
+          <PanelInfoButton
+            className="collection-grid__schema-info-btn"
+            onClick={() => setSchemaInfoOpen(true)}
+            ariaLabel="Open structure schema info"
+            title="Structure info"
+          />
+          <img
+            className="collection-grid__schema-image"
+            src="/images/schemas/collection-structure-schema.png?v=20260224b"
+            alt="Collection structure schema PNG with ten rarity blocks, base price, NFT count, linked block, and growth percent."
+            loading="lazy"
+            decoding="async"
+          />
         </section>
+        <PanelInfoModal
+          open={schemaInfoOpen}
+          onClose={() => setSchemaInfoOpen(false)}
+          title="Structure schema info"
+          items={schemaInfoItems}
+        />
       </>
     );
   },
@@ -344,5 +187,3 @@ const COLLECTION1Panel = React.memo(
 COLLECTION1Panel.displayName = "COLLECTION1Panel";
 
 export default COLLECTION1Panel;
-
-

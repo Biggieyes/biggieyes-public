@@ -60,12 +60,16 @@ export default class TokenRewardsService {
   }
 
   // --------- View getters (ABI) ---------
-  async allowedCOLLECTIONs(addr) {
-    return await this.contract.allowedCOLLECTIONs(addr);
+  async allowedCollections(addr) {
+    return await this.contract.allowedCollections(addr);
   } // bool
-  async blockWeight() {
-    return await this.contract.blockWeight();
-  } // uint8
+  async allowedCOLLECTIONs(addr) {
+    return await this.allowedCollections(addr);
+  } // legacy alias
+  async blockWeight(index) {
+    if (index == null) return await this.getBlockWeights();
+    return await this.contract.blockWeight(index);
+  } // uint8 | uint8[11]
   async claimablePreview(tokenIds) {
     return await this.contract.claimablePreview(tokenIds);
   } // (units, amount)
@@ -81,9 +85,12 @@ export default class TokenRewardsService {
   async getBlockWeights() {
     return await this.contract.getBlockWeights();
   } // uint8[11]
-  async isAllowedCOLLECTION(coll) {
-    return await this.contract.isAllowedCOLLECTION(coll);
+  async isAllowedCollection(coll) {
+    return await this.contract.isAllowedCollection(coll);
   } // bool
+  async isAllowedCOLLECTION(coll) {
+    return await this.isAllowedCollection(coll);
+  } // legacy alias
   async lastRecordedWeek() {
     return await this.contract.lastRecordedWeek();
   } // uint64
@@ -102,9 +109,12 @@ export default class TokenRewardsService {
   async nextClaimWeekFor(tokenId) {
     return await this.contract.nextClaimWeekFor(tokenId);
   } // uint64
-  async nextClaimWeekForCOLLECTION(COLLECTION, tokenId) {
-    return await this.contract.nextClaimWeekForCOLLECTION(COLLECTION, tokenId);
+  async nextClaimWeekForCollection(collection, tokenId) {
+    return await this.contract.nextClaimWeekForCollection(collection, tokenId);
   } // uint64
+  async nextClaimWeekForCOLLECTION(collection, tokenId) {
+    return await this.nextClaimWeekForCollection(collection, tokenId);
+  } // legacy alias
   async owner() {
     return await this.contract.owner();
   } // address
@@ -190,12 +200,15 @@ export default class TokenRewardsService {
    * @param {Array<string>} COLLECTIONs - pole adres kolekcí (1:1 k tokenIds nebo podle kontraktu)
    * @param {Array<number|string>} tokenIds
    */
-  async claimWithCOLLECTIONs(COLLECTIONs, tokenIds, overrides = {}) {
+  async claimWithCollections(collections, tokenIds, overrides = {}) {
     return await this._sendTx(
-      "claimWithCOLLECTIONs",
-      [COLLECTIONs, tokenIds],
+      "claimWithCollections",
+      [collections, tokenIds],
       overrides,
     );
+  }
+  async claimWithCOLLECTIONs(collections, tokenIds, overrides = {}) {
+    return await this.claimWithCollections(collections, tokenIds, overrides);
   }
 
   // --------- Batch helper: getAllStats ----------

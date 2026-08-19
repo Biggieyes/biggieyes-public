@@ -1,7 +1,13 @@
 /** @type {import('jest').Config} */
 module.exports = {
   testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/src/setupTests.js'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  roots: ['<rootDir>/__tests__'],
+  modulePathIgnorePatterns: [
+    '<rootDir>/public-repo/',
+    '<rootDir>/biggi-project/',
+    '<rootDir>/alchemy-demo/',
+  ],
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },

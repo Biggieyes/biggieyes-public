@@ -1,0 +1,31 @@
+{
+  "createdAt": "2026-07-05T13:12:24.850Z",
+  "forkOnly": true,
+  "sendsMainnetTransactions": false,
+  "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "pair": "0x59C7B17B3ACD48979B25215a0c477dF6FFFF3e90",
+  "lpRecipient": "0xFe234394845B601B2c671c0dD631fA6290c02bb9",
+  "seed": {
+    "biggi": "8000000.0",
+    "pol": "5000.0",
+    "pricePolPerBiggi": "0.000625",
+    "biggiPerPol": "1600",
+    "vaultRealLp": "199999999999999999999000",
+    "vaultAccountedLpBeforeSync": "0"
+  },
+  "postSeedSync": {
+    "biggi": "1600.0",
+    "pol": "1.0",
+    "pairBiggi": "8001600.0",
+    "pairPol": "5001.0",
+    "vaultAccountedLp": "200039999999999999999000",
+    "vaultRealLp": "200039999999999999999000"
+  },
+  "checks": {
+    "pairStartedEmpty": true,
+    "lpMintedDirectlyToVault": true,
+    "vaultAccountingSynchronized": true,
+    "ownerMarketingBalancePreserved": true,
+    "routerAllowanceCleared": true
+  }
+}

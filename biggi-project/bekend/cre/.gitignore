@@ -1,0 +1,8 @@
+*.env
+node_modules/
+**/node_modules/
+binary.wasm*
+*.wasm
+*.wasm.br
+*.wasm.br.b64
+.cre_build_tmp.js

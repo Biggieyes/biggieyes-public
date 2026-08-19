@@ -1,0 +1,57 @@
+.line-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.line-chart__svg {
+  width: 100%;
+  display: block;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(
+    180deg,
+    rgba(74, 210, 255, 0.08),
+    rgba(4, 7, 15, 0.7)
+  );
+}
+
+.line-chart__meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #8da3c5;
+}
+
+.line-chart__grid line {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+}
+
+.line-chart__axis {
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 1;
+}
+
+.line-chart__line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.line-chart__line--glow {
+  stroke-width: 6;
+  opacity: 0.12;
+}
+
+.line-chart__marker {
+  stroke: #0b0f18;
+  stroke-width: 1.5;
+}
+
+.line-chart__empty {
+  padding: 24px 0;
+  text-align: center;
+  color: #6d7a93;
+}

@@ -49,6 +49,11 @@ export function prettyError(err) {
     NotTicket: "Selected token is not a ticket.",
     NotTicketOwner: "You are not the owner of this ticket.",
     AlreadyPending: "You already have a pending VRF draw.",
+    NoPendingMint: "No pending VRF request was found for this wallet.",
+    PendingRetryTooEarly:
+      "Pending VRF retry is not available yet. Wait a bit longer and try again.",
+    PendingStateCorrupted:
+      "Pending VRF state is inconsistent. Refresh the app and try again.",
     PresaleNotActive: "Presale is turned off.",
     Paused: "Contract is paused.",
     NoEligibleTokens: "No eligible NFTs to claim this week.",

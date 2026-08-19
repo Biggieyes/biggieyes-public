@@ -1,0 +1,38 @@
+{
+  "name": "BIGGI Universe Random Mint Ticket",
+  "description": "Transferable BIGGI marketing mint ticket for Chapter 2: Universe. Redeem becomes available when the chapter is activated, then the ticket is burned to request a random NFT from its VRF collection.",
+  "attributes": [
+    {
+      "trait_type": "Token Type",
+      "value": "Random Mint Ticket"
+    },
+    {
+      "trait_type": "Redeem Source",
+      "value": "VRF"
+    },
+    {
+      "trait_type": "Phase",
+      "value": "final"
+    },
+    {
+      "trait_type": "Image Finalized",
+      "value": "Yes"
+    },
+    {
+      "trait_type": "Chapter",
+      "value": 2
+    },
+    {
+      "trait_type": "Series",
+      "value": "Universe"
+    },
+    {
+      "trait_type": "Redeem Status",
+      "value": "Enabled when chapter activates"
+    }
+  ],
+  "compiler": "BIGGI metadata pipeline",
+  "metadata_file": "Biggi_RANDOM_MINT_TICKET.json",
+  "image": "ipfs://bafkreibibush7j663pzqdetazkv3nec6fblbs2jwoyewxrkrstaphirpfe",
+  "external_url": "https://biggieyes.com"
+}

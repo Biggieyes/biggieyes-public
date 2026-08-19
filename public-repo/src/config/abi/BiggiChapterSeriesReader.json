@@ -1,0 +1,710 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "chapterController_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "registry_",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "collections",
+        "type": "address[]"
+      }
+    ],
+    "name": "batchCollectionSnapshot",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "collection",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "chapterId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "seriesId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "chapterNumber",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "tokenRewardsEligible",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "collectionRewardsEligible",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "isVrfCollection",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "isPublicCollection",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "isTicketHubCollection",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct BiggiChapterSeriesReader.CollectionSnapshot[]",
+        "name": "out",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "chapterController",
+    "outputs": [
+      {
+        "internalType": "contract IBiggiChapterControllerReaderView",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "chapterId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "treasury",
+        "type": "address"
+      }
+    ],
+    "name": "chapterPaymentSnapshot",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "chapterId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "treasury",
+            "type": "address"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "collection",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "biggi",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "distributor",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "tokenSink",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "tokenSinkBps",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bool",
+                "name": "tokenSinkDepositMode",
+                "type": "bool"
+              },
+              {
+                "internalType": "uint256",
+                "name": "biggiPerEth",
+                "type": "uint256"
+              },
+              {
+                "internalType": "address",
+                "name": "reserveAddress",
+                "type": "address"
+              },
+              {
+                "internalType": "bool",
+                "name": "paused",
+                "type": "bool"
+              },
+              {
+                "internalType": "bool",
+                "name": "treasuryAllowsCollection",
+                "type": "bool"
+              },
+              {
+                "internalType": "bool",
+                "name": "paymentConfigured",
+                "type": "bool"
+              },
+              {
+                "internalType": "bool",
+                "name": "ecosystemTreasuryRouteOk",
+                "type": "bool"
+              }
+            ],
+            "internalType": "struct BiggiChapterSeriesReader.PaymentRouteSnapshot",
+            "name": "ticketHubRoute",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "collection",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "biggi",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "distributor",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "tokenSink",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "tokenSinkBps",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bool",
+                "name": "tokenSinkDepositMode",
+                "type": "bool"
+              },
+              {
+                "internalType": "uint256",
+                "name": "biggiPerEth",
+                "type": "uint256"
+              },
+              {
+                "internalType": "address",
+                "name": "reserveAddress",
+                "type": "address"
+              },
+              {
+                "internalType": "bool",
+                "name": "paused",
+                "type": "bool"
+              },
+              {
+                "internalType": "bool",
+                "name": "treasuryAllowsCollection",
+                "type": "bool"
+              },
+              {
+                "internalType": "bool",
+                "name": "paymentConfigured",
+                "type": "bool"
+              },
+              {
+                "internalType": "bool",
+                "name": "ecosystemTreasuryRouteOk",
+                "type": "bool"
+              }
+            ],
+            "internalType": "struct BiggiChapterSeriesReader.PaymentRouteSnapshot",
+            "name": "publicCollectionRoute",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct BiggiChapterSeriesReader.ChapterPaymentSnapshot",
+        "name": "s",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "chapterId",
+        "type": "uint256"
+      }
+    ],
+    "name": "chapterSnapshot",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "chapterId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "configured",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "chapterExists",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "seriesId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "chapterNumber",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "vrfCollection",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "publicCollection",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "ticketHub",
+            "type": "address"
+          },
+          {
+            "internalType": "uint16",
+            "name": "saleCap",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "marketingCap",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "totalCap",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint256",
+            "name": "saleMinted",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "marketingMinted",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalMinted",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "publicUnlocked",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "priceProvider",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "tokenRewardsEligibleVRF",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "tokenRewardsEligiblePublic",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "collectionRewardsEligibleVRF",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "controllerRegistryMatch",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct BiggiChapterSeriesReader.ChapterSnapshot",
+        "name": "s",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "collection",
+        "type": "address"
+      }
+    ],
+    "name": "collectionSnapshot",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "collection",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "chapterId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "seriesId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "chapterNumber",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "tokenRewardsEligible",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "collectionRewardsEligible",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "isVrfCollection",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "isPublicCollection",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "isTicketHubCollection",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct BiggiChapterSeriesReader.CollectionSnapshot",
+        "name": "s",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "globalSnapshot",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "controller",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "registry",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "seriesCount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "chapterCount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "controllerRegistry",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "controllerMatchesRegistry",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct BiggiChapterSeriesReader.GlobalSnapshot",
+        "name": "s",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "collection",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "treasury",
+        "type": "address"
+      }
+    ],
+    "name": "paymentRouteSnapshot",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "collection",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "biggi",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "distributor",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "tokenSink",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenSinkBps",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "tokenSinkDepositMode",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "biggiPerEth",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "reserveAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "paused",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "treasuryAllowsCollection",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "paymentConfigured",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "ecosystemTreasuryRouteOk",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct BiggiChapterSeriesReader.PaymentRouteSnapshot",
+        "name": "s",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "registry",
+    "outputs": [
+      {
+        "internalType": "contract IBiggiSeriesRegistryReaderView",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "seriesId",
+        "type": "uint256"
+      }
+    ],
+    "name": "seriesSnapshot",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "seriesId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "exists",
+            "type": "bool"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "chapterCount",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct BiggiChapterSeriesReader.SeriesSnapshot",
+        "name": "s",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "ticketHub",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "chapterId",
+        "type": "uint256"
+      }
+    ],
+    "name": "ticketHubSnapshot",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "collection",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "chapterId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "seriesId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "chapterNumber",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "tokenRewardsEligible",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "collectionRewardsEligible",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "isVrfCollection",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "isPublicCollection",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "isTicketHubCollection",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct BiggiChapterSeriesReader.CollectionSnapshot",
+        "name": "s",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

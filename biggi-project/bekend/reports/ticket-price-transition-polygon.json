@@ -1,0 +1,63 @@
+{
+  "checkedAt": "2026-08-18T09:30:08.836Z",
+  "network": "polygon",
+  "chainId": 137,
+  "mode": "dry-run",
+  "ticketHub": "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
+  "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "ownerBalanceWei": "41702355078343587715",
+  "paused": false,
+  "currentPriceWei": "500000000000000000000",
+  "targetPriceWei": "500000000000000000000",
+  "priceIncreasePerMint": "10033",
+  "chapters": [
+    {
+      "chapterId": 1,
+      "marketingCap": 50,
+      "marketingMinted": 50,
+      "saleCap": 500,
+      "saleMinted": 0,
+      "active": false
+    },
+    {
+      "chapterId": 2,
+      "marketingCap": 50,
+      "marketingMinted": 50,
+      "saleCap": 500,
+      "saleMinted": 0,
+      "active": false
+    },
+    {
+      "chapterId": 3,
+      "marketingCap": 50,
+      "marketingMinted": 50,
+      "saleCap": 500,
+      "saleMinted": 0,
+      "active": false
+    },
+    {
+      "chapterId": 4,
+      "marketingCap": 50,
+      "marketingMinted": 50,
+      "saleCap": 500,
+      "saleMinted": 0,
+      "active": false
+    },
+    {
+      "chapterId": 5,
+      "marketingCap": 50,
+      "marketingMinted": 50,
+      "saleCap": 500,
+      "saleMinted": 0,
+      "active": false
+    }
+  ],
+  "transactionHash": "0x1fb1165f4a67416c25f3d0c4c7ae7600e35466fc2b3ba8913d60554a5d1db63b",
+  "blockNumber": 92226673,
+  "lastExecution": {
+    "transactionHash": "0x1fb1165f4a67416c25f3d0c4c7ae7600e35466fc2b3ba8913d60554a5d1db63b",
+    "blockNumber": 92226673,
+    "executedAt": "2026-08-18T09:23:54.737Z"
+  },
+  "result": "already-configured"
+}

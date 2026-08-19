@@ -56,8 +56,23 @@ const SimpleLineChart = ({
   width = DEFAULT_WIDTH,
   emptyLabel = "No data yet.",
   showLegend = true,
+  maxPoints = 48,
 }) => {
-  const points = Array.isArray(data) ? data : [];
+  const rawPoints = Array.isArray(data) ? data : [];
+  const limit = Number(maxPoints) || 0;
+  const points =
+    limit > 0 && rawPoints.length > limit
+      ? (() => {
+          const step = Math.ceil(rawPoints.length / limit);
+          const sampled = [];
+          for (let i = 0; i < rawPoints.length; i += step) {
+            sampled.push(rawPoints[i]);
+          }
+          const last = rawPoints[rawPoints.length - 1];
+          if (sampled[sampled.length - 1] !== last) sampled.push(last);
+          return sampled;
+        })()
+      : rawPoints;
   const seriesList = Array.isArray(series) ? series : [];
 
   const values = [];
@@ -204,5 +219,5 @@ const SimpleLineChart = ({
   );
 };
 
-export default SimpleLineChart;
+export default React.memo(SimpleLineChart);
 

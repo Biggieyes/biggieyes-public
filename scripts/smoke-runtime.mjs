@@ -56,6 +56,30 @@ function startPreview(port) {
   return child;
 }
 
+async function stopProcessTree(child) {
+  if (!child || child.exitCode !== null || child.killed) return;
+
+  if (process.platform === "win32" && child.pid) {
+    await new Promise((resolve) => {
+      const killer = spawn(
+        "taskkill",
+        ["/pid", String(child.pid), "/T", "/F"],
+        {
+          stdio: "ignore",
+          shell: false,
+        },
+      );
+      killer.once("exit", () => resolve());
+      killer.once("error", () => resolve());
+    });
+    return;
+  }
+
+  child.kill("SIGTERM");
+  await delay(400);
+  if (!child.killed) child.kill("SIGKILL");
+}
+
 async function waitForServer(url, preview, timeoutMs = 45_000) {
   const started = Date.now();
   let exited = false;
@@ -105,6 +129,17 @@ function isFatalConsoleError(text) {
   return fatalPatterns.some((rx) => rx.test(text));
 }
 
+function isNetworkConsoleError(text) {
+  const networkPatterns = [
+    /Failed to fetch/i,
+    /NetworkError/i,
+    /ERR_(?:NETWORK|CONNECTION|FAILED)/i,
+    /Load failed/i,
+    /CORS/i,
+  ];
+  return networkPatterns.some((rx) => rx.test(text));
+}
+
 async function runSmoke(baseUrl) {
   console.log("[smoke] launching browser");
   const browser = await withTimeout(
@@ -112,78 +147,142 @@ async function runSmoke(baseUrl) {
     90_000,
     "chromium.launch",
   );
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  try {
+    const page = await browser.newPage({
+      viewport: { width: 1440, height: 900 },
+    });
 
-  const pageErrors = [];
-  const fatalConsoleErrors = [];
-  const consoleErrors = [];
+    const pageErrors = [];
+    const fatalConsoleErrors = [];
+    const networkConsoleErrors = [];
+    const consoleErrors = [];
+    const httpErrorResponses = [];
 
-  page.on("pageerror", (err) => {
-    pageErrors.push(err?.message || String(err));
-  });
+    page.on("pageerror", (err) => {
+      pageErrors.push(err?.message || String(err));
+    });
 
-  page.on("console", (msg) => {
-    if (msg.type() !== "error") return;
-    const text = msg.text();
-    consoleErrors.push(text);
-    if (isFatalConsoleError(text)) fatalConsoleErrors.push(text);
-  });
+    page.on("console", (msg) => {
+      if (msg.type() !== "error") return;
+      const text = msg.text();
+      consoleErrors.push(text);
+      if (isFatalConsoleError(text)) fatalConsoleErrors.push(text);
+      if (isNetworkConsoleError(text)) networkConsoleErrors.push(text);
+    });
 
-  console.log("[smoke] goto app");
-  await page.goto(baseUrl, { waitUntil: "domcontentloaded", timeout: 60_000 });
-  await page.waitForSelector("text=My NFTs", { timeout: 60_000 });
-  console.log("[smoke] app shell ready");
+    page.on("response", (res) => {
+      const status = res.status();
+      if (status >= 400) httpErrorResponses.push(`${status} ${res.url()}`);
+    });
 
-  // Gallery + metadata/IPFS path smoke.
-  const gallery = page.locator(".gallery-section");
-  await gallery.getByRole("button", { name: "Open NFT card help" }).click();
-  await page.waitForSelector("text=IPFS images", { timeout: 15_000 });
-  await gallery.getByRole("button", { name: "Open NFT card help" }).click();
-  console.log("[smoke] gallery metadata/ipfs flow ok");
+    const appUrl = new URL("/app/", baseUrl).toString();
+    console.log(`[smoke] goto app: ${appUrl}`);
+    await page.goto(appUrl, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await page.waitForSelector(
+      '.gallery-section, #gallery, h2:has-text("My NFTs")',
+      { timeout: 60_000 },
+    );
+    console.log("[smoke] app shell ready");
 
-  // Live stats smoke (ALLOCATION modal).
-  await page.getByRole("button", { name: "ALLOCATION" }).first().click();
-  await page.waitForSelector("text=ALLOCATION", { timeout: 15_000 });
-  await page.getByRole("button", { name: "Close" }).first().click();
-  console.log("[smoke] live stats flow ok");
+    // Gallery shell and filtering controls smoke.
+    const gallery = page.locator(".gallery-section");
+    await gallery
+      .getByRole("heading", { name: /My Biggi COLLECTION/i })
+      .waitFor({ state: "visible", timeout: 30_000 });
+    const gallerySort = gallery.getByLabel("Sort");
+    const galleryRarity = gallery.getByLabel("Rarity");
+    await gallerySort.selectOption("token");
+    await galleryRarity.selectOption("rare");
+    await galleryRarity.selectOption("all");
+    await gallery
+      .getByText("Total Assets", { exact: true })
+      .waitFor({ state: "visible", timeout: 15_000 });
+    console.log("[smoke] gallery shell and controls flow ok");
 
-  // Token rewards claim status smoke in REWARDS panel.
-  const rewardsNavButton = page.locator('button[aria-label="REWARDS"]').first();
-  await rewardsNavButton.waitFor({ state: "visible", timeout: 20_000 });
-  await rewardsNavButton.click();
-  const rewardsPanel = page.locator("section.rewards-grid");
-  await rewardsPanel.waitFor({ state: "visible", timeout: 45_000 });
-  await rewardsPanel
-    .locator('h2.rewards-grid__title:has-text("Biggi REWARDS")')
-    .waitFor({ state: "visible", timeout: 45_000 });
-  await rewardsPanel
-    .getByRole("heading", { name: "Claim preview", exact: true })
-    .waitFor({ state: "visible", timeout: 45_000 });
-  await rewardsPanel
-    .getByRole("button", { name: /Connect wallet to claim|Claim REWARDS/i })
-    .first()
-    .waitFor({ state: "visible", timeout: 45_000 });
-  console.log("[smoke] token rewards claim-status flow ok");
+    // Live stats smoke (open Tokenomics modal and verify pools/allocation section).
+    const liveStatsRoot = page.locator("#live-stats");
+    await liveStatsRoot.first().scrollIntoViewIfNeeded();
+    const tokenomicsBtn = liveStatsRoot
+      .getByRole("button", { name: "TOKENOMICS" })
+      .first();
+    await tokenomicsBtn.waitFor({ state: "visible", timeout: 30_000 });
+    await tokenomicsBtn.click();
+    await page
+      .getByText(/POOLS\s*&\s*ALLOCATION/i)
+      .first()
+      .waitFor({
+        state: "visible",
+        timeout: 30_000,
+      });
+    await page.getByRole("button", { name: "Close" }).first().click();
+    console.log("[smoke] live stats flow ok");
 
-  await browser.close();
+    // Token rewards claim status smoke in REWARDS panel.
+    const rewardsNavButton = page
+      .getByRole("button", {
+        name: /Open Rewards: token, NFT, and collection rewards/i,
+      })
+      .first();
+    await rewardsNavButton.waitFor({ state: "visible", timeout: 20_000 });
+    await rewardsNavButton.click();
+    const rewardsPanel = page.locator("section.rewards-grid");
+    await rewardsPanel.waitFor({ state: "visible", timeout: 45_000 });
+    await rewardsPanel
+      .locator("h2.rewards-grid__title")
+      .waitFor({ state: "visible", timeout: 45_000 });
+    await page
+      .getByRole("heading", {
+        name: /TOKEN REWARDS|COLLECTION REWARDS|NFT REWARDS/i,
+      })
+      .first()
+      .waitFor({ state: "visible", timeout: 45_000 });
+    await rewardsPanel
+      .getByRole("heading", { name: "Claim preview", exact: true })
+      .waitFor({ state: "visible", timeout: 45_000 });
+    await rewardsPanel
+      .getByRole("button", { name: /Connect wallet to claim|Claim REWARDS/i })
+      .first()
+      .waitFor({ state: "visible", timeout: 45_000 });
+    console.log("[smoke] token rewards claim-status flow ok");
 
-  if (pageErrors.length || fatalConsoleErrors.length) {
-    const details = [
-      pageErrors.length
-        ? `Page errors:\n- ${pageErrors.join("\n- ")}`
-        : null,
-      fatalConsoleErrors.length
-        ? `Fatal console errors:\n- ${fatalConsoleErrors.join("\n- ")}`
-        : null,
-    ]
-      .filter(Boolean)
-      .join("\n\n");
-    throw new Error(`Runtime smoke failed.\n${details}`);
-  }
+    if (
+      pageErrors.length ||
+      fatalConsoleErrors.length ||
+      networkConsoleErrors.length
+    ) {
+      const details = [
+        pageErrors.length ? `Page errors:\n- ${pageErrors.join("\n- ")}` : null,
+        fatalConsoleErrors.length
+          ? `Fatal console errors:\n- ${fatalConsoleErrors.join("\n- ")}`
+          : null,
+        networkConsoleErrors.length
+          ? `Network console errors:\n- ${networkConsoleErrors.join("\n- ")}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+      throw new Error(`Runtime smoke failed.\n${details}`);
+    }
 
-  console.log("Runtime smoke passed.");
-  if (consoleErrors.length) {
-    console.log(`Non-fatal console errors observed: ${consoleErrors.length}`);
+    console.log("Runtime smoke passed.");
+    if (consoleErrors.length) {
+      console.log(`Non-fatal console errors observed: ${consoleErrors.length}`);
+      const nonFatalConsoleErrors = consoleErrors.filter(
+        (text) =>
+          !fatalConsoleErrors.includes(text) &&
+          !networkConsoleErrors.includes(text),
+      );
+      if (nonFatalConsoleErrors.length) {
+        const sample = nonFatalConsoleErrors.slice(0, 10).join("\n- ");
+        console.log(`Non-fatal console error sample:\n- ${sample}`);
+      }
+    }
+    if (httpErrorResponses.length) {
+      const sample = [...new Set(httpErrorResponses)].slice(0, 10).join("\n- ");
+      console.log(`HTTP error response sample:\n- ${sample}`);
+    }
+  } finally {
+    await browser.close().catch(() => {});
   }
 }
 
@@ -195,11 +294,7 @@ async function main() {
     await waitForServer(baseUrl, preview);
     await runSmoke(baseUrl);
   } finally {
-    if (preview.exitCode === null && !preview.killed) {
-      preview.kill("SIGTERM");
-      await delay(400);
-      if (!preview.killed) preview.kill("SIGKILL");
-    }
+    await stopProcessTree(preview);
   }
 }
 

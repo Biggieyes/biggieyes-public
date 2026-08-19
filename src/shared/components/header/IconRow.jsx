@@ -161,6 +161,15 @@ function IconRowBase({ icons = [], onIconClick, className = "", style }) {
                 decoding={eager ? "sync" : "async"}
                 draggable={false}
                 onError={(e) => {
+                  const fallbackSrc = icon?.fallbackSrc;
+                  if (
+                    fallbackSrc &&
+                    e.currentTarget.dataset.fallbackApplied !== "1"
+                  ) {
+                    e.currentTarget.dataset.fallbackApplied = "1";
+                    e.currentTarget.src = fallbackSrc;
+                    return;
+                  }
                   e.currentTarget.src = transparentPx;
                 }}
                 style={{

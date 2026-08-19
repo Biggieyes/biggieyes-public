@@ -1,6 +1,10 @@
 import { formatEther } from "ethers";
 import { getMCDReaderV2RO } from "./contract";
 import { ADDR } from "./addresses";
+import {
+  getDistributorGlobalSnapshot,
+  getDistributorPendingCommunity,
+} from "@/shared/services/tokenomics/distributorReaderCompat.js";
 
 export async function fetchCOMMUNITYCENTERStats() {
   try {
@@ -8,14 +12,13 @@ export async function fetchCOMMUNITYCENTERStats() {
     if (!reader) return {};
 
     const [rawSnap, pendingCommunity] = await Promise.all([
-      reader.globalSnapshot(),
-      reader.pendingCommunity?.().catch?.(() => null),
+      getDistributorGlobalSnapshot(reader),
+      getDistributorPendingCommunity(reader).catch(() => null),
     ]);
 
-    const snap = rawSnap?.s ?? rawSnap?.[0] ?? rawSnap;
+    const snap = rawSnap;
     const communityCenter =
       snap?.communityCenter ??
-      snap?.[4] ??
       ADDR.COMMUNITY_CENTER ??
       null;
 
@@ -35,7 +38,7 @@ export async function fetchCOMMUNITYCENTERStats() {
     const fmt = (v) => (v != null ? formatEther(v) : undefined);
     return {
       COMMUNITYCENTERAddr: communityCenter || undefined,
-      pendingCommunity: fmt(pendingCommunity ?? snap?.totalPending ?? snap?.[5]),
+      pendingCommunity: fmt(pendingCommunity ?? snap?.totalPending),
       communityPoolBalance: fmt(communityPoolBalance),
     };
   } catch {

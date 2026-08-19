@@ -22,9 +22,11 @@ export default function NFTStatusBlock({
         VRFPending={VRFPending}
         redeemMsg={redeemMsg}
         onRefresh={async () => {
-          await fetchStats();
-          await fetchREWARDS();
-          await fetchWalletAssets(walletAddress);
+          await Promise.allSettled([
+            fetchStats?.(),
+            fetchREWARDS?.(),
+            fetchWalletAssets?.(walletAddress),
+          ]);
         }}
         compact={isMobile}
       />

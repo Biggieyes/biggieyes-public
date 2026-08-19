@@ -1,0 +1,62 @@
+{
+  "startedAt": "2026-08-19T01:17:38.345Z",
+  "status": "failed",
+  "options": {
+    "network": "polygon",
+    "envFile": "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\.env.core.polygon",
+    "addressesFile": "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\addresses.master.json",
+    "expectLiquidityPath": "keeper_proxy",
+    "expectOwner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+    "skipCompile": false,
+    "skipTests": false,
+    "skipValidate": false,
+    "skipCheck": false,
+    "requireCode": true,
+    "withForkTests": false,
+    "reportPath": "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\reports\\master-mainnet-preflight-polygon.json"
+  },
+  "steps": [
+    {
+      "name": "compile:master",
+      "command": "npm run compile:master",
+      "startedAt": "2026-08-19T01:17:38.367Z",
+      "finishedAt": "2026-08-19T01:17:44.526Z",
+      "durationMs": 6159,
+      "status": 0
+    },
+    {
+      "name": "test:master",
+      "command": "npm run test:master",
+      "startedAt": "2026-08-19T01:17:44.526Z",
+      "finishedAt": "2026-08-19T01:19:13.342Z",
+      "durationMs": 88816,
+      "status": 0
+    },
+    {
+      "name": "test:master:fork",
+      "status": "skipped",
+      "reason": "not requested",
+      "startedAt": "2026-08-19T01:19:13.342Z",
+      "finishedAt": "2026-08-19T01:19:13.342Z",
+      "durationMs": 0
+    },
+    {
+      "name": "validate:master:polygon:strict",
+      "command": "node scripts/master/validateMainnetEnv.js --network polygon --strict --env C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\.env.core.polygon --expect-liquidity-path keeper_proxy --expect-owner 0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "startedAt": "2026-08-19T01:19:13.342Z",
+      "finishedAt": "2026-08-19T01:19:13.840Z",
+      "durationMs": 498,
+      "status": 0
+    },
+    {
+      "name": "check:master:polygon",
+      "command": "npx hardhat run --config hardhat.biggi-master.cjs scripts/master/checkMasterStatus.js --network polygon",
+      "startedAt": "2026-08-19T01:19:13.840Z",
+      "finishedAt": "2026-08-19T01:19:39.516Z",
+      "durationMs": 25675,
+      "status": 1
+    }
+  ],
+  "error": "check:master:polygon failed with status 1",
+  "finishedAt": "2026-08-19T01:19:39.516Z"
+}
