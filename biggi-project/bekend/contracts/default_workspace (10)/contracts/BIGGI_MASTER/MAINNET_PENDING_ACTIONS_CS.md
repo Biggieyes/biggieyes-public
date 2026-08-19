@@ -17,9 +17,11 @@ Zamer projektu je 550 ticketu celkem:
 
 - `SALE_CAP=500`
 - `MARKETING_CAP=50`
-- cena paid ticketu `1 POL`
+- cena marketing ticketu `1 POL` (snapshot; marketing mint nezvysuje krivku)
+- cena prvniho paid ticketu `500 POL`
+- paid cena se po kazdem paid mintu nasobi `10033 / 10000` (+0.33 %)
 
-Centralni live TicketHub ma `saleCap=500`, `marketingCap=50`, cenu `1 POL`, finalni distributor a dev wallet. Je napojen na pet series/chapter paru; kazdy chapter ma 50 marketing ticketu a zustava neaktivni. CORE wiring kontrolovat pred kazdym dalsim write krokem pres `npm.cmd run verify:master:core-series:polygon` a `npm.cmd run check:master:core:polygon`.
+Centralni live TicketHub ma `saleCap=500`, `marketingCap=50`, verejnou startovni cenu `500 POL`, finalni distributor a dev wallet. Je napojen na pet series/chapter paru; kazdy chapter ma 50 marketing ticketu a zustava neaktivni. Marketing tickety si zachovavaji snapshot `1 POL`; prvni paid ticket Chapter 1 bude token ID 51. CORE wiring kontrolovat pred kazdym dalsim write krokem pres `npm.cmd run verify:master:core-series:polygon` a `npm.cmd run check:master:core:polygon`.
 
 ## 3. Chainlink VRF
 

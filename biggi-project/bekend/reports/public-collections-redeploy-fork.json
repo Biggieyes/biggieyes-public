@@ -1,0 +1,1090 @@
+{
+  "checkedAt": "2026-08-18T21:17:48.753Z",
+  "network": "hardhat",
+  "chainId": 137,
+  "mode": "execute",
+  "sourceModel": {
+    "publicSupply": 100,
+    "perBlock": 10,
+    "backgroundVariants": false
+  },
+  "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "deployer": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+  "ownerBalancePol": "41.702355078343587715",
+  "deployerBalancePol": "37.860747902990473069",
+  "maxFeePerGasGwei": "482.024362382",
+  "deploymentGasPerContract": "3908410",
+  "deploymentGasFiveContracts": "19542050",
+  "deploymentMaximumCostPol": "9.4197441908871631",
+  "chapters": [
+    {
+      "chapterId": 1,
+      "seriesId": 1,
+      "vrf": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+      "oldPublic": "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634",
+      "maxSupply": "550",
+      "minted": "0",
+      "distributorPending": "0",
+      "paused": false,
+      "resume": null,
+      "saleCap": 500,
+      "marketingCap": 50,
+      "totalCap": 550,
+      "targetUris": [
+        "ipfs://bafybeihn4yqga5yuslc2577qsvoajt2fwdpcsr6oj7fdurivwnlrsi7qzy/",
+        "ipfs://bafybeihn4yqga5yuslc2577qsvoajt2fwdpcsr6oj7fdurivwnlrsi7qzy/",
+        "ipfs://bafybeihn4yqga5yuslc2577qsvoajt2fwdpcsr6oj7fdurivwnlrsi7qzy/",
+        "ipfs://bafybeihn4yqga5yuslc2577qsvoajt2fwdpcsr6oj7fdurivwnlrsi7qzy/",
+        "ipfs://bafybeihn4yqga5yuslc2577qsvoajt2fwdpcsr6oj7fdurivwnlrsi7qzy/",
+        "ipfs://bafybeihn4yqga5yuslc2577qsvoajt2fwdpcsr6oj7fdurivwnlrsi7qzy/",
+        "ipfs://bafybeihn4yqga5yuslc2577qsvoajt2fwdpcsr6oj7fdurivwnlrsi7qzy/",
+        "ipfs://bafybeihn4yqga5yuslc2577qsvoajt2fwdpcsr6oj7fdurivwnlrsi7qzy/",
+        "ipfs://bafybeihn4yqga5yuslc2577qsvoajt2fwdpcsr6oj7fdurivwnlrsi7qzy/",
+        "ipfs://bafybeihn4yqga5yuslc2577qsvoajt2fwdpcsr6oj7fdurivwnlrsi7qzy/"
+      ],
+      "wiring": {
+        "distributor": "0xCE892698159D8D799D5eF7f0dF0111487511fD22",
+        "priceProvider": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+        "devWallet": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "biggi": "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
+        "biggiPerEth": "1000000000000000000",
+        "tokenSink": "0x35EE9523D20fFfe47c62dCcF01fA0136424A05e7",
+        "tokenSinkBps": "10000",
+        "tokenSinkDepositMode": true,
+        "reserve": "0x2786e46e01a5d229118fEdC102267217C7e94574",
+        "rewardsBaseURI": "",
+        "charactersBaseURI": "",
+        "contractURI": ""
+      },
+      "oldAllowlist": {
+        "distributor": true,
+        "treasury": true,
+        "reserve": true,
+        "nftRewards": true,
+        "drip": true
+      },
+      "newPublic": "0xe56cC0657A89daf10994204eD745985a61b0E36F"
+    },
+    {
+      "chapterId": 2,
+      "seriesId": 2,
+      "vrf": "0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036",
+      "oldPublic": "0xce4dF4eFc703fb0D9827aAacDB28c90405aB57D0",
+      "maxSupply": "550",
+      "minted": "0",
+      "distributorPending": "0",
+      "paused": false,
+      "resume": null,
+      "saleCap": 500,
+      "marketingCap": 50,
+      "totalCap": 550,
+      "targetUris": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "wiring": {
+        "distributor": "0xCE892698159D8D799D5eF7f0dF0111487511fD22",
+        "priceProvider": "0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036",
+        "devWallet": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "biggi": "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
+        "biggiPerEth": "1000000000000000000",
+        "tokenSink": "0x35EE9523D20fFfe47c62dCcF01fA0136424A05e7",
+        "tokenSinkBps": "10000",
+        "tokenSinkDepositMode": true,
+        "reserve": "0x2786e46e01a5d229118fEdC102267217C7e94574",
+        "rewardsBaseURI": "",
+        "charactersBaseURI": "",
+        "contractURI": ""
+      },
+      "oldAllowlist": {
+        "distributor": true,
+        "treasury": true,
+        "reserve": true,
+        "nftRewards": true,
+        "drip": true
+      },
+      "newPublic": "0x7EaB23497085cfF00Cb2E9809b2Af0e717187356"
+    },
+    {
+      "chapterId": 3,
+      "seriesId": 3,
+      "vrf": "0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2",
+      "oldPublic": "0x4bB7a55Ba690Fc38653f5889E2262316A049a1D9",
+      "maxSupply": "550",
+      "minted": "0",
+      "distributorPending": "0",
+      "paused": false,
+      "resume": null,
+      "saleCap": 500,
+      "marketingCap": 50,
+      "totalCap": 550,
+      "targetUris": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "wiring": {
+        "distributor": "0xCE892698159D8D799D5eF7f0dF0111487511fD22",
+        "priceProvider": "0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2",
+        "devWallet": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "biggi": "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
+        "biggiPerEth": "1000000000000000000",
+        "tokenSink": "0x35EE9523D20fFfe47c62dCcF01fA0136424A05e7",
+        "tokenSinkBps": "10000",
+        "tokenSinkDepositMode": true,
+        "reserve": "0x2786e46e01a5d229118fEdC102267217C7e94574",
+        "rewardsBaseURI": "",
+        "charactersBaseURI": "",
+        "contractURI": ""
+      },
+      "oldAllowlist": {
+        "distributor": true,
+        "treasury": true,
+        "reserve": true,
+        "nftRewards": true,
+        "drip": true
+      },
+      "newPublic": "0xda6A6f45053796d0f5edB965fe3FA47B9a35460c"
+    },
+    {
+      "chapterId": 4,
+      "seriesId": 4,
+      "vrf": "0x8E862D9071120D69517D3F7Db0c101175E911115",
+      "oldPublic": "0x43b4C220aD039C0272153cF4B43Eaee68de09b00",
+      "maxSupply": "550",
+      "minted": "0",
+      "distributorPending": "0",
+      "paused": false,
+      "resume": null,
+      "saleCap": 500,
+      "marketingCap": 50,
+      "totalCap": 550,
+      "targetUris": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "wiring": {
+        "distributor": "0xCE892698159D8D799D5eF7f0dF0111487511fD22",
+        "priceProvider": "0x8E862D9071120D69517D3F7Db0c101175E911115",
+        "devWallet": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "biggi": "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
+        "biggiPerEth": "1000000000000000000",
+        "tokenSink": "0x35EE9523D20fFfe47c62dCcF01fA0136424A05e7",
+        "tokenSinkBps": "10000",
+        "tokenSinkDepositMode": true,
+        "reserve": "0x2786e46e01a5d229118fEdC102267217C7e94574",
+        "rewardsBaseURI": "",
+        "charactersBaseURI": "",
+        "contractURI": ""
+      },
+      "oldAllowlist": {
+        "distributor": true,
+        "treasury": true,
+        "reserve": true,
+        "nftRewards": true,
+        "drip": true
+      },
+      "newPublic": "0xecE7D61AB3FB2229C39B48380D704183532fE960"
+    },
+    {
+      "chapterId": 5,
+      "seriesId": 5,
+      "vrf": "0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38",
+      "oldPublic": "0xcA168A6e391a54de4F664397eE17328280305A75",
+      "maxSupply": "550",
+      "minted": "0",
+      "distributorPending": "0",
+      "paused": false,
+      "resume": null,
+      "saleCap": 500,
+      "marketingCap": 50,
+      "totalCap": 550,
+      "targetUris": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "wiring": {
+        "distributor": "0xCE892698159D8D799D5eF7f0dF0111487511fD22",
+        "priceProvider": "0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38",
+        "devWallet": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "biggi": "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
+        "biggiPerEth": "1000000000000000000",
+        "tokenSink": "0x35EE9523D20fFfe47c62dCcF01fA0136424A05e7",
+        "tokenSinkBps": "10000",
+        "tokenSinkDepositMode": true,
+        "reserve": "0x2786e46e01a5d229118fEdC102267217C7e94574",
+        "rewardsBaseURI": "",
+        "charactersBaseURI": "",
+        "contractURI": ""
+      },
+      "oldAllowlist": {
+        "distributor": true,
+        "treasury": true,
+        "reserve": true,
+        "nftRewards": true,
+        "drip": true
+      },
+      "newPublic": "0x99f049279BC545469F989d8f06CD915ef4B6f1d4"
+    }
+  ],
+  "blockers": [],
+  "transactions": [
+    {
+      "label": "Chapter 1 deploy",
+      "hash": "0x31c3ff3880f095b069038b159391e67bc0a7f7e956490fea43405caa027de2b4",
+      "blockNumber": 92255088,
+      "gasUsed": "3908410"
+    },
+    {
+      "label": "Chapter 1 new Public pause",
+      "hash": "0xa3fc0ffcac4f0f4c9d38acfedeba395ee6d879630536b7dabf7f9a9536f195c3",
+      "blockNumber": 92255089,
+      "gasUsed": "28475"
+    },
+    {
+      "label": "Chapter 1 setDevWallet",
+      "hash": "0x1451e121de41717aa40810ace7ad508704a6264e776ce170defc6ebb2f7c0b69",
+      "blockNumber": 92255090,
+      "gasUsed": "27849"
+    },
+    {
+      "label": "Chapter 1 setPriceProvider",
+      "hash": "0x040704dfa1a90c0254cfa5b7af8180658bb306fe4ade382bc45e099dfbeafe4d",
+      "blockNumber": 92255091,
+      "gasUsed": "47437"
+    },
+    {
+      "label": "Chapter 1 setDistributor",
+      "hash": "0x01d8f17d7d89c28b1605423cedf8661d6fd6370824f8afbc3bbb38af20eabdbe",
+      "blockNumber": 92255092,
+      "gasUsed": "47877"
+    },
+    {
+      "label": "Chapter 1 setBiggiToken",
+      "hash": "0x5b7e81dc70d32bb3cad363c9662b9a0d89bdf6f05d25e8288bee595ae0fdac28",
+      "blockNumber": 92255093,
+      "gasUsed": "47481"
+    },
+    {
+      "label": "Chapter 1 setBiggiRate",
+      "hash": "0xf20ad33e2961488ea89c9a7d54ad154c4a69253e7ddb5ddcc85343c57a5247de",
+      "blockNumber": 92255094,
+      "gasUsed": "27980"
+    },
+    {
+      "label": "Chapter 1 setTokenSink",
+      "hash": "0x3067864ad1868e7a58150de6d3b2c27809be63096ed5b0fd29db25038acf448e",
+      "blockNumber": 92255095,
+      "gasUsed": "50657"
+    },
+    {
+      "label": "Chapter 1 setTokenSinkDepositMode",
+      "hash": "0x7376bb9264863e903c8fc736849978574f819342c9644f90ff103be87e471cac",
+      "blockNumber": 92255096,
+      "gasUsed": "47787"
+    },
+    {
+      "label": "Chapter 1 setReserveAddress",
+      "hash": "0x2457b0b8edfda3dbdf87712ad78de03b17f6d82c8667aeeec9d26d65019563d8",
+      "blockNumber": 92255097,
+      "gasUsed": "47661"
+    },
+    {
+      "label": "Chapter 1 block 1 URI",
+      "hash": "0x02740541683ea4eaace449cb3e08ff202454d52f0d3ef2818a1c48b694908cd2",
+      "blockNumber": 92255098,
+      "gasUsed": "119108"
+    },
+    {
+      "label": "Chapter 1 block 2 URI",
+      "hash": "0xdff24a2fac702c8a7f14b3ade1d53d9c61780333aa4fefd66d0a2f0581ab65ca",
+      "blockNumber": 92255099,
+      "gasUsed": "119108"
+    },
+    {
+      "label": "Chapter 1 block 3 URI",
+      "hash": "0x5742a3931c99ea987e4536b2b91c3f41091dce8d5060a93d008cfbd2a774816b",
+      "blockNumber": 92255100,
+      "gasUsed": "119108"
+    },
+    {
+      "label": "Chapter 1 block 4 URI",
+      "hash": "0xbc4c9d41e2f9654c2fed952fd2131a593bb5230531a94360035d430e51d3d4b4",
+      "blockNumber": 92255101,
+      "gasUsed": "119108"
+    },
+    {
+      "label": "Chapter 1 block 5 URI",
+      "hash": "0xcca7c249d4eeeb2f52e993f419ce98e6b10885a4a825ff7d03a5e44b036efc78",
+      "blockNumber": 92255102,
+      "gasUsed": "119108"
+    },
+    {
+      "label": "Chapter 1 block 6 URI",
+      "hash": "0xb950ce5ef7a7c657396034a3def8330932f43c37867257f6985d949f176effc1",
+      "blockNumber": 92255103,
+      "gasUsed": "119108"
+    },
+    {
+      "label": "Chapter 1 block 7 URI",
+      "hash": "0xeef7232a9e646334d4435c44464aec617361e3cd00eead7205cf8ffbfff8c041",
+      "blockNumber": 92255104,
+      "gasUsed": "119108"
+    },
+    {
+      "label": "Chapter 1 block 8 URI",
+      "hash": "0x8defc804eaba559887b73bf15ed299a6d4f15e7caca1641059e5e9c0e2c0b307",
+      "blockNumber": 92255105,
+      "gasUsed": "119108"
+    },
+    {
+      "label": "Chapter 1 block 9 URI",
+      "hash": "0x3c094ead7f09e268f4383897010aff29b747036a21c543c77243775ec3b3190e",
+      "blockNumber": 92255106,
+      "gasUsed": "119108"
+    },
+    {
+      "label": "Chapter 1 block 10 URI",
+      "hash": "0xdc8fb586dcbd5dfc47461bc0abbe69902eb99c88b81bb6647a6181686424fef0",
+      "blockNumber": 92255107,
+      "gasUsed": "119108"
+    },
+    {
+      "label": "Chapter 1 seed 1-50",
+      "hash": "0x404988dc6fc7e694b16d2e1f34a401e1c24c39dbba37f2a9ab6ee716dd7130be",
+      "blockNumber": 92255108,
+      "gasUsed": "2370823"
+    },
+    {
+      "label": "Chapter 1 seed 51-100",
+      "hash": "0x23efacbdf1efd6400fe53b08b96654e610ede6aeeecbca37c60f569773247db4",
+      "blockNumber": 92255109,
+      "gasUsed": "2370823"
+    },
+    {
+      "label": "Chapter 2 deploy",
+      "hash": "0x2b7dc5c1dc831bf5d4c3164189889b08dfa999b90b73489d16965321eeab6a76",
+      "blockNumber": 92255110,
+      "gasUsed": "3908410"
+    },
+    {
+      "label": "Chapter 2 new Public pause",
+      "hash": "0x684adc5da11c2aadf9e62b347a042e895bffc61a8a95f2e7657e67e993a57df7",
+      "blockNumber": 92255111,
+      "gasUsed": "28475"
+    },
+    {
+      "label": "Chapter 2 setDevWallet",
+      "hash": "0x3ca93d1996dd15b0f8b6f7ba0ef093aed7c862424ec965612fbc42defc9914dc",
+      "blockNumber": 92255112,
+      "gasUsed": "27849"
+    },
+    {
+      "label": "Chapter 2 setPriceProvider",
+      "hash": "0x5a8bb409e20025a2d9ab35fe39713cbb218166f7c3ebf9a2d1e22a98810e7332",
+      "blockNumber": 92255113,
+      "gasUsed": "47425"
+    },
+    {
+      "label": "Chapter 2 setDistributor",
+      "hash": "0x133b64ffb443b7c202a5c214e1262d7aa24eeeeb53ad2f8d8b7b67cede7b90e8",
+      "blockNumber": 92255114,
+      "gasUsed": "47877"
+    },
+    {
+      "label": "Chapter 2 setBiggiToken",
+      "hash": "0x1f028cf6cb5c3730c4c8ee47365b584d1470fec72622267db5d523fa6158f6c1",
+      "blockNumber": 92255115,
+      "gasUsed": "47481"
+    },
+    {
+      "label": "Chapter 2 setBiggiRate",
+      "hash": "0x99bd36f243a5dc2d1ce5df2528c0bbe3d4f493bc592c6f667fe8488e29668e3c",
+      "blockNumber": 92255116,
+      "gasUsed": "27980"
+    },
+    {
+      "label": "Chapter 2 setTokenSink",
+      "hash": "0x577590c6e8cea692ee59104d9a5414783c6920ae38acc4d8e94271490daeb9c4",
+      "blockNumber": 92255117,
+      "gasUsed": "50657"
+    },
+    {
+      "label": "Chapter 2 setTokenSinkDepositMode",
+      "hash": "0xbd25c9e66bc918086b764d8b2a6e759adab9422035a4212be879c0190f082048",
+      "blockNumber": 92255118,
+      "gasUsed": "47787"
+    },
+    {
+      "label": "Chapter 2 setReserveAddress",
+      "hash": "0xbe9fec9a95863bb65de7f4793fc32d9663758f4cf69f62af375bace36ae8da91",
+      "blockNumber": 92255119,
+      "gasUsed": "47661"
+    },
+    {
+      "label": "Chapter 2 seed 1-50",
+      "hash": "0x441270e89066b541099fe87c837e87843f1d103ad23f16d2706c5a62c6c329c0",
+      "blockNumber": 92255120,
+      "gasUsed": "2370823"
+    },
+    {
+      "label": "Chapter 2 seed 51-100",
+      "hash": "0xbdf343b00bf7193aec494914156f346885d6899fd03e2b78cdb1ed68def6b3e4",
+      "blockNumber": 92255121,
+      "gasUsed": "2370823"
+    },
+    {
+      "label": "Chapter 3 deploy",
+      "hash": "0x6aff06b5a3c8dfa22c0e36abde078d043160d0aa7ff7a9e4c971a3fa5c9b1751",
+      "blockNumber": 92255122,
+      "gasUsed": "3908410"
+    },
+    {
+      "label": "Chapter 3 new Public pause",
+      "hash": "0x88efa1f30fc75fdeba686cd7609a4af9469f1124fc810311a70c7f09c022a0f7",
+      "blockNumber": 92255123,
+      "gasUsed": "28475"
+    },
+    {
+      "label": "Chapter 3 setDevWallet",
+      "hash": "0x2f293bba8f5ca8c705c321e0de6664827cbce282e4b0b9546fc3f22bae9a952e",
+      "blockNumber": 92255124,
+      "gasUsed": "27849"
+    },
+    {
+      "label": "Chapter 3 setPriceProvider",
+      "hash": "0x50f47d4c6da48fc1c24e2178d8e112c1f90121164ea824e22eb8e34e1d5dde95",
+      "blockNumber": 92255125,
+      "gasUsed": "47437"
+    },
+    {
+      "label": "Chapter 3 setDistributor",
+      "hash": "0x5c671e21fca010727e6ea28fe9c8c8bd7c6ffd8b7c96d7f47900c1b57a6cad40",
+      "blockNumber": 92255126,
+      "gasUsed": "47877"
+    },
+    {
+      "label": "Chapter 3 setBiggiToken",
+      "hash": "0xc7674c56a4b87c158762ccfe0d697d1abba066516ee5a1fc717bf43ed31fcc75",
+      "blockNumber": 92255127,
+      "gasUsed": "47481"
+    },
+    {
+      "label": "Chapter 3 setBiggiRate",
+      "hash": "0x4888fcb303aeeb8aa6c8edab11c6de46230c2f072dd18ce0f764004fb27e49da",
+      "blockNumber": 92255128,
+      "gasUsed": "27980"
+    },
+    {
+      "label": "Chapter 3 setTokenSink",
+      "hash": "0xabfc1f6018c33727d0d1f478e37a1f6f8414906b7b8354c6790bbafac84d06b8",
+      "blockNumber": 92255129,
+      "gasUsed": "50657"
+    },
+    {
+      "label": "Chapter 3 setTokenSinkDepositMode",
+      "hash": "0x87196b7acf0612a3d0a6a63e4390f8e535d9368f88bcf72bd9064f32cfc4b8b4",
+      "blockNumber": 92255130,
+      "gasUsed": "47787"
+    },
+    {
+      "label": "Chapter 3 setReserveAddress",
+      "hash": "0x8b0c2b9ea7726450e13d794fcdc0785aa42fcd7dcf4827ad0b02472e0eeb8dac",
+      "blockNumber": 92255131,
+      "gasUsed": "47661"
+    },
+    {
+      "label": "Chapter 3 seed 1-50",
+      "hash": "0xfe62117c4f3b189ffae135a9da6f55973926b6b4141809e2efa58d1044a3e34a",
+      "blockNumber": 92255132,
+      "gasUsed": "2370823"
+    },
+    {
+      "label": "Chapter 3 seed 51-100",
+      "hash": "0x95eb9694667414c02571f782475b7aba224ba36cdeb56c0eb0ef0473f90232ed",
+      "blockNumber": 92255133,
+      "gasUsed": "2370823"
+    },
+    {
+      "label": "Chapter 4 deploy",
+      "hash": "0x5ed2febfcc97619fb0e24215d3781bb4ed81ee16ff5d2d8ad51f7e64de4647c1",
+      "blockNumber": 92255134,
+      "gasUsed": "3908410"
+    },
+    {
+      "label": "Chapter 4 new Public pause",
+      "hash": "0x94b1f86b63eff1d0fb04310004469bd4e9432b7aa43cf219439c5ac9450cfadc",
+      "blockNumber": 92255135,
+      "gasUsed": "28475"
+    },
+    {
+      "label": "Chapter 4 setDevWallet",
+      "hash": "0x64d0a6698cdd4e4d736c2ae28974d300ac23d18e58825802bb81aed29c0fb6a0",
+      "blockNumber": 92255136,
+      "gasUsed": "27849"
+    },
+    {
+      "label": "Chapter 4 setPriceProvider",
+      "hash": "0x20794aff06b5a03c5637dde83ffd1a52d30a28649704e0eceb53c73ed98eb955",
+      "blockNumber": 92255137,
+      "gasUsed": "47437"
+    },
+    {
+      "label": "Chapter 4 setDistributor",
+      "hash": "0x025cbaf5107bc8c9c14fb2b43a08fa93e6ce80e4c776bf00eb3bc3bf8059c8aa",
+      "blockNumber": 92255138,
+      "gasUsed": "47877"
+    },
+    {
+      "label": "Chapter 4 setBiggiToken",
+      "hash": "0x81138549ee469fa2f68c82d02a14c6bde7c2b817af1cc304c20394a61b5f3b98",
+      "blockNumber": 92255139,
+      "gasUsed": "47481"
+    },
+    {
+      "label": "Chapter 4 setBiggiRate",
+      "hash": "0xbcf045281e67447fd3b023ca24e9f470645efdd09e26bbb773a28cca0cd9485b",
+      "blockNumber": 92255140,
+      "gasUsed": "27980"
+    },
+    {
+      "label": "Chapter 4 setTokenSink",
+      "hash": "0x77da9f6c49ac75fb3373287cb4f690263ef4e6253df3c83484154f76172adf78",
+      "blockNumber": 92255141,
+      "gasUsed": "50657"
+    },
+    {
+      "label": "Chapter 4 setTokenSinkDepositMode",
+      "hash": "0x9d1de1ae3598bee1fbeef0b30650896a6ae1134cff09989bece8178cc769be85",
+      "blockNumber": 92255142,
+      "gasUsed": "47787"
+    },
+    {
+      "label": "Chapter 4 setReserveAddress",
+      "hash": "0x33099747b02cea547dfbb94b075dce484e950678d107a9d560658254b928d73a",
+      "blockNumber": 92255143,
+      "gasUsed": "47661"
+    },
+    {
+      "label": "Chapter 4 seed 1-50",
+      "hash": "0xb8b4096a712db88d351b658884e395fb21d2b471f72027dbd896e4fa137a2e8c",
+      "blockNumber": 92255144,
+      "gasUsed": "2370823"
+    },
+    {
+      "label": "Chapter 4 seed 51-100",
+      "hash": "0x74e4caf6a7948a6a43b42711b6b05d76a8f2b1fe1558bf4f9907a44b34a0c9b0",
+      "blockNumber": 92255145,
+      "gasUsed": "2370823"
+    },
+    {
+      "label": "Chapter 5 deploy",
+      "hash": "0xcb193e5148b237155f9c56a27c666e109997eaebafc97b15c882f63ae276a0ac",
+      "blockNumber": 92255146,
+      "gasUsed": "3908410"
+    },
+    {
+      "label": "Chapter 5 new Public pause",
+      "hash": "0x54ceb360f5e25d60010f5544a0884eb9789c854070e8bc081dce29ec852862c8",
+      "blockNumber": 92255147,
+      "gasUsed": "28475"
+    },
+    {
+      "label": "Chapter 5 setDevWallet",
+      "hash": "0x244abdc0e524e426aa085baf750d4f3d6b8620313a4c57c5a6fc18454a25e3de",
+      "blockNumber": 92255148,
+      "gasUsed": "27849"
+    },
+    {
+      "label": "Chapter 5 setPriceProvider",
+      "hash": "0xabc991b4c8f60182c6ac0d067420569ccf2612482e4c0bf07915ffb8b929edd4",
+      "blockNumber": 92255149,
+      "gasUsed": "47437"
+    },
+    {
+      "label": "Chapter 5 setDistributor",
+      "hash": "0xd31feda95d5a790057b440cfb7739860081a6de0ba0f80d033a7fd9a3db1dabd",
+      "blockNumber": 92255150,
+      "gasUsed": "47877"
+    },
+    {
+      "label": "Chapter 5 setBiggiToken",
+      "hash": "0x652b2b501551e8fb7a97cb4615964a904c072ee943747e932ea3c67cc8503393",
+      "blockNumber": 92255151,
+      "gasUsed": "47481"
+    },
+    {
+      "label": "Chapter 5 setBiggiRate",
+      "hash": "0xe1e689b34fe9b3175ec2f880e28b1b802d5614a045a8ab01cc73bf4ae4f41b88",
+      "blockNumber": 92255152,
+      "gasUsed": "27980"
+    },
+    {
+      "label": "Chapter 5 setTokenSink",
+      "hash": "0x886d13b8d36ea7d1256af4bc28d1fa0bc46c4cb8f154444e7367f891067c7774",
+      "blockNumber": 92255153,
+      "gasUsed": "50657"
+    },
+    {
+      "label": "Chapter 5 setTokenSinkDepositMode",
+      "hash": "0xaff6a20e3551cd36597e84f2a126339f8713fa65732ecf278940a73a3d114b4b",
+      "blockNumber": 92255154,
+      "gasUsed": "47787"
+    },
+    {
+      "label": "Chapter 5 setReserveAddress",
+      "hash": "0x85c56a55cb79a4aec3e17e5aa9ca2dc466b99819235a7c6915b308b58e25432b",
+      "blockNumber": 92255155,
+      "gasUsed": "47661"
+    },
+    {
+      "label": "Chapter 5 seed 1-50",
+      "hash": "0xd599bd15dcfe94f1dabfba091de048e73d855a37d04f2c823ca6b3523ff33ecb",
+      "blockNumber": 92255156,
+      "gasUsed": "2370823"
+    },
+    {
+      "label": "Chapter 5 seed 51-100",
+      "hash": "0xd70e6d41e93515ee91a42b17be3622cccd103d9bbf4c3b4060ff3047d6b6d9ce",
+      "blockNumber": 92255157,
+      "gasUsed": "2370823"
+    },
+    {
+      "label": "Chapter 1 old Public pause",
+      "hash": "0x2a5dd67a5014ea37ea0e808315852bd6fdfd07ff6ffd70fe94ca68b49701cbe8",
+      "blockNumber": 92255158,
+      "gasUsed": "28459"
+    },
+    {
+      "label": "Chapter 1 Registry replace Public",
+      "hash": "0x5f20453ec44a9f6d86874a5f8b7b8e6bf7b4c52d05e5f1a6eec2b0e487fc942c",
+      "blockNumber": 92255159,
+      "gasUsed": "64149"
+    },
+    {
+      "label": "Chapter 1 bind new Public controller",
+      "hash": "0x37615e23c3325384c1de2c79822be271ff36d427e5f00ec25796598b1d1242b8",
+      "blockNumber": 92255160,
+      "gasUsed": "89207"
+    },
+    {
+      "label": "Chapter 1 Distributor add new",
+      "hash": "0x51392f20a1457649809dda58f7037a2fb4fae83ec77710eab20d732792d3159d",
+      "blockNumber": 92255161,
+      "gasUsed": "47680"
+    },
+    {
+      "label": "Chapter 1 Treasury allow new",
+      "hash": "0x433241f2d13c76fe04f33efe15fd8aaacf94915f7bc4857b398f5a0748868ace",
+      "blockNumber": 92255162,
+      "gasUsed": "47852"
+    },
+    {
+      "label": "Chapter 1 Reserve allow new",
+      "hash": "0xdfb500a32fed90b457c70d9b6b9a68e9431c69b524c52efd61b58de6dfc65d47",
+      "blockNumber": 92255163,
+      "gasUsed": "48055"
+    },
+    {
+      "label": "Chapter 1 NFTRewards allow new",
+      "hash": "0x7e5ad202501dca353459dc6cc554f9309fb02a0288ee52a744c3a4d201297565",
+      "blockNumber": 92255164,
+      "gasUsed": "47986"
+    },
+    {
+      "label": "Chapter 1 Drip allow new",
+      "hash": "0x1da109317c99226ffa1d06a729f1f1eb1d8101aa8edcfbc1626b74341f12d6d6",
+      "blockNumber": 92255165,
+      "gasUsed": "47755"
+    },
+    {
+      "label": "Chapter 1 Distributor remove old",
+      "hash": "0xc91d79b9a9a05084dd5d670fb4914b595b6f6d8e4e5d026a5088e1a007668db2",
+      "blockNumber": 92255166,
+      "gasUsed": "25466"
+    },
+    {
+      "label": "Chapter 1 Treasury remove old",
+      "hash": "0x8cb94471eefef7a7f2386ca2ee1a443f58a296bcc36513fab4de2b1f4c914a1a",
+      "blockNumber": 92255167,
+      "gasUsed": "25940"
+    },
+    {
+      "label": "Chapter 1 Reserve remove old",
+      "hash": "0x8a8a9c87f2b6a9c7440b7116717bc49c91b9911df8eb2084e9befc859908f6df",
+      "blockNumber": 92255168,
+      "gasUsed": "26143"
+    },
+    {
+      "label": "Chapter 1 NFTRewards remove old",
+      "hash": "0x97af4fd7f568f67c4205bfea56bfe401fbad90c29fa5259c28ca1f50c6f09929",
+      "blockNumber": 92255169,
+      "gasUsed": "26074"
+    },
+    {
+      "label": "Chapter 1 Drip remove old",
+      "hash": "0x6ad339a6a04c81ac039beca6e74f2d90febd63c0fda60877f07bd343d20cac14",
+      "blockNumber": 92255170,
+      "gasUsed": "25843"
+    },
+    {
+      "label": "Chapter 2 old Public pause",
+      "hash": "0x1c4a8059f56c0ce8c036342bd1c6604aeacb29c49d7f3d9a1f9ced1f8b9dfedc",
+      "blockNumber": 92255171,
+      "gasUsed": "28459"
+    },
+    {
+      "label": "Chapter 2 Registry replace Public",
+      "hash": "0xe5faa8947eb5e813739bd759fe7da3c94dadf36bb253f5ab908acf8ad991f839",
+      "blockNumber": 92255172,
+      "gasUsed": "64137"
+    },
+    {
+      "label": "Chapter 2 bind new Public controller",
+      "hash": "0x9dca883c1d40dcc0ae08bf2f60cf93e91499cb8b5b130fb70e8811431b657886",
+      "blockNumber": 92255173,
+      "gasUsed": "89207"
+    },
+    {
+      "label": "Chapter 2 Distributor add new",
+      "hash": "0x6e2666bfedaba3e0de4a3abfbf245cfdb3263e30aced6b6a47bcb9db36d7f60d",
+      "blockNumber": 92255174,
+      "gasUsed": "47680"
+    },
+    {
+      "label": "Chapter 2 Treasury allow new",
+      "hash": "0xcaa77e70fcc74738a24e95d752b175d73058cdd559fe20819c90459486403cd4",
+      "blockNumber": 92255175,
+      "gasUsed": "47852"
+    },
+    {
+      "label": "Chapter 2 Reserve allow new",
+      "hash": "0xa1a5309e7b21a32bad0b787d69e515d467b01f81719eb55d8cd04e91f30dc040",
+      "blockNumber": 92255176,
+      "gasUsed": "48055"
+    },
+    {
+      "label": "Chapter 2 NFTRewards allow new",
+      "hash": "0x2e552864f0d99d7b946409575904f22856c9f17ca6ece9c5a48b0dd65e9c3f38",
+      "blockNumber": 92255177,
+      "gasUsed": "47986"
+    },
+    {
+      "label": "Chapter 2 Drip allow new",
+      "hash": "0x4018d96c87bce2a0cb4ee541c8a5b8d52db8925500082048fbf8e4ee92c45edb",
+      "blockNumber": 92255178,
+      "gasUsed": "47755"
+    },
+    {
+      "label": "Chapter 2 Distributor remove old",
+      "hash": "0x2a2fc50f3afb8acc69052317ff9b79cc9be68ad5d00f20693fda7ccc2c8f6e46",
+      "blockNumber": 92255179,
+      "gasUsed": "25466"
+    },
+    {
+      "label": "Chapter 2 Treasury remove old",
+      "hash": "0x4459d0fb14a428bf822cc3c6b60fa6f22da37092481aa6e5441f5fe69708fbce",
+      "blockNumber": 92255180,
+      "gasUsed": "25940"
+    },
+    {
+      "label": "Chapter 2 Reserve remove old",
+      "hash": "0x15b7e130d64ac63c2165fcb6f1ce0b9fa192049a4ea0a69ca88f410c3142df8e",
+      "blockNumber": 92255181,
+      "gasUsed": "26143"
+    },
+    {
+      "label": "Chapter 2 NFTRewards remove old",
+      "hash": "0xf80e9883a8632f45a442b1202eb5d92f92aef49d14c5fe5e630e2ba90b4d02c1",
+      "blockNumber": 92255182,
+      "gasUsed": "26074"
+    },
+    {
+      "label": "Chapter 2 Drip remove old",
+      "hash": "0x173ea941f65449609ca4b60228d53b5887af9bc3d2f74493ac7c0179a9e8aff4",
+      "blockNumber": 92255183,
+      "gasUsed": "25843"
+    },
+    {
+      "label": "Chapter 3 old Public pause",
+      "hash": "0x41d582fef4042b109c1679237ea8c623fc503f63c555a93666747d8f5979afdd",
+      "blockNumber": 92255184,
+      "gasUsed": "28459"
+    },
+    {
+      "label": "Chapter 3 Registry replace Public",
+      "hash": "0xc6dcd2431fd735f7a151acfc4873bf0c5d7dbb8cae6289be664ae2dbfa3205e6",
+      "blockNumber": 92255185,
+      "gasUsed": "64149"
+    },
+    {
+      "label": "Chapter 3 bind new Public controller",
+      "hash": "0x3fd18d0da12f685737bc3cf0c171d7807c96cb3595581a43fae71b1a6f2cd193",
+      "blockNumber": 92255186,
+      "gasUsed": "89207"
+    },
+    {
+      "label": "Chapter 3 Distributor add new",
+      "hash": "0xfcca9348d8f20d1b377934473440fdaeff9b5e0635da6ac09c830655a9418f7b",
+      "blockNumber": 92255187,
+      "gasUsed": "47680"
+    },
+    {
+      "label": "Chapter 3 Treasury allow new",
+      "hash": "0xed5c37949002b582d7513ae89c96b37f670a3c9eaa29ac78a55adda00ae58f7a",
+      "blockNumber": 92255188,
+      "gasUsed": "47852"
+    },
+    {
+      "label": "Chapter 3 Reserve allow new",
+      "hash": "0xdcd8f25646b536aef2ea6c4c8ffcbcf999f25fd4c3f4653b762bd48d4aa2e07a",
+      "blockNumber": 92255189,
+      "gasUsed": "48055"
+    },
+    {
+      "label": "Chapter 3 NFTRewards allow new",
+      "hash": "0x7c2322a5b36293ec2794f1f78b34ef8794581e6f60b8f626f5e9c2be15c87f86",
+      "blockNumber": 92255190,
+      "gasUsed": "47986"
+    },
+    {
+      "label": "Chapter 3 Drip allow new",
+      "hash": "0x98e7477beb4e8ff4fc6e2a162553433e37d78ab8cc910e03de222f6060d89cfb",
+      "blockNumber": 92255191,
+      "gasUsed": "47755"
+    },
+    {
+      "label": "Chapter 3 Distributor remove old",
+      "hash": "0x2444b834a878728b4d1805a2fd7d354b1ec1639e55e9b9cd978e3a24bdf18338",
+      "blockNumber": 92255192,
+      "gasUsed": "25466"
+    },
+    {
+      "label": "Chapter 3 Treasury remove old",
+      "hash": "0x25ca87f6760f60e4ac73e930880c6ff35f97941128ab8846a74147df01b084d8",
+      "blockNumber": 92255193,
+      "gasUsed": "25940"
+    },
+    {
+      "label": "Chapter 3 Reserve remove old",
+      "hash": "0xf62219b552777707b5c9901339bd7440458dc156c4e2059bfe549c8897dfd50e",
+      "blockNumber": 92255194,
+      "gasUsed": "26143"
+    },
+    {
+      "label": "Chapter 3 NFTRewards remove old",
+      "hash": "0xddcfb8478872acbdce7d1b41021a76fef095ede0cd99940dd3aa5270ea0c8679",
+      "blockNumber": 92255195,
+      "gasUsed": "26074"
+    },
+    {
+      "label": "Chapter 3 Drip remove old",
+      "hash": "0x3db6556b77acad4d419328495f46f28f5ad6b4e2ede0c68ef657c5b26a31824a",
+      "blockNumber": 92255196,
+      "gasUsed": "25843"
+    },
+    {
+      "label": "Chapter 4 old Public pause",
+      "hash": "0xf70f610e49d65425d73d1f355353f6d38a521887c3871676fe0c25d1844d2d56",
+      "blockNumber": 92255197,
+      "gasUsed": "28459"
+    },
+    {
+      "label": "Chapter 4 Registry replace Public",
+      "hash": "0x4f7bdeb0eb908682c146c25fdcd560b14ff9b013369f15dfbbc9391746e41f7d",
+      "blockNumber": 92255198,
+      "gasUsed": "64149"
+    },
+    {
+      "label": "Chapter 4 bind new Public controller",
+      "hash": "0x938d93bf659b2b1c8ecfa42769bf0d37177572b2bda5002d70256095b04639cf",
+      "blockNumber": 92255199,
+      "gasUsed": "89207"
+    },
+    {
+      "label": "Chapter 4 Distributor add new",
+      "hash": "0x1ae5441e7ea88b5fbabaa0eca27f28b04ae51774960eaa832c1b483260db3fc7",
+      "blockNumber": 92255200,
+      "gasUsed": "47680"
+    },
+    {
+      "label": "Chapter 4 Treasury allow new",
+      "hash": "0x8d231411d72911783018afbef3b762e42403dbd84d1f71b423a2c833823c72b3",
+      "blockNumber": 92255201,
+      "gasUsed": "47852"
+    },
+    {
+      "label": "Chapter 4 Reserve allow new",
+      "hash": "0x1bac1fe7d3f5a20d879d7659f805f2497f114c6cf9d5b9f907a10910a7658a26",
+      "blockNumber": 92255202,
+      "gasUsed": "48055"
+    },
+    {
+      "label": "Chapter 4 NFTRewards allow new",
+      "hash": "0xc45dea638a7394ab2d7ffad893e62787d6c23501195a8e0b4c559aa68efe1411",
+      "blockNumber": 92255203,
+      "gasUsed": "47986"
+    },
+    {
+      "label": "Chapter 4 Drip allow new",
+      "hash": "0x4db7a7137932f6d5f5fcacec6000178733d548b5d0ba63d102c93de26eba73da",
+      "blockNumber": 92255204,
+      "gasUsed": "47755"
+    },
+    {
+      "label": "Chapter 4 Distributor remove old",
+      "hash": "0x9f8a2b1a65b319f87a8d7bed52f0ec2d1c3a10453a537f134cea4dbdc89ac0ba",
+      "blockNumber": 92255205,
+      "gasUsed": "25454"
+    },
+    {
+      "label": "Chapter 4 Treasury remove old",
+      "hash": "0x6c11226d93af6beae24a6932de64d20b192efdd50a0a7ef4fedb4cc5ecf43574",
+      "blockNumber": 92255206,
+      "gasUsed": "25928"
+    },
+    {
+      "label": "Chapter 4 Reserve remove old",
+      "hash": "0x7f36b5bc819b4567befc494ba98591ad40229bfb371ddaf3bedbd4fb38e6a37d",
+      "blockNumber": 92255207,
+      "gasUsed": "26131"
+    },
+    {
+      "label": "Chapter 4 NFTRewards remove old",
+      "hash": "0x789bd0c955536d842c2116f9d30d228161764a0ad6425dd827af8ac484902bf8",
+      "blockNumber": 92255208,
+      "gasUsed": "26062"
+    },
+    {
+      "label": "Chapter 4 Drip remove old",
+      "hash": "0x6b37f39e5e702579d6fcae4c23f4a79888c37d4206c76c1200c6a1192fc0e6a1",
+      "blockNumber": 92255209,
+      "gasUsed": "25831"
+    },
+    {
+      "label": "Chapter 5 old Public pause",
+      "hash": "0xd802f394497986ce82e6add69645df55af427a9f14c72c170a573bfaa5b77829",
+      "blockNumber": 92255210,
+      "gasUsed": "28459"
+    },
+    {
+      "label": "Chapter 5 Registry replace Public",
+      "hash": "0xe667c2e382aa1485480da1e2281f60a6897bef1d3e6425face30cbcc426709f9",
+      "blockNumber": 92255211,
+      "gasUsed": "64149"
+    },
+    {
+      "label": "Chapter 5 bind new Public controller",
+      "hash": "0x4854c0245759b8088a15753c35906e4a011c875a2bfedcef4fea777476c3caf3",
+      "blockNumber": 92255212,
+      "gasUsed": "89207"
+    },
+    {
+      "label": "Chapter 5 Distributor add new",
+      "hash": "0x304410739391a5595d6c16d9b5ec9a5586a5234844c41addc91b02c4d94171ef",
+      "blockNumber": 92255213,
+      "gasUsed": "47680"
+    },
+    {
+      "label": "Chapter 5 Treasury allow new",
+      "hash": "0x313f3238774c5e75d20a2981255db7ceb5ae1e5304c50d4e1f7168a25058109c",
+      "blockNumber": 92255214,
+      "gasUsed": "47852"
+    },
+    {
+      "label": "Chapter 5 Reserve allow new",
+      "hash": "0xc4d621d980dd75d7eed412aa34921bac52c4cfbe86a506674493f59dd2a5a08b",
+      "blockNumber": 92255215,
+      "gasUsed": "48055"
+    },
+    {
+      "label": "Chapter 5 NFTRewards allow new",
+      "hash": "0x40fd4bfec9940c69c75967f059f9549805d10ec317e6613b839474bad65bfbf1",
+      "blockNumber": 92255216,
+      "gasUsed": "47986"
+    },
+    {
+      "label": "Chapter 5 Drip allow new",
+      "hash": "0x7e99e179cb4d5e8db3ac00e01b891af78ae05e33854f0e331b4d0333e32a2ddb",
+      "blockNumber": 92255217,
+      "gasUsed": "47755"
+    },
+    {
+      "label": "Chapter 5 Distributor remove old",
+      "hash": "0x7c179b46e9434ac76588df464f7628c91143ec225ef0e49543734303ac35838d",
+      "blockNumber": 92255218,
+      "gasUsed": "25466"
+    },
+    {
+      "label": "Chapter 5 Treasury remove old",
+      "hash": "0x17d0649bd63e330b9868530d29ae25adbee07bece33c84f66958fdc34438fe1b",
+      "blockNumber": 92255219,
+      "gasUsed": "25940"
+    },
+    {
+      "label": "Chapter 5 Reserve remove old",
+      "hash": "0x9b7c8acc3f8c7db0bfa280829702e8032950f5a167fa10d4786592faa4513427",
+      "blockNumber": 92255220,
+      "gasUsed": "26143"
+    },
+    {
+      "label": "Chapter 5 NFTRewards remove old",
+      "hash": "0xdd12d31d8079651d6717cc9595ebc26fc128dc4f58a8e120243a6c9597e94c99",
+      "blockNumber": 92255221,
+      "gasUsed": "26074"
+    },
+    {
+      "label": "Chapter 5 Drip remove old",
+      "hash": "0xbbd017353eaf2d9328fe4956046808e2e4f8fc25cf7d3b3c833471a60e1c4976",
+      "blockNumber": 92255222,
+      "gasUsed": "25843"
+    },
+    {
+      "label": "MasterConfig replace chapter-1 Public",
+      "hash": "0x5911db9a9c035052548cd4cd313ac4ce1a275910d4c366731706b40cf8e1fdb9",
+      "blockNumber": 92255223,
+      "gasUsed": "38919"
+    }
+  ],
+  "gasUsed": {
+    "total": "49099260",
+    "deployer": "19542050",
+    "owner": "29557210",
+    "maximumTotalCostPolAtQuotedMaxFee": "23.66703949492803732",
+    "maximumDeployerCostPolAtQuotedMaxFee": "9.4197441908871631",
+    "maximumOwnerCostPolAtQuotedMaxFee": "14.24729530404087422"
+  },
+  "result": "deployed-wired-paused",
+  "completedAt": "2026-08-18T21:20:37.562Z"
+}

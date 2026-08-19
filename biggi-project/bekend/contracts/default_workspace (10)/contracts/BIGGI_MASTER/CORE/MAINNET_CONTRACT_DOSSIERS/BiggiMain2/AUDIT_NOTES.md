@@ -1,6 +1,6 @@
 # Audit Notes - BiggiMain2
 
-Deployment status: live on Polygon mainnet as of 2026-06-16. These notes are predeploy audit notes for final mainnet preparation.
+Deployment status: corrected 100-NFT implementation is awaiting Polygon redeploy. The previously recorded 550-row Public deployment is superseded.
 
 ## Security invariants
 - Public mint limits and payment validation
@@ -25,4 +25,4 @@ Deployment status: live on Polygon mainnet as of 2026-06-16. These notes are pre
 ## Metadata consistency update (2026-06-07)
 - `BiggiMain2` now exposes the same metadata readiness views as `BiggiMain`: `metadataConfiguredCount`, `isMetadataFullyConfigured`, `isRewardMatrixConsistent`, `metadataConsistency`, and `assertMetadataConsistency`.
 - Public block URI category is `2`; VRF `BiggiMain` block URI category remains `3`.
-- Launch readiness requires all 550 metadata rows seeded and `assertMetadataConsistency()` passing before public mint is opened.
+- Launch readiness requires all 100 metadata rows seeded, exactly ten per block, all ten block URIs configured, and `assertMetadataConsistency()` passing before public mint is opened.

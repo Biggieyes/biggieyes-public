@@ -2,7 +2,7 @@
   "name": "biggi-backend",
   "version": "0.0.0",
   "private": true,
-  "description": "Backend scripts for Biggi project (Hardhat 2.27 / ethers v5 compatible)",
+  "description": "Backend scripts for Biggi project (Hardhat 2 / ethers v5 compatible)",
   "main": "index.js",
   "scripts": {
     "compile": "npx hardhat compile",
@@ -44,6 +44,15 @@
     "preflight:master:cre:polygon": "node scripts/master/runCREPreflightPolygon.js",
     "prepare:master:cre-receiver:polygon": "node scripts/master/runPrepareCREReceiverPolygon.js",
     "preflight:launch:polygon": "node scripts/master/runLaunchReadinessPreflightPolygon.js",
+    "prepare:public-ticket-price:polygon": "node scripts/master/runSetPublicTicketPricePolygon.js",
+    "set:public-ticket-price:polygon": "node scripts/master/runSetPublicTicketPricePolygon.js --execute",
+    "prepare:main2-metadata:polygon": "node scripts/master/runSeedMain2MetadataPolygon.js --dry-run",
+    "seed:main2-metadata:polygon": "node scripts/master/runSeedMain2MetadataPolygon.js --execute",
+    "prepare:public-collections-redeploy:polygon": "node scripts/master/runRedeployPublicCollectionsPolygon.js --dry-run",
+    "redeploy:public-collections:polygon": "node scripts/master/runRedeployPublicCollectionsPolygon.js --execute",
+    "resume:public-collections-redeploy:polygon": "node scripts/master/runRedeployPublicCollectionsPolygon.js --execute --resume",
+    "sync:public-collections-redeploy": "node scripts/master/syncPublicRedeployAddresses.js",
+    "rehearse:public-collections-redeploy:fork": "node scripts/master/runPublicCollectionsRedeployForkRehearsal.js",
     "prepare:initial-distribution:polygon": "node scripts/master/runInitialDistributionPolygon.js",
     "prepare:initial-liquidity:polygon": "node scripts/master/runInitialLiquidityPolygon.js",
     "rehearse:initial-liquidity:fork": "node scripts/master/runInitialLiquidityForkRehearsal.js",
@@ -95,5 +104,13 @@
     "ethers": "^5.8.0",
     "hardhat": "^2.29.0",
     "mocha": "^10.2.0"
+  },
+  "overrides": {
+    "@ethersproject/providers": {
+      "ws": "8.21.3"
+    },
+    "solc": {
+      "tmp": "0.2.7"
+    }
   }
 }

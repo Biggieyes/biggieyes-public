@@ -482,7 +482,22 @@ async function main() {
   if (saleCap + marketingCap !== TOTAL_TICKETS) {
     throw new Error(`SALE_CAP + MARKETING_CAP must equal ${TOTAL_TICKETS}`);
   }
-  const ticketPrice = env("TICKET_PRICE");
+  const marketingTicketPrice = env("MARKETING_TICKET_PRICE", env("TICKET_PRICE", "1"));
+  const publicTicketPrice = env("PUBLIC_TICKET_PRICE", "500");
+  let marketingTicketPriceWei;
+  let publicTicketPriceWei;
+  try {
+    marketingTicketPriceWei = ethers.utils.parseEther(marketingTicketPrice);
+    publicTicketPriceWei = ethers.utils.parseEther(publicTicketPrice);
+  } catch {
+    throw new Error("MARKETING_TICKET_PRICE and PUBLIC_TICKET_PRICE must be valid POL amounts");
+  }
+  if (marketingTicketPriceWei.lte(0)) {
+    throw new Error("MARKETING_TICKET_PRICE must be greater than zero");
+  }
+  if (publicTicketPriceWei.lte(marketingTicketPriceWei)) {
+    throw new Error("PUBLIC_TICKET_PRICE must be greater than MARKETING_TICKET_PRICE");
+  }
   const priceIncreaseBps = envInt("PRICE_INCREASE_PER_MINT_BPS", Number(base.PRICE_INCREASE_PER_MINT_BPS || 10033));
   const biggiRate = env("BIGGI_RATE", base.BIGGI_RATE || "");
   const tokenSink = isAddress(A.TOKEN_SINK) ? A.TOKEN_SINK : A.TREASURY;
@@ -645,8 +660,10 @@ async function main() {
       await maybeTx(opts, "TicketHub.setTicketBaseURI chapter1", () => ticketHub.setTicketBaseURI(chapter1TicketBase));
     }
     await maybeTx(opts, "TicketHub.setPriceIncreasePerMint", () => ticketHub.setPriceIncreasePerMint(priceIncreaseBps));
-    if (ticketPrice) {
-      await maybeTx(opts, "TicketHub.setTicketPrice", () => ticketHub.setTicketPrice(ethers.utils.parseEther(ticketPrice)));
+    if (marketingTicketPrice) {
+      await maybeTx(opts, "TicketHub.setTicketPrice marketing bootstrap", () =>
+        ticketHub.setTicketPrice(marketingTicketPriceWei)
+      );
     }
     if (isAddress(A.DISTRIBUTOR)) {
       await maybeTx(opts, "TicketHub.setDistributor", () => ticketHub.setDistributor(A.DISTRIBUTOR));
@@ -980,20 +997,51 @@ async function main() {
     }
   }
 
-  if (opts.mintMarketing) {
-    for (const chapterId of rangeFromOne(chapterCount)) {
-      const alreadyMintedRaw = await ticketHub.chapterMarketingMinted(chapterId);
-      const alreadyMinted = asNumber(alreadyMintedRaw);
-      const remaining = marketingCap - alreadyMinted;
-      if (remaining < 0) throw new Error(`Chapter ${chapterId} marketing mint exceeds cap`);
-      if (remaining === 0) {
-        console.log(`OK TicketHub chapter ${chapterId} marketing tickets: ${marketingCap}`);
-      } else {
-        await maybeTx(opts, `TicketHub.mintMarketingTicketsForChapter ${chapterId} x${remaining}`, () =>
-          ticketHub.mintMarketingTicketsForChapter(chapterId, recipient, remaining)
+  let marketingAllocationComplete = true;
+  let totalPaidMints = 0;
+  for (const chapterId of rangeFromOne(chapterCount)) {
+    const [alreadyMintedRaw, paidMintedRaw] = await Promise.all([
+      ticketHub.chapterMarketingMinted(chapterId),
+      ticketHub.chapterSaleMinted(chapterId),
+    ]);
+    const alreadyMinted = asNumber(alreadyMintedRaw);
+    totalPaidMints += asNumber(paidMintedRaw);
+    const remaining = marketingCap - alreadyMinted;
+    if (remaining < 0) throw new Error(`Chapter ${chapterId} marketing mint exceeds cap`);
+    if (remaining === 0) {
+      console.log(`OK TicketHub chapter ${chapterId} marketing tickets: ${marketingCap}`);
+    } else if (opts.mintMarketing) {
+      await maybeTx(opts, `TicketHub.mintMarketingTicketsForChapter ${chapterId} x${remaining}`, () =>
+        ticketHub.mintMarketingTicketsForChapter(chapterId, recipient, remaining)
+      );
+    } else {
+      marketingAllocationComplete = false;
+      console.log(`PENDING TicketHub chapter ${chapterId} marketing tickets: ${alreadyMinted}/${marketingCap}`);
+    }
+  }
+
+  if (publicTicketPrice && (marketingAllocationComplete || opts.mintMarketing)) {
+    const currentTicketPriceWei = await ticketHub.ticketPrice();
+    if (totalPaidMints > 0) {
+      if (currentTicketPriceWei.lt(publicTicketPriceWei)) {
+        throw new Error(
+          `TicketHub has ${totalPaidMints} paid mints but its current price is below the public start price`
         );
       }
+      console.log(
+        `OK TicketHub live paid curve preserved after ${totalPaidMints} paid mints: ${ethers.utils.formatEther(currentTicketPriceWei)} POL`
+      );
+    } else if (currentTicketPriceWei.eq(publicTicketPriceWei)) {
+      console.log(`OK TicketHub public start price: ${publicTicketPrice} POL`);
+    } else {
+      await maybeTx(opts, "TicketHub.setTicketPrice public sale", () =>
+        ticketHub.setTicketPrice(publicTicketPriceWei)
+      );
     }
+  } else if (publicTicketPrice) {
+    console.log(
+      `PENDING TicketHub public price ${publicTicketPrice} POL until every chapter marketing allocation is complete`
+    );
   }
 
   const output = {
@@ -1018,6 +1066,8 @@ async function main() {
     RESERVE: A.RESERVE,
     SALE_CAP: saleCap,
     MARKETING_CAP: marketingCap,
+    MARKETING_TICKET_PRICE_WEI: marketingTicketPriceWei.toString(),
+    PUBLIC_TICKET_PRICE_WEI: publicTicketPriceWei.toString(),
     chapters: chapters.map((ch) => ({
       chapterId: ch.chapterId,
       seriesId: ch.seriesId,
@@ -1032,7 +1082,9 @@ async function main() {
     CHAPTER_ID: 1,
     SERIES_ID: 1,
     CHAPTER_COUNT: chapterCount,
-    marketingTicketsMintedPerChapter: opts.mintMarketing ? marketingCap : 0,
+    marketingTicketsMintedPerChapter:
+      marketingAllocationComplete || opts.mintMarketing ? marketingCap : null,
+    totalPaidMints,
     createdAt: new Date().toISOString(),
   };
 

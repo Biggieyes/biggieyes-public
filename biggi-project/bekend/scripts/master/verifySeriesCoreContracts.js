@@ -45,16 +45,18 @@ async function main() {
     },
   ];
 
-  for (const chapter of addresses.chapters.filter((item) => Number(item.chapterId) > 1)) {
-    contracts.push({
-      name: `Chapter ${chapter.chapterId} BiggiEyesMain`,
-      address: chapter.MAIN,
-      contract: `${sourceRoot}/BiggiMain.sol:BiggiEyesMain`,
-      constructorArguments: [owner],
-      libraries: {
-        [`${sourceRoot}/CORE_LIBRARY/BiggiNamesLib.sol:BiggiNamesLib`]: addresses.BIGGI_NAMES_LIB,
-      },
-    });
+  for (const chapter of addresses.chapters) {
+    if (Number(chapter.chapterId) > 1) {
+      contracts.push({
+        name: `Chapter ${chapter.chapterId} BiggiEyesMain`,
+        address: chapter.MAIN,
+        contract: `${sourceRoot}/BiggiMain.sol:BiggiEyesMain`,
+        constructorArguments: [owner],
+        libraries: {
+          [`${sourceRoot}/CORE_LIBRARY/BiggiNamesLib.sol:BiggiNamesLib`]: addresses.BIGGI_NAMES_LIB,
+        },
+      });
+    }
     contracts.push({
       name: `Chapter ${chapter.chapterId} BiggiEyesMain2`,
       address: chapter.MAIN2,

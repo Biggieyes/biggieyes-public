@@ -1,6 +1,6 @@
 # CORE runbook
 
-Status 2026-08-17: chapter-aware `BIGGI_MASTER/CORE` je nasazeny na Polygon mainnetu pro pet series. Tento runbook je pro kontrolu wiring, metadata readiness a postupnou aktivaci jednotlivych chapteru.
+Status 2026-08-18: chapter-aware `BIGGI_MASTER/CORE` je nasazeny na Polygon mainnetu pro pet series. Vsech pet Public deploymentu pouziva opravenou 100-NFT implementaci, je verified a zustava paused. Tento runbook je pro kontrolu wiring, metadata readiness a postupnou aktivaci jednotlivych chapteru.
 
 Tento dokument popisuje praktický postup po deployi `CORE` kontraktů.
 
@@ -171,8 +171,10 @@ V `BiggiMain2` nastav:
 8. `setContractURI(...)`
 9. `setURI(1, 0, charactersBaseURI)` pro public character metadata
 10. `setURI(2, blockIdx, blockBaseURI)` pro vsech 10 public block base URI
-11. `batchSetNFTBackgroundAndBlock(...)`
-12. zkontrolovat `metadataConsistency()` a `assertMetadataConsistency()`
+11. `batchSetNFTBackgroundAndBlock(...)` pro presne 100 indexu: `mainId=idx`, interni sentinel `background=1`, `blockIdx=((idx-1)/10)+1`
+12. zkontrolovat `metadataConsistency() == (100, true, true)` a `assertMetadataConsistency()`
+
+Public nema barevne background klony ani vlastni cenovou krivku. Kazdy z 10 bloku obsahuje 10 unikatnich NFT a cenu vzdy poskytuje sparovana VRF kolekce pres chapter controller.
 
 Mainnet-prep BIGGI public payment flow:
 
@@ -211,6 +213,8 @@ Potom:
 
 Deploy `BiggiCollectionRewards(BiggiMain, owner)` a nastav:
 
+`CollectionRewards` se vztahuje pouze na VRF kolekci kazdeho chapteru. Public kolekce musi zustat z `CollectionRewards` vyloucena.
+
 1. volitelně `setRegistry(BiggiSeriesRegistry)`
 2. volitelně `setDistributor(BiggiMultiCollectionDistributor)`
 3. volitelně `setRewardsAmounts(...)`
@@ -218,6 +222,8 @@ Deploy `BiggiCollectionRewards(BiggiMain, owner)` a nastav:
 ### Token rewards
 
 Deploy `BiggiTokenRewards(BiggiMain, BiggiMain2, BIGGI_TOKEN, owner)` a nastav:
+
+`TokenRewards` se vztahuje na VRF i Public kolekci kazdeho registrovaneho chapteru.
 
 1. `setTreasure(...)`
 2. volitelně `setRegistry(BiggiSeriesRegistry)`

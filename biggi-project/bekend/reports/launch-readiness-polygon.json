@@ -1,7 +1,7 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "createdAt": "2026-08-17T20:11:42.226Z",
+  "createdAt": "2026-08-19T01:40:49.121Z",
   "okForDeployOnly": true,
   "okForPublicLaunch": false,
   "checks": [
@@ -18,7 +18,7 @@
     {
       "name": "Code exists: MAIN2",
       "ok": true,
-      "value": "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634"
+      "value": "0xe56cC0657A89daf10994204eD745985a61b0E36F"
     },
     {
       "name": "Code exists: TICKET_HUB",
@@ -191,6 +191,17 @@
       }
     },
     {
+      "name": "MAIN2 metadata consistency ok",
+      "ok": true,
+      "value": {
+        "configuredCount": "100",
+        "fullyConfigured": true,
+        "rewardMatrixConsistent": true,
+        "paused": true,
+        "devWallet": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2"
+      }
+    },
+    {
       "name": "DRIP_KEEPER_PROXY remains paused",
       "ok": true,
       "value": true
@@ -210,12 +221,12 @@
       }
     },
     {
-      "name": "MAIN2 metadata is not launch-ready",
+      "name": "MAIN2 is paused",
       "value": {
-        "configuredCount": "0",
-        "fullyConfigured": false,
-        "rewardMatrixConsistent": false,
-        "paused": false,
+        "configuredCount": "100",
+        "fullyConfigured": true,
+        "rewardMatrixConsistent": true,
+        "paused": true,
         "devWallet": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2"
       }
     },
@@ -287,7 +298,9 @@
       "marketingCap": 50,
       "saleMinted": 0,
       "marketingMinted": 50,
-      "ticketPrice": "1000000000000000000",
+      "totalPaidMints": "0",
+      "ticketPrice": "500000000000000000000",
+      "priceIncreasePerMint": "10033",
       "devWallet": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "tokenSink": "0x35EE9523D20fFfe47c62dCcF01fA0136424A05e7",
       "tokenSinkBps": "10000",
@@ -303,10 +316,10 @@
       "paused": false
     },
     "main2Metadata": {
-      "configuredCount": "0",
-      "fullyConfigured": false,
-      "rewardMatrixConsistent": false,
-      "paused": false,
+      "configuredCount": "100",
+      "fullyConfigured": true,
+      "rewardMatrixConsistent": true,
+      "paused": true,
       "devWallet": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2"
     },
     "vrf": {

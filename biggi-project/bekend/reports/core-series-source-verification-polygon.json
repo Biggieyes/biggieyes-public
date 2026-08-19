@@ -27,13 +27,18 @@
       "status": "verified"
     },
     {
+      "name": "Chapter 1 BiggiEyesMain2",
+      "address": "0xe56cC0657A89daf10994204eD745985a61b0E36F",
+      "status": "verified"
+    },
+    {
       "name": "Chapter 2 BiggiEyesMain",
       "address": "0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036",
       "status": "verified"
     },
     {
       "name": "Chapter 2 BiggiEyesMain2",
-      "address": "0xce4dF4eFc703fb0D9827aAacDB28c90405aB57D0",
+      "address": "0x7EaB23497085cfF00Cb2E9809b2Af0e717187356",
       "status": "verified"
     },
     {
@@ -43,7 +48,7 @@
     },
     {
       "name": "Chapter 3 BiggiEyesMain2",
-      "address": "0x4bB7a55Ba690Fc38653f5889E2262316A049a1D9",
+      "address": "0xda6A6f45053796d0f5edB965fe3FA47B9a35460c",
       "status": "verified"
     },
     {
@@ -53,7 +58,7 @@
     },
     {
       "name": "Chapter 4 BiggiEyesMain2",
-      "address": "0x43b4C220aD039C0272153cF4B43Eaee68de09b00",
+      "address": "0xecE7D61AB3FB2229C39B48380D704183532fE960",
       "status": "verified"
     },
     {
@@ -63,10 +68,10 @@
     },
     {
       "name": "Chapter 5 BiggiEyesMain2",
-      "address": "0xcA168A6e391a54de4F664397eE17328280305A75",
+      "address": "0x99f049279BC545469F989d8f06CD915ef4B6f1d4",
       "status": "verified"
     }
   ],
   "failures": [],
-  "verifiedAt": "2026-08-17T19:37:28.507Z"
+  "verifiedAt": "2026-08-18T22:52:55.734Z"
 }

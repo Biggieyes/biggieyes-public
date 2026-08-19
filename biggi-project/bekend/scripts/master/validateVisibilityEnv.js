@@ -5,6 +5,7 @@ const { ethers } = require("ethers");
 
 const ZERO = ethers.constants.AddressZero;
 const TOTAL_TICKETS = 550;
+const PUBLIC_SUPPLY = 100;
 
 function parseArgs(argv) {
   const opts = {
@@ -123,7 +124,7 @@ function printList(title, values) {
   }
 }
 
-function validateMetadataFile(filePath, label, errors, warnings) {
+function validateMetadataFile(filePath, label, errors, warnings, collectionKind = "main") {
   if (!filePath) {
     warnings.push(`${label} is not set.`);
     return 0;
@@ -149,6 +150,12 @@ function validateMetadataFile(filePath, label, errors, warnings) {
     return 0;
   }
 
+  const isPublic = collectionKind === "public";
+  const expectedSupply = isPublic ? PUBLIC_SUPPLY : TOTAL_TICKETS;
+  if (list.length !== expectedSupply) {
+    errors.push(`${label} must contain exactly ${expectedSupply} items (got ${list.length}).`);
+  }
+
   const seen = new Set();
   for (let i = 0; i < list.length; i++) {
     const item = list[i] || {};
@@ -159,21 +166,24 @@ function validateMetadataFile(filePath, label, errors, warnings) {
     const blockIdx = Number(item.blockIdx ?? item.block ?? item.blockIndex);
     const mainId = Number(item.mainId ?? item.mainID ?? item.main ?? item.main_id);
 
-    if (!Number.isInteger(idx) || idx < 1 || idx > TOTAL_TICKETS) {
+    if (!Number.isInteger(idx) || idx < 1 || idx > expectedSupply) {
       errors.push(`${label}[${i}] has invalid idx`);
     } else if (seen.has(idx)) {
       errors.push(`${label}[${i}] duplicates idx ${idx}`);
     } else {
       seen.add(idx);
     }
-    if (!Number.isInteger(background) || background < 1 || background > 10) {
+    if (!Number.isInteger(background) || (isPublic ? background !== 1 : background < 1 || background > 10)) {
       errors.push(`${label}[${i}] has invalid background`);
     }
     if (!Number.isInteger(blockIdx) || blockIdx < 1 || blockIdx > 10) {
       errors.push(`${label}[${i}] has invalid blockIdx`);
     }
-    if (!Number.isInteger(mainId) || mainId < 1) {
+    if (!Number.isInteger(mainId) || (isPublic ? mainId !== idx : mainId < 1)) {
       errors.push(`${label}[${i}] has invalid mainId`);
+    }
+    if (isPublic && Number.isInteger(idx) && blockIdx !== Math.floor((idx - 1) / 10) + 1) {
+      errors.push(`${label}[${i}] has invalid Public blockIdx`);
     }
   }
 
@@ -277,6 +287,39 @@ function main() {
     }
   }
 
+  const marketingTicketPrice = env("MARKETING_TICKET_PRICE", ticketPrice || "1");
+  const publicTicketPrice = env("PUBLIC_TICKET_PRICE", "500");
+  let marketingTicketPriceWei;
+  let publicTicketPriceWei;
+  try {
+    marketingTicketPriceWei = ethers.utils.parseEther(marketingTicketPrice);
+  } catch {
+    errors.push(`MARKETING_TICKET_PRICE must be parseable as ether value (got: ${marketingTicketPrice})`);
+  }
+  try {
+    publicTicketPriceWei = ethers.utils.parseEther(publicTicketPrice);
+  } catch {
+    errors.push(`PUBLIC_TICKET_PRICE must be parseable as ether value (got: ${publicTicketPrice})`);
+  }
+  if (marketingTicketPriceWei && publicTicketPriceWei) {
+    if (marketingTicketPriceWei.lte(0)) errors.push("MARKETING_TICKET_PRICE must be greater than zero.");
+    if (publicTicketPriceWei.lte(marketingTicketPriceWei)) {
+      errors.push("PUBLIC_TICKET_PRICE must be greater than MARKETING_TICKET_PRICE.");
+    }
+  }
+
+  const publicTicketPriceWeiRaw = env("PUBLIC_TICKET_PRICE_WEI");
+  if (publicTicketPriceWeiRaw) {
+    try {
+      const configuredPublicTicketPriceWei = ethers.BigNumber.from(publicTicketPriceWeiRaw);
+      if (publicTicketPriceWei && !configuredPublicTicketPriceWei.eq(publicTicketPriceWei)) {
+        errors.push("PUBLIC_TICKET_PRICE_WEI must match PUBLIC_TICKET_PRICE.");
+      }
+    } catch {
+      errors.push(`PUBLIC_TICKET_PRICE_WEI must be an integer wei value (got: ${publicTicketPriceWeiRaw})`);
+    }
+  }
+
   parseIntStrict("PRICE_INCREASE_PER_MINT_BPS", env("PRICE_INCREASE_PER_MINT_BPS"), 10033, errors);
 
   const mainMetadataCount = validateMetadataFile(
@@ -346,7 +389,8 @@ function main() {
       env("PUBLIC_METADATA_FILE"),
       "PUBLIC_METADATA_FILE",
       errors,
-      warnings
+      warnings,
+      "public"
     );
     if (publicMetadataCount === 0) {
       warnings.push("PUBLIC metadata is missing; Main2 public collection will have no seeded NFT layout.");

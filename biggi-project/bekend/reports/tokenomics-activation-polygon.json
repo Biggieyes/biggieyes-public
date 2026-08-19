@@ -1,7 +1,7 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "createdAt": "2026-06-27T01:44:38.244Z",
+  "createdAt": "2026-08-19T01:22:20.115Z",
   "execute": false,
   "flags": {
     "enableLiquidityOrchestrator": false,
@@ -14,12 +14,11 @@
   "actions": [],
   "unchanged": [],
   "blockers": [
-    "BIGGI initial distribution is not executed.",
     "PAIR has no liquidity."
   ],
   "values": {
-    "distributed": false,
-    "totalSupply": "0",
+    "distributed": true,
+    "totalSupply": "1200000000000000000000000000",
     "pairReserve0": "0",
     "pairReserve1": "0",
     "pairLpSupply": "0"

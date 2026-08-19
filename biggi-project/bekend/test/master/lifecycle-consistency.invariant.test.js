@@ -69,6 +69,24 @@ async function seedFullMainMetadata(main) {
   await flush();
 }
 
+async function seedFullPublicMetadata(main2) {
+  for (let start = 1; start <= 100; start += 50) {
+    const indices = [];
+    const backgrounds = [];
+    const blocks = [];
+    const mainIds = [];
+    for (let idx = start; idx < start + 50; idx += 1) {
+      indices.push(idx);
+      backgrounds.push(1);
+      blocks.push(Math.floor((idx - 1) / 10) + 1);
+      mainIds.push(idx);
+    }
+    await (
+      await main2.batchSetNFTBackgroundAndBlock(indices, backgrounds, blocks, mainIds)
+    ).wait();
+  }
+}
+
 describe("BIGGI_MASTER: lifecycle and consistency invariants", function () {
   let owner;
   let alice;
@@ -195,6 +213,31 @@ describe("BIGGI_MASTER: lifecycle and consistency invariants", function () {
     expect(await ticketHub.saleMinted()).to.equal(1);
     expect(await ticketHub.marketingMinted()).to.equal(1);
     expect(await ticketHub.ticketMinted()).to.equal(2);
+  });
+
+  it("keeps marketing tickets at 1 POL and starts the paid curve at 500 POL", async () => {
+    const main = await deployMainWithLinkedLibraries(owner.address);
+    const ticketHub = await deploy("BiggiTicketHub", owner.address, main.address);
+    const distributor = await deploy("MockMintShareReceiver");
+    const marketingPrice = ethers.utils.parseEther("1");
+    const publicPrice = ethers.utils.parseEther("500");
+
+    await (await ticketHub.setDistributor(distributor.address)).wait();
+    await (await ticketHub.setTicketCaps(500, 50)).wait();
+    await (await ticketHub.setPriceIncreasePerMint(10033)).wait();
+    await (await ticketHub.setTicketPrice(marketingPrice)).wait();
+    await (await ticketHub.mintMarketingTicketsForChapter(1, owner.address, 50)).wait();
+
+    expect(await ticketHub.ticketPrice()).to.equal(marketingPrice);
+    expect(await ticketHub.mintedTicketPrice(1)).to.equal(marketingPrice);
+    expect(await ticketHub.mintedTicketPrice(50)).to.equal(marketingPrice);
+
+    await (await ticketHub.setTicketPrice(publicPrice)).wait();
+    await (await ticketHub.setChapterActive(1, true)).wait();
+    await (await ticketHub.connect(alice).mintTicket({ value: publicPrice })).wait();
+
+    expect(await ticketHub.mintedTicketPrice(51)).to.equal(publicPrice);
+    expect(await ticketHub.ticketPrice()).to.equal(ethers.utils.parseEther("501.65"));
   });
 
   it("keeps TicketHub owner counts correct across ticket transfers and redemption", async () => {
@@ -410,6 +453,9 @@ describe("BIGGI_MASTER: lifecycle and consistency invariants", function () {
     const ticketProgress = await deploy("MockTicketHubProgress");
     const distributor = await deploy("MockMintShareReceiver");
 
+    // Public has no standalone price before it is bound to a chapter VRF collection.
+    await expect(main2.getCurrentBlockPrice(1)).to.be.reverted;
+
     await (await ticketProgress.setMainCollection(main.address)).wait();
     await (await ticketProgress.setCaps(2, 1, 3)).wait();
     await (await main.setTicketHub(ticketProgress.address)).wait();
@@ -436,7 +482,7 @@ describe("BIGGI_MASTER: lifecycle and consistency invariants", function () {
     await (await main2.setChapterController(controller.address, 1)).wait();
     await (await main2.setPriceProvider(owner.address)).wait();
 
-    await (await main2.batchSetNFTBackgroundAndBlock([1, 2], [1, 2], [1, 1], [1, 2])).wait();
+    await (await main2.batchSetNFTBackgroundAndBlock([1, 2], [1, 1], [1, 1], [1, 2])).wait();
 
     await (await main.setBlockCurrentPrice(1, ethers.utils.parseEther("2"))).wait();
     await (await main2.setBlockCurrentPrice(1, ethers.utils.parseEther("9"))).wait();
@@ -509,7 +555,7 @@ describe("BIGGI_MASTER: lifecycle and consistency invariants", function () {
     await expect(main2.assertMetadataConsistency()).to.be.reverted;
 
     await seedFullMainMetadata(main);
-    await seedFullMainMetadata(main2);
+    await seedFullPublicMetadata(main2);
 
     const [configuredCount, fullyConfigured, rewardMatrixConsistent] = await main.metadataConsistency();
     expect(configuredCount).to.equal(550);
@@ -517,8 +563,17 @@ describe("BIGGI_MASTER: lifecycle and consistency invariants", function () {
     expect(rewardMatrixConsistent).to.equal(true);
     expect(await main.assertMetadataConsistency()).to.equal(true);
 
-    const [configuredCount2, fullyConfigured2, rewardMatrixConsistent2] = await main2.metadataConsistency();
-    expect(configuredCount2).to.equal(550);
+    let [configuredCount2, fullyConfigured2, rewardMatrixConsistent2] = await main2.metadataConsistency();
+    expect(configuredCount2).to.equal(100);
+    expect(fullyConfigured2).to.equal(false);
+    expect(rewardMatrixConsistent2).to.equal(true);
+    await expect(main2.assertMetadataConsistency()).to.be.reverted;
+
+    for (let blockIdx = 1; blockIdx <= 10; blockIdx += 1) {
+      await (await main2.setURI(2, blockIdx, "ipfs://public/")).wait();
+    }
+    [configuredCount2, fullyConfigured2, rewardMatrixConsistent2] = await main2.metadataConsistency();
+    expect(configuredCount2).to.equal(100);
     expect(fullyConfigured2).to.equal(true);
     expect(rewardMatrixConsistent2).to.equal(true);
     expect(await main2.assertMetadataConsistency()).to.equal(true);

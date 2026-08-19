@@ -150,7 +150,9 @@ async function main() {
     "function marketingCap() view returns (uint16)",
     "function saleMinted() view returns (uint16)",
     "function marketingMinted() view returns (uint16)",
+    "function chapterSaleMinted(uint256 chapterId) view returns (uint16)",
     "function ticketPrice() view returns (uint256)",
+    "function priceIncreasePerMint() view returns (uint256)",
     "function devWallet() view returns (address)",
     "function tokenSink() view returns (address)",
     "function tokenSinkBps() view returns (uint256)",
@@ -255,7 +257,15 @@ async function main() {
 
   if (await codeExists(A.TICKET_HUB)) {
     const hub = await ethers.getContractAt(hubAbi, A.TICKET_HUB);
-    const [paused, distributor, saleCap, marketingCap, saleMinted, marketingMinted, ticketPrice, devWallet, tokenSink, tokenSinkBps, tokenSinkDepositMode] =
+    const chapterCount = Number(env("CHAPTER_COUNT", A.CHAPTER_COUNT == null ? "1" : A.CHAPTER_COUNT));
+    const chapterSaleMints = await Promise.all(
+      Array.from({ length: chapterCount }, (_, index) => hub.chapterSaleMinted(index + 1))
+    );
+    const totalPaidMints = chapterSaleMints.reduce(
+      (total, count) => total.add(count),
+      ethers.BigNumber.from(0)
+    );
+    const [paused, distributor, saleCap, marketingCap, saleMinted, marketingMinted, ticketPrice, priceIncreasePerMint, devWallet, tokenSink, tokenSinkBps, tokenSinkDepositMode] =
       await Promise.all([
         hub.paused(),
         hub.distributor(),
@@ -264,6 +274,7 @@ async function main() {
         hub.saleMinted(),
         hub.marketingMinted(),
         hub.ticketPrice(),
+        hub.priceIncreasePerMint(),
         hub.devWallet(),
         hub.tokenSink(),
         hub.tokenSinkBps(),
@@ -276,7 +287,9 @@ async function main() {
       marketingCap,
       saleMinted,
       marketingMinted,
+      totalPaidMints: fmt(totalPaidMints),
       ticketPrice: fmt(ticketPrice),
+      priceIncreasePerMint: fmt(priceIncreasePerMint),
       devWallet,
       tokenSink,
       tokenSinkBps: fmt(tokenSinkBps),
@@ -299,9 +312,30 @@ async function main() {
     if (isAddress(A.DEV_WALLET) && getAddress(devWallet) !== getAddress(A.DEV_WALLET)) {
       block("TicketHub devWallet mismatch", { current: devWallet, expected: A.DEV_WALLET });
     }
-    const expectedTicketPrice = env("TICKET_PRICE_WEI", "");
-    if (expectedTicketPrice && !ticketPrice.eq(expectedTicketPrice)) {
-      block("TicketHub ticketPrice does not match TICKET_PRICE_WEI", { current: fmt(ticketPrice), expected: expectedTicketPrice });
+    const expectedPublicTicketPrice = env(
+      "PUBLIC_TICKET_PRICE_WEI",
+      A.PUBLIC_TICKET_PRICE_WEI == null
+        ? ethers.utils.parseEther("500").toString()
+        : String(A.PUBLIC_TICKET_PRICE_WEI)
+    );
+    const expectedPriceIncrease = env("PRICE_INCREASE_PER_MINT_BPS", "10033");
+    let expectedLiveTicketPrice = ethers.BigNumber.from(expectedPublicTicketPrice);
+    for (let i = 0; i < totalPaidMints.toNumber(); i += 1) {
+      expectedLiveTicketPrice = expectedLiveTicketPrice.mul(expectedPriceIncrease).div(10_000);
+    }
+    if (!ticketPrice.eq(expectedLiveTicketPrice)) {
+      block("TicketHub paid-mint price is not on the configured curve", {
+        current: fmt(ticketPrice),
+        expected: fmt(expectedLiveTicketPrice),
+        publicStart: expectedPublicTicketPrice,
+        totalPaidMints: fmt(totalPaidMints),
+      });
+    }
+    if (!priceIncreasePerMint.eq(expectedPriceIncrease)) {
+      block("TicketHub paid-mint price curve mismatch", {
+        current: fmt(priceIncreasePerMint),
+        expected: expectedPriceIncrease,
+      });
     }
     if (getAddress(tokenSink) !== getAddress(A.TREASURY) || !tokenSinkDepositMode || !tokenSinkBps.eq(10_000)) {
       block("TicketHub BIGGI token sink is not routed fully to Treasury deposit mode", report.values.ticketHub);

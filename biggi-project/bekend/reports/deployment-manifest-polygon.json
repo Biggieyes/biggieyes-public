@@ -1,7 +1,7 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "createdAt": "2026-08-17T20:14:17.543Z",
+  "createdAt": "2026-08-19T01:19:45.792Z",
   "source": "canonical BIGGI project addresses (core + tokenomics + readers + linked libraries + CRE receiver)",
   "summary": {
     "total": 58,
@@ -22,10 +22,10 @@
     },
     {
       "key": "MAIN2",
-      "address": "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634",
+      "address": "0xe56cC0657A89daf10994204eD745985a61b0E36F",
       "hasCode": true,
       "deployer": "0x8fa5c9545b2eef1ca3c6533951c286e05928f27b",
-      "txHash": "0xa8810a261979ef025963bfd6263e6651ea5f396f9d012c433e7146b57b60841f",
+      "txHash": "0x3bbc15fc8ca95a8ffab4f0bb0e04b6e060e5bd74fb439ea283f4e4e331193b77",
       "verified": true,
       "contractName": "BiggiEyesMain2",
       "compilerVersion": "v0.8.24+commit.e11b9ed9"
@@ -522,10 +522,10 @@
     },
     {
       "key": "CHAPTER_2_MAIN2",
-      "address": "0xce4dF4eFc703fb0D9827aAacDB28c90405aB57D0",
+      "address": "0x7EaB23497085cfF00Cb2E9809b2Af0e717187356",
       "hasCode": true,
       "deployer": "0x8fa5c9545b2eef1ca3c6533951c286e05928f27b",
-      "txHash": "0x9ef95497e58e3214256e5ffcdec7c2a5def90e6cd4d8b096b9f831bac80b6392",
+      "txHash": "0x2e8b63a2ba5f0d4ed8698be1713ef32cbe21e48bd6221283dc3cc72f479f9d0a",
       "verified": true,
       "contractName": "BiggiEyesMain2",
       "compilerVersion": "v0.8.24+commit.e11b9ed9"
@@ -542,10 +542,10 @@
     },
     {
       "key": "CHAPTER_3_MAIN2",
-      "address": "0x4bB7a55Ba690Fc38653f5889E2262316A049a1D9",
+      "address": "0xda6A6f45053796d0f5edB965fe3FA47B9a35460c",
       "hasCode": true,
       "deployer": "0x8fa5c9545b2eef1ca3c6533951c286e05928f27b",
-      "txHash": "0x9ca3b0f60d48884d815d8790b550a477a0a1fa095f206f6fe68f97a053e82b71",
+      "txHash": "0x1d663472f8d7a56216f952dd7e507eac18f6fb74aed97107d30e7f0258449a96",
       "verified": true,
       "contractName": "BiggiEyesMain2",
       "compilerVersion": "v0.8.24+commit.e11b9ed9"
@@ -562,10 +562,10 @@
     },
     {
       "key": "CHAPTER_4_MAIN2",
-      "address": "0x43b4C220aD039C0272153cF4B43Eaee68de09b00",
+      "address": "0xecE7D61AB3FB2229C39B48380D704183532fE960",
       "hasCode": true,
       "deployer": "0x8fa5c9545b2eef1ca3c6533951c286e05928f27b",
-      "txHash": "0xe9210f22dfa0516a3164341d5b01dc3491ac37b385782e986aed4e01c3a3808e",
+      "txHash": "0xb8753d8ec38ffb9bde0c78d11332d505d82134fa52a9e84b3272c9c25fd578d5",
       "verified": true,
       "contractName": "BiggiEyesMain2",
       "compilerVersion": "v0.8.24+commit.e11b9ed9"
@@ -582,10 +582,10 @@
     },
     {
       "key": "CHAPTER_5_MAIN2",
-      "address": "0xcA168A6e391a54de4F664397eE17328280305A75",
+      "address": "0x99f049279BC545469F989d8f06CD915ef4B6f1d4",
       "hasCode": true,
       "deployer": "0x8fa5c9545b2eef1ca3c6533951c286e05928f27b",
-      "txHash": "0xe117cbca60a957598aeecf04f1bf633ce142e52db4abd75e4cd68e961cf5dfee",
+      "txHash": "0xff5dc32f10a4dba3550bd5c1d3a62b080fe9e80532b77f06190c334a72136f83",
       "verified": true,
       "contractName": "BiggiEyesMain2",
       "compilerVersion": "v0.8.24+commit.e11b9ed9"

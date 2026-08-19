@@ -1,6 +1,6 @@
 # CORE Mainnet Real Data
 
-Last documentation sync: 2026-08-17.
+Last documentation sync: 2026-08-18.
 
 ## Deployment Status
 
@@ -11,7 +11,7 @@ Public mint is not open yet. Launch blockers are operational configuration items
 - QuickSwap V2 BIGGI/WPOL pair exists, but initial liquidity is still `0/0`.
 - `BIGGI_TOKEN.initialDistribute()` is complete and total supply is `1.2B BIGGI`.
 - TicketHub wiring and caps are complete (`500/50`); all chapters remain inactive.
-- MAIN2/future chapter metadata, CRE identity/wiring, liquidity automation, and chapter activation remain final go-live steps.
+- Chapter 1 Public metadata are launch-ready. Chapter 2-5 Public image URIs, CRE identity/wiring, liquidity automation, and chapter activation remain final go-live steps.
 
 ## Live Core Addresses
 
@@ -24,7 +24,7 @@ Public mint is not open yet. Launch blockers are operational configuration items
 | `COMPUTE` | `0x0A09261631496B4aad9A5c2A82b62666249d773f` |
 | `VRF_ROUTER` | `0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F` |
 | `MAIN` | `0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4` |
-| `MAIN2` | `0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634` |
+| `MAIN2` | `0xe56cC0657A89daf10994204eD745985a61b0E36F` |
 | `TICKET_HUB` | `0x7b7e561173f498C8274b821090Da64E8ee653f6A` |
 | `DISTRIBUTOR` | `0xCE892698159D8D799D5eF7f0dF0111487511fD22` |
 | `COLLECTION_REWARDS` | `0x5d1273070c9133381C570009768621762F024FB8` |
@@ -38,15 +38,17 @@ Public mint is not open yet. Launch blockers are operational configuration items
 
 | Chapter | VRF collection | Public collection | Marketing tickets | Status |
 | --- | --- | --- | ---: | --- |
-| 1 - Original BIGGI | `0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4` | `0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634` | 50 | inactive |
-| 2 - Universe | `0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036` | `0xce4dF4eFc703fb0D9827aAacDB28c90405aB57D0` | 50 | inactive |
-| 3 - Mutant | `0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2` | `0x4bB7a55Ba690Fc38653f5889E2262316A049a1D9` | 50 | inactive |
-| 4 - Apocalipse | `0x8E862D9071120D69517D3F7Db0c101175E911115` | `0x43b4C220aD039C0272153cF4B43Eaee68de09b00` | 50 | inactive |
-| 5 - Super Hero | `0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38` | `0xcA168A6e391a54de4F664397eE17328280305A75` | 50 | inactive |
+| 1 - Original BIGGI | `0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4` | `0xe56cC0657A89daf10994204eD745985a61b0E36F` | 50 | inactive |
+| 2 - Universe | `0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036` | `0x7EaB23497085cfF00Cb2E9809b2Af0e717187356` | 50 | inactive |
+| 3 - Mutant | `0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2` | `0xda6A6f45053796d0f5edB965fe3FA47B9a35460c` | 50 | inactive |
+| 4 - Apocalipse | `0x8E862D9071120D69517D3F7Db0c101175E911115` | `0xecE7D61AB3FB2229C39B48380D704183532fE960` | 50 | inactive |
+| 5 - Super Hero | `0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38` | `0x99f049279BC545469F989d8f06CD915ef4B6f1d4` | 50 | inactive |
 
-All VRF chapters share Chapter 1's 550-position block-color, tier, rarity, and game-logic matrix. Only chapter-specific images and NFT metadata differ. Public collection block prices are read from the paired VRF collection through the ChapterController.
+All VRF chapters share Chapter 1's 550-position block-color, tier, rarity, and game-logic matrix. Each Public collection has 100 unique NFTs, ten per block, no background clones, and reads block prices from its paired VRF collection through the ChapterController.
 
-The latest production verification passed `204/204` on-chain checks and `13/13` PolygonScan source verifications. Future chapter NFT metadata remains intentionally unset and redemption remains locked until explicit chapter activation.
+TokenRewards applies to both the VRF and Public collection in every registered chapter. CollectionRewards applies only to the VRF collection; Public collections are intentionally excluded from CollectionRewards.
+
+The latest production verification passed `219/219` on-chain checks and `14/14` PolygonScan source verifications. Chapter 1 Public metadata are `100/100` and fully configured; chapters 2-5 are `100/100` structurally valid but intentionally lack final image URIs. Redemption remains locked until explicit chapter activation.
 
 ## External / Operational Values
 
@@ -59,11 +61,18 @@ The latest production verification passed `204/204` on-chain checks and `13/13` 
 | `VRF_COORDINATOR` | `0xec0Ed46f36576541C75739E915ADbCb3DE24bD77` |
 | `VRF_KEY_HASH` | `0x719ed7d7664abc3001c18aac8130a2265e1e70b7e036ae20f3ca8b92b3154d86` |
 | `VRF_SUB_ID` | `81201946401186585545741412524989119977867721966007705722641563343499481545614` |
-| `TICKET_PRICE_WEI` | `1000000000000000000` |
+| current `TicketHub.ticketPrice()` | `500000000000000000000` (500 POL public start; configured) |
+| `MARKETING_TICKET_PRICE_WEI` | `1000000000000000000` (1 POL snapshot) |
+| `PUBLIC_TICKET_PRICE_WEI` | `500000000000000000000` (500 POL before first paid mint) |
+| `PRICE_INCREASE_PER_MINT_BPS` | `10033` (+0.33% after each paid mint) |
 | `SALE_CAP` | `500` |
 | `MARKETING_CAP` | `50` |
 
-Live read-only preflight on 2026-08-17 returned `okForDeployOnly=true`, `okForPublicLaunch=false`, 7 blockers and 0 warnings. Current blockers are initial liquidity, MAIN2 metadata, paused CRE receiver, missing CRE workflow ID/owner lock, and paused liquidity orchestrator/keeper proxy.
+Marketing minting stores the 1 POL snapshot and does not advance the public curve. Before a chapter is exposed in the application, the global TicketHub price must be switched to 500 POL. For Chapter 1, token IDs 1-50 are marketing tickets and token ID 51 is the first possible paid ticket; the paid allocation is 500 tickets.
+
+The public price transition was confirmed in Polygon block `92226673`, transaction `0x1fb1165f4a67416c25f3d0c4c7ae7600e35466fc2b3ba8913d60554a5d1db63b`.
+
+Live read-only preflight on 2026-08-18 returned `okForDeployOnly=true`, `okForPublicLaunch=false`, 7 blockers and 0 warnings. The remaining blockers are empty initial DEX liquidity, the intentionally paused Chapter 1 Public collection, paused/unlocked CRE receiver identity, and the paused liquidity orchestrator/keeper proxy. Chapter 1 Public metadata are complete; missing final image URIs for chapters 2-5 block only those future chapters.
 
 ## Canonical Manifest Files
 

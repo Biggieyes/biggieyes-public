@@ -22,7 +22,7 @@ This package contains per-contract dossiers for BIGGI core contracts and core re
 | Dossier | Canonical address |
 | --- | --- |
 | [BiggiMain](./BiggiMain/README.md) | `0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4` |
-| [BiggiMain2](./BiggiMain2/README.md) | `0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634` |
+| [BiggiMain2](./BiggiMain2/README.md) | `0xe56cC0657A89daf10994204eD745985a61b0E36F` |
 | [BiggiTicketHub](./BiggiTicketHub/README.md) | `0x7b7e561173f498C8274b821090Da64E8ee653f6A` |
 | [BiggiSeriesRegistry](./BiggiSeriesRegistry/README.md) | `0x09f3728e8607e1B951A6396DcEE4EC134C5e4058` |
 | [BiggiChapterController](./BiggiChapterController/README.md) | `0x9c084D89c0CB6c8424652d1fa82E83aD9c098288` |

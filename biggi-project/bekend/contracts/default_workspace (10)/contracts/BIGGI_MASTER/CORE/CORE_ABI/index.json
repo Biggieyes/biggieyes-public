@@ -7,7 +7,7 @@
   {
     "output": "BiggiEyesMain2.abi.json",
     "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiMain2.sol/BiggiEyesMain2.json",
-    "abiLength": 139
+    "abiLength": 140
   },
   {
     "output": "BiggiTicketHub.abi.json",

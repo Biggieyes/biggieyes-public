@@ -177,7 +177,7 @@
     "BiggiEyesMain2": {
       "abiFile": "contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\CORE\\CORE_ABI\\BiggiEyesMain2.abi.json",
       "sourceFile": "contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\CORE\\BiggiMain2.sol",
-      "abiFunctionCount": 74,
+      "abiFunctionCount": 75,
       "srcFunctionCount": 36,
       "missingInAbi": [],
       "missingInSource": [],
@@ -188,6 +188,7 @@
       "publicVars": [
         "MAX_BATCH",
         "MAX_SUPPLY",
+        "PUBLIC_BACKGROUND",
         "distributor",
         "priceProvider",
         "chapterController",

@@ -47,8 +47,8 @@
     {
       "label": "Chapter 1 registry Public",
       "ok": true,
-      "actual": "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634",
-      "expected": "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634"
+      "actual": "0xe56cC0657A89daf10994204eD745985a61b0E36F",
+      "expected": "0xe56cC0657A89daf10994204eD745985a61b0E36F"
     },
     {
       "label": "Chapter 1 registry TicketHub",
@@ -207,6 +207,18 @@
       "expected": "1"
     },
     {
+      "label": "Chapter 1 Public max supply",
+      "ok": true,
+      "actual": "100",
+      "expected": "100"
+    },
+    {
+      "label": "Chapter 1 Public minted",
+      "ok": true,
+      "actual": "0",
+      "expected": "0"
+    },
+    {
       "label": "Chapter 1 Public price follows VRF",
       "ok": true,
       "actual": "100000000000000000000",
@@ -227,14 +239,20 @@
     {
       "label": "Chapter 1 Public metadata count",
       "ok": true,
-      "actual": "0",
-      "expected": "0"
+      "actual": "100",
+      "expected": "100"
     },
     {
-      "label": "Chapter 1 Public metadata remains locked",
+      "label": "Chapter 1 Public metadata configured",
       "ok": true,
-      "actual": "false",
-      "expected": "false"
+      "actual": "true",
+      "expected": "true"
+    },
+    {
+      "label": "Chapter 1 Public metadata matrix",
+      "ok": true,
+      "actual": "true",
+      "expected": "true"
     },
     {
       "label": "Chapter 2 series id",
@@ -257,8 +275,8 @@
     {
       "label": "Chapter 2 registry Public",
       "ok": true,
-      "actual": "0xce4dF4eFc703fb0D9827aAacDB28c90405aB57D0",
-      "expected": "0xce4dF4eFc703fb0D9827aAacDB28c90405aB57D0"
+      "actual": "0x7EaB23497085cfF00Cb2E9809b2Af0e717187356",
+      "expected": "0x7EaB23497085cfF00Cb2E9809b2Af0e717187356"
     },
     {
       "label": "Chapter 2 registry TicketHub",
@@ -417,6 +435,18 @@
       "expected": "2"
     },
     {
+      "label": "Chapter 2 Public max supply",
+      "ok": true,
+      "actual": "100",
+      "expected": "100"
+    },
+    {
+      "label": "Chapter 2 Public minted",
+      "ok": true,
+      "actual": "0",
+      "expected": "0"
+    },
+    {
       "label": "Chapter 2 Public price follows VRF",
       "ok": true,
       "actual": "100000000000000000000",
@@ -437,14 +467,20 @@
     {
       "label": "Chapter 2 Public metadata count",
       "ok": true,
-      "actual": "0",
-      "expected": "0"
+      "actual": "100",
+      "expected": "100"
     },
     {
-      "label": "Chapter 2 Public metadata remains locked",
+      "label": "Chapter 2 Public metadata configured",
       "ok": true,
       "actual": "false",
       "expected": "false"
+    },
+    {
+      "label": "Chapter 2 Public metadata matrix",
+      "ok": true,
+      "actual": "true",
+      "expected": "true"
     },
     {
       "label": "Chapter 3 series id",
@@ -467,8 +503,8 @@
     {
       "label": "Chapter 3 registry Public",
       "ok": true,
-      "actual": "0x4bB7a55Ba690Fc38653f5889E2262316A049a1D9",
-      "expected": "0x4bB7a55Ba690Fc38653f5889E2262316A049a1D9"
+      "actual": "0xda6A6f45053796d0f5edB965fe3FA47B9a35460c",
+      "expected": "0xda6A6f45053796d0f5edB965fe3FA47B9a35460c"
     },
     {
       "label": "Chapter 3 registry TicketHub",
@@ -627,6 +663,18 @@
       "expected": "3"
     },
     {
+      "label": "Chapter 3 Public max supply",
+      "ok": true,
+      "actual": "100",
+      "expected": "100"
+    },
+    {
+      "label": "Chapter 3 Public minted",
+      "ok": true,
+      "actual": "0",
+      "expected": "0"
+    },
+    {
       "label": "Chapter 3 Public price follows VRF",
       "ok": true,
       "actual": "100000000000000000000",
@@ -647,14 +695,20 @@
     {
       "label": "Chapter 3 Public metadata count",
       "ok": true,
-      "actual": "0",
-      "expected": "0"
+      "actual": "100",
+      "expected": "100"
     },
     {
-      "label": "Chapter 3 Public metadata remains locked",
+      "label": "Chapter 3 Public metadata configured",
       "ok": true,
       "actual": "false",
       "expected": "false"
+    },
+    {
+      "label": "Chapter 3 Public metadata matrix",
+      "ok": true,
+      "actual": "true",
+      "expected": "true"
     },
     {
       "label": "Chapter 4 series id",
@@ -677,8 +731,8 @@
     {
       "label": "Chapter 4 registry Public",
       "ok": true,
-      "actual": "0x43b4C220aD039C0272153cF4B43Eaee68de09b00",
-      "expected": "0x43b4C220aD039C0272153cF4B43Eaee68de09b00"
+      "actual": "0xecE7D61AB3FB2229C39B48380D704183532fE960",
+      "expected": "0xecE7D61AB3FB2229C39B48380D704183532fE960"
     },
     {
       "label": "Chapter 4 registry TicketHub",
@@ -837,6 +891,18 @@
       "expected": "4"
     },
     {
+      "label": "Chapter 4 Public max supply",
+      "ok": true,
+      "actual": "100",
+      "expected": "100"
+    },
+    {
+      "label": "Chapter 4 Public minted",
+      "ok": true,
+      "actual": "0",
+      "expected": "0"
+    },
+    {
       "label": "Chapter 4 Public price follows VRF",
       "ok": true,
       "actual": "100000000000000000000",
@@ -857,14 +923,20 @@
     {
       "label": "Chapter 4 Public metadata count",
       "ok": true,
-      "actual": "0",
-      "expected": "0"
+      "actual": "100",
+      "expected": "100"
     },
     {
-      "label": "Chapter 4 Public metadata remains locked",
+      "label": "Chapter 4 Public metadata configured",
       "ok": true,
       "actual": "false",
       "expected": "false"
+    },
+    {
+      "label": "Chapter 4 Public metadata matrix",
+      "ok": true,
+      "actual": "true",
+      "expected": "true"
     },
     {
       "label": "Chapter 5 series id",
@@ -887,8 +959,8 @@
     {
       "label": "Chapter 5 registry Public",
       "ok": true,
-      "actual": "0xcA168A6e391a54de4F664397eE17328280305A75",
-      "expected": "0xcA168A6e391a54de4F664397eE17328280305A75"
+      "actual": "0x99f049279BC545469F989d8f06CD915ef4B6f1d4",
+      "expected": "0x99f049279BC545469F989d8f06CD915ef4B6f1d4"
     },
     {
       "label": "Chapter 5 registry TicketHub",
@@ -1047,6 +1119,18 @@
       "expected": "5"
     },
     {
+      "label": "Chapter 5 Public max supply",
+      "ok": true,
+      "actual": "100",
+      "expected": "100"
+    },
+    {
+      "label": "Chapter 5 Public minted",
+      "ok": true,
+      "actual": "0",
+      "expected": "0"
+    },
+    {
       "label": "Chapter 5 Public price follows VRF",
       "ok": true,
       "actual": "100000000000000000000",
@@ -1067,14 +1151,20 @@
     {
       "label": "Chapter 5 Public metadata count",
       "ok": true,
-      "actual": "0",
-      "expected": "0"
+      "actual": "100",
+      "expected": "100"
     },
     {
-      "label": "Chapter 5 Public metadata remains locked",
+      "label": "Chapter 5 Public metadata configured",
       "ok": true,
       "actual": "false",
       "expected": "false"
+    },
+    {
+      "label": "Chapter 5 Public metadata matrix",
+      "ok": true,
+      "actual": "true",
+      "expected": "true"
     },
     {
       "label": "Marketing recipient total TicketHub balance",
@@ -1228,5 +1318,5 @@
     }
   ],
   "issues": [],
-  "checkedAt": "2026-08-17T22:02:23.568Z"
+  "checkedAt": "2026-08-18T21:53:53.698Z"
 }

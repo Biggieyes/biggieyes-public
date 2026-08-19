@@ -9,6 +9,9 @@ Pinata uploads. It is designed for two phases:
   values from a CID/URI map after final artwork is pinned.
 
 The script does not upload anything unless `pinata-upload --execute` is used.
+For folder uploads, use the exact `IPFS folder base` printed by the command;
+the multipart upload uses one common root, while the returned CID exposes the
+folder contents directly.
 
 ## Existing BIGGI metadata source
 
@@ -149,9 +152,37 @@ Any missing final image falls back to the placeholder image and is counted in
 ## MAIN2 public branch
 
 For `MAIN2`, use `--collection-kind main2`. The contract's `tokenURI()` uses the
-`PUBLIC` suffix, so the 550 seeded layout rows resolve to 100 unique metadata
-files. The generated layout still has all 550 rows for
-`batchSetNFTBackgroundAndBlock(...)`.
+`PUBLIC` suffix. It has exactly 100 independently mintable NFTs: ten unique
+NFTs in each of the ten blocks. The generated Public layout therefore contains
+100 rows and 100 unique metadata files. Public has no colored background
+variants and its metadata contain no background or price traits.
+
+`BiggiMain2` reads the live price of the matching block from its paired VRF
+collection. It does not store an independent Public base-price curve and does
+not add any background adjustment.
+
+Generate a chapter-aware prereveal set like this:
+
+```powershell
+python scripts/metadata/biggi_metadata.py build `
+  --collection-kind main2 `
+  --phase placeholder `
+  --collection-name "BIGGI Universe Public" `
+  --chapter-id 2 `
+  --series "Universe" `
+  --description "BIGGI Universe public companion collection." `
+  --placeholder-image-uri "ipfs://<PUBLIC_PLACEHOLDER_CID>/universe-public.png" `
+  --external-url "https://biggieyes.com/collection" `
+  --out metadata-out/universe-public-placeholder
+```
+
+For final artwork, map one image to each contract filename:
+
+```csv
+filename,image
+Biggi_1_ORANGE_PUBLIC.json,ipfs://bafy.../Biggi_1_ORANGE_PUBLIC.png
+Biggi_2_ORANGE_PUBLIC.json,ipfs://bafy.../Biggi_2_ORANGE_PUBLIC.png
+```
 
 Use `PUBLIC_BLOCK_URI_1..10` and `PUBLIC_METADATA_FILE` for the public branch.
 

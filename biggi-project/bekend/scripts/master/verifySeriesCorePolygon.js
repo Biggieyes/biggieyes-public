@@ -151,6 +151,8 @@ async function main() {
       "function priceProvider() view returns (address)",
       "function chapterController() view returns (address)",
       "function chapterId() view returns (uint256)",
+      "function MAX_SUPPLY() view returns (uint256)",
+      "function biggiMinted() view returns (uint16)",
       "function getEffectiveBlockPrice(uint256) view returns (uint256)",
       "function metadataConsistency() view returns (uint256,bool,bool)",
     ]);
@@ -168,6 +170,8 @@ async function main() {
     expectAddress(`Chapter ${id} Public direct price provider`, await read("Public provider", () => publicCollection.priceProvider()), chapter.MAIN);
     expectAddress(`Chapter ${id} Public controller`, await read("Public controller", () => publicCollection.chapterController()), addresses.CHAPTER_CONTROLLER);
     expectNumber(`Chapter ${id} Public chapter id`, await read("Public chapter", () => publicCollection.chapterId()), id);
+    expectNumber(`Chapter ${id} Public max supply`, await read("Public max supply", () => publicCollection.MAX_SUPPLY()), 100);
+    expectNumber(`Chapter ${id} Public minted`, await read("Public minted", () => publicCollection.biggiMinted()), 0);
     const vrfPrice = await read("VRF block price", () => mainCollection.getCurrentBlockPrice(1));
     const publicPrice = await read("Public effective block price", () => publicCollection.getEffectiveBlockPrice(1));
     expectNumber(`Chapter ${id} Public price follows VRF`, publicPrice, vrfPrice == null ? "missing" : vrfPrice.toString());
@@ -179,8 +183,9 @@ async function main() {
       expectBool(`Chapter ${id} VRF metadata configured`, vrfMetadata[1], id === 1);
     }
     if (publicMetadata) {
-      expectNumber(`Chapter ${id} Public metadata count`, publicMetadata[0], 0);
-      expectBool(`Chapter ${id} Public metadata remains locked`, publicMetadata[1], false);
+      expectNumber(`Chapter ${id} Public metadata count`, publicMetadata[0], 100);
+      expectBool(`Chapter ${id} Public metadata configured`, publicMetadata[1], chapter.publicMetadataReady === true);
+      expectBool(`Chapter ${id} Public metadata matrix`, publicMetadata[2], true);
     }
   }
 

@@ -4,7 +4,7 @@
 - Source file: `BiggiMain2.sol`
 - Frozen ABI: `./ABI.json`
 - External linked library: `CORE_LIBRARY/BiggiNamesLib2.sol`
-- Deployment status: live on Polygon mainnet as of 2026-06-16.
+- Deployment status: corrected 100-NFT implementation is live, verified, paused, and wired for all five chapters as of 2026-08-18.
 - Canonical manifest: `biggi-project/bekend/addresses.master.json` plus phase-specific Polygon manifests.
 
 ## Constructor
@@ -14,8 +14,9 @@ constructor(address initialOwner)
 
 ## Main role
 - public chapter collection with explicit index minting
+- exactly 100 NFTs, ten per block, with no colored background variants
 - reads public-mint unlock state from `BiggiChapterController`
-- can read pricing from a chapter VRF-side price provider
+- reads pricing only from the paired chapter VRF collection through `BiggiChapterController`
 - supports native and BIGGI payment routing
 - supports treasury deposit mode for BIGGI paid public mints
 
@@ -48,7 +49,7 @@ unpause()
 ## Metadata rules
 - `setURI(1, 0, charactersBaseURI)` sets public character metadata base.
 - `setURI(2, blockIdx, blockBaseURI)` sets block metadata bases for block indexes `1..10`.
-- `metadataConsistency()` must report `configuredCount=550`, `fullyConfigured=true`, and `rewardMatrixConsistent=true` before public mint is opened.
+- All ten Public block URIs must be non-empty and `metadataConsistency()` must report `configuredCount=100`, `fullyConfigured=true`, and `rewardMatrixConsistent=true` before public mint is opened.
 - `assertMetadataConsistency()` is the strict preflight check used by launch tooling.
 
 ## Runtime invariant
@@ -57,11 +58,13 @@ Mainnet-prep BIGGI payment routing uses `tokenSink = BiggiTreasury`, `tokenSinkB
 Treasury deposit mode requires `BiggiTreasury.setEcosystemBiggiCaller(BiggiMain2, true)`.
 If deposit mode is disabled, `tokenSink` receives a plain BIGGI transfer and does not split through treasury.
 `setBiggiRate(...)` rejects zero and BIGGI minting rejects a zero computed token payment.
+There is no standalone Public `100..1000` base-price curve. Price resolution fails closed when the chapter controller or paired VRF provider is unavailable.
 
 ## Canonical Polygon Mainnet Address
 
 | Key | Address |
 | --- | --- |
-| `MAIN2` | `0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634` |
+| Active chapter 1 `MAIN2` | `0xe56cC0657A89daf10994204eD745985a61b0E36F` |
+| Superseded chapter 1 `MAIN2` | `0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634` |
 
 Canonical manifests: `addresses.master.json`, phase-specific Polygon manifests, and `MAINNET_DEPLOYMENT_MANIFEST_POLYGON.json`.

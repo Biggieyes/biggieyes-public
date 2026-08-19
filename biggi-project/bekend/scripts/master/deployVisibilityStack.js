@@ -5,6 +5,7 @@ const hre = require("hardhat");
 const { ethers, network } = hre;
 const ZERO = ethers.constants.AddressZero;
 const TOTAL_TICKETS = 550;
+const PUBLIC_SUPPLY = 100;
 const MAIN_BATCH_LIMIT = 55;
 
 function env(name, fallback = "") {
@@ -58,34 +59,39 @@ function resolveFile(inputPath) {
   return path.resolve(process.cwd(), inputPath);
 }
 
-function normalizeMetadataItem(raw, index) {
+function normalizeMetadataItem(raw, index, collectionKind) {
   const idx = Number(raw?.idx ?? raw?.index ?? raw?.nftIndex ?? raw?.id ?? raw?.tokenIndex);
   const background = Number(
     raw?.background ?? raw?.bg ?? raw?.backgroundCode ?? raw?.bgCode ?? raw?.bgIdx
   );
   const blockIdx = Number(raw?.blockIdx ?? raw?.block ?? raw?.blockIndex);
   const mainId = Number(raw?.mainId ?? raw?.mainID ?? raw?.main ?? raw?.main_id);
+  const isPublic = collectionKind === "public";
+  const maxSupply = isPublic ? PUBLIC_SUPPLY : TOTAL_TICKETS;
   const bgCountForBlock = Number.isInteger(blockIdx) && blockIdx >= 1 && blockIdx <= 10 ? (11 - blockIdx) : 0;
   const minMainIdForBlock = Number.isInteger(blockIdx) && blockIdx >= 1 && blockIdx <= 10 ? (((blockIdx - 1) * 10) + 1) : 0;
   const maxMainIdForBlock = Number.isInteger(blockIdx) && blockIdx >= 1 && blockIdx <= 10 ? (blockIdx * 10) : 0;
 
-  if (!Number.isInteger(idx) || idx < 1 || idx > TOTAL_TICKETS) {
+  if (!Number.isInteger(idx) || idx < 1 || idx > maxSupply) {
     throw new Error(`Metadata item ${index} has invalid idx`);
   }
-  if (!Number.isInteger(background) || background < 1 || background > bgCountForBlock) {
+  if (!Number.isInteger(background) || (isPublic ? background !== 1 : background < 1 || background > bgCountForBlock)) {
     throw new Error(`Metadata item ${index} has invalid background`);
   }
   if (!Number.isInteger(blockIdx) || blockIdx < 1 || blockIdx > 10) {
     throw new Error(`Metadata item ${index} has invalid blockIdx`);
   }
-  if (!Number.isInteger(mainId) || mainId < minMainIdForBlock || mainId > maxMainIdForBlock) {
+  if (!Number.isInteger(mainId) || (isPublic ? mainId !== idx : mainId < minMainIdForBlock || mainId > maxMainIdForBlock)) {
     throw new Error(`Metadata item ${index} has invalid mainId`);
+  }
+  if (isPublic && blockIdx !== Math.floor((idx - 1) / 10) + 1) {
+    throw new Error(`Metadata item ${index} has invalid Public blockIdx`);
   }
 
   return { idx, background, blockIdx, mainId };
 }
 
-function loadMetadataFile(envName) {
+function loadMetadataFile(envName, collectionKind) {
   const file = env(envName);
   if (!file) return [];
   const resolved = resolveFile(file);
@@ -98,8 +104,12 @@ function loadMetadataFile(envName) {
   if (!Array.isArray(list)) {
     throw new Error(`${envName} must be a JSON array or { items: [] }`);
   }
+  const expectedSupply = collectionKind === "public" ? PUBLIC_SUPPLY : TOTAL_TICKETS;
+  if (list.length !== expectedSupply) {
+    throw new Error(`${envName} must contain exactly ${expectedSupply} items`);
+  }
 
-  return list.map((item, index) => normalizeMetadataItem(item, index));
+  return list.map((item, index) => normalizeMetadataItem(item, index, collectionKind));
 }
 
 function chunk(list, size) {
@@ -224,7 +234,10 @@ async function main() {
   const deployPublicBranch = envBool("DEPLOY_PUBLIC_BRANCH", false);
   const seriesName = env("SERIES_NAME", "BIGGI Private Visibility Launch");
   const pendingRetryDelay = envInt("PENDING_RETRY_DELAY_SEC", 900);
-  const ticketPrice = envWei("TICKET_PRICE", null);
+  const ticketPrice = envWei(
+    "MARKETING_TICKET_PRICE",
+    envWei("TICKET_PRICE", null)
+  );
   const ticketPriceIncreaseBps = envInt("PRICE_INCREASE_PER_MINT_BPS", 10033);
   const distributor = envAddr("DISTRIBUTOR");
   const biggiToken = envAddr("BIGGI_TOKEN");
@@ -347,7 +360,7 @@ async function main() {
   }
 
   await configureMainUris(mainCollection, "MAIN", 3);
-  const mainMetadata = loadMetadataFile("MAIN_METADATA_FILE");
+  const mainMetadata = loadMetadataFile("MAIN_METADATA_FILE", "main");
   if (mainMetadata.length) {
     await seedMainMetadata(mainCollection, mainMetadata);
   } else {
@@ -432,7 +445,7 @@ async function main() {
     await maybeTx(() => main2.setChapterController(chapterController.address, 1));
 
     await configureMainUris(main2, "PUBLIC", 2);
-    const publicMetadata = loadMetadataFile("PUBLIC_METADATA_FILE");
+    const publicMetadata = loadMetadataFile("PUBLIC_METADATA_FILE", "public");
     if (publicMetadata.length) {
       await seedMainMetadata(main2, publicMetadata);
     }

@@ -1,73 +1,41 @@
 {
-  "createdAt": "2026-07-05T07:39:42.907Z",
+  "createdAt": "2026-08-19T01:38:24.200Z",
   "network": "polygon",
   "chainId": 137,
   "dryRun": true,
   "sendsTransactions": false,
-  "deployer": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "deployer": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
   "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
   "forwarder": "0x76c9cf548b4179F8901cda1f8623568b58215E62",
-  "existingReceiver": "0x0000000000000000000000000000000000000000",
+  "existingReceiver": "0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6",
   "predictedReceiver": "0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6",
-  "pendingNonce": 19,
-  "balanceWei": "2188971196189965735",
-  "balancePol": "2.188971196189965735",
-  "gasPriceWei": "497598586840",
-  "estimatedPreApprovalGas": "1651789",
-  "estimatedPreApprovalCostWei": "821927872157856760",
-  "estimatedPreApprovalCostPol": "0.82192787215785676",
+  "pendingNonce": 390,
+  "balanceWei": "32402454020167001349",
+  "balancePol": "32.402454020167001349",
+  "gasPriceWei": "502438631912",
+  "estimatedPreApprovalGas": "0",
+  "estimatedPreApprovalCostWei": "0",
+  "estimatedPreApprovalCostPol": "0.0",
   "actions": [
     {
-      "label": "Deploy BiggiCREAutomationReceiver (starts paused)",
-      "gas": "1147048",
-      "estimate": "rpc"
-    },
-    {
-      "label": "Receiver.setCallsAllowed (5 target/selector pairs)",
-      "gas": "300000",
-      "estimate": "conservative until receiver exists",
-      "targets": [
-        [
-          "0x810ba27C98aAB09737e3988a3C1b10D6CadaB8E8",
-          "0x4585e33b"
-        ],
-        [
-          "0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875",
-          "0x4585e33b"
-        ],
-        [
-          "0x4fC6EaD8CC6451e1A5EA7Ceaf6a072e18f91F04c",
-          "0x4585e33b"
-        ],
-        [
-          "0x350370c248495758b80Ea1C564Df1290cA76588B",
-          "0x4585e33b"
-        ],
-        [
-          "0xA7B71DFEBF89481b37d803dD0765E3612f29Ffb9",
-          "0x69fa508a"
-        ]
-      ]
-    },
-    {
       "label": "SupplyController.setAllowedCaller(receiver,true)",
-      "gas": "55988",
-      "estimate": "rpc"
+      "gas": "not estimated",
+      "estimate": "missing local signer"
     },
     {
       "label": "DexReserveGuard.setKeeper(receiver,true)",
-      "gas": "55932",
-      "estimate": "rpc"
+      "gas": "not estimated",
+      "estimate": "missing local signer"
     },
     {
       "label": "TokenRewardsEmissionController.setKeeper(receiver,true)",
-      "gas": "55785",
-      "estimate": "rpc"
+      "gas": "not estimated",
+      "estimate": "missing local signer"
     },
     {
       "label": "LiquidityKeeperProxy.setAllowedCaller(receiver)",
-      "gas": "37036",
-      "estimate": "rpc"
+      "gas": "not estimated",
+      "estimate": "missing local signer"
     },
     {
       "label": "After CRE deploy: receiver.setExpectedWorkflowIdentity(workflowId,workflowOwner)",
@@ -78,7 +46,12 @@
       "gas": "estimated immediately before activation"
     }
   ],
-  "warnings": [],
+  "warnings": [
+    {
+      "label": "receiver",
+      "value": "Receiver already exists; deployment estimate omitted"
+    }
+  ],
   "blockers": [],
   "readyToExecute": true
 }

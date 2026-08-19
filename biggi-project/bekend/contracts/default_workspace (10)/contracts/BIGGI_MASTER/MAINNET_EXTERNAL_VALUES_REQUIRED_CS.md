@@ -121,7 +121,9 @@ Public branch, pokud se nasazuje `Main2`:
 
 - `SALE_CAP`
 - `MARKETING_CAP`
-- `TICKET_PRICE`
+- `MARKETING_TICKET_PRICE` (`1` POL; `TICKET_PRICE` zustava legacy fallback)
+- `PUBLIC_TICKET_PRICE` (`500` POL)
+- `PUBLIC_TICKET_PRICE_WEI` (`500000000000000000000`)
 - `PRICE_INCREASE_PER_MINT_BPS`
 - `PENDING_RETRY_DELAY_SEC`
 - `SERIES_NAME`
@@ -212,7 +214,9 @@ Minimalne doplnit:
 - metadata a URI hodnoty
 - `SALE_CAP`
 - `MARKETING_CAP`
-- `TICKET_PRICE`
+- `MARKETING_TICKET_PRICE`
+- `PUBLIC_TICKET_PRICE`
+- `PUBLIC_TICKET_PRICE_WEI`
 
 ### Tokenomics base bez liquidity
 

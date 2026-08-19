@@ -1,6 +1,6 @@
 # BIGGI_MASTER Mainnet Contract Address Records
 
-Last documentation sync: 2026-08-17.
+Last documentation sync: 2026-08-18.
 
 ## Canonical Polygon Mainnet Deployment
 
@@ -32,7 +32,7 @@ Canonical manifests:
 | `COMPUTE` | `0x0A09261631496B4aad9A5c2A82b62666249d773f` |
 | `VRF_ROUTER` | `0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F` |
 | `MAIN` | `0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4` |
-| `MAIN2` | `0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634` |
+| `MAIN2` | `0xe56cC0657A89daf10994204eD745985a61b0E36F` |
 | `TICKET_HUB` | `0x7b7e561173f498C8274b821090Da64E8ee653f6A` |
 | `DISTRIBUTOR` | `0xCE892698159D8D799D5eF7f0dF0111487511fD22` |
 | `COLLECTION_REWARDS` | `0x5d1273070c9133381C570009768621762F024FB8` |
@@ -46,15 +46,15 @@ Canonical manifests:
 
 | Chapter | VRF collection | Public collection | Marketing tickets | Status |
 | --- | --- | --- | ---: | --- |
-| 1 - Original BIGGI | `0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4` | `0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634` | 50 | inactive |
-| 2 - Universe | `0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036` | `0xce4dF4eFc703fb0D9827aAacDB28c90405aB57D0` | 50 | inactive |
-| 3 - Mutant | `0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2` | `0x4bB7a55Ba690Fc38653f5889E2262316A049a1D9` | 50 | inactive |
-| 4 - Apocalipse | `0x8E862D9071120D69517D3F7Db0c101175E911115` | `0x43b4C220aD039C0272153cF4B43Eaee68de09b00` | 50 | inactive |
-| 5 - Super Hero | `0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38` | `0xcA168A6e391a54de4F664397eE17328280305A75` | 50 | inactive |
+| 1 - Original BIGGI | `0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4` | `0xe56cC0657A89daf10994204eD745985a61b0E36F` | 50 | inactive |
+| 2 - Universe | `0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036` | `0x7EaB23497085cfF00Cb2E9809b2Af0e717187356` | 50 | inactive |
+| 3 - Mutant | `0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2` | `0xda6A6f45053796d0f5edB965fe3FA47B9a35460c` | 50 | inactive |
+| 4 - Apocalipse | `0x8E862D9071120D69517D3F7Db0c101175E911115` | `0xecE7D61AB3FB2229C39B48380D704183532fE960` | 50 | inactive |
+| 5 - Super Hero | `0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38` | `0x99f049279BC545469F989d8f06CD915ef4B6f1d4` | 50 | inactive |
 
-Every VRF chapter uses the same 550-position block-color, tier, rarity, and game-logic matrix as Chapter 1. Chapter-specific images and NFT metadata are configured later, before that chapter is activated. Public collection pricing is derived from its paired VRF collection.
+Every VRF chapter uses the same 550-position block-color, tier, rarity, and game-logic matrix as Chapter 1. Every Public collection has 100 unique NFTs, ten per block and no background clones. Public collection pricing is derived from its paired VRF collection.
 
-Current verification: `204/204` on-chain relationship checks and `13/13` PolygonScan source verifications passed. All 250 marketing tickets are minted, transferable, and not redeemable while their chapters remain inactive.
+Current verification: `219/219` on-chain relationship checks and `14/14` PolygonScan source verifications passed. All 250 marketing tickets are minted, transferable, and not redeemable while their chapters remain inactive.
 
 ## Live Tokenomics Write Contracts
 
@@ -117,7 +117,8 @@ Current verification: `204/204` on-chain relationship checks and `13/13` Polygon
 | `BiggiToken.totalSupply` | `1,200,000,000 BIGGI` |
 | `BiggiToken.distributed` | `true`; reserve lock is active |
 | `TicketHub.saleCap / marketingCap` | `500 / 50` per chapter |
-| `TicketHub.ticketPrice` | `1 POL` |
+| `TicketHub.ticketPrice` | `500 POL` current public start; marketing snapshots remain `1 POL` |
+| `TicketHub.priceIncreasePerMint` | `10033` (+0.33% after each paid mint) |
 | Chapter activation | all five chapters `active=false` |
 | `BiggiLiquidityManager.autoTopUpEnabled` | `false` |
 | `BiggiLiquidityKeeperProxy.paused` | `true` |

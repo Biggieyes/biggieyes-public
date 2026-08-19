@@ -1,7 +1,7 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "checkedAt": "2026-08-17T22:02:29.252Z",
+  "checkedAt": "2026-08-19T01:33:31.926Z",
   "checks": [
     {
       "status": "ok",
@@ -299,7 +299,7 @@
       "label": "REGISTRY.getChapterCollections",
       "actual": [
         "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
-        "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634",
+        "0xe56cC0657A89daf10994204eD745985a61b0E36F",
         "0x7b7e561173f498C8274b821090Da64E8ee653f6A"
       ]
     },
@@ -312,8 +312,8 @@
     {
       "status": "ok",
       "label": "REGISTRY.chapter.publicCollection == MAIN2",
-      "actual": "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634",
-      "expected": "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634"
+      "actual": "0xe56cC0657A89daf10994204eD745985a61b0E36F",
+      "expected": "0xe56cC0657A89daf10994204eD745985a61b0E36F"
     },
     {
       "status": "ok",
@@ -421,7 +421,7 @@
     {
       "status": "ok",
       "label": "MAIN2.code",
-      "address": "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634"
+      "address": "0xe56cC0657A89daf10994204eD745985a61b0E36F"
     },
     {
       "status": "ok",
@@ -446,15 +446,15 @@
     {
       "status": "ok",
       "label": "MAIN2.paused",
-      "actual": "false"
+      "actual": "true"
     },
     {
       "status": "ok",
       "label": "MAIN2.metadataConsistency",
       "actual": {
-        "configuredCount": "0",
-        "fullyConfigured": "false",
-        "rewardMatrixConsistent": "false"
+        "configuredCount": "100",
+        "fullyConfigured": "true",
+        "rewardMatrixConsistent": "true"
       }
     },
     {
@@ -482,12 +482,11 @@
       "expected": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4"
     },
     {
-      "status": "warn",
+      "status": "ok",
       "label": "MAIN2.metadata launch-ready",
-      "configuredCount": "0",
-      "fullyConfigured": false,
-      "rewardMatrixConsistent": false,
-      "message": "public metadata is not fully configured"
+      "configuredCount": "100",
+      "fullyConfigured": true,
+      "rewardMatrixConsistent": true
     },
     {
       "status": "ok",
@@ -761,15 +760,7 @@
       "expected": "0x939Df533b80943298E15ad4c8F188102954f34FF"
     }
   ],
-  "warnings": [
-    {
-      "label": "MAIN2.metadata launch-ready",
-      "message": "public metadata is not fully configured",
-      "configuredCount": "0",
-      "fullyConfigured": false,
-      "rewardMatrixConsistent": false
-    }
-  ],
+  "warnings": [],
   "issues": [],
   "addressesFile": "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\addresses.master.json",
   "strict": false,

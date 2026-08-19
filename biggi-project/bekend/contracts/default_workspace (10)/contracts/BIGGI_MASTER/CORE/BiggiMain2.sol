@@ -78,7 +78,8 @@ contract BiggiEyesMain2 is ERC721, Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint256 public constant MAX_BATCH   = 55;
-    uint256 public constant MAX_SUPPLY  = 550;
+    uint256 public constant MAX_SUPPLY  = 100;
+    uint16 public constant PUBLIC_BACKGROUND = 1;
 
     IBiggiDistributor public distributor;
     IBiggiPriceProvider public priceProvider;
@@ -127,15 +128,6 @@ contract BiggiEyesMain2 is ERC721, Ownable, Pausable, ReentrancyGuard {
     constructor(address initialOwner) ERC721("BiggiEyesPublic", "BIGGI-PUB") Ownable(initialOwner) {
         if (initialOwner == address(0)) revert OwnerZero();
         devWallet = initialOwner;
-        uint256[10] memory base = [
-            uint256(100 ether), 200 ether, 300 ether, 400 ether, 500 ether,
-            600 ether, 700 ether, 800 ether, 900 ether, 1000 ether
-        ];
-        uint256[10] memory growth = [
-            uint256(10000), 10000, 10000, 10000, 10000,
-            10000, 10000, 10000, 10000, 10000
-        ];
-        BiggiPriceMathLib.initializeBlocks(blockInfos, base, growth);
     }
 
     function pause() external onlyOwner { _pause(); }
@@ -278,27 +270,16 @@ contract BiggiEyesMain2 is ERC721, Ownable, Pausable, ReentrancyGuard {
     function getEffectiveBlockPrice(uint256 blockId) public view returns (uint256) {
         uint16 blockIdx = uint16(blockId);
         if (blockIdx < 1 || blockIdx > 10) revert InvalidBlock();
+        if (address(chapterController) == address(0)) revert ChapterControllerNotSet();
 
-        if (address(chapterController) != address(0)) {
-            address chapterProvider = chapterController.getChapterPriceProvider(chapterId);
-            if (chapterProvider == address(0)) revert ChapterPriceProviderUnavailable();
-            try IBiggiPriceProvider(chapterProvider).getCurrentBlockPrice(blockIdx) returns (uint256 resolvedPrice) {
-                if (resolvedPrice == 0) revert ChapterPriceProviderUnavailable();
-                return resolvedPrice;
-            } catch {
-                revert ChapterPriceProviderUnavailable();
-            }
+        address chapterProvider = chapterController.getChapterPriceProvider(chapterId);
+        if (chapterProvider == address(0)) revert ChapterPriceProviderUnavailable();
+        try IBiggiPriceProvider(chapterProvider).getCurrentBlockPrice(blockIdx) returns (uint256 resolvedPrice) {
+            if (resolvedPrice == 0) revert ChapterPriceProviderUnavailable();
+            return resolvedPrice;
+        } catch {
+            revert ChapterPriceProviderUnavailable();
         }
-
-        address provider = address(priceProvider);
-        if (provider != address(0)) {
-            try IBiggiPriceProvider(provider).getCurrentBlockPrice(blockIdx) returns (uint256 resolvedPrice) {
-                if (resolvedPrice > 0) return resolvedPrice;
-            } catch {
-                // Fall through to local storage price.
-            }
-        }
-        return blockInfos[blockIdx - 1].currentPrice;
     }
 
     function getBlockMintCount(uint16 blockIdx) public view returns (uint16) {
@@ -316,7 +297,7 @@ contract BiggiEyesMain2 is ERC721, Ownable, Pausable, ReentrancyGuard {
         uint256 count;
         for (uint256 idx = 1; idx <= MAX_SUPPLY; ++idx) {
             BiggiIdIndexLib.NFTInfo memory info = nftInfo[idx];
-            if (!_isMetadataValid(info.blockIdx, info.background, info.mainId)) {
+            if (!_isMetadataValid(idx, info.blockIdx, info.background, info.mainId)) {
                 invalid[count] = idx;
                 unchecked { ++count; }
             }
@@ -368,9 +349,9 @@ contract BiggiEyesMain2 is ERC721, Ownable, Pausable, ReentrancyGuard {
         for (uint256 i = 0; i < len; ++i) {
             uint256 idx = indices[i];
             if (idx < 1 || idx > MAX_SUPPLY) revert InvalidIndex();
-            if (bgCodes[i] < 1 || bgCodes[i] > 10) revert InvalidBg();
+            if (bgCodes[i] != PUBLIC_BACKGROUND) revert InvalidBg();
             if (blockIndices[i] < 1 || blockIndices[i] > 10) revert InvalidBlock();
-            if (!_isMetadataValid(blockIndices[i], bgCodes[i], mainIds[i])) revert InvalidIndex();
+            if (!_isMetadataValid(idx, blockIndices[i], bgCodes[i], mainIds[i])) revert InvalidIndex();
 
             BiggiIdIndexLib.NFTInfo storage info = nftInfo[idx];
             if (info.minted || info.background != 0 || info.blockIdx != 0 || info.mainId != 0) revert AlreadySet();
@@ -386,7 +367,7 @@ contract BiggiEyesMain2 is ERC721, Ownable, Pausable, ReentrancyGuard {
         if (idx < 1 || idx > MAX_SUPPLY) revert InvalidIndex();
         if (nftInfo[idx].minted) revert InvalidIndex();
         BiggiIdIndexLib.NFTInfo storage info = nftInfo[idx];
-        if (!_isMintMetadataValid(info)) revert InvalidIndex();
+        if (!_isMintMetadataValid(idx, info)) revert InvalidIndex();
         if (biggiMinted >= MAX_SUPPLY) revert AllNFTsMintedErr();
 
         uint16 blk_ = info.blockIdx;
@@ -409,7 +390,7 @@ contract BiggiEyesMain2 is ERC721, Ownable, Pausable, ReentrancyGuard {
         if (idx < 1 || idx > MAX_SUPPLY) revert InvalidIndex();
         if (nftInfo[idx].minted) revert InvalidIndex();
         BiggiIdIndexLib.NFTInfo storage info = nftInfo[idx];
-        if (!_isMintMetadataValid(info)) revert InvalidIndex();
+        if (!_isMintMetadataValid(idx, info)) revert InvalidIndex();
         if (biggiMinted >= MAX_SUPPLY) revert AllNFTsMintedErr();
 
         uint16 blk_ = info.blockIdx;
@@ -515,31 +496,22 @@ contract BiggiEyesMain2 is ERC721, Ownable, Pausable, ReentrancyGuard {
         if (!ok) revert NativeRescueFailed();
     }
 
-    function _backgroundCountForBlock(uint16 blk_) internal pure returns (uint16) {
-        if (blk_ < 1 || blk_ > 10) return 0;
-        return uint16(11 - blk_);
+    function _expectedBlockForIndex(uint256 idx) internal pure returns (uint16) {
+        if (idx < 1 || idx > MAX_SUPPLY) return 0;
+        return uint16(((idx - 1) / 10) + 1);
     }
 
-    function _minMainIdForBlock(uint16 blk_) internal pure returns (uint256) {
-        if (blk_ < 1 || blk_ > 10) return 0;
-        return (uint256(blk_ - 1) * 10) + 1;
+    function _isMetadataValid(uint256 idx, uint16 blk_, uint16 bg_, uint256 mainId_) internal pure returns (bool) {
+        return
+            idx >= 1 &&
+            idx <= MAX_SUPPLY &&
+            bg_ == PUBLIC_BACKGROUND &&
+            blk_ == _expectedBlockForIndex(idx) &&
+            mainId_ == idx;
     }
 
-    function _maxMainIdForBlock(uint16 blk_) internal pure returns (uint256) {
-        if (blk_ < 1 || blk_ > 10) return 0;
-        return uint256(blk_) * 10;
-    }
-
-    function _isMetadataValid(uint16 blk_, uint16 bg_, uint256 mainId_) internal pure returns (bool) {
-        uint16 bgCount = _backgroundCountForBlock(blk_);
-        if (bgCount == 0) return false;
-        uint256 minMainId = _minMainIdForBlock(blk_);
-        uint256 maxMainId = _maxMainIdForBlock(blk_);
-        return bg_ >= 1 && bg_ <= bgCount && mainId_ >= minMainId && mainId_ <= maxMainId;
-    }
-
-    function _isMintMetadataValid(BiggiIdIndexLib.NFTInfo storage info) internal view returns (bool) {
-        return _isMetadataValid(info.blockIdx, info.background, info.mainId);
+    function _isMintMetadataValid(uint256 idx, BiggiIdIndexLib.NFTInfo storage info) internal view returns (bool) {
+        return _isMetadataValid(idx, info.blockIdx, info.background, info.mainId);
     }
 
     function _metadataConsistencyState()
@@ -547,35 +519,25 @@ contract BiggiEyesMain2 is ERC721, Ownable, Pausable, ReentrancyGuard {
         view
         returns (uint256 configuredCount, bool fullyConfigured, bool rewardMatrixConsistent)
     {
-        uint16[101][11] memory seenBackgroundMaskByBlockMain;
-        uint8[101][11] memory uniqueBackgroundCountByBlockMain;
+        uint16[10] memory configuredByBlock;
 
         for (uint256 idx = 1; idx <= MAX_SUPPLY; ++idx) {
             BiggiIdIndexLib.NFTInfo memory info = nftInfo[idx];
-            if (!_isMetadataValid(info.blockIdx, info.background, info.mainId)) continue;
+            if (!_isMetadataValid(idx, info.blockIdx, info.background, info.mainId)) continue;
 
             configuredCount++;
-            uint16 bit = uint16(1 << (info.background - 1));
-            if ((seenBackgroundMaskByBlockMain[info.blockIdx][info.mainId] & bit) == 0) {
-                seenBackgroundMaskByBlockMain[info.blockIdx][info.mainId] |= bit;
-                unchecked {
-                    uniqueBackgroundCountByBlockMain[info.blockIdx][info.mainId] += 1;
-                }
-            }
+            unchecked { configuredByBlock[info.blockIdx - 1]++; }
         }
 
-        fullyConfigured = configuredCount == MAX_SUPPLY;
-        rewardMatrixConsistent = fullyConfigured;
+        rewardMatrixConsistent = configuredCount == MAX_SUPPLY;
 
-        for (uint16 blk = 1; blk <= 10; ++blk) {
-            uint16 expectedBackgroundCount = _backgroundCountForBlock(blk);
-            uint256 minMainId = _minMainIdForBlock(blk);
-            uint256 maxMainId = _maxMainIdForBlock(blk);
-            for (uint256 mainId = minMainId; mainId <= maxMainId; ++mainId) {
-                if (uniqueBackgroundCountByBlockMain[blk][mainId] != expectedBackgroundCount) {
-                    rewardMatrixConsistent = false;
-                }
-            }
+        for (uint256 blockIndex = 0; blockIndex < 10; ++blockIndex) {
+            if (configuredByBlock[blockIndex] != 10) rewardMatrixConsistent = false;
+        }
+
+        fullyConfigured = rewardMatrixConsistent;
+        for (uint16 blockIndex = 1; blockIndex <= 10; ++blockIndex) {
+            if (bytes(blockBaseURIs[blockIndex]).length == 0) fullyConfigured = false;
         }
     }
 

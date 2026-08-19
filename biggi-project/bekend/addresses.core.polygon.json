@@ -26,52 +26,59 @@
       "seriesId": 1,
       "seriesName": "BIGGI MASTER Core Launch",
       "MAIN": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
-      "MAIN2": "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634",
+      "MAIN2": "0xe56cC0657A89daf10994204eD745985a61b0E36F",
       "ticketBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeid32cnhzvsmg56nwlgf2lcowqcnaqch2us7g4af6oyta6cwhkzrgu/",
-      "active": false
+      "active": false,
+      "publicMetadataReady": true
     },
     {
       "chapterId": 2,
       "seriesId": 2,
       "seriesName": "BIGGI Universe",
       "MAIN": "0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036",
-      "MAIN2": "0xce4dF4eFc703fb0D9827aAacDB28c90405aB57D0",
+      "MAIN2": "0x7EaB23497085cfF00Cb2E9809b2Af0e717187356",
       "ticketBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeigifkdov4wcyfu2hgyrwpwbi2shaitqcklxna6chi2itdhdfap7p4/",
-      "active": false
+      "active": false,
+      "publicMetadataReady": false
     },
     {
       "chapterId": 3,
       "seriesId": 3,
       "seriesName": "BIGGI Mutant",
       "MAIN": "0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2",
-      "MAIN2": "0x4bB7a55Ba690Fc38653f5889E2262316A049a1D9",
+      "MAIN2": "0xda6A6f45053796d0f5edB965fe3FA47B9a35460c",
       "ticketBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeigdkx4e4ovnr33pwir3g6f2rhlnboo65mncp6euutn5wv4pnebxf4/",
-      "active": false
+      "active": false,
+      "publicMetadataReady": false
     },
     {
       "chapterId": 4,
       "seriesId": 4,
       "seriesName": "BIGGI Apocalipse",
       "MAIN": "0x8E862D9071120D69517D3F7Db0c101175E911115",
-      "MAIN2": "0x43b4C220aD039C0272153cF4B43Eaee68de09b00",
+      "MAIN2": "0xecE7D61AB3FB2229C39B48380D704183532fE960",
       "ticketBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeihqoyhcjjzj4yyw6j3c62z44ezwm3coicbefak4q7ufhiefnhqsru/",
-      "active": false
+      "active": false,
+      "publicMetadataReady": false
     },
     {
       "chapterId": 5,
       "seriesId": 5,
       "seriesName": "BIGGI Super Hero",
       "MAIN": "0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38",
-      "MAIN2": "0xcA168A6e391a54de4F664397eE17328280305A75",
+      "MAIN2": "0x99f049279BC545469F989d8f06CD915ef4B6f1d4",
       "ticketBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeibd3pz4pvfuuasonn2va7tylapqrdtfl5zgytiiggwsemtxd3qxru/",
-      "active": false
+      "active": false,
+      "publicMetadataReady": false
     }
   ],
   "MAIN": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
-  "MAIN2": "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634",
+  "MAIN2": "0xe56cC0657A89daf10994204eD745985a61b0E36F",
   "CHAPTER_ID": 1,
   "SERIES_ID": 1,
   "CHAPTER_COUNT": 5,
   "marketingTicketsMintedPerChapter": 50,
-  "createdAt": "2026-08-17T17:57:22.980Z"
+  "createdAt": "2026-08-17T17:57:22.980Z",
+  "PUBLIC_COLLECTIONS_REDEPLOYED_AT": "2026-08-18T21:41:38.977Z",
+  "PUBLIC_COLLECTIONS_REDEPLOY_BLOCK": 92256175
 }

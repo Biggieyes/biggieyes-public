@@ -1,12 +1,13 @@
 # BIGGI Polygon mainnet: finalni deploy a launch postup
 
-Stav k 2026-08-17. Tento dokument je hlavni poradi zbyvajicich kroku. Vychazi z live read-only kontrol Polygonu, overeni vsech peti CORE chapteru a lokalnich testu.
+Stav k 2026-08-18. Tento dokument je hlavni poradi zbyvajicich kroku. Vychazi z live read-only kontrol Polygonu, overeni vsech peti CORE chapteru a lokalnich testu.
 
 ## Aktualni verdikt
 
 - CORE a tokenomika jsou nasazene na Polygon mainnetu.
 - Deployment manifest eviduje 58 unikatnich projektovych deploymentu: 58 ma bytecode a 58 je verifikovano.
-- Centralni TicketHub, SeriesRegistry, ChapterController, readery a pet VRF/Public paru jsou nasazene a `204/204` live vazeb proslo.
+- Centralni TicketHub, SeriesRegistry, ChapterController, readery a pet opravenych VRF/Public paru jsou nasazene. Aktualni kontrola je `219/219`; vsech pet Public kontraktu ma `MAX_SUPPLY=100`.
+- Opravena Public migrace prosla kompletnim Polygon fork nacvikem: 5 deploymentu, 136 lokalnich transakci a finalni wiring audit `deployed-wired-paused`.
 - `BiggiCREAutomationReceiver` je nasazeny, verifikovany a zamerne paused.
 - `okForDeployOnly=true`, ale `okForPublicLaunch=false`.
 - Posledni `npm.cmd run preflight:launch:polygon` vratil 7 blockeru a 0 warningu.
@@ -27,7 +28,7 @@ Live odhad k 2026-06-29, Polygon blok priblizne `89353439`:
 - Pri gas price `50 gwei` by stejny kompletni setup stal priblizne `1.86 POL`, s 30% rezervou `2.42 POL`.
 - Aktualni zustatek puvodni admin wallet byl pri kontrole priblizne `2.406 POL`.
 
-Odhad zahrnuje ownership transfer, pause/unpause, CORE konfiguraci, 550 MAIN2 metadata zapisu a URI, VRF admin transakce, `initialDistribute`, CRE receiver a wiring, DEX setup gas a aktivaci tokenomiky. Nezahrnuje:
+Tento historicky odhad vychazel ze zruseneho 550-radkoveho MAIN2 modelu a pro opraveny Public redeploy neni platny. Posledni read-only preflight je ulozen v `reports/public-collections-redeploy-polygon.json`; jeho odhad pokryva pouze pet deployment transakci, konfiguracni a wiring transakce jsou navic. Pred execute je nutny novy preflight. Naklady na likviditu, VRF subscription, CRE, IPFS a hosting nejsou zahrnuty.
 
 - zvoleny `LIQ_NATIVE_AMOUNT`, ktery se vlozi jako kapital do BIGGI/WPOL poolu;
 - castku vlozenou do VRF subscription;
@@ -45,7 +46,7 @@ Do chatu neposilat zadny private key ani seed phrase. Potrebne jsou pouze verejn
 1. Finalni `LIQ_TOKEN_AMOUNT` a `LIQ_NATIVE_AMOUNT` pro pocatecni BIGGI/WPOL likviditu.
 2. Potvrzeni `LIQ_LP_RECIPIENT=0xFe234394845B601B2c671c0dD631fA6290c02bb9` (`LiquidityVault`).
 3. Provozni minimum a monitoring financovani VRF subscription.
-4. `PUBLIC_METADATA_FILE`: kompletni 550polozkova MAIN2 metadata matice a finalni IPFS URI pro aktivovany chapter.
+4. `PUBLIC_METADATA_FILE`: kompletni 100polozkova MAIN2 metadata matice (10 NFT v kazdem z 10 bloku, bez background klonu) a finalni IPFS URI pro aktivovany chapter.
 5. Schvaleny Chainlink CRE Deploy Access a z nej ziskane workflow ID/owner.
 
 ## Aktualnich 7 on-chain launch blockeru
@@ -53,7 +54,7 @@ Do chatu neposilat zadny private key ani seed phrase. Potrebne jsou pouze verejn
 Stav z `preflight:launch:polygon` po nasazeni CRE receiveru:
 
 1. BIGGI/WPOL pair nema pocatecni likviditu.
-2. MAIN2 metadata nejsou launch-ready.
+2. Chapter 1 Public je zamerne paused; metadata jsou `100/100`, `fullyConfigured=true` a `rewardMatrixConsistent=true`.
 3. `CRE_AUTOMATION_RECEIVER` je zamerne paused.
 4. CRE workflow ID jeste neni zamknute v receiveru.
 5. CRE workflow owner jeste neni zamknuty v receiveru.
@@ -61,6 +62,8 @@ Stav z `preflight:launch:polygon` po nasazeni CRE receiveru:
 7. `LIQUIDITY_KEEPER_PROXY` je paused.
 
 Mimo on-chain preflight zustava externi blocker: CRE Deploy Access je stale `Not enabled`. Receiver `0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6` je nasazeny, overeny pres Sourcify a bezpecne paused.
+
+Finalni image URI kapitol 2-5 chybi, ale neblokuji aktivaci kapitoly 1. Kazdy budouci chapter je musi mit doplnene a overene pred svou vlastni aktivaci. TokenRewards zahrnuje VRF i Public kolekci kazdeho chapteru; CollectionRewards zahrnuje pouze VRF kolekci.
 
 ## Presne poradi
 
@@ -143,18 +146,20 @@ Kontrola:
 npm.cmd run check:master:core:polygon
 ```
 
-### 4. Dokoncit MAIN2 metadata
+### 4. MAIN2 redeploy dokoncen; doplnit budouci Public metadata
 
-1. Dodat 550 zaznamu `idx/background/blockIdx/mainId` pro Main2.
-2. Dodat finalni IPFS base URI, deset block URI a contract URI.
-3. Seedovat `batchSetNFTBackgroundAndBlock` v malych batchich.
-4. Overit:
-   - `metadataConfiguredCount() == 550`
+1. Redeploy peti opravenych Public kontraktu byl dokoncen 2026-08-18; znovu jej nespoustet.
+2. Aktivni adresy jsou v `addresses.master.json`; report je `reports/public-collections-redeploy-polygon.json`.
+3. Pro kazdy chapter seedovat presne 100 zaznamu: `idx=mainId=1..100`, `background=1` pouze jako interni PUBLIC sentinel a 10 indexu v kazdem bloku.
+4. Public metadata nesmi obsahovat background variant trait ani vlastni cenu. Cenu bloku vzdy poskytuje sparovana VRF kolekce.
+5. Dodat finalni IPFS URI pro konkretni chapter pred jeho aktivaci. Chapter 1 ma prereveal CID `bafybeihn4yqga5yuslc2577qsvoajt2fwdpcsr6oj7fdurivwnlrsi7qzy`; chapters 2-5 zustavaji bez URI, dokud nebudou mit vlastni obrazky.
+6. Overit:
+   - `metadataConfiguredCount() == 100`
    - `metadataFullyConfigured() == true`
    - `rewardMatrixConsistent() == true`
    - vsechny IPFS URI odpovidaji skutecnym souborum
 
-MAIN metadata jsou uz konzistentni 550/550. MAIN2 tento gate zatim nesplnuje.
+MAIN metadata zustavaji 550/550. Public je samostatna 100-NFT kolekce a nema background klony. Dokud chybi URI chapteru, `rewardMatrixConsistent=true`, ale `fullyConfigured=false`; takovy chapter se nesmi aktivovat.
 
 ### 5. Dokoncit Chainlink VRF
 
@@ -341,7 +346,10 @@ npm.cmd run manifest:deployment:polygon
 4. Teprve potom aktivovat pripraveny chapter pres `TicketHub.setChapterActive(chapterId, true)`; chapters 2-5 zustanou neaktivni, dokud nemaji vlastni metadata a launch gate.
 5. Preflight zopakovat po odblokovani.
 6. Provest jeden maly end-to-end mainnet smoke test:
-   - nakup ticketu za 1 POL
+   - overit, ze marketing alokace ma snapshot `1 POL` a paid mint ji nezahrnuje do cenove krivky
+   - nastavit a read-only overit public start `500 POL`
+   - nakup prvniho paid ticketu za `500 POL` (Chapter 1 token ID 51)
+   - kontrola navyseni dalsi paid ceny o `+0.33 %`
    - kontrola 60/40 splitu a distributor vetvi
    - redeem pres VRF a callback
    - zobrazeni NFT a metadat ve frontend galerii

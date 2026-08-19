@@ -1,5 +1,5 @@
 {
-  "createdAt": "2026-07-20T19:30:49.591Z",
+  "createdAt": "2026-08-19T01:39:50.068Z",
   "network": "polygon",
   "chainId": 137,
   "ok": false,
@@ -252,7 +252,7 @@
       "name": "rewards-week-roll: week state readable",
       "ok": true,
       "value": {
-        "currentWeek": "2950",
+        "currentWeek": "2954",
         "initialized": false
       }
     },

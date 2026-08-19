@@ -25,7 +25,8 @@ from dataclasses import dataclass
 from typing import Any
 
 
-MAX_SUPPLY = 550
+MAIN_MAX_SUPPLY = 550
+PUBLIC_MAX_SUPPLY = 100
 BIGGI_OFFSET = 1001
 TICKET_FILENAME = "Biggi_RANDOM_MINT_TICKET.json"
 PINATA_LEGACY_PIN_FILE_URL = "https://api.pinata.cloud/pinning/pinFileToIPFS"
@@ -151,16 +152,16 @@ def normalize_uri(value: str) -> str:
     return value
 
 
-def safe_url_join(base: str, suffix: str) -> str:
+def safe_url_join(base: str, suffix: str, parameter: str = "token_id") -> str:
     base = base.strip()
     suffix = suffix.strip()
     if not base:
         return ""
     sep = "&" if "?" in base else "?"
-    return f"{base}{sep}token_id={suffix}"
+    return f"{base}{sep}{parameter}={suffix}"
 
 
-def build_layout() -> list[LayoutRow]:
+def build_main_layout() -> list[LayoutRow]:
     rows: list[LayoutRow] = []
     idx = 1
     for block_idx in range(1, 11):
@@ -171,9 +172,25 @@ def build_layout() -> list[LayoutRow]:
             for background in range(1, background_count + 1):
                 rows.append(LayoutRow(idx, background, block_idx, main_id))
                 idx += 1
-    if len(rows) != MAX_SUPPLY:
-        fail(f"internal layout error: expected {MAX_SUPPLY}, got {len(rows)}")
+    if len(rows) != MAIN_MAX_SUPPLY:
+        fail(f"internal layout error: expected {MAIN_MAX_SUPPLY}, got {len(rows)}")
     return rows
+
+
+def build_public_layout() -> list[LayoutRow]:
+    return [
+        LayoutRow(
+            idx=idx,
+            background=1,
+            block_idx=((idx - 1) // 10) + 1,
+            main_id=idx,
+        )
+        for idx in range(1, PUBLIC_MAX_SUPPLY + 1)
+    ]
+
+
+def build_layout(collection_kind: str = "main") -> list[LayoutRow]:
+    return build_public_layout() if collection_kind == "main2" else build_main_layout()
 
 
 def metadata_filename(row: LayoutRow, collection_kind: str) -> str:
@@ -183,6 +200,13 @@ def metadata_filename(row: LayoutRow, collection_kind: str) -> str:
     else:
         suffix = BACKGROUND_SHORT[row.background]
     return f"Biggi_{row.main_id}_{block_name}_{suffix}.json"
+
+
+def group_layout_rows(rows: list[LayoutRow], collection_kind: str) -> list[list[LayoutRow]]:
+    grouped: dict[str, list[LayoutRow]] = {}
+    for row in rows:
+        grouped.setdefault(metadata_filename(row, collection_kind), []).append(row)
+    return list(grouped.values())
 
 
 def image_lookup_keys(row: LayoutRow, collection_kind: str) -> list[str]:
@@ -266,20 +290,32 @@ def load_image_map(path: pathlib.Path | None) -> dict[str, str]:
 
 
 def select_image_uri(
-    row: LayoutRow,
+    rows: list[LayoutRow],
     collection_kind: str,
     image_map: dict[str, str],
     placeholder_image_uri: str,
 ) -> tuple[str, bool]:
-    for key in image_lookup_keys(row, collection_kind):
-        if key in image_map:
-            return image_map[key], False
+    resolved = {
+        image_map[key]
+        for row in rows
+        for key in image_lookup_keys(row, collection_kind)
+        if key in image_map
+    }
+    if len(resolved) > 1:
+        filename = metadata_filename(rows[0], collection_kind)
+        fail(
+            f"conflicting image URIs for shared metadata file {filename}. "
+            "MAIN2 requires one image per block/Main ID PUBLIC filename."
+        )
+    if resolved:
+        return resolved.pop(), False
     return placeholder_image_uri, True
 
 
 def build_metadata(
     row: LayoutRow,
     *,
+    layout_rows: list[LayoutRow] | None = None,
     collection_kind: str,
     collection_name: str,
     description: str,
@@ -287,30 +323,51 @@ def build_metadata(
     placeholder_used: bool,
     external_url: str,
     phase: str,
+    chapter_id: int | None = None,
+    series: str = "",
 ) -> dict[str, Any]:
     filename = metadata_filename(row, collection_kind)
     block_name = BLOCK_NAMES[row.block_idx]
-    background_short = "PUBLIC" if collection_kind == "main2" else BACKGROUND_SHORT[row.background]
-    background_label = "Public" if collection_kind == "main2" else BACKGROUND_LABEL[row.background]
-    display_name = f"{collection_name} #{row.token_id}"
+    if collection_kind == "main2":
+        display_name = f"{collection_name} #{row.main_id}"
+        attributes: list[dict[str, Any]] = [
+            {"trait_type": "Collection Kind", "value": "PUBLIC"},
+            {"trait_type": "Phase", "value": phase},
+            {"trait_type": "Block/Eye Color", "value": block_name},
+            {"trait_type": "Block Index", "value": row.block_idx},
+            {"trait_type": "Linked Block", "value": block_name},
+            {"trait_type": "Price Source", "value": "Paired VRF Collection"},
+            {"trait_type": "Main ID", "value": row.main_id},
+            {"trait_type": "Image Finalized", "value": "No" if placeholder_used else "Yes"},
+        ]
+        external_suffix = str(row.main_id)
+        external_parameter = "main_id"
+    else:
+        display_name = f"{collection_name} #{row.token_id}"
+        attributes = [
+            {"trait_type": "Collection Kind", "value": collection_kind.upper()},
+            {"trait_type": "Phase", "value": phase},
+            {"trait_type": "Block", "value": block_name},
+            {"trait_type": "Block Index", "value": row.block_idx},
+            {"trait_type": "Background", "value": BACKGROUND_LABEL[row.background]},
+            {"trait_type": "Background Code", "value": BACKGROUND_SHORT[row.background]},
+            {"trait_type": "Main ID", "value": row.main_id},
+            {"trait_type": "Metadata Index", "value": row.idx},
+            {"trait_type": "Token ID", "value": row.token_id},
+            {"trait_type": "Image Finalized", "value": "No" if placeholder_used else "Yes"},
+        ]
+        external_suffix = str(row.token_id)
+        external_parameter = "token_id"
 
-    attributes: list[dict[str, Any]] = [
-        {"trait_type": "Collection Kind", "value": collection_kind.upper()},
-        {"trait_type": "Phase", "value": phase},
-        {"trait_type": "Block", "value": block_name},
-        {"trait_type": "Block Index", "value": row.block_idx},
-        {"trait_type": "Background", "value": background_label},
-        {"trait_type": "Background Code", "value": background_short},
-        {"trait_type": "Main ID", "value": row.main_id},
-        {"trait_type": "Metadata Index", "value": row.idx},
-        {"trait_type": "Token ID", "value": row.token_id},
-        {"trait_type": "Image Finalized", "value": "No" if placeholder_used else "Yes"},
-    ]
+    if chapter_id is not None:
+        attributes.insert(2, {"trait_type": "Chapter", "value": chapter_id})
+    if series:
+        attributes.insert(3 if chapter_id is not None else 2, {"trait_type": "Series", "value": series})
 
     data: dict[str, Any] = {
         "name": display_name,
         "description": description,
-        "external_url": safe_url_join(external_url, str(row.token_id)) if external_url else "",
+        "external_url": safe_url_join(external_url, external_suffix, external_parameter) if external_url else "",
         "attributes": attributes,
         "compiler": "BIGGI metadata pipeline",
         "metadata_file": filename,
@@ -438,9 +495,9 @@ def command_prepare_ticket_release(args: argparse.Namespace) -> None:
         fail("ticket metadata has no image")
 
     marketing_count = args.marketing_count
-    if marketing_count < 1 or marketing_count > MAX_SUPPLY:
+    if marketing_count < 1 or marketing_count > MAIN_MAX_SUPPLY:
         fail("--marketing-count must be from 1 to 550")
-    sale_cap = MAX_SUPPLY - marketing_count
+    sale_cap = MAIN_MAX_SUPPLY - marketing_count
 
     out_dir = pathlib.Path(args.out).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -484,23 +541,22 @@ def command_prepare_ticket_release(args: argparse.Namespace) -> None:
 
 
 def command_build(args: argparse.Namespace) -> None:
+    if args.chapter_id is not None and args.chapter_id < 1:
+        fail("--chapter-id must be at least 1")
     placeholder = normalize_uri(args.placeholder_image_uri or os.environ.get("PLACEHOLDER_IMAGE_URI", ""))
     image_map = load_image_map(pathlib.Path(args.image_map).resolve() if args.image_map else None)
-    rows = build_layout()
+    rows = build_layout(args.collection_kind)
+    row_groups = group_layout_rows(rows, args.collection_kind)
     out_dir = pathlib.Path(args.out).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    seen_files: set[str] = set()
     placeholder_count = 0
     finalized_count = 0
-    skipped_duplicates = 0
 
-    for row in rows:
+    for shared_rows in row_groups:
+        row = shared_rows[0]
         filename = metadata_filename(row, args.collection_kind)
-        if filename in seen_files:
-            skipped_duplicates += 1
-            continue
-        image_uri, placeholder_used = select_image_uri(row, args.collection_kind, image_map, placeholder)
+        image_uri, placeholder_used = select_image_uri(shared_rows, args.collection_kind, image_map, placeholder)
         if not image_uri and not args.allow_missing_image:
             fail(
                 "image URI missing. Provide --placeholder-image-uri for prereveal/marketing "
@@ -508,6 +564,7 @@ def command_build(args: argparse.Namespace) -> None:
             )
         metadata = build_metadata(
             row,
+            layout_rows=shared_rows,
             collection_kind=args.collection_kind,
             collection_name=args.collection_name,
             description=args.description,
@@ -515,9 +572,10 @@ def command_build(args: argparse.Namespace) -> None:
             placeholder_used=placeholder_used,
             external_url=args.external_url,
             phase=args.phase,
+            chapter_id=args.chapter_id,
+            series=args.series,
         )
         write_json(out_dir / filename, metadata)
-        seen_files.add(filename)
         if placeholder_used:
             placeholder_count += 1
         else:
@@ -527,18 +585,21 @@ def command_build(args: argparse.Namespace) -> None:
     manifest = {
         "collectionKind": args.collection_kind,
         "phase": args.phase,
+        "chapterId": args.chapter_id,
+        "series": args.series,
         "generatedAt": now_iso(),
-        "maxSupply": MAX_SUPPLY,
+        "maxSupply": len(rows),
         "layoutRows": len(rows),
-        "metadataFiles": len(seen_files),
-        "duplicateTokenUrisSkipped": skipped_duplicates,
+        "metadataFiles": len(row_groups),
+        "sharedTokenUriRows": len(rows) - len(row_groups),
         "placeholderImageCount": placeholder_count,
         "finalImageCount": finalized_count,
         "placeholderImageUriSet": bool(placeholder),
         "imageMap": str(pathlib.Path(args.image_map).resolve()) if args.image_map else "",
         "notes": [
             "MAIN uses 550 unique filenames.",
-            "MAIN2 uses the contract PUBLIC suffix, so multiple layout rows share tokenURI filenames.",
+            "MAIN2 uses 100 unique PUBLIC filenames for 100 independently mintable NFTs, ten per block.",
+            "Live MAIN2 prices come from the paired VRF collection; Public NFTs have no background variants or adjustments.",
             "Set all block base URIs to the uploaded metadata folder CID unless you intentionally split folders per block.",
         ],
     }
@@ -546,11 +607,12 @@ def command_build(args: argparse.Namespace) -> None:
 
     print(f"Generated metadata: {out_dir}")
     print(f"Layout rows: {len(rows)}")
-    print(f"Metadata files: {len(seen_files)}")
+    print(f"Metadata files: {len(row_groups)}")
     print(f"Final images: {finalized_count}")
     print(f"Placeholder images: {placeholder_count}")
-    if skipped_duplicates:
-        print(f"Duplicate tokenURI files skipped: {skipped_duplicates}")
+    shared_rows = len(rows) - len(row_groups)
+    if shared_rows:
+        print(f"Layout rows sharing existing tokenURI files: {shared_rows}")
 
 
 def iter_json_files(path: pathlib.Path) -> list[pathlib.Path]:
@@ -846,6 +908,8 @@ def build_parser() -> argparse.ArgumentParser:
     build.add_argument("--phase", choices=("placeholder", "final"), default="placeholder")
     build.add_argument("--collection-name", default="BIGGI")
     build.add_argument("--description", default="BIGGI NFT collection metadata.")
+    build.add_argument("--chapter-id", type=int, default=None)
+    build.add_argument("--series", default="")
     build.add_argument("--external-url", default="")
     build.add_argument("--placeholder-image-uri", default="")
     build.add_argument("--image-map", default="", help="CSV or JSON mapping metadata rows/files to final image URIs/CIDs")

@@ -13,16 +13,16 @@ if (process.env.FORK_BLOCK_NUMBER && !Number.isInteger(forkBlockNumber)) {
 const hardhatNetwork = process.env.FORK_URL
   ? {
       chainId: 137,
+      hardfork: "shanghai",
       forking: {
         url: process.env.FORK_URL,
         ...(Number.isInteger(forkBlockNumber) ? { blockNumber: forkBlockNumber } : {}),
       },
       chains: {
         137: {
-          // Polygon PoS is a custom chain from Hardhat's perspective. The
-          // fork uses the latest EDR execution rules. Block 1 avoids EDR's
-          // zero-activation edge case for custom hardfork histories.
-          hardforkHistory: { prague: 1 },
+          // Hardhat has no built-in Polygon history. Treat the forked state as
+          // Shanghai-compatible so EDR can execute calls at the fork block.
+          hardforkHistory: { shanghai: 0 },
         },
       },
     }
