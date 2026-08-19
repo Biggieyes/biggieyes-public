@@ -36,6 +36,9 @@ export default function LiveStatsPanel({
           lastNftId={lastMinted.tokenId}
           lastBlockName={lastMinted.blockName}
           lastBackgroundName={lastMinted.backgroundName}
+          lastContractAddress={lastMinted.contractAddress}
+          lastChapterId={lastMinted.chapterId}
+          lastFinalPrice={lastMinted?.finalPrice ?? null}
           biggiMinted={biggiMinted}
           maxSupply={maxSupply}
           ticketMinted={ticketMinted}
@@ -49,7 +52,6 @@ export default function LiveStatsPanel({
           myClaimable={myClaimable}
           items={myNFTs}
           mintVolumeMatic={mintVolumeMatic}
-          sharePercent={22}
           epochStart={epochStartTs}
           userLastClaimTs={userLastClaimTs}
           weekSeconds={7 * 24 * 60 * 60}
@@ -60,4 +62,3 @@ export default function LiveStatsPanel({
     </div>
   );
 }
-

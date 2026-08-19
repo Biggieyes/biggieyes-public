@@ -3,6 +3,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { ethers } from "ethers";
 import crypto from "crypto";
+import { captureException, initSentry } from "./_sentry.js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -16,6 +17,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type,Authorization",
 };
+
+initSentry();
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -92,10 +95,12 @@ async function handleRequest({ method, query, body }) {
       }, { onConflict: ["address"], ignoreDuplicates: false });
     if (error) {
       console.error("nonce upsert error:", error);
+      captureException(error, { stage: "nonce_upsert" });
       return jsonResponse(500, { ok: false, error: "Nonce upsert failed" });
     }
   } catch (e) {
     console.error("nonce upsert unexpected:", e);
+    captureException(e, { stage: "nonce_upsert" });
     return jsonResponse(500, { ok: false, error: "Nonce upsert failed" });
   }
 
@@ -118,7 +123,7 @@ export default vercelHandler;
 /* NETLIFY / AWS LAMBDA style export */
 export const handler = async (event) => {
   const query = event?.queryStringParameters || {};
-  const body = event?.body ? JSON.parse(event.body) : {};
+  const body = parseBody(event);
   const result = await handleRequest({ method: event?.httpMethod, query, body });
   return { statusCode: result.status, headers: result.headers, body: result.body };
 };

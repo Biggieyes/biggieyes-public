@@ -1,7 +1,7 @@
 import * as React from "react";
 import SimpleLineChart from "./SimpleLineChart";
 
-export default function DexLiquidityChart({ data, height = 320 }) {
+function DexLiquidityChart({ data, height = 320 }) {
   const chartData = Array.isArray(data) ? data : [];
   const safeHeight = Math.max(120, Number(height) || 320);
   const series = [
@@ -21,4 +21,6 @@ export default function DexLiquidityChart({ data, height = 320 }) {
     </div>
   );
 }
+
+export default React.memo(DexLiquidityChart);
 

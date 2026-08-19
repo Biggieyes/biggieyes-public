@@ -1,0 +1,337 @@
+// src/services/BUYBACKService.js
+// Ethers v6 service wrapper for BUYBACKAgent-like contract (read-only helpers)
+// Neprovádím žádné změny v kontraktu.
+
+import * as ethers from "ethers";
+import { BiggiBuybackAgent as ABI } from "@/config/abi/index.js";
+import { multicallAggregate } from "../utils/multicall";
+
+export default class BUYBACKService {
+  /**
+   * @param {string} address - contract address
+   * @param {ethers.providers.Provider} provider - ethers provider
+   */
+  constructor(address, provider) {
+    if (!address) throw new Error("Contract address required");
+    if (!provider) throw new Error("Provider required");
+    this.address = address;
+    this.provider = provider;
+    this.contract = new ethers.Contract(address, ABI, provider);
+    this._onBlockHandler = null;
+    this._signerConnected = false;
+  }
+
+  /** Volitelný init sanity check (ověří provider + jednoduchý getter) */
+  async init() {
+    try {
+      await this.provider.getNetwork();
+      await this.BIGGI();
+      return true;
+    } catch (e) {
+      console.error("BUYBACKService.init failed:", e);
+      throw e;
+    }
+  }
+
+  /** Připojí signer pokud bude potřeba (pro write v budoucnu) */
+  connectWithSigner(signer) {
+    if (!signer) throw new Error("Signer required");
+    this.contract = this.contract.connect(signer);
+    this.provider = signer.provider ?? this.provider;
+    this._signerConnected = true;
+  }
+
+  // --- getters ---
+  async BIGGI() {
+    return await this.contract.BIGGI();
+  } // address (IERC20)
+  async autoBUYBACKEnabled() {
+    return await this.contract.autoBuybackEnabled();
+  } // bool
+  async biggiBalance() {
+    return await this.contract.biggiBalance();
+  } // BigNumber
+  async nativeBalance() {
+    return await this.contract.nativeBalance();
+  } // BigNumber (wei)
+  async router() {
+    return await this.contract.router();
+  } // address
+  async wrappedNative() {
+    return await this.contract.wrappedNative();
+  } // address
+  async treasury() {
+    return await this.contract.treasury();
+  } // address
+  async POLICY() {
+    return await this.contract.policy();
+  } // address
+  async DRIPLM() {
+    return await this.contract.dripLM();
+  } // address
+  async fallbackMinIntervalSec() {
+    return await this.contract.fallbackMinIntervalSec();
+  } // BigNumber
+  async fallbackSwapSlippageBps() {
+    return await this.contract.fallbackSwapSlippageBps();
+  } // BigNumber
+  async fallbackTxDeadlineSec() {
+    return await this.contract.fallbackTxDeadlineSec();
+  } // BigNumber
+  async lastBUYBACKAt() {
+    return await this.contract.lastBuybackAt();
+  } // BigNumber (timestamp)
+  async pathCustom() {
+    return await this.contract.pathCustom();
+  } // address[]
+  async totalBiggiAcquired() {
+    return await this.contract.totalBiggiAcquired();
+  } // BigNumber
+  async totalNativeReceived() {
+    return await this.contract.totalNativeReceived();
+  } // BigNumber
+  async totalNativeSpent() {
+    return await this.contract.totalNativeSpent();
+  } // BigNumber
+  async paused() {
+    return await this.contract.paused();
+  } // bool
+  async owner() {
+    return await this.contract.owner();
+  } // address
+
+  /**
+   * Paralelní načtení všech důležitých metrík.
+   * Vrací objekt s bigint / primitivy.
+   */
+  async getAllStats() {
+    try {
+      // Try multicall first (falls back internally if no multicall address configured)
+      const iface = new ethers.Interface(ABI);
+      const methods = [
+        "BIGGI",
+        "autoBuybackEnabled",
+        "biggiBalance",
+        "nativeBalance",
+        "router",
+        "wrappedNative",
+        "treasury",
+        "policy",
+        "dripLM",
+        "fallbackMinIntervalSec",
+        "fallbackSwapSlippageBps",
+        "fallbackTxDeadlineSec",
+        "lastBuybackAt",
+        "pathCustom",
+        "totalBiggiAcquired",
+        "totalNativeReceived",
+        "totalNativeSpent",
+        "paused",
+        "owner",
+      ];
+      const calls = methods.map((m) => ({
+        target: this.address,
+        iface,
+        method: m,
+      }));
+      const decoded = await multicallAggregate(this.provider, calls).catch(
+        () => null,
+      );
+      if (decoded && decoded.length === methods.length) {
+        const vals = decoded.map((d) =>
+          Array.isArray(d) && d.length === 1 ? d[0] : d,
+        );
+        const [
+          BIGGI,
+          autoBUYBACKEnabled,
+          biggiBalance,
+          nativeBalance,
+          router,
+          wrappedNative,
+          treasury,
+          POLICY,
+          DRIPLM,
+          fallbackMinIntervalSec,
+          fallbackSwapSlippageBps,
+          fallbackTxDeadlineSec,
+          lastBUYBACKAt,
+          pathCustom,
+          totalBiggiAcquired,
+          totalNativeReceived,
+          totalNativeSpent,
+          paused,
+          owner,
+        ] = vals;
+        return {
+          BIGGI,
+          autoBUYBACKEnabled,
+          biggiBalance,
+          nativeBalance,
+          router,
+          wrappedNative,
+          treasury,
+          POLICY,
+          DRIPLM,
+          fallbackMinIntervalSec,
+          fallbackSwapSlippageBps,
+          fallbackTxDeadlineSec,
+          lastBUYBACKAt,
+          pathCustom,
+          totalBiggiAcquired,
+          totalNativeReceived,
+          totalNativeSpent,
+          paused,
+          owner,
+        };
+      }
+    } catch (e) {
+      console.warn(
+        "BUYBACKService multicall failed, falling back to Promise.all",
+        e?.message || e,
+      );
+    }
+
+    // fallback: original parallel calls
+    const calls = [
+      this.BIGGI(),
+      this.autoBUYBACKEnabled(),
+      this.biggiBalance(),
+      this.nativeBalance(),
+      this.router(),
+      this.wrappedNative(),
+      this.treasury(),
+      this.POLICY(),
+      this.DRIPLM(),
+      this.fallbackMinIntervalSec(),
+      this.fallbackSwapSlippageBps(),
+      this.fallbackTxDeadlineSec(),
+      this.lastBUYBACKAt(),
+      this.pathCustom(),
+      this.totalBiggiAcquired(),
+      this.totalNativeReceived(),
+      this.totalNativeSpent(),
+      this.paused(),
+      this.owner(),
+    ];
+
+    const [
+      BIGGI,
+      autoBUYBACKEnabled,
+      biggiBalance,
+      nativeBalance,
+      router,
+      wrappedNative,
+      treasury,
+      POLICY,
+      DRIPLM,
+      fallbackMinIntervalSec,
+      fallbackSwapSlippageBps,
+      fallbackTxDeadlineSec,
+      lastBUYBACKAt,
+      pathCustom,
+      totalBiggiAcquired,
+      totalNativeReceived,
+      totalNativeSpent,
+      paused,
+      owner,
+    ] = await Promise.all(calls);
+
+    return {
+      BIGGI,
+      autoBUYBACKEnabled,
+      biggiBalance,
+      nativeBalance,
+      router,
+      wrappedNative,
+      treasury,
+      POLICY,
+      DRIPLM,
+      fallbackMinIntervalSec,
+      fallbackSwapSlippageBps,
+      fallbackTxDeadlineSec,
+      lastBUYBACKAt,
+      pathCustom,
+      totalBiggiAcquired,
+      totalNativeReceived,
+      totalNativeSpent,
+      paused,
+      owner,
+    };
+  }
+
+  /**
+   * Subscribe na nové bloky; callback(blockNumber, stats)
+   * Pozor: getAllStats() se volá každý blok -> heavy. Doporučuju throttle/polling v produkci.
+   */
+  subscribeOnBlock(callback) {
+    if (this._onBlockHandler) this.unsubscribeOnBlock();
+    this._onBlockHandler = async (blockNumber) => {
+      try {
+        const stats = await this.getAllStats();
+        callback(blockNumber, stats);
+      } catch (e) {
+        console.error("BUYBACKService subscribeOnBlock handler error", e);
+      }
+    };
+    this.provider.on("block", this._onBlockHandler);
+  }
+
+  unsubscribeOnBlock() {
+    if (this._onBlockHandler) {
+      this.provider.off("block", this._onBlockHandler);
+      this._onBlockHandler = null;
+    }
+  }
+
+  /** Helper: převod BigNumber -> string (default 18 decimals) */
+  static bnToString(bn, decimals = 18) {
+    if (!bn) return "0";
+    try {
+      return ethers.formatUnits(bn, decimals);
+    } catch {
+      return bn.toString();
+    }
+  }
+
+  /** Formátované shrnutí stringů pro UI (tokeny podle 18 decimál) */
+  static formatSummary(stats) {
+    const decimals = 18;
+    return {
+      biggiToken: stats.BIGGI,
+      autoBUYBACKEnabled: stats.autoBUYBACKEnabled,
+      biggiBalance: BUYBACKService.bnToString(stats.biggiBalance, decimals),
+      nativeBalanceEth: BUYBACKService.bnToString(
+        stats.nativeBalance,
+        decimals,
+      ),
+      router: stats.router,
+      wrappedNative: stats.wrappedNative,
+      treasury: stats.treasury,
+      POLICY: stats.POLICY,
+      DRIPLM: stats.DRIPLM,
+      fallbackMinIntervalSec: stats.fallbackMinIntervalSec?.toString?.(),
+      fallbackSwapSlippageBps: stats.fallbackSwapSlippageBps?.toString?.(),
+      fallbackTxDeadlineSec: stats.fallbackTxDeadlineSec?.toString?.(),
+      lastBUYBACKAt: stats.lastBUYBACKAt?.toString?.(),
+      pathCustom: stats.pathCustom,
+      totalBiggiAcquired: BUYBACKService.bnToString(
+        stats.totalBiggiAcquired,
+        decimals,
+      ),
+      totalNativeReceived: BUYBACKService.bnToString(
+        stats.totalNativeReceived,
+        decimals,
+      ),
+      totalNativeSpent: BUYBACKService.bnToString(
+        stats.totalNativeSpent,
+        decimals,
+      ),
+      paused: stats.paused,
+      owner: stats.owner,
+    };
+  }
+}
+
+
+
+

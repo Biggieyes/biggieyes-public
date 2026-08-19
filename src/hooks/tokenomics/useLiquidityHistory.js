@@ -13,21 +13,84 @@ const toNumberLoose = (value) => {
 };
 
 export default function useLiquidityHistory(snapshot, options = {}) {
-  const { limit = 30 } = options;
-  const { history } = useHistoryBuffer(snapshot, { limit });
+  const { limit = 30, minIntervalMs = 0 } = options;
+  const { history } = useHistoryBuffer(snapshot, { limit, minIntervalMs });
 
-  const chartPoints = React.useMemo(
-    () =>
+  const buildSeries = React.useCallback(
+    (selector, timeKey = "label") =>
       history
-        .map((entry) => ({
-          time: entry?.tsLabel || "",
-          value:
-            toNumberLoose(entry?.vault?.totalLpLockedNumeric) ??
-            toNumberLoose(entry?.vault?.totalLpLocked),
-        }))
-        .filter((point) => Number.isFinite(point.value)),
+        .map((entry) => {
+          const value = toNumberLoose(selector(entry));
+          return Number.isFinite(value)
+            ? { [timeKey]: entry?.tsLabel || "", value }
+            : null;
+        })
+        .filter(Boolean),
     [history],
   );
 
-  return { history, chartPoints };
+  const vaultSeries = React.useMemo(
+    () =>
+      buildSeries(
+        (entry) =>
+          entry?.vault?.totalLpLockedNumeric ?? entry?.vault?.totalLpLocked,
+      ),
+    [buildSeries],
+  );
+
+  const reserveSeries = React.useMemo(
+    () =>
+      buildSeries(
+        (entry) =>
+          entry?.reserve?.maticBalanceNumeric ?? entry?.reserve?.maticBalance,
+      ),
+    [buildSeries],
+  );
+
+  const waitingSeries = React.useMemo(
+    () =>
+      buildSeries(
+        (entry) =>
+          entry?.reserve?.waitingBiggiNumeric ?? entry?.reserve?.waitingBiggi,
+      ),
+    [buildSeries],
+  );
+
+  const refillSeries = React.useMemo(
+    () =>
+      buildSeries(
+        (entry) =>
+          entry?.reserve?.dexRefillBiggiNumeric ??
+          entry?.reserve?.dexRefillBiggi,
+      ),
+    [buildSeries],
+  );
+
+  const quotaSeries = React.useMemo(
+    () =>
+      buildSeries(
+        (entry) =>
+          entry?.automation?.usedTodayNumeric ?? entry?.automation?.usedToday,
+      ),
+    [buildSeries],
+  );
+
+  const chartPoints = React.useMemo(
+    () =>
+      vaultSeries.map((point) => ({
+        time: point.label || "",
+        value: point.value,
+      })),
+    [vaultSeries],
+  );
+
+  return {
+    history,
+    chartPoints,
+    vaultSeries,
+    reserveSeries,
+    waitingSeries,
+    refillSeries,
+    quotaSeries,
+  };
 }

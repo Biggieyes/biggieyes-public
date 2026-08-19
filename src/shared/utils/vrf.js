@@ -1,4 +1,5 @@
 import {
+  ADDR,
   getReadOnlyMain as getReadOnlyContract,
   getProviderForContract,
   getVRFRO,
@@ -132,6 +133,7 @@ export async function refreshVRFPanel(
 
     let params = {};
     let subId = "";
+    let subIdMatches = null;
     try {
       const vrf = getVRFRO(provider);
       const [keyHash, numWords, gas, sub, conf, coord] = await Promise.all([
@@ -144,14 +146,43 @@ export async function refreshVRFPanel(
         c.requestConfirmations?.().catch?.(() => 3) ?? 3,
         vrf?.coordinator ? vrf.coordinator().catch(() => "") : "",
       ]);
+      const expectedKeyHash = ADDR.VRF_KEY_HASH || "";
+      const expectedCoordinator = ADDR.VRF_COORDINATOR || "";
+      const expectedSubId = ADDR.VRF_SUB_ID || "";
+      const liveKeyHash = keyHash || "";
+      const liveCoordinator = coord || "";
+      const liveSubId = sub?.toString?.() || "";
+      const keyHashMatches =
+        liveKeyHash && expectedKeyHash
+          ? String(liveKeyHash).toLowerCase() ===
+            String(expectedKeyHash).toLowerCase()
+          : null;
+      const coordinatorMatches =
+        liveCoordinator && expectedCoordinator
+          ? String(liveCoordinator).toLowerCase() ===
+            String(expectedCoordinator).toLowerCase()
+          : null;
       params = {
-        keyHash: keyHash || "",
+        keyHash: liveKeyHash || expectedKeyHash,
+        keyHashLive: liveKeyHash,
+        expectedKeyHash,
+        keyHashMatches,
         confirmations: Number(conf ?? 3),
         numWords: Number(numWords ?? 1),
         callbackGasLimit: Number(gas ?? 300000),
-        coordinator: coord || "",
+        coordinator: liveCoordinator || expectedCoordinator,
+        coordinatorLive: liveCoordinator,
+        expectedCoordinator,
+        coordinatorMatches,
+        collection: ADDR.COLLECTION_VRF || ADDR.MAIN || "",
+        ticketHub: ADDR.TICKET_HUB || "",
+        vrfRouter: ADDR.VRF_ROUTER || "",
       };
-      subId = sub?.toString?.() || "";
+      subId = liveSubId || expectedSubId;
+      subIdMatches =
+        liveSubId && expectedSubId
+          ? String(liveSubId) === String(expectedSubId)
+          : null;
     } catch {
       // ignore params fetch
     }
@@ -218,7 +249,13 @@ export async function refreshVRFPanel(
         : `chainId ${net.chainId}`,
       chainId: Number(net?.chainId),
       userAddress: walletAddress || "",
-      subscription: { id: subId, linkBalance: "", consumers: [] },
+      subscription: {
+        id: subId,
+        expectedId: ADDR.VRF_SUB_ID || "",
+        matches: subIdMatches,
+        linkBalance: "",
+        consumers: [],
+      },
       params,
       last,
       history,

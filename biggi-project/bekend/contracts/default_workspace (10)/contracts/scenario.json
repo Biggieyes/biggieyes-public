@@ -1,0 +1,259 @@
+{
+  "accounts": {
+    "account{0}": "0x64ADb3e4B5BE8567c599bA8e050F7016C3D51eD0"
+  },
+  "linkReferences": {},
+  "transactions": [
+    {
+      "timestamp": 1750813279035,
+      "record": {
+        "value": "0",
+        "inputs": "()",
+        "parameters": [],
+        "name": "mintTicket",
+        "type": "function",
+        "to": "created{undefined}",
+        "from": "account{0}"
+      }
+    },
+    {
+      "timestamp": 1750813389913,
+      "record": {
+        "value": "0",
+        "inputs": "()",
+        "parameters": [],
+        "name": "mintTicket",
+        "type": "function",
+        "to": "created{undefined}",
+        "from": "account{0}"
+      }
+    },
+    {
+      "timestamp": 1750813414453,
+      "record": {
+        "value": "0",
+        "inputs": "()",
+        "parameters": [],
+        "name": "mintTicket",
+        "type": "function",
+        "to": "created{undefined}",
+        "from": "account{0}"
+      }
+    },
+    {
+      "timestamp": 1750813613834,
+      "record": {
+        "value": "0",
+        "inputs": "(uint256)",
+        "parameters": [
+          "1"
+        ],
+        "name": "redeemTicketAndMintNFT",
+        "type": "function",
+        "to": "created{undefined}",
+        "from": "account{0}"
+      }
+    },
+    {
+      "timestamp": 1750813624176,
+      "record": {
+        "value": "0",
+        "inputs": "(uint256)",
+        "parameters": [
+          "1"
+        ],
+        "name": "redeemTicketAndMintNFT",
+        "type": "function",
+        "to": "created{undefined}",
+        "from": "account{0}"
+      }
+    },
+    {
+      "timestamp": 1750813633985,
+      "record": {
+        "value": "0",
+        "inputs": "(uint256)",
+        "parameters": [
+          "1"
+        ],
+        "name": "redeemTicketAndMintNFT",
+        "type": "function",
+        "to": "created{undefined}",
+        "from": "account{0}"
+      }
+    },
+    {
+      "timestamp": 1750813645670,
+      "record": {
+        "value": "0",
+        "inputs": "(uint256)",
+        "parameters": [
+          "1"
+        ],
+        "name": "redeemTicketAndMintNFT",
+        "type": "function",
+        "to": "created{undefined}",
+        "from": "account{0}"
+      }
+    },
+    {
+      "timestamp": 1750813655815,
+      "record": {
+        "value": "0",
+        "inputs": "(uint256)",
+        "parameters": [
+          "1"
+        ],
+        "name": "redeemTicketAndMintNFT",
+        "type": "function",
+        "to": "created{undefined}",
+        "from": "account{0}"
+      }
+    },
+    {
+      "timestamp": 1750813676090,
+      "record": {
+        "value": "0",
+        "inputs": "(uint256)",
+        "parameters": [
+          "1"
+        ],
+        "name": "redeemTicketAndMintNFT",
+        "type": "function",
+        "to": "created{undefined}",
+        "from": "account{0}"
+      }
+    },
+    {
+      "timestamp": 1750813687269,
+      "record": {
+        "value": "0",
+        "inputs": "(uint256)",
+        "parameters": [
+          "1"
+        ],
+        "name": "redeemTicketAndMintNFT",
+        "type": "function",
+        "to": "created{undefined}",
+        "from": "account{0}"
+      }
+    },
+    {
+      "timestamp": 1750813705819,
+      "record": {
+        "value": "0",
+        "inputs": "()",
+        "parameters": [],
+        "name": "mintTicket",
+        "type": "function",
+        "to": "created{undefined}",
+        "from": "account{0}"
+      }
+    },
+    {
+      "timestamp": 1750813726319,
+      "record": {
+        "value": "0",
+        "inputs": "()",
+        "parameters": [],
+        "name": "mintTicket",
+        "type": "function",
+        "to": "created{undefined}",
+        "from": "account{0}"
+      }
+    },
+    {
+      "timestamp": 1750814411746,
+      "record": {
+        "value": "0",
+        "inputs": "(string)",
+        "parameters": [
+          "https://azure-fancy-guppy-825.mypinata.cloud/ipfs/bafybeih7ke5llkrbyzn4wty3iu4rqhlu4ebhcb7sxnglnorsge2tquqo4e/"
+        ],
+        "name": "setBaseURI",
+        "type": "function",
+        "to": "created{undefined}",
+        "from": "account{0}"
+      }
+    },
+    {
+      "timestamp": 1750814432810,
+      "record": {
+        "value": "0",
+        "inputs": "()",
+        "parameters": [],
+        "name": "mintTicket",
+        "type": "function",
+        "to": "created{undefined}",
+        "from": "account{0}"
+      }
+    },
+    {
+      "timestamp": 1750814465616,
+      "record": {
+        "value": "0",
+        "inputs": "(uint256)",
+        "parameters": [
+          "1"
+        ],
+        "name": "redeemTicketAndMintNFT",
+        "type": "function",
+        "to": "created{undefined}",
+        "from": "account{0}"
+      }
+    },
+    {
+      "timestamp": 1750814545447,
+      "record": {
+        "value": "0",
+        "inputs": "()",
+        "parameters": [],
+        "name": "mintTicket",
+        "type": "function",
+        "to": "created{undefined}",
+        "from": "account{0}"
+      }
+    },
+    {
+      "timestamp": 1750814558632,
+      "record": {
+        "value": "0",
+        "inputs": "(uint256)",
+        "parameters": [
+          "1"
+        ],
+        "name": "redeemTicketAndMintNFT",
+        "type": "function",
+        "to": "created{undefined}",
+        "from": "account{0}"
+      }
+    },
+    {
+      "timestamp": 1750814760431,
+      "record": {
+        "value": "0",
+        "inputs": "()",
+        "parameters": [],
+        "name": "mintTicket",
+        "type": "function",
+        "to": "created{undefined}",
+        "from": "account{0}"
+      }
+    },
+    {
+      "timestamp": 1750814773930,
+      "record": {
+        "value": "0",
+        "inputs": "(uint256)",
+        "parameters": [
+          "1"
+        ],
+        "name": "redeemTicketAndMintNFT",
+        "type": "function",
+        "to": "created{undefined}",
+        "from": "account{0}"
+      }
+    }
+  ],
+  "abis": {}
+}

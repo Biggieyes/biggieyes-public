@@ -1,0 +1,49 @@
+{
+  "startedAt": "2026-06-26T01:50:52.824Z",
+  "options": {
+    "skipCompile": false,
+    "skipTests": false,
+    "skipDeploy": false,
+    "expectedLiquidityPath": "keeper_proxy",
+    "expectedOwner": "",
+    "requireCode": true,
+    "strictCheck": true,
+    "timeoutMs": 120000
+  },
+  "steps": [
+    {
+      "name": "compile:master",
+      "command": "npm run compile:master",
+      "startedAt": "2026-06-26T01:50:52.826Z",
+      "finishedAt": "2026-06-26T01:51:02.818Z",
+      "durationMs": 9992,
+      "status": 0
+    },
+    {
+      "name": "test:master",
+      "command": "npm run test:master",
+      "startedAt": "2026-06-26T01:51:02.818Z",
+      "finishedAt": "2026-06-26T01:52:20.160Z",
+      "durationMs": 77342,
+      "status": 0
+    },
+    {
+      "name": "deploy:master:local",
+      "command": "npm run deploy:master:local",
+      "startedAt": "2026-06-26T01:52:32.836Z",
+      "finishedAt": "2026-06-26T01:52:57.297Z",
+      "durationMs": 24461,
+      "status": 0
+    },
+    {
+      "name": "check:master:local",
+      "command": "npm run check:master:local",
+      "startedAt": "2026-06-26T01:52:57.297Z",
+      "finishedAt": "2026-06-26T01:53:18.037Z",
+      "durationMs": 20740,
+      "status": 0
+    }
+  ],
+  "status": "ok",
+  "finishedAt": "2026-06-26T01:53:18.038Z"
+}

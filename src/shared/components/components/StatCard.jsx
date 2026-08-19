@@ -1,6 +1,9 @@
 import * as React from "react";
 import "./StatCard.css";
 
+const hasValue = (value) =>
+  value !== null && value !== undefined && value !== "";
+
 const isAddressLike = (value) => {
   if (typeof value !== "string") return false;
   const trimmed = value.trim();
@@ -35,7 +38,7 @@ const StatCard = ({ label, value, hint, accent, tone }) => {
     <article className={className}>
       <div className="stat-card__label">{label}</div>
       <div className={valueClassName}>{value}</div>
-      {hint && <div className={hintClassName}>{hint}</div>}
+      {hasValue(hint) ? <div className={hintClassName}>{hint}</div> : null}
     </article>
   );
 };

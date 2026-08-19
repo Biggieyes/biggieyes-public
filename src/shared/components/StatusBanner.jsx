@@ -7,6 +7,8 @@ import RefreshButton from "./RefreshButton";
  *  isRedeeming?: boolean,
  *  VRFPending?: boolean,
  *  redeemMsg?: string,
+ *  txStatus?: { type?: string, stage?: string, hash?: string, chainId?: number },
+ *  txLink?: string,
  *  onRefresh?: () => void
  * }} props
  */
@@ -14,22 +16,42 @@ export default function StatusBanner({
   isRedeeming = false,
   VRFPending = false,
   redeemMsg = "",
+  txStatus = null,
+  txLink = "",
   onRefresh = () => {},
 }) {
-  const show = isRedeeming || VRFPending || !!redeemMsg;
+  const show = isRedeeming || VRFPending || !!redeemMsg || !!txStatus;
   const AUTO_HIDE_MS = 40000;
   const [dismissed, setDismissed] = React.useState(false);
   const lastKeyRef = React.useRef("");
 
+  const txMessage = React.useMemo(() => {
+    if (!txStatus) return "";
+    const type = String(txStatus?.type || "").toLowerCase();
+    const stage = String(txStatus?.stage || "").toLowerCase();
+    const labelMap = {
+      mint: "Mint ticket",
+      redeem: "Redeem ticket",
+      claim: "Claim REWARDS",
+    };
+    const label = labelMap[type] || "Transaction";
+    if (stage === "wallet") return `${label}: confirm in your wallet...`;
+    if (stage === "pending") return `${label}: pending on-chain confirmation...`;
+    if (stage === "confirmed") return `${label}: confirmed.`;
+    if (stage === "failed") return `${label}: failed.`;
+    return `${label}: processing...`;
+  }, [txStatus]);
+
   const msg = React.useMemo(() => {
     if (redeemMsg) return redeemMsg;
+    if (txMessage) return txMessage;
     if (isRedeeming && !VRFPending)
       return "Sending and confirming the transaction...";
     if (VRFPending) return "Waiting for the VRF reveal...";
     return "";
-  }, [redeemMsg, isRedeeming, VRFPending]);
+  }, [redeemMsg, txMessage, isRedeeming, VRFPending]);
 
-  const bannerKey = `${isRedeeming}-${VRFPending}-${redeemMsg || ""}`;
+  const bannerKey = `${isRedeeming}-${VRFPending}-${redeemMsg || ""}-${txStatus?.stage || ""}-${txStatus?.hash || ""}`;
 
   React.useEffect(() => {
     if (!show) {
@@ -111,7 +133,10 @@ export default function StatusBanner({
         transform: show ? "translateY(0)" : "translateY(-10px)",
       }}
     >
-      {(isRedeeming || VRFPending) && (
+      {(isRedeeming ||
+        VRFPending ||
+        txStatus?.stage === "pending" ||
+        txStatus?.stage === "wallet") && (
         <span
           aria-hidden="true"
           className="spinner"
@@ -129,6 +154,22 @@ export default function StatusBanner({
       )}
 
       <span>{msg}</span>
+
+      {txLink ? (
+        <a
+          href={txLink}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            color: "#ffe800",
+            textDecoration: "none",
+            fontWeight: 700,
+            borderBottom: "1px solid rgba(255,232,0,0.6)",
+          }}
+        >
+          View on explorer
+        </a>
+      ) : null}
 
       {VRFPending && (
         <span style={{ display: "inline-flex", alignItems: "center" }}>

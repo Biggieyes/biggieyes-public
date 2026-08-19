@@ -1,5 +1,4 @@
-import { Contract } from "ethers";
-import { formatEther } from "ethers";
+import { Contract, formatEther } from "ethers";
 import TreasuryService from "../services/treasuryService";
 import { parseIdsCsv } from "./ids";
 import { ADDR } from "./addresses";
@@ -8,6 +7,11 @@ import {
   getReserveTreasurySnapshotRO,
   getMCDReaderV2RO,
 } from "./contract";
+import {
+  getDistributorGlobalSnapshot,
+  getDistributorPendingCommunity,
+  getDistributorPendingOf,
+} from "@/shared/services/tokenomics/distributorReaderCompat.js";
 
 export const ABI_RESERVE = [
   {
@@ -600,25 +604,24 @@ export async function refreshREWARDS({
   const reader = getMCDReaderV2RO();
   const ids = parseIdsCsv(tokenIdsCsv);
   const [snap, pendingCommunity, pendingOfMe] = await Promise.all([
-    reader.globalSnapshot(),
-    reader.pendingCommunity?.().catch?.(() => null),
+    getDistributorGlobalSnapshot(reader),
+    getDistributorPendingCommunity(reader).catch(() => null),
     walletAddress
-      ? reader.pendingOf([walletAddress]).catch(() => null)
+      ? getDistributorPendingOf(reader, [walletAddress]).catch(() => null)
       : Promise.resolve(null),
   ]);
 
-  const snapshot =
-    snap?.s && snap.s.buybackAgent
-      ? {
-          buybackAgent: snap.s.buybackAgent,
-          collectionRewards: snap.s.collectionRewards,
-          reserve: snap.s.reserve,
-          treasury: snap.s.treasury,
-          communityCenter: snap.s.communityCenter,
-          totalPending: formatEther(snap.s.totalPending || 0),
-          totalReceived: formatEther(snap.s.totalReceived || 0),
-        }
-      : null;
+  const snapshot = snap?.buybackAgent
+    ? {
+        buybackAgent: snap.buybackAgent,
+        collectionRewards: snap.collectionRewards,
+        reserve: snap.reserve,
+        treasury: snap.treasury,
+        communityCenter: snap.communityCenter,
+        totalPending: formatEther(snap.totalPending || 0n),
+        totalReceived: formatEther(snap.totalReceived || 0n),
+      }
+    : null;
 
   const claimPreview =
     pendingOfMe && pendingOfMe.length

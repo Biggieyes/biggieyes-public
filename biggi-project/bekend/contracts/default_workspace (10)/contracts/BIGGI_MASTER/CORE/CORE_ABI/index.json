@@ -1,0 +1,137 @@
+[
+  {
+    "output": "BiggiEyesMain.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiMain.sol/BiggiEyesMain.json",
+    "abiLength": 138
+  },
+  {
+    "output": "BiggiEyesMain2.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiMain2.sol/BiggiEyesMain2.json",
+    "abiLength": 140
+  },
+  {
+    "output": "BiggiTicketHub.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiTicketHub.sol/BiggiTicketHub.json",
+    "abiLength": 165
+  },
+  {
+    "output": "BiggiSeriesRegistry.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiSeriesRegistry.sol/BiggiSeriesRegistry.json",
+    "abiLength": 30
+  },
+  {
+    "output": "BiggiChapterController.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiChapterController.sol/BiggiChapterController.json",
+    "abiLength": 24
+  },
+  {
+    "output": "BiggiCompute.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiCompute.sol/BiggiCompute.json",
+    "abiLength": 2
+  },
+  {
+    "output": "BiggiCollectionRewards.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiCollectionRewards.sol/BiggiCollectionRewards.json",
+    "abiLength": 60
+  },
+  {
+    "output": "BiggiTokenRewards.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiTokenRewards.sol/BiggiTokenRewards.json",
+    "abiLength": 77
+  },
+  {
+    "output": "BiggiNFTRewards.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiNftRewards.sol/BiggiNFTRewards.json",
+    "abiLength": 90
+  },
+  {
+    "output": "BiggiVRFRouter.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiVrfRouter.sol/BiggiVRFRouter.json",
+    "abiLength": 37
+  },
+  {
+    "output": "BiggiMultiCollectionDistributor.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiMultiCollectionDistributor.sol/BiggiMultiCollectionDistributor.json",
+    "abiLength": 70
+  },
+  {
+    "output": "BiggiMainReader.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_READERS/BiggiMainReader.sol/BiggiMainReader.json",
+    "abiLength": 12
+  },
+  {
+    "output": "BiggiChapterSeriesReader.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_READERS/BiggiChapterSeriesReader.sol/BiggiChapterSeriesReader.json",
+    "abiLength": 11
+  },
+  {
+    "output": "BiggiMultiCollectionDistributorReaderV2.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_READERS/BiggiMultiCollectionDistributorReaderV2.sol/BiggiMultiCollectionDistributorReaderV2.json",
+    "abiLength": 6
+  },
+  {
+    "output": "BiggiNftRewardsReader.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_READERS/BiggiNftRewardsReader.sol/BiggiNftRewardsReader.json",
+    "abiLength": 8
+  },
+  {
+    "output": "BiggiBpsLib.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_LIBRARY/BiggiBpsLib.sol/BiggiBpsLib.json",
+    "abiLength": 0,
+    "kind": "library"
+  },
+  {
+    "output": "BiggiCapsLib.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_LIBRARY/BiggiCapsLib.sol/BiggiCapsLib.json",
+    "abiLength": 9,
+    "kind": "library"
+  },
+  {
+    "output": "BiggiCollectionEligibilityLib.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_LIBRARY/BiggiCollectionEligibilityLib.sol/BiggiCollectionEligibilityLib.json",
+    "abiLength": 0,
+    "kind": "library"
+  },
+  {
+    "output": "BiggiErrorsLib.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_LIBRARY/BiggiErrorsLib.sol/BiggiErrorsLib.json",
+    "abiLength": 26,
+    "kind": "library"
+  },
+  {
+    "output": "BiggiIdIndexLib.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_LIBRARY/BiggiIdIndexLib.sol/BiggiIdIndexLib.json",
+    "abiLength": 0,
+    "kind": "library"
+  },
+  {
+    "output": "BiggiMetaRedeemLib.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_LIBRARY/BiggiMetaRedeemLib.sol/BiggiMetaRedeemLib.json",
+    "abiLength": 0,
+    "kind": "library"
+  },
+  {
+    "output": "BiggiNamesLib.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_LIBRARY/BiggiNamesLib.sol/BiggiNamesLib.json",
+    "abiLength": 3,
+    "kind": "library"
+  },
+  {
+    "output": "BiggiNamesLib2.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_LIBRARY/BiggiNamesLib2.sol/BiggiNamesLib2.json",
+    "abiLength": 2,
+    "kind": "library"
+  },
+  {
+    "output": "BiggiPriceMathLib.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_LIBRARY/BiggiPriceMathLib.sol/BiggiPriceMathLib.json",
+    "abiLength": 0,
+    "kind": "library"
+  },
+  {
+    "output": "BiggiSwapLib.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_LIBRARY/BiggiSwapLib.sol/BiggiSwapLib.json",
+    "abiLength": 0,
+    "kind": "library"
+  }
+]

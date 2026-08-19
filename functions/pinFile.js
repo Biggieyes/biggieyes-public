@@ -12,6 +12,7 @@
  */
 import Busboy from "busboy";
 import FormData from "form-data";
+import { captureException, initSentry } from "./_sentry.js";
 import {
   buildPinataGatewayUrl,
   buildPinataHeaders,
@@ -34,6 +35,8 @@ const ALLOWED_MIME = new Set([
   "image/webp",
   "application/json",
 ]);
+
+initSentry();
 
 const allowRequest = createRateLimiter({ capacity: 10, refillMs: 60_000 });
 
@@ -203,6 +206,7 @@ export async function handler(event) {
       backupCid = await backupToNftStorage(buffer, { name, mime });
     } catch (backupErr) {
       console.error("pinFile backup failed:", backupErr?.message || backupErr);
+      captureException(backupErr, { stage: "nft_storage_backup" });
     }
 
     console.info("pinFile success", { name, size: buffer.length, cid });
@@ -218,6 +222,7 @@ export async function handler(event) {
     const status = err?.response?.status || 500;
     const details = err?.response?.data?.error || err?.response?.data || err?.message || "Pinata error";
     console.error("pinFile error", { error: details });
+    captureException(err, { stage: "pinata", status, details });
     return jsonResponse(status >= 400 && status < 600 ? status : 500, { success: false, error: String(details) });
   }
 }

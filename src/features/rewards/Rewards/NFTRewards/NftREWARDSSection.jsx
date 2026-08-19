@@ -23,18 +23,22 @@ const renderStaticPreview = (basePath, count, prefix) => {
   return (
     <div className="rewards-grid__preview-grid">
       {Array.from({ length: safeCount }).map((_, index) => {
-        const src = addBase(`${basePath}/${index + 1}.png`);
+        const fallbackSrc = addBase(`${basePath}/${index + 1}.optimized.jpg`);
+        const thumbSrc = addBase(
+          `${basePath.replace("/images/rewards", "/images/rewards-thumb")}/${index + 1}.jpg`,
+        );
         return (
           <div
             key={`${prefix}-${index}`}
             className="rewards-grid__preview-thumb"
           >
             <img
-              src={src}
+              src={thumbSrc}
+              data-fallback-src={fallbackSrc}
               alt={`${prefix} reward ${index + 1}`}
               width={70}
               height={70}
-              loading="React.lazy"
+              loading="lazy"
               decoding="async"
               onError={handleImageError}
             />
@@ -139,7 +143,7 @@ function NftREWARDSSection({
                 {formattedAddress}
               </span>
               <span className="nft-rewards__summary-hint">
-                Polygon Amoy deployment
+                Polygon mainnet deployment
               </span>
               <button
                 type="button"

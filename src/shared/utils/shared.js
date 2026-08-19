@@ -32,11 +32,75 @@ export const BACKGROUND_BONUSES = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50];
 const LOGS_BATCH = 300;
 const ARCHIVE_THROTTLE_MS = 180;
 const MAX_RATE_LIMIT_RETRIES = 5;
+const LOG_QUERY_CACHE_TTL_MS = 10_000;
+const logQueryCache = new Map();
 
 function sleep(ms) {
   if (!ms || ms <= 0) return Promise.resolve();
   return new Promise((res) => setTimeout(res, ms));
 }
+
+function cleanupLogQueryCache(now = Date.now()) {
+  for (const [key, entry] of logQueryCache.entries()) {
+    if (!entry || Number(entry.expiresAt || 0) <= now) {
+      logQueryCache.delete(key);
+    }
+  }
+}
+
+function makeLogQueryCacheKey(request) {
+  return JSON.stringify({
+    address: request?.address || "",
+    topics: Array.isArray(request?.topics) ? request.topics : null,
+    fromBlock: request?.fromBlock ?? null,
+    toBlock: request?.toBlock ?? null,
+  });
+}
+
+async function getLogsWithShortCache(provider, request) {
+  const now = Date.now();
+  cleanupLogQueryCache(now);
+  const key = makeLogQueryCacheKey(request);
+  const cached = logQueryCache.get(key);
+  if (cached?.promise) return cached.promise;
+  if (cached && Number(cached.expiresAt || 0) > now) return cached.value || [];
+
+  const promise = provider
+    .getLogs(request)
+    .then((value) => {
+      logQueryCache.set(key, {
+        value,
+        expiresAt: Date.now() + LOG_QUERY_CACHE_TTL_MS,
+      });
+      return value;
+    })
+    .catch((error) => {
+      logQueryCache.delete(key);
+      throw error;
+    });
+
+  logQueryCache.set(key, {
+    promise,
+    expiresAt: now + LOG_QUERY_CACHE_TTL_MS,
+  });
+  return promise;
+}
+
+function normalizeLogProvider(provider) {
+  if (!provider) return provider;
+  const configs = Array.isArray(provider?.providerConfigs)
+    ? provider.providerConfigs
+    : null;
+  if (!configs?.length) return provider;
+  for (const config of configs) {
+    const candidate = config?.provider;
+    if (candidate && typeof candidate.getLogs === "function") {
+      return candidate;
+    }
+  }
+  return provider;
+}
+
 const PRUNED_LOOKBACK_DEFAULT = 10_000;
 const HAS_ARCHIVE_ENV = (() => {
   try {
@@ -44,7 +108,7 @@ const HAS_ARCHIVE_ENV = (() => {
       const env = import.meta.env;
       return Boolean(
         env.VITE_ARCHIVE_RPC_URL ||
-          env.VITE_AMOY_ARCHIVE_RPC_URL ||
+          env.VITE_ACTIVE_CHAIN_ARCHIVE_RPC_URL ||
           env.VITE_ARCHIVE_RPC_URLS,
       );
     }
@@ -101,14 +165,15 @@ const PRUNED_LOOKBACK = (() => {
   return PRUNED_LOOKBACK_DEFAULT;
 })();
 let prunedWarned = false;
-const WALLET_CACHE_VERSION = "v2";
+const WALLET_CACHE_VERSION = "v3-mainnet";
 export const WALLET_CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 export function walletCacheKey(addr, contractAddr) {
   const wallet = String(addr || "").toLowerCase();
   const contract = String(contractAddr || "").toLowerCase();
+  const chainId = Number(ADDR?.CHAIN_ID || 137) || 137;
   const suffix = contract ? `_c_${contract}` : "";
-  return `biggi_wallet_${WALLET_CACHE_VERSION}_${wallet}${suffix}`;
+  return `biggi_wallet_${WALLET_CACHE_VERSION}_${chainId}_${wallet}${suffix}`;
 }
 
 export function loadWalletCache(addr, options = {}, contractAddr) {
@@ -167,6 +232,7 @@ export async function queryLogsBatched(
   let provider = getProviderForContract(contract);
   const preferArchive = options.preferArchive !== false;
   const requestFullHistory = Boolean(options.fullHistory);
+  const disableLookbackClamp = options.disableLookbackClamp === true;
   const archiveProvider = preferArchive ? getArchiveProvider() : null;
   const hasArchive = Boolean(archiveProvider);
   const fullHistoryActive =
@@ -185,10 +251,28 @@ export async function queryLogsBatched(
   } else if (!provider || isInjectedProvider) {
     provider = getProvider();
   }
+  // Avoid FallbackProvider fan-out for eth_getLogs; one log scan should use one RPC.
+  provider = normalizeLogProvider(provider);
   const baseFilter = {
     address: filter?.address || contract?.target || contract?.address,
-    topics: filter?.topics,
   };
+  let resolvedTopics = Array.isArray(filter?.topics) ? filter.topics : null;
+  if (!resolvedTopics && typeof filter?.getTopicFilter === "function") {
+    try {
+      const topicFilter = await filter.getTopicFilter();
+      if (Array.isArray(topicFilter)) {
+        resolvedTopics = topicFilter;
+      } else if (Array.isArray(topicFilter?.topics)) {
+        resolvedTopics = topicFilter.topics;
+        if (!baseFilter.address && topicFilter.address) {
+          baseFilter.address = topicFilter.address;
+        }
+      }
+    } catch {
+      // Fallback to provider.getLogs without topics if deferred filter resolution fails.
+    }
+  }
+  if (resolvedTopics) baseFilter.topics = resolvedTopics;
   const iface = contract?.interface;
   const decodeIfNeeded = (logs) => {
     if (!Array.isArray(logs) || !logs.length) return logs || [];
@@ -211,7 +295,7 @@ export async function queryLogsBatched(
 
   // Pre-clamp to recent history to avoid pruned RPC errors on public endpoints
   // unless full-history mode is explicitly enabled.
-  if (!fullHistoryActive) {
+  if (!fullHistoryActive && !disableLookbackClamp) {
     const lookback =
       Number.isFinite(PRUNED_LOOKBACK) && PRUNED_LOOKBACK > 0
         ? PRUNED_LOOKBACK
@@ -238,7 +322,7 @@ export async function queryLogsBatched(
     try {
       let part = [];
       if (provider && typeof provider.getLogs === "function") {
-        part = await provider.getLogs({
+        part = await getLogsWithShortCache(provider, {
           ...baseFilter,
           fromBlock: start,
           toBlock: end,
@@ -259,19 +343,37 @@ export async function queryLogsBatched(
       rateLimitStreak = 0;
     } catch (err) {
       const msg = String(err?.message || "");
+      const infoMsg = String(
+        err?.info?.error?.message ||
+          err?.info?.message ||
+          err?.info?.responseBody ||
+          "",
+      );
       const code = err?.code ?? err?.error?.code ?? null;
+      const combinedMsg = `${msg} ${infoMsg}`.toLowerCase();
       const isPruned = code === -32701 || /history has been pruned/i.test(msg);
       const isInvalidRange =
-        code === -32000 && /invalid block range/i.test(msg);
+        (code === -32000 && /invalid block range/i.test(msg)) ||
+        (/ranges over\s*10000 blocks/i.test(combinedMsg) && Number(code) === 35);
+      const isUnknownBlock =
+        code === 26 ||
+        /unknown block/i.test(msg) ||
+        /unknown block/i.test(infoMsg);
+      const isUnsupportedMethod =
+        Number(code) === 35 &&
+        /method is not available on freetier/i.test(combinedMsg);
       const isRateLimit =
         code === -32005 || /too many requests/i.test(msg);
-      if (isPruned || isInvalidRange) {
+      if (isUnsupportedMethod) {
+        return out;
+      }
+      if (isPruned || isInvalidRange || isUnknownBlock) {
         // If even archive hits pruning, disable full-history for this session.
         if (archiveProvider) forceRecentOnly = true;
         if (!prunedWarned) {
           prunedWarned = true;
           console.warn(
-            isInvalidRange
+            isInvalidRange || isUnknownBlock
               ? "RPC rejected log range: falling back to recent blocks. Use an archive RPC for full history."
               : "RPC history pruned: falling back to recent blocks. Use an archive RPC for full history.",
           );
@@ -313,7 +415,7 @@ export async function queryLogsBatched(
         if (archiveProvider && !downgradedFromArchive) {
           downgradedFromArchive = true;
           forceRecentOnly = true;
-          provider = getProvider();
+          provider = normalizeLogProvider(getProvider());
           try {
             const latest = await provider.getBlockNumber();
             const lookback =

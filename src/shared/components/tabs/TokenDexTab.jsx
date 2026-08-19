@@ -1,1 +1,1 @@
-export { TokenDexTab as default } from "../../../features/tokenomics";
+export { default } from "../../../features/tokenomics/tabs/TokenDexTab.jsx";

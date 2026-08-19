@@ -1,0 +1,8 @@
+{
+  "kind": "ticket",
+  "phase": "final",
+  "generatedAt": "2026-08-17T17:24:25+00:00",
+  "metadataFiles": 1,
+  "filename": "Biggi_RANDOM_MINT_TICKET.json",
+  "ticketBaseUriEnv": "TICKET_BASE_URI=ipfs://<TICKET_METADATA_FOLDER_CID>/"
+}

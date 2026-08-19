@@ -1,7 +1,7 @@
 /* @refresh reload */
 // src/context/StatsProvider.jsx
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress } from "ethers";
+import { formatEther } from "ethers";
 import { useContracts } from "./ContractsProvider";
 import {
   resolveTicketPriceWeiFromHub,
@@ -13,8 +13,8 @@ const Ctx = React.createContext(null);
 export function StatsProvider({ children }) {
   const { mainRead, readerRead } = useContracts();
 
-  const idxs = React.useMemo(
-    () => Array.from({ length: 10 }, (_, i) => i + 1),
+  const rowIdxs = React.useMemo(
+    () => Array.from({ length: 10 }, (_, i) => i),
     [],
   );
 
@@ -59,6 +59,7 @@ export function StatsProvider({ children }) {
           return;
         } catch (err) {
           console.debug("StatsProvider.refresh reader snapshot failed", err);
+          throw err;
         }
       }
 
@@ -84,21 +85,20 @@ export function StatsProvider({ children }) {
 
       const [blockPricesWei, blocksMinted] = await Promise.all([
         Promise.all(
-          idxs.map(async (i) => {
+          rowIdxs.map(async (rowIdx) => {
             const f = main.getCurrentBlockPrice || main.getCurrentBlockPriceWei;
-            if (typeof f === "function") return f(i);
-            return 0n;
+            if (typeof f === "function") return f(rowIdx + 1);
+            const info = await main.blockInfos?.(rowIdx);
+            return info?.currentPrice ?? info?.[2] ?? 0n;
           }),
         ).catch(() => Array(10).fill(0n)),
         Promise.all(
-          idxs.map(async (i) => {
-            const f = main.blockMintCounts || main.getBlockMintCount;
-            if (typeof f === "function") {
-              try {
-                return f(i - 1);
-              } catch {
-                return f(i);
-              }
+          rowIdxs.map(async (rowIdx) => {
+            if (typeof main.getBlockMintCount === "function") {
+              return main.getBlockMintCount(rowIdx + 1);
+            }
+            if (typeof main.blockMintCounts === "function") {
+              return main.blockMintCounts(rowIdx);
             }
             return 0;
           }),
@@ -110,9 +110,7 @@ export function StatsProvider({ children }) {
         biggiMinted: Number(biggiMintedBN),
         ticketMinted: Number(ticketMintedBN),
         blockMintCounts: blocksMinted.map((x) => Number(x)),
-        blockPrices: blockPricesWei.map((x) =>
-          Number(formatEther(x)),
-        ),
+        blockPrices: blockPricesWei.map((x) => Number(formatEther(x))),
         bgsMinted: Array(10).fill(0),
         charactersMinted: 0,
       });
@@ -121,7 +119,7 @@ export function StatsProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [readerRead, mainRead, idxs]);
+  }, [readerRead, mainRead, rowIdxs]);
 
   return (
     <Ctx.Provider value={{ data, loading, refresh }}>{children}</Ctx.Provider>
@@ -133,4 +131,3 @@ export function useStats() {
   if (!v) throw new Error("useStats must be used inside <StatsProvider>");
   return v;
 }
-

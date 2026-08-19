@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-S49TZ90XND"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-S49TZ90XND");
+    </script>
+    <meta name="theme-color" content="#171717" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta
+      name="description"
+      content="BiggiEyes App on Polygon: mint tradable ticket entries, redeem with VRF, and manage tradable NFT assets in one Web3 dashboard."
+    />
+    <meta
+      name="robots"
+      content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"
+    />
+    <link rel="canonical" href="https://biggieyes.com/app/" />
+
+    <!-- Open Graph tagy pro sociální sítě -->
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="BiggiEyes" />
+    <meta
+      property="og:title"
+      content="BiggiEyes App | NFT Ticket VRF Dashboard (Tradable)"
+    />
+    <meta
+      property="og:description"
+      content="Mint tradable ticket entries, redeem with VRF, and track tradable NFT activity in the BiggiEyes app dashboard."
+    />
+    <meta property="og:image" content="https://biggieyes.com/og/og-biggieyes.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://biggieyes.com/app/" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="BiggiEyes app preview" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="BiggiEyes App | NFT Ticket VRF Dashboard (Tradable)"
+    />
+    <meta
+      name="twitter:description"
+      content="Mint tradable ticket entries, redeem with VRF, and manage tradable BiggiEyes NFT assets on Polygon."
+    />
+    <meta name="twitter:url" content="https://biggieyes.com/app/" />
+    <meta name="twitter:image" content="https://biggieyes.com/og/og-biggieyes.png" />
+    <meta name="twitter:image:alt" content="BiggiEyes app preview" />
+
+    <!-- Preconnect pouze na hlavní IPFS gatewaye -->
+    <link rel="preconnect" href="https://cloudflare-ipfs.com" crossorigin>
+    <link rel="preconnect" href="https://ipfs.io" crossorigin>
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/png" href="/images/favicon.png" />
+
+    <!-- Preload pouze klíčových backgroundů a fontů -->
+    <link rel="preload" as="image" href="/images/bg-main2.png" fetchpriority="high" />
+
+
+    <!-- Preload ikon použitých v top baru -->
+    <link rel="preload" as="image" type="image/svg+xml" href="/images/metamask-fox.svg" />
+    <link rel="preload" as="image" type="image/svg+xml" href="/images/walletconnect.svg" />
+
+    <title>BiggiEyes App | NFT Ticket VRF Dashboard (Tradable)</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "@id": "https://biggieyes.com/app/#webapp",
+        "name": "BiggiEyes App",
+        "url": "https://biggieyes.com/app/",
+        "description": "Web3 app for minting tickets, VRF redeem, and trading BiggiEyes NFTs.",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web"
+      }
+    </script>
+
+    <style>
+      [data-defer], img[loading="lazy"] { content-visibility: auto; contain-intrinsic-size: 1px 300px; }
+      :root { --vh: 1vh; }
+      .full-bg { min-height: calc(var(--vh, 1vh) * 100); }
+      body { opacity: 1; transition: opacity 0.5s; }
+      body.loaded { opacity: 1; }
+    </style>
+  </head>
+  <body>
+    <noscript>BiggiEyes requires JavaScript to be enabled.</noscript>
+    <div id="root"></div>
+
+    <script>
+      (function () {
+        const GATEWAYS = [
+          "https://cloudflare-ipfs.com/ipfs/",
+          "https://ipfs.io/ipfs/",
+          "https://gateway.pinata.cloud/ipfs/",
+          "https://dweb.link/ipfs/"
+        ];
+
+        function ipfsToHttp(src) {
+          if (!src || typeof src !== "string") return src;
+          if (src.startsWith("ipfs://")) {
+            const cid = src.replace("ipfs://", "");
+            return GATEWAYS[0] + cid;
+          }
+          return src;
+        }
+
+        function tuneImage(img) {
+          if (!img || img.dataset.tuned) return;
+          img.dataset.tuned = "1";
+
+          if (img.src && img.src.startsWith("ipfs://")) img.src = ipfsToHttp(img.src);
+          const srcAttr = img.getAttribute("src");
+          if (srcAttr && srcAttr.startsWith("ipfs://")) img.setAttribute("src", ipfsToHttp(srcAttr));
+
+          const above = img.closest(".above-the-fold");
+          if (!above) {
+            if (!img.hasAttribute("loading")) img.setAttribute("loading", "lazy");
+            if (!img.hasAttribute("decoding")) img.setAttribute("decoding", "async");
+            // ✅ OPRAVA: fetchPriority místo fetchpriority
+            if (!img.hasAttribute("fetchPriority")) img.setAttribute("fetchPriority", "low");
+          } else {
+            // ✅ OPRAVA: fetchPriority místo fetchpriority
+            if (!img.hasAttribute("fetchPriority")) img.setAttribute("fetchPriority", "high");
+          }
+
+          if (!img.hasAttribute("width") && img.dataset.w) img.setAttribute("width", img.dataset.w);
+          if (!img.hasAttribute("height") && img.dataset.h) img.setAttribute("height", img.dataset.h);
+        }
+
+        Array.prototype.forEach.call(document.images || [], tuneImage);
+
+        const mo = new MutationObserver((muts) => {
+          for (const m of muts) {
+            for (const n of m.addedNodes) {
+              if (n.nodeType !== 1) continue;
+              if (n.tagName === "IMG") tuneImage(n);
+              const imgs = n.querySelectorAll ? n.querySelectorAll("img") : [];
+              imgs.forEach(tuneImage);
+            }
+          }
+        });
+        mo.observe(document.documentElement, { childList: true, subtree: true });
+
+        window.addEventListener("error", (e) => {
+          const img = e.target;
+          if (!(img instanceof HTMLImageElement)) return;
+          const src = img.getAttribute("src") || "";
+          if (!src.includes("/ipfs/")) return;
+          const idx = GATEWAYS.findIndex((g) => src.startsWith(g));
+          const next = GATEWAYS[(idx + 1) % GATEWAYS.length];
+          if (next && idx !== -1) {
+            const cid = src.replace(GATEWAYS[idx], "");
+            img.src = next + cid;
+          }
+        }, true);
+
+        const setVh = () => {
+          document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
+        };
+        setVh();
+        window.addEventListener('resize', setVh);
+
+        window.addEventListener('DOMContentLoaded', () => document.body.classList.add('loaded'));
+
+        // Consume preloaded images quickly to avoid unused-preload warnings.
+        const preloadImgs = [
+          "/images/bg-main2.png",
+          "/images/metamask-fox.svg",
+          "/images/walletconnect.svg",
+        ];
+        preloadImgs.forEach((src) => {
+          const img = new Image();
+          img.decoding = "async";
+          img.loading = "eager";
+          img.src = src;
+        });
+      })();
+    </script>
+
+    <script type="module" src="/src/app/preload.js"></script>
+    <script type="module" src="/src/app/main.jsx"></script>
+  </body>
+</html>

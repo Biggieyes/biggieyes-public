@@ -1,0 +1,38 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,3 L0,6 Z" fill="#333" />
+    </marker>
+  </defs>
+
+  <rect x="30" y="40" width="350" height="100" rx="10" fill="#fff2cc" stroke="#333" />
+  <text x="205" y="70" font-family="Arial" font-size="16" text-anchor="middle">Token Rewards (BIGGI)</text>
+  <text x="205" y="92" font-family="Arial" font-size="12" text-anchor="middle">Weekly claim by block weight</text>
+  <text x="205" y="112" font-family="Arial" font-size="12" text-anchor="middle">1 BIGGI per weight unit</text>
+
+  <rect x="430" y="40" width="350" height="100" rx="10" fill="#e6f7ff" stroke="#333" />
+  <text x="605" y="70" font-family="Arial" font-size="16" text-anchor="middle">Collection Rewards (POL)</text>
+  <text x="605" y="92" font-family="Arial" font-size="12" text-anchor="middle">Orange / Block / Rainbow</text>
+  <text x="605" y="112" font-family="Arial" font-size="12" text-anchor="middle">1000 / 3000 / 10000 POL</text>
+
+  <rect x="830" y="40" width="330" height="100" rx="10" fill="#f3e9ff" stroke="#333" />
+  <text x="995" y="70" font-family="Arial" font-size="16" text-anchor="middle">NFT Rewards</text>
+  <text x="995" y="92" font-family="Arial" font-size="12" text-anchor="middle">Character / Manual / Mystery</text>
+  <text x="995" y="112" font-family="Arial" font-size="12" text-anchor="middle">ERC721 rewards</text>
+
+  <rect x="30" y="190" width="350" height="80" rx="10" fill="#f9f2d0" stroke="#333" />
+  <text x="205" y="220" font-family="Arial" font-size="12" text-anchor="middle">Eligibility:</text>
+  <text x="205" y="240" font-family="Arial" font-size="12" text-anchor="middle">blockOf(token) -> weight</text>
+
+  <rect x="430" y="190" width="350" height="80" rx="10" fill="#f9f2d0" stroke="#333" />
+  <text x="605" y="220" font-family="Arial" font-size="12" text-anchor="middle">Eligibility:</text>
+  <text x="605" y="240" font-family="Arial" font-size="12" text-anchor="middle">all 10 mainIds OR all bgs</text>
+
+  <rect x="830" y="190" width="330" height="80" rx="10" fill="#f9f2d0" stroke="#333" />
+  <text x="995" y="220" font-family="Arial" font-size="12" text-anchor="middle">Eligibility:</text>
+  <text x="995" y="240" font-family="Arial" font-size="12" text-anchor="middle">main contract / admin / VRF</text>
+
+  <line x1="205" y1="140" x2="205" y2="190" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+  <line x1="605" y1="140" x2="605" y2="190" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+  <line x1="995" y1="140" x2="995" y2="190" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+</svg>

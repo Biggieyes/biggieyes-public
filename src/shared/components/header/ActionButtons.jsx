@@ -6,6 +6,25 @@ const ProjectInfoModal = React.lazy(() =>
   import("../../../ACTIONBUTTONS/INFO/ProjectInfoModal.jsx"),
 );
 
+const BUTTON_IMAGE_SOURCES = {
+  mint: {
+    src: "/images/mint.optimized.png",
+    fallbackSrc: "/images/mint.fallback.png",
+  },
+  claim: {
+    src: "/images/claim.optimized.png",
+    fallbackSrc: "/images/claim.fallback.png",
+  },
+  redeem: {
+    src: "/images/redeem-button.optimized.png",
+    fallbackSrc: "/images/redeem-button.fallback.png",
+  },
+  info: {
+    src: "/images/icons/info.optimized.png",
+    fallbackSrc: "/images/icons/info.fallback.png",
+  },
+};
+
 export default function ActionButtons({
   onMint,
   onRedeem,
@@ -13,14 +32,56 @@ export default function ActionButtons({
   isRedeeming,
   VRFPending,
   performing = false,
+  performingLabel = "",
   actionError = null,
   isMobile = false,
+  infoGateActive = false,
+  onInfoGateComplete,
+  onInfoButtonRect,
+  forceInfoOpenTick = 0,
+  mintDisabledReason = "",
 }) {
   const lockRef = React.useRef(false);
   const [infoOpen, setInfoOpen] = React.useState(false);
+  const infoButtonRef = React.useRef(null);
 
-  const redeemDisabled = Boolean(isRedeeming || VRFPending || performing);
-  const actionDisabled = Boolean(performing);
+  const gateActive = Boolean(infoGateActive);
+  const redeemDisabled = Boolean(isRedeeming || VRFPending || performing || gateActive);
+  const actionDisabled = Boolean(performing || gateActive);
+  const mintDisabled = Boolean(actionDisabled || mintDisabledReason);
+
+  React.useEffect(() => {
+    if (forceInfoOpenTick > 0) setInfoOpen(true);
+  }, [forceInfoOpenTick]);
+
+  const reportInfoRect = React.useCallback(() => {
+    if (!onInfoButtonRect || !infoButtonRef.current) return;
+    const rect = infoButtonRef.current.getBoundingClientRect();
+    onInfoButtonRect({
+      left: rect.left,
+      top: rect.top,
+      right: rect.right,
+      bottom: rect.bottom,
+      width: rect.width,
+      height: rect.height,
+    });
+  }, [onInfoButtonRect]);
+
+  React.useLayoutEffect(() => {
+    if (!gateActive) return;
+    reportInfoRect();
+  }, [gateActive, isMobile, reportInfoRect]);
+
+  React.useEffect(() => {
+    if (!gateActive) return;
+    const handler = () => reportInfoRect();
+    window.addEventListener("resize", handler);
+    window.addEventListener("scroll", handler, true);
+    return () => {
+      window.removeEventListener("resize", handler);
+      window.removeEventListener("scroll", handler, true);
+    };
+  }, [gateActive, reportInfoRect]);
 
   const errorText = React.useMemo(() => {
     if (!actionError) return "";
@@ -60,13 +121,19 @@ export default function ActionButtons({
     overflow: "visible",
   };
 
-  const buttonWrapper = (src, alt, onClick, options = {}) => {
+  const buttonWrapper = (image, alt, onClick, options = {}) => {
     const {
       isDisabled = false,
       borderColor = "#1abc9c",
       glow = "rgba(26, 188, 156, 0.6)",
       variant,
+      wrapperClassName,
+      wrapperStyle,
+      wrapperRef,
+      disabledReason = "",
     } = options;
+    const resolvedImage =
+      typeof image === "string" ? { src: image, fallbackSrc: "" } : image;
 
     const hoverGlow = glow.replace(/([0-9]*\.?[0-9]+)\s*\)$/g, (_, alpha) => {
       const numeric = parseFloat(alpha);
@@ -94,11 +161,15 @@ export default function ActionButtons({
 
     return (
       <div
-        className={`action-buttons__wrapper${variant ? ` action-buttons__wrapper--${variant}` : ""}`}
+        className={`action-buttons__wrapper${variant ? ` action-buttons__wrapper--${variant}` : ""}${
+          wrapperClassName ? ` ${wrapperClassName}` : ""
+        }`}
+        ref={wrapperRef}
         style={{
           ...baseWrapperStyle,
           border: `2px solid ${borderColor}`,
           boxShadow: `0 0 12px ${glow}`,
+          ...wrapperStyle,
           opacity: isDisabled ? 0.65 : 1,
           pointerEvents: isDisabled ? "none" : "auto",
         }}
@@ -109,7 +180,9 @@ export default function ActionButtons({
           type="button"
           onClick={onClick}
           disabled={isDisabled}
+          aria-label={isDisabled && disabledReason ? `${alt}: ${disabledReason}` : alt}
           aria-disabled={isDisabled || undefined}
+          title={isDisabled && disabledReason ? `${alt}: ${disabledReason}` : alt}
           style={{
             background: "transparent",
             border: "none",
@@ -126,8 +199,19 @@ export default function ActionButtons({
           }}
         >
           <img
-            src={src}
+            src={resolvedImage.src}
             alt={alt}
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
+            width="100"
+            height="100"
+            onError={(event) => {
+              if (!resolvedImage.fallbackSrc) return;
+              if (event.currentTarget.dataset.fallbackApplied === "1") return;
+              event.currentTarget.dataset.fallbackApplied = "1";
+              event.currentTarget.src = resolvedImage.fallbackSrc;
+            }}
             style={{
               width: "100%",
               height: "100%",
@@ -149,6 +233,8 @@ export default function ActionButtons({
   const rowJustify = isMobile ? "center" : "space-between";
   const rowWidth = isMobile ? "100%" : 240;
   const rowMaxWidth = isMobile ? 320 : 240;
+  const headingAlign = isMobile ? "center" : "flex-start";
+  const headingTextAlign = isMobile ? "center" : "left";
 
   return (
     <div
@@ -162,6 +248,21 @@ export default function ActionButtons({
       }}
     >
       <div
+        className="action-buttons-heading"
+        style={{
+          alignItems: headingAlign,
+          textAlign: headingTextAlign,
+        }}
+      >
+        <div className="action-buttons-heading__title">
+          BiggiEyes — On-Chain NFT Economy Protocol
+        </div>
+        <div className="action-buttons-heading__subtitle">
+          Mint NFTs, gain rarity, and watch the ecosystem create value for BIGGI
+          holders.
+        </div>
+      </div>
+      <div
         style={{
           display: "flex",
           gap: 10,
@@ -171,18 +272,29 @@ export default function ActionButtons({
           maxWidth: rowMaxWidth,
         }}
       >
-        {buttonWrapper("/images/mint.png", "Mint Ticket", runOnce(onMint, actionDisabled), {
-          isDisabled: actionDisabled,
-          variant: "mint",
-          borderColor: "#26f7d1",
-          glow: "rgba(38, 247, 209, 0.55)",
-        })}
-        {buttonWrapper("/images/claim.png", "Claim REWARDS", runOnce(onClaim, actionDisabled), {
-          isDisabled: actionDisabled,
-          variant: "mint",
-          borderColor: "#26f7d1",
-          glow: "rgba(38, 247, 209, 0.55)",
-        })}
+        {buttonWrapper(
+          BUTTON_IMAGE_SOURCES.mint,
+          "Mint Ticket",
+          runOnce(onMint, mintDisabled),
+          {
+            isDisabled: mintDisabled,
+            disabledReason: mintDisabledReason,
+            variant: "mint",
+            borderColor: "#26f7d1",
+            glow: "rgba(38, 247, 209, 0.55)",
+          },
+        )}
+        {buttonWrapper(
+          BUTTON_IMAGE_SOURCES.claim,
+          "Claim REWARDS",
+          runOnce(onClaim, actionDisabled),
+          {
+            isDisabled: actionDisabled,
+            variant: "mint",
+            borderColor: "#26f7d1",
+            glow: "rgba(38, 247, 209, 0.55)",
+          },
+        )}
       </div>
 
       <div
@@ -197,7 +309,7 @@ export default function ActionButtons({
         }}
       >
         {buttonWrapper(
-          "/images/redeem-button.png",
+          BUTTON_IMAGE_SOURCES.redeem,
           "Redeem Ticket",
           runOnce(onRedeem, redeemDisabled),
           {
@@ -207,13 +319,20 @@ export default function ActionButtons({
             glow: "rgba(38, 247, 209, 0.55)",
           },
         )}
-        {buttonWrapper("/images/icons/info.png", "Project Info", () => setInfoOpen(true), {
-          borderColor: "#ffe800",
-          glow: "rgba(255, 232, 0, 0.6)",
-        })}
+        {buttonWrapper(
+          BUTTON_IMAGE_SOURCES.info,
+          "Project Info",
+          () => setInfoOpen(true),
+          {
+            borderColor: "#ffe800",
+            glow: gateActive ? "rgba(255, 232, 0, 0.95)" : "rgba(255, 232, 0, 0.6)",
+            wrapperClassName: gateActive ? "info-gate-target" : undefined,
+            wrapperRef: infoButtonRef,
+          },
+        )}
       </div>
 
-      {(performing || errorText) && (
+      {(mintDisabledReason || performing || errorText) && (
         <div
           style={{
             marginTop: 10,
@@ -223,7 +342,12 @@ export default function ActionButtons({
             maxWidth: 320,
           }}
         >
-          {performing && <div>Processing transaction...</div>}
+          {mintDisabledReason && !performing && (
+            <div>Mint: {mintDisabledReason}</div>
+          )}
+          {performing && (
+            <div>{performingLabel || "Processing transaction..."}</div>
+          )}
           {errorText && (
             <div role="alert" style={{ color: "#ff7b7b" }}>
               Last error: {errorText}
@@ -234,7 +358,13 @@ export default function ActionButtons({
 
       {infoOpen && (
         <React.Suspense fallback={null}>
-          <ProjectInfoModal open onClose={() => setInfoOpen(false)} />
+          <ProjectInfoModal
+            open
+            onClose={() => {
+              setInfoOpen(false);
+              if (gateActive) onInfoGateComplete?.();
+            }}
+          />
         </React.Suspense>
       )}
     </div>

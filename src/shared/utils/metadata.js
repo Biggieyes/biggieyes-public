@@ -1,7 +1,18 @@
 import { BACKGROUND_NAMES, BACKGROUND_CODES } from "./shared";
 
 const PRICE_KEYS = ["Ticket Price", "Block Price", "Final Price"];
-const keyFor = (tokenId) => `biggi_meta_prices_${String(tokenId)}`;
+const LEGACY_KEY_PREFIX = "biggi_meta_prices_";
+const normalizeContractAddress = (value) => {
+  const raw = String(value ?? "").trim().toLowerCase();
+  return /^0x[a-f0-9]{40}$/.test(raw) ? raw : "";
+};
+const keyFor = (tokenId, contractAddress = null) => {
+  const token = String(tokenId ?? "").trim();
+  const addr = normalizeContractAddress(contractAddress);
+  return addr
+    ? `${LEGACY_KEY_PREFIX}${addr}_${token}`
+    : `${LEGACY_KEY_PREFIX}${token}`;
+};
 const normKey = (s) =>
   String(s ?? "")
     .trim()
@@ -52,10 +63,10 @@ export function mergeAttrs(baseArr, patchArr) {
   return Array.from(map.values());
 }
 
-export function getCachedPriceAttrs(tokenId) {
+export function getCachedPriceAttrs(tokenId, contractAddress = null) {
   try {
     if (typeof window === "undefined" || !window.localStorage) return null;
-    const raw = window.localStorage.getItem(keyFor(tokenId));
+    const raw = window.localStorage.getItem(keyFor(tokenId, contractAddress));
     if (!raw) return null;
     const obj = JSON.parse(raw);
     const attrs = Array.isArray(obj?.attributes) ? obj.attributes : null;
@@ -74,9 +85,11 @@ export function getCachedPriceAttrs(tokenId) {
   }
 }
 
-export function setCachedPriceAttrs(tokenId, attrs) {
+export function setCachedPriceAttrs(tokenId, attrs, contractAddress = null) {
   try {
     if (typeof window === "undefined" || !window.localStorage) return;
+    const scopedKey = keyFor(tokenId, contractAddress);
+    const legacyKey = keyFor(tokenId);
     const compact = (Array.isArray(attrs) ? attrs : []).filter(
       (a) =>
         a &&
@@ -86,11 +99,17 @@ export function setCachedPriceAttrs(tokenId, attrs) {
     );
     if (compact.length) {
       window.localStorage.setItem(
-        keyFor(tokenId),
+        scopedKey,
         JSON.stringify({ attributes: compact }),
       );
+      if (scopedKey !== legacyKey) {
+        window.localStorage.removeItem(legacyKey);
+      }
     } else {
-      window.localStorage.removeItem(keyFor(tokenId));
+      window.localStorage.removeItem(scopedKey);
+      if (scopedKey !== legacyKey) {
+        window.localStorage.removeItem(legacyKey);
+      }
     }
   } catch {
     // ignore cache write errors

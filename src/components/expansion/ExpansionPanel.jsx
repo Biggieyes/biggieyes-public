@@ -1,1 +1,1 @@
-export { ExpansionPanel as default } from "../../features/tokenomics";
+export { default } from "../../features/tokenomics/expansion/ExpansionPanel.jsx";

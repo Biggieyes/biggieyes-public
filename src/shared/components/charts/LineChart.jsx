@@ -8,48 +8,124 @@ function _formatNumber(value) {
 
 const GRID_ROWS = 4;
 const GRID_COLS = 5;
+const CHART_PADDING = { top: 12, right: 12, bottom: 20, left: 20 };
 
-const LineChart = ({ points = [], width = 320, height = 150 }) => {
-  const sanitized = points
-    .map((point) => ({
-      value:
-        typeof point.value === "number"
-          ? point.value
-          : Number(point.value) || 0,
-      label: point.label || "",
-    }))
-    .filter((point) => Number.isFinite(point.value));
-
-  if (!sanitized.length) {
-    return <div className="line-chart__empty">No liquidity history yet.</div>;
-  }
-
-  const values = sanitized.map((entry) => entry.value);
-  const max = Math.max(...values);
-  const min = Math.min(...values);
-  const range = max - min || 1;
-  const padding = { top: 12, right: 12, bottom: 20, left: 20 };
-  const plotWidth = Math.max(1, width - padding.left - padding.right);
-  const plotHeight = Math.max(1, height - padding.top - padding.bottom);
+const LineChart = ({
+  points = [],
+  width = 320,
+  height = 150,
+  maxPoints = 48,
+}) => {
+  const sanitized = React.useMemo(
+    () =>
+      points
+        .map((point) => ({
+          value:
+            typeof point.value === "number"
+              ? point.value
+              : Number(point.value) || 0,
+          label: point.label || "",
+        }))
+        .filter((point) => Number.isFinite(point.value)),
+    [points],
+  );
   const clipIdRef = React.useRef(
     `line-chart-clip-${Math.random().toString(36).slice(2, 9)}`,
   );
   const clipId = clipIdRef.current;
+  const chartState = React.useMemo(() => {
+    if (!sanitized.length) {
+      return null;
+    }
+    const limit = Number(maxPoints) || 0;
+    const reducedPoints =
+      limit > 0 && sanitized.length > limit
+        ? (() => {
+            const step = Math.ceil(sanitized.length / limit);
+            const sampled = [];
+            for (let i = 0; i < sanitized.length; i += step) {
+              sampled.push(sanitized[i]);
+            }
+            const last = sanitized[sanitized.length - 1];
+            if (sampled[sampled.length - 1] !== last) sampled.push(last);
+            return sampled;
+          })()
+        : sanitized;
 
-  const coords = sanitized.map((entry, index) => {
-    const x =
-      padding.left +
-      (sanitized.length === 1
-        ? plotWidth / 2
-        : (plotWidth / (sanitized.length - 1)) * index);
-    const y =
-      padding.top + plotHeight - ((entry.value - min) / range) * plotHeight;
-    return { x, y };
-  });
-  const svgPoints = coords.map((pt) => `${pt.x},${pt.y}`).join(" ");
+    const values = reducedPoints.map((entry) => entry.value);
+    const dataMax = Math.max(...values);
+    const dataMin = Math.min(...values);
+    let nextMax = dataMax;
+    let nextMin = dataMin;
+    const isFlat = dataMax === dataMin;
+    if (nextMax === nextMin) {
+      const delta = Math.abs(nextMax) * 0.05 || 1;
+      nextMax += delta;
+      nextMin -= delta;
+    }
+    const range = nextMax - nextMin || 1;
+    const nextPlotWidth = Math.max(
+      1,
+      width - CHART_PADDING.left - CHART_PADDING.right,
+    );
+    const nextPlotHeight = Math.max(
+      1,
+      height - CHART_PADDING.top - CHART_PADDING.bottom,
+    );
+    const plotPoints =
+      reducedPoints.length === 1
+        ? [reducedPoints[0], reducedPoints[0]]
+        : reducedPoints;
+    const coords = plotPoints.map((entry, index) => {
+      const x =
+        CHART_PADDING.left +
+        (plotPoints.length === 1
+          ? nextPlotWidth / 2
+          : (nextPlotWidth / (plotPoints.length - 1)) * index);
+      const y =
+        CHART_PADDING.top +
+        nextPlotHeight -
+        ((entry.value - nextMin) / range) * nextPlotHeight;
+      return { x, y };
+    });
 
-  const latest = sanitized[sanitized.length - 1];
-  const lastPoint = coords[coords.length - 1];
+    return {
+      reduced: reducedPoints,
+      min: dataMin,
+      max: dataMax,
+      isFlat,
+      pointCount: reducedPoints.length,
+      plotWidth: nextPlotWidth,
+      plotHeight: nextPlotHeight,
+      svgPoints: coords.map((pt) => `${pt.x},${pt.y}`).join(" "),
+      coords,
+      latest: reducedPoints[reducedPoints.length - 1],
+      first: reducedPoints[0],
+      lastPoint: coords[coords.length - 1],
+    };
+  }, [height, maxPoints, sanitized, width]);
+
+  if (!chartState?.latest) {
+    return <div className="line-chart__empty">No liquidity history yet.</div>;
+  }
+
+  const {
+    min,
+    max,
+    isFlat,
+    pointCount,
+    plotWidth,
+    plotHeight,
+    svgPoints,
+    coords,
+    first,
+    latest,
+    lastPoint,
+  } = chartState;
+
+  const noChange = pointCount > 1 && isFlat;
+  const collecting = pointCount < 3;
+  const showPointMarkers = pointCount <= 24;
 
   return (
     <div className="line-chart">
@@ -62,8 +138,8 @@ const LineChart = ({ points = [], width = 320, height = 150 }) => {
         <defs>
           <clipPath id={clipId}>
             <rect
-              x={padding.left}
-              y={padding.top}
+              x={CHART_PADDING.left}
+              y={CHART_PADDING.top}
               width={plotWidth}
               height={plotHeight}
               rx="6"
@@ -72,36 +148,36 @@ const LineChart = ({ points = [], width = 320, height = 150 }) => {
         </defs>
         <g className="line-chart__grid">
           {Array.from({ length: GRID_ROWS + 1 }, (_, i) => {
-            const y = padding.top + (plotHeight / GRID_ROWS) * i;
+            const y = CHART_PADDING.top + (plotHeight / GRID_ROWS) * i;
             return (
               <line
                 key={`h-${i}`}
-                x1={padding.left}
-                x2={padding.left + plotWidth}
+                x1={CHART_PADDING.left}
+                x2={CHART_PADDING.left + plotWidth}
                 y1={y}
                 y2={y}
               />
             );
           })}
           {Array.from({ length: GRID_COLS + 1 }, (_, i) => {
-            const x = padding.left + (plotWidth / GRID_COLS) * i;
+            const x = CHART_PADDING.left + (plotWidth / GRID_COLS) * i;
             return (
               <line
                 key={`v-${i}`}
                 x1={x}
                 x2={x}
-                y1={padding.top}
-                y2={padding.top + plotHeight}
+                y1={CHART_PADDING.top}
+                y2={CHART_PADDING.top + plotHeight}
               />
             );
           })}
         </g>
         <line
           className="line-chart__axis"
-          x1={padding.left}
-          x2={padding.left + plotWidth}
-          y1={padding.top + plotHeight}
-          y2={padding.top + plotHeight}
+          x1={CHART_PADDING.left}
+          x2={CHART_PADDING.left + plotWidth}
+          y1={CHART_PADDING.top + plotHeight}
+          y2={CHART_PADDING.top + plotHeight}
         />
         <g clipPath={`url(#${clipId})`}>
           <polyline
@@ -114,6 +190,18 @@ const LineChart = ({ points = [], width = 320, height = 150 }) => {
             points={svgPoints}
             stroke="#4ad2ff"
           />
+          {showPointMarkers
+            ? coords.map((point, idx) => (
+                <circle
+                  key={`marker-${idx}`}
+                  className="line-chart__marker line-chart__marker--minor"
+                  cx={point.x}
+                  cy={point.y}
+                  r="2.2"
+                  fill="#98ecff"
+                />
+              ))
+            : null}
           {lastPoint ? (
             <circle
               className="line-chart__marker"
@@ -130,10 +218,24 @@ const LineChart = ({ points = [], width = 320, height = 150 }) => {
         <span>
           Range: {_formatNumber(min)} - {_formatNumber(max)}
         </span>
+        <span
+          className={`line-chart__status ${
+            noChange
+              ? "line-chart__status--flat"
+              : collecting
+                ? "line-chart__status--collecting"
+                : ""
+          }`.trim()}
+        >
+          {noChange
+            ? "No change in current session"
+            : collecting
+              ? `Collecting history (${pointCount} pts)`
+              : `Delta: ${_formatNumber(latest.value - first.value)}`}
+        </span>
       </div>
     </div>
   );
 };
 
-export default LineChart;
-
+export default React.memo(LineChart);

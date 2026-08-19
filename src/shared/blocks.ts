@@ -25,15 +25,54 @@ export const ROWS_BY_BLOCK: Record<string, number> = {
 };
 
 export const BASE_PRICES: Record<string, number> = {
-  ORANGE: 1,
+  ORANGE: 100,
+  BLACK: 200,
+  WHITE: 300,
+  BROWN: 400,
+  BLUE: 500,
+  GREEN: 600,
+  VIOLET: 700,
+  RED: 800,
+  PINK: 900,
+  RAINBOW: 1000,
+};
+
+export const MAX_SUPPLY_BY_BLOCK: Record<string, number> = {
+  ORANGE: 100,
+  BLACK: 90,
+  WHITE: 80,
+  BROWN: 70,
+  BLUE: 60,
+  GREEN: 50,
+  VIOLET: 40,
+  RED: 30,
+  PINK: 20,
+  RAINBOW: 10,
+};
+
+export const BACKGROUND_BONUS_PCT: Record<string, number> = {
+  ORANGE: 5,
+  BLACK: 10,
+  WHITE: 15,
+  BROWN: 20,
+  BLUE: 25,
+  GREEN: 30,
+  VIOLET: 35,
+  RED: 40,
+  PINK: 45,
+  RAINBOW: 50,
+};
+
+export const BACKGROUND_GROWTH_PCT: Record<string, number> = {
+  ORANGE: 5,
   BLACK: 2,
-  WHITE: 3,
-  BROWN: 4,
-  BLUE: 5,
-  GREEN: 6,
-  VIOLET: 7,
-  RED: 8,
-  PINK: 9,
+  WHITE: 2,
+  BROWN: 3,
+  BLUE: 3,
+  GREEN: 4,
+  VIOLET: 4,
+  RED: 5,
+  PINK: 5,
   RAINBOW: 10,
 };
 

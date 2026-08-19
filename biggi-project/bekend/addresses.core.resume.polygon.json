@@ -1,0 +1,43 @@
+{
+  "network": "polygon",
+  "chainId": 137,
+  "status": "complete",
+  "OWNER": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "TICKET_HUB": "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
+  "REGISTRY": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
+  "CHAPTER_CONTROLLER": "0x9c084D89c0CB6c8424652d1fa82E83aD9c098288",
+  "MAIN_READER": "0x4937CdcF1668255Cb46c78E19547ea96C94391Ef",
+  "CHAPTER_SERIES_READER": "0x421c8ed70fC893517481315aC62f4c95331e647f",
+  "CHAPTER_COUNT": 5,
+  "chapters": [
+    {
+      "chapterId": 2,
+      "seriesId": 2,
+      "MAIN": "0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036",
+      "MAIN2": "0xce4dF4eFc703fb0D9827aAacDB28c90405aB57D0",
+      "configured": true
+    },
+    {
+      "chapterId": 3,
+      "seriesId": 3,
+      "MAIN": "0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2",
+      "MAIN2": "0x4bB7a55Ba690Fc38653f5889E2262316A049a1D9",
+      "configured": true
+    },
+    {
+      "chapterId": 4,
+      "seriesId": 4,
+      "MAIN": "0x8E862D9071120D69517D3F7Db0c101175E911115",
+      "MAIN2": "0x43b4C220aD039C0272153cF4B43Eaee68de09b00",
+      "configured": true
+    },
+    {
+      "chapterId": 5,
+      "seriesId": 5,
+      "MAIN": "0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38",
+      "MAIN2": "0xcA168A6e391a54de4F664397eE17328280305A75",
+      "configured": true
+    }
+  ],
+  "updatedAt": "2026-08-17T17:57:22.983Z"
+}

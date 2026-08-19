@@ -78,6 +78,8 @@ export default function useTokenRewardsReader(
         main: status.main ?? null,
         main2: status.main2 ?? null,
         unitReward: status.unitReward ?? null,
+        emissionController: status.emissionController ?? null,
+        emissionControllerEnabled: status.emissionControllerEnabled ?? null,
         blockWeights: status.blockWeights ?? null,
         REWARDSCap: status.rewardsCap ?? null,
         REWARDSMinted: status.rewardsMinted ?? null,

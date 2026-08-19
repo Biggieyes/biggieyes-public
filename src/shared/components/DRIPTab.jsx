@@ -1,1 +1,1 @@
-export { DRIPTab as default } from "../../features/tokenomics";
+export { default } from "../../features/tokenomics/tabs/DRIPTab.jsx";

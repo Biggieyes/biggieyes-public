@@ -10,7 +10,7 @@ import DRIPDistributorService from "./DRIPDistributorService";
 import DRIPLMService from "./DRIPLMService";
 import TokenREWARDSService from "./tokenREWARDSService";
 import { getROProvider } from "@/shared/utils/contract";
-import { ADDR } from "../utils/addresses";
+import { ADDR } from "@/shared/utils/addresses.js";
 
 // Simple getters for functional services (they use internal RO provider by default)
 export function getReserveService() {
@@ -79,7 +79,6 @@ export default {
   createDRIPLMService,
   createTokenREWARDSService,
 };
-
 
 
 

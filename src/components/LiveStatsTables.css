@@ -1,0 +1,55 @@
+.ls-stats-table-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10070;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100dvh;
+  padding: 16px;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(6px);
+  isolation: isolate;
+}
+
+.ls-stats-table-panel {
+  width: min(1080px, 100%);
+  max-height: calc(100dvh - 32px);
+  padding: 16px;
+  overflow: auto;
+  box-sizing: border-box;
+  overscroll-behavior: contain;
+  background: #080b11;
+  border: 2px solid #ffe800;
+  border-radius: 8px;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.65);
+}
+
+.ls-stats-table-panel .bw-container,
+.ls-stats-table-panel .bgw-container {
+  width: 100%;
+  min-width: 0;
+}
+
+.ls-stats-table-panel .bw-header,
+.ls-stats-table-panel .bw-table-wrapper,
+.ls-stats-table-panel .bw-button-container,
+.ls-stats-table-panel .bgw-header,
+.ls-stats-table-panel .bgw-table-wrapper,
+.ls-stats-table-panel .bgw-button-container {
+  max-width: 100%;
+}
+
+@media (max-width: 700px) {
+  .ls-stats-table-overlay {
+    padding: 8px;
+  }
+
+  .ls-stats-table-panel {
+    max-height: calc(100dvh - 16px);
+    padding: 10px;
+  }
+}

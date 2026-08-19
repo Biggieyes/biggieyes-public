@@ -1,0 +1,223 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_tokenRewards",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_collectionRewards",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_nftRewards",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_treasury",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_reserve",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "collectionRewards",
+    "outputs": [
+      {
+        "internalType": "contract IBiggiCollectionRewards",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "globalSnapshot",
+    "outputs": [
+      {
+        "internalType": "uint64",
+        "name": "weekNow",
+        "type": "uint64"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenAddr",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenRewardsMinted",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenRewardsCap",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "treasuryBiggi",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "treasuryMatic",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "reserveBiggi",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "reserveMatic",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "remainingOrange",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "remainingBlock",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nftRewards",
+    "outputs": [
+      {
+        "internalType": "contract IBiggiNFTRewards",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "tokenIds",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "nftRewardsStatus",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "claimableAmounts",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "bool[]",
+        "name": "claimedFlags",
+        "type": "bool[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "reserve",
+    "outputs": [
+      {
+        "internalType": "contract IBiggiReserveV4",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokenRewards",
+    "outputs": [
+      {
+        "internalType": "contract IBiggiTokenRewards",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "treasury",
+    "outputs": [
+      {
+        "internalType": "contract IBiggiTreasury",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "userCollectionWins",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "tokenIds",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "userTokenClaimPreview",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "units",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

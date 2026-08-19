@@ -191,7 +191,7 @@ video {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background-image: url("/images/panels/loading panel.png");
+  background-image: url("/images/panels/loading-panel.optimized.jpg");
   background-repeat: no-repeat;
   background-position: center;
   background-size: auto;

@@ -1,12 +1,15 @@
 import { Contract } from "ethers";
 import {
   BiggiReserveV4 as ABI_BiggiReserve,
+  BiggiLiquidityBranchUserReader as ABI_BiggiLiquidityBranchUserReader,
   BiggiLiquidityManager as ABI_BiggiLiquidityManager,
   BiggiLiquidityHelperReader as ABI_BiggiLiquidityHelperReader,
+  BiggiLiquidityOrchestrator as ABI_BiggiLiquidityOrchestrator,
   LiquidityVault as ABI_LiquidityVault,
+  LiquidityKeeperProxy as ABI_LiquidityKeeperProxy,
   BiggiReserveTreasuryReader as ABI_BiggiReserveTreasuryReader,
 } from "@/config/abi/index.js";
-import { getLiquidityAddresses } from "../../config/addresses";
+import { getLiquidityAddresses } from "../../config/addresses/index.js";
 import defaultProvider from "../provider";
 export function getLiquidityContracts(chainId, provider) {
   const signerOrProvider = provider || defaultProvider;
@@ -16,6 +19,9 @@ export function getLiquidityContracts(chainId, provider) {
     liquidityVault,
     liquidityHelper,
     reserveTreasuryReader,
+    liquidityOrchestrator,
+    keeperProxy,
+    liquidityBranchUserReader,
   } =
     getLiquidityAddresses(chainId);
 
@@ -44,6 +50,23 @@ export function getLiquidityContracts(chainId, provider) {
         signerOrProvider,
       )
     : null;
+  const orchestratorContract = liquidityOrchestrator
+    ? new Contract(
+        liquidityOrchestrator,
+        ABI_BiggiLiquidityOrchestrator,
+        signerOrProvider,
+      )
+    : null;
+  const keeperProxyContract = keeperProxy
+    ? new Contract(keeperProxy, ABI_LiquidityKeeperProxy, signerOrProvider)
+    : null;
+  const branchUserReaderContract = liquidityBranchUserReader
+    ? new Contract(
+        liquidityBranchUserReader,
+        ABI_BiggiLiquidityBranchUserReader,
+        signerOrProvider,
+      )
+    : null;
 
   return {
     reserve: reserveContract,
@@ -51,5 +74,8 @@ export function getLiquidityContracts(chainId, provider) {
     vault: vaultContract,
     helper: helperContract,
     reserveTreasuryReader: reserveTreasuryReaderContract,
+    orchestrator: orchestratorContract,
+    keeperProxy: keeperProxyContract,
+    branchUserReader: branchUserReaderContract,
   };
 }

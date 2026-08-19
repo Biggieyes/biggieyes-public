@@ -20,7 +20,10 @@ export default function useLiquiditySnapshot(options = {}) {
     if (!ui) return raw;
     return {
       ...ui,
-      treasury: raw.treasury ?? ui.treasury,
+      treasury: ui.treasury ?? raw.treasury,
+      automation: ui.automation ?? raw.automation,
+      keeperProxy: ui.keeperProxy ?? raw.keeperProxy,
+      branchReader: ui.branchReader ?? raw.branchReader,
       vault: {
         ...ui.vault,
         pairWhitelisted:

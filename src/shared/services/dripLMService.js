@@ -4,7 +4,7 @@
 
 import * as ethers from "ethers";
 import { multicallAggregate } from "../utils/multicall";
-import { BiggiDRIPLM as ABI } from "@/config/abi/index.js";
+import { BiggiDripLMToModerator as ABI } from "@/config/abi/index.js";
 
 export default class DRIPLMService {
   /**

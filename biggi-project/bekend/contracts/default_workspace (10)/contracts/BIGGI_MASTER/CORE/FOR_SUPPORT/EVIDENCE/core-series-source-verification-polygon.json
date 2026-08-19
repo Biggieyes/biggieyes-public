@@ -1,0 +1,77 @@
+{
+  "network": "polygon",
+  "contracts": [
+    {
+      "name": "BiggiTicketHub",
+      "address": "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
+      "status": "verified"
+    },
+    {
+      "name": "BiggiSeriesRegistry",
+      "address": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
+      "status": "verified"
+    },
+    {
+      "name": "BiggiChapterController",
+      "address": "0x9c084D89c0CB6c8424652d1fa82E83aD9c098288",
+      "status": "verified"
+    },
+    {
+      "name": "BiggiMainReader",
+      "address": "0x4937CdcF1668255Cb46c78E19547ea96C94391Ef",
+      "status": "verified"
+    },
+    {
+      "name": "BiggiChapterSeriesReader",
+      "address": "0x421c8ed70fC893517481315aC62f4c95331e647f",
+      "status": "verified"
+    },
+    {
+      "name": "Chapter 1 BiggiEyesMain2",
+      "address": "0xe56cC0657A89daf10994204eD745985a61b0E36F",
+      "status": "verified"
+    },
+    {
+      "name": "Chapter 2 BiggiEyesMain",
+      "address": "0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036",
+      "status": "verified"
+    },
+    {
+      "name": "Chapter 2 BiggiEyesMain2",
+      "address": "0x7EaB23497085cfF00Cb2E9809b2Af0e717187356",
+      "status": "verified"
+    },
+    {
+      "name": "Chapter 3 BiggiEyesMain",
+      "address": "0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2",
+      "status": "verified"
+    },
+    {
+      "name": "Chapter 3 BiggiEyesMain2",
+      "address": "0xda6A6f45053796d0f5edB965fe3FA47B9a35460c",
+      "status": "verified"
+    },
+    {
+      "name": "Chapter 4 BiggiEyesMain",
+      "address": "0x8E862D9071120D69517D3F7Db0c101175E911115",
+      "status": "verified"
+    },
+    {
+      "name": "Chapter 4 BiggiEyesMain2",
+      "address": "0xecE7D61AB3FB2229C39B48380D704183532fE960",
+      "status": "verified"
+    },
+    {
+      "name": "Chapter 5 BiggiEyesMain",
+      "address": "0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38",
+      "status": "verified"
+    },
+    {
+      "name": "Chapter 5 BiggiEyesMain2",
+      "address": "0x99f049279BC545469F989d8f06CD915ef4B6f1d4",
+      "status": "verified"
+    }
+  ],
+  "failures": [],
+  "verifiedAt": "2026-08-18T22:52:55.734Z"
+}

@@ -32,20 +32,14 @@ export default function RedeemOverlay({
           method: "eth_chainId",
         });
         const id = idHex ? parseInt(idHex, 16) : null;
-        const map = {
-          1: "Ethereum",
-          5: "Goerli",
-          10: "Optimism",
-          137: "Polygon",
-          80001: "Polygon Mumbai",
-          80002: "Polygon Amoy", // current testnet
-          8453: "Base",
-          42161: "Arbitrum",
-        };
         if (alive) {
           setChainId(id);
           setNetworkLabel(
-            Number.isFinite(id) ? `${map[id] || "EVM"} (${id})` : "EVM",
+            Number.isFinite(id)
+              ? id === 137
+                ? "Polygon mainnet (137)"
+                : `Unsupported chain (${id})`
+              : "Not connected",
           );
         }
       } catch {
@@ -257,12 +251,19 @@ export default function RedeemOverlay({
           <div style={S.header}>
             <div style={S.iconContainer}>
               <img
-                src="/images/icons/mint.png"
+                src="/images/icons/mint.optimized.png"
                 alt=""
                 style={S.icon}
-                loading="React.lazy"
+                loading="eager"
                 decoding="async"
-                fetchPriority="low"
+                fetchPriority="high"
+                onError={(event) => {
+                  if (event.currentTarget.dataset.fallbackApplied === "1") {
+                    return;
+                  }
+                  event.currentTarget.dataset.fallbackApplied = "1";
+                  event.currentTarget.src = "/images/icons/mint.fallback.png";
+                }}
               />
             </div>
             <div style={S.headerTxts}>
@@ -735,6 +736,5 @@ const styles = {
     lineHeight: 1.4,
   },
 };
-
 
 

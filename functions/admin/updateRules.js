@@ -2,16 +2,22 @@
 // Owner-only rules update for live chat.
 import { createClient } from "@supabase/supabase-js";
 import { ethers } from "ethers";
+import { captureException, initSentry } from "../_sentry.js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const CHAT_OWNER_ADDRESS = (process.env.CHAT_OWNER_ADDRESS || "").toLowerCase();
 
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
+
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Methods": "POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type,Authorization",
+  Vary: "Origin",
 };
+
+initSentry();
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -34,6 +40,34 @@ const parseBody = (req) => {
   return {};
 };
 
+const isAddressSafe = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return false;
+  try {
+    if (typeof ethers.getAddress === "function") {
+      ethers.getAddress(raw);
+      return true;
+    }
+    if (ethers.utils && typeof ethers.utils.getAddress === "function") {
+      ethers.utils.getAddress(raw);
+      return true;
+    }
+  } catch {
+    return false;
+  }
+  return /^0x[a-fA-F0-9]{40}$/.test(raw);
+};
+
+const verifySignedMessage = (payload, signature) => {
+  if (typeof ethers.verifyMessage === "function") {
+    return ethers.verifyMessage(payload, signature);
+  }
+  if (ethers.utils && typeof ethers.utils.verifyMessage === "function") {
+    return ethers.utils.verifyMessage(payload, signature);
+  }
+  throw new Error("verifyMessage not available");
+};
+
 async function resolveOwnerAddress() {
   if (CHAT_OWNER_ADDRESS) return CHAT_OWNER_ADDRESS;
   const { data } = await supabase.from("chat_config").select("owner_address").eq("id", 1).maybeSingle();
@@ -51,7 +85,7 @@ async function handleRequest({ method, body }) {
   const signature = String(body?.signature || "").trim();
   const rulesText = String(body?.rulesText || "").trim();
 
-  if (!ethers.utils.isAddress(address)) {
+  if (!isAddressSafe(address)) {
     return jsonResponse(400, { ok: false, error: "Invalid address" });
   }
   if (!signature || !rulesText) {
@@ -64,7 +98,7 @@ async function handleRequest({ method, body }) {
   }
 
   const payload = `rules|${rulesText}`;
-  const recovered = ethers.utils.verifyMessage(payload, signature);
+  const recovered = verifySignedMessage(payload, signature);
   if (recovered.toLowerCase() !== owner) {
     return jsonResponse(401, { ok: false, error: "Signature mismatch" });
   }
@@ -75,22 +109,34 @@ async function handleRequest({ method, body }) {
     .upsert({ id: 1, text: rulesText, updated_by_address: owner, updated_at: now }, { onConflict: "id" });
 
   if (error) {
+    captureException(error, { stage: "rules_update" });
     return jsonResponse(500, { ok: false, error: "Rules update failed" });
   }
 
-  await supabase.from("moderation_log").insert({
+  const { error: logError } = await supabase.from("moderation_log").insert({
     action: "rules-update",
     message_id: null,
     by_address: owner,
   });
+  if (logError) {
+    captureException(logError, { stage: "moderation_log" });
+  }
 
   return jsonResponse(200, { ok: true });
 }
 
-export default async function handler(req, res) {
+const vercelHandler = async (req, res) => {
   const body = parseBody(req);
   const result = await handleRequest({ method: req?.method, body });
   res.statusCode = result.status;
   Object.entries(result.headers).forEach(([k, v]) => res.setHeader(k, v));
   res.end(result.body);
-}
+};
+
+export default vercelHandler;
+
+export const handler = async (event) => {
+  const body = parseBody(event);
+  const result = await handleRequest({ method: event?.httpMethod, body });
+  return { statusCode: result.status, headers: result.headers, body: result.body };
+};
