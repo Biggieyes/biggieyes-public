@@ -9,7 +9,7 @@ Steps to run the example
 You need to add a private key to env file. This is specifically required if you want to simulate chain writes. For that to work the key should be valid and funded.
 If your workflow does not do any chain write then you can just put any dummy key as a private key. e.g.
 ```
-CRE_ETH_PRIVATE_KEY=0000000000000000000000000000000000000000000000000000000000000001
+CRE_ETH_PRIVATE_KEY=<dummy-or-funded-private-key>
 ```
 
 ## 2. Install dependencies
