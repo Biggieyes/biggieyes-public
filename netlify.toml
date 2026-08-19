@@ -30,6 +30,16 @@
   status = 200
 
 [[redirects]]
+  from = "/api/communityVoting"
+  to = "/.netlify/functions/communityVoting"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin/communityVoting"
+  to = "/.netlify/functions/admin-communityVoting"
+  status = 200
+
+[[redirects]]
   from = "/api/admin/editMessage"
   to = "/.netlify/functions/admin-editMessage"
   status = 200

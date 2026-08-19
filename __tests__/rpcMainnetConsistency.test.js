@@ -65,7 +65,7 @@ describe("Polygon mainnet RPC configuration", () => {
     expect(getCoreChapter(5)).toMatchObject({
       seriesName: "BIGGI Super Hero",
       main: "0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38",
-      main2: "0xcA168A6e391a54de4F664397eE17328280305A75",
+      main2: "0x99f049279BC545469F989d8f06CD915ef4B6f1d4",
       active: false,
     });
     expect(getCoreChapter(6)).toBeNull();

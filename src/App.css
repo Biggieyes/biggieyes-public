@@ -2344,8 +2344,8 @@ canvas {
 .fullscreen-panel__container {
   width: 100vw !important;
   max-width: 100vw !important;
-  height: 100vh !important;
-  max-height: 100vh !important;
+  height: 100% !important;
+  max-height: 100% !important;
   padding: 0 !important;
   margin: 0 !important;
   border: none !important;

@@ -7,7 +7,7 @@ The BIGGIEYES NFT system is built around a dual-collection architecture:
 - `BiggiEyesMain` is the ticket-driven VRF collection
 - `BiggiEyesMain2` is the public mint collection
 
-Both collections share the same visual grammar of blocks, backgrounds, and main IDs, but they serve different product and economic roles.
+Both collections share the same ten block and main-ID grammar, but only the VRF collection uses colored background variants.
 
 ## Collection Roles
 
@@ -33,11 +33,11 @@ The VRF collection mints a maximum of `550` NFTs. Randomness selects an unminted
 
 ### Public NFT Supply
 
-`BiggiEyesMain2` also supports up to `550` indexed NFTs, but the metadata for each index must be seeded before minting. Users then mint specific indices directly.
+`BiggiEyesMain2` contains exactly `100` indexed NFTs, ten in each block. It has no colored background clones. Metadata for each index must be seeded before users can mint specific indices directly.
 
 ## Metadata Model
 
-Each NFT index stores:
+The shared contract record stores:
 
 - `mainId`
 - `blockIdx`
@@ -47,11 +47,11 @@ Each NFT index stores:
 - `finalPrice`
 - `minted`
 
-This means each NFT is not only a collectible, but also a recorded economic object with mint-time pricing context.
+For Public, `background` is only an internal ABI compatibility sentinel and is not an NFT trait. Its mint-time block and final prices are identical and come from the paired VRF block.
 
 ## Block Structure
 
-The collection is partitioned across ten blocks. The main contract uses the following internal block inventory logic:
+The VRF collection is partitioned across ten blocks using the following internal inventory logic:
 
 ```text
 total NFTs in block N = 110 - 10 * N
@@ -89,7 +89,7 @@ BIGGIEYES uses ten background families:
 - PINK
 - RAINBOW
 
-Backgrounds matter for both rarity signaling and collection reward eligibility.
+Backgrounds apply only to the VRF collection and matter for its rarity signaling and collection reward eligibility. Public has no background variants and is not part of CollectionRewards.
 
 ## Ticket Minting
 

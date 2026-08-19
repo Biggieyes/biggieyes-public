@@ -11,10 +11,7 @@ import {
   pickFormatted,
   toDisplayNumber,
 } from "../utils/amountFormatting.js";
-import {
-  pickAddress,
-  sameAddress,
-} from "../utils/panelFormatting.js";
+import { pickAddress, sameAddress } from "../utils/panelFormatting.js";
 
 const hasValue = (value) =>
   value !== null && value !== undefined && value !== "";
@@ -74,7 +71,11 @@ function DRIPTab({
     return <div className="drip-tab">Loading DRIP snapshot...</div>;
   }
   if (error) {
-    return <div className="drip-tab drip-tab--error">{error?.message || String(error)}</div>;
+    return (
+      <div className="drip-tab drip-tab--error">
+        {error?.message || String(error)}
+      </div>
+    );
   }
 
   const dist = snapshot?.distributor || {};
@@ -83,7 +84,9 @@ function DRIPTab({
   const derived = snapshot?.derived || {};
   const effectiveReader = readerStatus || {};
   const tokenDecimals =
-    tokenDexSnapshot?.token?.decimals ?? flowSnapshot?.tokenMeta?.decimals ?? 18;
+    tokenDexSnapshot?.token?.decimals ??
+    flowSnapshot?.tokenMeta?.decimals ??
+    18;
   const reserveAddress = pickAddress(
     liquiditySnapshot?.reserve?.address,
     flowSnapshot?.addresses?.reserve,
@@ -131,11 +134,17 @@ function DRIPTab({
     },
     {
       label: "Reserve DEX refill",
-      value: formatTokenDisplay(liquiditySnapshot?.reserve?.dexRefillBiggi, tokenDecimals),
+      value: formatTokenDisplay(
+        liquiditySnapshot?.reserve?.dexRefillBiggi,
+        tokenDecimals,
+      ),
     },
     {
       label: "BUYBACK agent BIGGI",
-      value: formatTokenDisplay(buybackSnapshot?.BUYBACK?.biggiBalance, tokenDecimals),
+      value: formatTokenDisplay(
+        buybackSnapshot?.BUYBACK?.biggiBalance,
+        tokenDecimals,
+      ),
     },
   ];
   const routeChecks = [
@@ -320,23 +329,33 @@ function DRIPTab({
       hint: capRemainingMetric.hint,
     },
     {
-      label: "Split",
+      label: "Sell share",
       value:
-        lm.sellPct != null ||
-        lm.reserveShareBps != null ||
-        lm.moderatorShareBps != null
-          ? `${lm.sellPct ?? effectiveReader.sellPct ?? "--"}% sell | ${lm.reserveShareBps ?? effectiveReader.reserveShareBps ?? "--"} bps reserve`
+        lm.sellPct != null || effectiveReader.sellPct != null
+          ? `${lm.sellPct ?? effectiveReader.sellPct}% of notified BIGGI`
           : "--",
-      hint:
+      hint: "Applied after a successful buyback notification",
+    },
+    {
+      label: "Native split",
+      value:
+        lm.reserveShareBps != null ||
+        effectiveReader.reserveShareBps != null ||
         lm.moderatorShareBps != null ||
         effectiveReader.moderatorShareBps != null
-          ? `Moderator ${lm.moderatorShareBps ?? effectiveReader.moderatorShareBps ?? "--"} bps`
-          : null,
+          ? `${Number(lm.reserveShareBps ?? effectiveReader.reserveShareBps ?? 0) / 100}% reserve / ${Number(lm.moderatorShareBps ?? effectiveReader.moderatorShareBps ?? 0) / 100}% moderator`
+          : "--",
+      hint: "Split of POL received from the DRIP sale",
     },
     {
       label: "Automation",
       value: derived.automationStatusLabel || "--",
-      hint: derived.statusLabel || "--",
+      hint:
+        keeper.upkeepNeeded == null
+          ? "Upkeep status unavailable"
+          : keeper.upkeepNeeded
+            ? "Upkeep needed"
+            : "Upkeep idle",
     },
   ];
 
@@ -384,12 +403,14 @@ function DRIPTab({
         <div className="drip-tab__headline">
           <h3>DRIP distribution</h3>
           <p>
-            Emission availability, LM routing, and cumulative native forwarded from
-            DRIP activity.
+            Emission availability, LM routing, and cumulative native forwarded
+            from DRIP activity.
           </p>
         </div>
         <div className="drip-tab__header-meta">
-          <span className={`drip-tab__badge drip-tab__badge--${derived.statusTone || "idle"}`}>
+          <span
+            className={`drip-tab__badge drip-tab__badge--${derived.statusTone || "idle"}`}
+          >
             {derived.statusLabel || "--"}
           </span>
           <span
@@ -397,7 +418,9 @@ function DRIPTab({
           >
             {derived.automationStatusLabel || "--"}
           </span>
-          <span className="drip-tab__timestamp">{snapshot?.tsLabel || "--"}</span>
+          <span className="drip-tab__timestamp">
+            {snapshot?.tsLabel || "--"}
+          </span>
         </div>
       </header>
 
@@ -430,13 +453,18 @@ function DRIPTab({
         </div>
         <div className="drip-tab__chart">
           <h4>LM native balance</h4>
-          <p>Live native balance on DRIPLM. This can stay low even after sells because the contract forwards native onward.</p>
+          <p>
+            Live native balance on DRIPLM. This can stay low even after sells
+            because the contract forwards native onward.
+          </p>
           <LineChart points={nativeSeries} height={160} />
         </div>
         {stabilitySeries?.length ? (
           <div className="drip-tab__chart">
             <h4>BUYBACK stability</h4>
-            <p>Cross-check of DRIP-side pressure against BUYBACK-side stability.</p>
+            <p>
+              Cross-check of DRIP-side pressure against BUYBACK-side stability.
+            </p>
             <LineChart points={stabilitySeries} height={160} />
           </div>
         ) : null}
@@ -551,7 +579,9 @@ function DRIPTab({
             </span>
           </div>
           <div className={styles.ecoTableRow}>
-            <span className={styles.ecoTableLabel}>Distributor target status</span>
+            <span className={styles.ecoTableLabel}>
+              Distributor target status
+            </span>
             <span className={styles.ecoTableValue}>
               {dist.targetMatches == null
                 ? "--"
@@ -583,7 +613,11 @@ function DRIPTab({
             <div key={row.label} className={styles.ecoTableRow}>
               <span className={styles.ecoTableLabel}>{row.label}</span>
               <span className={styles.ecoTableValue}>
-                {row.aligned == null ? "--" : row.aligned ? "Aligned" : "Mismatch"}
+                {row.aligned == null
+                  ? "--"
+                  : row.aligned
+                    ? "Aligned"
+                    : "Mismatch"}
               </span>
             </div>
           ))}

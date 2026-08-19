@@ -60,13 +60,13 @@ const Badge = React.memo(function VRFBadge({
   );
 });
 
-const Tabs = React.memo(function VRFTabs({
-  sections,
-  active,
-  onChange,
-}) {
+const Tabs = React.memo(function VRFTabs({ sections, active, onChange }) {
   return (
-    <div role="tablist" aria-label="VRF tabs" className="rewards-grid__tabs vrf-tabs">
+    <div
+      role="tablist"
+      aria-label="VRF tabs"
+      className="rewards-grid__tabs vrf-tabs"
+    >
       {sections.map((section) => (
         <button
           key={section.key}
@@ -110,8 +110,7 @@ function Value({
   colors = VRF_COLORS,
 }) {
   const toneMap = {
-    neutral:
-      "linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.18))",
+    neutral: "linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.18))",
     warm: `linear-gradient(180deg, ${colors.y}14, rgba(0,0,0,.18))`,
     cool: `linear-gradient(180deg, ${colors.c}14, rgba(0,0,0,.18))`,
     violet: `linear-gradient(180deg, ${colors.v}14, rgba(0,0,0,.18))`,
@@ -123,19 +122,24 @@ function Value({
     <span
       title={title}
       style={{
-        display: "inline-flex",
+        display: "flex",
         alignItems: "center",
         gap: 8,
+        width: "100%",
+        maxWidth: "100%",
+        minWidth: 0,
         minHeight: 34,
         padding: "8px 12px",
+        boxSizing: "border-box",
         borderRadius: 12,
         border: `1px solid ${colors.line}`,
         background: toneMap[tone] || toneMap.neutral,
         fontWeight: 800,
         color: colors.text,
-        fontFamily: mono
-          ? "ui-monospace,Menlo,Consolas,monospace"
-          : "inherit",
+        fontFamily: mono ? "ui-monospace,Menlo,Consolas,monospace" : "inherit",
+        whiteSpace: "normal",
+        overflowWrap: "anywhere",
+        wordBreak: "break-word",
       }}
     >
       {children}
@@ -161,7 +165,9 @@ function KV({ items = [], colors = VRF_COLORS }) {
 }
 
 function normalizeComparable(value) {
-  return String(value || "").trim().toLowerCase();
+  return String(value || "")
+    .trim()
+    .toLowerCase();
 }
 
 function resolveMatchState(liveValue, expectedValue, explicitMatch) {
@@ -362,27 +368,30 @@ export default function VRFPanel({
   const { refreshVRFPanel: refreshVRFPanelHook } = useVRF();
   const [hookData, setHookData] = React.useState(null);
 
-  const refreshData = React.useCallback(async ({ silent = false } = {}) => {
-    if (refreshInFlightRef.current) return refreshInFlightRef.current;
+  const refreshData = React.useCallback(
+    async ({ silent = false } = {}) => {
+      if (refreshInFlightRef.current) return refreshInFlightRef.current;
 
-    const task = (async () => {
-      if (!silent) setIsRefreshing(true);
-      try {
-        if (typeof onRefresh === "function") {
-          return await onRefresh();
+      const task = (async () => {
+        if (!silent) setIsRefreshing(true);
+        try {
+          if (typeof onRefresh === "function") {
+            return await onRefresh();
+          }
+          const next = await refreshVRFPanelHook(walletAddress);
+          if (next) setHookData(next);
+          return next;
+        } finally {
+          if (!silent) setIsRefreshing(false);
+          refreshInFlightRef.current = null;
         }
-        const next = await refreshVRFPanelHook(walletAddress);
-        if (next) setHookData(next);
-        return next;
-      } finally {
-        if (!silent) setIsRefreshing(false);
-        refreshInFlightRef.current = null;
-      }
-    })();
+      })();
 
-    refreshInFlightRef.current = task;
-    return task;
-  }, [onRefresh, refreshVRFPanelHook, walletAddress]);
+      refreshInFlightRef.current = task;
+      return task;
+    },
+    [onRefresh, refreshVRFPanelHook, walletAddress],
+  );
   refreshDataRef.current = refreshData;
 
   const hasExternalData = data && Object.keys(data).length > 0;
@@ -427,9 +436,7 @@ export default function VRFPanel({
   const netLabel = React.useMemo(() => {
     const id = Number(viewData.networkId ?? viewData.chainId);
     if (Number.isFinite(id)) {
-      return id === 137
-        ? "Polygon mainnet (137)"
-        : `Unsupported chain (${id})`;
+      return id === 137 ? "Polygon mainnet (137)" : `Unsupported chain (${id})`;
     }
     return viewData.network || "Not connected";
   }, [viewData.networkId, viewData.chainId, viewData.network]);
@@ -558,21 +565,29 @@ export default function VRFPanel({
     : `Retry becomes available in ${formatRetryCountdown(retryRemainingSeconds)}.`;
 
   const latestFulfilled = React.useMemo(
-    () => hist.find((h) => String(h.status).toLowerCase() === "fulfilled") || null,
+    () =>
+      hist.find((h) => String(h.status).toLowerCase() === "fulfilled") || null,
     [hist],
   );
 
   const orchestrationSteps = React.useMemo(() => {
-    const hasRequest = Boolean(effectiveLast.requestId && effectiveLast.requestId !== "0");
-    const isFulfilled = String(effectiveLast.status).toLowerCase() === "fulfilled";
-    const hasWords = Array.isArray(effectiveLast.randomWords) && effectiveLast.randomWords.length > 0;
+    const hasRequest = Boolean(
+      effectiveLast.requestId && effectiveLast.requestId !== "0",
+    );
+    const isFulfilled =
+      String(effectiveLast.status).toLowerCase() === "fulfilled";
+    const hasWords =
+      Array.isArray(effectiveLast.randomWords) &&
+      effectiveLast.randomWords.length > 0;
     const hasTx = Boolean(effectiveLast.txHash);
     const hasHistory = hist.length > 0;
     return [
       {
         key: "request",
         label: "Redeem request captured",
-        detail: hasRequest ? `requestId ${short(effectiveLast.requestId)}` : "No request found",
+        detail: hasRequest
+          ? `requestId ${short(effectiveLast.requestId)}`
+          : "No request found",
         state: hasRequest ? "ok" : "dim",
       },
       {
@@ -600,7 +615,9 @@ export default function VRFPanel({
       {
         key: "history",
         label: "Proof history synced",
-        detail: hasHistory ? `${hist.length} row(s) available` : "No rows in history",
+        detail: hasHistory
+          ? `${hist.length} row(s) available`
+          : "No rows in history",
         state: hasHistory ? "ok" : "dim",
       },
     ];
@@ -632,21 +649,27 @@ export default function VRFPanel({
       {
         key: "collection",
         label: "Collection VRF",
-        detail: params?.collection ? short(params.collection) : "Missing collection address",
+        detail: params?.collection
+          ? short(params.collection)
+          : "Missing collection address",
         title: params?.collection || "",
         state: params?.collection ? "ok" : "warn",
       },
       {
         key: "ticketHub",
         label: "TicketHub",
-        detail: params?.ticketHub ? short(params.ticketHub) : "Missing TicketHub address",
+        detail: params?.ticketHub
+          ? short(params.ticketHub)
+          : "Missing TicketHub address",
         title: params?.ticketHub || "",
         state: params?.ticketHub ? "ok" : "warn",
       },
       {
         key: "router",
         label: "VRF Router",
-        detail: params?.vrfRouter ? short(params.vrfRouter) : "Missing VRF router address",
+        detail: params?.vrfRouter
+          ? short(params.vrfRouter)
+          : "Missing VRF router address",
         title: params?.vrfRouter || "",
         state: params?.vrfRouter ? "ok" : "warn",
       },
@@ -693,17 +716,19 @@ export default function VRFPanel({
   }, [params, short, viewData.subscription]);
 
   const engineSignals = React.useMemo(() => {
-    const pendingRows = hist.filter((row) => String(row.status).toLowerCase() === "pending").length;
+    const pendingRows = hist.filter(
+      (row) => String(row.status).toLowerCase() === "pending",
+    ).length;
     const hasFulfilled = Boolean(latestFulfilled);
     const latestWordCount = Array.isArray(effectiveLast.randomWords)
       ? effectiveLast.randomWords.length
       : 0;
     const hasMainnetWiring = Boolean(
       params?.collection &&
-        params?.ticketHub &&
-        params?.vrfRouter &&
-        (params?.keyHash || params?.expectedKeyHash) &&
-        (params?.coordinator || params?.expectedCoordinator),
+      params?.ticketHub &&
+      params?.vrfRouter &&
+      (params?.keyHash || params?.expectedKeyHash) &&
+      (params?.coordinator || params?.expectedCoordinator),
     );
     const hasMismatch =
       params?.keyHashMatches === false ||
@@ -722,7 +747,9 @@ export default function VRFPanel({
         detail:
           pendingRows > 0
             ? `${pendingRows} pending request(s)${
-                pendingAgeMinutes != null ? `, latest ${pendingAgeMinutes} min` : ""
+                pendingAgeMinutes != null
+                  ? `, latest ${pendingAgeMinutes} min`
+                  : ""
               }`
             : "No pending requests",
         state: pendingRows > 0 ? "warn" : "ok",
@@ -756,7 +783,14 @@ export default function VRFPanel({
         state: hasMismatch ? "warn" : hasMainnetWiring ? "ok" : "dim",
       },
     ];
-  }, [hist, latestFulfilled, effectiveLast.randomWords, pendingAgeMinutes, params, viewData.subscription]);
+  }, [
+    hist,
+    latestFulfilled,
+    effectiveLast.randomWords,
+    pendingAgeMinutes,
+    params,
+    viewData.subscription,
+  ]);
 
   const proofRows = React.useMemo(() => {
     const rows = hist.length
@@ -785,7 +819,8 @@ export default function VRFPanel({
       const needsTx = status === "fulfilled";
       const needsWords = status === "fulfilled";
       const hasWords = wordsCount > 0;
-      const ok = hasRequestId && (!needsTx || hasTx) && (!needsWords || hasWords);
+      const ok =
+        hasRequestId && (!needsTx || hasTx) && (!needsWords || hasWords);
       return {
         key: `${row.requestId || "row"}-${idx}`,
         time: row.time || "-",
@@ -817,7 +852,19 @@ export default function VRFPanel({
         accent: hist.length ? C.y : C.dim,
       },
     ],
-    [netLabel, userAddr, short, lastStatusLabel, hist.length, C.y, C.c, C.p, C.g, C.v, C.dim],
+    [
+      netLabel,
+      userAddr,
+      short,
+      lastStatusLabel,
+      hist.length,
+      C.y,
+      C.c,
+      C.p,
+      C.g,
+      C.v,
+      C.dim,
+    ],
   );
 
   const recentHistory = React.useMemo(() => hist.slice(0, 6), [hist]);
@@ -832,12 +879,12 @@ export default function VRFPanel({
 
   const hasData = Boolean(
     viewData &&
-      (viewData.params ||
-        (Array.isArray(viewData.history) && viewData.history.length) ||
-        (viewData.last &&
-          (viewData.last.requestId ||
-            (Array.isArray(viewData.last.randomWords) &&
-              viewData.last.randomWords.length)))),
+    (viewData.params ||
+      (Array.isArray(viewData.history) && viewData.history.length) ||
+      (viewData.last &&
+        (viewData.last.requestId ||
+          (Array.isArray(viewData.last.randomWords) &&
+            viewData.last.randomWords.length)))),
   );
 
   return (
@@ -871,7 +918,9 @@ export default function VRFPanel({
                 </GhostBtn>
               )}
             {!!effectiveLast.txHash && (
-              <GhostBtn onClick={() => onOpenExplorer(effectiveLast.txHash, "tx")}>
+              <GhostBtn
+                onClick={() => onOpenExplorer(effectiveLast.txHash, "tx")}
+              >
                 Explorer
               </GhostBtn>
             )}
@@ -903,9 +952,13 @@ export default function VRFPanel({
         <Tabs sections={sections} active={active} onChange={setActive} />
 
         <div className="vrf-section-head" role="status" aria-live="polite">
-          <span className="vrf-section-head__kicker">{activeSectionMeta.kicker}</span>
+          <span className="vrf-section-head__kicker">
+            {activeSectionMeta.kicker}
+          </span>
           <h3 className="vrf-section-head__title">{activeSectionMeta.title}</h3>
-          <p className="vrf-section-head__desc">{activeSectionMeta.description}</p>
+          <p className="vrf-section-head__desc">
+            {activeSectionMeta.description}
+          </p>
         </div>
 
         {!hasData && (
@@ -950,7 +1003,9 @@ export default function VRFPanel({
                     },
                     {
                       k: "Fulfilled Tx",
-                      v: effectiveLast.txHash ? short(effectiveLast.txHash) : "-",
+                      v: effectiveLast.txHash
+                        ? short(effectiveLast.txHash)
+                        : "-",
                       mono: true,
                       tone: "violet",
                       title: effectiveLast.txHash,
@@ -988,7 +1043,9 @@ export default function VRFPanel({
                     <span>Fulfilled Tx</span>
                     {effectiveLast.txHash ? (
                       <GhostBtn
-                        onClick={() => onOpenExplorer(effectiveLast.txHash, "tx")}
+                        onClick={() =>
+                          onOpenExplorer(effectiveLast.txHash, "tx")
+                        }
                       >
                         {short(effectiveLast.txHash)}
                       </GhostBtn>
@@ -1020,16 +1077,22 @@ export default function VRFPanel({
                   <tbody>
                     {recentHistory.map((r, idx) => (
                       <tr key={`${r.requestId}-${idx}`}>
-                        <td>{r.time || "-"}</td>
-                        <td className="vrf-table__mono">{short(r.requestId)}</td>
-                        <td className="vrf-table__strong">
+                        <td data-label="Time">{r.time || "-"}</td>
+                        <td data-label="Request ID" className="vrf-table__mono">
+                          {short(r.requestId)}
+                        </td>
+                        <td data-label="Status" className="vrf-table__strong">
                           {String(r.status || "-").toUpperCase()}
                         </td>
-                        <td>{r.confirmations ?? "-"}</td>
-                        <td>{r.words ?? "-"}</td>
-                        <td>
+                        <td data-label="Confirmations">
+                          {r.confirmations ?? "-"}
+                        </td>
+                        <td data-label="Words">{r.words ?? "-"}</td>
+                        <td data-label="Transaction">
                           {r.tx ? (
-                            <GhostBtn onClick={() => onOpenExplorer(r.tx, "tx")}>
+                            <GhostBtn
+                              onClick={() => onOpenExplorer(r.tx, "tx")}
+                            >
                               {short(r.tx)}
                             </GhostBtn>
                           ) : (
@@ -1071,16 +1134,25 @@ export default function VRFPanel({
                     {hist.length ? (
                       hist.map((r, idx) => (
                         <tr key={`${r.requestId}-${idx}`}>
-                          <td>{r.time || "-"}</td>
-                          <td className="vrf-table__mono">{short(r.requestId)}</td>
-                          <td className="vrf-table__strong">
+                          <td data-label="Time">{r.time || "-"}</td>
+                          <td
+                            data-label="Request ID"
+                            className="vrf-table__mono"
+                          >
+                            {short(r.requestId)}
+                          </td>
+                          <td data-label="Status" className="vrf-table__strong">
                             {String(r.status || "-").toUpperCase()}
                           </td>
-                          <td>{r.confirmations ?? "-"}</td>
-                          <td>{r.words ?? "-"}</td>
-                          <td>
+                          <td data-label="Confirmations">
+                            {r.confirmations ?? "-"}
+                          </td>
+                          <td data-label="Words">{r.words ?? "-"}</td>
+                          <td data-label="Transaction">
                             {r.tx ? (
-                              <GhostBtn onClick={() => onOpenExplorer(r.tx, "tx")}>
+                              <GhostBtn
+                                onClick={() => onOpenExplorer(r.tx, "tx")}
+                              >
                                 {short(r.tx)}
                               </GhostBtn>
                             ) : (
@@ -1112,8 +1184,8 @@ export default function VRFPanel({
                   <Badge tone="dim">READ ONLY</Badge>
                 </div>
                 <p className="vrf-muted">
-                  Redeem event to request to fulfillment to proof synchronization.
-                  This section does not execute transactions.
+                  Redeem event to request to fulfillment to proof
+                  synchronization. This section does not execute transactions.
                 </p>
                 <div className="vrf-steps">
                   {orchestrationSteps.map((step) => (
@@ -1217,9 +1289,7 @@ export default function VRFPanel({
                       title: params?.keyHash || "",
                       mono: true,
                       tone:
-                        params?.keyHashMatches === false
-                          ? "pink"
-                          : "neutral",
+                        params?.keyHashMatches === false ? "pink" : "neutral",
                     },
                   ]}
                 />
@@ -1237,8 +1307,8 @@ export default function VRFPanel({
                   <Badge tone="dim">READ ONLY</Badge>
                 </div>
                 <p className="vrf-muted">
-                  Chainlink request state, fulfillment proof, and mainnet
-                  wiring are displayed here as a read-only monitor.
+                  Chainlink request state, fulfillment proof, and mainnet wiring
+                  are displayed here as a read-only monitor.
                 </p>
                 <div className="vrf-chip-list">
                   {[
@@ -1267,7 +1337,9 @@ export default function VRFPanel({
                     >
                       <div className="vrf-step__meta">
                         <span className="vrf-step__label">{signal.label}</span>
-                        <span className="vrf-step__detail">{signal.detail}</span>
+                        <span className="vrf-step__detail">
+                          {signal.detail}
+                        </span>
                       </div>
                       <Badge
                         tone={
@@ -1327,15 +1399,17 @@ export default function VRFPanel({
                 <h3>Action Hooks</h3>
               </div>
               <p className="vrf-muted">
-                This panel intentionally keeps execution disabled. Use refresh to
-                run a new read cycle and update checks.
+                This panel intentionally keeps execution disabled. Use refresh
+                to run a new read cycle and update checks.
               </p>
               <div className="vrf-actions-row">
                 <GhostBtn onClick={refreshData} disabled={isRefreshing}>
                   {isRefreshing ? "Running..." : "Run Checks"}
                 </GhostBtn>
                 {!!effectiveLast.txHash && (
-                  <GhostBtn onClick={() => onOpenExplorer(effectiveLast.txHash, "tx")}>
+                  <GhostBtn
+                    onClick={() => onOpenExplorer(effectiveLast.txHash, "tx")}
+                  >
                     Open Last Fulfillment Tx
                   </GhostBtn>
                 )}
@@ -1366,22 +1440,29 @@ export default function VRFPanel({
                     {proofRows.length ? (
                       proofRows.map((row) => (
                         <tr key={row.key}>
-                          <td>{row.time}</td>
-                          <td className="vrf-table__mono">{short(row.requestId)}</td>
-                          <td className="vrf-table__strong">
+                          <td data-label="Time">{row.time}</td>
+                          <td
+                            data-label="Request ID"
+                            className="vrf-table__mono"
+                          >
+                            {short(row.requestId)}
+                          </td>
+                          <td data-label="Status" className="vrf-table__strong">
                             {String(row.status).toUpperCase()}
                           </td>
-                          <td>{row.words}</td>
-                          <td>
+                          <td data-label="Words">{row.words}</td>
+                          <td data-label="Transaction">
                             {row.tx ? (
-                              <GhostBtn onClick={() => onOpenExplorer(row.tx, "tx")}>
+                              <GhostBtn
+                                onClick={() => onOpenExplorer(row.tx, "tx")}
+                              >
                                 {short(row.tx)}
                               </GhostBtn>
                             ) : (
                               "-"
                             )}
                           </td>
-                          <td>
+                          <td data-label="Check">
                             <Badge
                               tone={
                                 row.check === "ok"
@@ -1452,5 +1533,4 @@ export default function VRFPanel({
       </div>
     </section>
   );
-
 }

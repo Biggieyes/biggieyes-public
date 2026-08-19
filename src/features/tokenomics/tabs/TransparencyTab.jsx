@@ -55,7 +55,7 @@ const download = (filename, content, type = "text/plain") => {
   URL.revokeObjectURL(url);
 };
 
-const buildTimeline = ({
+export const buildTimeline = ({
   buybackHistory = [],
   dripHistory = [],
   liquidityHistory = [],
@@ -152,7 +152,16 @@ const buildTimeline = ({
     });
   });
 
-  return items.sort((a, b) => b.ts - a.ts).slice(0, 20);
+  const latestSignatureByType = new Map();
+  return items
+    .sort((a, b) => b.ts - a.ts)
+    .filter((item) => {
+      const signature = `${item.valueA}\u0000${item.valueB}`;
+      if (latestSignatureByType.get(item.type) === signature) return false;
+      latestSignatureByType.set(item.type, signature);
+      return true;
+    })
+    .slice(0, 20);
 };
 
 const buildAllocationRows = (flowSnapshot, distributorSnapshot) => {
@@ -510,11 +519,11 @@ export default function TransparencyTab({
       </Card>
 
       <Card
-        title="FUNDS FLOW TIMELINE"
-        subtitle="Recent on-chain snapshots merged across subsystems"
+        title="SNAPSHOT TIMELINE"
+        subtitle="Observed on-chain state changes across subsystems"
       >
         <div className={styles.ecoTable}>
-          <div className={styles.ecoTableHeader}>Latest updates</div>
+          <div className={styles.ecoTableHeader}>Latest state changes</div>
           {timeline.length ? (
             timeline.map((row, idx) => (
               <div

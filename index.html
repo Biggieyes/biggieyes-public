@@ -85,10 +85,10 @@
       gtag("js", new Date());
       gtag("config", "G-S49TZ90XND");
     </script>
-    <title>BiggiEyes | NFT Tickets, VRF Reveal, Weekly BIGGI Rewards</title>
+    <title>BiggiEyes | Polygon NFT Tickets, VRF Reveal &amp; BIGGI</title>
     <meta
       name="description"
-      content="BiggiEyes on Polygon starts with tradable NFT tickets, raises ticket price by 0.33% after every mint, and lets eligible finalized NFTs claim BIGGI weekly by rarity. Explore the guide, then open the app."
+      content="Explore BiggiEyes on Polygon: 50 marketing tickets per chapter at 1 POL, a 500 POL public mint start, VRF NFT reveals, and connected BIGGI tokenomics."
     />
     <meta
       name="robots"
@@ -99,11 +99,11 @@
     <meta property="og:site_name" content="BiggiEyes" />
     <meta
       property="og:title"
-      content="BiggiEyes | NFT Tickets, VRF Reveal, Weekly BIGGI Rewards"
+      content="BiggiEyes | Polygon NFT Tickets, VRF Reveal &amp; BIGGI"
     />
     <meta
       property="og:description"
-      content="Tradable NFT tickets, 0.33% price growth per mint, VRF reveal, and weekly BIGGI rewards for eligible finalized NFTs by rarity."
+      content="Live Polygon ticket pricing, verifiable NFT reveals, chapter collections, and connected BIGGI tokenomics."
     />
     <meta property="og:url" content="https://biggieyes.com/" />
     <meta property="og:type" content="website" />
@@ -120,11 +120,11 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta
       name="twitter:title"
-      content="BiggiEyes | NFT Tickets, VRF Reveal, Weekly BIGGI Rewards"
+      content="BiggiEyes | Polygon NFT Tickets, VRF Reveal &amp; BIGGI"
     />
     <meta
       name="twitter:description"
-      content="Explore BiggiEyes on Polygon: tradable tickets, 0.33% ticket growth per mint, VRF reveal, and weekly BIGGI rewards by NFT rarity."
+      content="Explore BiggiEyes on Polygon: on-chain tickets, VRF NFT reveals, chapter collections, and connected BIGGI tokenomics."
     />
     <meta name="twitter:url" content="https://biggieyes.com/" />
     <meta
@@ -168,10 +168,10 @@
             "@id": "https://biggieyes.com/#project",
             "name": "BiggiEyes",
             "url": "https://biggieyes.com/",
-            "description": "Web3 ticket-to-reveal project with tradable tickets, 0.33% ticket price growth after every mint, verifiable randomness, and weekly BIGGI rewards for eligible finalized NFTs.",
+            "description": "Web3 ticket-to-reveal project with live on-chain pricing, verifiable randomness, chapter collections, and connected BIGGI tokenomics.",
             "image": "https://biggieyes.com/og/og-biggieyes.png",
             "creator": { "@id": "https://biggieyes.com/#organization" },
-            "keywords": ["Web3", "NFT", "VRF", "Polygon", "Ticket to Reveal", "Weekly BIGGI Rewards", "0.33% Ticket Growth"]
+            "keywords": ["Web3", "NFT", "VRF", "Polygon", "Ticket to Reveal", "BIGGI", "Chapter Collections"]
           },
           {
             "@type": "WebApplication",
@@ -195,8 +195,8 @@
             "@type": "WebPage",
             "@id": "https://biggieyes.com/#webpage",
             "url": "https://biggieyes.com/",
-            "name": "BiggiEyes | NFT Tickets, VRF Reveal, Weekly BIGGI Rewards",
-            "description": "Landing page for BiggiEyes on Polygon. Review tradable ticket pricing, weekly BIGGI rewards by rarity, and the VRF reveal flow while the interactive app is temporarily offline.",
+            "name": "BiggiEyes | Polygon NFT Tickets, VRF Reveal & BIGGI",
+            "description": "Landing page for BiggiEyes on Polygon with live on-chain ticket pricing, VRF reveal flow, chapter collections, and BIGGI tokenomics.",
             "inLanguage": "en",
             "isPartOf": { "@id": "https://biggieyes.com/#website" },
             "about": [
@@ -204,7 +204,7 @@
               "VRF reveal",
               "tradable ticket mint",
               "weekly BIGGI rewards",
-              "0.33% ticket price growth",
+              "public on-chain ticket pricing",
               "collection rewards",
               "app guide"
             ]
@@ -218,7 +218,7 @@
                 "name": "How does BiggiEyes minting work?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Users mint a tradable ticket that starts at 500 POL and rises by 0.33% after each mint, then redeem it through a VRF flow that reveals the final NFT on Polygon."
+                  "text": "Each chapter reserves 50 marketing tickets with a 1 POL price snapshot. The first paid public ticket starts at 500 POL, the configured public curve updates after each paid mint, and redemption uses VRF to reveal the final NFT on Polygon."
                 }
               },
               {
@@ -258,7 +258,7 @@
                 "name": "Is this homepage the full BiggiEyes app?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "The interactive app is temporarily offline, so the landing page is the only active public BiggiEyes surface right now."
+                  "text": "The homepage introduces BiggiEyes and links to the interactive app where access is enabled. Public launch remains gated until final mainnet setup is complete."
                 }
               }
             ]
@@ -290,8 +290,6 @@
         margin: 0;
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         background:
-          radial-gradient(circle at 20% 10%, rgba(97, 217, 255, 0.2), transparent 40%),
-          radial-gradient(circle at 80% 0%, rgba(255, 232, 0, 0.18), transparent 36%),
           linear-gradient(180deg, rgba(5, 10, 22, 0.62), rgba(5, 10, 22, 0.84)),
           url("/images/panels/community.optimized.jpg") center top / cover no-repeat fixed,
           var(--bg);
@@ -493,9 +491,18 @@
 
       h1 {
         margin: 0 0 8px;
-        font-size: clamp(1.9rem, 3.5vw, 2.7rem);
+        font-size: 3.8rem;
         line-height: 1.04;
         color: var(--accent);
+      }
+
+      .hero-title-copy {
+        max-width: 780px;
+        margin: 0;
+        color: var(--text);
+        font-size: 1.55rem;
+        font-weight: 700;
+        line-height: 1.25;
       }
 
       h2 {
@@ -723,6 +730,11 @@
       .hero-stats .live-card:nth-child(2) {
         border-color: var(--frame-red);
         box-shadow: 0 10px 22px rgba(255, 102, 102, 0.08);
+      }
+
+      .hero-stats .live-card:nth-child(3) {
+        border-color: var(--frame-green);
+        box-shadow: 0 10px 22px rgba(123, 255, 178, 0.08);
       }
 
       .hero-stats .live-status {
@@ -1308,11 +1320,11 @@
           0 22px 44px rgba(27, 111, 255, 0.26),
           0 0 38px rgba(97, 217, 255, 0.24),
           0 0 0 1px rgba(125, 212, 255, 0.26) inset;
-        animation: heroCtaPulse 2.8s ease-in-out infinite;
+        animation: none;
       }
 
       .hero-app-cta::after {
-        content: "Landing Only";
+        content: "Launch Gated";
         position: absolute;
         right: 24px;
         top: 50%;
@@ -1337,7 +1349,7 @@
       }
 
       .landing-local-app-enabled .hero-app-cta::after {
-        content: "Local Dev";
+        content: "Preview";
         color: rgba(5, 27, 21, 0.84);
       }
 
@@ -1613,8 +1625,21 @@
       }
 
       .landing-mobile-compact .hero-main h1 {
-        font-size: clamp(1.72rem, 8vw, 2.18rem);
+        font-size: 2.8rem;
         line-height: 1.08;
+      }
+
+      .landing-mobile-compact .hero-title-copy {
+        font-size: 1.25rem;
+      }
+
+      .landing-mobile-compact .hero-note,
+      .landing-mobile-compact .hero-keyfacts,
+      .landing-mobile-compact .hero-onboarding,
+      .landing-mobile-compact .landing-paths,
+      .landing-mobile-compact .landing-state,
+      .landing-mobile-compact .landing-trust {
+        display: none;
       }
 
       .landing-mobile-compact .hero-badges {
@@ -1971,7 +1996,7 @@
       <aside class="preview-rail" aria-label="App preview images">
         <p class="preview-rail__label">App Preview</p>
         <p class="preview-rail__copy">
-          Dashboard preview cards from the currently offline app.
+          Current dashboard panels from the BiggiEyes application.
         </p>
         <div class="landing-gallery">
           <figure class="landing-gallery__item">
@@ -2037,20 +2062,20 @@
       <section class="hero">
         <div class="hero-grid">
           <div class="hero-main">
-            <div class="hero-kicker">Mainnet-Ready Collectible System</div>
-            <h1>BiggiEyes turns one public entry ticket into a full collectible and ecosystem flow.</h1>
+            <div class="hero-kicker">Polygon Mainnet Architecture</div>
+            <h1>BiggiEyes</h1>
+            <p class="hero-title-copy">One on-chain ticket flow connecting VRF collections with the BIGGI ecosystem.</p>
             <p class="hero-copy">
-              Entry starts with a tradable ticket at <strong>500 POL</strong>.
-              The ticket price rises by <strong>0.33%</strong> after every
-              mint, redeems through verifiable randomness into a final NFT, and
-              can later unlock <strong>weekly BIGGI claims</strong> if the NFT
-              is eligible. Behind that collector flow sits a connected
-              ecosystem of rewards, treasury, reserve, drip, buyback, and
-              liquidity guardrails. The interactive app is temporarily offline,
-              so this landing stays as the active public page.
+              Each chapter starts with <strong>50 marketing tickets at 1 POL</strong>.
+              The first paid public ticket starts at <strong>500 POL</strong>, its
+              price rises by <strong>0.33%</strong> after each paid mint, and
+              redemption uses verifiable randomness to create the final NFT.
+              Rewards, treasury, reserve, drip, buyback, and liquidity are
+              connected behind the collector flow. Public launch remains gated
+              while final mainnet configuration is completed.
             </p>
             <div class="hero-badges" aria-label="Landing overview">
-              <span class="hero-badge">500 POL entry + weekly BIGGI utility</span>
+              <span class="hero-badge">Live Polygon contract data</span>
               <span class="hero-badge">Public ticket curve + verifiable reveal</span>
               <span class="hero-badge">Treasury, reserve, buyback, liquidity</span>
             </div>
@@ -2058,16 +2083,16 @@
               <strong>Most important:</strong> BiggiEyes is not built as
               separate NFT and token products. Tickets, VRF reveal, finalized
               NFTs, rewards, tokenomics, and future chapter expansion all read
-              from one connected public architecture. The topic buttons below
-              only switch this landing guide; the interactive dashboard is
-              temporarily unavailable.
+              from one connected public architecture. The dashboard is
+              available in enabled preview environments; public launch remains
+              protected by the final readiness gate.
             </div>
             <div class="grid hero-keyfacts">
               <article class="card">
                 <h3>Collector flow with public rules</h3>
                 <p>
-                  Buy the ticket, follow the public
-                  <strong>+0.33%</strong> mint curve, redeem through VRF, and
+                  Buy the ticket from the <strong>500 POL public starting price</strong>,
+                  follow the paid-mint curve, redeem through VRF, and
                   hold the final NFT that later determines rarity and reward
                   weight.
                 </p>
@@ -2084,19 +2109,19 @@
             </div>
             <div class="hero-primary-cta">
               <a class="btn app-cta hero-app-cta" href="#app-status">
-                <span class="hero-app-cta__eyebrow">Temporary Status</span>
-                <span class="hero-app-cta__title">App Offline</span>
-                <span class="hero-app-cta__meta">Landing is live. Wallet actions and panels are disabled.</span>
+                <span class="hero-app-cta__eyebrow">Launch Gate</span>
+                <span class="hero-app-cta__title">Public App Gated</span>
+                <span class="hero-app-cta__meta">Final mainnet readiness checks are still in progress.</span>
               </a>
             </div>
             <div class="hero-mobile-preview" aria-label="App preview images for mobile">
               <p class="hero-mobile-preview__label">App Preview</p>
               <p class="hero-mobile-preview__copy">
-                Dashboard preview cards directly inside the main panel on mobile.
+                Swipe through current dashboard panels.
               </p>
               <div class="landing-gallery">
                 <figure class="landing-gallery__item">
-                  <img src="./images/tolanding/landing-preview-1.optimized.jpg" alt="BiggiEyes landing preview 1" width="1920" height="1080" loading="lazy" decoding="async" />
+                  <img src="./images/tolanding/landing-preview-1.optimized.jpg" alt="BiggiEyes dashboard overview" width="1920" height="1080" loading="eager" fetchpriority="high" decoding="async" />
                 </figure>
                 <figure class="landing-gallery__item">
                   <img src="./images/tolanding/landing-preview-2.optimized.jpg" alt="BiggiEyes landing preview 2" width="1920" height="1080" loading="lazy" decoding="async" />
@@ -2118,14 +2143,24 @@
           <p class="hero-stats__label">Live Entry Stats</p>
           <div class="live-grid">
             <article class="live-card">
-              <p class="live-label">Current Ticket Price</p>
+              <p class="live-label">Current TicketHub Price</p>
               <div class="live-value" id="stat-ticket-price">Loading...</div>
-              <div class="live-meta">Source: BiggiMain `getTicketPrice()`</div>
+              <div class="live-meta">Public curve configured; chapter activation remains gated</div>
             </article>
             <article class="live-card">
               <p class="live-label">Current BIGGI Token Price</p>
               <div class="live-value" id="stat-biggi-price">Loading...</div>
-              <div class="live-meta">Source: DEX pair / oracle fallback</div>
+              <div class="live-meta">Source: BIGGI / WPOL DEX pair</div>
+            </article>
+            <article class="live-card">
+              <p class="live-label">Public Sale Progress</p>
+              <div class="live-value" id="stat-sale-progress">Loading...</div>
+              <div class="live-meta">Source: TicketHub saleMinted() / saleCap()</div>
+            </article>
+            <article class="live-card">
+              <p class="live-label">Public Launch Price</p>
+              <div class="live-value">500 POL</div>
+              <div class="live-meta">Required before the first paid application mint</div>
             </article>
           </div>
           <div class="live-status" id="stat-updated">Waiting for first update...</div>
@@ -2157,8 +2192,8 @@
               <article class="quick-step">
                 <div class="quick-step__number">3</div>
                 <div class="quick-step__body">
-                  <strong>Wait for relaunch</strong>
-                  <p>Wallet actions and live panel data are temporarily unavailable while only the landing stays online.</p>
+                  <strong>Check launch status</strong>
+                  <p>Use the preview for inspection; transact only after the public readiness gate is open.</p>
                 </div>
               </article>
             </div>
@@ -2178,7 +2213,7 @@
             <article class="flow-step flow-step--ticket">
               <div class="flow-step__number">1</div>
               <h3>Buy Ticket</h3>
-              <p>Start at 500 POL. Every mint moves the public ticket price up by 0.33%.</p>
+              <p>The first paid ticket starts at 500 POL. Each later paid mint applies the +0.33% public curve.</p>
             </article>
             <article class="flow-step flow-step--redeem">
               <div class="flow-step__number">2</div>
@@ -2205,20 +2240,20 @@
             <a class="path-card path-card--collector" href="#app-status">
               <span class="path-card__eyebrow">Collector</span>
               <h3>Start with the ticket flow</h3>
-              <p>See the 500 POL entry, the +0.33% curve, and the redeem path that creates the final NFT.</p>
-              <span class="path-card__cta">Landing only right now</span>
+              <p>See the 1 POL marketing snapshot, 500 POL public start, paid-mint curve, and VRF redeem path.</p>
+              <span class="path-card__cta">Public launch gated</span>
             </a>
             <a class="path-card path-card--holder" href="#app-status">
               <span class="path-card__eyebrow">Holder</span>
               <h3>Check weekly BIGGI utility</h3>
               <p>See whether a finalized NFT is eligible, how much it can claim, and when the next claim window opens.</p>
-              <span class="path-card__cta">Landing only right now</span>
+              <span class="path-card__cta">Public launch gated</span>
             </a>
             <a class="path-card path-card--ecosystem" href="#app-status">
               <span class="path-card__eyebrow">Ecosystem</span>
               <h3>Read the token and treasury layer</h3>
               <p>Follow how rewards, treasury, reserve, buyback, drip, and liquidity fit into one public system.</p>
-              <span class="path-card__cta">Landing only right now</span>
+              <span class="path-card__cta">Public launch gated</span>
             </a>
           </div>
         </div>
@@ -2226,20 +2261,20 @@
 
       <section class="landing-state" aria-label="Live now versus future expansion">
         <div class="launch-group">
-          <div class="launch-group__label">Live Now Vs Future Expansion</div>
+          <div class="launch-group__label">Mainnet State Vs Public Launch</div>
           <p class="launch-group__copy">
-            This matters because visitors need to know what they can already do
-            today and what the architecture is built to support over time.
+            Deployed contracts and a public launch are different states. The
+            readiness gate stays closed until every required branch is ready.
           </p>
           <div class="state-grid">
             <article class="state-card state-card--live">
-              <p class="state-card__eyebrow">Live Now</p>
-              <h3>What users can already do</h3>
+              <p class="state-card__eyebrow">Deployed Now</p>
+              <h3>What is already visible on Polygon</h3>
               <div class="state-card__list">
-                <span class="state-point">Buy a tradable ticket and watch the public price curve move.</span>
-                <span class="state-point">Redeem through VRF and receive the final NFT reveal.</span>
-                <span class="state-point">Track collection state, rarity context, and live panel data.</span>
-                <span class="state-point">Claim weekly BIGGI when a finalized NFT is eligible.</span>
+                <span class="state-point">Central TicketHub with chapter routing and a configured 500 POL public starting price.</span>
+                <span class="state-point">VRF collection contracts and verifiable metadata state.</span>
+                <span class="state-point">50 marketing tickets minted for each of five configured chapters (250 total).</span>
+                <span class="state-point">BIGGI treasury, reserve, rewards, drip, and buyback branches.</span>
               </div>
             </article>
             <article class="state-card state-card--future">
@@ -2265,12 +2300,16 @@
           </p>
           <div class="trust-strip">
             <article class="trust-item trust-item--gold">
+              <strong>1 POL</strong>
+              <span>Marketing ticket price snapshot</span>
+            </article>
+            <article class="trust-item trust-item--cyan">
               <strong>500 POL</strong>
-              <span>Starting ticket price</span>
+              <span>First paid public ticket</span>
             </article>
             <article class="trust-item trust-item--red">
               <strong>+0.33%</strong>
-              <span>Public increase after every mint</span>
+              <span>Current configured sale-mint curve</span>
             </article>
             <article class="trust-item trust-item--cyan">
               <strong>VRF Reveal</strong>
@@ -2278,7 +2317,7 @@
             </article>
             <article class="trust-item trust-item--green">
               <strong>Weekly BIGGI</strong>
-              <span>Eligible finalized NFTs can claim rewards</span>
+              <span>Eligibility-based reward architecture</span>
             </article>
             <article class="trust-item trust-item--violet">
               <strong>Guardrails</strong>
@@ -2301,8 +2340,8 @@
               <span>Switch topics and read the overview without leaving the homepage.</span>
             </article>
             <article class="topic-summary__item">
-              <strong>App later</strong>
-              <span>Open the app only when you want live wallet data, mint, redeem, or claim actions.</span>
+              <strong>App preview</strong>
+              <span>Use enabled environments to inspect live wallet and contract panels before public launch.</span>
             </article>
           </div>
           <div class="topic-tabs" role="tablist" aria-label="BiggiEyes guide topics">
@@ -2398,7 +2437,7 @@
             </article>
           </div>
           <div class="topic-panel__actions">
-            <a class="btn secondary topic-panel__standalone" href="#app-status">Standalone pages temporarily offline</a>
+            <a class="btn secondary topic-panel__standalone" href="#app-status">Preview access depends on environment</a>
           </div>
         </article>
 
@@ -2438,7 +2477,7 @@
             </article>
           </div>
           <div class="topic-panel__actions">
-            <a class="btn secondary topic-panel__standalone" href="#app-status">Standalone pages temporarily offline</a>
+            <a class="btn secondary topic-panel__standalone" href="#app-status">Preview access depends on environment</a>
           </div>
         </article>
 
@@ -2453,14 +2492,14 @@
           <p class="topic-panel__eyebrow">VRF Mint Guide</p>
           <h2>Entry begins with a tradable ticket and ends with a verifiable NFT reveal</h2>
           <p class="topic-panel__lead">
-            The mint flow is intentionally public and readable. A ticket starts
-            at 500 POL, rises by 0.33% after each mint, and later redeems into
-            a final NFT through verifiable randomness rather than a hidden
-            manual reveal.
+            The mint flow is intentionally public and readable. TicketHub
+            exposes the current price and configured sale-mint curve, and the
+            ticket later redeems into a final NFT through verifiable randomness
+            rather than a hidden manual reveal.
           </p>
           <div class="topic-panel__highlights">
-            <span class="topic-highlight">500 POL starting ticket</span>
-            <span class="topic-highlight">+0.33% public mint curve</span>
+            <span class="topic-highlight">1 POL marketing snapshot</span>
+            <span class="topic-highlight">500 POL public start + paid-mint curve</span>
             <span class="topic-highlight">Verifiable reveal after redeem</span>
           </div>
           <div class="grid">
@@ -2478,7 +2517,7 @@
             </article>
           </div>
           <div class="topic-panel__actions">
-            <a class="btn secondary topic-panel__standalone" href="#app-status">Standalone pages temporarily offline</a>
+            <a class="btn secondary topic-panel__standalone" href="#app-status">Preview access depends on environment</a>
           </div>
         </article>
 
@@ -2518,7 +2557,7 @@
             </article>
           </div>
           <div class="topic-panel__actions">
-            <a class="btn secondary topic-panel__standalone" href="#app-status">Standalone pages temporarily offline</a>
+            <a class="btn secondary topic-panel__standalone" href="#app-status">Preview access depends on environment</a>
           </div>
         </article>
 
@@ -2546,7 +2585,7 @@
           <div class="grid">
             <article class="card">
               <h3>What visitors get first</h3>
-              <p>They can understand the collectible idea, the mint flow, and the reward model before approving a wallet or waiting for the app relaunch.</p>
+              <p>They can understand the collectible idea, mint flow, and reward model before connecting a wallet or entering the app preview.</p>
             </article>
             <article class="card">
               <h3>Why this matters</h3>
@@ -2558,7 +2597,7 @@
             </article>
           </div>
           <div class="topic-panel__actions">
-            <a class="btn secondary topic-panel__standalone" href="#app-status">Standalone pages temporarily offline</a>
+            <a class="btn secondary topic-panel__standalone" href="#app-status">Preview access depends on environment</a>
           </div>
         </article>
       </section>
@@ -2567,17 +2606,18 @@
         <div class="launch-group">
           <div class="launch-group__label">App Status</div>
           <p class="launch-group__copy">
-            The interactive app is temporarily offline. Landing content stays
-            online, but mint, redeem, rewards, collection, users, community,
-            and ecosystem panels are disabled until relaunch.
+            Contracts and live read panels are deployed, but public launch is
+            still gated by final mainnet readiness. Local development can open
+            the app for inspection; this status does not authorize public mint,
+            redeem, claim, or tokenomics activation.
           </p>
           <div class="launch-row">
-            <a class="btn secondary launch-link launch-link--panel" href="#top">Rewards panel offline</a>
-            <a class="btn secondary launch-link launch-link--panel" href="#top">Collection panel offline</a>
-            <a class="btn secondary launch-link launch-link--panel" href="#top">VRF panel offline</a>
-            <a class="btn secondary launch-link launch-link--panel" href="#top">Ecosystem panel offline</a>
-            <a class="btn secondary launch-link launch-link--panel" href="#top">Users panel offline</a>
-            <a class="btn secondary launch-link launch-link--panel" href="#top">Community panel offline</a>
+            <a class="btn secondary launch-link launch-link--panel" href="#top">Rewards preview gated</a>
+            <a class="btn secondary launch-link launch-link--panel" href="#top">Collection preview gated</a>
+            <a class="btn secondary launch-link launch-link--panel" href="#top">VRF preview gated</a>
+            <a class="btn secondary launch-link launch-link--panel" href="#top">Ecosystem preview gated</a>
+            <a class="btn secondary launch-link launch-link--panel" href="#top">Users preview gated</a>
+            <a class="btn secondary launch-link launch-link--panel" href="#top">Community preview gated</a>
           </div>
         </div>
       </section>
@@ -2588,9 +2628,10 @@
           <article class="card">
             <h3>How does minting start?</h3>
             <p>
-              Minting starts with a tradable Ticket. The ticket curve starts at
-              500 POL and rises by 0.33% after every mint, while the final NFT
-              appears only after redeem and VRF completion.
+              Each chapter begins with 50 marketing tickets carrying a 1 POL
+              snapshot. The first paid Ticket starts at 500 POL and each later
+              paid mint applies the configured curve, while the
+              final NFT appears only after redeem and VRF completion.
             </p>
           </article>
           <article class="card">
@@ -2617,16 +2658,17 @@
           <article class="card">
             <h3>Where should I start?</h3>
             <p>
-              Start with the guide topic that matches your intent on this
-              homepage. The interactive app is temporarily offline, so this
-              landing is the only active public surface right now.
+              Start with the guide topic that matches your intent. Where preview
+              access is enabled, open the corresponding app panel to inspect
+              live wallet and contract data.
             </p>
           </article>
           <article class="card">
             <h3>Is this homepage the full app?</h3>
             <p>
-              For now, yes in practice. The interactive app is temporarily
-              disabled, so only the landing guide remains available.
+              No. This page is the public introduction. The interactive app is
+              a separate dashboard, while transaction access remains subject
+              to the public launch gate.
             </p>
           </article>
         </div>
@@ -2662,6 +2704,8 @@
         const SIG = {
           getTicketPrice: "0x87bb7ae0",
           ticketPrice: "0x1209b1f6",
+          saleMinted: "0xde00772f",
+          saleCap: "0x078fd9ea",
           latestRoundData: "0xfeaf968c",
           decimals: "0x313ce567",
           token0: "0x0dfe1681",
@@ -2671,6 +2715,7 @@
 
         const ticketNode = document.getElementById("stat-ticket-price");
         const biggiNode = document.getElementById("stat-biggi-price");
+        const saleNode = document.getElementById("stat-sale-progress");
         const updatedNode = document.getElementById("stat-updated");
 
         let activeRpc = null;
@@ -2788,6 +2833,17 @@
           throw new Error("Ticket price unavailable");
         };
 
+        const readSaleProgress = async () => {
+          const [mintedRaw, capRaw] = await Promise.all([
+            ethCall(ADDR.TICKET_HUB, SIG.saleMinted),
+            ethCall(ADDR.TICKET_HUB, SIG.saleCap),
+          ]);
+          return {
+            minted: decodeUintWord(mintedRaw, 0),
+            cap: decodeUintWord(capRaw, 0),
+          };
+        };
+
         const readBiggiFromOracle = async () => {
           if (!hasAddress(ADDR.PRICE_ORACLE)) throw new Error("Oracle not configured");
           const [roundRaw, decRaw] = await Promise.all([
@@ -2846,6 +2902,7 @@
         const setLoading = () => {
           if (ticketNode) ticketNode.textContent = "Loading...";
           if (biggiNode) biggiNode.textContent = "Loading...";
+          if (saleNode) saleNode.textContent = "Loading...";
         };
 
         const setUpdated = (message) => {
@@ -2855,39 +2912,67 @@
 
         const refreshStats = async () => {
           setLoading();
-          try {
-            const ticketWei = await readTicketPrice();
-            const ticket = formatUnits(ticketWei, 18, 8);
-            if (ticketNode) ticketNode.textContent = formatAdaptive(ticket, "POL");
+          const status = [];
+          const [ticketResult, saleResult] = await Promise.allSettled([
+            readTicketPrice(),
+            readSaleProgress(),
+          ]);
 
-            let biggi = null;
-            let source = "pair";
+          if (ticketResult.status === "fulfilled") {
+            const ticketWei = ticketResult.value;
+            const ticket = formatUnits(ticketWei, 18, 8);
+            const formattedTicket = formatAdaptive(ticket, "POL");
+            if (ticketNode) ticketNode.textContent = formattedTicket;
+            status.push("ticket: on-chain");
+          } else {
+            if (ticketNode) ticketNode.textContent = "Unavailable";
+            status.push("ticket: unavailable");
+          }
+
+          if (saleResult.status === "fulfilled") {
+            const { minted, cap } = saleResult.value;
+            if (saleNode) saleNode.textContent = `${minted.toString()} / ${cap.toString()}`;
+            status.push("sale: on-chain");
+          } else {
+            if (saleNode) saleNode.textContent = "Unavailable";
+            status.push("sale: unavailable");
+          }
+
+          try {
+            let biggi;
+            let source = "DEX pair";
             try {
-              // Prefer DEX pair price as primary "current" market value.
               biggi = await readBiggiFromPair();
-            } catch (_pairErr) {
+            } catch (pairErr) {
+              if (String(pairErr?.message || pairErr).includes("reserves empty")) {
+                if (biggiNode) biggiNode.textContent = "No DEX liquidity";
+                status.push("BIGGI: awaiting liquidity");
+                throw new Error("BIGGI_LIQUIDITY_PENDING");
+              }
               biggi = await readBiggiFromOracle();
               source = "oracle fallback";
             }
 
             if (biggiNode) biggiNode.textContent = formatAdaptive(biggi, "POL");
-
-            const now = new Date();
-            const stamp = now.toLocaleString("en-GB", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-              hour12: false,
-            });
-            setUpdated(`Updated: ${stamp} | source: ${source} | rpc: ${activeRpc || "n/a"}`);
+            status.push(`BIGGI: ${source}`);
           } catch (err) {
-            if (ticketNode) ticketNode.textContent = "Unavailable";
-            if (biggiNode) biggiNode.textContent = "Unavailable";
-            setUpdated(`Live stats unavailable: ${err.message || err}`);
+            if (String(err?.message || err) !== "BIGGI_LIQUIDITY_PENDING") {
+              if (biggiNode) biggiNode.textContent = "Unavailable";
+              status.push("BIGGI: unavailable");
+            }
           }
+
+          const now = new Date();
+          const stamp = now.toLocaleString("en-GB", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+          });
+          setUpdated(`Updated: ${stamp} | ${status.join(" | ")} | rpc: ${activeRpc || "n/a"}`);
         };
 
         refreshStats();
@@ -2903,15 +2988,15 @@
           const eyebrow = heroCta.querySelector(".hero-app-cta__eyebrow");
           const title = heroCta.querySelector(".hero-app-cta__title");
           const meta = heroCta.querySelector(".hero-app-cta__meta");
-          if (eyebrow) eyebrow.textContent = "Local Development";
-          if (title) title.textContent = "Open App";
-          if (meta) meta.textContent = "Localhost keeps wallet actions and app panels enabled.";
+          if (eyebrow) eyebrow.textContent = "Preview Environment";
+          if (title) title.textContent = "Open App Preview";
+          if (meta) meta.textContent = "Inspect live panels locally; the public launch gate remains closed.";
         }
 
-        const statusCopy = document.querySelector(".launch-group__copy");
+        const statusCopy = document.querySelector(".app-launch .launch-group__copy");
         if (statusCopy) {
           statusCopy.textContent =
-            "Local development mode is enabled. On localhost the app panels are available again while production can stay landing-only.";
+            "Local preview access is enabled. Inspect live panels and wallet state here, but do not treat this environment as public launch authorization.";
         }
 
         const panelDefs = [
@@ -3032,4 +3117,3 @@
     </script>
   </body>
 </html>
-

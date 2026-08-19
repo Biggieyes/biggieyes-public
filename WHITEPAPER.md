@@ -62,7 +62,9 @@ BIGGIEYES uses a dual-collection model:
 - `BiggiEyesMain` is the ticket and VRF collection
 - `BiggiEyesMain2` is the public mint collection
 
-The main collection enforces a maximum of 550 tickets and 550 final NFTs. The public collection supports another indexed set of up to 550 NFTs with owner-seeded metadata. Each NFT stores:
+The main collection enforces a maximum of 550 tickets and 550 final NFTs. Its paired public collection contains exactly 100 indexed NFTs, ten in each of ten blocks, with owner-seeded metadata and no background variants. The Public mint price for a block is read from the paired VRF collection.
+
+The shared on-chain NFT record stores:
 
 - block index
 - background code

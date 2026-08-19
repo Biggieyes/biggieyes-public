@@ -57,12 +57,28 @@ const PANELS = [
 ];
 
 const ECOSYSTEM_TABS = [
+  { name: "ecosystem-flow-tab", tab: /^FLOW$/i },
   { name: "ecosystem-distributor", tab: /^DISTRIBUTOR$/i },
   { name: "ecosystem-buyback", tab: /^BUYBACK$/i },
   { name: "ecosystem-drip", tab: /^DRIP$/i },
   { name: "ecosystem-liquidity", tab: /RESERVE\s*\/\s*LM/i },
   { name: "ecosystem-dex", tab: /TOKEN\s*\/\s*DEX/i },
+  { name: "ecosystem-history", tab: /^HISTORY$/i },
   { name: "ecosystem-transparency", tab: /^TRANSPARENCY$/i },
+  { name: "ecosystem-policy", tab: /^POLICY$/i },
+];
+
+const COLLECTION_TABS = [
+  { name: "collections-public", tab: /^Public Collection$/i },
+  { name: "collections-chapters", tab: /^Chapters$/i },
+];
+
+const VRF_TABS = [
+  { name: "vrf-requests", tab: /^Requests$/i },
+  { name: "vrf-history", tab: /^History$/i },
+  { name: "vrf-post-redeem", tab: /^Post-Redeem$/i },
+  { name: "vrf-health", tab: /^VRF Health$/i },
+  { name: "vrf-proof-log", tab: /^Proof Log$/i },
 ];
 
 function log(msg) {
@@ -128,10 +144,14 @@ async function stopPreview(child) {
   if (!child || child.killed) return;
   if (process.platform === "win32" && child.pid) {
     await new Promise((resolve) => {
-      const killer = spawn("taskkill", ["/pid", String(child.pid), "/T", "/F"], {
-        stdio: "ignore",
-        shell: false,
-      });
+      const killer = spawn(
+        "taskkill",
+        ["/pid", String(child.pid), "/T", "/F"],
+        {
+          stdio: "ignore",
+          shell: false,
+        },
+      );
       killer.once("exit", () => resolve());
       killer.once("error", () => resolve());
       setTimeout(resolve, 3_000).unref();
@@ -173,7 +193,10 @@ async function openPanel(page, panel) {
 }
 
 async function clickTab(page, tab) {
-  const button = page.getByRole("button", { name: tab.tab }).first();
+  const button = page
+    .getByRole("tab", { name: tab.tab })
+    .or(page.getByRole("button", { name: tab.tab }))
+    .first();
   await button.scrollIntoViewIfNeeded({ timeout: 6_000 }).catch(() => {});
   await button.click({ timeout: 10_000 });
   await page.waitForTimeout(1_200);
@@ -188,7 +211,11 @@ async function detectOverflow(page) {
     };
     const hasHorizontalScrollAncestor = (el) => {
       let node = el.parentElement;
-      while (node && node !== document.body && node !== document.documentElement) {
+      while (
+        node &&
+        node !== document.body &&
+        node !== document.documentElement
+      ) {
         const style = window.getComputedStyle(node);
         const canScroll = /(auto|scroll)/.test(style.overflowX || "");
         if (canScroll && node.scrollWidth > node.clientWidth + 4) return true;
@@ -221,7 +248,10 @@ async function detectOverflow(page) {
         offenders.push({
           tag: el.tagName.toLowerCase(),
           className: String(el.className || "").slice(0, 120),
-          text: String(el.textContent || "").trim().replace(/\s+/g, " ").slice(0, 100),
+          text: String(el.textContent || "")
+            .trim()
+            .replace(/\s+/g, " ")
+            .slice(0, 100),
           left: Math.round(rect.left),
           right: Math.round(rect.right),
           width: Math.round(rect.width),
@@ -232,9 +262,18 @@ async function detectOverflow(page) {
   });
 }
 
-async function capture(page, viewportName, name, failures) {
-  const screenshotPath = path.join(OUT_DIR, `${viewportName}-${slug(name)}.png`);
-  await page.screenshot({ path: screenshotPath, fullPage: true });
+async function capture(
+  page,
+  viewportName,
+  name,
+  failures,
+  { fullPage = true } = {},
+) {
+  const screenshotPath = path.join(
+    OUT_DIR,
+    `${viewportName}-${slug(name)}.png`,
+  );
+  await page.screenshot({ path: screenshotPath, fullPage });
   const overflow = await detectOverflow(page);
   if (overflow.rootOverflow > 8 || overflow.offenders.length > 0) {
     failures.push({
@@ -244,6 +283,99 @@ async function capture(page, viewportName, name, failures) {
     });
   }
   log(`saved ${path.relative(ROOT, screenshotPath)}`);
+}
+
+async function scrollPanel(page, selector, position) {
+  const target = page.locator(selector).first();
+  await target.evaluate((element, nextPosition) => {
+    element.scrollTop = nextPosition === "bottom" ? element.scrollHeight : 0;
+  }, position);
+  await page.waitForTimeout(500);
+}
+
+async function checkLiveStatsTables(page, viewport, failures) {
+  const widget = page.locator(".live-stats-widget-new").first();
+  await widget.scrollIntoViewIfNeeded({ timeout: 8_000 }).catch(() => {});
+
+  const measure = async () => ({
+    widget: await widget.boundingBox(),
+    bodyHeight: await page.evaluate(() => document.body.scrollHeight),
+    documentWidth: await page.evaluate(
+      () => document.documentElement.scrollWidth,
+    ),
+  });
+  const baseline = await measure();
+  const tables = [
+    { name: "live-stats-blocks", button: "BLOCKS", selector: ".bw-container" },
+    {
+      name: "live-stats-backgrounds",
+      button: "BACKGROUNDS",
+      selector: ".bgw-container",
+    },
+  ];
+
+  for (const table of tables) {
+    await widget
+      .getByRole("button", { name: table.button, exact: true })
+      .click({ timeout: 10_000 });
+    await page.locator(table.selector).waitFor({ timeout: 10_000 });
+    await page.waitForTimeout(250);
+
+    const opened = await measure();
+    const before = baseline.widget;
+    const after = opened.widget;
+    const widgetMoved =
+      !before ||
+      !after ||
+      ["x", "y", "width", "height"].some(
+        (key) => Math.abs(Number(before?.[key]) - Number(after?.[key])) > 1,
+      );
+    if (
+      widgetMoved ||
+      opened.bodyHeight !== baseline.bodyHeight ||
+      opened.documentWidth !== baseline.documentWidth
+    ) {
+      failures.push({
+        viewport: viewport.name,
+        screen: table.name,
+        layoutShift: { baseline, opened },
+      });
+    }
+
+    const tableWrapper = page
+      .locator(
+        table.selector === ".bw-container"
+          ? ".bw-table-wrapper"
+          : ".bgw-table-wrapper",
+      )
+      .first();
+    const tableOverflow = await tableWrapper.evaluate((element) => ({
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+    }));
+    if (
+      viewport.isMobile &&
+      tableOverflow.scrollWidth > tableOverflow.clientWidth + 4
+    ) {
+      failures.push({
+        viewport: viewport.name,
+        screen: table.name,
+        tableOverflow,
+      });
+    }
+
+    await capture(page, viewport.name, table.name, failures, {
+      fullPage: false,
+    });
+    await page
+      .locator(
+        table.selector === ".bw-container" ? ".bw-button" : ".bgw-button",
+      )
+      .click({ timeout: 10_000 });
+    await page
+      .locator(table.selector)
+      .waitFor({ state: "detached", timeout: 10_000 });
+  }
 }
 
 async function runViewport(browser, baseUrl, viewport, failures) {
@@ -268,18 +400,97 @@ async function runViewport(browser, baseUrl, viewport, failures) {
     timeout: PAGE_TIMEOUT_MS,
   });
   await page.locator("body").waitFor({ timeout: 15_000 });
+  await page
+    .evaluate(() => document.fonts?.ready || Promise.resolve())
+    .catch(() => {});
   await page.waitForTimeout(3_000);
   await capture(page, viewport.name, "app-home", failures);
+  await checkLiveStatsTables(page, viewport, failures);
 
   for (const panel of PANELS) {
     await openPanel(page, panel);
-    await capture(page, viewport.name, panel.name, failures);
+    await capture(page, viewport.name, panel.name, failures, {
+      fullPage: false,
+    });
 
     if (panel.name === "ecosystem-flow") {
       for (const tab of ECOSYSTEM_TABS) {
         await clickTab(page, tab);
-        await capture(page, viewport.name, tab.name, failures);
+        await capture(page, viewport.name, tab.name, failures, {
+          fullPage: false,
+        });
       }
+    }
+
+    if (panel.name === "collections") {
+      for (const tab of COLLECTION_TABS) {
+        await clickTab(page, tab);
+        await capture(page, viewport.name, tab.name, failures, {
+          fullPage: false,
+        });
+        if (tab.name === "collections-chapters") {
+          await scrollPanel(page, ".fullscreen-panel__container", "bottom");
+          await capture(
+            page,
+            viewport.name,
+            "collections-chapters-bottom",
+            failures,
+            { fullPage: false },
+          );
+          await scrollPanel(page, ".fullscreen-panel__container", "top");
+        }
+      }
+
+      const futureCollections = page
+        .getByRole("button", { name: /^Future Collections$/i })
+        .first();
+      await futureCollections.click({ timeout: 10_000 });
+      await page
+        .getByText(/Upcoming chapters/i)
+        .first()
+        .waitFor({ timeout: 10_000 });
+      await page.waitForTimeout(600);
+      await capture(page, viewport.name, "collections-future", failures, {
+        fullPage: false,
+      });
+      await scrollPanel(page, ".collection-grid__future-overlay", "bottom");
+      await capture(
+        page,
+        viewport.name,
+        "collections-future-bottom",
+        failures,
+        { fullPage: false },
+      );
+      await page
+        .getByRole("button", { name: /Close upcoming chapters/i })
+        .click({ timeout: 10_000 });
+      await page.waitForTimeout(350);
+    }
+
+    if (panel.name === "vrf-mint") {
+      for (const tab of VRF_TABS) {
+        await clickTab(page, tab);
+        await capture(page, viewport.name, tab.name, failures, {
+          fullPage: false,
+        });
+        await scrollPanel(page, ".fullscreen-panel__container", "bottom");
+        await capture(page, viewport.name, `${tab.name}-bottom`, failures, {
+          fullPage: false,
+        });
+        await scrollPanel(page, ".fullscreen-panel__container", "top");
+      }
+    }
+
+    if (
+      panel.name === "rewards" ||
+      panel.name === "user-panel" ||
+      panel.name === "community-center"
+    ) {
+      await scrollPanel(page, ".fullscreen-panel__container", "bottom");
+      await capture(page, viewport.name, `${panel.name}-bottom`, failures, {
+        fullPage: false,
+      });
+      await scrollPanel(page, ".fullscreen-panel__container", "top");
     }
   }
 

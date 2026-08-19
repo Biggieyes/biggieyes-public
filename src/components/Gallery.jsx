@@ -72,8 +72,9 @@ const getGalleryContractCacheAddress = (contractLike = null) =>
 const makeSessionKey = (prefix, value, contractAddress = "") => {
   const chainId = Number(ADDR?.CHAIN_ID || 137) || 137;
   const contract =
-    String(contractAddress || "").trim().toLowerCase() ||
-    getGalleryContractCacheAddress();
+    String(contractAddress || "")
+      .trim()
+      .toLowerCase() || getGalleryContractCacheAddress();
   return `${prefix}:${SESSION_CACHE_VERSION}:${chainId}:${
     contract || "main"
   }:${encodeURIComponent(String(value || ""))}`;
@@ -88,12 +89,6 @@ const RARITY_TIER_RANK = {
   rare: 3,
   uncommon: 4,
   common: 5,
-};
-const SORT_LABELS = {
-  default: "Newest",
-  token: "Token ID",
-  name: "Name",
-  rarity: "Rarity",
 };
 const BLOCK_NAME_SET = new Set(DEFAULT_BLOCKS);
 const normalizeBlockName = (value) => {
@@ -304,7 +299,6 @@ function toTokenIdBigInt(value) {
   return null;
 }
 
-
 /**
  * Resolve token IDs owned by address with preference for reader methods.
  * - mainContract: contract instance for main (ERC-721)
@@ -462,9 +456,7 @@ async function resolveHeldTokenIds(mainContract, address, reader) {
         8_000,
         "gallery balanceOf",
       );
-      const balanceNum = Number(
-        balanceRaw?.toString?.() ?? balanceRaw ?? 0,
-      );
+      const balanceNum = Number(balanceRaw?.toString?.() ?? balanceRaw ?? 0);
       if (Number.isFinite(balanceNum) && balanceNum >= 0) {
         const balance = Math.trunc(balanceNum);
         if (balance === 0) return [];
@@ -639,7 +631,8 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
             idStr,
             contractCacheAddress,
           );
-          uri = tokenUriCache.get(tokenMemoryKey) || loadSessionJson(uriCacheKey);
+          uri =
+            tokenUriCache.get(tokenMemoryKey) || loadSessionJson(uriCacheKey);
           if (!uri) {
             try {
               if (typeof mainContract.tokenURI === "function") {
@@ -682,8 +675,7 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
                   contractCacheAddress,
                 );
                 image =
-                  imageCache.get(imgCandidate) ||
-                  loadSessionJson(imgCacheKey);
+                  imageCache.get(imgCandidate) || loadSessionJson(imgCacheKey);
                 if (!image) {
                   const resolved = await resolveImageUrl(
                     imgCandidate,
@@ -747,7 +739,9 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
           if (!isTicket && (uriLooksTicket || metaLooksTicket)) {
             try {
               // force-refresh tokenURI after redeem (ticket -> NFT)
-              const freshUri = await mainContract.tokenURI(id).catch(() => null);
+              const freshUri = await mainContract
+                .tokenURI(id)
+                .catch(() => null);
               if (freshUri && freshUri !== uri) {
                 uri = freshUri;
                 tokenUriCache.set(tokenMemoryKey, uri);
@@ -758,14 +752,18 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
             }
 
             if (uri) {
-              const metaMemoryKey = makeMemoryCacheKey(contractCacheAddress, uri);
+              const metaMemoryKey = makeMemoryCacheKey(
+                contractCacheAddress,
+                uri,
+              );
               const metaCacheKey = makeSessionKey(
                 "biggi_meta",
                 uri,
                 contractCacheAddress,
               );
               meta =
-                metadataCache.get(metaMemoryKey) || loadSessionJson(metaCacheKey);
+                metadataCache.get(metaMemoryKey) ||
+                loadSessionJson(metaCacheKey);
               if (!meta) {
                 meta = await readJsonFromURI(uri).catch(() => null);
                 if (meta) {
@@ -972,7 +970,8 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
             image,
             mint,
             isTicket,
-            contractAddress: mainContract?.target || mainContract?.address || null,
+            contractAddress:
+              mainContract?.target || mainContract?.address || null,
           };
         } catch (err) {
           console.error("Gallery hydrate token failed", err);
@@ -983,7 +982,8 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
             image: "/images/Biggi.png",
             mint: null,
             isTicket: false,
-            contractAddress: mainContract?.target || mainContract?.address || null,
+            contractAddress:
+              mainContract?.target || mainContract?.address || null,
           };
         }
       }),
@@ -999,7 +999,10 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
 export default function Gallery({
   address: addressProp,
   items: itemsProp = [],
+  loading = false,
   liveTicketPrice = null,
+  activeTicketChapterId = null,
+  activeTicketChapterCount = 0,
   dynamicTraitsById = {},
   topFirstId = null,
   onOpenDetails,
@@ -1029,6 +1032,7 @@ export default function Gallery({
   const [sortBy, setSortBy] = React.useState("default");
   const [filterRarity, setFilterRarity] = React.useState("all");
   const [page, setPage] = React.useState(0);
+  const [ticketPage, setTicketPage] = React.useState(0);
   const [highlightId, setHighlightId] = React.useState("");
   const highlightTimerRef = React.useRef(null);
   const topFirstResetRef = React.useRef("");
@@ -1170,7 +1174,9 @@ export default function Gallery({
           if (!contract) return [];
           const provider = getProviderForContract(contract);
           if (!provider || typeof provider.getBlockNumber !== "function") {
-            console.warn(`Gallery: provider not available on ${label} contract`);
+            console.warn(
+              `Gallery: provider not available on ${label} contract`,
+            );
             return [];
           }
           return withTimeout(
@@ -1246,7 +1252,10 @@ export default function Gallery({
       } catch (err) {
         const isTimeout = String(err?.message || "").includes("timed out");
         if (isTimeout) {
-          console.warn("Gallery chain fetch timed out; keeping previous data", err);
+          console.warn(
+            "Gallery chain fetch timed out; keeping previous data",
+            err,
+          );
         } else {
           console.error("Gallery chain fetch failed", err);
         }
@@ -1273,7 +1282,9 @@ export default function Gallery({
   const pageSize = isMobile || compact ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP;
 
   const ticketItems = React.useMemo(() => {
-    const list = renderedItems.filter((item) => isTicketLike(item, maxSupplyHint));
+    const list = renderedItems.filter((item) =>
+      isTicketLike(item, maxSupplyHint),
+    );
     if (!list.length) return list;
     const topId = topFirstId != null ? String(topFirstId) : "";
     const sorted = [...list];
@@ -1297,10 +1308,7 @@ export default function Gallery({
   }, [renderedItems, topFirstId, maxSupplyHint]);
 
   const nonTicketItemsSource = React.useMemo(
-    () =>
-      renderedItems.filter(
-        (item) => !isTicketLike(item, maxSupplyHint),
-      ),
+    () => renderedItems.filter((item) => !isTicketLike(item, maxSupplyHint)),
     [renderedItems, maxSupplyHint],
   );
 
@@ -1333,7 +1341,8 @@ export default function Gallery({
     if (filterRarity !== "all") {
       const target = String(filterRarity).toLowerCase();
       list = list.filter(
-        (item) => String(deriveRarityInfo(item)?.rarity ?? "").toLowerCase() === target,
+        (item) =>
+          String(deriveRarityInfo(item)?.rarity ?? "").toLowerCase() === target,
       );
     }
     const sorted = [...list];
@@ -1358,8 +1367,10 @@ export default function Gallery({
       });
     } else if (sortBy === "rarity") {
       sorted.sort((a, b) => {
-        const rankA = deriveRarityInfo(a)?.rarityRank ?? Number.MAX_SAFE_INTEGER;
-        const rankB = deriveRarityInfo(b)?.rarityRank ?? Number.MAX_SAFE_INTEGER;
+        const rankA =
+          deriveRarityInfo(a)?.rarityRank ?? Number.MAX_SAFE_INTEGER;
+        const rankB =
+          deriveRarityInfo(b)?.rarityRank ?? Number.MAX_SAFE_INTEGER;
         if (rankA !== rankB) return rankA - rankB;
         const idA = toTokenIdBigInt(a?.tokenId ?? a?.id);
         const idB = toTokenIdBigInt(b?.tokenId ?? b?.id);
@@ -1468,12 +1479,38 @@ export default function Gallery({
   const totalOwned = renderedItems.length;
   const totalNfts = nonTicketItemsSource.length;
   const totalTickets = ticketItems.length;
+  const ticketPageSize =
+    compact || isMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP;
+  const totalTicketPages = Math.max(
+    1,
+    Math.ceil(ticketItems.length / ticketPageSize),
+  );
+  const pagedTicketItems = React.useMemo(() => {
+    const start = ticketPage * ticketPageSize;
+    return ticketItems.slice(start, start + ticketPageSize);
+  }, [ticketItems, ticketPage, ticketPageSize]);
+
+  React.useEffect(() => {
+    setTicketPage((previous) => Math.min(previous, totalTicketPages - 1));
+  }, [totalTicketPages]);
   const pendingTickets = React.useMemo(
     () => ticketItems.reduce((sum, item) => sum + (item?.isPending ? 1 : 0), 0),
     [ticketItems],
   );
-  const redeemableTickets = Math.max(0, totalTickets - pendingTickets);
-  const showSummaryLoading = fetching && renderedItems.length === 0;
+  const redeemableTickets = React.useMemo(() => {
+    if (activeTicketChapterCount !== 1 || activeTicketChapterId == null)
+      return 0;
+    return ticketItems.reduce(
+      (sum, item) =>
+        sum +
+        (!item?.isPending && Number(item?.chapterId) === activeTicketChapterId
+          ? 1
+          : 0),
+      0,
+    );
+  }, [ticketItems, activeTicketChapterCount, activeTicketChapterId]);
+  const showSummaryLoading =
+    (fetching || loading) && renderedItems.length === 0;
 
   const rarityCounts = React.useMemo(() => {
     const counts = {};
@@ -1493,12 +1530,6 @@ export default function Gallery({
       }),
     [rarityCounts],
   );
-  const activeSortLabel = SORT_LABELS[sortBy] || SORT_LABELS.default;
-  const activeFilterLabel =
-    filterRarity === "all"
-      ? "All rarities"
-      : `${filterRarity.charAt(0).toUpperCase()}${filterRarity.slice(1)}`;
-
   const renderCard = (item, index, inMainGrid = false) => {
     const { rarity, rarityRank } = deriveRarityInfo(item);
     const enriched =
@@ -1526,6 +1557,8 @@ export default function Gallery({
         key={key}
         nft={enriched}
         liveTicketPrice={liveTicketPrice}
+        activeTicketChapterId={activeTicketChapterId}
+        activeTicketChapterCount={activeTicketChapterCount}
         dynamicTraits={dynamic}
         onOpenDetails={onOpenDetails}
         onZoom={onZoom}
@@ -1547,15 +1580,10 @@ export default function Gallery({
               <span className="gallery__connection-dot" aria-hidden="true" />
               {isConnected ? "Wallet connected" : "Wallet disconnected"}
             </span>
-            <span className="gallery__header-mode">
-              Sort: {activeSortLabel} · Filter: {activeFilterLabel}
-            </span>
           </div>
           <h2 className="gallery__title">My Biggi COLLECTION</h2>
           <p className="gallery__subtitle">
-            Browse every Biggi NFT linked to your wallet with richer sorting
-            and filtering. Open card details to review rarity context, metadata
-            traits, and explorer-verified contract records in one place.
+            NFTs and tickets owned by the connected wallet on Polygon mainnet.
           </p>
         </div>
         <div className="gallery__header-actions-shell">
@@ -1594,14 +1622,6 @@ export default function Gallery({
       </header>
 
       <div className="gallery__summary">
-        <div className="gallery__summary-item">
-          <span>Wallet</span>
-          <strong>
-            {address
-              ? `${address.slice(0, 6)}...${address.slice(-4)}`
-              : "Not connected"}
-          </strong>
-        </div>
         <div className="gallery__summary-item gallery__summary-item--metric">
           <span>Total Assets</span>
           <strong>
@@ -1641,9 +1661,13 @@ export default function Gallery({
           <small>
             {showSummaryLoading
               ? "Checking status..."
-              : totalTickets > 0
-                ? `${redeemableTickets} ready | ${pendingTickets} pending`
-                : "No tickets in wallet"}
+              : activeTicketChapterCount === 0
+                ? "No chapter is active"
+                : activeTicketChapterCount > 1
+                  ? "Chapter configuration conflict"
+                  : totalTickets > 0
+                    ? `${redeemableTickets} redeemable | ${pendingTickets} pending`
+                    : "No tickets in wallet"}
           </small>
         </div>
         <div className="gallery__summary-item">
@@ -1663,12 +1687,6 @@ export default function Gallery({
             <strong>--</strong>
           )}
         </div>
-        <div className="gallery__summary-item gallery__summary-item--metric">
-          <span>Page</span>
-          <strong>
-            {page + 1} / {totalPages}
-          </strong>
-        </div>
       </div>
 
       {ticketItems.length > 0 && (
@@ -1676,16 +1694,49 @@ export default function Gallery({
           <div className="gallery__ticket-head">
             <h3>Tickets in wallet</h3>
             <span>
-              {showSummaryLoading ? "Loading..." : `${totalTickets} total`}
+              {showSummaryLoading
+                ? "Loading..."
+                : `${totalTickets} total / page ${ticketPage + 1}/${totalTicketPages}`}
             </span>
           </div>
           <div className="gallery__grid gallery__grid--tickets">
-            {ticketItems.map((item, index) => renderCard(item, index, false))}
+            {pagedTicketItems.map((item, index) =>
+              renderCard(item, index, false),
+            )}
           </div>
+          {totalTicketPages > 1 ? (
+            <footer className="gallery__pager">
+              <button
+                type="button"
+                className="gallery__pager-btn"
+                onClick={() => setTicketPage((value) => Math.max(0, value - 1))}
+                disabled={ticketPage === 0}
+              >
+                Prev
+              </button>
+              <span className="gallery__pager-status">
+                Page {ticketPage + 1} of {totalTicketPages}
+              </span>
+              <button
+                type="button"
+                className="gallery__pager-btn"
+                onClick={() =>
+                  setTicketPage((value) =>
+                    Math.min(totalTicketPages - 1, value + 1),
+                  )
+                }
+                disabled={ticketPage >= totalTicketPages - 1}
+              >
+                Next
+              </button>
+            </footer>
+          ) : null}
         </section>
       )}
 
-      <div className={`gallery__grid${showSummaryLoading ? " is-loading" : ""}`}>
+      <div
+        className={`gallery__grid${showSummaryLoading ? " is-loading" : ""}`}
+      >
         {!isConnected && (
           <div className="gallery__placeholder">
             <h3>Connect Wallet</h3>
@@ -1695,7 +1746,7 @@ export default function Gallery({
         {isConnected && showSummaryLoading && (
           <div className="gallery__placeholder">Loading COLLECTION...</div>
         )}
-        {isConnected && !fetching && renderedItems.length === 0 && (
+        {isConnected && !showSummaryLoading && renderedItems.length === 0 && (
           <div className="gallery__placeholder">
             <h3>No NFTs detected</h3>
             <p>
@@ -1705,20 +1756,20 @@ export default function Gallery({
           </div>
         )}
         {isConnected &&
-          !fetching &&
+          !showSummaryLoading &&
           renderedItems.length > 0 &&
           nonTicketItemsSource.length === 0 &&
           ticketItems.length > 0 && (
             <div className="gallery__placeholder">
               <h3>No revealed NFTs yet</h3>
               <p>
-                Wallet data loaded. You currently hold tickets; redeem them to
-                reveal NFTs. Tickets are listed above.
+                Wallet data loaded. Tickets become redeemable when their chapter
+                is active.
               </p>
             </div>
           )}
         {isConnected &&
-          !fetching &&
+          !showSummaryLoading &&
           renderedItems.length > 0 &&
           nonTicketItemsSource.length > 0 &&
           processedItems.length === 0 && (
@@ -1756,7 +1807,6 @@ export default function Gallery({
           </button>
         </footer>
       )}
-
     </section>
   );
 }

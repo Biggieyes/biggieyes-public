@@ -136,7 +136,15 @@ export async function mintPublicWithBiggi(chapterId, index) {
 }
 
 export async function getSuggestedMintPriceWei(chapterId, index) {
-  return (await getMintData(chapterId, index)).finalPrice;
+  const info = await getNftInfo(chapterId, index);
+  if (
+    !Number.isInteger(info.blockIdx) ||
+    info.blockIdx < 1 ||
+    info.blockIdx > 10
+  ) {
+    throw new Error("Public NFT metadata is not configured for this index.");
+  }
+  return getCurrentBlockPriceRaw(chapterId, info.blockIdx);
 }
 
 export async function getSuggestedMintPriceEth(chapterId, index) {

@@ -1,26 +1,15 @@
 import * as React from "react";
+import {
+  BASE_PRICES,
+  DEFAULT_BLOCKS,
+  MAX_SUPPLY_BY_BLOCK,
+} from "@/shared/blocks";
 import "./BlocksWidget.css";
 import "./InfoTables.css";
 
 // Constants
 const MOBILE_BREAKPOINT = 700;
 const ANIMATION_DURATION = 2.8;
-
-const BLOCK_MAX_SUPPLY = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10];
-const BASE_PRICES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-const BG_GROWTH_PCT = [5, 2, 2, 3, 3, 4, 4, 5, 5, 10];
-const DEFAULT_BLOCK_NAMES = [
-  "ORANGE",
-  "BLACK",
-  "WHITE",
-  "BROWN",
-  "BLUE",
-  "GREEN",
-  "VIOLET",
-  "RED",
-  "PINK",
-  "RAINBOW",
-];
 
 const BLOCK_COLORS = {
   ORANGE: "#ff9000",
@@ -106,26 +95,16 @@ const fmtPrice = (value) => {
   }).format(n);
 };
 
-const safeNumber = (value, fallback = 0) => {
+const finiteNumber = (value) => {
+  if (value == null || value === "") return null;
   const n = Number(value);
-  return Number.isFinite(n) ? n : fallback;
-};
-
-const derivePriceFromBgMints = (basePrice, bgMinted, growthPct) => {
-  const base = Number(basePrice);
-  const mints = Number(bgMinted);
-  const growth = Number(growthPct);
-  if (!Number.isFinite(base) || base <= 0) return null;
-  if (!Number.isFinite(mints) || mints <= 0) return base;
-  if (!Number.isFinite(growth) || growth <= 0) return base;
-  return base * Math.pow(1 + growth / 100, mints);
+  return Number.isFinite(n) ? n : null;
 };
 
 const BlocksWidget = ({
   blockNames = [],
   blockMintCounts = [],
   blockPrices = [],
-  backgroundMintCounts = [],
   lastRedeemedTokenId = "",
   lastRedeemedBlock = "",
   lastRedeemedBackground = "",
@@ -171,7 +150,9 @@ const BlocksWidget = ({
   const normalizedLastBg = String(lastRedeemedBackground || "")
     .trim()
     .toUpperCase();
-  const normalizedLastToken = String(lastRedeemedTokenId || "").trim();
+  const normalizedLastTokenRaw = String(lastRedeemedTokenId || "").trim();
+  const normalizedLastToken =
+    normalizedLastTokenRaw === "-" ? "" : normalizedLastTokenRaw;
 
   const headerLastRedeemedId = normalizedLastToken
     ? `NFT #${normalizedLastToken} (${normalizedLastBlock || "-"}/${normalizedLastBg || "-"})`
@@ -190,10 +171,14 @@ const BlocksWidget = ({
   const displayBlockNames = React.useMemo(() => {
     const names = Array.isArray(blockNames)
       ? blockNames
-          .map((name) => String(name || "").trim().toUpperCase())
+          .map((name) =>
+            String(name || "")
+              .trim()
+              .toUpperCase(),
+          )
           .filter(Boolean)
       : [];
-    return names.length ? names : DEFAULT_BLOCK_NAMES;
+    return names.length ? names : DEFAULT_BLOCKS;
   }, [blockNames]);
 
   return (
@@ -244,9 +229,15 @@ const BlocksWidget = ({
           <tbody>
             {displayBlockNames.map((name, i) => {
               const isLastRedeemed =
-                String(name || "").trim().toUpperCase() === normalizedLastBlock;
-              const minted = safeNumber(blockMintCounts?.[i], 0);
-              const linkedBg = LINKED_BG[String(name || "").toUpperCase()] || "-";
+                String(name || "")
+                  .trim()
+                  .toUpperCase() === normalizedLastBlock;
+              const upperName = String(name || "").toUpperCase();
+              const minted = finiteNumber(blockMintCounts?.[i]);
+              const maxSupply = finiteNumber(MAX_SUPPLY_BY_BLOCK[upperName]);
+              const basePrice = finiteNumber(BASE_PRICES[upperName]);
+              const livePrice = finiteNumber(blockPrices?.[i]);
+              const linkedBg = LINKED_BG[upperName] || "-";
               return (
                 <tr
                   key={name}
@@ -262,42 +253,19 @@ const BlocksWidget = ({
                     {name}
                   </td>
                   <td style={mintedStyle} data-label={headerTitles[1]}>
-                    {minted}
+                    {minted ?? "--"}
                   </td>
                   <td style={cellStyle} data-label={headerTitles[2]}>
                     {linkedBg}
                   </td>
                   <td style={cellStyle} data-label={headerTitles[3]}>
-                    {BLOCK_MAX_SUPPLY[i]}
+                    {maxSupply ?? "--"}
                   </td>
                   <td style={cellStyle} data-label={headerTitles[4]}>
-                    {BASE_PRICES[i]}
+                    {basePrice == null ? "--" : `${fmtPrice(basePrice)} POL`}
                   </td>
                   <td style={priceStyle} data-label={headerTitles[5]}>
-                    {(() => {
-                      const base = safeNumber(BASE_PRICES[i], i + 1);
-                      const live = safeNumber(blockPrices?.[i], 0);
-                      const bgMinted = safeNumber(backgroundMintCounts?.[i], 0);
-                      const growth = safeNumber(BG_GROWTH_PCT[i], 0);
-                      const derived = derivePriceFromBgMints(
-                        base,
-                        bgMinted,
-                        growth,
-                      );
-
-                      let resolved =
-                        Number.isFinite(live) && live > 0 ? live : base;
-                      // If upstream RPC data is stale at base while bg mints exist, use derived value.
-                      if (
-                        bgMinted > 0 &&
-                        Number.isFinite(derived) &&
-                        resolved <= base + 1e-9
-                      ) {
-                        resolved = derived;
-                      }
-                      return fmtPrice(resolved);
-                    })()}{" "}
-                    POL
+                    {livePrice == null ? "--" : `${fmtPrice(livePrice)} POL`}
                   </td>
                 </tr>
               );
@@ -341,8 +309,14 @@ const BlocksWidget = ({
                     <td className="bw-k">Eyes Color</td>
                     <td className="bw-v">
                       Block name (NFT eye color). Example:{" "}
-                      <span className="bw-chip info-chip info-chip--block">BLUE</span>,{" "}
-                      <span className="bw-chip info-chip info-chip--mint">GREEN</span>.
+                      <span className="bw-chip info-chip info-chip--block">
+                        BLUE
+                      </span>
+                      ,{" "}
+                      <span className="bw-chip info-chip info-chip--mint">
+                        GREEN
+                      </span>
+                      .
                     </td>
                   </tr>
                   <tr className="info-row--mint">
@@ -355,8 +329,14 @@ const BlocksWidget = ({
                     <td className="bw-k">Linked BG</td>
                     <td className="bw-v">
                       Abbreviation of the background linked to the block (e.g.,{" "}
-                      <span className="bw-chip bw-mono info-chip info-chip--link">BL</span>,{" "}
-                      <span className="bw-chip bw-mono info-chip info-chip--link">G</span>).
+                      <span className="bw-chip bw-mono info-chip info-chip--link">
+                        BL
+                      </span>
+                      ,{" "}
+                      <span className="bw-chip bw-mono info-chip info-chip--link">
+                        G
+                      </span>
+                      ).
                     </td>
                   </tr>
                   <tr className="info-row--supply">
@@ -374,10 +354,9 @@ const BlocksWidget = ({
                   <tr className="info-row--live">
                     <td className="bw-k">Live Price</td>
                     <td className="bw-v">
-                      Live block price from the mainnet reader. If the RPC returns
-                      a stale base value while background mints are already present,
-                      the UI derives the same displayed price from background mint
-                      count and block growth.
+                      Current block price read from the Polygon mainnet
+                      contract. Missing RPC data is shown as unavailable and is
+                      never estimated in the UI.
                     </td>
                   </tr>
                 </tbody>
@@ -400,5 +379,3 @@ const BlocksWidget = ({
 };
 
 export default BlocksWidget;
-
-

@@ -61,10 +61,14 @@ async function stopProcessTree(child) {
 
   if (process.platform === "win32" && child.pid) {
     await new Promise((resolve) => {
-      const killer = spawn("taskkill", ["/pid", String(child.pid), "/T", "/F"], {
-        stdio: "ignore",
-        shell: false,
-      });
+      const killer = spawn(
+        "taskkill",
+        ["/pid", String(child.pid), "/T", "/F"],
+        {
+          stdio: "ignore",
+          shell: false,
+        },
+      );
       killer.once("exit", () => resolve());
       killer.once("error", () => resolve());
     });
@@ -144,7 +148,9 @@ async function runSmoke(baseUrl) {
     "chromium.launch",
   );
   try {
-    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    const page = await browser.newPage({
+      viewport: { width: 1440, height: 900 },
+    });
 
     const pageErrors = [];
     const fatalConsoleErrors = [];
@@ -178,23 +184,36 @@ async function runSmoke(baseUrl) {
     );
     console.log("[smoke] app shell ready");
 
-    // Gallery + metadata/IPFS path smoke.
+    // Gallery shell and filtering controls smoke.
     const gallery = page.locator(".gallery-section");
-    await gallery.getByRole("button", { name: "Open NFT card help" }).click();
-    await page.waitForSelector("text=IPFS images", { timeout: 15_000 });
-    await gallery.getByRole("button", { name: "Open NFT card help" }).click();
-    console.log("[smoke] gallery metadata/ipfs flow ok");
+    await gallery
+      .getByRole("heading", { name: /My Biggi COLLECTION/i })
+      .waitFor({ state: "visible", timeout: 30_000 });
+    const gallerySort = gallery.getByLabel("Sort");
+    const galleryRarity = gallery.getByLabel("Rarity");
+    await gallerySort.selectOption("token");
+    await galleryRarity.selectOption("rare");
+    await galleryRarity.selectOption("all");
+    await gallery
+      .getByText("Total Assets", { exact: true })
+      .waitFor({ state: "visible", timeout: 15_000 });
+    console.log("[smoke] gallery shell and controls flow ok");
 
     // Live stats smoke (open Tokenomics modal and verify pools/allocation section).
     const liveStatsRoot = page.locator("#live-stats");
     await liveStatsRoot.first().scrollIntoViewIfNeeded();
-    const tokenomicsBtn = liveStatsRoot.getByRole("button", { name: "TOKENOMICS" }).first();
+    const tokenomicsBtn = liveStatsRoot
+      .getByRole("button", { name: "TOKENOMICS" })
+      .first();
     await tokenomicsBtn.waitFor({ state: "visible", timeout: 30_000 });
     await tokenomicsBtn.click();
-    await page.getByText(/POOLS\s*&\s*ALLOCATION/i).first().waitFor({
-      state: "visible",
-      timeout: 30_000,
-    });
+    await page
+      .getByText(/POOLS\s*&\s*ALLOCATION/i)
+      .first()
+      .waitFor({
+        state: "visible",
+        timeout: 30_000,
+      });
     await page.getByRole("button", { name: "Close" }).first().click();
     console.log("[smoke] live stats flow ok");
 
@@ -232,9 +251,7 @@ async function runSmoke(baseUrl) {
       networkConsoleErrors.length
     ) {
       const details = [
-        pageErrors.length
-          ? `Page errors:\n- ${pageErrors.join("\n- ")}`
-          : null,
+        pageErrors.length ? `Page errors:\n- ${pageErrors.join("\n- ")}` : null,
         fatalConsoleErrors.length
           ? `Fatal console errors:\n- ${fatalConsoleErrors.join("\n- ")}`
           : null,

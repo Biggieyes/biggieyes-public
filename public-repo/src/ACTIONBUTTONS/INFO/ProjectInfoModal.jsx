@@ -316,7 +316,10 @@ Reserve to LiquidityManager to LiquidityVault`}
             <ul style={{ marginLeft: 18 }}>
               <li>VRF collection uses ticket to redeem to random assignment.</li>
               <li>Public collection enables direct mint by id when active.</li>
-              <li>Both collections use the same block and background pricing model.</li>
+              <li>
+                Public contains 100 NFTs, ten per block, without background
+                variants; its block prices come from the paired VRF collection.
+              </li>
             </ul>
 
             <Heading>Episodes</Heading>

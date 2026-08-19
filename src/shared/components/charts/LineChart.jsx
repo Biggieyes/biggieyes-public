@@ -10,7 +10,12 @@ const GRID_ROWS = 4;
 const GRID_COLS = 5;
 const CHART_PADDING = { top: 12, right: 12, bottom: 20, left: 20 };
 
-const LineChart = ({ points = [], width = 320, height = 150, maxPoints = 48 }) => {
+const LineChart = ({
+  points = [],
+  width = 320,
+  height = 150,
+  maxPoints = 48,
+}) => {
   const sanitized = React.useMemo(
     () =>
       points
@@ -48,9 +53,11 @@ const LineChart = ({ points = [], width = 320, height = 150, maxPoints = 48 }) =
         : sanitized;
 
     const values = reducedPoints.map((entry) => entry.value);
-    let nextMax = Math.max(...values);
-    let nextMin = Math.min(...values);
-    const isFlat = nextMax === nextMin;
+    const dataMax = Math.max(...values);
+    const dataMin = Math.min(...values);
+    let nextMax = dataMax;
+    let nextMin = dataMin;
+    const isFlat = dataMax === dataMin;
     if (nextMax === nextMin) {
       const delta = Math.abs(nextMax) * 0.05 || 1;
       nextMax += delta;
@@ -66,7 +73,9 @@ const LineChart = ({ points = [], width = 320, height = 150, maxPoints = 48 }) =
       height - CHART_PADDING.top - CHART_PADDING.bottom,
     );
     const plotPoints =
-      reducedPoints.length === 1 ? [reducedPoints[0], reducedPoints[0]] : reducedPoints;
+      reducedPoints.length === 1
+        ? [reducedPoints[0], reducedPoints[0]]
+        : reducedPoints;
     const coords = plotPoints.map((entry, index) => {
       const x =
         CHART_PADDING.left +
@@ -82,8 +91,8 @@ const LineChart = ({ points = [], width = 320, height = 150, maxPoints = 48 }) =
 
     return {
       reduced: reducedPoints,
-      min: nextMin,
-      max: nextMax,
+      min: dataMin,
+      max: dataMax,
       isFlat,
       pointCount: reducedPoints.length,
       plotWidth: nextPlotWidth,
@@ -211,7 +220,11 @@ const LineChart = ({ points = [], width = 320, height = 150, maxPoints = 48 }) =
         </span>
         <span
           className={`line-chart__status ${
-            noChange ? "line-chart__status--flat" : collecting ? "line-chart__status--collecting" : ""
+            noChange
+              ? "line-chart__status--flat"
+              : collecting
+                ? "line-chart__status--collecting"
+                : ""
           }`.trim()}
         >
           {noChange
@@ -226,4 +239,3 @@ const LineChart = ({ points = [], width = 320, height = 150, maxPoints = 48 }) =
 };
 
 export default React.memo(LineChart);
-

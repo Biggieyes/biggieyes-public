@@ -53,9 +53,7 @@ export function useStatsREWARDS(options = {}) {
     // 1) Try reader snapshot
     try {
       const reader = getReaderRO?.();
-      const snap = reader
-        ? await getFrontendSnapshotLiteActive(reader)
-        : null;
+      const snap = reader ? await getFrontendSnapshotLiteActive(reader) : null;
       if (snap) {
         const [
           ticketPriceWei,
@@ -97,7 +95,7 @@ export function useStatsREWARDS(options = {}) {
       }
     } catch (err) {
       // reader snapshot failed, fall through to direct calls
-       
+
       console.debug("useStatsREWARDS reader snapshot failed", err);
     }
 
@@ -117,52 +115,29 @@ export function useStatsREWARDS(options = {}) {
       applySetter(setTicketMinted, tm != null ? Number(tm) : null);
       applySetter(setBiggiMinted, bm != null ? Number(bm) : null);
 
-      const blockMintCountReader =
-        typeof main.getBlockMintCount === "function"
-          ? (i) => main.getBlockMintCount(i)
-          : typeof main.blockMintCounts === "function"
-            ? (i) => main.blockMintCounts(i)
-            : null;
-
-      const indexProbes = [];
-      if (typeof main.getCurrentBlockPrice === "function") {
-        indexProbes.push((i) => main.getCurrentBlockPrice(i));
-      }
-      if (typeof main.blockInfos === "function") {
-        indexProbes.push((i) => main.blockInfos(i));
-      }
-      if (blockMintCountReader) {
-        indexProbes.push((i) => blockMintCountReader(i));
-      }
-
-      let scoreBase0 = 0;
-      let scoreBase1 = 0;
-      for (const probe of indexProbes) {
-        const [at0, at9, at1, at10] = await Promise.all([
-          safeCall(() => probe(0), null),
-          safeCall(() => probe(9), null),
-          safeCall(() => probe(1), null),
-          safeCall(() => probe(10), null),
-        ]);
-        if (at0 != null && at9 != null) scoreBase0 += 1;
-        if (at1 != null && at10 != null) scoreBase1 += 1;
-      }
-      const blockIndexBase = scoreBase0 > scoreBase1 ? 0 : 1;
-
       const blockRows = await Promise.all(
         Array.from({ length: 10 }, async (_, i) => {
-          const blockId = i + blockIndexBase;
-          const info = await safeCall(() => main.blockInfos?.(blockId), null);
+          const blockId = i + 1;
+          const [helperPrice, helperMinted] = await Promise.all([
+            safeCall(() => main.getCurrentBlockPrice?.(blockId), null),
+            typeof main.getBlockMintCount === "function"
+              ? safeCall(() => main.getBlockMintCount(blockId), null)
+              : Promise.resolve(null),
+          ]);
+          const info =
+            helperPrice == null || helperMinted == null
+              ? await safeCall(() => main.blockInfos?.(i), null)
+              : null;
           const blockPrice =
-            info?.currentPrice ??
-            info?.[2] ??
-            (await safeCall(() => main.getCurrentBlockPrice?.(blockId), null));
+            helperPrice ?? info?.currentPrice ?? info?.[2] ?? null;
           const blockMinted =
+            helperMinted ??
+            (typeof main.blockMintCounts === "function"
+              ? await safeCall(() => main.blockMintCounts(i), null)
+              : null) ??
             info?.mintCount ??
             info?.[3] ??
-            (blockMintCountReader
-              ? await safeCall(() => blockMintCountReader(blockId), null)
-              : null);
+            null;
           return {
             price: blockPrice != null ? toNumEth(blockPrice) : null,
             minted: blockMinted != null ? Number(blockMinted) : null,
@@ -210,7 +185,6 @@ export function useStatsREWARDS(options = {}) {
 
       return { prices, minted, bgCounts: normalizedBgCounts };
     } catch (err) {
-       
       console.warn("useStatsREWARDS fallback failed", err);
       return null;
     }

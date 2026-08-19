@@ -37,9 +37,6 @@ import {
   MOBILE_BREAKPOINT,
   MAX_BLOCKS,
   PREVIEW_SIZE,
-  COLLECTION_TABS,
-  FALLBACK_VALUE,
-  COLLECTION_STATUSES,
   getFutureCollectionStats,
 } from "./COLLECTIONBlocksGrid.constants";
 import {
@@ -52,6 +49,9 @@ import {
   isValidCount,
   safeAsyncCall,
   safeSyncCall,
+  readCollectionBlockSnapshot,
+  normalizeNftInfo,
+  normalizeMetadataConsistency,
 } from "./COLLECTIONBlocksGrid.utils";
 
 // Import sub-komponenty
@@ -64,13 +64,11 @@ import ChapterSeriesPanel from "./CollectionBlocksGrid.ChapterSeriesPanel";
 import FutureCollectionsModal from "./CollectionBlocksGrid.FutureCollectionsModal";
 import ModalPortal from "../../../components/common/ModalPortal";
 
-const ExpansionPanelLazy = React.lazy(
-  () => import("../../../components/expansion/ExpansionPanel.jsx"),
-);
 const NOOP = () => {};
 const BACKGROUND_CODES = ["O", "B", "W", "BR", "BL", "G", "V", "R", "P", "RB"];
 const MODAL_FILE_PATTERN = /^Biggi_(\d+)_([A-Z]+)_([A-Z]+)\.png$/i;
 const DEFAULT_MODAL_SCAN_SUPPLY = 550;
+const PUBLIC_MAX_SUPPLY = 100;
 const MODAL_SCAN_CHUNK = 32;
 
 const parseModalImageFile = (fileName) => {
@@ -101,7 +99,9 @@ const bgCodeFromInfoIndex = (value) => {
 
 const buildMintedModalKey = (mainId, bgCode) => {
   const idRaw = String(mainId || "").trim();
-  const bg = String(bgCode || "").trim().toUpperCase();
+  const bg = String(bgCode || "")
+    .trim()
+    .toUpperCase();
   if (!/^\d+$/.test(idRaw) || !bg) return "";
   return `${String(Number(idRaw))}:${bg}`;
 };
@@ -133,18 +133,10 @@ const COLLECTION_SECTION_META = {
     accentSoft: "rgba(93, 220, 255, 0.22)",
     accentGlow: "rgba(93, 220, 255, 0.38)",
   },
-  expansion: {
-    title: "EXPANSION",
-    subtitle:
-      "Inspect the expansion roadmap and ecosystem-linked telemetry gathered inside the collection hub.",
-    accent: "#b584ff",
-    accentSoft: "rgba(181, 132, 255, 0.22)",
-    accentGlow: "rgba(181, 132, 255, 0.38)",
-  },
   chapterSeries: {
-    title: "CHAPTER / SERIES",
+    title: "CHAPTERS",
     subtitle:
-      "Verify ChapterSeriesReader wiring, collection eligibility, and the active VRF/Public pair from Polygon mainnet.",
+      "Current chapter availability and mint progress from Polygon mainnet.",
     accent: "#27d9d2",
     accentSoft: "rgba(39, 217, 210, 0.2)",
     accentGlow: "rgba(39, 217, 210, 0.32)",
@@ -167,8 +159,12 @@ function COLLECTIONBlocksGrid({
   const autoInfoOpened = React.useRef(false);
   const [futureOpen, setFutureOpen] = React.useState(false);
   const [selectedBlock, setSelectedBlock] = React.useState(1);
-  const [selectedBackground, setSelectedBackground] = React.useState(1);
   const [desiredTokenId, setDesiredTokenId] = React.useState("");
+  const [selectedPublicNft, setSelectedPublicNft] = React.useState({
+    info: null,
+    loading: false,
+    error: null,
+  });
   const [COLLECTIONMeta, setCOLLECTIONMeta] = React.useState({});
   const [onchainUnavailable, setOnchainUnavailable] = React.useState(false);
   const [reloadCounter, setReloadCounter] = React.useState(0);
@@ -179,10 +175,7 @@ function COLLECTIONBlocksGrid({
     snapshotKey: "",
     byBlock: {},
   });
-  const futureStats = React.useMemo(
-    () => getFutureCollectionStats(),
-    [],
-  );
+  const futureStats = React.useMemo(() => getFutureCollectionStats(), []);
   const {
     data: chapterSeriesData,
     loading: chapterSeriesLoading,
@@ -262,6 +255,17 @@ function COLLECTIONBlocksGrid({
     return CORE_CHAPTERS[0];
   }, [activeChapterIds]);
   const displayedChapterIsActive = activeChapterIds.length === 1;
+  const displayedChapterSnapshot = React.useMemo(
+    () =>
+      (Array.isArray(chapterSeriesData?.chapters)
+        ? chapterSeriesData.chapters
+        : []
+      ).find(
+        (chapter) =>
+          Number(chapter.chapterId) === Number(displayedChapter.chapterId),
+      ) || null,
+    [chapterSeriesData?.chapters, displayedChapter.chapterId],
+  );
 
   const getCollectionReadContract = React.useCallback(() => {
     const readPublic = activeCollectionKey === "COLLECTION2";
@@ -273,7 +277,9 @@ function COLLECTIONBlocksGrid({
     } catch {
       try {
         if (readPublic) {
-          return contracts?.chapterMain2Read?.(displayedChapter.chapterId) || null;
+          return (
+            contracts?.chapterMain2Read?.(displayedChapter.chapterId) || null
+          );
         }
         return contracts?.chapterMainRead?.(displayedChapter.chapterId) || null;
       } catch {
@@ -284,6 +290,9 @@ function COLLECTIONBlocksGrid({
 
   // ==== on-chain zdroje ====
   const [livePrices, setLivePrices] = React.useState(
+    Array(MAX_BLOCKS).fill(null),
+  );
+  const [liveBasePrices, setLiveBasePrices] = React.useState(
     Array(MAX_BLOCKS).fill(null),
   );
   const [liveMinted, setLiveMinted] = React.useState(
@@ -304,23 +313,23 @@ function COLLECTIONBlocksGrid({
         const coll = getCollectionReadContract();
         if (!coll) return;
 
-        const pausedVal = await safeAsyncCall(() => coll.paused?.());
+        const [pausedVal, metadataRaw] = await Promise.all([
+          safeAsyncCall(() => coll.paused?.()),
+          safeAsyncCall(() => coll.metadataConsistency?.()),
+        ]);
+        const metadata = normalizeMetadataConsistency(metadataRaw);
         const meta = {
           maxSupply: await safeAsyncCall(() => coll.MAX_SUPPLY?.()),
-          maxTickets: await safeAsyncCall(() => coll.MAX_TICKETS?.()),
-          ticketMinted: await safeAsyncCall(() => coll.ticketMinted?.()),
           biggiMinted: await safeAsyncCall(() => coll.biggiMinted?.()),
-          paused: coerceBool(pausedVal),
+          paused: pausedVal == null ? null : coerceBool(pausedVal),
+          ...metadata,
         };
 
         meta.maxSupply = meta.maxSupply != null ? Number(meta.maxSupply) : null;
-        meta.maxTickets =
-          meta.maxTickets != null ? Number(meta.maxTickets) : null;
-        meta.ticketMinted =
-          meta.ticketMinted != null ? Number(meta.ticketMinted) : null;
         meta.biggiMinted =
           meta.biggiMinted != null ? Number(meta.biggiMinted) : null;
 
+        const basePrices = [];
         const prices = [];
         const minted = [];
 
@@ -336,7 +345,9 @@ function COLLECTIONBlocksGrid({
             ));
           const code =
             providerForCode && contractAddress
-              ? await safeAsyncCall(() => providerForCode.getCode(contractAddress))
+              ? await safeAsyncCall(() =>
+                  providerForCode.getCode(contractAddress),
+                )
               : null;
           if (!code || code === "0x" || code === "0x0") {
             // eslint-disable-next-line no-console
@@ -349,10 +360,12 @@ function COLLECTIONBlocksGrid({
             setOnchainUnavailable(true);
             // leave prices/minted as null arrays
             for (let i = 1; i <= MAX_BLOCKS; i++) {
+              basePrices.push(null);
               prices.push(null);
               minted.push(null);
             }
             if (!cancelled) {
+              setLiveBasePrices(basePrices);
               setLivePrices(prices);
               setLiveMinted(minted);
               setCOLLECTIONMeta(meta);
@@ -368,81 +381,21 @@ function COLLECTIONBlocksGrid({
           );
         }
 
-        const silentAsyncCall = async (fn) => {
-          try {
-            return await fn();
-          } catch {
-            return null;
-          }
-        };
-
-        let blockInfosSupported = true;
-        if (typeof coll.blockInfos === "function") {
-          // Some deployments use 0-based blockIdx (0..9), others 1-based (1..10).
-          const probe0 = await silentAsyncCall(() => coll.blockInfos(0));
-          const probe1 = probe0 == null ? await silentAsyncCall(() => coll.blockInfos(1)) : null;
-          if (probe0 == null && probe1 == null) blockInfosSupported = false;
-        } else {
-          blockInfosSupported = false;
-        }
-
-        const blockMintCountReader =
-          typeof coll.getBlockMintCount === "function"
-            ? (i) => coll.getBlockMintCount(i)
-            : typeof coll.blockMintCounts === "function"
-              ? (i) => coll.blockMintCounts(i)
-              : null;
-        let blockMintCountsSupported = false;
-        if (blockMintCountReader) {
-          const probe0 = await silentAsyncCall(() => blockMintCountReader(0));
-          const probe1 = probe0 == null ? await silentAsyncCall(() => blockMintCountReader(1)) : null;
-          blockMintCountsSupported = probe0 != null || probe1 != null;
-        }
-
-        // Decide block index base once to avoid off-by-one UI issues.
-        let blockIndexBase = 1;
-        if (typeof coll.getCurrentBlockPrice === "function") {
-          const probe0 = await silentAsyncCall(() => coll.getCurrentBlockPrice(0));
-          const probe1 = await silentAsyncCall(() => coll.getCurrentBlockPrice(1));
-          // If 0 works, prefer 0-based to match base price table (Block 1 => index 0).
-          if (probe0 != null) blockIndexBase = 0;
-          else if (probe1 != null) blockIndexBase = 1;
-        } else if (typeof coll.blockInfos === "function") {
-          const probe0 = await silentAsyncCall(() => coll.blockInfos(0));
-          if (probe0 != null) blockIndexBase = 0;
-        } else if (blockMintCountReader) {
-          const probe0 = await silentAsyncCall(() => blockMintCountReader(0));
-          if (probe0 != null) blockIndexBase = 0;
-        }
-
-        for (let i = 0; i < MAX_BLOCKS; i++) {
-          const blockId = i + blockIndexBase;
-          let blockPrice = null;
-          let blockMinted = null;
-
-          if (blockInfosSupported) {
-            const info = await silentAsyncCall(() => coll.blockInfos(blockId));
-            blockPrice = info?.currentPrice ?? info?.[2] ?? null;
-            blockMinted = info?.mintCount ?? info?.[3] ?? null;
-          }
-
-          if (blockPrice == null) {
-            blockPrice = await safeAsyncCall(() =>
-              coll.getCurrentBlockPrice?.(blockId),
-            );
-          }
-
-          if (blockMinted == null && blockMintCountsSupported) {
-            blockMinted = await silentAsyncCall(() =>
-              blockMintCountReader(blockId),
-            );
-          }
-
-          prices.push(blockPrice != null ? fmtPrice(blockPrice) : null);
-          minted.push(blockMinted != null ? Number(blockMinted) : null);
+        const blockRows = await Promise.all(
+          Array.from({ length: MAX_BLOCKS }, (_, index) =>
+            readCollectionBlockSnapshot(coll, index + 1),
+          ),
+        );
+        for (const row of blockRows) {
+          basePrices.push(
+            row.basePriceWei != null ? fmtPrice(row.basePriceWei) : null,
+          );
+          prices.push(row.priceWei != null ? fmtPrice(row.priceWei) : null);
+          minted.push(row.mintedRaw != null ? Number(row.mintedRaw) : null);
         }
 
         if (!cancelled) {
+          setLiveBasePrices(basePrices);
           setLivePrices(prices);
           setLiveMinted(minted);
           setCOLLECTIONMeta(meta);
@@ -454,6 +407,7 @@ function COLLECTIONBlocksGrid({
         // mark unavailable to inform user
         setOnchainUnavailable(true);
         if (!cancelled) {
+          setLiveBasePrices(Array(MAX_BLOCKS).fill(null));
           setLivePrices(Array(MAX_BLOCKS).fill(null));
           setLiveMinted(Array(MAX_BLOCKS).fill(null));
           setCOLLECTIONMeta({});
@@ -472,6 +426,7 @@ function COLLECTIONBlocksGrid({
   }, [getCollectionReadContract, reloadCounter]);
 
   React.useEffect(() => {
+    setLiveBasePrices(Array(MAX_BLOCKS).fill(null));
     setLivePrices(Array(MAX_BLOCKS).fill(null));
     setLiveMinted(Array(MAX_BLOCKS).fill(null));
     setCOLLECTIONMeta({});
@@ -480,6 +435,62 @@ function COLLECTIONBlocksGrid({
     setFallbackBgMinted(Array(MAX_BLOCKS).fill(null));
     modalMintedCacheRef.current = { snapshotKey: "", byBlock: {} };
   }, [displayedChapter.chapterId, activeCollectionKey]);
+
+  React.useEffect(() => {
+    if (activeCollectionKey !== "COLLECTION2") {
+      setSelectedPublicNft({ info: null, loading: false, error: null });
+      return undefined;
+    }
+
+    const index = Number(desiredTokenId);
+    const publicMaxSupply = Number(COLLECTIONMeta.maxSupply) || PUBLIC_MAX_SUPPLY;
+    if (!Number.isInteger(index) || index < 1 || index > publicMaxSupply) {
+      setSelectedPublicNft({ info: null, loading: false, error: null });
+      return undefined;
+    }
+
+    let cancelled = false;
+    setSelectedPublicNft({ info: null, loading: true, error: null });
+    const load = async () => {
+      const contract = getCollectionReadContract();
+      if (!contract || typeof contract.nftInfo !== "function") {
+        if (!cancelled) {
+          setSelectedPublicNft({
+            info: null,
+            loading: false,
+            error: "NFT metadata is unavailable.",
+          });
+        }
+        return;
+      }
+      try {
+        const info = normalizeNftInfo(await contract.nftInfo(index));
+        if (!cancelled) {
+          setSelectedPublicNft({ info, loading: false, error: null });
+          if (info?.blockIdx >= 1 && info.blockIdx <= MAX_BLOCKS) {
+            setSelectedBlock(info.blockIdx);
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          setSelectedPublicNft({
+            info: null,
+            loading: false,
+            error: "Unable to read this NFT from Polygon.",
+          });
+        }
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    activeCollectionKey,
+    desiredTokenId,
+    getCollectionReadContract,
+    COLLECTIONMeta.maxSupply,
+  ]);
 
   React.useEffect(() => {
     const missingPrices =
@@ -555,8 +566,11 @@ function COLLECTIONBlocksGrid({
         const folder = safeBlockFolder(name);
         const currentPrice = normalizedPrices[index];
         const minted = normalizedMintCounts[index];
-        const basePrice =
-          typeof BASE_PRICES[folder] === "number" ? BASE_PRICES[folder] : null;
+        const basePrice = Number.isFinite(liveBasePrices[index])
+          ? liveBasePrices[index]
+          : typeof BASE_PRICES[folder] === "number"
+            ? BASE_PRICES[folder]
+            : null;
         const blockFiles = getBlockImages(name);
         const thumbFallback =
           blockFiles.length > 0 ? buildBlockImagePath(blockFiles[0]) : "";
@@ -575,7 +589,7 @@ function COLLECTIONBlocksGrid({
           buttonStyle: resolveButtonStyle(name),
         };
       }),
-    [normalizedNames, normalizedPrices, normalizedMintCounts],
+    [normalizedNames, normalizedPrices, normalizedMintCounts, liveBasePrices],
   );
 
   const stats = React.useMemo(() => {
@@ -627,12 +641,23 @@ function COLLECTIONBlocksGrid({
   const COLLECTIONTotals = React.useMemo(
     () => ({
       maxSupply: COLLECTIONMeta.maxSupply ?? null,
-      maxTickets: COLLECTIONMeta.maxTickets ?? null,
-      ticketMinted: COLLECTIONMeta.ticketMinted ?? null,
+      maxTickets:
+        displayedChapterSnapshot?.totalCap == null
+          ? null
+          : Number(displayedChapterSnapshot.totalCap),
+      ticketMinted:
+        displayedChapterSnapshot?.totalMinted == null
+          ? null
+          : Number(displayedChapterSnapshot.totalMinted),
       biggiMinted: COLLECTIONMeta.biggiMinted ?? null,
-      paused: Boolean(COLLECTIONMeta.paused),
+      paused: COLLECTIONMeta.paused ?? null,
+      metadataConfiguredCount: COLLECTIONMeta.configuredCount ?? null,
+      metadataFullyConfigured: COLLECTIONMeta.fullyConfigured ?? null,
+      rewardMatrixConsistent: COLLECTIONMeta.rewardMatrixConsistent ?? null,
+      chapterActive: displayedChapterSnapshot?.active ?? false,
+      publicUnlocked: displayedChapterSnapshot?.publicUnlocked ?? false,
     }),
-    [COLLECTIONMeta],
+    [COLLECTIONMeta, displayedChapterSnapshot],
   );
 
   React.useEffect(() => {
@@ -797,89 +822,33 @@ function COLLECTIONBlocksGrid({
   const panelInfoItems = React.useMemo(
     () => [
       {
-        label: "COLLECTION 1",
+        label: "VRF COLLECTION",
         description: [
-          "Primary collection blocks with live pricing and mints.",
-          "Prices reflect base 1–10 POL + demand adjustments.",
+          "VRF collection blocks with current Polygon prices and mint counts.",
         ],
       },
       {
-        label: "COLLECTION 2",
+        label: "PUBLIC COLLECTION",
         description: [
-          "Secondary collection overview and on-chain stats.",
-          "Useful for comparing demand and pricing between collections.",
+          "Public NFTs use the paired VRF block price and their preconfigured metadata.",
         ],
       },
       {
-        label: "EXPANSION",
+        label: "CHAPTERS",
         description: [
-          "Expansion collection blocks and roadmap previews.",
-          "Shows the mainnet-ready roadmap tied to the ecosystem loop.",
-        ],
-      },
-      {
-        label: "CHAPTER / SERIES",
-        description: [
-          "Live ChapterSeriesReader wiring for the current VRF/Public pair.",
-          "Shows registry, controller, chapter caps, mint progress, and reward eligibility.",
+          "Only one chapter may be available at a time.",
+          "Progress and availability come from Polygon mainnet.",
         ],
       },
       {
         label: "FUTURE COLLECTIONS",
         description: [
-          "Preview the mainnet-ready collection roadmap.",
-          "Informational view for upcoming releases and supply targets.",
+          "Preview deployed but inactive chapter pairs in release order.",
         ],
       },
     ],
     [],
   );
-
-  const statRows = [
-    {
-      label: "Blocks configured",
-      value: String(stats.blocksWithData ?? FALLBACK_VALUE),
-      detail: "Cards rendered below",
-    },
-    {
-      label: "Total minted",
-      value: Number.isFinite(stats.totalMinted)
-        ? String(Math.round(stats.totalMinted))
-        : FALLBACK_VALUE,
-      detail: "Sum across all blocks",
-    },
-    {
-      label: "Average price",
-      value: Number.isFinite(stats.averagePrice)
-        ? `${stats.averagePrice} POL`
-        : FALLBACK_VALUE,
-      detail: "Based on live prices",
-    },
-    {
-      label: "Highest price",
-      value:
-        stats.highestPrice && Number.isFinite(stats.highestPrice.value)
-          ? `${Math.round(stats.highestPrice.value)} POL`
-          : FALLBACK_VALUE,
-      detail: highestPriceName || FALLBACK_VALUE,
-    },
-    {
-      label: "Lowest price",
-      value:
-        stats.lowestPrice && Number.isFinite(stats.lowestPrice.value)
-          ? `${Math.round(stats.lowestPrice.value)} POL`
-          : FALLBACK_VALUE,
-      detail: lowestPriceName || FALLBACK_VALUE,
-    },
-    {
-      label: "Top minted block",
-      value:
-        stats.topMinted && Number.isFinite(stats.topMinted.value)
-          ? String(Math.round(stats.topMinted.value))
-          : FALLBACK_VALUE,
-      detail: topMintedName || FALLBACK_VALUE,
-    },
-  ];
 
   // --- nový lokální stav pro fallback řízení activeCOLLECTION ---
   const effectiveActive = localActive;
@@ -955,46 +924,23 @@ function COLLECTIONBlocksGrid({
       <COLLECTION2Panel
         renderBlockCardsGrid={renderBlockCardsGrid}
         blockEntries={blockEntries}
-        selectedBlock={selectedBlock}
-        selectedBackground={selectedBackground}
         desiredTokenId={desiredTokenId}
         selectedEntry={selectedEntry}
+        selectedNftInfo={selectedPublicNft.info}
+        selectedNftLoading={selectedPublicNft.loading}
+        selectedNftError={selectedPublicNft.error}
         COLLECTIONTotals={COLLECTIONTotals}
-        onBlockChange={setSelectedBlock}
-        onBackgroundChange={setSelectedBackground}
         onTokenIdChange={setDesiredTokenId}
       />
     ),
     [
       renderBlockCardsGrid,
       blockEntries,
-      selectedBlock,
-      selectedBackground,
       desiredTokenId,
       selectedEntry,
+      selectedPublicNft,
       COLLECTIONTotals,
     ],
-  );
-
-  const renderExpansionPanel = () => (
-    <section className="collection-grid__panel collection-grid__panel--expansion">
-      <header className="collection-grid__panel-header">
-        <h3>Expansion overview</h3>
-        <p>Protocol telemetry moved into the COLLECTION hub.</p>
-      </header>
-
-      <div className="collection-grid__expansion-loading">
-        <React.Suspense
-          fallback={
-            <div className="collection-grid__expansion-loading">
-              Loading expansion data...
-            </div>
-          }
-        >
-          <ExpansionPanelLazy compact={isMobile} />
-        </React.Suspense>
-      </div>
-    </section>
   );
 
   const renderChapterSeriesPanel = React.useCallback(
@@ -1044,10 +990,8 @@ function COLLECTIONBlocksGrid({
   const activePanel =
     effectiveActive === "COLLECTION2"
       ? renderCOLLECTIONTwo()
-      : effectiveActive === "expansion"
-        ? renderExpansionPanel()
-        : effectiveActive === "chapterSeries"
-          ? renderChapterSeriesPanel()
+      : effectiveActive === "chapterSeries"
+        ? renderChapterSeriesPanel()
         : renderCOLLECTIONOne();
 
   return (
@@ -1064,12 +1008,15 @@ function COLLECTIONBlocksGrid({
       >
         <header className="collection-grid__header panel-header panel-header--collection">
           <div>
-            <h2 className="collection-grid__title">{activeSectionMeta.title}</h2>
+            <h2 className="collection-grid__title">
+              {activeSectionMeta.title}
+            </h2>
             <p className="collection-grid__subtitle">
               {activeSectionMeta.subtitle}
             </p>
             <span className="collection-grid__pill collection-grid__pill--outline">
-              Chapter {displayedChapter.chapterId}: {displayedChapter.displayName}
+              Chapter {displayedChapter.chapterId}:{" "}
+              {displayedChapter.displayName}
               {displayedChapterIsActive ? " / Active" : " / Preview"}
             </span>
           </div>
@@ -1081,28 +1028,21 @@ function COLLECTIONBlocksGrid({
                 className={`collection-grid__tab${effectiveActive === "COLLECTION1" ? " is-active" : ""}`}
                 onClick={() => handleSwitchCOLLECTION("COLLECTION1")}
               >
-                COLLECTION 1
+                VRF Collection
               </button>
               <button
                 type="button"
                 className={`collection-grid__tab${effectiveActive === "COLLECTION2" ? " is-active" : ""}`}
                 onClick={() => handleSwitchCOLLECTION("COLLECTION2")}
               >
-                COLLECTION 2
-              </button>
-              <button
-                type="button"
-                className={`collection-grid__tab${effectiveActive === "expansion" ? " is-active" : ""}`}
-                onClick={() => handleSwitchCOLLECTION("expansion")}
-              >
-                Expansion
+                Public Collection
               </button>
               <button
                 type="button"
                 className={`collection-grid__tab${effectiveActive === "chapterSeries" ? " is-active" : ""}`}
                 onClick={() => handleSwitchCOLLECTION("chapterSeries")}
               >
-                Chapter / Series
+                Chapters
               </button>
               <button
                 type="button"
@@ -1163,6 +1103,7 @@ function COLLECTIONBlocksGrid({
             isOpen={futureOpen}
             onClose={() => setFutureOpen(false)}
             futureStats={futureStats}
+            chapterSeries={chapterSeriesData}
           />
         )}
 
@@ -1222,8 +1163,7 @@ function COLLECTIONBlocksGrid({
                     const modalKey = parsed
                       ? buildMintedModalKey(parsed.mainId, parsed.bgCode)
                       : "";
-                    const isMinted =
-                      modalKey && modalMintedKeys.has(modalKey);
+                    const isMinted = modalKey && modalMintedKeys.has(modalKey);
                     return (
                       <div
                         key={`${file}-${index}`}

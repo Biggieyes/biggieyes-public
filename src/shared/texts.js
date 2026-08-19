@@ -16,9 +16,11 @@ The rarest — RAINBOW block — has only 10 NFTs, the ultimate prize for collec
 
 📈 Dynamic, On-Chain Price Growth
 
-Mint pass (ticket) starts at 500 POL.
+Each chapter has 50 prelaunch marketing tickets with a 1 POL price snapshot. They do not advance the paid curve.
 
-After every mint, price rises by 0.33% — all on-chain & visible to everyone.
+The first paid ticket starts at 500 POL.
+
+After every paid mint, price rises by 0.33% — all on-chain & visible to everyone.
 
 Early birds pay less and have better odds for rare bonuses.
 
@@ -44,7 +46,7 @@ Orange +5%
 
 Black +10%
 
-White +20%
+White +15%
 
 … up to Rainbow +50% 🚀
 
@@ -58,18 +60,18 @@ If you mint or buy one → your next entry is free.
 
 📊 How Value Grows
 
-Example with 0.33% price growth per mint:
+Example with 0.33% price growth per paid mint:
 
-Mint #	Ticket Price (POL)
+Paid Mint #	Ticket Price (POL)
 1	500.00
-10	514.95
-50	589.82
-100	696.84
-200	971.78
-400	1,889.25
-550	3,178.08
+10	515.05
+50	587.60
+100	692.82
+200	963.17
+400	1,861.50
+500	2,587.89
 
-The last ticket will be over 3,100 POL. Every mint makes the next one more valuable.
+The 500th paid ticket is approximately 2,587.89 POL. Marketing mints do not change this curve.
 
 🛡️ Fairness & Transparency
 
@@ -133,7 +135,7 @@ Fairness and transparency mean a real chance to get a unique and valuable NFT, w
 Win Chances & REWARDS - BiggiEyes Style
 
 Tickets & Trading
-Entry tickets can be freely sold and traded on secondary markets like OpenSea. Each wallet can hold up to 10 tickets. Dynamic ticket price growth starts at 500 POL and increases by 0.33% after every mint. Everything stays on-chain and transparent.
+Entry tickets can be freely sold and traded on secondary markets like OpenSea. Each wallet can hold up to 10 tickets. Each chapter has 50 prelaunch marketing tickets with a 1 POL snapshot; the paid price starts at 500 POL and increases by 0.33% after every paid mint. Everything stays on-chain and transparent.
 
 Blocks = Eye Colors
 NFTs are split into 10 color-coded blocks (eye colors). Each block has its own rarity and base price.
@@ -141,11 +143,9 @@ NFTs are split into 10 color-coded blocks (eye colors). Each block has its own r
 Backgrounds as Block Boosters
 Each NFT's background is randomly assigned via Chainlink VRF, making every mint a surprise. It also boosts the value of the block.
 
-The background color permanently increases the value of your block by the following percentages:
-Orange: +1%
-Other colors: +0.3% (up to a 4x factor)
-Rainbow: +3.7%
-One-time bonuses per background are applied automatically at mint.
+The background color permanently increases the matching block price by these percentages:
+Orange +5%, Black +2%, White +2%, Brown +3%, Blue +3%, Green +4%, Violet +4%, Red +5%, Pink +5%, Rainbow +10%.
+The one-time final-price bonuses are Orange +5%, Black +10%, White +15%, Brown +20%, Blue +25%, Green +30%, Violet +35%, Red +40%, Pink +45%, and Rainbow +50%.
 
 Eyes determine NFT rarity and cannot be chosen manually.
 
@@ -157,10 +157,10 @@ Special Bonuses - rare backgrounds raise rarity and FOMO as the COLLECTION sells
 Golden Tickets - Free Mints! 55 NFTs hide a special Golden Ticket (free mint for the next BiggiEyes generation).
 
 Claim Button & Reward Pool
-If a user meets the reward conditions (e.g., completing a block or a special combination), the Claim Reward button instantly grants the prize. REWARDS are drawn from a reward pool that keeps 22% of each mint.
+If a user meets the reward conditions (e.g., completing a block or a special combination), the Claim Reward button submits the on-chain claim. Collection rewards receive 25% of the distributor branch, equal to 15% of a native paid mint under the current 40/60 mint split.
 
-Three COLLECTIONs - One Growing Economy
-BiggiEyes is built as three consecutive COLLECTIONs. Each new COLLECTION starts where the previous one left off, so ticket prices and block values continue to rise across generations.
+Scalable Chapters - One Growing Economy
+BiggiEyes currently has five configured chapter pairs and can add more. One central TicketHub carries the paid-ticket curve across chapters, while every VRF collection keeps its own block and background price state.
 
 Live Tracking
 Want to see what is hot right now? Check the Live Stats Widget for real-time prices, claimed REWARDS, and rarity bonuses.
@@ -205,8 +205,6 @@ We believe in a community-first approach, where transparency builds trust, and t
 If you’re ready to mix luck with strategy — welcome to BiggiEyes.
   `,
 };
-
-
 
 
 

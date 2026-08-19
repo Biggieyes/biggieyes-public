@@ -10,16 +10,27 @@ function formatBps(bps) {
   if (bps == null) return "--";
   const n = Number(bps);
   if (!Number.isFinite(n)) return "--";
-  return `${(n / 100).toFixed(2)}%`;
+  const percent = (n / 100).toLocaleString("en-US", {
+    maximumFractionDigits: 2,
+  });
+  return `${n.toLocaleString("en-US")} bps (${percent}%)`;
 }
 
 function formatSeconds(sec) {
   if (sec == null) return "--";
   const n = Number(sec);
   if (!Number.isFinite(n)) return "--";
-  if (n < 60) return `${n}s`;
-  if (n < 3600) return `${(n / 60).toFixed(1)}m`;
-  return `${(n / 3600).toFixed(2)}h`;
+  if (n < 60) return `${n} s`;
+  if (n < 3600) {
+    const minutes = (n / 60).toLocaleString("en-US", {
+      maximumFractionDigits: 2,
+    });
+    return `${n} s (${minutes} min)`;
+  }
+  const hours = (n / 3600).toLocaleString("en-US", {
+    maximumFractionDigits: 2,
+  });
+  return `${n} s (${hours} h)`;
 }
 
 function formatNative(value) {
@@ -40,21 +51,35 @@ function PolicyTab({ snapshot, loading, error }) {
 
   return (
     <div className="biggi-grid">
-      <Card title="POLICY" subtitle="Buyback throttles, slippage, quotas (view-only)">
+      <Card
+        title="POLICY"
+        subtitle="Buyback throttles, slippage, quotas (view-only)"
+      >
         {loading ? <div className="biggi-muted">Loading…</div> : null}
-        {error ? <div className="biggi-muted">{String(error?.message || error)}</div> : null}
+        {error ? (
+          <div className="biggi-muted">{String(error?.message || error)}</div>
+        ) : null}
 
-        <AddressLine label="Policy" address={p?.address} href={explorerLink(p?.address)} />
+        <AddressLine
+          label="Policy"
+          address={p?.address}
+          href={explorerLink(p?.address)}
+        />
 
         <Line
           label="Buybacks paused"
-          value={p?.buybacksPaused == null ? "--" : p.buybacksPaused ? "YES" : "NO"}
+          value={
+            p?.buybacksPaused == null ? "--" : p.buybacksPaused ? "YES" : "NO"
+          }
           tone={p?.buybacksPaused ? "warn" : "ok"}
         />
 
         <Line label="Swap slippage" value={formatBps(p?.swapSlippageBps)} />
         <Line label="TX deadline" value={formatSeconds(p?.txDeadlineSec)} />
-        <Line label="Min buyback interval" value={formatSeconds(p?.minBuybackInterval)} />
+        <Line
+          label="Min buyback interval"
+          value={formatSeconds(p?.minBuybackInterval)}
+        />
 
         <div className="biggi-divider" />
 
@@ -62,7 +87,10 @@ function PolicyTab({ snapshot, loading, error }) {
         <Line label="Used today" value={formatNative(usedToday)} />
         <Line label="Remaining today" value={formatNative(remaining)} />
 
-        <Line label="Day index" value={p?.dayIndex == null ? "--" : String(p.dayIndex)} />
+        <Line
+          label="Day index"
+          value={p?.dayIndex == null ? "--" : String(p.dayIndex)}
+        />
       </Card>
     </div>
   );

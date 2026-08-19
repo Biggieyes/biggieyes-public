@@ -60,7 +60,7 @@ export const INFO_CONCEPTS = [
   {
     concept: "Base vs live price",
     explanation:
-      "Base price is the 1-10 POL start. Live price is on-chain and can rise with VRF mints and matching background usage.",
+      "Base and live prices are read from the active chapter contract. Live price can rise with VRF mints and matching background usage.",
   },
   {
     concept: "Minted",
@@ -91,10 +91,119 @@ export const COLLECTION_STATUSES = {
   NETWORK: "Polygon mainnet",
 };
 
-// Future COLLECTIONs configuration
-export const FUTURE_COLLECTIONS = [
-  // Add future COLLECTIONs here as needed
-  // Format: { id, name, description, status, items, mintPrice, progress }
+const VRF_COLLECTION_SUPPLY = 550;
+const PUBLIC_COLLECTION_SUPPLY = 100;
+const DEFAULT_PAIR_SUPPLY = VRF_COLLECTION_SUPPLY + PUBLIC_COLLECTION_SUPPLY;
+
+const roadmapImage = (name) => ({
+  imageSrc: `/images/expansion-roadmap/${name}.optimized.jpg`,
+  imageFallbackSrc: `/images/expansion-roadmap/${name}.png`,
+});
+
+const createRoadmapCollection = ({
+  id,
+  name,
+  type,
+  supply,
+  status,
+  description,
+  imageSrc = "",
+  imageFallbackSrc = "",
+  imageAlt = "",
+  placeholderLabel = "Image coming soon",
+  featuredNote = "",
+}) => ({
+  id,
+  name,
+  type,
+  supply,
+  status,
+  description,
+  imageSrc,
+  imageFallbackSrc,
+  imageAlt: imageAlt || `${name} preview`,
+  placeholderLabel,
+  featuredNote,
+  items: supply,
+  mintPrice: "TBA",
+  progress: 0,
+});
+
+const ROADMAP_CHAPTERS = [
+  { chapterId: 2, slug: "universe", title: "Universe" },
+  { chapterId: 3, slug: "mutant", title: "Mutant" },
+  { chapterId: 4, slug: "apocalipse", title: "Apocalipse" },
+  { chapterId: 5, slug: "super-hero", title: "Super Hero" },
 ];
 
+export const FUTURE_COLLECTION_STAGES = ROADMAP_CHAPTERS.map(
+  ({ chapterId, slug, title }) => ({
+    id: `vrf-public-${slug}`,
+    chapterId,
+    kind: "pair",
+    title,
+    chapterKey: "vrfPublic",
+    chapterLabel: "VRF + Public",
+    status: "Inactive",
+    description: `${title} opens after the preceding chapter is complete.`,
+    collections: [
+      createRoadmapCollection({
+        id: `${slug}-vrf`,
+        name: title,
+        type: "VRF",
+        supply: VRF_COLLECTION_SUPPLY,
+        status: "Inactive",
+        description: `${title} VRF collection.`,
+        ...roadmapImage(slug),
+      }),
+      createRoadmapCollection({
+        id: `${slug}-public`,
+        name: `${title} Public`,
+        type: "Public",
+        supply: PUBLIC_COLLECTION_SUPPLY,
+        status: "Inactive",
+        description: `Public companion for ${title}.`,
+        ...roadmapImage(`${slug}-public`),
+      }),
+    ],
+  }),
+);
 
+export const FUTURE_COLLECTIONS = FUTURE_COLLECTION_STAGES.flatMap((stage) =>
+  (Array.isArray(stage.collections) ? stage.collections : []).map(
+    (collection) => ({
+      ...collection,
+      stageId: stage.id,
+      stageKind: stage.kind,
+      stageTitle: stage.title,
+      stageStatus: stage.status,
+      stageDescription: stage.description,
+      chapterKey: stage.chapterKey,
+      chapterLabel: stage.chapterLabel,
+    }),
+  ),
+);
+
+export const getFutureCollectionStats = (stages = FUTURE_COLLECTION_STAGES) => {
+  const safeStages = Array.isArray(stages) ? stages : [];
+  const collections = safeStages.flatMap((stage) =>
+    Array.isArray(stage.collections) ? stage.collections : [],
+  );
+  const pairStages = safeStages.filter((stage) => stage.kind === "pair");
+  const pairCollections = pairStages.flatMap((stage) =>
+    Array.isArray(stage.collections) ? stage.collections : [],
+  );
+  return {
+    totalStages: safeStages.length,
+    totalPairs: pairStages.length,
+    totalCollections: collections.length,
+    totalItems: collections.reduce(
+      (sum, collection) => sum + Number(collection.supply || 0),
+      0,
+    ),
+    pairCollections: pairCollections.length,
+    finalCollections: 0,
+    pairSupply: DEFAULT_PAIR_SUPPLY,
+    finalSupply: 0,
+  };
+};

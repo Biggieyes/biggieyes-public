@@ -43,7 +43,9 @@ const HistoryTab = React.lazy(() => import("./tabs/HistoryTab.jsx"));
 const DistributorTokenTab = React.lazy(
   () => import("./tabs/DistributorTokenTab.jsx"),
 );
-const TokenomicsPanel = React.lazy(() => import("./sections/TokenomicsPanel.jsx"));
+const TokenomicsPanel = React.lazy(
+  () => import("./sections/TokenomicsPanel.jsx"),
+);
 const TransparencyTab = React.lazy(() => import("./tabs/TransparencyTab.jsx"));
 
 const TABS = [
@@ -202,8 +204,7 @@ export default function EcosystemPanel({
 
   const isBuybackFocused =
     needsBuybackHistory || active === "distributor" || wiringOpen;
-  const isDripFocused =
-    needsDripHistory || active === "distributor";
+  const isDripFocused = needsDripHistory || active === "distributor";
   const isLiquidityFocused = needsLiquidityHistory || wiringOpen;
   const isDexFocused =
     needsDexHistory || active === "distributor" || wiringOpen;
@@ -427,7 +428,10 @@ export default function EcosystemPanel({
     const derived = tokenDex.snapshot?.derived || {};
     return {
       reserveNative: toNumberSafe(r.native, 18),
-      reserveBiggi: toNumberSafe(r.token, tokenDex.snapshot?.token?.decimals ?? 18),
+      reserveBiggi: toNumberSafe(
+        r.token,
+        tokenDex.snapshot?.token?.decimals ?? 18,
+      ),
       lpTotalSupply: toNumberSafe(p?.lpTotalSupply, 18),
       nativePerBiggi: derived.priceNativePerToken ?? null,
       biggiPerNative: derived.priceTokenPerNative ?? null,
@@ -443,7 +447,10 @@ export default function EcosystemPanel({
       pair: {
         address: p.address,
         nativeReserve: toNumberSafe(p.reserves?.native, 18),
-        biggiReserve: toNumberSafe(p.reserves?.token, tokenDex.snapshot?.token?.decimals ?? 18),
+        biggiReserve: toNumberSafe(
+          p.reserves?.token,
+          tokenDex.snapshot?.token?.decimals ?? 18,
+        ),
         lpTotalSupply: toNumberSafe(p.lpTotalSupply, 18),
       },
       derived: tokenDex.snapshot?.derived,
@@ -453,7 +460,9 @@ export default function EcosystemPanel({
   const heroStats = React.useMemo(() => {
     const items = [];
     const tokenDecimals =
-      tokenDex.snapshot?.token?.decimals ?? flow.snapshot?.tokenMeta?.decimals ?? 18;
+      tokenDex.snapshot?.token?.decimals ??
+      flow.snapshot?.tokenMeta?.decimals ??
+      18;
     const priceNative = tokenDex.snapshot?.derived?.priceNativePerToken;
     const reserveNative =
       liquidity.snapshot?.reserve?.maticBalanceNumeric ??
@@ -740,10 +749,7 @@ export default function EcosystemPanel({
       },
       {
         label: "Wrapped Native",
-        address: pickAddr(
-          tokenDex.snapshot?.dex?.weth,
-          ADDR.WETH,
-        ),
+        address: pickAddr(tokenDex.snapshot?.dex?.weth, ADDR.WETH),
       },
     ];
 
@@ -812,42 +818,19 @@ export default function EcosystemPanel({
         }}
       >
         <div className="rewards-grid__surface biggi-token-surface">
-          <header className="rewards-grid__header biggi-header panel-header panel-header--ecosystem">
-            <div className="rewards-grid__headline">
-              <h2 className="rewards-grid__title">{activeTabMeta.title}</h2>
-              <p className="rewards-grid__subtitle">
-                {activeTabMeta.subtitle}
-              </p>
-            </div>
-
-            <div className="biggi-header-right">
-              <div className="biggi-status">
-                <span className="biggi-status-dot" />
-                <span>{chainStatus.role}</span>
-              </div>
-            </div>
-          </header>
-
           <MainnetDataRail
             title="Tokenomics mainnet data"
             items={mainnetRailItems}
           />
 
           <HeroStats items={heroStats} className={styles.ecoHeroStats} />
-          <div
-            className={`panel-tabs-row ${styles.ecoToolbarRow}`}
-          >
+          <div className={`panel-tabs-row ${styles.ecoToolbarRow}`}>
             <TabsBar tabs={TABS} active={active} onChange={handleTabChange} />
             <PanelInfoButton
               onClick={() => setInfoOpen(true)}
               ariaLabel="Ecosystem buttons info"
             />
           </div>
-          {lastUpdatedLabel ? (
-            <div className={`biggi-value mono ${styles.ecoUpdateStamp}`}>
-              {lastUpdatedLabel}
-            </div>
-          ) : null}
           <PanelInfoModal
             open={infoOpen}
             onClose={() => setInfoOpen(false)}
@@ -1023,14 +1006,18 @@ export default function EcosystemPanel({
                   <div className={styles.ecoWiringGrid}>
                     {wiringGroups.map((group) => (
                       <div key={group.title} className={styles.ecoWiringCard}>
-                        <div className={styles.ecoWiringTitle}>{group.title}</div>
+                        <div className={styles.ecoWiringTitle}>
+                          {group.title}
+                        </div>
                         <div className={styles.ecoTable}>
                           {group.rows.map((row) => (
                             <div
                               key={`${group.title}-${row.label}`}
                               className={`${styles.ecoTableRow} ${styles.ecoTableRowThree} ${styles.ecoWiringRow}`}
                             >
-                              <span className={`${styles.ecoTableLabel} ${styles.ecoWiringLabel}`}>
+                              <span
+                                className={`${styles.ecoTableLabel} ${styles.ecoWiringLabel}`}
+                              >
                                 {row.label}
                               </span>
                               <span
@@ -1056,7 +1043,9 @@ export default function EcosystemPanel({
                               <span
                                 className={`${styles.ecoStatusDot} ${styles.ecoWiringStatus} ${row.address ? styles.ecoStatusOk : styles.ecoStatusWarn}`}
                                 title={row.address ? "Connected" : "Missing"}
-                                aria-label={row.address ? "Connected" : "Missing"}
+                                aria-label={
+                                  row.address ? "Connected" : "Missing"
+                                }
                               />
                             </div>
                           ))}

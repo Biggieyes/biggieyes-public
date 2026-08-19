@@ -1,25 +1,17 @@
 import * as React from "react";
+import {
+  BACKGROUND_BONUS_PCT,
+  BACKGROUND_GROWTH_PCT,
+  BASE_PRICES,
+  DEFAULT_BLOCKS,
+  MAX_SUPPLY_BY_BLOCK,
+} from "@/shared/blocks";
 import "./BackgroundsWidget.css";
 import "./InfoTables.css";
 
 // Constants
 const MOBILE_BREAKPOINT = 700;
 const ANIMATION_DURATION = 2.8;
-
-const DEFAULT_BLOCK_NAMES = [
-  "ORANGE",
-  "BLACK",
-  "WHITE",
-  "BROWN",
-  "BLUE",
-  "GREEN",
-  "VIOLET",
-  "RED",
-  "PINK",
-  "RAINBOW",
-];
-
-const BLOCK_MAX_SUPPLY = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10];
 
 const BLOCK_COLORS = {
   ORANGE: "#ff9000",
@@ -33,34 +25,6 @@ const BLOCK_COLORS = {
   PINK: "#ff63c2",
   RAINBOW: "linear-gradient(90deg,#ff3,#0ff,#9f3,#f0f,#3cf,#f66,#ffe800)",
 };
-
-const BACKGROUND_INCREASES = {
-  ORANGE: "5%",
-  BLACK: "10%",
-  WHITE: "15%",
-  BROWN: "20%",
-  BLUE: "25%",
-  GREEN: "30%",
-  VIOLET: "35%",
-  RED: "40%",
-  PINK: "45%",
-  RAINBOW: "50%",
-};
-
-const BLOCK_BASE_PRICES = {
-  ORANGE: 1,
-  BLACK: 2,
-  WHITE: 3,
-  BROWN: 4,
-  BLUE: 5,
-  GREEN: 6,
-  VIOLET: 7,
-  RED: 8,
-  PINK: 9,
-  RAINBOW: 10,
-};
-
-const GROWTH_BY_BG_INDEX = [5, 2, 2, 3, 3, 4, 4, 5, 5, 10];
 
 const getBlockColor = (name) => {
   const upperName = String(name || "").toUpperCase();
@@ -132,6 +96,12 @@ const fmt2 = (n) =>
       }).format(n)
     : "--";
 
+const finiteNumber = (value) => {
+  if (value == null || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+};
+
 const BackgroundsWidget = ({
   blockNames = [],
   backgroundMintCounts = [],
@@ -169,22 +139,24 @@ const BackgroundsWidget = ({
 
   const { countByName, priceByName, maxSupplyByName, normalizedNames } =
     React.useMemo(() => {
-      const namesUC = (Array.isArray(blockNames) && blockNames.length
-        ? blockNames
-        : DEFAULT_BLOCK_NAMES
+      const namesUC = (
+        Array.isArray(blockNames) && blockNames.length
+          ? blockNames
+          : DEFAULT_BLOCKS
       )
-        .map((n) => String(n || "").trim().toUpperCase())
+        .map((n) =>
+          String(n || "")
+            .trim()
+            .toUpperCase(),
+        )
         .filter(Boolean);
       const countMap = {};
       const priceMap = {};
       const supplyMap = {};
       namesUC.forEach((N, i) => {
-        const count = Number(backgroundMintCounts[i] ?? 0);
-        const price = Number(blockPrices[i] ?? 0);
-        const supply = Number(BLOCK_MAX_SUPPLY[i] ?? 0);
-        countMap[N] = Number.isFinite(count) ? count : 0;
-        priceMap[N] = Number.isFinite(price) ? price : 0;
-        supplyMap[N] = Number.isFinite(supply) ? supply : 0;
+        countMap[N] = finiteNumber(backgroundMintCounts[i]);
+        priceMap[N] = finiteNumber(blockPrices[i]);
+        supplyMap[N] = finiteNumber(MAX_SUPPLY_BY_BLOCK[N]);
       });
       return {
         countByName: countMap,
@@ -210,7 +182,9 @@ const BackgroundsWidget = ({
   const normalizedLastBg = String(lastRedeemedBackground || "")
     .trim()
     .toUpperCase();
-  const normalizedLastToken = String(lastRedeemedTokenId || "").trim();
+  const normalizedLastTokenRaw = String(lastRedeemedTokenId || "").trim();
+  const normalizedLastToken =
+    normalizedLastTokenRaw === "-" ? "" : normalizedLastTokenRaw;
 
   const headerLastRedeemedId = normalizedLastToken
     ? `NFT #${normalizedLastToken} (${normalizedLastBlock || "-"}/${normalizedLastBg || "-"})`
@@ -274,21 +248,28 @@ const BackgroundsWidget = ({
           <tbody>
             {normalizedNames.map((upper, i) => {
               const isLastRedeemed = upper === normalizedLastBg;
-              const minted = Number(countByName[upper] ?? 0);
-              const currentPrice = Number(priceByName[upper] ?? 0);
-              const basePrice = Number(BLOCK_BASE_PRICES[upper] ?? 0);
-              const safeCurrent = Number.isFinite(currentPrice)
-                ? currentPrice
-                : basePrice;
-              const rawDiff = Number.isFinite(safeCurrent - basePrice)
-                ? safeCurrent - basePrice
-                : 0;
-              const sign = rawDiff > 0 ? "+" : rawDiff < 0 ? "-" : "";
-              const priceDiff = `${sign}${fmt2(Math.abs(rawDiff))}`;
-              const maxSupply = Number(
-                maxSupplyByName[upper] ?? BLOCK_MAX_SUPPLY[i] ?? 0,
-              );
-              const growthPct = `${GROWTH_BY_BG_INDEX[i] || 0}%`;
+              const minted = finiteNumber(countByName[upper]);
+              const currentPrice = finiteNumber(priceByName[upper]);
+              const basePrice = finiteNumber(BASE_PRICES[upper]);
+              const rawDiff =
+                currentPrice != null && basePrice != null
+                  ? currentPrice - basePrice
+                  : null;
+              const sign =
+                rawDiff == null
+                  ? ""
+                  : rawDiff > 0
+                    ? "+"
+                    : rawDiff < 0
+                      ? "-"
+                      : "";
+              const priceDiff =
+                rawDiff == null
+                  ? "--"
+                  : `${sign}${fmt2(Math.abs(rawDiff))} POL`;
+              const maxSupply = finiteNumber(maxSupplyByName[upper]);
+              const bonusPct = finiteNumber(BACKGROUND_BONUS_PCT[upper]);
+              const growthPct = finiteNumber(BACKGROUND_GROWTH_PCT[upper]);
 
               return (
                 <tr
@@ -305,22 +286,22 @@ const BackgroundsWidget = ({
                     {upper}
                   </td>
                   <td style={mintedStyle} data-label={headerTitles[1]}>
-                    {minted}
+                    {minted ?? "--"}
                   </td>
                   <td style={linkedBlockStyle} data-label={headerTitles[2]}>
                     {pretty(upper)}
                   </td>
                   <td style={priceStyleWhite} data-label={headerTitles[3]}>
-                    {BACKGROUND_INCREASES[upper] || "-"}
+                    {bonusPct == null ? "--" : `${bonusPct}%`}
                   </td>
                   <td style={priceStyleWhite} data-label={headerTitles[4]}>
-                    {growthPct}
+                    {growthPct == null ? "--" : `${growthPct}%`}
                   </td>
                   <td style={maxSupplyStyle} data-label={headerTitles[5]}>
-                    {maxSupply}
+                    {maxSupply ?? "--"}
                   </td>
                   <td style={priceStyle} data-label={headerTitles[6]}>
-                    {priceDiff} POL
+                    {priceDiff}
                   </td>
                 </tr>
               );
@@ -426,5 +407,3 @@ const BackgroundsWidget = ({
 };
 
 export default BackgroundsWidget;
-
-

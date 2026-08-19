@@ -161,6 +161,7 @@ const BACKGROUND_NAMES = [
   "RAINBOW",
 ];
 const BACKGROUND_CODES = ["O", "B", "W", "BR", "BL", "G", "V", "R", "P", "RB"];
+const PUBLIC_TICKET_START_PRICE_POL = 500;
 
 const PLACEHOLDER_IMAGE = "/images/Biggi.png";
 const EMPTY_LAST_MINTED = Object.freeze({
@@ -1906,6 +1907,8 @@ export default function AppCore() {
     marketingMinted: null,
     paused: null,
     distributor: "",
+    activeChapterId: null,
+    activeChapterCount: 0,
   });
 
   const [blockMintCounts, setBlockMintCounts] = React.useState(
@@ -1919,7 +1922,6 @@ export default function AppCore() {
   const [myNFTs, setMyNFTs] = React.useState([]);
   const [galleryLoading, setGalleryLoading] = React.useState(false);
   const [galleryNotice, setGalleryNotice] = React.useState("");
-  const [cardsHelpOpen, setCardsHelpOpen] = React.useState(false);
   const [, setZoomImg] = React.useState(null);
 
   const [lastMinted, setLastMinted] = React.useState(() => {
@@ -2333,15 +2335,28 @@ export default function AppCore() {
     const ticketHub = ticketHubArg || getReadOnlyTicketHub();
     if (!ticketHub) return null;
 
-    const read = async (methodName) => {
+    const read = async (methodName, args = []) => {
       const fn = ticketHub?.[methodName];
       if (typeof fn !== "function") return null;
       try {
-        return await fn();
+        return await fn(...args);
       } catch {
         return null;
       }
     };
+
+    const chapterStates = await Promise.all(
+      CORE_CHAPTERS.map(async (chapter) => ({
+        chapterId: chapter.chapterId,
+        active: Boolean(await read("chapterActive", [chapter.chapterId])),
+      })),
+    );
+    const activeChapterIds = chapterStates
+      .filter((chapter) => chapter.active)
+      .map((chapter) => chapter.chapterId);
+    const activeChapterId =
+      activeChapterIds.length === 1 ? activeChapterIds[0] : null;
+    const displayedChapterId = activeChapterId || CORE_CHAPTERS[0].chapterId;
 
     const [
       saleCap,
@@ -2351,10 +2366,10 @@ export default function AppCore() {
       paused,
       distributor,
     ] = await Promise.all([
-      read("saleCap"),
-      read("marketingCap"),
-      read("saleMinted"),
-      read("marketingMinted"),
+      read("chapterSaleCap", [displayedChapterId]),
+      read("chapterMarketingCap", [displayedChapterId]),
+      read("chapterSaleMinted", [displayedChapterId]),
+      read("chapterMarketingMinted", [displayedChapterId]),
       read("paused"),
       read("distributor"),
     ]);
@@ -2366,6 +2381,8 @@ export default function AppCore() {
       marketingMinted: toNumInt(marketingMinted),
       paused: paused == null ? null : Boolean(paused),
       distributor: String(distributor || ""),
+      activeChapterId,
+      activeChapterCount: activeChapterIds.length,
     };
     setTicketHubStatus(next);
     return next;
@@ -3036,7 +3053,8 @@ export default function AppCore() {
 
     // 1) Prefer reader snapshot for scalar stats
     try {
-      if (displayedChapter.chapterId !== 1) throw new Error("READER_CHAPTER_MISMATCH");
+      if (displayedChapter.chapterId !== 1)
+        throw new Error("READER_CHAPTER_MISMATCH");
       const readerKinds = ["main", "tokenomics", "REWARDS", "generic"];
       let snap = null;
 
@@ -3195,8 +3213,7 @@ export default function AppCore() {
       );
       const volWei = volumeValues.some((value) => value != null)
         ? volumeValues.reduce(
-            (sum, value) =>
-              sum + BigInt(value?.toString?.() || "0"),
+            (sum, value) => sum + BigInt(value?.toString?.() || "0"),
             0n,
           )
         : null;
@@ -3429,7 +3446,10 @@ export default function AppCore() {
       try {
         const tokenId = nft?.tokenId != null ? String(nft.tokenId) : "";
         if (!tokenId) return;
-        const assetKey = getAssetIdentity(nft, ADDR.COLLECTION_VRF || ADDR.MAIN);
+        const assetKey = getAssetIdentity(
+          nft,
+          ADDR.COLLECTION_VRF || ADDR.MAIN,
+        );
         if (!assetKey) return;
         if (dynamicTraitsById[assetKey] || dynamicTraitsById[tokenId]) return;
 
@@ -3453,7 +3473,10 @@ export default function AppCore() {
             maxSupply: 550,
             allowLegacy: true,
           });
-          if (nftIndex != null && typeof collection?.getMintData === "function") {
+          if (
+            nftIndex != null &&
+            typeof collection?.getMintData === "function"
+          ) {
             res = await collection.getMintData(nftIndex).catch(() => null);
           }
         }
@@ -3683,6 +3706,20 @@ export default function AppCore() {
               description: `Redeem this ticket (#${id}) to mint a BiggiEyes NFT.`,
             };
             let image = PLACEHOLDER_IMAGE;
+            let chapterId = null;
+
+            if (typeof contract?.ticketChapterId === "function") {
+              const rawChapterId = await contract
+                .ticketChapterId(idBN)
+                .catch(() => null);
+              const parsedChapterId = Number(rawChapterId);
+              if (
+                Number.isSafeInteger(parsedChapterId) &&
+                parsedChapterId > 0
+              ) {
+                chapterId = parsedChapterId;
+              }
+            }
 
             try {
               const uri = await getTokenUriCached(contract, idBN);
@@ -3709,6 +3746,7 @@ export default function AppCore() {
               image,
               meta,
               isTicket: true,
+              chapterId,
               contractAddress: contract?.target || contract?.address || null,
             };
           },
@@ -4867,16 +4905,14 @@ export default function AppCore() {
             const rest = finalList.filter((_, index) => index !== mintedIndex);
             return [minted, ...rest];
           }
-          const dedup = finalList.filter(
-            (x) => !x.isPending,
-          );
+          const dedup = finalList.filter((x) => !x.isPending);
           return [pending, ...dedup];
         }
         const targetTopId =
           preferredTopId != null ? String(preferredTopId) : topFirstId;
         if (targetTopId) {
-          const topIndex = finalList.findIndex(
-            (x) => isAssetReferenceMatch(x, targetTopId),
+          const topIndex = finalList.findIndex((x) =>
+            isAssetReferenceMatch(x, targetTopId),
           );
           const top = topIndex >= 0 ? finalList[topIndex] : null;
           const rest = finalList.filter((_, index) => index !== topIndex);
@@ -5398,9 +5434,7 @@ export default function AppCore() {
           const currentTopId = topIdForThisFetch;
           const currentTopStillVisible =
             currentTopId != null &&
-            merged.some((item) =>
-              isAssetReferenceMatch(item, currentTopId),
-            );
+            merged.some((item) => isAssetReferenceMatch(item, currentTopId));
 
           let effectiveTopId = currentTopStillVisible ? currentTopId : null;
 
@@ -6297,16 +6331,14 @@ export default function AppCore() {
               image,
               blockName,
               backgroundName,
-              contractAddress:
-                contract?.target || contract?.address || null,
+              contractAddress: contract?.target || contract?.address || null,
               chapterId: displayedChapter.chapterId,
             }) || {
               tokenId,
               image,
               blockName,
               backgroundName,
-              contractAddress:
-                contract?.target || contract?.address || null,
+              contractAddress: contract?.target || contract?.address || null,
               chapterId: displayedChapter.chapterId,
             },
           );
@@ -6966,10 +6998,7 @@ export default function AppCore() {
                     contractAddress: transferCollection,
                   });
                   setTopFirstId(mintedReference || mintedId);
-                  saveTopFirstCache(
-                    activeWallet,
-                    mintedReference || mintedId,
-                  );
+                  saveTopFirstCache(activeWallet, mintedReference || mintedId);
                   lastRedeemTicketIdRef.current = null;
                 }
               }
@@ -7539,22 +7568,34 @@ export default function AppCore() {
     const distributorConfigured =
       /^0x[a-fA-F0-9]{40}$/.test(distributor) &&
       distributor.toLowerCase() !== ZeroAddress.toLowerCase();
+    const publicPriceReady =
+      Number.isFinite(Number(ticketPrice)) &&
+      Number(ticketPrice) >= PUBLIC_TICKET_START_PRICE_POL;
     const saleRemaining =
       Number.isFinite(saleCap) && Number.isFinite(saleMinted)
         ? Math.max(0, saleCap - saleMinted)
         : null;
     const publicMintActive =
+      ticketHubStatus.activeChapterCount === 1 &&
       ticketHubStatus.paused === false &&
       distributorConfigured &&
+      publicPriceReady &&
       Number.isFinite(saleRemaining) &&
       saleRemaining > 0;
-    const publicMintReason = ticketHubStatus.paused
-      ? "Mint paused"
-      : !distributorConfigured
-        ? "Launch pending"
-        : Number.isFinite(saleRemaining) && saleRemaining <= 0
-          ? "Launch pending"
-          : "";
+    const publicMintReason =
+      ticketHubStatus.activeChapterCount === 0
+        ? "No chapter active"
+        : ticketHubStatus.activeChapterCount > 1
+          ? "Chapter configuration conflict"
+          : ticketHubStatus.paused
+            ? "Mint paused"
+            : !publicPriceReady
+              ? "Public price not configured"
+              : !distributorConfigured
+                ? "Launch pending"
+                : Number.isFinite(saleRemaining) && saleRemaining <= 0
+                  ? "Chapter sold out"
+                  : "";
 
     return {
       networkLabel: "Polygon mainnet",
@@ -7571,8 +7612,12 @@ export default function AppCore() {
       saleRemaining,
       marketingCap,
       marketingMinted,
+      activeChapterId: ticketHubStatus.activeChapterId,
+      activeChapterCount: ticketHubStatus.activeChapterCount,
       publicMintActive,
       publicMintReason,
+      publicPriceReady,
+      publicTicketStartPrice: PUBLIC_TICKET_START_PRICE_POL,
     };
   }, [
     ticketHubStatus,
@@ -7954,10 +7999,7 @@ export default function AppCore() {
         tickets,
       );
       tickets = [activeTicket.ticketId];
-      readContract = getReadOnlyChapterMain(
-        activeTicket.chapterId,
-        roProvider,
-      );
+      readContract = getReadOnlyChapterMain(activeTicket.chapterId, roProvider);
       await assertContractDeployed(
         readContract,
         getContractCheckProvider(roProvider),
@@ -8125,7 +8167,8 @@ export default function AppCore() {
         },
         isTicket: true,
         isPending: true,
-        contractAddress: writeContract?.target || writeContract?.address || null,
+        contractAddress:
+          writeContract?.target || writeContract?.address || null,
         expectedCollectionAddress:
           readContract?.target || readContract?.address || null,
       };
@@ -9356,6 +9399,8 @@ export default function AppCore() {
         ticketMinted={ticketMinted}
         maxTickets={maxTickets}
         ticketPrice={ticketPrice}
+        activeTicketChapterId={ticketHubStatus.activeChapterId}
+        activeTicketChapterCount={ticketHubStatus.activeChapterCount}
         blockMintCounts={blockMintCounts}
         BACKGROUND_NAMES={BACKGROUND_NAMES}
         blockPrices={blockPrices}
@@ -9367,8 +9412,6 @@ export default function AppCore() {
         epochStartTs={epochStartTs}
         userLastClaimTs={userLastClaimTs}
         fetchChainNowTs={fetchChainNowTs}
-        cardsHelpOpen={cardsHelpOpen}
-        setCardsHelpOpen={setCardsHelpOpen}
         galleryLoading={galleryLoading}
         galleryNotice={galleryNotice}
         hideExtras={hideExtras}

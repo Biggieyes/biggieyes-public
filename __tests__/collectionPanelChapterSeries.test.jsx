@@ -78,25 +78,18 @@ describe("collection chapter / series panel", () => {
       />,
     );
 
-    expect(screen.getByText("Chapter / Series wiring")).toBeTruthy();
-    expect(screen.getByText("Polygon mainnet / chainId 137")).toBeTruthy();
-    expect(screen.getByText("BIGGI MASTER Core Launch")).toBeTruthy();
+    expect(screen.getByText("Chapters")).toBeTruthy();
     for (const chapter of CORE_CHAPTERS) {
-      expect(
-        screen.getByText(
-          `Chapter ${chapter.chapterId}: ${chapter.displayName}`,
-        ),
-      ).toBeTruthy();
+      expect(screen.getByText(chapter.displayName)).toBeTruthy();
     }
     expect(screen.getAllByText("Eligible").length).toBeGreaterThan(1);
     expect(screen.getAllByText("Matched").length).toBeGreaterThan(1);
     expect(screen.getAllByText("Not active")).toHaveLength(5);
     expect(container.textContent).toContain("Available chapters0 / 5");
     expect(container.textContent).toMatch(
-      /250 \/ 2[\s\u00a0]750 tickets minted/,
+      /Tickets minted250 \/ 2[\s\u00a0]750/,
     );
     expect(container.textContent).not.toContain("Active pair");
-    expect(container.textContent).toContain("1 POL");
     expect(container.textContent).not.toMatch(/\d+(?:\.\d+)?e\+\d+/i);
     expect(container.textContent).not.toMatch(/amoy|mumbai|testnet|80002/i);
   });

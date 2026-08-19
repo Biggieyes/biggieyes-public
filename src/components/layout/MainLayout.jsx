@@ -82,6 +82,8 @@ function MainLayout({
   ticketMinted,
   maxTickets,
   ticketPrice,
+  activeTicketChapterId,
+  activeTicketChapterCount,
   blockMintCounts,
   BACKGROUND_NAMES,
   blockPrices,
@@ -93,8 +95,6 @@ function MainLayout({
   epochStartTs,
   userLastClaimTs,
   fetchChainNowTs,
-  cardsHelpOpen,
-  setCardsHelpOpen,
   galleryLoading,
   galleryNotice,
   hideExtras,
@@ -168,21 +168,18 @@ function MainLayout({
         infoGateActive={infoGateActive}
         onInfoGateComplete={onInfoGateComplete}
         onInfoButtonRect={onInfoButtonRect}
-          forceInfoOpenTick={forceInfoOpenTick}
-          mintDisabledReason={mintDisabledReason}
-        />
+        forceInfoOpenTick={forceInfoOpenTick}
+        mintDisabledReason={mintDisabledReason}
+      />
 
       <main className="dashboard-shell" id="top">
         <div className="dashboard-shell__inner">
           {isWrongNetwork ? (
-            <div
-              className="network-warning"
-              role="status"
-              aria-live="polite"
-            >
+            <div className="network-warning" role="status" aria-live="polite">
               <div className="network-warning__message">
-                You are connected to <strong>{currentChainLabel}</strong>. Switch
-                to <strong>{expectedChainLabel}</strong> for on-chain actions.
+                You are connected to <strong>{currentChainLabel}</strong>.
+                Switch to <strong>{expectedChainLabel}</strong> for on-chain
+                actions.
               </div>
               <div className="network-warning__actions">
                 <Button
@@ -246,13 +243,13 @@ function MainLayout({
           >
             <React.Suspense fallback={galleryPlaceholder}>
               <GallerySection
-                cardsHelpOpen={cardsHelpOpen}
-                setCardsHelpOpen={setCardsHelpOpen}
                 hideExtras={hideExtras}
                 galleryLoading={galleryLoading}
                 galleryNotice={galleryNotice}
                 myNFTs={myNFTs}
                 ticketPrice={ticketPrice}
+                activeTicketChapterId={activeTicketChapterId}
+                activeTicketChapterCount={activeTicketChapterCount}
                 dynamicTraitsById={dynamicTraitsById}
                 topFirstId={topFirstId}
                 setTopFirstId={setTopFirstId}

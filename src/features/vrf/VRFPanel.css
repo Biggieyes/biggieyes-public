@@ -31,7 +31,11 @@
   border-radius: 14px;
   background:
     radial-gradient(circle at 10% 20%, rgba(255, 232, 0, 0.1), transparent 48%),
-    radial-gradient(circle at 90% 15%, rgba(39, 217, 210, 0.08), transparent 52%),
+    radial-gradient(
+      circle at 90% 15%,
+      rgba(39, 217, 210, 0.08),
+      transparent 52%
+    ),
     linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(0, 0, 0, 0.2));
 }
 
@@ -93,7 +97,9 @@
   border-radius: 16px;
   padding: 16px;
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .vrf-card:hover {
@@ -364,6 +370,59 @@
 
   .vrf-card--full {
     grid-column: 1 / -1;
+  }
+
+  .vrf-table {
+    min-width: 0;
+  }
+
+  .vrf-table thead {
+    display: none;
+  }
+
+  .vrf-table,
+  .vrf-table tbody,
+  .vrf-table tr,
+  .vrf-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .vrf-table tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .vrf-table tbody tr {
+    padding: 8px 10px;
+    border: 1px solid rgba(255, 232, 0, 0.14);
+    border-radius: 8px;
+  }
+
+  .vrf-table td {
+    display: grid;
+    grid-template-columns: minmax(96px, 0.45fr) minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    padding: 7px 0;
+    overflow-wrap: anywhere;
+  }
+
+  .vrf-table td::before {
+    content: attr(data-label);
+    color: #ffe800;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .vrf-table td.vrf-table__empty {
+    display: block;
+    padding: 14px 8px;
+  }
+
+  .vrf-table td.vrf-table__empty::before {
+    content: none;
   }
 }
 

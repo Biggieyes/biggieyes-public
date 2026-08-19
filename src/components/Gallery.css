@@ -656,6 +656,8 @@
   }
 
   .gallery__header-main {
+    flex: 0 1 auto;
+    min-width: 0;
     max-width: none;
   }
 
@@ -679,6 +681,19 @@
 }
 
 @media (max-width: 520px) {
+  .gallery__summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gallery__summary-item--metric {
+    min-height: 120px;
+    padding: 10px;
+  }
+
+  .gallery__summary-item:last-child {
+    grid-column: 1 / -1;
+  }
+
   .gallery__grid {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }

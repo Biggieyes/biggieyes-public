@@ -33,9 +33,17 @@ import {
 } from "@/shared/utils/rpcConfig";
 import { isRateLimitedRpcError } from "@/shared/utils/rpcErrors";
 import { fetchDistributorSnapshot } from "@/shared/services/tokenomics/distributor.reader";
-import { httpFromIpfs, readJsonFromURI, resolveImageUrl } from "@/shared/services/ipfs";
+import {
+  httpFromIpfs,
+  readJsonFromURI,
+  resolveImageUrl,
+} from "@/shared/services/ipfs";
 import { buildBlockImagePath } from "@/shared/utils/images";
-import { DEFAULT_BLOCKS, BASE_PRICES } from "@/shared/blocks";
+import {
+  BACKGROUND_BONUS_PCT,
+  BASE_PRICES,
+  DEFAULT_BLOCKS,
+} from "@/shared/blocks";
 import { getCachedPriceAttrs } from "@/shared/utils/metadata";
 import ModalPortal from "./common/ModalPortal";
 import WeeklyCountdown from "./WeeklyCountdown";
@@ -45,6 +53,7 @@ import {
   selectLiveStatsImage,
 } from "./liveStatsImageState.js";
 import "./LiveStatsPools.css";
+import "./LiveStatsTables.css";
 import "./InfoTables.css";
 
 const OKLINK_BASE = "https://www.oklink.com/polygon/address/";
@@ -54,7 +63,8 @@ const BackgroundsWidget = React.lazy(() => import("./BackgroundsWidget"));
 const LiveChatLoadError = () => (
   <section className="live-chat-panel">
     <div className="live-chat-panel__error">
-      Live Chat module failed to load. Refresh the page or restart `dev:netlify`.
+      Live Chat module failed to load. Refresh the page or restart
+      `dev:netlify`.
     </div>
   </section>
 );
@@ -73,7 +83,6 @@ const TOKEN_REWARDS_MIN_ABI = [
   "function tokenMeta() view returns(string name_,string symbol_,uint8 decimals_)",
 ];
 
-const BACKGROUND_BONUSES = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50];
 const COLLECTION_INFO_ROWS = [
   {
     concept: "Total minted / Tickets minted",
@@ -226,7 +235,9 @@ const parsePriceNumber = (value) => {
 
 const readPriceFromMeta = (meta, traitNames = [], directValues = []) => {
   const normalizedNames = traitNames.map((name) =>
-    String(name || "").trim().toLowerCase(),
+    String(name || "")
+      .trim()
+      .toLowerCase(),
   );
   const attrValue = traitValueFromMeta(meta, normalizedNames);
   const fromAttr = parsePriceNumber(attrValue);
@@ -291,16 +302,13 @@ const BLOCK_IMAGE_BASES = Object.freeze({
     "https://biggieyes.mypinata.cloud/ipfs/bafybeicqja4j6wmdm2jbomtloggwafe4kluokgp5qhdr2pkrgxju6tpyl4/",
   BROWN:
     "https://biggieyes.mypinata.cloud/ipfs/bafybeibbqjofkkvldzfmmi5tfzucrmbd56ba3i5pfivywqb7g25wa7677m/",
-  BLUE:
-    "https://biggieyes.mypinata.cloud/ipfs/bafybeieuk5o3mktitbutdzyymacz27me5zntkybk3zhndjvsfuqa6osj4m/",
+  BLUE: "https://biggieyes.mypinata.cloud/ipfs/bafybeieuk5o3mktitbutdzyymacz27me5zntkybk3zhndjvsfuqa6osj4m/",
   GREEN:
     "https://biggieyes.mypinata.cloud/ipfs/bafybeihgbvpuomieigi3eenho6fzbbtwpvw7lfqbpbriojenvutufn6opa/",
   VIOLET:
     "https://biggieyes.mypinata.cloud/ipfs/bafybeibs3xyn3wdsssxubow5wqh4vyg4dkumshqza6ppssiqqrbo4chq3a/",
-  RED:
-    "https://biggieyes.mypinata.cloud/ipfs/bafybeifuhvp33jihz2xzr45vwme2drg7uxe5sukabttx4eqqupdbfmmebi/",
-  PINK:
-    "https://biggieyes.mypinata.cloud/ipfs/bafybeihkz72p25huca3b463o7q7yp4xnv2l4lejyzckodolqij6m5ofw2a/",
+  RED: "https://biggieyes.mypinata.cloud/ipfs/bafybeifuhvp33jihz2xzr45vwme2drg7uxe5sukabttx4eqqupdbfmmebi/",
+  PINK: "https://biggieyes.mypinata.cloud/ipfs/bafybeihkz72p25huca3b463o7q7yp4xnv2l4lejyzckodolqij6m5ofw2a/",
   RAINBOW:
     "https://biggieyes.mypinata.cloud/ipfs/bafybeibda5h7lwnalrugm4fek63pqsndvm4nyesm3t77tuegziloqgna3i/",
 });
@@ -308,7 +316,9 @@ const BLOCK_IMAGE_BASES = Object.freeze({
 const trimSlash = (val) => String(val || "").replace(/\/+$/, "");
 
 const normalizeBgCode = (value) => {
-  const raw = String(value || "").trim().toUpperCase();
+  const raw = String(value || "")
+    .trim()
+    .toUpperCase();
   if (!raw) return "";
   if (BACKGROUND_CODE_BY_NAME[raw]) return BACKGROUND_CODE_BY_NAME[raw];
   const allowed = new Set(Object.values(BACKGROUND_CODE_BY_NAME));
@@ -317,7 +327,9 @@ const normalizeBgCode = (value) => {
 };
 
 const normalizeBackgroundName = (value) => {
-  const raw = String(value || "").trim().toUpperCase();
+  const raw = String(value || "")
+    .trim()
+    .toUpperCase();
   if (!raw || raw === "-") return "";
   if (BACKGROUND_CODE_BY_NAME[raw]) return raw;
   const byCode = Object.entries(BACKGROUND_CODE_BY_NAME).find(
@@ -328,7 +340,9 @@ const normalizeBackgroundName = (value) => {
 };
 
 const normalizeBlockForImage = (value) => {
-  const raw = String(value || "").trim().toUpperCase();
+  const raw = String(value || "")
+    .trim()
+    .toUpperCase();
   if (!raw || raw === "-") return "";
   if (DEFAULT_BLOCKS.includes(raw)) return raw;
   return raw;
@@ -352,7 +366,9 @@ const LAST_IMAGE_TOKEN_CACHE_LIMIT = 64;
 const liveStatsImageByToken = new Map();
 const LIVE_STATS_IMAGE_CACHE_VERSION = "v3-core-series";
 const LIVE_STATS_CACHE_CHAIN_ID = Number(ADDR?.CHAIN_ID || 137) || 137;
-const LIVE_STATS_CACHE_CONTRACT = String(ADDR?.MAIN || ADDR?.COLLECTION_VRF || "")
+const LIVE_STATS_CACHE_CONTRACT = String(
+  ADDR?.MAIN || ADDR?.COLLECTION_VRF || "",
+)
   .trim()
   .toLowerCase();
 const LIVE_STATS_CACHE_SCOPE = `${LIVE_STATS_IMAGE_CACHE_VERSION}_${LIVE_STATS_CACHE_CHAIN_ID}${
@@ -385,7 +401,9 @@ const readPersistedLiveStatsImageForToken = (tokenId) => {
     if (!canUseLiveStatsStorage()) return "";
     const key = String(tokenId || "").trim();
     if (!key || key === "-") return "";
-    const raw = window.localStorage.getItem(`${LIVE_STATS_IMAGE_CACHE_PREFIX}${key}`);
+    const raw = window.localStorage.getItem(
+      `${LIVE_STATS_IMAGE_CACHE_PREFIX}${key}`,
+    );
     const normalized = normalizeLiveStatsImage(raw);
     return isUsableLiveStatsImage(normalized) ? normalized : "";
   } catch {
@@ -524,7 +542,7 @@ function LiveStats({
       let isTicket = it?.isTicket;
       if (metaLooksNft) {
         isTicket = false;
-      } else if ((isTicket == null) && metaLooksTicket && !metaLooksNft) {
+      } else if (isTicket == null && metaLooksTicket && !metaLooksNft) {
         isTicket = true;
       } else if (isTicket != null) {
         isTicket = Boolean(isTicket);
@@ -571,7 +589,10 @@ function LiveStats({
       "-";
     const backgroundName =
       String(fallbackItem?.backgroundName || "").trim() ||
-      traitValueFromMeta(fallbackItem?.meta, ["background", "background color"]) ||
+      traitValueFromMeta(fallbackItem?.meta, [
+        "background",
+        "background color",
+      ]) ||
       "-";
 
     return toDisplayLastMinted({
@@ -729,8 +750,7 @@ function LiveStats({
     (async () => {
       try {
         const provider = getROProvider();
-        const mainAddr =
-          effectiveLastMinted.contractAddress || ADDR?.MAIN;
+        const mainAddr = effectiveLastMinted.contractAddress || ADDR?.MAIN;
         if (!provider || !mainAddr) return;
         const contract = new Contract(
           mainAddr,
@@ -750,7 +770,9 @@ function LiveStats({
           const parsed = parseTokenUriPartsForImage(uri);
           if (parsed?.mainId && parsed?.blockName && parsed?.bgCode) {
             const fileName = `Biggi_${parsed.mainId}_${parsed.blockName}_${parsed.bgCode}.png`;
-            const remoteBase = trimSlash(BLOCK_IMAGE_BASES[parsed.blockName] || "");
+            const remoteBase = trimSlash(
+              BLOCK_IMAGE_BASES[parsed.blockName] || "",
+            );
             if (remoteBase) {
               resolved = `${remoteBase}/${fileName}`;
             } else {
@@ -802,8 +824,12 @@ function LiveStats({
   const [lastImageFailed, setLastImageFailed] = React.useState(false);
   const lastImageRetryRef = React.useRef(0);
   const persistedStableRef = React.useRef(readPersistedLastLiveStatsImage());
-  const lastStableImageRef = React.useRef(persistedStableRef.current.image || "");
-  const lastStableTokenRef = React.useRef(persistedStableRef.current.tokenId || "");
+  const lastStableImageRef = React.useRef(
+    persistedStableRef.current.image || "",
+  );
+  const lastStableTokenRef = React.useRef(
+    persistedStableRef.current.tokenId || "",
+  );
   const lastPrimaryBaseRef = React.useRef("");
   const lastPrimaryTokenRef = React.useRef("");
   const [isOffline, setIsOffline] = React.useState(
@@ -872,8 +898,7 @@ function LiveStats({
 
   const lastImageIsIpfs = React.useMemo(() => {
     const raw =
-      `${String(normalizedLastImage || "")} ${String(displayLastImageSrc || "")}`
-        .toLowerCase();
+      `${String(normalizedLastImage || "")} ${String(displayLastImageSrc || "")}`.toLowerCase();
     return (
       raw.includes("ipfs://") ||
       raw.includes("/ipfs/") ||
@@ -886,8 +911,7 @@ function LiveStats({
   }, [displayLastImageSrc, normalizedLastImage]);
 
   const showLastImageFallback =
-    lastImageIsIpfs &&
-    (lastImageFailed || (!lastImageLoaded && isOffline));
+    lastImageIsIpfs && (lastImageFailed || (!lastImageLoaded && isOffline));
   const hasLastToken = effectiveTokenId !== "-";
   const hasLastImage =
     hasLastToken && isUsableLiveStatsImage(displayLastImageSrc);
@@ -895,7 +919,9 @@ function LiveStats({
   React.useEffect(() => {
     if (!lastImageFailed || !lastImageIsIpfs) return;
     if (lastImageRetryRef.current >= 2) return;
-    const base = String(displayLastImageSrc || lastImageCandidates[0] || "").trim();
+    const base = String(
+      displayLastImageSrc || lastImageCandidates[0] || "",
+    ).trim();
     if (!base) return;
     const timer = setTimeout(() => {
       lastImageRetryRef.current += 1;
@@ -987,7 +1013,10 @@ function LiveStats({
     const landscape = width > height;
     const shortLandscapeViewport = height > 0 && height <= 500;
 
-    return Boolean(compact) || (likelyPhoneOrTablet && landscape && shortLandscapeViewport);
+    return (
+      Boolean(compact) ||
+      (likelyPhoneOrTablet && landscape && shortLandscapeViewport)
+    );
   }, [compact]);
 
   const [isPhone, setIsPhone] = React.useState(() => computePhoneViewport());
@@ -1125,7 +1154,9 @@ function LiveStats({
         ? ` (rpc ${fromHost || "?"} -> ${toHostName || "?"})`
         : "";
     const reasonLabel = isRateLimited ? "rate-limited" : "network-failure";
-    console.warn(`${scope}: RPC ${reasonLabel}, rotating read RPC${routeInfo}.`);
+    console.warn(
+      `${scope}: RPC ${reasonLabel}, rotating read RPC${routeInfo}.`,
+    );
     return true;
   }, []);
 
@@ -1183,14 +1214,14 @@ function LiveStats({
             (collection.chapterId === 1 &&
               collection.collectionType === "vrf")) &&
           provider
-          ? (() => {
-              try {
-                return getReaderRO(provider);
-              } catch {
-                return null;
-              }
-            })()
-          : null;
+            ? (() => {
+                try {
+                  return getReaderRO(provider);
+                } catch {
+                  return null;
+                }
+              })()
+            : null;
         const main = provider
           ? (() => {
               try {
@@ -1201,10 +1232,7 @@ function LiveStats({
                   );
                 }
                 if (collection?.chapterId) {
-                  return getReadOnlyChapterMain(
-                    collection.chapterId,
-                    provider,
-                  );
+                  return getReadOnlyChapterMain(collection.chapterId, provider);
                 }
                 return getReadOnlyMain(provider);
               } catch {
@@ -1288,7 +1316,9 @@ function LiveStats({
           typeof main.tokenURI === "function"
         ) {
           const uri = await main.tokenURI(tokenId).catch(() => null);
-          const meta = uri ? await readJsonFromURI(uri).catch(() => null) : null;
+          const meta = uri
+            ? await readJsonFromURI(uri).catch(() => null)
+            : null;
           if (meta) {
             if (next.ticketPrice == null) {
               next.ticketPrice = readPriceFromMeta(
@@ -1372,7 +1402,8 @@ function LiveStats({
     // Liquidity-derived array is only a last-resort fallback.
     if (hasAnyValue(currentBlockPrices)) return normalize(currentBlockPrices);
     if (hasAnyValue(blockPrices)) return normalize(blockPrices);
-    if (hasAnyValue(blockPricesFromChain)) return normalize(blockPricesFromChain);
+    if (hasAnyValue(blockPricesFromChain))
+      return normalize(blockPricesFromChain);
     return [];
   }, [blockPricesFromChain, currentBlockPrices, blockPrices]);
 
@@ -1721,79 +1752,75 @@ function LiveStats({
 
       if (!r || !prov) throw new Error("Distributor or provider not available");
 
-        const resolveCollectionRewards = async () => {
-          if (typeof r.collectionRewards === "function")
-            return r.collectionRewards();
-          if (typeof r.COLLECTIONREWARDS === "function")
-            return r.COLLECTIONREWARDS();
-          return ADDR.COLLECTION_REWARDS || ZeroAddress;
-        };
-        const resolveCommunityCenter = async () => {
-          if (typeof r.communityCenter === "function")
-            return r.communityCenter();
-          if (typeof r.COMMUNITYCENTER === "function")
-            return r.COMMUNITYCENTER();
-          return (
-            ADDR.COMMUNITY_CENTER ||
-            ADDR.COMMUNITYCENTER ||
-            ZeroAddress
-          );
-        };
+      const resolveCollectionRewards = async () => {
+        if (typeof r.collectionRewards === "function")
+          return r.collectionRewards();
+        if (typeof r.COLLECTIONREWARDS === "function")
+          return r.COLLECTIONREWARDS();
+        return ADDR.COLLECTION_REWARDS || ZeroAddress;
+      };
+      const resolveCommunityCenter = async () => {
+        if (typeof r.communityCenter === "function") return r.communityCenter();
+        if (typeof r.COMMUNITYCENTER === "function") return r.COMMUNITYCENTER();
+        return ADDR.COMMUNITY_CENTER || ADDR.COMMUNITYCENTER || ZeroAddress;
+      };
 
-        const [
-          totalReceived,
-          receivedForMain,
-          reserveAddr,
-          collREWARDSAddr,
-          BUYBACKAddr,
-          treasuryAddr,
-          COMMUNITYCENTERAddr,
-        ] = await Promise.all([
-          typeof r.totalReceived === "function"
-            ? r.totalReceived()
-            : Promise.resolve(0n),
-          (async () => {
-            const readReceived =
-              typeof r.receivedByAddress === "function"
-                ? (address) => r.receivedByAddress(address)
-                : typeof r.receivedByCOLLECTION === "function"
-                  ? (address) => r.receivedByCOLLECTION(address)
-                  : null;
-            if (!readReceived) return 0n;
-            const addresses = CORE_CHAPTERS.flatMap((chapter) => [
-              chapter.main,
-              chapter.main2,
-            ]);
-            const values = await Promise.all(
-              addresses.map((address) =>
-                readReceived(address).catch(() => 0n),
-              ),
-            );
-            return values.reduce(
-              (sum, value) => sum + BigInt(value?.toString?.() || "0"),
-              0n,
-            );
-          })(),
+      const [
+        totalReceived,
+        receivedForMain,
+        reserveAddr,
+        collREWARDSAddr,
+        BUYBACKAddr,
+        treasuryAddr,
+        COMMUNITYCENTERAddr,
+      ] = await Promise.all([
+        typeof r.totalReceived === "function"
+          ? r.totalReceived()
+          : Promise.resolve(0n),
+        (async () => {
+          const readReceived =
+            typeof r.receivedByAddress === "function"
+              ? (address) => r.receivedByAddress(address)
+              : typeof r.receivedByCOLLECTION === "function"
+                ? (address) => r.receivedByCOLLECTION(address)
+                : null;
+          if (!readReceived) return 0n;
+          const addresses = CORE_CHAPTERS.flatMap((chapter) => [
+            chapter.main,
+            chapter.main2,
+          ]);
+          const values = await Promise.all(
+            addresses.map((address) => readReceived(address).catch(() => 0n)),
+          );
+          return values.reduce(
+            (sum, value) => sum + BigInt(value?.toString?.() || "0"),
+            0n,
+          );
+        })(),
         typeof r.reserve === "function"
           ? r.reserve()
           : Promise.resolve(ADDR.RESERVE || ZeroAddress),
-          resolveCollectionRewards(),
-          typeof r.buybackAgent === "function"
-            ? r.buybackAgent()
-            : typeof r.BUYBACKAgent === "function"
-              ? r.BUYBACKAgent()
-              : Promise.resolve(ADDR.BUYBACK_AGENT || ZeroAddress),
-          typeof r.treasury === "function"
-            ? r.treasury()
-            : Promise.resolve(ADDR.TREASURY || ZeroAddress),
-          resolveCommunityCenter(),
-        ]);
+        resolveCollectionRewards(),
+        typeof r.buybackAgent === "function"
+          ? r.buybackAgent()
+          : typeof r.BUYBACKAgent === "function"
+            ? r.BUYBACKAgent()
+            : Promise.resolve(ADDR.BUYBACK_AGENT || ZeroAddress),
+        typeof r.treasury === "function"
+          ? r.treasury()
+          : Promise.resolve(ADDR.TREASURY || ZeroAddress),
+        resolveCommunityCenter(),
+      ]);
 
       const targets = [
         { key: "reserve", name: "Reserve", addr: reserveAddr },
         { key: "BUYBACK", name: "Buyback Agent", addr: BUYBACKAddr },
         { key: "treasury", name: "Treasury", addr: treasuryAddr },
-        { key: "community", name: "Community Center", addr: COMMUNITYCENTERAddr },
+        {
+          key: "community",
+          name: "Community Center",
+          addr: COMMUNITYCENTERAddr,
+        },
         { key: "REWARDS", name: "Collection Rewards", addr: collREWARDSAddr },
       ];
 
@@ -1818,25 +1845,24 @@ function LiveStats({
         allocations = {};
       }
 
-        const communityNativeBalance = COMMUNITYCENTERAddr
-          ? await prov.getBalance(COMMUNITYCENTERAddr).catch(() => 0n)
-          : 0n;
+      const communityNativeBalance = COMMUNITYCENTERAddr
+        ? await prov.getBalance(COMMUNITYCENTERAddr).catch(() => 0n)
+        : 0n;
 
       const balancesArr = await Promise.all(
         targets.map((t) => {
-            if (t.key === "community") return Promise.resolve(communityNativeBalance);
-            return prov.getBalance(t.addr).catch(() => 0n);
-          }),
-        );
+          if (t.key === "community")
+            return Promise.resolve(communityNativeBalance);
+          return prov.getBalance(t.addr).catch(() => 0n);
+        }),
+      );
 
       const balances = {};
       targets.forEach((t, i) => {
         balances[t.key] = balancesArr[i];
       });
 
-      const distBal = await prov
-        .getBalance(ADDR.DISTRIBUTOR)
-        .catch(() => 0n);
+      const distBal = await prov.getBalance(ADDR.DISTRIBUTOR).catch(() => 0n);
 
       // ===== token + LP balances =====
       let tokenMeta = {
@@ -1870,7 +1896,11 @@ function LiveStats({
             { key: "reserve", name: "Reserve", addr: ADDR.RESERVE },
             { key: "treasury", name: "Treasury", addr: ADDR.TREASURY },
             { key: "buyback", name: "Buyback Agent", addr: ADDR.BUYBACK_AGENT },
-            { key: "tokenRewards", name: "Token Rewards", addr: ADDR.TOKEN_REWARDS },
+            {
+              key: "tokenRewards",
+              name: "Token Rewards",
+              addr: ADDR.TOKEN_REWARDS,
+            },
             {
               key: "collectionRewards",
               name: "Collection Rewards",
@@ -1907,7 +1937,10 @@ function LiveStats({
           }));
         }
       } catch (err) {
-        const handled = handleReadRpcFailure(err, "refreshPools token balances");
+        const handled = handleReadRpcFailure(
+          err,
+          "refreshPools token balances",
+        );
         if (!handled) {
           console.warn("refreshPools: token balances failed", err);
         }
@@ -2117,16 +2150,12 @@ function LiveStats({
           : 18;
 
         const balances = await Promise.all(
-          lockedAddrs.map((addr) =>
-            token.balanceOf(addr).catch(() => 0n),
-          ),
+          lockedAddrs.map((addr) => token.balanceOf(addr).catch(() => 0n)),
         );
         if (!alive) return;
 
         const locked = balances.reduce((sum, bn) => {
-          const n = Number(
-            _formatUnits(bn ?? 0n, decimalsForLocked),
-          );
+          const n = Number(_formatUnits(bn ?? 0n, decimalsForLocked));
           return sum + (Number.isFinite(n) ? n : 0);
         }, 0);
         if (!Number.isFinite(locked)) return;
@@ -2271,17 +2300,33 @@ function LiveStats({
   const boxBigFontSize = isTiny ? "1.06em" : isPhone ? "1.22em" : "1.42em";
   const infoCardFontSize = isTiny ? "0.54em" : isPhone ? "0.64em" : "0.74em";
   const infoCardBigFontSize = isTiny ? "0.96em" : isPhone ? "1.12em" : "1.24em";
-  const tokenomicsLabelFontSize = isTiny ? "0.68em" : isPhone ? "0.78em" : "0.86em";
-  const marketCapBoxLabelFontSize = isTiny ? "0.6em" : isPhone ? "0.7em" : "0.78em";
-  const marketCapBoxValueFontSize = isTiny ? "0.72em" : isPhone ? "0.82em" : "0.92em";
-  const marketCapBoxBigValueFontSize = isTiny ? "0.92em" : isPhone ? "1.04em" : "1.16em";
+  const tokenomicsLabelFontSize = isTiny
+    ? "0.68em"
+    : isPhone
+      ? "0.78em"
+      : "0.86em";
+  const marketCapBoxLabelFontSize = isTiny
+    ? "0.6em"
+    : isPhone
+      ? "0.7em"
+      : "0.78em";
+  const marketCapBoxValueFontSize = isTiny
+    ? "0.72em"
+    : isPhone
+      ? "0.82em"
+      : "0.92em";
+  const marketCapBoxBigValueFontSize = isTiny
+    ? "0.92em"
+    : isPhone
+      ? "1.04em"
+      : "1.16em";
   const mobileMaxWidth = isPhone ? (isTiny ? 320 : 420) : undefined;
   const statsBoxWidth = isPhone ? (isTiny ? "100%" : "calc(50% - 6px)") : BOX;
   const statsBoxHeight = isPhone ? "auto" : BOX;
   const statsBoxMinHeight = isPhone ? (isTiny ? 96 : 110) : BOX;
-  const infoBoxWidth = isPhone ? "100%" : BOX;
-  const infoBoxHeight = isPhone ? "auto" : BOX;
-  const infoBoxMinHeight = isPhone ? (isTiny ? 110 : 120) : BOX;
+  const infoBoxWidth = isPhone ? "100%" : 180;
+  const infoBoxHeight = "auto";
+  const infoBoxMinHeight = isPhone ? (isTiny ? 110 : 120) : 170;
   const imageBox = isPhone ? (isTiny ? 150 : 170) : BOX;
   const statsGroupDirection = isPhone ? (isTiny ? "column" : "row") : "column";
   const statsGroupWidth = isPhone ? "100%" : statsBoxWidth;
@@ -2410,6 +2455,7 @@ function LiveStats({
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
+    flexShrink: 0,
   };
 
   const thBase = {
@@ -2496,22 +2542,18 @@ function LiveStats({
         null;
       if (!REWARDSAddr) throw new Error("REWARDS contract address missing");
 
-      const REWARDS = new Contract(
-        REWARDSAddr,
-        TOKEN_REWARDS_MIN_ABI,
-        signer,
-      );
+      const REWARDS = new Contract(REWARDSAddr, TOKEN_REWARDS_MIN_ABI, signer);
       const tokenIds = collectTokenIds();
 
       // gas estimate
       let gas;
-        try {
-          const estimateClaim =
-            REWARDS.estimateGas?.claim || REWARDS.claim?.estimateGas;
-          const est = estimateClaim ? await estimateClaim(tokenIds) : null;
-          if (est != null) {
-            if (isBigNumber(est) && typeof est.mul === "function") {
-              gas = est.mul(110).div(100);
+      try {
+        const estimateClaim =
+          REWARDS.estimateGas?.claim || REWARDS.claim?.estimateGas;
+        const est = estimateClaim ? await estimateClaim(tokenIds) : null;
+        if (est != null) {
+          if (isBigNumber(est) && typeof est.mul === "function") {
+            gas = est.mul(110).div(100);
           } else if (typeof est === "bigint") {
             gas = (est * 110n) / 100n;
           } else {
@@ -2575,8 +2617,7 @@ function LiveStats({
         right: 0,
         zIndex: 10060,
         width: "100vw",
-        height:
-          modalViewportHeight > 0 ? `${modalViewportHeight}px` : "100vh",
+        height: modalViewportHeight > 0 ? `${modalViewportHeight}px` : "100vh",
         display: "flex",
         justifyContent: "stretch",
         alignItems: "stretch",
@@ -2896,8 +2937,7 @@ function LiveStats({
             String(effectiveLastMinted.blockName).toUpperCase(),
           )
         : -1;
-    const live =
-      idx >= 0 ? Number(effectiveBlockPrices?.[idx]) : Number.NaN;
+    const live = idx >= 0 ? Number(effectiveBlockPrices?.[idx]) : Number.NaN;
     if (Number.isFinite(live) && live > 0) return live;
     const key =
       idx >= 0
@@ -2906,16 +2946,15 @@ function LiveStats({
           ).toUpperCase()
         : String(effectiveLastMinted.blockName || "").toUpperCase();
     const base =
-      typeof BASE_PRICES?.[key] === "number"
-        ? BASE_PRICES[key]
-        : idx >= 0
-          ? idx + 1
-          : null;
+      typeof BASE_PRICES?.[key] === "number" ? BASE_PRICES[key] : null;
     return Number.isFinite(Number(base)) ? Number(base) : null;
   }, [safeBlockNames, effectiveLastMinted.blockName, effectiveBlockPrices]);
 
   const normalizedLastRedeemedBlock = React.useMemo(
-    () => String(effectiveLastMinted.blockName || "").trim().toUpperCase(),
+    () =>
+      String(effectiveLastMinted.blockName || "")
+        .trim()
+        .toUpperCase(),
     [effectiveLastMinted.blockName],
   );
 
@@ -2926,16 +2965,11 @@ function LiveStats({
 
   const lastRedeemedBackgroundBonusPct = React.useMemo(() => {
     if (!normalizedLastRedeemedBackground) return null;
-    const namesSource =
-      Array.isArray(safeBlockNames) && safeBlockNames.length
-        ? safeBlockNames
-        : DEFAULT_BLOCKS;
-    const names = namesSource.map((n) => String(n || "").trim().toUpperCase());
-    const idx = names.indexOf(normalizedLastRedeemedBackground);
-    if (idx < 0) return null;
-    const bonus = Number(BACKGROUND_BONUSES[idx]);
+    const bonus = Number(
+      BACKGROUND_BONUS_PCT[normalizedLastRedeemedBackground],
+    );
     return Number.isFinite(bonus) ? bonus : null;
-  }, [safeBlockNames, normalizedLastRedeemedBackground]);
+  }, [normalizedLastRedeemedBackground]);
 
   const lastRedeemedBackgroundBonusValue = React.useMemo(() => {
     const base = Number(currentBlockPrice);
@@ -3076,7 +3110,7 @@ function LiveStats({
   const collectionBlockRows = React.useMemo(() => {
     return collectionBlockNames.map((name, idx) => {
       const live = Number(effectiveBlockPrices?.[idx]);
-      const base = Number(BASE_PRICES?.[name] ?? idx + 1);
+      const base = Number(BASE_PRICES?.[name]);
       const minted = Number(effectiveBlockMintCounts?.[idx] ?? 0);
       const liveValue = Number.isFinite(live) ? live : base;
       const delta = Number.isFinite(liveValue) ? liveValue - base : 0;
@@ -3088,22 +3122,18 @@ function LiveStats({
         delta,
       };
     });
-  }, [
-    collectionBlockNames,
-    effectiveBlockPrices,
-    effectiveBlockMintCounts,
-  ]);
+  }, [collectionBlockNames, effectiveBlockPrices, effectiveBlockMintCounts]);
 
   const collectionBackgroundRows = React.useMemo(() => {
     return collectionBlockNames.map((name, idx) => {
       const minted = Number(effectiveBackgroundMintCounts?.[idx] ?? 0);
-      const base = Number(BASE_PRICES?.[name] ?? idx + 1);
+      const base = Number(BASE_PRICES?.[name]);
       const live = Number(effectiveBlockPrices?.[idx]);
       const delta = Number.isFinite(live) ? live - base : 0;
       return {
         name,
         minted,
-        bonus: BACKGROUND_BONUSES[idx] ?? 0,
+        bonus: BACKGROUND_BONUS_PCT[name] ?? 0,
         delta,
       };
     });
@@ -3112,7 +3142,6 @@ function LiveStats({
     effectiveBackgroundMintCounts,
     effectiveBlockPrices,
   ]);
-
 
   const userBlockCounts = React.useMemo(() => {
     const counts = new Array(10).fill(0);
@@ -3212,7 +3241,9 @@ function LiveStats({
   }, [pools, tokenDecimals, tokenSymbol]);
 
   const visibleTokenBalanceEntries = React.useMemo(() => {
-    const entries = (pools?.tokenBalances || []).filter((entry) => entry?.balance != null);
+    const entries = (pools?.tokenBalances || []).filter(
+      (entry) => entry?.balance != null,
+    );
     return desktopFullscreen ? entries.slice(0, 4) : entries.slice(0, 6);
   }, [desktopFullscreen, pools]);
 
@@ -3309,7 +3340,8 @@ function LiveStats({
                 setLastImageFailed(true);
                 setLastImageLoaded(false);
 
-                const currentKey = stripRetryParam(displayLastImageSrc).toLowerCase();
+                const currentKey =
+                  stripRetryParam(displayLastImageSrc).toLowerCase();
                 const currentIdx = lastImageCandidates.findIndex(
                   (candidate) =>
                     stripRetryParam(candidate).toLowerCase() === currentKey,
@@ -3339,8 +3371,12 @@ function LiveStats({
                     setLastImageLoaded(false);
                     return;
                   }
-                  const stableTokenId = String(lastStableTokenRef.current || "").trim();
-                  const stableSrc = String(lastStableImageRef.current || "").trim();
+                  const stableTokenId = String(
+                    lastStableTokenRef.current || "",
+                  ).trim();
+                  const stableSrc = String(
+                    lastStableImageRef.current || "",
+                  ).trim();
                   if (
                     stableSrc &&
                     effectiveTokenId &&
@@ -3353,7 +3389,6 @@ function LiveStats({
                     setLastImageLoaded(true);
                     return;
                   }
-
                 }
               }}
               onMouseEnter={(e) => {
@@ -3378,7 +3413,9 @@ function LiveStats({
                 padding: "0 10px",
               }}
             >
-              {hasLastToken ? "Last NFT image unavailable" : "No wallet NFT yet"}
+              {hasLastToken
+                ? "Last NFT image unavailable"
+                : "No wallet NFT yet"}
             </div>
           )}
           {showLastImageFallback && (
@@ -3420,9 +3457,7 @@ function LiveStats({
             color: "#ffe800",
           }}
         >
-          <div
-            style={infoRowStyle}
-          >
+          <div style={infoRowStyle}>
             LAST NFT:&nbsp;
             <span className="highlight" style={{ color: "#ff0000" }}>
               #{effectiveLastMinted.tokenId}
@@ -3469,6 +3504,10 @@ function LiveStats({
               color: "#9ee5ff",
               textTransform: "none",
               fontSize: isTiny ? "0.48em" : isPhone ? "0.58em" : "0.64em",
+              whiteSpace: "normal",
+              overflow: "visible",
+              textOverflow: "clip",
+              overflowWrap: "anywhere",
             }}
           >
             {hasCurrentBlockPrice
@@ -3580,7 +3619,10 @@ function LiveStats({
         >
           <div
             className="widget-title"
-            style={{ ...tokenomicsLabelStyle, fontSize: marketCapBoxLabelFontSize }}
+            style={{
+              ...tokenomicsLabelStyle,
+              fontSize: marketCapBoxLabelFontSize,
+            }}
           >
             TRADEABLE SUPPLY
           </div>
@@ -3630,7 +3672,7 @@ function LiveStats({
     <div className="live-stats-widget-new" style={widgetStyle}>
       {topButtonsRow}
 
-      {!showBlocks && !showBgStats && !showREWARDS && (
+      {!showREWARDS && (
         <>
           {mainStats}
 
@@ -3721,7 +3763,9 @@ function LiveStats({
                 <div style={fullscreenModalFrameStyle}>
                   <div
                     style={{ ...fullscreenModalCardStyle, padding: 0 }}
-                    className={desktopFullscreen ? "ls-fullscreen-tokenomics" : undefined}
+                    className={
+                      desktopFullscreen ? "ls-fullscreen-tokenomics" : undefined
+                    }
                   >
                     <div style={modalHeaderStyle}>
                       <div style={{ color: "#ffe800", fontWeight: 900 }}>
@@ -3746,13 +3790,21 @@ function LiveStats({
                     </div>
 
                     <div
-                      className={desktopFullscreen ? "ls-tokenomics-modal__content" : undefined}
+                      className={
+                        desktopFullscreen
+                          ? "ls-tokenomics-modal__content"
+                          : undefined
+                      }
                       style={{
                         ...tokenomicsModalBodyStyle,
                       }}
                     >
                       <div
-                        className={desktopFullscreen ? "ls-tokenomics-modal__grid" : undefined}
+                        className={
+                          desktopFullscreen
+                            ? "ls-tokenomics-modal__grid"
+                            : undefined
+                        }
                         style={{
                           ...tokenomicsModalGridStyle,
                         }}
@@ -3765,192 +3817,150 @@ function LiveStats({
                           </div>
                           <div className="pools-card__body">
                             <div className="collection-stats-grid">
-                            <div className="collection-stat-card">
-                              <div className="collection-stat-label">Price</div>
-                              <div className="collection-stat-value">
-                                {typeof biggiPrice === "number"
-                                  ? `${biggiPrice.toFixed(
-                                      biggiPrice >= 1 ? 3 : 6,
-                                    )} ${priceQuoteSymbol}`
-                                  : "-"}
-                              </div>
-                            </div>
-                            {!isPhone && (
                               <div className="collection-stat-card">
                                 <div className="collection-stat-label">
-                                  24H Change
-                                </div>
-                                <div
-                                  className="collection-stat-value"
-                                  style={{
-                                    color:
-                                      biggiChange24h == null
-                                        ? "#ffffff"
-                                        : biggiChange24h >= 0
-                                          ? "#47ff9a"
-                                          : "#ff6b6b",
-                                  }}
-                                >
-                                  {typeof biggiChange24h === "number"
-                                    ? `${biggiChange24h.toFixed(2)} %`
-                                    : "-"}
-                                </div>
-                              </div>
-                            )}
-                            <div className="collection-stat-card">
-                              <div className="collection-stat-label">
-                                Tradeable supply
-                              </div>
-                              <div className="collection-stat-value">
-                                {typeof tradableSupply === "number"
-                                  ? `${tradableSupply.toLocaleString(
-                                      undefined,
-                                      { maximumFractionDigits: 2 },
-                                    )} ${resolvedTokenMeta.symbol}`
-                                  : "-"}
-                              </div>
-                            </div>
-                            <div className="collection-stat-card">
-                              <div className="collection-stat-label">
-                                Market Cap
-                              </div>
-                              <div className="collection-stat-value">
-                                {typeof biggiMcap === "number"
-                                  ? `${biggiMcap.toLocaleString(undefined, {
-                                      maximumFractionDigits: 0,
-                                    })} ${priceQuoteSymbol}`
-                                  : "-"}
-                              </div>
-                            </div>
-                            {!isPhone && (
-                              <div className="collection-stat-card">
-                                <div className="collection-stat-label">
-                                  Weekly Pool
+                                  Price
                                 </div>
                                 <div className="collection-stat-value">
-                                  {typeof computedREWARDSPool === "number"
-                                    ? `${computedREWARDSPool.toLocaleString(
-                                        undefined,
-                                        { maximumFractionDigits: 4 },
-                                      )} POL`
+                                  {typeof biggiPrice === "number"
+                                    ? `${biggiPrice.toFixed(
+                                        biggiPrice >= 1 ? 3 : 6,
+                                      )} ${priceQuoteSymbol}`
                                     : "-"}
                                 </div>
                               </div>
-                            )}
+                              {!isPhone && (
+                                <div className="collection-stat-card">
+                                  <div className="collection-stat-label">
+                                    24H Change
+                                  </div>
+                                  <div
+                                    className="collection-stat-value"
+                                    style={{
+                                      color:
+                                        biggiChange24h == null
+                                          ? "#ffffff"
+                                          : biggiChange24h >= 0
+                                            ? "#47ff9a"
+                                            : "#ff6b6b",
+                                    }}
+                                  >
+                                    {typeof biggiChange24h === "number"
+                                      ? `${biggiChange24h.toFixed(2)} %`
+                                      : "-"}
+                                  </div>
+                                </div>
+                              )}
+                              <div className="collection-stat-card">
+                                <div className="collection-stat-label">
+                                  Tradeable supply
+                                </div>
+                                <div className="collection-stat-value">
+                                  {typeof tradableSupply === "number"
+                                    ? `${tradableSupply.toLocaleString(
+                                        undefined,
+                                        { maximumFractionDigits: 2 },
+                                      )} ${resolvedTokenMeta.symbol}`
+                                    : "-"}
+                                </div>
+                              </div>
+                              <div className="collection-stat-card">
+                                <div className="collection-stat-label">
+                                  Market Cap
+                                </div>
+                                <div className="collection-stat-value">
+                                  {typeof biggiMcap === "number"
+                                    ? `${biggiMcap.toLocaleString(undefined, {
+                                        maximumFractionDigits: 0,
+                                      })} ${priceQuoteSymbol}`
+                                    : "-"}
+                                </div>
+                              </div>
+                              {!isPhone && (
+                                <div className="collection-stat-card">
+                                  <div className="collection-stat-label">
+                                    Weekly Pool
+                                  </div>
+                                  <div className="collection-stat-value">
+                                    {typeof computedREWARDSPool === "number"
+                                      ? `${computedREWARDSPool.toLocaleString(
+                                          undefined,
+                                          { maximumFractionDigits: 4 },
+                                        )} POL`
+                                      : "-"}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
-                      <div className="pools-card collection-stats-card ls-tokenomics-modal__section ls-tokenomics-modal__section--allocation">
-                        <div className="pools-card__header">
-                          <div className="collection-section-title">
-                            POOLS & ALLOCATION
-                          </div>
-                        </div>
-                        <div className="pools-card__body">
-                          <div className="collection-stats-grid">
-                            {(() => {
-                              const entries = pools?.targets || [];
-                              if (!entries.length) {
-                                return (
-                                  <div className="collection-stat-card">
-                                    <div className="collection-stat-label">
-                                      Loading
-                                    </div>
-                                    <div className="collection-stat-value">--</div>
-                                  </div>
-                                );
-                              }
-                              return entries.map((t) => {
-                                const bal =
-                                  t.key && pools?.balances?.[t.key] != null
-                                    ? fmtPOL(pools.balances[t.key])
-                                    : "-";
-                                const allocation =
-                                  t.key && pools?.allocations?.[t.key] != null
-                                    ? fmtPOL(pools.allocations[t.key])
-                                    : "-";
-                                const prettyName =
-                                  t.key === "REWARDS"
-                                    ? "COLLECTION REWARDS"
-                                    : t.key === "BUYBACK"
-                                      ? "BUYBACK AGENT"
-                                      : t.name || t.key || "POOL";
-                                const balDisplay =
-                                  bal === "-" ? "-" : `${bal} POL`;
-                                const allocDisplay =
-                                  allocation === "-"
-                                    ? "-"
-                                    : `${allocation} POL`;
-                                return (
-                                  <div
-                                    key={t.key || t.addr || prettyName}
-                                    className="collection-stat-card"
-                                  >
-                                    <div className="collection-stat-label">
-                                      {prettyName}
-                                    </div>
-                                    <div className="collection-stat-value">
-                                      {balDisplay}
-                                    </div>
-                                    <div
-                                      className="ls-tokenomics-modal__meta"
-                                      style={{
-                                        color: "#9ee5ff",
-                                        fontSize: desktopFullscreen ? "0.62rem" : "0.68rem",
-                                        fontWeight: 700,
-                                        letterSpacing: "0.08em",
-                                        textTransform: "uppercase",
-                                      }}
-                                    >
-                                      Alloc: {allocDisplay}
-                                    </div>
-                                  </div>
-                                );
-                              });
-                            })()}
-                          </div>
-                        </div>
-                      </div>
-
-                      {!isPhone && (
-                        <div className="pools-card collection-stats-card ls-tokenomics-modal__section ls-tokenomics-modal__section--contracts">
+                        <div className="pools-card collection-stats-card ls-tokenomics-modal__section ls-tokenomics-modal__section--allocation">
                           <div className="pools-card__header">
                             <div className="collection-section-title">
-                              BIGGI IN CONTRACTS
+                              POOLS & ALLOCATION
                             </div>
                           </div>
                           <div className="pools-card__body">
                             <div className="collection-stats-grid">
                               {(() => {
-                                if (!visibleTokenBalanceEntries.length) {
+                                const entries = pools?.targets || [];
+                                if (!entries.length) {
                                   return (
                                     <div className="collection-stat-card">
                                       <div className="collection-stat-label">
                                         Loading
                                       </div>
-                                      <div className="collection-stat-value">--</div>
+                                      <div className="collection-stat-value">
+                                        --
+                                      </div>
                                     </div>
                                   );
                                 }
-                                return visibleTokenBalanceEntries.map((t) => {
-                                  const bal = fmtToken(
-                                    t.balance,
-                                    resolvedTokenMeta.decimals,
-                                  );
+                                return entries.map((t) => {
+                                  const bal =
+                                    t.key && pools?.balances?.[t.key] != null
+                                      ? fmtPOL(pools.balances[t.key])
+                                      : "-";
+                                  const allocation =
+                                    t.key && pools?.allocations?.[t.key] != null
+                                      ? fmtPOL(pools.allocations[t.key])
+                                      : "-";
+                                  const prettyName =
+                                    t.key === "REWARDS"
+                                      ? "COLLECTION REWARDS"
+                                      : t.key === "BUYBACK"
+                                        ? "BUYBACK AGENT"
+                                        : t.name || t.key || "POOL";
                                   const balDisplay =
-                                    bal === "-"
+                                    bal === "-" ? "-" : `${bal} POL`;
+                                  const allocDisplay =
+                                    allocation === "-"
                                       ? "-"
-                                      : `${bal} ${resolvedTokenMeta.symbol}`;
+                                      : `${allocation} POL`;
                                   return (
                                     <div
-                                      key={t.key || t.addr || t.name}
+                                      key={t.key || t.addr || prettyName}
                                       className="collection-stat-card"
                                     >
                                       <div className="collection-stat-label">
-                                        {t.name || t.key || "Contract"}
+                                        {prettyName}
                                       </div>
                                       <div className="collection-stat-value">
                                         {balDisplay}
+                                      </div>
+                                      <div
+                                        className="ls-tokenomics-modal__meta"
+                                        style={{
+                                          color: "#9ee5ff",
+                                          fontSize: desktopFullscreen
+                                            ? "0.62rem"
+                                            : "0.68rem",
+                                          fontWeight: 700,
+                                          letterSpacing: "0.08em",
+                                          textTransform: "uppercase",
+                                        }}
+                                      >
+                                        Alloc: {allocDisplay}
                                       </div>
                                     </div>
                                   );
@@ -3959,52 +3969,101 @@ function LiveStats({
                             </div>
                           </div>
                         </div>
-                      )}
 
-                      <div className="pools-card collection-stats-card ls-tokenomics-modal__section ls-tokenomics-modal__section--lp">
-                        <div className="pools-card__header">
-                          <div className="collection-section-title">
-                            LP TOKENS
+                        {!isPhone && (
+                          <div className="pools-card collection-stats-card ls-tokenomics-modal__section ls-tokenomics-modal__section--contracts">
+                            <div className="pools-card__header">
+                              <div className="collection-section-title">
+                                BIGGI IN CONTRACTS
+                              </div>
+                            </div>
+                            <div className="pools-card__body">
+                              <div className="collection-stats-grid">
+                                {(() => {
+                                  if (!visibleTokenBalanceEntries.length) {
+                                    return (
+                                      <div className="collection-stat-card">
+                                        <div className="collection-stat-label">
+                                          Loading
+                                        </div>
+                                        <div className="collection-stat-value">
+                                          --
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                  return visibleTokenBalanceEntries.map((t) => {
+                                    const bal = fmtToken(
+                                      t.balance,
+                                      resolvedTokenMeta.decimals,
+                                    );
+                                    const balDisplay =
+                                      bal === "-"
+                                        ? "-"
+                                        : `${bal} ${resolvedTokenMeta.symbol}`;
+                                    return (
+                                      <div
+                                        key={t.key || t.addr || t.name}
+                                        className="collection-stat-card"
+                                      >
+                                        <div className="collection-stat-label">
+                                          {t.name || t.key || "Contract"}
+                                        </div>
+                                        <div className="collection-stat-value">
+                                          {balDisplay}
+                                        </div>
+                                      </div>
+                                    );
+                                  });
+                                })()}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        <div className="pools-card__body">
-                          <div className="collection-stats-grid">
-                            <div className="collection-stat-card">
-                              <div className="collection-stat-label">
-                                LP SYMBOL
-                              </div>
-                              <div className="collection-stat-value">
-                                {pools?.lpStats?.symbol || "-"}
-                              </div>
+                        )}
+
+                        <div className="pools-card collection-stats-card ls-tokenomics-modal__section ls-tokenomics-modal__section--lp">
+                          <div className="pools-card__header">
+                            <div className="collection-section-title">
+                              LP TOKENS
                             </div>
-                            <div className="collection-stat-card">
-                              <div className="collection-stat-label">
-                                TOTAL SUPPLY
+                          </div>
+                          <div className="pools-card__body">
+                            <div className="collection-stats-grid">
+                              <div className="collection-stat-card">
+                                <div className="collection-stat-label">
+                                  LP SYMBOL
+                                </div>
+                                <div className="collection-stat-value">
+                                  {pools?.lpStats?.symbol || "-"}
+                                </div>
                               </div>
-                              <div className="collection-stat-value">
-                                {pools?.lpStats?.totalSupply != null
-                                  ? `${fmtToken(
-                                      pools.lpStats.totalSupply,
-                                      pools.lpStats.decimals,
-                                    )} ${pools.lpStats.symbol}`
-                                  : "-"}
+                              <div className="collection-stat-card">
+                                <div className="collection-stat-label">
+                                  TOTAL SUPPLY
+                                </div>
+                                <div className="collection-stat-value">
+                                  {pools?.lpStats?.totalSupply != null
+                                    ? `${fmtToken(
+                                        pools.lpStats.totalSupply,
+                                        pools.lpStats.decimals,
+                                      )} ${pools.lpStats.symbol}`
+                                    : "-"}
+                                </div>
                               </div>
-                            </div>
-                            <div className="collection-stat-card">
-                              <div className="collection-stat-label">
-                                LP PRICE
+                              <div className="collection-stat-card">
+                                <div className="collection-stat-label">
+                                  LP PRICE
+                                </div>
+                                <div className="collection-stat-value">
+                                  {typeof lpPrice === "number"
+                                    ? `${lpPrice.toFixed(
+                                        lpPrice >= 1 ? 3 : 6,
+                                      )} POL`
+                                    : "-"}
+                                </div>
                               </div>
-                              <div className="collection-stat-value">
-                                {typeof lpPrice === "number"
-                                  ? `${lpPrice.toFixed(
-                                      lpPrice >= 1 ? 3 : 6,
-                                    )} POL`
-                                  : "-"}
-                              </div>
-                            </div>
-                            {!isPhone &&
-                              visibleLpHolderEntries
-                                .map((t) => {
+                              {!isPhone &&
+                                visibleLpHolderEntries.map((t) => {
                                   const bal =
                                     t.balance != null && pools?.lpStats
                                       ? fmtToken(
@@ -4030,10 +4089,10 @@ function LiveStats({
                                     </div>
                                   );
                                 })}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
                     </div>
                   </div>
                 </div>
@@ -4048,7 +4107,9 @@ function LiveStats({
                 <div style={fullscreenModalFrameStyle}>
                   <div
                     style={fullscreenModalCardStyle}
-                    className={desktopFullscreen ? "ls-fullscreen-chat" : undefined}
+                    className={
+                      desktopFullscreen ? "ls-fullscreen-chat" : undefined
+                    }
                   >
                     <div style={modalHeaderStyle}>
                       <div style={{ color: "#ffe800", fontWeight: 900 }}>
@@ -4072,7 +4133,11 @@ function LiveStats({
                       </button>
                     </div>
                     <div
-                      className={desktopFullscreen ? "ls-fullscreen-chat__content" : undefined}
+                      className={
+                        desktopFullscreen
+                          ? "ls-fullscreen-chat__content"
+                          : undefined
+                      }
                       style={{
                         ...chatModalContentStyle,
                       }}
@@ -4089,297 +4154,321 @@ function LiveStats({
         </>
       )}
 
-      {showBlocks && (
-        <React.Suspense fallback={null}>
-          <BlocksWidget
-            blockNames={safeBlockNames}
-            blockMintCounts={effectiveBlockMintCounts}
-            blockPrices={effectiveBlockPrices}
-            backgroundMintCounts={effectiveBackgroundMintCounts}
-            lastRedeemedTokenId={effectiveLastMinted.tokenId}
-            lastRedeemedBlock={effectiveLastMinted.blockName}
-            lastRedeemedBackground={effectiveLastMinted.backgroundName}
-            onBack={resetAll}
-          />
-        </React.Suspense>
-      )}
-
-      {showBgStats && (
-        <React.Suspense fallback={null}>
-          <BackgroundsWidget
-            blockNames={safeBlockNames}
-            backgroundMintCounts={effectiveBackgroundMintCounts}
-            blockPrices={effectiveBlockPrices}
-            lastRedeemedTokenId={effectiveLastMinted.tokenId}
-            lastRedeemedBlock={effectiveLastMinted.blockName}
-            lastRedeemedBackground={effectiveLastMinted.backgroundName}
-            onBack={resetAll}
-          />
-        </React.Suspense>
+      {(showBlocks || showBgStats) && (
+        <ModalPortal lockScroll={false}>
+          <div
+            className="ls-stats-table-overlay"
+            onClick={resetAll}
+            role="presentation"
+          >
+            <div
+              className="ls-stats-table-panel"
+              role="dialog"
+              aria-modal="true"
+              aria-label={
+                showBlocks ? "Block statistics" : "Background statistics"
+              }
+              onClick={(event) => event.stopPropagation()}
+            >
+              <React.Suspense fallback={null}>
+                {showBlocks ? (
+                  <BlocksWidget
+                    blockNames={safeBlockNames}
+                    blockMintCounts={effectiveBlockMintCounts}
+                    blockPrices={effectiveBlockPrices}
+                    lastRedeemedTokenId={effectiveLastMinted.tokenId}
+                    lastRedeemedBlock={effectiveLastMinted.blockName}
+                    lastRedeemedBackground={effectiveLastMinted.backgroundName}
+                    onBack={resetAll}
+                  />
+                ) : (
+                  <BackgroundsWidget
+                    blockNames={safeBlockNames}
+                    backgroundMintCounts={effectiveBackgroundMintCounts}
+                    blockPrices={effectiveBlockPrices}
+                    lastRedeemedTokenId={effectiveLastMinted.tokenId}
+                    lastRedeemedBlock={effectiveLastMinted.blockName}
+                    lastRedeemedBackground={effectiveLastMinted.backgroundName}
+                    onBack={resetAll}
+                  />
+                )}
+              </React.Suspense>
+            </div>
+          </div>
+        </ModalPortal>
       )}
 
       {showREWARDS && (
         <>
-        <div
-          className="pools-card collection-stats-card"
-          style={{
-            width: "100%",
-            margin: 0,
-            borderColor: "rgba(255, 232, 0, 0.3)",
-          }}
-        >
-          <div className="pools-card__header">
-            <div className="collection-stats-header-title">
-              <div style={{ color: "#ffe800", fontWeight: 900 }}>
-                COLLECTION STATS
+          <div
+            className="pools-card collection-stats-card"
+            style={{
+              width: "100%",
+              margin: 0,
+              borderColor: "rgba(255, 232, 0, 0.3)",
+            }}
+          >
+            <div className="pools-card__header">
+              <div className="collection-stats-header-title">
+                <div style={{ color: "#ffe800", fontWeight: 900 }}>
+                  COLLECTION STATS
+                </div>
+                <button
+                  type="button"
+                  className="live-info-button"
+                  onClick={() => setShowCollectionInfo((v) => !v)}
+                  aria-label="Open collection stats information"
+                  aria-expanded={showCollectionInfo ? "true" : "false"}
+                  title="Info"
+                >
+                  i
+                </button>
               </div>
               <button
-                type="button"
-                className="live-info-button"
-                onClick={() => setShowCollectionInfo((v) => !v)}
-                aria-label="Open collection stats information"
-                aria-expanded={showCollectionInfo ? "true" : "false"}
-                title="Info"
+                onClick={resetAll}
+                style={{
+                  background: "transparent",
+                  border: "1px solid #ffe800",
+                  color: "#ffe800",
+                  borderRadius: 10,
+                  padding: "6px 12px",
+                  cursor: "pointer",
+                  fontWeight: 800,
+                }}
               >
-                i
+                Back
               </button>
             </div>
-            <button
-              onClick={resetAll}
-              style={{
-                background: "transparent",
-                border: "1px solid #ffe800",
-                color: "#ffe800",
-                borderRadius: 10,
-                padding: "6px 12px",
-                cursor: "pointer",
-                fontWeight: 800,
-              }}
-            >
-              Back
-            </button>
-          </div>
-          <div className="pools-card__body">
-            <div className="collection-stats-grid">
-              {[
-                {
-                  label: "Total minted",
-                  value:
-                    typeof biggiMinted === "number" && Number.isFinite(biggiMinted)
-                      ? `${Math.round(biggiMinted)} / ${maxSupply}`
+            <div className="pools-card__body">
+              <div className="collection-stats-grid">
+                {[
+                  {
+                    label: "Total minted",
+                    value:
+                      typeof biggiMinted === "number" &&
+                      Number.isFinite(biggiMinted)
+                        ? `${Math.round(biggiMinted)} / ${maxSupply}`
+                        : "--",
+                  },
+                  {
+                    label: "Tickets minted",
+                    value:
+                      typeof ticketMinted === "number" &&
+                      Number.isFinite(ticketMinted)
+                        ? `${Math.round(ticketMinted)} / ${maxTickets}`
+                        : "--",
+                  },
+                  {
+                    label: "Ticket price",
+                    value:
+                      typeof ticketPrice === "number" &&
+                      Number.isFinite(ticketPrice)
+                        ? `${formatMaybe(ticketPrice, 2)} ${priceQuoteSymbol}`
+                        : "--",
+                  },
+                  {
+                    label: "Reward pool",
+                    value:
+                      typeof computedREWARDSPool === "number" &&
+                      Number.isFinite(computedREWARDSPool)
+                        ? `${formatMaybe(computedREWARDSPool, 2)} ${priceQuoteSymbol}`
+                        : "--",
+                  },
+                  {
+                    label: "Mint volume",
+                    value:
+                      typeof mintVolumeMatic === "number" &&
+                      Number.isFinite(mintVolumeMatic)
+                        ? `${formatMaybe(mintVolumeMatic, 2)} ${priceQuoteSymbol}`
+                        : "--",
+                  },
+                  {
+                    label: "Avg block price",
+                    value:
+                      typeof blockPriceStats.avg === "number" &&
+                      Number.isFinite(blockPriceStats.avg)
+                        ? `${formatMaybe(blockPriceStats.avg, 2)} ${priceQuoteSymbol}`
+                        : "--",
+                  },
+                  {
+                    label: "Highest price",
+                    value:
+                      typeof blockPriceStats.max === "number" &&
+                      Number.isFinite(blockPriceStats.max)
+                        ? `${formatMaybe(blockPriceStats.max, 2)} ${priceQuoteSymbol}`
+                        : "--",
+                  },
+                  {
+                    label: "Lowest price",
+                    value:
+                      typeof blockPriceStats.min === "number" &&
+                      Number.isFinite(blockPriceStats.min)
+                        ? `${formatMaybe(blockPriceStats.min, 2)} ${priceQuoteSymbol}`
+                        : "--",
+                  },
+                  {
+                    label: "Blocks minted",
+                    value: Number.isFinite(totalBlockMinted)
+                      ? totalBlockMinted.toLocaleString()
                       : "--",
-                },
-                {
-                  label: "Tickets minted",
-                  value:
-                    typeof ticketMinted === "number" && Number.isFinite(ticketMinted)
-                      ? `${Math.round(ticketMinted)} / ${maxTickets}`
+                  },
+                  {
+                    label: "BG minted",
+                    value: Number.isFinite(totalBackgroundMinted)
+                      ? totalBackgroundMinted.toLocaleString()
                       : "--",
-                },
-                {
-                  label: "Ticket price",
-                  value:
-                    typeof ticketPrice === "number" && Number.isFinite(ticketPrice)
-                      ? `${formatMaybe(ticketPrice, 2)} ${priceQuoteSymbol}`
+                  },
+                  {
+                    label: "Owned NFTs",
+                    value: Number.isFinite(ownedNftCount)
+                      ? ownedNftCount.toLocaleString()
                       : "--",
-                },
-                {
-                  label: "Reward pool",
-                  value:
-                    typeof computedREWARDSPool === "number" &&
-                    Number.isFinite(computedREWARDSPool)
-                      ? `${formatMaybe(computedREWARDSPool, 2)} ${priceQuoteSymbol}`
-                      : "--",
-                },
-                {
-                  label: "Mint volume",
-                  value:
-                    typeof mintVolumeMatic === "number" &&
-                    Number.isFinite(mintVolumeMatic)
-                      ? `${formatMaybe(mintVolumeMatic, 2)} ${priceQuoteSymbol}`
-                      : "--",
-                },
-                {
-                  label: "Avg block price",
-                  value:
-                    typeof blockPriceStats.avg === "number" &&
-                    Number.isFinite(blockPriceStats.avg)
-                      ? `${formatMaybe(blockPriceStats.avg, 2)} ${priceQuoteSymbol}`
-                      : "--",
-                },
-                {
-                  label: "Highest price",
-                  value:
-                    typeof blockPriceStats.max === "number" &&
-                    Number.isFinite(blockPriceStats.max)
-                      ? `${formatMaybe(blockPriceStats.max, 2)} ${priceQuoteSymbol}`
-                      : "--",
-                },
-                {
-                  label: "Lowest price",
-                  value:
-                    typeof blockPriceStats.min === "number" &&
-                    Number.isFinite(blockPriceStats.min)
-                      ? `${formatMaybe(blockPriceStats.min, 2)} ${priceQuoteSymbol}`
-                      : "--",
-                },
-                {
-                  label: "Blocks minted",
-                  value: Number.isFinite(totalBlockMinted)
-                    ? totalBlockMinted.toLocaleString()
-                    : "--",
-                },
-                {
-                  label: "BG minted",
-                  value: Number.isFinite(totalBackgroundMinted)
-                    ? totalBackgroundMinted.toLocaleString()
-                    : "--",
-                },
-                {
-                  label: "Owned NFTs",
-                  value: Number.isFinite(ownedNftCount)
-                    ? ownedNftCount.toLocaleString()
-                    : "--",
-                },
-                {
-                  label: "My weekly BIGGI",
-                  value: walletAddress
-                    ? unitsToTokenAmountStr(userTotalUnits)
-                    : "Connect wallet",
-                },
-              ].map((stat) => (
-                <div key={stat.label} className="collection-stat-card">
-                  <span className="collection-stat-label">{stat.label}</span>
-                  <span className="collection-stat-value">{stat.value}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="collection-section-title">Block prices</div>
-            <div className="collection-table-wrap">
-              <table className="pools-table collection-stats-table">
-                <colgroup>
-                  <col style={{ width: "30%" }} />
-                  <col style={{ width: "18%" }} />
-                  <col style={{ width: "16%" }} />
-                  <col style={{ width: "18%" }} />
-                  <col style={{ width: "18%" }} />
-                </colgroup>
-                <thead>
-                  <tr>
-                    <th>Block</th>
-                    <th>Minted</th>
-                    <th>Base</th>
-                    <th>Live</th>
-                    <th>Delta</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {collectionBlockRows.map((row) => (
-                    <tr key={row.name}>
-                      <td
-                        data-label="Block"
-                        style={{ color: "#ffe800", fontWeight: 800 }}
-                      >
-                        {row.name}
-                      </td>
-                      <td data-label="Minted">{row.minted}</td>
-                      <td data-label="Base">{formatMaybe(row.base, 2)}</td>
-                      <td data-label="Live">
-                        {row.live != null
-                          ? formatMaybe(row.live, 2)
-                          : formatMaybe(row.base, 2)}
-                      </td>
-                      <td data-label="Delta">{formatSigned(row.delta, 2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="collection-section-title">Background bonuses</div>
-            <div className="collection-table-wrap">
-              <table className="pools-table collection-stats-table">
-                <colgroup>
-                  <col style={{ width: "36%" }} />
-                  <col style={{ width: "20%" }} />
-                  <col style={{ width: "20%" }} />
-                  <col style={{ width: "24%" }} />
-                </colgroup>
-                <thead>
-                  <tr>
-                    <th>Background</th>
-                    <th>Minted</th>
-                    <th>Bonus</th>
-                    <th>Block Delta</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {collectionBackgroundRows.map((row, idx) => (
-                    <tr key={`${row.name}-${idx}`}>
-                      <td
-                        data-label="Background"
-                        style={{ color: "#ffe800", fontWeight: 800 }}
-                      >
-                        {row.name}
-                      </td>
-                      <td data-label="Minted">{row.minted}</td>
-                      <td data-label="Bonus">{row.bonus}%</td>
-                      <td data-label="Block Delta">
-                        {formatSigned(row.delta, 2)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        {showCollectionInfo && (
-          <div
-            className="ls-info-modal-overlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="ls-collection-info-title"
-            onClick={() => setShowCollectionInfo(false)}
-          >
-            <div
-              className="ls-info-modal-content"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div className="ls-info-modal-header" id="ls-collection-info-title">
-                Collection Stats Info
+                  },
+                  {
+                    label: "My weekly BIGGI",
+                    value: walletAddress
+                      ? unitsToTokenAmountStr(userTotalUnits)
+                      : "Connect wallet",
+                  },
+                ].map((stat) => (
+                  <div key={stat.label} className="collection-stat-card">
+                    <span className="collection-stat-label">{stat.label}</span>
+                    <span className="collection-stat-value">{stat.value}</span>
+                  </div>
+                ))}
               </div>
-              <div className="ls-info-modal-body">
-                <table className="rw-info-table">
+
+              <div className="collection-section-title">Block prices</div>
+              <div className="collection-table-wrap">
+                <table className="pools-table collection-stats-table">
+                  <colgroup>
+                    <col style={{ width: "30%" }} />
+                    <col style={{ width: "18%" }} />
+                    <col style={{ width: "16%" }} />
+                    <col style={{ width: "18%" }} />
+                    <col style={{ width: "18%" }} />
+                  </colgroup>
                   <thead>
                     <tr>
-                      <th>Concept</th>
-                      <th>Explanation</th>
+                      <th>Block</th>
+                      <th>Minted</th>
+                      <th>Base</th>
+                      <th>Live</th>
+                      <th>Delta</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {COLLECTION_INFO_ROWS.map((row) => (
-                      <tr key={row.concept} className={`info-row--${row.tone}`}>
-                        <td className="rw-k">{row.concept}</td>
-                        <td className="rw-v">{row.detail}</td>
+                    {collectionBlockRows.map((row) => (
+                      <tr key={row.name}>
+                        <td
+                          data-label="Block"
+                          style={{ color: "#ffe800", fontWeight: 800 }}
+                        >
+                          {row.name}
+                        </td>
+                        <td data-label="Minted">{row.minted}</td>
+                        <td data-label="Base">{formatMaybe(row.base, 2)}</td>
+                        <td data-label="Live">
+                          {row.live != null
+                            ? formatMaybe(row.live, 2)
+                            : formatMaybe(row.base, 2)}
+                        </td>
+                        <td data-label="Delta">{formatSigned(row.delta, 2)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <div className="ls-info-modal-footer">
-                <button
-                  type="button"
-                  className="ls-info-modal-close-button"
-                  onClick={() => setShowCollectionInfo(false)}
-                >
-                  Close
-                </button>
+
+              <div className="collection-section-title">Background bonuses</div>
+              <div className="collection-table-wrap">
+                <table className="pools-table collection-stats-table">
+                  <colgroup>
+                    <col style={{ width: "36%" }} />
+                    <col style={{ width: "20%" }} />
+                    <col style={{ width: "20%" }} />
+                    <col style={{ width: "24%" }} />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>Background</th>
+                      <th>Minted</th>
+                      <th>Bonus</th>
+                      <th>Block Delta</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {collectionBackgroundRows.map((row, idx) => (
+                      <tr key={`${row.name}-${idx}`}>
+                        <td
+                          data-label="Background"
+                          style={{ color: "#ffe800", fontWeight: 800 }}
+                        >
+                          {row.name}
+                        </td>
+                        <td data-label="Minted">{row.minted}</td>
+                        <td data-label="Bonus">{row.bonus}%</td>
+                        <td data-label="Block Delta">
+                          {formatSigned(row.delta, 2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
-        )}
+          {showCollectionInfo && (
+            <div
+              className="ls-info-modal-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="ls-collection-info-title"
+              onClick={() => setShowCollectionInfo(false)}
+            >
+              <div
+                className="ls-info-modal-content"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div
+                  className="ls-info-modal-header"
+                  id="ls-collection-info-title"
+                >
+                  Collection Stats Info
+                </div>
+                <div className="ls-info-modal-body">
+                  <table className="rw-info-table">
+                    <thead>
+                      <tr>
+                        <th>Concept</th>
+                        <th>Explanation</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {COLLECTION_INFO_ROWS.map((row) => (
+                        <tr
+                          key={row.concept}
+                          className={`info-row--${row.tone}`}
+                        >
+                          <td className="rw-k">{row.concept}</td>
+                          <td className="rw-v">{row.detail}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="ls-info-modal-footer">
+                  <button
+                    type="button"
+                    className="ls-info-modal-close-button"
+                    onClick={() => setShowCollectionInfo(false)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

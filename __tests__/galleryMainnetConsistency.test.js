@@ -8,7 +8,7 @@ import { buildRewardClaimPayload } from "../src/shared/utils/assetIdentity.js";
 import { CORE_CHAPTERS } from "../src/shared/utils/addresses.js";
 
 const MAIN = "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4";
-const MAIN2 = "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634";
+const MAIN2 = "0xe56cC0657A89daf10994204eD745985a61b0E36F";
 const PLACEHOLDER = "/images/Biggi.png";
 
 describe("gallery mainnet consistency", () => {

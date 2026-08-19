@@ -537,10 +537,7 @@ function StageCard({ stage, stageIndex, compact = false }) {
   const stageCollections = Array.isArray(stage.collections)
     ? stage.collections
     : [];
-  const isFinalStage = stage.kind === "final";
-  const stageLabel = isFinalStage
-    ? `Stage ${String(stageIndex + 1).padStart(2, "0")}`
-    : `Pair ${String(stageIndex + 1).padStart(2, "0")}`;
+  const stageLabel = `Pair ${String(stageIndex + 1).padStart(2, "0")}`;
 
   return (
     <section
@@ -548,8 +545,8 @@ function StageCard({ stage, stageIndex, compact = false }) {
         ...styles.stageCard,
         padding: compact ? 16 : styles.stageCard.padding,
         gap: compact ? 14 : styles.stageCard.gap,
-        borderColor: isFinalStage ? "rgba(255,232,0,0.34)" : THEME.border,
-        gridColumn: isFinalStage && !compact ? "1 / -1" : "auto",
+        borderColor: THEME.border,
+        gridColumn: "auto",
       }}
     >
       <div
@@ -615,8 +612,6 @@ export default function ExpansionPanel({ compact = false } = {}) {
     [roadmapStages],
   );
   const pairStages = roadmapStages.filter((stage) => stage.kind === "pair");
-  const finalStage =
-    roadmapStages.find((stage) => stage.kind === "final") || null;
   const infoItems = React.useMemo(
     () => [
       {
@@ -636,8 +631,8 @@ export default function ExpansionPanel({ compact = false } = {}) {
       {
         label: "Mainnet Scope",
         description: [
-          "The collections shown here are presented as mainnet-ready roadmap entries.",
-          "Expansion tracks release structure and supply targets, not live mint activity.",
+          "The four upcoming chapter pairs are deployed on Polygon mainnet but remain inactive.",
+          "Metadata, chapter activation, and the final launch gate determine when each pair becomes available.",
         ],
       },
     ],
@@ -684,7 +679,7 @@ export default function ExpansionPanel({ compact = false } = {}) {
                   lineHeight: compact ? 1.15 : undefined,
                 }}
               >
-                VRF + Public pairs before the final collection
+                Deployed VRF + Public chapter pairs
               </h2>
               <p
                 style={{
@@ -693,12 +688,11 @@ export default function ExpansionPanel({ compact = false } = {}) {
                   fontSize: compact ? 13 : styles.subtitle.fontSize,
                 }}
               >
-                This panel now tracks the collection roadmap instead of
-                distributor telemetry. The visible structure is four
-                `vrfplusPublic` pairs followed by one final collection, and all
-                visible collections are already prepared for mainnet. Every
-                non-final collection is set to 550 NFTs, and the final
-                collection is set to 1100 NFTs.
+                Universe, Mutant, Apocalipse, and Super Hero are four deployed
+                chapter pairs that follow the Original chapter. Each chapter
+                has its own VRF and Public collection, with a maximum supply of
+                550 NFTs per contract. They remain inactive until their launch
+                requirements are complete.
               </p>
             </div>
             <div
@@ -752,10 +746,9 @@ export default function ExpansionPanel({ compact = false } = {}) {
                     fontSize: compact ? 13 : styles.tokenomicsBannerText.fontSize,
                   }}
                 >
-                  Universe, Mutant, Apocalipse, Super Hero, and MULTIVERSE are
-                  not isolated branches. They are designed to run on one shared
-                  BIGGI tokenomics system, so future collection launches expand
-                  the same reserve, liquidity, rewards, and treasury framework.
+                  Universe, Mutant, Apocalipse, and Super Hero are not isolated
+                  branches. They use one central TicketHub and the same BIGGI
+                  reserve, liquidity, rewards, and treasury framework.
                 </p>
               </div>
             </div>
@@ -763,7 +756,7 @@ export default function ExpansionPanel({ compact = false } = {}) {
               <span style={styles.tokenomicsTag}>Shared reserve logic</span>
               <span style={styles.tokenomicsTag}>Shared liquidity path</span>
               <span style={styles.tokenomicsTag}>Shared reward economy</span>
-              <span style={styles.tokenomicsTag}>Mainnet-ready roadmap</span>
+              <span style={styles.tokenomicsTag}>Deployed / inactive</span>
             </div>
           </section>
 
@@ -778,25 +771,25 @@ export default function ExpansionPanel({ compact = false } = {}) {
             <SummaryCard
               label="Pairs"
               value={roadmapStats.totalPairs}
-              hint="Four mainnet-ready roadmap pairs are visible in the VRF + Public chapter."
+              hint="Four upcoming VRF + Public chapter pairs are deployed on Polygon."
               compact={compact}
             />
             <SummaryCard
-              label="Pre-Final Collections"
+              label="Collection Contracts"
               value={roadmapStats.pairCollections}
-              hint="Each pair contains one VRF collection and one public collection, both prepared for mainnet."
+              hint="Each chapter contains one VRF collection and one Public collection."
               compact={compact}
             />
             <SummaryCard
-              label="Pair Supply"
+              label="Supply Per Pair"
               value={`${roadmapStats.pairSupply} NFTs`}
-              hint="Every non-final mainnet-ready collection is set to 550 NFTs."
+              hint="Each pair contains 550 VRF NFTs and 100 Public NFTs, ten per block."
               compact={compact}
             />
             <SummaryCard
-              label="Final Supply"
-              value={`${roadmapStats.finalSupply} NFTs`}
-              hint="The final mainnet-ready collection doubles the supply target to 1100 NFTs."
+              label="Marketing Tickets"
+              value="50 / chapter"
+              hint="Already minted, transferable, and not redeemable while the chapter is inactive."
               compact={compact}
             />
           </div>
@@ -822,13 +815,6 @@ export default function ExpansionPanel({ compact = false } = {}) {
               compact={compact}
             />
           ))}
-          {finalStage ? (
-            <StageCard
-              stage={finalStage}
-              stageIndex={pairStages.length}
-              compact={compact}
-            />
-          ) : null}
         </div>
 
         <div
@@ -846,10 +832,10 @@ export default function ExpansionPanel({ compact = false } = {}) {
           >
             <h3 style={styles.noteTitle}>How the roadmap is structured</h3>
             <ul style={styles.noteList}>
-              <li>Pairs 01 to 04 belong to the `vrfplusPublic` chapter.</li>
-              <li>Each pair contains exactly two mainnet-ready collections: one VRF and one Public.</li>
-              <li>Each of those eight roadmap collections is set to 550 NFTs.</li>
-              <li>The fifth and final roadmap stage is a single mainnet-ready collection with 1100 NFTs.</li>
+              <li>Chapters 2 to 5 open sequentially after the Original chapter.</li>
+              <li>Each chapter contains two deployed contracts: one VRF and one Public collection.</li>
+              <li>Each of those eight collection contracts has a 550 NFT maximum supply.</li>
+              <li>Additional series and chapters can be registered; Super Hero is not a hard protocol limit.</li>
             </ul>
           </section>
 

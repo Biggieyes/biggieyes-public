@@ -68,7 +68,7 @@ const BlockCard = React.memo(
             </dd>
           </div>
           <div>
-            <dt title="Start reference price (1-10 POL). Live price can move.">
+            <dt title="Base price stored by the active chapter contract.">
               Base price
             </dt>
             <dd>
@@ -101,5 +101,3 @@ const BlockCard = React.memo(
 BlockCard.displayName = "BlockCard";
 
 export default BlockCard;
-
-
