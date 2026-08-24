@@ -1858,7 +1858,7 @@ function decodeKnownCustomError(err) {
 /* ======================================================================== */
 
 export default function AppCore() {
-  const isMobile = useIsMobile(700);
+  const isMobile = useIsMobile(900);
 
   const [openNavIdx, setOpenNavIdx] = React.useState(() => {
     if (typeof window === "undefined") return null;

@@ -15,6 +15,13 @@ const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
 const VIEWPORTS = [
   { name: "desktop", width: 1440, height: 900, isMobile: false },
   {
+    name: "tablet",
+    width: 768,
+    height: 1024,
+    isMobile: true,
+    hasTouch: true,
+  },
+  {
     name: "mobile",
     width: 390,
     height: 844,
@@ -423,11 +430,43 @@ async function runViewport(browser, baseUrl, viewport, failures) {
     }
 
     if (panel.name === "collections") {
+      const universeButton = page
+        .getByRole("button", { name: /^Universe$/i })
+        .first();
+      await universeButton.click({ timeout: 10_000 });
+      await page.getByText(/^SOON$/i).first().waitFor({ timeout: 10_000 });
+      await capture(
+        page,
+        viewport.name,
+        "collections-vrf-universe",
+        failures,
+        { fullPage: false },
+      );
+      await page
+        .getByRole("button", { name: /^Back to Original$/i })
+        .click({ timeout: 10_000 });
+
       for (const tab of COLLECTION_TABS) {
         await clickTab(page, tab);
         await capture(page, viewport.name, tab.name, failures, {
           fullPage: false,
         });
+        if (tab.name === "collections-public") {
+          await page
+            .getByRole("button", { name: /^Universe$/i })
+            .click({ timeout: 10_000 });
+          await page.getByText(/^SOON$/i).first().waitFor({ timeout: 10_000 });
+          await capture(
+            page,
+            viewport.name,
+            "collections-public-universe",
+            failures,
+            { fullPage: false },
+          );
+          await page
+            .getByRole("button", { name: /^Back to Original$/i })
+            .click({ timeout: 10_000 });
+        }
         if (tab.name === "collections-chapters") {
           await scrollPanel(page, ".fullscreen-panel__container", "bottom");
           await capture(
@@ -440,31 +479,6 @@ async function runViewport(browser, baseUrl, viewport, failures) {
           await scrollPanel(page, ".fullscreen-panel__container", "top");
         }
       }
-
-      const futureCollections = page
-        .getByRole("button", { name: /^Future Collections$/i })
-        .first();
-      await futureCollections.click({ timeout: 10_000 });
-      await page
-        .getByText(/Upcoming chapters/i)
-        .first()
-        .waitFor({ timeout: 10_000 });
-      await page.waitForTimeout(600);
-      await capture(page, viewport.name, "collections-future", failures, {
-        fullPage: false,
-      });
-      await scrollPanel(page, ".collection-grid__future-overlay", "bottom");
-      await capture(
-        page,
-        viewport.name,
-        "collections-future-bottom",
-        failures,
-        { fullPage: false },
-      );
-      await page
-        .getByRole("button", { name: /Close upcoming chapters/i })
-        .click({ timeout: 10_000 });
-      await page.waitForTimeout(350);
     }
 
     if (panel.name === "vrf-mint") {
