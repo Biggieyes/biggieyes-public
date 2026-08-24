@@ -50,6 +50,7 @@ const COLLECTION2Panel = React.memo(
     selectedNftError,
     COLLECTIONTotals,
     onTokenIdChange,
+    renderChapterSwitcher,
     comingSoon = false,
   }) => {
     const hasSelection = /^\d+$/.test(String(desiredTokenId || ""));
@@ -211,6 +212,7 @@ const COLLECTION2Panel = React.memo(
         </div>
 
         <SectionHeader label="Block prices" accent="#5ddcff" />
+        {renderChapterSwitcher?.()}
         <div className="collection-grid__cards">{renderBlockCardsGrid()}</div>
       </section>
     );

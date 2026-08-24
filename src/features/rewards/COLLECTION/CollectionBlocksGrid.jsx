@@ -985,6 +985,7 @@ function COLLECTIONBlocksGrid({
         selectedNftError={selectedPublicNft.error}
         COLLECTIONTotals={COLLECTIONTotals}
         onTokenIdChange={setDesiredTokenId}
+        renderChapterSwitcher={renderChapterSwitcher}
         comingSoon={isFutureChapter}
       />
     ),
@@ -995,6 +996,7 @@ function COLLECTIONBlocksGrid({
       selectedEntry,
       selectedPublicNft,
       COLLECTIONTotals,
+      renderChapterSwitcher,
       isFutureChapter,
     ],
   );
@@ -1028,6 +1030,7 @@ function COLLECTIONBlocksGrid({
         lowestPriceName={lowestPriceName}
         topMintedName={topMintedName}
         additionalText={additionalText}
+        renderChapterSwitcher={renderChapterSwitcher}
       />
     ),
     [
@@ -1040,6 +1043,7 @@ function COLLECTIONBlocksGrid({
       lowestPriceName,
       topMintedName,
       additionalText,
+      renderChapterSwitcher,
     ],
   );
 
@@ -1146,8 +1150,6 @@ function COLLECTIONBlocksGrid({
             </div>
           </div>
         )}
-
-        {effectiveActive !== "chapterSeries" && renderChapterSwitcher()}
 
         {activePanel || (
           <section className="collection-grid__panel">
