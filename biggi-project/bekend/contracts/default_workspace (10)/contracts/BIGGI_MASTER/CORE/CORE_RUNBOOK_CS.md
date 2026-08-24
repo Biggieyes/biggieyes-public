@@ -1,6 +1,10 @@
 # CORE runbook
 
-## CollectionRewards budget gate (2026-08-24)
+## CollectionRewards budget gate (deployed 2026-08-24)
+
+Current Polygon address: `0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43`.
+All five VRF collection budgets are configured and Chapter 1 is the current
+`fundingCollection`.
 
 For every VRF collection, run `configureCollectionBudget(vrfCollection)`.
 Before a chapter sale starts, run `setFundingCollection(vrfCollection)` and

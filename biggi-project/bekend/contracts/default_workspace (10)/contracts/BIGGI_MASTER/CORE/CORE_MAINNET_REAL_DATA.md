@@ -1,6 +1,6 @@
 # CORE Mainnet Real Data
 
-Last documentation sync: 2026-08-18.
+Last documentation sync: 2026-08-25.
 
 ## Deployment Status
 
@@ -27,9 +27,9 @@ Public mint is not open yet. Launch blockers are operational configuration items
 | `MAIN2` | `0xe56cC0657A89daf10994204eD745985a61b0E36F` |
 | `TICKET_HUB` | `0x7b7e561173f498C8274b821090Da64E8ee653f6A` |
 | `DISTRIBUTOR` | `0xCE892698159D8D799D5eF7f0dF0111487511fD22` |
-| `COLLECTION_REWARDS` | `0x5d1273070c9133381C570009768621762F024FB8` |
+| `COLLECTION_REWARDS` | `0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43` |
 | `NFT_REWARDS` | `0x939Df533b80943298E15ad4c8F188102954f34FF` |
-| `MAIN_READER` | `0x4937CdcF1668255Cb46c78E19547ea96C94391Ef` |
+| `MAIN_READER` | `0xde05be77024eABf37E4eA4fbBD58F161081be2f3` |
 | `MULTI_COLLECTION_READER` | `0xa65B4e88E37F085B9009295eA0AcF05e18a82884` |
 | `CHAPTER_SERIES_READER` | `0x421c8ed70fC893517481315aC62f4c95331e647f` |
 | `NFT_REWARDS_READER` | `0x430376b1f4F12ce2D641CC28f2968297aA2b0c12` |
@@ -72,7 +72,7 @@ Marketing minting stores the 1 POL snapshot and does not advance the public curv
 
 The public price transition was confirmed in Polygon block `92226673`, transaction `0x1fb1165f4a67416c25f3d0c4c7ae7600e35466fc2b3ba8913d60554a5d1db63b`.
 
-Live read-only preflight on 2026-08-18 returned `okForDeployOnly=true`, `okForPublicLaunch=false`, 7 blockers and 0 warnings. The remaining blockers are empty initial DEX liquidity, the intentionally paused Chapter 1 Public collection, paused/unlocked CRE receiver identity, and the paused liquidity orchestrator/keeper proxy. Chapter 1 Public metadata are complete; missing final image URIs for chapters 2-5 block only those future chapters.
+Live read-only preflight after the CollectionRewards migration returned `okForDeployOnly=true`, `okForPublicLaunch=false`, 7 blockers and 2 warnings. The remaining blockers are empty initial DEX liquidity, the intentionally paused Chapter 1 Public collection, paused/unlocked CRE receiver identity, and the paused liquidity orchestrator/keeper proxy. The warnings confirm that Chapter 1 CollectionRewards claims remain locked while its isolated `47000 POL` budget fills and that BIGGI-paid mints do not add native POL. Chapter 1 Public metadata are complete; missing final image URIs for chapters 2-5 block only those future chapters.
 
 ## Canonical Manifest Files
 

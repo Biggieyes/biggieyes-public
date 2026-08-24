@@ -1,35 +1,34 @@
 # Pending Mainnet Activation Runbook
 
-Datum: 2026-08-19
+Datum: 2026-08-25
 
-Tento runbook je priprava. Nejde o potvrzeni, ze transakce byly spustene.
+CollectionRewards migrace popsana v sekci 0 je dokoncena. Liquidity a finalni
+aktivacni kroky v dalsich sekcich zustavaji pending.
 
-## 0. CollectionRewards budget gate
+## 0. CollectionRewards budget gate - completed
 
-Pred verejnou aktivaci je pripraven redeploy `BiggiCollectionRewards` a
-`BiggiMainReader`. Distributor se nemeni.
+Nasazeno a verified na Polygon mainnetu 2026-08-24:
 
-Dry-run bez transakce:
+- `BiggiCollectionRewards`: `0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43`
+- `BiggiMainReader`: `0xde05be77024eABf37E4eA4fbBD58F161081be2f3`
+- 5 VRF budgetu je nakonfigurovano
+- Chapter 1 je aktualni `fundingCollection`
+- Distributor a MasterConfig smeruji na novy CollectionRewards
+- Distributor je po migraci unpaused
+- pending pro stary i novy CollectionRewards byl pri post-checku `0 POL`
+- maximum je `47 000 POL` pro kazdou VRF kolekci
 
-```powershell
-npm run prepare:collection-rewards-redeploy:polygon
-```
-
-Stav overeny 2026-08-24:
-
-- 5 chapteru je neaktivnich
-- legacy CollectionRewards ma 0 POL
-- zadny chapter nema historicky claim
-- Distributor nema pending castku pro legacy CollectionRewards
-- maximum je 47 000 POL pro kazdou VRF kolekci
-
-Execute prikaz vyzaduje samostatny explicitni souhlas. Po nem musi projit:
+Potvrzene kontroly:
 
 ```powershell
 npm run audit:collection-rewards:polygon
 npm run check:master:core:polygon
 npm run preflight:launch:polygon
 ```
+
+Vysledek: claim audit `65/65`, CORE relationship check bez issue a source
+verification `15/15`. Preflight zustava zamerne `okForPublicLaunch=false`
+kvuli liquidity a dalsim aktivacnim blockerum, ne kvuli CollectionRewards.
 
 Native mint tok je `60 % do Distributoru * 25 % do CollectionRewards`, tedy
 15 % ceny mintu. Castka se pripise rozpoctu aktivni VRF kolekce po kazdem

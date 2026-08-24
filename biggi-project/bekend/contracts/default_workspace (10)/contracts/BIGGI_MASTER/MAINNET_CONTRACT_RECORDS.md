@@ -1,6 +1,6 @@
 # BIGGI_MASTER Mainnet Contract Address Records
 
-Last documentation sync: 2026-08-18.
+Last documentation sync: 2026-08-25.
 
 ## Canonical Polygon Mainnet Deployment
 
@@ -35,9 +35,9 @@ Canonical manifests:
 | `MAIN2` | `0xe56cC0657A89daf10994204eD745985a61b0E36F` |
 | `TICKET_HUB` | `0x7b7e561173f498C8274b821090Da64E8ee653f6A` |
 | `DISTRIBUTOR` | `0xCE892698159D8D799D5eF7f0dF0111487511fD22` |
-| `COLLECTION_REWARDS` | `0x5d1273070c9133381C570009768621762F024FB8` |
+| `COLLECTION_REWARDS` | `0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43` |
 | `NFT_REWARDS` | `0x939Df533b80943298E15ad4c8F188102954f34FF` |
-| `MAIN_READER` | `0x4937CdcF1668255Cb46c78E19547ea96C94391Ef` |
+| `MAIN_READER` | `0xde05be77024eABf37E4eA4fbBD58F161081be2f3` |
 | `MULTI_COLLECTION_READER` | `0xa65B4e88E37F085B9009295eA0AcF05e18a82884` |
 | `CHAPTER_SERIES_READER` | `0x421c8ed70fC893517481315aC62f4c95331e647f` |
 | `NFT_REWARDS_READER` | `0x430376b1f4F12ce2D641CC28f2968297aA2b0c12` |
@@ -54,7 +54,7 @@ Canonical manifests:
 
 Every VRF chapter uses the same 550-position block-color, tier, rarity, and game-logic matrix as Chapter 1. Every Public collection has 100 unique NFTs, ten per block and no background clones. Public collection pricing is derived from its paired VRF collection.
 
-Current verification: `219/219` on-chain relationship checks and `14/14` PolygonScan source verifications passed. All 250 marketing tickets are minted, transferable, and not redeemable while their chapters remain inactive.
+Current verification: CORE relationship check passed with `136` checks and `0` issues; PolygonScan source verification passed `15/15`. All 250 marketing tickets are minted, transferable, and not redeemable while their chapters remain inactive.
 
 ## Live Tokenomics Write Contracts
 

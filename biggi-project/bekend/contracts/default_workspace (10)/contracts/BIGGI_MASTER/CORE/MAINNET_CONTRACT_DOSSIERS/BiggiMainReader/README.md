@@ -3,7 +3,7 @@
 ## Source of truth
 - Source file: `CORE_READERS/BiggiMainReader.sol`
 - Frozen ABI: `./ABI.json`
-- Deployment status: current TicketHub-aware reader live and verified on Polygon mainnet as of 2026-08-17.
+- Deployment status: current CollectionRewards-aware reader live and verified on Polygon mainnet as of 2026-08-24.
 - Canonical manifest: `biggi-project/bekend/addresses.master.json` plus phase-specific Polygon manifests.
 
 ## Constructor
@@ -35,6 +35,8 @@ findTicket(address owner)
 
 | Key | Address |
 | --- | --- |
-| `MAIN_READER` | `0x4937CdcF1668255Cb46c78E19547ea96C94391Ef` |
+| `MAIN_READER` | `0xde05be77024eABf37E4eA4fbBD58F161081be2f3` |
+
+Deployment transaction: `0xdc90981a1a510f0f72e8c645fde0af725e3bad5036f70280157b86f43bfdb659`.
 
 Canonical manifests: `addresses.master.json`, phase-specific Polygon manifests, and `MAINNET_DEPLOYMENT_MANIFEST_POLYGON.json`.

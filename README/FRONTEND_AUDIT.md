@@ -1,6 +1,6 @@
 # Frontend Audit - Current Mainnet State
 
-Last verified: 2026-08-17
+Last verified: 2026-08-25
 
 This document replaces the old January frontend audit. It reflects the current Polygon mainnet frontend wiring, ABI inventory, reader configuration, and runtime validation.
 
@@ -46,7 +46,7 @@ Runtime smoke verified Gallery, LiveStats, and Rewards panel flows against the c
 
 | Reader key | Address |
 | --- | --- |
-| `MAIN_READER` | `0x4937CdcF1668255Cb46c78E19547ea96C94391Ef` |
+| `MAIN_READER` | `0xde05be77024eABf37E4eA4fbBD58F161081be2f3` |
 | `MCD_READER_V2` | `0xa65B4e88E37F085B9009295eA0AcF05e18a82884` |
 | `NFT_REWARDS_READER` | `0x430376b1f4F12ce2D641CC28f2968297aA2b0c12` |
 | `TOKEN_REWARDS_READER` | `0xB558137Ce8a2e065de09f7ef7cF24911E49A9972` |

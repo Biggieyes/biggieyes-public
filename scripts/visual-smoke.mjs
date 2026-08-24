@@ -300,9 +300,26 @@ async function scrollPanel(page, selector, position) {
   await page.waitForTimeout(500);
 }
 
+async function waitForStableDocumentHeight(page, timeoutMs = 12_000) {
+  const deadline = Date.now() + timeoutMs;
+  let previousHeight = -1;
+  let stableSamples = 0;
+
+  while (Date.now() < deadline) {
+    const height = await page.evaluate(() => document.body.scrollHeight);
+    if (height === previousHeight) stableSamples += 1;
+    else stableSamples = 0;
+    if (stableSamples >= 3) return;
+    previousHeight = height;
+    await page.waitForTimeout(300);
+  }
+}
+
 async function checkLiveStatsTables(page, viewport, failures) {
   const widget = page.locator(".live-stats-widget-new").first();
   await widget.scrollIntoViewIfNeeded({ timeout: 8_000 }).catch(() => {});
+  await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+  await waitForStableDocumentHeight(page);
 
   const measure = async () => ({
     widget: await widget.boundingBox(),

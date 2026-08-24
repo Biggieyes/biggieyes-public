@@ -95,7 +95,7 @@ The current address registry exported in the frontend and backend mirror points 
 | `Reserve` | `0x2786e46e01a5d229118fEdC102267217C7e94574` |
 | `Treasury` | `0x35EE9523D20fFfe47c62dCcF01fA0136424A05e7` |
 | `BuybackAgent` | `0x5A77E90c467576C82B8d0E74eD112B829C625BB4` |
-| `CollectionRewards` | `0x5d1273070c9133381C570009768621762F024FB8` |
+| `CollectionRewards` | `0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43` |
 | `TokenRewards` | `0xA455775BBe0BC863f644516147b95Ef5103b29FA` |
 | `DripDistributor` | `0x2E4677729cb8a02aDd752Bcbd2637809C20CBAf3` |
 | `DripLiquidityManager` | `0xE258843bca54803a366413571b3B4d6a28eAF2eC` |

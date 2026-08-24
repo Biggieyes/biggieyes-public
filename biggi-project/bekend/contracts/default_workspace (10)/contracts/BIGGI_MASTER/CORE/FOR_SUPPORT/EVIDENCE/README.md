@@ -14,3 +14,5 @@ Expected files:
 - `initial-liquidity-polygon.json`
 - `tokenomics-activation-polygon.json`
 - `core-relationships-polygon.json`
+- `collection-rewards-redeploy-polygon.json`
+- `collection-rewards-claims-audit-polygon.json`

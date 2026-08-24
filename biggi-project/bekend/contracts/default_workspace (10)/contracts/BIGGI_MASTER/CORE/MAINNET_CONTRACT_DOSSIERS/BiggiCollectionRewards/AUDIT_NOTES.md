@@ -1,6 +1,7 @@
 # Audit Notes - BiggiCollectionRewards
 
-Deployment status: replacement source prepared; legacy address remains live.
+Deployment status: current budget-gated contract is live and verified at
+`0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43`.
 
 ## Security invariants
 - No cross-collection state collision
@@ -25,12 +26,12 @@ Deployment status: replacement source prepared; legacy address remains live.
 - Alert if an active chapter differs from `fundingCollection`.
 - Alert on distributor pending transfers and owner/configuration changes.
 
-## Status (2026-08-24)
-- Read-only Polygon claim audit: `55/55` checks passed at block `92590349`.
+## Status (2026-08-25)
+- Read-only Polygon claim audit: `65/65` checks passed at block `92602468`.
 - Live reward amounts: `1000 / 3000 / 10000 POL`.
 - Maximum liability: `47000 POL` per chapter, `235000 POL` across five chapters.
 - Current pool and distributor receipts: `0 POL`; claims remain fail-closed until mint revenue funds the pool.
 - Native ticket mints route an effective 15% to CollectionRewards; BIGGI-paid ticket mints route no POL to this pool.
-- Replacement dry-run passed for all five chapters on 2026-08-24; no mainnet
-  write was submitted.
+- Five isolated budgets are configured; Chapter 1 is the active funding target.
+- Deployment, wiring, post-checks, and PolygonScan verification completed.
 - Audit command: `npm run audit:collection-rewards:polygon`.

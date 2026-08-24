@@ -1,6 +1,6 @@
 # Audit Notes - BiggiMainReader
 
-Deployment status: live on Polygon mainnet as of 2026-06-16. These notes are predeploy audit notes for final mainnet preparation.
+Deployment status: replacement reader live and verified on Polygon mainnet as of 2026-08-24 at `0xde05be77024eABf37E4eA4fbBD58F161081be2f3`.
 
 ## Security invariants
 - Reader returns deterministic snapshots

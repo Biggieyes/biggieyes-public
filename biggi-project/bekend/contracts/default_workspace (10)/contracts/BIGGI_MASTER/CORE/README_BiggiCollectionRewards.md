@@ -1,8 +1,9 @@
 # BiggiCollectionRewards
 
-Source status: budget-gated replacement prepared on 2026-08-24. The legacy
-Polygon deployment at `0x5d1273070c9133381C570009768621762F024FB8`
-remains live until the explicit redeploy command is approved and executed.
+Deployment status: budget-gated contract deployed and verified on Polygon on
+2026-08-24 at `0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43`.
+The superseded address is recorded in `addresses.master.json` as
+`OLD_COLLECTION_REWARDS`.
 
 ## Purpose
 Native-token rewards contract for collection completion milestones.

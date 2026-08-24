@@ -1,7 +1,7 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "createdAt": "2026-08-19T01:38:23.009Z",
+  "createdAt": "2026-08-24T21:59:39.309Z",
   "okForDeployOnly": true,
   "okForPublicLaunch": false,
   "checks": [
@@ -34,6 +34,11 @@
       "name": "Code exists: DISTRIBUTOR",
       "ok": true,
       "value": "0xCE892698159D8D799D5eF7f0dF0111487511fD22"
+    },
+    {
+      "name": "Code exists: COLLECTION_REWARDS",
+      "ok": true,
+      "value": "0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43"
     },
     {
       "name": "Code exists: BIGGI_TOKEN",
@@ -178,6 +183,20 @@
       }
     },
     {
+      "name": "CollectionRewards active chapter budget gate configured",
+      "ok": true,
+      "value": {
+        "configured": true,
+        "claimsEnabled": false,
+        "required": "47000000000000000000000",
+        "funded": "0",
+        "spent": "0",
+        "available": "0",
+        "remainingLiability": "47000000000000000000000",
+        "surplus": "0"
+      }
+    },
+    {
       "name": "MAIN metadata consistency ok",
       "ok": true,
       "value": {
@@ -207,7 +226,25 @@
       "value": true
     }
   ],
-  "warnings": [],
+  "warnings": [
+    {
+      "name": "CollectionRewards claims are locked while the chapter budget fills",
+      "value": {
+        "configured": true,
+        "claimsEnabled": false,
+        "required": "47000000000000000000000",
+        "funded": "0",
+        "spent": "0",
+        "available": "0",
+        "remainingLiability": "47000000000000000000000",
+        "surplus": "0"
+      }
+    },
+    {
+      "name": "BIGGI-paid ticket mints do not fund the native CollectionRewards pool",
+      "value": "Only native POL mints and explicit chapter funding advance the active collection budget."
+    }
+  ],
   "blockers": [
     {
       "name": "PAIR has no initial liquidity",
@@ -305,6 +342,33 @@
       "tokenSink": "0x35EE9523D20fFfe47c62dCcF01fA0136424A05e7",
       "tokenSinkBps": "10000",
       "tokenSinkDepositMode": true
+    },
+    "collectionRewards": {
+      "address": "0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "distributor": "0xCE892698159D8D799D5eF7f0dF0111487511fD22",
+      "registry": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
+      "defaultMain": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+      "defaultMainEligible": true,
+      "orangeReward": "1000000000000000000000",
+      "blockReward": "3000000000000000000000",
+      "rainbowReward": "10000000000000000000000",
+      "balance": "0",
+      "maximumChapterLiability": "47000000000000000000000",
+      "isolatedBudgetMode": true,
+      "fundingCollection": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+      "activeBudget": {
+        "configured": true,
+        "claimsEnabled": false,
+        "required": "47000000000000000000000",
+        "funded": "0",
+        "spent": "0",
+        "available": "0",
+        "remainingLiability": "47000000000000000000000",
+        "surplus": "0"
+      },
+      "distributorTarget": "0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43",
+      "distributorPending": "0"
     },
     "mainMetadata": {
       "configuredCount": "550",

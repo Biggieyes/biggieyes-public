@@ -75,16 +75,23 @@ function setEnvLines(file, updates) {
 function updateJsonAddresses(file, oldRewards, newRewards, oldReader, newReader, metadata) {
   if (!fs.existsSync(file)) return;
   const value = readJson(file);
-  if (Object.prototype.hasOwnProperty.call(value, "COLLECTION_REWARDS")) {
+  const basename = path.basename(file);
+  const coreAddressBook = [
+    "addresses.master.json",
+    "addresses.json",
+    "addresses.core.polygon.json",
+    "addresses.visibility.polygon.json",
+  ].includes(basename);
+  if (coreAddressBook || Object.prototype.hasOwnProperty.call(value, "COLLECTION_REWARDS")) {
     value.COLLECTION_REWARDS = newRewards;
   }
-  if (Object.prototype.hasOwnProperty.call(value, "MAIN_READER")) {
+  if (coreAddressBook || Object.prototype.hasOwnProperty.call(value, "MAIN_READER")) {
     value.MAIN_READER = newReader;
   }
   if (Object.prototype.hasOwnProperty.call(value, "READER") && same(value.READER, oldReader)) {
     value.READER = newReader;
   }
-  if (path.basename(file) === "addresses.master.json") {
+  if (basename === "addresses.master.json") {
     value.OLD_COLLECTION_REWARDS = oldRewards;
     value.OLD_MAIN_READER = oldReader;
     value.collectionRewardsRedeployedAt = metadata.completedAt;
@@ -366,7 +373,9 @@ async function main() {
       rewardsGas.add(readerGas).mul(fees.maxFeePerGas),
     ),
     blockers,
-    transactions: [],
+    transactions: Array.isArray(persistedResume?.transactions)
+      ? [...persistedResume.transactions]
+      : [],
   };
   writeJson(reportFile, report);
   if (blockers.length) throw new Error(`CollectionRewards redeploy blocked: ${blockers.join("; ")}`);
@@ -406,11 +415,13 @@ async function main() {
       blockNumber: receipt.blockNumber,
       gasUsed: receipt.gasUsed.toString(),
     });
+    resumeState.transactions = report.transactions;
+    writeJson(resumeFile, resumeState);
     writeJson(reportFile, report);
   }
 
   async function send(label, transactionFactory) {
-    const tx = await transactionFactory();
+    const tx = await transactionFactory(fees);
     const receipt = await tx.wait(confirmations);
     if (receipt.status !== 1) throw new Error(`${label} failed: ${tx.hash}`);
     await record(label, tx, receipt);
@@ -423,34 +434,35 @@ async function main() {
   } else {
     newRewards = await rewardsFactory.connect(deployer).deploy(required.MAIN, required.OWNER, fees);
     const receipt = await newRewards.deployTransaction.wait(confirmations);
-    await record("deploy BiggiCollectionRewards", newRewards.deployTransaction, receipt);
     resumeState.newCollectionRewards = newRewards.address;
-    writeJson(resumeFile, resumeState);
+    await record("deploy BiggiCollectionRewards", newRewards.deployTransaction, receipt);
     newRewards = newRewards.connect(owner);
   }
 
   if (!(await newRewards.orangeReward()).eq(orangeReward) ||
       !(await newRewards.blockReward()).eq(blockReward) ||
       !(await newRewards.rainbowReward()).eq(rainbowReward)) {
-    await send("preserve reward schedule", () =>
-      newRewards.setRewardsAmounts(orangeReward, blockReward, rainbowReward));
+    await send("preserve reward schedule", (txFees) =>
+      newRewards.setRewardsAmounts(orangeReward, blockReward, rainbowReward, txFees));
   }
   if (!same(await newRewards.registry(), required.REGISTRY)) {
-    await send("set CollectionRewards registry", () => newRewards.setRegistry(required.REGISTRY));
+    await send("set CollectionRewards registry", (txFees) =>
+      newRewards.setRegistry(required.REGISTRY, txFees));
   }
   if (!same(await newRewards.distributor(), required.DISTRIBUTOR)) {
-    await send("set CollectionRewards distributor", () => newRewards.setDistributor(required.DISTRIBUTOR));
+    await send("set CollectionRewards distributor", (txFees) =>
+      newRewards.setDistributor(required.DISTRIBUTOR, txFees));
   }
   for (const mainAddress of chapterMains) {
     const budget = await newRewards.collectionBudgets(mainAddress);
     if (!Boolean(budget.configured ?? budget[0])) {
-      await send(`configure budget ${mainAddress}`, () =>
-        newRewards.configureCollectionBudget(mainAddress));
+      await send(`configure budget ${mainAddress}`, (txFees) =>
+        newRewards.configureCollectionBudget(mainAddress, txFees));
     }
   }
   if (!same(await newRewards.fundingCollection(), chapterMains[0])) {
-    await send("set Chapter 1 funding collection", () =>
-      newRewards.setFundingCollection(chapterMains[0]));
+    await send("set Chapter 1 funding collection", (txFees) =>
+      newRewards.setFundingCollection(chapterMains[0], txFees));
   }
 
   let newReader;
@@ -464,9 +476,8 @@ async function main() {
       fees,
     );
     const receipt = await newReader.deployTransaction.wait(confirmations);
-    await record("deploy BiggiMainReader", newReader.deployTransaction, receipt);
     resumeState.newMainReader = newReader.address;
-    writeJson(resumeFile, resumeState);
+    await record("deploy BiggiMainReader", newReader.deployTransaction, receipt);
   }
 
   const distributor = new ethers.Contract(required.DISTRIBUTOR, [
@@ -483,19 +494,19 @@ async function main() {
   ], owner);
 
   if (!(await distributor.paused())) {
-    await send("pause distributor for target switch", () => distributor.pause());
+    await send("pause distributor for target switch", (txFees) => distributor.pause(txFees));
   }
   if (!same(await distributor.collectionRewards(), newRewards.address)) {
-    await send("switch distributor CollectionRewards target", () =>
-      distributor.setCollectionRewards(newRewards.address));
+    await send("switch distributor CollectionRewards target", (txFees) =>
+      distributor.setCollectionRewards(newRewards.address, txFees));
   }
   const currentBundle = await masterConfig.rewardsBundle();
   if (!same(currentBundle[0], newRewards.address)) {
-    await send("switch MasterConfig CollectionRewards target", () =>
-      masterConfig.setRewards(newRewards.address, currentBundle[1], currentBundle[2], currentBundle[3]));
+    await send("switch MasterConfig CollectionRewards target", (txFees) =>
+      masterConfig.setRewards(newRewards.address, currentBundle[1], currentBundle[2], currentBundle[3], txFees));
   }
   if (!resumeState.distributorInitiallyPaused && await distributor.paused()) {
-    await send("restore distributor unpaused state", () => distributor.unpause());
+    await send("restore distributor unpaused state", (txFees) => distributor.unpause(txFees));
   }
 
   const newReaderView = new ethers.Contract(newReader.address, [

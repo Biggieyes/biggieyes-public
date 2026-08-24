@@ -1,7 +1,7 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "checkedAt": "2026-08-19T01:33:31.926Z",
+  "checkedAt": "2026-08-24T21:59:09.818Z",
   "checks": [
     {
       "status": "ok",
@@ -496,7 +496,7 @@
     {
       "status": "ok",
       "label": "DISTRIBUTOR.collectionRewards",
-      "actual": "0x5d1273070c9133381C570009768621762F024FB8"
+      "actual": "0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43"
     },
     {
       "status": "ok",
@@ -531,7 +531,7 @@
     {
       "status": "ok",
       "label": "DISTRIBUTOR.collectionRewards non-zero",
-      "actual": "0x5d1273070c9133381C570009768621762F024FB8"
+      "actual": "0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43"
     },
     {
       "status": "ok",
@@ -584,7 +584,7 @@
     {
       "status": "ok",
       "label": "COLLECTION_REWARDS.code",
-      "address": "0x5d1273070c9133381C570009768621762F024FB8"
+      "address": "0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43"
     },
     {
       "status": "ok",
@@ -665,7 +665,7 @@
     {
       "status": "ok",
       "label": "MAIN_READER.code",
-      "address": "0x4937CdcF1668255Cb46c78E19547ea96C94391Ef"
+      "address": "0xde05be77024eABf37E4eA4fbBD58F161081be2f3"
     },
     {
       "status": "ok",
@@ -692,13 +692,13 @@
     {
       "status": "ok",
       "label": "MAIN_READER.collectionRewards",
-      "actual": "0x5d1273070c9133381C570009768621762F024FB8"
+      "actual": "0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43"
     },
     {
       "status": "ok",
       "label": "MAIN_READER.collectionRewards expected",
-      "actual": "0x5d1273070c9133381C570009768621762F024FB8",
-      "expected": "0x5d1273070c9133381C570009768621762F024FB8"
+      "actual": "0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43",
+      "expected": "0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43"
     },
     {
       "status": "ok",

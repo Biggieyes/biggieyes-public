@@ -1,7 +1,7 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "createdAt": "2026-08-19T01:19:45.792Z",
+  "createdAt": "2026-08-24T22:05:26.045Z",
   "source": "canonical BIGGI project addresses (core + tokenomics + readers + linked libraries + CRE receiver)",
   "summary": {
     "total": 58,
@@ -82,10 +82,10 @@
     },
     {
       "key": "COLLECTION_REWARDS",
-      "address": "0x5d1273070c9133381C570009768621762F024FB8",
+      "address": "0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43",
       "hasCode": true,
       "deployer": "0x8fa5c9545b2eef1ca3c6533951c286e05928f27b",
-      "txHash": "0xf17446aca95fb03236f58fc48c5bd009f9c049f2dc9cde5ea749a6a00b453c3b",
+      "txHash": "0xff0d250e399a2cead79a476be674641814a053103aa235253948e3acc20501d4",
       "verified": true,
       "contractName": "BiggiCollectionRewards",
       "compilerVersion": "v0.8.24+commit.e11b9ed9"
@@ -102,10 +102,10 @@
     },
     {
       "key": "MAIN_READER",
-      "address": "0x4937CdcF1668255Cb46c78E19547ea96C94391Ef",
+      "address": "0xde05be77024eABf37E4eA4fbBD58F161081be2f3",
       "hasCode": true,
       "deployer": "0x8fa5c9545b2eef1ca3c6533951c286e05928f27b",
-      "txHash": "0x238853c6220259c4b7201b3c4a23f2e1dee88b720cc34c6ba3ef90e0239341cc",
+      "txHash": "0xdc90981a1a510f0f72e8c645fde0af725e3bad5036f70280157b86f43bfdb659",
       "verified": true,
       "contractName": "BiggiMainReader",
       "compilerVersion": "v0.8.24+commit.e11b9ed9"

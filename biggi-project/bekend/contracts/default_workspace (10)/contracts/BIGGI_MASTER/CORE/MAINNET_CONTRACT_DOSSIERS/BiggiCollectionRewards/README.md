@@ -4,16 +4,17 @@
 
 - Contract: `CORE/BiggiCollectionRewards.sol`
 - Solidity: `^0.8.24`
-- Legacy live Polygon address: `0x5d1273070c9133381C570009768621762F024FB8`
-- Replacement address: pending explicit mainnet redeploy
+- Current Polygon address: `0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43`
+- Superseded Polygon address: `0x5d1273070c9133381C570009768621762F024FB8`
+- Deployment transaction: `0xff0d250e399a2cead79a476be674641814a053103aa235253948e3acc20501d4`
+- Deployment block: `92602358`
 - Registry: `0x09f3728e8607e1B951A6396DcEE4EC134C5e4058`
 - Distributor: `0xCE892698159D8D799D5eF7f0dF0111487511fD22`
 - Default VRF collection: `0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4`
 
-The repository source and `ABI.json` describe the budget-gated replacement.
-They must not be submitted as verification input for the legacy address. The
-replacement address and constructor arguments must be recorded here only
-after the redeploy report confirms all post-deploy checks.
+The repository source and `ABI.json` describe the current verified deployment.
+Constructor arguments are the Chapter 1 VRF collection and owner recorded in
+the canonical address manifest.
 
 The contract pays fixed native POL rewards for ownership milestones in each
 eligible VRF collection. Public collections are intentionally excluded.
@@ -149,18 +150,15 @@ The contract has no pause switch and no owner withdrawal function. Operational
 changes to registry, distributor, funding collection, or ownership must
 therefore be monitored directly from on-chain state.
 
-## Redeploy procedure
+## Redeploy record
 
-Read-only preflight:
+The migration completed on 2026-08-24 and is recorded in:
 
-```bash
-npm run prepare:collection-rewards-redeploy:polygon
-```
+`reports/collection-rewards-redeploy-polygon.json`.
 
-The execute command is intentionally separate and must not be run without an
-explicit mainnet approval. It deploys the replacement and a new
-`BiggiMainReader`, configures all registered VRF budgets, switches Distributor
-and MasterConfig, verifies post-state, and synchronizes address books.
+All five VRF budgets are configured, Chapter 1 is the funding collection,
+Distributor and MasterConfig target the current address, and both old and new
+Distributor pending balances were zero at completion.
 
 ## Verification
 
