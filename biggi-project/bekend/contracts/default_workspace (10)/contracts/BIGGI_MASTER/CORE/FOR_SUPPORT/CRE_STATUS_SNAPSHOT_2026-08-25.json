@@ -65,8 +65,14 @@
     "pairReserveWpol": "0",
     "pairReserveBiggi": "0",
     "pairLpSupply": "0",
+    "deadlineSec": 900,
     "readyToExecute": false,
-    "blocker": "Insufficient native POL on the token-owner wallet"
+    "blocker": "Insufficient native POL on the token-owner wallet",
+    "forkRehearsal": {
+      "evidence": "EVIDENCE/initial-liquidity-fork-rehearsal.json",
+      "sendsMainnetTransactions": false,
+      "allChecksPassed": true
+    }
   },
   "launchReadiness": {
     "okForDeployOnly": true,

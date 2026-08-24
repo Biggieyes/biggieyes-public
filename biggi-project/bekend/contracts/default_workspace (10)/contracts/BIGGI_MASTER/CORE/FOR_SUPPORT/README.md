@@ -39,6 +39,7 @@ This folder intentionally does not contain secrets, private keys, API keys, wall
 - Deployment wallet balance observed: `1.387342241466426688 POL`.
 - BIGGI/WPOL pair reserves and LP supply are still zero.
 - The dry-run is blocked only by insufficient native POL on the token-owner wallet.
+- The 2026-08-25 Polygon fork rehearsal passed all five seed and Vault-accounting checks without sending a mainnet transaction.
 
 ## Current PolygonScan Status
 

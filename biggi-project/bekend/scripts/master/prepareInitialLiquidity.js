@@ -43,7 +43,10 @@ async function main() {
   const A = loadAddresses(root);
   const signers = await ethers.getSigners();
   const deployer = signers[0] || null;
-  const deployerAddress = getAddress(env("DEPLOYER", env("EXPECT_OWNER", A.DEPLOYER || A.OWNER || (deployer && deployer.address))));
+  const signerAddress = deployer ? getAddress(deployer.address) : ZERO;
+  const deployerAddress = getAddress(
+    env("LIQUIDITY_OWNER", env("EXPECT_OWNER", A.OWNER || env("DEPLOYER", A.DEPLOYER || signerAddress)))
+  );
   const chain = await ethers.provider.getNetwork();
   if (network.name === "polygon" && chain.chainId !== 137) {
     throw new Error(`Expected Polygon chainId 137, got ${chain.chainId}`);
@@ -54,7 +57,11 @@ async function main() {
   if (execute && !deployer) {
     throw new Error("EXECUTE_INITIAL_LIQUIDITY requires a local signer; dry-run can use DEPLOYER/EXPECT_OWNER.");
   }
-  if (execute && isAddress(compromisedOwner) && deployerAddress === compromisedOwner) {
+  if (
+    execute &&
+    isAddress(compromisedOwner) &&
+    (deployerAddress === compromisedOwner || signerAddress === compromisedOwner)
+  ) {
     throw new Error("Refusing initial liquidity transaction from COMPROMISED_OWNER_ADDRESS");
   }
   const tokenAmountRaw = env("LIQ_TOKEN_AMOUNT", "");
@@ -67,6 +74,7 @@ async function main() {
   const requireVaultRecipient = envBool("LIQ_REQUIRE_VAULT_RECIPIENT", true);
   const irreversibleConfirmed = envBool("I_UNDERSTAND_INITIAL_LIQUIDITY_IS_IRREVERSIBLE", false);
   const postSeedSyncPolRaw = env("LIQ_POST_SEED_SYNC_POL", "1");
+  const deadlineSec = Number(env("LIQ_DEADLINE_SEC", "900"));
 
   const report = {
     network: network.name,
@@ -74,6 +82,7 @@ async function main() {
     createdAt: new Date().toISOString(),
     execute,
     deployer: deployerAddress,
+    signer: signerAddress,
     actions: [],
     blockers: [],
     warnings: [],
@@ -85,15 +94,22 @@ async function main() {
       requireVaultRecipient,
       irreversibleConfirmed,
       postSeedSyncPol: postSeedSyncPolRaw,
+      deadlineSec,
     },
   };
 
   if (!tokenAmountRaw) report.blockers.push("Missing LIQ_TOKEN_AMOUNT, example: 8000000");
   if (!nativeAmountRaw) report.blockers.push("Missing LIQ_NATIVE_AMOUNT, example: 5000");
+  if (deployer && signerAddress !== deployerAddress) {
+    report.blockers.push("Configured transaction signer does not match the required liquidity owner wallet.");
+  }
   if (execute && !irreversibleConfirmed) {
     report.blockers.push("Set I_UNDERSTAND_INITIAL_LIQUIDITY_IS_IRREVERSIBLE=1 for execution.");
   }
   if (slippageBps < 0 || slippageBps > 10_000) report.blockers.push("LIQ_INITIAL_SLIPPAGE_BPS must be 0..10000");
+  if (!Number.isInteger(deadlineSec) || deadlineSec <= 0) {
+    report.blockers.push("LIQ_DEADLINE_SEC must be a positive integer");
+  }
   if (requireVaultRecipient && getAddress(lpRecipient) !== getAddress(A.LIQUIDITY_VAULT)) {
     report.blockers.push("LIQ_LP_RECIPIENT must equal LIQUIDITY_VAULT for the production launch.");
   }
@@ -242,7 +258,7 @@ async function main() {
 
   if (!(await token.distributed())) report.blockers.push("BIGGI initial distribution is not executed.");
   if (getAddress(tokenOwner) !== deployerAddress) {
-    report.blockers.push("Signer is not the BiggiToken owner required for reserve transfer.");
+    report.blockers.push("Required liquidity owner is not the BiggiToken owner for reserve transfer.");
   }
   if (getAddress(tokenReserve) !== getAddress(A.RESERVE)) report.blockers.push("BiggiToken reserveAddr mismatch.");
   if (getAddress(routerWeth) !== getAddress(A.WETH)) report.blockers.push("Router WETH mismatch.");
@@ -262,13 +278,13 @@ async function main() {
     report.blockers.push("BIGGI/WPOL pair is no longer empty; initial-price transaction is blocked.");
   }
   if (nativeBalance.lte(amountNativeDesired.add(postSeedSyncNative))) {
-    report.blockers.push("Deployer native balance is not enough for requested liquidity, post-seed sync and gas.");
+    report.blockers.push("Liquidity owner native balance is not enough for requested liquidity, post-seed sync and gas.");
   }
   if (transferFromReserve && reserveTokenBalanceBefore.lt(amountTokenDesired.add(postSeedSyncToken))) {
     report.blockers.push("Reserve BIGGI balance is too low for the configured initial allocation.");
   }
   if (!transferFromReserve && tokenBalanceBefore.lt(amountTokenDesired)) {
-    report.blockers.push("Deployer BIGGI balance is too low. Set TRANSFER_FROM_RESERVE=1 or transfer BIGGI manually.");
+    report.blockers.push("Liquidity owner BIGGI balance is too low. Set TRANSFER_FROM_RESERVE=1 or transfer BIGGI manually.");
   }
 
   if (!execute) {
@@ -296,7 +312,7 @@ async function main() {
       report.actions.push({ action: "approve", tx: tx.hash, status: rc.status, blockNumber: rc.blockNumber });
     }
 
-    const deadline = Math.floor(Date.now() / 1000) + Number(env("LIQ_DEADLINE_SEC", "1800"));
+    const deadline = Math.floor(Date.now() / 1000) + deadlineSec;
     let seedSucceeded = false;
     try {
       const tx = await router.addLiquidityETH(

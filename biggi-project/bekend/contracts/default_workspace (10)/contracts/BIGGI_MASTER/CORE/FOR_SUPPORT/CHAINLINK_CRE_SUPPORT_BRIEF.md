@@ -134,6 +134,7 @@ The production seed remains blocked. A fresh dry-run on 2026-08-25 confirmed:
 - deployment wallet native balance: `1.387342241466426688 POL`;
 - Reserve BIGGI balance: `600,000,000 BIGGI`;
 - blocking condition: insufficient native POL for the seed, `1 POL` post-seed accounting sync and gas.
+- Polygon fork rehearsal: all checks passed; no mainnet transaction was sent.
 
 ## Current CRE Preflight
 
