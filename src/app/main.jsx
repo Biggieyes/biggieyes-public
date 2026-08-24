@@ -4,16 +4,11 @@ import * as React from "react";
 import { createRoot } from "react-dom/client";
 import * as Sentry from "@sentry/react";
 import "../index.css";
-import App from "./App.jsx";
-import { Web3Provider } from "./providers/Web3Provider.jsx";
-import { ContractsProvider } from "./providers/ContractsProvider.jsx";
-import { REWARDSProvider } from "./providers/REWARDSProvider.jsx";
-import { VRFProvider } from "./providers/VrfProvider.jsx";
-import { ensurePreferredRpc } from "../shared/utils/rpcConfig.js";
 import LoadingOverlay from "@/components/LoadingOverlay.jsx";
 import { createPreloadManager } from "../shared/utils/preloadManager.js";
 
 const BiggiEyesDocsApp = React.lazy(() => import("../docs/BiggiEyesDocsApp.jsx"));
+const AppRuntime = React.lazy(() => import("./AppRuntime.jsx"));
 
 const isBiggiEyesDocsRoute =
   typeof window !== "undefined" &&
@@ -53,6 +48,9 @@ if (SENTRY_DSN) {
 if (typeof window !== "undefined" && !isBiggiEyesDocsRoute) {
   (async () => {
     try {
+      const { ensurePreferredRpc } = await import(
+        "../shared/utils/rpcConfig.js"
+      );
       await ensurePreferredRpc();
     } catch {
       // ignore
@@ -203,15 +201,13 @@ const appTree = isBiggiEyesDocsRoute ? (
   </React.Suspense>
 ) : (
   <Bootstrap>
-    <Web3Provider>
-      <ContractsProvider>
-        <VRFProvider>
-          <REWARDSProvider>
-            <App />
-          </REWARDSProvider>
-        </VRFProvider>
-      </ContractsProvider>
-    </Web3Provider>
+    <React.Suspense
+      fallback={
+        <LoadingOverlay open percent={25} message="Loading dashboard..." />
+      }
+    >
+      <AppRuntime />
+    </React.Suspense>
   </Bootstrap>
 );
 
@@ -244,12 +240,16 @@ const appWithBoundary = SENTRY_DSN ? (
   appTree
 );
 
-root.render(
-  <React.StrictMode>
-    {appWithBoundary}
-  </React.StrictMode>,
-);
+const strictModeEnabled =
+  !import.meta.env.DEV || import.meta.env.VITE_REACT_STRICT_MODE === "1";
 
+root.render(
+  strictModeEnabled ? (
+    <React.StrictMode>{appWithBoundary}</React.StrictMode>
+  ) : (
+    appWithBoundary
+  ),
+);
 
 
 
