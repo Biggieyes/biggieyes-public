@@ -33,6 +33,59 @@ const COLORS = {
 
 const gradientBackdrop = "#0a0b10";
 
+const PROJECT_FAQ_ITEMS = [
+  {
+    question: "What is BiggiEyes?",
+    answer:
+      "BiggiEyes is a Polygon mainnet NFT protocol with ticket minting, Chainlink VRF reveals, paired collection chapters, BIGGI rewards, and transparent on-chain tokenomics.",
+  },
+  {
+    question: "What do I buy first?",
+    answer:
+      "You mint a ticket first. The ticket is then redeemed to request Chainlink VRF, which finalizes the NFT outcome and mints the revealed NFT to your wallet.",
+  },
+  {
+    question: "Why does the project use Chainlink VRF?",
+    answer:
+      "VRF gives the reveal process verifiable randomness. That matters because block tier and traits affect rarity, pricing context, and reward weight.",
+  },
+  {
+    question: "What is the difference between VRF and Public collections?",
+    answer:
+      "The VRF collection uses ticket redemption and random assignment. The paired Public collection is a smaller direct-mint collection for the same chapter and follows the chapter's block pricing without background variants.",
+  },
+  {
+    question: "How many NFTs are in the Public collection?",
+    answer:
+      "The Public collection has 100 NFTs per chapter, ten per block. It does not clone each block across background colors because that mechanic belongs to the VRF collection.",
+  },
+  {
+    question: "How do ticket and block prices work?",
+    answer:
+      "Marketing tickets are handled separately. After the public sale begins, contract logic controls ticket pricing, block pricing, and chapter-specific state. The dashboard displays the current mainnet values.",
+  },
+  {
+    question: "How do BIGGI weekly rewards work?",
+    answer:
+      "Eligible revealed NFTs can claim weekly BIGGI rewards. The amount depends on live reward settings and the NFT's block tier weight.",
+  },
+  {
+    question: "Where does mint revenue go?",
+    answer:
+      "Mint revenue is routed by protocol contracts into treasury, reserve, drip, buyback, liquidity, and rewards branches. The exact state is visible on-chain and in ecosystem panels.",
+  },
+  {
+    question: "Is CRE part of core minting?",
+    answer:
+      "No. Core minting and VRF fulfillment are handled by contracts. CRE is planned for automation around buyback, drip, liquidity, reserve checks, and reward maintenance.",
+  },
+  {
+    question: "How do I verify contract data?",
+    answer:
+      "Use the Trust tab, explorer links, OpenSea contract pages, and repository documentation. Mainnet transactions, balances, source verification, and events should be independently checkable.",
+  },
+];
+
 const SidebarButton = ({ active, icon, children, style, labelStyle, ...props }) => (
   <button
     {...props}
@@ -440,14 +493,34 @@ Reserve to LiquidityManager to LiquidityVault`}
 
         {active === "faq" && (
           <>
-            <Heading>FAQ</Heading>
-            <ul style={{ marginLeft: 18 }}>
-              <li><strong>What is VRF?</strong> Verifiable randomness from Chainlink.</li>
-              <li><strong>How do rewards work?</strong> Weekly, based on block weight.</li>
-              <li><strong>What is BIGGI?</strong> The rewards token of the protocol.</li>
-              <li><strong>How many NFTs exist?</strong> Fixed max per block, shown in the UI.</li>
-              <li><strong>What if something fails?</strong> Check the explorer and retry.</li>
-            </ul>
+            <Heading>Essential questions</Heading>
+            <div style={{ display: "grid", gap: 10 }}>
+              {PROJECT_FAQ_ITEMS.map((item) => (
+                <details
+                  key={item.question}
+                  style={{
+                    border: `1px solid ${COLORS.y}44`,
+                    borderRadius: 12,
+                    background: "rgba(0,0,0,0.24)",
+                    padding: "10px 12px",
+                  }}
+                >
+                  <summary
+                    style={{
+                      color: COLORS.y,
+                      cursor: "pointer",
+                      fontWeight: 900,
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    {item.question}
+                  </summary>
+                  <p style={{ margin: "10px 0 0", color: COLORS.dim }}>
+                    {item.answer}
+                  </p>
+                </details>
+              ))}
+            </div>
           </>
         )}
 
@@ -699,8 +772,6 @@ Reserve to LiquidityManager to LiquidityVault`}
 };
 
 export default ProjectInfoModal;
-
-
 
 
 
