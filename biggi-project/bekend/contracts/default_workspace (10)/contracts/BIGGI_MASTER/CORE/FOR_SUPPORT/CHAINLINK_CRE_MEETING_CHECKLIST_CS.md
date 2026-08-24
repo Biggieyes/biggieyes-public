@@ -1,6 +1,6 @@
 # Chainlink CRE Meeting Checklist
 
-Datum: 2026-08-19
+Datum: 2026-08-25
 
 ## Cil schuzky
 
@@ -14,6 +14,9 @@ Potvrdit cestu k CRE Early Access deployi pro BIGGI tokenomics workflow na Polyg
 - Produkcni workflow: zatim zadny.
 - Receiver: nasazeny, source verified, paused.
 - PolygonScan: 58/58 kontraktu source verified.
+- Posledni simulace: `needed=1`, `submitted=0`, `failed=0`, `dryRun=true`.
+- Pocatecni likvidita: pair je prazdny; owner wallet ma pouze `1.824440220558510091 POL` proti pozadovanym `5000 POL + 1 POL sync + gas`.
+- `cre account access --non-interactive` dne 2026-08-25 neocekavane ohlasil odeslany request bez vyzadani popisu.
 
 ## Co ukazat Chainlinku
 
@@ -22,6 +25,8 @@ Potvrdit cestu k CRE Early Access deployi pro BIGGI tokenomics workflow na Polyg
 - `EVIDENCE/cre-preflight-polygon.json`
 - `EVIDENCE/launch-readiness-polygon.json`
 - `EVIDENCE/deployment-manifest-polygon.json`
+- `EVIDENCE/cre-simulation-2026-08-25.json`
+- `EVIDENCE/initial-liquidity-polygon.json`
 
 ## Otazky
 
@@ -33,6 +38,7 @@ Potvrdit cestu k CRE Early Access deployi pro BIGGI tokenomics workflow na Polyg
 6. Je bezpecne posilat vice reportu z jednoho cron ticku, pokud vice vetvi potrebuje akci?
 7. Jakou kombinaci receiver ochran doporucuji: workflow ID, owner, metadata hash allowlist?
 8. Jak nastavit billing/limity pro 5min cron a max 5 zapisovych vetvi?
+9. Ktery access request je aktualne prirazeny organizaci a je request odeslany pres `--non-interactive` bez popisu platny?
 
 ## Co nedelat pred potvrzenim
 

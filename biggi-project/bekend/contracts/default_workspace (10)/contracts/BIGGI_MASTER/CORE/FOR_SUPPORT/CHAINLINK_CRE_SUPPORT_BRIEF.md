@@ -1,6 +1,6 @@
 # BIGGI Chainlink CRE Support Brief
 
-Date: 2026-08-19
+Date: 2026-08-25
 
 ## Project Summary
 
@@ -16,6 +16,8 @@ MNDA status: signed. The signed MNDA is intentionally not stored in the reposito
 - `cre account list-key`: no linked owners found
 - `cre workflow list --target production-settings`: no workflows found
 - Workflow deployment registry configured in project: `private`
+
+On 2026-08-25, `cre account access --non-interactive` unexpectedly entered the submission flow and reported a submitted request without collecting a use-case description. The organization still reports `Deploy Access: Not enabled`. Support should confirm which request is active and whether the original detailed application remains attached to the organization.
 
 Observed issue for support: deployment access is still disabled, so there is no production workflow visible in the Chainlink dashboard yet.
 
@@ -117,8 +119,21 @@ Result:
 - Binary hash: `71d32f1dbfe0937630d8e8e184b521cf2f847d0b6ee620583d2a11b52bcaf37e`
 - Config hash: `05b79e06fc8fe58a91d360b3e7c5d858982e8dbb18a439fbb3111a100c4dea68`
 - Dry-run result: `{"needed":1,"submitted":0,"failed":0,"dryRun":true}`
+- Supply, buyback, liquidity and DEX guard reported `no action needed`.
+- Rewards week roll reported `action needed; dry-run skipped write`.
 
 No production deploy, upload, activation, or transaction was performed from this support package step.
+
+## Initial Liquidity Gate
+
+The production seed remains blocked. A fresh dry-run on 2026-08-25 confirmed:
+
+- requested seed: `8,000,000 BIGGI + 5,000 POL`;
+- BIGGI/WPOL pair reserves and LP supply: zero;
+- token owner wallet native balance: `1.824440220558510091 POL`;
+- deployment wallet native balance: `1.387342241466426688 POL`;
+- Reserve BIGGI balance: `600,000,000 BIGGI`;
+- blocking condition: insufficient native POL for the seed, `1 POL` post-seed accounting sync and gas.
 
 ## Current CRE Preflight
 

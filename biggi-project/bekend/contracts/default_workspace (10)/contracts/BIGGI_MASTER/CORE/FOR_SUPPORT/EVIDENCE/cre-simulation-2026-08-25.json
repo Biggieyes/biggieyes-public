@@ -1,0 +1,40 @@
+{
+  "date": "2026-08-25",
+  "command": "cre workflow simulate .\\my-workflow --target test-settings --trigger-index 0 --non-interactive",
+  "projectRoot": "biggi-project/bekend/cre-workflows/biggi-cre",
+  "workflow": "my-workflow",
+  "target": "test-settings",
+  "network": "polygon-mainnet",
+  "dryRun": true,
+  "broadcast": false,
+  "binaryHash": "71d32f1dbfe0937630d8e8e184b521cf2f847d0b6ee620583d2a11b52bcaf37e",
+  "configHash": "05b79e06fc8fe58a91d360b3e7c5d858982e8dbb18a439fbb3111a100c4dea68",
+  "branches": [
+    {
+      "name": "supply-controller",
+      "result": "no action needed"
+    },
+    {
+      "name": "buyback",
+      "result": "no action needed"
+    },
+    {
+      "name": "liquidity",
+      "result": "no action needed"
+    },
+    {
+      "name": "dex-reserve-guard",
+      "result": "no action needed"
+    },
+    {
+      "name": "rewards-week-roll",
+      "result": "action needed; dry-run skipped write"
+    }
+  ],
+  "result": {
+    "needed": 1,
+    "submitted": 0,
+    "failed": 0,
+    "dryRun": true
+  }
+}

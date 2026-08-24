@@ -16,3 +16,4 @@ Expected files:
 - `core-relationships-polygon.json`
 - `collection-rewards-redeploy-polygon.json`
 - `collection-rewards-claims-audit-polygon.json`
+- `cre-simulation-2026-08-25.json`

@@ -1,0 +1,84 @@
+{
+  "date": "2026-08-25",
+  "network": {
+    "name": "polygon",
+    "chainId": 137,
+    "creChainName": "polygon-mainnet",
+    "creChainSelector": "4051577828743386545",
+    "keystoneForwarder": "0x76c9cf548b4179F8901cda1f8623568b58215E62"
+  },
+  "creAccount": {
+    "organizationId": "org_d09xtsv4XAgGOXMi",
+    "organizationName": "My Org",
+    "deployAccess": "Not enabled",
+    "linkedOwnersFound": false,
+    "productionWorkflowsFound": false,
+    "accessRequestCheck": {
+      "command": "cre account access --non-interactive",
+      "result": "CLI unexpectedly reported a submitted request without collecting a description",
+      "requiresSupportConfirmation": true
+    }
+  },
+  "toolchain": {
+    "creCli": "v1.30.0",
+    "bun": "1.3.14",
+    "chainlinkCreSdk": "1.15.0",
+    "typescript": "5.9.3",
+    "viem": "2.34.0",
+    "zod": "3.25.76"
+  },
+  "workflow": {
+    "path": "biggi-project/bekend/cre-workflows/biggi-cre/my-workflow",
+    "testTarget": "test-settings",
+    "productionTarget": "production-settings",
+    "productionName": "biggi-tokenomics-production",
+    "deploymentRegistry": "private",
+    "schedule": "0 */5 * * * *",
+    "simulationEvidence": "EVIDENCE/cre-simulation-2026-08-25.json"
+  },
+  "receiver": {
+    "address": "0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6",
+    "paused": true,
+    "expectedWorkflowId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "expectedWorkflowOwner": "0x0000000000000000000000000000000000000000",
+    "allowlistOpen": false
+  },
+  "simulation": {
+    "dryRun": true,
+    "broadcast": false,
+    "needed": 1,
+    "submitted": 0,
+    "failed": 0,
+    "actionNeeded": [
+      "rewards-week-roll"
+    ]
+  },
+  "initialLiquidity": {
+    "tokenAmountBiggi": "8000000",
+    "nativeAmountPol": "5000",
+    "postSeedSyncPol": "1",
+    "ownerWallet": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+    "ownerNativeBalancePol": "1.824440220558510091",
+    "deploymentWallet": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+    "deploymentWalletNativeBalancePol": "1.387342241466426688",
+    "reserveBiggiBalance": "600000000",
+    "pairReserveWpol": "0",
+    "pairReserveBiggi": "0",
+    "pairLpSupply": "0",
+    "readyToExecute": false,
+    "blocker": "Insufficient native POL on the token-owner wallet"
+  },
+  "launchReadiness": {
+    "okForDeployOnly": true,
+    "okForPublicLaunch": false,
+    "blockers": [
+      "PAIR has no initial liquidity",
+      "MAIN2 is paused",
+      "CRE automation receiver is paused",
+      "CRE workflow ID is not locked",
+      "CRE workflow owner is not locked",
+      "LIQUIDITY_ORCHESTRATOR is paused",
+      "LIQUIDITY_KEEPER_PROXY is paused"
+    ]
+  }
+}

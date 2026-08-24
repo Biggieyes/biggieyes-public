@@ -1,6 +1,6 @@
 # BIGGI Support Package
 
-Date: 2026-08-19
+Date: 2026-08-25
 
 Purpose: one place for external support conversations about BIGGI mainnet source verification and Chainlink CRE migration.
 
@@ -14,7 +14,8 @@ This folder intentionally does not contain secrets, private keys, API keys, wall
 - `POLYGONSCAN_SOURCE_VERIFICATION.md` - exact verification environment and commands.
 - `POLYGONSCAN_CONTRACT_INVENTORY.md` - source-verification inventory summary and canonical evidence file.
 - `PRE_LIQUIDITY_AUTOMATION_READINESS_2026-08-19.md` - pre-liquidity readiness and activation order.
-- `CRE_STATUS_SNAPSHOT_2026-08-19.json` - machine-readable support snapshot.
+- `CRE_STATUS_SNAPSHOT_2026-08-25.json` - current machine-readable support snapshot.
+- `CRE_STATUS_SNAPSHOT_2026-08-19.json` - historical machine-readable support snapshot.
 - `EVIDENCE/` - copied public reports generated from the repo tooling.
 
 ## Current CRE Status
@@ -28,6 +29,16 @@ This folder intentionally does not contain secrets, private keys, API keys, wall
 - Production workflows: none found
 - Workflow deployment registry: `private`
 - Receiver is deployed on Polygon mainnet but intentionally paused and not allowlisted yet.
+- Safe simulation on 2026-08-25: `needed=1`, `submitted=0`, `failed=0`, `dryRun=true`.
+- `cre account access --non-interactive` unexpectedly reported a submitted request without collecting a description; Chainlink should confirm which request is active.
+
+## Current Initial Liquidity Status
+
+- Requested seed: `8,000,000 BIGGI + 5,000 POL`.
+- Owner wallet balance observed: `1.824440220558510091 POL`.
+- Deployment wallet balance observed: `1.387342241466426688 POL`.
+- BIGGI/WPOL pair reserves and LP supply are still zero.
+- The dry-run is blocked only by insufficient native POL on the token-owner wallet.
 
 ## Current PolygonScan Status
 
