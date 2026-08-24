@@ -51,6 +51,7 @@ const COLLECTION2Panel = React.memo(
     COLLECTIONTotals,
     onTokenIdChange,
     renderChapterSwitcher,
+    comingSoon = false,
   }) => {
     const hasSelection = /^\d+$/.test(String(desiredTokenId || ""));
     const selectedBlockName = selectedNftInfo?.configured
@@ -70,13 +71,15 @@ const COLLECTION2Panel = React.memo(
       COLLECTIONTotals?.metadataConfiguredCount,
       COLLECTIONTotals?.maxSupply,
     );
-    const mintStatus = resolveMintStatus({
-      totals: COLLECTIONTotals,
-      info: selectedNftInfo,
-      loading: selectedNftLoading,
-      error: selectedNftError,
-      hasSelection,
-    });
+    const mintStatus = comingSoon
+      ? { label: "Coming soon", tone: "neutral" }
+      : resolveMintStatus({
+          totals: COLLECTIONTotals,
+          info: selectedNftInfo,
+          loading: selectedNftLoading,
+          error: selectedNftError,
+          hasSelection,
+        });
 
     if (!blockEntries || blockEntries.length === 0) {
       return (
@@ -105,7 +108,8 @@ const COLLECTION2Panel = React.memo(
                 step="1"
                 value={desiredTokenId}
                 onChange={(event) => onTokenIdChange(event.target.value)}
-                placeholder="Enter NFT number"
+                placeholder={comingSoon ? "Available later" : "Enter NFT number"}
+                disabled={comingSoon}
               />
             </label>
             <p className="collection-grid__helper">
@@ -126,18 +130,26 @@ const COLLECTION2Panel = React.memo(
             <dl className="collection-grid__key-values">
               <div>
                 <dt>Block</dt>
-                <dd>{selectedNftLoading ? "Loading..." : selectedBlockName}</dd>
+                <dd>
+                  {comingSoon
+                    ? FALLBACK_VALUE
+                    : selectedNftLoading
+                      ? "Loading..."
+                      : selectedBlockName}
+                </dd>
               </div>
               <div>
                 <dt>Exact mint price</dt>
                 <dd className="collection-grid__price-live">
-                  {formatPrice(selectedBlockPrice)}
+                  {comingSoon ? FALLBACK_VALUE : formatPrice(selectedBlockPrice)}
                 </dd>
               </div>
               <div>
                 <dt>NFT state</dt>
                 <dd>
-                  {selectedNftInfo?.configured
+                  {comingSoon
+                    ? "Coming soon"
+                    : selectedNftInfo?.configured
                     ? selectedNftInfo.minted
                       ? "Minted"
                       : "Available"
@@ -145,7 +157,7 @@ const COLLECTION2Panel = React.memo(
                 </dd>
               </div>
             </dl>
-            {selectedNftError ? (
+            {!comingSoon && selectedNftError ? (
               <p className="collection-grid__helper">{selectedNftError}</p>
             ) : null}
           </article>
@@ -155,35 +167,43 @@ const COLLECTION2Panel = React.memo(
           <article className="collection-grid__stat-card collection-grid__stat-card--glass">
             <span className="muted">Public NFTs minted</span>
             <strong className="collection-grid__stat-value-large">
-              {formatCount(COLLECTIONTotals?.biggiMinted)} /{" "}
-              {formatCount(COLLECTIONTotals?.maxSupply)}
+              {comingSoon
+                ? "SOON"
+                : `${formatCount(COLLECTIONTotals?.biggiMinted)} / ${formatCount(COLLECTIONTotals?.maxSupply)}`}
             </strong>
             <div className="collection-grid__progress">
               <span
                 className="collection-grid__progress-bar"
-                style={{ width: `${mintedPct ?? 0}%` }}
+                style={{ width: `${comingSoon ? 0 : (mintedPct ?? 0)}%` }}
               />
             </div>
           </article>
           <article className="collection-grid__stat-card collection-grid__stat-card--glass">
             <span className="muted">Metadata configured</span>
             <strong className="collection-grid__stat-value-large">
-              {formatCount(COLLECTIONTotals?.metadataConfiguredCount)} /{" "}
-              {formatCount(COLLECTIONTotals?.maxSupply)}
+              {comingSoon
+                ? "SOON"
+                : `${formatCount(COLLECTIONTotals?.metadataConfiguredCount)} / ${formatCount(COLLECTIONTotals?.maxSupply)}`}
             </strong>
             <div className="collection-grid__progress">
               <span
                 className="collection-grid__progress-bar"
-                style={{ width: `${metadataPct ?? 0}%` }}
+                style={{ width: `${comingSoon ? 0 : (metadataPct ?? 0)}%` }}
               />
             </div>
           </article>
           <article className="collection-grid__stat-card collection-grid__stat-card--glass">
             <span className="muted">Public gate</span>
             <strong className="collection-grid__stat-value-large">
-              {COLLECTIONTotals?.publicUnlocked ? "Unlocked" : "Locked"}
+              {comingSoon
+                ? "SOON"
+                : COLLECTIONTotals?.publicUnlocked
+                  ? "Unlocked"
+                  : "Locked"}
             </strong>
-            <span className="collection-grid__stat-foot">Polygon mainnet</span>
+            <span className="collection-grid__stat-foot">
+              {comingSoon ? "Future chapter" : "Polygon mainnet"}
+            </span>
           </article>
         </div>
 
