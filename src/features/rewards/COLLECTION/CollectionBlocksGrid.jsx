@@ -37,7 +37,6 @@ import {
   MOBILE_BREAKPOINT,
   MAX_BLOCKS,
   PREVIEW_SIZE,
-  getFutureCollectionStats,
 } from "./COLLECTIONBlocksGrid.constants";
 import {
   parseCount,
@@ -61,7 +60,6 @@ import PanelInfoButton from "@/components/common/PanelInfoButton";
 import COLLECTION1Panel from "./CollectionBlocksGrid.Collection1Panel";
 import COLLECTION2Panel from "./CollectionBlocksGrid.Collection2Panel";
 import ChapterSeriesPanel from "./CollectionBlocksGrid.ChapterSeriesPanel";
-import FutureCollectionsModal from "./CollectionBlocksGrid.FutureCollectionsModal";
 import ModalPortal from "../../../components/common/ModalPortal";
 
 const NOOP = () => {};
@@ -157,7 +155,7 @@ function COLLECTIONBlocksGrid({
   const [hoveredBlock, setHoveredBlock] = React.useState(null);
   const [infoOpen, setInfoOpen] = React.useState(false);
   const autoInfoOpened = React.useRef(false);
-  const [futureOpen, setFutureOpen] = React.useState(false);
+  const [selectedChapterId, setSelectedChapterId] = React.useState(1);
   const [selectedBlock, setSelectedBlock] = React.useState(1);
   const [desiredTokenId, setDesiredTokenId] = React.useState("");
   const [selectedPublicNft, setSelectedPublicNft] = React.useState({
@@ -175,7 +173,6 @@ function COLLECTIONBlocksGrid({
     snapshotKey: "",
     byBlock: {},
   });
-  const futureStats = React.useMemo(() => getFutureCollectionStats(), []);
   const {
     data: chapterSeriesData,
     loading: chapterSeriesLoading,
@@ -244,17 +241,17 @@ function COLLECTIONBlocksGrid({
         .filter((chapterId) => Number.isSafeInteger(chapterId)),
     [chapterSeriesData?.chapters],
   );
-  const displayedChapter = React.useMemo(() => {
-    if (activeChapterIds.length === 1) {
-      return (
-        CORE_CHAPTERS.find(
-          (chapter) => chapter.chapterId === activeChapterIds[0],
-        ) || CORE_CHAPTERS[0]
-      );
-    }
-    return CORE_CHAPTERS[0];
-  }, [activeChapterIds]);
-  const displayedChapterIsActive = activeChapterIds.length === 1;
+  const displayedChapter = React.useMemo(
+    () =>
+      CORE_CHAPTERS.find(
+        (chapter) => chapter.chapterId === selectedChapterId,
+      ) || CORE_CHAPTERS[0],
+    [selectedChapterId],
+  );
+  const displayedChapterIsActive =
+    activeChapterIds.length === 1 &&
+    activeChapterIds[0] === displayedChapter.chapterId;
+  const isFutureChapter = displayedChapter.chapterId !== 1;
   const displayedChapterSnapshot = React.useMemo(
     () =>
       (Array.isArray(chapterSeriesData?.chapters)
@@ -523,7 +520,8 @@ function COLLECTIONBlocksGrid({
   }, [blockNames]);
 
   const normalizedPrices = React.useMemo(() => {
-    const fromProps = Array.isArray(blockPricesProp)
+    const fromProps =
+      displayedChapter.chapterId === 1 && Array.isArray(blockPricesProp)
       ? blockPricesProp.slice(0, MAX_BLOCKS)
       : [];
     while (fromProps.length < MAX_BLOCKS) fromProps.push(null);
@@ -539,10 +537,11 @@ function COLLECTIONBlocksGrid({
         return livePrices[i];
       return v == null ? (fallbackPrices[i] ?? null) : v;
     });
-  }, [blockPricesProp, livePrices, fallbackPrices]);
+  }, [blockPricesProp, displayedChapter.chapterId, livePrices, fallbackPrices]);
 
   const normalizedMintCounts = React.useMemo(() => {
-    const fromProps = Array.isArray(blockMintCountsProp)
+    const fromProps =
+      displayedChapter.chapterId === 1 && Array.isArray(blockMintCountsProp)
       ? blockMintCountsProp.slice(0, MAX_BLOCKS)
       : [];
     while (fromProps.length < MAX_BLOCKS) fromProps.push(null);
@@ -558,7 +557,12 @@ function COLLECTIONBlocksGrid({
         return liveMinted[i];
       return v == null ? (fallbackMinted[i] ?? null) : v;
     });
-  }, [blockMintCountsProp, liveMinted, fallbackMinted]);
+  }, [
+    blockMintCountsProp,
+    displayedChapter.chapterId,
+    liveMinted,
+    fallbackMinted,
+  ]);
 
   const blockEntries = React.useMemo(
     () =>
@@ -568,7 +572,8 @@ function COLLECTIONBlocksGrid({
         const minted = normalizedMintCounts[index];
         const basePrice = Number.isFinite(liveBasePrices[index])
           ? liveBasePrices[index]
-          : typeof BASE_PRICES[folder] === "number"
+          : displayedChapter.chapterId === 1 &&
+              typeof BASE_PRICES[folder] === "number"
             ? BASE_PRICES[folder]
             : null;
         const blockFiles = getBlockImages(name);
@@ -589,7 +594,13 @@ function COLLECTIONBlocksGrid({
           buttonStyle: resolveButtonStyle(name),
         };
       }),
-    [normalizedNames, normalizedPrices, normalizedMintCounts, liveBasePrices],
+    [
+      displayedChapter.chapterId,
+      normalizedNames,
+      normalizedPrices,
+      normalizedMintCounts,
+      liveBasePrices,
+    ],
   );
 
   const stats = React.useMemo(() => {
@@ -906,6 +917,7 @@ function COLLECTIONBlocksGrid({
             onMouseEnter={handleRowHoverEnter}
             onMouseLeave={handleRowHoverLeave}
             ctaLabel={ctaLabel}
+            comingSoon={isFutureChapter}
           />
         )),
     [
@@ -916,7 +928,48 @@ function COLLECTIONBlocksGrid({
       handleCardKeyDown,
       handleRowHoverEnter,
       handleRowHoverLeave,
+      isFutureChapter,
     ],
+  );
+
+  const renderChapterSwitcher = React.useCallback(
+    () => (
+      <nav
+        className="collection-grid__chapter-switcher"
+        aria-label="Collection chapters"
+      >
+        <div className="collection-grid__chapter-switcher-heading">
+          <span>Next collections</span>
+          <strong>{displayedChapter.seriesName}</strong>
+        </div>
+        <div className="collection-grid__chapter-switcher-buttons">
+          {isFutureChapter ? (
+            <button
+              type="button"
+              className="collection-grid__chapter-button collection-grid__chapter-button--original"
+              onClick={() => setSelectedChapterId(1)}
+            >
+              Back to Original
+            </button>
+          ) : null}
+          {CORE_CHAPTERS.slice(1).map((chapter) => (
+            <button
+              type="button"
+              className={`collection-grid__chapter-button${displayedChapter.chapterId === chapter.chapterId ? " is-active" : ""}`}
+              key={chapter.chapterId}
+              onClick={() => {
+                setOpenBlock(null);
+                setSelectedChapterId(chapter.chapterId);
+              }}
+              aria-pressed={displayedChapter.chapterId === chapter.chapterId}
+            >
+              {chapter.displayName}
+            </button>
+          ))}
+        </div>
+      </nav>
+    ),
+    [displayedChapter, isFutureChapter],
   );
 
   const renderCOLLECTIONTwo = React.useCallback(
@@ -931,6 +984,7 @@ function COLLECTIONBlocksGrid({
         selectedNftError={selectedPublicNft.error}
         COLLECTIONTotals={COLLECTIONTotals}
         onTokenIdChange={setDesiredTokenId}
+        renderChapterSwitcher={renderChapterSwitcher}
       />
     ),
     [
@@ -940,6 +994,7 @@ function COLLECTIONBlocksGrid({
       selectedEntry,
       selectedPublicNft,
       COLLECTIONTotals,
+      renderChapterSwitcher,
     ],
   );
 
@@ -972,6 +1027,7 @@ function COLLECTIONBlocksGrid({
         lowestPriceName={lowestPriceName}
         topMintedName={topMintedName}
         additionalText={additionalText}
+        renderChapterSwitcher={renderChapterSwitcher}
       />
     ),
     [
@@ -984,6 +1040,7 @@ function COLLECTIONBlocksGrid({
       lowestPriceName,
       topMintedName,
       additionalText,
+      renderChapterSwitcher,
     ],
   );
 
@@ -1044,13 +1101,6 @@ function COLLECTIONBlocksGrid({
               >
                 Chapters
               </button>
-              <button
-                type="button"
-                className="collection-grid__tab collection-grid__tab--future"
-                onClick={() => setFutureOpen(true)}
-              >
-                Future COLLECTIONs
-              </button>
               <PanelInfoButton
                 className="panel-info-btn--transparent"
                 onClick={() => setInfoOpen(true)}
@@ -1096,15 +1146,6 @@ function COLLECTIONBlocksGrid({
               </button>
             </div>
           </div>
-        )}
-
-        {futureOpen && (
-          <FutureCollectionsModal
-            isOpen={futureOpen}
-            onClose={() => setFutureOpen(false)}
-            futureStats={futureStats}
-            chapterSeries={chapterSeriesData}
-          />
         )}
 
         {activePanel || (
