@@ -4229,35 +4229,21 @@ function LiveStats({
                   borderColor: "rgba(255, 232, 0, 0.3)",
                 }}
               >
-                <div className="pools-card__header">
+                <div className="pools-card__header collection-stats-card__header">
                   <div className="collection-stats-header-title">
                     <div style={{ color: "#ffe800", fontWeight: 900 }}>
                       COLLECTION STATS
                     </div>
-                    <button
-                      type="button"
-                      className="live-info-button"
-                      onClick={() => setShowCollectionInfo((v) => !v)}
-                      aria-label="Open collection stats information"
-                      aria-expanded={showCollectionInfo ? "true" : "false"}
-                      title="Info"
-                    >
-                      i
-                    </button>
                   </div>
                   <button
-                    onClick={resetAll}
-                    style={{
-                      background: "transparent",
-                      border: "1px solid #ffe800",
-                      color: "#ffe800",
-                      borderRadius: 10,
-                      padding: "6px 12px",
-                      cursor: "pointer",
-                      fontWeight: 800,
-                    }}
+                    type="button"
+                    className="live-info-button collection-stats-card__info"
+                    onClick={() => setShowCollectionInfo((v) => !v)}
+                    aria-label="Open collection stats information"
+                    aria-expanded={showCollectionInfo ? "true" : "false"}
+                    title="Info"
                   >
-                    Back
+                    i
                   </button>
                 </div>
                 <div className="pools-card__body">
@@ -4446,6 +4432,16 @@ function LiveStats({
                         ))}
                       </tbody>
                     </table>
+                  </div>
+
+                  <div className="bgw-button-container collection-stats-card__back">
+                    <button
+                      type="button"
+                      className="bgw-button"
+                      onClick={resetAll}
+                    >
+                      Back
+                    </button>
                   </div>
                 </div>
               </div>
