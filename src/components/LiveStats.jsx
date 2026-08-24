@@ -3672,8 +3672,7 @@ function LiveStats({
     <div className="live-stats-widget-new" style={widgetStyle}>
       {topButtonsRow}
 
-      {!showREWARDS && (
-        <>
+      <>
           {mainStats}
 
           <div
@@ -4151,8 +4150,7 @@ function LiveStats({
               </div>
             </ModalPortal>
           )}
-        </>
-      )}
+      </>
 
       {(showBlocks || showBgStats) && (
         <ModalPortal lockScroll={false}>
@@ -4199,49 +4197,61 @@ function LiveStats({
       )}
 
       {showREWARDS && (
-        <>
+        <ModalPortal lockScroll={false}>
           <div
-            className="pools-card collection-stats-card"
-            style={{
-              width: "100%",
-              margin: 0,
-              borderColor: "rgba(255, 232, 0, 0.3)",
-            }}
+            className="ls-stats-table-overlay"
+            onClick={resetAll}
+            role="presentation"
           >
-            <div className="pools-card__header">
-              <div className="collection-stats-header-title">
-                <div style={{ color: "#ffe800", fontWeight: 900 }}>
-                  COLLECTION STATS
-                </div>
-                <button
-                  type="button"
-                  className="live-info-button"
-                  onClick={() => setShowCollectionInfo((v) => !v)}
-                  aria-label="Open collection stats information"
-                  aria-expanded={showCollectionInfo ? "true" : "false"}
-                  title="Info"
-                >
-                  i
-                </button>
-              </div>
-              <button
-                onClick={resetAll}
+            <div
+              className="ls-stats-table-panel"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Collection statistics"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div
+                className="pools-card collection-stats-card"
                 style={{
-                  background: "transparent",
-                  border: "1px solid #ffe800",
-                  color: "#ffe800",
-                  borderRadius: 10,
-                  padding: "6px 12px",
-                  cursor: "pointer",
-                  fontWeight: 800,
+                  width: "100%",
+                  margin: 0,
+                  borderColor: "rgba(255, 232, 0, 0.3)",
                 }}
               >
-                Back
-              </button>
-            </div>
-            <div className="pools-card__body">
-              <div className="collection-stats-grid">
-                {[
+                <div className="pools-card__header">
+                  <div className="collection-stats-header-title">
+                    <div style={{ color: "#ffe800", fontWeight: 900 }}>
+                      COLLECTION STATS
+                    </div>
+                    <button
+                      type="button"
+                      className="live-info-button"
+                      onClick={() => setShowCollectionInfo((v) => !v)}
+                      aria-label="Open collection stats information"
+                      aria-expanded={showCollectionInfo ? "true" : "false"}
+                      title="Info"
+                    >
+                      i
+                    </button>
+                  </div>
+                  <button
+                    onClick={resetAll}
+                    style={{
+                      background: "transparent",
+                      border: "1px solid #ffe800",
+                      color: "#ffe800",
+                      borderRadius: 10,
+                      padding: "6px 12px",
+                      cursor: "pointer",
+                      fontWeight: 800,
+                    }}
+                  >
+                    Back
+                  </button>
+                </div>
+                <div className="pools-card__body">
+                  <div className="collection-stats-grid">
+                    {[
                   {
                     label: "Total minted",
                     value:
@@ -4330,146 +4340,158 @@ function LiveStats({
                       ? unitsToTokenAmountStr(userTotalUnits)
                       : "Connect wallet",
                   },
-                ].map((stat) => (
-                  <div key={stat.label} className="collection-stat-card">
-                    <span className="collection-stat-label">{stat.label}</span>
-                    <span className="collection-stat-value">{stat.value}</span>
+                    ].map((stat) => (
+                      <div key={stat.label} className="collection-stat-card">
+                        <span className="collection-stat-label">
+                          {stat.label}
+                        </span>
+                        <span className="collection-stat-value">
+                          {stat.value}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
 
-              <div className="collection-section-title">Block prices</div>
-              <div className="collection-table-wrap">
-                <table className="pools-table collection-stats-table">
-                  <colgroup>
-                    <col style={{ width: "30%" }} />
-                    <col style={{ width: "18%" }} />
-                    <col style={{ width: "16%" }} />
-                    <col style={{ width: "18%" }} />
-                    <col style={{ width: "18%" }} />
-                  </colgroup>
-                  <thead>
-                    <tr>
-                      <th>Block</th>
-                      <th>Minted</th>
-                      <th>Base</th>
-                      <th>Live</th>
-                      <th>Delta</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {collectionBlockRows.map((row) => (
-                      <tr key={row.name}>
-                        <td
-                          data-label="Block"
-                          style={{ color: "#ffe800", fontWeight: 800 }}
-                        >
-                          {row.name}
-                        </td>
-                        <td data-label="Minted">{row.minted}</td>
-                        <td data-label="Base">{formatMaybe(row.base, 2)}</td>
-                        <td data-label="Live">
-                          {row.live != null
-                            ? formatMaybe(row.live, 2)
-                            : formatMaybe(row.base, 2)}
-                        </td>
-                        <td data-label="Delta">{formatSigned(row.delta, 2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  <div className="collection-section-title">Block prices</div>
+                  <div className="collection-table-wrap">
+                    <table className="pools-table collection-stats-table">
+                      <colgroup>
+                        <col style={{ width: "30%" }} />
+                        <col style={{ width: "18%" }} />
+                        <col style={{ width: "16%" }} />
+                        <col style={{ width: "18%" }} />
+                        <col style={{ width: "18%" }} />
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th>Block</th>
+                          <th>Minted</th>
+                          <th>Base</th>
+                          <th>Live</th>
+                          <th>Delta</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {collectionBlockRows.map((row) => (
+                          <tr key={row.name}>
+                            <td
+                              data-label="Block"
+                              style={{ color: "#ffe800", fontWeight: 800 }}
+                            >
+                              {row.name}
+                            </td>
+                            <td data-label="Minted">{row.minted}</td>
+                            <td data-label="Base">
+                              {formatMaybe(row.base, 2)}
+                            </td>
+                            <td data-label="Live">
+                              {row.live != null
+                                ? formatMaybe(row.live, 2)
+                                : formatMaybe(row.base, 2)}
+                            </td>
+                            <td data-label="Delta">
+                              {formatSigned(row.delta, 2)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
 
-              <div className="collection-section-title">Background bonuses</div>
-              <div className="collection-table-wrap">
-                <table className="pools-table collection-stats-table">
-                  <colgroup>
-                    <col style={{ width: "36%" }} />
-                    <col style={{ width: "20%" }} />
-                    <col style={{ width: "20%" }} />
-                    <col style={{ width: "24%" }} />
-                  </colgroup>
-                  <thead>
-                    <tr>
-                      <th>Background</th>
-                      <th>Minted</th>
-                      <th>Bonus</th>
-                      <th>Block Delta</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {collectionBackgroundRows.map((row, idx) => (
-                      <tr key={`${row.name}-${idx}`}>
-                        <td
-                          data-label="Background"
-                          style={{ color: "#ffe800", fontWeight: 800 }}
-                        >
-                          {row.name}
-                        </td>
-                        <td data-label="Minted">{row.minted}</td>
-                        <td data-label="Bonus">{row.bonus}%</td>
-                        <td data-label="Block Delta">
-                          {formatSigned(row.delta, 2)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                  <div className="collection-section-title">
+                    Background bonuses
+                  </div>
+                  <div className="collection-table-wrap">
+                    <table className="pools-table collection-stats-table">
+                      <colgroup>
+                        <col style={{ width: "36%" }} />
+                        <col style={{ width: "20%" }} />
+                        <col style={{ width: "20%" }} />
+                        <col style={{ width: "24%" }} />
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th>Background</th>
+                          <th>Minted</th>
+                          <th>Bonus</th>
+                          <th>Block Delta</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {collectionBackgroundRows.map((row, idx) => (
+                          <tr key={`${row.name}-${idx}`}>
+                            <td
+                              data-label="Background"
+                              style={{ color: "#ffe800", fontWeight: 800 }}
+                            >
+                              {row.name}
+                            </td>
+                            <td data-label="Minted">{row.minted}</td>
+                            <td data-label="Bonus">{row.bonus}%</td>
+                            <td data-label="Block Delta">
+                              {formatSigned(row.delta, 2)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
+              {showCollectionInfo && (
+                <div
+                  className="ls-info-modal-overlay"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="ls-collection-info-title"
+                  onClick={() => setShowCollectionInfo(false)}
+                >
+                  <div
+                    className="ls-info-modal-content"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <div
+                      className="ls-info-modal-header"
+                      id="ls-collection-info-title"
+                    >
+                      Collection Stats Info
+                    </div>
+                    <div className="ls-info-modal-body">
+                      <table className="rw-info-table">
+                        <thead>
+                          <tr>
+                            <th>Concept</th>
+                            <th>Explanation</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {COLLECTION_INFO_ROWS.map((row) => (
+                            <tr
+                              key={row.concept}
+                              className={`info-row--${row.tone}`}
+                            >
+                              <td className="rw-k">{row.concept}</td>
+                              <td className="rw-v">{row.detail}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="ls-info-modal-footer">
+                      <button
+                        type="button"
+                        className="ls-info-modal-close-button"
+                        onClick={() => setShowCollectionInfo(false)}
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-          {showCollectionInfo && (
-            <div
-              className="ls-info-modal-overlay"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="ls-collection-info-title"
-              onClick={() => setShowCollectionInfo(false)}
-            >
-              <div
-                className="ls-info-modal-content"
-                onClick={(event) => event.stopPropagation()}
-              >
-                <div
-                  className="ls-info-modal-header"
-                  id="ls-collection-info-title"
-                >
-                  Collection Stats Info
-                </div>
-                <div className="ls-info-modal-body">
-                  <table className="rw-info-table">
-                    <thead>
-                      <tr>
-                        <th>Concept</th>
-                        <th>Explanation</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {COLLECTION_INFO_ROWS.map((row) => (
-                        <tr
-                          key={row.concept}
-                          className={`info-row--${row.tone}`}
-                        >
-                          <td className="rw-k">{row.concept}</td>
-                          <td className="rw-v">{row.detail}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="ls-info-modal-footer">
-                  <button
-                    type="button"
-                    className="ls-info-modal-close-button"
-                    onClick={() => setShowCollectionInfo(false)}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </>
+        </ModalPortal>
       )}
     </div>
   );
