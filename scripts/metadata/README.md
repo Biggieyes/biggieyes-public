@@ -191,6 +191,11 @@ Use `PUBLIC_BLOCK_URI_1..10` and `PUBLIC_METADATA_FILE` for the public branch.
 TicketHub always resolves the same filename:
 `Biggi_RANDOM_MINT_TICKET.json`.
 
+Ticket traits are intentionally limited to stable, public filters used by
+marketplaces: `Ticket Type`, `Chapter`, `Series`, and `Mint Mechanism`.
+Activation state and metadata preparation state must not be traits because
+they change over the lifetime of a chapter.
+
 ```powershell
 python scripts/metadata/biggi_metadata.py build-ticket `
   --phase placeholder `
@@ -205,6 +210,22 @@ After upload, configure:
 
 ```text
 TICKET_BASE_URI=ipfs://<TICKET_METADATA_FOLDER_CID>/
+```
+
+For the deployed Polygon TicketHub, the guarded metadata migration is:
+
+```powershell
+cd biggi-project/bekend
+npm run prepare:ticket-metadata:polygon
+npm run set:ticket-metadata:polygon
+```
+
+OpenSea caches metadata separately. After setting `OPENSEA_API_KEY` in the
+ignored `.env.core.polygon`, queue all five 50-ticket chapter ranges with:
+
+```powershell
+npm run prepare:opensea-ticket-refresh
+npm run refresh:opensea-tickets
 ```
 
 ## Contract-level metadata

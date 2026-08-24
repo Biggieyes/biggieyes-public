@@ -78,18 +78,17 @@ async function main() {
   const hub = contract(addresses.TICKET_HUB, [
     "function owner() view returns (address)",
     "function ownerOf(uint256) view returns (address)",
-    "function balanceOf(address) view returns (uint256)",
     "function chapterMainCollection(uint256) view returns (address)",
     "function chapterTicketBaseURI(uint256) view returns (string)",
     "function chapterActive(uint256) view returns (bool)",
     "function chapterMarketingMinted(uint256) view returns (uint16)",
     "function chapterSaleMinted(uint256) view returns (uint16)",
     "function chapterTicketMinted(uint256) view returns (uint16)",
-    "function chapterTicketCount(uint256,address) view returns (uint256)",
+    "function ticketChapterId(uint256) view returns (uint256)",
+    "function isTicket(uint256) view returns (bool)",
     "function ticketRedeemable(uint256) view returns (bool)",
     "function tokenURI(uint256) view returns (string)",
   ]);
-  const marketingRecipient = process.env.MARKETING_TICKET_RECIPIENT || addresses.OWNER;
   expectAddress("TicketHub owner", await read("TicketHub.owner", () => hub.owner()), addresses.OWNER);
 
   expectNumber("Registry series count", await read("Registry.seriesCount", () => registry.seriesCount()), addresses.CHAPTER_COUNT);
@@ -127,9 +126,10 @@ async function main() {
     expectNumber(`Chapter ${id} total tickets minted`, await read("hub total", () => hub.chapterTicketMinted(id)), 50);
     const firstTicketId = ((id - 1) * 550) + 1;
     const lastMarketingTicketId = firstTicketId + 49;
-    expectNumber(`Chapter ${id} recipient ticket count`, await read("hub recipient count", () => hub.chapterTicketCount(id, marketingRecipient)), 50);
-    expectAddress(`Chapter ${id} first ticket owner`, await read("hub first owner", () => hub.ownerOf(firstTicketId)), marketingRecipient);
-    expectAddress(`Chapter ${id} last marketing ticket owner`, await read("hub last owner", () => hub.ownerOf(lastMarketingTicketId)), marketingRecipient);
+    expectBool(`Chapter ${id} first ticket exists`, await read("hub first ticket", () => hub.isTicket(firstTicketId)), true);
+    expectBool(`Chapter ${id} last marketing ticket exists`, await read("hub last ticket", () => hub.isTicket(lastMarketingTicketId)), true);
+    expectNumber(`Chapter ${id} first ticket binding`, await read("hub first ticket chapter", () => hub.ticketChapterId(firstTicketId)), id);
+    expectNumber(`Chapter ${id} last ticket binding`, await read("hub last ticket chapter", () => hub.ticketChapterId(lastMarketingTicketId)), id);
     expectBool(`Chapter ${id} first ticket redeem locked`, await read("hub redeemable", () => hub.ticketRedeemable(firstTicketId)), false);
     const firstTicketURI = await read("hub tokenURI", () => hub.tokenURI(firstTicketId));
     record(
@@ -188,8 +188,6 @@ async function main() {
       expectBool(`Chapter ${id} Public metadata matrix`, publicMetadata[2], true);
     }
   }
-
-  expectNumber("Marketing recipient total TicketHub balance", await read("hub marketing balance", () => hub.balanceOf(marketingRecipient)), addresses.CHAPTER_COUNT * 50);
 
   const sharedContracts = [
     ["CollectionRewards", process.env.COLLECTION_REWARDS],

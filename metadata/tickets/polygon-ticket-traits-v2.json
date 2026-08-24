@@ -1,0 +1,43 @@
+{
+  "network": "polygon",
+  "chainId": 137,
+  "ticketHub": "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
+  "metadataFilename": "Biggi_RANDOM_MINT_TICKET.json",
+  "chapters": [
+    {
+      "chapterId": 1,
+      "series": "Original",
+      "firstTicketId": 1,
+      "oldBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeid32cnhzvsmg56nwlgf2lcowqcnaqch2us7g4af6oyta6cwhkzrgu/",
+      "newBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeib24uncna6uormewhpdapx4onr546ddwunsc2h6j2ael3uo7iw5x4/"
+    },
+    {
+      "chapterId": 2,
+      "series": "Universe",
+      "firstTicketId": 551,
+      "oldBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeigifkdov4wcyfu2hgyrwpwbi2shaitqcklxna6chi2itdhdfap7p4/",
+      "newBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeicewmj5jmjs4gumyin4mxph6kyjb3t4fyo7fdfajamptfw6vxdxpm/"
+    },
+    {
+      "chapterId": 3,
+      "series": "Mutant",
+      "firstTicketId": 1101,
+      "oldBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeigdkx4e4ovnr33pwir3g6f2rhlnboo65mncp6euutn5wv4pnebxf4/",
+      "newBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeifoia7zjv6rohlfpg376sgbx6h6qawecv6obasjpaintfzi2ejafu/"
+    },
+    {
+      "chapterId": 4,
+      "series": "Apocalipse",
+      "firstTicketId": 1651,
+      "oldBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeihqoyhcjjzj4yyw6j3c62z44ezwm3coicbefak4q7ufhiefnhqsru/",
+      "newBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeid7vhuehxxkox6pafbhn2ttaefsuptampg7cg4vvgcslpv2wpb5qe/"
+    },
+    {
+      "chapterId": 5,
+      "series": "Super Hero",
+      "firstTicketId": 2201,
+      "oldBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeibd3pz4pvfuuasonn2va7tylapqrdtfl5zgytiiggwsemtxd3qxru/",
+      "newBaseURI": "https://biggieyes.mypinata.cloud/ipfs/bafybeiddw4lk6ozl6dqs3flwiqr7hd5qse552kxteeskl2blenwc2rviey/"
+    }
+  ]
+}

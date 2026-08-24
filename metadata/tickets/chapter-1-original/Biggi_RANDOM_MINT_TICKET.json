@@ -1,0 +1,26 @@
+{
+  "name": "BIGGI Original Random Mint Ticket",
+  "description": "Transferable BIGGI random mint ticket for Chapter 1: Original. Redemption becomes available when the chapter is activated; redeeming burns the ticket and requests a random NFT from the chapter's VRF collection.",
+  "attributes": [
+    {
+      "trait_type": "Ticket Type",
+      "value": "Random Mint Ticket"
+    },
+    {
+      "trait_type": "Chapter",
+      "value": "Chapter 1"
+    },
+    {
+      "trait_type": "Series",
+      "value": "Original"
+    },
+    {
+      "trait_type": "Mint Mechanism",
+      "value": "Chainlink VRF"
+    }
+  ],
+  "compiler": "BIGGI metadata pipeline",
+  "metadata_file": "Biggi_RANDOM_MINT_TICKET.json",
+  "image": "ipfs://bafybeigsbajmobtaivf7tvrj7l2mradsc2yaovr3ooy37wedukeexe3quq/Biggi_RANDOM_MINT_TICKET.png",
+  "external_url": "https://biggieyes.com"
+}

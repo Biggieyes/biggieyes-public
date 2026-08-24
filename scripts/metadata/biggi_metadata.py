@@ -673,17 +673,12 @@ def command_ticket(args: argparse.Namespace) -> None:
         fail("ticket image URI missing. Provide --image-uri or --placeholder-image-uri.")
     if args.chapter_id is not None and args.chapter_id < 1:
         fail("--chapter-id must be at least 1")
-    attributes = [
-        {"trait_type": "Token Type", "value": "Random Mint Ticket"},
-        {"trait_type": "Redeem Source", "value": "VRF"},
-        {"trait_type": "Phase", "value": args.phase},
-        {"trait_type": "Image Finalized", "value": "No" if args.phase == "placeholder" else "Yes"},
-    ]
+    attributes = [{"trait_type": "Ticket Type", "value": "Random Mint Ticket"}]
     if args.chapter_id is not None:
-        attributes.append({"trait_type": "Chapter", "value": args.chapter_id})
+        attributes.append({"trait_type": "Chapter", "value": f"Chapter {args.chapter_id}"})
     if args.series:
         attributes.append({"trait_type": "Series", "value": args.series})
-    attributes.append({"trait_type": "Redeem Status", "value": "Enabled when chapter activates"})
+    attributes.append({"trait_type": "Mint Mechanism", "value": "Chainlink VRF"})
     metadata: dict[str, Any] = {
         "name": args.name,
         "description": args.description,

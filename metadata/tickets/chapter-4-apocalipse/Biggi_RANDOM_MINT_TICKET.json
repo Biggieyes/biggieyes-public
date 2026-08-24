@@ -1,34 +1,22 @@
 {
   "name": "BIGGI Apocalipse Random Mint Ticket",
-  "description": "Transferable BIGGI marketing mint ticket for Chapter 4: Apocalipse. Redeem becomes available when the chapter is activated, then the ticket is burned to request a random NFT from its VRF collection.",
+  "description": "Transferable BIGGI random mint ticket for Chapter 4: Apocalipse. Redemption becomes available when the chapter is activated; redeeming burns the ticket and requests a random NFT from the chapter's VRF collection.",
   "attributes": [
     {
-      "trait_type": "Token Type",
+      "trait_type": "Ticket Type",
       "value": "Random Mint Ticket"
     },
     {
-      "trait_type": "Redeem Source",
-      "value": "VRF"
-    },
-    {
-      "trait_type": "Phase",
-      "value": "final"
-    },
-    {
-      "trait_type": "Image Finalized",
-      "value": "Yes"
-    },
-    {
       "trait_type": "Chapter",
-      "value": 4
+      "value": "Chapter 4"
     },
     {
       "trait_type": "Series",
       "value": "Apocalipse"
     },
     {
-      "trait_type": "Redeem Status",
-      "value": "Enabled when chapter activates"
+      "trait_type": "Mint Mechanism",
+      "value": "Chainlink VRF"
     }
   ],
   "compiler": "BIGGI metadata pipeline",

@@ -1,0 +1,46 @@
+{
+  "network": "polygon",
+  "chainId": 137,
+  "ticketHub": "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
+  "executedAt": "2026-08-24T16:25:24.000Z",
+  "scope": "BiggiTicketHub chapter ticket base URIs only",
+  "gameMetadataChanged": false,
+  "totalGasCostPOL": "0.120401735154883252",
+  "transactions": [
+    {
+      "chapterId": 1,
+      "transactionHash": "0x948aa53c06d3192416578fbb460dd8a73f7d0804368de63db14d6aaa470bad59",
+      "blockNumber": 92589117,
+      "status": 1,
+      "gasUsed": "79709"
+    },
+    {
+      "chapterId": 2,
+      "transactionHash": "0xc56e0ec50ec6085ddcd0e4812e9adefe32ff7b0d43a196270e4e6cd9919d3929",
+      "blockNumber": 92589121,
+      "status": 1,
+      "gasUsed": "75257"
+    },
+    {
+      "chapterId": 3,
+      "transactionHash": "0xd6040f8c862ffe95ac01786d476ede8f546ac0caba04dfe08e6ebf7b4edd4025",
+      "blockNumber": 92589124,
+      "status": 1,
+      "gasUsed": "75257"
+    },
+    {
+      "chapterId": 4,
+      "transactionHash": "0x7feb61cb0fdd9cb0399c59c1c78cb72d9c38476012818cd8b8bdf249c8d4650a",
+      "blockNumber": 92589127,
+      "status": 1,
+      "gasUsed": "75257"
+    },
+    {
+      "chapterId": 5,
+      "transactionHash": "0xb82701e773f653cd0ded42cae056bafc536eb73ad10a5cfc16abd037672f3aaa",
+      "blockNumber": 92589131,
+      "status": 1,
+      "gasUsed": "75257"
+    }
+  ]
+}

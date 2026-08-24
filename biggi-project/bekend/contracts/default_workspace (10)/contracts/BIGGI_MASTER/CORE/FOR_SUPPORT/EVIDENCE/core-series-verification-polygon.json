@@ -107,8 +107,8 @@
     {
       "label": "Chapter 1 ticket metadata URI",
       "ok": true,
-      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeid32cnhzvsmg56nwlgf2lcowqcnaqch2us7g4af6oyta6cwhkzrgu/",
-      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeid32cnhzvsmg56nwlgf2lcowqcnaqch2us7g4af6oyta6cwhkzrgu/"
+      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeib24uncna6uormewhpdapx4onr546ddwunsc2h6j2ael3uo7iw5x4/",
+      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeib24uncna6uormewhpdapx4onr546ddwunsc2h6j2ael3uo7iw5x4/"
     },
     {
       "label": "Chapter 1 remains inactive",
@@ -135,22 +135,28 @@
       "expected": "50"
     },
     {
-      "label": "Chapter 1 recipient ticket count",
+      "label": "Chapter 1 first ticket exists",
       "ok": true,
-      "actual": "50",
-      "expected": "50"
+      "actual": "true",
+      "expected": "true"
     },
     {
-      "label": "Chapter 1 first ticket owner",
+      "label": "Chapter 1 last marketing ticket exists",
       "ok": true,
-      "actual": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
-      "expected": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2"
+      "actual": "true",
+      "expected": "true"
     },
     {
-      "label": "Chapter 1 last marketing ticket owner",
+      "label": "Chapter 1 first ticket binding",
       "ok": true,
-      "actual": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
-      "expected": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2"
+      "actual": "1",
+      "expected": "1"
+    },
+    {
+      "label": "Chapter 1 last ticket binding",
+      "ok": true,
+      "actual": "1",
+      "expected": "1"
     },
     {
       "label": "Chapter 1 first ticket redeem locked",
@@ -161,8 +167,8 @@
     {
       "label": "Chapter 1 first ticket URI",
       "ok": true,
-      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeid32cnhzvsmg56nwlgf2lcowqcnaqch2us7g4af6oyta6cwhkzrgu/Biggi_RANDOM_MINT_TICKET.json",
-      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeid32cnhzvsmg56nwlgf2lcowqcnaqch2us7g4af6oyta6cwhkzrgu/Biggi_RANDOM_MINT_TICKET.json"
+      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeib24uncna6uormewhpdapx4onr546ddwunsc2h6j2ael3uo7iw5x4/Biggi_RANDOM_MINT_TICKET.json",
+      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeib24uncna6uormewhpdapx4onr546ddwunsc2h6j2ael3uo7iw5x4/Biggi_RANDOM_MINT_TICKET.json"
     },
     {
       "label": "Chapter 1 VRF owner",
@@ -335,8 +341,8 @@
     {
       "label": "Chapter 2 ticket metadata URI",
       "ok": true,
-      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeigifkdov4wcyfu2hgyrwpwbi2shaitqcklxna6chi2itdhdfap7p4/",
-      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeigifkdov4wcyfu2hgyrwpwbi2shaitqcklxna6chi2itdhdfap7p4/"
+      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeicewmj5jmjs4gumyin4mxph6kyjb3t4fyo7fdfajamptfw6vxdxpm/",
+      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeicewmj5jmjs4gumyin4mxph6kyjb3t4fyo7fdfajamptfw6vxdxpm/"
     },
     {
       "label": "Chapter 2 remains inactive",
@@ -363,22 +369,28 @@
       "expected": "50"
     },
     {
-      "label": "Chapter 2 recipient ticket count",
+      "label": "Chapter 2 first ticket exists",
       "ok": true,
-      "actual": "50",
-      "expected": "50"
+      "actual": "true",
+      "expected": "true"
     },
     {
-      "label": "Chapter 2 first ticket owner",
+      "label": "Chapter 2 last marketing ticket exists",
       "ok": true,
-      "actual": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
-      "expected": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2"
+      "actual": "true",
+      "expected": "true"
     },
     {
-      "label": "Chapter 2 last marketing ticket owner",
+      "label": "Chapter 2 first ticket binding",
       "ok": true,
-      "actual": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
-      "expected": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2"
+      "actual": "2",
+      "expected": "2"
+    },
+    {
+      "label": "Chapter 2 last ticket binding",
+      "ok": true,
+      "actual": "2",
+      "expected": "2"
     },
     {
       "label": "Chapter 2 first ticket redeem locked",
@@ -389,8 +401,8 @@
     {
       "label": "Chapter 2 first ticket URI",
       "ok": true,
-      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeigifkdov4wcyfu2hgyrwpwbi2shaitqcklxna6chi2itdhdfap7p4/Biggi_RANDOM_MINT_TICKET.json",
-      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeigifkdov4wcyfu2hgyrwpwbi2shaitqcklxna6chi2itdhdfap7p4/Biggi_RANDOM_MINT_TICKET.json"
+      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeicewmj5jmjs4gumyin4mxph6kyjb3t4fyo7fdfajamptfw6vxdxpm/Biggi_RANDOM_MINT_TICKET.json",
+      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeicewmj5jmjs4gumyin4mxph6kyjb3t4fyo7fdfajamptfw6vxdxpm/Biggi_RANDOM_MINT_TICKET.json"
     },
     {
       "label": "Chapter 2 VRF owner",
@@ -563,8 +575,8 @@
     {
       "label": "Chapter 3 ticket metadata URI",
       "ok": true,
-      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeigdkx4e4ovnr33pwir3g6f2rhlnboo65mncp6euutn5wv4pnebxf4/",
-      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeigdkx4e4ovnr33pwir3g6f2rhlnboo65mncp6euutn5wv4pnebxf4/"
+      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeifoia7zjv6rohlfpg376sgbx6h6qawecv6obasjpaintfzi2ejafu/",
+      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeifoia7zjv6rohlfpg376sgbx6h6qawecv6obasjpaintfzi2ejafu/"
     },
     {
       "label": "Chapter 3 remains inactive",
@@ -591,22 +603,28 @@
       "expected": "50"
     },
     {
-      "label": "Chapter 3 recipient ticket count",
+      "label": "Chapter 3 first ticket exists",
       "ok": true,
-      "actual": "50",
-      "expected": "50"
+      "actual": "true",
+      "expected": "true"
     },
     {
-      "label": "Chapter 3 first ticket owner",
+      "label": "Chapter 3 last marketing ticket exists",
       "ok": true,
-      "actual": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
-      "expected": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2"
+      "actual": "true",
+      "expected": "true"
     },
     {
-      "label": "Chapter 3 last marketing ticket owner",
+      "label": "Chapter 3 first ticket binding",
       "ok": true,
-      "actual": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
-      "expected": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2"
+      "actual": "3",
+      "expected": "3"
+    },
+    {
+      "label": "Chapter 3 last ticket binding",
+      "ok": true,
+      "actual": "3",
+      "expected": "3"
     },
     {
       "label": "Chapter 3 first ticket redeem locked",
@@ -617,8 +635,8 @@
     {
       "label": "Chapter 3 first ticket URI",
       "ok": true,
-      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeigdkx4e4ovnr33pwir3g6f2rhlnboo65mncp6euutn5wv4pnebxf4/Biggi_RANDOM_MINT_TICKET.json",
-      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeigdkx4e4ovnr33pwir3g6f2rhlnboo65mncp6euutn5wv4pnebxf4/Biggi_RANDOM_MINT_TICKET.json"
+      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeifoia7zjv6rohlfpg376sgbx6h6qawecv6obasjpaintfzi2ejafu/Biggi_RANDOM_MINT_TICKET.json",
+      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeifoia7zjv6rohlfpg376sgbx6h6qawecv6obasjpaintfzi2ejafu/Biggi_RANDOM_MINT_TICKET.json"
     },
     {
       "label": "Chapter 3 VRF owner",
@@ -791,8 +809,8 @@
     {
       "label": "Chapter 4 ticket metadata URI",
       "ok": true,
-      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeihqoyhcjjzj4yyw6j3c62z44ezwm3coicbefak4q7ufhiefnhqsru/",
-      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeihqoyhcjjzj4yyw6j3c62z44ezwm3coicbefak4q7ufhiefnhqsru/"
+      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeid7vhuehxxkox6pafbhn2ttaefsuptampg7cg4vvgcslpv2wpb5qe/",
+      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeid7vhuehxxkox6pafbhn2ttaefsuptampg7cg4vvgcslpv2wpb5qe/"
     },
     {
       "label": "Chapter 4 remains inactive",
@@ -819,22 +837,28 @@
       "expected": "50"
     },
     {
-      "label": "Chapter 4 recipient ticket count",
+      "label": "Chapter 4 first ticket exists",
       "ok": true,
-      "actual": "50",
-      "expected": "50"
+      "actual": "true",
+      "expected": "true"
     },
     {
-      "label": "Chapter 4 first ticket owner",
+      "label": "Chapter 4 last marketing ticket exists",
       "ok": true,
-      "actual": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
-      "expected": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2"
+      "actual": "true",
+      "expected": "true"
     },
     {
-      "label": "Chapter 4 last marketing ticket owner",
+      "label": "Chapter 4 first ticket binding",
       "ok": true,
-      "actual": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
-      "expected": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2"
+      "actual": "4",
+      "expected": "4"
+    },
+    {
+      "label": "Chapter 4 last ticket binding",
+      "ok": true,
+      "actual": "4",
+      "expected": "4"
     },
     {
       "label": "Chapter 4 first ticket redeem locked",
@@ -845,8 +869,8 @@
     {
       "label": "Chapter 4 first ticket URI",
       "ok": true,
-      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeihqoyhcjjzj4yyw6j3c62z44ezwm3coicbefak4q7ufhiefnhqsru/Biggi_RANDOM_MINT_TICKET.json",
-      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeihqoyhcjjzj4yyw6j3c62z44ezwm3coicbefak4q7ufhiefnhqsru/Biggi_RANDOM_MINT_TICKET.json"
+      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeid7vhuehxxkox6pafbhn2ttaefsuptampg7cg4vvgcslpv2wpb5qe/Biggi_RANDOM_MINT_TICKET.json",
+      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeid7vhuehxxkox6pafbhn2ttaefsuptampg7cg4vvgcslpv2wpb5qe/Biggi_RANDOM_MINT_TICKET.json"
     },
     {
       "label": "Chapter 4 VRF owner",
@@ -1019,8 +1043,8 @@
     {
       "label": "Chapter 5 ticket metadata URI",
       "ok": true,
-      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeibd3pz4pvfuuasonn2va7tylapqrdtfl5zgytiiggwsemtxd3qxru/",
-      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeibd3pz4pvfuuasonn2va7tylapqrdtfl5zgytiiggwsemtxd3qxru/"
+      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeiddw4lk6ozl6dqs3flwiqr7hd5qse552kxteeskl2blenwc2rviey/",
+      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeiddw4lk6ozl6dqs3flwiqr7hd5qse552kxteeskl2blenwc2rviey/"
     },
     {
       "label": "Chapter 5 remains inactive",
@@ -1047,22 +1071,28 @@
       "expected": "50"
     },
     {
-      "label": "Chapter 5 recipient ticket count",
+      "label": "Chapter 5 first ticket exists",
       "ok": true,
-      "actual": "50",
-      "expected": "50"
+      "actual": "true",
+      "expected": "true"
     },
     {
-      "label": "Chapter 5 first ticket owner",
+      "label": "Chapter 5 last marketing ticket exists",
       "ok": true,
-      "actual": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
-      "expected": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2"
+      "actual": "true",
+      "expected": "true"
     },
     {
-      "label": "Chapter 5 last marketing ticket owner",
+      "label": "Chapter 5 first ticket binding",
       "ok": true,
-      "actual": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
-      "expected": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2"
+      "actual": "5",
+      "expected": "5"
+    },
+    {
+      "label": "Chapter 5 last ticket binding",
+      "ok": true,
+      "actual": "5",
+      "expected": "5"
     },
     {
       "label": "Chapter 5 first ticket redeem locked",
@@ -1073,8 +1103,8 @@
     {
       "label": "Chapter 5 first ticket URI",
       "ok": true,
-      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeibd3pz4pvfuuasonn2va7tylapqrdtfl5zgytiiggwsemtxd3qxru/Biggi_RANDOM_MINT_TICKET.json",
-      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeibd3pz4pvfuuasonn2va7tylapqrdtfl5zgytiiggwsemtxd3qxru/Biggi_RANDOM_MINT_TICKET.json"
+      "actual": "https://biggieyes.mypinata.cloud/ipfs/bafybeiddw4lk6ozl6dqs3flwiqr7hd5qse552kxteeskl2blenwc2rviey/Biggi_RANDOM_MINT_TICKET.json",
+      "expected": "https://biggieyes.mypinata.cloud/ipfs/bafybeiddw4lk6ozl6dqs3flwiqr7hd5qse552kxteeskl2blenwc2rviey/Biggi_RANDOM_MINT_TICKET.json"
     },
     {
       "label": "Chapter 5 VRF owner",
@@ -1165,12 +1195,6 @@
       "ok": true,
       "actual": "true",
       "expected": "true"
-    },
-    {
-      "label": "Marketing recipient total TicketHub balance",
-      "ok": true,
-      "actual": "250",
-      "expected": "250"
     },
     {
       "label": "CollectionRewards uses central Registry",
@@ -1318,5 +1342,5 @@
     }
   ],
   "issues": [],
-  "checkedAt": "2026-08-18T21:53:53.698Z"
+  "checkedAt": "2026-08-24T16:30:09.897Z"
 }

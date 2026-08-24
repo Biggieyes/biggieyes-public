@@ -141,5 +141,54 @@ class Main2MetadataTests(unittest.TestCase):
             )
 
 
+class TicketMetadataTests(unittest.TestCase):
+    def test_ticket_traits_are_stable_and_opensea_friendly(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = metadata.main(
+                [
+                    "build-ticket",
+                    "--phase",
+                    "final",
+                    "--name",
+                    "BIGGI Universe Random Mint Ticket",
+                    "--description",
+                    "BIGGI ticket for Chapter 2: Universe.",
+                    "--chapter-id",
+                    "2",
+                    "--series",
+                    "Universe",
+                    "--image-uri",
+                    "ipfs://bafyexample/ticket.png",
+                    "--out",
+                    temp_dir,
+                ]
+            )
+            document = json.loads(
+                (pathlib.Path(temp_dir) / "Biggi_RANDOM_MINT_TICKET.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+
+            self.assertEqual(result, 0)
+            self.assertEqual(
+                trait_map(document),
+                {
+                    "Ticket Type": "Random Mint Ticket",
+                    "Chapter": "Chapter 2",
+                    "Series": "Universe",
+                    "Mint Mechanism": "Chainlink VRF",
+                },
+            )
+            internal_traits = {
+                "Phase",
+                "Image Finalized",
+                "Redeem Source",
+                "Redeem Status",
+                "Ticket Price",
+                "Utility",
+            }
+            self.assertTrue(internal_traits.isdisjoint(trait_map(document)))
+
+
 if __name__ == "__main__":
     unittest.main()

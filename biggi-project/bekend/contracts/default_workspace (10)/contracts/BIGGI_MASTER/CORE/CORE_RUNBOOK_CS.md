@@ -157,6 +157,8 @@ Postup pro dalsi chapter bez finalnich obrazku:
 
 Kazdy chapter musi mit vlastni `ticketBaseURI` s vlastnim ticket obrazkem. Chapters 1-5 jsou uz nasazene, maji po 50 marketing ticketech a zustavaji neaktivni. Marketing tickety jsou obchodovatelne, ale redeem je blokovany. Finalni obrazky/metadata VRF a Public NFT lze doplnit pozdeji, ale pred `setChapterActive(chapterId, true)` musi projit metadata a wiring gate pro konkretni chapter.
 
+Od 2026-08-24 maji ticket metadata vsech peti chapteru jednotne verejne traits: `Ticket Type`, `Chapter`, `Series` a `Mint Mechanism`. Aktualni Pinata URI jsou v `addresses.core.polygon.json`; transakcni dukaz je v `FOR_SUPPORT/EVIDENCE/ticket-metadata-traits-v2-polygon.json`. Tato migrace menila pouze `BiggiTicketHub.chapterTicketBaseURI(1..5)`. Metadata VRF/Public NFT a on-chain cenova mechanika bloku nebyly zmeneny.
+
 ## 6. Fáze E: public branch nastavení
 
 V `BiggiMain2` nastav:
