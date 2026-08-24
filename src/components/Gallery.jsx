@@ -4,10 +4,15 @@ import NftCard from "./NftCard";
 import { useContracts } from "../providers/ContractsProvider";
 import { useWeb3 } from "../providers/Web3Provider";
 import { formatEther } from "ethers";
-import { ADDR } from "@/shared/utils/addresses.js";
+import { ADDR, CORE_CHAPTERS } from "@/shared/utils/addresses.js";
 import { DEFAULT_BLOCKS, ROWS_BY_BLOCK } from "../shared/blocks";
 import { getProviderForContract } from "../shared/utils/contract";
 import { mergeGalleryItem } from "../shared/services/gallery/gallery.merge.js";
+import {
+  countGalleryAssetsByChapter,
+  filterGalleryItemsByChapter,
+  resolveGalleryChapterId,
+} from "../shared/services/gallery/gallery.chapters.js";
 import { coerceBool } from "../shared/utils/boolean";
 import {
   getAssetIdentity,
@@ -1031,6 +1036,9 @@ export default function Gallery({
   const [fetching, setFetching] = React.useState(false);
   const [sortBy, setSortBy] = React.useState("default");
   const [filterRarity, setFilterRarity] = React.useState("all");
+  const [selectedChapterId, setSelectedChapterId] = React.useState(
+    CORE_CHAPTERS[0]?.chapterId ?? 1,
+  );
   const [page, setPage] = React.useState(0);
   const [ticketPage, setTicketPage] = React.useState(0);
   const [highlightId, setHighlightId] = React.useState("");
@@ -1159,8 +1167,18 @@ export default function Gallery({
           const main = contracts.mainRead?.();
           const main2 = contracts.main2Read?.();
           collectionEntries = [
-            { contract: main, label: "MAIN", chapterId: 1 },
-            { contract: main2, label: "MAIN2", chapterId: 1 },
+            {
+              contract: main,
+              label: "MAIN",
+              chapterId: 1,
+              collectionType: "vrf",
+            },
+            {
+              contract: main2,
+              label: "MAIN2",
+              chapterId: 1,
+              collectionType: "public",
+            },
           ].filter((entry) => entry.contract);
         }
 
@@ -1170,7 +1188,8 @@ export default function Gallery({
           return;
         }
 
-        const loadForContract = async (contract, label, contractReader) => {
+        const loadForContract = async (entry, label, contractReader) => {
+          const { contract } = entry || {};
           if (!contract) return [];
           const provider = getProviderForContract(contract);
           if (!provider || typeof provider.getBlockNumber !== "function") {
@@ -1187,7 +1206,17 @@ export default function Gallery({
                 contractReader,
               );
               if (!tokenIds.length) return [];
-              return hydrateTokens(contract, contractReader, tokenIds);
+              const hydrated = await hydrateTokens(
+                contract,
+                contractReader,
+                tokenIds,
+              );
+              return hydrated.map((item) => ({
+                ...item,
+                chapterId: item?.chapterId ?? entry.chapterId,
+                collectionType:
+                  item?.collectionType ?? entry.collectionType ?? null,
+              }));
             })(),
             CHAIN_FETCH_TIMEOUT_MS,
             `gallery ${String(label || "").toLowerCase()} fetch`,
@@ -1205,7 +1234,7 @@ export default function Gallery({
           const chunkResults = await Promise.allSettled(
             chunk.map((entry, index) =>
               loadForContract(
-                entry.contract,
+                entry,
                 labels[offset + index],
                 entry.chapterId === 1 ? reader : null,
               ),
@@ -1281,7 +1310,7 @@ export default function Gallery({
 
   const pageSize = isMobile || compact ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP;
 
-  const ticketItems = React.useMemo(() => {
+  const allTicketItems = React.useMemo(() => {
     const list = renderedItems.filter((item) =>
       isTicketLike(item, maxSupplyHint),
     );
@@ -1307,9 +1336,47 @@ export default function Gallery({
     return sorted;
   }, [renderedItems, topFirstId, maxSupplyHint]);
 
-  const nonTicketItemsSource = React.useMemo(
+  const allNonTicketItemsSource = React.useMemo(
     () => renderedItems.filter((item) => !isTicketLike(item, maxSupplyHint)),
     [renderedItems, maxSupplyHint],
+  );
+  const selectedChapter = React.useMemo(
+    () =>
+      CORE_CHAPTERS.find(
+        (chapter) => chapter.chapterId === selectedChapterId,
+      ) || CORE_CHAPTERS[0],
+    [selectedChapterId],
+  );
+  const chapterAssetCounts = React.useMemo(
+    () => countGalleryAssetsByChapter(renderedItems, CORE_CHAPTERS),
+    [renderedItems],
+  );
+  const selectedChapterItems = React.useMemo(
+    () =>
+      filterGalleryItemsByChapter(
+        renderedItems,
+        selectedChapterId,
+        CORE_CHAPTERS,
+      ),
+    [renderedItems, selectedChapterId],
+  );
+  const ticketItems = React.useMemo(
+    () =>
+      filterGalleryItemsByChapter(
+        allTicketItems,
+        selectedChapterId,
+        CORE_CHAPTERS,
+      ),
+    [allTicketItems, selectedChapterId],
+  );
+  const nonTicketItemsSource = React.useMemo(
+    () =>
+      filterGalleryItemsByChapter(
+        allNonTicketItemsSource,
+        selectedChapterId,
+        CORE_CHAPTERS,
+      ),
+    [allNonTicketItemsSource, selectedChapterId],
   );
 
   React.useEffect(() => {
@@ -1318,6 +1385,7 @@ export default function Gallery({
       wallet: address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "",
       providedItems: providedItems.length,
       renderedItems: renderedItems.length,
+      selectedChapterId,
       nftItems: nonTicketItemsSource.length,
       ticketItems: ticketItems.length,
       sampleTokenIds: renderedItems
@@ -1331,6 +1399,7 @@ export default function Gallery({
     address,
     providedItems,
     renderedItems,
+    selectedChapterId,
     nonTicketItemsSource,
     ticketItems,
   ]);
@@ -1411,7 +1480,7 @@ export default function Gallery({
 
   React.useEffect(() => {
     setPage(0);
-  }, [sortBy, filterRarity]);
+  }, [sortBy, filterRarity, selectedChapterId]);
 
   React.useEffect(() => {
     const id = topFirstId != null ? String(topFirstId) : "";
@@ -1430,17 +1499,20 @@ export default function Gallery({
       setPinnedTopId("");
       return;
     }
-    const isVisible = processedItems.some((item) =>
+    const highlightedItem = allNonTicketItemsSource.find((item) =>
       isAssetReferenceMatch(item, id, mainContractAddress),
     );
+    const isVisible = Boolean(highlightedItem);
     const prev = topFirstVisibleRef.current;
     const becameVisible = isVisible && (prev.id !== id || !prev.visible);
     topFirstVisibleRef.current = { id, visible: isVisible };
     if (becameVisible) {
+      const chapterId = resolveGalleryChapterId(highlightedItem, CORE_CHAPTERS);
+      if (chapterId != null) setSelectedChapterId(chapterId);
       setHighlightId(id);
       setPinnedTopId(id);
     }
-  }, [topFirstId, processedItems, mainContractAddress]);
+  }, [topFirstId, allNonTicketItemsSource, mainContractAddress]);
 
   React.useEffect(() => {
     if (!highlightId) return;
@@ -1476,7 +1548,7 @@ export default function Gallery({
   const handleNext = () =>
     setPage((prev) => Math.min(totalPages - 1, prev + 1));
 
-  const totalOwned = renderedItems.length;
+  const totalOwned = selectedChapterItems.length;
   const totalNfts = nonTicketItemsSource.length;
   const totalTickets = ticketItems.length;
   const ticketPageSize =
@@ -1493,6 +1565,9 @@ export default function Gallery({
   React.useEffect(() => {
     setTicketPage((previous) => Math.min(previous, totalTicketPages - 1));
   }, [totalTicketPages]);
+  React.useEffect(() => {
+    setTicketPage(0);
+  }, [selectedChapterId]);
   const pendingTickets = React.useMemo(
     () => ticketItems.reduce((sum, item) => sum + (item?.isPending ? 1 : 0), 0),
     [ticketItems],
@@ -1689,10 +1764,38 @@ export default function Gallery({
         </div>
       </div>
 
+      <nav className="gallery__chapter-switcher" aria-label="Gallery chapters">
+        <div className="gallery__chapter-switcher-heading">
+          <span>Gallery chapter</span>
+          <strong>{selectedChapter?.seriesName || "BIGGI collection"}</strong>
+        </div>
+        <div className="gallery__chapter-switcher-buttons">
+          {CORE_CHAPTERS.map((chapter) => {
+            const active = chapter.chapterId === selectedChapterId;
+            const count = chapterAssetCounts[chapter.chapterId] || 0;
+            return (
+              <button
+                type="button"
+                key={chapter.chapterId}
+                className={`gallery__chapter-button${active ? " is-active" : ""}`}
+                onClick={() => setSelectedChapterId(chapter.chapterId)}
+                aria-pressed={active}
+                aria-label={`${chapter.displayName}, chapter ${chapter.chapterId}, ${count} assets`}
+              >
+                <span>{chapter.displayName}</span>
+                <small>
+                  Chapter {chapter.chapterId} / {count} assets
+                </small>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
       {ticketItems.length > 0 && (
         <section className="gallery__ticket-panel" aria-label="Wallet tickets">
           <div className="gallery__ticket-head">
-            <h3>Tickets in wallet</h3>
+            <h3>{selectedChapter?.displayName} tickets</h3>
             <span>
               {showSummaryLoading
                 ? "Loading..."
@@ -1734,6 +1837,11 @@ export default function Gallery({
         </section>
       )}
 
+      <div className="gallery__asset-head">
+        <h3>{selectedChapter?.displayName} NFTs</h3>
+        <span>VRF + Public / {totalNfts} total</span>
+      </div>
+
       <div
         className={`gallery__grid${showSummaryLoading ? " is-loading" : ""}`}
       >
@@ -1758,6 +1866,16 @@ export default function Gallery({
         {isConnected &&
           !showSummaryLoading &&
           renderedItems.length > 0 &&
+          selectedChapterItems.length === 0 && (
+            <div className="gallery__placeholder">
+              <h3>No assets in {selectedChapter?.displayName}</h3>
+              <p>This wallet has no assets from the selected chapter.</p>
+            </div>
+          )}
+        {isConnected &&
+          !showSummaryLoading &&
+          renderedItems.length > 0 &&
+          selectedChapterItems.length > 0 &&
           nonTicketItemsSource.length === 0 &&
           ticketItems.length > 0 && (
             <div className="gallery__placeholder">

@@ -4,8 +4,13 @@ import {
   mergeGalleryItem,
   mergeGalleryLists,
 } from "../src/shared/services/gallery/gallery.merge.js";
+import {
+  countGalleryAssetsByChapter,
+  filterGalleryItemsByChapter,
+  resolveGalleryChapterId,
+} from "../src/shared/services/gallery/gallery.chapters.js";
 import { buildRewardClaimPayload } from "../src/shared/utils/assetIdentity.js";
-import { CORE_CHAPTERS } from "../src/shared/utils/addresses.js";
+import { ADDR, CORE_CHAPTERS } from "../src/shared/utils/addresses.js";
 
 const MAIN = "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4";
 const MAIN2 = "0xe56cC0657A89daf10994204eD745985a61b0E36F";
@@ -129,5 +134,52 @@ describe("gallery mainnet consistency", () => {
     ]);
     expect(payload.hasTokenIdCollisions).toBe(true);
     expect(payload.shouldUseCollectionAware).toBe(true);
+  });
+
+  it("groups paired VRF and Public contracts under the same gallery chapter", () => {
+    const universe = CORE_CHAPTERS[1];
+    const mutant = CORE_CHAPTERS[2];
+    const assets = [
+      {
+        tokenId: "11",
+        contractAddress: universe.main,
+        collectionType: "vrf",
+        isTicket: false,
+      },
+      {
+        tokenId: "11",
+        contractAddress: universe.main2,
+        collectionType: "public",
+        isTicket: false,
+      },
+      {
+        tokenId: "12",
+        contractAddress: mutant.main,
+        collectionType: "vrf",
+        isTicket: false,
+      },
+    ];
+
+    expect(resolveGalleryChapterId(assets[0])).toBe(universe.chapterId);
+    expect(resolveGalleryChapterId(assets[1])).toBe(universe.chapterId);
+    expect(
+      filterGalleryItemsByChapter(assets, universe.chapterId),
+    ).toHaveLength(2);
+    expect(countGalleryAssetsByChapter(assets)[universe.chapterId]).toBe(2);
+  });
+
+  it("places central TicketHub assets using their Chapter metadata", () => {
+    const ticket = {
+      tokenId: "1000000000000000000000000000201",
+      contractAddress: ADDR.TICKET_HUB,
+      isTicket: true,
+      meta: {
+        attributes: [{ trait_type: "Chapter", value: "Chapter 5" }],
+      },
+    };
+
+    expect(resolveGalleryChapterId(ticket)).toBe(5);
+    expect(filterGalleryItemsByChapter([ticket], 5)).toEqual([ticket]);
+    expect(filterGalleryItemsByChapter([ticket], 1)).toEqual([]);
   });
 });
