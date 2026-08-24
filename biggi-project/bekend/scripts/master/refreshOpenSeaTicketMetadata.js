@@ -14,7 +14,7 @@ function sleep(ms) {
 }
 
 async function queueRefresh(apiKey, contract, tokenId) {
-  const url = `${OPEN_SEA_API_BASE}/chain/polygon/contract/${contract}/nfts/${tokenId}/refresh`;
+  const url = `${OPEN_SEA_API_BASE}/chain/polygon/contract/${contract}/nfts/${tokenId}/refresh?ignoreCachedItemUrls=true`;
   for (let attempt = 1; attempt <= 4; attempt += 1) {
     const response = await fetch(url, {
       method: "POST",
