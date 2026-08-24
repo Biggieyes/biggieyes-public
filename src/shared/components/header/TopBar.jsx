@@ -57,6 +57,18 @@ function TopBar({
         <>
           <div className="left-block">
             <div className="left-logo-row">
+              <a
+                className="opensea-btn-top"
+                href={OPENSEA_BIGGI_URL}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Open BiggiEyes on OpenSea"
+              >
+                <span className="opensea-icon" aria-hidden>
+                  OS
+                </span>
+                <span className="wallet-btn-label">OpenSea</span>
+              </a>
               <img
                 src={TOPBAR_LOGOS.primary.src}
                 className="left-logo"
@@ -72,18 +84,6 @@ function TopBar({
                   event.currentTarget.src = TOPBAR_LOGOS.primary.fallbackSrc;
                 }}
               />
-              <a
-                className="opensea-btn-top"
-                href={OPENSEA_BIGGI_URL}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Open BiggiEyes on OpenSea"
-              >
-                <span className="opensea-icon" aria-hidden>
-                  OS
-                </span>
-                <span className="wallet-btn-label">OpenSea</span>
-              </a>
             </div>
             <ActionButtons
               onMint={onMint}
@@ -171,5 +171,4 @@ function TopBar({
 }
 
 export default React.memo(TopBar);
-
 
