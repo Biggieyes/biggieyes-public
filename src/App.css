@@ -2258,9 +2258,11 @@ canvas {
 
 .site-footer__faq-list {
   gap: 8px;
+  align-items: center;
 }
 
 .site-footer__faq-item {
+  width: min(100%, 320px);
   text-align: left;
 }
 
