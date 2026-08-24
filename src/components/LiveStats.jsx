@@ -3725,12 +3725,19 @@ function LiveStats({
           {/* WEEKLY MODAL */}
           {weeklyOpen && (
             <ModalPortal lockScroll={false}>
-              <div style={modalOverlayStyle}>
-                <div style={{ ...fullscreenModalFrameStyle, padding: 0 }}>
-                  <div
-                    style={fullscreenModalCardStyle}
-                    className={`wc-fullscreen-shell${desktopFullscreen ? " wc-fullscreen-shell--desktop" : ""}`}
-                  >
+              <div
+                className="ls-stats-table-overlay"
+                onClick={closeWeeklyModal}
+                role="presentation"
+              >
+                <div
+                  className="ls-stats-table-panel ls-stats-table-panel--weekly"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="BIGGI weekly"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="wc-fullscreen-shell wc-fullscreen-shell--stats-panel">
                     <button
                       type="button"
                       className="wc-fullscreen-close"
@@ -3739,9 +3746,7 @@ function LiveStats({
                     >
                       Close
                     </button>
-                    <div
-                      className={`wc-fullscreen-wrapper${desktopFullscreen ? " wc-fullscreen-wrapper--desktop" : ""}`}
-                    >
+                    <div className="wc-fullscreen-wrapper wc-fullscreen-wrapper--stats-panel">
                       <WeeklyCountdown
                         info={weeklyCountdownInfo}
                         isClaiming={weeklyIsClaiming}
@@ -3758,14 +3763,18 @@ function LiveStats({
           {/* TOKENOMICS MODAL */}
           {poolsOpen && (
             <ModalPortal lockScroll={false}>
-              <div style={modalOverlayStyle}>
-                <div style={fullscreenModalFrameStyle}>
-                  <div
-                    style={{ ...fullscreenModalCardStyle, padding: 0 }}
-                    className={
-                      desktopFullscreen ? "ls-fullscreen-tokenomics" : undefined
-                    }
-                  >
+              <div
+                className="ls-stats-table-overlay"
+                onClick={closePoolsModal}
+                role="presentation"
+              >
+                <div
+                  className="ls-stats-table-panel ls-stats-table-panel--tokenomics ls-fullscreen-tokenomics"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Tokenomics"
+                  onClick={(event) => event.stopPropagation()}
+                >
                     <div style={modalHeaderStyle}>
                       <div style={{ color: "#ffe800", fontWeight: 900 }}>
                         TOKENOMICS
@@ -4093,7 +4102,6 @@ function LiveStats({
                         </div>
                       </div>
                     </div>
-                  </div>
                 </div>
               </div>
             </ModalPortal>
@@ -4102,14 +4110,18 @@ function LiveStats({
           {/* LIVE CHAT MODAL */}
           {chatOpen && (
             <ModalPortal lockScroll={false}>
-              <div style={modalOverlayStyle}>
-                <div style={fullscreenModalFrameStyle}>
-                  <div
-                    style={fullscreenModalCardStyle}
-                    className={
-                      desktopFullscreen ? "ls-fullscreen-chat" : undefined
-                    }
-                  >
+              <div
+                className="ls-stats-table-overlay"
+                onClick={closeChatModal}
+                role="presentation"
+              >
+                <div
+                  className="ls-stats-table-panel ls-stats-table-panel--chat ls-fullscreen-chat"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Live chat"
+                  onClick={(event) => event.stopPropagation()}
+                >
                     <div style={modalHeaderStyle}>
                       <div style={{ color: "#ffe800", fontWeight: 900 }}>
                         LIVE CHAT
@@ -4145,7 +4157,6 @@ function LiveStats({
                         <LiveChatPanel walletAddress={walletAddress} />
                       </React.Suspense>
                     </div>
-                  </div>
                 </div>
               </div>
             </ModalPortal>

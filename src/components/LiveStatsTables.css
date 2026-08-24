@@ -28,6 +28,56 @@
   box-shadow: 0 18px 46px rgba(0, 0, 0, 0.65);
 }
 
+.ls-stats-table-panel--weekly,
+.ls-stats-table-panel--tokenomics,
+.ls-stats-table-panel--chat {
+  width: min(1180px, 100%);
+  height: min(760px, calc(100dvh - 32px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ls-stats-table-panel--weekly {
+  padding: 0;
+}
+
+.ls-stats-table-panel--weekly .wc-fullscreen-shell--stats-panel {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.ls-stats-table-panel--weekly .wc-fullscreen-wrapper--stats-panel {
+  padding: clamp(52px, 5vw, 72px) 14px 14px;
+  overflow: auto;
+}
+
+.ls-stats-table-panel--weekly .wc-card {
+  min-height: 0;
+}
+
+.ls-stats-table-panel--tokenomics {
+  padding: 0;
+}
+
+.ls-stats-table-panel--tokenomics .ls-tokenomics-modal__content,
+.ls-stats-table-panel--chat .ls-fullscreen-chat__content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.ls-stats-table-panel--tokenomics .ls-tokenomics-modal__grid {
+  height: auto;
+  min-height: 0;
+}
+
+.ls-stats-table-panel--chat {
+  width: min(980px, 100%);
+  padding: 0;
+}
+
 .ls-stats-table-panel .bw-container,
 .ls-stats-table-panel .bgw-container {
   width: 100%;
@@ -51,5 +101,12 @@
   .ls-stats-table-panel {
     max-height: calc(100dvh - 16px);
     padding: 10px;
+  }
+
+  .ls-stats-table-panel--weekly,
+  .ls-stats-table-panel--tokenomics,
+  .ls-stats-table-panel--chat {
+    height: calc(100dvh - 16px);
+    padding: 0;
   }
 }
