@@ -1295,7 +1295,9 @@ export default function NftCard({
           <div className="nft-card__section-title">
             {nft?.isTicket ? "Ticket status" : "Mint summary"}
           </div>
-          <div className="nft-card__stats">
+          <div
+            className={`nft-card__stats${nft?.isTicket ? " nft-card__stats--ticket" : ""}`}
+          >
             <div>
               <span>{nft?.isTicket ? "Ticket price" : "Ticket"}</span>
               <strong>
