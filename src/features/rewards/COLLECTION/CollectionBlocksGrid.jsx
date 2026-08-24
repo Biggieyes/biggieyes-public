@@ -440,7 +440,8 @@ function COLLECTIONBlocksGrid({
     }
 
     const index = Number(desiredTokenId);
-    const publicMaxSupply = Number(COLLECTIONMeta.maxSupply) || PUBLIC_MAX_SUPPLY;
+    const publicMaxSupply =
+      Number(COLLECTIONMeta.maxSupply) || PUBLIC_MAX_SUPPLY;
     if (!Number.isInteger(index) || index < 1 || index > publicMaxSupply) {
       setSelectedPublicNft({ info: null, loading: false, error: null });
       return undefined;
@@ -522,8 +523,8 @@ function COLLECTIONBlocksGrid({
   const normalizedPrices = React.useMemo(() => {
     const fromProps =
       displayedChapter.chapterId === 1 && Array.isArray(blockPricesProp)
-      ? blockPricesProp.slice(0, MAX_BLOCKS)
-      : [];
+        ? blockPricesProp.slice(0, MAX_BLOCKS)
+        : [];
     while (fromProps.length < MAX_BLOCKS) fromProps.push(null);
 
     const hasProps = fromProps.some((v) => Number.isFinite(v));
@@ -542,8 +543,8 @@ function COLLECTIONBlocksGrid({
   const normalizedMintCounts = React.useMemo(() => {
     const fromProps =
       displayedChapter.chapterId === 1 && Array.isArray(blockMintCountsProp)
-      ? blockMintCountsProp.slice(0, MAX_BLOCKS)
-      : [];
+        ? blockMintCountsProp.slice(0, MAX_BLOCKS)
+        : [];
     while (fromProps.length < MAX_BLOCKS) fromProps.push(null);
 
     const hasProps = fromProps.some((v) => Number.isFinite(v));
@@ -984,7 +985,6 @@ function COLLECTIONBlocksGrid({
         selectedNftError={selectedPublicNft.error}
         COLLECTIONTotals={COLLECTIONTotals}
         onTokenIdChange={setDesiredTokenId}
-        renderChapterSwitcher={renderChapterSwitcher}
         comingSoon={isFutureChapter}
       />
     ),
@@ -995,7 +995,6 @@ function COLLECTIONBlocksGrid({
       selectedEntry,
       selectedPublicNft,
       COLLECTIONTotals,
-      renderChapterSwitcher,
       isFutureChapter,
     ],
   );
@@ -1029,7 +1028,6 @@ function COLLECTIONBlocksGrid({
         lowestPriceName={lowestPriceName}
         topMintedName={topMintedName}
         additionalText={additionalText}
-        renderChapterSwitcher={renderChapterSwitcher}
       />
     ),
     [
@@ -1042,7 +1040,6 @@ function COLLECTIONBlocksGrid({
       lowestPriceName,
       topMintedName,
       additionalText,
-      renderChapterSwitcher,
     ],
   );
 
@@ -1149,6 +1146,8 @@ function COLLECTIONBlocksGrid({
             </div>
           </div>
         )}
+
+        {effectiveActive !== "chapterSeries" && renderChapterSwitcher()}
 
         {activePanel || (
           <section className="collection-grid__panel">

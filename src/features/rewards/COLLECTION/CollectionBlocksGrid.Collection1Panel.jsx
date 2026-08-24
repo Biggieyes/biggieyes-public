@@ -29,7 +29,6 @@ const COLLECTION1Panel = React.memo(
     lowestPriceName,
     topMintedName,
     additionalText,
-    renderChapterSwitcher,
   }) => {
     const [schemaInfoOpen, setSchemaInfoOpen] = React.useState(false);
 
@@ -146,7 +145,6 @@ const COLLECTION1Panel = React.memo(
         <SectionHeader label="Blocks" accent="#5ddcff" />
         <section className="collection-grid__cards-panel">
           <div className="collection-grid__cards">{renderBlockCardsGrid()}</div>
-          {renderChapterSwitcher?.()}
         </section>
 
         <SectionHeader label="Structure" accent="#ff8a00" />
@@ -181,8 +179,7 @@ const COLLECTION1Panel = React.memo(
       prevProps.blockPrices === nextProps.blockPrices &&
       prevProps.blockMints === nextProps.blockMints &&
       prevProps.stats === nextProps.stats &&
-      prevProps.additionalText === nextProps.additionalText &&
-      prevProps.renderChapterSwitcher === nextProps.renderChapterSwitcher
+      prevProps.additionalText === nextProps.additionalText
     );
   },
 );

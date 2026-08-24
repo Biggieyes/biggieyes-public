@@ -50,7 +50,6 @@ const COLLECTION2Panel = React.memo(
     selectedNftError,
     COLLECTIONTotals,
     onTokenIdChange,
-    renderChapterSwitcher,
     comingSoon = false,
   }) => {
     const hasSelection = /^\d+$/.test(String(desiredTokenId || ""));
@@ -108,7 +107,9 @@ const COLLECTION2Panel = React.memo(
                 step="1"
                 value={desiredTokenId}
                 onChange={(event) => onTokenIdChange(event.target.value)}
-                placeholder={comingSoon ? "Available later" : "Enter NFT number"}
+                placeholder={
+                  comingSoon ? "Available later" : "Enter NFT number"
+                }
                 disabled={comingSoon}
               />
             </label>
@@ -141,7 +142,9 @@ const COLLECTION2Panel = React.memo(
               <div>
                 <dt>Exact mint price</dt>
                 <dd className="collection-grid__price-live">
-                  {comingSoon ? FALLBACK_VALUE : formatPrice(selectedBlockPrice)}
+                  {comingSoon
+                    ? FALLBACK_VALUE
+                    : formatPrice(selectedBlockPrice)}
                 </dd>
               </div>
               <div>
@@ -150,10 +153,10 @@ const COLLECTION2Panel = React.memo(
                   {comingSoon
                     ? "Coming soon"
                     : selectedNftInfo?.configured
-                    ? selectedNftInfo.minted
-                      ? "Minted"
-                      : "Available"
-                    : FALLBACK_VALUE}
+                      ? selectedNftInfo.minted
+                        ? "Minted"
+                        : "Available"
+                      : FALLBACK_VALUE}
                 </dd>
               </div>
             </dl>
@@ -209,7 +212,6 @@ const COLLECTION2Panel = React.memo(
 
         <SectionHeader label="Block prices" accent="#5ddcff" />
         <div className="collection-grid__cards">{renderBlockCardsGrid()}</div>
-        {renderChapterSwitcher?.()}
       </section>
     );
   },

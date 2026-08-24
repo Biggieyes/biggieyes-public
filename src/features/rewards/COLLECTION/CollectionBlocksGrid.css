@@ -1225,9 +1225,11 @@
 .collection-grid__chapter-switcher {
   display: grid;
   gap: 12px;
-  margin-top: 22px;
-  padding-top: 18px;
-  border-top: 1px solid rgba(255, 232, 0, 0.18);
+  margin: 16px 0 20px;
+  padding: 14px;
+  border: 1px solid rgba(255, 232, 0, 0.18);
+  border-radius: 8px;
+  background: rgba(6, 10, 18, 0.58);
 }
 
 .collection-grid__chapter-switcher-heading {
