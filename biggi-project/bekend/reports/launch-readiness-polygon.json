@@ -1,7 +1,7 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "createdAt": "2026-08-19T01:40:49.121Z",
+  "createdAt": "2026-08-24T17:02:51.805Z",
   "okForDeployOnly": true,
   "okForPublicLaunch": false,
   "checks": [
@@ -34,6 +34,11 @@
       "name": "Code exists: DISTRIBUTOR",
       "ok": true,
       "value": "0xCE892698159D8D799D5eF7f0dF0111487511fD22"
+    },
+    {
+      "name": "Code exists: COLLECTION_REWARDS",
+      "ok": true,
+      "value": "0x5d1273070c9133381C570009768621762F024FB8"
     },
     {
       "name": "Code exists: BIGGI_TOKEN",
@@ -207,7 +212,12 @@
       "value": true
     }
   ],
-  "warnings": [],
+  "warnings": [
+    {
+      "name": "BIGGI-paid ticket mints do not fund the native CollectionRewards pool",
+      "value": "Maintain the configured minimum POL balance before chapter activation."
+    }
+  ],
   "blockers": [
     {
       "name": "PAIR has no initial liquidity",
@@ -218,6 +228,25 @@
         "reserve0": "0",
         "reserve1": "0",
         "lpSupply": "0"
+      }
+    },
+    {
+      "name": "CollectionRewards native pool is below launch minimum",
+      "value": {
+        "address": "0x5d1273070c9133381C570009768621762F024FB8",
+        "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "distributor": "0xCE892698159D8D799D5eF7f0dF0111487511fD22",
+        "registry": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
+        "defaultMain": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+        "defaultMainEligible": true,
+        "orangeReward": "1000000000000000000000",
+        "blockReward": "3000000000000000000000",
+        "rainbowReward": "10000000000000000000000",
+        "balance": "0",
+        "maximumChapterLiability": "47000000000000000000000",
+        "minimumLaunchBalance": "47000000000000000000000",
+        "distributorTarget": "0x5d1273070c9133381C570009768621762F024FB8",
+        "distributorPending": "0"
       }
     },
     {
@@ -305,6 +334,22 @@
       "tokenSink": "0x35EE9523D20fFfe47c62dCcF01fA0136424A05e7",
       "tokenSinkBps": "10000",
       "tokenSinkDepositMode": true
+    },
+    "collectionRewards": {
+      "address": "0x5d1273070c9133381C570009768621762F024FB8",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "distributor": "0xCE892698159D8D799D5eF7f0dF0111487511fD22",
+      "registry": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
+      "defaultMain": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+      "defaultMainEligible": true,
+      "orangeReward": "1000000000000000000000",
+      "blockReward": "3000000000000000000000",
+      "rainbowReward": "10000000000000000000000",
+      "balance": "0",
+      "maximumChapterLiability": "47000000000000000000000",
+      "minimumLaunchBalance": "47000000000000000000000",
+      "distributorTarget": "0x5d1273070c9133381C570009768621762F024FB8",
+      "distributorPending": "0"
     },
     "mainMetadata": {
       "configuredCount": "550",

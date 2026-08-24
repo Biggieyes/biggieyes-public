@@ -1,402 +1,148 @@
-# BiggiCollectionRewards — Technical Specification
+# BiggiCollectionRewards - Technical Specification
 
 ## Source of truth
 
-- Contract: `BiggiCollectionRewards.sol`
-- Solidity version: `^0.8.24`
-- Base inheritance:
-  - `Ownable`
-  - `ReentrancyGuard`
+- Contract: `CORE/BiggiCollectionRewards.sol`
+- Solidity: `^0.8.24`
+- Live Polygon address: `0x5d1273070c9133381C570009768621762F024FB8`
+- Registry: `0x09f3728e8607e1B951A6396DcEE4EC134C5e4058`
+- Distributor: `0xCE892698159D8D799D5eF7f0dF0111487511fD22`
+- Default VRF collection: `0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4`
 
-## Purpose
+The contract pays fixed native POL rewards for ownership milestones in each
+eligible VRF collection. Public collections are intentionally excluded.
 
-`BiggiCollectionRewards` is a native-token reward distribution contract for BiggiEyes NFT collections.
+## Live reward amounts
 
-The contract distributes fixed POL rewards for collection completion milestones.
+- Orange: `1000 POL`
+- Block: `3000 POL`
+- Rainbow: `10000 POL`
 
-The system supports:
-- multiple NFT collections
-- optional registry-based collection validation
-- per-collection accounting
-- one-time reward claims
-- capped reward winners
-- direct native-token payouts
+The owner can change future reward amounts with `setRewardsAmounts(...)`.
+Claims already settled are not recalculated.
 
----
+Maximum liability per collection is:
 
-## Reward Types
-
-## 1. Orange Reward
-
-Reward for completing all background variants for a specific `mainId` within a block.
-
-### Reward amount
-
-- `2000 POL`
-
-### Eligibility
-
-Caller must:
-- own all background variants for a specific `mainId`
-- satisfy collection eligibility validation
-
-### Limits
-
-- maximum 10 orange rewards per collection
-- each `mainId` can only be rewarded once per collection
-
-### Claim function
-
-```solidity
-claimOrangeRewardFor(address collection, uint256 mainId)
+```text
+10 * 1000 + 9 * 3000 + 1 * 10000 = 47000 POL
 ```
 
----
+Five configured chapters therefore have a maximum aggregate liability of
+`235000 POL` before any claims are settled.
 
-## 2. Block Reward
+## Claim rules
 
-Reward for completing all ten main IDs inside a specific block.
+### Orange
 
-### Reward amount
+`claimOrangeRewardFor(collection, mainId)` accepts `mainId` 1-10. The caller
+must currently own all ten background variants for that Main ID in block 1.
+Only one payout exists for each Main ID and at most ten payouts exist per VRF
+collection.
 
-- `5000 POL`
+### Block
 
-### Eligibility
+`claimBlockRewardFor(collection, blockIdx)` accepts blocks 1-9. The caller must
+currently own at least one minted NFT for every one of the ten distinct Main
+IDs assigned to the block. Only one payout exists for each block and at most
+nine payouts exist per VRF collection.
 
-Caller must:
-- own all ten NFTs within the target block
-- satisfy collection eligibility validation
+### Rainbow
 
-### Limits
+`claimRainbowRewardFor(collection)` requires the caller to currently own all
+ten distinct Main IDs assigned to block 10. There is one Rainbow payout per
+VRF collection.
 
-- maximum 9 block rewards per collection
-- each block can only be rewarded once per collection
+The legacy `claimOrangeReward`, `claimBlockReward`, and `claimRainbowReward`
+entrypoints always use `defaultMain`. Multi-chapter clients must use the
+explicit `*For` entrypoints.
 
-### Claim function
+## Eligibility
 
-```solidity
-claimBlockRewardFor(address collection, uint16 blockIdx)
-```
+`defaultMain` is always eligible. When `registry` is configured, any additional
+collection must satisfy `BiggiSeriesRegistry.isCollectionRewardsCollection`.
+The registry returns true only for a chapter's VRF collection when its
+CollectionRewards flag is enabled. A Public collection is not eligible.
 
----
-
-## 3. Rainbow Reward
-
-Global completion reward for a collection.
-
-### Reward amount
-
-- `20000 POL`
-
-### Eligibility
-
-Caller must:
-- satisfy full collection completion logic defined by the connected collection contract
-- satisfy collection eligibility validation
-
-### Limits
-
-- can only be claimed once globally per collection
-
-### Claim function
+The selected collection must implement:
 
 ```solidity
-claimRainbowRewardFor(address collection)
+hasAllTenMainIdsInBlock(address owner, uint16 blockIdx)
+hasAllBackgroundsForMainIdInBlock(
+    address owner,
+    uint16 blockIdx,
+    uint256 mainId
+)
 ```
 
----
+Unsupported collection interfaces are rejected as `InvalidCollection`.
 
-# Core State Variables
+## Claim safety
 
-## Administrative
+- Every claim entrypoint is `nonReentrant`.
+- Eligibility is checked against current on-chain ownership.
+- Global paid state is written before the native payout call.
+- A failed payout reverts the complete state transition.
+- An underfunded pool reverts with `NotEnoughBalance`.
+- Preview helpers return `ok` plus a reason code without sending a transaction.
 
-```solidity
-address public distributor;
-address public registry;
-address public defaultMain;
+## Funding
+
+`depositMintShareFromDistributor()` and `receiveMintShare()` both require the
+configured distributor as caller and a non-zero value. Plain native transfers
+through `receive()` are also accepted.
+
+For native TicketHub mints, TicketHub sends 60% to the shared distributor and
+the distributor sends 25% of that amount here. The effective share is 15% of
+the native ticket price. At the live starting price of `500 POL`, the live
+`10033` price factor, and 500 native sales, the projected inflow is about
+`95292.1393 POL`; one chapter's `47000 POL` liability is reached after 341
+native sales.
+
+BIGGI-paid ticket mints do not fund this native POL pool. Before activating a
+chapter, operations must therefore prefund its outstanding claim liability or
+enforce and monitor a sufficient native-mint funding threshold. Failed native
+forwarding is tracked in the distributor's `pending(CollectionRewards)`
+balance and can be retried.
+
+The launch preflight defaults
+`COLLECTION_REWARDS_MIN_NATIVE_BALANCE_WEI` to one chapter's maximum live
+liability. Override it only with a documented funding policy and explicit risk
+acceptance.
+
+## State isolation
+
+These values are keyed by VRF collection:
+
+- `orangeWinnersCount`
+- `blockWinnersCount`
+- `rainbowRewardClaimedGlobal`
+- `orangeMainIdPaid`
+- `blockPaid`
+- `userClaimedBlock`
+
+A claim in one chapter cannot mark the same milestone paid in another chapter.
+
+## Administration
+
+Owner-only methods:
+
+- `setOwner`
+- `setMain`
+- `setRegistry` / `clearRegistry`
+- `setDistributor`
+- `setRewardsAmounts`
+
+The contract has no pause switch and no owner withdrawal function. Operational
+changes to reward amounts, registry, distributor, or ownership must therefore
+be monitored directly from on-chain state.
+
+## Verification
+
+Run the read-only Polygon audit:
+
+```bash
+npm run audit:collection-rewards:polygon
 ```
 
-### distributor
-
-Authorized funding address for mint-share deposits.
-
-### registry
-
-Optional collection registry used for eligibility validation.
-
-### defaultMain
-
-Fallback collection used by legacy/internal flows.
-
----
-
-# Reward Configuration
-
-```solidity
-uint256 public orangeReward  = 2000 ether;
-uint256 public blockReward   = 5000 ether;
-uint256 public rainbowReward = 20000 ether;
-```
-
-All rewards are denominated in native chain currency.
-
----
-
-# Claim Tracking
-
-## Orange reward tracking
-
-```solidity
-mapping(address => mapping(uint256 => bool)) public orangeMainIdPaid;
-```
-
-Tracks rewarded `mainId` values per collection.
-
----
-
-## Block reward tracking
-
-```solidity
-mapping(address => mapping(uint16 => bool)) public blockPaid;
-```
-
-Tracks rewarded blocks per collection.
-
----
-
-## User block claims
-
-```solidity
-mapping(address => mapping(address => mapping(uint16 => bool))) public userClaimedBlock;
-```
-
-Tracks whether a user already claimed a specific block reward.
-
----
-
-## Winner counters
-
-```solidity
-mapping(address => uint8) public orangeWinnersCount;
-mapping(address => uint8) public blockWinnersCount;
-```
-
-Per-collection reward caps.
-
----
-
-## Rainbow completion tracking
-
-```solidity
-mapping(address => bool) public rainbowRewardClaimedGlobal;
-```
-
-Tracks whether rainbow reward was already claimed for a collection.
-
----
-
-# Funding Model
-
-The contract stores and distributes native POL.
-
-## Funding entrypoints
-
-### Distributor-only funding
-
-```solidity
-depositMintShareFromDistributor()
-```
-
-Restrictions:
-- callable only by configured distributor
-- payable
-- amount must be non-zero
-
----
-
-### Public funding
-
-```solidity
-receiveMintShare()
-```
-
-Restrictions:
-- payable
-- amount must be non-zero
-
----
-
-# Eligibility System
-
-The contract uses:
-
-```solidity
-BiggiCollectionEligibilityLib
-```
-
-Eligibility can operate in two modes:
-
-## Registry mode
-
-If registry is configured:
-- collection must be validated through registry logic
-
-## Direct mode
-
-If registry is cleared:
-- contract falls back to direct collection validation
-
----
-
-# External Collection Interface
-
-The contract interacts with collection contracts through:
-
-```solidity
-interface IBiggiEyesMainView
-```
-
-Required external functions:
-
-```solidity
-exists(uint256 tokenId)
-hasAllTenMainIdsInBlock(address owner, uint16 blk)
-hasAllBackgroundsForMainIdInBlock(address owner, uint16 blk, uint256 mainId)
-```
-
----
-
-# Administrative Functions
-
-## Distributor management
-
-```solidity
-setDistributor(address newDistributor)
-```
-
----
-
-## Registry management
-
-```solidity
-setRegistry(address newRegistry)
-clearRegistry()
-```
-
----
-
-## Main collection management
-
-```solidity
-setMain(address newMain)
-```
-
----
-
-# Read Functions
-
-## Reward previews and eligibility
-
-```solidity
-canClaimOrangeFor(...)
-canClaimBlockFor(...)
-canClaimRainbowFor(...)
-```
-
-Used by frontend and reader contracts.
-
----
-
-## Snapshot helper
-
-```solidity
-rewardsSnapshot()
-```
-
-Returns current reward configuration and counters.
-
----
-
-# Security Properties
-
-## Reentrancy protection
-
-All payout flows are protected with:
-```solidity
-ReentrancyGuard
-```
-
----
-
-## Ownership protection
-
-Administrative operations are restricted through:
-```solidity
-Ownable
-```
-
----
-
-## Native transfer protection
-
-Failed native payouts revert with:
-```solidity
-PaymentFailed()
-```
-
----
-
-## Events
-
-```solidity
-OrangeRewardClaimed
-BlockRewardClaimed
-RainbowRewardClaimed
-DistributorSet
-RegistrySet
-MainSet
-MintShareReceived
-```
-
----
-
-## Error Types
-
-```solidity
-NotEnoughBalance
-AlreadyClaimed
-InvalidIndex
-PaymentFailed
-ZeroAddress
-NotDistributor
-AmountZero
-NotEligible
-InvalidCollection
-```
-
----
-
-## Mainnet Notes
-
-## Deployment references
-
-### addresses.json
-
-- COLLECTION_REWARDS:
-  `0xa708E016dEC7B6a5b3da640c0d995895979cE332`
-
-- COLLECTION_REWARDS_MAIN_ADAPTER:
-  `0x8984EFc3a4916e5C59D71480F4931326cfF7e552`
-
-- COLLECTION_REWARDS_READER:
-  `0x1A1521465B4828726e2025C6f8351587A15903Cb`
-
----
-
-### addresses.master.json
-
-- COLLECTION_REWARDS:
-  `0xC9481A6935698050E569AcD70078DAD8303871CF`
-
-- REGISTRY:
-  `0x6D31CEaaa0588A62fFb99eCa3Bde0F22Bd7DBb7B`
+The JSON result is written to
+`reports/collection-rewards-claims-audit-polygon.json`.

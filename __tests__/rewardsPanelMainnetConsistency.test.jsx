@@ -27,14 +27,14 @@ describe("rewards panel mainnet consistency", () => {
           formatNativeDisplay(value, digits)
         }
         formatAddress={(addr) => (isRealAddress(addr) ? "live" : "--")}
-        rewardPool="92339.3422"
         collectionBalance={0}
       />,
     );
 
     expect(container.textContent).toContain("1 POL");
     expect(container.textContent).toContain("2.5 POL");
-    expect(container.textContent).toContain("92,339.34 POL");
+    expect(container.textContent).toContain("Contract balance");
+    expect(container.textContent).not.toContain("Native pool");
     expect(container.textContent).not.toMatch(/e\+29/i);
     expect(container.textContent).not.toMatch(/POL POL/);
     expect(isRealAddress(ZERO_ADDRESS)).toBe(false);
@@ -51,5 +51,22 @@ describe("rewards panel mainnet consistency", () => {
     expect(screen.getByText("WEEKLY BIGGI")).toBeTruthy();
     expect(container.textContent).toContain("1 BIGGI");
     expect(container.textContent).not.toMatch(/e\+/i);
+  });
+
+  it("does not reuse Original reward artwork for future chapters", () => {
+    const { container } = render(
+      <COLLECTIONREWARDSSection
+        chapters={[
+          { chapterId: 1, displayName: "Original" },
+          { chapterId: 2, displayName: "Universe" },
+        ]}
+        selectedChapterId={2}
+        rewardArtworkReady={false}
+      />,
+    );
+
+    expect(container.textContent).toContain("Universe");
+    expect(container.textContent).toContain("Artwork soon");
+    expect(container.querySelector(".rewards-panel__claim-plate img")).toBeNull();
   });
 });

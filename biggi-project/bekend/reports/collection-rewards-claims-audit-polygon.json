@@ -1,0 +1,567 @@
+{
+  "network": "polygon",
+  "chainId": 137,
+  "blockNumber": 92590349,
+  "checkedAt": "2026-08-24T16:55:55.387Z",
+  "checks": [
+    {
+      "label": "Polygon chainId",
+      "ok": true,
+      "actual": "137",
+      "expected": "137"
+    },
+    {
+      "label": "CollectionRewards owner",
+      "ok": true,
+      "actual": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "expected": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2"
+    },
+    {
+      "label": "CollectionRewards distributor",
+      "ok": true,
+      "actual": "0xCE892698159D8D799D5eF7f0dF0111487511fD22",
+      "expected": "0xCE892698159D8D799D5eF7f0dF0111487511fD22"
+    },
+    {
+      "label": "CollectionRewards registry",
+      "ok": true,
+      "actual": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
+      "expected": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058"
+    },
+    {
+      "label": "CollectionRewards default main",
+      "ok": true,
+      "actual": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+      "expected": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4"
+    },
+    {
+      "label": "Orange reward",
+      "ok": true,
+      "actual": "1000.0",
+      "expected": "1000 POL"
+    },
+    {
+      "label": "Block reward",
+      "ok": true,
+      "actual": "3000.0",
+      "expected": "3000 POL"
+    },
+    {
+      "label": "Rainbow reward",
+      "ok": true,
+      "actual": "10000.0",
+      "expected": "10000 POL"
+    },
+    {
+      "label": "Distributor owner",
+      "ok": true,
+      "actual": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "expected": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2"
+    },
+    {
+      "label": "Distributor unpaused",
+      "ok": true,
+      "actual": "false",
+      "expected": "false"
+    },
+    {
+      "label": "Distributor registry",
+      "ok": true,
+      "actual": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
+      "expected": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058"
+    },
+    {
+      "label": "Distributor rewards target",
+      "ok": true,
+      "actual": "0x5d1273070c9133381C570009768621762F024FB8",
+      "expected": "0x5d1273070c9133381C570009768621762F024FB8"
+    },
+    {
+      "label": "TicketHub distributor whitelist",
+      "ok": true,
+      "actual": "true",
+      "expected": "true"
+    },
+    {
+      "label": "TicketHub unpaused",
+      "ok": true,
+      "actual": "false",
+      "expected": "false"
+    },
+    {
+      "label": "TicketHub BIGGI token",
+      "ok": true,
+      "actual": "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
+      "expected": "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD"
+    },
+    {
+      "label": "Chapter 1 VRF eligible",
+      "ok": true,
+      "actual": "true/true",
+      "expected": "true/true"
+    },
+    {
+      "label": "Chapter 1 Public excluded",
+      "ok": true,
+      "actual": "false/false",
+      "expected": "false/false"
+    },
+    {
+      "label": "Chapter 1 TokenRewards eligible",
+      "ok": true,
+      "actual": "true",
+      "expected": "true"
+    },
+    {
+      "label": "Chapter 1 registry binding",
+      "ok": true,
+      "actual": "1",
+      "expected": "1"
+    },
+    {
+      "label": "Chapter 1 VRF code",
+      "ok": true,
+      "actual": "19280 bytes",
+      "expected": "deployed bytecode"
+    },
+    {
+      "label": "Chapter 1 Public code",
+      "ok": true,
+      "actual": "17029 bytes",
+      "expected": "deployed bytecode"
+    },
+    {
+      "label": "Chapter 1 orange count",
+      "ok": true,
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "label": "Chapter 1 block count",
+      "ok": true,
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "label": "Chapter 2 VRF eligible",
+      "ok": true,
+      "actual": "true/true",
+      "expected": "true/true"
+    },
+    {
+      "label": "Chapter 2 Public excluded",
+      "ok": true,
+      "actual": "false/false",
+      "expected": "false/false"
+    },
+    {
+      "label": "Chapter 2 TokenRewards eligible",
+      "ok": true,
+      "actual": "true",
+      "expected": "true"
+    },
+    {
+      "label": "Chapter 2 registry binding",
+      "ok": true,
+      "actual": "2",
+      "expected": "2"
+    },
+    {
+      "label": "Chapter 2 VRF code",
+      "ok": true,
+      "actual": "19334 bytes",
+      "expected": "deployed bytecode"
+    },
+    {
+      "label": "Chapter 2 Public code",
+      "ok": true,
+      "actual": "17029 bytes",
+      "expected": "deployed bytecode"
+    },
+    {
+      "label": "Chapter 2 orange count",
+      "ok": true,
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "label": "Chapter 2 block count",
+      "ok": true,
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "label": "Chapter 3 VRF eligible",
+      "ok": true,
+      "actual": "true/true",
+      "expected": "true/true"
+    },
+    {
+      "label": "Chapter 3 Public excluded",
+      "ok": true,
+      "actual": "false/false",
+      "expected": "false/false"
+    },
+    {
+      "label": "Chapter 3 TokenRewards eligible",
+      "ok": true,
+      "actual": "true",
+      "expected": "true"
+    },
+    {
+      "label": "Chapter 3 registry binding",
+      "ok": true,
+      "actual": "3",
+      "expected": "3"
+    },
+    {
+      "label": "Chapter 3 VRF code",
+      "ok": true,
+      "actual": "19334 bytes",
+      "expected": "deployed bytecode"
+    },
+    {
+      "label": "Chapter 3 Public code",
+      "ok": true,
+      "actual": "17029 bytes",
+      "expected": "deployed bytecode"
+    },
+    {
+      "label": "Chapter 3 orange count",
+      "ok": true,
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "label": "Chapter 3 block count",
+      "ok": true,
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "label": "Chapter 4 VRF eligible",
+      "ok": true,
+      "actual": "true/true",
+      "expected": "true/true"
+    },
+    {
+      "label": "Chapter 4 Public excluded",
+      "ok": true,
+      "actual": "false/false",
+      "expected": "false/false"
+    },
+    {
+      "label": "Chapter 4 TokenRewards eligible",
+      "ok": true,
+      "actual": "true",
+      "expected": "true"
+    },
+    {
+      "label": "Chapter 4 registry binding",
+      "ok": true,
+      "actual": "4",
+      "expected": "4"
+    },
+    {
+      "label": "Chapter 4 VRF code",
+      "ok": true,
+      "actual": "19334 bytes",
+      "expected": "deployed bytecode"
+    },
+    {
+      "label": "Chapter 4 Public code",
+      "ok": true,
+      "actual": "17029 bytes",
+      "expected": "deployed bytecode"
+    },
+    {
+      "label": "Chapter 4 orange count",
+      "ok": true,
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "label": "Chapter 4 block count",
+      "ok": true,
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "label": "Chapter 5 VRF eligible",
+      "ok": true,
+      "actual": "true/true",
+      "expected": "true/true"
+    },
+    {
+      "label": "Chapter 5 Public excluded",
+      "ok": true,
+      "actual": "false/false",
+      "expected": "false/false"
+    },
+    {
+      "label": "Chapter 5 TokenRewards eligible",
+      "ok": true,
+      "actual": "true",
+      "expected": "true"
+    },
+    {
+      "label": "Chapter 5 registry binding",
+      "ok": true,
+      "actual": "5",
+      "expected": "5"
+    },
+    {
+      "label": "Chapter 5 VRF code",
+      "ok": true,
+      "actual": "19334 bytes",
+      "expected": "deployed bytecode"
+    },
+    {
+      "label": "Chapter 5 Public code",
+      "ok": true,
+      "actual": "17029 bytes",
+      "expected": "deployed bytecode"
+    },
+    {
+      "label": "Chapter 5 orange count",
+      "ok": true,
+      "actual": "0",
+      "expected": "0"
+    },
+    {
+      "label": "Chapter 5 block count",
+      "ok": true,
+      "actual": "0",
+      "expected": "0"
+    }
+  ],
+  "warnings": [
+    {
+      "label": "CollectionRewards pool is not fully prefunded",
+      "currentPOL": "0.0",
+      "outstandingLiabilityPOL": "235000.0",
+      "note": "Claims remain fail-closed until sufficient mint revenue reaches the pool."
+    },
+    {
+      "label": "BIGGI-paid ticket mints do not fund the native CollectionRewards pool",
+      "note": "Before each chapter activation, prefund its outstanding POL liability or enforce a monitored native-mint funding threshold."
+    }
+  ],
+  "chapters": [
+    {
+      "chapterId": 1,
+      "name": "BIGGI MASTER Core Launch",
+      "vrfCollection": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+      "publicCollection": "0xe56cC0657A89daf10994204eD745985a61b0E36F",
+      "active": false,
+      "saleCap": 500,
+      "distributorWhitelist": {
+        "vrf": true,
+        "public": true
+      },
+      "receivedPOL": {
+        "chapter": "0.0",
+        "vrf": "0.0",
+        "public": "0.0"
+      },
+      "paid": {
+        "orange": 0,
+        "blocks": 0,
+        "rainbow": false
+      },
+      "ownerPreview": {
+        "orangeMainId1": {
+          "ok": false,
+          "reason": 5
+        },
+        "block1": {
+          "ok": false,
+          "reason": 6
+        },
+        "rainbow": {
+          "ok": false,
+          "reason": 3
+        }
+      },
+      "outstandingLiabilityPOL": "47000.0"
+    },
+    {
+      "chapterId": 2,
+      "name": "BIGGI Universe",
+      "vrfCollection": "0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036",
+      "publicCollection": "0x7EaB23497085cfF00Cb2E9809b2Af0e717187356",
+      "active": false,
+      "saleCap": 500,
+      "distributorWhitelist": {
+        "vrf": false,
+        "public": true
+      },
+      "receivedPOL": {
+        "chapter": "0.0",
+        "vrf": "0.0",
+        "public": "0.0"
+      },
+      "paid": {
+        "orange": 0,
+        "blocks": 0,
+        "rainbow": false
+      },
+      "ownerPreview": {
+        "orangeMainId1": {
+          "ok": false,
+          "reason": 5
+        },
+        "block1": {
+          "ok": false,
+          "reason": 6
+        },
+        "rainbow": {
+          "ok": false,
+          "reason": 3
+        }
+      },
+      "outstandingLiabilityPOL": "47000.0"
+    },
+    {
+      "chapterId": 3,
+      "name": "BIGGI Mutant",
+      "vrfCollection": "0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2",
+      "publicCollection": "0xda6A6f45053796d0f5edB965fe3FA47B9a35460c",
+      "active": false,
+      "saleCap": 500,
+      "distributorWhitelist": {
+        "vrf": false,
+        "public": true
+      },
+      "receivedPOL": {
+        "chapter": "0.0",
+        "vrf": "0.0",
+        "public": "0.0"
+      },
+      "paid": {
+        "orange": 0,
+        "blocks": 0,
+        "rainbow": false
+      },
+      "ownerPreview": {
+        "orangeMainId1": {
+          "ok": false,
+          "reason": 5
+        },
+        "block1": {
+          "ok": false,
+          "reason": 6
+        },
+        "rainbow": {
+          "ok": false,
+          "reason": 3
+        }
+      },
+      "outstandingLiabilityPOL": "47000.0"
+    },
+    {
+      "chapterId": 4,
+      "name": "BIGGI Apocalipse",
+      "vrfCollection": "0x8E862D9071120D69517D3F7Db0c101175E911115",
+      "publicCollection": "0xecE7D61AB3FB2229C39B48380D704183532fE960",
+      "active": false,
+      "saleCap": 500,
+      "distributorWhitelist": {
+        "vrf": false,
+        "public": true
+      },
+      "receivedPOL": {
+        "chapter": "0.0",
+        "vrf": "0.0",
+        "public": "0.0"
+      },
+      "paid": {
+        "orange": 0,
+        "blocks": 0,
+        "rainbow": false
+      },
+      "ownerPreview": {
+        "orangeMainId1": {
+          "ok": false,
+          "reason": 5
+        },
+        "block1": {
+          "ok": false,
+          "reason": 6
+        },
+        "rainbow": {
+          "ok": false,
+          "reason": 3
+        }
+      },
+      "outstandingLiabilityPOL": "47000.0"
+    },
+    {
+      "chapterId": 5,
+      "name": "BIGGI Super Hero",
+      "vrfCollection": "0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38",
+      "publicCollection": "0x99f049279BC545469F989d8f06CD915ef4B6f1d4",
+      "active": false,
+      "saleCap": 500,
+      "distributorWhitelist": {
+        "vrf": false,
+        "public": true
+      },
+      "receivedPOL": {
+        "chapter": "0.0",
+        "vrf": "0.0",
+        "public": "0.0"
+      },
+      "paid": {
+        "orange": 0,
+        "blocks": 0,
+        "rainbow": false
+      },
+      "ownerPreview": {
+        "orangeMainId1": {
+          "ok": false,
+          "reason": 5
+        },
+        "block1": {
+          "ok": false,
+          "reason": 6
+        },
+        "rainbow": {
+          "ok": false,
+          "reason": 3
+        }
+      },
+      "outstandingLiabilityPOL": "47000.0"
+    }
+  ],
+  "rewards": {
+    "address": "0x5d1273070c9133381C570009768621762F024FB8",
+    "balancePOL": "0.0",
+    "orangeRewardPOL": "1000.0",
+    "blockRewardPOL": "3000.0",
+    "rainbowRewardPOL": "10000.0",
+    "maximumLiabilityPerChapterPOL": "47000.0",
+    "outstandingLiabilityAllChaptersPOL": "235000.0",
+    "outstandingLiabilityActiveChaptersPOL": "0.0"
+  },
+  "distributor": {
+    "address": "0xCE892698159D8D799D5eF7f0dF0111487511fD22",
+    "balancePOL": "0.0",
+    "pendingRewardsPOL": "0.0",
+    "totalPendingPOL": "0.0",
+    "totalReceivedPOL": "0.0"
+  },
+  "fundingModel": {
+    "currentTicketPricePOL": "500.0",
+    "priceFactorBps": "10033",
+    "ticketNativeShareToDistributorBps": 6000,
+    "distributorShareToCollectionRewardsBps": 2500,
+    "effectiveNativeMintShareToCollectionRewardsBps": 1500,
+    "projectedNativeSales": 500,
+    "projectedGrossPOL": "635280.928774928937197257",
+    "projectedCollectionRewardsPOL": "95292.139316239340579355",
+    "projectedFinalTicketPricePOL": "2596.427064957265492499",
+    "nativeMintsToFundOneChapterLiability": 341,
+    "biggiTicketMintFundsNativeRewardsPool": false
+  }
+}

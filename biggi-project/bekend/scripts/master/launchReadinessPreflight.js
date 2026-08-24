@@ -92,6 +92,7 @@ async function main() {
     "TICKET_HUB",
     "VRF_ROUTER",
     "DISTRIBUTOR",
+    "COLLECTION_REWARDS",
     "BIGGI_TOKEN",
     "RESERVE",
     "TREASURY",
@@ -186,6 +187,20 @@ async function main() {
     "function keystoneForwarder() view returns (address)",
     "function expectedWorkflowId() view returns (bytes32)",
     "function expectedWorkflowOwner() view returns (address)",
+  ];
+  const collectionRewardsAbi = [
+    "function owner() view returns (address)",
+    "function distributor() view returns (address)",
+    "function registry() view returns (address)",
+    "function defaultMain() view returns (address)",
+    "function orangeReward() view returns (uint256)",
+    "function blockReward() view returns (uint256)",
+    "function rainbowReward() view returns (uint256)",
+    "function isEligibleCollection(address) view returns (bool)",
+  ];
+  const distributorRewardsAbi = [
+    "function collectionRewards() view returns (address)",
+    "function pending(address) view returns (uint256)",
   ];
 
   if (await codeExists(A.PAIR)) {
@@ -340,6 +355,99 @@ async function main() {
     if (getAddress(tokenSink) !== getAddress(A.TREASURY) || !tokenSinkDepositMode || !tokenSinkBps.eq(10_000)) {
       block("TicketHub BIGGI token sink is not routed fully to Treasury deposit mode", report.values.ticketHub);
     }
+  }
+
+  if (await codeExists(A.COLLECTION_REWARDS)) {
+    const collectionRewards = await ethers.getContractAt(
+      collectionRewardsAbi,
+      A.COLLECTION_REWARDS
+    );
+    const [
+      owner,
+      distributor,
+      registry,
+      defaultMain,
+      orangeReward,
+      blockReward,
+      rainbowReward,
+      defaultMainEligible,
+      balance,
+    ] = await Promise.all([
+      collectionRewards.owner(),
+      collectionRewards.distributor(),
+      collectionRewards.registry(),
+      collectionRewards.defaultMain(),
+      collectionRewards.orangeReward(),
+      collectionRewards.blockReward(),
+      collectionRewards.rainbowReward(),
+      collectionRewards.isEligibleCollection(A.MAIN),
+      ethers.provider.getBalance(A.COLLECTION_REWARDS),
+    ]);
+    const maximumChapterLiability = orangeReward
+      .mul(10)
+      .add(blockReward.mul(9))
+      .add(rainbowReward);
+    const minimumBalance = ethers.BigNumber.from(
+      env(
+        "COLLECTION_REWARDS_MIN_NATIVE_BALANCE_WEI",
+        maximumChapterLiability.toString()
+      )
+    );
+    report.values.collectionRewards = {
+      address: A.COLLECTION_REWARDS,
+      owner,
+      distributor,
+      registry,
+      defaultMain,
+      defaultMainEligible,
+      orangeReward: fmt(orangeReward),
+      blockReward: fmt(blockReward),
+      rainbowReward: fmt(rainbowReward),
+      balance: fmt(balance),
+      maximumChapterLiability: fmt(maximumChapterLiability),
+      minimumLaunchBalance: fmt(minimumBalance),
+    };
+    if (isAddress(expectedOwner) && getAddress(owner) !== expectedOwner) {
+      block("CollectionRewards owner mismatch", report.values.collectionRewards);
+    }
+    if (getAddress(distributor) !== getAddress(A.DISTRIBUTOR)) {
+      block("CollectionRewards distributor mismatch", report.values.collectionRewards);
+    }
+    if (getAddress(registry) !== getAddress(A.REGISTRY)) {
+      block("CollectionRewards registry mismatch", report.values.collectionRewards);
+    }
+    if (getAddress(defaultMain) !== getAddress(A.MAIN) || !defaultMainEligible) {
+      block("CollectionRewards default VRF collection mismatch", report.values.collectionRewards);
+    }
+    if (balance.lt(minimumBalance)) {
+      block("CollectionRewards native pool is below launch minimum", report.values.collectionRewards);
+    } else {
+      pass("CollectionRewards native pool covers launch minimum", report.values.collectionRewards);
+    }
+
+    if (await codeExists(A.DISTRIBUTOR)) {
+      const rewardsDistributor = await ethers.getContractAt(
+        distributorRewardsAbi,
+        A.DISTRIBUTOR
+      );
+      const [target, pending] = await Promise.all([
+        rewardsDistributor.collectionRewards(),
+        rewardsDistributor.pending(A.COLLECTION_REWARDS),
+      ]);
+      report.values.collectionRewards.distributorTarget = target;
+      report.values.collectionRewards.distributorPending = fmt(pending);
+      if (getAddress(target) !== getAddress(A.COLLECTION_REWARDS)) {
+        block("Distributor CollectionRewards target mismatch", report.values.collectionRewards);
+      }
+      if (!pending.eq(0)) {
+        block("Distributor has pending CollectionRewards funding", report.values.collectionRewards);
+      }
+    }
+
+    warn(
+      "BIGGI-paid ticket mints do not fund the native CollectionRewards pool",
+      "Maintain the configured minimum POL balance before chapter activation."
+    );
   }
 
   if (await codeExists(A.MAIN)) {

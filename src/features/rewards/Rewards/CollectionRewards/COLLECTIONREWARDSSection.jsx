@@ -20,6 +20,7 @@ const CLAIM_REASON_LABELS = {
     5: "Already claimed",
     6: "Need full block",
     7: "Pool low",
+    8: "Invalid collection",
   },
   orange: {
     1: "Reward off",
@@ -28,12 +29,14 @@ const CLAIM_REASON_LABELS = {
     4: "Paid",
     5: "Need orange set",
     6: "Pool low",
+    8: "Invalid collection",
   },
   rainbow: {
     1: "Reward off",
     2: "Paid",
     3: "Need block 10",
     4: "Pool low",
+    5: "Invalid collection",
   },
 };
 
@@ -166,7 +169,6 @@ function COLLECTIONREWARDSSection({
   statusRows = [],
   formatDecimal,
   formatNativeAmount,
-  rewardPool = null,
   collectionBalance = null,
   blockPaid = [],
   blockClaimability = [],
@@ -174,6 +176,10 @@ function COLLECTIONREWARDSSection({
   orangeClaimability = [],
   rainbowClaimed = false,
   rainbowClaimability = { ok: null, reason: null, resolved: false },
+  chapters = [],
+  selectedChapterId = null,
+  onChapterChange,
+  rewardArtworkReady = true,
   canClaimCOLLECTION = false,
   claimState = { block: null, orange: null, rainbow: false },
   onClaimBlockReward,
@@ -243,13 +249,6 @@ function COLLECTIONREWARDSSection({
         : WAITING_VALUE,
     },
     {
-      label: "Native pool",
-      value:
-        rewardPool != null
-          ? formatNativeValue(rewardPool, 2)
-          : WAITING_VALUE,
-    },
-    {
       label: "Contract balance",
       value:
         collectionBalance != null
@@ -274,6 +273,28 @@ function COLLECTIONREWARDSSection({
 
   return (
     <section className="rewards-panel__section rewards-panel__section--collection">
+      {chapters.length > 1 && (
+        <div
+          className="rewards-panel__chapter-switcher"
+          aria-label="Reward chapter"
+        >
+          {chapters.map((chapter) => {
+            const active = chapter.chapterId === selectedChapterId;
+            return (
+              <button
+                type="button"
+                key={chapter.chapterId}
+                className={`rewards-panel__chapter-button${active ? " is-active" : ""}`}
+                aria-pressed={active}
+                onClick={() => onChapterChange?.(chapter.chapterId)}
+              >
+                <span>{chapter.displayName || chapter.seriesName}</span>
+                <small>Chapter {chapter.chapterId}</small>
+              </button>
+            );
+          })}
+        </div>
+      )}
       <div className="collection-claims-stack">
         <div className="collection-claims-top">
           <article className="biggi-card biggi-card--y rewards-panel__card rewards-panel__card--summary">
@@ -325,8 +346,8 @@ function COLLECTIONREWARDSSection({
                 >
                   <div className="rewards-panel__claim-plate">
                     {renderThumbnailPlate(
-                      rainbowThumbnails(),
-                      "Rainbow preview",
+                      rewardArtworkReady ? rainbowThumbnails() : [],
+                      rewardArtworkReady ? "Rainbow preview" : "Artwork soon",
                     )}
                   </div>
                   <div className="rewards-panel__claim-info">
@@ -382,7 +403,9 @@ function COLLECTIONREWARDSSection({
                       canClaim: canClaimCOLLECTION,
                       claimability,
                     });
-                    const blockThumbs = blockThumbnailsForId(blockIdx);
+                    const blockThumbs = rewardArtworkReady
+                      ? blockThumbnailsForId(blockIdx)
+                      : [];
                     return (
                       <div
                         key={`block-${blockIdx}`}
@@ -391,7 +414,9 @@ function COLLECTIONREWARDSSection({
                         <div className="rewards-panel__claim-plate">
                           {renderThumbnailPlate(
                             blockThumbs,
-                            `Block ${blockIdx}`,
+                            rewardArtworkReady
+                              ? `Block ${blockIdx}`
+                              : "Artwork soon",
                           )}
                         </div>
                         <div className="rewards-panel__claim-info">
@@ -441,7 +466,9 @@ function COLLECTIONREWARDSSection({
                       canClaim: canClaimCOLLECTION,
                       claimability,
                     });
-                    const orangeThumbs = orangeThumbnailsForId(mainId);
+                    const orangeThumbs = rewardArtworkReady
+                      ? orangeThumbnailsForId(mainId)
+                      : [];
                     return (
                       <div
                         key={`orange-${mainId}`}
@@ -450,7 +477,9 @@ function COLLECTIONREWARDSSection({
                         <div className="rewards-panel__claim-plate">
                           {renderThumbnailPlate(
                             orangeThumbs,
-                            `Main ID ${mainId}`,
+                            rewardArtworkReady
+                              ? `Main ID ${mainId}`
+                              : "Artwork soon",
                           )}
                         </div>
                         <div className="rewards-panel__claim-info">

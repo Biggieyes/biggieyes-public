@@ -20,12 +20,13 @@ const withGasBuffer = (gas, pct = 120) => {
 };
 
 export default class COLLECTIONREWARDSService {
-  constructor(address, provider) {
+  constructor(address, provider, collectionAddress = null) {
     if (!address) throw new Error("Contract address required");
     if (!provider) throw new Error("Provider required");
     this.address = address;
     this.provider = provider;
     this.contract = new Contract(address, ABI, provider);
+    this.collectionAddress = collectionAddress;
     this._signerConnected = false;
   }
 
@@ -36,40 +37,101 @@ export default class COLLECTIONREWARDSService {
     this._signerConnected = true;
   }
 
-  async blockPaid(idx) {
-    return await this.contract.blockPaid(idx);
+  setCollection(collectionAddress) {
+    if (!collectionAddress) throw new Error("Collection address required");
+    this.collectionAddress = collectionAddress;
+  }
+
+  async defaultMain() {
+    return await this.contract.defaultMain();
+  }
+
+  async _resolveCollection(collectionAddress = null) {
+    const selected = collectionAddress || this.collectionAddress;
+    if (selected) return selected;
+    const fallback = await this.defaultMain();
+    this.collectionAddress = fallback;
+    return fallback;
+  }
+
+  async blockPaid(collectionAddress, idx) {
+    return await this.contract.blockPaid(collectionAddress, idx);
   }
 
   async blockReward() {
     return await this.contract.blockReward();
   }
 
-  async blockWinnersCount() {
-    return await this.contract.blockWinnersCount();
+  async blockWinnersCount(collectionAddress) {
+    return await this.contract.blockWinnersCount(collectionAddress);
   }
 
   async claimBlockReward(blockIdx, overrides = {}) {
     return await this._sendTx("claimBlockReward", [blockIdx], overrides);
   }
 
+  async claimBlockRewardFor(collectionAddress, blockIdx, overrides = {}) {
+    return await this._sendTx(
+      "claimBlockRewardFor",
+      [collectionAddress, blockIdx],
+      overrides,
+    );
+  }
+
   async claimOrangeReward(mainId, overrides = {}) {
     return await this._sendTx("claimOrangeReward", [mainId], overrides);
+  }
+
+  async claimOrangeRewardFor(collectionAddress, mainId, overrides = {}) {
+    return await this._sendTx(
+      "claimOrangeRewardFor",
+      [collectionAddress, mainId],
+      overrides,
+    );
   }
 
   async claimRainbowReward(overrides = {}) {
     return await this._sendTx("claimRainbowReward", [], overrides);
   }
 
+  async claimRainbowRewardFor(collectionAddress, overrides = {}) {
+    return await this._sendTx(
+      "claimRainbowRewardFor",
+      [collectionAddress],
+      overrides,
+    );
+  }
+
   async canClaimBlock(addr, blockIdx) {
     return await this.contract.canClaimBlock(addr, blockIdx);
+  }
+
+  async canClaimBlockFor(collectionAddress, addr, blockIdx) {
+    return await this.contract.canClaimBlockFor(
+      collectionAddress,
+      addr,
+      blockIdx,
+    );
   }
 
   async canClaimOrange(addr, mainId) {
     return await this.contract.canClaimOrange(addr, mainId);
   }
 
+  async canClaimOrangeFor(collectionAddress, addr, mainId) {
+    return await this.contract.canClaimOrangeFor(
+      collectionAddress,
+      addr,
+      mainId,
+    );
+  }
+
   async canClaimRainbow(addr) {
     return await this.contract.canClaimRainbow(addr);
+  }
+
+  async canClaimRainbowFor(collectionAddress, addr) {
+    return await this.contract.canClaimRainbowFor(collectionAddress, addr);
   }
 
   async distributor() {
@@ -77,27 +139,27 @@ export default class COLLECTIONREWARDSService {
   }
 
   async main() {
-    return await this.contract.main();
+    return await this._resolveCollection();
   }
 
-  async orangeMainIdPaid(mainId) {
-    return await this.contract.orangeMainIdPaid(mainId);
+  async orangeMainIdPaid(collectionAddress, mainId) {
+    return await this.contract.orangeMainIdPaid(collectionAddress, mainId);
   }
 
   async orangeReward() {
     return await this.contract.orangeReward();
   }
 
-  async orangeWinnersCount() {
-    return await this.contract.orangeWinnersCount();
+  async orangeWinnersCount(collectionAddress) {
+    return await this.contract.orangeWinnersCount(collectionAddress);
   }
 
   async owner() {
     return await this.contract.owner();
   }
 
-  async rainbowRewardClaimedGlobal() {
-    return await this.contract.rainbowRewardClaimedGlobal();
+  async rainbowRewardClaimedGlobal(collectionAddress) {
+    return await this.contract.rainbowRewardClaimedGlobal(collectionAddress);
   }
 
   async rainbowReward() {
@@ -113,10 +175,9 @@ export default class COLLECTIONREWARDSService {
     if (!method) throw new Error("Method not found: " + methodName);
     let gasEstimate = null;
     try {
-      gasEstimate = await this.contract.estimateGas[methodName](
-        ...args,
-        overrides,
-      );
+      const estimate =
+        method.estimateGas || this.contract.estimateGas?.[methodName];
+      gasEstimate = estimate ? await estimate(...args, overrides) : null;
     } catch (err) {
       console.debug(
         "COLLECTIONREWARDSService estimateGas failed",
@@ -134,44 +195,55 @@ export default class COLLECTIONREWARDSService {
     return receipt;
   }
 
-  async getAllStats(walletAddress = null) {
+  async getAllStats(walletAddress = null, collectionAddress = null) {
+    const collection = await this._resolveCollection(collectionAddress);
     const read = (fn, fallback = null) =>
       COLLECTIONREWARDSService.safeRead(fn, fallback);
     const readClaimability = (fn) =>
       read(fn, null).then(COLLECTIONREWARDSService.normalizeClaimability);
 
     const blockPaidPromise = Promise.all(
-      BLOCK_INDICES.map((idx) => read(() => this.blockPaid(idx), false)),
+      BLOCK_INDICES.map((idx) =>
+        read(() => this.blockPaid(collection, idx), false),
+      ),
     );
     const orangePaidPromise = Promise.all(
-      ORANGE_MAIN_IDS.map((id) => read(() => this.orangeMainIdPaid(id), false)),
+      ORANGE_MAIN_IDS.map((id) =>
+        read(() => this.orangeMainIdPaid(collection, id), false),
+      ),
     );
     const blockClaimabilityPromise = walletAddress
       ? Promise.all(
           BLOCK_INDICES.map((idx) =>
-            readClaimability(() => this.canClaimBlock(walletAddress, idx)),
+            readClaimability(() =>
+              this.canClaimBlockFor(collection, walletAddress, idx),
+            ),
           ),
         )
       : Promise.resolve([]);
     const orangeClaimabilityPromise = walletAddress
       ? Promise.all(
           ORANGE_MAIN_IDS.map((mainId) =>
-            readClaimability(() => this.canClaimOrange(walletAddress, mainId)),
+            readClaimability(() =>
+              this.canClaimOrangeFor(collection, walletAddress, mainId),
+            ),
           ),
         )
       : Promise.resolve([]);
     const rainbowClaimabilityPromise = walletAddress
-      ? readClaimability(() => this.canClaimRainbow(walletAddress))
+      ? readClaimability(() =>
+          this.canClaimRainbowFor(collection, walletAddress),
+        )
       : Promise.resolve(COLLECTIONREWARDSService.normalizeClaimability(null));
     const promises = [
       read(() => this.blockReward(), null),
-      read(() => this.blockWinnersCount(), null),
+      read(() => this.blockWinnersCount(collection), null),
       read(() => this.orangeReward(), null),
-      read(() => this.orangeWinnersCount(), null),
+      read(() => this.orangeWinnersCount(collection), null),
       read(() => this.rainbowReward(), null),
-      read(() => this.rainbowRewardClaimedGlobal(), false),
+      read(() => this.rainbowRewardClaimedGlobal(collection), false),
       read(() => this.distributor(), null),
-      read(() => this.main(), null),
+      read(() => this.defaultMain(), null),
       read(() => this.owner(), null),
       blockPaidPromise,
       orangePaidPromise,
@@ -187,7 +259,7 @@ export default class COLLECTIONREWARDSService {
       rainbowReward,
       rainbowClaimed,
       distributor,
-      main,
+      defaultMain,
       owner,
       blockPaidRaw,
       orangePaidRaw,
@@ -204,7 +276,9 @@ export default class COLLECTIONREWARDSService {
       rainbowReward,
       rainbowClaimed: Boolean(rainbowClaimed),
       distributor,
-      main,
+      collection,
+      main: collection,
+      defaultMain,
       owner,
       blockPaid: (blockPaidRaw || []).map((paid) => Boolean(paid)),
       orangeMainIdPaid: (orangePaidRaw || []).map((paid) => Boolean(paid)),

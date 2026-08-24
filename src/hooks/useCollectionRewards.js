@@ -7,6 +7,7 @@ export default function useCollectionRewards(
   walletAddress,
   providerOverride,
   addressOverride,
+  collectionAddress,
 ) {
   const [data, setData] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
@@ -31,8 +32,15 @@ export default function useCollectionRewards(
     setLoading(true);
     setError(null);
     try {
-      const service = new CollectionRewardsService(address, provider);
-      const stats = await service.getAllStats(walletAddress || null);
+      const service = new CollectionRewardsService(
+        address,
+        provider,
+        collectionAddress,
+      );
+      const stats = await service.getAllStats(
+        walletAddress || null,
+        collectionAddress,
+      );
       setData(stats);
       return stats;
     } catch (err) {
@@ -42,7 +50,7 @@ export default function useCollectionRewards(
     } finally {
       setLoading(false);
     }
-  }, [address, provider, walletAddress]);
+  }, [address, collectionAddress, provider, walletAddress]);
 
   React.useEffect(() => {
     refresh();

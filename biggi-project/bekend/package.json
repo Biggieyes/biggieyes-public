@@ -28,6 +28,7 @@
     "deploy:master:core:polygon": "node scripts/master/runDeploySeriesCorePolygon.js",
     "deploy:master:core:polygon:execute": "node scripts/master/runDeploySeriesCorePolygon.js --execute",
     "verify:master:core-series:polygon": "node scripts/master/verifySeriesCorePolygon.js",
+    "audit:collection-rewards:polygon": "node scripts/master/auditCollectionRewardsClaimsPolygon.js",
     "verify:master:core-series:sources:polygon": "node scripts/master/runVerifySeriesCoreContractsPolygon.js",
     "estimate:master:ticket-marketing-gas": "npx hardhat run --config hardhat.biggi-master.cjs scripts/master/estimateTicketHubMarketingGas.js",
     "deploy:master:core4:polygon": "node scripts/master/runDeployFourSeriesCorePolygon.js",

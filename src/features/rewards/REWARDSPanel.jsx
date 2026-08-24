@@ -154,7 +154,6 @@ function REWARDSPanel({
   items = [],
   blockNames = [],
   claimable = null,
-  rewardPool = null,
   onClaim,
   autoOpenInfo = false,
   onActiveSectionChange,
@@ -190,6 +189,16 @@ function REWARDSPanel({
   const [COLLECTIONClaimFeedback, setCOLLECTIONClaimFeedback] =
     React.useState(null);
   const [collectionBalance, setCollectionBalance] = React.useState(null);
+  const [collectionRewardsChapterId, setCollectionRewardsChapterId] =
+    React.useState(CORE_CHAPTERS[0]?.chapterId ?? 1);
+  const collectionRewardsChapter = React.useMemo(
+    () =>
+      CORE_CHAPTERS.find(
+        (chapter) => chapter.chapterId === collectionRewardsChapterId,
+      ) || CORE_CHAPTERS[0],
+    [collectionRewardsChapterId],
+  );
+  const collectionRewardsMain = collectionRewardsChapter?.main || ADDR.MAIN;
 
   const infoItems = React.useMemo(
     () => [
@@ -312,7 +321,12 @@ function REWARDSPanel({
   const { data: tokenStatsReader, refresh: refreshTokenReader } =
     useTokenRewardsReader(readProvider, tokenRewardsReaderAddr);
   const { data: COLLECTIONStats, refresh: refreshCOLLECTIONStats } =
-    useCOLLECTIONREWARDS(walletAddress, readProvider, collectionRewardsAddr);
+    useCOLLECTIONREWARDS(
+      walletAddress,
+      readProvider,
+      collectionRewardsAddr,
+      collectionRewardsMain,
+    );
   const { data: nftSummary, refresh: refreshNftStats } = useNFTREWARDS(
     readProvider,
     nftRewardsAddr,
@@ -389,12 +403,16 @@ function REWARDSPanel({
   const COLLECTIONService = React.useMemo(() => {
     if (!readProvider) return null;
     try {
-      return new COLLECTIONREWARDSService(collectionRewardsAddr, readProvider);
+      return new COLLECTIONREWARDSService(
+        collectionRewardsAddr,
+        readProvider,
+        collectionRewardsMain,
+      );
     } catch (err) {
       console.error("REWARDSPanel: COLLECTION service init failed", err);
       return null;
     }
-  }, [readProvider, collectionRewardsAddr]);
+  }, [readProvider, collectionRewardsAddr, collectionRewardsMain]);
 
   const eligibleTokenIds = React.useMemo(() => {
     return rewardClaimPayload.tokenIds;
@@ -455,7 +473,7 @@ function REWARDSPanel({
   React.useEffect(() => {
     setCOLLECTIONClaimFeedback(null);
     setCOLLECTIONClaiming({ block: null, orange: null, rainbow: false });
-  }, [walletAddress]);
+  }, [collectionRewardsChapterId, walletAddress]);
 
   const canClaimCOLLECTION = React.useMemo(
     () =>
@@ -527,7 +545,10 @@ function REWARDSPanel({
       try {
         const signer = await writeProvider.getSigner();
         COLLECTIONService.connectWithSigner(signer);
-        await COLLECTIONService.claimBlockReward(blockIdx);
+        await COLLECTIONService.claimBlockRewardFor(
+          collectionRewardsMain,
+          blockIdx,
+        );
         setCOLLECTIONClaimFeedback({
           tone: "success",
           text: `Block ${blockIdx} request submitted.`,
@@ -543,7 +564,13 @@ function REWARDSPanel({
         setCOLLECTIONClaiming((prev) => ({ ...prev, block: null }));
       }
     },
-    [canClaimCOLLECTION, COLLECTIONService, writeProvider, handleRefresh],
+    [
+      canClaimCOLLECTION,
+      COLLECTIONService,
+      collectionRewardsMain,
+      writeProvider,
+      handleRefresh,
+    ],
   );
 
   const handleClaimOrangeReward = React.useCallback(
@@ -554,7 +581,10 @@ function REWARDSPanel({
       try {
         const signer = await writeProvider.getSigner();
         COLLECTIONService.connectWithSigner(signer);
-        await COLLECTIONService.claimOrangeReward(mainId);
+        await COLLECTIONService.claimOrangeRewardFor(
+          collectionRewardsMain,
+          mainId,
+        );
         setCOLLECTIONClaimFeedback({
           tone: "success",
           text: `Orange reward for Main ID ${mainId} submitted.`,
@@ -570,7 +600,13 @@ function REWARDSPanel({
         setCOLLECTIONClaiming((prev) => ({ ...prev, orange: null }));
       }
     },
-    [canClaimCOLLECTION, COLLECTIONService, writeProvider, handleRefresh],
+    [
+      canClaimCOLLECTION,
+      COLLECTIONService,
+      collectionRewardsMain,
+      writeProvider,
+      handleRefresh,
+    ],
   );
 
   const handleClaimRainbowReward = React.useCallback(async () => {
@@ -580,7 +616,7 @@ function REWARDSPanel({
     try {
       const signer = await writeProvider.getSigner();
       COLLECTIONService.connectWithSigner(signer);
-      await COLLECTIONService.claimRainbowReward();
+      await COLLECTIONService.claimRainbowRewardFor(collectionRewardsMain);
       setCOLLECTIONClaimFeedback({
         tone: "success",
         text: "Rainbow reward submitted.",
@@ -595,7 +631,13 @@ function REWARDSPanel({
     } finally {
       setCOLLECTIONClaiming((prev) => ({ ...prev, rainbow: false }));
     }
-  }, [canClaimCOLLECTION, COLLECTIONService, writeProvider, handleRefresh]);
+  }, [
+    canClaimCOLLECTION,
+    COLLECTIONService,
+    collectionRewardsMain,
+    writeProvider,
+    handleRefresh,
+  ]);
 
   const heroCards = React.useMemo(() => {
     const symbol = tokenSymbol;
@@ -756,7 +798,7 @@ function REWARDSPanel({
   };
   const metadataRows = [
     { label: "Distributor", value: COLLECTIONStats?.distributor },
-    { label: "Eyes main", value: COLLECTIONStats?.main },
+    { label: "VRF collection", value: COLLECTIONStats?.collection },
     { label: "Owner", value: COLLECTIONStats?.owner },
   ];
 
@@ -1015,11 +1057,14 @@ function REWARDSPanel({
         accent={SECTION_META.COLLECTION.accent}
       />
       <COLLECTIONREWARDSSection
+        chapters={CORE_CHAPTERS}
+        selectedChapterId={collectionRewardsChapterId}
+        onChapterChange={setCollectionRewardsChapterId}
+        rewardArtworkReady={collectionRewardsChapterId === 1}
         stats={COLLECTIONStats}
         statusRows={COLLECTIONStatus}
         formatDecimal={formatDecimal}
         formatNativeAmount={formatRewardNative}
-        rewardPool={rewardPool}
         collectionBalance={collectionBalance}
         blockPaid={blockPaid}
         blockClaimability={blockClaimability}

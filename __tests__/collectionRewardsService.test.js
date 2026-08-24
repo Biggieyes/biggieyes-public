@@ -10,6 +10,8 @@ vi.mock("ethers", () => ({
 
 import CollectionRewardsService from "@/shared/services/collectionRewardsService.js";
 
+const COLLECTION = "0x2222222222222222222222222222222222222222";
+
 const buildContractMock = (overrides = {}) => ({
   blockReward: vi.fn().mockResolvedValue(3000n),
   blockWinnersCount: vi.fn().mockResolvedValue(2n),
@@ -18,15 +20,21 @@ const buildContractMock = (overrides = {}) => ({
   rainbowReward: vi.fn().mockResolvedValue(10000n),
   rainbowRewardClaimedGlobal: vi.fn().mockResolvedValue(false),
   distributor: vi.fn().mockResolvedValue("0x1111111111111111111111111111111111111111"),
-  main: vi.fn().mockResolvedValue("0x2222222222222222222222222222222222222222"),
+  defaultMain: vi.fn().mockResolvedValue(COLLECTION),
   owner: vi.fn().mockResolvedValue("0x3333333333333333333333333333333333333333"),
-  blockPaid: vi.fn().mockImplementation((idx) => Promise.resolve(idx === 1)),
+  blockPaid: vi
+    .fn()
+    .mockImplementation((collection, idx) =>
+      Promise.resolve(collection === COLLECTION && idx === 1),
+    ),
   orangeMainIdPaid: vi
     .fn()
-    .mockImplementation((mainId) => Promise.resolve(mainId === 2)),
-  canClaimBlock: vi.fn().mockResolvedValue([true, 0n]),
-  canClaimOrange: vi.fn().mockResolvedValue([true, 0n]),
-  canClaimRainbow: vi.fn().mockResolvedValue([false, 3n]),
+    .mockImplementation((collection, mainId) =>
+      Promise.resolve(collection === COLLECTION && mainId === 2),
+    ),
+  canClaimBlockFor: vi.fn().mockResolvedValue([true, 0n]),
+  canClaimOrangeFor: vi.fn().mockResolvedValue([true, 0n]),
+  canClaimRainbowFor: vi.fn().mockResolvedValue([false, 3n]),
   ...overrides,
 });
 
@@ -37,9 +45,9 @@ describe("CollectionRewardsService", () => {
 
   it("returns core stats even when claimability reads revert", async () => {
     const contractMock = buildContractMock({
-      canClaimBlock: vi.fn().mockRejectedValue(new Error("revert")),
-      canClaimOrange: vi.fn().mockRejectedValue(new Error("revert")),
-      canClaimRainbow: vi.fn().mockRejectedValue(new Error("revert")),
+      canClaimBlockFor: vi.fn().mockRejectedValue(new Error("revert")),
+      canClaimOrangeFor: vi.fn().mockRejectedValue(new Error("revert")),
+      canClaimRainbowFor: vi.fn().mockRejectedValue(new Error("revert")),
     });
     ContractMock.mockImplementation(function MockContract() {
       return contractMock;
@@ -48,6 +56,7 @@ describe("CollectionRewardsService", () => {
     const service = new CollectionRewardsService(
       "0xa708E016dEC7B6a5b3da640c0d995895979cE332",
       { provider: true },
+      COLLECTION,
     );
     const stats = await service.getAllStats(
       "0x4444444444444444444444444444444444444444",
@@ -80,13 +89,20 @@ describe("CollectionRewardsService", () => {
 
   it("normalizes tuple claimability responses", async () => {
     const contractMock = buildContractMock({
-      canClaimBlock: vi
+      canClaimBlockFor: vi
         .fn()
-        .mockImplementation((_, idx) => Promise.resolve([idx === 1, 0n])),
-      canClaimOrange: vi
+        .mockImplementation((collection, _, idx) =>
+          Promise.resolve([collection === COLLECTION && idx === 1, 0n]),
+        ),
+      canClaimOrangeFor: vi
         .fn()
-        .mockImplementation((_, mainId) => Promise.resolve([false, BigInt(mainId)])),
-      canClaimRainbow: vi.fn().mockResolvedValue([false, 3n]),
+        .mockImplementation((collection, _, mainId) =>
+          Promise.resolve([
+            false,
+            collection === COLLECTION ? BigInt(mainId) : 8n,
+          ]),
+        ),
+      canClaimRainbowFor: vi.fn().mockResolvedValue([false, 3n]),
     });
     ContractMock.mockImplementation(function MockContract() {
       return contractMock;
@@ -95,6 +111,7 @@ describe("CollectionRewardsService", () => {
     const service = new CollectionRewardsService(
       "0xa708E016dEC7B6a5b3da640c0d995895979cE332",
       { provider: true },
+      COLLECTION,
     );
     const stats = await service.getAllStats(
       "0x5555555555555555555555555555555555555555",
@@ -125,5 +142,44 @@ describe("CollectionRewardsService", () => {
       reason: 3,
       resolved: true,
     });
+    expect(stats.collection).toBe(COLLECTION);
+    expect(contractMock.blockPaid).toHaveBeenCalledWith(COLLECTION, 1);
+    expect(contractMock.canClaimBlockFor).toHaveBeenCalledWith(
+      COLLECTION,
+      "0x5555555555555555555555555555555555555555",
+      1,
+    );
+  });
+
+  it("sends explicit collection claims with an ethers v6 gas estimate", async () => {
+    const wait = vi.fn().mockResolvedValue({ status: 1 });
+    const claimBlockRewardFor = vi.fn().mockResolvedValue({ wait });
+    claimBlockRewardFor.estimateGas = vi.fn().mockResolvedValue(100n);
+    const contractMock = buildContractMock({
+      claimBlockRewardFor,
+    });
+    contractMock.connect = vi.fn().mockReturnValue(contractMock);
+    ContractMock.mockImplementation(function MockContract() {
+      return contractMock;
+    });
+
+    const service = new CollectionRewardsService(
+      "0xa708E016dEC7B6a5b3da640c0d995895979cE332",
+      { provider: true },
+      COLLECTION,
+    );
+    service.connectWithSigner({ provider: { provider: true } });
+
+    await service.claimBlockRewardFor(COLLECTION, 1);
+
+    expect(claimBlockRewardFor.estimateGas).toHaveBeenCalledWith(
+      COLLECTION,
+      1,
+      {},
+    );
+    expect(claimBlockRewardFor).toHaveBeenCalledWith(COLLECTION, 1, {
+      gasLimit: 120n,
+    });
+    expect(wait).toHaveBeenCalledWith(1);
   });
 });

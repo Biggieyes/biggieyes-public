@@ -36,12 +36,35 @@ describe("BIGGI_MASTER: multicollection + rewards consistency smoke", function (
 
     await (await main1.setHasAllTenMainIdsInBlock(alice.address, 1, true)).wait();
     await (await main2.setHasAllTenMainIdsInBlock(bob.address, 1, true)).wait();
+    await (await main1.setHasAllBackgroundsForMainIdInBlock(alice.address, 1, 1, true)).wait();
+    await (await main2.setHasAllBackgroundsForMainIdInBlock(bob.address, 1, 1, true)).wait();
+    await (await main1.setHasAllTenMainIdsInBlock(alice.address, 10, true)).wait();
+    await (await main2.setHasAllTenMainIdsInBlock(bob.address, 10, true)).wait();
 
     await (await rewards.connect(alice).claimBlockRewardFor(main1.address, 1)).wait();
     await (await rewards.connect(bob).claimBlockRewardFor(main2.address, 1)).wait();
+    await (await rewards.connect(alice).claimOrangeRewardFor(main1.address, 1)).wait();
+    await (await rewards.connect(bob).claimOrangeRewardFor(main2.address, 1)).wait();
+    await (await rewards.connect(alice).claimRainbowRewardFor(main1.address)).wait();
+    await (await rewards.connect(bob).claimRainbowRewardFor(main2.address)).wait();
 
     expect(await rewards.blockWinnersCount(main1.address)).to.equal(1);
     expect(await rewards.blockWinnersCount(main2.address)).to.equal(1);
+    expect(await rewards.orangeWinnersCount(main1.address)).to.equal(1);
+    expect(await rewards.orangeWinnersCount(main2.address)).to.equal(1);
+    expect(await rewards.rainbowRewardClaimedGlobal(main1.address)).to.equal(true);
+    expect(await rewards.rainbowRewardClaimedGlobal(main2.address)).to.equal(true);
+    expect(await ethers.provider.getBalance(rewards.address)).to.equal(toWei("8"));
+
+    await expect(
+      rewards.connect(alice).claimBlockRewardFor(main1.address, 1)
+    ).to.be.reverted;
+    await expect(
+      rewards.connect(bob).claimOrangeRewardFor(main1.address, 1)
+    ).to.be.reverted;
+    await expect(
+      rewards.connect(bob).claimRainbowRewardFor(main1.address)
+    ).to.be.reverted;
 
     await expect(
       rewards.connect(alice).claimBlockRewardFor(pub1.address, 1)
