@@ -44,36 +44,8 @@
     <meta name="author" content="BiggiEyes" />
     <script>
       (function () {
-        const hostname = String(window.location.hostname || "").toLowerCase();
-        const isLocalAppHost =
-          hostname === "localhost" ||
-          hostname === "127.0.0.1" ||
-          hostname === "::1" ||
-          hostname.endsWith(".local");
-
-        window.__BIGGI_LOCAL_APP_ENABLED__ = isLocalAppHost;
-        if (isLocalAppHost) {
-          document.documentElement.classList.add("landing-local-app-enabled");
-          return;
-        }
-
-        const standaloneRedirects = {
-          "/rewards": "/",
-          "/rewards/": "/",
-          "/collection": "/",
-          "/collection/": "/",
-          "/vrf-mint": "/",
-          "/vrf-mint/": "/",
-          "/ecosystem": "/",
-          "/ecosystem/": "/",
-          "/community-center": "/",
-          "/community-center/": "/",
-        };
-
-        const target = standaloneRedirects[window.location.pathname];
-        if (!target) return;
-        if (window.location.pathname === target) return;
-        window.location.replace(`${target}${window.location.search}${window.location.hash}`);
+        window.__BIGGI_APP_ENABLED__ = true;
+        document.documentElement.classList.add("landing-app-enabled");
       })();
     </script>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-S49TZ90XND"></script>
@@ -1337,7 +1309,7 @@
         color: rgba(5, 17, 31, 0.82);
       }
 
-      .landing-local-app-enabled .hero-app-cta {
+      .landing-app-enabled .hero-app-cta {
         border-color: rgba(123, 255, 178, 0.78);
         background:
           radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.24), transparent 26%),
@@ -1348,7 +1320,7 @@
           0 0 0 1px rgba(123, 255, 178, 0.26) inset;
       }
 
-      .landing-local-app-enabled .hero-app-cta::after {
+      .landing-app-enabled .hero-app-cta::after {
         content: "Preview";
         color: rgba(5, 27, 21, 0.84);
       }
@@ -2108,10 +2080,10 @@
               </article>
             </div>
             <div class="hero-primary-cta">
-              <a class="btn app-cta hero-app-cta" href="#app-status">
-                <span class="hero-app-cta__eyebrow">Launch Gate</span>
-                <span class="hero-app-cta__title">Public App Gated</span>
-                <span class="hero-app-cta__meta">Final mainnet readiness checks are still in progress.</span>
+              <a class="btn app-cta hero-app-cta" href="/app/">
+                <span class="hero-app-cta__eyebrow">App Dashboard</span>
+                <span class="hero-app-cta__title">Open BiggiEyes App</span>
+                <span class="hero-app-cta__meta">Inspect live Polygon data; writes still follow on-chain readiness.</span>
               </a>
             </div>
             <div class="hero-mobile-preview" aria-label="App preview images for mobile">
@@ -2237,23 +2209,23 @@
             that matches what you care about most.
           </p>
           <div class="path-grid">
-            <a class="path-card path-card--collector" href="#app-status">
+            <a class="path-card path-card--collector" href="/app/?panel=VRF%20MINT">
               <span class="path-card__eyebrow">Collector</span>
               <h3>Start with the ticket flow</h3>
               <p>See the 1 POL marketing snapshot, 500 POL public start, paid-mint curve, and VRF redeem path.</p>
-              <span class="path-card__cta">Public launch gated</span>
+              <span class="path-card__cta">Open ticket flow</span>
             </a>
-            <a class="path-card path-card--holder" href="#app-status">
+            <a class="path-card path-card--holder" href="/app/?panel=REWARDS">
               <span class="path-card__eyebrow">Holder</span>
               <h3>Check weekly BIGGI utility</h3>
               <p>See whether a finalized NFT is eligible, how much it can claim, and when the next claim window opens.</p>
-              <span class="path-card__cta">Public launch gated</span>
+              <span class="path-card__cta">Open rewards</span>
             </a>
-            <a class="path-card path-card--ecosystem" href="#app-status">
+            <a class="path-card path-card--ecosystem" href="/app/?panel=BIGGI%20ECOSYSTEM">
               <span class="path-card__eyebrow">Ecosystem</span>
               <h3>Read the token and treasury layer</h3>
               <p>Follow how rewards, treasury, reserve, buyback, drip, and liquidity fit into one public system.</p>
-              <span class="path-card__cta">Public launch gated</span>
+              <span class="path-card__cta">Open ecosystem</span>
             </a>
           </div>
         </div>
@@ -2437,7 +2409,7 @@
             </article>
           </div>
           <div class="topic-panel__actions">
-            <a class="btn secondary topic-panel__standalone" href="#app-status">Preview access depends on environment</a>
+            <a class="btn secondary topic-panel__standalone" href="/app/?panel=REWARDS">Open Rewards panel</a>
           </div>
         </article>
 
@@ -2477,7 +2449,7 @@
             </article>
           </div>
           <div class="topic-panel__actions">
-            <a class="btn secondary topic-panel__standalone" href="#app-status">Preview access depends on environment</a>
+            <a class="btn secondary topic-panel__standalone" href="/app/?panel=COLLECTION">Open Collection panel</a>
           </div>
         </article>
 
@@ -2517,7 +2489,7 @@
             </article>
           </div>
           <div class="topic-panel__actions">
-            <a class="btn secondary topic-panel__standalone" href="#app-status">Preview access depends on environment</a>
+            <a class="btn secondary topic-panel__standalone" href="/app/?panel=VRF%20MINT">Open VRF panel</a>
           </div>
         </article>
 
@@ -2557,7 +2529,7 @@
             </article>
           </div>
           <div class="topic-panel__actions">
-            <a class="btn secondary topic-panel__standalone" href="#app-status">Preview access depends on environment</a>
+            <a class="btn secondary topic-panel__standalone" href="/app/?panel=BIGGI%20ECOSYSTEM">Open Ecosystem panel</a>
           </div>
         </article>
 
@@ -2597,7 +2569,7 @@
             </article>
           </div>
           <div class="topic-panel__actions">
-            <a class="btn secondary topic-panel__standalone" href="#app-status">Preview access depends on environment</a>
+            <a class="btn secondary topic-panel__standalone" href="/app/?panel=COMMUNITY%20CENTER">Open Community panel</a>
           </div>
         </article>
       </section>
@@ -2612,12 +2584,12 @@
             redeem, claim, or tokenomics activation.
           </p>
           <div class="launch-row">
-            <a class="btn secondary launch-link launch-link--panel" href="#top">Rewards preview gated</a>
-            <a class="btn secondary launch-link launch-link--panel" href="#top">Collection preview gated</a>
-            <a class="btn secondary launch-link launch-link--panel" href="#top">VRF preview gated</a>
-            <a class="btn secondary launch-link launch-link--panel" href="#top">Ecosystem preview gated</a>
-            <a class="btn secondary launch-link launch-link--panel" href="#top">Users preview gated</a>
-            <a class="btn secondary launch-link launch-link--panel" href="#top">Community preview gated</a>
+            <a class="btn secondary launch-link launch-link--panel" href="/app/?panel=REWARDS">Open Rewards panel</a>
+            <a class="btn secondary launch-link launch-link--panel" href="/app/?panel=COLLECTION">Open Collection panel</a>
+            <a class="btn secondary launch-link launch-link--panel" href="/app/?panel=VRF%20MINT">Open VRF panel</a>
+            <a class="btn secondary launch-link launch-link--panel" href="/app/?panel=BIGGI%20ECOSYSTEM">Open Ecosystem panel</a>
+            <a class="btn secondary launch-link launch-link--panel" href="/app/?panel=USERS">Open Users panel</a>
+            <a class="btn secondary launch-link launch-link--panel" href="/app/?panel=COMMUNITY%20CENTER">Open Community panel</a>
           </div>
         </div>
       </section>
@@ -2980,7 +2952,7 @@
       })();
 
       (function () {
-        if (!window.__BIGGI_LOCAL_APP_ENABLED__) return;
+        if (!window.__BIGGI_APP_ENABLED__) return;
 
         const heroCta = document.querySelector(".hero-app-cta");
         if (heroCta) {
@@ -2988,24 +2960,24 @@
           const eyebrow = heroCta.querySelector(".hero-app-cta__eyebrow");
           const title = heroCta.querySelector(".hero-app-cta__title");
           const meta = heroCta.querySelector(".hero-app-cta__meta");
-          if (eyebrow) eyebrow.textContent = "Preview Environment";
-          if (title) title.textContent = "Open App Preview";
-          if (meta) meta.textContent = "Inspect live panels locally; the public launch gate remains closed.";
+          if (eyebrow) eyebrow.textContent = "App Dashboard";
+          if (title) title.textContent = "Open BiggiEyes App";
+          if (meta) meta.textContent = "Inspect live Polygon data; writes still follow on-chain readiness.";
         }
 
         const statusCopy = document.querySelector(".app-launch .launch-group__copy");
         if (statusCopy) {
           statusCopy.textContent =
-            "Local preview access is enabled. Inspect live panels and wallet state here, but do not treat this environment as public launch authorization.";
+            "The dashboard is available for inspection. Wallet actions remain governed by the current on-chain pause and readiness state.";
         }
 
         const panelDefs = [
-          { href: "/rewards/", text: "Open Rewards panel" },
-          { href: "/collection/", text: "Open Collection panel" },
-          { href: "/vrf-mint/", text: "Open VRF panel" },
-          { href: "/ecosystem/", text: "Open Ecosystem panel" },
-          { href: "/app/", text: "Open Users panel" },
-          { href: "/community-center/", text: "Open Community panel" },
+          { href: "/app/?panel=REWARDS", text: "Open Rewards panel" },
+          { href: "/app/?panel=COLLECTION", text: "Open Collection panel" },
+          { href: "/app/?panel=VRF%20MINT", text: "Open VRF panel" },
+          { href: "/app/?panel=BIGGI%20ECOSYSTEM", text: "Open Ecosystem panel" },
+          { href: "/app/?panel=USERS", text: "Open Users panel" },
+          { href: "/app/?panel=COMMUNITY%20CENTER", text: "Open Community panel" },
         ];
 
         const panelLinks = Array.from(
@@ -3019,11 +2991,11 @@
         });
 
         const standaloneByTopic = {
-          rewards: { href: "/rewards/", text: "Open Rewards panel" },
-          collection: { href: "/collection/", text: "Open Collection panel" },
-          vrf: { href: "/vrf-mint/", text: "Open VRF panel" },
-          ecosystem: { href: "/ecosystem/", text: "Open Ecosystem panel" },
-          community: { href: "/community-center/", text: "Open Community panel" },
+          rewards: { href: "/app/?panel=REWARDS", text: "Open Rewards panel" },
+          collection: { href: "/app/?panel=COLLECTION", text: "Open Collection panel" },
+          vrf: { href: "/app/?panel=VRF%20MINT", text: "Open VRF panel" },
+          ecosystem: { href: "/app/?panel=BIGGI%20ECOSYSTEM", text: "Open Ecosystem panel" },
+          community: { href: "/app/?panel=COMMUNITY%20CENTER", text: "Open Community panel" },
         };
 
         document

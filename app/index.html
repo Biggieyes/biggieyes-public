@@ -2,21 +2,6 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <script>
-      (function () {
-        const hostname = String(window.location.hostname || "").toLowerCase();
-        const isLocalAppHost =
-          hostname === "localhost" ||
-          hostname === "127.0.0.1" ||
-          hostname === "::1" ||
-          hostname.endsWith(".local");
-        if (isLocalAppHost) return;
-
-        const target = `/${window.location.search || ""}${window.location.hash || ""}`;
-        window.location.replace(target);
-      })();
-    </script>
-
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
