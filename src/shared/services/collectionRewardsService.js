@@ -66,6 +66,10 @@ export default class COLLECTIONREWARDSService {
     return await this.contract.blockWinnersCount(collectionAddress);
   }
 
+  async collectionBudgetSnapshot(collectionAddress) {
+    return await this.contract.collectionBudgetSnapshot(collectionAddress);
+  }
+
   async claimBlockReward(blockIdx, overrides = {}) {
     return await this._sendTx("claimBlockReward", [blockIdx], overrides);
   }
@@ -235,6 +239,10 @@ export default class COLLECTIONREWARDSService {
           this.canClaimRainbowFor(collection, walletAddress),
         )
       : Promise.resolve(COLLECTIONREWARDSService.normalizeClaimability(null));
+    const budgetPromise = read(
+      () => this.collectionBudgetSnapshot(collection),
+      null,
+    ).then(COLLECTIONREWARDSService.normalizeBudgetSnapshot);
     const promises = [
       read(() => this.blockReward(), null),
       read(() => this.blockWinnersCount(collection), null),
@@ -250,6 +258,7 @@ export default class COLLECTIONREWARDSService {
       blockClaimabilityPromise,
       orangeClaimabilityPromise,
       rainbowClaimabilityPromise,
+      budgetPromise,
     ];
     const [
       blockReward,
@@ -266,6 +275,7 @@ export default class COLLECTIONREWARDSService {
       blockClaimability,
       orangeClaimability,
       rainbowClaimability,
+      budget,
     ] = await Promise.all(promises);
 
     return {
@@ -285,6 +295,15 @@ export default class COLLECTIONREWARDSService {
       blockClaimability,
       orangeClaimability,
       rainbowClaimability,
+      budget,
+      budgetConfigured: budget.configured,
+      claimsEnabled: budget.claimsEnabled,
+      requiredBudget: budget.requiredBudget,
+      fundedBudget: budget.fundedBudget,
+      spentBudget: budget.spentBudget,
+      availableBudget: budget.availableBudget,
+      remainingLiability: budget.remainingLiability,
+      surplusBudget: budget.surplusBudget,
     };
   }
 
@@ -306,6 +325,33 @@ export default class COLLECTIONREWARDSService {
     const reason =
       reasonRaw == null ? null : COLLECTIONREWARDSService.toNumber(reasonRaw);
     return { ok, reason, resolved: true };
+  }
+
+  static normalizeBudgetSnapshot(value) {
+    if (value == null) {
+      return {
+        configured: null,
+        claimsEnabled: null,
+        requiredBudget: null,
+        fundedBudget: null,
+        spentBudget: null,
+        availableBudget: null,
+        remainingLiability: null,
+        surplusBudget: null,
+        resolved: false,
+      };
+    }
+    return {
+      configured: Boolean(value?.configured ?? value?.[0]),
+      claimsEnabled: Boolean(value?.claimsEnabled ?? value?.[1]),
+      requiredBudget: value?.requiredBudget ?? value?.[2] ?? null,
+      fundedBudget: value?.fundedBudget ?? value?.[3] ?? null,
+      spentBudget: value?.spentBudget ?? value?.[4] ?? null,
+      availableBudget: value?.availableBudget ?? value?.[5] ?? null,
+      remainingLiability: value?.remainingLiability ?? value?.[6] ?? null,
+      surplusBudget: value?.surplusBudget ?? value?.[7] ?? null,
+      resolved: true,
+    };
   }
 
   static toNumber(value) {

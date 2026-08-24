@@ -33,6 +33,7 @@ const CORE_ABI_MAP = {
   BiggiChapterController: "BiggiChapterController.abi.json",
   BiggiMainReader: "BiggiMainReader.abi.json",
   BiggiChapterSeriesReader: "BiggiChapterSeriesReader.abi.json",
+  BiggiCollectionRewards: "BiggiCollectionRewards.abi.json",
 };
 
 const BACKEND_ONLY_ARCHIVE_KEYS = new Set(["OLD_TICKET_HUB"]);

@@ -1,8 +1,8 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "blockNumber": 92590349,
-  "checkedAt": "2026-08-24T16:55:55.387Z",
+  "blockNumber": 92601680,
+  "checkedAt": "2026-08-24T21:39:15.903Z",
   "checks": [
     {
       "label": "Polygon chainId",
@@ -337,14 +337,14 @@
   ],
   "warnings": [
     {
-      "label": "CollectionRewards pool is not fully prefunded",
+      "label": "Legacy CollectionRewards pool is not fully prefunded",
       "currentPOL": "0.0",
       "outstandingLiabilityPOL": "235000.0",
       "note": "Claims remain fail-closed until sufficient mint revenue reaches the pool."
     },
     {
       "label": "BIGGI-paid ticket mints do not fund the native CollectionRewards pool",
-      "note": "Before each chapter activation, prefund its outstanding POL liability or enforce a monitored native-mint funding threshold."
+      "note": "Only native POL mints and explicit fundCollectionBudget calls advance a chapter budget."
     }
   ],
   "chapters": [
@@ -383,7 +383,8 @@
           "reason": 3
         }
       },
-      "outstandingLiabilityPOL": "47000.0"
+      "outstandingLiabilityPOL": "47000.0",
+      "budget": null
     },
     {
       "chapterId": 2,
@@ -420,7 +421,8 @@
           "reason": 3
         }
       },
-      "outstandingLiabilityPOL": "47000.0"
+      "outstandingLiabilityPOL": "47000.0",
+      "budget": null
     },
     {
       "chapterId": 3,
@@ -457,7 +459,8 @@
           "reason": 3
         }
       },
-      "outstandingLiabilityPOL": "47000.0"
+      "outstandingLiabilityPOL": "47000.0",
+      "budget": null
     },
     {
       "chapterId": 4,
@@ -494,7 +497,8 @@
           "reason": 3
         }
       },
-      "outstandingLiabilityPOL": "47000.0"
+      "outstandingLiabilityPOL": "47000.0",
+      "budget": null
     },
     {
       "chapterId": 5,
@@ -531,7 +535,8 @@
           "reason": 3
         }
       },
-      "outstandingLiabilityPOL": "47000.0"
+      "outstandingLiabilityPOL": "47000.0",
+      "budget": null
     }
   ],
   "rewards": {
@@ -542,7 +547,10 @@
     "rainbowRewardPOL": "10000.0",
     "maximumLiabilityPerChapterPOL": "47000.0",
     "outstandingLiabilityAllChaptersPOL": "235000.0",
-    "outstandingLiabilityActiveChaptersPOL": "0.0"
+    "outstandingLiabilityActiveChaptersPOL": "0.0",
+    "isolatedBudgetMode": false,
+    "fundingCollection": null,
+    "contractMaximumLiabilityPOL": null
   },
   "distributor": {
     "address": "0xCE892698159D8D799D5eF7f0dF0111487511fD22",

@@ -32,10 +32,16 @@ async function main() {
       constructorArguments: [owner, addresses.REGISTRY],
     },
     {
+      name: "BiggiCollectionRewards",
+      address: addresses.COLLECTION_REWARDS,
+      contract: `${sourceRoot}/BiggiCollectionRewards.sol:BiggiCollectionRewards`,
+      constructorArguments: [addresses.MAIN, owner],
+    },
+    {
       name: "BiggiMainReader",
       address: addresses.MAIN_READER,
       contract: `${sourceRoot}/CORE_READERS/BiggiMainReader.sol:BiggiMainReader`,
-      constructorArguments: [addresses.MAIN, addresses.TICKET_HUB, process.env.COLLECTION_REWARDS],
+      constructorArguments: [addresses.MAIN, addresses.TICKET_HUB, addresses.COLLECTION_REWARDS],
     },
     {
       name: "BiggiChapterSeriesReader",

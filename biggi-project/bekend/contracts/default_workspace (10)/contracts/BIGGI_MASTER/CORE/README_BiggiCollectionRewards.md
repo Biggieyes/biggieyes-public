@@ -1,6 +1,8 @@
 # BiggiCollectionRewards
 
-Deployment status: deployed on Polygon mainnet as of 2026-06-16. This document describes the live contract behavior and launch-time operations.
+Source status: budget-gated replacement prepared on 2026-08-24. The legacy
+Polygon deployment at `0x5d1273070c9133381C570009768621762F024FB8`
+remains live until the explicit redeploy command is approved and executed.
 
 ## Purpose
 Native-token rewards contract for collection completion milestones.
@@ -19,9 +21,27 @@ constructor(address main_, address owner_)
 - default-main claims and explicit per-collection claims
 - optional registry-based collection eligibility
 - distributor-gated named funding functions
-- unrestricted plain native funding through `receive()`
+- isolated native budget accounting for every eligible VRF collection
+- automatic claim unlock only after that collection reaches full coverage
+- one active `fundingCollection` for sequential chapter sales
 
 ## Main runtime role
 - pays orange, block, and rainbow rewards
 - tracks per-collection claim caps and one-time claims
 - exposes preview helpers such as `canClaim*` and `rewardsSnapshot`
+
+## Funding invariant
+
+Each native mint forwards 60% to `BiggiMultiCollectionDistributor`; the
+distributor immediately forwards 25% of that amount here. Therefore 15% of
+the native mint price is credited to the active VRF collection budget in the
+same transaction. BIGGI-paid mints do not create a native POL inflow.
+
+With the production reward schedule, one collection unlocks claims at:
+
+```text
+10 * 1000 + 9 * 3000 + 10000 = 47000 POL
+```
+
+Until then, `canClaim*For` returns reason `9` and claim transactions revert
+with `ClaimsBudgetLocked`.

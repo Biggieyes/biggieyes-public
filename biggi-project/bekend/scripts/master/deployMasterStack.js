@@ -544,6 +544,8 @@ async function main() {
 
   await (await collectionRewards.setRegistry(registry.address)).wait();
   await (await collectionRewards.setDistributor(distributor.address)).wait();
+  await (await collectionRewards.configureCollectionBudget(mainCollection.address)).wait();
+  await (await collectionRewards.setFundingCollection(mainCollection.address)).wait();
 
   await (await distributor.addCollection(ticketHub.address)).wait();
   await (await distributor.addCollection(publicCollection.address)).wait();

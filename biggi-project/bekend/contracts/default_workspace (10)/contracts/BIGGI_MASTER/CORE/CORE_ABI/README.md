@@ -1,6 +1,9 @@
 # CORE_ABI
 
-Deployment status: current chapter-aware CORE ABI snapshots were regenerated from `artifacts-master` and synchronized to both frontend trees on 2026-08-17.
+Deployment status: CORE ABI snapshots were regenerated from `artifacts-master`
+and synchronized to both frontend trees on 2026-08-24. The
+BiggiCollectionRewards ABI is for the prepared budget-gated replacement; the
+legacy Polygon address does not expose its added methods.
 
 ABI export for BIGGI core contracts, readers, and libraries (from artifacts-master).
 
@@ -11,7 +14,7 @@ Generated contract and reader files:
 - BiggiSeriesRegistry.abi.json (items: 30)
 - BiggiChapterController.abi.json (items: 24)
 - BiggiCompute.abi.json (items: 2)
-- BiggiCollectionRewards.abi.json (items: 60)
+- BiggiCollectionRewards.abi.json (items: 79)
 - BiggiTokenRewards.abi.json (items: 77)
 - BiggiNFTRewards.abi.json (items: 90)
 - BiggiVRFRouter.abi.json (items: 37)

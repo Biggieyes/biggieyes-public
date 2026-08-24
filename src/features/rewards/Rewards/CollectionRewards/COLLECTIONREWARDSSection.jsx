@@ -21,6 +21,7 @@ const CLAIM_REASON_LABELS = {
     6: "Need full block",
     7: "Pool low",
     8: "Invalid collection",
+    9: "Budget filling",
   },
   orange: {
     1: "Reward off",
@@ -30,6 +31,7 @@ const CLAIM_REASON_LABELS = {
     5: "Need orange set",
     6: "Pool low",
     8: "Invalid collection",
+    9: "Budget filling",
   },
   rainbow: {
     1: "Reward off",
@@ -37,6 +39,7 @@ const CLAIM_REASON_LABELS = {
     3: "Need block 10",
     4: "Pool low",
     5: "Invalid collection",
+    9: "Budget filling",
   },
 };
 
@@ -249,11 +252,30 @@ function COLLECTIONREWARDSSection({
         : WAITING_VALUE,
     },
     {
+      label: "Chapter budget",
+      value: stats?.budget?.resolved
+        ? formatNativeValue(stats.fundedBudget, 2)
+        : WAITING_VALUE,
+    },
+    {
+      label: "Budget target",
+      value: stats?.budget?.resolved
+        ? formatNativeValue(stats.requiredBudget, 2)
+        : WAITING_VALUE,
+    },
+    {
+      label: "Claims",
+      value: stats?.budget?.resolved
+        ? stats.claimsEnabled
+          ? "Open"
+          : "Budget filling"
+        : WAITING_VALUE,
+    },
+    {
       label: "Contract balance",
-      value:
-        collectionBalance != null
-          ? formatNativeValue(collectionBalance, 2)
-          : WAITING_VALUE,
+      value: collectionBalance != null
+        ? formatNativeValue(collectionBalance, 2)
+        : WAITING_VALUE,
     },
   ];
 
@@ -321,10 +343,9 @@ function COLLECTIONREWARDSSection({
                 </div>
               )}
               <ul className="rewards-grid__info-list">
-                <li>Block winners share the same reward amount each round.</li>
+                <li>Native mints fund the selected chapter automatically.</li>
                 <li>
-                  Orange winners and the Rainbow drop are minted once per block
-                  window.
+                  Claims open only after its complete reward budget is covered.
                 </li>
               </ul>
             </div>

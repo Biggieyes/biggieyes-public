@@ -1,7 +1,7 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "createdAt": "2026-08-24T17:02:51.805Z",
+  "createdAt": "2026-08-24T21:39:47.312Z",
   "okForDeployOnly": true,
   "okForPublicLaunch": false,
   "checks": [
@@ -214,8 +214,12 @@
   ],
   "warnings": [
     {
+      "name": "CollectionRewards does not expose isolated chapter budgets",
+      "value": "Redeploy the budget-gated contract before public activation."
+    },
+    {
       "name": "BIGGI-paid ticket mints do not fund the native CollectionRewards pool",
-      "value": "Maintain the configured minimum POL balance before chapter activation."
+      "value": "Only native POL mints and explicit chapter funding advance the active collection budget."
     }
   ],
   "blockers": [
@@ -231,7 +235,7 @@
       }
     },
     {
-      "name": "CollectionRewards native pool is below launch minimum",
+      "name": "Legacy CollectionRewards native pool is below launch minimum",
       "value": {
         "address": "0x5d1273070c9133381C570009768621762F024FB8",
         "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
@@ -244,6 +248,7 @@
         "rainbowReward": "10000000000000000000000",
         "balance": "0",
         "maximumChapterLiability": "47000000000000000000000",
+        "isolatedBudgetMode": false,
         "minimumLaunchBalance": "47000000000000000000000",
         "distributorTarget": "0x5d1273070c9133381C570009768621762F024FB8",
         "distributorPending": "0"
@@ -347,6 +352,7 @@
       "rainbowReward": "10000000000000000000000",
       "balance": "0",
       "maximumChapterLiability": "47000000000000000000000",
+      "isolatedBudgetMode": false,
       "minimumLaunchBalance": "47000000000000000000000",
       "distributorTarget": "0x5d1273070c9133381C570009768621762F024FB8",
       "distributorPending": "0"

@@ -19,6 +19,16 @@ const buildContractMock = (overrides = {}) => ({
   orangeWinnersCount: vi.fn().mockResolvedValue(1n),
   rainbowReward: vi.fn().mockResolvedValue(10000n),
   rainbowRewardClaimedGlobal: vi.fn().mockResolvedValue(false),
+  collectionBudgetSnapshot: vi.fn().mockResolvedValue([
+    true,
+    false,
+    47000n,
+    12500n,
+    0n,
+    12500n,
+    47000n,
+    0n,
+  ]),
   distributor: vi.fn().mockResolvedValue("0x1111111111111111111111111111111111111111"),
   defaultMain: vi.fn().mockResolvedValue(COLLECTION),
   owner: vi.fn().mockResolvedValue("0x3333333333333333333333333333333333333333"),
@@ -85,6 +95,10 @@ describe("CollectionRewardsService", () => {
       reason: null,
       resolved: false,
     });
+    expect(stats.budgetConfigured).toBe(true);
+    expect(stats.claimsEnabled).toBe(false);
+    expect(stats.requiredBudget).toBe(47000n);
+    expect(stats.fundedBudget).toBe(12500n);
   });
 
   it("normalizes tuple claimability responses", async () => {
@@ -149,6 +163,29 @@ describe("CollectionRewardsService", () => {
       "0x5555555555555555555555555555555555555555",
       1,
     );
+    expect(contractMock.collectionBudgetSnapshot).toHaveBeenCalledWith(
+      COLLECTION,
+    );
+  });
+
+  it("keeps legacy deployments readable when budget snapshots are unavailable", async () => {
+    const contractMock = buildContractMock({
+      collectionBudgetSnapshot: vi.fn().mockRejectedValue(new Error("old ABI")),
+    });
+    ContractMock.mockImplementation(function MockContract() {
+      return contractMock;
+    });
+
+    const service = new CollectionRewardsService(
+      "0xa708E016dEC7B6a5b3da640c0d995895979cE332",
+      { provider: true },
+      COLLECTION,
+    );
+    const stats = await service.getAllStats();
+
+    expect(stats.budget.resolved).toBe(false);
+    expect(stats.budgetConfigured).toBeNull();
+    expect(stats.claimsEnabled).toBeNull();
   });
 
   it("sends explicit collection claims with an ethers v6 gas estimate", async () => {

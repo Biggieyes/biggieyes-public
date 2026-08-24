@@ -197,6 +197,8 @@ async function main() {
     "function blockReward() view returns (uint256)",
     "function rainbowReward() view returns (uint256)",
     "function isEligibleCollection(address) view returns (bool)",
+    "function fundingCollection() view returns (address)",
+    "function collectionBudgetSnapshot(address) view returns (bool configured,bool claimsEnabled,uint256 requiredBudget,uint256 fundedBudget,uint256 spentBudget,uint256 availableBudget,uint256 remainingLiability,uint256 surplusBudget)",
   ];
   const distributorRewardsAbi = [
     "function collectionRewards() view returns (address)",
@@ -387,12 +389,17 @@ async function main() {
       .mul(10)
       .add(blockReward.mul(9))
       .add(rainbowReward);
-    const minimumBalance = ethers.BigNumber.from(
-      env(
-        "COLLECTION_REWARDS_MIN_NATIVE_BALANCE_WEI",
-        maximumChapterLiability.toString()
-      )
-    );
+    let fundingCollection = null;
+    let collectionBudget = null;
+    try {
+      [fundingCollection, collectionBudget] = await Promise.all([
+        collectionRewards.fundingCollection(),
+        collectionRewards.collectionBudgetSnapshot(A.MAIN),
+      ]);
+    } catch {
+      // The currently deployed legacy contract has no isolated budget API.
+    }
+    const isolatedBudgetMode = collectionBudget != null;
     report.values.collectionRewards = {
       address: A.COLLECTION_REWARDS,
       owner,
@@ -405,7 +412,7 @@ async function main() {
       rainbowReward: fmt(rainbowReward),
       balance: fmt(balance),
       maximumChapterLiability: fmt(maximumChapterLiability),
-      minimumLaunchBalance: fmt(minimumBalance),
+      isolatedBudgetMode,
     };
     if (isAddress(expectedOwner) && getAddress(owner) !== expectedOwner) {
       block("CollectionRewards owner mismatch", report.values.collectionRewards);
@@ -419,10 +426,61 @@ async function main() {
     if (getAddress(defaultMain) !== getAddress(A.MAIN) || !defaultMainEligible) {
       block("CollectionRewards default VRF collection mismatch", report.values.collectionRewards);
     }
-    if (balance.lt(minimumBalance)) {
-      block("CollectionRewards native pool is below launch minimum", report.values.collectionRewards);
+    if (isolatedBudgetMode) {
+      const budget = {
+        configured: Boolean(collectionBudget.configured ?? collectionBudget[0]),
+        claimsEnabled: Boolean(collectionBudget.claimsEnabled ?? collectionBudget[1]),
+        required: collectionBudget.requiredBudget ?? collectionBudget[2],
+        funded: collectionBudget.fundedBudget ?? collectionBudget[3],
+        spent: collectionBudget.spentBudget ?? collectionBudget[4],
+        available: collectionBudget.availableBudget ?? collectionBudget[5],
+        remainingLiability: collectionBudget.remainingLiability ?? collectionBudget[6],
+        surplus: collectionBudget.surplusBudget ?? collectionBudget[7],
+      };
+      report.values.collectionRewards.fundingCollection = fundingCollection;
+      report.values.collectionRewards.activeBudget = {
+        configured: budget.configured,
+        claimsEnabled: budget.claimsEnabled,
+        required: fmt(budget.required),
+        funded: fmt(budget.funded),
+        spent: fmt(budget.spent),
+        available: fmt(budget.available),
+        remainingLiability: fmt(budget.remainingLiability),
+        surplus: fmt(budget.surplus),
+      };
+      if (!budget.configured || !budget.required.eq(maximumChapterLiability)) {
+        block("CollectionRewards active chapter budget is not configured correctly", report.values.collectionRewards);
+      } else {
+        pass("CollectionRewards active chapter budget gate configured", report.values.collectionRewards.activeBudget);
+      }
+      if (getAddress(fundingCollection) !== getAddress(A.MAIN)) {
+        block("CollectionRewards funding target is not the launch VRF collection", report.values.collectionRewards);
+      }
+      if (!budget.claimsEnabled) {
+        warn(
+          "CollectionRewards claims are locked while the chapter budget fills",
+          report.values.collectionRewards.activeBudget
+        );
+      } else {
+        pass("CollectionRewards claims budget is fully funded", report.values.collectionRewards.activeBudget);
+      }
     } else {
-      pass("CollectionRewards native pool covers launch minimum", report.values.collectionRewards);
+      const minimumBalance = ethers.BigNumber.from(
+        env(
+          "COLLECTION_REWARDS_MIN_NATIVE_BALANCE_WEI",
+          maximumChapterLiability.toString()
+        )
+      );
+      report.values.collectionRewards.minimumLaunchBalance = fmt(minimumBalance);
+      if (balance.lt(minimumBalance)) {
+        block("Legacy CollectionRewards native pool is below launch minimum", report.values.collectionRewards);
+      } else {
+        pass("Legacy CollectionRewards native pool covers launch minimum", report.values.collectionRewards);
+      }
+      warn(
+        "CollectionRewards does not expose isolated chapter budgets",
+        "Redeploy the budget-gated contract before public activation."
+      );
     }
 
     if (await codeExists(A.DISTRIBUTOR)) {
@@ -446,7 +504,7 @@ async function main() {
 
     warn(
       "BIGGI-paid ticket mints do not fund the native CollectionRewards pool",
-      "Maintain the configured minimum POL balance before chapter activation."
+      "Only native POL mints and explicit chapter funding advance the active collection budget."
     );
   }
 

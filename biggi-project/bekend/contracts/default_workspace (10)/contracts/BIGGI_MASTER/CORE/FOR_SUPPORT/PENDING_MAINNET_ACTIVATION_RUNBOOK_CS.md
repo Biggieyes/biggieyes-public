@@ -4,6 +4,45 @@ Datum: 2026-08-19
 
 Tento runbook je priprava. Nejde o potvrzeni, ze transakce byly spustene.
 
+## 0. CollectionRewards budget gate
+
+Pred verejnou aktivaci je pripraven redeploy `BiggiCollectionRewards` a
+`BiggiMainReader`. Distributor se nemeni.
+
+Dry-run bez transakce:
+
+```powershell
+npm run prepare:collection-rewards-redeploy:polygon
+```
+
+Stav overeny 2026-08-24:
+
+- 5 chapteru je neaktivnich
+- legacy CollectionRewards ma 0 POL
+- zadny chapter nema historicky claim
+- Distributor nema pending castku pro legacy CollectionRewards
+- maximum je 47 000 POL pro kazdou VRF kolekci
+
+Execute prikaz vyzaduje samostatny explicitni souhlas. Po nem musi projit:
+
+```powershell
+npm run audit:collection-rewards:polygon
+npm run check:master:core:polygon
+npm run preflight:launch:polygon
+```
+
+Native mint tok je `60 % do Distributoru * 25 % do CollectionRewards`, tedy
+15 % ceny mintu. Castka se pripise rozpoctu aktivni VRF kolekce po kazdem
+mintu. Claim se automaticky odemkne az pri plnem kryti 47 000 POL. BIGGI mint
+neposila do tohoto native budgetu zadny POL.
+
+Pri prechodu na dalsi chapter dodrzet poradi:
+
+1. deaktivovat predchozi chapter
+2. overit `Distributor.pending(CollectionRewards) == 0`
+3. `CollectionRewards.setFundingCollection(nextVrfCollection)`
+4. aktivovat pouze novy chapter
+
 ## 1. Initial Liquidity
 
 Plan:

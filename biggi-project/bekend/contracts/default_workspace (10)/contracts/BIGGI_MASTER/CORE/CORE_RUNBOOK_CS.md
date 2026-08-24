@@ -1,5 +1,17 @@
 # CORE runbook
 
+## CollectionRewards budget gate (2026-08-24)
+
+For every VRF collection, run `configureCollectionBudget(vrfCollection)`.
+Before a chapter sale starts, run `setFundingCollection(vrfCollection)` and
+only then activate that chapter in TicketHub. The previous chapter must be
+inactive and `Distributor.pending(CollectionRewards)` must be zero.
+
+The production maximum liability is `47000 POL` per VRF collection. Every
+native mint immediately routes an effective 15% of its price to the selected
+budget. Claims remain fail-closed with preview reason `9` until that complete
+budget is funded. BIGGI-paid mints do not add POL to this budget.
+
 Status 2026-08-18: chapter-aware `BIGGI_MASTER/CORE` je nasazeny na Polygon mainnetu pro pet series. Vsech pet Public deploymentu pouziva opravenou 100-NFT implementaci, je verified a zustava paused. Tento runbook je pro kontrolu wiring, metadata readiness a postupnou aktivaci jednotlivych chapteru.
 
 Tento dokument popisuje praktický postup po deployi `CORE` kontraktů.

@@ -31,8 +31,10 @@ describe("BIGGI_MASTER: multicollection + rewards consistency smoke", function (
     const rewards = await deploy("BiggiCollectionRewards", main1.address, owner.address);
     await (await rewards.setRegistry(registry.address)).wait();
     await (await rewards.setRewardsAmounts(toWei("1"), toWei("2"), toWei("3"))).wait();
-
-    await owner.sendTransaction({ to: rewards.address, value: toWei("20") });
+    await (await rewards.configureCollectionBudget(main1.address)).wait();
+    await (await rewards.configureCollectionBudget(main2.address)).wait();
+    await (await rewards.fundCollectionBudget(main1.address, { value: toWei("31") })).wait();
+    await (await rewards.fundCollectionBudget(main2.address, { value: toWei("31") })).wait();
 
     await (await main1.setHasAllTenMainIdsInBlock(alice.address, 1, true)).wait();
     await (await main2.setHasAllTenMainIdsInBlock(bob.address, 1, true)).wait();
@@ -54,7 +56,7 @@ describe("BIGGI_MASTER: multicollection + rewards consistency smoke", function (
     expect(await rewards.orangeWinnersCount(main2.address)).to.equal(1);
     expect(await rewards.rainbowRewardClaimedGlobal(main1.address)).to.equal(true);
     expect(await rewards.rainbowRewardClaimedGlobal(main2.address)).to.equal(true);
-    expect(await ethers.provider.getBalance(rewards.address)).to.equal(toWei("8"));
+    expect(await ethers.provider.getBalance(rewards.address)).to.equal(toWei("50"));
 
     await expect(
       rewards.connect(alice).claimBlockRewardFor(main1.address, 1)
@@ -69,6 +71,62 @@ describe("BIGGI_MASTER: multicollection + rewards consistency smoke", function (
     await expect(
       rewards.connect(alice).claimBlockRewardFor(pub1.address, 1)
     ).to.be.reverted;
+  });
+
+  it("unlocks claims only after each collection reaches its own full budget", async () => {
+    const [owner, alice] = await ethers.getSigners();
+
+    const registry = await deploy("BiggiSeriesRegistry", owner.address);
+    const main1 = await deploy("MockCollectionMainView");
+    const main2 = await deploy("MockCollectionMainView");
+    const pub1 = await deploy("MockMintShareReceiver");
+    const pub2 = await deploy("MockMintShareReceiver");
+    const hub1 = await deploy("MockMintShareReceiver");
+    const hub2 = await deploy("MockMintShareReceiver");
+
+    await (await registry.createSeries("MASTER")).wait();
+    await (await registry.createChapter(1)).wait();
+    await (await registry.createChapter(1)).wait();
+    await (await registry.setChapterCollections(1, main1.address, pub1.address, hub1.address)).wait();
+    await (await registry.setChapterCollections(2, main2.address, pub2.address, hub2.address)).wait();
+
+    const rewards = await deploy("BiggiCollectionRewards", main1.address, owner.address);
+    await (await rewards.setRegistry(registry.address)).wait();
+    await (await rewards.setRewardsAmounts(toWei("1"), toWei("2"), toWei("3"))).wait();
+    await (await rewards.configureCollectionBudget(main1.address)).wait();
+    await (await rewards.configureCollectionBudget(main2.address)).wait();
+
+    await (await main1.setHasAllTenMainIdsInBlock(alice.address, 1, true)).wait();
+    await (await main2.setHasAllTenMainIdsInBlock(alice.address, 1, true)).wait();
+
+    await (await rewards.fundCollectionBudget(main1.address, { value: toWei("30") })).wait();
+    let preview = await rewards.canClaimBlockFor(main1.address, alice.address, 1);
+    expect(preview.ok).to.equal(false);
+    expect(preview.reason).to.equal(9);
+    await expect(
+      rewards.connect(alice).claimBlockRewardFor(main1.address, 1)
+    ).to.be.revertedWithCustomError(rewards, "ClaimsBudgetLocked");
+
+    await expect(rewards.fundCollectionBudget(main1.address, { value: toWei("1") }))
+      .to.emit(rewards, "CollectionClaimsEnabled")
+      .withArgs(main1.address, toWei("31"), toWei("31"));
+
+    preview = await rewards.canClaimBlockFor(main1.address, alice.address, 1);
+    expect(preview.ok).to.equal(true);
+
+    const main2Before = await rewards.collectionBudgetSnapshot(main2.address);
+    expect(main2Before.claimsEnabled).to.equal(false);
+    expect(main2Before.fundedBudget).to.equal(0);
+
+    await (await rewards.connect(alice).claimBlockRewardFor(main1.address, 1)).wait();
+    const main1After = await rewards.collectionBudgetSnapshot(main1.address);
+    expect(main1After.claimsEnabled).to.equal(true);
+    expect(main1After.spentBudget).to.equal(toWei("2"));
+    expect(main1After.availableBudget).to.equal(toWei("29"));
+
+    preview = await rewards.canClaimBlockFor(main2.address, alice.address, 1);
+    expect(preview.ok).to.equal(false);
+    expect(preview.reason).to.equal(9);
   });
 
   it("tracks chapter attribution, pending retries, and reader snapshots", async () => {
@@ -90,6 +148,7 @@ describe("BIGGI_MASTER: multicollection + rewards consistency smoke", function (
     const treasury = await deploy("MockMintShareReceiver");
     const community = await deploy("MockRejectReceiver");
     await (await collectionRewards.setDistributor(distributor.address)).wait();
+    await (await collectionRewards.setFundingCollection(source.address)).wait();
 
     await (await distributor.setRegistry(registry.address)).wait();
     await (await distributor.setCollectionRewards(collectionRewards.address)).wait();
@@ -114,6 +173,9 @@ describe("BIGGI_MASTER: multicollection + rewards consistency smoke", function (
     expect(await distributor.pending(community.address)).to.equal(0);
     expect(await distributor.totalPending()).to.equal(0);
     expect(await community.totalReceived()).to.equal(toWei("1"));
+    const budget = await collectionRewards.collectionBudgetSnapshot(source.address);
+    expect(budget.fundedBudget).to.equal(toWei("2.5"));
+    expect(budget.claimsEnabled).to.equal(false);
 
     const reader = await deploy("BiggiMultiCollectionDistributorReaderV2", distributor.address);
     const sourceSnapshot = await reader.sourceSnapshot(source.address);
@@ -152,6 +214,7 @@ describe("BIGGI_MASTER: multicollection + rewards consistency smoke", function (
     const community = await deploy("BiggiCommunityCenter", owner.address);
 
     await (await buyback.toggleAutoBuyback(false)).wait();
+    await (await collectionRewards.setFundingCollection(mainView.address)).wait();
 
     await (await registry.createSeries("MASTER")).wait();
     await (await registry.createChapter(1)).wait(); // chapterId 1
@@ -213,7 +276,7 @@ describe("BIGGI_MASTER: multicollection + rewards consistency smoke", function (
     const public2 = await deploy("MockMintShareReceiver");
     const ticketHub = await deploy("BiggiTicketHub", owner.address, main1.address);
     const distributor = await deploy("BiggiMultiCollectionDistributor", owner.address);
-    const collectionRewards = await deploy("MockMintShareReceiver");
+    const collectionRewards = await deploy("BiggiCollectionRewards", main1.address, owner.address);
     const reserve = await deploy("MockMintShareReceiver");
     const buyback = await deploy("MockMintShareReceiver");
     const treasury = await deploy("MockMintShareReceiver");
@@ -224,6 +287,10 @@ describe("BIGGI_MASTER: multicollection + rewards consistency smoke", function (
     await (await registry.createChapter(1)).wait();
     await (await registry.setChapterCollections(1, main1.address, public1.address, ticketHub.address)).wait();
     await (await registry.setChapterCollections(2, main2.address, public2.address, ticketHub.address)).wait();
+
+    await (await collectionRewards.setRegistry(registry.address)).wait();
+    await (await collectionRewards.setDistributor(distributor.address)).wait();
+    await (await collectionRewards.setFundingCollection(main2.address)).wait();
 
     await (await distributor.setRegistry(registry.address)).wait();
     await (await distributor.setCollectionRewards(collectionRewards.address)).wait();
@@ -245,6 +312,10 @@ describe("BIGGI_MASTER: multicollection + rewards consistency smoke", function (
     expect(await distributor.receivedByChapter(1)).to.equal(0);
     expect(await distributor.receivedByChapter(2)).to.equal(distributed);
     expect(await distributor.receivedBySeries(1)).to.equal(distributed);
+    const chapterBudget = await collectionRewards.collectionBudgetSnapshot(main2.address);
+    expect(chapterBudget.fundedBudget).to.equal(distributed.mul(2500).div(10000));
+    expect(chapterBudget.fundedBudget).to.equal(ticketPrice.mul(1500).div(10000));
+    expect(chapterBudget.claimsEnabled).to.equal(false);
   });
 
   it("does not block native distribution when optional registry attribution is misconfigured", async () => {
@@ -298,7 +369,8 @@ describe("BIGGI_MASTER: multicollection + rewards consistency smoke", function (
     const rewards = await deploy("BiggiCollectionRewards", defaultMain.address, owner.address);
     await (await rewards.setRegistry(registry.address)).wait();
     await (await rewards.setRewardsAmounts(toWei("1"), toWei("2"), toWei("3"))).wait();
-    await owner.sendTransaction({ to: rewards.address, value: toWei("20") });
+    await (await rewards.configureCollectionBudget(defaultMain.address)).wait();
+    await (await rewards.fundCollectionBudget(defaultMain.address, { value: toWei("31") })).wait();
 
     await (await defaultMain.setHasAllTenMainIdsInBlock(alice.address, 1, true)).wait();
 

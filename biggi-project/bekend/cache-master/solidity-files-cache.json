@@ -2223,8 +2223,8 @@
       ]
     },
     "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\CORE\\BiggiCollectionRewards.sol": {
-      "lastModificationDate": 1779732504708,
-      "contentHash": "fc3c270db923014614e1bc6dad21753d",
+      "lastModificationDate": 1787605968236,
+      "contentHash": "5431d320fa618c1a31a48e67219842a0",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiCollectionRewards.sol",
       "solcConfig": {
         "version": "0.8.24",

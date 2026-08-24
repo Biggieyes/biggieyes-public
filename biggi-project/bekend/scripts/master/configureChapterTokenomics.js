@@ -122,8 +122,10 @@ const ABI = {
   collectionRewards: [
     "function distributor() view returns (address)",
     "function registry() view returns (address)",
+    "function collectionBudgets(address) view returns (bool configured,bool claimsEnabled,uint256 required,uint256 funded,uint256 spent)",
     "function setDistributor(address) external",
     "function setRegistry(address) external",
+    "function configureCollectionBudget(address) external",
   ],
   tokenRewards: [
     "function treasure() view returns (address)",
@@ -513,6 +515,16 @@ async function main() {
     const collectionRewards = new ethers.Contract(A.COLLECTION_REWARDS, ABI.collectionRewards, signer);
     await ensureAddress("COLLECTION_REWARDS.registry", () => collectionRewards.registry(), A.REGISTRY, () => collectionRewards.setRegistry(A.REGISTRY));
     await ensureAddress("COLLECTION_REWARDS.distributor", () => collectionRewards.distributor(), A.DISTRIBUTOR, () => collectionRewards.setDistributor(A.DISTRIBUTOR));
+    try {
+      const budget = await collectionRewards.collectionBudgets(A.MAIN);
+      if (!Boolean(budget.configured ?? budget[0])) {
+        await tx("COLLECTION_REWARDS.configureCollectionBudget(MAIN)", () =>
+          collectionRewards.configureCollectionBudget(A.MAIN)
+        );
+      }
+    } catch {
+      console.warn("[WARN] COLLECTION_REWARDS has no isolated budget API; redeploy is required before activation.");
+    }
   }
 
   if (isSet(A.TOKEN_REWARDS)) {

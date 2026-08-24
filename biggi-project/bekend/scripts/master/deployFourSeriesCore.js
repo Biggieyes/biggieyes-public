@@ -942,6 +942,22 @@ async function main() {
       registry.address,
       () => collectionRewards.setRegistry(registry.address)
     );
+    try {
+      for (const chapter of chapters) {
+        await setBoolIfDifferent(
+          opts,
+          `CollectionRewards.budgetConfigured ${chapter.main.address}`,
+          async () => {
+            const budget = await collectionRewards.collectionBudgets(chapter.main.address);
+            return Boolean(budget.configured ?? budget[0]);
+          },
+          true,
+          () => collectionRewards.configureCollectionBudget(chapter.main.address)
+        );
+      }
+    } catch (error) {
+      console.warn(`WARN: CollectionRewards isolated budgets unavailable: ${error.message}`);
+    }
   }
 
   if (isAddress(A.TOKEN_REWARDS)) {

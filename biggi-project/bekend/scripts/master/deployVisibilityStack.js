@@ -444,6 +444,18 @@ async function main() {
     );
     await maybeTx(() => main2.setChapterController(chapterController.address, 1));
 
+    if (collectionRewards) {
+      if (distributor !== ZERO) {
+        await maybeTx(() => collectionRewards.setDistributor(distributor));
+      }
+      try {
+        await maybeTx(() => collectionRewards.configureCollectionBudget(mainCollection.address));
+        await maybeTx(() => collectionRewards.setFundingCollection(mainCollection.address));
+      } catch (error) {
+        console.warn(`WARN: CollectionRewards budget gate configuration skipped: ${error.message}`);
+      }
+    }
+
     await configureMainUris(main2, "PUBLIC", 2);
     const publicMetadata = loadMetadataFile("PUBLIC_METADATA_FILE", "public");
     if (publicMetadata.length) {

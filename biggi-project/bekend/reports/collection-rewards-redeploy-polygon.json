@@ -1,0 +1,64 @@
+{
+  "checkedAt": "2026-08-24T21:39:35.231Z",
+  "network": "polygon",
+  "chainId": 137,
+  "blockNumber": 92601698,
+  "mode": "dry-run",
+  "oldCollectionRewards": "0x5d1273070c9133381C570009768621762F024FB8",
+  "oldMainReader": "0x4937CdcF1668255Cb46c78E19547ea96C94391Ef",
+  "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "deployer": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+  "distributorInitiallyPaused": false,
+  "legacyState": {
+    "balancePOL": "0.0",
+    "distributorPendingPOL": "0.0"
+  },
+  "rewardSchedulePOL": {
+    "orange": "1000.0",
+    "block": "3000.0",
+    "rainbow": "10000.0",
+    "maximumPerChapter": "47000.0"
+  },
+  "chapters": [
+    {
+      "chapterId": 1,
+      "name": "BIGGI MASTER Core Launch",
+      "main": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+      "active": false,
+      "settledClaims": 0
+    },
+    {
+      "chapterId": 2,
+      "name": "BIGGI Universe",
+      "main": "0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036",
+      "active": false,
+      "settledClaims": 0
+    },
+    {
+      "chapterId": 3,
+      "name": "BIGGI Mutant",
+      "main": "0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2",
+      "active": false,
+      "settledClaims": 0
+    },
+    {
+      "chapterId": 4,
+      "name": "BIGGI Apocalipse",
+      "main": "0x8E862D9071120D69517D3F7Db0c101175E911115",
+      "active": false,
+      "settledClaims": 0
+    },
+    {
+      "chapterId": 5,
+      "name": "BIGGI Super Hero",
+      "main": "0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38",
+      "active": false,
+      "settledClaims": 0
+    }
+  ],
+  "deploymentGasEstimate": "3639877",
+  "deploymentMaximumCostPOL": "1.916827343576941296",
+  "blockers": [],
+  "transactions": [],
+  "result": "ready-for-explicit-execute"
+}

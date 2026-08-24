@@ -88,7 +88,7 @@ The current address registry exported in the frontend and backend mirror points 
 | Contract | Address |
 | --- | --- |
 | `BiggiEyesMain` | `0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4` |
-| `BiggiEyesMain2` | `0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634` |
+| `BiggiEyesMain2` | `0xe56cC0657A89daf10994204eD745985a61b0E36F` |
 | `VRFRouter` | `0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F` |
 | `BiggiToken` | `0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD` |
 | `Distributor` | `0xCE892698159D8D799D5eF7f0dF0111487511fD22` |

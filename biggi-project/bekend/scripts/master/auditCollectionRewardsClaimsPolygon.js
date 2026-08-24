@@ -34,6 +34,9 @@ const REWARDS_ABI = [
   "function canClaimOrangeFor(address,address,uint256) view returns (bool,uint8)",
   "function canClaimBlockFor(address,address,uint16) view returns (bool,uint8)",
   "function canClaimRainbowFor(address,address) view returns (bool,uint8)",
+  "function fundingCollection() view returns (address)",
+  "function maximumCollectionLiability() view returns (uint256)",
+  "function collectionBudgetSnapshot(address) view returns (bool configured,bool claimsEnabled,uint256 requiredBudget,uint256 fundedBudget,uint256 spentBudget,uint256 availableBudget,uint256 remainingLiability,uint256 surplusBudget)",
 ];
 
 const REGISTRY_ABI = [
@@ -210,6 +213,19 @@ async function main() {
   check("TicketHub unpaused", ticketHubPaused === false, ticketHubPaused, false);
   check("TicketHub BIGGI token", sameAddress(ticketBiggi, addresses.BIGGI_TOKEN), ticketBiggi, addresses.BIGGI_TOKEN);
 
+  let isolatedBudgetMode = false;
+  let fundingCollection = null;
+  let contractMaximumLiability = null;
+  try {
+    [fundingCollection, contractMaximumLiability] = await Promise.all([
+      rewards.fundingCollection(),
+      rewards.maximumCollectionLiability(),
+    ]);
+    isolatedBudgetMode = true;
+  } catch {
+    // The legacy mainnet deployment does not expose isolated chapter budgets.
+  }
+
   let outstandingLiability = ethers.constants.Zero;
   let activeOutstandingLiability = ethers.constants.Zero;
   let firstSaleCap = null;
@@ -292,6 +308,41 @@ async function main() {
     }
     if (firstSaleCap == null) firstSaleCap = Number(saleCap);
 
+    let budget = null;
+    if (isolatedBudgetMode) {
+      const rawBudget = await rewards.collectionBudgetSnapshot(chapter.MAIN);
+      budget = {
+        configured: Boolean(rawBudget.configured ?? rawBudget[0]),
+        claimsEnabled: Boolean(rawBudget.claimsEnabled ?? rawBudget[1]),
+        required: rawBudget.requiredBudget ?? rawBudget[2],
+        funded: rawBudget.fundedBudget ?? rawBudget[3],
+        spent: rawBudget.spentBudget ?? rawBudget[4],
+        available: rawBudget.availableBudget ?? rawBudget[5],
+        remainingLiability: rawBudget.remainingLiability ?? rawBudget[6],
+        surplus: rawBudget.surplusBudget ?? rawBudget[7],
+      };
+      check(
+        `Chapter ${id} isolated budget configured`,
+        budget.configured && budget.required.eq(contractMaximumLiability),
+        `${budget.configured}/${formatPol(budget.required)}`,
+        `true/${formatPol(contractMaximumLiability)}`,
+      );
+      check(
+        `Chapter ${id} budget gate coherent`,
+        budget.claimsEnabled === budget.funded.gte(budget.required),
+        `${budget.claimsEnabled}/${formatPol(budget.funded)}`,
+        `${budget.funded.gte(budget.required)}/${formatPol(budget.funded)}`,
+      );
+      if (chapterActive) {
+        check(
+          `Chapter ${id} receives new CollectionRewards funding`,
+          sameAddress(fundingCollection, chapter.MAIN),
+          fundingCollection,
+          chapter.MAIN,
+        );
+      }
+    }
+
     report.chapters.push({
       chapterId: id,
       name: chapter.seriesName,
@@ -319,6 +370,18 @@ async function main() {
         rainbow: preview(ownerRainbowPreview),
       },
       outstandingLiabilityPOL: formatPol(chapterOutstanding),
+      budget: budget
+        ? {
+            configured: budget.configured,
+            claimsEnabled: budget.claimsEnabled,
+            requiredPOL: formatPol(budget.required),
+            fundedPOL: formatPol(budget.funded),
+            spentPOL: formatPol(budget.spent),
+            availablePOL: formatPol(budget.available),
+            remainingLiabilityPOL: formatPol(budget.remainingLiability),
+            surplusPOL: formatPol(budget.surplus),
+          }
+        : null,
     });
   }
 
@@ -335,6 +398,11 @@ async function main() {
     outstandingLiabilityActiveChaptersPOL: formatPol(
       activeOutstandingLiability,
     ),
+    isolatedBudgetMode,
+    fundingCollection,
+    contractMaximumLiabilityPOL: contractMaximumLiability
+      ? formatPol(contractMaximumLiability)
+      : null,
   };
   report.distributor = {
     address: addresses.DISTRIBUTOR,
@@ -368,9 +436,20 @@ async function main() {
     biggiTicketMintFundsNativeRewardsPool: false,
   };
 
-  if (rewardsBalance.lt(outstandingLiability)) {
+  if (isolatedBudgetMode) {
+    for (const chapter of report.chapters) {
+      if (chapter.budget && !chapter.budget.claimsEnabled) {
+        report.warnings.push({
+          label: `Chapter ${chapter.chapterId} CollectionRewards claims are budget-locked`,
+          fundedPOL: chapter.budget.fundedPOL,
+          requiredPOL: chapter.budget.requiredPOL,
+          note: "Native mints keep funding this isolated budget; claims unlock automatically at full coverage.",
+        });
+      }
+    }
+  } else if (rewardsBalance.lt(outstandingLiability)) {
     report.warnings.push({
-      label: "CollectionRewards pool is not fully prefunded",
+      label: "Legacy CollectionRewards pool is not fully prefunded",
       currentPOL: formatPol(rewardsBalance),
       outstandingLiabilityPOL: formatPol(outstandingLiability),
       note: "Claims remain fail-closed until sufficient mint revenue reaches the pool.",
@@ -384,7 +463,7 @@ async function main() {
   }
   report.warnings.push({
     label: "BIGGI-paid ticket mints do not fund the native CollectionRewards pool",
-    note: "Before each chapter activation, prefund its outstanding POL liability or enforce a monitored native-mint funding threshold.",
+    note: "Only native POL mints and explicit fundCollectionBudget calls advance a chapter budget.",
   });
 
   report.checkedAt = new Date().toISOString();

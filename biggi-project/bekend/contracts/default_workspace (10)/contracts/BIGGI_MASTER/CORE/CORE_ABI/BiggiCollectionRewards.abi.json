@@ -27,6 +27,26 @@
   },
   {
     "inputs": [],
+    "name": "ClaimsBudgetLocked",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CollectionBudgetNotConfigured",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FundingCollectionNotSet",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InsufficientCollectionBudget",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidCollection",
     "type": "error"
   },
@@ -84,6 +104,11 @@
   },
   {
     "inputs": [],
+    "name": "RewardScheduleLocked",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "ZeroAddress",
     "type": "error"
   },
@@ -116,6 +141,87 @@
       }
     ],
     "name": "BlockRewardClaimed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "collection",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "requiredBudget",
+        "type": "uint256"
+      }
+    ],
+    "name": "CollectionBudgetConfigured",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "collection",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "funder",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "fundedBudget",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "requiredBudget",
+        "type": "uint256"
+      }
+    ],
+    "name": "CollectionBudgetFunded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "collection",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "fundedBudget",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "requiredBudget",
+        "type": "uint256"
+      }
+    ],
+    "name": "CollectionClaimsEnabled",
     "type": "event"
   },
   {
@@ -159,6 +265,31 @@
   {
     "anonymous": false,
     "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "oldCollection",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newCollection",
+        "type": "address"
+      }
+    ],
+    "name": "FundingCollectionSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "collection",
+        "type": "address"
+      },
       {
         "indexed": false,
         "internalType": "uint256",
@@ -582,9 +713,135 @@
   },
   {
     "inputs": [],
+    "name": "clearFundingCollection",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "clearRegistry",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "collection",
+        "type": "address"
+      }
+    ],
+    "name": "collectionBudgetSnapshot",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "configured",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "claimsEnabled",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "requiredBudget",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fundedBudget",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "spentBudget",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "availableBudget",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "remainingLiability",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "surplusBudget",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "collectionBudgets",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "configured",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "claimsEnabled",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "required",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "funded",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "spent",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "collection",
+        "type": "address"
+      }
+    ],
+    "name": "configureCollectionBudget",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "configuredCollectionCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -628,6 +885,32 @@
         "type": "address"
       }
     ],
+    "name": "fundCollectionBudget",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "fundingCollection",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "collection",
+        "type": "address"
+      }
+    ],
     "name": "isEligibleCollection",
     "outputs": [
       {
@@ -647,6 +930,19 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "maximumCollectionLiability",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -781,6 +1077,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "rewardScheduleLocked",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -863,6 +1172,19 @@
       }
     ],
     "name": "setDistributor",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "collection",
+        "type": "address"
+      }
+    ],
+    "name": "setFundingCollection",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
