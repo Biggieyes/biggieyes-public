@@ -1,6 +1,7 @@
 # Pre-Liquidity Automation Readiness
 
-Date: 2026-08-19
+Initial record: 2026-08-19
+Last verified: 2026-08-25
 Network: Polygon mainnet
 
 This document records what is ready before the first BIGGI/WPOL liquidity seed and what must remain inactive until liquidity and CRE deployment access are available.
@@ -115,6 +116,7 @@ CRE account:
 - Deploy access: `Not enabled`.
 - No production workflows found.
 - No linked owners found.
+- `cre account access --non-interactive` unexpectedly reported a submitted request without collecting a description; confirm the active request with Chainlink support.
 
 ## Planned Initial Liquidity
 
@@ -133,6 +135,8 @@ Implied initial price:
 Dry-run status:
 
 - Parameters are coherent.
+- Owner wallet balance observed: `1.824440220558510091 POL`.
+- Deployment wallet balance observed: `1.387342241466426688 POL`.
 - Only current blocker is insufficient native balance on the owner wallet for `5,000 POL + 1 POL + gas`.
 
 ## Later Activation Order

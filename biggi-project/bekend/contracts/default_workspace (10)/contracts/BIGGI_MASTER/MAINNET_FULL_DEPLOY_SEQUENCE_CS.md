@@ -1,16 +1,16 @@
 # BIGGI Polygon mainnet: finalni deploy a launch postup
 
-Stav k 2026-08-18. Tento dokument je hlavni poradi zbyvajicich kroku. Vychazi z live read-only kontrol Polygonu, overeni vsech peti CORE chapteru a lokalnich testu.
+Stav k 2026-08-25. Tento dokument je hlavni poradi zbyvajicich kroku. Vychazi z live read-only kontrol Polygonu, overeni vsech peti CORE chapteru a lokalnich testu.
 
 ## Aktualni verdikt
 
 - CORE a tokenomika jsou nasazene na Polygon mainnetu.
 - Deployment manifest eviduje 58 unikatnich projektovych deploymentu: 58 ma bytecode a 58 je verifikovano.
-- Centralni TicketHub, SeriesRegistry, ChapterController, readery a pet opravenych VRF/Public paru jsou nasazene. Aktualni kontrola je `219/219`; vsech pet Public kontraktu ma `MAX_SUPPLY=100`.
+- Centralni TicketHub, SeriesRegistry, ChapterController, readery a pet opravenych VRF/Public paru jsou nasazene. Aktualni kontrola je `223/223`; vsech pet Public kontraktu ma `MAX_SUPPLY=100`.
 - Opravena Public migrace prosla kompletnim Polygon fork nacvikem: 5 deploymentu, 136 lokalnich transakci a finalni wiring audit `deployed-wired-paused`.
 - `BiggiCREAutomationReceiver` je nasazeny, verifikovany a zamerne paused.
 - `okForDeployOnly=true`, ale `okForPublicLaunch=false`.
-- Posledni `npm.cmd run preflight:launch:polygon` vratil 7 blockeru a 0 warningu.
+- Posledni `npm.cmd run preflight:launch:polygon` vratil 7 blockeru a 2 ocekavane warningy k CollectionRewards budgetu a BIGGI-paid mintum.
 - Ownership transfer, VRF subscription transfer, CRE receiver deploy a pocatecni distribuce BIGGI jsou hotove. Initial liquidity ani CRE aktivace zatim odeslane nebyly.
 
 ## Historicky odhad POL nakladu
@@ -201,13 +201,13 @@ cre registry list
 cre workflow simulate .\my-workflow --target test-settings --trigger-index 0 --non-interactive
 cre workflow deploy .\my-workflow --target production-settings
 cre workflow get .\my-workflow --target production-settings
-cre workflow list --output json
+cre workflow list --target production-settings --output json
 ```
 
 `cre whoami` musi ukazat `Deploy Access: Enabled`. Pokud je novy workflow po deployi `ACTIVE`, okamzite ho pozastavit:
 
 ```powershell
-cre workflow pause .\biggi-tokenomics-automation --target production-settings
+cre workflow pause .\my-workflow --target production-settings
 ```
 
 Z `workflow get/list` ziskat skutecne `workflowId` a `ownerAddress`. Tyto hodnoty nastavit lokalne:

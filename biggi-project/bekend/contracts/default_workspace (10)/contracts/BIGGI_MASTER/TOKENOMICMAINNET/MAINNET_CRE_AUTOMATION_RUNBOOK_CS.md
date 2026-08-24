@@ -1,6 +1,6 @@
 # BIGGI mainnet CRE automation runbook
 
-Stav overen 2026-08-17. CRE nahrazuje orchestrace starych Chainlink Automation upkeepu. Nasazene tokenomicke kontrakty zustavaji execution vrstvou; novy CRE workflow cte jejich stav a zapisuje pres zabezpeceny receiver.
+Stav overen 2026-08-25. CRE nahrazuje orchestrace starych Chainlink Automation upkeepu. Nasazene tokenomicke kontrakty zustavaji execution vrstvou; novy CRE workflow cte jejich stav a zapisuje pres zabezpeceny receiver.
 
 Petikapitolovy CORE update nemeni pet tokenomickych CRE target vetvi. Receiver zustava paused a CRE workflow se nesmi deploynout ani aktivovat pred likviditou a finalnim gate. Ucet je prihlaseny, ale `Deploy Access` je stale `Not enabled`.
 
@@ -68,7 +68,9 @@ Pouziva se pouze `LIQUIDITY_KEEPER_PROXY`, nikoli paralelne `LIQUIDITY_AUTOMATIO
 - keeper proxy smoke testy: 4/4 OK.
 - tokenomic ABI porovnani: 46 kontraktu, 0 problemu.
 - CRE dry-run nad Polygonem: OK, `submitted=0`, `failed=0`.
-- Pri poslednim dry-run byly eligible vetve supply controller a rewards week; buyback, liquidity a DEX guard spravne vratily no action.
+- Posledni dry-run vratil `needed=1`, `submitted=0`, `failed=0`, `dryRun=true`.
+- Supply controller, buyback, liquidity a DEX guard vratily `no action needed`; pouze rewards week roll vratil `action needed; dry-run skipped write`.
+- BIGGI/WPOL pair je stale prazdny. Owner wallet mela pri dry-run `1.824440220558510091 POL`, proto nelze provest planovany seed `5000 POL + 1 POL sync + gas`.
 
 Dry-run nepouziva `--broadcast` a neodesila transakce.
 
@@ -85,6 +87,8 @@ cre registry list
 `cre registry list` uspesne vratil `private` a `onchain:ethereum-mainnet`. BIGGI workflow je nastaven na `private`, aby sprava workflow nevyzadovala Ethereum mainnet gas.
 
 `cre account access` je interaktivni terminalovy proces, nikoli webova stranka. V terminalu potvrdit `Yes` a zadat strucny popis BIGGI use case. Chainlink nasledne zadost rucne posoudi a odpovi e-mailem. Stav kontrolovat prikazem `cre whoami`.
+
+Pozor: dne 2026-08-25 `cre account access --non-interactive` v CLI v1.30.0 neocekavane nezastavil prompt a ohlasil odeslany request bez vyzadani popisu. Tento prikaz znovu nespoustet; na support meetingu potvrdit, ktery request je k organizaci prirazen.
 
 2. V `cre-workflows/biggi-cre/my-workflow/workflow.yaml` je nastaveno:
 

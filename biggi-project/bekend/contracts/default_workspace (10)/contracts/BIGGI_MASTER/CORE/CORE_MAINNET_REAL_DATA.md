@@ -48,7 +48,7 @@ All VRF chapters share Chapter 1's 550-position block-color, tier, rarity, and g
 
 TokenRewards applies to both the VRF and Public collection in every registered chapter. CollectionRewards applies only to the VRF collection; Public collections are intentionally excluded from CollectionRewards.
 
-The latest production verification passed `219/219` on-chain checks and `14/14` PolygonScan source verifications. Chapter 1 Public metadata are `100/100` and fully configured; chapters 2-5 are `100/100` structurally valid but intentionally lack final image URIs. Redemption remains locked until explicit chapter activation.
+The latest production verification passed `223/223` on-chain checks and `15/15` PolygonScan source verifications. Chapter 1 Public metadata are `100/100` and fully configured; chapters 2-5 are `100/100` structurally valid but intentionally lack final image URIs. Redemption remains locked until explicit chapter activation.
 
 ## External / Operational Values
 

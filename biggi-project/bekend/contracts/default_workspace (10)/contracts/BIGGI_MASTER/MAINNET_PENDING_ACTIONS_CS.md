@@ -1,8 +1,8 @@
 # BIGGI mainnet pending actions
 
-Stav k 2026-08-17. Tento dokument vychazi z aktualni live read-only kontroly Polygon mainnetu. Audit sam neposila zadne transakce.
+Stav k 2026-08-25. Tento dokument vychazi z aktualni live read-only kontroly Polygon mainnetu. Audit sam neposila zadne transakce.
 
-Kompletni zavazne poradi je v [MAINNET_FULL_DEPLOY_SEQUENCE_CS.md](MAINNET_FULL_DEPLOY_SEQUENCE_CS.md). Posledni launch preflight aktualne eviduje 7 blockeru a 0 warningu.
+Kompletni zavazne poradi je v [MAINNET_FULL_DEPLOY_SEQUENCE_CS.md](MAINNET_FULL_DEPLOY_SEQUENCE_CS.md). Posledni launch preflight aktualne eviduje 7 blockeru a 2 ocekavane warningy.
 
 ## 1. Kriticka bezpecnost
 
@@ -57,6 +57,7 @@ Aktualne je total supply `1.2B BIGGI` a DEX pair nema likviditu.
 
 - Deploy Access: ceka na schvaleni Chainlinkem.
 - Workflow dry-run: uspesny, `failed=0`, bez broadcastu.
+- Posledni dry-run: `needed=1`, `submitted=0`; zapis by potreboval pouze rewards week roll a byl bezpecne preskocen.
 - Registry: `private`.
 - Receiver `0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6` je nasazeny, verifikovany a paused.
 - Pet produkcnich target/selector dvojic zatim neni allowlisted; to je zamerne do finalniho workflow ID/owner wiring.
@@ -72,7 +73,8 @@ Po schvaleni:
 ## 6. Metadata a finalni gate
 
 - MAIN metadata kontrola je konzistentni pro 550 polozek.
-- MAIN2 public metadata zatim nejsou plne launch-ready.
+- Chapter 1 MAIN2 metadata jsou on-chain `100/100`, `fullyConfigured=true` a `rewardMatrixConsistent=true`; kontrakt zustava zamerne paused.
+- Finalni obrazky/URI budoucich chapteru 2-5 musi byt doplneny a overeny pred aktivaci kazdeho z nich.
 - Pred otevrenim mintu spustit znovu:
 
 ```powershell

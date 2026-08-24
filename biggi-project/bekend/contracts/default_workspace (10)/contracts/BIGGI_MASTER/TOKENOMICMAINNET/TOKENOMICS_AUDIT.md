@@ -93,7 +93,7 @@ Dynamic TokenRewards emission audit on 2026-06-10:
 - `BiggiTokenRewardsReader` now exposes controller address/enabled status and `emissionPreview(user, units)`.
 - `BiggiTokenomikReader` now includes TokenRewards controller address/enabled status in the aggregate tokenomics status.
 - `deployMasterStack.js` can deploy and enable the controller by default; `configureMasterEssence.js` can reconcile its wiring and budget parameters; `checkMasterStatus.js` validates the live link in strict checks.
-- Current verification (2026-08-17): `npm run compile:master` OK, `npm run test:master` OK with `79 passing`, Polygon deployment manifest 58/58 verified, tokenomic ABI compare OK with 46 contracts / 0 issues, and five-series CORE verification 204/204.
+- Current verification (2026-08-25): `npm run compile:master` OK, `npm run test:master` OK with `81 passing`, Polygon deployment manifest 58/58 verified, tokenomic ABI compare OK with 46 contracts / 0 issues, CORE ABI compare with 25 contracts / 0 issues, and five-series CORE verification 223/223.
 
 CRE automation migration update on 2026-06-26:
 

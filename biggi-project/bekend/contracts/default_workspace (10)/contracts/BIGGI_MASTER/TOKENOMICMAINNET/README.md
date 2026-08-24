@@ -1,20 +1,20 @@
 # TOKENOMICMAINNET
 
-Deployment status: deployed on Polygon mainnet. Tokenomics phase 1 and phase 2 are verified and the one-time initial BIGGI distribution is complete; public economic activation still waits for initial liquidity, MAIN2 metadata and CRE activation.
+Deployment status: deployed on Polygon mainnet. Tokenomics phase 1 and phase 2 are verified and the one-time initial BIGGI distribution is complete; public economic activation still waits for initial liquidity, MAIN2 unpause, CRE workflow identity/wiring and final keeper activation.
 
 This branch contains the BIGGI token, reserve, treasury, drip, buyback, liquidity, supply protection, moderator, reader, setup, upkeep/CRE, and tokenomic library contracts.
 
 ## Current Verification
 
-Last verified: 2026-08-17.
+Last verified: 2026-08-25.
 
 - `npm run compile:master` passed.
-- `npm run test:master` passed with `79 passing`.
+- `npm run test:master` passed with `81 passing`.
 - Polygon deployment manifest passed with `58/58` unique project deployments containing bytecode and verified source code.
-- Five chapter pairs, the central TicketHub/registry/controller and CORE readers passed `204/204` live relationship checks.
-- `npm run gate:master:local` passed with `Final gate local: OK`.
-- Strict local status check returned `Consistency checks: OK`.
+- Five chapter pairs, the central TicketHub/registry/controller and CORE readers passed `223/223` live checks.
+- Focused CORE relationship verification passed with no issues.
 - `ABI/` contains 46 contract ABI files plus `index.json` and matches current `artifacts-master`.
+- ABI/source checks passed for `46` tokenomic contracts and `25` CORE contracts with zero issues.
 - `TOKENOMIC_LIBRARY/` contains 5 libraries; all have ABI snapshots in `ABI/`.
 - `TOKENOMIC_READERS/` contains 11 tokenomic reader contracts; master deploy/check flow supports them.
 
@@ -27,7 +27,7 @@ Dynamic TokenRewards emission update on 2026-06-10:
 - If a claim exceeds the remaining weekly budget, it reverts instead of partially paying and marking all NFTs claimed.
 - `BiggiTokenRewardsReader` and `BiggiTokenomikReader` expose controller address/enabled status; `BiggiTokenRewardsReader.emissionPreview(user, units)` exposes live budget preview data.
 - `deployMasterStack.js`, `configureMasterEssence.js`, and `checkMasterStatus.js` now understand `TOKEN_REWARDS_EMISSION_CONTROLLER`.
-- Latest full verification passed: `npm run compile:master`, `npm run test:master` with 79 passing, deployment manifest 58/58 verified, tokenomic ABI compare with 46 contracts / 0 issues, and five-series CORE verification 204/204.
+- Latest full verification passed: `npm run compile:master`, `npm run test:master` with 81 passing, deployment manifest 58/58 verified, tokenomic ABI compare with 46 contracts / 0 issues, CORE ABI compare with 25 contracts / 0 issues, and five-series CORE verification 223/223.
 
 Focused hardening recheck on 2026-06-07:
 
@@ -66,15 +66,16 @@ Deep tokenomics audit on 2026-06-07:
 
 ## Mainnet Notes
 
-Mainnet deployment now has real external addresses. Remaining operational values before public activation:
+Mainnet deployment has real QuickSwap router/factory/WPOL/pair addresses and final project contract addresses. Remaining operational gates before public activation:
 
-- `PAIR`, `QUOTE_TOKEN`, `ROUTER`, `FACTORY`, `WETH`
-- optional `DEX_GUARD_QUOTE_ORACLE`, `DEX_GUARD_MAX_ORACLE_STALENESS_SEC`, `DEX_GUARD_REQUIRE_QUOTE_ORACLE`, `DEX_GUARD_REFRESH_PRICE_ANCHOR`
-- optional VRF values or final `VRF_ROUTER`
-- final `DEV_WALLET`
-- final `EXPECT_OWNER` / Safe / timelock
-- final CRE workflow deployment/activation and receiver wiring
-- final buyback/router/policy values
+- seed `8,000,000 BIGGI + 5,000 POL` into the currently empty BIGGI/WPOL pair;
+- run the post-seed LiquidityManager accounting sync and snapshot the supply/DEX baselines;
+- keep Chapter 1 Public paused until the strict launch gate passes;
+- obtain CRE Deploy Access, deploy the workflow paused, then lock its workflow ID/owner and exact receiver allowlist;
+- activate only `LIQUIDITY_KEEPER_PROXY`, not parallel `LIQUIDITY_AUTOMATION`;
+- keep `DRIP_KEEPER_PROXY` paused because successful buyback triggers drip directly;
+- fund and test the VRF subscription before public redeem traffic;
+- optionally move long-term ownership to a hardware-backed Safe/multisig.
 
 `addresses.master.json` is now the canonical merged Polygon manifest; use it together with the phase-specific Polygon manifests.
 

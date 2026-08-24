@@ -91,7 +91,7 @@ Dynamic TokenRewards reader recheck on 2026-06-10:
 - `BiggiTokenRewardsReader.getStatus()` includes `emissionController` and `emissionControllerEnabled`.
 - `BiggiTokenRewardsReader.emissionPreview(user, units)` exposes dynamic weekly budget, paid amount, and unit reward.
 - `BiggiTokenomikReader.getFullStatus()` includes TokenRewards controller address/enabled status.
-- Full master test: `npm run test:master` OK, 79 passing (2026-08-17).
+- Full master test: `npm run test:master` OK, 81 passing (2026-08-25).
 - Local final gate: `npm run gate:master:local` OK, report status `ok`.
 - ABI check: `node scripts/tools/compareTokenomicAbi.js` OK, 46 contracts, 0 issues.
 - ABI-to-source check: `node scripts/tools/compareAbiToSource.js` OK, 25 contracts, 0 issues.

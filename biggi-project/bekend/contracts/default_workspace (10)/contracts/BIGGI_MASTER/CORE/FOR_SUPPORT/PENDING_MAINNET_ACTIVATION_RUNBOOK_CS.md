@@ -66,7 +66,7 @@ npm run prepare:initial-liquidity:polygon
 
 Current dry-run blocker:
 
-- Owner wallet does not have enough POL for `5000 POL + 1 POL + gas`.
+- Owner wallet currently has `1.824440220558510091 POL`, not enough for `5000 POL + 1 POL + gas`.
 
 Execution must not be run until the owner wallet has enough POL and the irreversible flag is set intentionally:
 
@@ -113,6 +113,7 @@ npm run activate:tokenomics:polygon
 CRE is still blocked by account access:
 
 - `cre whoami` reports `Deploy Access: Not enabled`.
+- `cre account access --non-interactive` unexpectedly reported a submitted request without collecting a description; do not repeat it before Chainlink confirms the active request.
 
 Until Chainlink enables deploy access, do not run production deploy/activate.
 
