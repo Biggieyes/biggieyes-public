@@ -2324,9 +2324,9 @@ function LiveStats({
   const statsBoxWidth = isPhone ? (isTiny ? "100%" : "calc(50% - 6px)") : BOX;
   const statsBoxHeight = isPhone ? "auto" : BOX;
   const statsBoxMinHeight = isPhone ? (isTiny ? 96 : 110) : BOX;
-  const infoBoxWidth = isPhone ? "100%" : 180;
-  const infoBoxHeight = "auto";
-  const infoBoxMinHeight = isPhone ? (isTiny ? 110 : 120) : 170;
+  const infoBoxWidth = isPhone ? "100%" : statsBoxWidth;
+  const infoBoxHeight = statsBoxHeight;
+  const infoBoxMinHeight = statsBoxMinHeight;
   const imageBox = isPhone ? (isTiny ? 150 : 170) : BOX;
   const statsGroupDirection = isPhone ? (isTiny ? "column" : "row") : "column";
   const statsGroupWidth = isPhone ? "100%" : statsBoxWidth;
