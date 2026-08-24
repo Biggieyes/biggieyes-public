@@ -985,6 +985,7 @@ function COLLECTIONBlocksGrid({
         COLLECTIONTotals={COLLECTIONTotals}
         onTokenIdChange={setDesiredTokenId}
         renderChapterSwitcher={renderChapterSwitcher}
+        comingSoon={isFutureChapter}
       />
     ),
     [
@@ -995,6 +996,7 @@ function COLLECTIONBlocksGrid({
       selectedPublicNft,
       COLLECTIONTotals,
       renderChapterSwitcher,
+      isFutureChapter,
     ],
   );
 
