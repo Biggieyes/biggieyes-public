@@ -24,16 +24,44 @@ async function queueRefresh(apiKey, contract, tokenId) {
       },
       signal: AbortSignal.timeout(30_000),
     });
-    if (response.ok || response.status === 409) return response.status;
+    const numberHeader = (name) => {
+      const value = response.headers.get(name);
+      return value === null || value === "" ? null : Number(value);
+    };
+    const rateLimit = {
+      limit: numberHeader("x-ratelimit-limit"),
+      remaining: numberHeader("x-ratelimit-remaining"),
+      reset: numberHeader("x-ratelimit-reset"),
+      retryAfter: numberHeader("retry-after"),
+    };
+    if (response.ok || response.status === 409) {
+      return { status: response.status, rateLimit };
+    }
     if (response.status === 429 && attempt < 4) {
       const retryAfter = Number(response.headers.get("retry-after") || 2);
       await sleep(Math.max(1, retryAfter) * 1_000);
       continue;
     }
     const detail = await response.text();
-    throw new Error(`token ${tokenId}: OpenSea HTTP ${response.status}: ${detail}`);
+    const error = new Error(
+      `token ${tokenId}: OpenSea HTTP ${response.status}: ${detail}`,
+    );
+    error.status = response.status;
+    throw error;
   }
   throw new Error(`token ${tokenId}: OpenSea refresh retry limit reached`);
+}
+
+function nextRequestDelay(rateLimit, fallbackMs) {
+  const now = Date.now();
+  const resetMs = rateLimit?.reset == null ? null : rateLimit.reset * 1000;
+  const remaining = rateLimit?.remaining;
+  if (Number.isFinite(resetMs) && resetMs > now && Number.isFinite(remaining)) {
+    const untilReset = resetMs - now;
+    if (remaining <= 0) return Math.max(500, untilReset + 250);
+    return Math.max(500, Math.ceil(untilReset / (remaining + 1)) + 100);
+  }
+  return fallbackMs;
 }
 
 async function main() {
@@ -56,21 +84,39 @@ async function main() {
 
   const apiKey = process.env.OPENSEA_API_KEY;
   if (!apiKey) throw new Error("OPENSEA_API_KEY is missing");
-  const delayMs = Number(process.env.OPENSEA_REFRESH_DELAY_MS || 12_500);
-  if (!Number.isFinite(delayMs) || delayMs < 500) {
+  const fallbackDelayMs = Number(
+    process.env.OPENSEA_REFRESH_DELAY_MS || 12_500,
+  );
+  if (!Number.isFinite(fallbackDelayMs) || fallbackDelayMs < 500) {
     throw new Error("OPENSEA_REFRESH_DELAY_MS must be at least 500");
   }
   let queued = 0;
+  let delayMs = fallbackDelayMs;
+  let rateLimitLogged = false;
   const failures = [];
   for (const tokenId of tokenIds) {
     try {
-      await queueRefresh(apiKey, manifest.ticketHub, tokenId);
+      const result = await queueRefresh(apiKey, manifest.ticketHub, tokenId);
       queued += 1;
+      delayMs = nextRequestDelay(result.rateLimit, fallbackDelayMs);
+      if (
+        !rateLimitLogged &&
+        result.rateLimit?.limit != null &&
+        Number.isFinite(result.rateLimit.limit)
+      ) {
+        console.log(
+          `OpenSea write limit: ${result.rateLimit.limit}; adaptive pacing enabled`,
+        );
+        rateLimitLogged = true;
+      }
     } catch (error) {
+      if (error?.status === 401 || error?.status === 403) throw error;
       failures.push(error.message || String(error));
     }
     await sleep(delayMs);
-    if (queued > 0 && queued % 25 === 0) console.log(`Queued ${queued}/${tokenIds.length}`);
+    if (queued > 0 && queued % 10 === 0) {
+      console.log(`Queued ${queued}/${tokenIds.length}`);
+    }
   }
   console.log(`OpenSea refresh queued: ${queued}/${tokenIds.length}`);
   if (failures.length) {
