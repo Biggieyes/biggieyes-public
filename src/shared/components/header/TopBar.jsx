@@ -17,6 +17,9 @@ const TOPBAR_LOGOS = {
   },
 };
 
+const OPENSEA_BIGGI_URL =
+  "https://opensea.io/collection/biggi-ticket-339884819/overview";
+
 const BIGGI_STORY_PARAGRAPHS = [
   "In BiggiVerse, eye colors are not style like in our world - they are maps of origin. This universe is split into 10 blocks (10 zones of reality), and each zone leaves a trace: an eye color and a distinct type of background. That is why eyes and backgrounds in BiggiEyes actually mean something - they show which layer of BiggiVerse a being comes from.",
   "The main character is a human boy named Biggi. When you mint, you do not get a finished being right away - you get a Ticket featuring Biggi. The Ticket is fully tradable (you can buy it, sell it, transfer it), because in BiggiVerse the chance to transform has real value. The Ticket price increases dynamically after every mint, so holding a Ticket can be worthwhile even without redeeming it. At the same time, the Ticket provides no extra perks and no weekly rewards - it is purely a tradable entry pass with a rising price.",
@@ -53,21 +56,35 @@ function TopBar({
       {!isMobile && (
         <>
           <div className="left-block">
-            <img
-              src={TOPBAR_LOGOS.primary.src}
-              className="left-logo"
-              alt="BiggiEyes Logo"
-              loading="eager"
-              decoding="async"
-              fetchPriority="high"
-              width={TOPBAR_LOGOS.primary.width}
-              height={TOPBAR_LOGOS.primary.height}
-              onError={(event) => {
-                if (event.currentTarget.dataset.fallbackApplied === "1") return;
-                event.currentTarget.dataset.fallbackApplied = "1";
-                event.currentTarget.src = TOPBAR_LOGOS.primary.fallbackSrc;
-              }}
-            />
+            <div className="left-logo-row">
+              <img
+                src={TOPBAR_LOGOS.primary.src}
+                className="left-logo"
+                alt="BiggiEyes Logo"
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                width={TOPBAR_LOGOS.primary.width}
+                height={TOPBAR_LOGOS.primary.height}
+                onError={(event) => {
+                  if (event.currentTarget.dataset.fallbackApplied === "1") return;
+                  event.currentTarget.dataset.fallbackApplied = "1";
+                  event.currentTarget.src = TOPBAR_LOGOS.primary.fallbackSrc;
+                }}
+              />
+              <a
+                className="opensea-btn-top"
+                href={OPENSEA_BIGGI_URL}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Open BiggiEyes on OpenSea"
+              >
+                <span className="opensea-icon" aria-hidden>
+                  OS
+                </span>
+                <span className="wallet-btn-label">OpenSea</span>
+              </a>
+            </div>
             <ActionButtons
               onMint={onMint}
               onRedeem={onRedeem}
@@ -154,6 +171,5 @@ function TopBar({
 }
 
 export default React.memo(TopBar);
-
 
 
