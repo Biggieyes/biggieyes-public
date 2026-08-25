@@ -170,14 +170,10 @@ EVIDENCE/cre-preflight-polygon.json
 Preflight result:
 
 - Total checks: `48`
-- Errors: `6`
+- Errors: `5`
 - Warnings: `0`
 
-One error is an unsafe live configuration that must be corrected before activation:
-
-- `BUYBACK_UPKEEP_PROXY.minNativeThresholdWei` is `1 wei`; the canonical production value is `0.5 POL` and the preflight rejects values below `0.001 POL`.
-
-The other five errors are expected before production activation. The receiver has not yet allowlisted the final targets/selectors:
+All five errors are expected before production activation. The receiver has not yet allowlisted the final targets/selectors:
 
 - supply-controller `0x810ba27C98aAB09737e3988a3C1b10D6CadaB8E8` selector `0x4585e33b`
 - buyback `0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875` selector `0x4585e33b`
@@ -185,7 +181,7 @@ The other five errors are expected before production activation. The receiver ha
 - dex-reserve-guard `0x350370c248495758b80Ea1C564Df1290cA76588B` selector `0x4585e33b`
 - rewards-week-roll `0xA7B71DFEBF89481b37d803dD0765E3612f29Ffb9` selector `0x69fa508a`
 
-The launch-readiness preflight currently reports 13 blockers and 2 expected warnings. The stricter count now also covers canonical LiquidityManager trigger/request values, auto-buyback state, all five CRE call/role bindings, and Chapter 1 activation. The unsigned five-phase plan and full Polygon-fork rehearsal are in `EVIDENCE/production-activation-plan-polygon.json` and `EVIDENCE/production-activation-plan-fork.json`. No corrective mainnet transaction or signature has been produced.
+The launch-readiness preflight currently reports 11 blockers and 2 expected warnings. Pre-liquidity remediation completed on Polygon with two confirmed zero-value owner transactions: the buyback threshold is `0.5 POL` and disabled LiquidityManager trigger/request values are `5 POL / 5 POL`. Evidence is in `EVIDENCE/pre-liquidity-remediation-execution-polygon.json`. The unsigned five-phase plan and full Polygon-fork rehearsal are in `EVIDENCE/production-activation-plan-polygon.json` and `EVIDENCE/production-activation-plan-fork.json`.
 
 ## Support Questions For Chainlink
 

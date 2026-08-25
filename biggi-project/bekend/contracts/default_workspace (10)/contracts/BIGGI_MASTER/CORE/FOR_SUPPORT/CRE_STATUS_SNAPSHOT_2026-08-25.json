@@ -80,7 +80,7 @@
     "nativeAmountPol": "5000",
     "postSeedSyncPol": "1",
     "ownerWallet": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
-    "ownerNativeBalancePol": "1.824440220558510091",
+    "ownerNativeBalancePol": "1.800179327500824706",
     "deploymentWallet": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
     "deploymentWalletNativeBalancePol": "1.387342241466426688",
     "reserveBiggiBalance": "600000000",
@@ -107,12 +107,22 @@
       "30-cre-wiring",
       "40-originals-launch"
     ],
+    "preLiquidityRemediation": {
+      "completed": true,
+      "evidence": "EVIDENCE/pre-liquidity-remediation-execution-polygon.json",
+      "transactions": 2,
+      "buybackThresholdWei": "500000000000000000",
+      "liquidityManagerAutoTopUpEnabled": false,
+      "liquidityManagerTriggerWei": "5000000000000000000",
+      "liquidityManagerRequestWei": "5000000000000000000"
+    },
     "readOnlyPlanBlockers": [
       "Owner lacks 5001 POL execution value plus gas",
       "CRE production workflow ID/owner unresolved"
     ],
-    "forkTransactionsExecuted": 24,
-    "forkGasUsed": "1545502",
+    "forkTransactionsExecuted": 22,
+    "forkTransactionsSkipped": 4,
+    "forkGasUsed": "1477848",
     "allForkPostStateChecksPassed": true,
     "mainnetTransactionsSent": 0,
     "mainnetSignaturesProduced": 0
@@ -122,7 +132,6 @@
     "okForPublicLaunch": false,
     "blockers": [
       "BUYBACK_UPKEEP_PROXY is paused",
-      "BUYBACK_UPKEEP_PROXY threshold is dust-level: 1 wei; canonical default is 0.5 POL",
       "PAIR has no initial liquidity",
       "MAIN2 is paused",
       "CRE automation receiver is paused",
@@ -130,7 +139,6 @@
       "CRE workflow owner is not locked",
       "LIQUIDITY_ORCHESTRATOR is paused",
       "LIQUIDITY_KEEPER_PROXY is paused",
-      "Canonical LiquidityManager trigger/request values are not set",
       "BuybackAgent auto-buyback is not enabled",
       "CRE production call allowlist and target-side roles are not wired",
       "Originals Chapter 1 is not active"

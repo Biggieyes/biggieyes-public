@@ -1,5 +1,5 @@
 {
-  "createdAt": "2026-08-25T00:57:40.960Z",
+  "createdAt": "2026-08-25T01:46:24.655Z",
   "network": "polygon",
   "chainId": 137,
   "ok": false,
@@ -294,9 +294,9 @@
     },
     {
       "name": "BuybackUpkeep threshold is not dust-level",
-      "ok": false,
+      "ok": true,
       "value": {
-        "actualWei": "1",
+        "actualWei": "500000000000000000",
         "minimumWei": "1000000000000000",
         "canonicalDefaultWei": "500000000000000000"
       }
@@ -365,14 +365,6 @@
   ],
   "warnings": [],
   "errors": [
-    {
-      "name": "BuybackUpkeep threshold is not dust-level",
-      "value": {
-        "actualWei": "1",
-        "minimumWei": "1000000000000000",
-        "canonicalDefaultWei": "500000000000000000"
-      }
-    },
     {
       "name": "supply-controller: receiver selector allowlisted",
       "value": {

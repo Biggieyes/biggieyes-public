@@ -10,8 +10,8 @@ Stav k 2026-08-25. Tento dokument je hlavni poradi zbyvajicich kroku. Vychazi z 
 - Opravena Public migrace prosla kompletnim Polygon fork nacvikem: 5 deploymentu, 136 lokalnich transakci a finalni wiring audit `deployed-wired-paused`.
 - `BiggiCREAutomationReceiver` je nasazeny, verifikovany a zamerne paused.
 - `okForDeployOnly=true`, ale `okForPublicLaunch=false`.
-- Posledni `npm.cmd run preflight:launch:polygon` vratil 13 blockeru a 2 ocekavane warningy k CollectionRewards budgetu a BIGGI-paid mintum.
-- Kanonicky read-only plan ma pet oddelenych fazi a jeho kompletni Polygon-fork rehearsal provedl 24 lokalnich transakci se vsemi post-checky; zadna mainnet transakce ani podpis nevznikly.
+- Posledni `npm.cmd run preflight:launch:polygon` vratil 11 blockeru a 2 ocekavane warningy k CollectionRewards budgetu a BIGGI-paid mintum.
+- Kanonicky read-only plan ma pet oddelenych fazi a posledni Polygon-fork rehearsal po dokonceni faze 00 provedl 22 potrebnych lokalnich transakci; 4 jiz splnene/nepovinne kroky preskocil a vsechny post-checky prosly. Zadna mainnet transakce ani podpis pri rehearsal nevznikly.
 - Ownership transfer, VRF subscription transfer, CRE receiver deploy a pocatecni distribuce BIGGI jsou hotove. Initial liquidity ani CRE aktivace zatim odeslane nebyly.
 
 ## Historicky odhad POL nakladu
@@ -50,7 +50,7 @@ Do chatu neposilat zadny private key ani seed phrase. Potrebne jsou pouze verejn
 4. `PUBLIC_METADATA_FILE`: kompletni 100polozkova MAIN2 metadata matice (10 NFT v kazdem z 10 bloku, bez background klonu) a finalni IPFS URI pro aktivovany chapter.
 5. Schvaleny Chainlink CRE Deploy Access a z nej ziskane workflow ID/owner.
 
-## Aktualnich 13 launch blockeru
+## Aktualnich 11 launch blockeru
 
 Stav z `preflight:launch:polygon` po nasazeni CRE receiveru:
 
@@ -62,11 +62,9 @@ Stav z `preflight:launch:polygon` po nasazeni CRE receiveru:
 6. `LIQUIDITY_ORCHESTRATOR` je paused.
 7. `LIQUIDITY_KEEPER_PROXY` je paused.
 8. `BUYBACK_UPKEEP_PROXY` je paused.
-9. `BUYBACK_UPKEEP_PROXY.minNativeThresholdWei` je chybne `1 wei`, kanonicky `0.5 POL`.
-10. LM auto trigger/request jsou ulozene jako `5 wei / 5 wei`, kanonicky `5 POL / 5 POL` pri `autoTopUpEnabled=false`.
-11. BuybackAgent auto-buyback zatim neni zapnuty.
-12. Pet CRE call allowlist polozek a ctyri target-side role zatim nejsou zapojene.
-13. Originals Chapter 1 zatim neni aktivni.
+9. BuybackAgent auto-buyback zatim neni zapnuty.
+10. Pet CRE call allowlist polozek a ctyri target-side role zatim nejsou zapojene.
+11. Originals Chapter 1 zatim neni aktivni.
 
 Mimo on-chain preflight zustava externi blocker: CRE Deploy Access je stale `Not enabled`. Receiver `0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6` je nasazeny, overeny pres Sourcify a bezpecne paused.
 
@@ -293,6 +291,11 @@ plan se deli na faze `00-remediation`, `10-liquidity`, `20-tokenomics`,
 `30-CRE` a `40-Originals`. Liquidity calldata ma deadline pouze 900 sekund,
 proto se musi tesne pred skutecnym krokem znovu vygenerovat.
 
+Faze `00-pre-liquidity-remediation` byla na Polygonu dokoncena 2026-08-25.
+`BUYBACK_UPKEEP_PROXY` ma threshold `0.5 POL`, zustava paused, a LiquidityManager
+ma pri vypnutem auto top-up ulozeno `5 POL / 5 POL`. Doklad je v
+`CORE/FOR_SUPPORT/EVIDENCE/pre-liquidity-remediation-execution-polygon.json`.
+
 Po kontrole execution:
 
 ```powershell
@@ -330,7 +333,7 @@ $env:I_UNDERSTAND_KEEPERS_GO_LIVE="1"
 npm.cmd run activate:tokenomics:polygon
 ```
 
-Tento krok take snapshotuje baseline SupplyControlleru a DexReserveGuardu. Skript nyni hard-blockuje pokus o zapnuti Drip keeperu a dust-level buyback threshold. Live `BUYBACK_UPKEEP_PROXY.minNativeThresholdWei=1` opravi na `0.5 POL` pred unpause proxy.
+Tento krok take snapshotuje baseline SupplyControlleru a DexReserveGuardu. Skript hard-blockuje pokus o zapnuti Drip keeperu a dust-level buyback threshold. Kanonicky threshold `0.5 POL` byl nastaven uz v bezpecne paused fazi 00 a pred unpause se znovu overi.
 
 Potom aktivovat on-chain CRE receiver:
 

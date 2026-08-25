@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-08-25T01:53:03.906Z",
+  "network": "polygon",
+  "chainId": 137,
+  "sourceBlock": 92611837,
+  "configFile": "config/production-activation.polygon.json",
+  "execute": false,
+  "expectedOwner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "contracts": {
+    "buybackUpkeepProxy": "0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875",
+    "liquidityManager": "0xfb770C5A5AC6e41C85f076DB7C3434eAcd8e0F19"
+  },
+  "desired": {
+    "buybackThresholdWei": "500000000000000000",
+    "liquidityManager": {
+      "autoTopUpEnabled": false,
+      "autoTriggerMinPolWei": "5000000000000000000",
+      "autoRequestPolWei": "5000000000000000000"
+    }
+  },
+  "before": {
+    "buyback": {
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "paused": true,
+      "minNativeThresholdWei": "500000000000000000"
+    },
+    "liquidityManager": {
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "autoTopUpEnabled": false,
+      "autoTriggerMinPolWei": "5000000000000000000",
+      "autoRequestPolWei": "5000000000000000000"
+    }
+  },
+  "plannedActions": [],
+  "transactions": [],
+  "blockers": [],
+  "errors": [],
+  "after": {
+    "buyback": {
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "paused": true,
+      "minNativeThresholdWei": "500000000000000000"
+    },
+    "liquidityManager": {
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "autoTopUpEnabled": false,
+      "autoTriggerMinPolWei": "5000000000000000000",
+      "autoRequestPolWei": "5000000000000000000"
+    }
+  },
+  "postconditions": {
+    "buybackThresholdCanonical": true,
+    "liquidityManagerCanonical": true,
+    "buybackStillPaused": true,
+    "liquidityManagerStillDisabled": true
+  },
+  "complete": true,
+  "okForExecution": true
+}

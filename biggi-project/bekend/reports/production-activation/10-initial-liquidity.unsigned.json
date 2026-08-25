@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "createdAt": "2026-08-25T01:05:21.870Z",
+  "createdAt": "2026-08-25T01:38:18.548Z",
   "network": {
     "name": "polygon",
     "chainId": 137
   },
   "sourceBlock": {
-    "number": 92609926,
-    "timestamp": 1787619916
+    "number": 92611244,
+    "timestamp": 1787621893
   },
   "sendsTransactions": false,
   "containsSignatures": false,
@@ -17,8 +17,8 @@
     "id": "10-initial-liquidity",
     "irreversible": true,
     "ready": false,
-    "expiresAtUnix": 1787620816,
-    "mustRegenerateAfterUnix": 1787620816,
+    "expiresAtUnix": 1787622793,
+    "mustRegenerateAfterUnix": 1787622793,
     "transactions": [
       {
         "id": "reserve-to-owner",
@@ -59,7 +59,7 @@
         "label": "Seed BIGGI/WPOL liquidity with LP minted to Vault",
         "to": "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff",
         "value": "5000000000000000000000",
-        "data": "0xf305d719000000000000000000000000d73152845bc5a9b8253ea0100bb10388cc5c0eed000000000000000000000000000000000000000000069e10de76676d0800000000000000000000000000000000000000000000000006959876f340823f00000000000000000000000000000000000000000000000000010db1fe8d52005c0000000000000000000000000000fe234394845b601b2c671c0dd631fa6290c02bb9000000000000000000000000000000000000000000000000000000006a8cedd0",
+        "data": "0xf305d719000000000000000000000000d73152845bc5a9b8253ea0100bb10388cc5c0eed000000000000000000000000000000000000000000069e10de76676d0800000000000000000000000000000000000000000000000006959876f340823f00000000000000000000000000000000000000000000000000010db1fe8d52005c0000000000000000000000000000fe234394845b601b2c671c0dd631fa6290c02bb9000000000000000000000000000000000000000000000000000000006a8cf589",
         "method": "addLiquidityETH(address,uint256,uint256,uint256,address,uint256)",
         "args": [
           "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
@@ -67,11 +67,11 @@
           "7960000000000000000000000",
           "4975000000000000000000",
           "0xFe234394845B601B2c671c0dD631fA6290c02bb9",
-          1787620816
+          1787622793
         ],
         "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
         "required": true,
-        "condition": "execute before Unix 1787620816; pair must still be empty",
+        "condition": "execute before Unix 1787622793; pair must still be empty",
         "postcondition": "pair reserves are non-zero and LP is held by LiquidityVault",
         "blockedBy": []
       },
@@ -140,7 +140,6 @@
       }
     ],
     "blockers": [
-      "Phase 00 remediation must be executed and the plan regenerated",
       "Owner lacks 5001 POL execution value plus gas"
     ]
   }

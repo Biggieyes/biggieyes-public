@@ -27,6 +27,7 @@ Vystupy:
 1. `00-pre-liquidity-remediation`
    - `BuybackUpkeepProxy.setThreshold(0.5 POL)`
    - `LiquidityManager.setAutoTopUpConfig(false, 5 POL, 5 POL)`
+   - dokonceno na Polygonu 2026-08-25; obe post-condition prosly a automatizace zustaly paused
 2. `10-initial-liquidity`
    - `8,000,000 BIGGI + 5,000 POL`
    - LP prijemce je `LiquidityVault`
@@ -61,15 +62,16 @@ Vystupy:
 
 Read-only plan aktualne eviduje dva blokatory:
 
-1. Owner ma `1.824440220558510091 POL`, ale samotna hodnota liquidity a sync kroku je `5001 POL`; gas je navic.
+1. Owner ma `1.800179327500824706 POL`, ale samotna hodnota liquidity a sync kroku je `5001 POL`; gas je navic.
 2. CRE production workflow ID/owner zatim neexistuji, protoze Deploy Access neni enabled.
 
-Strict launch preflight eviduje 13 blockeru, protoze zapocitava i vsechny zamerne
+Strict launch preflight eviduje 11 blockeru, protoze zapocitava i vsechny zamerne
 paused/neaktivni stavy, ktere se odstrani az v jednotlivych fazich.
 
 ## Fork dukaz
 
-Kompletni nacvik provedl 24 lokalnich transakci a spotreboval `1,545,502 gas`.
+Kompletni nacvik po dokonceni faze 00 provedl 22 potrebnych lokalnich transakci,
+4 jiz splnene/nepovinne kroky preskocil a spotreboval `1,477,848 gas`.
 Prosel presnou likviditou `8,001,600 BIGGI / 5,001 POL` po sync kroku,
 Vault `accounted == real`, peti CRE cestami, paused DripKeeperem a aktivaci pouze
 Chapter 1. Nebyla odeslana mainnet transakce ani vytvoren mainnet podpis.

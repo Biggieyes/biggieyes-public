@@ -704,6 +704,9 @@ async function main() {
   const raw = JSON.parse(fs.readFileSync(addressesPath, "utf8"));
   const A = normalizeAddresses(raw);
   const [signer] = await ethers.getSigners();
+  if (opts.execute && !signer) {
+    throw new Error("Execute mode requires a configured signer");
+  }
 
   const local = isLocalLikeNetwork();
   const productionLike = !local;
@@ -814,7 +817,7 @@ async function main() {
 
   const report = {
     network: network.name,
-    signer: signer.address,
+    signer: signer ? signer.address : null,
     addressesFile: addressesPath,
     execute: opts.execute,
     strict: opts.strict,
@@ -865,7 +868,7 @@ async function main() {
   async function attach(label, addr, abi, required = false) {
     const ok = await validateContractAddress(label, addr, required);
     if (!ok) return null;
-    return new ethers.Contract(addr, abi, signer);
+    return new ethers.Contract(addr, abi, signer || ethers.provider);
   }
 
   async function change(label, txFactory) {
@@ -994,7 +997,7 @@ async function main() {
   }
 
   console.log("Network:", network.name);
-  console.log("Signer:", signer.address);
+  console.log("Signer:", signer ? signer.address : "read-only provider");
   console.log("Addresses file:", addressesPath);
   console.log("Mode:", opts.execute ? "EXECUTE" : "DRY-RUN");
   console.log("Liquidity path:", liquidityPath);

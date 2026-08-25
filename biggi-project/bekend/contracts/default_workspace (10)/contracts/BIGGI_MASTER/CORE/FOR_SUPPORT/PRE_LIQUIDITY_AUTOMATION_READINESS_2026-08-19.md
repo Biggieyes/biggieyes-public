@@ -109,7 +109,6 @@ Retry result: simulation completed successfully in dry-run mode.
 Launch preflight:
 
 - BuybackUpkeepProxy is paused.
-- BuybackUpkeepProxy has an unsafe `1 wei` native threshold; activation must set the canonical `0.5 POL` value before unpause.
 - BIGGI/WPOL pair has no liquidity.
 - MAIN2 is paused.
 - CRE receiver is paused.
@@ -117,12 +116,15 @@ Launch preflight:
 - CRE workflow owner is not locked.
 - LiquidityOrchestrator is paused.
 - LiquidityKeeperProxy is paused.
+- BuybackAgent auto-buyback is disabled.
+- CRE calls and target-side roles are not wired.
+- Originals Chapter 1 is inactive.
 
 CRE preflight:
 
-- BuybackUpkeepProxy has the same dust-level threshold blocker.
 - Receiver target/selector allowlist is still closed for the five production targets.
-- The closed allowlist is intentional until workflow ID/owner are known and CRE deploy access is enabled; the buyback threshold is not intentional.
+- The closed allowlist is intentional until workflow ID/owner are known and CRE deploy access is enabled.
+- The previous buyback threshold and LiquidityManager unit mismatches were corrected on Polygon on 2026-08-25; evidence is `EVIDENCE/pre-liquidity-remediation-execution-polygon.json`.
 
 CRE account:
 

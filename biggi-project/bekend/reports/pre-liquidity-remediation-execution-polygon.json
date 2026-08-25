@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "network": "polygon",
+  "chainId": 137,
+  "executedAt": "2026-08-25T01:37:09.000Z",
+  "verificationSource": "Polygon RPC transaction receipts and live post-state",
+  "expectedOwner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "transactions": [
+    {
+      "id": "buyback-threshold",
+      "hash": "0xdde6b8791d52bab04b03e506c69fe0c9af66807926debb62243f2661848d6c5c",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "to": "0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875",
+      "method": "setThreshold(uint256)",
+      "args": ["500000000000000000"],
+      "value": "0",
+      "blockNumber": 92611198,
+      "blockTimestamp": 1787621824,
+      "gasUsed": "33165",
+      "status": 1
+    },
+    {
+      "id": "liquidity-manager-auto-topup-config",
+      "hash": "0x61fef04cc06cb0f1a24c268049019c6bd289ed4fdd5eec414729dfa26181b2f1",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "to": "0xfb770C5A5AC6e41C85f076DB7C3434eAcd8e0F19",
+      "method": "setAutoTopUpConfig(bool,uint256,uint256)",
+      "args": [false, "5000000000000000000", "5000000000000000000"],
+      "value": "0",
+      "blockNumber": 92611201,
+      "blockTimestamp": 1787621829,
+      "gasUsed": "44569",
+      "status": 1
+    }
+  ],
+  "postState": {
+    "buybackUpkeepProxy": {
+      "paused": true,
+      "minNativeThresholdWei": "500000000000000000"
+    },
+    "liquidityManager": {
+      "autoTopUpEnabled": false,
+      "autoTriggerMinPolWei": "5000000000000000000",
+      "autoRequestPolWei": "5000000000000000000"
+    }
+  },
+  "postconditionsPassed": true
+}

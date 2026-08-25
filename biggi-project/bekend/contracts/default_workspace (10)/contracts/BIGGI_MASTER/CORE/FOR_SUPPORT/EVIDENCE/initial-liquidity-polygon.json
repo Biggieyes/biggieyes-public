@@ -1,7 +1,7 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "createdAt": "2026-08-24T23:03:44.827Z",
+  "createdAt": "2026-08-25T01:55:25.888Z",
   "execute": false,
   "deployer": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
   "signer": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
@@ -9,7 +9,7 @@
     "DRY_RUN: would transfer exactly LIQ_TOKEN_AMOUNT from Reserve to the owner wallet.",
     "DRY_RUN: would approve exactly LIQ_TOKEN_AMOUNT to the router.",
     "DRY_RUN: would call addLiquidityETH with LP minted directly to LiquidityVault.",
-    "DRY_RUN: would run post-seed LiquidityManager pairing with 1 POL and proportional BIGGI to synchronize Vault accounting."
+    "DRY_RUN: would run post-seed LiquidityManager pairing with 1.0 POL and proportional BIGGI to synchronize Vault accounting."
   ],
   "blockers": [
     "Liquidity owner native balance is not enough for requested liquidity, post-seed sync and gas."
@@ -22,13 +22,13 @@
     "requireEmptyPair": true,
     "requireVaultRecipient": true,
     "irreversibleConfirmed": false,
-    "postSeedSyncPol": "1",
+    "postSeedSyncPol": "1.0",
     "deadlineSec": 900,
     "before": {
       "distributed": true,
       "tokenBalance": "200000000000000000000000000",
       "reserveTokenBalance": "600000000000000000000000000",
-      "nativeBalance": "1824440220558510091",
+      "nativeBalance": "1800179327500824706",
       "pairReserve0": "0",
       "pairReserve1": "0",
       "pairLpSupply": "0",

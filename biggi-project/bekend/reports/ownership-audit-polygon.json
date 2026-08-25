@@ -1,18 +1,18 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "createdAt": "2026-06-27T01:21:42.705Z",
+  "createdAt": "2026-08-25T01:31:50.726Z",
   "manifestFiles": [
     "addresses.master.json",
     "addresses.visibility.polygon.json",
     "addresses.tokenomics.phase1.polygon.json",
     "addresses.tokenomics.phase2.polygon.json"
   ],
-  "uniqueAddressCandidates": 57,
-  "addressesWithCode": 55,
-  "ownableContracts": 32,
+  "uniqueAddressCandidates": 75,
+  "addressesWithCode": 72,
+  "ownableContracts": 48,
   "owners": {
-    "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B": 30,
+    "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2": 46,
     "0x53bC8B33F9Fd9cf5323b260CC078967cC3f30297": 1,
     "0x1E0166613594883337B971d4A594ebEbF75382EB": 1
   },
@@ -29,7 +29,7 @@
         "addresses.visibility.polygon.json.BIGGI_MODERATOR_CENTER",
         "addresses.visibility.polygon.json.MODERATOR_CENTER"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -41,7 +41,7 @@
         "addresses.tokenomics.phase2.polygon.json.BIGGI_TOKEN",
         "addresses.visibility.polygon.json.BIGGI_TOKEN"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -57,7 +57,7 @@
         "addresses.visibility.polygon.json.BUYBACK_AGENT",
         "addresses.visibility.polygon.json.BUYBACK_AGENT_EFFECTIVE"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -73,19 +73,19 @@
         "addresses.visibility.polygon.json.BUYBACK_UPKEEP_PROXY",
         "addresses.visibility.polygon.json.UPKEEP_PROXY"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
     {
-      "address": "0x5d1273070c9133381C570009768621762F024FB8",
+      "address": "0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43",
       "keys": [
         "addresses.master.json.COLLECTION_REWARDS",
         "addresses.tokenomics.phase1.polygon.json.COLLECTION_REWARDS",
         "addresses.tokenomics.phase2.polygon.json.COLLECTION_REWARDS",
         "addresses.visibility.polygon.json.COLLECTION_REWARDS"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -101,7 +101,16 @@
         "addresses.visibility.polygon.json.COMMUNITY_CENTER",
         "addresses.visibility.polygon.json.COMMUNITY_CENTER_EFFECTIVE"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6",
+      "keys": [
+        "addresses.master.json.CRE_AUTOMATION_RECEIVER"
+      ],
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -122,7 +131,7 @@
         "addresses.tokenomics.phase2.polygon.json.DEX_RESERVE_GUARD",
         "addresses.visibility.polygon.json.DEX_RESERVE_GUARD"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -134,7 +143,7 @@
         "addresses.tokenomics.phase2.polygon.json.DISTRIBUTOR",
         "addresses.visibility.polygon.json.DISTRIBUTOR"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -146,7 +155,7 @@
         "addresses.tokenomics.phase2.polygon.json.DRIP_DISTRIBUTOR",
         "addresses.visibility.polygon.json.DRIP_DISTRIBUTOR"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -158,7 +167,7 @@
         "addresses.tokenomics.phase2.polygon.json.DRIP_KEEPER_PROXY",
         "addresses.visibility.polygon.json.DRIP_KEEPER_PROXY"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -170,19 +179,91 @@
         "addresses.tokenomics.phase2.polygon.json.DRIP_LM",
         "addresses.visibility.polygon.json.DRIP_LM"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
     {
-      "address": "0x6bf341647C9592eFEadE43a3f396DB616B11f7E7",
+      "address": "0x9c084D89c0CB6c8424652d1fa82E83aD9c098288",
       "keys": [
         "addresses.master.json.CHAPTER_CONTROLLER",
         "addresses.tokenomics.phase1.polygon.json.CHAPTER_CONTROLLER",
         "addresses.tokenomics.phase2.polygon.json.CHAPTER_CONTROLLER",
         "addresses.visibility.polygon.json.CHAPTER_CONTROLLER"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036",
+      "keys": [
+        "addresses.master.json.chapters.1.MAIN"
+      ],
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x7EaB23497085cfF00Cb2E9809b2Af0e717187356",
+      "keys": [
+        "addresses.master.json.chapters.1.MAIN2"
+      ],
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2",
+      "keys": [
+        "addresses.master.json.chapters.2.MAIN"
+      ],
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0xda6A6f45053796d0f5edB965fe3FA47B9a35460c",
+      "keys": [
+        "addresses.master.json.chapters.2.MAIN2"
+      ],
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x8E862D9071120D69517D3F7Db0c101175E911115",
+      "keys": [
+        "addresses.master.json.chapters.3.MAIN"
+      ],
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0xecE7D61AB3FB2229C39B48380D704183532fE960",
+      "keys": [
+        "addresses.master.json.chapters.3.MAIN2"
+      ],
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38",
+      "keys": [
+        "addresses.master.json.chapters.4.MAIN"
+      ],
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x99f049279BC545469F989d8f06CD915ef4B6f1d4",
+      "keys": [
+        "addresses.master.json.chapters.4.MAIN2"
+      ],
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -198,7 +279,7 @@
         "addresses.visibility.polygon.json.KEEPER_PROXY",
         "addresses.visibility.polygon.json.LIQUIDITY_KEEPER_PROXY"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": true
     },
@@ -214,7 +295,7 @@
         "addresses.visibility.polygon.json.LIQUIDITY_MANAGER",
         "addresses.visibility.polygon.json.LM"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -226,7 +307,7 @@
         "addresses.tokenomics.phase2.polygon.json.LIQUIDITY_ORCHESTRATOR",
         "addresses.visibility.polygon.json.LIQUIDITY_ORCHESTRATOR"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": true
     },
@@ -242,7 +323,7 @@
         "addresses.visibility.polygon.json.LIQUIDITY_VAULT",
         "addresses.visibility.polygon.json.LM_VAULT"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -250,23 +331,25 @@
       "address": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
       "keys": [
         "addresses.master.json.MAIN",
+        "addresses.master.json.chapters.0.MAIN",
         "addresses.tokenomics.phase1.polygon.json.MAIN",
         "addresses.tokenomics.phase2.polygon.json.MAIN",
         "addresses.visibility.polygon.json.MAIN"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
     {
-      "address": "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634",
+      "address": "0xe56cC0657A89daf10994204eD745985a61b0E36F",
       "keys": [
         "addresses.master.json.MAIN2",
+        "addresses.master.json.chapters.0.MAIN2",
         "addresses.tokenomics.phase1.polygon.json.MAIN2",
         "addresses.tokenomics.phase2.polygon.json.MAIN2",
         "addresses.visibility.polygon.json.MAIN2"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -278,7 +361,7 @@
         "addresses.tokenomics.phase2.polygon.json.MASTER_CONFIG",
         "addresses.visibility.polygon.json.MASTER_CONFIG"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -290,7 +373,28 @@
         "addresses.tokenomics.phase2.polygon.json.NFT_REWARDS",
         "addresses.visibility.polygon.json.NFT_REWARDS"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x5d1273070c9133381C570009768621762F024FB8",
+      "keys": [
+        "addresses.master.json.OLD_COLLECTION_REWARDS"
+      ],
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0xe6d742D7DC66fA63434E6794C69798A5272e9873",
+      "keys": [
+        "addresses.master.json.OLD_TICKET_HUB",
+        "addresses.tokenomics.phase1.polygon.json.OLD_TICKET_HUB",
+        "addresses.tokenomics.phase2.polygon.json.OLD_TICKET_HUB",
+        "addresses.visibility.polygon.json.OLD_TICKET_HUB"
+      ],
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -302,19 +406,19 @@
         "addresses.tokenomics.phase2.polygon.json.POLICY",
         "addresses.visibility.polygon.json.POLICY"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
     {
-      "address": "0x5CFe3ed77386e71cd89EA3f5d0a8906F78785013",
+      "address": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
       "keys": [
         "addresses.master.json.REGISTRY",
         "addresses.tokenomics.phase1.polygon.json.REGISTRY",
         "addresses.tokenomics.phase2.polygon.json.REGISTRY",
         "addresses.visibility.polygon.json.REGISTRY"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -330,9 +434,54 @@
         "addresses.visibility.polygon.json.RESERVE",
         "addresses.visibility.polygon.json.RESERVE_ADDRESS"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": true
+    },
+    {
+      "address": "0xF82Eb16aFFEae270F808E4bFF1C43f1BB04E4634",
+      "keys": [
+        "addresses.master.json.supersededPublicCollections.0.address"
+      ],
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0xce4dF4eFc703fb0D9827aAacDB28c90405aB57D0",
+      "keys": [
+        "addresses.master.json.supersededPublicCollections.1.address"
+      ],
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x4bB7a55Ba690Fc38653f5889E2262316A049a1D9",
+      "keys": [
+        "addresses.master.json.supersededPublicCollections.2.address"
+      ],
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0x43b4C220aD039C0272153cF4B43Eaee68de09b00",
+      "keys": [
+        "addresses.master.json.supersededPublicCollections.3.address"
+      ],
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
+    },
+    {
+      "address": "0xcA168A6e391a54de4F664397eE17328280305A75",
+      "keys": [
+        "addresses.master.json.supersededPublicCollections.4.address"
+      ],
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "ownable2Step": false
     },
     {
       "address": "0x810ba27C98aAB09737e3988a3C1b10D6CadaB8E8",
@@ -342,7 +491,7 @@
         "addresses.tokenomics.phase2.polygon.json.SUPPLY_CONTROLLER",
         "addresses.visibility.polygon.json.SUPPLY_CONTROLLER"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -354,19 +503,19 @@
         "addresses.tokenomics.phase2.polygon.json.SUPPLY_GUARDIAN",
         "addresses.visibility.polygon.json.SUPPLY_GUARDIAN"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
     {
-      "address": "0xe6d742D7DC66fA63434E6794C69798A5272e9873",
+      "address": "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
       "keys": [
         "addresses.master.json.TICKET_HUB",
         "addresses.tokenomics.phase1.polygon.json.TICKET_HUB",
         "addresses.tokenomics.phase2.polygon.json.TICKET_HUB",
         "addresses.visibility.polygon.json.TICKET_HUB"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -378,7 +527,7 @@
         "addresses.tokenomics.phase2.polygon.json.TOKEN_REWARDS",
         "addresses.visibility.polygon.json.TOKEN_REWARDS"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -390,7 +539,7 @@
         "addresses.tokenomics.phase2.polygon.json.TOKEN_REWARDS_EMISSION_CONTROLLER",
         "addresses.visibility.polygon.json.TOKEN_REWARDS_EMISSION_CONTROLLER"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -402,7 +551,7 @@
         "addresses.tokenomics.phase2.polygon.json.TREASURY",
         "addresses.visibility.polygon.json.TREASURY"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     },
@@ -426,7 +575,7 @@
         "addresses.tokenomics.phase2.polygon.json.VRF_ROUTER",
         "addresses.visibility.polygon.json.VRF_ROUTER"
       ],
-      "owner": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "pendingOwner": "0x0000000000000000000000000000000000000000",
       "ownable2Step": false
     }

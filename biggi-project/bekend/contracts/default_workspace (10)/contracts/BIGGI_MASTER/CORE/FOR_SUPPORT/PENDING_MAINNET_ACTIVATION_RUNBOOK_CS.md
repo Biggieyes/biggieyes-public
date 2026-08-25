@@ -123,11 +123,11 @@ $env:I_UNDERSTAND_KEEPERS_GO_LIVE='1'
 npm run activate:tokenomics:polygon
 ```
 
-Mainnet proxy ma aktualne chybne `minNativeThresholdWei=1`. Aktivacni skript musi nejdrive provest `setThreshold(500000000000000000)` (`0.5 POL`) a teprve potom `setPaused(false)`. Hodnotu pod `0.001 POL` skript odmitne. Dry-run po doplneni liquidity musi tento plan zobrazit pred jakymkoli podpisem; execute prikazy se spousteji ve stejnem PowerShell okne, aby zustaly nastavene parametry z dry-runu.
-
-Pred liquidity se take opravi ulozene LM hodnoty z `5 wei / 5 wei` na
-`5 POL / 5 POL` pres `setAutoTopUpConfig(false, ...)`. LM zustava vypnuty,
-`tokenPct=100` a `slippageBps=300`.
+Pre-liquidity oprava byla na Polygonu dokoncena 2026-08-25. Proxy ma
+`minNativeThresholdWei=500000000000000000` (`0.5 POL`) a zustava paused.
+LiquidityManager ma `setAutoTopUpConfig(false, 5 POL, 5 POL)`, `tokenPct=100`
+a `slippageBps=300`. Doklad je v
+`EVIDENCE/pre-liquidity-remediation-execution-polygon.json`.
 
 ## 4. CRE
 

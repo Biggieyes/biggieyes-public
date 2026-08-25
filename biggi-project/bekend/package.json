@@ -67,6 +67,8 @@
     "rehearse:initial-liquidity:fork": "node scripts/master/runInitialLiquidityForkRehearsal.js",
     "plan:production-activation:polygon": "node scripts/master/runBuildProductionActivationPlanPolygon.js",
     "rehearse:production-activation:fork": "node scripts/master/runProductionActivationPlanForkRehearsal.js",
+    "prepare:pre-liquidity-remediation:polygon": "node scripts/master/runPreLiquidityRemediationPolygon.js",
+    "execute:pre-liquidity-remediation:polygon": "node scripts/master/runPreLiquidityRemediationPolygon.js --execute",
     "activate:tokenomics:polygon": "node scripts/master/runActivateTokenomicsPolygon.js",
     "manifest:deployment:polygon": "node scripts/master/runBuildDeploymentManifestPolygon.js",
     "sync:master:visibility:addresses": "node scripts/master/syncVisibilityAddresses.js",

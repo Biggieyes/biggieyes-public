@@ -113,7 +113,7 @@ This is intentional. Receiver activation must happen only after workflow deploy 
 5. Configure receiver expected workflow ID/owner.
 6. Allowlist the five target/selector pairs.
 7. Configure target-side keeper/allowed-caller roles for the receiver where required.
-8. Correct `BUYBACK_UPKEEP_PROXY.minNativeThresholdWei` from the live `1 wei` value to the canonical `0.5 POL`; the activation script performs this before proxy unpause and rejects values below `0.001 POL`.
+8. Verify the completed pre-liquidity remediation: `BUYBACK_UPKEEP_PROXY.minNativeThresholdWei=0.5 POL` and disabled LiquidityManager trigger/request values are `5 POL / 5 POL`; evidence is in `EVIDENCE/pre-liquidity-remediation-execution-polygon.json`.
 9. Keep legacy/parallel keepers paused to avoid duplicate execution.
 10. Unpause receiver only after DEX liquidity and final tokenomics launch gates are satisfied.
 11. Monitor first executions in the CRE dashboard and on PolygonScan.
@@ -130,12 +130,11 @@ Current status:
 
 - `okForDeployOnly`: `true`
 - `okForPublicLaunch`: `false`
-- Blockers: `13`
+- Blockers: `11`
 
 Known blockers:
 
 - `BUYBACK_UPKEEP_PROXY` is paused.
-- `BUYBACK_UPKEEP_PROXY.minNativeThresholdWei` is the unsafe dust value `1 wei` instead of the canonical `0.5 POL`.
 - BIGGI/WPOL pair has no initial liquidity.
 - `MAIN2` is paused.
 - CRE receiver is paused.
@@ -143,7 +142,6 @@ Known blockers:
 - CRE workflow owner is not locked.
 - `LIQUIDITY_ORCHESTRATOR` is paused.
 - `LIQUIDITY_KEEPER_PROXY` is paused.
-- LiquidityManager stored auto trigger/request values are `5 wei / 5 wei` instead of canonical `5 POL / 5 POL`; auto top-up remains disabled.
 - BuybackAgent automatic execution is not enabled.
 - The five CRE target calls and four target-side roles are not wired yet.
 - Originals Chapter 1 is not active.

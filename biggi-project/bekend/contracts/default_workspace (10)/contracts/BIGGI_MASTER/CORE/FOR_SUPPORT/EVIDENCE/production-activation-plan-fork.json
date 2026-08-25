@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "createdAt": "2026-08-25T01:04:25.463Z",
+  "createdAt": "2026-08-25T01:57:13.205Z",
   "forkOnly": true,
   "sendsMainnetTransactions": false,
   "containsMainnetSignatures": false,
@@ -12,7 +12,7 @@
   },
   "plan": {
     "schemaVersion": 1,
-    "createdAt": "2026-08-25T01:04:21.037Z",
+    "createdAt": "2026-08-25T01:57:08.330Z",
     "network": {
       "name": "polygon",
       "chainId": 137
@@ -22,8 +22,8 @@
     "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
     "configDigest": "0x04f84711460b351c111ca9eaa80ea63f156c96e3d1e83def2e9a75a4b9eca562",
     "dynamicValues": {
-      "sourceBlockTimestamp": 1787619590,
-      "liquidityDeadlineUnix": 1787620490,
+      "sourceBlockTimestamp": 1787622785,
+      "liquidityDeadlineUnix": 1787623685,
       "workflowIdentityResolved": true
     },
     "phases": [
@@ -43,7 +43,7 @@
               "500000000000000000"
             ],
             "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
-            "required": true,
+            "required": false,
             "condition": "minNativeThresholdWei != 500000000000000000",
             "postcondition": "minNativeThresholdWei == 500000000000000000",
             "blockedBy": []
@@ -61,7 +61,7 @@
               "5000000000000000000"
             ],
             "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
-            "required": true,
+            "required": false,
             "condition": "disabled LM auto-top-up parameters do not match the canonical manifest",
             "postcondition": "autoTopUpEnabled=false and trigger/request are both 5 POL",
             "blockedBy": []
@@ -72,8 +72,8 @@
         "id": "10-initial-liquidity",
         "irreversible": true,
         "ready": true,
-        "expiresAtUnix": 1787620490,
-        "mustRegenerateAfterUnix": 1787620490,
+        "expiresAtUnix": 1787623685,
+        "mustRegenerateAfterUnix": 1787623685,
         "transactions": [
           {
             "id": "reserve-to-owner",
@@ -114,7 +114,7 @@
             "label": "Seed BIGGI/WPOL liquidity with LP minted to Vault",
             "to": "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff",
             "value": "5000000000000000000000",
-            "data": "0xf305d719000000000000000000000000d73152845bc5a9b8253ea0100bb10388cc5c0eed000000000000000000000000000000000000000000069e10de76676d0800000000000000000000000000000000000000000000000006959876f340823f00000000000000000000000000000000000000000000000000010db1fe8d52005c0000000000000000000000000000fe234394845b601b2c671c0dd631fa6290c02bb9000000000000000000000000000000000000000000000000000000006a8cec8a",
+            "data": "0xf305d719000000000000000000000000d73152845bc5a9b8253ea0100bb10388cc5c0eed000000000000000000000000000000000000000000069e10de76676d0800000000000000000000000000000000000000000000000006959876f340823f00000000000000000000000000000000000000000000000000010db1fe8d52005c0000000000000000000000000000fe234394845b601b2c671c0dd631fa6290c02bb9000000000000000000000000000000000000000000000000000000006a8cf905",
             "method": "addLiquidityETH(address,uint256,uint256,uint256,address,uint256)",
             "args": [
               "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
@@ -122,11 +122,11 @@
               "7960000000000000000000000",
               "4975000000000000000000",
               "0xFe234394845B601B2c671c0dD631fA6290c02bb9",
-              1787620490
+              1787623685
             ],
             "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
             "required": true,
-            "condition": "execute before Unix 1787620490; pair must still be empty",
+            "condition": "execute before Unix 1787623685; pair must still be empty",
             "postcondition": "pair reserves are non-zero and LP is held by LiquidityVault",
             "blockedBy": []
           },
@@ -508,17 +508,11 @@
       "transactions": [
         {
           "id": "buyback-threshold",
-          "status": "executed-on-fork",
-          "txHash": "0x10caf46891292fb57d841bbdaba700453b20ffd0a3cfaf6a9121c51d6501af2c",
-          "blockNumber": 92609710,
-          "gasUsed": "29805"
+          "status": "not-required"
         },
         {
           "id": "liquidity-manager-auto-topup-config",
-          "status": "executed-on-fork",
-          "txHash": "0x4d93f330518496d60b9025a39a8adec6b0a0def13e0d05afb0e0a0da348638fb",
-          "blockNumber": 92609711,
-          "gasUsed": "37849"
+          "status": "not-required"
         }
       ]
     },
@@ -528,50 +522,50 @@
         {
           "id": "reserve-to-owner",
           "status": "executed-on-fork",
-          "txHash": "0x2d9d6ebed44da8cee9ff518084e1b117960f89d56e75b11d025e480f7f98c128",
-          "blockNumber": 92609712,
+          "txHash": "0x82a189e12a4202274ab1786317fb6b79ba08c718f9ce25c432c4fed93fb92026",
+          "blockNumber": 92611840,
           "gasUsed": "40915"
         },
         {
           "id": "approve-router",
           "status": "executed-on-fork",
-          "txHash": "0x6f11d8e21958c6f80d9b1340c5c673fc53b16975b07822b0b6f817652ca46ace",
-          "blockNumber": 92609713,
+          "txHash": "0x511ca521d5da9e3d3520827f15cf0cf3171ac370915aa26321851a1dedc8b358",
+          "blockNumber": 92611841,
           "gasUsed": "46043"
         },
         {
           "id": "add-liquidity",
           "status": "executed-on-fork",
-          "txHash": "0x0df6ebdebf01fe16416c4b5f49591dfd3e790ea1c3a49aa15c59e76e6ce50075",
-          "blockNumber": 92609714,
+          "txHash": "0xd1f9ab2c56623b7826fda74f587880518252952814ce3cfddbbce1db7c1936fd",
+          "blockNumber": 92611842,
           "gasUsed": "252526"
         },
         {
           "id": "revoke-router",
           "status": "executed-on-fork",
-          "txHash": "0x5bd3a93ee5c4f0b5b3508c2090bb2f29c0e646ffd41c899b41bef6303f1045b4",
-          "blockNumber": 92609715,
+          "txHash": "0x2ed7007771035d47b19f4f012b5af27eb85c235191181c6b7411a23b1391612b",
+          "blockNumber": 92611843,
           "gasUsed": "26047"
         },
         {
           "id": "fund-reserve-sync",
           "status": "executed-on-fork",
-          "txHash": "0x9d233a9933b8cb222bc007a98f5e238c2b5b6dff685f4dffd99c8fcb2f53d119",
-          "blockNumber": 92609716,
+          "txHash": "0x5bf4023b87ce57f0748ac5519d50fdf977dccdadc5c1097b03fc116488860d7e",
+          "blockNumber": 92611844,
           "gasUsed": "21075"
         },
         {
           "id": "topup-reserve-sync-bucket",
           "status": "executed-on-fork",
-          "txHash": "0xf6cfe489bfd05c125b546c27c806d2a9c7e4820100b1bc8e3639a19144fb28a9",
-          "blockNumber": 92609717,
+          "txHash": "0xe22407c01f172da71bef14936050f371a9897b9802a4f2e599c5430ec25756bb",
+          "blockNumber": 92611845,
           "gasUsed": "55783"
         },
         {
           "id": "execute-post-seed-sync",
           "status": "executed-on-fork",
-          "txHash": "0xa78de56f9a1550079f708302037f186dc2c536e63ff3691f8f04111c6c6eb4c9",
-          "blockNumber": 92609718,
+          "txHash": "0x0a38ff6a2c7d71740aee25510631d31fcd494067fe57e3edc3a0203bdaaf5597",
+          "blockNumber": 92611846,
           "gasUsed": "291888"
         }
       ]
@@ -582,43 +576,43 @@
         {
           "id": "snapshot-supply-baseline",
           "status": "executed-on-fork",
-          "txHash": "0xba0d7aae7b3d7a43b5990c799944d365cd1c2205e63c0b3cd5df0e4f6cc15909",
-          "blockNumber": 92609719,
+          "txHash": "0xc2b6a482638292c7f90b6d27bed60f5c5314fbe6384f2461d416e3b46ab3c4dc",
+          "blockNumber": 92611847,
           "gasUsed": "60982"
         },
         {
           "id": "snapshot-dex-guard-baseline",
           "status": "executed-on-fork",
-          "txHash": "0x5ece4c47da7ced6457a409402d91a56904a1fa4348c4b3a812feec3f2421b963",
-          "blockNumber": 92609720,
+          "txHash": "0xd8dea793a495faf33f3c4d7fc20dc55e11016fa0ad6dd53dfaa06c376052b026",
+          "blockNumber": 92611848,
           "gasUsed": "63063"
         },
         {
           "id": "unpause-liquidity-orchestrator",
           "status": "executed-on-fork",
-          "txHash": "0xfbcfa4f6795b93862c5c199246a156c95d996a99987df5ebde2531921e35c7e7",
-          "blockNumber": 92609721,
+          "txHash": "0x0b83fdfc3d164bf2c90113f5a52e20f174962b7102e4ee327f7596a4063c6660",
+          "blockNumber": 92611849,
           "gasUsed": "29683"
         },
         {
           "id": "unpause-liquidity-keeper",
           "status": "executed-on-fork",
-          "txHash": "0x0d3865fee16c3ab5cd7bea4be7ad024d9e8012d3fd06a0a5f1c6a806f12da6b0",
-          "blockNumber": 92609722,
+          "txHash": "0xa326adb35ffa9ca5828febf60d91f876ec80dcf4cc75ca5c098c018d1ce239bc",
+          "blockNumber": 92611850,
           "gasUsed": "29769"
         },
         {
           "id": "unpause-buyback-upkeep",
           "status": "executed-on-fork",
-          "txHash": "0x56f32bd7e0053c4bd87ebb21b2a6855e910d7d155adff0f8ecad82634cdce569",
-          "blockNumber": 92609723,
+          "txHash": "0xdd56028afdbb2ed7ac5f0dccde5a3634fbc4fa0227a96e15a5d3cb9b06571124",
+          "blockNumber": 92611851,
           "gasUsed": "24804"
         },
         {
           "id": "enable-auto-buyback",
           "status": "executed-on-fork",
-          "txHash": "0x7101473cd64e7761995f3cc8a28dcab7ea1555dde3dd7767f26dd42029f0fff1",
-          "blockNumber": 92609724,
+          "txHash": "0x31b707b9544c2fbd6cf5ed7cc9e80738e56803a0620d5a7956b43238bd4498c3",
+          "blockNumber": 92611852,
           "gasUsed": "47491"
         }
       ]
@@ -629,50 +623,50 @@
         {
           "id": "cre-workflow-identity",
           "status": "executed-on-fork",
-          "txHash": "0x56bd367eebc3ca62dceb5b859bd9dcf1b821074012656cc64051ce1d8abfbac6",
-          "blockNumber": 92609725,
+          "txHash": "0xb833201a6dfda4b7d22c2b50eed7415958c73a74b2e45bdbd49b337897b362f2",
+          "blockNumber": 92611853,
           "gasUsed": "70581"
         },
         {
           "id": "cre-call-allowlist",
           "status": "executed-on-fork",
-          "txHash": "0x445477b7184778d929cc6af225883d3f0ee6276547d46035c6183746778c8e04",
-          "blockNumber": 92609726,
+          "txHash": "0x272116c786c69171f66a83e2c8ece836e37185c2a4a52be3d2bfed20b7774d76",
+          "blockNumber": 92611854,
           "gasUsed": "151295"
         },
         {
           "id": "cre-role-supply",
           "status": "executed-on-fork",
-          "txHash": "0x3bd7cbc3350876a087416b414f1958decc0adbb1ac3d1d8ea12efdd33669febc",
-          "blockNumber": 92609727,
+          "txHash": "0xe3655f07e3f119af85f9aca5735e48db7baa13811f1bae28b62abed5f86af0d1",
+          "blockNumber": 92611855,
           "gasUsed": "48466"
         },
         {
           "id": "cre-role-dex-guard",
           "status": "executed-on-fork",
-          "txHash": "0x992aa68a19fe9fa8621122a2f8afdde5d35cf49b8093cd4169da6afe990c797e",
-          "blockNumber": 92609728,
+          "txHash": "0x0daaca159379acea0fc8934242d48579f44fcf3feba2520ef72a4f94fbdb9dc3",
+          "blockNumber": 92611856,
           "gasUsed": "48410"
         },
         {
           "id": "cre-role-emission",
           "status": "executed-on-fork",
-          "txHash": "0x96392b41edd1c2663610005cb9a521342cd9673af9a6bfeba4329f3fb36dbd37",
-          "blockNumber": 92609729,
+          "txHash": "0x5b10bb531ca57f0f328158d90787b94a1677edddba1afc770ca5293dbf44ffc6",
+          "blockNumber": 92611857,
           "gasUsed": "48264"
         },
         {
           "id": "cre-role-liquidity",
           "status": "executed-on-fork",
-          "txHash": "0xfdc835e5dbefa454599474773022c6df98498df40b8751a6de071c80b200aaf2",
-          "blockNumber": 92609730,
+          "txHash": "0x0793c8e3abee4319b346605992d4e0fead8742f5fdf660968e6ecf55ee1faa52",
+          "blockNumber": 92611858,
           "gasUsed": "30793"
         },
         {
           "id": "cre-receiver-unpause",
           "status": "executed-on-fork",
-          "txHash": "0xa0fdab21f76d7c67c01e173ec84ab2dfaa52efb08883391e4145fc8e339dde6c",
-          "blockNumber": 92609731,
+          "txHash": "0x65c4fabb8a7d219b080526695b633ba469c47a27be3d61ae183a0e885e2e09cf",
+          "blockNumber": 92611859,
           "gasUsed": "29566"
         }
       ]
@@ -691,27 +685,27 @@
         {
           "id": "unpause-originals-public",
           "status": "executed-on-fork",
-          "txHash": "0x8ff3e7eec4ef58aa95637b1904b946c275133e07319b3b35601a35a1bcaafb23",
-          "blockNumber": 92609732,
+          "txHash": "0xa2cfb166c1299bd4b8956186ca1537bd445cb2fe35cef2028b3e0899ad7f8802",
+          "blockNumber": 92611860,
           "gasUsed": "28009"
         },
         {
           "id": "activate-originals-chapter",
           "status": "executed-on-fork",
-          "txHash": "0x7e4a3067f560966741c198fb2d2c2ef900fd1837b36a1c0c8e86caf8c9674c95",
-          "blockNumber": 92609733,
+          "txHash": "0xf6301f66fa7f0c847ad655ac8563b60d04a043f6b047ac83a184576cac367f9b",
+          "blockNumber": 92611861,
           "gasUsed": "32395"
         }
       ]
     }
   ],
-  "totalGasUsed": "1545502",
+  "totalGasUsed": "1477848",
   "stateBefore": {
     "buybackUpkeep": {
       "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "agent": "0x5A77E90c467576C82B8d0E74eD112B829C625BB4",
       "paused": true,
-      "minNativeThresholdWei": "1"
+      "minNativeThresholdWei": "500000000000000000"
     },
     "buybackAgent": {
       "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
@@ -738,8 +732,8 @@
       "slippageBps": "300",
       "txDeadlineSec": "600",
       "autoTopUpEnabled": false,
-      "autoTriggerMinPolWei": "5",
-      "autoRequestPolWei": "5"
+      "autoTriggerMinPolWei": "5000000000000000000",
+      "autoRequestPolWei": "5000000000000000000"
     },
     "liquidityOrchestrator": {
       "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",

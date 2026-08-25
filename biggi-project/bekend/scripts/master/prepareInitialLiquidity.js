@@ -113,9 +113,13 @@ async function main() {
   if (requireVaultRecipient && getAddress(lpRecipient) !== getAddress(A.LIQUIDITY_VAULT)) {
     report.blockers.push("LIQ_LP_RECIPIENT must equal LIQUIDITY_VAULT for the production launch.");
   }
-  if (getAddress(lpRecipient) === getAddress(A.LIQUIDITY_VAULT) && !allowVaultRecipient) {
+  if (
+    getAddress(lpRecipient) === getAddress(A.LIQUIDITY_VAULT) &&
+    !allowVaultRecipient &&
+    ethers.utils.parseEther(postSeedSyncPolRaw).isZero()
+  ) {
     report.blockers.push(
-      "LIQ_LP_RECIPIENT is LiquidityVault. Current vault accounting can only be synced by LiquidityManager; set ALLOW_UNSYNCED_VAULT_LP=1 only if you accept unsynced vault accounting."
+      "LIQ_LP_RECIPIENT is LiquidityVault but no post-seed LiquidityManager sync is configured."
     );
   }
 
@@ -384,8 +388,15 @@ async function main() {
   }
 
   const reportFile = path.resolve(root, env("INITIAL_LIQUIDITY_REPORT", "reports/initial-liquidity-polygon.json"));
+  const evidenceFile = path.resolve(
+    root,
+    "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/FOR_SUPPORT/EVIDENCE/initial-liquidity-polygon.json"
+  );
+  const reportBody = `${JSON.stringify(report, null, 2)}\n`;
   fs.mkdirSync(path.dirname(reportFile), { recursive: true });
-  fs.writeFileSync(reportFile, `${JSON.stringify(report, null, 2)}\n`);
+  fs.mkdirSync(path.dirname(evidenceFile), { recursive: true });
+  fs.writeFileSync(reportFile, reportBody);
+  fs.writeFileSync(evidenceFile, reportBody);
   console.log(JSON.stringify({
     execute,
     readyToExecute: report.blockers.length === 0,

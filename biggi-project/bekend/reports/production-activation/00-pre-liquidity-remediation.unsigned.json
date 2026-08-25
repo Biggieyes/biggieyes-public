@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "createdAt": "2026-08-25T01:05:21.870Z",
+  "createdAt": "2026-08-25T01:38:18.548Z",
   "network": {
     "name": "polygon",
     "chainId": 137
   },
   "sourceBlock": {
-    "number": 92609926,
-    "timestamp": 1787619916
+    "number": 92611244,
+    "timestamp": 1787621893
   },
   "sendsTransactions": false,
   "containsSignatures": false,
@@ -29,7 +29,7 @@
           "500000000000000000"
         ],
         "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
-        "required": true,
+        "required": false,
         "condition": "minNativeThresholdWei != 500000000000000000",
         "postcondition": "minNativeThresholdWei == 500000000000000000",
         "blockedBy": []
@@ -47,7 +47,7 @@
           "5000000000000000000"
         ],
         "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
-        "required": true,
+        "required": false,
         "condition": "disabled LM auto-top-up parameters do not match the canonical manifest",
         "postcondition": "autoTopUpEnabled=false and trigger/request are both 5 POL",
         "blockedBy": []

@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "createdAt": "2026-08-25T01:05:21.870Z",
+  "createdAt": "2026-08-25T01:38:18.548Z",
   "sourceBlock": {
-    "number": 92609926,
-    "timestamp": 1787619916
+    "number": 92611244,
+    "timestamp": 1787621893
   },
   "network": {
     "hardhatName": "polygon",
@@ -15,11 +15,11 @@
   "configFile": "config/production-activation.polygon.json",
   "readyForExecution": false,
   "blockerCount": 2,
-  "warningCount": 2,
+  "warningCount": 1,
   "blockers": [
     {
       "name": "Owner lacks execution value plus a positive gas reserve",
-      "actualWei": "1824440220558510091",
+      "actualWei": "1800179327500824706",
       "executionValueWei": "5001000000000000000000"
     },
     {
@@ -32,38 +32,12 @@
   ],
   "warnings": [
     {
-      "name": "Phase 00 contains required canonical remediation",
-      "checks": [
-        {
-          "name": "BuybackUpkeep threshold",
-          "category": "parameter",
-          "ok": false,
-          "actual": "1",
-          "expected": "500000000000000000"
-        },
-        {
-          "name": "LiquidityManager auto trigger",
-          "category": "parameter",
-          "ok": false,
-          "actual": "5",
-          "expected": "5000000000000000000"
-        },
-        {
-          "name": "LiquidityManager auto request",
-          "category": "parameter",
-          "ok": false,
-          "actual": "5",
-          "expected": "5000000000000000000"
-        }
-      ]
-    },
-    {
       "name": "Liquidity transaction deadline is ephemeral",
-      "value": "Regenerate this plan after Phase 00 and immediately before Phase 10; current deadline is 1787620816."
+      "value": "Regenerate this plan after Phase 00 and immediately before Phase 10; current deadline is 1787622793."
     }
   ],
   "funding": {
-    "ownerNativeWei": "1824440220558510091",
+    "ownerNativeWei": "1800179327500824706",
     "requiredExecutionValueWei": "5001000000000000000000",
     "surplusForGasWei": "0",
     "reserveBiggiWei": "600000000000000000000000000",
@@ -79,8 +53,8 @@
       },
       "parameter": {
         "total": 56,
-        "passed": 53,
-        "failed": 3
+        "passed": 56,
+        "failed": 0
       },
       "activationState": {
         "total": 7,
@@ -212,8 +186,8 @@
       {
         "name": "BuybackUpkeep threshold",
         "category": "parameter",
-        "ok": false,
-        "actual": "1",
+        "ok": true,
+        "actual": "500000000000000000",
         "expected": "500000000000000000"
       },
       {
@@ -324,15 +298,15 @@
       {
         "name": "LiquidityManager auto trigger",
         "category": "parameter",
-        "ok": false,
-        "actual": "5",
+        "ok": true,
+        "actual": "5000000000000000000",
         "expected": "5000000000000000000"
       },
       {
         "name": "LiquidityManager auto request",
         "category": "parameter",
-        "ok": false,
-        "actual": "5",
+        "ok": true,
+        "actual": "5000000000000000000",
         "expected": "5000000000000000000"
       },
       {
@@ -755,7 +729,7 @@
       "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
       "agent": "0x5A77E90c467576C82B8d0E74eD112B829C625BB4",
       "paused": true,
-      "minNativeThresholdWei": "1"
+      "minNativeThresholdWei": "500000000000000000"
     },
     "buybackAgent": {
       "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
@@ -782,8 +756,8 @@
       "slippageBps": "300",
       "txDeadlineSec": "600",
       "autoTopUpEnabled": false,
-      "autoTriggerMinPolWei": "5",
-      "autoRequestPolWei": "5"
+      "autoTriggerMinPolWei": "5000000000000000000",
+      "autoRequestPolWei": "5000000000000000000"
     },
     "liquidityOrchestrator": {
       "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
@@ -895,7 +869,7 @@
   },
   "plan": {
     "schemaVersion": 1,
-    "createdAt": "2026-08-25T01:05:21.548Z",
+    "createdAt": "2026-08-25T01:38:18.382Z",
     "network": {
       "name": "polygon",
       "chainId": 137
@@ -905,8 +879,8 @@
     "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
     "configDigest": "0x04f84711460b351c111ca9eaa80ea63f156c96e3d1e83def2e9a75a4b9eca562",
     "dynamicValues": {
-      "sourceBlockTimestamp": 1787619916,
-      "liquidityDeadlineUnix": 1787620816,
+      "sourceBlockTimestamp": 1787621893,
+      "liquidityDeadlineUnix": 1787622793,
       "workflowIdentityResolved": false
     },
     "phases": [
@@ -926,7 +900,7 @@
               "500000000000000000"
             ],
             "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
-            "required": true,
+            "required": false,
             "condition": "minNativeThresholdWei != 500000000000000000",
             "postcondition": "minNativeThresholdWei == 500000000000000000",
             "blockedBy": []
@@ -944,7 +918,7 @@
               "5000000000000000000"
             ],
             "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
-            "required": true,
+            "required": false,
             "condition": "disabled LM auto-top-up parameters do not match the canonical manifest",
             "postcondition": "autoTopUpEnabled=false and trigger/request are both 5 POL",
             "blockedBy": []
@@ -956,8 +930,8 @@
         "id": "10-initial-liquidity",
         "irreversible": true,
         "ready": false,
-        "expiresAtUnix": 1787620816,
-        "mustRegenerateAfterUnix": 1787620816,
+        "expiresAtUnix": 1787622793,
+        "mustRegenerateAfterUnix": 1787622793,
         "transactions": [
           {
             "id": "reserve-to-owner",
@@ -998,7 +972,7 @@
             "label": "Seed BIGGI/WPOL liquidity with LP minted to Vault",
             "to": "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff",
             "value": "5000000000000000000000",
-            "data": "0xf305d719000000000000000000000000d73152845bc5a9b8253ea0100bb10388cc5c0eed000000000000000000000000000000000000000000069e10de76676d0800000000000000000000000000000000000000000000000006959876f340823f00000000000000000000000000000000000000000000000000010db1fe8d52005c0000000000000000000000000000fe234394845b601b2c671c0dd631fa6290c02bb9000000000000000000000000000000000000000000000000000000006a8cedd0",
+            "data": "0xf305d719000000000000000000000000d73152845bc5a9b8253ea0100bb10388cc5c0eed000000000000000000000000000000000000000000069e10de76676d0800000000000000000000000000000000000000000000000006959876f340823f00000000000000000000000000000000000000000000000000010db1fe8d52005c0000000000000000000000000000fe234394845b601b2c671c0dd631fa6290c02bb9000000000000000000000000000000000000000000000000000000006a8cf589",
             "method": "addLiquidityETH(address,uint256,uint256,uint256,address,uint256)",
             "args": [
               "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
@@ -1006,11 +980,11 @@
               "7960000000000000000000000",
               "4975000000000000000000",
               "0xFe234394845B601B2c671c0dD631fA6290c02bb9",
-              1787620816
+              1787622793
             ],
             "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
             "required": true,
-            "condition": "execute before Unix 1787620816; pair must still be empty",
+            "condition": "execute before Unix 1787622793; pair must still be empty",
             "postcondition": "pair reserves are non-zero and LP is held by LiquidityVault",
             "blockedBy": []
           },
@@ -1079,7 +1053,6 @@
           }
         ],
         "blockers": [
-          "Phase 00 remediation must be executed and the plan regenerated",
           "Owner lacks 5001 POL execution value plus gas"
         ]
       },

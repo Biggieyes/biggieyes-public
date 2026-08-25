@@ -1,7 +1,7 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "createdAt": "2026-08-25T01:02:33.635Z",
+  "createdAt": "2026-08-25T01:37:34.151Z",
   "okForDeployOnly": true,
   "okForPublicLaunch": false,
   "checks": [
@@ -161,6 +161,18 @@
       "value": "0x70bc315E4E5548e54F358Abf4515C1bB1551687b"
     },
     {
+      "name": "BUYBACK_UPKEEP_PROXY threshold matches canonical production value",
+      "ok": true,
+      "value": {
+        "address": "0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875",
+        "agent": "0x5A77E90c467576C82B8d0E74eD112B829C625BB4",
+        "paused": true,
+        "minNativeThresholdWei": "500000000000000000",
+        "minimumSafeThresholdWei": "1000000000000000",
+        "canonicalThresholdWei": "500000000000000000"
+      }
+    },
+    {
       "name": "PAIR contains BIGGI and WPOL",
       "ok": true,
       "value": "0x59C7B17B3ACD48979B25215a0c477dF6FFFF3e90"
@@ -231,6 +243,11 @@
       "value": true
     },
     {
+      "name": "Canonical production parameters",
+      "ok": true,
+      "value": true
+    },
+    {
       "name": "Future chapter isolation",
       "ok": true,
       "value": true
@@ -262,18 +279,7 @@
         "address": "0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875",
         "agent": "0x5A77E90c467576C82B8d0E74eD112B829C625BB4",
         "paused": true,
-        "minNativeThresholdWei": "1",
-        "minimumSafeThresholdWei": "1000000000000000",
-        "canonicalThresholdWei": "500000000000000000"
-      }
-    },
-    {
-      "name": "BUYBACK_UPKEEP_PROXY threshold is dust-level",
-      "value": {
-        "address": "0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875",
-        "agent": "0x5A77E90c467576C82B8d0E74eD112B829C625BB4",
-        "paused": true,
-        "minNativeThresholdWei": "1",
+        "minNativeThresholdWei": "500000000000000000",
         "minimumSafeThresholdWei": "1000000000000000",
         "canonicalThresholdWei": "500000000000000000"
       }
@@ -336,25 +342,6 @@
     {
       "name": "LIQUIDITY_KEEPER_PROXY is paused",
       "value": true
-    },
-    {
-      "name": "Canonical production parameters",
-      "value": [
-        {
-          "name": "LiquidityManager auto trigger",
-          "category": "parameter",
-          "ok": false,
-          "actual": "5",
-          "expected": "5000000000000000000"
-        },
-        {
-          "name": "LiquidityManager auto request",
-          "category": "parameter",
-          "ok": false,
-          "actual": "5",
-          "expected": "5000000000000000000"
-        }
-      ]
     },
     {
       "name": "Additional production activation state",
@@ -426,7 +413,7 @@
       "address": "0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875",
       "agent": "0x5A77E90c467576C82B8d0E74eD112B829C625BB4",
       "paused": true,
-      "minNativeThresholdWei": "1",
+      "minNativeThresholdWei": "500000000000000000",
       "minimumSafeThresholdWei": "1000000000000000",
       "canonicalThresholdWei": "500000000000000000"
     },
@@ -545,7 +532,7 @@
           "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
           "agent": "0x5A77E90c467576C82B8d0E74eD112B829C625BB4",
           "paused": true,
-          "minNativeThresholdWei": "1"
+          "minNativeThresholdWei": "500000000000000000"
         },
         "buybackAgent": {
           "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
@@ -572,8 +559,8 @@
           "slippageBps": "300",
           "txDeadlineSec": "600",
           "autoTopUpEnabled": false,
-          "autoTriggerMinPolWei": "5",
-          "autoRequestPolWei": "5"
+          "autoTriggerMinPolWei": "5000000000000000000",
+          "autoRequestPolWei": "5000000000000000000"
         },
         "liquidityOrchestrator": {
           "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
@@ -792,8 +779,8 @@
         {
           "name": "BuybackUpkeep threshold",
           "category": "parameter",
-          "ok": false,
-          "actual": "1",
+          "ok": true,
+          "actual": "500000000000000000",
           "expected": "500000000000000000"
         },
         {
@@ -904,15 +891,15 @@
         {
           "name": "LiquidityManager auto trigger",
           "category": "parameter",
-          "ok": false,
-          "actual": "5",
+          "ok": true,
+          "actual": "5000000000000000000",
           "expected": "5000000000000000000"
         },
         {
           "name": "LiquidityManager auto request",
           "category": "parameter",
-          "ok": false,
-          "actual": "5",
+          "ok": true,
+          "actual": "5000000000000000000",
           "expected": "5000000000000000000"
         },
         {
@@ -1337,8 +1324,8 @@
         },
         "parameter": {
           "total": 56,
-          "passed": 53,
-          "failed": 3
+          "passed": 56,
+          "failed": 0
         },
         "activationState": {
           "total": 7,

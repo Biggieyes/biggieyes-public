@@ -2,7 +2,7 @@
 
 Stav k 2026-08-25. Tento dokument vychazi z aktualni live read-only kontroly Polygon mainnetu. Audit sam neposila zadne transakce.
 
-Kompletni zavazne poradi je v [MAINNET_FULL_DEPLOY_SEQUENCE_CS.md](MAINNET_FULL_DEPLOY_SEQUENCE_CS.md). Posledni launch preflight aktualne eviduje 13 blockeru a 2 ocekavane warningy.
+Kompletni zavazne poradi je v [MAINNET_FULL_DEPLOY_SEQUENCE_CS.md](MAINNET_FULL_DEPLOY_SEQUENCE_CS.md). Posledni launch preflight aktualne eviduje 11 blockeru a 2 ocekavane warningy.
 
 ## 1. Kriticka bezpecnost
 
@@ -70,7 +70,7 @@ Po schvaleni:
 4. aktivovat workflow az po liquidity a finalnim preflightu;
 5. ponechat samostatny `DRIP_KEEPER_PROXY` paused, protoze drip spousti BuybackAgent primo.
 
-Pred unpause `BUYBACK_UPKEEP_PROXY` opravit jeho live `minNativeThresholdWei=1` na kanonickych `500000000000000000` (`0.5 POL`). Aktualizovany aktivacni skript tuto opravu radi pred unpause a blokuje hodnoty pod `0.001 POL`.
+Pre-liquidity oprava byla potvrzena na Polygonu 2026-08-25: `BUYBACK_UPKEEP_PROXY.minNativeThresholdWei=500000000000000000` (`0.5 POL`) a LiquidityManager ma pri `autoTopUpEnabled=false` hodnoty `5 POL / 5 POL`. Proxy zustava paused. Tx hashe a post-state jsou v `CORE/FOR_SUPPORT/EVIDENCE/pre-liquidity-remediation-execution-polygon.json`.
 
 ## 6. Metadata a finalni gate
 
