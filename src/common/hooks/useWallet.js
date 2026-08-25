@@ -6,7 +6,6 @@ import {
   getContract,
   getInjectedProvider,
   setInjectedProvider,
-  syncPolygonRpcIfNeeded,
 } from "@/shared/utils/contract";
 import { isLikelyMetaMaskSdkProvider } from "@/shared/utils/injectedProviders";
 
@@ -52,11 +51,6 @@ export function useWallet({ onConnected } = {}) {
       const accounts = await eth.request({ method: "eth_requestAccounts" });
       const addr = accounts?.[0];
       if (!addr) throw new Error("No account returned from wallet.");
-      try {
-        await syncPolygonRpcIfNeeded(eth);
-      } catch {
-        // non-fatal: wallet can still connect without metadata sync
-      }
 
       const chainHex = await eth
         .request({ method: "eth_chainId" })

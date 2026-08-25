@@ -7332,11 +7332,6 @@ export default function AppCore() {
 
       walletConnectResumeAllowedRef.current = false;
       setInjectedProvider(eth);
-      try {
-        await syncPolygonRpcIfNeeded(eth);
-      } catch {
-        // non-fatal: continue connect flow even when chain metadata sync fails
-      }
 
       const injectedProvider = new BrowserProvider(eth, "any");
       const net = await injectedProvider.getNetwork().catch(() => null);

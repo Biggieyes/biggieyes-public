@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   ACTIVE_CHAIN,
   getRpcUrls,
   getWalletRpcUrls,
+  isKnownPolygonTestnetRpcUrl,
 } from "../src/shared/utils/rpcConfig.js";
 import { CHAINS, getChainInfo } from "../src/config/chains.js";
 import {
@@ -18,7 +19,10 @@ import {
   getLiquidityAddresses,
   getTokenDexAddresses,
 } from "../src/shared/utils/addresses.js";
-import { getReadOnlyContract } from "../src/shared/utils/contract.js";
+import {
+  ensurePolygon,
+  getReadOnlyContract,
+} from "../src/shared/utils/contract.js";
 
 function hostOf(url) {
   return new URL(url).hostname.toLowerCase();
@@ -35,6 +39,7 @@ describe("Polygon mainnet RPC configuration", () => {
     expect(urls.length).toBeGreaterThan(0);
     expect(urls.every((url) => /^https?:\/\//i.test(url))).toBe(true);
     expect(urls.map(hostOf)).not.toContain("polygon-rpc.com");
+    expect(urls.every((url) => !isKnownPolygonTestnetRpcUrl(url))).toBe(true);
   });
 
   it("uses the same filtered endpoints for wallet chain registration", () => {
@@ -43,6 +48,47 @@ describe("Polygon mainnet RPC configuration", () => {
     expect(urls.length).toBeGreaterThan(0);
     expect(urls.every((url) => /^https?:\/\//i.test(url))).toBe(true);
     expect(urls.map(hostOf)).not.toContain("polygon-rpc.com");
+    expect(urls.every((url) => !isKnownPolygonTestnetRpcUrl(url))).toBe(true);
+    expect(
+      isKnownPolygonTestnetRpcUrl(
+        "https://polygon-amoy.g.alchemy.com/v2/example",
+      ),
+    ).toBe(true);
+    expect(
+      isKnownPolygonTestnetRpcUrl("https://rpc-amoy.polygon.technology"),
+    ).toBe(true);
+    expect(isKnownPolygonTestnetRpcUrl("https://polygon.drpc.org")).toBe(
+      false,
+    );
+  });
+
+  it("does not request network registration when MetaMask is already on Polygon", async () => {
+    const provider = {
+      request: vi.fn(async ({ method }) => {
+        if (method === "eth_chainId") return "0x89";
+        throw new Error(`Unexpected wallet method: ${method}`);
+      }),
+    };
+
+    await expect(ensurePolygon(provider)).resolves.toBe(true);
+    expect(provider.request).toHaveBeenCalledTimes(1);
+    expect(provider.request).toHaveBeenCalledWith({ method: "eth_chainId" });
+  });
+
+  it("switches to an existing Polygon network without adding it again", async () => {
+    const provider = {
+      request: vi.fn(async ({ method }) => {
+        if (method === "eth_chainId") return "0x1";
+        if (method === "wallet_switchEthereumChain") return null;
+        throw new Error(`Unexpected wallet method: ${method}`);
+      }),
+    };
+
+    await expect(ensurePolygon(provider)).resolves.toBe(true);
+    expect(provider.request).toHaveBeenCalledTimes(2);
+    expect(provider.request).not.toHaveBeenCalledWith(
+      expect.objectContaining({ method: "wallet_addEthereumChain" }),
+    );
   });
 
   it("rejects unsupported networks instead of falling back to Polygon addresses", () => {

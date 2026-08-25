@@ -11,7 +11,6 @@ import {
   getROProvider,
   hasInjectedProviderOverride,
   setInjectedProvider,
-  syncPolygonRpcIfNeeded,
 } from "@/shared/utils/contract";
 import {
   getInjectedProviderCandidates,
@@ -196,16 +195,7 @@ export function Web3Provider({ children }) {
         await ensurePolygon(eth);
         return true;
       } catch {
-        try {
-          await syncPolygonRpcIfNeeded(eth, { force: true });
-          await eth.request({
-            method: "wallet_switchEthereumChain",
-            params: [{ chainId: ACTIVE_CHAIN.hex }],
-          });
-          return true;
-        } catch {
-          return false;
-        }
+        return false;
       } finally {
         await refresh();
       }
@@ -290,11 +280,6 @@ export function Web3Provider({ children }) {
       explicitConnectionRef.current = true;
       clearWalletConnectResumeExpected();
       setInjectedProvider(eth);
-      try {
-        await syncPolygonRpcIfNeeded(eth);
-      } catch {
-        // non-fatal: continue connect flow even if chain metadata update is skipped
-      }
       const chainHex = await eth
         .request({ method: "eth_chainId" })
         .catch(() => null);

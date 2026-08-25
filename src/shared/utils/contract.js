@@ -519,12 +519,14 @@ export async function ensurePolygon(externalProvider) {
   if (!_hasRequest(provider))
     throw new Error("Ethereum provider not available");
 
-  // Best effort update of chain metadata (RPC URLs/explorer) before switching.
-  // This helps recover from stale or rate-limited RPC endpoints in existing wallets.
-  try {
-    await syncPolygonRpcIfNeeded(provider);
-  } catch {
-    // ignore sync failures; switch flow below still attempts to continue
+  const currentChainHex = await provider
+    .request({ method: "eth_chainId" })
+    .catch(() => null);
+  if (
+    typeof currentChainHex === "string" &&
+    Number.parseInt(currentChainHex, 16) === ACTIVE_CHAIN.chainId
+  ) {
+    return true;
   }
 
   try {
@@ -537,7 +539,6 @@ export async function ensurePolygon(externalProvider) {
     const code = err?.code ?? err?.data?.originalError?.code;
     if (
       code === 4902 ||
-      code === -32603 ||
       /unrecognized chain/i.test(err?.message || "")
     ) {
       await syncPolygonRpcIfNeeded(provider, { force: true });

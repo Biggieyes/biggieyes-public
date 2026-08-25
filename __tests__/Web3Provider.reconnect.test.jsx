@@ -167,6 +167,7 @@ describe("Web3Provider reconnect policy", () => {
       method: "eth_requestAccounts",
     });
     expect(mocks.setInjectedProvider).toHaveBeenCalledWith(injected);
+    expect(mocks.syncPolygonRpcIfNeeded).not.toHaveBeenCalled();
     expect(mocks.BrowserProvider).toHaveBeenCalledTimes(1);
     expect(mocks.browserProviderInstance.getSigner).toHaveBeenCalled();
   });

@@ -121,6 +121,7 @@ const RATE_LIMITED_POLYGON_RPC_HOSTS = [
   // This public endpoint currently returns 401 in browser workloads.
   "polygon-rpc.com",
 ];
+const POLYGON_TESTNET_HOST_MARKER = /(^|[.-])(amoy|mumbai)([.-]|$)/i;
 const rateLimitedRpcMarks = new Map();
 
 function env(key) {
@@ -297,6 +298,15 @@ function rankRpcUrls(urls) {
   return deduped;
 }
 
+export function isKnownPolygonTestnetRpcUrl(url) {
+  try {
+    const parsed = new URL(String(url || "").trim());
+    return POLYGON_TESTNET_HOST_MARKER.test(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
 function filterOutBadRpcs(urls) {
   const allowTenderly = env("VITE_ALLOW_TENDERLY_RPC") === "1";
   const allowUnstablePublicRpcs =
@@ -317,6 +327,7 @@ function filterOutBadRpcs(urls) {
     } catch {
       return false;
     }
+    if (isKnownPolygonTestnetRpcUrl(raw)) return false;
     const host = String(parsed.hostname || "").toLowerCase();
     const path = String(parsed.pathname || "").toLowerCase();
     const lower = raw.toLowerCase();
