@@ -110,19 +110,41 @@ Drip is not a separate periodic CRE branch. It is triggered by successful buybac
 Safe dry-run simulation was run against `test-settings`:
 
 ```powershell
-cre workflow simulate .\my-workflow --target test-settings --trigger-index 0 --non-interactive
+cre workflow simulate .\my-workflow --target test-settings --trigger-index 0 --non-interactive --limits .\limits.chainlink-production-2026-08-25.json
 ```
 
 Result:
 
 - Simulation completed.
-- Binary hash: `71d32f1dbfe0937630d8e8e184b521cf2f847d0b6ee620583d2a11b52bcaf37e`
+- Binary hash: `f3a6e9044f4eee55f87c4926eb19fef77f22d58e77dfa729ab52fb2342665ac0`
 - Config hash: `05b79e06fc8fe58a91d360b3e7c5d858982e8dbb18a439fbb3111a100c4dea68`
+- Enforced profile: `my-workflow/limits.chainlink-production-2026-08-25.json` (`5,000,000` EVM gas, `5 KB` EVM report, `15` EVM reads, `25 KB` consensus observation).
 - Dry-run result: `{"needed":1,"submitted":0,"failed":0,"dryRun":true}`
 - Supply, buyback, liquidity and DEX guard reported `no action needed`.
 - Rewards week roll reported `action needed; dry-run skipped write`.
 
 No production deploy, upload, activation, or transaction was performed from this support package step.
+
+## Polygon-Fork Automation Rehearsal
+
+Command:
+
+```powershell
+npm run rehearse:master:cre-automation:fork
+```
+
+Evidence: `EVIDENCE/cre-automation-adversarial-gas-fork.json`
+
+- Chain ID: `137`, Polygon mainnet fork.
+- Production implementations were deployed only inside the local fork and executed through `BiggiCREAutomationReceiver`.
+- All five branches passed: Supply, Buyback, Liquidity, DEX reserve guard and Rewards week roll.
+- All six adversarial checks passed: unauthorized forwarder, wrong workflow identity, contained target revert, receiver recovery, retryable buyback failure and buyback recovery.
+- Workflow worst-case read count is `6`, below the CRE per-run quota of `15`.
+- Measured direct `receiver.onReport` gas was `140949` to `384598`; every configured branch limit retained at least `64.61%` headroom.
+- Measurements include receiver plus target execution but exclude KeystoneForwarder/DON overhead.
+- No mainnet transaction was sent.
+
+The Buyback proxy intentionally catches an agent revert and emits `PerformFailed`; the upkeep remains eligible and the next report can retry. Production monitoring must therefore alert on `PerformFailed`, not only on receiver transaction status.
 
 ## Initial Liquidity Gate
 
@@ -168,5 +190,5 @@ The 5 errors are expected before production activation. The receiver has not yet
 6. Is submitting up to five independent `writeReport` outputs from one 5-minute cron invocation supported/recommended?
 7. Is the current custom receiver pattern compatible with CRE production reports on Polygon mainnet?
 8. Should the receiver use workflow ID locking, workflow owner locking, metadata hash allowlisting, or a combination?
-9. What are the recommended gas, quota, and billing limits for this 5-minute five-branch automation design?
+9. Why does CRE CLI v1.30.0 `cre workflow limits export` return `10,000,000` EVM gas while the current service-quota page lists `5,000,000`, and which value will production enforce?
 10. What is the recommended cutover sequence from paused local keepers/legacy automation to CRE without duplicate execution?

@@ -30,6 +30,7 @@ This folder intentionally does not contain secrets, private keys, API keys, wall
 - Workflow deployment registry: `private`
 - Receiver is deployed on Polygon mainnet but intentionally paused and not allowlisted yet.
 - Safe simulation on 2026-08-25: `needed=1`, `submitted=0`, `failed=0`, `dryRun=true`.
+- Polygon-fork CRE automation rehearsal: 5/5 branches and 6/6 adversarial checks passed; no mainnet transaction was sent.
 - `cre account access --non-interactive` unexpectedly reported a submitted request without collecting a description; Chainlink should confirm which request is active.
 
 ## Current Initial Liquidity Status

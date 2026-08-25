@@ -1,13 +1,20 @@
 {
   "date": "2026-08-25",
-  "command": "cre workflow simulate .\\my-workflow --target test-settings --trigger-index 0 --non-interactive",
+  "command": "cre workflow simulate .\\my-workflow --target test-settings --trigger-index 0 --non-interactive --limits .\\limits.chainlink-production-2026-08-25.json",
   "projectRoot": "biggi-project/bekend/cre-workflows/biggi-cre",
   "workflow": "my-workflow",
   "target": "test-settings",
   "network": "polygon-mainnet",
   "dryRun": true,
   "broadcast": false,
-  "binaryHash": "71d32f1dbfe0937630d8e8e184b521cf2f847d0b6ee620583d2a11b52bcaf37e",
+  "limitsProfile": "my-workflow/limits.chainlink-production-2026-08-25.json",
+  "limits": {
+    "evmTransactionGas": 5000000,
+    "evmReportSize": "5kb",
+    "evmReadCallsPerRun": 15,
+    "consensusObservationSize": "25kb"
+  },
+  "binaryHash": "f3a6e9044f4eee55f87c4926eb19fef77f22d58e77dfa729ab52fb2342665ac0",
   "configHash": "05b79e06fc8fe58a91d360b3e7c5d858982e8dbb18a439fbb3111a100c4dea68",
   "branches": [
     {
@@ -36,5 +43,6 @@
     "submitted": 0,
     "failed": 0,
     "dryRun": true
-  }
+  },
+  "cliDefaultLimitsNote": "CRE CLI v1.30.0 exports 10000000 EVM gas while the official service-quota page currently lists 5000000; this run used the checked-in official-quota profile."
 }

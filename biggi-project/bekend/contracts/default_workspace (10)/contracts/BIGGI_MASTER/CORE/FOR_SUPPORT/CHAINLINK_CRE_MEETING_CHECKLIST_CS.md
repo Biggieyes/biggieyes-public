@@ -15,6 +15,7 @@ Potvrdit cestu k CRE Early Access deployi pro BIGGI tokenomics workflow na Polyg
 - Receiver: nasazeny, source verified, paused.
 - PolygonScan: 58/58 kontraktu source verified.
 - Posledni simulace: `needed=1`, `submitted=0`, `failed=0`, `dryRun=true`.
+- Polygon-fork zkouska automatizace: 5/5 vetvi a 6/6 adversarial kontrol proslo, bez mainnet transakce.
 - Pocatecni likvidita: pair je prazdny; owner wallet ma pouze `1.824440220558510091 POL` proti pozadovanym `5000 POL + 1 POL sync + gas`.
 - `cre account access --non-interactive` dne 2026-08-25 neocekavane ohlasil odeslany request bez vyzadani popisu.
 
@@ -27,6 +28,7 @@ Potvrdit cestu k CRE Early Access deployi pro BIGGI tokenomics workflow na Polyg
 - `EVIDENCE/deployment-manifest-polygon.json`
 - `EVIDENCE/cre-simulation-2026-08-25.json`
 - `EVIDENCE/initial-liquidity-polygon.json`
+- `EVIDENCE/cre-automation-adversarial-gas-fork.json`
 
 ## Otazky
 
@@ -39,6 +41,7 @@ Potvrdit cestu k CRE Early Access deployi pro BIGGI tokenomics workflow na Polyg
 7. Jakou kombinaci receiver ochran doporucuji: workflow ID, owner, metadata hash allowlist?
 8. Jak nastavit billing/limity pro 5min cron a max 5 zapisovych vetvi?
 9. Ktery access request je aktualne prirazeny organizaci a je request odeslany pres `--non-interactive` bez popisu platny?
+10. Proc CLI v1.30.0 exportuje EVM gas limit `10 000 000`, kdyz aktualni service quota dokumentace uvadi `5 000 000`, a co bude platit v produkci?
 
 ## Co nedelat pred potvrzenim
 

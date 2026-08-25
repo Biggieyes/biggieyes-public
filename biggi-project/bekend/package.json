@@ -47,6 +47,7 @@
     "verify:master:cre-receiver:polygon": "node scripts/master/runVerifyCREAutomationReceiverPolygon.js",
     "preflight:master:cre:polygon": "node scripts/master/runCREPreflightPolygon.js",
     "prepare:master:cre-receiver:polygon": "node scripts/master/runPrepareCREReceiverPolygon.js",
+    "rehearse:master:cre-automation:fork": "node scripts/master/runCREAutomationForkRehearsal.js",
     "preflight:launch:polygon": "node scripts/master/runLaunchReadinessPreflightPolygon.js",
     "prepare:public-ticket-price:polygon": "node scripts/master/runSetPublicTicketPricePolygon.js",
     "set:public-ticket-price:polygon": "node scripts/master/runSetPublicTicketPricePolygon.js --execute",

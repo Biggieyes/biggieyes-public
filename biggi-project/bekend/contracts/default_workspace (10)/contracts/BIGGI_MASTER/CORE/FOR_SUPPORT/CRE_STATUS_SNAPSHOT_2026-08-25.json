@@ -34,7 +34,9 @@
     "productionName": "biggi-tokenomics-production",
     "deploymentRegistry": "private",
     "schedule": "0 */5 * * * *",
-    "simulationEvidence": "EVIDENCE/cre-simulation-2026-08-25.json"
+    "simulationEvidence": "EVIDENCE/cre-simulation-2026-08-25.json",
+    "forkRehearsalEvidence": "EVIDENCE/cre-automation-adversarial-gas-fork.json",
+    "simulationLimitsProfile": "my-workflow/limits.chainlink-production-2026-08-25.json"
   },
   "receiver": {
     "address": "0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6",
@@ -49,9 +51,27 @@
     "needed": 1,
     "submitted": 0,
     "failed": 0,
+    "evmTransactionGasLimit": 5000000,
+    "evmReadCallLimit": 15,
+    "cliEmbeddedGasLimit": 10000000,
+    "officialQuotaMismatchRequiresSupportConfirmation": true,
     "actionNeeded": [
       "rewards-week-roll"
     ]
+  },
+  "automationForkRehearsal": {
+    "chainId": 137,
+    "productionBranchesPassed": 5,
+    "productionBranchesTotal": 5,
+    "adversarialChecksPassed": 6,
+    "adversarialChecksTotal": 6,
+    "worstCaseWorkflowReads": 6,
+    "creReadQuota": 15,
+    "maxMeasuredReceiverAndTargetGas": 384598,
+    "minimumConfiguredHeadroomPct": 64.61,
+    "keystoneForwarderAndDonOverheadIncluded": false,
+    "mainnetTransactionsSent": 0,
+    "result": "PASS"
   },
   "initialLiquidity": {
     "tokenAmountBiggi": "8000000",

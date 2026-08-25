@@ -56,6 +56,32 @@ The workflow must preserve deterministic behavior. It must not use Node-only API
 
 Only `LIQUIDITY_KEEPER_PROXY` should be active for the liquidity CRE branch. Do not run a parallel legacy `LIQUIDITY_AUTOMATION` branch.
 
+## Fork-Rehearsed Gas And Failure Behavior
+
+Reproduction command:
+
+```powershell
+npm run rehearse:master:cre-automation:fork
+```
+
+Canonical evidence: `EVIDENCE/cre-automation-adversarial-gas-fork.json`
+
+| Branch | Receiver + target gas | Configured limit | Headroom |
+| --- | ---: | ---: | ---: |
+| Supply | `259225` | `900000` | `71.20%` |
+| Buyback | `140949` | `1400000` | `89.93%` |
+| Liquidity | `384598` | `1600000` | `75.96%` |
+| DEX reserve guard | `229773` | `1400000` | `83.59%` |
+| Rewards week roll | `176949` | `500000` | `64.61%` |
+
+These are direct `BiggiCREAutomationReceiver.onReport` measurements using production implementations deployed inside a Polygon mainnet fork. They exclude KeystoneForwarder and DON overhead and are not estimates of billing cost. All values remain below both the configured write limits and the current `5,000,000` CRE EVM transaction gas quota.
+
+The workflow performs at most six EVM reads per run: four `checkUpkeep` calls plus `currentWeek` and `weekState`. This is below the current per-run EVM read quota of `15`.
+
+The checked-in `my-workflow/limits.chainlink-production-2026-08-25.json` profile mirrors the official quota page as verified on 2026-08-25. It is passed explicitly during simulation because CRE CLI v1.30.0 currently exports an embedded `10,000,000` EVM gas default while the official production service quota lists `5,000,000`. Chainlink support should confirm which value the tenant will enforce.
+
+Adversarial checks cover unauthorized forwarders, wrong workflow identity, target reverts, receiver recovery and Buyback retry behavior. `BiggiBuybackUpkeepProxy` intentionally catches an agent revert and emits `PerformFailed`; monitoring must consume that event because the receiver transaction remains successful and the next workflow tick retries the still-eligible upkeep.
+
 ## Receiver State Before Activation
 
 Receiver:

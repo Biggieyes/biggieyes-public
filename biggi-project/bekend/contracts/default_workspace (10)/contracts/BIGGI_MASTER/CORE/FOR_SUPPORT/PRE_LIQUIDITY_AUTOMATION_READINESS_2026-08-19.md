@@ -17,19 +17,21 @@ npm run preflight:launch:polygon
 npm run preflight:master:cre:polygon
 npx hardhat run --config hardhat.biggi-master.cjs scripts/checkDripBranch.js --network polygon
 npm run prepare:master:cre-receiver:polygon
+npm run rehearse:master:cre-automation:fork
 ```
 
 CRE simulation attempted:
 
 ```powershell
-cre workflow simulate .\my-workflow --target test-settings --trigger-index 0 --non-interactive
+cre workflow simulate .\my-workflow --target test-settings --trigger-index 0 --non-interactive --limits .\limits.chainlink-production-2026-08-25.json
 ```
 
 Result: blocked by CRE credential validation while the organization still reports `Deploy Access: Not enabled`.
 Retry result: simulation completed successfully in dry-run mode.
 
-- Binary hash: `71d32f1dbfe0937630d8e8e184b521cf2f847d0b6ee620583d2a11b52bcaf37e`
+- Binary hash: `f3a6e9044f4eee55f87c4926eb19fef77f22d58e77dfa729ab52fb2342665ac0`
 - Config hash: `05b79e06fc8fe58a91d360b3e7c5d858982e8dbb18a439fbb3111a100c4dea68`
+- Explicit official-quota profile: EVM gas `5,000,000`, EVM report `5 KB`, EVM reads `15`, consensus observation `25 KB`.
 - User logs:
   - `[supply-controller] no action needed`
   - `[buyback] no action needed`
@@ -83,6 +85,13 @@ Retry result: simulation completed successfully in dry-run mode.
   - existing receiver: `0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6`
   - readyToExecute: `true`
   - blockers: `0`
+- CRE Polygon-fork automation rehearsal:
+  - five production branches passed through the receiver;
+  - six adversarial/recovery checks passed;
+  - configured gas headroom remained at least `64.61%` before KeystoneForwarder/DON overhead;
+  - worst-case workflow reads: `6 / 15`;
+  - no mainnet transaction was sent;
+  - evidence: `EVIDENCE/cre-automation-adversarial-gas-fork.json`.
 
 ## Must Stay Inactive Before Liquidity
 
@@ -117,6 +126,7 @@ CRE account:
 - No production workflows found.
 - No linked owners found.
 - `cre account access --non-interactive` unexpectedly reported a submitted request without collecting a description; confirm the active request with Chainlink support.
+- CRE CLI v1.30.0 exports `10,000,000` EVM gas in its embedded simulation limits while the current official service-quota page lists `5,000,000`; the checked-in dated limits profile enforces the lower official value pending support confirmation.
 
 ## Planned Initial Liquidity
 

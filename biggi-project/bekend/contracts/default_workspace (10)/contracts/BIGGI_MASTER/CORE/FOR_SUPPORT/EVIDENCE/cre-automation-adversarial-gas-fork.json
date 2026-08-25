@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-24T23:53:21.123Z",
+  "workflow": "biggi-tokenomics-production",
+  "execution": {
+    "mode": "polygon-mainnet-fork",
+    "chainId": 137,
+    "startBlock": 92606899,
+    "endBlock": 92607028,
+    "mainnetTransactionsSent": 0,
+    "locallyDeployedProductionImplementations": true
+  },
+  "creQuotas": {
+    "evmTransactionGas": 5000000,
+    "evmReadCallsPerRun": 15,
+    "source": "https://docs.chain.link/cre/service-quotas"
+  },
+  "workflowReadBudget": {
+    "worstCaseCalls": 6,
+    "withinQuota": true,
+    "calculation": "4 automation checkUpkeep reads + currentWeek + weekState"
+  },
+  "gasAccounting": {
+    "scope": "Direct BiggiCREAutomationReceiver.onReport transaction including the target branch",
+    "excludes": "KeystoneForwarder and CRE DON overhead",
+    "result": "PASS",
+    "branches": [
+      {
+        "name": "supply-controller",
+        "targetContract": "0x5aAFfB4Eb2e0D1FE3C744d49CCf4366972533132",
+        "selector": "0x4585e33b",
+        "receiverOnReportGasUsed": 259225,
+        "configuredWriteGasLimit": 900000,
+        "configuredHeadroomGas": 640775,
+        "configuredHeadroomPct": 71.2,
+        "withinConfiguredLimit": true,
+        "withinCRETransactionQuota": true
+      },
+      {
+        "name": "buyback",
+        "targetContract": "0xEB706c6fb15A91EA3219650527e646Ef4C462A7e",
+        "selector": "0x4585e33b",
+        "receiverOnReportGasUsed": 140949,
+        "configuredWriteGasLimit": 1400000,
+        "configuredHeadroomGas": 1259051,
+        "configuredHeadroomPct": 89.93,
+        "withinConfiguredLimit": true,
+        "withinCRETransactionQuota": true
+      },
+      {
+        "name": "liquidity",
+        "targetContract": "0x2952dB809c28b183983Ff9d99d7Eb91C05e4f7d5",
+        "selector": "0x4585e33b",
+        "receiverOnReportGasUsed": 384598,
+        "configuredWriteGasLimit": 1600000,
+        "configuredHeadroomGas": 1215402,
+        "configuredHeadroomPct": 75.96,
+        "withinConfiguredLimit": true,
+        "withinCRETransactionQuota": true
+      },
+      {
+        "name": "dex-reserve-guard",
+        "targetContract": "0xe3633440F16C027e0B013D8370A4d273479aEA26",
+        "selector": "0x4585e33b",
+        "receiverOnReportGasUsed": 229773,
+        "configuredWriteGasLimit": 1400000,
+        "configuredHeadroomGas": 1170227,
+        "configuredHeadroomPct": 83.59,
+        "withinConfiguredLimit": true,
+        "withinCRETransactionQuota": true
+      },
+      {
+        "name": "rewards-week-roll",
+        "targetContract": "0xF90ae483c5b37f3b4b415fa071D8702803e83E60",
+        "selector": "0x69fa508a",
+        "receiverOnReportGasUsed": 176949,
+        "configuredWriteGasLimit": 500000,
+        "configuredHeadroomGas": 323051,
+        "configuredHeadroomPct": 64.61,
+        "withinConfiguredLimit": true,
+        "withinCRETransactionQuota": true
+      }
+    ]
+  },
+  "adversarialChecks": [
+    {
+      "name": "unauthorized-forwarder",
+      "passed": true
+    },
+    {
+      "name": "wrong-workflow-identity",
+      "passed": true
+    },
+    {
+      "name": "target-revert-contained",
+      "passed": true
+    },
+    {
+      "name": "receiver-recovers-for-next-report",
+      "passed": true
+    },
+    {
+      "name": "buyback-failure-remains-retryable",
+      "passed": true
+    },
+    {
+      "name": "buyback-recovers-on-next-report",
+      "passed": true
+    }
+  ],
+  "operationalNotes": [
+    "BuybackUpkeepProxy intentionally catches BuybackAgent reverts and emits PerformFailed.",
+    "A caught buyback failure leaves the upkeep eligible for the next workflow tick; monitor PerformFailed events because the receiver transaction itself succeeds."
+  ],
+  "overallResult": "PASS"
+}

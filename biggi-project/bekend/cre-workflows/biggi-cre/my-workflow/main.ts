@@ -26,7 +26,7 @@ const hexSchema = z.string().regex(/^0x(?:[0-9a-fA-F]{2})*$/, "invalid hex bytes
 const gasLimitSchema = z
   .string()
   .regex(/^\d+$/, "gas limit must be an integer")
-  .refine((value) => BigInt(value) > 0n && BigInt(value) <= 10_000_000n, "gas limit must be 1..10000000");
+  .refine((value) => BigInt(value) > 0n && BigInt(value) <= 5_000_000n, "gas limit must be 1..5000000");
 
 const targetSchema = z.object({
   name: z.string().min(1),
