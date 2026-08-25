@@ -460,6 +460,29 @@ For mainnet-like simulation you can use fork tests:
 npm run test:master:fork
 ```
 
+## Canonical production activation plan
+
+Generate the current Polygon state audit and five separate unsigned phase files:
+
+```bash
+npm run plan:production-activation:polygon
+```
+
+This command is read-only. It does not request a signer, sign transactions, or
+broadcast them. The canonical values come from
+`config/production-activation.polygon.json`. Phase `10-initial-liquidity` has a
+900-second dynamic deadline, so regenerate it immediately before any human-reviewed use.
+
+Execute the same encoded phase order only on a Polygon fork:
+
+```bash
+npm run rehearse:production-activation:fork
+```
+
+The rehearsal impersonates the owner only inside Hardhat, verifies exact pair
+reserves and Vault accounting, wires a synthetic CRE identity, keeps DripKeeper
+paused, and activates only Originals Chapter 1. It never sends a mainnet transaction.
+
 Fork notes:
 
 - requires archive-capable RPC (`FORK_URL` or `.env` `POLYGON_RPC_URL`)

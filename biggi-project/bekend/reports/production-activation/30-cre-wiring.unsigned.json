@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-08-25T01:05:21.870Z",
+  "network": {
+    "name": "polygon",
+    "chainId": 137
+  },
+  "sourceBlock": {
+    "number": 92609926,
+    "timestamp": 1787619916
+  },
+  "sendsTransactions": false,
+  "containsSignatures": false,
+  "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "configDigest": "0x04f84711460b351c111ca9eaa80ea63f156c96e3d1e83def2e9a75a4b9eca562",
+  "phase": {
+    "id": "30-cre-wiring",
+    "irreversible": false,
+    "ready": false,
+    "workflowIdentityResolved": false,
+    "blockers": [
+      "CRE deploy access and exact workflow ID/owner are required"
+    ],
+    "transactions": [
+      {
+        "id": "cre-workflow-identity",
+        "label": "Lock CRE workflow identity",
+        "to": "0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6",
+        "value": "0",
+        "data": "0xfc280c8b00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "method": "setExpectedWorkflowIdentity(bytes32,address)",
+        "args": [
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "0x0000000000000000000000000000000000000000"
+        ],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": true,
+        "condition": "use only the workflow ID and owner returned by CRE after deployment",
+        "postcondition": "receiver identity equals the deployed production workflow",
+        "blockedBy": [
+          "workflow identity unresolved"
+        ]
+      },
+      {
+        "id": "cre-call-allowlist",
+        "label": "Allow exactly five CRE target/selector pairs",
+        "to": "0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6",
+        "value": "0",
+        "data": "0xe0ec4a550000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000005000000000000000000000000810ba27c98aab09737e3988a3c1b10d6cadab8e80000000000000000000000003c260f987d1ad7ca3dc8d61a3b731b2068c388750000000000000000000000004fc6ead8cc6451e1a5ea7ceaf6a072e18f91f04c000000000000000000000000350370c248495758b80ea1c564df1290ca76588b000000000000000000000000a7b71dfebf89481b37d803dd0765e3612f29ffb900000000000000000000000000000000000000000000000000000000000000054585e33b000000000000000000000000000000000000000000000000000000004585e33b000000000000000000000000000000000000000000000000000000004585e33b000000000000000000000000000000000000000000000000000000004585e33b0000000000000000000000000000000000000000000000000000000069fa508a00000000000000000000000000000000000000000000000000000000",
+        "method": "setCallsAllowed(address[],bytes4[],bool)",
+        "args": [
+          [
+            "0x810ba27C98aAB09737e3988a3C1b10D6CadaB8E8",
+            "0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875",
+            "0x4fC6EaD8CC6451e1A5EA7Ceaf6a072e18f91F04c",
+            "0x350370c248495758b80Ea1C564Df1290cA76588B",
+            "0xA7B71DFEBF89481b37d803dD0765E3612f29Ffb9"
+          ],
+          [
+            "0x4585e33b",
+            "0x4585e33b",
+            "0x4585e33b",
+            "0x4585e33b",
+            "0x69fa508a"
+          ],
+          true
+        ],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": true,
+        "condition": "workflow identity is locked and reviewed",
+        "postcondition": "the five documented production calls are enabled",
+        "blockedBy": [
+          "workflow identity unresolved"
+        ]
+      },
+      {
+        "id": "cre-role-supply",
+        "label": "Authorize receiver on SupplyController",
+        "to": "0x810ba27C98aAB09737e3988a3C1b10D6CadaB8E8",
+        "value": "0",
+        "data": "0xd8b0e716000000000000000000000000f1a21e04da73580ed2d1311412e3639c40d47fe60000000000000000000000000000000000000000000000000000000000000001",
+        "method": "setAllowedCaller(address,bool)",
+        "args": [
+          "0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6",
+          true
+        ],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": true,
+        "condition": "receiver call allowlist is configured",
+        "postcondition": "SupplyController allows the receiver",
+        "blockedBy": [
+          "workflow identity unresolved"
+        ]
+      },
+      {
+        "id": "cre-role-dex-guard",
+        "label": "Authorize receiver on DexReserveGuard",
+        "to": "0x350370c248495758b80Ea1C564Df1290cA76588B",
+        "value": "0",
+        "data": "0xd1b9e853000000000000000000000000f1a21e04da73580ed2d1311412e3639c40d47fe60000000000000000000000000000000000000000000000000000000000000001",
+        "method": "setKeeper(address,bool)",
+        "args": [
+          "0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6",
+          true
+        ],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": true,
+        "condition": "receiver call allowlist is configured",
+        "postcondition": "DexReserveGuard recognizes the receiver keeper",
+        "blockedBy": [
+          "workflow identity unresolved"
+        ]
+      },
+      {
+        "id": "cre-role-emission",
+        "label": "Authorize receiver on TokenRewardsEmissionController",
+        "to": "0xA7B71DFEBF89481b37d803dD0765E3612f29Ffb9",
+        "value": "0",
+        "data": "0xd1b9e853000000000000000000000000f1a21e04da73580ed2d1311412e3639c40d47fe60000000000000000000000000000000000000000000000000000000000000001",
+        "method": "setKeeper(address,bool)",
+        "args": [
+          "0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6",
+          true
+        ],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": true,
+        "condition": "receiver call allowlist is configured",
+        "postcondition": "TokenRewardsEmissionController recognizes the receiver keeper",
+        "blockedBy": [
+          "workflow identity unresolved"
+        ]
+      },
+      {
+        "id": "cre-role-liquidity",
+        "label": "Set receiver as LiquidityKeeperProxy allowed caller",
+        "to": "0x4fC6EaD8CC6451e1A5EA7Ceaf6a072e18f91F04c",
+        "value": "0",
+        "data": "0xb16d6436000000000000000000000000f1a21e04da73580ed2d1311412e3639c40d47fe6",
+        "method": "setAllowedCaller(address)",
+        "args": [
+          "0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6"
+        ],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": true,
+        "condition": "receiver call allowlist is configured",
+        "postcondition": "LiquidityKeeperProxy.allowedCaller() equals receiver",
+        "blockedBy": [
+          "workflow identity unresolved"
+        ]
+      },
+      {
+        "id": "cre-receiver-unpause",
+        "label": "Unpause CRE receiver last",
+        "to": "0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6",
+        "value": "0",
+        "data": "0x3f4ba83a",
+        "method": "unpause()",
+        "args": [],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": true,
+        "condition": "identity, five calls, target roles, liquidity and tokenomics gates all pass",
+        "postcondition": "CRE receiver is active",
+        "blockedBy": [
+          "workflow identity unresolved"
+        ]
+      }
+    ]
+  }
+}

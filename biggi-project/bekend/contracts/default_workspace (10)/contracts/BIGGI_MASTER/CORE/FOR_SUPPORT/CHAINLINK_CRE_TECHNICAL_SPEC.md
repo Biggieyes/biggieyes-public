@@ -1,6 +1,6 @@
 # BIGGI CRE Technical Spec
 
-Date: 2026-08-19
+Date: 2026-08-25
 
 ## Objective
 
@@ -130,7 +130,7 @@ Current status:
 
 - `okForDeployOnly`: `true`
 - `okForPublicLaunch`: `false`
-- Blockers: `9`
+- Blockers: `13`
 
 Known blockers:
 
@@ -143,6 +143,13 @@ Known blockers:
 - CRE workflow owner is not locked.
 - `LIQUIDITY_ORCHESTRATOR` is paused.
 - `LIQUIDITY_KEEPER_PROXY` is paused.
+- LiquidityManager stored auto trigger/request values are `5 wei / 5 wei` instead of canonical `5 POL / 5 POL`; auto top-up remains disabled.
+- BuybackAgent automatic execution is not enabled.
+- The five CRE target calls and four target-side roles are not wired yet.
+- Originals Chapter 1 is not active.
+
+The complete unsigned plan is `EVIDENCE/production-activation-plan-polygon.json`.
+Its full Polygon-fork rehearsal is `EVIDENCE/production-activation-plan-fork.json` and passed all canonical post-state checks without a mainnet write.
 
 ## Chainlink Confirmation Needed
 

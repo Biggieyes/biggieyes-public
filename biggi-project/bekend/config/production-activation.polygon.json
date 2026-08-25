@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "network": {
+    "name": "polygon",
+    "chainId": 137
+  },
+  "authority": {
+    "ownerAddressKey": "OWNER"
+  },
+  "initialLiquidity": {
+    "tokenAddressKey": "BIGGI_TOKEN",
+    "routerAddressKey": "ROUTER",
+    "pairAddressKey": "PAIR",
+    "reserveAddressKey": "RESERVE",
+    "liquidityManagerAddressKey": "LIQUIDITY_MANAGER",
+    "lpRecipientAddressKey": "LIQUIDITY_VAULT",
+    "tokenAmountWei": "8000000000000000000000000",
+    "nativeAmountWei": "5000000000000000000000",
+    "slippageBps": 50,
+    "deadlineSec": 900,
+    "postSeedSyncTokenWei": "1600000000000000000000",
+    "postSeedSyncNativeWei": "1000000000000000000",
+    "requireEmptyPair": true
+  },
+  "tokenomics": {
+    "buybackUpkeep": {
+      "addressKey": "BUYBACK_UPKEEP_PROXY",
+      "agentAddressKey": "BUYBACK_AGENT",
+      "minNativeThresholdWei": "500000000000000000",
+      "pausedAtLaunch": false
+    },
+    "buybackAgent": {
+      "addressKey": "BUYBACK_AGENT",
+      "autoBuybackEnabled": true,
+      "pausedAtLaunch": false
+    },
+    "policy": {
+      "addressKey": "POLICY",
+      "swapSlippageBps": "500",
+      "txDeadlineSec": "600",
+      "minBuybackIntervalSec": "300",
+      "buybacksPausedAtLaunch": false,
+      "maxDailyBuybackNativeWei": "0"
+    },
+    "liquidityManager": {
+      "addressKey": "LIQUIDITY_MANAGER",
+      "routerAddressKey": "ROUTER",
+      "factoryAddressKey": "FACTORY",
+      "reserveAddressKey": "RESERVE",
+      "vaultAddressKey": "LIQUIDITY_VAULT",
+      "keeperAddressKey": "LIQUIDITY_ORCHESTRATOR",
+      "tokenPct": "100",
+      "slippageBps": "300",
+      "txDeadlineSec": "600",
+      "autoTopUpEnabled": false,
+      "autoTriggerMinPolWei": "5000000000000000000",
+      "autoRequestPolWei": "5000000000000000000"
+    },
+    "liquidityOrchestrator": {
+      "addressKey": "LIQUIDITY_ORCHESTRATOR",
+      "keeperAddressKey": "LIQUIDITY_KEEPER_PROXY",
+      "minPolPerTxWei": "500000000000000000",
+      "maxPolPerTxWei": "50000000000000000000",
+      "minDexRefillBiggiWei": "1000000000000000000",
+      "cooldownSec": "3600",
+      "dailyQuotaPolWei": "0",
+      "pausedAtLaunch": false
+    },
+    "liquidityKeeper": {
+      "addressKey": "LIQUIDITY_KEEPER_PROXY",
+      "amountMode": "1",
+      "fixedAmountWei": "1000000000000000000",
+      "percentBps": "500",
+      "minIntervalSec": "900",
+      "minReservePolWei": "1000000000000000000",
+      "maxPerTxWei": "20000000000000000000",
+      "minDexRefillBiggiWei": "1000000000000000000",
+      "pausedAtLaunch": false
+    },
+    "dripKeeper": {
+      "addressKey": "DRIP_KEEPER_PROXY",
+      "pausedAtLaunch": true
+    },
+    "supplyController": {
+      "addressKey": "SUPPLY_CONTROLLER",
+      "reserveDropBps": "5000",
+      "dexRefillAmountWei": "20000000000000000000000000",
+      "dexCooldownSec": "1800",
+      "rewardsThresholdWei": "5000000000000000000000000",
+      "rewardsRefillAmountWei": "200000000000000000000000000",
+      "rewardsCooldownSec": "43200",
+      "circuitBreakerEnabled": true,
+      "dexCriticalFloorWei": "500000000000000000000",
+      "rewardsCriticalFloorWei": "500000000000000000000"
+    },
+    "dexReserveGuard": {
+      "addressKey": "DEX_RESERVE_GUARD",
+      "minReserveRatioBps": "5000",
+      "refillAmountWei": "20000000000000000000000000",
+      "cooldownSec": "1800",
+      "pausedAtLaunch": false
+    }
+  },
+  "cre": {
+    "receiverAddressKey": "CRE_AUTOMATION_RECEIVER",
+    "forwarderAddressKey": "CRE_KEYSTONE_FORWARDER",
+    "maxReportBytes": "4096",
+    "maxCallDataBytes": "2048",
+    "calls": [
+      {
+        "key": "supply-controller",
+        "targetAddressKey": "SUPPLY_CONTROLLER",
+        "signature": "performUpkeep(bytes)",
+        "targetRole": "supplyAllowedCaller"
+      },
+      {
+        "key": "buyback",
+        "targetAddressKey": "BUYBACK_UPKEEP_PROXY",
+        "signature": "performUpkeep(bytes)",
+        "targetRole": null
+      },
+      {
+        "key": "liquidity",
+        "targetAddressKey": "LIQUIDITY_KEEPER_PROXY",
+        "signature": "performUpkeep(bytes)",
+        "targetRole": "liquidityAllowedCaller"
+      },
+      {
+        "key": "dex-reserve-guard",
+        "targetAddressKey": "DEX_RESERVE_GUARD",
+        "signature": "performUpkeep(bytes)",
+        "targetRole": "dexKeeper"
+      },
+      {
+        "key": "rewards-week-roll",
+        "targetAddressKey": "TOKEN_REWARDS_EMISSION_CONTROLLER",
+        "signature": "rollCurrentWeek()",
+        "targetRole": "emissionKeeper"
+      }
+    ],
+    "legacyLiquidityAutomation": {
+      "addressKey": "LIQUIDITY_AUTOMATION",
+      "mustRemainUndeployed": true
+    }
+  },
+  "launch": {
+    "chapterId": 1,
+    "displayName": "Originals",
+    "chapterCount": 5,
+    "futureChapterIds": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "ticketHubAddressKey": "TICKET_HUB",
+    "vrfCollectionAddressKey": "MAIN",
+    "publicCollectionAddressKey": "MAIN2",
+    "publicTicketStartPriceWei": "500000000000000000000",
+    "priceIncreasePerMintBps": "10033",
+    "saleCap": "500",
+    "marketingCap": "50"
+  }
+}

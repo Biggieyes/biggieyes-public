@@ -5,6 +5,19 @@ Datum: 2026-08-25
 CollectionRewards migrace popsana v sekci 0 je dokoncena. Liquidity a finalni
 aktivacni kroky v dalsich sekcich zustavaji pending.
 
+## Kanonicky unsigned plan
+
+Pred jakymkoli write krokem vzdy znovu spustit:
+
+```powershell
+npm run plan:production-activation:polygon
+npm run rehearse:production-activation:fork
+```
+
+Plan ma pet oddelenych fazi `00`, `10`, `20`, `30`, `40`. Zdroj hodnot je
+`config/production-activation.polygon.json`; podrobnosti jsou v
+`PRODUCTION_ACTIVATION_PLAN_CS.md`. Vystup nema podpisy ani nic neodesila.
+
 ## 0. CollectionRewards budget gate - completed
 
 Nasazeno a verified na Polygon mainnetu 2026-08-24:
@@ -67,6 +80,7 @@ npm run prepare:initial-liquidity:polygon
 Current dry-run blocker:
 
 - Owner wallet currently has `1.824440220558510091 POL`, not enough for `5000 POL + 1 POL + gas`.
+- Transaction deadline je dynamicky `latest block timestamp + 900 s`; plan se musi regenerovat tesne pred liquidity krokem.
 
 Execution must not be run until the owner wallet has enough POL and the irreversible flag is set intentionally:
 
@@ -111,6 +125,10 @@ npm run activate:tokenomics:polygon
 
 Mainnet proxy ma aktualne chybne `minNativeThresholdWei=1`. Aktivacni skript musi nejdrive provest `setThreshold(500000000000000000)` (`0.5 POL`) a teprve potom `setPaused(false)`. Hodnotu pod `0.001 POL` skript odmitne. Dry-run po doplneni liquidity musi tento plan zobrazit pred jakymkoli podpisem; execute prikazy se spousteji ve stejnem PowerShell okne, aby zustaly nastavene parametry z dry-runu.
 
+Pred liquidity se take opravi ulozene LM hodnoty z `5 wei / 5 wei` na
+`5 POL / 5 POL` pres `setAutoTopUpConfig(false, ...)`. LM zustava vypnuty,
+`tokenPct=100` a `slippageBps=300`.
+
 ## 4. CRE
 
 CRE is still blocked by account access:
@@ -136,3 +154,8 @@ Required receiver steps after production workflow identity is known:
 - allowlist five target/selector pairs
 - set receiver keeper/allowed-caller roles
 - unpause receiver last
+
+## 5. Originals launch
+
+Az po finalnim strict gate se odpause Chapter 1 Public a aktivuje pouze
+`TicketHub.setChapterActive(1, true)`. Chapters 2-5 zustavaji `false`.

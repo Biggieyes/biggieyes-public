@@ -185,7 +185,7 @@ The other five errors are expected before production activation. The receiver ha
 - dex-reserve-guard `0x350370c248495758b80Ea1C564Df1290cA76588B` selector `0x4585e33b`
 - rewards-week-roll `0xA7B71DFEBF89481b37d803dD0765E3612f29Ffb9` selector `0x69fa508a`
 
-The launch-readiness preflight currently reports 9 blockers and 2 expected warnings. In addition to the existing liquidity, Public collection, CRE identity and liquidity-keeper gates, `BUYBACK_UPKEEP_PROXY` is paused and has the dust-level threshold above. The activation script now sets the threshold to `0.5 POL` before unpausing it; no corrective mainnet transaction has been sent.
+The launch-readiness preflight currently reports 13 blockers and 2 expected warnings. The stricter count now also covers canonical LiquidityManager trigger/request values, auto-buyback state, all five CRE call/role bindings, and Chapter 1 activation. The unsigned five-phase plan and full Polygon-fork rehearsal are in `EVIDENCE/production-activation-plan-polygon.json` and `EVIDENCE/production-activation-plan-fork.json`. No corrective mainnet transaction or signature has been produced.
 
 ## Support Questions For Chainlink
 

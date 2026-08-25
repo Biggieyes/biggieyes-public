@@ -14,6 +14,7 @@ This folder intentionally does not contain secrets, private keys, API keys, wall
 - `POLYGONSCAN_SOURCE_VERIFICATION.md` - exact verification environment and commands.
 - `POLYGONSCAN_CONTRACT_INVENTORY.md` - source-verification inventory summary and canonical evidence file.
 - `PRE_LIQUIDITY_AUTOMATION_READINESS_2026-08-19.md` - pre-liquidity readiness and activation order.
+- `PRODUCTION_ACTIVATION_PLAN_CS.md` - canonical five-phase unsigned plan and fork proof.
 - `CRE_STATUS_SNAPSHOT_2026-08-25.json` - current machine-readable support snapshot.
 - `CRE_STATUS_SNAPSHOT_2026-08-19.json` - historical machine-readable support snapshot.
 - `EVIDENCE/` - copied public reports generated from the repo tooling.
@@ -31,8 +32,10 @@ This folder intentionally does not contain secrets, private keys, API keys, wall
 - Receiver is deployed on Polygon mainnet but intentionally paused and not allowlisted yet.
 - Safe simulation on 2026-08-25: `needed=1`, `submitted=0`, `failed=0`, `dryRun=true`.
 - Polygon-fork CRE automation rehearsal: 5/5 branches, 6/6 adversarial checks and 5/5 duplicate/stale-report checks passed; no mainnet transaction was sent.
-- Current launch preflight: `okForDeployOnly=true`, `okForPublicLaunch=false`, 9 blockers and 2 expected warnings.
+- Current launch preflight: `okForDeployOnly=true`, `okForPublicLaunch=false`, 13 blockers and 2 expected warnings.
 - Mainnet `BUYBACK_UPKEEP_PROXY.minNativeThresholdWei` is incorrectly `1 wei`; the activation tooling now requires a non-dust value and schedules the canonical `0.5 POL` threshold before unpausing the proxy.
+- Mainnet LiquidityManager is intentionally `tokenPct=100`, `slippageBps=300`, and auto top-up disabled; its stored trigger/request values must be corrected from `5 wei` to `5 POL` before activation.
+- Full five-phase Polygon-fork rehearsal passed 24 local transactions and all post-state checks with no mainnet transaction or signature.
 - `cre account access --non-interactive` unexpectedly reported a submitted request without collecting a description; Chainlink should confirm which request is active.
 
 ## Current Initial Liquidity Status
@@ -43,6 +46,7 @@ This folder intentionally does not contain secrets, private keys, API keys, wall
 - BIGGI/WPOL pair reserves and LP supply are still zero.
 - The dry-run is blocked only by insufficient native POL on the token-owner wallet.
 - The 2026-08-25 Polygon fork rehearsal passed all five seed and Vault-accounting checks without sending a mainnet transaction.
+- The consolidated activation plan remains blocked by insufficient owner POL and the unresolved CRE production workflow identity.
 
 ## Current PolygonScan Status
 

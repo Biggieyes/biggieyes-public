@@ -2,7 +2,7 @@
 
 Stav k 2026-08-25. Tento dokument vychazi z aktualni live read-only kontroly Polygon mainnetu. Audit sam neposila zadne transakce.
 
-Kompletni zavazne poradi je v [MAINNET_FULL_DEPLOY_SEQUENCE_CS.md](MAINNET_FULL_DEPLOY_SEQUENCE_CS.md). Posledni launch preflight aktualne eviduje 9 blockeru a 2 ocekavane warningy.
+Kompletni zavazne poradi je v [MAINNET_FULL_DEPLOY_SEQUENCE_CS.md](MAINNET_FULL_DEPLOY_SEQUENCE_CS.md). Posledni launch preflight aktualne eviduje 13 blockeru a 2 ocekavane warningy.
 
 ## 1. Kriticka bezpecnost
 

@@ -19,3 +19,5 @@ Expected files:
 - `cre-simulation-2026-08-25.json`
 - `initial-liquidity-fork-rehearsal.json`
 - `cre-automation-adversarial-gas-fork.json`
+- `production-activation-plan-polygon.json`
+- `production-activation-plan-fork.json`

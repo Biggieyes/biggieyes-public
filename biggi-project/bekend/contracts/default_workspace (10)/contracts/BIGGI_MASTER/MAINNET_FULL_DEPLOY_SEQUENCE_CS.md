@@ -10,7 +10,8 @@ Stav k 2026-08-25. Tento dokument je hlavni poradi zbyvajicich kroku. Vychazi z 
 - Opravena Public migrace prosla kompletnim Polygon fork nacvikem: 5 deploymentu, 136 lokalnich transakci a finalni wiring audit `deployed-wired-paused`.
 - `BiggiCREAutomationReceiver` je nasazeny, verifikovany a zamerne paused.
 - `okForDeployOnly=true`, ale `okForPublicLaunch=false`.
-- Posledni `npm.cmd run preflight:launch:polygon` vratil 9 blockeru a 2 ocekavane warningy k CollectionRewards budgetu a BIGGI-paid mintum.
+- Posledni `npm.cmd run preflight:launch:polygon` vratil 13 blockeru a 2 ocekavane warningy k CollectionRewards budgetu a BIGGI-paid mintum.
+- Kanonicky read-only plan ma pet oddelenych fazi a jeho kompletni Polygon-fork rehearsal provedl 24 lokalnich transakci se vsemi post-checky; zadna mainnet transakce ani podpis nevznikly.
 - Ownership transfer, VRF subscription transfer, CRE receiver deploy a pocatecni distribuce BIGGI jsou hotove. Initial liquidity ani CRE aktivace zatim odeslane nebyly.
 
 ## Historicky odhad POL nakladu
@@ -49,7 +50,7 @@ Do chatu neposilat zadny private key ani seed phrase. Potrebne jsou pouze verejn
 4. `PUBLIC_METADATA_FILE`: kompletni 100polozkova MAIN2 metadata matice (10 NFT v kazdem z 10 bloku, bez background klonu) a finalni IPFS URI pro aktivovany chapter.
 5. Schvaleny Chainlink CRE Deploy Access a z nej ziskane workflow ID/owner.
 
-## Aktualnich 7 on-chain launch blockeru
+## Aktualnich 13 launch blockeru
 
 Stav z `preflight:launch:polygon` po nasazeni CRE receiveru:
 
@@ -60,6 +61,12 @@ Stav z `preflight:launch:polygon` po nasazeni CRE receiveru:
 5. CRE workflow owner jeste neni zamknuty v receiveru.
 6. `LIQUIDITY_ORCHESTRATOR` je paused.
 7. `LIQUIDITY_KEEPER_PROXY` je paused.
+8. `BUYBACK_UPKEEP_PROXY` je paused.
+9. `BUYBACK_UPKEEP_PROXY.minNativeThresholdWei` je chybne `1 wei`, kanonicky `0.5 POL`.
+10. LM auto trigger/request jsou ulozene jako `5 wei / 5 wei`, kanonicky `5 POL / 5 POL` pri `autoTopUpEnabled=false`.
+11. BuybackAgent auto-buyback zatim neni zapnuty.
+12. Pet CRE call allowlist polozek a ctyri target-side role zatim nejsou zapojene.
+13. Originals Chapter 1 zatim neni aktivni.
 
 Mimo on-chain preflight zustava externi blocker: CRE Deploy Access je stale `Not enabled`. Receiver `0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6` je nasazeny, overeny pres Sourcify a bezpecne paused.
 
@@ -277,7 +284,14 @@ Finalni hodnoty jsou ulozene v `.env.core.polygon`. Spustit dry-run a fork rehea
 ```powershell
 npm.cmd run prepare:initial-liquidity:polygon
 npm.cmd run rehearse:initial-liquidity:fork
+npm.cmd run plan:production-activation:polygon
+npm.cmd run rehearse:production-activation:fork
 ```
+
+Kanonicky manifest je `config/production-activation.polygon.json`. Konsolidovany
+plan se deli na faze `00-remediation`, `10-liquidity`, `20-tokenomics`,
+`30-CRE` a `40-Originals`. Liquidity calldata ma deadline pouze 900 sekund,
+proto se musi tesne pred skutecnym krokem znovu vygenerovat.
 
 Po kontrole execution:
 

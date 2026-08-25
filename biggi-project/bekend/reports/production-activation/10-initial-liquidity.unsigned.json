@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-08-25T01:05:21.870Z",
+  "network": {
+    "name": "polygon",
+    "chainId": 137
+  },
+  "sourceBlock": {
+    "number": 92609926,
+    "timestamp": 1787619916
+  },
+  "sendsTransactions": false,
+  "containsSignatures": false,
+  "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "configDigest": "0x04f84711460b351c111ca9eaa80ea63f156c96e3d1e83def2e9a75a4b9eca562",
+  "phase": {
+    "id": "10-initial-liquidity",
+    "irreversible": true,
+    "ready": false,
+    "expiresAtUnix": 1787620816,
+    "mustRegenerateAfterUnix": 1787620816,
+    "transactions": [
+      {
+        "id": "reserve-to-owner",
+        "label": "Move exact seed BIGGI from Reserve to owner",
+        "to": "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
+        "value": "0",
+        "data": "0x4bfd500d000000000000000000000000402ce2ff958ab47edafc42296d2682cc8f9d92b2000000000000000000000000000000000000000000069e10de76676d08000000",
+        "method": "transferFromReserveTo(address,uint256)",
+        "args": [
+          "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+          "8000000000000000000000000"
+        ],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": true,
+        "condition": "pair is empty and Reserve holds the configured BIGGI amount",
+        "postcondition": "owner receives exactly 8,000,000 BIGGI for router transfer",
+        "blockedBy": []
+      },
+      {
+        "id": "approve-router",
+        "label": "Approve exact seed BIGGI to router",
+        "to": "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
+        "value": "0",
+        "data": "0x095ea7b3000000000000000000000000a5e0829caced8ffdd4de3c43696c57f7d7a678ff000000000000000000000000000000000000000000069e10de76676d08000000",
+        "method": "approve(address,uint256)",
+        "args": [
+          "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff",
+          "8000000000000000000000000"
+        ],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": true,
+        "condition": "reserve-to-owner transaction succeeded",
+        "postcondition": "router allowance equals the exact seed amount",
+        "blockedBy": []
+      },
+      {
+        "id": "add-liquidity",
+        "label": "Seed BIGGI/WPOL liquidity with LP minted to Vault",
+        "to": "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff",
+        "value": "5000000000000000000000",
+        "data": "0xf305d719000000000000000000000000d73152845bc5a9b8253ea0100bb10388cc5c0eed000000000000000000000000000000000000000000069e10de76676d0800000000000000000000000000000000000000000000000006959876f340823f00000000000000000000000000000000000000000000000000010db1fe8d52005c0000000000000000000000000000fe234394845b601b2c671c0dd631fa6290c02bb9000000000000000000000000000000000000000000000000000000006a8cedd0",
+        "method": "addLiquidityETH(address,uint256,uint256,uint256,address,uint256)",
+        "args": [
+          "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
+          "8000000000000000000000000",
+          "7960000000000000000000000",
+          "4975000000000000000000",
+          "0xFe234394845B601B2c671c0dD631fA6290c02bb9",
+          1787620816
+        ],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": true,
+        "condition": "execute before Unix 1787620816; pair must still be empty",
+        "postcondition": "pair reserves are non-zero and LP is held by LiquidityVault",
+        "blockedBy": []
+      },
+      {
+        "id": "revoke-router",
+        "label": "Clear any remaining router allowance",
+        "to": "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
+        "value": "0",
+        "data": "0x095ea7b3000000000000000000000000a5e0829caced8ffdd4de3c43696c57f7d7a678ff0000000000000000000000000000000000000000000000000000000000000000",
+        "method": "approve(address,uint256)",
+        "args": [
+          "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff",
+          "0"
+        ],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": true,
+        "condition": "initial router call completed or failed after approval",
+        "postcondition": "router allowance is zero",
+        "blockedBy": []
+      },
+      {
+        "id": "fund-reserve-sync",
+        "label": "Fund Reserve for post-seed accounting sync",
+        "to": "0x2786e46e01a5d229118fEdC102267217C7e94574",
+        "value": "1000000000000000000",
+        "data": "0x",
+        "method": null,
+        "args": [],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": true,
+        "condition": "initial liquidity transaction succeeded",
+        "postcondition": "Reserve native balance increased by 1 POL",
+        "blockedBy": []
+      },
+      {
+        "id": "topup-reserve-sync-bucket",
+        "label": "Attribute proportional BIGGI to Reserve DEX bucket",
+        "to": "0x2786e46e01a5d229118fEdC102267217C7e94574",
+        "value": "0",
+        "data": "0xaee193a5000000000000000000000000000000000000000000000056bc75e2d631000000",
+        "method": "ownerTopUpDexRefill(uint256)",
+        "args": [
+          "1600000000000000000000"
+        ],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": true,
+        "condition": "Reserve has sufficient unaccounted BIGGI for the 1 POL sync ratio",
+        "postcondition": "DEX_REFILL bucket increased by 1,600 BIGGI",
+        "blockedBy": []
+      },
+      {
+        "id": "execute-post-seed-sync",
+        "label": "Execute 1 POL LiquidityManager pairing and sync Vault accounting",
+        "to": "0xfb770C5A5AC6e41C85f076DB7C3434eAcd8e0F19",
+        "value": "0",
+        "data": "0x83a5d2490000000000000000000000000000000000000000000000000de0b6b3a7640000",
+        "method": "executePairing(uint256)",
+        "args": [
+          "1000000000000000000"
+        ],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": true,
+        "condition": "initial pair and Reserve sync funding are confirmed",
+        "postcondition": "LiquidityVault accounted LP equals real LP balance",
+        "blockedBy": []
+      }
+    ],
+    "blockers": [
+      "Phase 00 remediation must be executed and the plan regenerated",
+      "Owner lacks 5001 POL execution value plus gas"
+    ]
+  }
+}

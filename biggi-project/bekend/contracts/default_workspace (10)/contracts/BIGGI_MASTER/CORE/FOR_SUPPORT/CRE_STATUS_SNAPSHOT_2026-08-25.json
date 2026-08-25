@@ -96,6 +96,27 @@
       "allChecksPassed": true
     }
   },
+  "productionActivationPlan": {
+    "manifest": "config/production-activation.polygon.json",
+    "unsignedPlanEvidence": "EVIDENCE/production-activation-plan-polygon.json",
+    "forkEvidence": "EVIDENCE/production-activation-plan-fork.json",
+    "phases": [
+      "00-pre-liquidity-remediation",
+      "10-initial-liquidity",
+      "20-post-liquidity-tokenomics",
+      "30-cre-wiring",
+      "40-originals-launch"
+    ],
+    "readOnlyPlanBlockers": [
+      "Owner lacks 5001 POL execution value plus gas",
+      "CRE production workflow ID/owner unresolved"
+    ],
+    "forkTransactionsExecuted": 24,
+    "forkGasUsed": "1545502",
+    "allForkPostStateChecksPassed": true,
+    "mainnetTransactionsSent": 0,
+    "mainnetSignaturesProduced": 0
+  },
   "launchReadiness": {
     "okForDeployOnly": true,
     "okForPublicLaunch": false,
@@ -108,7 +129,11 @@
       "CRE workflow ID is not locked",
       "CRE workflow owner is not locked",
       "LIQUIDITY_ORCHESTRATOR is paused",
-      "LIQUIDITY_KEEPER_PROXY is paused"
+      "LIQUIDITY_KEEPER_PROXY is paused",
+      "Canonical LiquidityManager trigger/request values are not set",
+      "BuybackAgent auto-buyback is not enabled",
+      "CRE production call allowlist and target-side roles are not wired",
+      "Originals Chapter 1 is not active"
     ]
   }
 }

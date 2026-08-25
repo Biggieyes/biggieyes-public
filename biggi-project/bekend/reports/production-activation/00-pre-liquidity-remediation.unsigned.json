@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-08-25T01:05:21.870Z",
+  "network": {
+    "name": "polygon",
+    "chainId": 137
+  },
+  "sourceBlock": {
+    "number": 92609926,
+    "timestamp": 1787619916
+  },
+  "sendsTransactions": false,
+  "containsSignatures": false,
+  "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "configDigest": "0x04f84711460b351c111ca9eaa80ea63f156c96e3d1e83def2e9a75a4b9eca562",
+  "phase": {
+    "id": "00-pre-liquidity-remediation",
+    "irreversible": false,
+    "ready": true,
+    "transactions": [
+      {
+        "id": "buyback-threshold",
+        "label": "Correct BuybackUpkeepProxy threshold",
+        "to": "0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875",
+        "value": "0",
+        "data": "0x960bfe0400000000000000000000000000000000000000000000000006f05b59d3b20000",
+        "method": "setThreshold(uint256)",
+        "args": [
+          "500000000000000000"
+        ],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": true,
+        "condition": "minNativeThresholdWei != 500000000000000000",
+        "postcondition": "minNativeThresholdWei == 500000000000000000",
+        "blockedBy": []
+      },
+      {
+        "id": "liquidity-manager-auto-topup-config",
+        "label": "Correct disabled LiquidityManager auto-top-up values",
+        "to": "0xfb770C5A5AC6e41C85f076DB7C3434eAcd8e0F19",
+        "value": "0",
+        "data": "0x18cbebe300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004563918244f400000000000000000000000000000000000000000000000000004563918244f40000",
+        "method": "setAutoTopUpConfig(bool,uint256,uint256)",
+        "args": [
+          false,
+          "5000000000000000000",
+          "5000000000000000000"
+        ],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": true,
+        "condition": "disabled LM auto-top-up parameters do not match the canonical manifest",
+        "postcondition": "autoTopUpEnabled=false and trigger/request are both 5 POL",
+        "blockedBy": []
+      }
+    ],
+    "blockers": []
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-08-25T01:05:21.870Z",
+  "network": {
+    "name": "polygon",
+    "chainId": 137
+  },
+  "sourceBlock": {
+    "number": 92609926,
+    "timestamp": 1787619916
+  },
+  "sendsTransactions": false,
+  "containsSignatures": false,
+  "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "configDigest": "0x04f84711460b351c111ca9eaa80ea63f156c96e3d1e83def2e9a75a4b9eca562",
+  "phase": {
+    "id": "40-originals-launch",
+    "irreversible": false,
+    "ready": false,
+    "blockers": [
+      "Requires final strict gate after CRE activation"
+    ],
+    "transactions": [
+      {
+        "id": "unpause-originals-vrf",
+        "label": "Unpause Originals VRF collection if needed",
+        "to": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+        "value": "0",
+        "data": "0x3f4ba83a",
+        "method": "unpause()",
+        "args": [],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": false,
+        "condition": "all launch gates pass",
+        "postcondition": "Originals VRF collection is active",
+        "blockedBy": []
+      },
+      {
+        "id": "unpause-ticket-hub",
+        "label": "Unpause central TicketHub if needed",
+        "to": "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
+        "value": "0",
+        "data": "0x3f4ba83a",
+        "method": "unpause()",
+        "args": [],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": false,
+        "condition": "all launch gates pass",
+        "postcondition": "TicketHub is active",
+        "blockedBy": []
+      },
+      {
+        "id": "unpause-originals-public",
+        "label": "Unpause Originals Public collection",
+        "to": "0xe56cC0657A89daf10994204eD745985a61b0E36F",
+        "value": "0",
+        "data": "0x3f4ba83a",
+        "method": "unpause()",
+        "args": [],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": true,
+        "condition": "metadata is 100/100 and reward matrix is consistent",
+        "postcondition": "Public collection is active but mint remains controller-gated until VRF exhaustion",
+        "blockedBy": []
+      },
+      {
+        "id": "activate-originals-chapter",
+        "label": "Activate only TicketHub chapter 1 (Originals)",
+        "to": "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
+        "value": "0",
+        "data": "0xf7fb43b200000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
+        "method": "setChapterActive(uint256,bool)",
+        "args": [
+          1,
+          true
+        ],
+        "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+        "required": true,
+        "condition": "execute last after all final-gate checks pass",
+        "postcondition": "chapter 1 active; chapters 2-5 remain inactive",
+        "blockedBy": []
+      }
+    ]
+  }
+}

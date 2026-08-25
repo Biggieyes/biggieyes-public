@@ -1,6 +1,12 @@
 const fs = require("fs");
 const path = require("path");
 const hre = require("hardhat");
+const { loadProductionConfig } = require("./lib/productionActivationPlan");
+const {
+  compareProductionState,
+  readProductionState,
+  serializeProductionState,
+} = require("./lib/productionState");
 
 const { ethers, network } = hre;
 const ZERO = ethers.constants.AddressZero;
@@ -47,6 +53,7 @@ function fmt(bn) {
 async function main() {
   const root = path.resolve(__dirname, "../..");
   const A = loadAddresses(root);
+  const { file: productionConfigFile, config: productionConfig } = loadProductionConfig(root);
   const chain = await ethers.provider.getNetwork();
   const report = {
     network: network.name,
@@ -74,9 +81,17 @@ async function main() {
   if (chain.chainId !== 137) block("RPC is not Polygon mainnet", chain.chainId);
   else pass("RPC chainId is Polygon mainnet", chain.chainId);
 
-  const expectedOwner = getAddress(env("EXPECT_OWNER"));
+  const canonicalOwner = getAddress(A[productionConfig.authority.ownerAddressKey]);
+  const configuredExpectedOwner = getAddress(env("EXPECT_OWNER"));
+  const expectedOwner = canonicalOwner;
   const compromisedOwner = getAddress(env("COMPROMISED_OWNER_ADDRESS"));
-  if (!isAddress(expectedOwner)) block("EXPECT_OWNER is not configured", env("EXPECT_OWNER"));
+  if (!isAddress(configuredExpectedOwner)) block("EXPECT_OWNER is not configured", env("EXPECT_OWNER"));
+  else if (configuredExpectedOwner !== canonicalOwner) {
+    block("EXPECT_OWNER conflicts with the canonical production manifest", {
+      configured: configuredExpectedOwner,
+      canonical: canonicalOwner,
+    });
+  }
   if (isAddress(compromisedOwner) && getAddress(expectedOwner) === getAddress(compromisedOwner)) {
     block("EXPECT_OWNER uses the compromised owner address", expectedOwner);
   }
@@ -224,7 +239,7 @@ async function main() {
       paused,
       minNativeThresholdWei: fmt(minNativeThresholdWei),
       minimumSafeThresholdWei: MIN_SAFE_BUYBACK_THRESHOLD_WEI.toString(),
-      canonicalDefaultThresholdWei: ethers.utils.parseEther("0.5").toString(),
+      canonicalThresholdWei: productionConfig.tokenomics.buybackUpkeep.minNativeThresholdWei,
     };
     if (getAddress(agent) !== getAddress(A.BUYBACK_AGENT)) {
       block("BUYBACK_UPKEEP_PROXY agent mismatch", report.values.buybackUpkeep);
@@ -233,8 +248,10 @@ async function main() {
     else pass("BUYBACK_UPKEEP_PROXY is active", report.values.buybackUpkeep);
     if (minNativeThresholdWei.lt(MIN_SAFE_BUYBACK_THRESHOLD_WEI)) {
       block("BUYBACK_UPKEEP_PROXY threshold is dust-level", report.values.buybackUpkeep);
+    } else if (!minNativeThresholdWei.eq(productionConfig.tokenomics.buybackUpkeep.minNativeThresholdWei)) {
+      block("BUYBACK_UPKEEP_PROXY threshold differs from canonical production value", report.values.buybackUpkeep);
     } else {
-      pass("BUYBACK_UPKEEP_PROXY threshold is production-safe", report.values.buybackUpkeep);
+      pass("BUYBACK_UPKEEP_PROXY threshold matches canonical production value", report.values.buybackUpkeep);
     }
   }
 
@@ -307,7 +324,7 @@ async function main() {
 
   if (await codeExists(A.TICKET_HUB)) {
     const hub = await ethers.getContractAt(hubAbi, A.TICKET_HUB);
-    const chapterCount = Number(env("CHAPTER_COUNT", A.CHAPTER_COUNT == null ? "1" : A.CHAPTER_COUNT));
+    const chapterCount = productionConfig.launch.chapterCount;
     const chapterSaleMints = await Promise.all(
       Array.from({ length: chapterCount }, (_, index) => hub.chapterSaleMinted(index + 1))
     );
@@ -348,8 +365,8 @@ async function main() {
     if (paused) block("TicketHub is paused", report.values.ticketHub);
     if (!isAddress(distributor)) block("TicketHub distributor is not set", report.values.ticketHub);
     else if (getAddress(distributor) !== getAddress(A.DISTRIBUTOR)) block("TicketHub distributor mismatch", report.values.ticketHub);
-    const expectedSaleCap = Number(env("SALE_CAP", A.SALE_CAP == null ? "" : A.SALE_CAP));
-    const expectedMarketingCap = Number(env("MARKETING_CAP", A.MARKETING_CAP == null ? "" : A.MARKETING_CAP));
+    const expectedSaleCap = Number(productionConfig.launch.saleCap);
+    const expectedMarketingCap = Number(productionConfig.launch.marketingCap);
     if (ethers.BigNumber.from(saleCap).eq(0)) block("TicketHub saleCap is zero", report.values.ticketHub);
     const saleCapValue = ethers.BigNumber.from(saleCap).toNumber();
     const marketingCapValue = ethers.BigNumber.from(marketingCap).toNumber();
@@ -362,13 +379,8 @@ async function main() {
     if (isAddress(A.DEV_WALLET) && getAddress(devWallet) !== getAddress(A.DEV_WALLET)) {
       block("TicketHub devWallet mismatch", { current: devWallet, expected: A.DEV_WALLET });
     }
-    const expectedPublicTicketPrice = env(
-      "PUBLIC_TICKET_PRICE_WEI",
-      A.PUBLIC_TICKET_PRICE_WEI == null
-        ? ethers.utils.parseEther("500").toString()
-        : String(A.PUBLIC_TICKET_PRICE_WEI)
-    );
-    const expectedPriceIncrease = env("PRICE_INCREASE_PER_MINT_BPS", "10033");
+    const expectedPublicTicketPrice = productionConfig.launch.publicTicketStartPriceWei;
+    const expectedPriceIncrease = productionConfig.launch.priceIncreasePerMintBps;
     let expectedLiveTicketPrice = ethers.BigNumber.from(expectedPublicTicketPrice);
     for (let i = 0; i < totalPaidMints.toNumber(); i += 1) {
       expectedLiveTicketPrice = expectedLiveTicketPrice.mul(expectedPriceIncrease).div(10_000);
@@ -669,9 +681,81 @@ async function main() {
     }
   }
 
+  try {
+    const productionState = await readProductionState(ethers.provider, A, productionConfig);
+    const productionChecks = compareProductionState(productionState, A, productionConfig);
+    report.values.productionManifest = {
+      file: path.relative(root, productionConfigFile).replace(/\\/g, "/"),
+      state: serializeProductionState(productionState),
+      checks: productionChecks,
+      summary: productionChecks.reduce((summary, check) => {
+        const category = summary[check.category] || { total: 0, passed: 0, failed: 0 };
+        category.total += 1;
+        if (check.ok) category.passed += 1;
+        else category.failed += 1;
+        summary[check.category] = category;
+        return summary;
+      }, {}),
+    };
+
+    const addAggregateBlocker = (name, checks) => {
+      if (checks.length > 0) block(name, checks);
+      else pass(name, true);
+    };
+    addAggregateBlocker(
+      "Canonical production ownership",
+      productionChecks.filter((check) => check.category === "ownership" && !check.ok)
+    );
+    addAggregateBlocker(
+      "Canonical production parameters",
+      productionChecks.filter(
+        (check) => check.category === "parameter" && !check.ok && check.name !== "BuybackUpkeep threshold"
+      )
+    );
+    addAggregateBlocker(
+      "Additional production activation state",
+      productionChecks.filter(
+        (check) => check.category === "activationState" && !check.ok && ![
+          "BuybackUpkeep paused flag",
+          "LiquidityOrchestrator paused flag",
+          "LiquidityKeeper paused flag",
+          "DripKeeper paused flag",
+        ].includes(check.name)
+      )
+    );
+    addAggregateBlocker(
+      "CRE production call and role wiring",
+      productionChecks.filter(
+        (check) => check.category === "creWiring" && !check.ok && check.name !== "CRE receiver paused flag"
+      )
+    );
+    addAggregateBlocker(
+      "Originals chapter launch state",
+      productionChecks.filter(
+        (check) => check.category === "launchState" && !check.ok && ![
+          "Originals VRF paused flag",
+          "TicketHub paused flag",
+          "Originals Public paused flag",
+        ].includes(check.name)
+      )
+    );
+    addAggregateBlocker(
+      "Future chapter isolation",
+      productionChecks.filter((check) => check.category === "chapterIsolation" && !check.ok)
+    );
+  } catch (error) {
+    block("Canonical production manifest audit failed", String(error && error.message ? error.message : error));
+  }
+
   const reportFile = path.resolve(root, env("LAUNCH_PREFLIGHT_REPORT", "reports/launch-readiness-polygon.json"));
   fs.mkdirSync(path.dirname(reportFile), { recursive: true });
   fs.writeFileSync(reportFile, `${JSON.stringify(report, null, 2)}\n`);
+  const supportReportFile = path.resolve(
+    root,
+    "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/FOR_SUPPORT/EVIDENCE/launch-readiness-polygon.json"
+  );
+  fs.mkdirSync(path.dirname(supportReportFile), { recursive: true });
+  fs.writeFileSync(supportReportFile, `${JSON.stringify(report, null, 2)}\n`);
   console.log(JSON.stringify({
     okForDeployOnly: report.okForDeployOnly,
     okForPublicLaunch: report.okForPublicLaunch,

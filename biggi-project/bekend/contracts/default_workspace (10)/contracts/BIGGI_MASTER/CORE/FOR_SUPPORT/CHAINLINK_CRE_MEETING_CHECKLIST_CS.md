@@ -16,7 +16,8 @@ Potvrdit cestu k CRE Early Access deployi pro BIGGI tokenomics workflow na Polyg
 - PolygonScan: 58/58 kontraktu source verified.
 - Posledni simulace: `needed=1`, `submitted=0`, `failed=0`, `dryRun=true`.
 - Polygon-fork zkouska automatizace: 5/5 vetvi, 6/6 adversarial a 5/5 duplicate/stale-report kontrol proslo, bez mainnet transakce.
-- Launch preflight ma 9 blockeru; navic odhalil chybny buyback threshold `1 wei`. Aktivacni skript jej pred unpause nastavi na kanonickych `0.5 POL`.
+- Launch preflight ma 13 blockeru; strict manifest navic hlida LM `5 POL / 5 POL`, auto-buyback, vsechny CRE role/calls a aktivaci pouze Chapter 1.
+- Kompletni petifazovy Polygon-fork nacvik provedl 24 lokalnich transakci a vsechny post-checky prosly bez mainnet zapisu nebo podpisu.
 - Pocatecni likvidita: pair je prazdny; owner wallet ma pouze `1.824440220558510091 POL` proti pozadovanym `5000 POL + 1 POL sync + gas`.
 - `cre account access --non-interactive` dne 2026-08-25 neocekavane ohlasil odeslany request bez vyzadani popisu.
 
@@ -30,6 +31,8 @@ Potvrdit cestu k CRE Early Access deployi pro BIGGI tokenomics workflow na Polyg
 - `EVIDENCE/cre-simulation-2026-08-25.json`
 - `EVIDENCE/initial-liquidity-polygon.json`
 - `EVIDENCE/cre-automation-adversarial-gas-fork.json`
+- `EVIDENCE/production-activation-plan-polygon.json`
+- `EVIDENCE/production-activation-plan-fork.json`
 
 ## Otazky
 
