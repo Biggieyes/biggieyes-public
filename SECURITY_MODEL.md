@@ -164,6 +164,12 @@ The frontend follows a read-heavy model:
 
 ## Operational Risks
 
+### Dependency Audit Snapshot
+
+As of 2026-08-25, `npm audit` reports zero findings for the root project and zero findings in backend production dependencies. GitHub Dependabot still reports one low-severity development-scope alert, `GHSA-848j-6mx2-7j84`, through `ethers@5.8.0 -> @ethersproject/signing-key -> elliptic@6.6.1`.
+
+The advisory has no patched `elliptic` release. Removing it requires a deliberate ethers v6/Hardhat plugin migration across deployment scripts and tests, not a lockfile-only update. The alert remains open rather than being hidden; this migration must retain full mainnet script and fork-test coverage.
+
 ### Key Risks
 
 - owner key compromise

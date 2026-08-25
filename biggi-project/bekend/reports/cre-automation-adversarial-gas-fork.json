@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-24T23:53:21.123Z",
+  "generatedAt": "2026-08-25T00:11:11.755Z",
   "workflow": "biggi-tokenomics-production",
   "execution": {
     "mode": "polygon-mainnet-fork",
     "chainId": 137,
-    "startBlock": 92606899,
-    "endBlock": 92607028,
+    "startBlock": 92607596,
+    "endBlock": 92607732,
     "mainnetTransactionsSent": 0,
     "locallyDeployedProductionImplementations": true
   },
@@ -49,29 +49,29 @@
       },
       {
         "name": "liquidity",
-        "targetContract": "0x2952dB809c28b183983Ff9d99d7Eb91C05e4f7d5",
+        "targetContract": "0xf09f694860E62Be8ccFc575eC54193bC0Af600F4",
         "selector": "0x4585e33b",
-        "receiverOnReportGasUsed": 384598,
+        "receiverOnReportGasUsed": 384586,
         "configuredWriteGasLimit": 1600000,
-        "configuredHeadroomGas": 1215402,
+        "configuredHeadroomGas": 1215414,
         "configuredHeadroomPct": 75.96,
         "withinConfiguredLimit": true,
         "withinCRETransactionQuota": true
       },
       {
         "name": "dex-reserve-guard",
-        "targetContract": "0xe3633440F16C027e0B013D8370A4d273479aEA26",
+        "targetContract": "0xa783b15082C53D3f3b592bd4a400AB3DE6Fe6385",
         "selector": "0x4585e33b",
-        "receiverOnReportGasUsed": 229773,
+        "receiverOnReportGasUsed": 229761,
         "configuredWriteGasLimit": 1400000,
-        "configuredHeadroomGas": 1170227,
+        "configuredHeadroomGas": 1170239,
         "configuredHeadroomPct": 83.59,
         "withinConfiguredLimit": true,
         "withinCRETransactionQuota": true
       },
       {
         "name": "rewards-week-roll",
-        "targetContract": "0xF90ae483c5b37f3b4b415fa071D8702803e83E60",
+        "targetContract": "0x11275947C798905c38868Ed35a0670d8840433c8",
         "selector": "0x69fa508a",
         "receiverOnReportGasUsed": 176949,
         "configuredWriteGasLimit": 500000,
@@ -108,6 +108,40 @@
       "passed": true
     }
   ],
+  "replaySafety": {
+    "controls": {
+      "supplyDexCooldownSec": 1800,
+      "supplyRewardsCooldownSec": 43200,
+      "buybackPolicyCooldownSec": 300,
+      "liquidityKeeperMinIntervalSec": 900,
+      "liquidityOrchestratorCooldownSec": 3600,
+      "dexReserveGuardCooldownSec": 1800,
+      "rewardsWeekRoll": "idempotent week initialization"
+    },
+    "checks": [
+      {
+        "name": "supply-stale-report-noop",
+        "passed": true
+      },
+      {
+        "name": "buyback-stale-report-noop",
+        "passed": true
+      },
+      {
+        "name": "liquidity-stale-report-rejected",
+        "passed": true
+      },
+      {
+        "name": "dex-guard-stale-report-rejected",
+        "passed": true
+      },
+      {
+        "name": "week-roll-stale-report-idempotent",
+        "passed": true
+      }
+    ],
+    "result": "PASS"
+  },
   "operationalNotes": [
     "BuybackUpkeepProxy intentionally catches BuybackAgent reverts and emits PerformFailed.",
     "A caught buyback failure leaves the upkeep eligible for the next workflow tick; monitor PerformFailed events because the receiver transaction itself succeeds."

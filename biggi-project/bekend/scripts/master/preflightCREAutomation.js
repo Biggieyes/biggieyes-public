@@ -7,6 +7,7 @@ const ZERO = ethers.constants.AddressZero;
 const POLYGON_FORWARDER = "0x76c9cf548b4179F8901cda1f8623568b58215E62";
 const PERFORM_UPKEEP_SELECTOR = ethers.utils.id("performUpkeep(bytes)").slice(0, 10);
 const ROLL_CURRENT_WEEK_SELECTOR = ethers.utils.id("rollCurrentWeek()").slice(0, 10);
+const MIN_SAFE_BUYBACK_THRESHOLD_WEI = ethers.utils.parseEther("0.001");
 
 const EXPECTED_TARGETS = [
   ["supply-controller", "AUTOMATION", "SUPPLY_CONTROLLER"],
@@ -169,6 +170,21 @@ async function main() {
       actual: await dripLm.buybackAgent(),
     });
     check("Legacy DripKeeper remains paused", await dripProxy.paused(), dripProxyAddress);
+
+    const buybackProxy = await ethers.getContractAt(
+      ["function minNativeThresholdWei() view returns(uint256)"],
+      buybackProxyAddress
+    );
+    const buybackThreshold = await buybackProxy.minNativeThresholdWei();
+    check(
+      "BuybackUpkeep threshold is not dust-level",
+      buybackThreshold.gte(MIN_SAFE_BUYBACK_THRESHOLD_WEI),
+      {
+        actualWei: buybackThreshold.toString(),
+        minimumWei: MIN_SAFE_BUYBACK_THRESHOLD_WEI.toString(),
+        canonicalDefaultWei: ethers.utils.parseEther("0.5").toString(),
+      }
+    );
   }
 
   const configuredReceiver = address(

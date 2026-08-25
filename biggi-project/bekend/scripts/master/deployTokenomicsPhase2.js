@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const hre = require("hardhat");
+const { parseNativeAmount } = require("./lib/nativeUnits");
 
 const { ethers, network } = hre;
 const ZERO = ethers.constants.AddressZero;
@@ -67,8 +68,7 @@ function bn(value) {
 
 function parseEtherEnv(name, fallbackEth) {
   const raw = env(name, fallbackEth);
-  if (/^\d+$/.test(raw)) return ethers.BigNumber.from(raw);
-  return ethers.utils.parseEther(raw);
+  return parseNativeAmount(raw, name);
 }
 
 function parseIntEnv(name, fallback) {
@@ -572,8 +572,8 @@ async function main() {
   await txIf(
     "BuybackUpkeep.threshold",
     () => buybackUpkeepProxy.minNativeThresholdWei(),
-    parseEtherEnv("BUYBACK_UPKEEP_MIN_NATIVE", "1"),
-    () => buybackUpkeepProxy.setThreshold(parseEtherEnv("BUYBACK_UPKEEP_MIN_NATIVE", "1"))
+    parseEtherEnv("BUYBACK_UPKEEP_MIN_NATIVE", "0.5"),
+    () => buybackUpkeepProxy.setThreshold(parseEtherEnv("BUYBACK_UPKEEP_MIN_NATIVE", "0.5"))
   );
   await txIf("BuybackUpkeep.paused", () => buybackUpkeepProxy.paused(), true, () =>
     buybackUpkeepProxy.setPaused(true)

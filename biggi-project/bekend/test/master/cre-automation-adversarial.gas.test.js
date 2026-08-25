@@ -18,6 +18,7 @@ const GAS_LIMITS = Object.fromEntries(
 
 const gasRows = [];
 const adversarialChecks = [];
+const replayChecks = [];
 let startBlock;
 let endBlock;
 let chainId;
@@ -185,6 +186,7 @@ async function executeBranch(receiver, forwarder, metadata, name, target, callDa
     withinConfiguredLimit: true,
     withinCRETransactionQuota: true,
   });
+  return { report, receipt };
 }
 
 function writeEvidenceReport() {
@@ -224,12 +226,31 @@ function writeEvidenceReport() {
       branches: gasRows,
     },
     adversarialChecks,
+    replaySafety: {
+      controls: {
+        supplyDexCooldownSec: 1800,
+        supplyRewardsCooldownSec: 43200,
+        buybackPolicyCooldownSec: 300,
+        liquidityKeeperMinIntervalSec: 900,
+        liquidityOrchestratorCooldownSec: 3600,
+        dexReserveGuardCooldownSec: 1800,
+        rewardsWeekRoll: "idempotent week initialization",
+      },
+      checks: replayChecks,
+      result:
+        replayChecks.length === 5 && replayChecks.every((check) => check.passed)
+          ? "PASS"
+          : "FAIL",
+    },
     operationalNotes: [
       "BuybackUpkeepProxy intentionally catches BuybackAgent reverts and emits PerformFailed.",
       "A caught buyback failure leaves the upkeep eligible for the next workflow tick; monitor PerformFailed events because the receiver transaction itself succeeds.",
     ],
     overallResult:
-      gasRows.length === 5 && adversarialChecks.every((check) => check.passed)
+      gasRows.length === 5 &&
+      adversarialChecks.every((check) => check.passed) &&
+      replayChecks.length === 5 &&
+      replayChecks.every((check) => check.passed)
         ? "PASS"
         : "FAIL",
   };
@@ -272,10 +293,10 @@ describe("BIGGI_MASTER: CRE automation adversarial and gas rehearsal", function 
 
     const supply = await deployTokenStack(owner);
     await (
-      await supply.controller.setDexConfig(9000, toWei("100"), 0, 0, false)
+      await supply.controller.setDexConfig(9000, toWei("100"), 1800, 0, false)
     ).wait();
     await (
-      await supply.controller.setRewardsConfig(toWei("300000000"), toWei("50"), 0)
+      await supply.controller.setRewardsConfig(toWei("300000000"), toWei("50"), 43200)
     ).wait();
     await (await supply.controller.snapshotBaseline()).wait();
     await (await supply.controller.setAllowedCaller(receiver.address, true)).wait();
@@ -286,14 +307,24 @@ describe("BIGGI_MASTER: CRE automation adversarial and gas rehearsal", function 
     const buybackProxy = await deploy("BiggiBuybackUpkeepProxy", owner.address);
     await (await buybackProxy.setAgent(buybackAgent.address)).wait();
     await (await buybackProxy.setThreshold(toWei("1"))).wait();
+    await (await policy.setMinBuybackInterval(300)).wait();
     await (await buybackAgent.setNativeBalance(toWei("2"))).wait();
 
     const liquidity = await deployLiquidityStack(owner);
+    await (
+      await liquidity.orchestrator.setLimits(
+        toWei("0.1"),
+        toWei("5"),
+        toWei("1"),
+        3600,
+        0
+      )
+    ).wait();
     await (await liquidity.orchestrator.setKeeper(liquidity.keeperProxy.address)).wait();
     await (await liquidity.keeperProxy.setAllowedCaller(receiver.address)).wait();
     await (await liquidity.keeperProxy.setStrategy(0, toWei("0.5"), 500)).wait();
     await (
-      await liquidity.keeperProxy.setLimits(0, toWei("0.1"), toWei("2"), toWei("1"))
+      await liquidity.keeperProxy.setLimits(900, toWei("0.1"), toWei("2"), toWei("1"))
     ).wait();
 
     const guardStack = await deployTokenStack(owner);
@@ -303,7 +334,7 @@ describe("BIGGI_MASTER: CRE automation adversarial and gas rehearsal", function 
     await (await guardStack.controller.snapshotBaseline()).wait();
     await (await guardStack.controller.setAllowedCaller(guardStack.guard.address, true)).wait();
     await (await guardStack.guard.setKeeper(receiver.address, true)).wait();
-    await (await guardStack.guard.setCooldown(0)).wait();
+    await (await guardStack.guard.setCooldown(1800)).wait();
     await (await guardStack.guard.setReserveRatioBps(9000)).wait();
     await (await guardStack.guard.setRefillAmount(toWei("20000000"))).wait();
     await (await guardStack.guard.snapshotBaseline()).wait();
@@ -337,7 +368,7 @@ describe("BIGGI_MASTER: CRE automation adversarial and gas rehearsal", function 
     await (await receiver.unpause()).wait();
 
     const supplyData = await automationCall(supply.controller);
-    await executeBranch(
+    const supplyExecution = await executeBranch(
       receiver,
       forwarder,
       metadata,
@@ -347,9 +378,15 @@ describe("BIGGI_MASTER: CRE automation adversarial and gas rehearsal", function 
     );
     expect(await supply.token.guardianDexMinted()).to.equal(toWei("100"));
     expect(await supply.token.guardianRewardsMinted()).to.equal(toWei("50"));
+    await (
+      await receiver.connect(forwarder).onReport(metadata, supplyExecution.report)
+    ).wait();
+    expect(await supply.token.guardianDexMinted()).to.equal(toWei("100"));
+    expect(await supply.token.guardianRewardsMinted()).to.equal(toWei("50"));
+    replayChecks.push({ name: "supply-stale-report-noop", passed: true });
 
     const buybackData = await automationCall(buybackProxy);
-    await executeBranch(
+    const buybackExecution = await executeBranch(
       receiver,
       forwarder,
       metadata,
@@ -358,10 +395,15 @@ describe("BIGGI_MASTER: CRE automation adversarial and gas rehearsal", function 
       buybackData
     );
     expect(await buybackAgent.buybackCalls()).to.equal(1);
+    await (
+      await receiver.connect(forwarder).onReport(metadata, buybackExecution.report)
+    ).wait();
+    expect(await buybackAgent.buybackCalls()).to.equal(1);
+    replayChecks.push({ name: "buyback-stale-report-noop", passed: true });
 
     const reservePolBefore = await liquidity.reserve.polBalance();
     const liquidityData = await automationCall(liquidity.keeperProxy);
-    await executeBranch(
+    const liquidityExecution = await executeBranch(
       receiver,
       forwarder,
       metadata,
@@ -371,9 +413,15 @@ describe("BIGGI_MASTER: CRE automation adversarial and gas rehearsal", function 
     );
     expect(await liquidity.reserve.polBalance()).to.be.lt(reservePolBefore);
     expect(await liquidity.vault.lpBalanceOf(liquidity.lpToken.address)).to.be.gt(0);
+    const reservePolAfter = await liquidity.reserve.polBalance();
+    await expect(
+      receiver.connect(forwarder).onReport(metadata, liquidityExecution.report)
+    ).to.be.reverted;
+    expect(await liquidity.reserve.polBalance()).to.equal(reservePolAfter);
+    replayChecks.push({ name: "liquidity-stale-report-rejected", passed: true });
 
     const guardData = await automationCall(guardStack.guard);
-    await executeBranch(
+    const guardExecution = await executeBranch(
       receiver,
       forwarder,
       metadata,
@@ -382,11 +430,16 @@ describe("BIGGI_MASTER: CRE automation adversarial and gas rehearsal", function 
       guardData
     );
     expect(await guardStack.token.guardianDexMinted()).to.equal(toWei("20000000"));
+    await expect(
+      receiver.connect(forwarder).onReport(metadata, guardExecution.report)
+    ).to.be.reverted;
+    expect(await guardStack.token.guardianDexMinted()).to.equal(toWei("20000000"));
+    replayChecks.push({ name: "dex-guard-stale-report-rejected", passed: true });
 
     const weekId = await emission.currentWeek();
     expect((await emission.weekState(weekId)).initialized).to.equal(false);
     const weekData = emission.interface.encodeFunctionData("rollCurrentWeek");
-    await executeBranch(
+    const weekExecution = await executeBranch(
       receiver,
       forwarder,
       metadata,
@@ -395,8 +448,17 @@ describe("BIGGI_MASTER: CRE automation adversarial and gas rehearsal", function 
       weekData
     );
     expect((await emission.weekState(weekId)).initialized).to.equal(true);
+    const weekStateAfter = await emission.weekState(weekId);
+    await (
+      await receiver.connect(forwarder).onReport(metadata, weekExecution.report)
+    ).wait();
+    const weekStateAfterReplay = await emission.weekState(weekId);
+    expect(weekStateAfterReplay.budget).to.equal(weekStateAfter.budget);
+    expect(weekStateAfterReplay.paid).to.equal(weekStateAfter.paid);
+    replayChecks.push({ name: "week-roll-stale-report-idempotent", passed: true });
 
     expect(gasRows).to.have.length(5);
+    expect(replayChecks).to.have.length(5);
     expect(WORKFLOW_WORST_CASE_READ_CALLS).to.be.at.most(CRE_EVM_READ_CALL_QUOTA);
   });
 

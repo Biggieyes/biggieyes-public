@@ -139,8 +139,9 @@ Evidence: `EVIDENCE/cre-automation-adversarial-gas-fork.json`
 - Production implementations were deployed only inside the local fork and executed through `BiggiCREAutomationReceiver`.
 - All five branches passed: Supply, Buyback, Liquidity, DEX reserve guard and Rewards week roll.
 - All six adversarial checks passed: unauthorized forwarder, wrong workflow identity, contained target revert, receiver recovery, retryable buyback failure and buyback recovery.
+- All five duplicate/stale-report checks passed using the production cooldowns and target behavior: Supply and Buyback no-op, Liquidity and DEX guard revert without state change, and Rewards week roll is idempotent.
 - Workflow worst-case read count is `6`, below the CRE per-run quota of `15`.
-- Measured direct `receiver.onReport` gas was `140949` to `384598`; every configured branch limit retained at least `64.61%` headroom.
+- Measured direct `receiver.onReport` gas was `140949` to `384586`; every configured branch limit retained at least `64.61%` headroom.
 - Measurements include receiver plus target execution but exclude KeystoneForwarder/DON overhead.
 - No mainnet transaction was sent.
 
@@ -168,17 +169,23 @@ EVIDENCE/cre-preflight-polygon.json
 
 Preflight result:
 
-- Total checks: `47`
-- Errors: `5`
+- Total checks: `48`
+- Errors: `6`
 - Warnings: `0`
 
-The 5 errors are expected before production activation. The receiver has not yet allowlisted the final targets/selectors:
+One error is an unsafe live configuration that must be corrected before activation:
+
+- `BUYBACK_UPKEEP_PROXY.minNativeThresholdWei` is `1 wei`; the canonical production value is `0.5 POL` and the preflight rejects values below `0.001 POL`.
+
+The other five errors are expected before production activation. The receiver has not yet allowlisted the final targets/selectors:
 
 - supply-controller `0x810ba27C98aAB09737e3988a3C1b10D6CadaB8E8` selector `0x4585e33b`
 - buyback `0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875` selector `0x4585e33b`
 - liquidity `0x4fC6EaD8CC6451e1A5EA7Ceaf6a072e18f91F04c` selector `0x4585e33b`
 - dex-reserve-guard `0x350370c248495758b80Ea1C564Df1290cA76588B` selector `0x4585e33b`
 - rewards-week-roll `0xA7B71DFEBF89481b37d803dD0765E3612f29Ffb9` selector `0x69fa508a`
+
+The launch-readiness preflight currently reports 9 blockers and 2 expected warnings. In addition to the existing liquidity, Public collection, CRE identity and liquidity-keeper gates, `BUYBACK_UPKEEP_PROXY` is paused and has the dust-level threshold above. The activation script now sets the threshold to `0.5 POL` before unpausing it; no corrective mainnet transaction has been sent.
 
 ## Support Questions For Chainlink
 

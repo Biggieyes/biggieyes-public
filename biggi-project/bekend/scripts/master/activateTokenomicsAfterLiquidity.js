@@ -3,6 +3,7 @@ const path = require("path");
 const hre = require("hardhat");
 
 const { ethers, network } = hre;
+const MIN_SAFE_BUYBACK_THRESHOLD_WEI = ethers.utils.parseEther("0.001");
 
 function env(name, fallback = "") {
   const raw = process.env[name];
@@ -95,7 +96,15 @@ async function main() {
   const orchestrator = await ethers.getContractAt(["function paused() view returns (bool)", "function unpauseAll() external"], A.LIQUIDITY_ORCHESTRATOR);
   const keeper = await ethers.getContractAt(["function paused() view returns (bool)", "function unpauseAll() external"], A.LIQUIDITY_KEEPER_PROXY);
   const dripKeeper = await ethers.getContractAt(["function paused() view returns (bool)", "function unpause() external"], A.DRIP_KEEPER_PROXY);
-  const buybackUpkeep = await ethers.getContractAt(["function paused() view returns (bool)", "function setPaused(bool) external"], A.BUYBACK_UPKEEP_PROXY);
+  const buybackUpkeep = await ethers.getContractAt(
+    [
+      "function paused() view returns (bool)",
+      "function minNativeThresholdWei() view returns (uint256)",
+      "function setThreshold(uint256) external",
+      "function setPaused(bool) external",
+    ],
+    A.BUYBACK_UPKEEP_PROXY
+  );
   const buyback = await ethers.getContractAt(["function autoBuybackEnabled() view returns (bool)", "function toggleAutoBuyback(bool) external"], A.BUYBACK_AGENT);
   const lm = await ethers.getContractAt(
     [
@@ -118,11 +127,23 @@ async function main() {
     pairReserve1: reserves[1].toString(),
     pairLpSupply: lpSupply.toString(),
   };
+  const desiredBuybackThresholdWei = ethers.BigNumber.from(
+    env("BUYBACK_MIN_NATIVE_WEI", ethers.utils.parseEther("0.5").toString())
+  );
+  report.values.buybackUpkeep = {
+    currentThresholdWei: (await buybackUpkeep.minNativeThresholdWei()).toString(),
+    desiredThresholdWei: desiredBuybackThresholdWei.toString(),
+    minimumSafeThresholdWei: MIN_SAFE_BUYBACK_THRESHOLD_WEI.toString(),
+    paused: await buybackUpkeep.paused(),
+  };
 
   if (!distributed || totalSupply.eq(0)) report.blockers.push("BIGGI initial distribution is not executed.");
   if (reserves[0].eq(0) || reserves[1].eq(0) || lpSupply.eq(0)) report.blockers.push("PAIR has no liquidity.");
   if (flags.enableDripKeeper) {
     report.blockers.push("DRIP_KEEPER_PROXY must remain paused; BuybackAgent triggers drip directly.");
+  }
+  if (flags.enableBuybackUpkeep && desiredBuybackThresholdWei.lt(MIN_SAFE_BUYBACK_THRESHOLD_WEI)) {
+    report.blockers.push("BUYBACK_MIN_NATIVE_WEI is dust-level; use at least 0.001 POL (canonical default 0.5 POL).");
   }
   if (execute && !confirmed) report.blockers.push("Set I_UNDERSTAND_KEEPERS_GO_LIVE=1 to execute activation.");
 
@@ -140,6 +161,13 @@ async function main() {
       await txMaybe(report, execute, "DripKeeperProxy.unpause", () => dripKeeper.paused(), () => dripKeeper.unpause());
     }
     if (flags.enableBuybackUpkeep) {
+      await txMaybe(
+        report,
+        execute,
+        "BuybackUpkeepProxy.setThreshold(production)",
+        async () => !(await buybackUpkeep.minNativeThresholdWei()).eq(desiredBuybackThresholdWei),
+        () => buybackUpkeep.setThreshold(desiredBuybackThresholdWei)
+      );
       await txMaybe(report, execute, "BuybackUpkeepProxy.setPaused(false)", () => buybackUpkeep.paused(), () => buybackUpkeep.setPaused(false));
     }
     if (flags.enableAutoBuyback) {

@@ -1,5 +1,5 @@
 {
-  "createdAt": "2026-08-24T22:49:59.586Z",
+  "createdAt": "2026-08-25T00:11:35.235Z",
   "network": "polygon",
   "chainId": 137,
   "ok": false,
@@ -293,6 +293,15 @@
       "value": "0xf71b3B9E64bf48E1EC8F9195c3420464fe767cCc"
     },
     {
+      "name": "BuybackUpkeep threshold is not dust-level",
+      "ok": false,
+      "value": {
+        "actualWei": "1",
+        "minimumWei": "1000000000000000",
+        "canonicalDefaultWei": "500000000000000000"
+      }
+    },
+    {
       "name": "CRE receiver has bytecode",
       "ok": true,
       "value": "0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6"
@@ -356,6 +365,14 @@
   ],
   "warnings": [],
   "errors": [
+    {
+      "name": "BuybackUpkeep threshold is not dust-level",
+      "value": {
+        "actualWei": "1",
+        "minimumWei": "1000000000000000",
+        "canonicalDefaultWei": "500000000000000000"
+      }
+    },
     {
       "name": "supply-controller: receiver selector allowlisted",
       "value": {

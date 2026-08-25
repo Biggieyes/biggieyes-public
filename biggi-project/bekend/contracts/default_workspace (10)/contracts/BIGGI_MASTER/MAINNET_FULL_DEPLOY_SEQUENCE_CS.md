@@ -10,7 +10,7 @@ Stav k 2026-08-25. Tento dokument je hlavni poradi zbyvajicich kroku. Vychazi z 
 - Opravena Public migrace prosla kompletnim Polygon fork nacvikem: 5 deploymentu, 136 lokalnich transakci a finalni wiring audit `deployed-wired-paused`.
 - `BiggiCREAutomationReceiver` je nasazeny, verifikovany a zamerne paused.
 - `okForDeployOnly=true`, ale `okForPublicLaunch=false`.
-- Posledni `npm.cmd run preflight:launch:polygon` vratil 7 blockeru a 2 ocekavane warningy k CollectionRewards budgetu a BIGGI-paid mintum.
+- Posledni `npm.cmd run preflight:launch:polygon` vratil 9 blockeru a 2 ocekavane warningy k CollectionRewards budgetu a BIGGI-paid mintum.
 - Ownership transfer, VRF subscription transfer, CRE receiver deploy a pocatecni distribuce BIGGI jsou hotove. Initial liquidity ani CRE aktivace zatim odeslane nebyly.
 
 ## Historicky odhad POL nakladu
@@ -298,18 +298,25 @@ Presny postup a recovery pravidla jsou v `TOKENOMICMAINNET/INITIAL_LIQUIDITY_RUN
 Az po distribuci, likvidite, VRF a metadata gate:
 
 ```powershell
-$env:EXECUTE_TOKENOMICS_ACTIVATION="1"
-$env:I_UNDERSTAND_KEEPERS_GO_LIVE="1"
 $env:ENABLE_LIQUIDITY_ORCHESTRATOR="1"
 $env:ENABLE_LIQUIDITY_KEEPER="1"
 $env:ENABLE_DRIP_KEEPER="0"
 $env:ENABLE_BUYBACK_UPKEEP="1"
 $env:ENABLE_AUTO_BUYBACK="1"
 $env:ENABLE_LM_AUTO_TOPUP="0"
+$env:BUYBACK_MIN_NATIVE_WEI="500000000000000000"
 npm.cmd run activate:tokenomics:polygon
 ```
 
-Tento krok take snapshotuje baseline SupplyControlleru a DexReserveGuardu. Skript nyni hard-blockuje pokus o zapnuti Drip keeperu.
+Zkontrolovat dry-run report a ve stejnem PowerShell okne teprve povolit execution:
+
+```powershell
+$env:EXECUTE_TOKENOMICS_ACTIVATION="1"
+$env:I_UNDERSTAND_KEEPERS_GO_LIVE="1"
+npm.cmd run activate:tokenomics:polygon
+```
+
+Tento krok take snapshotuje baseline SupplyControlleru a DexReserveGuardu. Skript nyni hard-blockuje pokus o zapnuti Drip keeperu a dust-level buyback threshold. Live `BUYBACK_UPKEEP_PROXY.minNativeThresholdWei=1` opravi na `0.5 POL` pred unpause proxy.
 
 Potom aktivovat on-chain CRE receiver:
 

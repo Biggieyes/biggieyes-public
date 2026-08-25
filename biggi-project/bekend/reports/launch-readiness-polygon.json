@@ -1,7 +1,7 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "createdAt": "2026-08-24T21:59:39.309Z",
+  "createdAt": "2026-08-25T00:11:28.852Z",
   "okForDeployOnly": true,
   "okForPublicLaunch": false,
   "checks": [
@@ -247,6 +247,28 @@
   ],
   "blockers": [
     {
+      "name": "BUYBACK_UPKEEP_PROXY is paused",
+      "value": {
+        "address": "0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875",
+        "agent": "0x5A77E90c467576C82B8d0E74eD112B829C625BB4",
+        "paused": true,
+        "minNativeThresholdWei": "1",
+        "minimumSafeThresholdWei": "1000000000000000",
+        "canonicalDefaultThresholdWei": "500000000000000000"
+      }
+    },
+    {
+      "name": "BUYBACK_UPKEEP_PROXY threshold is dust-level",
+      "value": {
+        "address": "0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875",
+        "agent": "0x5A77E90c467576C82B8d0E74eD112B829C625BB4",
+        "paused": true,
+        "minNativeThresholdWei": "1",
+        "minimumSafeThresholdWei": "1000000000000000",
+        "canonicalDefaultThresholdWei": "500000000000000000"
+      }
+    },
+    {
       "name": "PAIR has no initial liquidity",
       "value": {
         "address": "0x59C7B17B3ACD48979B25215a0c477dF6FFFF3e90",
@@ -307,6 +329,14 @@
     }
   ],
   "values": {
+    "buybackUpkeep": {
+      "address": "0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875",
+      "agent": "0x5A77E90c467576C82B8d0E74eD112B829C625BB4",
+      "paused": true,
+      "minNativeThresholdWei": "1",
+      "minimumSafeThresholdWei": "1000000000000000",
+      "canonicalDefaultThresholdWei": "500000000000000000"
+    },
     "pair": {
       "address": "0x59C7B17B3ACD48979B25215a0c477dF6FFFF3e90",
       "token0": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",

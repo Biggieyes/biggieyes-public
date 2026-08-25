@@ -92,6 +92,12 @@ DripKeeper must remain paused. Drip is triggered by BuybackAgent through DripLM.
 Dry-run:
 
 ```powershell
+$env:ENABLE_LIQUIDITY_ORCHESTRATOR='1'
+$env:ENABLE_LIQUIDITY_KEEPER='1'
+$env:ENABLE_BUYBACK_UPKEEP='1'
+$env:ENABLE_AUTO_BUYBACK='1'
+$env:ENABLE_DRIP_KEEPER='0'
+$env:BUYBACK_MIN_NATIVE_WEI='500000000000000000'
 npm run activate:tokenomics:polygon
 ```
 
@@ -100,13 +106,10 @@ Execution, only after liquidity passes:
 ```powershell
 $env:EXECUTE_TOKENOMICS_ACTIVATION='1'
 $env:I_UNDERSTAND_KEEPERS_GO_LIVE='1'
-$env:ENABLE_LIQUIDITY_ORCHESTRATOR='1'
-$env:ENABLE_LIQUIDITY_KEEPER='1'
-$env:ENABLE_BUYBACK_UPKEEP='1'
-$env:ENABLE_AUTO_BUYBACK='1'
-$env:ENABLE_DRIP_KEEPER='0'
 npm run activate:tokenomics:polygon
 ```
+
+Mainnet proxy ma aktualne chybne `minNativeThresholdWei=1`. Aktivacni skript musi nejdrive provest `setThreshold(500000000000000000)` (`0.5 POL`) a teprve potom `setPaused(false)`. Hodnotu pod `0.001 POL` skript odmitne. Dry-run po doplneni liquidity musi tento plan zobrazit pred jakymkoli podpisem; execute prikazy se spousteji ve stejnem PowerShell okne, aby zustaly nastavene parametry z dry-runu.
 
 ## 4. CRE
 

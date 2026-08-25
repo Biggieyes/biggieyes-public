@@ -70,8 +70,8 @@ Canonical evidence: `EVIDENCE/cre-automation-adversarial-gas-fork.json`
 | --- | ---: | ---: | ---: |
 | Supply | `259225` | `900000` | `71.20%` |
 | Buyback | `140949` | `1400000` | `89.93%` |
-| Liquidity | `384598` | `1600000` | `75.96%` |
-| DEX reserve guard | `229773` | `1400000` | `83.59%` |
+| Liquidity | `384586` | `1600000` | `75.96%` |
+| DEX reserve guard | `229761` | `1400000` | `83.59%` |
 | Rewards week roll | `176949` | `500000` | `64.61%` |
 
 These are direct `BiggiCREAutomationReceiver.onReport` measurements using production implementations deployed inside a Polygon mainnet fork. They exclude KeystoneForwarder and DON overhead and are not estimates of billing cost. All values remain below both the configured write limits and the current `5,000,000` CRE EVM transaction gas quota.
@@ -81,6 +81,8 @@ The workflow performs at most six EVM reads per run: four `checkUpkeep` calls pl
 The checked-in `my-workflow/limits.chainlink-production-2026-08-25.json` profile mirrors the official quota page as verified on 2026-08-25. It is passed explicitly during simulation because CRE CLI v1.30.0 currently exports an embedded `10,000,000` EVM gas default while the official production service quota lists `5,000,000`. Chainlink support should confirm which value the tenant will enforce.
 
 Adversarial checks cover unauthorized forwarders, wrong workflow identity, target reverts, receiver recovery and Buyback retry behavior. `BiggiBuybackUpkeepProxy` intentionally catches an agent revert and emits `PerformFailed`; monitoring must consume that event because the receiver transaction remains successful and the next workflow tick retries the still-eligible upkeep.
+
+The receiver does not maintain a report nonce. Replay protection is therefore target-level. The fork rehearsal repeated each successful report with production cooldowns: Supply and Buyback produced no second effect, Liquidity and DEX guard rejected the stale action without state change, and Rewards week roll remained idempotent. All five checks passed.
 
 ## Receiver State Before Activation
 
@@ -111,9 +113,10 @@ This is intentional. Receiver activation must happen only after workflow deploy 
 5. Configure receiver expected workflow ID/owner.
 6. Allowlist the five target/selector pairs.
 7. Configure target-side keeper/allowed-caller roles for the receiver where required.
-8. Keep legacy/parallel keepers paused to avoid duplicate execution.
-9. Unpause receiver only after DEX liquidity and final tokenomics launch gates are satisfied.
-10. Monitor first executions in the CRE dashboard and on PolygonScan.
+8. Correct `BUYBACK_UPKEEP_PROXY.minNativeThresholdWei` from the live `1 wei` value to the canonical `0.5 POL`; the activation script performs this before proxy unpause and rejects values below `0.001 POL`.
+9. Keep legacy/parallel keepers paused to avoid duplicate execution.
+10. Unpause receiver only after DEX liquidity and final tokenomics launch gates are satisfied.
+11. Monitor first executions in the CRE dashboard and on PolygonScan.
 
 ## Launch Gate Snapshot
 
@@ -127,10 +130,12 @@ Current status:
 
 - `okForDeployOnly`: `true`
 - `okForPublicLaunch`: `false`
-- Blockers: `7`
+- Blockers: `9`
 
 Known blockers:
 
+- `BUYBACK_UPKEEP_PROXY` is paused.
+- `BUYBACK_UPKEEP_PROXY.minNativeThresholdWei` is the unsafe dust value `1 wei` instead of the canonical `0.5 POL`.
 - BIGGI/WPOL pair has no initial liquidity.
 - `MAIN2` is paused.
 - CRE receiver is paused.

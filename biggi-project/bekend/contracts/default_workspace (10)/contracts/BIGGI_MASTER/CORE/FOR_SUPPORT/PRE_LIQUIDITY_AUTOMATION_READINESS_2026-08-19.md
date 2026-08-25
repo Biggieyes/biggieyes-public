@@ -88,6 +88,7 @@ Retry result: simulation completed successfully in dry-run mode.
 - CRE Polygon-fork automation rehearsal:
   - five production branches passed through the receiver;
   - six adversarial/recovery checks passed;
+  - five duplicate/stale-report checks passed with no duplicate state effect;
   - configured gas headroom remained at least `64.61%` before KeystoneForwarder/DON overhead;
   - worst-case workflow reads: `6 / 15`;
   - no mainnet transaction was sent;
@@ -107,6 +108,8 @@ Retry result: simulation completed successfully in dry-run mode.
 
 Launch preflight:
 
+- BuybackUpkeepProxy is paused.
+- BuybackUpkeepProxy has an unsafe `1 wei` native threshold; activation must set the canonical `0.5 POL` value before unpause.
 - BIGGI/WPOL pair has no liquidity.
 - MAIN2 is paused.
 - CRE receiver is paused.
@@ -117,8 +120,9 @@ Launch preflight:
 
 CRE preflight:
 
+- BuybackUpkeepProxy has the same dust-level threshold blocker.
 - Receiver target/selector allowlist is still closed for the five production targets.
-- This is intentional until workflow ID/owner are known and CRE deploy access is enabled.
+- The closed allowlist is intentional until workflow ID/owner are known and CRE deploy access is enabled; the buyback threshold is not intentional.
 
 CRE account:
 
@@ -153,7 +157,7 @@ Dry-run status:
 
 1. Seed BIGGI/WPOL liquidity.
 2. Run launch preflight again.
-3. Activate tokenomics keepers except legacy DripKeeper.
+3. Correct the BuybackUpkeepProxy threshold to `0.5 POL`, then activate tokenomics keepers except legacy DripKeeper.
 4. Confirm CRE deploy access is enabled.
 5. Deploy CRE workflow to production settings.
 6. Read workflow ID and owner from current CRE CLI/UI.

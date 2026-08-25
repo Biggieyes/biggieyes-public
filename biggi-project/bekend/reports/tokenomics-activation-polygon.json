@@ -1,7 +1,7 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "createdAt": "2026-08-19T01:22:20.115Z",
+  "createdAt": "2026-08-25T00:18:59.361Z",
   "execute": false,
   "flags": {
     "enableLiquidityOrchestrator": false,
@@ -21,6 +21,12 @@
     "totalSupply": "1200000000000000000000000000",
     "pairReserve0": "0",
     "pairReserve1": "0",
-    "pairLpSupply": "0"
+    "pairLpSupply": "0",
+    "buybackUpkeep": {
+      "currentThresholdWei": "1",
+      "desiredThresholdWei": "500000000000000000",
+      "minimumSafeThresholdWei": "1000000000000000",
+      "paused": true
+    }
   }
 }

@@ -70,6 +70,8 @@ Pouziva se pouze `LIQUIDITY_KEEPER_PROXY`, nikoli paralelne `LIQUIDITY_AUTOMATIO
 - CRE dry-run nad Polygonem: OK, `submitted=0`, `failed=0`.
 - Posledni dry-run vratil `needed=1`, `submitted=0`, `failed=0`, `dryRun=true`.
 - Supply controller, buyback, liquidity a DEX guard vratily `no action needed`; pouze rewards week roll vratil `action needed; dry-run skipped write`.
+- Polygon-fork receiver rehearsal prosla 5/5 produkcnich vetvi, 6/6 adversarial kontrol a 5/5 duplicate/stale-report kontrol bez mainnet transakce.
+- Mainnet `BUYBACK_UPKEEP_PROXY.minNativeThresholdWei` je chybne `1 wei`; pred unpause jej aktivacni skript nastavi na kanonickych `0.5 POL` a odmitne dust hodnotu pod `0.001 POL`.
 - BIGGI/WPOL pair je stale prazdny. Owner wallet mela pri dry-run `1.824440220558510091 POL`, proto nelze provest planovany seed `5000 POL + 1 POL sync + gas`.
 
 Dry-run nepouziva `--broadcast` a neodesila transakce.

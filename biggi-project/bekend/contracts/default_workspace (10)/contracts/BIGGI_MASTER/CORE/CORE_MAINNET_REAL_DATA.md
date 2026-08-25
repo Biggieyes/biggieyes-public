@@ -72,7 +72,7 @@ Marketing minting stores the 1 POL snapshot and does not advance the public curv
 
 The public price transition was confirmed in Polygon block `92226673`, transaction `0x1fb1165f4a67416c25f3d0c4c7ae7600e35466fc2b3ba8913d60554a5d1db63b`.
 
-Live read-only preflight after the CollectionRewards migration returned `okForDeployOnly=true`, `okForPublicLaunch=false`, 7 blockers and 2 warnings. The remaining blockers are empty initial DEX liquidity, the intentionally paused Chapter 1 Public collection, paused/unlocked CRE receiver identity, and the paused liquidity orchestrator/keeper proxy. The warnings confirm that Chapter 1 CollectionRewards claims remain locked while its isolated `47000 POL` budget fills and that BIGGI-paid mints do not add native POL. Chapter 1 Public metadata are complete; missing final image URIs for chapters 2-5 block only those future chapters.
+Live read-only preflight after the CollectionRewards migration returned `okForDeployOnly=true`, `okForPublicLaunch=false`, 9 blockers and 2 warnings. The remaining blockers are the paused BuybackUpkeepProxy and its erroneous `1 wei` threshold, empty initial DEX liquidity, the intentionally paused Chapter 1 Public collection, paused/unlocked CRE receiver identity, and the paused liquidity orchestrator/keeper proxy. The activation tooling schedules the canonical `0.5 POL` buyback threshold before proxy unpause. The warnings confirm that Chapter 1 CollectionRewards claims remain locked while its isolated `47000 POL` budget fills and that BIGGI-paid mints do not add native POL. Chapter 1 Public metadata are complete; missing final image URIs for chapters 2-5 block only those future chapters.
 
 ## Canonical Manifest Files
 

@@ -4,6 +4,7 @@ const hre = require("hardhat");
 
 const { ethers, network } = hre;
 const ZERO = ethers.constants.AddressZero;
+const MIN_SAFE_BUYBACK_THRESHOLD_WEI = ethers.utils.parseEther("0.001");
 
 function env(name, fallback = "") {
   const raw = process.env[name];
@@ -204,6 +205,38 @@ async function main() {
     "function collectionRewards() view returns (address)",
     "function pending(address) view returns (uint256)",
   ];
+  const buybackUpkeepAbi = [
+    "function agent() view returns (address)",
+    "function paused() view returns (bool)",
+    "function minNativeThresholdWei() view returns (uint256)",
+  ];
+
+  if (await codeExists(A.BUYBACK_UPKEEP_PROXY)) {
+    const buybackUpkeep = await ethers.getContractAt(buybackUpkeepAbi, A.BUYBACK_UPKEEP_PROXY);
+    const [agent, paused, minNativeThresholdWei] = await Promise.all([
+      buybackUpkeep.agent(),
+      buybackUpkeep.paused(),
+      buybackUpkeep.minNativeThresholdWei(),
+    ]);
+    report.values.buybackUpkeep = {
+      address: A.BUYBACK_UPKEEP_PROXY,
+      agent,
+      paused,
+      minNativeThresholdWei: fmt(minNativeThresholdWei),
+      minimumSafeThresholdWei: MIN_SAFE_BUYBACK_THRESHOLD_WEI.toString(),
+      canonicalDefaultThresholdWei: ethers.utils.parseEther("0.5").toString(),
+    };
+    if (getAddress(agent) !== getAddress(A.BUYBACK_AGENT)) {
+      block("BUYBACK_UPKEEP_PROXY agent mismatch", report.values.buybackUpkeep);
+    }
+    if (paused) block("BUYBACK_UPKEEP_PROXY is paused", report.values.buybackUpkeep);
+    else pass("BUYBACK_UPKEEP_PROXY is active", report.values.buybackUpkeep);
+    if (minNativeThresholdWei.lt(MIN_SAFE_BUYBACK_THRESHOLD_WEI)) {
+      block("BUYBACK_UPKEEP_PROXY threshold is dust-level", report.values.buybackUpkeep);
+    } else {
+      pass("BUYBACK_UPKEEP_PROXY threshold is production-safe", report.values.buybackUpkeep);
+    }
+  }
 
   if (await codeExists(A.PAIR)) {
     const pair = await ethers.getContractAt(pairAbi, A.PAIR);

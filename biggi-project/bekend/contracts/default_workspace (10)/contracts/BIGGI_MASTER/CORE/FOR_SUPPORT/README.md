@@ -30,7 +30,9 @@ This folder intentionally does not contain secrets, private keys, API keys, wall
 - Workflow deployment registry: `private`
 - Receiver is deployed on Polygon mainnet but intentionally paused and not allowlisted yet.
 - Safe simulation on 2026-08-25: `needed=1`, `submitted=0`, `failed=0`, `dryRun=true`.
-- Polygon-fork CRE automation rehearsal: 5/5 branches and 6/6 adversarial checks passed; no mainnet transaction was sent.
+- Polygon-fork CRE automation rehearsal: 5/5 branches, 6/6 adversarial checks and 5/5 duplicate/stale-report checks passed; no mainnet transaction was sent.
+- Current launch preflight: `okForDeployOnly=true`, `okForPublicLaunch=false`, 9 blockers and 2 expected warnings.
+- Mainnet `BUYBACK_UPKEEP_PROXY.minNativeThresholdWei` is incorrectly `1 wei`; the activation tooling now requires a non-dust value and schedules the canonical `0.5 POL` threshold before unpausing the proxy.
 - `cre account access --non-interactive` unexpectedly reported a submitted request without collecting a description; Chainlink should confirm which request is active.
 
 ## Current Initial Liquidity Status
