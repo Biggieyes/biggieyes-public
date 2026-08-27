@@ -13,7 +13,7 @@ Potvrdit cestu k CRE Early Access deployi pro BIGGI tokenomics workflow na Polyg
 - Deploy access: `Not enabled`
 - Produkcni workflow: zatim zadny.
 - Receiver: nasazeny, source verified, paused.
-- PolygonScan: 58/58 kontraktu source verified.
+- PolygonScan: 60/60 kanonickych a 3/3 nahrazenych historickych BIGGI kontraktu source verified.
 - Posledni simulace: `needed=1`, `submitted=0`, `failed=0`, `dryRun=true`.
 - Polygon-fork zkouska automatizace: 5/5 vetvi, 6/6 adversarial a 5/5 duplicate/stale-report kontrol proslo, bez mainnet transakce.
 - Launch preflight ma 11 blockeru; pre-liquidity oprava threshold/LM parametru je potvrzena on-chain a strict manifest dale hlida auto-buyback, vsechny CRE role/calls a aktivaci pouze Chapter 1.

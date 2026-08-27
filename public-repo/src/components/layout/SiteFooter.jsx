@@ -28,7 +28,7 @@ const COMMUNITY = [
   { label: "X / Twitter", href: "#", placeholder: true },
   { label: "Discord", href: "#", placeholder: true },
   { label: "Telegram", href: "#", placeholder: true },
-  { label: "Support Email", href: "mailto:help@placeholder.tld", placeholder: true },
+  { label: "eyesbiggi@gmail.com", href: "mailto:eyesbiggi@gmail.com" },
 ];
 
 const LINKS = [

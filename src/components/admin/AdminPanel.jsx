@@ -2406,10 +2406,8 @@ export default function AdminPanel({
               </div>
               <div style={{ padding: 12, display: "grid", gap: 12 }}>
                 <p style={{ margin: 0, color: C.dim, lineHeight: 1.6 }}>
-                  Owner-only Moderator Center actions were moved here from the
-                  moderator screen. Slot configuration, password and referral
-                  hashes, reward coefficients, allocations, distribution, and
-                  withdrawals now live in the main Admin Panel.
+                  On-chain ModeratorCenter V2 status, emergency pause, weekly
+                  settlement, slot weights, and payout liabilities.
                 </p>
                 <AdminDashboard
                   walletAddress={ownerWallet}

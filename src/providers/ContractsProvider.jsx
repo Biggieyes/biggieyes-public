@@ -469,3 +469,6 @@ export function useContracts() {
   return context;
 }
 
+export function useOptionalContracts() {
+  return React.useContext(Ctx);
+}

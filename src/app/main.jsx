@@ -139,11 +139,23 @@ function Bootstrap({ children }) {
 
         manager.setMessage("Loading fonts and UI...");
 
-        const fontsReady = (
-          document.fonts && document.fonts.ready
-            ? document.fonts.ready
-            : Promise.resolve()
-        ).then(() => doneFonts(1));
+        const fontsReady = new Promise((resolve) => {
+          let settled = false;
+          const finish = () => {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timeoutId);
+            doneFonts(1);
+            resolve();
+          };
+          const timeoutId = window.setTimeout(finish, 1500);
+          const readiness =
+            document.fonts && document.fonts.ready
+              ? document.fonts.ready
+              : Promise.resolve();
+
+          Promise.resolve(readiness).then(finish, finish);
+        });
 
         await Promise.all([waitForWindowLoad, fontsReady]);
         if (cancelled) return;
@@ -250,7 +262,6 @@ root.render(
     appWithBoundary
   ),
 );
-
 
 
 

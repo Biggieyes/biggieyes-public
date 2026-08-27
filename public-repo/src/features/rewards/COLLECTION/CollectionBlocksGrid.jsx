@@ -118,7 +118,7 @@ const resolveButtonStyle = (name) => {
 
 const COLLECTION_SECTION_META = {
   COLLECTION1: {
-    title: "VRF COLLECTION",
+    title: "ORIGINALS COLLECTION",
     subtitle:
       "Live VRF collection view with block pricing, background impact, and rarity-linked supply signals across the first collection layer.",
     accent: "#ffe800",
@@ -797,7 +797,7 @@ function COLLECTIONBlocksGrid({
   const panelInfoItems = React.useMemo(
     () => [
       {
-        label: "COLLECTION 1",
+        label: "ORIGINALS COLLECTION",
         description: [
           "Primary collection blocks with live pricing and mints.",
           "Prices reflect base 1–10 POL + demand adjustments.",
@@ -1081,7 +1081,7 @@ function COLLECTIONBlocksGrid({
                 className={`collection-grid__tab${effectiveActive === "COLLECTION1" ? " is-active" : ""}`}
                 onClick={() => handleSwitchCOLLECTION("COLLECTION1")}
               >
-                COLLECTION 1
+                ORIGINALS COLLECTION
               </button>
               <button
                 type="button"

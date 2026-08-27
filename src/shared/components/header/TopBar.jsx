@@ -4,13 +4,13 @@ import IconRow from "./IconRow";
 
 const TOPBAR_LOGOS = {
   primary: {
-    src: "/images/main-logo1.optimized.png",
+    src: "/images/main-logo1.optimized.lossless.webp",
     fallbackSrc: "/images/main-logo1.fallback.png",
     width: 460,
     height: 307,
   },
   secondary: {
-    src: "/images/main-logo2.optimized.png",
+    src: "/images/main-logo2.optimized.lossless.webp",
     fallbackSrc: "/images/main-logo2.fallback.png",
     width: 368,
     height: 245,
@@ -171,4 +171,3 @@ function TopBar({
 }
 
 export default React.memo(TopBar);
-

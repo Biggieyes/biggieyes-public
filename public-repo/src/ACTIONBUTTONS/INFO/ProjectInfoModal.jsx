@@ -5,107 +5,114 @@ import "../../components/CollectionBlocksGrid.css";
 import "../../features/rewards/REWARDSPanel.css";
 import "../../styles/biggi-token.skin.css";
 import TrustPanel from "../../features/info/trust/TrustPanel.jsx";
+import "./ProjectInfoModal.css";
 
 const SECTIONS = [
-  { id: "overview", label: "Overview & How It Works", icon: "O" },
-  { id: "guide", label: "User Guide", icon: "U" },
-  { id: "pricing", label: "Pricing, Blocks & Mechanics", icon: "$" },
-  { id: "transparency", label: "Transparency & On-Chain Proofs", icon: "#" },
-  { id: "trust", label: "Trust", icon: "T" },
-  { id: "trading", label: "Trading & User Experience", icon: "X" },
-  { id: "roadmap", label: "Roadmap, Community & Legal", icon: "R" },
-  { id: "troubleshooting", label: "Troubleshooting", icon: "!" },
-  { id: "faq", label: "FAQ", icon: "?" },
-  { id: "token", label: "BIGGI Ecosystem & Weekly Rewards", icon: "B" },
-  { id: "liquidity", label: "Liquidity, Router & LP Controls", icon: "L" },
+  { id: "overview", label: "Overview & How It Works" },
+  { id: "guide", label: "User Guide" },
+  { id: "pricing", label: "Pricing, Blocks & Mechanics" },
+  { id: "transparency", label: "Transparency & On-Chain Proofs" },
+  { id: "trust", label: "Trust" },
+  { id: "trading", label: "Trading & User Experience" },
+  { id: "roadmap", label: "Roadmap, Community & Legal" },
+  { id: "troubleshooting", label: "Troubleshooting" },
+  { id: "faq", label: "FAQ" },
+  { id: "token", label: "BIGGI Ecosystem & Weekly Rewards" },
+  { id: "liquidity", label: "Liquidity, Router & LP Controls" },
+  { id: "schema", label: "Protocol Map" },
 ];
 
-const COLORS = {
-  text: "#f6f7fb",
-  dim: "#cfd2db",
-  line: "rgba(255,255,255,.12)",
-  y: "#FFE800",
-  p: "#FF5DA2",
-  v: "#9B7BFF",
-  c: "#27D9D2",
-  g: "#6BEE5B",
-};
+const PROJECT_FAQ_ITEMS = [
+  {
+    question: "What is BiggiEyes?",
+    answer:
+      "BiggiEyes is a Polygon mainnet NFT protocol with ticket minting, Chainlink VRF reveals, paired collection chapters, BIGGI rewards, and transparent on-chain tokenomics.",
+  },
+  {
+    question: "What do I buy first?",
+    answer:
+      "You mint a ticket first. The ticket is then redeemed to request Chainlink VRF, which finalizes the NFT outcome and mints the revealed NFT to your wallet.",
+  },
+  {
+    question: "Why does the project use Chainlink VRF?",
+    answer:
+      "VRF gives the reveal process verifiable randomness. That matters because block tier and traits affect rarity, pricing context, and reward weight.",
+  },
+  {
+    question: "What is the difference between VRF and Public collections?",
+    answer:
+      "The VRF collection uses ticket redemption and random assignment. The paired Public collection is a smaller direct-mint collection for the same chapter and follows the chapter's block pricing without background variants.",
+  },
+  {
+    question: "How many NFTs are in the Public collection?",
+    answer:
+      "The Public collection has 100 NFTs per chapter, ten per block. It does not clone each block across background colors because that mechanic belongs to the VRF collection.",
+  },
+  {
+    question: "How do ticket and block prices work?",
+    answer:
+      "Marketing tickets are handled separately. After the public sale begins, contract logic controls ticket pricing, block pricing, and chapter-specific state. The dashboard displays the current mainnet values.",
+  },
+  {
+    question: "How do BIGGI weekly rewards work?",
+    answer:
+      "Eligible revealed NFTs can claim weekly BIGGI rewards. The amount depends on live reward settings and the NFT's block tier weight.",
+  },
+  {
+    question: "Where does mint revenue go?",
+    answer:
+      "A POL-paid mint sends 40% to the dev wallet and 60% to the MultiCollectionDistributor. That distributor share is split 25% to CollectionRewards, 35% to Reserve, 20% to Buyback, 10% to Treasury, and 10% to Community. BIGGI-paid mints use the separate Treasury 34/33/33 route.",
+  },
+  {
+    question: "Is CRE part of core minting?",
+    answer:
+      "No. Core minting and VRF fulfillment are handled by contracts. CRE is planned for automation around buyback, drip, liquidity, reserve checks, and reward maintenance.",
+  },
+  {
+    question: "How do I verify contract data?",
+    answer:
+      "Use the Trust tab, explorer links, OpenSea contract pages, and repository documentation. Mainnet transactions, balances, source verification, and events should be independently checkable.",
+  },
+];
 
-const gradientBackdrop = "#0a0b10";
-
-const SidebarButton = ({ active, icon, children, style, labelStyle, ...props }) => (
+const SidebarButton = ({ active, index, children, ...props }) => (
   <button
     {...props}
-    className={`rewards-grid__tab${active ? " is-active" : ""}`}
-    style={{
-      display: "inline-flex",
-      alignItems: "center",
-      gap: 8,
-      width: "100%",
-      justifyContent: "flex-start",
-      textAlign: "left",
-      ...style,
-    }}
+    type="button"
+    className={`project-info-tab${active ? " is-active" : ""}`}
   >
-    <span aria-hidden>{icon}</span>
-    <span
-      style={{
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-        minWidth: 0, // required for ellipsis inside flex containers
-        flex: "1 1 auto",
-        ...labelStyle,
-      }}
-    >
-      {children}
+    <span className="project-info-tab__index" aria-hidden>
+      {String(index + 1).padStart(2, "0")}
     </span>
+    <span className="project-info-tab__label">{children}</span>
   </button>
 );
 
 const Card = ({ tone = "v", title, children }) => (
-  <article className={`rewards-grid__card biggi-card biggi-card--${tone}`}>
-    <div className="biggi-card__glow" aria-hidden />
-    <div className="rewards-grid__card-header biggi-card__header">
-      <div className="biggi-card__heading">
-        <h3>{title}</h3>
-      </div>
-    </div>
-    <div className="biggi-card__body">{children}</div>
+  <article className={`project-info-card project-info-card--${tone}`}>
+    <header className="project-info-card__header">
+      <h3 className="project-info-card__title">{title}</h3>
+    </header>
+    <div className="project-info-card__body">{children}</div>
   </article>
 );
 
 const Heading = ({ children }) => (
-  <h4 style={{ margin: "6px 0", fontWeight: 900, color: COLORS.y }}>
-    {children}
-  </h4>
+  <h4 className="project-info-heading">{children}</h4>
 );
 
-const Divider = ({ tone = COLORS.v }) => (
-  <hr style={{ border: "none", height: 1, opacity: 0.18, background: tone }} />
-);
+const Divider = () => <hr className="project-info-divider" />;
 
 const ArrowButton = ({ onClick, title, children }) => (
   <button
     type="button"
-    className="biggi-ghost-btn"
+    className="project-info-icon-button"
     onClick={(event) => {
       event.stopPropagation();
       onClick?.();
     }}
     title={title}
     aria-label={title}
-    style={{
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      marginRight: 6,
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-      color: COLORS.y,
-      fontWeight: 900,
-    }}
   >
     {children}
   </button>
@@ -120,35 +127,28 @@ const ProjectInfoModal = ({
 }) => {
   const sections = React.useMemo(() => SECTIONS, []);
   const [active, setActive] = React.useState(sections[0].id);
-  const [isMobile, setIsMobile] = React.useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia("(max-width: 768px)").matches;
-  });
+  const scrollRef = React.useRef(null);
+  const closeButtonRef = React.useRef(null);
 
   React.useEffect(() => {
     if (!open || asPanel) return;
     const onKey = (event) => event.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, asPanel, onClose]);
+    const previouslyFocused = document.activeElement;
+    const previousBodyOverflow = document.body.style.overflow;
 
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    const media = window.matchMedia("(max-width: 768px)");
-    const handler = (event) => setIsMobile(event.matches);
-    try {
-      media.addEventListener("change", handler);
-    } catch {
-      media.addListener(handler);
-    }
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    const focusFrame = window.requestAnimationFrame(() => {
+      closeButtonRef.current?.focus();
+    });
+
     return () => {
-      try {
-        media.removeEventListener("change", handler);
-      } catch {
-        media.removeListener(handler);
-      }
+      window.cancelAnimationFrame(focusFrame);
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousBodyOverflow;
+      previouslyFocused?.focus?.();
     };
-  }, []);
+  }, [open, asPanel, onClose]);
 
   React.useEffect(() => {
     if (sections.every((section) => section.id !== active)) {
@@ -158,48 +158,48 @@ const ProjectInfoModal = ({
 
   if (!open) return null;
 
+  const handleSectionChange = (sectionId) => {
+    setActive(sectionId);
+    window.requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  };
+
   const Sidebar = (
-    <aside
-      style={{
-        background: "#14161c",
-        border: `1px solid ${COLORS.v}33`,
-        borderRadius: 16,
-        padding: 12,
-        display: "flex",
-        flexDirection: isMobile ? "row" : "column",
-        gap: 8,
-        overflowX: isMobile ? "auto" : "visible",
-      }}
+    <nav
+      className="project-info-nav"
+      role="tablist"
+      aria-label="Project information sections"
     >
-      {sections.map((section) => (
+      {sections.map((section, index) => (
         <SidebarButton
           key={section.id}
           active={active === section.id}
-          icon={section.icon}
-          onClick={() => setActive(section.id)}
-          aria-pressed={active === section.id}
-          style={isMobile ? { width: "auto", flex: "0 0 auto" } : undefined}
-          labelStyle={
-            isMobile
-              ? { whiteSpace: "nowrap" }
-              : { whiteSpace: "normal", lineHeight: 1.25, wordBreak: "break-word" }
-          }
+          index={index}
+          id={`project-info-tab-${section.id}`}
+          role="tab"
+          aria-selected={active === section.id}
+          aria-controls="project-info-active-panel"
+          onClick={() => handleSectionChange(section.id)}
         >
           {section.label}
         </SidebarButton>
       ))}
-    </aside>
+    </nav>
   );
 
   const Content = (
-    <Card
-      tone="c"
-      title={sections.find((entry) => entry.id === active)?.label ?? ""}
+    <div
+      className="project-info-content"
+      id="project-info-active-panel"
+      role="tabpanel"
+      aria-labelledby={`project-info-tab-${active}`}
     >
-      <div
-        className="rewards-info"
-        style={{ display: "grid", gap: 16, lineHeight: 1.7 }}
+      <Card
+        tone="c"
+        title={sections.find((entry) => entry.id === active)?.label ?? ""}
       >
+      <div className="project-info-copy">
         {active === "overview" && (
           <>
             <Heading>Two-minute overview</Heading>
@@ -211,7 +211,7 @@ const ProjectInfoModal = ({
               dynamic pricing.
             </p>
 
-            <Heading>Collections and episodes</Heading>
+            <Heading>Collections and chapters</Heading>
             <ul style={{ marginLeft: 18 }}>
               <li>VRF Collection: ticket to redeem to VRF to NFT.</li>
               <li>
@@ -219,8 +219,8 @@ const ProjectInfoModal = ({
                 separate collection in the dashboard.
               </li>
               <li>
-                Episodes (seasonal phases) group drops and rewards; when active,
-                the UI highlights the current episode.
+                Each chapter pairs one VRF collection with one Public collection.
+                Chapters become available sequentially.
               </li>
             </ul>
 
@@ -228,26 +228,24 @@ const ProjectInfoModal = ({
 
             <Heading>On-chain flow (high level)</Heading>
             <p>
-              Mint revenue is routed on-chain through the protocol flow
-              (Distributor to Reserve to Liquidity to Rewards to Buyback).
-              Exact splits are defined by contracts and are verifiable on-chain.
+              POL and BIGGI payments use separate on-chain routes. The native
+              distributor split and the BIGGI treasury split are fixed by the
+              deployed contract libraries and are independently verifiable.
             </p>
-            <div
-              style={{
-                fontFamily:
-                  'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                fontSize: 13,
-                lineHeight: 1.6,
-                whiteSpace: "pre-wrap",
-                opacity: 0.9,
-              }}
-            >
-{`Mint to Ticket NFT
-Mint fees to Distributor
-Distributor to Reserve | Buyback | Treasury | CollectionRewards
-Buyback to Treasury
-Treasury to TokenRewards + Reserve
-Reserve to LiquidityManager to LiquidityVault`}
+            <div className="project-info-flow">
+{`POL mint
+|- 40% -> Dev wallet
++- 60% -> MultiCollectionDistributor
+   |- 25% -> CollectionRewards
+   |- 35% -> Reserve
+   |- 20% -> Buyback
+   |- 10% -> Treasury
+   +- 10% -> Community
+
+BIGGI mint -> Treasury
+|- 34% -> TokenRewards
+|- 33% -> Reserve
++- 33% -> DripDistributor`}
             </div>
 
             <Divider />
@@ -322,11 +320,11 @@ Reserve to LiquidityManager to LiquidityVault`}
               </li>
             </ul>
 
-            <Heading>Episodes</Heading>
+            <Heading>Chapter sequencing</Heading>
             <p>
-              Episodes (seasonal phases) group drops and rewards. When an episode
-              is active, the dashboard highlights it and surfaces its rules and
-              progress.
+              Only one chapter can be available at a time. Future chapter pairs
+              remain inactive until their configuration and launch gates are
+              complete.
             </p>
           </>
         )}
@@ -399,7 +397,7 @@ Reserve to LiquidityManager to LiquidityVault`}
               <li>Mainnet monitoring and launch hardening (current focus).</li>
               <li>Security review and audit planning.</li>
               <li>Public mint launch after validation and review.</li>
-              <li>Episodes, community events, and marketplace integrations.</li>
+              <li>Future chapters, community events, and marketplace integrations.</li>
             </ul>
 
             <Heading>Community</Heading>
@@ -440,14 +438,15 @@ Reserve to LiquidityManager to LiquidityVault`}
 
         {active === "faq" && (
           <>
-            <Heading>FAQ</Heading>
-            <ul style={{ marginLeft: 18 }}>
-              <li><strong>What is VRF?</strong> Verifiable randomness from Chainlink.</li>
-              <li><strong>How do rewards work?</strong> Weekly, based on block weight.</li>
-              <li><strong>What is BIGGI?</strong> The rewards token of the protocol.</li>
-              <li><strong>How many NFTs exist?</strong> Fixed max per block, shown in the UI.</li>
-              <li><strong>What if something fails?</strong> Check the explorer and retry.</li>
-            </ul>
+            <Heading>Essential questions</Heading>
+            <div className="project-info-faq">
+              {PROJECT_FAQ_ITEMS.map((item) => (
+                <details key={item.question}>
+                  <summary>{item.question}</summary>
+                  <p>{item.answer}</p>
+                </details>
+              ))}
+            </div>
           </>
         )}
 
@@ -500,165 +499,86 @@ Reserve to LiquidityManager to LiquidityVault`}
           </>
         )}
 
-        </div>
-    </Card>
+        {active === "schema" && (
+          <>
+            <div className="project-info-map-notes">
+              <p>
+                <strong>POL route:</strong> 40% dev wallet and 60% distributor;
+                the diagram shows the distributor branches.
+              </p>
+              <p>
+                <strong>BIGGI route:</strong> 100% enters BiggiTreasury and is
+                split 34% / 33% / 33% to TokenRewards, Reserve, and
+                DripDistributor.
+              </p>
+            </div>
+            <div className="project-info-map">
+              <img
+                src="/diagrams/tokenomics-map.png"
+                alt="End-to-end protocol flow from minting to tokenomics"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+          </>
+        )}
+
+      </div>
+      </Card>
+    </div>
   );
 
   const Body = (
     <>
-      <div
-        className="block-fullscreen__topbar"
-        style={{
-          background: "#14161c",
-          border: `1px solid ${COLORS.line}`,
-          borderRadius: 14,
-          padding: isMobile ? "10px 12px" : "10px 14px",
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          alignItems: isMobile ? "stretch" : "center",
-          justifyContent: "space-between",
-          gap: isMobile ? 10 : 0,
-          color: COLORS.text,
-        }}
-      >
-        <h2
-          style={{
-            margin: 0,
-            letterSpacing: 0.5,
-            color: COLORS.y,
-            textAlign: isMobile ? "center" : "left",
-          }}
-        >
-          PROJECT INFO
-        </h2>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: isMobile ? "center" : "flex-end",
-            gap: 6,
-          }}
-        >
+      <header className="project-info-header">
+        <div className="project-info-title-group">
+          <h2 className="project-info-title">PROJECT INFO</h2>
+          <span className="project-info-network">Polygon mainnet</span>
+        </div>
+        <div className="project-info-header-actions">
           {typeof onPrev === "function" && (
             <ArrowButton onClick={onPrev} title="Previous">
-              ◄
+              {"\u25c0"}
             </ArrowButton>
           )}
           {typeof onNext === "function" && (
             <ArrowButton onClick={onNext} title="Next">
-              ►
+              {"\u25b6"}
             </ArrowButton>
           )}
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="biggi-ghost-btn"
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              border: `1px solid ${COLORS.line}`,
-              background: "#1a1d24",
-              color: COLORS.y,
-              fontWeight: 900,
-            }}
+            className="project-info-icon-button"
           >
-            ✕
+            {"\u00d7"}
           </button>
         </div>
-      </div>
+      </header>
 
-      <div className="block-fullscreen__body" style={{ paddingTop: 12 }}>
-        <div
-          style={{
-            display: isMobile ? "flex" : "grid",
-            flexDirection: isMobile ? "column" : undefined,
-            gridTemplateColumns: isMobile ? undefined : "320px 1fr",
-            gap: 18,
-            alignItems: "stretch",
-          }}
-        >
+      <div ref={scrollRef} className="project-info-scroll">
+        <div className="project-info-layout">
           {Sidebar}
           {Content}
         </div>
 
-        <div style={{ marginTop: 16 }}>
-          <Card tone="v" title="Project Schema (overview)">
-            <div
-              style={{
-                borderRadius: 12,
-                overflow: "hidden",
-                background: "#161920",
-                border: `1px solid ${COLORS.line}`,
-                display: "grid",
-                placeItems: "center",
-                minHeight: "48vh",
-              }}
-            >
-              <img
-                src="/diagrams/tokenomics-map.png"
-                alt="Project schema – end-to-end FLOW from mint to tokenomics"
-                style={{ width: "100%", height: "100%", objectFit: "contain" }}
-              />
-            </div>
-          </Card>
-        </div>
+        <footer className="project-info-footer">
+          &copy; {new Date().getFullYear()} BIGGI / BiggiEyes. All rights reserved.
+          {" | "}Nothing here is financial advice.{" | "}Use at your own risk.
+        </footer>
       </div>
-
-      <footer
-        style={{
-          marginTop: 14,
-          padding: "10px 6px 4px",
-          borderTop: `1px solid ${COLORS.line}`,
-          color: COLORS.dim,
-          fontSize: 12,
-          lineHeight: 1.6,
-          textAlign: "center",
-        }}
-      >
-        © {new Date().getFullYear()} BIGGI / BiggiEyes. All rights reserved. •
-        Nothing here is financial advice. • Use at your own risk.
-      </footer>
     </>
   );
 
-  const containerStyle = asPanel
-    ? {
-        background: gradientBackdrop,
-        borderRadius: isMobile ? 12 : 18,
-        border: `1px solid ${COLORS.line}`,
-        height: isMobile ? "100%" : "90vh",
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-        color: COLORS.text,
-      }
-    : {
-        background: gradientBackdrop,
-        borderRadius: 0,
-        border: "none",
-        width: "100%",
-        height: "100%",
-        overflowY: "auto",
-        display: "flex",
-        flexDirection: "column",
-        color: COLORS.text,
-        padding: isMobile ? "14px 12px" : "24px 30px",
-        boxSizing: "border-box",
-      };
-
   const Container = (
     <div
-      className="block-fullscreen__content"
+      className={`block-fullscreen__content project-info-shell${
+        asPanel ? " project-info-shell--panel" : ""
+      }`}
       onClick={(event) => event.stopPropagation()}
-      style={containerStyle}
     >
-      <style>{`
-        .rewards-table, .rewards-table * { transition: none !important; }
-        .rewards-table:hover { background: #12141a !important; border-color: inherit !important; box-shadow: none !important; }
-        .rewards-table:hover *, .rewards-table *:hover { background: transparent !important; color: inherit !important; box-shadow: none !important; filter: none !important; transform: none !important; }
-      `}</style>
       {Body}
     </div>
   );
@@ -669,22 +589,11 @@ Reserve to LiquidityManager to LiquidityVault`}
 
   const overlay = (
     <div
-      className="block-fullscreen"
+      className="block-fullscreen project-info-overlay"
       role="dialog"
       aria-modal="true"
       aria-label="Project information"
       onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 9999,
-        display: "flex",
-        alignItems: isMobile ? "flex-start" : "center",
-        justifyContent: "center",
-        padding: isMobile ? "16px 12px" : 0,
-        background: "rgba(0, 0, 0, 0.75)",
-        overflowY: isMobile ? "auto" : undefined,
-      }}
     >
       {Container}
     </div>

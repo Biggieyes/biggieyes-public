@@ -10,7 +10,10 @@ import {
   toUtf8Bytes,
   ZeroHash,
 } from "ethers";
-import { ModeratorCenter as moderatorsREWARDSAbi } from "../../config/abi/index.js";
+import {
+  ModeratorCenter as moderatorsREWARDSAbi,
+  ModeratorCenterV2 as moderatorCenterV2Abi,
+} from "../../config/abi/index.js";
 import { ADDR } from "./addresses";
 import {
   getSharedFallbackProvider,
@@ -33,6 +36,11 @@ const MOD_REWARDS_ADDRESS = firstNonZeroAddress(
   import.meta.env.VITE_MOD_REWARDS_CONTRACT,
   import.meta.env.VITE_MOD_REWARDS_ADDRESS,
   ADDR.BIGGI_MODERATOR_CENTER,
+);
+const MODERATOR_CENTER_V2_ADDRESS = firstNonZeroAddress(
+  import.meta.env.VITE_MODERATOR_CENTER_V2,
+  ADDR.MODERATOR_CENTER_V2,
+  MOD_REWARDS_ADDRESS,
 );
 const RAW_CHAIN_RPC_URL =
   import.meta.env.VITE_MOD_CHAIN_RPC ||
@@ -57,6 +65,7 @@ const OWNER_ADDRESS = firstNonZeroAddress(
 
 export const getConfig = () => ({
   contractAddress: MOD_REWARDS_ADDRESS,
+  v2ContractAddress: MODERATOR_CENTER_V2_ADDRESS,
   chainRpc: CHAIN_RPC_URL,
   ownerAddress: OWNER_ADDRESS,
   abiReady:
@@ -106,6 +115,54 @@ export const getModeratorsREWARDSContract = async ({ signer = false } = {}) => {
   if (!provider) throw new Error("Provider is not available.");
   const target = signer ? await provider.getSigner() : provider;
   return new Contract(contractAddress, moderatorsREWARDSAbi, target);
+};
+
+export const getModeratorCenterV2Contract = async ({ signer = false } = {}) => {
+  const { v2ContractAddress: contractAddress } = getConfig();
+  if (!contractAddress) throw new Error("ModeratorCenter address is missing.");
+  if (!Array.isArray(moderatorCenterV2Abi) || moderatorCenterV2Abi.length === 0) {
+    throw new Error("ModeratorCenterV2 ABI is missing.");
+  }
+  const provider = signer ? await getSignerProvider() : getReadOnlyProvider();
+  if (!provider) throw new Error("Provider is not available.");
+  const target = signer ? await provider.getSigner() : provider;
+  return new Contract(contractAddress, moderatorCenterV2Abi, target);
+};
+
+export const attributePaidTicketReferral = async (ticketId, referralValue) => {
+  const normalizedTicketId = BigInt(ticketId?.toString?.() ?? ticketId);
+  const referralHash = toBytes32(referralValue);
+  if (referralHash === ZeroHash) throw new Error("Referral code is missing.");
+
+  const contract = await getModeratorCenterV2Contract({ signer: true });
+  let configuredTicketHub;
+  try {
+    configuredTicketHub = await contract.ticketHub();
+  } catch {
+    throw new Error("ModeratorCenter V2 is not active on this address.");
+  }
+
+  const expectedTicketHub = firstNonZeroAddress(ADDR.TICKET_HUB);
+  if (
+    expectedTicketHub &&
+    String(configuredTicketHub).toLowerCase() !== expectedTicketHub.toLowerCase()
+  ) {
+    throw new Error("ModeratorCenter is connected to a different TicketHub.");
+  }
+
+  if (await contract.usedTicket(normalizedTicketId)) {
+    return { alreadyAttributed: true, ticketId: normalizedTicketId };
+  }
+
+  const tx = await contract.attributeTicket(normalizedTicketId, referralHash);
+  const receipt = await tx.wait();
+  return {
+    alreadyAttributed: false,
+    ticketId: normalizedTicketId,
+    referralHash,
+    txHash: tx.hash,
+    receipt,
+  };
 };
 
 export const formatWei = (value, decimals = 18) => {
@@ -196,4 +253,3 @@ export const readWeekStats = async (contract, week, slotId) => {
   ]);
   return { uniqueRefs, ticketSales, allocatedWei };
 };
-

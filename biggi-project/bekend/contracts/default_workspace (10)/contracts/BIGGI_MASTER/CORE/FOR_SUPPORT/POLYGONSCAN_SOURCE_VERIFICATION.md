@@ -1,6 +1,6 @@
 # PolygonScan Source Verification Notes
 
-Date: 2026-08-19
+Date: 2026-08-26
 
 ## Status
 
@@ -8,10 +8,11 @@ Source verification is complete for the current Polygon mainnet manifest:
 
 - Network: Polygon mainnet
 - Chain ID: `137`
-- Contracts in manifest: `58`
-- Contracts with bytecode: `58`
-- Source verified: `58`
-- Unverified: `0`
+- Current canonical contracts: `60/60` source verified
+- Deprecated historical contracts: `3/3` source verified
+- All BIGGI-owned contracts with bytecode: `63/63` source verified
+- Unverified contracts with bytecode: `0`
+- PolygonScan pages reporting `Contract: Verified`: `63/63`
 
 Canonical evidence:
 
@@ -83,6 +84,17 @@ Build deployment manifest:
 ```powershell
 npm run manifest:deployment:polygon
 ```
+
+Audit public PolygonScan name tags:
+
+```powershell
+npm run audit:master:polygonscan-tags
+npm run audit:master:polygonscan-tags:retry
+```
+
+Public name tags are independent of source verification and require PolygonScan
+account ownership verification plus PolygonScan review. The prepared submission
+is `POLYGONSCAN_PUBLIC_NAME_TAG_SUBMISSION.md`.
 
 Verification helpers:
 

@@ -413,3 +413,7 @@ export function useWeb3() {
   if (!v) throw new Error("useWeb3 must be used inside <Web3Provider>");
   return v;
 }
+
+export function useOptionalWeb3() {
+  return React.useContext(Ctx);
+}

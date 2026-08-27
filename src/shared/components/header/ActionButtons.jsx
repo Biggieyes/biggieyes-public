@@ -8,19 +8,19 @@ const ProjectInfoModal = React.lazy(() =>
 
 const BUTTON_IMAGE_SOURCES = {
   mint: {
-    src: "/images/mint.optimized.png",
+    src: "/images/mint.optimized.lossless.webp",
     fallbackSrc: "/images/mint.fallback.png",
   },
   claim: {
-    src: "/images/claim.optimized.png",
+    src: "/images/claim.optimized.lossless.webp",
     fallbackSrc: "/images/claim.fallback.png",
   },
   redeem: {
-    src: "/images/redeem-button.optimized.png",
+    src: "/images/redeem-button.optimized.lossless.webp",
     fallbackSrc: "/images/redeem-button.fallback.png",
   },
   info: {
-    src: "/images/icons/info.optimized.png",
+    src: "/images/icons/info.optimized.lossless.webp",
     fallbackSrc: "/images/icons/info.fallback.png",
   },
 };

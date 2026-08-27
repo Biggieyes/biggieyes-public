@@ -1,342 +1,318 @@
-// src/components/AdminDashboard.jsx
 import * as React from "react";
 import {
-  getModeratorsREWARDSContract,
+  formatWei,
   getConfig,
-  isOwner,
-  parseWei,
-} from "../utils/eth";
+  getModeratorCenterV2Contract,
+  readSlotInfo,
+  readWeekStats,
+} from "@/utils/eth";
 
-const shortAddr = (addr) => {
-  if (!addr) return "--";
-  const s = String(addr);
-  return `${s.slice(0, 6)}...${s.slice(-4)}`;
+const sameAddress = (left, right) =>
+  Boolean(left && right) && String(left).toLowerCase() === String(right).toLowerCase();
+
+const shortValue = (value, start = 8, end = 6) => {
+  if (!value) return "--";
+  const text = String(value);
+  return text.length <= start + end + 3
+    ? text
+    : `${text.slice(0, start)}...${text.slice(-end)}`;
 };
 
-export default function AdminDashboard({ walletAddress, onTx }) {
-  const [slotId, setSlotId] = React.useState("");
-  const [slotWallet, setSlotWallet] = React.useState("");
-  const [revokeSlotId, setRevokeSlotId] = React.useState("");
-  const [weekNumber, setWeekNumber] = React.useState("");
-  const [merkleRoot, setMerkleRoot] = React.useState("");
-  const [totalAmount, setTotalAmount] = React.useState("");
-  const [fundAmount, setFundAmount] = React.useState("");
+const asText = (value) => (value == null ? "--" : String(value));
+
+export default function AdminDashboard({ walletAddress = "", onTx }) {
+  const [state, setState] = React.useState(null);
   const [slots, setSlots] = React.useState([]);
-  const [status, setStatus] = React.useState("");
-  const [pending, setPending] = React.useState(false);
-
+  const [contractMode, setContractMode] = React.useState("checking");
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const [action, setAction] = React.useState("");
+  const [settleWeek, setSettleWeek] = React.useState("");
   const cfg = getConfig();
-  const ownerOk = isOwner(walletAddress);
 
-  const callFirst = async (contract, methods, args = [], overrides = {}) => {
-    for (const name of methods) {
-      if (typeof contract[name] === "function") {
-        return contract[name](...args, overrides);
+  const load = React.useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const contract = await getModeratorCenterV2Contract({ signer: false });
+      const ticketHub = await contract.ticketHub();
+      const [
+        owner,
+        paused,
+        ready,
+        currentWeek,
+        allocator,
+        registeredChapterCount,
+        leaderCoef,
+        moderatorCoef,
+        saleBoost,
+        globalUnique,
+        milestone100,
+        milestone500,
+        milestone1000,
+        milestoneBudget,
+        allocatedOutstanding,
+        totalClaimable,
+      ] = await Promise.all([
+        contract.owner(),
+        contract.paused(),
+        contract.operationallyReady(),
+        contract.currentWeek(),
+        contract.multiCollection(),
+        contract.registeredChapterCount(),
+        contract.leaderCoefBps(),
+        contract.moderatorCoefBps(),
+        contract.saleBoostBpsPerTicket(),
+        contract.globalUniquePerWeek(),
+        contract.milestone100(),
+        contract.milestone500(),
+        contract.milestone1000(),
+        contract.milestoneBudget(),
+        contract.totalAllocatedOutstanding(),
+        contract.totalClaimable(),
+      ]);
+      const slotRows = await Promise.all(
+        Array.from({ length: 10 }, async (_, slotId) => {
+          const [slot, week, weight, generation] = await Promise.all([
+            readSlotInfo(contract, slotId),
+            readWeekStats(contract, currentWeek, slotId).catch(() => null),
+            contract.getWeekWeight(currentWeek, slotId).catch(() => null),
+            contract.getSlotGeneration(slotId),
+          ]);
+          return { ...slot, slotId, week, weight, generation };
+        }),
+      );
+      setState({
+        contractAddress: cfg.v2ContractAddress,
+        ticketHub,
+        owner,
+        paused,
+        ready,
+        currentWeek,
+        allocator,
+        registeredChapterCount,
+        leaderCoef,
+        moderatorCoef,
+        saleBoost,
+        globalUnique,
+        milestone100,
+        milestone500,
+        milestone1000,
+        milestoneBudget,
+        allocatedOutstanding,
+        totalClaimable,
+      });
+      setSlots(slotRows);
+      setSettleWeek((current) => current || (Number(currentWeek) > 0 ? String(Number(currentWeek) - 1) : "0"));
+      setContractMode("v2");
+    } catch (loadError) {
+      setState(null);
+      setSlots([]);
+      setContractMode("legacy");
+      setError(
+        loadError?.message?.includes("missing")
+          ? loadError.message
+          : "Configured address is not ModeratorCenter V2.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [cfg.v2ContractAddress]);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const runAction = React.useCallback(
+    async (label, send) => {
+      setAction(label);
+      setError("");
+      try {
+        const contract = await getModeratorCenterV2Contract({ signer: true });
+        const tx = await send(contract);
+        await tx.wait();
+        onTx?.({ message: `${label} confirmed`, txHash: tx.hash });
+        await load();
+      } catch (actionError) {
+        setError(actionError?.shortMessage || actionError?.message || `${label} failed.`);
+      } finally {
+        setAction("");
       }
-    }
-    throw new Error("Function not found in ABI.");
-  };
+    },
+    [load, onTx],
+  );
 
-  const loadSlots = async () => {
-    try {
-      setStatus("Loading slots...");
-      const contract = await getModeratorsREWARDSContract({ signer: false });
-      const rows = [];
-      for (let i = 0; i < 10; i += 1) {
-        let addr = "";
-        try {
-          addr = await callFirst(
-            contract,
-            ["getSlotAddress", "slotAddress", "slotToAddress", "slotWallet"],
-            [i],
-          );
-        } catch {
-          addr = "";
-        }
-        rows.push({ slotId: i, wallet: addr });
-      }
-      setSlots(rows);
-      setStatus("Slots loaded.");
-    } catch (err) {
-      setStatus("Unable to load slots.");
-    }
-  };
+  const isConnectedOwner = sameAddress(walletAddress, state?.owner);
+  const enabledSlots = slots.filter((slot) => slot.enabled);
+  const leaderCount = enabledSlots.filter((slot) => slot.isLeader).length;
 
-  const handleSetSlot = async () => {
-    try {
-      setPending(true);
-      const contract = await getModeratorsREWARDSContract({ signer: true });
-      const tx = await callFirst(
-        contract,
-        ["setSlotAddress", "setSlotWallet", "setSlot"],
-        [Number(slotId), slotWallet],
-      );
-      onTx?.({
-        status: "pending",
-        txHash: tx.hash,
-        message: "Slot update submitted.",
-      });
-      await tx.wait();
-      onTx?.({
-        status: "confirmed",
-        txHash: tx.hash,
-        message: "Slot updated.",
-      });
-      setStatus("Slot updated.");
-    } catch (err) {
-      setStatus("Slot update failed.");
-    } finally {
-      setPending(false);
-    }
-  };
-
-  const handleRevokeSlot = async () => {
-    try {
-      setPending(true);
-      const contract = await getModeratorsREWARDSContract({ signer: true });
-      const tx = await callFirst(
-        contract,
-        ["revokeSlot"],
-        [Number(revokeSlotId)],
-      );
-      onTx?.({
-        status: "pending",
-        txHash: tx.hash,
-        message: "Slot revoke submitted.",
-      });
-      await tx.wait();
-      onTx?.({
-        status: "confirmed",
-        txHash: tx.hash,
-        message: "Slot revoked.",
-      });
-      setStatus("Slot revoked.");
-    } catch (err) {
-      setStatus("Slot revoke failed.");
-    } finally {
-      setPending(false);
-    }
-  };
-
-  const handleDistribute = async () => {
-    try {
-      setPending(true);
-      const totalWei = parseWei(totalAmount || "0");
-      const contract = await getModeratorsREWARDSContract({ signer: true });
-      const tx = await callFirst(
-        contract,
-        ["distributeWeek"],
-        [Number(weekNumber), merkleRoot, totalWei],
-        { value: totalWei },
-      );
-      onTx?.({
-        status: "pending",
-        txHash: tx.hash,
-        message: "Distribution submitted.",
-      });
-      await tx.wait();
-      onTx?.({
-        status: "confirmed",
-        txHash: tx.hash,
-        message: "Distribution confirmed.",
-      });
-      setStatus("Distribution confirmed.");
-    } catch (err) {
-      setStatus("Distribution failed.");
-    } finally {
-      setPending(false);
-    }
-  };
-
-  const handleFund = async () => {
-    try {
-      setPending(true);
-      const valueWei = parseWei(fundAmount || "0");
-      const contract = await getModeratorsREWARDSContract({ signer: true });
-      const tx = await callFirst(contract, ["fund"], [], { value: valueWei });
-      onTx?.({
-        status: "pending",
-        txHash: tx.hash,
-        message: "Funding submitted.",
-      });
-      await tx.wait();
-      onTx?.({
-        status: "confirmed",
-        txHash: tx.hash,
-        message: "Contract funded.",
-      });
-      setStatus("Contract funded.");
-    } catch (err) {
-      setStatus("Funding failed.");
-    } finally {
-      setPending(false);
-    }
-  };
+  if (contractMode !== "v2") {
+    return (
+      <section className="moderator-center__card">
+        <div className="moderator-center__card-head">
+          <h3>ModeratorCenter V2</h3>
+          <span className="moderator-center__chip moderator-center__chip--warn">
+            {loading ? "Checking" : "Not active"}
+          </span>
+        </div>
+        {error ? <div className="moderator-center__error">{error}</div> : null}
+        <div className="moderator-center__statlines">
+          <div className="moderator-center__statline">
+            <span>Configured address</span>
+            <strong className="mono">{shortValue(cfg.v2ContractAddress)}</strong>
+          </div>
+          <div className="moderator-center__statline">
+            <span>Legacy address</span>
+            <strong className="mono">{shortValue(cfg.contractAddress)}</strong>
+          </div>
+        </div>
+        <div className="moderator-center__actions">
+          <button type="button" className="biggi-btn biggi-btn--ghost" onClick={load}>
+            Refresh
+          </button>
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <section className="moderator-center__card">
-      <h3>Owner overview</h3>
-      <div className="moderator-center__notice">
-        <div>
-          <span className="muted">Owner wallet</span>
-          <strong>{shortAddr(cfg.ownerAddress) || "--"}</strong>
-        </div>
-        <div>
-          <span className="muted">Connected wallet</span>
-          <strong>{shortAddr(walletAddress)}</strong>
-        </div>
-        <div>
-          <span className="muted">Status</span>
-          <strong>{ownerOk ? "Owner" : "No access"}</strong>
-        </div>
+    <div className="moderator-center__stack">
+      {error ? <div className="moderator-center__error">{error}</div> : null}
+      <div className="moderator-center__hero">
+        {[
+          ["State", state.paused ? "Paused" : "Active", state.ready ? "Ready" : "Blocked"],
+          ["Slots", `${enabledSlots.length} / 10`, `${leaderCount} leader`],
+          ["Outstanding", `${formatWei(state.allocatedOutstanding)} POL`, "Weekly pools"],
+          ["Claimable", `${formatWei(state.totalClaimable)} POL`, "All payouts"],
+        ].map(([label, value, hint]) => (
+          <article key={label} className="moderator-center__stat-card">
+            <div>
+              <span className="moderator-center__stat-label">{label}</span>
+              <strong className="moderator-center__stat-value">{value}</strong>
+              <div className="moderator-center__stat-hint">{hint}</div>
+            </div>
+          </article>
+        ))}
       </div>
 
-      {!cfg.contractAddress && (
-        <div className="moderator-center__error">
-          Moderator Center contract address is missing.
-        </div>
-      )}
-      {!cfg.abiReady && (
-        <div className="moderator-center__error">
-          ABI is missing in <code>src/config/abi/ModeratorCenter.json</code>.
-        </div>
-      )}
+      <div className="moderator-center__grid moderator-center__grid--wide">
+        <section className="moderator-center__card">
+          <div className="moderator-center__card-head">
+            <h3>Configuration</h3>
+            <span className="moderator-center__chip moderator-center__chip--cyan">
+              V2
+            </span>
+          </div>
+          <div className="moderator-center__statlines">
+            {[
+              ["Contract", shortValue(state.contractAddress)],
+              ["Owner", shortValue(state.owner)],
+              ["TicketHub", shortValue(state.ticketHub)],
+              ["Allocator", shortValue(state.allocator)],
+              ["Registered chapters", asText(state.registeredChapterCount)],
+              ["Leader / moderator / boost", `${state.leaderCoef} / ${state.moderatorCoef} / ${state.saleBoost}`],
+              ["Unique policy", state.globalUnique ? "Global" : "Per slot"],
+              ["Milestones", `${formatWei(state.milestone100)} / ${formatWei(state.milestone500)} / ${formatWei(state.milestone1000)} POL`],
+              ["Milestone budget", `${formatWei(state.milestoneBudget)} POL`],
+            ].map(([label, value]) => (
+              <div key={label} className="moderator-center__statline">
+                <span>{label}</span>
+                <strong>{value}</strong>
+              </div>
+            ))}
+          </div>
+        </section>
 
-      <div className="moderator-center__field">
-        <label>Slot ID</label>
-        <input
-          value={slotId}
-          onChange={(e) => setSlotId(e.target.value)}
-          placeholder="0-9"
-        />
-      </div>
-      <div className="moderator-center__field">
-        <label>Slot wallet</label>
-        <input
-          value={slotWallet}
-          onChange={(e) => setSlotWallet(e.target.value)}
-          placeholder="0x..."
-        />
-      </div>
-      <div className="moderator-center__actions">
-        <button
-          type="button"
-          className="biggi-btn biggi-btn--accent"
-          disabled={pending || !ownerOk}
-          onClick={handleSetSlot}
-        >
-          Set slot
-        </button>
-        <button
-          type="button"
-          className="biggi-btn biggi-btn--ghost"
-          onClick={loadSlots}
-        >
-          Load slots
-        </button>
+        <section className="moderator-center__card">
+          <div className="moderator-center__card-head">
+            <h3>Operations</h3>
+            <span
+              className={`moderator-center__chip ${
+                isConnectedOwner
+                  ? "moderator-center__chip--ok"
+                  : "moderator-center__chip--warn"
+              }`.trim()}
+            >
+              {isConnectedOwner ? "Owner connected" : "Read only"}
+            </span>
+          </div>
+          <div className="moderator-center__actions">
+            <button
+              type="button"
+              className="biggi-btn biggi-btn--ghost"
+              disabled={!isConnectedOwner || Boolean(action) || state.paused}
+              onClick={() => runAction("Pause", (contract) => contract.pause())}
+            >
+              {action === "Pause" ? "Pausing..." : "Pause"}
+            </button>
+            <button
+              type="button"
+              className="biggi-btn biggi-btn--ghost"
+              disabled={!isConnectedOwner || Boolean(action) || !state.paused || !state.ready}
+              onClick={() => runAction("Unpause", (contract) => contract.unpause())}
+            >
+              {action === "Unpause" ? "Activating..." : "Unpause"}
+            </button>
+            <button
+              type="button"
+              className="biggi-btn biggi-btn--ghost"
+              disabled={loading}
+              onClick={load}
+            >
+              {loading ? "Loading..." : "Refresh"}
+            </button>
+          </div>
+          <div className="moderator-center__field">
+            <label>Week to settle</label>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={settleWeek}
+              onChange={(event) => setSettleWeek(event.target.value)}
+            />
+          </div>
+          <div className="moderator-center__actions">
+            <button
+              type="button"
+              className="biggi-btn biggi-btn--ghost"
+              disabled={Boolean(action) || settleWeek === ""}
+              onClick={() =>
+                runAction(`Settle week ${settleWeek}`, (contract) =>
+                  contract.settleWeek(BigInt(settleWeek)),
+                )
+              }
+            >
+              {action.startsWith("Settle") ? "Settling..." : "Settle week"}
+            </button>
+          </div>
+        </section>
       </div>
 
-      {slots.length > 0 && (
-        <div className="moderator-center__table">
+      <section className="moderator-center__card">
+        <div className="moderator-center__card-head">
+          <h3>Slots</h3>
+          <span className="moderator-center__chip">Current week {String(state.currentWeek)}</span>
+        </div>
+        <div className="moderator-center__table moderator-center__table--wide">
           <div className="moderator-center__table-head">
             <span>Slot</span>
-            <span>Wallet</span>
-            <span>Status</span>
+            <span>Role</span>
+            <span>Payout</span>
+            <span>Unique / tickets</span>
           </div>
-          {slots.map((row) => (
-            <div key={row.slotId} className="moderator-center__table-row">
-              <span className="mono">{row.slotId}</span>
-              <span className="mono">{shortAddr(row.wallet)}</span>
-              <span className={row.wallet ? "ok" : "muted"}>
-                {row.wallet ? "Active" : "Empty"}
+          {slots.map((slot) => (
+            <div key={slot.slotId} className="moderator-center__table-row">
+              <span>{slot.slotId}</span>
+              <span>{slot.enabled ? (slot.isLeader ? "Leader" : "Moderator") : "Disabled"}</span>
+              <span className="mono">{shortValue(slot.payout)}</span>
+              <span>
+                {asText(slot.week?.uniqueRefs)} / {asText(slot.week?.ticketSales)}
               </span>
             </div>
           ))}
         </div>
-      )}
-
-      <div className="moderator-center__divider" />
-
-      <div className="moderator-center__field">
-        <label>Revoke slot</label>
-        <input
-          value={revokeSlotId}
-          onChange={(e) => setRevokeSlotId(e.target.value)}
-          placeholder="Slot ID"
-        />
-      </div>
-      <div className="moderator-center__actions">
-        <button
-          type="button"
-          className="biggi-btn biggi-btn--ghost"
-          disabled={pending || !ownerOk}
-          onClick={handleRevokeSlot}
-        >
-          Revoke slot
-        </button>
-      </div>
-
-      <div className="moderator-center__divider" />
-
-      <div className="moderator-center__field">
-        <label>Week</label>
-        <input
-          value={weekNumber}
-          onChange={(e) => setWeekNumber(e.target.value)}
-          placeholder="e.g. 2025-W12"
-        />
-      </div>
-      <div className="moderator-center__field">
-        <label>Merkle root</label>
-        <input
-          value={merkleRoot}
-          onChange={(e) => setMerkleRoot(e.target.value)}
-          placeholder="0x..."
-        />
-      </div>
-      <div className="moderator-center__field">
-        <label>Total amount (POL)</label>
-        <input
-          value={totalAmount}
-          onChange={(e) => setTotalAmount(e.target.value)}
-          placeholder="e.g. 12.5"
-        />
-      </div>
-      <div className="moderator-center__actions">
-        <button
-          type="button"
-          className="biggi-btn biggi-btn--accent"
-          disabled={pending || !ownerOk}
-          onClick={handleDistribute}
-        >
-          Distribute week
-        </button>
-      </div>
-
-      <div className="moderator-center__divider" />
-
-      <div className="moderator-center__field">
-        <label>Fund contract (POL)</label>
-        <input
-          value={fundAmount}
-          onChange={(e) => setFundAmount(e.target.value)}
-          placeholder="e.g. 10"
-        />
-      </div>
-      <div className="moderator-center__actions">
-        <button
-          type="button"
-          className="biggi-btn biggi-btn--ghost"
-          disabled={pending || !ownerOk}
-          onClick={handleFund}
-        >
-          Send funds
-        </button>
-      </div>
-
-      {status && <div className="muted">{status}</div>}
-    </section>
+      </section>
+    </div>
   );
 }
-
-

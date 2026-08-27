@@ -57,6 +57,7 @@ const SimpleLineChart = ({
   emptyLabel = "No data yet.",
   showLegend = true,
 }) => {
+  const clipId = `simple-chart-clip-${React.useId().replace(/:/g, "")}`;
   const points = Array.isArray(data) ? data : [];
   const seriesList = Array.isArray(series) ? series : [];
 
@@ -79,11 +80,6 @@ const SimpleLineChart = ({
   const padding = { top: 16, right: 12, bottom: 22, left: 20 };
   const plotWidth = Math.max(1, safeWidth - padding.left - padding.right);
   const plotHeight = Math.max(1, safeHeight - padding.top - padding.bottom);
-  const clipIdRef = React.useRef(
-    `simple-chart-clip-${Math.random().toString(36).slice(2, 9)}`,
-  );
-  const clipId = clipIdRef.current;
-
   return (
     <div className="simple-chart" style={{ minHeight: safeHeight }}>
       <svg
@@ -205,4 +201,3 @@ const SimpleLineChart = ({
 };
 
 export default SimpleLineChart;
-

@@ -1661,6 +1661,10 @@ html {
   box-shadow: 0 6px 28px #000a;
   background-color: #0f121a;
   background-image: url(/images/blocks-bg.png);
+  background-image: image-set(
+    url(/images/blocks-bg.lossless.webp) type("image/webp"),
+    url(/images/blocks-bg.png) type("image/png")
+  );
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

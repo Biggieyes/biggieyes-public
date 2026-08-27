@@ -28,8 +28,6 @@ export default function Address({
   as: Tag = "span",
 }) {
   const full = address?.trim() || "";
-  if (!full) return null;
-
   const short = React.useMemo(
     () => formatAddress(full, start, end),
     [full, start, end],
@@ -59,6 +57,8 @@ export default function Address({
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
+
+  if (!full) return null;
 
   const baseStyle = monospace
     ? { fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" }
@@ -104,4 +104,3 @@ export default function Address({
     </Tag>
   );
 }
-

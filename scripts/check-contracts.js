@@ -36,7 +36,12 @@ const CORE_ABI_MAP = {
   BiggiCollectionRewards: "BiggiCollectionRewards.abi.json",
 };
 
-const BACKEND_ONLY_ARCHIVE_KEYS = new Set(["OLD_TICKET_HUB"]);
+const BACKEND_ONLY_RUNTIME_KEYS = new Set([
+  "OLD_TICKET_HUB",
+  "MODERATOR_V2_DEPLOYED",
+  "MODERATOR_V2_ACTIVATED",
+]);
+const FRONTEND_ONLY_ALIAS_KEYS = new Set(["MODERATORCENTER_V2"]);
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, "utf8").replace(/^\uFEFF/, ""));
@@ -76,22 +81,27 @@ async function loadFrontend(relativePath) {
 function compareMaps(label, expected, actual, failures) {
   const runtimeExpected = Object.fromEntries(
     Object.entries(expected || {}).filter(
-      ([key]) => !BACKEND_ONLY_ARCHIVE_KEYS.has(key),
+      ([key]) => !BACKEND_ONLY_RUNTIME_KEYS.has(key),
+    ),
+  );
+  const runtimeActual = Object.fromEntries(
+    Object.entries(actual || {}).filter(
+      ([key]) => !FRONTEND_ONLY_ALIAS_KEYS.has(key),
     ),
   );
   const expectedKeys = new Set(Object.keys(runtimeExpected));
-  const actualKeys = new Set(Object.keys(actual || {}));
+  const actualKeys = new Set(Object.keys(runtimeActual));
   const missing = [...expectedKeys].filter((key) => !actualKeys.has(key));
   const extra = [...actualKeys].filter((key) => !expectedKeys.has(key));
   const mismatches = [...expectedKeys]
     .filter((key) => actualKeys.has(key))
-    .filter((key) => !sameValue(runtimeExpected[key], actual[key]));
+    .filter((key) => !sameValue(runtimeExpected[key], runtimeActual[key]));
 
   if (missing.length) failures.push(`${label}: missing ${missing.sort().join(", ")}`);
   if (extra.length) failures.push(`${label}: extra ${extra.sort().join(", ")}`);
   for (const key of mismatches.sort()) {
     failures.push(
-      `${label}: ${key} expected=${JSON.stringify(runtimeExpected[key])} actual=${JSON.stringify(actual[key])}`,
+      `${label}: ${key} expected=${JSON.stringify(runtimeExpected[key])} actual=${JSON.stringify(runtimeActual[key])}`,
     );
   }
 

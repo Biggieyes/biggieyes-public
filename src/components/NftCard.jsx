@@ -8,7 +8,7 @@ import { toMainNftIndexFromTokenId } from "@/shared/utils/biggiIdIndex";
 import { mergeAttrs } from "@/shared/utils/metadata";
 import "./NftCard.css";
 import ImportNftButton from "./ImportNftButton";
-import { useContracts } from "../providers/ContractsProvider";
+import { useOptionalContracts } from "../providers/ContractsProvider";
 import {
   httpFromIpfs,
   readJsonFromURI,
@@ -339,12 +339,7 @@ export default function NftCard({
   promoted = false,
 }) {
   // HOOKS must be called deterministically; keep outside conditionals
-  let contracts = null;
-  try {
-    contracts = useContracts();
-  } catch {
-    contracts = null;
-  }
+  const contracts = useOptionalContracts();
 
   const tokenId = nft?.tokenId != null ? String(nft.tokenId) : null;
   const ticketChapterId = Number.isSafeInteger(Number(nft?.chapterId))

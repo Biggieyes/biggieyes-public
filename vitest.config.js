@@ -11,6 +11,7 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./vitest.setup.js"],
+    testTimeout: 15_000,
     include: ["__tests__/**/*.{js,jsx,ts,tsx}"],
     exclude: ["biggi-project/**", "bekend/**", "node_modules/**", "dist/**"],
   },

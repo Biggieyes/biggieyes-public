@@ -8,7 +8,7 @@
   <text x="140" y="70" font-family="Arial" font-size="16" text-anchor="middle">Mint Payment (POL)</text>
 
   <rect x="300" y="30" width="200" height="70" rx="10" fill="#e6f7ff" stroke="#333" />
-  <text x="400" y="60" font-family="Arial" font-size="16" text-anchor="middle">BiggiEyesMain</text>
+  <text x="400" y="60" font-family="Arial" font-size="16" text-anchor="middle">TicketHub / Main2</text>
   <text x="400" y="82" font-family="Arial" font-size="12" text-anchor="middle">split 60/40</text>
 
   <rect x="550" y="10" width="200" height="70" rx="10" fill="#ffe9e9" stroke="#333" />

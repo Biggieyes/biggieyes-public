@@ -2348,7 +2348,8 @@ function LiveStats({
     zIndex: 20,
     transform: isPhone ? "none" : "translate(254px, -92px)",
     overflow: "hidden",
-    backgroundImage: 'url("/images/blocks-bg.png")',
+    backgroundImage:
+      'image-set(url("/images/blocks-bg.lossless.webp") type("image/webp"), url("/images/blocks-bg.png") type("image/png"))',
     backgroundSize: "cover",
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
@@ -2388,7 +2389,8 @@ function LiveStats({
     textAlign: "center",
     margin: isPhone ? 0 : "0 auto",
     gap: isPhone ? 4 : 6,
-    backgroundImage: 'url("/images/blocks-bg.png")',
+    backgroundImage:
+      'image-set(url("/images/blocks-bg.lossless.webp") type("image/webp"), url("/images/blocks-bg.png") type("image/png"))',
     backgroundSize: "cover",
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
@@ -3300,7 +3302,8 @@ function LiveStats({
             alignItems: "center",
             justifyContent: "center",
             marginTop: "0",
-            backgroundImage: 'url("/images/blocks-bg.png")',
+            backgroundImage:
+              'image-set(url("/images/blocks-bg.lossless.webp") type("image/webp"), url("/images/blocks-bg.png") type("image/png"))',
             backgroundSize: "cover",
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",

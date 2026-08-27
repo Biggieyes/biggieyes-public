@@ -2,22 +2,26 @@ name: CI
 
 on:
   push:
-    branches: [ main, 'feature/**', 'pull/**' ]
+    branches: [ main, 'feature/**', 'pull/**', 'release/**' ]
   pull_request:
 
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - name: Use Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
+          cache: npm
       - name: Install deps
         run: npm ci
+      - name: Dependency audit (high and critical)
+        run: npm run security:audit
       - name: Lint
-        run: npm run lint
+        run: npm run lint:ci
       - name: Typecheck
         run: npm run typecheck
       - name: Unit tests
@@ -28,3 +32,30 @@ jobs:
         run: npm run check:contracts
       - name: Build
         run: npm run build
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Desktop and mobile runtime smoke
+        run: npm run smoke:runtime
+
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: biggi-project/bekend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: biggi-project/bekend/package-lock.json
+      - name: Install contract dependencies
+        run: npm ci
+      - name: Contract dependency audit (high and critical)
+        run: npm audit --audit-level=high
+      - name: Compile BIGGI_MASTER
+        run: npm run compile:master
+      - name: Contract tests
+        run: npm run test:master

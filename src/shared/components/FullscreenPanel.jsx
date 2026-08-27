@@ -17,7 +17,7 @@ export default function FullscreenPanel({
   titleColor,
   onClose,
   children,
-  logoSrc = "/images/main-logo1.optimized.png",
+  logoSrc = "/images/main-logo1.optimized.lossless.webp",
   // default behavior mirrors original
   closeOnEsc = false,
   closeOnOverlay = true,
@@ -651,5 +651,4 @@ export default function FullscreenPanel({
   if (typeof document === "undefined") return null;
   return ReactDOM.createPortal(content, document.body);
 }
-
 

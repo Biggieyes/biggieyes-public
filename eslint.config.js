@@ -12,18 +12,13 @@ const compat = new FlatCompat({
   recommendedConfig: js.configs.recommended,
 });
 
-const baseConfig = {
-  ignores: [
-    'dist',
-    'node_modules',
-    'coverage',
-    'out',
-    '.next',
-    '.turbo',
-    '*.config.js',
-    '*.d.ts',
-  ],
+const sourceFiles = ['src/**/*.{js,jsx,ts,tsx}'];
+const typeScriptFiles = ['src/**/*.ts', 'src/**/*.tsx'];
+const scopeConfigs = (configs, files = sourceFiles) =>
+  configs.map((config) => ({ ...config, files }));
 
+const baseConfig = {
+  files: sourceFiles,
   languageOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',
@@ -35,48 +30,45 @@ const baseConfig = {
       ecmaFeatures: { jsx: true },
     },
   },
-
-  rules: {
-    'no-unused-vars': [
-      'error',
-      {
-        varsIgnorePattern: '^[A-Z_]',
-        argsIgnorePattern: '^_',
-      },
-    ],
-    'react/react-in-jsx-scope': 'off',
-    'react/prop-types': 'off',
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    'react-refresh/only-export-components': 'warn',
-  },
-
   settings: {
     react: {
       version: 'detect',
     },
   },
+  rules: {
+    'no-unused-vars': [
+      'warn',
+      {
+        varsIgnorePattern: '^[A-Z_]',
+        argsIgnorePattern: '^_',
+      },
+    ],
+    'no-empty': ['warn', { allowEmptyCatch: true }],
+    'prefer-const': 'warn',
+    'no-irregular-whitespace': 'warn',
+    'react/react-in-jsx-scope': 'off',
+    'react/prop-types': 'off',
+    'react/no-unescaped-entities': 'warn',
+    'react-hooks/rules-of-hooks': 'error',
+    'react-hooks/exhaustive-deps': 'warn',
+    'react-refresh/only-export-components': 'warn',
+  },
 };
 
 const tsConfig = {
-  files: ['**/*.ts', '**/*.tsx'],
+  files: typeScriptFiles,
   languageOptions: {
     parser: tsParser,
   },
   rules: {
-    // Místo pro případná TS-specifická pravidla
-  },
-};
-
-const testConfig = {
-  files: ['**/*.test.*', '**/*.spec.*'],
-  languageOptions: {
-    globals: {
-      ...globals.jest,
-      ...globals.node,
-    },
-  },
-  rules: {
-    'no-unused-expressions': 'off',
+    'no-unused-vars': 'off',
+    '@typescript-eslint/no-unused-vars': [
+      'warn',
+      {
+        varsIgnorePattern: '^[A-Z_]',
+        argsIgnorePattern: '^_',
+      },
+    ],
   },
 };
 
@@ -98,15 +90,31 @@ const cjsShimsConfig = {
 };
 
 export default [
-  ...compat.plugins('react', 'react-hooks', 'react-refresh', '@typescript-eslint'),
-  ...compat.extends(
-    'plugin:react/recommended',
-    'plugin:react-hooks/recommended',
-    'plugin:@typescript-eslint/recommended',
+  {
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      'coverage/**',
+      'out/**',
+      '.next/**',
+      '.turbo/**',
+    ],
+  },
+  ...scopeConfigs(
+    compat.plugins(
+      'react',
+      'react-hooks',
+      'react-refresh',
+      '@typescript-eslint',
+    ),
   ),
-  js.configs.recommended,
+  ...scopeConfigs(compat.extends('plugin:react/recommended')),
+  ...scopeConfigs(
+    compat.extends('plugin:@typescript-eslint/recommended'),
+    typeScriptFiles,
+  ),
+  { ...js.configs.recommended, files: sourceFiles },
   baseConfig,
   tsConfig,
-  testConfig,
   cjsShimsConfig,
 ];

@@ -251,7 +251,7 @@ export default function RedeemOverlay({
           <div style={S.header}>
             <div style={S.iconContainer}>
               <img
-                src="/images/icons/mint.optimized.png"
+                src="/images/icons/mint.optimized.lossless.webp"
                 alt=""
                 style={S.icon}
                 loading="eager"
@@ -736,5 +736,4 @@ const styles = {
     lineHeight: 1.4,
   },
 };
-
 

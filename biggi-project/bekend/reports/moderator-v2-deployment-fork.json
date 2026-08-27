@@ -1,0 +1,330 @@
+{
+  "mode": "fork-rehearsal",
+  "network": "hardhat",
+  "chainId": 137,
+  "addressesFile": "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\addresses.master.json",
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "finalOwner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "dependencies": {
+    "ticketHub": "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
+    "token": "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
+    "router": "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff",
+    "reserve": "0x2786e46e01a5d229118fEdC102267217C7e94574",
+    "dripDistributor": "0x2E4677729cb8a02aDd752Bcbd2637809C20CBAf3",
+    "buybackAgent": "0x5A77E90c467576C82B8d0E74eD112B829C625BB4",
+    "oldDripLM": "0xE258843bca54803a366413571b3B4d6a28eAF2eC",
+    "oldModeratorCenter": "0xda07a5fDee4d6d491cF31368F00e2aD584bB033D"
+  },
+  "preservedParameters": {
+    "sellPct": 70,
+    "reserveShareBps": 5000,
+    "moderatorShareBps": 5000,
+    "slippageBps": "200",
+    "txDeadlineSec": "600",
+    "leaderCoefBps": "100",
+    "moderatorCoefBps": "30",
+    "saleBoostBpsPerTicket": "10",
+    "globalUniquePerWeek": true,
+    "milestone100": "0",
+    "milestone500": "0",
+    "milestone1000": "0"
+  },
+  "oldModeratorState": {
+    "nativeBalance": "0",
+    "allocatedOutstanding": "0",
+    "slots": [
+      {
+        "slotId": 0,
+        "enabled": false,
+        "isLeader": false,
+        "payout": "0x0000000000000000000000000000000000000000",
+        "referralHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "cumulativeTicketSales": "0"
+      },
+      {
+        "slotId": 1,
+        "enabled": false,
+        "isLeader": false,
+        "payout": "0x0000000000000000000000000000000000000000",
+        "referralHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "cumulativeTicketSales": "0"
+      },
+      {
+        "slotId": 2,
+        "enabled": false,
+        "isLeader": false,
+        "payout": "0x0000000000000000000000000000000000000000",
+        "referralHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "cumulativeTicketSales": "0"
+      },
+      {
+        "slotId": 3,
+        "enabled": false,
+        "isLeader": false,
+        "payout": "0x0000000000000000000000000000000000000000",
+        "referralHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "cumulativeTicketSales": "0"
+      },
+      {
+        "slotId": 4,
+        "enabled": false,
+        "isLeader": false,
+        "payout": "0x0000000000000000000000000000000000000000",
+        "referralHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "cumulativeTicketSales": "0"
+      },
+      {
+        "slotId": 5,
+        "enabled": false,
+        "isLeader": false,
+        "payout": "0x0000000000000000000000000000000000000000",
+        "referralHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "cumulativeTicketSales": "0"
+      },
+      {
+        "slotId": 6,
+        "enabled": false,
+        "isLeader": false,
+        "payout": "0x0000000000000000000000000000000000000000",
+        "referralHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "cumulativeTicketSales": "0"
+      },
+      {
+        "slotId": 7,
+        "enabled": false,
+        "isLeader": false,
+        "payout": "0x0000000000000000000000000000000000000000",
+        "referralHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "cumulativeTicketSales": "0"
+      },
+      {
+        "slotId": 8,
+        "enabled": false,
+        "isLeader": false,
+        "payout": "0x0000000000000000000000000000000000000000",
+        "referralHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "cumulativeTicketSales": "0"
+      },
+      {
+        "slotId": 9,
+        "enabled": false,
+        "isLeader": false,
+        "payout": "0x0000000000000000000000000000000000000000",
+        "referralHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "cumulativeTicketSales": "0"
+      }
+    ]
+  },
+  "chapters": [
+    {
+      "chapterId": 1,
+      "exists": true,
+      "totalCap": "550",
+      "totalMinted": "50",
+      "marketingCap": "50",
+      "marketingMinted": "50",
+      "saleCap": "500",
+      "saleMinted": "0",
+      "ready": true
+    },
+    {
+      "chapterId": 2,
+      "exists": true,
+      "totalCap": "550",
+      "totalMinted": "50",
+      "marketingCap": "50",
+      "marketingMinted": "50",
+      "saleCap": "500",
+      "saleMinted": "0",
+      "ready": true
+    },
+    {
+      "chapterId": 3,
+      "exists": true,
+      "totalCap": "550",
+      "totalMinted": "50",
+      "marketingCap": "50",
+      "marketingMinted": "50",
+      "saleCap": "500",
+      "saleMinted": "0",
+      "ready": true
+    },
+    {
+      "chapterId": 4,
+      "exists": true,
+      "totalCap": "550",
+      "totalMinted": "50",
+      "marketingCap": "50",
+      "marketingMinted": "50",
+      "saleCap": "500",
+      "saleMinted": "0",
+      "ready": true
+    },
+    {
+      "chapterId": 5,
+      "exists": true,
+      "totalCap": "550",
+      "totalMinted": "50",
+      "marketingCap": "50",
+      "marketingMinted": "50",
+      "saleCap": "500",
+      "saleMinted": "0",
+      "ready": true
+    }
+  ],
+  "gasEstimate": {
+    "moderator": "4321121",
+    "drip": "2004028",
+    "totalDeployOnly": "6325149"
+  },
+  "resumeModeratorAddress": null,
+  "deployerBalanceWei": "10000000000000000000000",
+  "createdAt": "2026-08-26T21:04:58.361Z",
+  "transactions": [
+    {
+      "label": "deploy ModeratorCenterV2",
+      "hash": "0x3630dc622354b24266df5bbf0024a8c11a40299ef20ebd48c70dea5b971695e6",
+      "blockNumber": 92715378,
+      "gasUsed": "4321121"
+    },
+    {
+      "label": "deploy BiggiDripLMToModeratorV2",
+      "hash": "0xa1da68238087ace22ce35e4d42327d37fd5ef8315d90a710f055f4809fcd1b35",
+      "blockNumber": 92715379,
+      "gasUsed": "2004028"
+    },
+    {
+      "label": "ModeratorCenterV2.registerChapter(1)",
+      "hash": "0x94b7d31c30d695e2e3c61ed8128a00e94a812f9d548cbd4373d48cd272d10870",
+      "blockNumber": 92715380,
+      "gasUsed": "157182"
+    },
+    {
+      "label": "ModeratorCenterV2.registerChapter(2)",
+      "hash": "0xed0f631cb5f31c4c7852e97cc22b245e1f706ed70dd477f957252648f2acd219",
+      "blockNumber": 92715381,
+      "gasUsed": "140082"
+    },
+    {
+      "label": "ModeratorCenterV2.registerChapter(3)",
+      "hash": "0xb1cfe8008b9a2ef964f5a30cd65fd8d449504f48616dec5589d9fadbb19e029d",
+      "blockNumber": 92715382,
+      "gasUsed": "140082"
+    },
+    {
+      "label": "ModeratorCenterV2.registerChapter(4)",
+      "hash": "0x13b16febe5331f52b079a3d8c26a9debb2790ba449cd34ca4e18b2231b88f9a8",
+      "blockNumber": 92715383,
+      "gasUsed": "140082"
+    },
+    {
+      "label": "ModeratorCenterV2.registerChapter(5)",
+      "hash": "0xf3aa972be563122e933cbde7262c32b973ae7c454ba308a7ba3d28058bdfeeb6",
+      "blockNumber": 92715384,
+      "gasUsed": "140082"
+    },
+    {
+      "label": "ModeratorCenterV2.setMultiCollection",
+      "hash": "0xdef81efe67684de8455dd578c2208b7ce495a85813aa94ccabf830231f2c6dd6",
+      "blockNumber": 92715385,
+      "gasUsed": "48066"
+    },
+    {
+      "label": "ModeratorCenterV2.setCoefs(preserved)",
+      "hash": "0x20c5e681682af97e492096e6052167f355b66ff09194c47d92381ccd51542d4a",
+      "blockNumber": 92715386,
+      "gasUsed": "473879"
+    },
+    {
+      "label": "ModeratorCenterV2.setGlobalUniquePerWeek(preserved)",
+      "hash": "0x88baa118253f2ac9256d83155e67601c7e91b2f1918dca0d9c8327d70727375c",
+      "blockNumber": 92715387,
+      "gasUsed": "472124"
+    },
+    {
+      "label": "ModeratorCenterV2.setMilestones(preserved)",
+      "hash": "0x0e761b98ab573eae3db7dd79e86d59bbc6e5ffcab867d97403f872c14d2b3dab",
+      "blockNumber": 92715388,
+      "gasUsed": "35197"
+    },
+    {
+      "label": "ModeratorCenterV2.lockMilestoneConfig",
+      "hash": "0xb70a95d997b2bf3ac89119ba02eabb7411668104fdcb1c322cd67665c8a41067",
+      "blockNumber": 92715389,
+      "gasUsed": "47855"
+    },
+    {
+      "label": "DripV2.setDripDistributor",
+      "hash": "0x0cf6bee2553b514247cc57c818f0975066299b6c711fc783126d16d665917fc6",
+      "blockNumber": 92715390,
+      "gasUsed": "48286"
+    },
+    {
+      "label": "DripV2.setReserve",
+      "hash": "0x42cea9d88eb8304acc43851815d977cc20ce46d402723de3cff7390aab54f84a",
+      "blockNumber": 92715391,
+      "gasUsed": "50180"
+    },
+    {
+      "label": "DripV2.setBuybackAgent",
+      "hash": "0xfa827006353461aaa101d5f83afa457dacb651426879cd1ee8deaffbbf7c62e5",
+      "blockNumber": 92715392,
+      "gasUsed": "47824"
+    },
+    {
+      "label": "DripV2.setModeratorCenter",
+      "hash": "0x920521d0e0aedda41b8762c13809cb68627577e4e95b6ca524c3e84f845116c2",
+      "blockNumber": 92715393,
+      "gasUsed": "33407"
+    },
+    {
+      "label": "DripV2.setSellPct",
+      "hash": "0x1271d50c1c85a3089f7c5b69cedd0396552f12af766beb2d01541e33e5f2077c",
+      "blockNumber": 92715394,
+      "gasUsed": "27794"
+    },
+    {
+      "label": "DripV2.setShares",
+      "hash": "0xef26938ee52b104f160848c0892d7b756a3a666e49e212ba033639a7048e9b50",
+      "blockNumber": 92715395,
+      "gasUsed": "27631"
+    },
+    {
+      "label": "DripV2.setSlippageBps",
+      "hash": "0xa87ce925a40c6d6d2919b0f860960a666fa14f1de389f1a32d6266449c4402b8",
+      "blockNumber": 92715396,
+      "gasUsed": "27239"
+    },
+    {
+      "label": "DripV2.setTxDeadlineSec",
+      "hash": "0xd0b6eefe784f1c771586351d776219f6617e5faf29bbf6fa30825c81f4042201",
+      "blockNumber": 92715397,
+      "gasUsed": "27684"
+    },
+    {
+      "label": "ModeratorCenterV2.transferOwnership",
+      "hash": "0x7462da9bd5f0210559e7d1a150ae25cc0119c5ed292230b5aea30814fdca1fa8",
+      "blockNumber": 92715398,
+      "gasUsed": "30062"
+    },
+    {
+      "label": "DripV2.transferOwnership",
+      "hash": "0x29b8247473e84c16200ff478af6f7f1778991e5b608e05125cdcbee57c5f34aa",
+      "blockNumber": 92715399,
+      "gasUsed": "29094"
+    }
+  ],
+  "activated": false,
+  "moderatorCenterV2": "0x9004EdE34F6aD003aC7e16814861726B8C8A07Fb",
+  "dripLMV2": "0xac8A61c475094Dae298Dc3b0f62c25E68eDaEad8",
+  "postDeploy": {
+    "moderatorOwner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+    "dripOwner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+    "moderatorPaused": true,
+    "dripPaused": true,
+    "wiringReady": true,
+    "milestoneLocked": true,
+    "moderatorParametersPreserved": true,
+    "liveContractsRewired": false
+  }
+}

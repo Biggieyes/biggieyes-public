@@ -1,8 +1,8 @@
 import * as React from "react";
 import "./Gallery.css";
 import NftCard from "./NftCard";
-import { useContracts } from "../providers/ContractsProvider";
-import { useWeb3 } from "../providers/Web3Provider";
+import { useOptionalContracts } from "../providers/ContractsProvider";
+import { useOptionalWeb3 } from "../providers/Web3Provider";
 import { formatEther } from "ethers";
 import { ADDR, CORE_CHAPTERS } from "@/shared/utils/addresses.js";
 import { DEFAULT_BLOCKS, ROWS_BY_BLOCK } from "../shared/blocks";
@@ -1016,21 +1016,10 @@ export default function Gallery({
   useProvidedOnly = false,
 }) {
   // fallback na adresu z kontextu peněženky
-  const { account: ctxAccount, address: ctxAddressLegacy } = (() => {
-    try {
-      return useWeb3();
-    } catch {
-      return { account: "", address: "" };
-    }
-  })();
+  const { account: ctxAccount, address: ctxAddressLegacy } =
+    useOptionalWeb3() || { account: "", address: "" };
   const ctxAddress = ctxAccount || ctxAddressLegacy || "";
-
-  let contracts;
-  try {
-    contracts = useContracts();
-  } catch {
-    contracts = null;
-  }
+  const contracts = useOptionalContracts();
 
   const [hydratedItems, setHydratedItems] = React.useState([]);
   const [fetching, setFetching] = React.useState(false);

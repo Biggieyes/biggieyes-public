@@ -57,6 +57,51 @@ async function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function uniqueAddressEntries(addressEntries) {
+  const seen = new Set();
+  return addressEntries.filter(({ value }) => {
+    const address = getAddress(value);
+    if (!isAddress(address) || seen.has(address)) return false;
+    seen.add(address);
+    return true;
+  });
+}
+
+async function inspectContracts(addressEntries, apiKey, scope) {
+  const uniqueEntries = uniqueAddressEntries(addressEntries);
+  const contracts = [];
+  for (const { key, value } of uniqueEntries) {
+    const address = getAddress(value);
+    const code = await ethers.provider.getCode(address);
+    const entry = { key, address, hasCode: code !== "0x" };
+    if (apiKey && entry.hasCode) {
+      await sleep(650);
+      const creation = await apiGet({ module: "contract", action: "getcontractcreation", contractaddresses: address }, apiKey);
+      if (creation.status === "1" && creation.result?.[0]) {
+        entry.deployer = creation.result[0].contractCreator;
+        entry.txHash = creation.result[0].txHash;
+      } else {
+        entry.creationLookupError = creation.result || creation.message;
+      }
+      await sleep(650);
+      const source = await apiGet({ module: "contract", action: "getsourcecode", address }, apiKey);
+      const row = source.result?.[0];
+      entry.verified = Boolean(source.status === "1" && row && row.SourceCode);
+      if (row) {
+        entry.contractName = row.ContractName;
+        entry.compilerVersion = row.CompilerVersion;
+      }
+    }
+    contracts.push(entry);
+    console.log(
+      `[AUDIT ${scope} ${contracts.length}/${uniqueEntries.length}] ${key}: code=${entry.hasCode} verified=${
+        entry.verified ?? "not-queried"
+      }`
+    );
+  }
+  return contracts;
+}
+
 async function main() {
   const root = path.resolve(__dirname, "../..");
   const A = loadAddresses(root);
@@ -92,6 +137,7 @@ async function main() {
     "TOKEN_REWARDS_READER",
     "TOKENOMICS_SYSTEM_ADDON_READER",
     "MODERATOR_CENTER",
+    "MODERATOR_CENTER_V2",
     "SUPPLY_CONTROLLER",
     "SUPPLY_GUARDIAN",
     "DEX_RESERVE_GUARD",
@@ -100,6 +146,7 @@ async function main() {
     "LIQUIDITY_ORCHESTRATOR",
     "LIQUIDITY_KEEPER_PROXY",
     "DRIP_LM",
+    "DRIP_LM_V2",
     "DRIP_KEEPER_PROXY",
     "BUYBACK_UPKEEP_PROXY",
     "SUPPLY_CONTROLLER_READER",
@@ -125,38 +172,13 @@ async function main() {
       );
     }
   }
+  const historicalAddressEntries = ["OLD_TICKET_HUB", "OLD_COLLECTION_REWARDS", "OLD_MAIN_READER"].map((key) => ({
+    key,
+    value: A[key],
+  }));
 
-  const seen = new Set();
-  const contracts = [];
-  for (const { key, value } of addressEntries) {
-    const address = getAddress(value);
-    if (!isAddress(address) || seen.has(address)) continue;
-    seen.add(address);
-    const code = await ethers.provider.getCode(address);
-    const entry = { key, address, hasCode: code !== "0x" };
-    if (apiKey && entry.hasCode) {
-      await sleep(650);
-      const creation = await apiGet({ module: "contract", action: "getcontractcreation", contractaddresses: address }, apiKey);
-      if (creation.status === "1" && creation.result?.[0]) {
-        entry.deployer = creation.result[0].contractCreator;
-        entry.txHash = creation.result[0].txHash;
-      } else {
-        entry.creationLookupError = creation.result || creation.message;
-      }
-      await sleep(650);
-      const source = await apiGet({ module: "contract", action: "getsourcecode", address }, apiKey);
-      const row = source.result?.[0];
-      entry.verified = Boolean(source.status === "1" && row && row.SourceCode);
-      if (row) {
-        entry.contractName = row.ContractName;
-        entry.compilerVersion = row.CompilerVersion;
-      }
-    }
-    contracts.push(entry);
-    console.log(
-      `[AUDIT ${contracts.length}/${addressEntries.length}] ${key}: code=${entry.hasCode} verified=${entry.verified ?? "not-queried"}`
-    );
-  }
+  const contracts = await inspectContracts(addressEntries, apiKey, "CURRENT");
+  const historicalContracts = await inspectContracts(historicalAddressEntries, apiKey, "HISTORICAL");
 
   const manifest = {
     network: network.name,
@@ -169,18 +191,51 @@ async function main() {
       verified: contracts.filter((entry) => entry.verified === true).length,
       unverified: contracts.filter((entry) => entry.hasCode && entry.verified === false).length,
     },
+    historicalSummary: {
+      total: historicalContracts.length,
+      withCode: historicalContracts.filter((entry) => entry.hasCode).length,
+      verified: historicalContracts.filter((entry) => entry.verified === true).length,
+      unverified: historicalContracts.filter((entry) => entry.hasCode && entry.verified === false).length,
+    },
+    allOwnedSummary: {
+      total: contracts.length + historicalContracts.length,
+      withCode: [...contracts, ...historicalContracts].filter((entry) => entry.hasCode).length,
+      verified: [...contracts, ...historicalContracts].filter((entry) => entry.verified === true).length,
+      unverified: [...contracts, ...historicalContracts].filter(
+        (entry) => entry.hasCode && entry.verified === false
+      ).length,
+    },
     contracts,
+    historicalContracts,
   };
   const reportFile = path.resolve(root, env("DEPLOYMENT_MANIFEST_REPORT", "reports/deployment-manifest-polygon.json"));
   const docsFile = path.resolve(
     root,
     "contracts/default_workspace (10)/contracts/BIGGI_MASTER/MAINNET_DEPLOYMENT_MANIFEST_POLYGON.json"
   );
+  const evidenceFile = path.resolve(
+    root,
+    "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/FOR_SUPPORT/EVIDENCE/deployment-manifest-polygon.json"
+  );
   fs.mkdirSync(path.dirname(reportFile), { recursive: true });
   fs.mkdirSync(path.dirname(docsFile), { recursive: true });
+  fs.mkdirSync(path.dirname(evidenceFile), { recursive: true });
   fs.writeFileSync(reportFile, `${JSON.stringify(manifest, null, 2)}\n`);
   fs.writeFileSync(docsFile, `${JSON.stringify(manifest, null, 2)}\n`);
-  console.log(JSON.stringify({ contracts: contracts.length, report: reportFile, docs: docsFile }, null, 2));
+  fs.writeFileSync(evidenceFile, `${JSON.stringify(manifest, null, 2)}\n`);
+  console.log(
+    JSON.stringify(
+      {
+        contracts: contracts.length,
+        historicalContracts: historicalContracts.length,
+        report: reportFile,
+        docs: docsFile,
+        evidence: evidenceFile,
+      },
+      null,
+      2
+    )
+  );
 }
 
 main().catch((err) => {

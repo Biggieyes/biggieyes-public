@@ -5,6 +5,7 @@ This folder contains copied public JSON reports generated from repository toolin
 Expected files:
 
 - `deployment-manifest-polygon.json`
+- `polygonscan-public-tags.json`
 - `core-series-source-verification-polygon.json`
 - `core-series-verification-polygon.json`
 - `cre-preflight-polygon.json`

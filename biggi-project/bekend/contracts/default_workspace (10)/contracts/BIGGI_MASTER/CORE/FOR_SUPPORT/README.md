@@ -13,6 +13,7 @@ This folder intentionally does not contain secrets, private keys, API keys, wall
 - `CHAINLINK_CRE_MEETING_CHECKLIST_CS.md` - short Czech checklist for the call.
 - `POLYGONSCAN_SOURCE_VERIFICATION.md` - exact verification environment and commands.
 - `POLYGONSCAN_CONTRACT_INVENTORY.md` - source-verification inventory summary and canonical evidence file.
+- `POLYGONSCAN_PUBLIC_NAME_TAG_SUBMISSION.md` - live public-tag audit and prepared bulk PolygonScan submission rows.
 - `PRE_LIQUIDITY_AUTOMATION_READINESS_2026-08-19.md` - pre-liquidity readiness and activation order.
 - `PRODUCTION_ACTIVATION_PLAN_CS.md` - canonical five-phase unsigned plan and fork proof.
 - `CRE_STATUS_SNAPSHOT_2026-08-25.json` - current machine-readable support snapshot.
@@ -52,8 +53,12 @@ This folder intentionally does not contain secrets, private keys, API keys, wall
 ## Current PolygonScan Status
 
 - Network: Polygon mainnet, chain ID `137`
-- Deployment manifest summary: `58` contracts, `58` with bytecode, `58` source verified, `0` unverified.
+- Deployment manifest: `60/60` current canonical contracts source verified plus `3/3` deprecated historical contracts source verified.
+- Full BIGGI-owned explorer scope: `63/63` with bytecode and source verified; `0` unverified.
+- Explorer page cross-check: `63/63` report `Contract: Verified`.
+- Public name tags: `10/63` present; `53` prepared for PolygonScan review.
 - Canonical source-evidence copy: `EVIDENCE/deployment-manifest-polygon.json`
+- Public-tag evidence: `EVIDENCE/polygonscan-public-tags.json`
 
 ## Important Operational Note
 

@@ -69,7 +69,11 @@ passwords.txt
 .netlify
 .netlify-appdata
 
+# Local Supabase CLI link/cache
+supabase/.temp/
+
 # Local visual/debug captures
+/artifacts/
 reports/visual-smoke/
 reports/*.png
 tmp-*.png
@@ -81,6 +85,7 @@ biggi-project/kendt/cache*/
 biggi-project/kendt/artifacts/
 biggi-project/kendt/artifacts-master/
 biggi-project/kendt/artifacts-*/
+biggi-project/bekend/artifacts/
 biggi-project/bekend/tmp-*.json
 
 # CRE local build outputs

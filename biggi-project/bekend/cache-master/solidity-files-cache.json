@@ -5258,6 +5258,214 @@
       "artifacts": [
         "MockCREAutomationTarget"
       ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\utils\\cryptography\\SignatureChecker.sol": {
+      "lastModificationDate": 1786777868210,
+      "contentHash": "03f092e4e7befa45c08cfa35b51016cb",
+      "sourceName": "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./ECDSA.sol",
+        "../../interfaces/IERC1271.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "SignatureChecker"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\node_modules\\@openzeppelin\\contracts\\interfaces\\IERC1271.sol": {
+      "lastModificationDate": 1786777865186,
+      "contentHash": "f8b3eec87e333cafeddb1310bd264f54",
+      "sourceName": "@openzeppelin/contracts/interfaces/IERC1271.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "IERC1271"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\TOKENOMICMAINNET\\ModeratorCenterV2.sol": {
+      "lastModificationDate": 1787696023886,
+      "contentHash": "c44b9ce475815b6907c5bb4365b5d9f8",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/ModeratorCenterV2.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/utils/Pausable.sol",
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "@openzeppelin/contracts/utils/Address.sol",
+        "@openzeppelin/contracts/utils/cryptography/EIP712.sol",
+        "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "IBiggiTicketHubModeratorV2",
+        "ModeratorCenterV2"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\TOKENOMICMAINNET\\BiggiDripLMToModeratorV2.sol": {
+      "lastModificationDate": 1787696023889,
+      "contentHash": "dfc66a1399942e156aad7e81ff07b11a",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/TOKENOMICMAINNET/BiggiDripLMToModeratorV2.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol",
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/utils/Pausable.sol",
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "@openzeppelin/contracts/utils/Address.sol",
+        "./TOKENOMIC_LIBRARY/BiggiErrorsLib.sol",
+        "./TOKENOMIC_LIBRARY/BiggiSwapLib.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiDripLMToModeratorV2",
+        "IBiggiDripDistributorV2",
+        "IBiggiDripRouterV2",
+        "IModeratorCenterAllocationV2"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\mocks\\MockModeratorTicketHub.sol": {
+      "lastModificationDate": 1787694723114,
+      "contentHash": "07ef5036dfbd6cb9e6bee46b5fbeb139",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/mocks/MockModeratorTicketHub.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "MockModeratorTicketHub"
+      ]
     }
   }
 }

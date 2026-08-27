@@ -21,7 +21,7 @@ import {
   buildBlockImagePath,
   buildBlockThumbPath,
 } from "../../../utils/images";
-import { useContracts } from "../../../providers/ContractsProvider";
+import { useOptionalContracts } from "../../../providers/ContractsProvider";
 import {
   ensurePolygon,
   getReadOnlyChapterMain,
@@ -116,7 +116,7 @@ const resolveButtonStyle = (name) => {
 
 const COLLECTION_SECTION_META = {
   COLLECTION1: {
-    title: "VRF COLLECTION",
+    title: "ORIGINALS COLLECTION",
     subtitle:
       "Live VRF collection view with block pricing, background impact, and rarity-linked supply signals across the first collection layer.",
     accent: "#ffe800",
@@ -217,15 +217,7 @@ function COLLECTIONBlocksGrid({
     myNFTs: [],
     setMyClaimable: NOOP,
   });
-  let contracts;
-  try {
-    contracts = useContracts();
-  } catch (error) {
-    // don't let contract access crash the component; log and continue
-    // eslint-disable-next-line no-console
-    console.warn("Failed to get contracts:", error);
-    contracts = null;
-  }
+  const contracts = useOptionalContracts();
 
   const activeCollectionKey =
     localActive === "COLLECTION2" ? "COLLECTION2" : "COLLECTION1";
@@ -834,7 +826,7 @@ function COLLECTIONBlocksGrid({
   const panelInfoItems = React.useMemo(
     () => [
       {
-        label: "VRF COLLECTION",
+        label: "ORIGINALS COLLECTION",
         description: [
           "VRF collection blocks with current Polygon prices and mint counts.",
         ],
@@ -1088,7 +1080,7 @@ function COLLECTIONBlocksGrid({
                 className={`collection-grid__tab${effectiveActive === "COLLECTION1" ? " is-active" : ""}`}
                 onClick={() => handleSwitchCOLLECTION("COLLECTION1")}
               >
-                VRF Collection
+                ORIGINALS COLLECTION
               </button>
               <button
                 type="button"

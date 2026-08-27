@@ -1,0 +1,42 @@
+Subject: Bulk public name tag request - BiggiEyes contracts on Polygon mainnet
+
+Hello PolygonScan Support,
+
+I am contacting you on behalf of BiggiEyes to request public name tags for our source-verified Polygon mainnet contracts.
+
+Project details:
+- Project: BiggiEyes
+- Website: https://biggieyes.com
+- Public repository: https://github.com/Biggieyes/biggieyes-public
+- Network: Polygon PoS mainnet (chain ID 137)
+- Description: BiggiEyes is a Polygon mainnet NFT ecosystem with chapter-based VRF/public ERC-721 collections and a shared BIGGI tokenomics and automation stack.
+
+Verification status:
+- 60 current canonical contracts
+- 3 deprecated historical contracts
+- 63/63 BIGGI-owned contracts with bytecode are source verified
+- All 63 PolygonScan address pages report "Contract: Verified"
+- 10 addresses already have public name tags
+- This request covers the remaining 53 addresses
+
+The missing tags are grouped by contract creator/deployer:
+- 0x8fa5c9545b2eef1ca3c6533951c286e05928f27b: 52 contract addresses
+- 0x402ce2ff958ab47edafc42296d2682cc8f9d92b2: 1 contract address
+
+The attached CSV contains only the 53 missing public tags. It includes each contract address, creator/deployer address, lifecycle, category, verified source-code URL, and the requested public name tag. The three replaced historical contracts are explicitly labeled "Deprecated" so they cannot be confused with current endpoints.
+
+External QuickSwap and Chainlink infrastructure is intentionally excluded. The factory-created BIGGI/WPOL pair is also excluded because it already has the public name tag "BiggiEyes: POL Liquidity Pair".
+
+Attachments:
+1. POLYGONSCAN_PUBLIC_NAME_TAG_REQUEST.csv
+2. deployment-manifest-polygon.json
+3. polygonscan-public-tags.json
+
+I control both creator wallets listed above and can complete PolygonScan ownership verification or sign PolygonScan-generated ownership messages from each creator address. Please let me know whether you can process this as one bulk request or whether you require two requests separated by creator wallet.
+
+No private keys or seed phrases will be provided. Please send the exact ownership-verification message through the official PolygonScan process if a signature is required.
+
+Best regards,
+Daniel Barta
+BiggiEyes
+https://biggieyes.com

@@ -57,6 +57,7 @@ const LINKS = [
 ];
 
 const CONTACTS = [
+  { label: "eyesbiggi@gmail.com", href: "mailto:eyesbiggi@gmail.com" },
   { label: "X / Twitter", href: "https://x.com/EyesBiggi", external: true },
   {
     label: "LinkedIn",

@@ -14,6 +14,7 @@
     "android:build:debug": "npm run android:sync && cd android && gradlew.bat assembleDebug",
     "android:build:release": "npm run android:sync && cd android && gradlew.bat bundleRelease",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\"",
+    "lint:ci": "eslint \"src/**/*.{js,jsx,ts,tsx}\" --quiet",
     "lint:fix": "eslint \"src/**/*.{js,jsx,ts,tsx}\" --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css}\"",
     "typecheck": "node scripts/typecheck.mjs",
@@ -24,6 +25,8 @@
     "preview": "vite preview",
     "preview:host": "vite preview --host --port 4173",
     "smoke:runtime": "node scripts/smoke-runtime.mjs",
+    "security:secrets": "node scripts/check-secrets.mjs",
+    "security:audit": "npm audit --audit-level=high && npm --prefix biggi-project/bekend audit --audit-level=high && npm --prefix public-repo audit --audit-level=high",
     "check:abis": "node scripts/check-abis.js",
     "check:contracts": "node scripts/check-contracts.js",
     "check:rpc": "node scripts/check-rpc-health.mjs"
@@ -127,7 +130,7 @@
     }
   },
   "engines": {
-    "node": ">=18.18"
+    "node": ">=20.19"
   },
   "description": "BiggiEyes mainnet frontend for Polygon NFT minting, rewards, and tokenomics.",
   "main": "eslint.config.js",

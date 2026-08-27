@@ -1,11 +1,10 @@
-import { spawn } from "node:child_process";
 import { createServer } from "node:net";
 import process from "node:process";
 import { setTimeout as delay } from "node:timers/promises";
 import { chromium } from "playwright";
+import { preview as createVitePreview } from "vite";
 
 const HOST = "127.0.0.1";
-const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
 
 async function withTimeout(promise, ms, label) {
   return Promise.race([
@@ -36,84 +35,34 @@ async function getFreePort(host = HOST) {
   });
 }
 
-function startPreview(port) {
-  const command = `${npmCmd} run preview -- --host ${HOST} --port ${port} --strictPort`;
-  console.log(`[smoke] starting preview: ${command}`);
-  const child = spawn(command, {
-    cwd: process.cwd(),
-    stdio: ["ignore", "pipe", "pipe"],
-    env: process.env,
-    shell: true,
+async function startPreview(port) {
+  console.log(`[smoke] starting preview on ${HOST}:${port}`);
+  return createVitePreview({
+    root: process.cwd(),
+    preview: {
+      host: HOST,
+      port,
+      strictPort: true,
+    },
   });
-
-  child.stdout.on("data", (chunk) => {
-    process.stdout.write(chunk);
-  });
-  child.stderr.on("data", (chunk) => {
-    process.stderr.write(chunk);
-  });
-
-  return child;
 }
 
-async function stopProcessTree(child) {
-  if (!child || child.exitCode !== null || child.killed) return;
-
-  if (process.platform === "win32" && child.pid) {
-    await new Promise((resolve) => {
-      const killer = spawn(
-        "taskkill",
-        ["/pid", String(child.pid), "/T", "/F"],
-        {
-          stdio: "ignore",
-          shell: false,
-        },
-      );
-      killer.once("exit", () => resolve());
-      killer.once("error", () => resolve());
-    });
-    return;
-  }
-
-  child.kill("SIGTERM");
-  await delay(400);
-  if (!child.killed) child.kill("SIGKILL");
-}
-
-async function waitForServer(url, preview, timeoutMs = 45_000) {
+async function waitForServer(url, timeoutMs = 45_000) {
   const started = Date.now();
-  let exited = false;
-  let exitCode = null;
-  let exitSignal = null;
-  const handleExit = (code, signal) => {
-    exited = true;
-    exitCode = code;
-    exitSignal = signal;
-  };
-  preview.once("exit", handleExit);
   console.log(`[smoke] waiting for server: ${url}`);
-  try {
-    while (Date.now() - started < timeoutMs) {
-      if (exited) {
-        throw new Error(
-          `Preview server exited before ready (code=${String(exitCode)} signal=${String(exitSignal)})`,
-        );
+  while (Date.now() - started < timeoutMs) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        console.log("[smoke] preview server is ready");
+        return;
       }
-      try {
-        const res = await fetch(url);
-        if (res.ok) {
-          console.log("[smoke] preview server is ready");
-          return;
-        }
-      } catch {
-        // server not ready yet
-      }
-      await delay(500);
+    } catch {
+      // server not ready yet
     }
-    throw new Error(`Preview server did not start within ${timeoutMs}ms`);
-  } finally {
-    preview.off("exit", handleExit);
+    await delay(500);
   }
+  throw new Error(`Preview server did not start within ${timeoutMs}ms`);
 }
 
 function isFatalConsoleError(text) {
@@ -264,7 +213,69 @@ async function runSmoke(baseUrl) {
       throw new Error(`Runtime smoke failed.\n${details}`);
     }
 
-    console.log("Runtime smoke passed.");
+    await page.close();
+
+    const mobilePage = await browser.newPage({
+      viewport: { width: 390, height: 844 },
+      screen: { width: 390, height: 844 },
+      isMobile: true,
+      hasTouch: true,
+    });
+    const mobileErrors = [];
+    mobilePage.on("pageerror", (err) => {
+      mobileErrors.push(err?.message || String(err));
+    });
+    mobilePage.on("console", (msg) => {
+      if (msg.type() !== "error") return;
+      const message = msg.text();
+      if (isFatalConsoleError(message) || isNetworkConsoleError(message)) {
+        mobileErrors.push(message);
+      }
+    });
+
+    try {
+      console.log(`[smoke] goto mobile app: ${appUrl}`);
+      await mobilePage.goto(appUrl, {
+        waitUntil: "domcontentloaded",
+        timeout: 60_000,
+      });
+      await mobilePage.waitForSelector(".live-stats-widget-new", {
+        state: "visible",
+        timeout: 60_000,
+      });
+      await mobilePage.waitForSelector(".gallery-section", {
+        state: "attached",
+        timeout: 60_000,
+      });
+      await mobilePage.locator(".gallery-section").scrollIntoViewIfNeeded();
+      await mobilePage.locator(".gallery-section").waitFor({
+        state: "visible",
+        timeout: 30_000,
+      });
+      await mobilePage.locator("#live-stats").first().scrollIntoViewIfNeeded();
+      await mobilePage.locator("#live-stats").first().waitFor({
+        state: "visible",
+        timeout: 30_000,
+      });
+
+      const layout = await mobilePage.evaluate(() => ({
+        viewportWidth: document.documentElement.clientWidth,
+        contentWidth: document.documentElement.scrollWidth,
+      }));
+      if (layout.contentWidth > layout.viewportWidth + 2) {
+        throw new Error(
+          `Mobile layout overflows horizontally (${layout.contentWidth}px > ${layout.viewportWidth}px)`,
+        );
+      }
+      if (mobileErrors.length) {
+        throw new Error(`Mobile runtime errors:\n- ${mobileErrors.join("\n- ")}`);
+      }
+      console.log("[smoke] mobile shell and responsive layout ok");
+    } finally {
+      await mobilePage.close().catch(() => {});
+    }
+
+    console.log("Desktop and mobile runtime smoke passed.");
     if (consoleErrors.length) {
       console.log(`Non-fatal console errors observed: ${consoleErrors.length}`);
       const nonFatalConsoleErrors = consoleErrors.filter(
@@ -289,16 +300,21 @@ async function runSmoke(baseUrl) {
 async function main() {
   const port = await getFreePort(HOST);
   const baseUrl = `http://${HOST}:${port}`;
-  const preview = startPreview(port);
+  const preview = await startPreview(port);
   try {
-    await waitForServer(baseUrl, preview);
+    await waitForServer(baseUrl);
     await runSmoke(baseUrl);
   } finally {
-    await stopProcessTree(preview);
+    await withTimeout(preview.close(), 5_000, "preview.close").catch((error) => {
+      console.warn(`[smoke] ${error.message}`);
+    });
   }
 }
 
-main().catch((err) => {
-  console.error(err?.stack || err?.message || String(err));
-  process.exitCode = 1;
-});
+main().then(
+  () => process.exit(0),
+  (err) => {
+    console.error(err?.stack || err?.message || String(err));
+    process.exit(1);
+  },
+);

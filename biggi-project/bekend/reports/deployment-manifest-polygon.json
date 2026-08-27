@@ -1,12 +1,24 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "createdAt": "2026-08-24T22:05:26.045Z",
+  "createdAt": "2026-08-26T21:55:15.569Z",
   "source": "canonical BIGGI project addresses (core + tokenomics + readers + linked libraries + CRE receiver)",
   "summary": {
-    "total": 58,
-    "withCode": 58,
-    "verified": 58,
+    "total": 60,
+    "withCode": 60,
+    "verified": 60,
+    "unverified": 0
+  },
+  "historicalSummary": {
+    "total": 3,
+    "withCode": 3,
+    "verified": 3,
+    "unverified": 0
+  },
+  "allOwnedSummary": {
+    "total": 63,
+    "withCode": 63,
+    "verified": 63,
     "unverified": 0
   },
   "contracts": [
@@ -301,6 +313,16 @@
       "compilerVersion": "v0.8.24+commit.e11b9ed9"
     },
     {
+      "key": "MODERATOR_CENTER_V2",
+      "address": "0x82Ad5a0f379CCA21AC2979E88AC24db94e670bD8",
+      "hasCode": true,
+      "deployer": "0x8fa5c9545b2eef1ca3c6533951c286e05928f27b",
+      "txHash": "0x05bfa6d236c124b1f4c927eae734d43b90d9afd7bdb07c0777fefb23338a9d05",
+      "verified": true,
+      "contractName": "ModeratorCenterV2",
+      "compilerVersion": "v0.8.24+commit.e11b9ed9"
+    },
+    {
       "key": "SUPPLY_CONTROLLER",
       "address": "0x810ba27C98aAB09737e3988a3C1b10D6CadaB8E8",
       "hasCode": true,
@@ -378,6 +400,16 @@
       "txHash": "0x4c4683fb1095a81f38d734a8a4f28c9929c083c12b1a9a0d773477f86a648260",
       "verified": true,
       "contractName": "BiggiDripLMToModerator",
+      "compilerVersion": "v0.8.24+commit.e11b9ed9"
+    },
+    {
+      "key": "DRIP_LM_V2",
+      "address": "0x1d2B3d3224dE553ff3138caeA45d162c62305d1A",
+      "hasCode": true,
+      "deployer": "0x8fa5c9545b2eef1ca3c6533951c286e05928f27b",
+      "txHash": "0xe8fcb1fe1456606731568c1474ce5ebcb73aa4dbadd2ecd902e0be3602e5b6b8",
+      "verified": true,
+      "contractName": "BiggiDripLMToModeratorV2",
       "compilerVersion": "v0.8.24+commit.e11b9ed9"
     },
     {
@@ -588,6 +620,38 @@
       "txHash": "0xff5dc32f10a4dba3550bd5c1d3a62b080fe9e80532b77f06190c334a72136f83",
       "verified": true,
       "contractName": "BiggiEyesMain2",
+      "compilerVersion": "v0.8.24+commit.e11b9ed9"
+    }
+  ],
+  "historicalContracts": [
+    {
+      "key": "OLD_TICKET_HUB",
+      "address": "0xe6d742D7DC66fA63434E6794C69798A5272e9873",
+      "hasCode": true,
+      "deployer": "0x8fa5c9545b2eef1ca3c6533951c286e05928f27b",
+      "txHash": "0x34ef8eeab9353cc74578a446692ff6dcb1cce629d08c26c2b08427069f82af8e",
+      "verified": true,
+      "contractName": "BiggiTicketHub",
+      "compilerVersion": "v0.8.24+commit.e11b9ed9"
+    },
+    {
+      "key": "OLD_COLLECTION_REWARDS",
+      "address": "0x5d1273070c9133381C570009768621762F024FB8",
+      "hasCode": true,
+      "deployer": "0x8fa5c9545b2eef1ca3c6533951c286e05928f27b",
+      "txHash": "0xf17446aca95fb03236f58fc48c5bd009f9c049f2dc9cde5ea749a6a00b453c3b",
+      "verified": true,
+      "contractName": "BiggiCollectionRewards",
+      "compilerVersion": "v0.8.24+commit.e11b9ed9"
+    },
+    {
+      "key": "OLD_MAIN_READER",
+      "address": "0x4937CdcF1668255Cb46c78E19547ea96C94391Ef",
+      "hasCode": true,
+      "deployer": "0x8fa5c9545b2eef1ca3c6533951c286e05928f27b",
+      "txHash": "0x238853c6220259c4b7201b3c4a23f2e1dee88b720cc34c6ba3ef90e0239341cc",
+      "verified": true,
+      "contractName": "BiggiMainReader",
       "compilerVersion": "v0.8.24+commit.e11b9ed9"
     }
   ]

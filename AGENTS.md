@@ -3,7 +3,7 @@
 Purpose: provide brief, actionable guidance for AI coding agents to be immediately productive in this repository. Keep this file minimal and link to existing docs for details.
 
 Key facts
-- Node engine: see `package.json` (`engines.node`): **>=18.18**
+- Node engine: see `package.json` (`engines.node`): **>=20.19**
 - Primary build: `npm run build` (uses `vite`).
 - Local dev: `npm run dev` or `npm run dev:host`.
 - Tests: unit tests via `npm test` (Vitest). CI/Jest coverage via `npm run test:ci`.
@@ -23,7 +23,7 @@ Important locations (linking, not duplicating):
 Agent guidance (concise)
 - Link, don't embed: prefer linking to existing docs above rather than copying content.
 - Repro steps: use `npm ci` then `npm run dev` / `npm run build` / `npm test` as appropriate.
-- Environment: assume Node >=18.18; do not modify global system configuration.
+- Environment: assume Node >=20.19; do not modify global system configuration.
 - Tests: prefer `npm test` (Vitest) for quick dev feedback and `npm run test:ci` for full CI-compatible run.
 - Android: only run Android/Capacitor commands when the environment has Android SDK configured.
 

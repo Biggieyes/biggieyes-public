@@ -1,32 +1,20 @@
-// api/nonce.js
-// Generates a one-time nonce for a wallet address (valid for TTL_MS).
-import { createClient } from "@supabase/supabase-js";
-import { ethers } from "ethers";
+// Generates a one-time nonce for a wallet address.
 import crypto from "crypto";
+import { ethers } from "ethers";
 import { captureException, initSentry } from "./_sentry.js";
+import {
+  buildCorsHeaders,
+  getSupabaseAdmin,
+  hasSupabaseConfig,
+  isNonceSchemaError,
+  jsonResponse,
+  unavailableResponse,
+} from "./lib/chatUtils.js";
 
-const SUPABASE_URL = process.env.SUPABASE_URL || "";
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const TTL_MS = 2 * 60 * 1000;
-
-// Replace '*' on production with your front-end origin, e.g. process.env.ALLOWED_ORIGIN
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type,Authorization",
-};
+const corsHeaders = buildCorsHeaders("GET,POST,OPTIONS");
 
 initSentry();
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-const jsonResponse = (status, body) => ({
-  status,
-  headers: { "Content-Type": "application/json", ...corsHeaders },
-  body: JSON.stringify(body),
-});
 
 const parseBody = (req) => {
   if (!req) return {};
@@ -41,89 +29,135 @@ const parseBody = (req) => {
   return {};
 };
 
-async function handleRequest({ method, query, body }) {
-  if (method === "OPTIONS") return jsonResponse(200, { ok: true });
-
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    return jsonResponse(500, { ok: false, error: "Missing Supabase env" });
+const normalizeAddress = (rawAddress) => {
+  if (typeof ethers.getAddress === "function") {
+    return ethers.getAddress(rawAddress);
   }
+  if (ethers.utils && typeof ethers.utils.getAddress === "function") {
+    return ethers.utils.getAddress(rawAddress);
+  }
+  if (!/^0x[a-fA-F0-9]{40}$/.test(rawAddress)) throw new Error("invalid");
+  return rawAddress;
+};
+
+export async function handleRequest({ method, query, body }) {
+  if (method === "OPTIONS") return jsonResponse(corsHeaders, 200, { ok: true });
   if (method !== "GET" && method !== "POST") {
-    return jsonResponse(405, { ok: false, error: "Method not allowed" });
+    return jsonResponse(corsHeaders, 405, {
+      ok: false,
+      error: "Method not allowed",
+    });
+  }
+  if (!hasSupabaseConfig()) {
+    return unavailableResponse(
+      corsHeaders,
+      "Live chat server configuration is incomplete.",
+    );
   }
 
   const rawAddress = String(
-    (method === "GET" ? query?.address : body?.address) || ""
+    (method === "GET" ? query?.address : body?.address) || "",
   ).trim();
 
-  // Validate and normalize address robustly across ethers versions
   let normalized;
   try {
-    // ethers.getAddress exists in v5/v6 (v5: ethers.utils.getAddress, v6: ethers.getAddress)
-    if (typeof ethers.getAddress === "function") {
-      normalized = ethers.getAddress(rawAddress);
-    } else if (ethers.utils && typeof ethers.utils.getAddress === "function") {
-      normalized = ethers.utils.getAddress(rawAddress);
-    } else {
-      // fallback basic regex (not ideal, but prevents crash)
-      if (!/^0x[a-fA-F0-9]{40}$/.test(rawAddress)) throw new Error("invalid");
-      normalized = rawAddress;
-    }
+    normalized = normalizeAddress(rawAddress).toLowerCase();
   } catch {
-    return jsonResponse(400, { ok: false, error: "Invalid address" });
+    return jsonResponse(corsHeaders, 400, {
+      ok: false,
+      error: "Invalid address",
+    });
   }
 
-  // cleanup old nonces (best effort)
-  try {
-    const now = Date.now();
-    const cutoff = new Date(now - TTL_MS).toISOString();
-    await supabase.from("nonces").delete().lt("created_at", cutoff);
-  } catch {
-    // continue — not fatal
-  }
+  const supabase = getSupabaseAdmin();
 
-  // generate nonce and upsert (replace any unused nonce for this address)
-  const nonce = crypto.randomBytes(16).toString("hex");
   try {
-    // upsert: pokud existuje nepoužitý nonce pro adresu, nahradí ho novým
+    const cutoff = new Date(Date.now() - TTL_MS).toISOString();
     const { error } = await supabase
       .from("nonces")
-      .upsert({
-        nonce,
-        address: normalized.toLowerCase(),
-        used: false,
-        created_at: new Date().toISOString(),
-      }, { onConflict: ["address"], ignoreDuplicates: false });
-    if (error) {
-      console.error("nonce upsert error:", error);
-      captureException(error, { stage: "nonce_upsert" });
-      return jsonResponse(500, { ok: false, error: "Nonce upsert failed" });
-    }
-  } catch (e) {
-    console.error("nonce upsert unexpected:", e);
-    captureException(e, { stage: "nonce_upsert" });
-    return jsonResponse(500, { ok: false, error: "Nonce upsert failed" });
+      .delete()
+      .lt("created_at", cutoff);
+    if (error) captureException(error, { stage: "nonce_cleanup" });
+  } catch (error) {
+    captureException(error, { stage: "nonce_cleanup" });
   }
 
-  // Bezpečná odpověď — nikdy nevracej žádné tajné klíče
-  return jsonResponse(200, { nonce, expiresInMs: TTL_MS });
+  const nonce = crypto.randomBytes(16).toString("hex");
+  try {
+    const { error } = await supabase.from("nonces").upsert(
+      {
+        nonce,
+        address: normalized,
+        used: false,
+        created_at: new Date().toISOString(),
+      },
+      { onConflict: "address", ignoreDuplicates: false },
+    );
+
+    if (error) {
+      captureException(error, { stage: "nonce_upsert" });
+      if (isNonceSchemaError(error)) {
+        // Compatibility path for an older schema without UNIQUE(address).
+        // The repair migration restores atomic upserts for concurrent requests.
+        const { error: deleteError } = await supabase
+          .from("nonces")
+          .delete()
+          .eq("address", normalized);
+        if (deleteError) {
+          captureException(deleteError, { stage: "nonce_legacy_delete" });
+          return unavailableResponse(corsHeaders);
+        }
+
+        const { error: insertError } = await supabase.from("nonces").insert({
+          nonce,
+          address: normalized,
+          used: false,
+          created_at: new Date().toISOString(),
+        });
+        if (insertError) {
+          captureException(insertError, { stage: "nonce_legacy_insert" });
+          return unavailableResponse(corsHeaders);
+        }
+
+        return jsonResponse(corsHeaders, 200, {
+          nonce,
+          expiresInMs: TTL_MS,
+        });
+      }
+      return unavailableResponse(corsHeaders);
+    }
+  } catch (error) {
+    captureException(error, { stage: "nonce_upsert" });
+    return unavailableResponse(corsHeaders);
+  }
+
+  return jsonResponse(corsHeaders, 200, { nonce, expiresInMs: TTL_MS });
 }
 
-/* VERCEL (default export) */
 const vercelHandler = async (req, res) => {
-  const query = req?.query || {};
-  const body = parseBody(req);
-  const result = await handleRequest({ method: req?.method, query, body });
+  const result = await handleRequest({
+    method: req?.method,
+    query: req?.query || {},
+    body: parseBody(req),
+  });
   res.statusCode = result.status;
-  Object.entries(result.headers).forEach(([k, v]) => res.setHeader(k, v));
+  Object.entries(result.headers).forEach(([key, value]) =>
+    res.setHeader(key, value),
+  );
   res.end(result.body);
 };
 
 export default vercelHandler;
 
-/* NETLIFY / AWS LAMBDA style export */
 export const handler = async (event) => {
-  const query = event?.queryStringParameters || {};
-  const body = parseBody(event);
-  const result = await handleRequest({ method: event?.httpMethod, query, body });
-  return { statusCode: result.status, headers: result.headers, body: result.body };
+  const result = await handleRequest({
+    method: event?.httpMethod,
+    query: event?.queryStringParameters || {},
+    body: parseBody(event),
+  });
+  return {
+    statusCode: result.status,
+    headers: result.headers,
+    body: result.body,
+  };
 };

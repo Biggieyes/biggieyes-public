@@ -15,6 +15,7 @@ import BiggiDexReserveGuard from "./BiggiDexReserveGuard.json";
 import BiggiDexReserveGuardReader from "./BiggiDexReserveGuardReader.json";
 import BiggiDripDistributor from "./BiggiDripDistributor.json";
 import BiggiDripLMToModerator from "./BiggiDripLMToModerator.json";
+import BiggiDripLMToModeratorV2 from "./BiggiDripLMToModeratorV2.json";
 import DripKeeperProxy from "./DripKeeperProxy.json";
 import BiggiLiquidityHelperReader from "./BiggiLiquidityHelperReader.json";
 import BiggiLiquidityBranchUserReader from "./BiggiLiquidityBranchUserReader.json";
@@ -52,6 +53,7 @@ import BiggiTokenRewardsReader from "./BiggiTokenRewardsReader.json";
 import BiggiTreasury from "./BiggiTreasury.json";
 import BiggiVrfRouter from "./BiggiVRFRouter.json";
 import ModeratorCenter from "./ModeratorCenter.json";
+import ModeratorCenterV2 from "./ModeratorCenterV2.json";
 import Multicall2 from "./Multicall2.json";
 import UniswapV2Factory from "./UniswapV2Factory.json";
 import UniswapV2Pair from "./UniswapV2Pair.json";
@@ -78,6 +80,7 @@ export {
   BiggiDexReserveGuardReader,
   BiggiDripDistributor,
   BiggiDripLMToModerator,
+  BiggiDripLMToModeratorV2,
   DripKeeperProxy,
   BiggiDRIPDistributor,
   BiggiDRIPLM,
@@ -120,6 +123,7 @@ export {
   BiggiVRFRouter,
   BiggiUpkeeperProxy,
   ModeratorCenter,
+  ModeratorCenterV2,
   Multicall2,
   UniswapV2Factory,
   UniswapV2Pair,

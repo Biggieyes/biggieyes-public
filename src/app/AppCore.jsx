@@ -122,8 +122,11 @@ import {
   saveGalleryCache,
 } from "@/shared/services/gallery/gallery.cache.js";
 import { mergeGalleryItem } from "@/shared/services/gallery/gallery.merge.js";
-import { registerReferral } from "@/shared/services/api.js";
-import { extractReferralParam } from "@/shared/utils/referrals.js";
+import {
+  extractMintedTicketIdFromReceipt,
+  extractReferralParam,
+} from "@/shared/utils/referrals.js";
+import { attributePaidTicketReferral } from "@/shared/utils/eth.js";
 
 /* ========= LAZY LOADED HEAVY PANELS ========= */
 const EcosystemPanel = React.lazy(
@@ -495,7 +498,7 @@ const TOP_FIRST_CACHE_VERSION = "v2-mainnet";
 const LAST_MINTED_CACHE_VERSION = "v2-mainnet";
 const PENDING_REFERRAL_CACHE_VERSION = "v1";
 const PENDING_REFERRAL_TTL = 30 * 24 * 60 * 60 * 1000;
-const CONSUMED_REFERRAL_CACHE_VERSION = "v1";
+const CONSUMED_REFERRAL_CACHE_VERSION = "v2-ticket";
 
 function activeCacheChainId() {
   return Number(ADDR?.CHAIN_ID || ACTIVE_CHAIN?.chainId || 137) || 137;
@@ -593,14 +596,14 @@ function pendingReferralCacheKey() {
   return `biggi_pending_referral_${PENDING_REFERRAL_CACHE_VERSION}`;
 }
 
-function consumedReferralCacheKey(addr, ref) {
+function consumedReferralCacheKey(addr, ref, ticketId) {
   return `biggi_registered_referral_${CONSUMED_REFERRAL_CACHE_VERSION}_${String(
     addr || "",
   ).toLowerCase()}_${encodeURIComponent(
     String(ref || "")
       .trim()
       .toLowerCase(),
-  )}`;
+  )}_${String(ticketId ?? "")}`;
 }
 
 function loadPendingReferralCache() {
@@ -646,23 +649,28 @@ function clearPendingReferralCache() {
   }
 }
 
-function hasConsumedReferralCache(addr, ref) {
+function hasConsumedReferralCache(addr, ref, ticketId) {
   try {
-    if (!addr || !ref) return false;
+    if (!addr || !ref || ticketId == null) return false;
     if (typeof window === "undefined" || !window.localStorage) return false;
     return (
-      window.localStorage.getItem(consumedReferralCacheKey(addr, ref)) === "1"
+      window.localStorage.getItem(
+        consumedReferralCacheKey(addr, ref, ticketId),
+      ) === "1"
     );
   } catch {
     return false;
   }
 }
 
-function markConsumedReferralCache(addr, ref) {
+function markConsumedReferralCache(addr, ref, ticketId) {
   try {
-    if (!addr || !ref) return;
+    if (!addr || !ref || ticketId == null) return;
     if (typeof window === "undefined" || !window.localStorage) return;
-    window.localStorage.setItem(consumedReferralCacheKey(addr, ref), "1");
+    window.localStorage.setItem(
+      consumedReferralCacheKey(addr, ref, ticketId),
+      "1",
+    );
   } catch {
     // ignore
   }
@@ -1192,7 +1200,7 @@ function useIsMobile(breakpoint = 700) {
 
 const ICONS = [
   {
-    src: "/images/icons/rewards.optimized.png",
+    src: "/images/icons/rewards.optimized.lossless.webp",
     fallbackSrc: "/images/icons/rewards.fallback.png",
     alt: "REWARDS",
     title: "Rewards: token, NFT, and collection rewards",
@@ -1201,7 +1209,7 @@ const ICONS = [
     eager: true,
   },
   {
-    src: "/images/icons/collection.optimized.png",
+    src: "/images/icons/collection.optimized.lossless.webp",
     fallbackSrc: "/images/icons/collection.fallback.png",
     alt: "COLLECTION",
     title: "Collections: VRF and public collection status",
@@ -1210,7 +1218,7 @@ const ICONS = [
     eager: true,
   },
   {
-    src: "/images/icons/mint.optimized.png",
+    src: "/images/icons/mint.optimized.lossless.webp",
     fallbackSrc: "/images/icons/mint.fallback.png",
     alt: "VRF MINT",
     title: "VRF Mint: ticket redeem, randomness, and reveal status",
@@ -1219,7 +1227,7 @@ const ICONS = [
     eager: true,
   },
   {
-    src: "/images/icons/token.optimized.png",
+    src: "/images/icons/token.optimized.lossless.webp",
     fallbackSrc: "/images/icons/token.fallback.png",
     alt: "BIGGI ECOSYSTEM",
     title:
@@ -1230,7 +1238,7 @@ const ICONS = [
     eager: true,
   },
   {
-    src: "/images/icons/users.optimized.png",
+    src: "/images/icons/users.optimized.lossless.webp",
     fallbackSrc: "/images/icons/users.fallback.png",
     alt: "USERS",
     title: "User panel: wallet NFTs, tickets, rewards, and transactions",
@@ -1240,7 +1248,7 @@ const ICONS = [
     eager: true,
   },
   {
-    src: "/images/icons/expansion.optimized.png",
+    src: "/images/icons/expansion.optimized.lossless.webp",
     fallbackSrc: "/images/icons/expansion.fallback.png",
     alt: "COMMUNITY CENTER",
     title: "Community Center: events, voting, moderation, and claims",
@@ -1872,7 +1880,7 @@ export default function AppCore() {
     accent: "#ffe800",
   });
   const [collectionPanelHeader, setCollectionPanelHeader] = React.useState({
-    title: "VRF COLLECTION",
+    title: "ORIGINALS COLLECTION",
     accent: "#ffe800",
   });
   const [ecosystemPanelHeader, setEcosystemPanelHeader] = React.useState({
@@ -2109,7 +2117,7 @@ export default function AppCore() {
     }
     if (navAlt === "COLLECTION") {
       setCollectionPanelHeader({
-        title: "VRF COLLECTION",
+        title: "ORIGINALS COLLECTION",
         accent: "#ffe800",
       });
     }
@@ -2714,37 +2722,41 @@ export default function AppCore() {
     };
   }, [persistPendingReferral]);
 
-  const attemptPendingReferralRegistration = React.useCallback(
-    async (address, referral) => {
+  const attemptMintedTicketReferralAttribution = React.useCallback(
+    async (address, referral, ticketId) => {
       const normalizedAddress = String(address || "").trim();
       const normalizedReferral = String(referral || "").trim();
       if (!/^0x[0-9a-fA-F]{40}$/.test(normalizedAddress)) return false;
       if (!normalizedReferral) return false;
+      if (ticketId == null) return false;
+      const normalizedTicketId = String(ticketId);
 
-      if (hasConsumedReferralCache(normalizedAddress, normalizedReferral)) {
-        persistPendingReferral("");
+      if (
+        hasConsumedReferralCache(
+          normalizedAddress,
+          normalizedReferral,
+          normalizedTicketId,
+        )
+      ) {
         clearReferralFromLocation();
         return true;
       }
 
-      const dedupeKey = `${normalizedAddress.toLowerCase()}|${normalizedReferral.toLowerCase()}`;
+      const dedupeKey = `${normalizedAddress.toLowerCase()}|${normalizedReferral.toLowerCase()}|${normalizedTicketId}`;
       if (referralRegisterInFlightRef.current === dedupeKey) return false;
       referralRegisterInFlightRef.current = dedupeKey;
 
       try {
-        await registerReferral({
-          ref: normalizedReferral,
-          referral: normalizedReferral,
-          referralCode: normalizedReferral,
-          address: normalizedAddress,
-          wallet: normalizedAddress,
-          walletAddress: normalizedAddress,
-          userAddress: normalizedAddress,
-        });
-        markConsumedReferralCache(normalizedAddress, normalizedReferral);
-        persistPendingReferral("");
+        await attributePaidTicketReferral(
+          normalizedTicketId,
+          normalizedReferral,
+        );
+        markConsumedReferralCache(
+          normalizedAddress,
+          normalizedReferral,
+          normalizedTicketId,
+        );
         clearReferralFromLocation();
-        showUserAlert("Referral registered.", "referral-registered", 1500);
         return true;
       } catch (error) {
         const message = String(error?.message || "").toLowerCase();
@@ -2756,15 +2768,19 @@ export default function AppCore() {
           "registered",
         ].some((token) => message.includes(token));
         if (looksConsumed) {
-          markConsumedReferralCache(normalizedAddress, normalizedReferral);
-          persistPendingReferral("");
+          markConsumedReferralCache(
+            normalizedAddress,
+            normalizedReferral,
+            normalizedTicketId,
+          );
           clearReferralFromLocation();
           return true;
         }
         console.warn(
-          "registerReferral failed",
+          "attributePaidTicketReferral failed",
           normalizedReferral,
           normalizedAddress,
+          normalizedTicketId,
           error,
         );
         return false;
@@ -2774,15 +2790,8 @@ export default function AppCore() {
         }
       }
     },
-    [clearReferralFromLocation, persistPendingReferral, showUserAlert],
+    [clearReferralFromLocation],
   );
-
-  React.useEffect(() => {
-    if (!walletAddress || !pendingReferral) return;
-    attemptPendingReferralRegistration(walletAddress, pendingReferral).catch(
-      () => {},
-    );
-  }, [walletAddress, pendingReferral, attemptPendingReferralRegistration]);
 
   const scheduleFetchStats = React.useCallback((delay = 500, fn) => {
     if (statsTimer.current) return;
@@ -7775,7 +7784,7 @@ export default function AppCore() {
         hash: tx?.hash,
         chainId,
       });
-      await tx.wait();
+      const receipt = await tx.wait();
       updateTxStatus({
         type: "mint",
         stage: "confirmed",
@@ -7787,6 +7796,26 @@ export default function AppCore() {
         9000,
       );
 
+      const mintedTicketId = extractMintedTicketIdFromReceipt(
+        receipt,
+        contract,
+        activeChapterId,
+        walletAddress,
+      );
+      let referralAttributed = null;
+      if (pendingReferral && mintedTicketId != null) {
+        showUserAlert(
+          "Ticket minted. Confirm the referral attribution in your wallet.",
+          "referral-wallet",
+          5000,
+        );
+        referralAttributed = await attemptMintedTicketReferralAttribution(
+          walletAddress,
+          pendingReferral,
+          mintedTicketId,
+        );
+      }
+
       setTimeout(() => {
         fetchStats().catch(() => {});
         fetchREWARDS().catch(() => {});
@@ -7796,7 +7825,21 @@ export default function AppCore() {
           fetchWalletAssets(walletAddress, { force: true }).catch(() => {});
         }, 2200);
       }, 800);
-      showUserAlert("Ticket minted.", "mint-success", 1200);
+      if (referralAttributed === true) {
+        showUserAlert(
+          "Ticket minted and referral recorded on-chain.",
+          "mint-referral-success",
+          2200,
+        );
+      } else if (pendingReferral && mintedTicketId != null) {
+        showUserAlert(
+          "Ticket minted. Referral attribution was not confirmed.",
+          "mint-referral-skipped",
+          5000,
+        );
+      } else {
+        showUserAlert("Ticket minted.", "mint-success", 1200);
+      }
     } catch (err) {
       if (isUserRejectedAction(err)) {
         console.info("mintTicket cancelled in wallet");
@@ -7848,6 +7891,8 @@ export default function AppCore() {
     releaseWriteTxLock,
     sendWriteWithRpcRetry,
     showUserAlert,
+    pendingReferral,
+    attemptMintedTicketReferralAttribution,
   ]);
 
   const redeemTicket = React.useCallback(async () => {

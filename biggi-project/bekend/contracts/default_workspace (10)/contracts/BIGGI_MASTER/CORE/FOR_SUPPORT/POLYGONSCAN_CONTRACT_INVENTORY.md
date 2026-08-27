@@ -1,6 +1,6 @@
 # PolygonScan Contract Inventory
 
-Date: 2026-08-19
+Live audit date: 2026-08-26
 
 Canonical machine-readable inventory:
 
@@ -10,10 +10,13 @@ EVIDENCE/deployment-manifest-polygon.json
 
 Summary:
 
-- Total manifest entries: `58`
-- With bytecode: `58`
-- Source verified: `58`
-- Unverified: `0`
+- Current canonical contracts: `60/60` source verified
+- Deprecated historical contracts: `3/3` source verified
+- All BIGGI-owned contracts with bytecode: `63/63` source verified
+- Unverified contracts with bytecode: `0`
+- PolygonScan pages reporting `Contract: Verified`: `63/63`
+- Existing public name tags: `10/63`
+- Missing public name tags: `53/63`
 
 The JSON evidence file is the authoritative inventory for PolygonScan support because it includes every key, address, deployer, deployment transaction hash, source-verification flag, contract name, and compiler version.
 
@@ -49,3 +52,50 @@ Chapter contracts:
 | `CHAPTER_5_MAIN2` | `BiggiEyesMain2` | `0x99f049279BC545469F989d8f06CD915ef4B6f1d4` |
 
 For a complete row-by-row list, use `EVIDENCE/deployment-manifest-polygon.json`.
+
+## Verified Staged Contracts
+
+These contracts are included in the current 60-contract manifest. They are
+source-verified and paused, but are not connected to the live tokenomics branch
+yet:
+
+| Key | Contract | Address | Deploy block |
+| --- | --- | --- | ---: |
+| `MODERATOR_CENTER_V2` | `ModeratorCenterV2` | `0x82Ad5a0f379CCA21AC2979E88AC24db94e670bD8` | `92715374` |
+| `DRIP_LM_V2` | `BiggiDripLMToModeratorV2` | `0x1d2B3d3224dE553ff3138caeA45d162c62305d1A` | `92716040` |
+
+Deployment evidence:
+
+```text
+biggi-project/bekend/reports/moderator-v2-deployment-polygon.json
+```
+
+## Deprecated Historical Contracts
+
+These replaced contracts remain immutable Polygon mainnet history. They are
+source verified but must be clearly tagged as deprecated, not presented as
+current protocol endpoints:
+
+| Key | Contract | Address |
+| --- | --- | --- |
+| `OLD_TICKET_HUB` | `BiggiTicketHub` | `0xe6D742D7dC66fa63434E6794C69798A5272E9873` |
+| `OLD_COLLECTION_REWARDS` | `BiggiCollectionRewards` | `0x5D1273070C9133381C570009768621762F024fB8` |
+| `OLD_MAIN_READER` | `BiggiMainReader` | `0x4937cdCf1668255cB46c78E19547Ea96c94391EF` |
+
+The stale `MOCK_QUOTE` value was removed from all current Polygon address/env
+manifests after RPC confirmed that the recorded address has no bytecode. The
+active quote token remains canonical WPOL.
+
+## Public Name Tags
+
+Source verification is complete. Public PolygonScan name tags are a separate,
+manually reviewed explorer state. The live per-address audit and prepared bulk
+submission are in:
+
+```text
+EVIDENCE/polygonscan-public-tags.json
+POLYGONSCAN_PUBLIC_NAME_TAG_SUBMISSION.md
+```
+
+The BIGGI/WPOL pair is factory-created and is outside the BIGGI-owned contract
+manifest. It already has the public tag `BiggiEyes: POL Liquidity Pair`.

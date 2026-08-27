@@ -48,6 +48,13 @@ export default defineConfig({
             return "vendor-preload";
           }
           if (!id.includes('node_modules')) return undefined;
+          if (
+            id.match(
+              /node_modules\/(?:react-markdown|remark-(?:gfm|parse|rehype)|unified|mdast-util-[^/]+|micromark(?:-[^/]+)?|hast-util-[^/]+|unist-util-[^/]+|vfile(?:-message)?|property-information|comma-separated-tokens|space-separated-tokens|decode-named-character-reference|character-entities(?:-[^/]+)?|parse-entities|stringify-entities|html-url-attributes|inline-style-parser|style-to-js|style-to-object|bail|ccount|devlop|longest-streak|markdown-table|trim-lines|trough|zwitch)(?:\/|$)/,
+            )
+          ) {
+            return 'vendor-markdown';
+          }
           if (id.match(/node_modules\/(?:react|react-dom|scheduler)(?:\/|$)/)) {
             return 'vendor-react';
           }
