@@ -39,6 +39,18 @@ create unique index if not exists community_poll_votes_poll_voter_uidx
 alter table public.community_polls enable row level security;
 alter table public.community_poll_votes enable row level security;
 
-create policy "community_polls_read_only"
-  on public.community_polls for select
-  using (true);
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'community_polls'
+      and policyname = 'community_polls_read_only'
+  ) then
+    create policy "community_polls_read_only"
+      on public.community_polls for select
+      using (true);
+  end if;
+end
+$$;

@@ -7,7 +7,10 @@ import {
   getInjectedProvider,
   setInjectedProvider,
 } from "@/shared/utils/contract";
-import { isLikelyMetaMaskSdkProvider } from "@/shared/utils/injectedProviders";
+import {
+  isLikelyMetaMaskSdkProvider,
+  requestInjectedAccounts,
+} from "@/shared/utils/injectedProviders";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
@@ -48,7 +51,9 @@ export function useWallet({ onConnected } = {}) {
     }
     try {
       setInjectedProvider(eth);
-      const accounts = await eth.request({ method: "eth_requestAccounts" });
+      const accounts = await requestInjectedAccounts(eth, {
+        forceSelection: true,
+      });
       const addr = accounts?.[0];
       if (!addr) throw new Error("No account returned from wallet.");
 

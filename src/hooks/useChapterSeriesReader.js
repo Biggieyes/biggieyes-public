@@ -7,6 +7,7 @@ import {
   getROProvider,
 } from "@/shared/utils/contract.js";
 import { isRealAddress } from "@/features/tokenomics/utils/amountFormatting.js";
+import { readTicketChapterStates } from "@/shared/utils/ticketChapters.js";
 
 const toStringValue = (value) => {
   if (value == null) return null;
@@ -173,14 +174,24 @@ export default function useChapterSeriesReader() {
         ...collections.map((item) => item.seriesId),
       ]);
 
+      const ticketChapterStates = await safeCall(
+        () => readTicketChapterStates(ticketHub),
+        [],
+      );
+      const activeByChapterId = new Map(
+        ticketChapterStates.map((chapter) => [
+          Number(chapter.chapterId),
+          chapter.active,
+        ]),
+      );
       const chapters = await Promise.all(
         chapterIds.map(async (chapterId) => {
           const snapshot = chapterSnapshotFrom(
             await safeCall(() => reader.chapterSnapshot(chapterId), {}),
           );
-          snapshot.active = toBool(
-            await safeCall(() => ticketHub.chapterActive(chapterId), null),
-          );
+          snapshot.active = activeByChapterId.has(Number(chapterId))
+            ? toBool(activeByChapterId.get(Number(chapterId)))
+            : null;
           return snapshot;
         }),
       );

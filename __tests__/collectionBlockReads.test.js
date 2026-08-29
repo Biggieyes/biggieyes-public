@@ -2,12 +2,22 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   computeDiff,
+  isExplicitlyEmptyContractCode,
   normalizeMetadataConsistency,
   normalizeNftInfo,
   readCollectionBlockSnapshot,
 } from "../src/features/rewards/COLLECTION/CollectionBlocksGrid.utils.js";
 
 describe("collection block reads", () => {
+  it("distinguishes an absent contract from an unavailable code probe", () => {
+    expect(isExplicitlyEmptyContractCode("0x")).toBe(true);
+    expect(isExplicitlyEmptyContractCode("0x0")).toBe(true);
+    expect(isExplicitlyEmptyContractCode("0x00")).toBe(true);
+    expect(isExplicitlyEmptyContractCode("0x6000")).toBe(false);
+    expect(isExplicitlyEmptyContractCode(null)).toBe(false);
+    expect(isExplicitlyEmptyContractCode(undefined)).toBe(false);
+  });
+
   it("does not show a price delta while live price equals contract base", () => {
     expect(computeDiff(600, 600)).toBeNull();
     expect(computeDiff(630, 600)).toMatchObject({ positive: true });

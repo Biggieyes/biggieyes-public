@@ -1,0 +1,67 @@
+{
+  "network": "Polygon mainnet",
+  "chainId": 137,
+  "checkedAt": "2026-08-28T20:53:02+02:00",
+  "checkedBlock": 92825313,
+  "classification": {
+    "wallet": "MetaMask",
+    "requestOrigin": "https://opensea.io",
+    "reportedSignal": "Malicious address",
+    "requestedMethod": "setApprovalForAll(address,bool)",
+    "assessment": "false positive"
+  },
+  "reportSubmission": {
+    "provider": "Blockaid",
+    "form": "https://report.blockaid.io/mistake",
+    "submittedAt": "2026-08-28T22:57:20+02:00",
+    "email": "eyesbiggi@gmail.com",
+    "status": "submitted",
+    "portalConfirmation": "Report Sent - Thank you for reporting! We'll review it thoroughly",
+    "referenceId": null
+  },
+  "nftContract": {
+    "name": "Biggi Ticket",
+    "symbol": "BGTICKET",
+    "contractName": "BiggiTicketHub",
+    "address": "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
+    "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+    "deployer": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+    "deploymentTransaction": "0xb2d085d7cf2442dc9fd5c029872e838afad03260681a14b6e78e969781fca112",
+    "deploymentBlock": 92188901,
+    "deploymentTimestamp": "2026-08-17T17:39:39.000Z",
+    "deploymentStatus": 1,
+    "sourceVerified": true,
+    "compiler": "v0.8.24+commit.e11b9ed9",
+    "openzeppelinContractsVersion": "5.1.0",
+    "supportsERC721": true,
+    "supportsERC721Metadata": true,
+    "paused": false,
+    "runtimeBytes": 18688,
+    "deployedRuntimeHash": "0x22f2b1ad462a9cfec1db17dd85f5fe1d44fb1527731bc23ce651492e92db951b",
+    "localArtifactRuntimeHash": "0x22f2b1ad462a9cfec1db17dd85f5fe1d44fb1527731bc23ce651492e92db951b",
+    "exactRuntimeMatch": true,
+    "sourceSha256": "f4c99c2cf69ea1f0e0deef3b1d7c4d59b245b83de6ddcbac864795148357a357",
+    "explorer": "https://polygonscan.com/address/0x7b7e561173f498C8274b821090Da64E8ee653f6A"
+  },
+  "listingApproval": {
+    "seller": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+    "tokenId": "3",
+    "transactionTo": "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
+    "operator": "0x1E0049783F008A0085193E00003D00cd54003c71",
+    "operatorLabel": "OpenSea Conduit",
+    "approved": true,
+    "currentlyApprovedOnChain": false,
+    "estimatedGas": "50891",
+    "calldata": "0xa22cb4650000000000000000000000001e0049783f008a0085193e00003d00cd54003c710000000000000000000000000000000000000000000000000000000000000001",
+    "decodedMethod": "setApprovalForAll(0x1E0049783F008A0085193E00003D00cd54003c71, true)",
+    "source": "OpenSea API v2 listing creation actions"
+  },
+  "links": {
+    "website": "https://biggieeyes.com",
+    "repository": "https://github.com/Biggieyes/biggieeyes-public",
+    "openSeaCollection": "https://opensea.io/collection/biggi-ticket-339884819",
+    "blockaidReport": "https://report.blockaid.io/mistake",
+    "blockaidProjectVerification": "https://report.blockaid.io/verifiedProject",
+    "metaMaskInstructions": "https://support.metamask.io/configure/wallet/security-alerts/"
+  }
+}

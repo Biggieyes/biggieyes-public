@@ -75,7 +75,7 @@ async function main() {
   // common OpenZeppelin/Ecosystem methods and events to ignore in "missingInSource"
   const ozFunctions = new Set([
     'approve','getApproved','setApprovalForAll','isApprovedForAll','transferFrom','safeTransferFrom','balanceOf','ownerOf','name','symbol','supportsInterface',
-    'approve','renounceOwnership','transferOwnership', 'owner', 'paused'
+    'approve','renounceOwnership','transferOwnership','acceptOwnership','pendingOwner', 'owner', 'paused'
   ]);
   const ozEvents = new Set(['Approval','ApprovalForAll','Transfer','OwnershipTransferred','Paused','Unpaused']);
 

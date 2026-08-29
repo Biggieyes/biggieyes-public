@@ -10,6 +10,26 @@ let discoveryStarted = false;
 const isProviderLike = (provider) =>
   Boolean(provider && typeof provider.request === "function");
 
+const getProviderErrorCode = (error) =>
+  error?.code ??
+  error?.rpcCode ??
+  error?.error?.code ??
+  error?.cause?.code ??
+  error?.data?.originalError?.code;
+
+const isUnsupportedPermissionsMethod = (error) => {
+  const code = Number(getProviderErrorCode(error));
+  if (code === 4200 || code === -32601) return true;
+  const message = String(
+    error?.message || error?.error?.message || error?.cause?.message || "",
+  ).toLowerCase();
+  return (
+    message.includes("method not found") ||
+    message.includes("method is not supported") ||
+    message.includes("unsupported method")
+  );
+};
+
 const normalizeRdns = (value) => String(value || "").trim().toLowerCase();
 
 const isMetaMaskProvider = (provider) => {
@@ -115,6 +135,29 @@ export function getInjectedProviderCandidates(options = {}) {
     (provider) => !isLikelyMetaMaskSdkProvider(provider),
   );
   return directMetaMask.length ? directMetaMask : onlyMetaMask;
+}
+
+export async function requestInjectedAccounts(
+  provider,
+  { forceSelection = false } = {},
+) {
+  if (!isProviderLike(provider)) {
+    throw new Error("Injected wallet provider is unavailable.");
+  }
+
+  if (forceSelection && !isLikelyMetaMaskSdkProvider(provider)) {
+    try {
+      await provider.request({
+        method: "wallet_requestPermissions",
+        params: [{ eth_accounts: {} }],
+      });
+    } catch (error) {
+      if (!isUnsupportedPermissionsMethod(error)) throw error;
+    }
+  }
+
+  const accounts = await provider.request({ method: "eth_requestAccounts" });
+  return Array.isArray(accounts) ? accounts : [];
 }
 
 export function isMetaMaskExtensionMissingError(error) {

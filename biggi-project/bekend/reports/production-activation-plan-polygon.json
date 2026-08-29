@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "createdAt": "2026-08-25T01:38:18.548Z",
+  "createdAt": "2026-08-27T23:54:27.022Z",
   "sourceBlock": {
-    "number": 92611244,
-    "timestamp": 1787621893
+    "number": 92779891,
+    "timestamp": 1787874864
   },
   "network": {
     "hardhatName": "polygon",
@@ -19,7 +19,7 @@
   "blockers": [
     {
       "name": "Owner lacks execution value plus a positive gas reserve",
-      "actualWei": "1800179327500824706",
+      "actualWei": "1702373944068000",
       "executionValueWei": "5001000000000000000000"
     },
     {
@@ -33,11 +33,11 @@
   "warnings": [
     {
       "name": "Liquidity transaction deadline is ephemeral",
-      "value": "Regenerate this plan after Phase 00 and immediately before Phase 10; current deadline is 1787622793."
+      "value": "Regenerate this plan after Phase 00 and immediately before Phase 10; current deadline is 1787875764."
     }
   ],
   "funding": {
-    "ownerNativeWei": "1800179327500824706",
+    "ownerNativeWei": "1702373944068000",
     "requiredExecutionValueWei": "5001000000000000000000",
     "surplusForGasWei": "0",
     "reserveBiggiWei": "600000000000000000000000000",
@@ -869,7 +869,7 @@
   },
   "plan": {
     "schemaVersion": 1,
-    "createdAt": "2026-08-25T01:38:18.382Z",
+    "createdAt": "2026-08-27T23:54:26.815Z",
     "network": {
       "name": "polygon",
       "chainId": 137
@@ -879,8 +879,8 @@
     "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
     "configDigest": "0x04f84711460b351c111ca9eaa80ea63f156c96e3d1e83def2e9a75a4b9eca562",
     "dynamicValues": {
-      "sourceBlockTimestamp": 1787621893,
-      "liquidityDeadlineUnix": 1787622793,
+      "sourceBlockTimestamp": 1787874864,
+      "liquidityDeadlineUnix": 1787875764,
       "workflowIdentityResolved": false
     },
     "phases": [
@@ -930,8 +930,8 @@
         "id": "10-initial-liquidity",
         "irreversible": true,
         "ready": false,
-        "expiresAtUnix": 1787622793,
-        "mustRegenerateAfterUnix": 1787622793,
+        "expiresAtUnix": 1787875764,
+        "mustRegenerateAfterUnix": 1787875764,
         "transactions": [
           {
             "id": "reserve-to-owner",
@@ -972,7 +972,7 @@
             "label": "Seed BIGGI/WPOL liquidity with LP minted to Vault",
             "to": "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff",
             "value": "5000000000000000000000",
-            "data": "0xf305d719000000000000000000000000d73152845bc5a9b8253ea0100bb10388cc5c0eed000000000000000000000000000000000000000000069e10de76676d0800000000000000000000000000000000000000000000000006959876f340823f00000000000000000000000000000000000000000000000000010db1fe8d52005c0000000000000000000000000000fe234394845b601b2c671c0dd631fa6290c02bb9000000000000000000000000000000000000000000000000000000006a8cf589",
+            "data": "0xf305d719000000000000000000000000d73152845bc5a9b8253ea0100bb10388cc5c0eed000000000000000000000000000000000000000000069e10de76676d0800000000000000000000000000000000000000000000000006959876f340823f00000000000000000000000000000000000000000000000000010db1fe8d52005c0000000000000000000000000000fe234394845b601b2c671c0dd631fa6290c02bb9000000000000000000000000000000000000000000000000000000006a90d1b4",
             "method": "addLiquidityETH(address,uint256,uint256,uint256,address,uint256)",
             "args": [
               "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
@@ -980,11 +980,11 @@
               "7960000000000000000000000",
               "4975000000000000000000",
               "0xFe234394845B601B2c671c0dD631fA6290c02bb9",
-              1787622793
+              1787875764
             ],
             "expectedSigner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
             "required": true,
-            "condition": "execute before Unix 1787622793; pair must still be empty",
+            "condition": "execute before Unix 1787875764; pair must still be empty",
             "postcondition": "pair reserves are non-zero and LP is held by LiquidityVault",
             "blockedBy": []
           },

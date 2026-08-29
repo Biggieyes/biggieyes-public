@@ -5,6 +5,7 @@ import * as React from "react";
 import { formatUnits } from "ethers";
 
 import styles from "./styles/BiggiToken.module.css";
+import "../../styles/panel-buttons.css";
 
 import { useWeb3 } from "@/providers/Web3Provider";
 

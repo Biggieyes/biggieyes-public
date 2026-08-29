@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "createdAt": "2026-08-25T01:53:03.906Z",
+  "createdAt": "2026-08-27T23:55:05.297Z",
   "network": "polygon",
   "chainId": 137,
-  "sourceBlock": 92611837,
+  "sourceBlock": 92779918,
   "configFile": "config/production-activation.polygon.json",
   "execute": false,
   "expectedOwner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",

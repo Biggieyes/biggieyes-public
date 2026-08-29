@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   ACTIVE_CHAIN,
+  getRpcBatchMaxCount,
   getRpcUrls,
   getWalletRpcUrls,
   isKnownPolygonTestnetRpcUrl,
@@ -29,6 +30,15 @@ function hostOf(url) {
 }
 
 describe("Polygon mainnet RPC configuration", () => {
+  it("keeps JSON-RPC batches within provider-safe limits", () => {
+    expect(
+      getRpcBatchMaxCount("https://polygon-mainnet.infura.io/v3/example"),
+    ).toBe(1);
+    expect(getRpcBatchMaxCount("https://polygon.drpc.org")).toBe(3);
+    expect(getRpcBatchMaxCount("https://polygon.publicnode.com")).toBe(5);
+    expect(getRpcBatchMaxCount("https://rpc.example")).toBe(5);
+  });
+
   it("targets Polygon mainnet and exposes usable filtered RPC URLs", () => {
     expect(ACTIVE_CHAIN.chainId).toBe(137);
     expect(ACTIVE_CHAIN.hex).toBe("0x89");
@@ -36,9 +46,17 @@ describe("Polygon mainnet RPC configuration", () => {
     expect(ACTIVE_CHAIN.explorer).toContain("polygonscan.com");
 
     const urls = getRpcUrls();
-    expect(urls.length).toBeGreaterThan(0);
+    expect(urls.length).toBeGreaterThanOrEqual(3);
     expect(urls.every((url) => /^https?:\/\//i.test(url))).toBe(true);
     expect(urls.map(hostOf)).not.toContain("polygon-rpc.com");
+    expect(new Set(urls.map(hostOf)).size).toBeGreaterThanOrEqual(3);
+    expect(urls.map(hostOf)).toEqual(
+      expect.arrayContaining([
+        "polygon.drpc.org",
+        "polygon.publicnode.com",
+        "1rpc.io",
+      ]),
+    );
     expect(urls.every((url) => !isKnownPolygonTestnetRpcUrl(url))).toBe(true);
   });
 

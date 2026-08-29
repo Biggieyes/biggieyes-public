@@ -80,6 +80,11 @@ export const isValidPrice = (price) =>
 export const isValidCount = (count) =>
   typeof count === "number" && Number.isFinite(count);
 
+export const isExplicitlyEmptyContractCode = (code) => {
+  if (typeof code !== "string") return false;
+  return /^0x0*$/i.test(code.trim());
+};
+
 const tryRead = async (fn) => {
   try {
     return await fn();

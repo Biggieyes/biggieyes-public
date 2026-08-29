@@ -1662,7 +1662,7 @@ html {
   background-color: #0f121a;
   background-image: url(/images/blocks-bg.png);
   background-image: image-set(
-    url(/images/blocks-bg.lossless.webp) type("image/webp"),
+    url(/images/blocks-bg.optimized.webp) type("image/webp"),
     url(/images/blocks-bg.png) type("image/png")
   );
   background-size: cover;
@@ -2973,7 +2973,7 @@ canvas {
   position: relative;
   color: var(--text-0);
   background:
-    linear-gradient(180deg, #090b12c7, #06070bf5), url(/images/bg-tab0.png) !important;
+    linear-gradient(180deg, #090b12c7, #06070bf5), url(/images/bg-tab0.webp) !important;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -3987,7 +3987,7 @@ canvas {
       0 14px 28px #0000006b,
       0 0 18px #ffe8001f;
     background:
-      linear-gradient(180deg, #0009, #000000e6), url(/images/bg-tab0.png) !important;
+      linear-gradient(180deg, #0009, #000000e6), url(/images/bg-tab0.webp) !important;
     background-size: cover;
     background-position: center;
     padding: 22px;
@@ -4067,7 +4067,7 @@ canvas {
       rgba(39, 217, 210, 0.1),
       transparent 60%
     ),
-    url(/images/bg-tab0.png);
+    url(/images/bg-tab0.webp);
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
@@ -4755,7 +4755,7 @@ canvas {
   margin-top: 18px;
   background:
     linear-gradient(180deg, #00000059, #000000bf),
-    linear-gradient(135deg, #57baff14, #48ffc70f), url(/images/bg-tab0.png),
+    linear-gradient(135deg, #57baff14, #48ffc70f), url(/images/bg-tab0.webp),
     #0b0d12d1;
   background-size: cover;
   background-repeat: no-repeat;

@@ -1,0 +1,51 @@
+{
+  "mode": "dry-run",
+  "createdAt": "2026-08-28T17:34:32.752Z",
+  "network": "polygon",
+  "chainId": 137,
+  "snapshotBlock": 92822296,
+  "addressesFile": "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\addresses.master.json",
+  "deployer": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+  "finalOwner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "dependencies": {
+    "nftRewardsV1": "0x939Df533b80943298E15ad4c8F188102954f34FF",
+    "nftRewardsReaderV1": "0x430376b1f4F12ce2D641CC28f2968297aA2b0c12",
+    "vrfRouter": "0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F"
+  },
+  "v1State": {
+    "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+    "nextEventId": "1",
+    "nextRewardId": "1",
+    "nativeBalanceWei": "0",
+    "readerTarget": "0x939Df533b80943298E15ad4c8F188102954f34FF",
+    "vrfConsumerApproved": true
+  },
+  "codeBytes": {
+    "NFT_REWARDS_V1": 11248,
+    "NFT_REWARDS_READER_V1": 3177,
+    "VRF_ROUTER": 4227
+  },
+  "predicted": {
+    "nftRewardsV2": "0x5b1d7320064017e80D63C6dd1367e851fdc00FA7",
+    "nftRewardsReaderV2": "0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9",
+    "deployerNonce": 415
+  },
+  "gas": {
+    "gasPriceWei": "280453799590",
+    "rewardsDeploy": "2383881",
+    "readerDeploy": "746124",
+    "vrfApproval": "55628",
+    "deployerRequiredWeiWithBuffer": "1097277243732122437",
+    "ownerRequiredWeiWithBuffer": "19501354954490650"
+  },
+  "balances": {
+    "deployerWei": "320764160595805697",
+    "ownerWei": "1702373944068000"
+  },
+  "blockers": [
+    "Deployer POL balance is too low: 320764160595805697 < 1097277243732122437",
+    "Owner POL balance is too low: 1702373944068000 < 19501354954490650"
+  ],
+  "transactions": [],
+  "activated": false
+}

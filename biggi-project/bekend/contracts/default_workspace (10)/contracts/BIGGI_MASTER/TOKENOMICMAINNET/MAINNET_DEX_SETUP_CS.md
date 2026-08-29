@@ -1,5 +1,27 @@
 # MAINNET DEX SETUP PRO BIGGI_MASTER
 
+## Aktualni produkcni volba (overeno 2026-08-28)
+
+DEX uz je zvolen a DEX-sensitive kontrakty jsou na Polygon mainnetu zapojene:
+
+| Hodnota | Produkcni nastaveni |
+| --- | --- |
+| DEX | `QuickSwap Polygon PoS V2` |
+| `BIGGI_TOKEN` | `0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD` |
+| `ROUTER` | `0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff` |
+| `FACTORY` | `0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32` |
+| `WETH` / `QUOTE_TOKEN` | `0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270` (WPOL) |
+| `PAIR` | `0x59C7B17B3ACD48979B25215a0c477dF6FFFF3e90` |
+| Liquidity path | `keeper_proxy` |
+
+On-chain kontrola potvrdila `router.WETH()`, `factory.getPair(BIGGI, WPOL)`,
+oba pair tokeny a kompletni wiring `LiquidityManager -> Orchestrator -> KeeperProxy`.
+Pair je zamerne stale prazdny. Finalni parametry seedu a jediny povoleny execution
+postup jsou v `INITIAL_LIQUIDITY_RUNBOOK_CS.md`.
+
+Nasledujici kapitoly vysvetluji obecny model a slouzi pro audit; nejsou pokynem
+k vyberu jineho DEXu nebo vytvoreni dalsiho pairu.
+
 Tento dokument je prakticky po lopate:
 
 - co v `BIGGI_MASTER` znamena `PAIR`, `QUOTE_TOKEN`, `ROUTER`, `FACTORY`, `WETH`

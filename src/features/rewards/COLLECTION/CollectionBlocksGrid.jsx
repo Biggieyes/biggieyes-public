@@ -1,6 +1,7 @@
 // src/components/COLLECTIONBlocksGrid.jsx
 import * as React from "react";
 import "./COLLECTIONBlocksGrid.css";
+import "../../../styles/panel-buttons.css";
 
 import useIsMobile from "../../../hooks/useIsMobile";
 import useIsTouch from "../../../hooks/useIsTouch";
@@ -48,10 +49,12 @@ import {
   isValidCount,
   safeAsyncCall,
   safeSyncCall,
+  isExplicitlyEmptyContractCode,
   readCollectionBlockSnapshot,
   normalizeNftInfo,
   normalizeMetadataConsistency,
 } from "./COLLECTIONBlocksGrid.utils";
+import { mapLimit } from "@/shared/utils/shared";
 
 // Import sub-komponenty
 import BlockCard from "./CollectionBlocksGrid.BlockCard";
@@ -325,20 +328,20 @@ function COLLECTIONBlocksGrid({
         // Defensive: verify there's contract code at the address before making repeated read calls.
         // If provider.getCode returns '0x' we likely pointed to a non-contract address or wrong network.
         try {
-          const providerForCode = coll && coll.provider ? coll.provider : null;
+          const providerForCode =
+            coll?.provider || coll?.runner?.provider || coll?.runner || null;
           const contractAddress =
             coll?.target ||
             coll?.address ||
             (await safeAsyncCall(() =>
               typeof coll?.getAddress === "function" ? coll.getAddress() : null,
             ));
-          const code =
-            providerForCode && contractAddress
-              ? await safeAsyncCall(() =>
-                  providerForCode.getCode(contractAddress),
-                )
-              : null;
-          if (!code || code === "0x" || code === "0x0") {
+          const canReadCode =
+            typeof providerForCode?.getCode === "function" && contractAddress;
+          const code = canReadCode
+            ? await providerForCode.getCode(contractAddress)
+            : null;
+          if (isExplicitlyEmptyContractCode(code)) {
             // eslint-disable-next-line no-console
             console.warn(
               "COLLECTION contract not found at address, skipping block reads:",
@@ -370,17 +373,33 @@ function COLLECTIONBlocksGrid({
           );
         }
 
-        const blockRows = await Promise.all(
-          Array.from({ length: MAX_BLOCKS }, (_, index) =>
-            readCollectionBlockSnapshot(coll, index + 1),
-          ),
-        );
-        for (const row of blockRows) {
-          basePrices.push(
-            row.basePriceWei != null ? fmtPrice(row.basePriceWei) : null,
+        const canReuseParentStats =
+          displayedChapter.chapterId === 1 &&
+          activeCollectionKey === "COLLECTION1" &&
+          Array.isArray(blockPricesProp) &&
+          blockPricesProp.slice(0, MAX_BLOCKS).every(Number.isFinite) &&
+          Array.isArray(blockMintCountsProp) &&
+          blockMintCountsProp.slice(0, MAX_BLOCKS).every(Number.isFinite);
+
+        if (canReuseParentStats) {
+          for (let i = 0; i < MAX_BLOCKS; i += 1) {
+            basePrices.push(null);
+            prices.push(Number(blockPricesProp[i]));
+            minted.push(Number(blockMintCountsProp[i]));
+          }
+        } else {
+          const blockRows = await mapLimit(
+            Array.from({ length: MAX_BLOCKS }, (_, index) => index + 1),
+            2,
+            (blockNumber) => readCollectionBlockSnapshot(coll, blockNumber),
           );
-          prices.push(row.priceWei != null ? fmtPrice(row.priceWei) : null);
-          minted.push(row.mintedRaw != null ? Number(row.mintedRaw) : null);
+          for (const row of blockRows) {
+            basePrices.push(
+              row.basePriceWei != null ? fmtPrice(row.basePriceWei) : null,
+            );
+            prices.push(row.priceWei != null ? fmtPrice(row.priceWei) : null);
+            minted.push(row.mintedRaw != null ? Number(row.mintedRaw) : null);
+          }
         }
 
         if (!cancelled) {
@@ -412,7 +431,14 @@ function COLLECTIONBlocksGrid({
       cancelled = true;
       clearInterval(interval);
     };
-  }, [getCollectionReadContract, reloadCounter]);
+  }, [
+    getCollectionReadContract,
+    reloadCounter,
+    displayedChapter.chapterId,
+    activeCollectionKey,
+    blockPricesProp,
+    blockMintCountsProp,
+  ]);
 
   React.useEffect(() => {
     setLiveBasePrices(Array(MAX_BLOCKS).fill(null));

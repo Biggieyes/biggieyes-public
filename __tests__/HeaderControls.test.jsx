@@ -52,7 +52,9 @@ describe("HeaderControls", () => {
     );
 
     expect(
-      screen.getByRole("button", { name: /connected wallet/i }),
+      screen.getByRole("button", {
+        name: /change connected metamask account/i,
+      }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /connect walletconnect/i }),

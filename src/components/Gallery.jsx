@@ -1,5 +1,6 @@
 import * as React from "react";
 import "./Gallery.css";
+import "../styles/panel-buttons.css";
 import NftCard from "./NftCard";
 import { useOptionalContracts } from "../providers/ContractsProvider";
 import { useOptionalWeb3 } from "../providers/Web3Provider";

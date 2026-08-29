@@ -84,6 +84,20 @@
 
     <link rel="preconnect" href="https://cloudflare-ipfs.com" crossorigin />
     <link rel="preconnect" href="https://ipfs.io" crossorigin />
+    <link
+      rel="preload"
+      as="image"
+      type="image/webp"
+      href="/images/bg-tab0.webp"
+      fetchpriority="high"
+    />
+    <link
+      rel="preload"
+      as="image"
+      type="image/webp"
+      href="/images/blocks-bg.optimized.webp"
+      fetchpriority="high"
+    />
 
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link
@@ -219,7 +233,8 @@
           if (!img || img.dataset.tuned) return;
           img.dataset.tuned = "1";
 
-          if (img.src && img.src.startsWith("ipfs://")) img.src = ipfsToHttp(img.src);
+          if (img.src && img.src.startsWith("ipfs://"))
+            img.src = ipfsToHttp(img.src);
 
           const srcAttr = img.getAttribute("src");
           if (srcAttr && srcAttr.startsWith("ipfs://")) {
@@ -227,14 +242,18 @@
           }
 
           if (isCriticalImage(img)) {
-            if (!img.hasAttribute("loading")) img.setAttribute("loading", "eager");
-            if (!img.hasAttribute("decoding")) img.setAttribute("decoding", "async");
+            if (!img.hasAttribute("loading"))
+              img.setAttribute("loading", "eager");
+            if (!img.hasAttribute("decoding"))
+              img.setAttribute("decoding", "async");
             if (!img.hasAttribute("fetchPriority")) {
               img.setAttribute("fetchPriority", "high");
             }
           } else {
-            if (!img.hasAttribute("loading")) img.setAttribute("loading", "lazy");
-            if (!img.hasAttribute("decoding")) img.setAttribute("decoding", "async");
+            if (!img.hasAttribute("loading"))
+              img.setAttribute("loading", "lazy");
+            if (!img.hasAttribute("decoding"))
+              img.setAttribute("decoding", "async");
             if (!img.hasAttribute("fetchPriority")) {
               img.setAttribute("fetchPriority", "low");
             }
@@ -260,7 +279,10 @@
             }
           }
         });
-        mo.observe(document.documentElement, { childList: true, subtree: true });
+        mo.observe(document.documentElement, {
+          childList: true,
+          subtree: true,
+        });
 
         window.addEventListener(
           "error",

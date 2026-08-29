@@ -22,6 +22,7 @@ Supporting dependencies:
 - `BiggiCollectionRewards.sol` - Collection rewards accounting.
 - `BiggiTokenRewards.sol` - Token rewards accounting.
 - `BiggiNftRewards.sol` - NFT rewards contract.
+- `BiggiNftRewardsV2.sol` - Hardened manual and VRF mystery NFT rewards contract.
 - `BiggiVrfRouter.sol` - VRF router for collection and rewards randomness.
 - `BiggiMultiCollectionDistributor.sol` - Multi-collection distribution router.
 

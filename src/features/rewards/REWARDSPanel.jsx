@@ -2,6 +2,7 @@
 import * as ethers from "ethers";
 import TokenREWARDSService from "../../services/tokenRewardsService";
 import COLLECTIONREWARDSService from "../../services/collectionRewardsService";
+import NFTREWARDSService from "../../services/nftRewardsService";
 import useTokenREWARDS from "../../hooks/useTokenRewards";
 import useCOLLECTIONREWARDS from "../../hooks/useCollectionRewards";
 import useNFTREWARDS from "../../hooks/useNFTRewards";
@@ -30,6 +31,7 @@ import REWARDSBlockSummary from "./REWARDSBlockSummary.jsx";
 import { buildRewardClaimPayload } from "@/shared/utils/assetIdentity.js";
 import "./REWARDSPanel.css";
 import "../../styles/biggi-token.skin.css";
+import "../../styles/panel-buttons.css";
 
 const TAB_ORDER = [
   { id: "token", label: "TOKEN REWARDS" },
@@ -57,24 +59,26 @@ const SECTION_META = {
   nft: {
     title: "NFT REWARDS",
     subtitle:
-      "Review character, leaderboard, and mystery NFT reward status, metadata rails, and explorer links for every reward contract output.",
+      "Review live NFT reward events, wallet assignments, metadata, and claim status directly from the Polygon contracts.",
     accent: "#b584ff",
     accentSoft: "rgba(181, 132, 255, 0.22)",
     accentGlow: "rgba(181, 132, 255, 0.38)",
   },
 };
 
-const NFT_RANGE = Array.from({ length: 10 }, (_, idx) => idx + 1);
 const DEFAULT_EXPLORER_BASE = "https://polygonscan.com";
 const explorerBaseForChain = (chainId) =>
   explorerBaseFor(chainId) || DEFAULT_EXPLORER_BASE;
 
 const DEFAULT_NFT_SUMMARY = {
-  baseURIs: { character: null, leaderboard: null, mystery: null },
-  characterClaimed: {},
-  leaderboardClaimed: {},
-  mysteryClaimed: {},
-  totalMinted: 0,
+  events: [],
+  rewards: [],
+  userRewards: [],
+  totalEventsCreated: 0,
+  totalRewardsCreated: 0,
+  totalClaimed: 0,
+  totalAssigned: 0,
+  rewardsTruncated: false,
   contractAddress: ADDR.NFT_REWARDS,
 };
 
@@ -188,6 +192,8 @@ function REWARDSPanel({
   });
   const [COLLECTIONClaimFeedback, setCOLLECTIONClaimFeedback] =
     React.useState(null);
+  const [nftClaimingId, setNftClaimingId] = React.useState(null);
+  const [nftClaimFeedback, setNftClaimFeedback] = React.useState(null);
   const [collectionBalance, setCollectionBalance] = React.useState(null);
   const [collectionRewardsChapterId, setCollectionRewardsChapterId] =
     React.useState(CORE_CHAPTERS[0]?.chapterId ?? 1);
@@ -219,8 +225,8 @@ function REWARDSPanel({
       {
         label: "NFT",
         description: [
-          "NFT reward ranks, eligibility, and claim status.",
-          "Uses NFTRewards + Reader helpers for snapshot data.",
+          "Live NFT reward events, assigned wallets, metadata, and claim status.",
+          "Claims mint the assigned ERC-721 reward from NFTRewards.",
         ],
       },
       {
@@ -327,10 +333,12 @@ function REWARDSPanel({
       collectionRewardsAddr,
       collectionRewardsMain,
     );
-  const { data: nftSummary, refresh: refreshNftStats } = useNFTREWARDS(
-    readProvider,
-    nftRewardsAddr,
-  );
+  const {
+    data: nftSummary,
+    loading: nftLoading,
+    error: nftError,
+    refresh: refreshNftStats,
+  } = useNFTREWARDS(readProvider, nftRewardsAddr, walletAddress);
   const { data: nftReader, refresh: refreshNftReader } = useNftRewardsReader(
     readProvider,
     nftRewardsReaderAddr,
@@ -475,6 +483,11 @@ function REWARDSPanel({
     setCOLLECTIONClaiming({ block: null, orange: null, rainbow: false });
   }, [collectionRewardsChapterId, walletAddress]);
 
+  React.useEffect(() => {
+    setNftClaimFeedback(null);
+    setNftClaimingId(null);
+  }, [walletAddress]);
+
   const canClaimCOLLECTION = React.useMemo(
     () =>
       Boolean(
@@ -484,6 +497,18 @@ function REWARDSPanel({
         COLLECTIONService,
       ),
     [walletAddress, writeProvider, COLLECTIONService],
+  );
+
+  const canClaimNft = React.useMemo(
+    () =>
+      Boolean(
+        walletAddress &&
+        readProvider &&
+        nftRewardsAddr &&
+        writeProvider &&
+        typeof writeProvider.getSigner === "function",
+      ),
+    [walletAddress, readProvider, nftRewardsAddr, writeProvider],
   );
 
   const handleRefresh = React.useCallback(async () => {
@@ -509,6 +534,7 @@ function REWARDSPanel({
     refreshNftStats,
     refreshNftReader,
     loadClaimPreview,
+    refreshCollectionBalance,
     refreshing,
   ]);
 
@@ -638,6 +664,76 @@ function REWARDSPanel({
     writeProvider,
     handleRefresh,
   ]);
+
+  const handleClaimNftReward = React.useCallback(
+    async (rewardId) => {
+      if (!canClaimNft) {
+        setNftClaimFeedback({
+          tone: "error",
+          text: "Connect the assigned wallet on Polygon before claiming.",
+        });
+        return;
+      }
+      const normalizedRewardId = Number(rewardId);
+      if (!Number.isSafeInteger(normalizedRewardId) || normalizedRewardId < 1) {
+        setNftClaimFeedback({ tone: "error", text: "Invalid reward ID." });
+        return;
+      }
+
+      setNftClaimFeedback(null);
+      setNftClaimingId(normalizedRewardId);
+      try {
+        const service = new NFTREWARDSService(nftRewardsAddr, readProvider);
+        const reward = await service.rewardInfo(normalizedRewardId);
+        const assigned = reward?.assigned ?? reward?.[0];
+        const alreadyClaimed = Boolean(reward?.isClaimed ?? reward?.[1]);
+        if (
+          String(assigned || "").toLowerCase() !==
+          String(walletAddress || "").toLowerCase()
+        ) {
+          throw new Error("Reward is not assigned to the connected wallet.");
+        }
+        if (alreadyClaimed) throw new Error("Reward is already claimed.");
+
+        const signer = await writeProvider.getSigner();
+        const signerAddress = await signer.getAddress();
+        if (
+          String(signerAddress).toLowerCase() !==
+          String(walletAddress).toLowerCase()
+        ) {
+          throw new Error("Wallet account changed. Reconnect and try again.");
+        }
+        service.connectWithSigner(signer);
+        await service.claim(normalizedRewardId);
+        setNftClaimFeedback({
+          tone: "success",
+          text: `NFT reward #${normalizedRewardId} claimed successfully.`,
+        });
+        await Promise.all([refreshNftStats(), refreshNftReader()]);
+      } catch (error) {
+        console.error("REWARDSPanel NFT reward claim failed", error);
+        setNftClaimFeedback({
+          tone: "error",
+          text:
+            error?.shortMessage ||
+            error?.reason ||
+            error?.message ||
+            "NFT reward claim failed.",
+        });
+      } finally {
+        setNftClaimingId(null);
+      }
+    },
+    [
+      canClaimNft,
+      nftRewardsAddr,
+      readProvider,
+      refreshNftReader,
+      refreshNftStats,
+      walletAddress,
+      writeProvider,
+    ],
+  );
 
   const heroCards = React.useMemo(() => {
     const symbol = tokenSymbol;
@@ -771,10 +867,6 @@ function REWARDSPanel({
       ...DEFAULT_NFT_SUMMARY,
       ...(nftSummary || {}),
       ...(nftReader || {}),
-      baseURIs: {
-        ...DEFAULT_NFT_SUMMARY.baseURIs,
-        ...(nftSummary?.baseURIs || {}),
-      },
       contractAddress:
         nftReader?.contractAddress ||
         nftSummary?.contractAddress ||
@@ -1089,7 +1181,9 @@ function REWARDSPanel({
       <SectionHeader label="NFT REWARDS" accent={SECTION_META.nft.accent} />
       <NftREWARDSTab
         data={nftData}
-        range={NFT_RANGE}
+        loading={nftLoading}
+        error={nftError}
+        walletAddress={walletAddress}
         formatInteger={formatInteger}
         formatAddress={shortAddress}
         formatUriDisplay={formatUriDisplay}
@@ -1098,7 +1192,10 @@ function REWARDSPanel({
           if (!url || typeof window === "undefined") return;
           window.open(url, "_blank", "noopener,noreferrer");
         }}
-        emptyRanks={{ 1: false, 2: false, 3: false }}
+        canClaim={canClaimNft}
+        claimState={nftClaimingId}
+        onClaimReward={handleClaimNftReward}
+        feedback={nftClaimFeedback}
       />
     </section>
   );
@@ -1245,7 +1342,7 @@ function REWARDSPanel({
           />
           <img
             className="rewards-grid__diagram-image"
-            src="/images/schemas/rewards-flow-diagram.png?v=20260224c"
+            src="/images/schemas/rewards-flow-diagram.png?v=20260828"
             alt="Rewards diagram showing reward contracts, readers, and native or token flows to wallet claims."
             loading="lazy"
             decoding="async"

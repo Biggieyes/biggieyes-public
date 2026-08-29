@@ -26,6 +26,13 @@ const mocks = vi.hoisted(() => {
         balanceOf: vi.fn(async () => 123_450_000_000_000_000_000n),
         decimals: vi.fn(async () => 18),
       }),
+      chapterCollectionsRead: vi.fn(() => [
+        { contract: { balanceOf: vi.fn(async () => 2n) } },
+        { contract: { balanceOf: vi.fn(async () => 3n) } },
+      ]),
+      ticketHubRead: vi.fn(() => ({
+        balanceOf: vi.fn(async () => 4n),
+      })),
       readerRead: () => ({
         findTicket: vi.fn(async () => [1n]),
       }),
@@ -79,6 +86,11 @@ describe("User Panel community connection", () => {
     );
 
     expect(screen.getAllByText("Community Center").length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("heading", { name: "Actions" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Protocol details")).toBeInTheDocument();
+    expect(screen.queryByText("Connection health")).not.toBeInTheDocument();
     expect(screen.getByText("Claimable POL")).toBeInTheDocument();
     expect(container.textContent).toContain("1.25 POL");
     expect(container.textContent).toContain("5 BIGGI");
@@ -88,6 +100,42 @@ describe("User Panel community connection", () => {
     await waitFor(() => {
       expect(container.textContent).toContain("123.45 BIGGI");
       expect(container.textContent).toContain("2 POL");
+      expect(
+        Array.from(
+          container.querySelectorAll(".user-panel__balance-item strong"),
+        ).map((node) => node.textContent),
+      ).toEqual(["2 POL", "123.45 BIGGI", "5", "4"]);
+    });
+  });
+
+  it("keeps redeem available from loaded inventory when Ticket Hub reads fail", async () => {
+    mocks.contracts.ticketHubRead.mockImplementationOnce(() => {
+      throw new Error("RPC unavailable");
+    });
+
+    const { container } = render(
+      <USERPANEL
+        items={[
+          {
+            tokenId: "12",
+            isTicket: true,
+            contractAddress: ADDR.TICKET_HUB,
+          },
+        ]}
+        onRedeem={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Redeem ticket" })).toBeEnabled();
+
+    await waitFor(() => {
+      const balanceValues = Array.from(
+        container.querySelectorAll(".user-panel__balance-item strong"),
+      ).map((node) => node.textContent);
+      expect(balanceValues[3]).toBe("1");
+      expect(container.textContent).toContain(
+        "Some wallet balances could not be refreshed.",
+      );
     });
   });
 });

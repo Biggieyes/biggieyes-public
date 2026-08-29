@@ -62,12 +62,13 @@ export async function checkRpcHealth(url, options = {}) {
   };
 
   const start = Date.now();
+  let provider = null;
   try {
     const timeoutMs =
       Number(options.timeoutMs) ||
       Number(env("VITE_RPC_HEALTH_TIMEOUT_MS")) ||
       6000;
-    const provider = new JsonRpcProvider(url);
+    provider = new JsonRpcProvider(url);
     const network = await withTimeout(
       provider.getNetwork(),
       timeoutMs,
@@ -96,9 +97,18 @@ export async function checkRpcHealth(url, options = {}) {
       "eth_blockNumber",
     );
     const latencyMs = Date.now() - start;
-    return { ok: true, blockNumber, latencyMs };
+    if (!Number.isSafeInteger(blockNumber) || blockNumber <= 0) {
+      return { ok: false, error: "blockNumber unavailable" };
+    }
+    return { ok: true, chainId, blockNumber, latencyMs };
   } catch (error) {
     return { ok: false, error: error?.message || String(error) };
+  } finally {
+    try {
+      provider?.destroy?.();
+    } catch {
+      // ignore provider cleanup failures
+    }
   }
 }
 export async function ensurePreferredRpc() {
@@ -137,6 +147,53 @@ function env(key) {
     // ignore process env lookup errors
   }
   return undefined;
+}
+
+const FALSE_ENV_VALUES = new Set(["0", "false", "no", "off"]);
+
+export function isEthersFallbackProviderEnabled() {
+  const raw = String(env("VITE_ENABLE_ETHERS_FALLBACK_PROVIDER") || "")
+    .trim()
+    .toLowerCase();
+  return !FALSE_ENV_VALUES.has(raw);
+}
+
+export function getRpcFallbackStallTimeoutMs(defaultMs = 1200) {
+  const configured = Number(env("VITE_RPC_FALLBACK_STALL_MS"));
+  if (Number.isFinite(configured) && configured >= 250) {
+    return Math.trunc(configured);
+  }
+  return defaultMs;
+}
+
+const RPC_BATCH_HOST_LIMITS = [
+  { suffix: ".infura.io", limit: 1 },
+  { suffix: ".drpc.org", limit: 3 },
+  { suffix: ".publicnode.com", limit: 5 },
+];
+const DEFAULT_RPC_BATCH_MAX_COUNT = 5;
+
+export function getRpcBatchMaxCount(url) {
+  const configured = Number(env("VITE_RPC_BATCH_MAX_COUNT"));
+  const configuredLimit =
+    Number.isFinite(configured) && configured > 0
+      ? Math.trunc(configured)
+      : null;
+
+  let hostLimit = DEFAULT_RPC_BATCH_MAX_COUNT;
+  try {
+    const host = new URL(String(url || "")).hostname.toLowerCase();
+    const matched = RPC_BATCH_HOST_LIMITS.find(
+      ({ suffix }) => host === suffix.slice(1) || host.endsWith(suffix),
+    );
+    if (matched) hostLimit = matched.limit;
+  } catch {
+    // Keep the conservative default for malformed or missing URLs.
+  }
+
+  return configuredLimit == null
+    ? hostLimit
+    : Math.max(1, Math.min(configuredLimit, hostLimit));
 }
 
 const ACTIVE_CHAIN_ID = 137;
@@ -196,7 +253,8 @@ function prioritizeHealthyRpcs(urls) {
 
 export const POLYGON_RPC = [
   "https://polygon.drpc.org",
-  "https://polygon-bor-rpc.publicnode.com",
+  "https://polygon.publicnode.com",
+  "https://1rpc.io/matic",
 ];
 
 export const PUBLIC_POLYGON_RPCS = [...POLYGON_RPC];

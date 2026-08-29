@@ -107,6 +107,9 @@ const parseCanClaim = (raw) => {
   };
 };
 
+export const hasCommunityAssignment = (event) =>
+  toBigInt(event?.walletStatus?.amount) > 0n;
+
 const scheduleStatus = (event) => {
   const now = Math.floor(Date.now() / 1000);
   if (!event?.exists) return "Missing";
@@ -243,8 +246,7 @@ export default function useCommunityCenterUserSnapshot({
           .length,
         finishedEvents: events.filter((event) => event.schedule === "Finished")
           .length,
-        assignedEvents: events.filter((event) => event.walletStatus?.exists)
-          .length,
+        assignedEvents: events.filter(hasCommunityAssignment).length,
         claimableEvents: events.filter((event) => event.claim?.ok).length,
         claimedEvents: events.filter((event) => event.walletStatus?.claimed)
           .length,

@@ -1,16 +1,78 @@
 import { CORE_CHAPTERS } from "./addresses.js";
 
-export async function readActiveTicketChapterIds(ticketHub) {
+const CHAPTER_STATE_CACHE_TTL_MS = 5_000;
+const chapterStateCache = new Map();
+let ticketHubObjectKeys = new WeakMap();
+let ticketHubObjectKeySequence = 0;
+
+const getTicketHubCacheKey = (ticketHub) => {
+  const address = ticketHub?.target || ticketHub?.address;
+  if (address) return String(address).toLowerCase();
+  if (
+    (typeof ticketHub === "object" && ticketHub !== null) ||
+    typeof ticketHub === "function"
+  ) {
+    if (!ticketHubObjectKeys.has(ticketHub)) {
+      ticketHubObjectKeySequence += 1;
+      ticketHubObjectKeys.set(
+        ticketHub,
+        `ticket-hub:${ticketHubObjectKeySequence}`,
+      );
+    }
+    return ticketHubObjectKeys.get(ticketHub);
+  }
+  return "ticket-hub:missing";
+};
+
+export function clearTicketChapterStateCache() {
+  chapterStateCache.clear();
+  ticketHubObjectKeys = new WeakMap();
+  ticketHubObjectKeySequence = 0;
+}
+
+export async function readTicketChapterStates(
+  ticketHub,
+  { force = false } = {},
+) {
   if (typeof ticketHub?.chapterActive !== "function") {
     throw new Error("TicketHub does not expose chapterActive().");
   }
 
-  const states = await Promise.all(
+  const cacheKey = getTicketHubCacheKey(ticketHub);
+  const now = Date.now();
+  const cached = chapterStateCache.get(cacheKey);
+  if (!force && cached && (cached.inFlight || cached.expiresAt > now)) {
+    return cached.promise;
+  }
+
+  const promise = Promise.all(
     CORE_CHAPTERS.map(async (chapter) => ({
       chapterId: chapter.chapterId,
       active: Boolean(await ticketHub.chapterActive(chapter.chapterId)),
     })),
   );
+  const entry = {
+    promise,
+    inFlight: true,
+    expiresAt: Number.POSITIVE_INFINITY,
+  };
+  chapterStateCache.set(cacheKey, entry);
+
+  try {
+    const states = await promise;
+    entry.inFlight = false;
+    entry.expiresAt = Date.now() + CHAPTER_STATE_CACHE_TTL_MS;
+    return states;
+  } catch (error) {
+    if (chapterStateCache.get(cacheKey) === entry) {
+      chapterStateCache.delete(cacheKey);
+    }
+    throw error;
+  }
+}
+
+export async function readActiveTicketChapterIds(ticketHub, options) {
+  const states = await readTicketChapterStates(ticketHub, options);
 
   return states
     .filter((chapter) => chapter.active)

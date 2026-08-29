@@ -8,10 +8,7 @@ const ABI = Array.isArray(BiggiNftRewardsReaderABI)
   ? BiggiNftRewardsReaderABI
   : [];
 
-export default function useNftRewardsReader(
-  providerOverride,
-  addressOverride,
-) {
+export default function useNftRewardsReader(providerOverride, addressOverride) {
   const [data, setData] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
@@ -47,9 +44,10 @@ export default function useNftRewardsReader(
         mainContract: status.main ?? null,
         VRFRouter: status.vrfRouter ?? null,
         owner: status.owner ?? null,
+        registry: status.registry ?? null,
         nextEventId: status.nextEventId ?? null,
         nextRewardId: status.nextRewardId ?? null,
-        totalMinted: status.totalRewardsCreated ?? null,
+        totalRewardsCreated: status.totalRewardsCreated ?? null,
         name: status.name ?? null,
         symbol: status.symbol ?? null,
       };

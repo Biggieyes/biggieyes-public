@@ -6,7 +6,7 @@ import {
   getArchiveProvider,
   getRpcUrls,
   getSharedFallbackProvider,
-  resetSharedFallbackProvider,
+  resetSharedFallbackProvider as resetSharedFallbackProviderCache,
 } from "./rpcProviders";
 
 let provider = null;
@@ -40,6 +40,11 @@ export async function getChainId() {
   }
 }
 
+export function resetSharedFallbackProvider() {
+  provider = null;
+  resetSharedFallbackProviderCache();
+}
+
 export {
   createArchiveProvider,
   createFallbackProvider,
@@ -47,7 +52,6 @@ export {
   getArchiveProvider,
   getRpcUrls,
   getSharedFallbackProvider,
-  resetSharedFallbackProvider,
 };
 
 export default getProvider();

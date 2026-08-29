@@ -86,19 +86,18 @@ async function getLogsWithShortCache(provider, request) {
   return promise;
 }
 
-function normalizeLogProvider(provider) {
-  if (!provider) return provider;
+function getLogProviderCandidates(provider) {
+  if (!provider) return [];
   const configs = Array.isArray(provider?.providerConfigs)
     ? provider.providerConfigs
     : null;
-  if (!configs?.length) return provider;
-  for (const config of configs) {
-    const candidate = config?.provider;
-    if (candidate && typeof candidate.getLogs === "function") {
-      return candidate;
-    }
-  }
-  return provider;
+  if (!configs?.length) return [provider];
+  const candidates = configs
+    .map((config) => config?.provider)
+    .filter(
+      (candidate) => candidate && typeof candidate.getLogs === "function",
+    );
+  return candidates.length ? candidates : [provider];
 }
 
 const PRUNED_LOOKBACK_DEFAULT = 10_000;
@@ -251,8 +250,21 @@ export async function queryLogsBatched(
   } else if (!provider || isInjectedProvider) {
     provider = getProvider();
   }
-  // Avoid FallbackProvider fan-out for eth_getLogs; one log scan should use one RPC.
-  provider = normalizeLogProvider(provider);
+  // Avoid fan-out for eth_getLogs, but retain sequential endpoint failover.
+  let logProviders = getLogProviderCandidates(provider);
+  let logProviderIndex = 0;
+  provider = logProviders[0] || provider;
+  const replaceLogProviderPool = (source) => {
+    logProviders = getLogProviderCandidates(source);
+    logProviderIndex = 0;
+    provider = logProviders[0] || source;
+  };
+  const rotateLogProvider = () => {
+    if (logProviderIndex + 1 >= logProviders.length) return false;
+    logProviderIndex += 1;
+    provider = logProviders[logProviderIndex];
+    return Boolean(provider);
+  };
   const baseFilter = {
     address: filter?.address || contract?.target || contract?.address,
   };
@@ -351,6 +363,13 @@ export async function queryLogsBatched(
       );
       const code = err?.code ?? err?.error?.code ?? null;
       const combinedMsg = `${msg} ${infoMsg}`.toLowerCase();
+      const status = Number(
+        err?.status ??
+          err?.httpStatus ??
+          err?.info?.status ??
+          err?.info?.httpStatus ??
+          0,
+      );
       const isPruned = code === -32701 || /history has been pruned/i.test(msg);
       const isInvalidRange =
         (code === -32000 && /invalid block range/i.test(msg)) ||
@@ -362,8 +381,13 @@ export async function queryLogsBatched(
       const isUnsupportedMethod =
         Number(code) === 35 &&
         /method is not available on freetier/i.test(combinedMsg);
-      const isRateLimit =
-        code === -32005 || /too many requests/i.test(msg);
+      const isRateLimit = code === -32005 || /too many requests/i.test(msg);
+      const isTransientNetwork =
+        ["NETWORK_ERROR", "SERVER_ERROR", "TIMEOUT"].includes(String(code)) ||
+        [408, 425, 429, 500, 502, 503, 504].includes(status) ||
+        /failed to fetch|network error|request failed|timed out|timeout|connection refused|service unavailable|gateway timeout/i.test(
+          combinedMsg,
+        );
       if (isUnsupportedMethod) {
         return out;
       }
@@ -404,6 +428,10 @@ export async function queryLogsBatched(
         return out;
       }
       if (isRateLimit) {
+        if (rotateLogProvider()) {
+          rateLimitStreak = 0;
+          continue;
+        }
         rateLimitStreak += 1;
         if (rateLimitStreak >= MAX_RATE_LIMIT_RETRIES) {
           if (archiveProvider) forceRecentOnly = true;
@@ -415,7 +443,7 @@ export async function queryLogsBatched(
         if (archiveProvider && !downgradedFromArchive) {
           downgradedFromArchive = true;
           forceRecentOnly = true;
-          provider = normalizeLogProvider(getProvider());
+          replaceLogProviderPool(getProvider({ forceRefresh: true }));
           try {
             const latest = await provider.getBlockNumber();
             const lookback =
@@ -435,6 +463,9 @@ export async function queryLogsBatched(
           await sleep(800 + rateLimitStreak * 400);
         }
         batch = Math.max(1, Math.floor(batch / 2));
+        continue;
+      }
+      if (isTransientNetwork && rotateLogProvider()) {
         continue;
       }
       if (batch <= 1) throw err;
@@ -466,4 +497,3 @@ export async function mapLimit(items, limit, mapper) {
   await Promise.all(workers);
   return ret;
 }
-

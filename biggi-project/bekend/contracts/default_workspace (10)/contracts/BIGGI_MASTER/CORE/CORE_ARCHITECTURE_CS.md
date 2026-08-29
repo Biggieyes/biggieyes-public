@@ -104,6 +104,9 @@ Centralni `BiggiTicketHub` pouziva `receiveMintShareForChapter(chapterId)`, poku
   - volitelně používá `registry`
   - pro mystery randomness používá `BiggiVRFRouter`
 
+Aktuální dosažitelnost jednotlivých větví a mainnet omezení jsou ověřena v
+[`NFT_REWARDS_CONSISTENCY_AUDIT_2026-08-28_CS.md`](NFT_REWARDS_CONSISTENCY_AUDIT_2026-08-28_CS.md).
+
 ### 3.5 Final-gate kontrolni invarianty
 
 Aktualni `scripts/master/checkMasterStatus.js` v strict modu kontroluje tyto prime vazby:
@@ -307,7 +310,12 @@ Strict gate navic kontroluje:
 - `BiggiTreasury.ecosystemBiggiCallers(BiggiTicketHub/BiggiMain2) == true`
 - `BiggiReserveV4.notifyCallers(BiggiTreasury) == true`
 
-## 9. Shrnutí
+## 9. Navazující NFT Rewards dokumentace
+
+- `NFT_REWARDS_CONSISTENCY_AUDIT_2026-08-28_CS.md`
+- `NFT_REWARDS_V2_DEPLOYMENT_RUNBOOK_CS.md`
+
+## 10. Shrnutí
 
 `CORE` není monolitický NFT kontrakt. Je to modulární chapter-based systém, kde:
 

@@ -182,6 +182,81 @@ describe("ecosystem mainnet mappers", () => {
     );
   });
 
+  it("renders all Token / DEX charts when liquidity history exists", () => {
+    const { container } = render(
+      React.createElement(TokenDexTab, {
+        tokenDexSnapshot: {
+          token: {
+            address: addr(11),
+            decimals: 18,
+            totalSupply: 1_000_000n * ONE,
+            cap: 10_000_000n * ONE,
+            remainingMintable: 9_000_000n * ONE,
+            balances: {
+              reserve: ONE,
+              liquidityVault: 2n * ONE,
+              treasury: 3n * ONE,
+              DRIPDistributor: 4n * ONE,
+              tokenREWARDS: 5n * ONE,
+            },
+          },
+          dex: {
+            weth: addr(12),
+            pair: {
+              address: addr(13),
+              token0: addr(12),
+              token1: addr(11),
+              reserves: {
+                native: 5n * ONE,
+                token: 8_000n * ONE,
+              },
+              totalSupply: 7n * ONE,
+            },
+          },
+          derived: {
+            priceNativePerToken: 0.000625,
+            priceTokenPerNative: 1_600,
+          },
+        },
+        dexHistory: {
+          dexSeries: [
+            {
+              time: "Earlier",
+              reserveNative: 4,
+              reserveBiggi: 7_000,
+              price: 0.000571,
+            },
+            {
+              time: "Now",
+              reserveNative: 5,
+              reserveBiggi: 8_000,
+              price: 0.000625,
+            },
+          ],
+          pricePoints: [
+            { label: "Earlier", value: 0.000571 },
+            { label: "Now", value: 0.000625 },
+          ],
+          biggiReservePoints: [
+            { label: "Earlier", value: 7_000 },
+            { label: "Now", value: 8_000 },
+          ],
+          reservePoints: [
+            { label: "Earlier", value: 4 },
+            { label: "Now", value: 5 },
+          ],
+        },
+      }),
+    );
+
+    expect(container.querySelectorAll(".token-dex-tab__chart")).toHaveLength(4);
+    expect(container.querySelectorAll(".simple-chart__svg")).toHaveLength(1);
+    expect(container.querySelectorAll(".line-chart__svg")).toHaveLength(3);
+    expect(
+      container.querySelectorAll(".simple-chart__empty, .line-chart__empty"),
+    ).toHaveLength(0);
+  });
+
   it("formats buyback, treasury, DRIP and distributor snapshots by branch unit", () => {
     const buyback = mapBUYBACKSnapshotToUI({
       BUYBACK: {

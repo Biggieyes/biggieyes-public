@@ -14,6 +14,7 @@ This folder intentionally does not contain secrets, private keys, API keys, wall
 - `POLYGONSCAN_SOURCE_VERIFICATION.md` - exact verification environment and commands.
 - `POLYGONSCAN_CONTRACT_INVENTORY.md` - source-verification inventory summary and canonical evidence file.
 - `POLYGONSCAN_PUBLIC_NAME_TAG_SUBMISSION.md` - live public-tag audit and prepared bulk PolygonScan submission rows.
+- `METAMASK_BLOCKAID_FALSE_POSITIVE_TICKET_HUB.md` - verified TicketHub runtime evidence and ready-to-submit false-positive report.
 - `PRE_LIQUIDITY_AUTOMATION_READINESS_2026-08-19.md` - pre-liquidity readiness and activation order.
 - `PRODUCTION_ACTIVATION_PLAN_CS.md` - canonical five-phase unsigned plan and fork proof.
 - `CRE_STATUS_SNAPSHOT_2026-08-25.json` - current machine-readable support snapshot.
@@ -59,6 +60,14 @@ This folder intentionally does not contain secrets, private keys, API keys, wall
 - Public name tags: `10/63` present; `53` prepared for PolygonScan review.
 - Canonical source-evidence copy: `EVIDENCE/deployment-manifest-polygon.json`
 - Public-tag evidence: `EVIDENCE/polygonscan-public-tags.json`
+
+## Current Wallet Classification Status
+
+- MetaMask currently flags `BiggiTicketHub` during the standard OpenSea ERC-721 approval flow.
+- The deployed runtime exactly matches the source-verified local artifact.
+- OpenSea API v2 decodes the request as `setApprovalForAll(OpenSea Conduit, true)`.
+- Submission evidence: `EVIDENCE/metamask-ticket-hub-false-positive-polygon.json`.
+- Do not bypass the wallet alert; submit the prepared MetaMask and Blockaid false-positive reports first.
 
 ## Important Operational Note
 

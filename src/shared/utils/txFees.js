@@ -1,5 +1,6 @@
-import { JsonRpcProvider, Network, parseUnits } from "ethers";
-import { ACTIVE_CHAIN, getPrimaryRpcUrl, getROProvider } from "./contract";
+import { parseUnits } from "ethers";
+import { getROProvider } from "./contract";
+import { getSharedFallbackProvider } from "../../web3/rpcProviders.js";
 
 const DEFAULT_MIN_PRIORITY_FEE_GWEI = 25;
 const TRUE_VALUES = new Set(["1", "true", "yes", "y", "on"]);
@@ -127,28 +128,10 @@ async function getLegacyGasPrice(provider) {
 function resolveFeeProvider(provider) {
   if (!provider) return null;
   if (!isInjectedProvider(provider)) return provider;
-  const url = getPrimaryRpcUrl();
-  if (url) {
-    try {
-      const network = Network.from({ chainId: ACTIVE_CHAIN.chainId, name: ACTIVE_CHAIN.name });
-      const options = { staticNetwork: network };
-      const fromEnv = parsePositiveNumber(env("VITE_RPC_BATCH_MAX_COUNT"));
-      if (fromEnv != null) {
-        options.batchMaxCount = Math.trunc(fromEnv);
-      } else {
-        try {
-          const host = new URL(String(url)).hostname.toLowerCase();
-          if (host.endsWith(".drpc.org")) {
-            options.batchMaxCount = 3;
-          }
-        } catch {
-          // ignore URL parsing failures
-        }
-      }
-      return new JsonRpcProvider(url, network, options);
-    } catch {
-      // fall back to default RO provider
-    }
+  try {
+    return getSharedFallbackProvider();
+  } catch {
+    // fall back to the legacy read-only provider
   }
   try {
     return getROProvider();

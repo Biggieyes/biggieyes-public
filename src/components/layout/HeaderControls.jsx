@@ -49,7 +49,12 @@ export default function HeaderControls({
             className="metamask-btn-top"
             onClick={connectMetaMask}
             aria-label={
-              hasVerifiedConnection ? "Connected wallet" : "Connect MetaMask"
+              hasVerifiedConnection
+                ? "Change connected MetaMask account"
+                : "Connect MetaMask"
+            }
+            title={
+              hasVerifiedConnection ? "Change MetaMask account" : undefined
             }
           >
             <img

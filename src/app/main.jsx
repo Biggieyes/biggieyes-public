@@ -48,16 +48,6 @@ if (SENTRY_DSN) {
 if (typeof window !== "undefined" && !isBiggiEyesDocsRoute) {
   (async () => {
     try {
-      const { ensurePreferredRpc } = await import(
-        "../shared/utils/rpcConfig.js"
-      );
-      await ensurePreferredRpc();
-    } catch {
-      // ignore
-    }
-  })();
-  (async () => {
-    try {
       const mod = await import("./utils/walletModalFix");
       const installWalletModalFix =
         mod.installWalletModalFix || mod.default || null;
@@ -262,6 +252,5 @@ root.render(
     appWithBoundary
   ),
 );
-
 
 

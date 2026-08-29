@@ -45,6 +45,11 @@
     "abiLength": 90
   },
   {
+    "output": "BiggiNFTRewardsV2.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiNftRewardsV2.sol/BiggiNFTRewardsV2.json",
+    "abiLength": 87
+  },
+  {
     "output": "BiggiVRFRouter.abi.json",
     "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiVrfRouter.sol/BiggiVRFRouter.json",
     "abiLength": 37

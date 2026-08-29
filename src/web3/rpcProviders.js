@@ -2,55 +2,21 @@
 import { FallbackProvider, JsonRpcProvider, Network } from "ethers";
 import {
   ACTIVE_CHAIN,
+  getRpcBatchMaxCount,
+  getRpcFallbackStallTimeoutMs,
   getRpcUrls as getConfiguredRpcUrls,
   getArchiveRpcUrls,
+  isEthersFallbackProviderEnabled,
 } from "../shared/utils/rpcConfig.js";
-
-const BATCH_LIMITED_HOSTS = new Set(["polygon.drpc.org"]);
-
-function env(key) {
-  try {
-    if (typeof import.meta !== "undefined" && import.meta.env)
-      return import.meta.env[key];
-  } catch {
-    // ignore env lookup errors
-  }
-  try {
-    if (typeof process !== "undefined" && process.env) return process.env[key];
-  } catch {
-    // ignore process env lookup errors
-  }
-  return undefined;
-}
-
-function resolveBatchMaxCount(url) {
-  const raw = env("VITE_RPC_BATCH_MAX_COUNT");
-  const fromEnv = Number(raw);
-  if (Number.isFinite(fromEnv) && fromEnv > 0) return Math.trunc(fromEnv);
-  if (!url) return undefined;
-  try {
-    const host = new URL(url).hostname.toLowerCase();
-    if (BATCH_LIMITED_HOSTS.has(host) || host.endsWith(".drpc.org")) return 3;
-  } catch {
-    // ignore URL parsing failures
-  }
-  return undefined;
-}
-
-function shouldUseEthersFallbackProvider() {
-  const raw = String(env("VITE_ENABLE_ETHERS_FALLBACK_PROVIDER") || "")
-    .trim()
-    .toLowerCase();
-  return raw === "1" || raw === "true";
-}
 
 function makeStaticProvider(url, chainId = ACTIVE_CHAIN.chainId) {
   const network = Network.from({ chainId, name: ACTIVE_CHAIN.name });
   // staticNetwork avoids repeated chainId detection on flaky/public RPCs
   // ethers v6 expects a Network object for staticNetwork (not boolean)
-  const batchMaxCount = resolveBatchMaxCount(url);
-  const options = { staticNetwork: network };
-  if (batchMaxCount) options.batchMaxCount = batchMaxCount;
+  const options = {
+    staticNetwork: network,
+    batchMaxCount: getRpcBatchMaxCount(url),
+  };
   return new JsonRpcProvider(url, network, options);
 }
 
@@ -76,13 +42,15 @@ export function createFallbackProvider(urls, chainId = ACTIVE_CHAIN.chainId) {
       "No RPC URLs configured (set VITE_JSON_RPC_URL or VITE_POLYGON_RPC_URL)",
     );
   if (list.length === 1) return createJsonRpcProvider(list[0], chainId);
-  if (!shouldUseEthersFallbackProvider())
+  if (!isEthersFallbackProviderEnabled())
     return createJsonRpcProvider(list[0], chainId);
+
+  const stallTimeout = getRpcFallbackStallTimeoutMs();
 
   const configs = list.map((url, index) => ({
     provider: makeStaticProvider(url, chainId),
     priority: index + 1,
-    stallTimeout: 1500,
+    stallTimeout,
     weight: 1,
   }));
 
@@ -101,13 +69,15 @@ export function createArchiveProvider(urls, chainId = ACTIVE_CHAIN.chainId) {
   const list = Array.isArray(urls) && urls.length ? urls : [];
   if (!list.length) return null;
   if (list.length === 1) return createJsonRpcProvider(list[0], chainId);
-  if (!shouldUseEthersFallbackProvider())
+  if (!isEthersFallbackProviderEnabled())
     return createJsonRpcProvider(list[0], chainId);
+
+  const stallTimeout = getRpcFallbackStallTimeoutMs(2000);
 
   const configs = list.map((url, index) => ({
     provider: makeStaticProvider(url, chainId),
     priority: index + 1,
-    stallTimeout: 2500,
+    stallTimeout,
     weight: 1,
   }));
 
@@ -125,14 +95,25 @@ export function createArchiveProvider(urls, chainId = ACTIVE_CHAIN.chainId) {
 let _sharedFallback = null;
 let _sharedArchive = null;
 
+function destroyProvider(provider) {
+  try {
+    const result = provider?.destroy?.();
+    if (result && typeof result.catch === "function") result.catch(() => {});
+  } catch {
+    // ignore provider cleanup failures
+  }
+}
+
 export function getSharedFallbackProvider({ forceRefresh = false } = {}) {
   if (!_sharedFallback || forceRefresh) {
+    if (forceRefresh) destroyProvider(_sharedFallback);
     _sharedFallback = createFallbackProvider();
   }
   return _sharedFallback;
 }
 
 export function resetSharedFallbackProvider() {
+  destroyProvider(_sharedFallback);
   _sharedFallback = null;
 }
 
@@ -140,6 +121,7 @@ export function getArchiveProvider({ forceRefresh = false } = {}) {
   const urls = getArchiveRpcUrls();
   if (!urls.length) return null;
   if (!_sharedArchive || forceRefresh) {
+    if (forceRefresh) destroyProvider(_sharedArchive);
     _sharedArchive = createArchiveProvider(urls);
   }
   return _sharedArchive;
@@ -150,4 +132,3 @@ export function getRpcUrls() {
 }
 
 export default getSharedFallbackProvider();
-

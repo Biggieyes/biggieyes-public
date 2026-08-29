@@ -303,7 +303,7 @@ const REWARDSWidget = ({
             alignItems: "center",
             width: "100%",
             backgroundImage:
-              'linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.45) 100%), url("/images/bg-tab0.png")',
+              'linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.45) 100%), url("/images/bg-tab0.webp")',
             backgroundSize: "cover, cover",
             backgroundPosition: "center, center",
             backgroundRepeat: "no-repeat, no-repeat",
@@ -766,4 +766,3 @@ const REWARDSWidget = ({
 };
 
 export default REWARDSWidget;
-

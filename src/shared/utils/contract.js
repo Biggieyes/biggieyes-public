@@ -1,14 +1,26 @@
 // src/utils/contract.js
 // Ethers v6 helpers and contract factories
-import { BrowserProvider, Contract, FallbackProvider, JsonRpcProvider, Network, parseEther, formatEther } from "ethers";
+import {
+  BrowserProvider,
+  Contract,
+  FallbackProvider,
+  JsonRpcProvider,
+  Network,
+  parseEther,
+  formatEther,
+} from "ethers";
 import { ADDR, CORE_CHAPTERS, getCoreChapter } from "./addresses.js";
+import { readTicketChapterStates } from "./ticketChapters.js";
 import {
   POLYGON_RPC,
   ACTIVE_CHAIN,
   PUBLIC_POLYGON_RPCS,
   getWalletRpcUrls,
   getPreferredRpc,
+  getRpcBatchMaxCount,
+  getRpcFallbackStallTimeoutMs,
   getRpcUrls,
+  isEthersFallbackProviderEnabled,
   setPreferredRpc,
 } from "./rpcConfig.js";
 import {
@@ -187,7 +199,13 @@ export function _secureRandomInt(maxExclusive) {
   return Math.floor(Math.random() * maxExclusive);
 }
 
-export { ADDR, ACTIVE_CHAIN, POLYGON_RPC, PUBLIC_POLYGON_RPCS, getWalletRpcUrls };
+export {
+  ADDR,
+  ACTIVE_CHAIN,
+  POLYGON_RPC,
+  PUBLIC_POLYGON_RPCS,
+  getWalletRpcUrls,
+};
 
 let _roProvider = undefined;
 let _roProviderCacheKey = "";
@@ -261,29 +279,15 @@ export function getPrimaryRpcUrl() {
 
 function _mkRpcProvider(url) {
   // Plain provider is more tolerant of flaky RPCs than batch in some gateways.
-  const network = Network.from({ chainId: ACTIVE_CHAIN.chainId, name: ACTIVE_CHAIN.name });
-  const options = { staticNetwork: network };
-  const fromEnv = Number(_env("VITE_RPC_BATCH_MAX_COUNT"));
-  if (Number.isFinite(fromEnv) && fromEnv > 0) {
-    options.batchMaxCount = Math.trunc(fromEnv);
-  } else {
-    try {
-      const host = new URL(String(url || "")).hostname.toLowerCase();
-      if (host.endsWith(".drpc.org")) {
-        options.batchMaxCount = 3;
-      }
-    } catch {
-      // ignore URL parsing failures
-    }
-  }
+  const network = Network.from({
+    chainId: ACTIVE_CHAIN.chainId,
+    name: ACTIVE_CHAIN.name,
+  });
+  const options = {
+    staticNetwork: network,
+    batchMaxCount: getRpcBatchMaxCount(url),
+  };
   return new JsonRpcProvider(url, network, options);
-}
-
-function _useEthersFallbackProvider() {
-  const raw = String(_env("VITE_ENABLE_ETHERS_FALLBACK_PROVIDER") || "")
-    .trim()
-    .toLowerCase();
-  return raw === "1" || raw === "true";
 }
 
 function _resolveROProviderMaxAgeMs() {
@@ -321,7 +325,7 @@ export function getROProvider() {
   const hasSelectedAddress = Boolean(ethereum?.selectedAddress);
   const isConnected = Boolean(
     hasSelectedAddress ||
-      (typeof ethereum?.isConnected === "function" && ethereum.isConnected()),
+    (typeof ethereum?.isConnected === "function" && ethereum.isConnected()),
   );
   const preferInjected = preferInjectedEnv && isConnected;
   const forceRpc = _env("VITE_FORCE_RPC") === "1";
@@ -373,17 +377,17 @@ export function getROProvider() {
     return _cacheROProvider(_mkRpcProvider(urls[0]), cacheKey);
   }
 
-  // ethers@6.16 FallbackProvider can throw "invalid numeric value (%internal)"
-  // when one backend fails while resolving fuzzy quorum (e.g. getBlockNumber).
-  // Keep it opt-in until upstream behavior is stable.
-  if (!_useEthersFallbackProvider()) {
+  // Keep an explicit opt-out for diagnostics, but make resilient reads the default.
+  if (!isEthersFallbackProviderEnabled()) {
     return _cacheROProvider(_mkRpcProvider(urls[0]), cacheKey);
   }
+
+  const stallTimeout = getRpcFallbackStallTimeoutMs();
 
   const configs = urls.map((url, index) => ({
     provider: _mkRpcProvider(url),
     priority: index + 1,
-    stallTimeout: 1500,
+    stallTimeout,
     weight: 1,
   }));
 
@@ -537,10 +541,7 @@ export async function ensurePolygon(externalProvider) {
     return true;
   } catch (err) {
     const code = err?.code ?? err?.data?.originalError?.code;
-    if (
-      code === 4902 ||
-      /unrecognized chain/i.test(err?.message || "")
-    ) {
+    if (code === 4902 || /unrecognized chain/i.test(err?.message || "")) {
       await syncPolygonRpcIfNeeded(provider, { force: true });
       await provider.request({
         method: "wallet_switchEthereumChain",
@@ -548,7 +549,10 @@ export async function ensurePolygon(externalProvider) {
       });
       return true;
     }
-    console.warn(`ensurePolygon: failed to switch to ${ACTIVE_CHAIN.name}`, err);
+    console.warn(
+      `ensurePolygon: failed to switch to ${ACTIVE_CHAIN.name}`,
+      err,
+    );
     throw err;
   }
 }
@@ -595,9 +599,9 @@ const _mkRO = (addr, abi, providerOverride) => {
 const _isSigner = (value) =>
   Boolean(
     value &&
-      typeof value === "object" &&
-      typeof value.getAddress === "function" &&
-      typeof value.signMessage === "function",
+    typeof value === "object" &&
+    typeof value.getAddress === "function" &&
+    typeof value.signMessage === "function",
   );
 
 const _resolveSigner = async (signerProvider) => {
@@ -867,9 +871,7 @@ export const getLiquidityHelperRO = (provider) =>
 
 export const getReserveTreasuryReaderRO = (provider) => {
   const addr =
-    ADDR.RESERVE_TREASURY_READER ||
-    ADDR.RESERVE_READER ||
-    ADDR.TREASURY_READER;
+    ADDR.RESERVE_TREASURY_READER || ADDR.RESERVE_READER || ADDR.TREASURY_READER;
   if (!addr)
     throw new Error(
       "Reserve/Treasury reader address not configured (RESERVE_TREASURY_READER).",
@@ -895,33 +897,43 @@ export const getReaderRO = (provider) => {
   return _mkRO(addr, ABI_READER, provider);
 };
 
-export async function getFrontendSnapshotLiteActive(readerOverride) {
-  const reader = readerOverride || getReaderRO();
+const FRONTEND_SNAPSHOT_CACHE_TTL_MS = 5_000;
+const frontendSnapshotCache = new Map();
+
+const normalizeFrontendSnapshot = (raw, charactersIndex = 6) => [
+  raw?.ticketPriceWei ?? raw?.[0] ?? 0n,
+  raw?.ticketMinted_ ?? raw?.ticketMinted ?? raw?.[1] ?? 0n,
+  raw?.biggiMinted_ ?? raw?.biggiMinted ?? raw?.[2] ?? 0n,
+  raw?.currentBlockPrices ?? raw?.[3] ?? [],
+  raw?.blocksMinted ?? raw?.[4] ?? [],
+  raw?.bgsMinted ?? raw?.[5] ?? [],
+  raw?.charactersMinted_ ??
+    raw?.charactersMinted ??
+    raw?.[charactersIndex] ??
+    0n,
+];
+
+export function clearFrontendSnapshotCache() {
+  frontendSnapshotCache.clear();
+}
+
+async function loadFrontendSnapshotLiteActive(reader, explicitChapterId) {
   const ticketHub = getReadOnlyTicketHub();
-  const chapterStates = await Promise.all(
-    CORE_CHAPTERS.map(async (chapter) => {
-      try {
-        return {
-          chapterId: chapter.chapterId,
-          active: Boolean(await ticketHub.chapterActive(chapter.chapterId)),
-        };
-      } catch {
-        return { chapterId: chapter.chapterId, active: null };
-      }
-    }),
-  );
-  if (chapterStates.some((chapter) => chapter.active == null)) {
-    throw new Error("Stats unavailable because CORE chapter state could not be read.");
+  let selectedChapterId = Number(explicitChapterId);
+  if (
+    !CORE_CHAPTERS.some((chapter) => chapter.chapterId === selectedChapterId)
+  ) {
+    const chapterStates = await readTicketChapterStates(ticketHub);
+    const activeChapterIds = chapterStates
+      .filter((chapter) => chapter.active)
+      .map((chapter) => chapter.chapterId);
+    if (activeChapterIds.length > 1) {
+      throw new Error(
+        `Stats unavailable because multiple CORE chapters are active: ${activeChapterIds.join(", ")}`,
+      );
+    }
+    selectedChapterId = activeChapterIds[0] || CORE_CHAPTERS[0].chapterId;
   }
-  const activeChapterIds = chapterStates
-    .filter((chapter) => chapter.active)
-    .map((chapter) => chapter.chapterId);
-  if (activeChapterIds.length > 1) {
-    throw new Error(
-      `Stats unavailable because multiple CORE chapters are active: ${activeChapterIds.join(", ")}`,
-    );
-  }
-  const selectedChapterId = activeChapterIds[0] || CORE_CHAPTERS[0].chapterId;
   const selectedChapter = getCoreChapter(selectedChapterId);
   const targetMain = selectedChapter?.main || null;
 
@@ -947,11 +959,17 @@ export async function getFrontendSnapshotLiteActive(readerOverride) {
     const res = await tryCall(reader.getFrontendSnapshotLite.bind(reader));
     if (!res?.__error) return res;
   }
+  if (
+    selectedChapterId === CORE_CHAPTERS[0].chapterId &&
+    typeof reader.getFrontendSnapshot === "function"
+  ) {
+    const res = await tryCall(reader.getFrontendSnapshot.bind(reader));
+    if (!res?.__error) return normalizeFrontendSnapshot(res, 9);
+  }
 
   // Fallback: build snapshot directly from main contract to avoid reader reverts.
   const main = getReadOnlyChapterMain(selectedChapterId);
-  const safeBn = (v) =>
-    typeof v === "bigint" ? v : BigInt(v || 0);
+  const safeBn = (v) => (typeof v === "bigint" ? v : BigInt(v || 0));
   const [ticketPriceWei, ticketMinted_, biggiMinted_] = await Promise.all([
     ticketHub
       .getTicketPrice?.()
@@ -963,18 +981,12 @@ export async function getFrontendSnapshotLiteActive(readerOverride) {
   const blockPricePromises = [];
   const blockMintPromises = [];
   for (let i = 1; i <= 10; i += 1) {
-    blockPricePromises.push(
-      main.getCurrentBlockPrice?.(i).catch(() => 0n),
-    );
-    blockMintPromises.push(
-      main.getBlockMintCount?.(i).catch(() => 0n),
-    );
+    blockPricePromises.push(main.getCurrentBlockPrice?.(i).catch(() => 0n));
+    blockMintPromises.push(main.getBlockMintCount?.(i).catch(() => 0n));
   }
   const bgMintPromises = [];
   for (let j = 0; j < 10; j += 1) {
-    bgMintPromises.push(
-      main.backgroundMintCounts?.(j).catch(() => 0n),
-    );
+    bgMintPromises.push(main.backgroundMintCounts?.(j).catch(() => 0n));
   }
 
   const currentBlockPrices = (await Promise.all(blockPricePromises)).map(
@@ -993,6 +1005,51 @@ export async function getFrontendSnapshotLiteActive(readerOverride) {
     bgsMinted,
     charactersMinted,
   ];
+}
+
+export async function getFrontendSnapshotLiteActive(
+  readerOverride,
+  { chapterId = null, force = false } = {},
+) {
+  const reader = readerOverride || getReaderRO();
+  const readerAddress = String(
+    reader?.target ||
+      reader?.address ||
+      ADDR.READER ||
+      ADDR.MAIN_READER ||
+      "reader",
+  ).toLowerCase();
+  const explicitChapterId = Number(chapterId);
+  const chapterKey = CORE_CHAPTERS.some(
+    (chapter) => chapter.chapterId === explicitChapterId,
+  )
+    ? explicitChapterId
+    : "active";
+  const cacheKey = `${readerAddress}:${chapterKey}`;
+  const now = Date.now();
+  const cached = frontendSnapshotCache.get(cacheKey);
+  if (!force && cached && (cached.inFlight || cached.expiresAt > now)) {
+    return cached.promise;
+  }
+
+  const promise = loadFrontendSnapshotLiteActive(reader, explicitChapterId);
+  const entry = {
+    promise,
+    inFlight: true,
+    expiresAt: Number.POSITIVE_INFINITY,
+  };
+  frontendSnapshotCache.set(cacheKey, entry);
+  try {
+    const snapshot = await promise;
+    entry.inFlight = false;
+    entry.expiresAt = Date.now() + FRONTEND_SNAPSHOT_CACHE_TTL_MS;
+    return normalizeFrontendSnapshot(snapshot);
+  } catch (error) {
+    if (frontendSnapshotCache.get(cacheKey) === entry) {
+      frontendSnapshotCache.delete(cacheKey);
+    }
+    throw error;
+  }
 }
 
 /* ---------------- New reader factories (explicit names) ---------------- */
@@ -1176,9 +1233,7 @@ export const getDRIPLMRO = (provider) => {
 export const getDRIPLM = async (signerOverride) => {
   const addr = ADDR.DRIP_LM || null;
   if (!addr) {
-    throw new Error(
-      "DRIPLM address not configured in ADDR (expected DRIP_LM)",
-    );
+    throw new Error("DRIPLM address not configured in ADDR (expected DRIP_LM)");
   }
   return _mkRW(addr, ABI_DRIPLM, signerOverride);
 };
@@ -1193,11 +1248,11 @@ export const fromWei = (bn) => Number(formatEther(bn));
 function _looksLikeProvider(value) {
   return Boolean(
     value &&
-      typeof value === "object" &&
-      (typeof value.getNetwork === "function" ||
-        typeof value.call === "function" ||
-        // ethers v5 providers have this
-        value._isProvider),
+    typeof value === "object" &&
+    (typeof value.getNetwork === "function" ||
+      typeof value.call === "function" ||
+      // ethers v5 providers have this
+      value._isProvider),
   );
 }
 
@@ -1380,9 +1435,7 @@ function _attachHelpers(target, signerMode = false) {
       }
       const prov = signerMode ? getSignerProvider() : getROProvider();
       const addr = ADDR.BUYBACK_AGENT;
-      const bal = await prov
-        .getBalance(addr)
-        .catch(() => 0n);
+      const bal = await prov.getBalance(addr).catch(() => 0n);
       return [bal, 0, 0, 0, 0];
     };
   }

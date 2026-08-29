@@ -1,5 +1,4 @@
 import * as React from "react";
-import { formatEther, parseEther, Contract, BrowserProvider, ZeroAddress } from "ethers";
 import { useContracts } from "./ContractsProvider";
 import {
   queryLogsBatched,
@@ -11,10 +10,15 @@ import {
   getProviderForContract,
   getReadOnlyTicketHub,
   getTicketHub,
+  getVRFRO,
 } from "../shared/utils/contract";
 import { buildFeeOverrides } from "../shared/utils/txFees";
 import { ADDR, CORE_CHAPTERS } from "../shared/utils/addresses.js";
-import { resolveRedeemableTicketForActiveChapter } from "../shared/utils/ticketChapters.js";
+import {
+  readTicketChapterStates,
+  resolveRedeemableTicketForActiveChapter,
+} from "../shared/utils/ticketChapters.js";
+import { readVrfSubscriptionSnapshot } from "../shared/utils/vrfSubscription.js";
 
 const Ctx = React.createContext(null);
 const FULL_HISTORY = isFullHistoryEnabled();
@@ -88,14 +92,7 @@ export function VRFProvider({ children }) {
         const fallbackMain = await mainRO();
         const provider = getProviderForContract(fallbackMain);
         const ticketHub = getReadOnlyTicketHub(provider);
-        const chapterStates = await Promise.all(
-          CORE_CHAPTERS.map(async (chapter) => ({
-            chapterId: chapter.chapterId,
-            active: Boolean(
-              await ticketHub.chapterActive(chapter.chapterId).catch(() => false),
-            ),
-          })),
-        );
+        const chapterStates = await readTicketChapterStates(ticketHub);
         const activeChapterIds = chapterStates
           .filter((chapter) => chapter.active)
           .map((chapter) => chapter.chapterId);
@@ -109,27 +106,67 @@ export function VRFProvider({ children }) {
         let nextParams = params;
         let nextSubscriptionId = subscriptionId;
         let nextSubscriptionMatches = null;
+        let nextSubscriptionRuntime = null;
         let nextHistory = [];
         let nextLast = last;
 
         // params
         try {
-          const [kh, conf, n, gas, sub] = await Promise.all([
-            c.keyHash().catch(() => ""),
-            c.requestConfirmations().catch(() => 3),
-            c.numWords().catch(() => 1),
-            c.callbackGasLimit().catch(() => 300000),
-            c.s_subscriptionId?.().catch?.(() => "") ?? "",
+          const vrf = getVRFRO(provider);
+          const collectionAddress = String(c?.target || c?.address || "");
+          const chapter = CORE_CHAPTERS.find(
+            (item) => item.chapterId === activeChapterId,
+          );
+          const [
+            kh,
+            conf,
+            n,
+            gas,
+            sub,
+            coord,
+            routerOwner,
+            routerMain,
+            collectionApproved,
+            ticketHubPaused,
+          ] = await Promise.all([
+            vrf?.keyHash
+              ? vrf.keyHash().catch(() => "")
+              : c.keyHash().catch(() => ""),
+            vrf?.requestConfirmations
+              ? vrf.requestConfirmations().catch(() => 3)
+              : c.requestConfirmations().catch(() => 3),
+            vrf?.numWords
+              ? vrf.numWords().catch(() => 1)
+              : c.numWords().catch(() => 1),
+            vrf?.callbackGasLimit
+              ? vrf.callbackGasLimit().catch(() => 300000)
+              : c.callbackGasLimit().catch(() => 300000),
+            vrf?.subId
+              ? vrf.subId().catch(() => "")
+              : (c.s_subscriptionId?.().catch?.(() => "") ?? ""),
+            vrf?.coordinator ? vrf.coordinator().catch(() => "") : "",
+            vrf?.owner ? vrf.owner().catch(() => "") : "",
+            vrf?.main ? vrf.main().catch(() => "") : "",
+            vrf?.approvedMains && collectionAddress
+              ? vrf.approvedMains(collectionAddress).catch(() => null)
+              : null,
+            ticketHub?.paused ? ticketHub.paused().catch(() => null) : null,
           ]);
           const expectedKeyHash = ADDR.VRF_KEY_HASH || "";
           const expectedCoordinator = ADDR.VRF_COORDINATOR || "";
           const expectedSubId = ADDR.VRF_SUB_ID || "";
           const liveKeyHash = kh || "";
           const liveSubId = sub?.toString?.() || "";
+          const liveCoordinator = coord || "";
           const keyHashMatches =
             liveKeyHash && expectedKeyHash
               ? String(liveKeyHash).toLowerCase() ===
                 String(expectedKeyHash).toLowerCase()
+              : null;
+          const coordinatorMatches =
+            liveCoordinator && expectedCoordinator
+              ? String(liveCoordinator).toLowerCase() ===
+                String(expectedCoordinator).toLowerCase()
               : null;
           nextParams = {
             keyHash: liveKeyHash || expectedKeyHash,
@@ -139,13 +176,24 @@ export function VRFProvider({ children }) {
             confirmations: Number(conf ?? 3),
             numWords: Number(n ?? 1),
             callbackGasLimit: Number(gas ?? 300000),
-            coordinator: expectedCoordinator,
-            coordinatorLive: "",
+            coordinator: liveCoordinator || expectedCoordinator,
+            coordinatorLive: liveCoordinator,
             expectedCoordinator,
-            coordinatorMatches: null,
-            collection: c?.target || c?.address || ADDR.COLLECTION_VRF || "",
+            coordinatorMatches,
+            collection: collectionAddress || ADDR.COLLECTION_VRF || "",
+            collectionApproved,
+            activeChapterName: chapter?.displayName || "",
+            activeChapterIds,
             ticketHub: ADDR.TICKET_HUB || "",
+            ticketHubPaused,
             vrfRouter: ADDR.VRF_ROUTER || "",
+            routerOwner,
+            routerOwnerMatches:
+              routerOwner && ADDR.EXPECT_OWNER
+                ? String(routerOwner).toLowerCase() ===
+                  String(ADDR.EXPECT_OWNER).toLowerCase()
+                : null,
+            routerMain,
             activeChapterId,
             activeChapterCount: activeChapterIds.length,
           };
@@ -154,6 +202,13 @@ export function VRFProvider({ children }) {
             liveSubId && expectedSubId
               ? String(liveSubId) === String(expectedSubId)
               : null;
+          nextSubscriptionRuntime = await readVrfSubscriptionSnapshot({
+            provider,
+            coordinator: liveCoordinator || expectedCoordinator,
+            subId: nextSubscriptionId,
+            routerAddress: ADDR.VRF_ROUTER,
+            expectedOwner: ADDR.EXPECT_OWNER,
+          });
           setParams(nextParams);
           setSubscriptionId(nextSubscriptionId);
         } catch {}
@@ -196,28 +251,66 @@ export function VRFProvider({ children }) {
             const rid =
               (rl.args?.requestId || rl.args?.[1])?.toString?.() || "";
             const f = byReq.get(rid);
+            const randomWord =
+              (f?.args?.randomWord || f?.args?.[2])?.toString?.() || "";
             rows.push({
               requestId: rid,
               status: f ? "fulfilled" : "pending",
               tx: f?.transactionHash || "",
               blockNumber: f?.blockNumber || rl.blockNumber,
               time: "",
+              words: randomWord ? 1 : 0,
+              randomWords: randomWord ? [randomWord] : [],
             });
           }
           rows.sort((a, b) => a.blockNumber - b.blockNumber);
           nextHistory = rows.slice(-25).reverse();
-          const fulfilled = nextHistory.find(
-            (row) => String(row.status).toLowerCase() === "fulfilled",
-          );
-          if (fulfilled) {
+          const pendingRequest = await c
+            .pendingMintRequest(userAddr)
+            .catch(() => 0n);
+          const pendingRequestId = pendingRequest?.toString?.() || "0";
+          if (pendingRequestId !== "0") {
+            let requestedAt = "";
+            let requestedAtMs = null;
+            try {
+              const timestamp = await c.pendingRequestedAt(pendingRequest);
+              const seconds = Number(timestamp?.toString?.() || 0);
+              if (seconds > 0) {
+                requestedAtMs = seconds * 1000;
+                requestedAt = new Date(requestedAtMs).toLocaleString();
+              }
+            } catch {}
             nextLast = {
-              requestId: fulfilled.requestId || "",
-              status: "fulfilled",
-              requestedAt: fulfilled.time || "",
-              txHash: fulfilled.tx || "",
-              blockNumber: fulfilled.blockNumber,
-              randomWords: fulfilled.randomWords || [],
+              requestId: pendingRequestId,
+              status: "pending",
+              requestedAt,
+              requestedAtMs,
+              txHash: "",
+              blockNumber: undefined,
+              randomWords: [],
             };
+          } else {
+            const fulfilled = nextHistory.find(
+              (row) => String(row.status).toLowerCase() === "fulfilled",
+            );
+            if (fulfilled) {
+              nextLast = {
+                requestId: fulfilled.requestId || "",
+                status: "fulfilled",
+                requestedAt: fulfilled.time || "",
+                txHash: fulfilled.tx || "",
+                blockNumber: fulfilled.blockNumber,
+                randomWords: fulfilled.randomWords || [],
+              };
+            } else {
+              nextLast = {
+                requestId: "",
+                status: "idle",
+                requestedAt: "",
+                txHash: "",
+                randomWords: [],
+              };
+            }
           }
           setHistory(nextHistory);
           setLast(nextLast);
@@ -235,6 +328,7 @@ export function VRFProvider({ children }) {
             id: nextSubscriptionId,
             expectedId: ADDR.VRF_SUB_ID || "",
             matches: nextSubscriptionMatches,
+            ...(nextSubscriptionRuntime || {}),
           },
           params: nextParams,
           last: nextLast,
@@ -348,9 +442,7 @@ export function VRFProvider({ children }) {
           }
         } catch (ownershipErr) {
           if (
-            String(ownershipErr?.message || "").includes(
-              "connected wallet",
-            )
+            String(ownershipErr?.message || "").includes("connected wallet")
           ) {
             throw ownershipErr;
           }
@@ -358,7 +450,9 @@ export function VRFProvider({ children }) {
 
         const redeemFn = ticketHubWrite?.redeemTicket;
         if (typeof redeemFn !== "function") {
-          throw new Error("Redeem function not available on TICKET_HUB contract.");
+          throw new Error(
+            "Redeem function not available on TICKET_HUB contract.",
+          );
         }
         const estimate =
           ticketHubWrite?.estimateGas?.redeemTicket ||
@@ -411,9 +505,7 @@ export function VRFProvider({ children }) {
               typeof chapterMainRead === "function"
                 ? chapterMainRead(chapterId)
                 : await mainRO();
-            return contract
-              .pendingMintRequest(userAddr)
-              .catch(() => BigInt(0));
+            return contract.pendingMintRequest(userAddr).catch(() => BigInt(0));
           }),
         );
         const hasPending = requests.some(

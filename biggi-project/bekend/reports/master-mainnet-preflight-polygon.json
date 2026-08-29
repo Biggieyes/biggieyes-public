@@ -1,6 +1,6 @@
 {
-  "startedAt": "2026-08-19T01:17:38.345Z",
-  "status": "failed",
+  "startedAt": "2026-08-27T23:55:17.117Z",
+  "status": "ok",
   "options": {
     "network": "polygon",
     "envFile": "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\.env.core.polygon",
@@ -19,44 +19,43 @@
     {
       "name": "compile:master",
       "command": "npm run compile:master",
-      "startedAt": "2026-08-19T01:17:38.367Z",
-      "finishedAt": "2026-08-19T01:17:44.526Z",
-      "durationMs": 6159,
+      "startedAt": "2026-08-27T23:55:17.159Z",
+      "finishedAt": "2026-08-27T23:55:25.729Z",
+      "durationMs": 8570,
       "status": 0
     },
     {
       "name": "test:master",
       "command": "npm run test:master",
-      "startedAt": "2026-08-19T01:17:44.526Z",
-      "finishedAt": "2026-08-19T01:19:13.342Z",
-      "durationMs": 88816,
+      "startedAt": "2026-08-27T23:55:25.729Z",
+      "finishedAt": "2026-08-27T23:57:32.766Z",
+      "durationMs": 127037,
       "status": 0
     },
     {
       "name": "test:master:fork",
       "status": "skipped",
       "reason": "not requested",
-      "startedAt": "2026-08-19T01:19:13.342Z",
-      "finishedAt": "2026-08-19T01:19:13.342Z",
+      "startedAt": "2026-08-27T23:57:32.766Z",
+      "finishedAt": "2026-08-27T23:57:32.766Z",
       "durationMs": 0
     },
     {
       "name": "validate:master:polygon:strict",
       "command": "node scripts/master/validateMainnetEnv.js --network polygon --strict --env C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\.env.core.polygon --expect-liquidity-path keeper_proxy --expect-owner 0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
-      "startedAt": "2026-08-19T01:19:13.342Z",
-      "finishedAt": "2026-08-19T01:19:13.840Z",
-      "durationMs": 498,
+      "startedAt": "2026-08-27T23:57:32.766Z",
+      "finishedAt": "2026-08-27T23:57:33.837Z",
+      "durationMs": 1071,
       "status": 0
     },
     {
       "name": "check:master:polygon",
       "command": "npx hardhat run --config hardhat.biggi-master.cjs scripts/master/checkMasterStatus.js --network polygon",
-      "startedAt": "2026-08-19T01:19:13.840Z",
-      "finishedAt": "2026-08-19T01:19:39.516Z",
-      "durationMs": 25675,
-      "status": 1
+      "startedAt": "2026-08-27T23:57:33.837Z",
+      "finishedAt": "2026-08-27T23:59:20.766Z",
+      "durationMs": 106929,
+      "status": 0
     }
   ],
-  "error": "check:master:polygon failed with status 1",
-  "finishedAt": "2026-08-19T01:19:39.516Z"
+  "finishedAt": "2026-08-27T23:59:20.766Z"
 }

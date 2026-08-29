@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isRateLimitedRpcError } from "../src/shared/utils/rpcErrors";
 
-describe("isRateLimitedRpcError", () => {
-  it("detects -32005 rate limit errors", () => {
+import { isRateLimitedRpcError } from "../src/shared/utils/rpcErrors.js";
+
+describe("RPC error classification", () => {
+  it("detects direct -32005 rate limit errors", () => {
     expect(
       isRateLimitedRpcError({
         code: -32005,
@@ -11,7 +12,7 @@ describe("isRateLimitedRpcError", () => {
     ).toBe(true);
   });
 
-  it("detects -32603 with rate limited message", () => {
+  it("detects rate-limit messages with generic provider codes", () => {
     expect(
       isRateLimitedRpcError({
         code: -32603,
@@ -20,7 +21,7 @@ describe("isRateLimitedRpcError", () => {
     ).toBe(true);
   });
 
-  it("detects http 429 inside nested payloads", () => {
+  it("detects HTTP 429 inside nested provider payloads", () => {
     expect(
       isRateLimitedRpcError({
         code: "UNKNOWN_ERROR",
@@ -34,13 +35,29 @@ describe("isRateLimitedRpcError", () => {
     ).toBe(true);
   });
 
-  it("returns false for unrelated errors", () => {
+  it("detects Infura rate limits nested in a malformed mixed batch", () => {
+    const error = {
+      code: "BAD_DATA",
+      message: "missing response for request",
+      value: [
+        { id: 18, jsonrpc: "2.0", result: "0x01" },
+        {
+          code: -32005,
+          data: { see: "https://infura.io/dashboard" },
+          message: "Too Many Requests",
+        },
+      ],
+    };
+
+    expect(isRateLimitedRpcError(error)).toBe(true);
+  });
+
+  it("does not classify ordinary contract reverts as rate limits", () => {
     expect(
       isRateLimitedRpcError({
-        code: -32603,
-        message: "execution reverted: NotOwner",
+        code: "CALL_EXCEPTION",
+        shortMessage: "execution reverted",
       }),
     ).toBe(false);
   });
 });
-

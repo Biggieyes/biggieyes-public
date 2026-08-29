@@ -188,7 +188,7 @@ Draw-GradientCard -Graphics $graphics -X 1285 -Y 390 -Width 1030 -Height 200 -Ra
 Draw-GradientCard -Graphics $graphics -X 2400 -Y 390 -Width 1030 -Height 200 -Radius 20 `
   -ColorA "#3fa9f5" -ColorB "#1d3d6a" `
   -Title "READER: NFT_REWARDS_READER" `
-  -Lines @("NFT reward status snapshots.", "Rank claims and minted reward views.") `
+  -Lines @("NFT reward event snapshots.", "Assignment and claim status views.") `
   -TitleFont $cardTitleFont -TextFont $cardTextFont -TitleBrush $textBrush -TextBrush $mutedBrush
 
 Draw-GradientCard -Graphics $graphics -X 170 -Y 720 -Width 1030 -Height 250 -Radius 22 `
@@ -206,7 +206,7 @@ Draw-GradientCard -Graphics $graphics -X 1285 -Y 720 -Width 1030 -Height 250 -Ra
 Draw-GradientCard -Graphics $graphics -X 2400 -Y 720 -Width 1030 -Height 250 -Radius 22 `
   -ColorA "#ff6ad5" -ColorB "#5a2148" `
   -Title "CONTRACT: NFT_REWARDS" `
-  -Lines @("Manages NFT reward eligibility.", "Character / leaderboard / mystery flows.", "Mints or releases NFT rewards.") `
+  -Lines @("Manages NFT reward events.", "Manual assignment / VRF mystery flows.", "Mints assigned NFT rewards on claim.") `
   -TitleFont $cardTitleFont -TextFont $cardTextFont -TitleBrush $textBrush -TextBrush $mutedBrush
 
 Draw-GradientCard -Graphics $graphics -X 170 -Y 1085 -Width 1030 -Height 220 -Radius 20 `

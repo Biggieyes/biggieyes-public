@@ -1,0 +1,553 @@
+:root {
+  --panel-control-height: 40px;
+  --panel-control-radius: 8px;
+  --panel-control-yellow: #ffe800;
+  --panel-control-cyan: #62e8df;
+  --panel-control-text: #f4f7fb;
+  --panel-control-muted: #b8c0cf;
+  --panel-control-bg: #0c1017;
+  --panel-control-bg-hover: #151a23;
+  --panel-control-border: rgba(255, 232, 0, 0.34);
+  --panel-control-border-hover: rgba(255, 232, 0, 0.78);
+  --panel-control-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 7px 16px rgba(0, 0, 0, 0.3);
+  --panel-control-shadow-hover:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 10px 22px rgba(0, 0, 0, 0.38),
+    0 0 0 1px rgba(255, 232, 0, 0.13);
+}
+
+/* Shared command buttons used across rewards, VRF, community and tokenomics. */
+.biggi-skin .biggi-btn,
+.moderator-center .biggi-btn,
+.admin-panel__backdrop .biggi-btn,
+.ui-btn,
+.user-panel__btn,
+.collection-grid__btn,
+.collection-grid__action-btn,
+.rewards-grid__btn,
+.gallery__pager-btn,
+.bw-button,
+.bgw-button,
+.wc-cta,
+.live-chat-panel__send,
+.live-chat-panel__refresh,
+.refresh-button,
+.token-dex-tab__refresh,
+.liquidity-tab__refresh,
+.biggi-button {
+  box-sizing: border-box;
+  min-height: var(--panel-control-height);
+  max-width: 100%;
+  padding: 9px 14px;
+  border-radius: var(--panel-control-radius) !important;
+  border-width: 1px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0 !important;
+  text-align: center;
+  text-wrap: balance;
+  cursor: pointer;
+  box-shadow: var(--panel-control-shadow);
+  transition:
+    transform 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    color 150ms ease,
+    filter 150ms ease,
+    opacity 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.biggi-skin .biggi-btn,
+.moderator-center .biggi-btn,
+.admin-panel__backdrop .biggi-btn,
+.biggi-skin .biggi-btn--ghost,
+.moderator-center .biggi-btn--ghost,
+.admin-panel__backdrop .biggi-btn--ghost,
+.user-panel__btn--ghost,
+.collection-grid__btn--ghost,
+.rewards-grid__btn--ghost,
+.gallery__pager-btn,
+.live-chat-panel__refresh,
+.refresh-button,
+.token-dex-tab__refresh,
+.liquidity-tab__refresh,
+.biggi-button {
+  color: var(--panel-control-text);
+  border-color: var(--panel-control-border);
+  background: linear-gradient(180deg, #151a22, var(--panel-control-bg));
+}
+
+.biggi-skin .biggi-btn--accent,
+.moderator-center .biggi-btn--accent,
+.admin-panel__backdrop .biggi-btn--accent,
+.user-panel__btn--accent,
+.rewards-grid__btn--accent,
+.collection-grid__btn:not(.collection-grid__btn--ghost),
+.collection-grid__action-btn--primary,
+.ui-btn--primary,
+.wc-cta,
+.bw-button,
+.bgw-button {
+  color: #101208;
+  border-color: rgba(255, 244, 104, 0.88);
+  background: linear-gradient(180deg, #fff259, #ffe000);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.52),
+    0 8px 18px rgba(255, 224, 0, 0.2);
+  text-shadow: none;
+}
+
+.biggi-skin .biggi-btn--c {
+  color: #071513;
+  border-color: rgba(134, 255, 242, 0.82);
+  background: linear-gradient(180deg, #82f8eb, #37d7cb);
+}
+
+.biggi-skin .biggi-btn--v {
+  color: #100d18;
+  border-color: rgba(205, 181, 255, 0.76);
+  background: linear-gradient(180deg, #c6a8ff, #9b7bea);
+}
+
+.biggi-skin .biggi-btn--y {
+  color: #161006;
+  border-color: rgba(255, 230, 142, 0.84);
+  background: linear-gradient(180deg, #ffe693, #ffc45c);
+}
+
+:is(
+    .biggi-btn,
+    .ui-btn,
+    .user-panel__btn,
+    .collection-grid__btn,
+    .collection-grid__action-btn,
+    .rewards-grid__btn,
+    .gallery__pager-btn,
+    .bw-button,
+    .bgw-button,
+    .wc-cta,
+    .live-chat-panel__send,
+    .live-chat-panel__refresh,
+    .refresh-button,
+    .token-dex-tab__refresh,
+    .liquidity-tab__refresh,
+    .biggi-button
+  ):not(:disabled):not([aria-disabled="true"]):hover {
+  transform: translateY(-1px);
+  border-color: var(--panel-control-border-hover);
+  box-shadow: var(--panel-control-shadow-hover);
+  filter: brightness(1.06);
+}
+
+:is(
+    .biggi-btn,
+    .ui-btn,
+    .user-panel__btn,
+    .collection-grid__btn,
+    .collection-grid__action-btn,
+    .rewards-grid__btn,
+    .gallery__pager-btn,
+    .bw-button,
+    .bgw-button,
+    .wc-cta,
+    .live-chat-panel__send,
+    .live-chat-panel__refresh,
+    .refresh-button,
+    .token-dex-tab__refresh,
+    .liquidity-tab__refresh,
+    .biggi-button
+  ):not(:disabled):not([aria-disabled="true"]):active {
+  transform: translateY(0);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.28);
+}
+
+/* Segmented navigation and chapter selectors. */
+.rewards-grid.biggi-skin .view-tabs .tab-button,
+.moderator-center .view-tabs .tab-button,
+.rewards-grid__tab,
+.collection-grid__tab,
+.collection-grid__chapter-button,
+.rewards-panel__chapter-button,
+.gallery__chapter-button {
+  box-sizing: border-box;
+  min-height: var(--panel-control-height);
+  max-width: 100%;
+  padding: 9px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.11) !important;
+  border-radius: var(--panel-control-radius) !important;
+  background: linear-gradient(180deg, #151a22, #0b0f16) !important;
+  color: var(--panel-control-muted) !important;
+  font-family: inherit;
+  font-size: 0.8rem !important;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0 !important;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition:
+    transform 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    color 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.rewards-grid.biggi-skin .view-tabs .tab-button:hover,
+.moderator-center .view-tabs .tab-button:hover,
+.rewards-grid__tab:hover,
+.collection-grid__tab:hover,
+.collection-grid__chapter-button:hover,
+.rewards-panel__chapter-button:hover,
+.gallery__chapter-button:hover {
+  transform: translateY(-1px);
+  border-color: var(--panel-control-border-hover) !important;
+  color: var(--panel-control-text) !important;
+  box-shadow: var(--panel-control-shadow-hover);
+}
+
+.rewards-grid.biggi-skin .view-tabs .tab-button.active,
+.moderator-center .view-tabs .tab-button.active,
+.rewards-grid__tab.is-active,
+.collection-grid__tab.is-active,
+.collection-grid__chapter-button.is-active,
+.rewards-panel__chapter-button.is-active,
+.gallery__chapter-button.is-active {
+  --panel-control-active: var(
+    --rewards-active-accent,
+    var(
+      --collection-active-accent,
+      var(--eco-active-accent, var(--panel-control-yellow))
+    )
+  );
+  --panel-control-active-soft: var(
+    --rewards-active-accent-soft,
+    var(
+      --collection-active-accent-soft,
+      var(--eco-active-accent-soft, rgba(255, 232, 0, 0.18))
+    )
+  );
+  --panel-control-active-glow: var(
+    --rewards-active-accent-glow,
+    var(
+      --collection-active-accent-glow,
+      var(--eco-active-accent-glow, rgba(255, 232, 0, 0.13))
+    )
+  );
+  transform: none;
+  border-color: var(--panel-control-active) !important;
+  background: linear-gradient(
+    180deg,
+    var(--panel-control-active-soft),
+    rgba(12, 16, 23, 0.98)
+  ) !important;
+  color: var(--panel-control-active) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 7px 18px var(--panel-control-active-glow) !important;
+}
+
+.collection-grid__chapter-button,
+.rewards-panel__chapter-button {
+  min-height: 44px;
+}
+
+.gallery__chapter-button {
+  min-height: 60px;
+}
+
+/* Compact icon controls keep a stable square hit area. */
+:is(
+  .panel-info-btn,
+  .collection-grid__close-btn,
+  .rewards-grid__close-btn,
+  .bw-info-button,
+  .bgw-info-button,
+  .live-info-button,
+  .fullscreen-panel__close,
+  .wc-fullscreen-close,
+  .ls-info-modal-close-button,
+  .panel-info-modal__close
+) {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 !important;
+  border-radius: var(--panel-control-radius) !important;
+  font-family: inherit;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0 !important;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 7px 16px rgba(0, 0, 0, 0.28);
+  transition:
+    transform 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    color 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+:is(
+    .panel-info-btn,
+    .collection-grid__close-btn,
+    .rewards-grid__close-btn,
+    .bw-info-button,
+    .bgw-info-button,
+    .live-info-button,
+    .fullscreen-panel__close,
+    .wc-fullscreen-close,
+    .ls-info-modal-close-button,
+    .panel-info-modal__close
+  ):not(:disabled):hover {
+  transform: translateY(-1px);
+  border-color: var(--panel-control-cyan) !important;
+  color: var(--panel-control-cyan) !important;
+  background: rgba(98, 232, 223, 0.09) !important;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.34),
+    0 0 0 2px rgba(98, 232, 223, 0.11);
+}
+
+/* LiveStats menu controls retain their category colors with cleaner depth. */
+.live-menu-btn.live-menu-btn--legacy {
+  min-height: var(--panel-control-height);
+  border-radius: var(--panel-control-radius) !important;
+  background: linear-gradient(180deg, #121821, #080c12) !important;
+  font-family: inherit;
+  font-weight: 800;
+  letter-spacing: 0 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 8px 18px rgba(0, 0, 0, 0.34);
+  transition:
+    transform 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    color 150ms ease;
+}
+
+.live-menu-btn.live-menu-btn--legacy:not(:disabled):hover,
+.live-menu-btn.live-menu-btn--legacy.is-active {
+  transform: translateY(-1px);
+  background: linear-gradient(180deg, #1a222d, #0b1018) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 10px 22px rgba(0, 0, 0, 0.4),
+    0 0 0 1px currentColor;
+}
+
+.user-panel__text-button {
+  min-height: 32px;
+  padding: 5px 9px;
+  border: 1px solid rgba(98, 232, 223, 0.28);
+  border-radius: 6px;
+  background: rgba(98, 232, 223, 0.05);
+  color: var(--panel-control-cyan);
+  font-family: inherit;
+  font-weight: 800;
+  letter-spacing: 0;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.user-panel__text-button:not(:disabled):hover {
+  border-color: rgba(98, 232, 223, 0.72);
+  background: rgba(98, 232, 223, 0.11);
+  color: #c5fff9;
+}
+
+/* Admin uses inline semantic colors; normalize geometry and interaction only. */
+.admin-panel__backdrop button {
+  box-sizing: border-box;
+  min-height: 38px;
+  max-width: 100%;
+  border-radius: 7px !important;
+  font-family: inherit;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0 !important;
+  text-wrap: balance;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 6px 14px rgba(0, 0, 0, 0.26);
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    filter 150ms ease,
+    opacity 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.admin-panel__backdrop button:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.11),
+    0 9px 20px rgba(0, 0, 0, 0.34);
+  filter: brightness(1.08);
+}
+
+.admin-panel__backdrop .admin-panel__tabs > button {
+  min-height: var(--panel-control-height);
+  padding: 9px 13px !important;
+}
+
+/* Accessible keyboard and unavailable states across every panel family. */
+:is(
+  .biggi-btn,
+  .ui-btn,
+  .user-panel__btn,
+  .user-panel__text-button,
+  .collection-grid__btn,
+  .collection-grid__action-btn,
+  .rewards-grid__btn,
+  .gallery__pager-btn,
+  .bw-button,
+  .bgw-button,
+  .wc-cta,
+  .live-chat-panel__send,
+  .live-chat-panel__refresh,
+  .refresh-button,
+  .token-dex-tab__refresh,
+  .liquidity-tab__refresh,
+  .biggi-button,
+  .tab-button,
+  .rewards-grid__tab,
+  .collection-grid__tab,
+  .collection-grid__chapter-button,
+  .rewards-panel__chapter-button,
+  .gallery__chapter-button,
+  .live-menu-btn,
+  .panel-info-btn,
+  .collection-grid__close-btn,
+  .rewards-grid__close-btn,
+  .bw-info-button,
+  .bgw-info-button,
+  .live-info-button,
+  .fullscreen-panel__close,
+  .wc-fullscreen-close,
+  .ls-info-modal-close-button,
+  .panel-info-modal__close
+):focus-visible,
+.admin-panel__backdrop button:focus-visible {
+  outline: 2px solid var(--panel-control-cyan) !important;
+  outline-offset: 2px;
+}
+
+:is(
+  .biggi-btn,
+  .ui-btn,
+  .user-panel__btn,
+  .user-panel__text-button,
+  .collection-grid__btn,
+  .collection-grid__action-btn,
+  .rewards-grid__btn,
+  .gallery__pager-btn,
+  .bw-button,
+  .bgw-button,
+  .wc-cta,
+  .live-chat-panel__send,
+  .live-chat-panel__refresh,
+  .refresh-button,
+  .token-dex-tab__refresh,
+  .liquidity-tab__refresh,
+  .biggi-button,
+  .tab-button,
+  .rewards-grid__tab,
+  .collection-grid__tab,
+  .collection-grid__chapter-button,
+  .rewards-panel__chapter-button,
+  .gallery__chapter-button,
+  .live-menu-btn
+):disabled,
+:is(.biggi-btn, .ui-btn, .tab-button, .live-menu-btn)[aria-disabled="true"],
+.admin-panel__backdrop button:disabled {
+  transform: none !important;
+  opacity: 0.46 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  filter: saturate(0.45) !important;
+}
+
+@media (max-width: 600px) {
+  .rewards-grid.biggi-skin .view-tabs .tab-button,
+  .moderator-center .view-tabs .tab-button,
+  .rewards-grid__tab,
+  .collection-grid__tab {
+    min-height: 40px;
+    padding: 8px 11px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .biggi-skin .biggi-btn,
+  .moderator-center .biggi-btn,
+  .user-panel__btn,
+  .collection-grid__btn,
+  .rewards-grid__btn,
+  .ui-btn {
+    min-height: 42px;
+  }
+}
+
+@media (hover: none) {
+  :is(
+    .biggi-btn,
+    .ui-btn,
+    .user-panel__btn,
+    .collection-grid__btn,
+    .collection-grid__action-btn,
+    .rewards-grid__btn,
+    .gallery__pager-btn,
+    .tab-button,
+    .rewards-grid__tab,
+    .collection-grid__tab,
+    .collection-grid__chapter-button,
+    .rewards-panel__chapter-button,
+    .gallery__chapter-button,
+    .live-menu-btn
+  ):hover {
+    transform: none;
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(
+    .biggi-btn,
+    .ui-btn,
+    .user-panel__btn,
+    .user-panel__text-button,
+    .collection-grid__btn,
+    .collection-grid__action-btn,
+    .rewards-grid__btn,
+    .gallery__pager-btn,
+    .tab-button,
+    .rewards-grid__tab,
+    .collection-grid__tab,
+    .collection-grid__chapter-button,
+    .rewards-panel__chapter-button,
+    .gallery__chapter-button,
+    .live-menu-btn
+  ),
+  .admin-panel__backdrop button {
+    transition: none !important;
+  }
+}

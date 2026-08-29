@@ -1,0 +1,127 @@
+.admin-panel__backdrop,
+.admin-panel__backdrop * {
+  box-sizing: border-box;
+}
+
+.admin-panel__topbar-actions,
+.admin-panel__tabs {
+  flex-wrap: wrap;
+}
+
+.admin-panel__scroller {
+  min-width: 0;
+  padding-bottom: 18px;
+}
+
+.admin-panel__access-warning {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 209, 102, 0.45);
+  border-radius: 8px;
+  background: rgba(255, 209, 102, 0.1);
+  color: #ffe29a;
+  line-height: 1.45;
+}
+
+.admin-panel__section-block {
+  margin-bottom: 18px;
+}
+
+.admin-panel__table-scroll {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  border-radius: 8px;
+}
+
+.admin-panel__data-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f6f7fb;
+  font-size: 13px;
+}
+
+.admin-panel__data-table th,
+.admin-panel__data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: left;
+}
+
+.admin-panel__data-table th {
+  background: rgba(255, 232, 0, 0.12);
+  color: #ffe800;
+}
+
+.admin-panel__data-table td:nth-child(n + 3) {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+
+.admin-panel__backdrop input,
+.admin-panel__backdrop textarea,
+.admin-panel__backdrop select {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.admin-panel__backdrop button:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.48 !important;
+}
+
+.admin-panel__backdrop .admin-kv-table td,
+.admin-panel__backdrop .admin-kv-table th {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .admin-panel__backdrop {
+    padding: 10px !important;
+  }
+
+  .admin-panel__topbar {
+    align-items: flex-start !important;
+    flex-direction: column;
+  }
+
+  .admin-panel__topbar-actions {
+    width: 100%;
+  }
+
+  .admin-panel__core-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .admin-panel__form-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-panel__backdrop {
+    padding: 6px !important;
+  }
+
+  .admin-panel__tabs {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .admin-panel__tabs > button {
+    flex: 0 0 auto;
+  }
+
+  .admin-panel__topbar-actions > span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .admin-panel__backdrop .admin-kv-table {
+    min-width: 520px;
+  }
+}

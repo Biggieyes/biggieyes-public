@@ -1,8 +1,8 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "blockNumber": 92602468,
-  "checkedAt": "2026-08-24T21:58:55.394Z",
+  "blockNumber": 92774712,
+  "checkedAt": "2026-08-27T21:45:02.420Z",
   "checks": [
     {
       "label": "Polygon chainId",

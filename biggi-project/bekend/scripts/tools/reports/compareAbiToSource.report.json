@@ -1,6 +1,6 @@
 {
   "summary": {
-    "totalContracts": 25,
+    "totalContracts": 26,
     "contractsWithIssues": 0
   },
   "contracts": {
@@ -366,6 +366,36 @@
       "missingEventsInSource": [],
       "publicVars": [
         "nftRewards"
+      ]
+    },
+    "BiggiNFTRewardsV2": {
+      "abiFile": "contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\CORE\\CORE_ABI\\BiggiNFTRewardsV2.abi.json",
+      "sourceFile": "contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\CORE\\BiggiNftRewardsV2.sol",
+      "abiFunctionCount": 39,
+      "srcFunctionCount": 13,
+      "missingInAbi": [],
+      "missingInSource": [],
+      "abiEventCount": 13,
+      "srcEventCount": 8,
+      "missingEventsInAbi": [],
+      "missingEventsInSource": [
+        {
+          "name": "OwnershipTransferStarted",
+          "arity": 2
+        }
+      ],
+      "publicVars": [
+        "nextRewardId",
+        "nextEventId",
+        "events",
+        "rewardTokenUri",
+        "assignedTo",
+        "claimed",
+        "vrfRequestToEvent",
+        "vrfRequestedAt",
+        "usedVrfRequestIds",
+        "vrfRouter",
+        "mysteryRetryDelay"
       ]
     },
     "BiggiPriceMathLib": {

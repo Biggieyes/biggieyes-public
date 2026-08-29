@@ -1,7 +1,7 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "createdAt": "2026-08-25T01:37:34.151Z",
+  "createdAt": "2026-08-27T21:45:10.729Z",
   "okForDeployOnly": true,
   "okForPublicLaunch": false,
   "checks": [

@@ -16,6 +16,7 @@ import {
   getInjectedProviderCandidates,
   isMetaMaskExtensionMissingError,
   isLikelyMetaMaskSdkProvider,
+  requestInjectedAccounts,
   startInjectedProviderDiscovery,
 } from "@/shared/utils/injectedProviders";
 import {
@@ -237,7 +238,9 @@ export function Web3Provider({ children }) {
       let eth = null;
       for (const candidate of candidates) {
         try {
-          const accounts = await candidate.request({ method: "eth_requestAccounts" });
+          const accounts = await requestInjectedAccounts(candidate, {
+            forceSelection: true,
+          });
           if (Array.isArray(accounts) && accounts[0]) {
             eth = candidate;
             break;
@@ -257,8 +260,8 @@ export function Web3Provider({ children }) {
         !isLikelyMetaMaskSdkProvider(window.ethereum)
       ) {
         try {
-          const accounts = await window.ethereum.request({
-            method: "eth_requestAccounts",
+          const accounts = await requestInjectedAccounts(window.ethereum, {
+            forceSelection: true,
           });
           if (Array.isArray(accounts) && accounts[0]) {
             eth = window.ethereum;

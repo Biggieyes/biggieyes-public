@@ -1,6 +1,6 @@
 # BIGGI initial liquidity runbook
 
-Stav overen 2026-08-25. Tento postup je urceny pro prvni BIGGI/WPOL likviditu na Polygon mainnetu.
+Stav overen 2026-08-28. Tento postup je urceny pro prvni BIGGI/WPOL likviditu na Polygon mainnetu.
 
 ## Finalni parametry
 
@@ -36,7 +36,7 @@ npm.cmd run rehearse:initial-liquidity:fork
 
 Prvni prikaz pouze cte Polygon. Druhy provede celou sekvenci na lokalnim mainnet forku s testovacim POL zustatkem.
 
-Aktualni dry-run je blokovan pouze chybejicim zustatkem na owner wallet. Zjisteny zustatek je `1.824440220558510091 POL`; potreba je `5000 POL + 1 POL post-seed sync + gas`. Fork rehearsal z 2026-08-25 prosel:
+Dry-run na bloku `92779891` je pro liquidity fazi blokovan pouze chybejicim zustatkem na owner wallet. Zjisteny zustatek je `0.001702373944068 POL`; potreba je `5000 POL + 1 POL post-seed sync + gas`. Pred execution vzdy znovu spustit oba prikazy vyse, protoze zustatek i stav pairu se mohou zmenit. Fork rehearsal z 2026-08-28 prosel:
 
 - pair zacal prazdny;
 - 8 milionu BIGGI bylo odecteno z Reserve, nikoli z marketing alokace;
@@ -46,7 +46,7 @@ Aktualni dry-run je blokovan pouze chybejicim zustatkem na owner wallet. Zjisten
 
 ## Finalni execution
 
-Execution provest tesne pred public launchem. Wallet musi mit vice nez `5 001 POL`; rozdil proti aktualnimu zustatku je `4 999.175559779441489909 POL` plus gas rezerva.
+Execution provest tesne pred public launchem. Wallet musi mit vice nez `5 001 POL`; proti snapshotu na bloku `92779891` chybi `5 000.998297626055932 POL` plus gas rezerva.
 
 ```powershell
 $env:LIQUIDITY_OWNER="0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2"

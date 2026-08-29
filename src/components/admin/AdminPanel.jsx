@@ -8,7 +8,12 @@ import {
   isAddress,
 } from "ethers";
 import { ADDR, CORE_CHAPTERS } from "@/shared/utils/addresses.js";
-import { getROProvider } from "@/shared/utils/contract";
+import { ensurePolygon, getROProvider } from "@/shared/utils/contract";
+import {
+  assertAdminSigner,
+  getAdminAccessState,
+  POLYGON_MAINNET_CHAIN_ID,
+} from "@/shared/utils/adminAccess.js";
 import { BiggiCommunityCenter } from "@/config/abi/index.js";
 import AdminDashboard from "@/components/AdminDashboard";
 import {
@@ -16,12 +21,19 @@ import {
   submitCommunityPollAdminAction,
 } from "@/shared/services/communityVotingApi.js";
 import { supabase, supabaseReady } from "../../services/chatClient";
+import "./AdminPanel.css";
+import "../../styles/panel-buttons.css";
 
 const COMMUNITY_CENTER_ABI = Array.isArray(BiggiCommunityCenter)
   ? BiggiCommunityCenter
   : [];
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const V2_PAIR_ABI = [
+  "function token0() view returns (address)",
+  "function token1() view returns (address)",
+  "function getReserves() view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)",
+];
 const CHAT_API_BASE = import.meta.env.VITE_CHAT_API_BASE || "";
 const CHAT_API_TIMEOUT_MS = (() => {
   const parsed = Number(
@@ -235,9 +247,11 @@ export default function AdminPanel({
   const [healthData, setHealthData] = React.useState({
     rpc: null,
     contracts: [],
+    dex: null,
   });
   const [healthLoading, setHealthLoading] = React.useState(false);
   const [healthError, setHealthError] = React.useState("");
+  const [walletChainId, setWalletChainId] = React.useState(null);
   const actions = React.useMemo(
     () =>
       new Proxy(actionsInput || {}, {
@@ -327,6 +341,52 @@ export default function AdminPanel({
   );
   const frontendAvailable = Boolean(data?.frontend);
   const ownerWallet = String(data?.frontend?.wallet || "");
+  const expectedChainId = Number(data?.chainId || ADDR.CHAIN_ID || 137);
+  const expectedOwner = String(
+    data?.owner || ADDR.EXPECT_OWNER || ADDR.OWNER || "",
+  );
+  const adminAccess = React.useMemo(
+    () =>
+      getAdminAccessState({
+        walletAddress: ownerWallet,
+        ownerAddress: expectedOwner,
+        chainId: walletChainId,
+        expectedChainId,
+      }),
+    [expectedChainId, expectedOwner, ownerWallet, walletChainId],
+  );
+
+  React.useEffect(() => {
+    if (!open || typeof window === "undefined" || !window.ethereum?.request) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    const readChainId = async () => {
+      const value = await window.ethereum
+        .request({ method: "eth_chainId" })
+        .catch(() => null);
+      if (!cancelled) {
+        setWalletChainId(
+          typeof value === "string"
+            ? Number.parseInt(value, 16)
+            : Number(value),
+        );
+      }
+    };
+    const onChainChanged = (value) => {
+      setWalletChainId(
+        typeof value === "string" ? Number.parseInt(value, 16) : Number(value),
+      );
+    };
+
+    readChainId();
+    window.ethereum.on?.("chainChanged", onChainChanged);
+    return () => {
+      cancelled = true;
+      window.ethereum.removeListener?.("chainChanged", onChainChanged);
+    };
+  }, [open]);
 
   // pending stavy pro tlačítka + status info
   const [pending, setPending] = React.useState({});
@@ -376,7 +436,8 @@ export default function AdminPanel({
   ]);
 
   // --- Handlers helpers ---
-  const run = async (key, fn) => {
+  const run = React.useCallback(
+    async (key, fn) => {
     if (!fn) return;
     try {
       setPending((p) => ({ ...p, [key]: true }));
@@ -395,7 +456,47 @@ export default function AdminPanel({
       // smazat hlášku po chvíli
       setTimeout(() => setStatusMsg(""), 3500);
     }
+    },
+    [actions, hasAction],
+  );
+
+  const submitVRFParams = React.useCallback(async () => {
+    const keyHash = String(VRF.keyHash || "").trim();
+    if (!/^0x[0-9a-fA-F]{64}$/.test(keyHash)) {
+      throw new Error("VRF key hash must be a 32-byte hex value");
+    }
+
+    const parsePositiveUint = (value, label, max = null) => {
+      const raw = String(value ?? "").trim();
+      if (!/^\d+$/.test(raw) || BigInt(raw) === 0n) {
+        throw new Error(`${label} must be a positive integer`);
+      }
+      const parsed = BigInt(raw);
+      if (max != null && parsed > max) {
+        throw new Error(`${label} exceeds the contract type limit`);
+      }
+      return parsed.toString();
   };
+
+    await actions.setVRFParams({
+      ...VRF,
+      keyHash,
+      subscriptionId: parsePositiveUint(VRF.subscriptionId, "Subscription ID"),
+      callbackGasLimit: Number(
+        parsePositiveUint(
+          VRF.callbackGasLimit,
+          "Callback gas limit",
+          0xffffffffn,
+        ),
+      ),
+      confirmations: Number(
+        parsePositiveUint(VRF.confirmations, "Confirmations", 0xffffn),
+      ),
+      numWords: Number(
+        parsePositiveUint(VRF.numWords, "Num words", 0xffffffffn),
+      ),
+    });
+  }, [VRF, actions]);
 
   const communityAddress = React.useMemo(
     () => resolveCOMMUNITYCENTERAddress(),
@@ -403,6 +504,42 @@ export default function AdminPanel({
   );
   const communityAvailable = Boolean(
     communityAddress && COMMUNITY_CENTER_ABI.length,
+  );
+  const communityAccess = React.useMemo(
+    () =>
+      getAdminAccessState({
+        walletAddress: ownerWallet,
+        ownerAddress: communityOwner || expectedOwner,
+        chainId: walletChainId,
+        expectedChainId,
+      }),
+    [
+      communityOwner,
+      expectedChainId,
+      expectedOwner,
+      ownerWallet,
+      walletChainId,
+    ],
+  );
+  const canWriteCommunity = communityAvailable && communityAccess.canWrite;
+
+  const getVerifiedAdminSigner = React.useCallback(
+    async (ownerAddress = expectedOwner) => {
+      if (typeof window === "undefined" || !window.ethereum) {
+        throw new Error("Wallet provider not found");
+      }
+      await ensurePolygon(window.ethereum);
+      await window.ethereum.request?.({ method: "eth_requestAccounts" });
+      const provider = new BrowserProvider(window.ethereum, "any");
+      const verified = await assertAdminSigner({
+        provider,
+        ownerAddress,
+        expectedChainId,
+      });
+      setWalletChainId(verified.chainId);
+      return verified;
+    },
+    [expectedChainId, expectedOwner],
   );
 
   const getCommunityContract = React.useCallback(
@@ -413,14 +550,9 @@ export default function AdminPanel({
         throw new Error("Community Center ABI missing");
 
       if (rw) {
-        if (typeof window === "undefined" || !window.ethereum) {
-          throw new Error("Wallet provider not found");
-        }
-        await window.ethereum
-          .request?.({ method: "eth_requestAccounts" })
-          .catch(() => {});
-        const provider = new BrowserProvider(window.ethereum, "any");
-        const signer = await provider.getSigner();
+        const { signer } = await getVerifiedAdminSigner(
+          communityOwner || expectedOwner,
+        );
         return new Contract(communityAddress, COMMUNITY_CENTER_ABI, signer);
       }
 
@@ -434,7 +566,7 @@ export default function AdminPanel({
       if (!provider) throw new Error("Read provider unavailable");
       return new Contract(communityAddress, COMMUNITY_CENTER_ABI, provider);
     },
-    [communityAddress],
+    [communityAddress, communityOwner, expectedOwner, getVerifiedAdminSigner],
   );
 
   const bnToString = (value) => {
@@ -447,26 +579,26 @@ export default function AdminPanel({
   };
 
   const parseUintField = (value, label, required = false) => {
-    if (value === "" || value == null) {
+    const raw = String(value ?? "").trim();
+    if (!raw) {
       if (required) throw new Error(`${label} is required`);
       return "0";
     }
-    const num = Number(value);
-    if (!Number.isFinite(num) || num < 0) {
-      throw new Error(`${label} must be a non-negative number`);
+    if (!/^\d+$/.test(raw)) {
+      throw new Error(`${label} must be a non-negative integer`);
     }
-    return String(Math.floor(num));
+    return BigInt(raw).toString();
   };
 
   const parseDepositField = (value) => {
     if (value === "" || value == null) {
       return BigInt(0);
     }
-    const num = Number(value);
-    if (!Number.isFinite(num) || num < 0) {
+    const raw = String(value).trim();
+    if (!/^\d+(\.\d+)?$/.test(raw)) {
       throw new Error("Deposit must be a non-negative number");
     }
-    return parseEther(String(value));
+    return parseEther(raw);
   };
 
   const formatPolDisplay = (value) => {
@@ -627,15 +759,8 @@ export default function AdminPanel({
   }, []);
 
   const signCommunityAdminPayload = async (payload) => {
-    if (typeof window === "undefined" || !window.ethereum) {
-      throw new Error("Wallet provider not found");
-    }
-    await window.ethereum
-      .request?.({ method: "eth_requestAccounts" })
-      .catch(() => {});
-    const provider = new BrowserProvider(window.ethereum, "any");
-    const signer = await provider.getSigner();
-    const address = await signer.getAddress();
+    const { signer, signerAddress: address } =
+      await getVerifiedAdminSigner(expectedOwner);
     const signature = await signer.signMessage(`community-admin|${payload}`);
     return { address, signature };
   };
@@ -795,19 +920,35 @@ export default function AdminPanel({
       if (!winners.length) {
         throw new Error("At least one winner address is required");
       }
+      if (winners.some((winner) => winner.toLowerCase() === ZERO_ADDRESS)) {
+        throw new Error("Winner address cannot be the zero address");
+      }
+      if (
+        new Set(winners.map((winner) => winner.toLowerCase())).size !==
+        winners.length
+      ) {
+        throw new Error("Winner addresses must be unique");
+      }
       const amountsText = splitListInput(eventAmounts);
       const amounts = amountsText.map((amt) => parseDepositField(amt));
       if (amounts.length !== winners.length) {
         throw new Error("Winners and amounts must have the same item count");
       }
+      if (amounts.some((amount) => amount <= 0n)) {
+        throw new Error("Every winner amount must be greater than zero");
+      }
       if (BigInt(end) <= BigInt(start)) {
         throw new Error("End timestamp must be greater than start timestamp");
       }
 
+      const amountsTotal = amounts.reduce((acc, amount) => acc + amount, 0n);
       const totalPrize =
         String(eventTotalPrize || "").trim() !== ""
           ? parseDepositField(eventTotalPrize)
-          : amounts.reduce((acc, amt) => acc + amt, 0n);
+          : amountsTotal;
+      if (totalPrize !== amountsTotal) {
+        throw new Error("Total prize must equal the sum of winner amounts");
+      }
 
       const args = [title, ipfsHash, start, end, totalPrize, winners, amounts];
       const nextId = await contract.createEvent.staticCall(...args);
@@ -992,16 +1133,8 @@ export default function AdminPanel({
         throw new Error("Message ID is invalid");
       if (action === "edit" && !nextContent)
         throw new Error("New content is required");
-      if (typeof window === "undefined" || !window.ethereum) {
-        throw new Error("Wallet provider not found");
-      }
-
-      await window.ethereum
-        .request?.({ method: "eth_requestAccounts" })
-        .catch(() => {});
-      const provider = new BrowserProvider(window.ethereum, "any");
-      const signer = await provider.getSigner();
-      const address = await signer.getAddress();
+      const { signer, signerAddress: address } =
+        await getVerifiedAdminSigner(expectedOwner);
       const payload = `${action}|${id}|${nextContent || ""}`;
       const signature = await signer.signMessage(payload);
 
@@ -1029,16 +1162,8 @@ export default function AdminPanel({
     run("chat_rules_update", async () => {
       const rulesText = chatRulesDraft.trim();
       if (!rulesText) throw new Error("Rules text is required");
-      if (typeof window === "undefined" || !window.ethereum) {
-        throw new Error("Wallet provider not found");
-      }
-
-      await window.ethereum
-        .request?.({ method: "eth_requestAccounts" })
-        .catch(() => {});
-      const provider = new BrowserProvider(window.ethereum, "any");
-      const signer = await provider.getSigner();
-      const address = await signer.getAddress();
+      const { signer, signerAddress: address } =
+        await getVerifiedAdminSigner(expectedOwner);
       const payload = `rules|${rulesText}`;
       const signature = await signer.signMessage(payload);
 
@@ -1156,6 +1281,7 @@ export default function AdminPanel({
 
   const Row = ({ k, children }) => (
     <div
+      className="admin-panel__form-row"
       style={{
         display: "grid",
         gridTemplateColumns: "180px 1fr",
@@ -1171,10 +1297,12 @@ export default function AdminPanel({
   // === KV TABLE (same look as VRF/Biggi tables) ===
   const KV = ({ items = [] }) => (
     <div
+      className="admin-panel__table-scroll"
       style={{
         border: "1px solid rgba(255,255,255,.08)",
         borderRadius: 14,
-        overflow: "hidden",
+        overflowX: "auto",
+        overflowY: "hidden",
         boxShadow:
           "inset 0 0 0 1px rgba(255,255,255,.03), 0 10px 28px rgba(0,0,0,.45)",
         background:
@@ -1277,11 +1405,6 @@ export default function AdminPanel({
     </div>
   );
 
-  const on =
-    (fn, ...args) =>
-    () =>
-      fn && fn(...args);
-
   const formatChatTime = (value) => {
     if (!value) return "--";
     const d = new Date(value);
@@ -1332,7 +1455,11 @@ export default function AdminPanel({
         label: "DRIP_KEEPER_PROXY",
         address: ADDR.DRIP_KEEPER_PROXY,
       },
-      { key: "DRIP_LM", label: "DRIP_LM", address: ADDR.DRIP_LM },
+      {
+        key: "DRIP_LM",
+        label: "DRIP_LM_V2",
+        address: ADDR.DRIP_LM_V2 || ADDR.DRIP_LM,
+      },
       { key: "FACTORY", label: "FACTORY", address: ADDR.FACTORY },
       { key: "KEEPER_ADDR", label: "KEEPER_ADDR", address: ADDR.KEEPER_ADDR },
       {
@@ -1398,10 +1525,61 @@ export default function AdminPanel({
         label: "BIGGIBUYBACKDRIPSETUP",
         address: ADDR.BIGGIBUYBACKDRIPSETUP,
       },
+      { key: "TICKET_HUB", label: "TICKET_HUB", address: ADDR.TICKET_HUB },
+      { key: "VRF_ROUTER", label: "VRF_ROUTER", address: ADDR.VRF_ROUTER },
+      {
+        key: "SERIES_REGISTRY",
+        label: "SERIES_REGISTRY",
+        address: ADDR.SERIES_REGISTRY || ADDR.REGISTRY,
+      },
+      {
+        key: "CHAPTER_CONTROLLER",
+        label: "CHAPTER_CONTROLLER",
+        address: ADDR.CHAPTER_CONTROLLER,
+      },
+      {
+        key: "MODERATOR_CENTER_V2",
+        label: "MODERATOR_CENTER_V2",
+        address: ADDR.MODERATOR_CENTER_V2,
+      },
+      {
+        key: "TOKEN_REWARDS_EMISSION_CONTROLLER",
+        label: "TOKEN_REWARDS_EMISSION_CONTROLLER",
+        address: ADDR.TOKEN_REWARDS_EMISSION_CONTROLLER,
+      },
+      {
+        key: "LIQUIDITY_ORCHESTRATOR",
+        label: "LIQUIDITY_ORCHESTRATOR",
+        address: ADDR.LIQUIDITY_ORCHESTRATOR,
+      },
+      {
+        key: "SUPPLY_CONTROLLER",
+        label: "SUPPLY_CONTROLLER",
+        address: ADDR.SUPPLY_CONTROLLER,
+      },
+      {
+        key: "SUPPLY_GUARDIAN",
+        label: "SUPPLY_GUARDIAN",
+        address: ADDR.SUPPLY_GUARDIAN,
+      },
+      {
+        key: "DEX_RESERVE_GUARD",
+        label: "DEX_RESERVE_GUARD",
+        address: ADDR.DEX_RESERVE_GUARD,
+      },
     ];
+    const omitted = new Set([
+      "BIGGIBUYBACKDRIPSETUP",
+      "DRIP_KEEPER_PROXY",
+      "KEEPER_ADDR",
+      "LIQUIDITY_AUTOMATION",
+      "LIQUIDITY_SETUP",
+    ]);
     const seen = new Set();
     return items.filter((item) => {
-      const key = item.address || item.key;
+      if (omitted.has(item.key)) return false;
+      if (!item.address || item.address === ZERO_ADDRESS) return false;
+      const key = String(item.address).toLowerCase();
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -1426,6 +1604,11 @@ export default function AdminPanel({
         provider.getNetwork(),
         provider.getBlockNumber(),
       ]);
+      if (Number(network?.chainId) !== expectedChainId) {
+        throw new Error(
+          `Health provider is on chain ${network?.chainId}; expected Polygon ${expectedChainId}`,
+        );
+      }
       const latencyMs = Date.now() - startedAt;
       const rpcUrl =
         provider?.connection?.url ||
@@ -1452,6 +1635,39 @@ export default function AdminPanel({
         }),
       );
 
+      let dex = null;
+      if (ADDR.PAIR && isAddress(ADDR.PAIR)) {
+        try {
+          const pair = new Contract(ADDR.PAIR, V2_PAIR_ABI, provider);
+          const [token0, token1, reserves] = await Promise.all([
+            pair.token0(),
+            pair.token1(),
+            pair.getReserves(),
+          ]);
+          const reserve0 = BigInt(reserves?.reserve0 ?? reserves?.[0] ?? 0);
+          const reserve1 = BigInt(reserves?.reserve1 ?? reserves?.[1] ?? 0);
+          const biggiIsToken0 =
+            String(token0).toLowerCase() === String(ADDR.BIGGI).toLowerCase();
+          const biggiReserve = biggiIsToken0 ? reserve0 : reserve1;
+          const quoteReserve = biggiIsToken0 ? reserve1 : reserve0;
+          const seeded = biggiReserve > 0n && quoteReserve > 0n;
+          dex = {
+            status: seeded
+              ? "seeded"
+              : biggiReserve === 0n && quoteReserve === 0n
+                ? "awaiting-liquidity"
+                : "partial",
+            pair: ADDR.PAIR,
+            token0,
+            token1,
+            biggiReserve: formatEther(biggiReserve),
+            quoteReserve: formatEther(quoteReserve),
+          };
+        } catch (error) {
+          dex = { status: "error", pair: ADDR.PAIR, error: shortErr(error) };
+        }
+      }
+
       setHealthData({
         rpc: {
           chainId: network?.chainId,
@@ -1462,13 +1678,14 @@ export default function AdminPanel({
           lastChecked: new Date().toLocaleString(),
         },
         contracts: checks,
+        dex,
       });
     } catch (err) {
       setHealthError(shortErr(err));
     } finally {
       setHealthLoading(false);
     }
-  }, [healthTargets]);
+  }, [expectedChainId, healthTargets]);
 
   const healthTone = (status) => {
     switch (status) {
@@ -1514,6 +1731,7 @@ export default function AdminPanel({
     ? healthData.contracts
     : [];
   const rpcSnapshot = healthData?.rpc || null;
+  const dexSnapshot = healthData?.dex || null;
 
   React.useEffect(() => {
     if (!open || activeTab !== "chat") return;
@@ -1533,15 +1751,16 @@ export default function AdminPanel({
       if (e.key === "Escape") onClose?.();
       if (
         hasAction("setVRFParams") &&
+        adminAccess.canWrite &&
         e.key === "Enter" &&
         (e.ctrlKey || e.metaKey)
       ) {
-        run("setVRFParams", () => actions.setVRFParams({ ...VRF }));
+        run("setVRFParams", submitVRFParams);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, VRF, actions, hasAction, onClose]);
+  }, [adminAccess.canWrite, open, hasAction, onClose, run, submitVRFParams]);
 
   const tabs = React.useMemo(() => {
     const next = [{ id: "core", label: "Core" }];
@@ -1566,6 +1785,7 @@ export default function AdminPanel({
 
   return (
     <div
+      className="admin-panel__backdrop"
       style={backdrop}
       onClick={onClose}
       role="dialog"
@@ -1573,7 +1793,11 @@ export default function AdminPanel({
       aria-label="Admin panel"
     >
       {/* Sticky topbar */}
-      <div style={topbar} onClick={(e) => e.stopPropagation()}>
+      <div
+        className="admin-panel__topbar"
+        style={topbar}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div style={{ display: "grid", gap: 2 }}>
           <h2
             style={{
@@ -1599,8 +1823,21 @@ export default function AdminPanel({
             guarded admin actions from one control surface.
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div
+          className="admin-panel__topbar-actions"
+          style={{ display: "flex", gap: 8, alignItems: "center" }}
+        >
           <span style={pill}>Owner: {short(data?.owner)}</span>
+          <span style={pill}>
+            {adminAccess.chainMatches
+              ? "Polygon 137"
+              : adminAccess.chainId
+                ? `Wrong chain: ${adminAccess.chainId}`
+                : "Checking network"}
+          </span>
+          <span style={pill}>
+            {adminAccess.ownerMatches ? "Owner wallet" : "Read only"}
+          </span>
           {hasAction("refresh") && (
             <button
               style={smallBtn(true)}
@@ -1618,7 +1855,11 @@ export default function AdminPanel({
       </div>
 
       {/* Scrollable body */}
-      <div style={scroller} onClick={(e) => e.stopPropagation()}>
+      <div
+        className="admin-panel__scroller"
+        style={scroller}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Status line */}
         {statusMsg && (
           <div
@@ -1637,7 +1878,18 @@ export default function AdminPanel({
           </div>
         )}
 
+        {!adminAccess.canWrite && (
+          <div className="admin-panel__access-warning" role="status">
+            {adminAccess.chainId == null
+              ? "Checking the connected wallet network before enabling writes."
+              : !adminAccess.chainMatches
+                ? `Admin writes are locked. Switch the wallet to Polygon mainnet (${expectedChainId}).`
+                : "Admin writes are locked because the connected wallet is not the configured owner."}
+          </div>
+        )}
+
         <div
+          className="admin-panel__tabs"
           style={{
             display: "flex",
             gap: 8,
@@ -1658,6 +1910,7 @@ export default function AdminPanel({
 
         {activeTab === "core" && (
           <div
+            className="admin-panel__core-grid"
             style={{
               display: "grid",
               gridTemplateColumns: "1.1fr 1fr",
@@ -1682,21 +1935,67 @@ export default function AdminPanel({
                   items={[
                     { k: "Network", v: data?.networkLabel || "EVM" },
                     {
-                      k: "Contract",
+                      k: "Active VRF collection",
                       v: short(data?.contractAddress),
                       mono: true,
                       copy: data?.contractAddress,
                     },
-                    { k: "Paused", v: String(!!data?.paused).toUpperCase() },
-                    { k: "Total Supply", v: data?.totalSupply },
-                    { k: "Max Supply", v: data?.maxSupply },
                     {
-                      k: "Ticket Price",
-                      v: data?.ticketPrice ? `${data.ticketPrice} POL` : "—",
+                      k: "Paired public collection",
+                      v: short(data?.publicContractAddress),
+                      mono: true,
+                      copy: data?.publicContractAddress,
                     },
                     {
-                      k: "REWARDS Pool",
-                      v: data?.REWARDSPool ? `${data.REWARDSPool} POL` : "—",
+                      k: "TicketHub",
+                      v: short(data?.ticketHub?.address),
+                      mono: true,
+                      copy: data?.ticketHub?.address,
+                    },
+                    {
+                      k: "TicketHub paused",
+                      v:
+                        data?.ticketHub?.paused == null
+                          ? "--"
+                          : data.ticketHub.paused
+                            ? "TRUE"
+                            : "FALSE",
+                    },
+                    {
+                      k: "Active chapter",
+                      v: data?.ticketHub?.activeChapterId ?? "None",
+                    },
+                    {
+                      k: "Active chapter count",
+                      v: data?.ticketHub?.activeChapterCount ?? "--",
+                    },
+                    { k: "Chapter NFT supply", v: data?.totalSupply ?? "--" },
+                    { k: "Chapter max supply", v: data?.maxSupply ?? "--" },
+                    {
+                      k: "Ticket Price",
+                      v:
+                        data?.ticketPrice == null || data.ticketPrice === ""
+                          ? "--"
+                          : `${data.ticketPrice} POL`,
+                    },
+                    {
+                      k: "Public ticket sales",
+                      v: `${data?.ticketHub?.saleMinted ?? "--"} / ${
+                        data?.ticketHub?.saleCap ?? "--"
+                      }`,
+                    },
+                    {
+                      k: "Marketing tickets",
+                      v: `${data?.ticketHub?.marketingMinted ?? "--"} / ${
+                        data?.ticketHub?.marketingCap ?? "--"
+                      }`,
+                    },
+                    {
+                      k: "Collection Rewards pool",
+                      v:
+                        data?.REWARDSPool == null || data.REWARDSPool === ""
+                          ? "--"
+                          : `${data.REWARDSPool} POL`,
                     },
                     {
                       k: "Treasury",
@@ -1717,16 +2016,22 @@ export default function AdminPanel({
                       copy: data?.token?.address,
                     },
                     {
-                      k: "Router",
+                      k: "DEX Router",
                       v: short(data?.dex?.router),
                       mono: true,
                       copy: data?.dex?.router,
                     },
                     {
-                      k: "BaseURI",
-                      v: data?.baseURI,
+                      k: "DEX Pair",
+                      v: short(data?.dex?.pair),
                       mono: true,
-                      copy: data?.baseURI,
+                      copy: data?.dex?.pair,
+                    },
+                    {
+                      k: "Shared VRF Router",
+                      v: short(data?.VRF?.router),
+                      mono: true,
+                      copy: data?.VRF?.router,
                     },
                     {
                       k: "VRF KeyHash",
@@ -1752,6 +2057,48 @@ export default function AdminPanel({
                   ]}
                 />
 
+                {Array.isArray(data?.chapters) && data.chapters.length > 0 && (
+                  <div style={{ marginTop: 12 }}>
+                    <div
+                      style={{
+                        color: C.y,
+                        fontWeight: 900,
+                        marginBottom: 8,
+                      }}
+                    >
+                      Chapter registry
+                    </div>
+                    <div className="admin-panel__table-scroll">
+                      <table className="admin-panel__data-table">
+                        <thead>
+                          <tr>
+                            <th>Chapter</th>
+                            <th>Status</th>
+                            <th>VRF collection</th>
+                            <th>Public collection</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {data.chapters.map((chapter) => (
+                            <tr key={chapter.chapterId}>
+                              <td>
+                                {chapter.chapterId}. {chapter.displayName}
+                              </td>
+                              <td>{chapter.active ? "ACTIVE" : "INACTIVE"}</td>
+                              <td title={chapter.main}>
+                                {short(chapter.main)}
+                              </td>
+                              <td title={chapter.main2}>
+                                {short(chapter.main2)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
                 {/* Blocks table – styled like VRF/Biggi tables */}
                 {Array.isArray(data?.blocks) && data.blocks.length > 0 && (
                   <div style={{ marginTop: 12 }}>
@@ -1762,7 +2109,7 @@ export default function AdminPanel({
                         marginBottom: 8,
                       }}
                     >
-                      Blocks
+                      Chapter {data?.displayedChapterId || 1} block state
                     </div>
 
                     <div
@@ -1875,7 +2222,7 @@ export default function AdminPanel({
                     textShadow: "0 0 10px rgba(255,232,0,.35)",
                   }}
                 >
-                  Setters
+                  Owner Controls
                 </h3>
               </div>
 
@@ -1890,10 +2237,8 @@ export default function AdminPanel({
                       color: "#ffe29a",
                     }}
                   >
-                    This build currently exposes the admin snapshot as
-                    read-only. Wire additional owner actions in{" "}
-                    <code>src/app/AppCore.jsx</code> to enable more setters
-                    here.
+                    No owner actions are available for the active Core
+                    deployment.
                   </div>
                 )}
 
@@ -1933,7 +2278,9 @@ export default function AdminPanel({
                         </label>
                         <button
                           style={smallBtn(true)}
-                          disabled={!coreAvailability.pause || !!pending.setPaused}
+                          disabled={
+                            !coreAvailability.pause || !!pending.setPaused
+                          }
                           onClick={() =>
                             run(
                               "setPaused",
@@ -2094,7 +2441,18 @@ export default function AdminPanel({
                         marginBottom: 10,
                       }}
                     >
-                      VRF (Ctrl+Enter = Apply)
+                      Shared VRF Router (Ctrl+Enter = Apply)
+                    </div>
+                    <div
+                      style={{
+                        color: C.dim,
+                        fontSize: 13,
+                        lineHeight: 1.45,
+                        marginBottom: 10,
+                      }}
+                    >
+                      These parameters are shared by every approved VRF chapter.
+                      The deployed coordinator address is immutable.
                     </div>
                     <div style={{ display: "grid", gap: 8 }}>
                       <Row k="KeyHash">
@@ -2145,10 +2503,10 @@ export default function AdminPanel({
                       <Row k="Coordinator">
                         <input
                           value={VRF.coordinator}
-                          onChange={(e) =>
-                            setVRF({ ...VRF, coordinator: e.target.value })
-                          }
                           style={inputStyle(true)}
+                          readOnly
+                          aria-readonly="true"
+                          title="Coordinator is fixed in the deployed VRF Router"
                         />
                       </Row>
                       <Row k="Subscription Id">
@@ -2168,15 +2526,12 @@ export default function AdminPanel({
                       >
                         <button
                           style={smallBtn(true)}
-                          disabled={!coreAvailability.vrf || !!pending.setVRFParams}
-                          onClick={() =>
-                            run(
-                              "setVRFParams",
-                              () =>
-                                actions.setVRFParams &&
-                                actions.setVRFParams({ ...VRF }),
-                            )
+                          disabled={
+                            !coreAvailability.vrf ||
+                            !adminAccess.canWrite ||
+                            !!pending.setVRFParams
                           }
+                          onClick={() => run("setVRFParams", submitVRFParams)}
                           title="Apply VRF params"
                         >
                           {pending.setVRFParams ? "Applying…" : "Apply VRF"}
@@ -2217,7 +2572,8 @@ export default function AdminPanel({
                           <button
                             style={smallBtn(true)}
                             disabled={
-                              !coreAvailability.treasury || !!pending.setTreasury
+                              !coreAvailability.treasury ||
+                              !!pending.setTreasury
                             }
                             onClick={() =>
                               run(
@@ -2293,7 +2649,9 @@ export default function AdminPanel({
                           />
                           <button
                             style={smallBtn(true)}
-                            disabled={!coreAvailability.router || !!pending.setRouter}
+                            disabled={
+                              !coreAvailability.router || !!pending.setRouter
+                            }
                             onClick={() =>
                               run(
                                 "setRouter",
@@ -2411,11 +2769,14 @@ export default function AdminPanel({
                 </p>
                 <AdminDashboard
                   walletAddress={ownerWallet}
+                  canWrite={adminAccess.canWrite}
                   onTx={(payload) => {
                     const message = String(payload?.message || "").trim();
                     const txHash = String(payload?.txHash || "").trim();
                     const suffix = txHash ? ` (${short(txHash)})` : "";
-                    setStatusMsg(message ? `${message}${suffix}` : "Tx submitted");
+                    setStatusMsg(
+                      message ? `${message}${suffix}` : "Tx submitted",
+                    );
                   }}
                 />
               </div>
@@ -2423,9 +2784,17 @@ export default function AdminPanel({
           </div>
         )}
 
-        {activeTab === "liquidity" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18 }}>
-            <section style={{ ...card }}>
+        {(activeTab === "liquidity" || activeTab === "community") && (
+          <div
+            className="admin-panel__section-block"
+            style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18 }}
+          >
+            <section
+              style={{
+                ...card,
+                display: activeTab === "liquidity" ? undefined : "none",
+              }}
+            >
               <div style={{ ...header, borderBottom: `1px solid ${C.line}` }}>
                 <h3
                   style={{
@@ -2446,7 +2815,11 @@ export default function AdminPanel({
                 <div style={sectionGrid}>
                   <div>
                     <div
-                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
+                      style={{
+                        color: C.dim,
+                        fontWeight: 900,
+                        marginBottom: 6,
+                      }}
                     >
                       Liquidity Recipient
                     </div>
@@ -2476,7 +2849,11 @@ export default function AdminPanel({
 
                   <div>
                     <div
-                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
+                      style={{
+                        color: C.dim,
+                        fontWeight: 900,
+                        marginBottom: 6,
+                      }}
                     >
                       LP Use Balance (bps)
                     </div>
@@ -2506,7 +2883,11 @@ export default function AdminPanel({
 
                   <div>
                     <div
-                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
+                      style={{
+                        color: C.dim,
+                        fontWeight: 900,
+                        marginBottom: 6,
+                      }}
                     >
                       Swap Slippage (bps)
                     </div>
@@ -2536,7 +2917,11 @@ export default function AdminPanel({
 
                   <div>
                     <div
-                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
+                      style={{
+                        color: C.dim,
+                        fontWeight: 900,
+                        marginBottom: 6,
+                      }}
                     >
                       LP Add Slippage (bps)
                     </div>
@@ -2566,7 +2951,11 @@ export default function AdminPanel({
 
                   <div>
                     <div
-                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
+                      style={{
+                        color: C.dim,
+                        fontWeight: 900,
+                        marginBottom: 6,
+                      }}
                     >
                       Tx Deadline (sec)
                     </div>
@@ -2596,7 +2985,11 @@ export default function AdminPanel({
 
                   <div style={{ gridColumn: "1 / -1" }}>
                     <div
-                      style={{ color: C.dim, fontWeight: 900, marginBottom: 6 }}
+                      style={{
+                        color: C.dim,
+                        fontWeight: 900,
+                        marginBottom: 6,
+                      }}
                     >
                       Swap Path (comma separated)
                     </div>
@@ -2663,7 +3056,11 @@ export default function AdminPanel({
                 >
                   <div>
                     <div
-                      style={{ marginBottom: 6, color: C.dim, fontWeight: 800 }}
+                      style={{
+                        marginBottom: 6,
+                        color: C.dim,
+                        fontWeight: 800,
+                      }}
                     >
                       BUYBACK to Treasury
                     </div>
@@ -2721,7 +3118,11 @@ export default function AdminPanel({
 
                   <div>
                     <div
-                      style={{ marginBottom: 6, color: C.dim, fontWeight: 800 }}
+                      style={{
+                        marginBottom: 6,
+                        color: C.dim,
+                        fontWeight: 800,
+                      }}
                     >
                       Add Liquidity (from balances)
                     </div>
@@ -2766,7 +3167,11 @@ export default function AdminPanel({
 
                   <div>
                     <div
-                      style={{ marginBottom: 6, color: C.dim, fontWeight: 800 }}
+                      style={{
+                        marginBottom: 6,
+                        color: C.dim,
+                        fontWeight: 800,
+                      }}
                     >
                       Bootstrap Liquidity
                     </div>
@@ -2813,7 +3218,11 @@ export default function AdminPanel({
 
                   <div>
                     <div
-                      style={{ marginBottom: 6, color: C.dim, fontWeight: 800 }}
+                      style={{
+                        marginBottom: 6,
+                        color: C.dim,
+                        fontWeight: 800,
+                      }}
                     >
                       Route BIGGI to Treasury
                     </div>
@@ -2850,7 +3259,12 @@ export default function AdminPanel({
               </div>
             </section>
 
-            <section style={{ ...card }}>
+            <section
+              style={{
+                ...card,
+                display: activeTab === "community" ? undefined : "none",
+              }}
+            >
               <div style={{ ...header, borderBottom: `1px solid ${C.line}` }}>
                 <h3
                   style={{
@@ -2866,14 +3280,24 @@ export default function AdminPanel({
                   disabled={!communityAvailable || !!pending.community_overview}
                   onClick={() => communityAvailable && loadCommunityOverview()}
                 >
-                  {pending.community_overview ? "Refreshing..." : "Refresh overview"}
+                  {pending.community_overview
+                    ? "Refreshing..."
+                    : "Refresh overview"}
                 </button>
               </div>
               <div style={{ padding: 12, display: "grid", gap: 16 }}>
                 <p style={{ margin: 0, color: C.dim }}>
-                  Owner-only contract operations for the Community Center. This is
-                  where distributor, pool, pause, rescue, and emergency flows now live.
+                  Owner-only contract operations for the Community Center. This
+                  is where distributor, pool, pause, rescue, and emergency flows
+                  now live.
                 </p>
+
+                {!communityAccess.canWrite && communityAvailable && (
+                  <div className="admin-panel__access-warning" role="status">
+                    Community writes remain disabled until the connected wallet
+                    is the Community Center owner on Polygon mainnet.
+                  </div>
+                )}
 
                 {!communityAvailable && (
                   <div
@@ -2885,9 +3309,8 @@ export default function AdminPanel({
                       color: "#ffb3b3",
                     }}
                   >
-                    Community Center contract address or ABI is missing.
-                    Configure it in <code>src/shared/utils/addresses.js</code>{" "}
-                    to enable owner operations.
+                    Community Center is missing from the active deployment
+                    configuration. Owner operations are disabled.
                   </div>
                 )}
 
@@ -2922,6 +3345,10 @@ export default function AdminPanel({
                       k: "Paused",
                       v: communityPaused ? "TRUE" : "FALSE",
                     },
+                    {
+                      k: "Write access",
+                      v: communityAccess.canWrite ? "ENABLED" : "READ ONLY",
+                    },
                   ]}
                 />
 
@@ -2938,17 +3365,19 @@ export default function AdminPanel({
                     </div>
                     <input
                       value={communityDistributorInput}
-                      onChange={(e) => setCommunityDistributorInput(e.target.value)}
+                      onChange={(e) =>
+                        setCommunityDistributorInput(e.target.value)
+                      }
                       style={inputStyle()}
                       placeholder="0x..."
                     />
                     <button
                       style={smallBtn(true)}
                       disabled={
-                        !communityAvailable || !!pending.community_setDistributor
+                        !canWriteCommunity || !!pending.community_setDistributor
                       }
                       onClick={() =>
-                        communityAvailable && setCommunityDistributorAddress()
+                        canWriteCommunity && setCommunityDistributorAddress()
                       }
                     >
                       {pending.community_setDistributor
@@ -2963,16 +3392,20 @@ export default function AdminPanel({
                     </div>
                     <input
                       value={communityDepositAmount}
-                      onChange={(e) => setCommunityDepositAmount(e.target.value)}
+                      onChange={(e) =>
+                        setCommunityDepositAmount(e.target.value)
+                      }
                       style={inputStyle()}
                       placeholder="POL amount"
                     />
                     <button
                       style={smallBtn(true)}
                       disabled={
-                        !communityAvailable || !!pending.community_ownerDeposit
+                        !canWriteCommunity || !!pending.community_ownerDeposit
                       }
-                      onClick={() => communityAvailable && depositCommunityPool()}
+                      onClick={() =>
+                        canWriteCommunity && depositCommunityPool()
+                      }
                     >
                       {pending.community_ownerDeposit
                         ? "Depositing..."
@@ -2990,9 +3423,11 @@ export default function AdminPanel({
                     <button
                       style={smallBtn(!communityPaused)}
                       disabled={
-                        !communityAvailable || !!pending.community_pauseToggle
+                        !canWriteCommunity || !!pending.community_pauseToggle
                       }
-                      onClick={() => communityAvailable && toggleCommunityPause()}
+                      onClick={() =>
+                        canWriteCommunity && toggleCommunityPause()
+                      }
                     >
                       {pending.community_pauseToggle
                         ? "Submitting..."
@@ -3029,11 +3464,13 @@ export default function AdminPanel({
                     <button
                       style={smallBtn(true)}
                       disabled={
-                        !communityAvailable || !!pending.community_rescuePool
+                        !canWriteCommunity || !!pending.community_rescuePool
                       }
-                      onClick={() => communityAvailable && rescueCommunityPool()}
+                      onClick={() => canWriteCommunity && rescueCommunityPool()}
                     >
-                      {pending.community_rescuePool ? "Sending..." : "Rescue pool"}
+                      {pending.community_rescuePool
+                        ? "Sending..."
+                        : "Rescue pool"}
                     </button>
                   </div>
 
@@ -3042,8 +3479,8 @@ export default function AdminPanel({
                       Emergency withdraw
                     </div>
                     <div style={{ color: C.dim, fontSize: "0.9rem" }}>
-                      Available only while paused. Sends contract free balance to
-                      the target address.
+                      Available only while paused. Sends contract free balance
+                      to the target address.
                     </div>
                     <input
                       value={communityEmergencyTo}
@@ -3054,12 +3491,12 @@ export default function AdminPanel({
                     <button
                       style={smallBtn(true)}
                       disabled={
-                        !communityAvailable ||
+                        !canWriteCommunity ||
                         !communityPaused ||
                         !!pending.community_emergencyWithdraw
                       }
                       onClick={() =>
-                        communityAvailable && emergencyWithdrawCommunity()
+                        canWriteCommunity && emergencyWithdrawCommunity()
                       }
                     >
                       {pending.community_emergencyWithdraw
@@ -3073,9 +3510,17 @@ export default function AdminPanel({
           </div>
         )}
 
-        {activeTab === "POLICY" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18 }}>
-            <section style={{ ...card }}>
+        {(activeTab === "POLICY" || activeTab === "community") && (
+          <div
+            className="admin-panel__section-block"
+            style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18 }}
+          >
+            <section
+              style={{
+                ...card,
+                display: activeTab === "POLICY" ? undefined : "none",
+              }}
+            >
               <div style={{ ...header, borderBottom: `1px solid ${C.line}` }}>
                 <h3
                   style={{
@@ -3413,7 +3858,12 @@ export default function AdminPanel({
               </div>
             </section>
 
-            <section style={{ ...card }}>
+            <section
+              style={{
+                ...card,
+                display: activeTab === "community" ? undefined : "none",
+              }}
+            >
               <div style={{ ...header, borderBottom: `1px solid ${C.line}` }}>
                 <h3
                   style={{
@@ -3433,15 +3883,17 @@ export default function AdminPanel({
                     })
                   }
                 >
-                  {pending.community_poll_refresh ? "Refreshing..." : "Refresh polls"}
+                  {pending.community_poll_refresh
+                    ? "Refreshing..."
+                    : "Refresh polls"}
                 </button>
               </div>
               <div style={{ padding: 12, display: "grid", gap: 12 }}>
                 <p style={{ margin: 0, color: C.dim }}>
-                  Create and manage wallet-signed community polls that show in the
-                  user-facing Community Center next to events. This voting layer is
-                  off-chain and is not stored in the current Community Center
-                  contract.
+                  Create and manage wallet-signed community polls that show in
+                  the user-facing Community Center next to events. This voting
+                  layer is off-chain and is not stored in the current Community
+                  Center contract.
                 </p>
 
                 {communityPollsError ? (
@@ -3461,12 +3913,17 @@ export default function AdminPanel({
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "minmax(180px, 1fr) minmax(180px, 1fr)",
+                    gridTemplateColumns:
+                      "minmax(180px, 1fr) minmax(180px, 1fr)",
                     gap: 12,
                   }}
                 >
                   <div
-                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                    }}
                   >
                     <span style={{ color: C.dim, fontWeight: 900 }}>
                       Poll ID (optional)
@@ -3479,7 +3936,11 @@ export default function AdminPanel({
                     />
                   </div>
                   <div
-                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                    }}
                   >
                     <span style={{ color: C.dim, fontWeight: 900 }}>
                       Linked event ID (optional)
@@ -3515,8 +3976,14 @@ export default function AdminPanel({
                   </span>
                   <textarea
                     value={communityPollDescription}
-                    onChange={(e) => setCommunityPollDescription(e.target.value)}
-                    style={{ ...inputStyle(), minHeight: 80, resize: "vertical" }}
+                    onChange={(e) =>
+                      setCommunityPollDescription(e.target.value)
+                    }
+                    style={{
+                      ...inputStyle(),
+                      minHeight: 80,
+                      resize: "vertical",
+                    }}
                     placeholder="Explain what the vote is about and what the choice means"
                   />
                 </div>
@@ -3529,7 +3996,11 @@ export default function AdminPanel({
                   }}
                 >
                   <div
-                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                    }}
                   >
                     <span style={{ color: C.dim, fontWeight: 900 }}>
                       Poll start
@@ -3542,7 +4013,11 @@ export default function AdminPanel({
                     />
                   </div>
                   <div
-                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                    }}
                   >
                     <span style={{ color: C.dim, fontWeight: 900 }}>
                       Poll end
@@ -3565,7 +4040,11 @@ export default function AdminPanel({
                   <textarea
                     value={communityPollOptions}
                     onChange={(e) => setCommunityPollOptions(e.target.value)}
-                    style={{ ...inputStyle(), minHeight: 96, resize: "vertical" }}
+                    style={{
+                      ...inputStyle(),
+                      minHeight: 96,
+                      resize: "vertical",
+                    }}
                     placeholder={"Yes\nNo"}
                   />
                 </div>
@@ -3586,7 +4065,9 @@ export default function AdminPanel({
                   </button>
                   <button
                     style={smallBtn(true)}
-                    disabled={!!pending.community_poll_save}
+                    disabled={
+                      !adminAccess.canWrite || !!pending.community_poll_save
+                    }
                     onClick={saveCommunityPoll}
                   >
                     {pending.community_poll_save
@@ -3602,9 +4083,7 @@ export default function AdminPanel({
                     Existing polls
                   </div>
                   {!communityPolls.length ? (
-                    <div style={{ color: C.dim }}>
-                      No polls created yet.
-                    </div>
+                    <div style={{ color: C.dim }}>No polls created yet.</div>
                   ) : (
                     communityPolls.map((poll) => (
                       <div
@@ -3638,18 +4117,29 @@ export default function AdminPanel({
                             </span>
                           </div>
                           <span style={pill}>
-                            {poll.status || "Live"} · {Number(poll.totalVotes || 0)} votes
+                            {poll.status || "Live"} ·{" "}
+                            {Number(poll.totalVotes || 0)} votes
                           </span>
                         </div>
                         {poll.description ? (
                           <div style={{ color: C.dim }}>{poll.description}</div>
                         ) : null}
                         <div style={{ color: C.dim, fontSize: "0.9rem" }}>
-                          {poll.startsAt ? `Opens: ${new Date(poll.startsAt).toLocaleString()}` : "Opens: --"}
+                          {poll.startsAt
+                            ? `Opens: ${new Date(poll.startsAt).toLocaleString()}`
+                            : "Opens: --"}
                           {" · "}
-                          {poll.endsAt ? `Closes: ${new Date(poll.endsAt).toLocaleString()}` : "Closes: --"}
+                          {poll.endsAt
+                            ? `Closes: ${new Date(poll.endsAt).toLocaleString()}`
+                            : "Closes: --"}
                         </div>
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 8,
+                            flexWrap: "wrap",
+                          }}
+                        >
                           <button
                             style={smallBtn(false)}
                             onClick={() => loadCommunityPollIntoForm(poll)}
@@ -3659,7 +4149,10 @@ export default function AdminPanel({
                           {poll.status !== "Closed" ? (
                             <button
                               style={smallBtn(true)}
-                              disabled={!!pending[`community_poll_close_${poll.id}`]}
+                              disabled={
+                                !adminAccess.canWrite ||
+                                !!pending[`community_poll_close_${poll.id}`]
+                              }
                               onClick={() => closeCommunityPoll(poll.id)}
                             >
                               {pending[`community_poll_close_${poll.id}`]
@@ -3693,16 +4186,16 @@ export default function AdminPanel({
               </div>
               <div style={{ padding: 12, display: "grid", gap: 12 }}>
                 <p style={{ margin: 0, color: C.dim }}>
-                  Create new on-chain community events, or load an existing event
-                  into the form for inspection and reuse. Timestamps are unix
-                  seconds. At least one winner is required and every winner must
-                  have a matching POL amount.
+                  Create new on-chain community events, or load an existing
+                  event into the form for inspection and reuse. Timestamps are
+                  unix seconds. At least one winner is required and every winner
+                  must have a matching POL amount.
                 </p>
                 <div style={{ margin: 0, color: C.dim, fontSize: "0.92rem" }}>
-                  For simple content, write `Description` and optional `Image URI`
-                  directly below. If `IPFS metadata` is left empty, the panel will
-                  store this metadata inline so it still shows to users without a
-                  separate IPFS upload.
+                  For simple content, write `Description` and optional `Image
+                  URI` directly below. If `IPFS metadata` is left empty, the
+                  panel will store this metadata inline so it still shows to
+                  users without a separate IPFS upload.
                 </div>
                 {!communityAvailable && (
                   <div
@@ -3714,9 +4207,8 @@ export default function AdminPanel({
                       color: "#ffb3b3",
                     }}
                   >
-                    Community Center contract address or ABI is missing.
-                    Configure it in <code>src/shared/utils/addresses.js</code>{" "}
-                    to enable editing.
+                    Community Center is missing from the active deployment
+                    configuration. Event editing is disabled.
                   </div>
                 )}
                 <div
@@ -3748,9 +4240,7 @@ export default function AdminPanel({
                 <div
                   style={{ display: "flex", flexDirection: "column", gap: 6 }}
                 >
-                  <span style={{ color: C.dim, fontWeight: 900 }}>
-                    Title
-                  </span>
+                  <span style={{ color: C.dim, fontWeight: 900 }}>Title</span>
                   <input
                     value={eventTitle}
                     onChange={(e) => setEventTitle(e.target.value)}
@@ -3857,9 +4347,11 @@ export default function AdminPanel({
                   </div>
                 </div>
 
-                <div style={{ marginTop: -6, color: C.dim, fontSize: "0.9rem" }}>
-                  Contract rule: no empty winner list, matching winner and amount
-                  counts, and end timestamp must be later than start.
+                <div
+                  style={{ marginTop: -6, color: C.dim, fontSize: "0.9rem" }}
+                >
+                  Contract rule: no empty winner list, matching winner and
+                  amount counts, and end timestamp must be later than start.
                 </div>
 
                 <div
@@ -3923,10 +4415,11 @@ export default function AdminPanel({
                     style={smallBtn(true)}
                     disabled={
                       !communityAvailable ||
+                      !canWriteCommunity ||
                       !!pending.community_createEvent ||
                       !eventTitle.trim()
                     }
-                    onClick={() => communityAvailable && createCommunityEvent()}
+                    onClick={() => canWriteCommunity && createCommunityEvent()}
                   >
                     {pending.community_createEvent
                       ? "Creating..."
@@ -4204,7 +4697,9 @@ export default function AdminPanel({
                   </button>
                   <button
                     style={smallBtn(true)}
-                    disabled={!!pending.chat_rules_update}
+                    disabled={
+                      !adminAccess.canWrite || !!pending.chat_rules_update
+                    }
                     onClick={updateChatRules}
                   >
                     {pending.chat_rules_update ? "Saving..." : "Update Rules"}
@@ -4292,7 +4787,7 @@ export default function AdminPanel({
                   </button>
                   <button
                     style={smallBtn(true)}
-                    disabled={!!pending.chat_moderate}
+                    disabled={!adminAccess.canWrite || !!pending.chat_moderate}
                     onClick={applyChatModeration}
                   >
                     {pending.chat_moderate ? "Applying..." : "Apply"}
@@ -4444,6 +4939,33 @@ export default function AdminPanel({
                           : "--",
                     },
                     { k: "Last Checked", v: rpcSnapshot?.lastChecked || "--" },
+                    {
+                      k: "DEX liquidity",
+                      v:
+                        dexSnapshot?.status === "seeded"
+                          ? "SEEDED"
+                          : dexSnapshot?.status === "awaiting-liquidity"
+                            ? "AWAITING INITIAL LIQUIDITY (PRE-LAUNCH)"
+                            : dexSnapshot?.status === "partial"
+                              ? "PARTIAL RESERVES - ACTION REQUIRED"
+                              : dexSnapshot?.status === "error"
+                                ? `READ ERROR: ${dexSnapshot.error || "unknown"}`
+                                : "--",
+                    },
+                    {
+                      k: "BIGGI pair reserve",
+                      v:
+                        dexSnapshot?.biggiReserve == null
+                          ? "--"
+                          : `${dexSnapshot.biggiReserve} BIGGI`,
+                    },
+                    {
+                      k: "WPOL pair reserve",
+                      v:
+                        dexSnapshot?.quoteReserve == null
+                          ? "--"
+                          : `${dexSnapshot.quoteReserve} WPOL`,
+                    },
                   ]}
                 />
               </div>
@@ -4461,7 +4983,10 @@ export default function AdminPanel({
                   Contract Status
                 </h3>
               </div>
-              <div style={{ padding: 12 }}>
+              <div
+                className="admin-panel__table-scroll"
+                style={{ padding: 12 }}
+              >
                 {healthLoading && (
                   <div style={{ color: C.dim }}>Checking contracts...</div>
                 )}
@@ -4546,7 +5071,7 @@ export default function AdminPanel({
                                 fontWeight: 800,
                               }}
                             >
-                              {row.label}
+                              {String(row.label || "").replaceAll("_", " ")}
                             </td>
                             <td
                               style={{

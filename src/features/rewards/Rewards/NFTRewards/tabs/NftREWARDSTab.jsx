@@ -3,23 +3,33 @@ import NftREWARDSSection from "../NftREWARDSSection.jsx";
 
 function NftREWARDSTab({
   data,
-  range,
+  loading,
+  error,
+  walletAddress,
   formatInteger,
   formatAddress,
   formatUriDisplay,
   onOpenExplorer,
-  emptyRanks,
+  canClaim,
+  claimState,
+  onClaimReward,
+  feedback,
 }) {
   return (
     <section className="rewards-grid__section rewards-grid__section--nft">
       <NftREWARDSSection
         data={data}
-        range={range}
+        loading={loading}
+        error={error}
+        walletAddress={walletAddress}
         formatInteger={formatInteger}
         formatAddress={formatAddress}
         formatUriDisplay={formatUriDisplay}
         onOpenExplorer={onOpenExplorer}
-        emptyRanks={emptyRanks}
+        canClaim={canClaim}
+        claimState={claimState}
+        onClaimReward={onClaimReward}
+        feedback={feedback}
       />
     </section>
   );

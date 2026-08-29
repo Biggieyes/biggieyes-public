@@ -6,9 +6,16 @@ import {
   readSlotInfo,
   readWeekStats,
 } from "@/utils/eth";
+import { ensurePolygon } from "@/shared/utils/contract";
+import {
+  assertAdminSigner,
+  POLYGON_MAINNET_CHAIN_ID,
+} from "@/shared/utils/adminAccess.js";
+import "@/features/admin/MODERATORCENTER/MODERATORCENTERPanel.css";
 
 const sameAddress = (left, right) =>
-  Boolean(left && right) && String(left).toLowerCase() === String(right).toLowerCase();
+  Boolean(left && right) &&
+  String(left).toLowerCase() === String(right).toLowerCase();
 
 const shortValue = (value, start = 8, end = 6) => {
   if (!value) return "--";
@@ -20,7 +27,11 @@ const shortValue = (value, start = 8, end = 6) => {
 
 const asText = (value) => (value == null ? "--" : String(value));
 
-export default function AdminDashboard({ walletAddress = "", onTx }) {
+export default function AdminDashboard({
+  walletAddress = "",
+  canWrite = false,
+  onTx,
+}) {
   const [state, setState] = React.useState(null);
   const [slots, setSlots] = React.useState([]);
   const [contractMode, setContractMode] = React.useState("checking");
@@ -103,7 +114,11 @@ export default function AdminDashboard({ walletAddress = "", onTx }) {
         totalClaimable,
       });
       setSlots(slotRows);
-      setSettleWeek((current) => current || (Number(currentWeek) > 0 ? String(Number(currentWeek) - 1) : "0"));
+      setSettleWeek(
+        (current) =>
+          current ||
+          (Number(currentWeek) > 0 ? String(Number(currentWeek) - 1) : "0"),
+      );
       setContractMode("v2");
     } catch (loadError) {
       setState(null);
@@ -128,21 +143,34 @@ export default function AdminDashboard({ walletAddress = "", onTx }) {
       setAction(label);
       setError("");
       try {
+        if (typeof window === "undefined" || !window.ethereum) {
+          throw new Error("Wallet provider not found");
+        }
+        await ensurePolygon(window.ethereum);
         const contract = await getModeratorCenterV2Contract({ signer: true });
+        await assertAdminSigner({
+          provider: contract?.runner?.provider,
+          ownerAddress: state?.owner,
+          expectedChainId: POLYGON_MAINNET_CHAIN_ID,
+        });
         const tx = await send(contract);
         await tx.wait();
         onTx?.({ message: `${label} confirmed`, txHash: tx.hash });
         await load();
       } catch (actionError) {
-        setError(actionError?.shortMessage || actionError?.message || `${label} failed.`);
+        setError(
+          actionError?.shortMessage ||
+            actionError?.message ||
+            `${label} failed.`,
+        );
       } finally {
         setAction("");
       }
     },
-    [load, onTx],
+    [load, onTx, state?.owner],
   );
 
-  const isConnectedOwner = sameAddress(walletAddress, state?.owner);
+  const isConnectedOwner = canWrite && sameAddress(walletAddress, state?.owner);
   const enabledSlots = slots.filter((slot) => slot.enabled);
   const leaderCount = enabledSlots.filter((slot) => slot.isLeader).length;
 
@@ -159,7 +187,9 @@ export default function AdminDashboard({ walletAddress = "", onTx }) {
         <div className="moderator-center__statlines">
           <div className="moderator-center__statline">
             <span>Configured address</span>
-            <strong className="mono">{shortValue(cfg.v2ContractAddress)}</strong>
+            <strong className="mono">
+              {shortValue(cfg.v2ContractAddress)}
+            </strong>
           </div>
           <div className="moderator-center__statline">
             <span>Legacy address</span>
@@ -167,7 +197,11 @@ export default function AdminDashboard({ walletAddress = "", onTx }) {
           </div>
         </div>
         <div className="moderator-center__actions">
-          <button type="button" className="biggi-btn biggi-btn--ghost" onClick={load}>
+          <button
+            type="button"
+            className="biggi-btn biggi-btn--ghost"
+            onClick={load}
+          >
             Refresh
           </button>
         </div>
@@ -180,10 +214,22 @@ export default function AdminDashboard({ walletAddress = "", onTx }) {
       {error ? <div className="moderator-center__error">{error}</div> : null}
       <div className="moderator-center__hero">
         {[
-          ["State", state.paused ? "Paused" : "Active", state.ready ? "Ready" : "Blocked"],
+          [
+            "State",
+            state.paused ? "Paused" : "Active",
+            state.ready ? "Ready" : "Blocked",
+          ],
           ["Slots", `${enabledSlots.length} / 10`, `${leaderCount} leader`],
-          ["Outstanding", `${formatWei(state.allocatedOutstanding)} POL`, "Weekly pools"],
-          ["Claimable", `${formatWei(state.totalClaimable)} POL`, "All payouts"],
+          [
+            "Outstanding",
+            `${formatWei(state.allocatedOutstanding)} POL`,
+            "Weekly pools",
+          ],
+          [
+            "Claimable",
+            `${formatWei(state.totalClaimable)} POL`,
+            "All payouts",
+          ],
         ].map(([label, value, hint]) => (
           <article key={label} className="moderator-center__stat-card">
             <div>
@@ -210,9 +256,15 @@ export default function AdminDashboard({ walletAddress = "", onTx }) {
               ["TicketHub", shortValue(state.ticketHub)],
               ["Allocator", shortValue(state.allocator)],
               ["Registered chapters", asText(state.registeredChapterCount)],
-              ["Leader / moderator / boost", `${state.leaderCoef} / ${state.moderatorCoef} / ${state.saleBoost}`],
+              [
+                "Leader / moderator / boost",
+                `${state.leaderCoef} / ${state.moderatorCoef} / ${state.saleBoost}`,
+              ],
               ["Unique policy", state.globalUnique ? "Global" : "Per slot"],
-              ["Milestones", `${formatWei(state.milestone100)} / ${formatWei(state.milestone500)} / ${formatWei(state.milestone1000)} POL`],
+              [
+                "Milestones",
+                `${formatWei(state.milestone100)} / ${formatWei(state.milestone500)} / ${formatWei(state.milestone1000)} POL`,
+              ],
               ["Milestone budget", `${formatWei(state.milestoneBudget)} POL`],
             ].map(([label, value]) => (
               <div key={label} className="moderator-center__statline">
@@ -248,8 +300,15 @@ export default function AdminDashboard({ walletAddress = "", onTx }) {
             <button
               type="button"
               className="biggi-btn biggi-btn--ghost"
-              disabled={!isConnectedOwner || Boolean(action) || !state.paused || !state.ready}
-              onClick={() => runAction("Unpause", (contract) => contract.unpause())}
+              disabled={
+                !isConnectedOwner ||
+                Boolean(action) ||
+                !state.paused ||
+                !state.ready
+              }
+              onClick={() =>
+                runAction("Unpause", (contract) => contract.unpause())
+              }
             >
               {action === "Unpause" ? "Activating..." : "Unpause"}
             </button>
@@ -276,7 +335,9 @@ export default function AdminDashboard({ walletAddress = "", onTx }) {
             <button
               type="button"
               className="biggi-btn biggi-btn--ghost"
-              disabled={Boolean(action) || settleWeek === ""}
+              disabled={
+                !isConnectedOwner || Boolean(action) || settleWeek === ""
+              }
               onClick={() =>
                 runAction(`Settle week ${settleWeek}`, (contract) =>
                   contract.settleWeek(BigInt(settleWeek)),
@@ -292,7 +353,9 @@ export default function AdminDashboard({ walletAddress = "", onTx }) {
       <section className="moderator-center__card">
         <div className="moderator-center__card-head">
           <h3>Slots</h3>
-          <span className="moderator-center__chip">Current week {String(state.currentWeek)}</span>
+          <span className="moderator-center__chip">
+            Current week {String(state.currentWeek)}
+          </span>
         </div>
         <div className="moderator-center__table moderator-center__table--wide">
           <div className="moderator-center__table-head">
@@ -304,10 +367,17 @@ export default function AdminDashboard({ walletAddress = "", onTx }) {
           {slots.map((slot) => (
             <div key={slot.slotId} className="moderator-center__table-row">
               <span>{slot.slotId}</span>
-              <span>{slot.enabled ? (slot.isLeader ? "Leader" : "Moderator") : "Disabled"}</span>
+              <span>
+                {slot.enabled
+                  ? slot.isLeader
+                    ? "Leader"
+                    : "Moderator"
+                  : "Disabled"}
+              </span>
               <span className="mono">{shortValue(slot.payout)}</span>
               <span>
-                {asText(slot.week?.uniqueRefs)} / {asText(slot.week?.ticketSales)}
+                {asText(slot.week?.uniqueRefs)} /{" "}
+                {asText(slot.week?.ticketSales)}
               </span>
             </div>
           ))}

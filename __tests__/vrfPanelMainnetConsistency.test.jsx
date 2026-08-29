@@ -18,6 +18,15 @@ const panelData = {
     id: ADDR.VRF_SUB_ID,
     expectedId: ADDR.VRF_SUB_ID,
     matches: true,
+    loaded: true,
+    nativeBalance: "2.0",
+    fundedForNative: true,
+    owner: ADDR.EXPECT_OWNER,
+    ownerMatches: true,
+    consumers: [ADDR.VRF_ROUTER],
+    routerIsConsumer: true,
+    requestCount: "0",
+    pendingRequestExists: false,
   },
   params: {
     collection: ADDR.COLLECTION_VRF,
@@ -35,12 +44,20 @@ const panelData = {
     numWords: 1,
     callbackGasLimit: 300000,
     retryPendingSupported: false,
+    activeChapterId: 1,
+    activeChapterCount: 1,
+    activeChapterName: "Originals",
+    collectionApproved: true,
+    ticketHubPaused: false,
+    routerOwner: ADDR.EXPECT_OWNER,
+    routerOwnerMatches: true,
   },
   last: {
     requestId: "123456789",
     status: "fulfilled",
     requestedAt: "6/21/2026, 10:00:00 AM",
-    txHash: "0x1111111111111111111111111111111111111111111111111111111111111111",
+    txHash:
+      "0x1111111111111111111111111111111111111111111111111111111111111111",
     blockNumber: 88274808,
     randomWords: ["42"],
   },
@@ -80,9 +97,70 @@ describe("VRF panel mainnet consistency", () => {
     expect(screen.getByText("Collection VRF")).toBeTruthy();
     expect(screen.getByText("TicketHub")).toBeTruthy();
     expect(screen.getByText("VRF Router")).toBeTruthy();
+    expect(screen.getByText("Native subscription funding")).toBeTruthy();
+    expect(screen.getByText("VRF Router registered")).toBeTruthy();
     expect(screen.getAllByText("OK").length).toBeGreaterThanOrEqual(4);
     expect(container.textContent).not.toMatch(
       /BiggiEyesMain|\bCRE\b|Amoy|Mumbai|testnet|80002|sepolia/i,
     );
+  });
+
+  it("keeps a current pending request separate from older fulfilled history", () => {
+    const requestAction = vi.fn();
+    const pendingData = {
+      ...panelData,
+      params: {
+        ...panelData.params,
+        activeChapterId: null,
+        activeChapterCount: 0,
+        activeChapterName: "",
+      },
+      last: {
+        requestId: "999999",
+        status: "pending",
+        requestedAt: "6/22/2026, 10:00:00 AM",
+        txHash: "",
+        randomWords: [],
+      },
+    };
+
+    const { container } = render(
+      <VRFPanel
+        data={pendingData}
+        walletAddress={ADDR.DEV_WALLET}
+        onRefresh={vi.fn(async () => pendingData)}
+        onRequestRandomness={requestAction}
+      />,
+    );
+
+    const statusCard = screen.getByText("My VRF Status").closest(".vrf-card");
+    expect(statusCard?.textContent).toContain("PENDING");
+    expect(statusCard?.textContent).toContain("999999");
+    expect(statusCard?.textContent).not.toContain("0x1111...1111");
+
+    const requestButton = screen.getByRole("button", {
+      name: "Redeem Ticket",
+    });
+    expect(requestButton).toBeDisabled();
+    expect(container.textContent).toContain("No chapter is active yet.");
+  });
+
+  it("enables redeem only for a healthy single active chapter", () => {
+    const requestAction = vi.fn();
+    render(
+      <VRFPanel
+        data={panelData}
+        walletAddress={ADDR.DEV_WALLET}
+        onRefresh={vi.fn(async () => panelData)}
+        onRequestRandomness={requestAction}
+      />,
+    );
+
+    const requestButton = screen.getByRole("button", {
+      name: "Redeem Ticket",
+    });
+    expect(requestButton).toBeEnabled();
+    fireEvent.click(requestButton);
+    expect(requestAction).toHaveBeenCalledTimes(1);
   });
 });

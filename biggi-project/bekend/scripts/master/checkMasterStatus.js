@@ -1695,7 +1695,7 @@ async function main() {
   await section("DEX_RESERVE_GUARD_READER", addresses.DEX_RESERVE_GUARD_READER, requireCode, issues, async () => {
     const reader = viewContract(addresses.DEX_RESERVE_GUARD_READER, [
       "function guard() view returns (address)",
-      "function getStatus() view returns (tuple(address guard,address owner,bool paused,address pair,address token,address quoteToken,uint256 baselineReserve,uint256 minReserveRatioBps,uint256 minAllowedReserve,uint256 refillAmount,uint256 cooldown,uint256 lastRefillAt,bool autoRefreshBaselineOnRefill,bool priceCheckEnabled,uint256 maxPriceDeviationBps,uint256 lastGoodDexPriceE18,uint256 currentTokenReserve,uint256 currentQuoteReserve,uint256 currentDexPriceE18,bool refillNeeded,string refillReason))",
+      "function getStatus() view returns (tuple(address guard,address owner,bool paused,address pair,address token,address quoteToken,uint256 baselineReserve,uint256 minReserveRatioBps,uint256 minAllowedReserve,uint256 refillAmount,uint256 cooldown,uint256 lastRefillAt,bool autoRefreshBaselineOnRefill,bool priceCheckEnabled,uint256 maxPriceDeviationBps,uint256 lastGoodDexPriceE18,address quoteOracle,uint256 maxOracleStaleness,bool requireQuoteOracleForPriceCheck,bool quoteOracleConfigured,bool quoteOracleRoundDataSupported,bool quoteOracleLegacyAnswerSupported,uint256 quoteOracleAnswerE18,uint256 quoteOracleUpdatedAt,bool quoteOracleStale,bool quoteOracleValid,uint256 currentTokenReserve,uint256 currentQuoteReserve,uint256 currentDexPriceE18,bool refillNeeded,string refillReason))",
     ]);
     const guardAddr = await safe("DEX_RESERVE_GUARD_READER.guard", () => reader.guard());
     const status = await safe("DEX_RESERVE_GUARD_READER.status", () => reader.getStatus());

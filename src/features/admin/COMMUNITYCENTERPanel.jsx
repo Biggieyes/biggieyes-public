@@ -23,6 +23,7 @@ import MODERATORCENTERPanel from "./MODERATORCENTER/MODERATORCENTERPanel.jsx";
 import "../rewards/REWARDSPanel.css";
 import "../../styles/biggi-token.skin.css";
 import "./COMMUNITYCENTERPanel.css";
+import "../../styles/panel-buttons.css";
 
 const COMMUNITY_CENTER_ABI = Array.isArray(COMMUNITYCENTERAbi)
   ? COMMUNITYCENTERAbi

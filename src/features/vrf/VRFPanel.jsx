@@ -1,6 +1,7 @@
 import * as React from "react";
 import "../rewards/REWARDSPanel.css";
 import "./VRFPanel.css";
+import "../../styles/panel-buttons.css";
 import { useVRF } from "../../hooks/useVRF";
 import PanelInfoModal from "@/components/common/PanelInfoModal";
 import PanelInfoButton from "@/components/common/PanelInfoButton";
@@ -183,6 +184,7 @@ function resolveMatchState(liveValue, expectedValue, explicitMatch) {
 function wiringBadgeLabel(state) {
   if (state === "ok") return "OK";
   if (state === "warn") return "CHECK";
+  if (state === "standby") return "STANDBY";
   return "CONFIG";
 }
 
@@ -224,7 +226,7 @@ const QuickStat = React.memo(function VRFQuickStat({
 export default function VRFPanel({
   data = {},
   walletAddress = "",
-  onRequestRandomness = () => {},
+  onRequestRandomness = null,
   onRefresh = null,
   onCancelPending = null,
   onOpenExplorer = () => {},
@@ -397,9 +399,12 @@ export default function VRFPanel({
   const hasExternalData = data && Object.keys(data).length > 0;
   const viewData = hasExternalData ? data : hookData || {};
 
-  const last = viewData.last || {};
-  const hist = Array.isArray(viewData.history) ? viewData.history : [];
-  const params = viewData.params || {};
+  const last = React.useMemo(() => viewData.last || {}, [viewData.last]);
+  const hist = React.useMemo(
+    () => (Array.isArray(viewData.history) ? viewData.history : []),
+    [viewData.history],
+  );
+  const params = React.useMemo(() => viewData.params || {}, [viewData.params]);
   const userAddr =
     viewData.user?.address ||
     viewData.userAddress ||
@@ -443,42 +448,54 @@ export default function VRFPanel({
 
   const effectiveLast = React.useMemo(() => {
     const L = { ...last };
-    if (
-      (Array.isArray(L.randomWords) && L.randomWords.length > 0) ||
-      L.txHash
-    ) {
-      return { ...L, status: "fulfilled" };
-    }
-    const fulfilled = hist.find(
+    const requestId = String(L.requestId || "");
+    const matchingHistory = requestId
+      ? hist.find((row) => String(row.requestId || "") === requestId)
+      : null;
+    const matchingFulfilled =
+      matchingHistory &&
+      String(matchingHistory.status).toLowerCase() === "fulfilled"
+        ? matchingHistory
+        : null;
+    const latestFulfilledRow = hist.find(
       (h) => String(h.status).toLowerCase() === "fulfilled",
     );
-    if (String(L.status).toLowerCase() === "pending" && fulfilled) {
+
+    if (matchingFulfilled) {
       return {
-        requestId: L.requestId || fulfilled.requestId || "",
+        requestId: requestId || matchingFulfilled.requestId || "",
         status: "fulfilled",
-        requestedAt: L.requestedAt || fulfilled.time || "",
+        requestedAt: L.requestedAt || matchingFulfilled.time || "",
         requestedAtMs: L.requestedAtMs ?? null,
-        txHash: fulfilled.tx || L.txHash || "",
+        txHash: matchingFulfilled.tx || L.txHash || "",
         blockNumber:
-          typeof fulfilled.blockNumber === "number"
-            ? fulfilled.blockNumber
+          typeof matchingFulfilled.blockNumber === "number"
+            ? matchingFulfilled.blockNumber
             : L.blockNumber,
         randomWords:
-          Array.isArray(fulfilled.randomWords) && fulfilled.randomWords.length
-            ? fulfilled.randomWords
+          Array.isArray(matchingFulfilled.randomWords) &&
+          matchingFulfilled.randomWords.length
+            ? matchingFulfilled.randomWords
             : L.randomWords || [],
         pendingTicketId: L.pendingTicketId || "",
       };
     }
-    if ((!L.requestId || L.requestId === "0") && fulfilled) {
+
+    if (String(L.status).toLowerCase() === "pending") return L;
+
+    if (Array.isArray(L.randomWords) && L.randomWords.length > 0) {
+      return { ...L, status: "fulfilled" };
+    }
+
+    if ((!requestId || requestId === "0") && latestFulfilledRow) {
       return {
-        requestId: fulfilled.requestId || "",
+        requestId: latestFulfilledRow.requestId || "",
         status: "fulfilled",
-        requestedAt: fulfilled.time || "",
+        requestedAt: latestFulfilledRow.time || "",
         requestedAtMs: null,
-        txHash: fulfilled.tx || "",
-        blockNumber: fulfilled.blockNumber,
-        randomWords: fulfilled.randomWords || [],
+        txHash: latestFulfilledRow.tx || "",
+        blockNumber: latestFulfilledRow.blockNumber,
+        randomWords: latestFulfilledRow.randomWords || [],
         pendingTicketId: "",
       };
     }
@@ -494,6 +511,54 @@ export default function VRFPanel({
       : lastStatusLabel === "PENDING"
         ? "warn"
         : "info";
+
+  const activeChapterCount = Number(params?.activeChapterCount ?? 0);
+  const activeChapterId = Number(params?.activeChapterId ?? 0);
+  const activeChapterLabel =
+    activeChapterCount === 1
+      ? params?.activeChapterName || `Chapter ${activeChapterId}`
+      : activeChapterCount === 0
+        ? "Pre-launch"
+        : `${activeChapterCount} active - check`;
+  const requestBlockedReason = React.useMemo(() => {
+    const chainId = Number(viewData.networkId ?? viewData.chainId);
+    if (chainId !== 137) return "Switch the wallet to Polygon mainnet.";
+    if (!userAddr) return "Connect a wallet first.";
+    if (activeChapterCount !== 1) {
+      return activeChapterCount > 1
+        ? "Exactly one chapter must be active."
+        : "No chapter is active yet.";
+    }
+    if (params?.ticketHubPaused === true) return "TicketHub is paused.";
+    if (params?.collectionApproved === false) {
+      return "The active collection is not approved by the VRF Router.";
+    }
+    if (viewData.subscription?.routerIsConsumer === false) {
+      return "The VRF Router is not registered as a subscription consumer.";
+    }
+    if (viewData.subscription?.fundedForNative === false) {
+      return "The VRF subscription has no native-token funding.";
+    }
+    if (String(effectiveLast.status).toLowerCase() === "pending") {
+      return "A VRF request is already pending for this wallet.";
+    }
+    if (typeof onRequestRandomness !== "function") {
+      return "Redeem is unavailable in this build.";
+    }
+    return "";
+  }, [
+    activeChapterCount,
+    effectiveLast.status,
+    onRequestRandomness,
+    params?.collectionApproved,
+    params?.ticketHubPaused,
+    userAddr,
+    viewData.chainId,
+    viewData.networkId,
+    viewData.subscription?.fundedForNative,
+    viewData.subscription?.routerIsConsumer,
+  ]);
+  const canRequestRandomness = !requestBlockedReason;
 
   const parseToEpoch = React.useCallback((raw) => {
     if (!raw) return null;
@@ -621,7 +686,7 @@ export default function VRFPanel({
         state: hasHistory ? "ok" : "dim",
       },
     ];
-  }, [effectiveLast, hist, latestFulfilled]);
+  }, [effectiveLast, hist, latestFulfilled, short]);
 
   const wiringSignals = React.useMemo(() => {
     const subscription = viewData.subscription || {};
@@ -644,8 +709,39 @@ export default function VRFPanel({
       subscription?.expectedId,
       subscription?.matches,
     );
+    const chapterState =
+      activeChapterCount === 1
+        ? "ok"
+        : activeChapterCount > 1
+          ? "warn"
+          : "standby";
+    const collectionState = !params?.collection
+      ? "warn"
+      : params?.collectionApproved === false
+        ? "warn"
+        : params?.collectionApproved === true
+          ? chapterState
+          : "dim";
+    const ticketHubState = !params?.ticketHub
+      ? "warn"
+      : params?.ticketHubPaused === true
+        ? "warn"
+        : params?.ticketHubPaused === false
+          ? "ok"
+          : "dim";
 
     return [
+      {
+        key: "chapter",
+        label: "Active chapter",
+        detail:
+          activeChapterCount === 1
+            ? `${activeChapterLabel} (#${activeChapterId})`
+            : activeChapterCount === 0
+              ? "No chapter active (pre-launch)"
+              : `${activeChapterCount} chapters active; exactly one required`,
+        state: chapterState,
+      },
       {
         key: "collection",
         label: "Collection VRF",
@@ -653,16 +749,22 @@ export default function VRFPanel({
           ? short(params.collection)
           : "Missing collection address",
         title: params?.collection || "",
-        state: params?.collection ? "ok" : "warn",
+        state: collectionState,
       },
       {
         key: "ticketHub",
         label: "TicketHub",
         detail: params?.ticketHub
-          ? short(params.ticketHub)
+          ? `${short(params.ticketHub)} / ${
+              params?.ticketHubPaused === true
+                ? "paused"
+                : params?.ticketHubPaused === false
+                  ? "ready"
+                  : "status not loaded"
+            }`
           : "Missing TicketHub address",
         title: params?.ticketHub || "",
-        state: params?.ticketHub ? "ok" : "warn",
+        state: ticketHubState,
       },
       {
         key: "router",
@@ -712,13 +814,98 @@ export default function VRFPanel({
         title: subscription?.id || subscription?.expectedId || "",
         state: subscriptionState,
       },
+      {
+        key: "routerApproval",
+        label: "Router approval",
+        detail:
+          params?.collectionApproved === true
+            ? "Active collection approved"
+            : params?.collectionApproved === false
+              ? "Active collection not approved"
+              : "Approval not loaded",
+        state:
+          params?.collectionApproved === true
+            ? "ok"
+            : params?.collectionApproved === false
+              ? "warn"
+              : "dim",
+      },
+      {
+        key: "routerOwner",
+        label: "Router owner",
+        detail: params?.routerOwner
+          ? short(params.routerOwner)
+          : "Owner not loaded",
+        title: params?.routerOwner || "",
+        state:
+          params?.routerOwnerMatches === true
+            ? "ok"
+            : params?.routerOwnerMatches === false
+              ? "warn"
+              : "dim",
+      },
+      {
+        key: "subscriptionConsumer",
+        label: "Subscription consumer",
+        detail:
+          subscription?.routerIsConsumer === true
+            ? "VRF Router registered"
+            : subscription?.routerIsConsumer === false
+              ? "VRF Router missing"
+              : "Consumer list not loaded",
+        state:
+          subscription?.routerIsConsumer === true
+            ? "ok"
+            : subscription?.routerIsConsumer === false
+              ? "warn"
+              : "dim",
+      },
+      {
+        key: "subscriptionOwner",
+        label: "Subscription owner",
+        detail: subscription?.owner
+          ? short(subscription.owner)
+          : "Owner not loaded",
+        title: subscription?.owner || "",
+        state:
+          subscription?.ownerMatches === true
+            ? "ok"
+            : subscription?.ownerMatches === false
+              ? "warn"
+              : "dim",
+      },
+      {
+        key: "subscriptionFunding",
+        label: "Native subscription funding",
+        detail: subscription?.loaded
+          ? `${subscription.nativeBalance || "0"} POL / ${
+              subscription.requestCount || "0"
+            } requests`
+          : "Balance not loaded",
+        state:
+          subscription?.fundedForNative === true
+            ? "ok"
+            : subscription?.fundedForNative === false
+              ? "warn"
+              : "dim",
+      },
     ];
-  }, [params, short, viewData.subscription]);
+  }, [
+    activeChapterCount,
+    activeChapterId,
+    activeChapterLabel,
+    params,
+    short,
+    viewData.subscription,
+  ]);
 
   const engineSignals = React.useMemo(() => {
     const pendingRows = hist.filter(
       (row) => String(row.status).toLowerCase() === "pending",
     ).length;
+    const currentPending =
+      String(effectiveLast.status).toLowerCase() === "pending";
+    const pendingCount = Math.max(pendingRows, currentPending ? 1 : 0);
     const hasFulfilled = Boolean(latestFulfilled);
     const latestWordCount = Array.isArray(effectiveLast.randomWords)
       ? effectiveLast.randomWords.length
@@ -728,12 +915,29 @@ export default function VRFPanel({
       params?.ticketHub &&
       params?.vrfRouter &&
       (params?.keyHash || params?.expectedKeyHash) &&
-      (params?.coordinator || params?.expectedCoordinator),
+      (params?.coordinator || params?.expectedCoordinator) &&
+      params?.collectionApproved === true &&
+      params?.ticketHubPaused === false &&
+      params?.routerOwnerMatches === true &&
+      viewData.subscription?.matches === true &&
+      viewData.subscription?.routerIsConsumer === true &&
+      viewData.subscription?.ownerMatches === true &&
+      viewData.subscription?.fundedForNative === true,
     );
     const hasMismatch =
       params?.keyHashMatches === false ||
       params?.coordinatorMatches === false ||
-      viewData.subscription?.matches === false;
+      params?.routerOwnerMatches === false ||
+      params?.collectionApproved === false ||
+      params?.ticketHubPaused === true ||
+      viewData.subscription?.matches === false ||
+      viewData.subscription?.routerIsConsumer === false ||
+      viewData.subscription?.ownerMatches === false ||
+      viewData.subscription?.fundedForNative === false;
+    const hasAnyRequest = Boolean(
+      (effectiveLast.requestId && effectiveLast.requestId !== "0") ||
+      hist.length,
+    );
     return [
       {
         key: "mode",
@@ -745,23 +949,28 @@ export default function VRFPanel({
         key: "queue",
         label: "Pending queue",
         detail:
-          pendingRows > 0
-            ? `${pendingRows} pending request(s)${
+          pendingCount > 0
+            ? `${pendingCount} pending request(s)${
                 pendingAgeMinutes != null
                   ? `, latest ${pendingAgeMinutes} min`
                   : ""
               }`
             : "No pending requests",
-        state: pendingRows > 0 ? "warn" : "ok",
+        state: pendingCount > 0 ? "warn" : "ok",
       },
       {
         key: "proof",
         label: "Proof completeness",
-        detail:
-          latestWordCount > 0 && hasFulfilled
+        detail: !hasAnyRequest
+          ? "No request history for this wallet"
+          : latestWordCount > 0 && hasFulfilled
             ? "Latest request has words + tx"
             : "Waiting for complete fulfillment proof",
-        state: latestWordCount > 0 && hasFulfilled ? "ok" : "warn",
+        state: !hasAnyRequest
+          ? "dim"
+          : latestWordCount > 0 && hasFulfilled
+            ? "ok"
+            : "warn",
       },
       {
         key: "params",
@@ -777,10 +986,20 @@ export default function VRFPanel({
         label: "Mainnet wiring",
         detail: hasMismatch
           ? "One or more live values differ from configured mainnet data"
+          : activeChapterCount > 1
+            ? "More than one chapter is active"
+            : activeChapterCount === 0 && hasMainnetWiring
+              ? "VRF infrastructure ready; chapter activation pending"
           : hasMainnetWiring
             ? "Collection, TicketHub, router, coordinator and keyHash configured"
             : "Mainnet wiring incomplete",
-        state: hasMismatch ? "warn" : hasMainnetWiring ? "ok" : "dim",
+        state: hasMismatch
+          ? "warn"
+          : activeChapterCount === 1 && hasMainnetWiring
+            ? "ok"
+            : activeChapterCount > 1
+              ? "warn"
+              : "dim",
       },
     ];
   }, [
@@ -790,6 +1009,9 @@ export default function VRFPanel({
     pendingAgeMinutes,
     params,
     viewData.subscription,
+    effectiveLast.requestId,
+    effectiveLast.status,
+    activeChapterCount,
   ]);
 
   const proofRows = React.useMemo(() => {
@@ -842,6 +1064,12 @@ export default function VRFPanel({
         accent: userAddr ? C.c : C.p,
       },
       {
+        label: "Active Chapter",
+        value: activeChapterLabel,
+        accent:
+          activeChapterCount === 1 ? C.g : activeChapterCount > 1 ? C.p : C.dim,
+      },
+      {
         label: "Last Status",
         value: lastStatusLabel,
         accent: lastStatusLabel === "FULFILLED" ? C.g : C.v,
@@ -864,12 +1092,14 @@ export default function VRFPanel({
       C.g,
       C.v,
       C.dim,
+      activeChapterCount,
+      activeChapterLabel,
     ],
   );
 
   const recentHistory = React.useMemo(() => hist.slice(0, 6), [hist]);
   const historyHeaders = React.useMemo(
-    () => ["Time", "RequestId", "Status", "Conf", "Words", "Tx"],
+    () => ["Time", "RequestId", "Status", "Words", "Tx"],
     [],
   );
   const proofHeaders = React.useMemo(
@@ -895,10 +1125,10 @@ export default function VRFPanel({
             <span className="vrf-badge">Chainlink VRF</span>
             <h2 className="rewards-grid__title">VRF Dashboard</h2>
             <p className="rewards-grid__subtitle">
-              Observe the full Chainlink VRF lifecycle on {netLabel}: request
+              Observe the Chainlink VRF lifecycle on {netLabel}: request
               creation, fulfillment timing, random words, health signals, and
-              proof checks. Every state is sourced from on-chain data for
-              transparent redeem auditing.
+              proof checks. Live contract values are compared with the Polygon
+              mainnet configuration.
             </p>
           </div>
           <div className="rewards-grid__header-actions">
@@ -926,11 +1156,20 @@ export default function VRFPanel({
             )}
             <GhostBtn
               tone="accent"
-              onClick={() => onRequestRandomness()}
-              title="Redeem a ticket and request Chainlink VRF"
+              onClick={() => onRequestRandomness?.()}
+              disabled={!canRequestRandomness}
+              title={
+                requestBlockedReason ||
+                "Redeem a ticket and request Chainlink VRF"
+              }
             >
-              Redeem / Request
+              Redeem Ticket
             </GhostBtn>
+            {requestBlockedReason && (
+              <span className="vrf-request-blocked" role="status">
+                {requestBlockedReason}
+              </span>
+            )}
             <PanelInfoButton
               onClick={() => setInfoOpen(true)}
               ariaLabel="VRF panel info"
@@ -1084,9 +1323,6 @@ export default function VRFPanel({
                         <td data-label="Status" className="vrf-table__strong">
                           {String(r.status || "-").toUpperCase()}
                         </td>
-                        <td data-label="Confirmations">
-                          {r.confirmations ?? "-"}
-                        </td>
                         <td data-label="Words">{r.words ?? "-"}</td>
                         <td data-label="Transaction">
                           {r.tx ? (
@@ -1103,7 +1339,7 @@ export default function VRFPanel({
                     ))}
                     {!hist.length && (
                       <tr>
-                        <td colSpan={6} className="vrf-table__empty">
+                        <td colSpan={5} className="vrf-table__empty">
                           No history yet.
                         </td>
                       </tr>
@@ -1144,9 +1380,6 @@ export default function VRFPanel({
                           <td data-label="Status" className="vrf-table__strong">
                             {String(r.status || "-").toUpperCase()}
                           </td>
-                          <td data-label="Confirmations">
-                            {r.confirmations ?? "-"}
-                          </td>
                           <td data-label="Words">{r.words ?? "-"}</td>
                           <td data-label="Transaction">
                             {r.tx ? (
@@ -1163,7 +1396,7 @@ export default function VRFPanel({
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={6} className="vrf-table__empty">
+                        <td colSpan={5} className="vrf-table__empty">
                           -
                         </td>
                       </tr>

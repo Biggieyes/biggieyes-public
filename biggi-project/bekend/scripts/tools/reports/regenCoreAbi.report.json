@@ -1,7 +1,7 @@
 {
-  "updated": 25,
+  "updated": 26,
   "skipped": 0,
-  "total": 25,
+  "total": 26,
   "details": [
     {
       "name": "BiggiEyesMain.abi.json",
@@ -47,6 +47,11 @@
       "name": "BiggiNFTRewards.abi.json",
       "status": "updated",
       "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiNftRewards.sol/BiggiNFTRewards.json"
+    },
+    {
+      "name": "BiggiNFTRewardsV2.abi.json",
+      "status": "updated",
+      "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiNftRewardsV2.sol/BiggiNFTRewardsV2.json"
     },
     {
       "name": "BiggiVRFRouter.abi.json",

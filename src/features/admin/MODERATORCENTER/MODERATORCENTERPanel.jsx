@@ -10,6 +10,7 @@ import {
   readWeekStats,
 } from "@/utils/eth";
 import "./MODERATORCENTERPanel.css";
+import "../../../styles/panel-buttons.css";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const shortValue = (value, start = 8, end = 6) => {
@@ -20,7 +21,8 @@ const shortValue = (value, start = 8, end = 6) => {
 };
 
 const sameAddress = (left, right) =>
-  Boolean(left && right) && String(left).toLowerCase() === String(right).toLowerCase();
+  Boolean(left && right) &&
+  String(left).toLowerCase() === String(right).toLowerCase();
 
 const rpcLabel = (value) => {
   if (!value) return "--";
@@ -50,7 +52,10 @@ export default function MODERATORCENTERPanel({
   const [operationallyReady, setOperationallyReady] = React.useState(null);
   const [chainLoading, setChainLoading] = React.useState(false);
   const [chainError, setChainError] = React.useState("");
-  const [claimState, setClaimState] = React.useState({ pending: false, message: "" });
+  const [claimState, setClaimState] = React.useState({
+    pending: false,
+    message: "",
+  });
   const [weeklyEntries, setWeeklyEntries] = React.useState([]);
 
   const cfg = getConfig();
@@ -58,7 +63,10 @@ export default function MODERATORCENTERPanel({
     () => (typeof window !== "undefined" ? window.location.origin : ""),
     [],
   );
-  const activeSlots = React.useMemo(() => slots.filter((slot) => slot.enabled), [slots]);
+  const activeSlots = React.useMemo(
+    () => slots.filter((slot) => slot.enabled),
+    [slots],
+  );
   const walletSlot = React.useMemo(
     () => slots.find((slot) => sameAddress(slot.payout, walletAddress)) || null,
     [slots, walletAddress],
@@ -71,17 +79,26 @@ export default function MODERATORCENTERPanel({
       const contract = await getModeratorCenterV2Contract({ signer: false });
       await contract.ticketHub();
       const loadedSlots = await Promise.all(
-        Array.from({ length: 10 }, (_, slotId) => readSlotInfo(contract, slotId)),
+        Array.from({ length: 10 }, (_, slotId) =>
+          readSlotInfo(contract, slotId),
+        ),
       );
       const matchedSlotId = loadedSlots.findIndex((slot) =>
         sameAddress(slot.payout, walletAddress),
       );
-      const [globalUniqueResult, pausedResult, readyResult, claimableResult, weekResult] =
-        await Promise.all([
+      const [
+        globalUniqueResult,
+        pausedResult,
+        readyResult,
+        claimableResult,
+        weekResult,
+      ] = await Promise.all([
           contract.globalUniquePerWeek(),
           contract.paused(),
           contract.operationallyReady(),
-          walletAddress ? contract.claimable(walletAddress) : Promise.resolve(null),
+        walletAddress
+          ? contract.claimable(walletAddress)
+          : Promise.resolve(null),
           matchedSlotId >= 0 && weekId
             ? readWeekStats(contract, weekId, matchedSlotId)
             : Promise.resolve(null),
@@ -120,7 +137,10 @@ export default function MODERATORCENTERPanel({
       const contract = await getModeratorCenterV2Contract({ signer: true });
       const tx = await contract.claim();
       await tx.wait();
-      setClaimState({ pending: false, message: `Claim confirmed: ${shortValue(tx.hash)}` });
+      setClaimState({
+        pending: false,
+        message: `Claim confirmed: ${shortValue(tx.hash)}`,
+      });
       await loadChainState();
     } catch (error) {
       setClaimState({
@@ -142,7 +162,9 @@ export default function MODERATORCENTERPanel({
             : "No assigned slot";
 
   return (
-    <section className={`moderator-center biggi-skin${compact ? " is-compact" : ""}`}>
+    <section
+      className={`moderator-center biggi-skin${compact ? " is-compact" : ""}`}
+    >
       <div className="moderator-center__surface">
         <header className="moderator-center__header">
           <div />
@@ -171,8 +193,12 @@ export default function MODERATORCENTERPanel({
         <div className="moderator-center__hero">
           <article className="moderator-center__hero-card">
             <span className="moderator-center__hero-label">Access</span>
-            <strong className="moderator-center__hero-value">{accessState}</strong>
-            <span className="moderator-center__hero-hint">Payout wallet identity</span>
+            <strong className="moderator-center__hero-value">
+              {accessState}
+            </strong>
+            <span className="moderator-center__hero-hint">
+              Payout wallet identity
+            </span>
           </article>
           <article className="moderator-center__hero-card">
             <span className="moderator-center__hero-label">Current slot</span>
@@ -189,15 +215,25 @@ export default function MODERATORCENTERPanel({
               {shortValue(cfg.v2ContractAddress)}
             </strong>
             <span className="moderator-center__hero-hint">
-              {paused == null ? "Status unavailable" : paused ? "Paused" : "Active"}
+              {paused == null
+                ? "Status unavailable"
+                : paused
+                  ? "Paused"
+                  : "Active"}
             </span>
           </article>
           <article className="moderator-center__hero-card">
             <span className="moderator-center__hero-label">Readiness</span>
             <strong className="moderator-center__hero-value">
-              {operationallyReady == null ? "--" : operationallyReady ? "Ready" : "Blocked"}
+              {operationallyReady == null
+                ? "--"
+                : operationallyReady
+                  ? "Ready"
+                  : "Blocked"}
             </strong>
-            <span className="moderator-center__hero-hint">RPC {rpcLabel(cfg.chainRpc)}</span>
+            <span className="moderator-center__hero-hint">
+              RPC {rpcLabel(cfg.chainRpc)}
+            </span>
           </article>
         </div>
 
@@ -219,7 +255,9 @@ export default function MODERATORCENTERPanel({
 
         {activeTab === "moderator" && (
           <div className="moderator-center__stack">
-            {chainError ? <div className="moderator-center__error">{chainError}</div> : null}
+            {chainError ? (
+              <div className="moderator-center__error">{chainError}</div>
+            ) : null}
             {contractState === "v2" && walletSlot ? (
               <ModeratorPanel
                 walletAddress={walletAddress}
@@ -239,7 +277,11 @@ export default function MODERATORCENTERPanel({
             ) : (
               <section className="moderator-center__card">
                 <div className="moderator-center__card-head">
-                  <h3>{contractState === "v2" ? "Wallet not assigned" : "V2 not active"}</h3>
+                  <h3>
+                    {contractState === "v2"
+                      ? "Wallet not assigned"
+                      : "V2 not active"}
+                  </h3>
                   <span className="moderator-center__chip moderator-center__chip--warn">
                     {chainLoading ? "Checking" : accessState}
                   </span>
@@ -247,15 +289,21 @@ export default function MODERATORCENTERPanel({
                 <div className="moderator-center__statlines">
                   <div className="moderator-center__statline">
                     <span>Connected wallet</span>
-                    <strong className="mono">{shortValue(walletAddress)}</strong>
+                    <strong className="mono">
+                      {shortValue(walletAddress)}
+                    </strong>
                   </div>
                   <div className="moderator-center__statline">
                     <span>Configured V2</span>
-                    <strong className="mono">{shortValue(cfg.v2ContractAddress)}</strong>
+                    <strong className="mono">
+                      {shortValue(cfg.v2ContractAddress)}
+                    </strong>
                   </div>
                   <div className="moderator-center__statline">
                     <span>Owner</span>
-                    <strong className="mono">{shortValue(cfg.ownerAddress)}</strong>
+                    <strong className="mono">
+                      {shortValue(cfg.ownerAddress)}
+                    </strong>
                   </div>
                 </div>
                 <div className="moderator-center__actions">

@@ -5466,6 +5466,86 @@
       "artifacts": [
         "MockModeratorTicketHub"
       ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\CORE\\BiggiNftRewardsV2.sol": {
+      "lastModificationDate": 1787886334986,
+      "contentHash": "e2545d3a4da172bf48692b37ac25e103",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiNftRewardsV2.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable2Step.sol",
+        "@openzeppelin/contracts/token/ERC721/ERC721.sol",
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiNFTRewardsV2",
+        "IBiggiRewardVrfRouterV2"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\mocks\\MockRewardVrfRouterV2.sol": {
+      "lastModificationDate": 1787885251999,
+      "contentHash": "238654f0db5b33cc29b783f57b0b37cb",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/mocks/MockRewardVrfRouterV2.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "IMockRewardVrfConsumerV2",
+        "MockRewardVrfRouterV2"
+      ]
     }
   }
 }

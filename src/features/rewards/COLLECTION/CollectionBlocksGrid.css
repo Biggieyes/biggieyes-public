@@ -29,7 +29,7 @@
       rgba(39, 217, 210, 0.1),
       transparent 60%
     ),
-    url("/images/bg-tab0.png");
+    url("/images/bg-tab0.webp");
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
@@ -1046,7 +1046,7 @@
   background:
     linear-gradient(180deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.75)),
     linear-gradient(135deg, rgba(87, 186, 255, 0.08), rgba(72, 255, 199, 0.06)),
-    url("/images/bg-tab0.png"), rgba(11, 13, 18, 0.82);
+    url("/images/bg-tab0.webp"), rgba(11, 13, 18, 0.82);
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;

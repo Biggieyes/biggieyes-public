@@ -51,6 +51,7 @@ import {
 import { buildFeeOverrides } from "@/shared/utils/txFees";
 import {
   readActiveTicketChapterIds,
+  readTicketChapterStates,
   resolveActiveTicketChapterId,
   resolveRedeemableTicketForActiveChapter,
 } from "@/shared/utils/ticketChapters.js";
@@ -72,6 +73,7 @@ import {
   shouldRunHeavyVrfRefresh,
   shouldRunWalletAssetRefresh,
 } from "@/shared/utils/vrfPolling";
+import { readVrfSubscriptionSnapshot } from "@/shared/utils/vrfSubscription.js";
 import { setVRFAllOrPartial } from "@/shared/utils/adminActions";
 import {
   buildRewardClaimPayload,
@@ -93,9 +95,11 @@ import {
   getInjectedProviderCandidates,
   isMetaMaskExtensionMissingError,
   isLikelyMetaMaskSdkProvider,
+  requestInjectedAccounts,
   startInjectedProviderDiscovery,
 } from "@/shared/utils/injectedProviders";
 import { shouldUseMetaMaskMobileFallback } from "@/shared/utils/mobileWallet";
+import { clearWalletConnectResumeExpected } from "@/shared/utils/walletConnectResume";
 
 import "./styles/biggi-token.skin.css";
 
@@ -1917,6 +1921,10 @@ export default function AppCore() {
     distributor: "",
     activeChapterId: null,
     activeChapterCount: 0,
+    chapters: CORE_CHAPTERS.map((chapter) => ({
+      chapterId: chapter.chapterId,
+      active: false,
+    })),
   });
 
   const [blockMintCounts, setBlockMintCounts] = React.useState(
@@ -2353,11 +2361,13 @@ export default function AppCore() {
       }
     };
 
-    const chapterStates = await Promise.all(
-      CORE_CHAPTERS.map(async (chapter) => ({
-        chapterId: chapter.chapterId,
-        active: Boolean(await read("chapterActive", [chapter.chapterId])),
-      })),
+    const chapterStates = await readTicketChapterStates(ticketHub).catch(() =>
+      Promise.all(
+        CORE_CHAPTERS.map(async (chapter) => ({
+          chapterId: chapter.chapterId,
+          active: Boolean(await read("chapterActive", [chapter.chapterId])),
+        })),
+      ),
     );
     const activeChapterIds = chapterStates
       .filter((chapter) => chapter.active)
@@ -2391,6 +2401,7 @@ export default function AppCore() {
       distributor: String(distributor || ""),
       activeChapterId,
       activeChapterCount: activeChapterIds.length,
+      chapters: chapterStates,
     };
     setTicketHubStatus(next);
     return next;
@@ -3044,12 +3055,14 @@ export default function AppCore() {
       return {
         chapterId,
         activeChapterCount: 1,
+        activeChapterIds,
         contract: getReadOnlyChapterMain(chapterId, provider),
       };
     }
     return {
       chapterId: 1,
       activeChapterCount: activeChapterIds.length,
+      activeChapterIds,
       contract: fallback,
     };
   }, []);
@@ -3064,17 +3077,12 @@ export default function AppCore() {
     try {
       if (displayedChapter.chapterId !== 1)
         throw new Error("READER_CHAPTER_MISMATCH");
-      const readerKinds = ["main", "tokenomics", "REWARDS", "generic"];
-      let snap = null;
-
-      for (const k of readerKinds) {
-        try {
-          const r = getCachedReaderInstance(k);
-          if (!r) continue;
-          snap = await getFrontendSnapshotLiteActive(r);
-          if (snap) break;
-        } catch {}
-      }
+      const reader = getCachedReaderInstance("main");
+      const snap = reader
+        ? await getFrontendSnapshotLiteActive(reader, {
+            chapterId: displayedChapter.chapterId,
+          })
+        : null;
 
       if (snap) {
         const [
@@ -3108,8 +3116,8 @@ export default function AppCore() {
       }
     }
 
-    // 2) Always refresh block/bG arrays from MAIN with index-base detection.
-    // This prevents stale/misaligned reader arrays from freezing dynamic prices.
+    // 2) Direct reads are a fallback only. The deployed reader calculates its
+    // arrays from MAIN in the same eth_call, so overlaying them duplicates work.
     try {
       const main = displayedMain;
       const ticketHub = getReadOnlyTicketHub();
@@ -3146,11 +3154,13 @@ export default function AppCore() {
         } catch {}
       }
 
-      const direct = await readMainBlockStats(main);
-      if (direct) {
-        setBlockPrices(direct.prices);
-        setBlockMintCounts(direct.blkCounts);
-        setBackgroundMintCounts(direct.bgCounts);
+      if (!snapshotUsed) {
+        const direct = await readMainBlockStats(main);
+        if (direct) {
+          setBlockPrices(direct.prices);
+          setBlockMintCounts(direct.blkCounts);
+          setBackgroundMintCounts(direct.bgCounts);
+        }
       }
     } catch (e) {
       if (isRateLimitedRpcError(e)) {
@@ -6733,27 +6743,54 @@ export default function AppCore() {
       let params = {};
       let subId = "";
       let subIdMatches = null;
+      let subscriptionRuntime = null;
 
       try {
         const vrf = getVRFRO(provider);
-        const [keyHash, conf, numWords, gas, sub, coord, retryDelay] =
-          await Promise.all([
-            vrf?.keyHash
-              ? vrf.keyHash().catch(() => "")
-              : c.keyHash().catch(() => ""),
-            c.requestConfirmations?.().catch?.(() => 3) ?? 3,
-            vrf?.numWords
-              ? vrf.numWords().catch(() => 1)
-              : c.numWords().catch(() => 1),
-            vrf?.callbackGasLimit
-              ? vrf.callbackGasLimit().catch(() => 300000)
-              : c.callbackGasLimit().catch(() => 300000),
-            vrf?.subId
-              ? vrf.subId().catch(() => "")
-              : (c.s_subscriptionId?.().catch?.(() => "") ?? ""),
-            vrf?.coordinator ? vrf.coordinator().catch(() => "") : "",
-            c.pendingRetryDelay?.().catch?.(() => 0) ?? 0,
-          ]);
+        const ticketHub = getReadOnlyTicketHub(provider);
+        const collectionAddress = await resolveContractAddress(c).catch(
+          () => "",
+        );
+        const chapter = CORE_CHAPTERS.find(
+          (item) => item.chapterId === displayedChapter.chapterId,
+        );
+        const [
+          keyHash,
+          conf,
+          numWords,
+          gas,
+          sub,
+          coord,
+          retryDelay,
+          routerOwner,
+          routerMain,
+          collectionApproved,
+          ticketHubPaused,
+        ] = await Promise.all([
+          vrf?.keyHash
+            ? vrf.keyHash().catch(() => "")
+            : c.keyHash().catch(() => ""),
+          vrf?.requestConfirmations
+            ? vrf.requestConfirmations().catch(() => 3)
+            : (c.requestConfirmations?.().catch?.(() => 3) ?? 3),
+          vrf?.numWords
+            ? vrf.numWords().catch(() => 1)
+            : c.numWords().catch(() => 1),
+          vrf?.callbackGasLimit
+            ? vrf.callbackGasLimit().catch(() => 300000)
+            : c.callbackGasLimit().catch(() => 300000),
+          vrf?.subId
+            ? vrf.subId().catch(() => "")
+            : (c.s_subscriptionId?.().catch?.(() => "") ?? ""),
+          vrf?.coordinator ? vrf.coordinator().catch(() => "") : "",
+          c.pendingRetryDelay?.().catch?.(() => 0) ?? 0,
+          vrf?.owner ? vrf.owner().catch(() => "") : "",
+          vrf?.main ? vrf.main().catch(() => "") : "",
+          vrf?.approvedMains && collectionAddress
+            ? vrf.approvedMains(collectionAddress).catch(() => null)
+            : null,
+          ticketHub?.paused ? ticketHub.paused().catch(() => null) : null,
+        ]);
 
         const expectedKeyHash = ADDR.VRF_KEY_HASH || "";
         const expectedCoordinator = ADDR.VRF_COORDINATOR || "";
@@ -6784,9 +6821,21 @@ export default function AppCore() {
           coordinatorLive: liveCoordinator,
           expectedCoordinator,
           coordinatorMatches,
-          collection: ADDR.COLLECTION_VRF || ADDR.MAIN || "",
+          collection:
+            collectionAddress || ADDR.COLLECTION_VRF || ADDR.MAIN || "",
+          collectionApproved,
+          activeChapterName: chapter?.displayName || "",
+          activeChapterIds: displayedChapter.activeChapterIds || [],
           ticketHub: ADDR.TICKET_HUB || "",
+          ticketHubPaused,
           vrfRouter: ADDR.VRF_ROUTER || "",
+          routerOwner,
+          routerOwnerMatches:
+            routerOwner && ADDR.EXPECT_OWNER
+              ? String(routerOwner).toLowerCase() ===
+                String(ADDR.EXPECT_OWNER).toLowerCase()
+              : null,
+          routerMain,
           pendingRetryDelaySec: Number(retryDelay ?? 0),
           retryPendingSupported,
           activeChapterId:
@@ -6800,6 +6849,13 @@ export default function AppCore() {
           liveSubId && expectedSubId
             ? String(liveSubId) === String(expectedSubId)
             : null;
+        subscriptionRuntime = await readVrfSubscriptionSnapshot({
+          provider,
+          coordinator: liveCoordinator || expectedCoordinator,
+          subId: subId,
+          routerAddress: ADDR.VRF_ROUTER,
+          expectedOwner: ADDR.EXPECT_OWNER,
+        });
       } catch {}
 
       let last = {
@@ -6903,6 +6959,7 @@ export default function AppCore() {
           id: subId,
           expectedId: ADDR.VRF_SUB_ID || "",
           matches: subIdMatches,
+          ...(subscriptionRuntime || {}),
         },
         params,
         last,
@@ -7218,6 +7275,7 @@ export default function AppCore() {
     if (connectInFlightRef.current) return;
     connectInFlightRef.current = true;
     walletConnectResumeAllowedRef.current = false;
+    clearWalletConnectResumeExpected();
     try {
       startInjectedProviderDiscovery();
       const metaMaskCandidates = getInjectedProviderCandidates({
@@ -7268,7 +7326,7 @@ export default function AppCore() {
             );
           }
           const accounts = await requestWithTimeout(
-            candidate.request({ method: "eth_requestAccounts" }),
+            requestInjectedAccounts(candidate, { forceSelection: true }),
             METAMASK_REQUEST_TIMEOUT_MS,
             "METAMASK_TIMEOUT",
           );
@@ -7315,7 +7373,7 @@ export default function AppCore() {
               );
             }
             const accounts = await requestWithTimeout(
-              rootProvider.request({ method: "eth_requestAccounts" }),
+              requestInjectedAccounts(rootProvider, { forceSelection: true }),
               METAMASK_REQUEST_TIMEOUT_MS,
               "METAMASK_TIMEOUT",
             );
@@ -9005,13 +9063,13 @@ export default function AppCore() {
 
     (async () => {
       try {
-        await fetchStats();
+        await runWithLock(statsPollRef, fetchStats);
         if (cancelled) return;
         await fetchREWARDS();
         if (cancelled) return;
         await fetchLastMinted(walletAddress || null);
         if (cancelled) return;
-        await refreshVRFPanel();
+        if (walletAddress) await refreshVRFPanel();
       } catch {}
     })();
 
@@ -9139,6 +9197,23 @@ export default function AppCore() {
   const adminData = React.useMemo(() => {
     const vrfParams = VRFUIData?.params || {};
     const subscriptionId = VRFUIData?.subscription?.id || "";
+    const chapterStates = Array.isArray(ticketHubStatus?.chapters)
+      ? ticketHubStatus.chapters
+      : [];
+    const chapters = CORE_CHAPTERS.map((chapter) => ({
+      ...chapter,
+      active: Boolean(
+        chapterStates.find(
+          (state) => Number(state?.chapterId) === Number(chapter.chapterId),
+        )?.active,
+      ),
+    }));
+    const displayedChapter =
+      chapters.find(
+        (chapter) =>
+          Number(chapter.chapterId) ===
+          Number(ticketHubStatus?.activeChapterId),
+      ) || chapters[0];
     const frontendInfo =
       typeof window === "undefined"
         ? null
@@ -9146,6 +9221,7 @@ export default function AppCore() {
             app: "BIGGINFTWEB",
             react: React.version,
             network: VRFUIData?.network || "EVM",
+            chainId: Number(VRFUIData?.chainId || ADDR.CHAIN_ID || 137),
             wallet: walletAddress || "",
             screen: `${window.innerWidth}x${window.innerHeight}`,
             userAgent: window.navigator?.userAgent || "",
@@ -9154,9 +9230,21 @@ export default function AppCore() {
     return {
       owner: adminOwner || "",
       networkLabel: VRFUIData?.network || "EVM",
-      contractAddress: ADDR.COLLECTION_VRF || ADDR.MAIN || "",
+      chainId: Number(VRFUIData?.chainId || ADDR.CHAIN_ID || 137),
+      contractAddress:
+        displayedChapter?.main || ADDR.COLLECTION_VRF || ADDR.MAIN || "",
+      publicContractAddress:
+        displayedChapter?.main2 || ADDR.COLLECTION_PUBLIC || ADDR.MAIN2 || "",
+      totalSupply: biggiMinted,
+      maxSupply,
       ticketPrice: ticketPrice ?? "",
       REWARDSPool: rewardPool ?? "",
+      chapters,
+      displayedChapterId: displayedChapter?.chapterId || 1,
+      ticketHub: {
+        address: ADDR.TICKET_HUB || "",
+        ...ticketHubStatus,
+      },
       treasury: ADDR.TREASURY || "",
       liquiditySink: ADDR.LIQUIDITY_VAULT || ADDR.LM_VAULT || "",
       token: {
@@ -9164,8 +9252,12 @@ export default function AppCore() {
       },
       dex: {
         router: ADDR.ROUTER || "",
+        factory: ADDR.FACTORY || "",
+        quoteToken: ADDR.QUOTE_TOKEN || ADDR.WPOL || ADDR.WETH || "",
+        pair: ADDR.PAIR || "",
       },
       VRF: {
+        router: ADDR.VRF_ROUTER || "",
         keyHash: vrfParams.keyHash || "",
         confirmations: vrfParams.confirmations ?? 3,
         numWords: vrfParams.numWords ?? 1,
@@ -9187,6 +9279,9 @@ export default function AppCore() {
     adminOwner,
     ticketPrice,
     rewardPool,
+    biggiMinted,
+    maxSupply,
+    ticketHubStatus,
     blockMintCounts,
     blockPrices,
     walletAddress,

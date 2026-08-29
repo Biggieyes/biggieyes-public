@@ -34,6 +34,9 @@ const mocks = vi.hoisted(() => {
     getInjectedProviderCandidates: vi.fn().mockReturnValue([]),
     isMetaMaskExtensionMissingError: vi.fn().mockReturnValue(false),
     isLikelyMetaMaskSdkProvider: vi.fn().mockReturnValue(false),
+    requestInjectedAccounts: vi.fn(async (provider) =>
+      provider.request({ method: "eth_requestAccounts" }),
+    ),
     startInjectedProviderDiscovery: vi.fn(),
     getWalletConnectMobileLinks: vi.fn().mockReturnValue(["metamask"]),
     shouldUseMetaMaskMobileFallback: vi.fn().mockReturnValue(false),
@@ -62,6 +65,7 @@ vi.mock("@/shared/utils/injectedProviders", () => ({
   getInjectedProviderCandidates: mocks.getInjectedProviderCandidates,
   isMetaMaskExtensionMissingError: mocks.isMetaMaskExtensionMissingError,
   isLikelyMetaMaskSdkProvider: mocks.isLikelyMetaMaskSdkProvider,
+  requestInjectedAccounts: mocks.requestInjectedAccounts,
   startInjectedProviderDiscovery: mocks.startInjectedProviderDiscovery,
 }));
 
@@ -165,6 +169,9 @@ describe("Web3Provider reconnect policy", () => {
 
     expect(injected.request).toHaveBeenCalledWith({
       method: "eth_requestAccounts",
+    });
+    expect(mocks.requestInjectedAccounts).toHaveBeenCalledWith(injected, {
+      forceSelection: true,
     });
     expect(mocks.setInjectedProvider).toHaveBeenCalledWith(injected);
     expect(mocks.syncPolygonRpcIfNeeded).not.toHaveBeenCalled();

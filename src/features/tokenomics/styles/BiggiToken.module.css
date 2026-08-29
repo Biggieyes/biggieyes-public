@@ -78,7 +78,7 @@
 .ecosystem :global(.biggi-token-surface) {
   position: relative;
   overflow: hidden;
-  background: var(--eco-surface-grad), url("/images/bg-tab0.png") !important;
+  background: var(--eco-surface-grad), url("/images/bg-tab0.webp") !important;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

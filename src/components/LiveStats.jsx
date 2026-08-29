@@ -55,6 +55,7 @@ import {
 import "./LiveStatsPools.css";
 import "./LiveStatsTables.css";
 import "./InfoTables.css";
+import "../styles/panel-buttons.css";
 
 const OKLINK_BASE = "https://www.oklink.com/polygon/address/";
 
@@ -1503,14 +1504,14 @@ function LiveStats({
   React.useEffect(() => {
     let alive = true;
     (async () => {
-      try {
+      const readMetadata = async () => {
         let r = null;
         try {
           r = getTokenREWARDSRO();
         } catch {
           r = null;
         }
-        if (!r) return;
+        if (!r) return null;
 
         const calls = [];
         calls.push(
@@ -1529,31 +1530,45 @@ function LiveStats({
             : Promise.resolve(null),
         );
 
-        const [wArr, unitWei, meta] = await Promise.all(calls);
-        if (!alive) return;
+        return Promise.all(calls);
+      };
 
-        if (wArr && Array.isArray(wArr)) {
-          const w = Array.from(wArr)
-            .slice(1)
-            .map((n) => Number(n || 0));
-          setWeightsFromContract(w.length === 10 ? w : null);
-        }
-
-        if (unitWei != null) setUnitRewardWei(unitWei);
-        const sym = meta?.symbol_ ?? meta?.[1] ?? null;
-        const dec = meta?.decimals_ ?? meta?.[2] ?? null;
-        if (sym && typeof sym === "string") setTokenSymbol(sym);
-        if (Number.isFinite(Number(dec))) setTokenDecimals(Number(dec));
-      } catch (e) {
-        // silent fallback — not critical
-        const handled = handleReadRpcFailure(
-          e,
-          "LiveStats token REWARDS metadata",
-        );
-        if (!handled) {
-          console.warn("LiveStats: failed reading token REWARDS metadata", e);
+      let metadata = null;
+      for (let attempt = 0; attempt < 2 && alive; attempt += 1) {
+        try {
+          metadata = await readMetadata();
+          break;
+        } catch (e) {
+          const handled = handleReadRpcFailure(
+            e,
+            "LiveStats token REWARDS metadata",
+          );
+          if (handled && attempt === 0) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            continue;
+          }
+          if (!handled) {
+            console.warn("LiveStats: failed reading token REWARDS metadata", e);
+          }
+          return;
         }
       }
+
+      if (!alive || !metadata) return;
+      const [wArr, unitWei, meta] = metadata;
+
+      if (wArr && Array.isArray(wArr)) {
+        const w = Array.from(wArr)
+          .slice(1)
+          .map((n) => Number(n || 0));
+        setWeightsFromContract(w.length === 10 ? w : null);
+      }
+
+      if (unitWei != null) setUnitRewardWei(unitWei);
+      const sym = meta?.symbol_ ?? meta?.[1] ?? null;
+      const dec = meta?.decimals_ ?? meta?.[2] ?? null;
+      if (sym && typeof sym === "string") setTokenSymbol(sym);
+      if (Number.isFinite(Number(dec))) setTokenDecimals(Number(dec));
     })();
     return () => {
       alive = false;
@@ -2349,7 +2364,7 @@ function LiveStats({
     transform: isPhone ? "none" : "translate(254px, -92px)",
     overflow: "hidden",
     backgroundImage:
-      'image-set(url("/images/blocks-bg.lossless.webp") type("image/webp"), url("/images/blocks-bg.png") type("image/png"))',
+      'image-set(url("/images/blocks-bg.optimized.webp") type("image/webp"), url("/images/blocks-bg.png") type("image/png"))',
     backgroundSize: "cover",
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
@@ -2390,7 +2405,7 @@ function LiveStats({
     margin: isPhone ? 0 : "0 auto",
     gap: isPhone ? 4 : 6,
     backgroundImage:
-      'image-set(url("/images/blocks-bg.lossless.webp") type("image/webp"), url("/images/blocks-bg.png") type("image/png"))',
+      'image-set(url("/images/blocks-bg.optimized.webp") type("image/webp"), url("/images/blocks-bg.png") type("image/png"))',
     backgroundSize: "cover",
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
@@ -3303,7 +3318,7 @@ function LiveStats({
             justifyContent: "center",
             marginTop: "0",
             backgroundImage:
-              'image-set(url("/images/blocks-bg.lossless.webp") type("image/webp"), url("/images/blocks-bg.png") type("image/png"))',
+              'image-set(url("/images/blocks-bg.optimized.webp") type("image/webp"), url("/images/blocks-bg.png") type("image/png"))',
             backgroundSize: "cover",
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
@@ -3829,9 +3844,7 @@ function LiveStats({
                           <div className="pools-card__body">
                             <div className="collection-stats-grid">
                               <div className="collection-stat-card">
-                                <div className="collection-stat-label">
-                                  Price
-                                </div>
+                            <div className="collection-stat-label">Price</div>
                                 <div className="collection-stat-value">
                                   {typeof biggiPrice === "number"
                                     ? `${biggiPrice.toFixed(
@@ -3868,10 +3881,9 @@ function LiveStats({
                                 </div>
                                 <div className="collection-stat-value">
                                   {typeof tradableSupply === "number"
-                                    ? `${tradableSupply.toLocaleString(
-                                        undefined,
-                                        { maximumFractionDigits: 2 },
-                                      )} ${resolvedTokenMeta.symbol}`
+                                ? `${tradableSupply.toLocaleString(undefined, {
+                                    maximumFractionDigits: 2,
+                                  })} ${resolvedTokenMeta.symbol}`
                                     : "-"}
                                 </div>
                               </div>
@@ -3945,9 +3957,7 @@ function LiveStats({
                                   const balDisplay =
                                     bal === "-" ? "-" : `${bal} POL`;
                                   const allocDisplay =
-                                    allocation === "-"
-                                      ? "-"
-                                      : `${allocation} POL`;
+                                allocation === "-" ? "-" : `${allocation} POL`;
                                   return (
                                     <div
                                       key={t.key || t.addr || prettyName}
@@ -4067,9 +4077,7 @@ function LiveStats({
                                 </div>
                                 <div className="collection-stat-value">
                                   {typeof lpPrice === "number"
-                                    ? `${lpPrice.toFixed(
-                                        lpPrice >= 1 ? 3 : 6,
-                                      )} POL`
+                                ? `${lpPrice.toFixed(lpPrice >= 1 ? 3 : 6)} POL`
                                     : "-"}
                                 </div>
                               </div>
@@ -4077,10 +4085,7 @@ function LiveStats({
                                 visibleLpHolderEntries.map((t) => {
                                   const bal =
                                     t.balance != null && pools?.lpStats
-                                      ? fmtToken(
-                                          t.balance,
-                                          pools.lpStats.decimals,
-                                        )
+                                  ? fmtToken(t.balance, pools.lpStats.decimals)
                                       : "-";
                                   const balDisplay =
                                     bal === "-" || !pools?.lpStats?.symbol
