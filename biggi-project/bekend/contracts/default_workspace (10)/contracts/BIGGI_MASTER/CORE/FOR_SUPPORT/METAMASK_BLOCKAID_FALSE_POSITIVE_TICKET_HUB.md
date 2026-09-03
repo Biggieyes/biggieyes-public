@@ -84,7 +84,7 @@ Explorer:
 https://polygonscan.com/address/0x7b7e561173f498C8274b821090Da64E8ee653f6A
 Deployment transaction:
 https://polygonscan.com/tx/0xb2d085d7cf2442dc9fd5c029872e838afad03260681a14b6e78e969781fca112
-Official website: https://biggieeyes.com
+Official website: https://biggieyes.com
 Repository: https://github.com/Biggieyes/biggieeyes-public
 OpenSea collection: https://opensea.io/collection/biggi-ticket-339884819
 
@@ -108,7 +108,7 @@ legitimate BiggiEyes project address.
 ### Blockaid developer verification
 
 - Form: https://report.blockaid.io/verifiedProject
-- Domain: `biggieeyes.com`
+- Domain: `biggieyes.com`
 - Chain: `Polygon`
 - Wallet: `MetaMask`
 - Address: `0x7b7e561173f498C8274b821090Da64E8ee653f6A`
