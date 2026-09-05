@@ -4,8 +4,11 @@
 }
 
 .live-stats-widget-new .live-menu-btn {
+  --live-menu-accent-rgb: 8 255 230;
   position: relative;
   overflow: hidden;
+  outline: 1px solid rgb(var(--live-menu-accent-rgb) / 0.24);
+  outline-offset: 2px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   line-height: 1;
@@ -16,7 +19,9 @@
     box-shadow 0.2s ease,
     border-color 0.2s ease,
     color 0.2s ease,
-    background 0.2s ease;
+    background 0.2s ease,
+    filter 0.2s ease,
+    outline-color 0.2s ease;
 }
 
 .live-stats-widget-new .live-menu-btn::after {
@@ -77,9 +82,11 @@
   opacity: 0.58;
   cursor: not-allowed;
   filter: saturate(0.7);
+  outline-color: transparent;
 }
 
 .live-stats-widget-new .live-menu-btn.live-menu-btn--cyan {
+  --live-menu-accent-rgb: 8 223 255;
   border-color: #08ffe6;
   box-shadow:
     0 10px 20px rgba(0, 0, 0, 0.4),
@@ -94,6 +101,7 @@
 }
 
 .live-stats-widget-new .live-menu-btn.live-menu-btn--gold {
+  --live-menu-accent-rgb: 255 232 0;
   border-color: #ffe800;
 }
 
@@ -105,6 +113,7 @@
 }
 
 .live-stats-widget-new .live-menu-btn.live-menu-btn--pink {
+  --live-menu-accent-rgb: 255 106 213;
   border-color: #ff6ad5;
   box-shadow:
     0 10px 20px rgba(0, 0, 0, 0.4),
@@ -116,6 +125,43 @@
   box-shadow:
     0 14px 28px rgba(0, 0, 0, 0.52),
     0 0 24px rgba(255, 106, 213, 0.5);
+}
+
+.live-stats-widget-new .live-menu-btn:hover:not(:disabled),
+.live-stats-widget-new .live-menu-btn:focus-visible,
+.live-stats-widget-new .live-menu-btn.is-active {
+  outline-color: rgb(var(--live-menu-accent-rgb) / 0.82);
+  filter: brightness(1.1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .live-stats-widget-new
+    .live-menu-btn:not(:disabled):not(.is-active):not(:hover):not(
+      :focus-visible
+    ):not(:active) {
+    animation: live-menu-affordance-pulse 3.6s ease-in-out infinite;
+  }
+
+  .live-stats-widget-new .live-menu-btn:nth-child(2) {
+    animation-delay: -1.2s;
+  }
+
+  .live-stats-widget-new .live-menu-btn:nth-child(3) {
+    animation-delay: -2.4s;
+  }
+}
+
+@keyframes live-menu-affordance-pulse {
+  0%,
+  100% {
+    outline-color: rgb(var(--live-menu-accent-rgb) / 0.2);
+    filter: brightness(1);
+  }
+
+  50% {
+    outline-color: rgb(var(--live-menu-accent-rgb) / 0.58);
+    filter: brightness(1.07);
+  }
 }
 
 .pools-card {
