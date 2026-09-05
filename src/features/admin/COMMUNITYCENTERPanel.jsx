@@ -252,10 +252,10 @@ const Card = ({
 );
 
 const ValueRow = ({ label, value, mono = false }) => (
-  <div className="biggi-line" style={{ justifyContent: "space-between" }}>
-    <span className="muted">{label}</span>
-    <span style={mono ? { fontFamily: "monospace" } : undefined}>
-      {value || "--"}
+  <div className="biggi-line community-center__value-row">
+    <span className="muted community-center__value-label">{label}</span>
+    <span className={`community-center__value${mono ? " is-mono" : ""}`}>
+      {value ?? "--"}
     </span>
   </div>
 );
@@ -507,33 +507,18 @@ export default function COMMUNITYCENTERPanel({
 
   const heroItems = React.useMemo(() => {
     const livePolls = polls.filter((poll) => poll.status === "Live").length;
-    const claimableEvents = events.filter((event) => event.claim?.ok).length;
 
     return [
       {
-        label: "Wallet",
-        value: activeWallet ? shorten(activeWallet, 8, 4) : "Not connected",
-        hint: activeWallet
-          ? "Eligible claims and live voting unlocked"
-          : "Connect a wallet for claims and voting",
-      },
-      {
-        label: "Events tracked",
-        value: eventsLoading ? "Syncing..." : String(events.length),
-        hint: eventsLoading
-          ? "Reading Community Center contract"
-          : "Owner-created on-chain event cards",
-      },
-      {
-        label: "Claimable",
+        label: "Assigned events",
         value: activeWallet
-          ? eventsLoading
+          ? userCommunityLoading
             ? "Syncing..."
-            : String(claimableEvents)
+            : String(userCommunitySnapshot.assignedEvents)
           : "--",
         hint: activeWallet
-          ? "Events where your wallet can claim now"
-          : "Visible after wallet connection",
+          ? "Events assigned to this wallet"
+          : "Connect a wallet to view",
       },
       {
         label: "Claimable POL",
@@ -552,22 +537,25 @@ export default function COMMUNITYCENTERPanel({
           : "Wallet-signed community votes",
       },
       {
-        label: "Pool locked",
-        value: userCommunityLoading
-          ? "Syncing..."
-          : formatPol(userCommunitySnapshot.totalLocked),
-        hint: "Total locked community event payouts",
+        label: "My votes",
+        value: activeWallet
+          ? pollsLoading || userCommunityLoading
+            ? "Syncing..."
+            : String(userCommunitySnapshot.myVotes)
+          : "--",
+        hint: activeWallet
+          ? "Polls voted on by this wallet"
+          : "Connect a wallet to view",
       },
     ];
   }, [
     activeWallet,
-    events,
-    eventsLoading,
     polls,
     pollsLoading,
     userCommunityLoading,
+    userCommunitySnapshot.assignedEvents,
     userCommunitySnapshot.claimableAmount,
-    userCommunitySnapshot.totalLocked,
+    userCommunitySnapshot.myVotes,
   ]);
 
   return (
@@ -585,10 +573,15 @@ export default function COMMUNITYCENTERPanel({
           </div>
           <div className="community-center__header-side">
             <div className="community-center__header-meta">
-              <span className="rewards-grid__pill">
-                {hasConfig ? "Contract ready" : "Contract missing"}
+              <span className="rewards-grid__pill community-center__network-pill">
+                Polygon mainnet
               </span>
-              <span className="rewards-grid__pill">
+              <span
+                className={`rewards-grid__pill community-center__state-pill${hasConfig ? " is-ready" : " is-error"}`}
+              >
+                {hasConfig ? "Contract live" : "Contract missing"}
+              </span>
+              <span className="rewards-grid__pill community-center__wallet-pill">
                 {activeWallet
                   ? `Wallet ${shorten(activeWallet, 6, 4)}`
                   : "Wallet disconnected"}
@@ -641,6 +634,34 @@ export default function COMMUNITYCENTERPanel({
           ))}
         </div>
 
+        {!activeWallet ? (
+          <div className="community-center__connect-banner">
+            <div className="community-center__connect-copy">
+              <strong>Connect your wallet</strong>
+              <span>
+                View personal event rewards, claim eligible prizes, and vote in
+                live community polls.
+              </span>
+            </div>
+            <div className="community-center__actions community-center__connect-actions">
+              <button
+                type="button"
+                className="biggi-btn biggi-btn--accent"
+                onClick={onConnectMetaMask}
+              >
+                MetaMask
+              </button>
+              <button
+                type="button"
+                className="biggi-btn biggi-btn--ghost"
+                onClick={onConnectWalletConnect}
+              >
+                WalletConnect
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         {!hasConfig ? (
           <Card
             title="Configuration Missing"
@@ -667,141 +688,130 @@ export default function COMMUNITYCENTERPanel({
           </Card>
         ) : null}
 
-        <Card
-          title="My Community Snapshot"
-          subtitle="Wallet-level event reward and voting summary from the Polygon mainnet Community Center."
-          tone="c"
-          className="community-center__snapshot-card"
-          action={
-            <button
-              type="button"
-              className="biggi-btn biggi-btn--ghost"
-              onClick={refreshAllData}
-              disabled={userCommunityLoading || eventsLoading || pollsLoading}
-            >
-              {userCommunityLoading ? "Refreshing..." : "Refresh snapshot"}
-            </button>
-          }
-        >
-          <div className="community-center__snapshot-grid">
-            <ValueRow
-              label="Wallet"
-              value={
-                activeWallet ? shorten(activeWallet, 8, 4) : "Not connected"
-              }
-              mono
-            />
-            <ValueRow
-              label="Contract"
-              value={
-                userCommunitySnapshot.address
-                  ? shorten(userCommunitySnapshot.address, 8, 4)
-                  : "--"
-              }
-              mono
-            />
-            <ValueRow
-              label="Status"
-              value={
-                userCommunitySnapshot.configured
-                  ? userCommunitySnapshot.paused
-                    ? "Paused"
-                    : "Live"
-                  : "Missing"
-              }
-            />
-            <ValueRow
-              label="Events tracked"
-              value={String(userCommunitySnapshot.eventsCount)}
-            />
-            <ValueRow
-              label="Assigned events"
-              value={String(userCommunitySnapshot.assignedEvents)}
-            />
-            <ValueRow
-              label="Claimable events"
-              value={String(userCommunitySnapshot.claimableEvents)}
-            />
-            <ValueRow
-              label="Assigned POL"
-              value={formatPol(userCommunitySnapshot.assignedAmount)}
-            />
-            <ValueRow
-              label="Claimable POL"
-              value={formatPol(userCommunitySnapshot.claimableAmount)}
-            />
-            <ValueRow
-              label="Pool balance"
-              value={formatPol(userCommunitySnapshot.poolBalance)}
-            />
-            <ValueRow
-              label="Total locked"
-              value={formatPol(userCommunitySnapshot.totalLocked)}
-            />
-            <ValueRow
-              label="Live polls"
-              value={String(userCommunitySnapshot.livePolls)}
-            />
-            <ValueRow
-              label="My votes"
-              value={String(userCommunitySnapshot.myVotes)}
-            />
+        <details className="community-center__account-details">
+          <summary className="community-center__account-summary">
+            <span className="community-center__account-heading">
+              <strong>My account & on-chain details</strong>
+              <span>
+                {activeWallet
+                  ? `${shorten(activeWallet, 8, 4)} connected`
+                  : "Wallet not connected"}
+              </span>
+            </span>
+            <span className="community-center__account-action">
+              View details
+            </span>
+          </summary>
+          <div className="community-center__account-body">
+            <div className="community-center__snapshot-grid community-center__snapshot-grid--details">
+              <ValueRow
+                label="Wallet"
+                value={
+                  activeWallet ? shorten(activeWallet, 8, 4) : "Not connected"
+                }
+                mono
+              />
+              <ValueRow
+                label="Reward status"
+                value={
+                  !activeWallet
+                    ? "Connect wallet"
+                    : userCommunityLoading
+                      ? "Syncing..."
+                      : userCommunitySnapshot.claimableEvents > 0
+                        ? "Prize ready"
+                        : "No claim available"
+                }
+              />
+              <ValueRow
+                label="Contract"
+                value={
+                  userCommunitySnapshot.address
+                    ? shorten(userCommunitySnapshot.address, 8, 4)
+                    : "--"
+                }
+                mono
+              />
+              <ValueRow
+                label="Contract status"
+                value={
+                  userCommunitySnapshot.configured
+                    ? userCommunitySnapshot.paused
+                      ? "Paused"
+                      : "Live"
+                    : "Missing"
+                }
+              />
+              <ValueRow
+                label="Events tracked"
+                value={String(userCommunitySnapshot.eventsCount)}
+              />
+              <ValueRow
+                label="Assigned events"
+                value={
+                  activeWallet
+                    ? String(userCommunitySnapshot.assignedEvents)
+                    : "--"
+                }
+              />
+              <ValueRow
+                label="Claimable events"
+                value={
+                  activeWallet
+                    ? String(userCommunitySnapshot.claimableEvents)
+                    : "--"
+                }
+              />
+              <ValueRow
+                label="My votes"
+                value={
+                  activeWallet ? String(userCommunitySnapshot.myVotes) : "--"
+                }
+              />
+              <ValueRow
+                label="Assigned POL"
+                value={
+                  activeWallet
+                    ? formatPol(userCommunitySnapshot.assignedAmount)
+                    : "--"
+                }
+              />
+              <ValueRow
+                label="Claimable POL"
+                value={
+                  activeWallet
+                    ? formatPol(userCommunitySnapshot.claimableAmount)
+                    : "--"
+                }
+              />
+              <ValueRow
+                label="Pool balance"
+                value={formatPol(userCommunitySnapshot.poolBalance)}
+              />
+              <ValueRow
+                label="Total locked"
+                value={formatPol(userCommunitySnapshot.totalLocked)}
+              />
+            </div>
           </div>
-          <div
-            className={
-              userCommunitySnapshot.claimableEvents > 0
-                ? "community-center__feedback"
-                : "community-center__notice"
-            }
-          >
-            <p className="muted community-center__copy">
-              {!activeWallet
-                ? "Connect a wallet to load wallet-specific assignments and votes."
-                : userCommunitySnapshot.claimableEvents > 0
-                  ? "This wallet has a Community Center prize ready to claim."
-                  : "No Community Center prize is claimable for this wallet right now."}
-            </p>
-          </div>
-        </Card>
+        </details>
 
         <div className="community-center__content">
           <Card
-            title="Events"
+            title="Rewards & Events"
             subtitle={
               eventsLoading
                 ? "Loading on-chain events..."
                 : "Owner-created event cards backed by the Community Center contract."
             }
             tone="c"
-            className="community-center__section-card"
+            className="community-center__section-card community-center__section-card--events"
           >
             <div className="community-center__stack">
-              {!activeWallet ? (
-                <div className="community-center__notice">
-                  <p className="muted community-center__copy">
-                    Connect a wallet to see whether a prize is assigned to your
-                    address and to claim on-chain payouts.
-                  </p>
-                  <div className="community-center__actions">
-                    <button
-                      type="button"
-                      className="biggi-btn biggi-btn--ghost"
-                      onClick={onConnectMetaMask}
-                    >
-                      Connect MetaMask
-                    </button>
-                    <button
-                      type="button"
-                      className="biggi-btn biggi-btn--ghost"
-                      onClick={onConnectWalletConnect}
-                    >
-                      WalletConnect
-                    </button>
-                  </div>
-                </div>
-              ) : null}
               {claimMessage ? (
-                <div className="community-center__feedback">{claimMessage}</div>
+                <div className="community-center__feedback" role="status">
+                  {claimMessage}
+                </div>
               ) : null}
               {!events.length && !eventsLoading ? (
                 <div className="community-center__empty">
@@ -815,7 +825,10 @@ export default function COMMUNITYCENTERPanel({
                     ? "No wallet status"
                     : "Connect wallet";
                 return (
-                  <article key={event.id} className="community-center__entry">
+                  <article
+                    key={event.id}
+                    className="community-center__entry community-center__entry--event"
+                  >
                     <div
                       className={`community-center__entry-top${event.image ? " has-thumb" : ""}`}
                     >
@@ -931,47 +944,28 @@ export default function COMMUNITYCENTERPanel({
           </Card>
 
           <Card
-            title="Voting"
+            title="Community Voting"
             subtitle={
               pollsLoading
                 ? "Loading community polls..."
                 : "Wallet-signed off-chain voting for the community."
             }
             tone="y"
-            className="community-center__section-card"
+            className="community-center__section-card community-center__section-card--voting"
           >
             <div className="community-center__stack">
               {pollsError ? (
-                <div className="community-center__feedback community-center__feedback--error">
+                <div
+                  className="community-center__feedback community-center__feedback--error"
+                  role="alert"
+                >
                   {pollsError}
                 </div>
               ) : null}
-              {!activeWallet ? (
-                <div className="community-center__notice">
-                  <p className="muted community-center__copy">
-                    Connect a wallet to cast one vote on each live community
-                    poll.
-                  </p>
-                  <div className="community-center__actions">
-                    <button
-                      type="button"
-                      className="biggi-btn biggi-btn--ghost"
-                      onClick={onConnectMetaMask}
-                    >
-                      Connect MetaMask
-                    </button>
-                    <button
-                      type="button"
-                      className="biggi-btn biggi-btn--ghost"
-                      onClick={onConnectWalletConnect}
-                    >
-                      WalletConnect
-                    </button>
-                  </div>
-                </div>
-              ) : null}
               {voteMessage ? (
-                <div className="community-center__feedback">{voteMessage}</div>
+                <div className="community-center__feedback" role="status">
+                  {voteMessage}
+                </div>
               ) : null}
               {!polls.length && !pollsLoading ? (
                 <div className="community-center__empty">
@@ -994,7 +988,10 @@ export default function COMMUNITYCENTERPanel({
                   !poll.myVoteOptionId;
 
                 return (
-                  <article key={poll.id} className="community-center__entry">
+                  <article
+                    key={poll.id}
+                    className="community-center__entry community-center__entry--poll"
+                  >
                     <div className="community-center__entry-copy">
                       <div className="community-center__entry-head">
                         <strong>{poll.title || poll.id}</strong>
@@ -1036,9 +1033,10 @@ export default function COMMUNITYCENTERPanel({
                       {(Array.isArray(poll.options) ? poll.options : []).map(
                         (option) => {
                           const optionVotes = Number(option.votes || 0);
-                          const percent = totalVotes
-                            ? `${Math.round((optionVotes / totalVotes) * 100)}%`
-                            : "0%";
+                          const percentValue = totalVotes
+                            ? Math.round((optionVotes / totalVotes) * 100)
+                            : 0;
+                          const percent = `${percentValue}%`;
                           const isSelected = selectedOptionId === option.id;
                           return (
                             <label
@@ -1059,11 +1057,22 @@ export default function COMMUNITYCENTERPanel({
                               />
                               <div className="community-center__option-copy">
                                 <div className="community-center__option-row">
-                                  <span>{option.label}</span>
-                                  <span className="muted">
+                                  <span className="community-center__option-label">
+                                    {option.label}
+                                  </span>
+                                  <span className="community-center__option-result">
                                     {optionVotes} votes ({percent})
                                   </span>
                                 </div>
+                                <span
+                                  className="community-center__option-meter"
+                                  aria-hidden="true"
+                                >
+                                  <span
+                                    className="community-center__option-meter-fill"
+                                    style={{ width: percent }}
+                                  />
+                                </span>
                               </div>
                             </label>
                           );
@@ -1075,7 +1084,7 @@ export default function COMMUNITYCENTERPanel({
                       {canVote ? (
                         <button
                           type="button"
-                          className="biggi-btn biggi-btn--accent"
+                          className="biggi-btn biggi-btn--accent community-center__vote-button"
                           disabled={
                             !selectedOptionId ||
                             String(votingPollId) === String(poll.id)
