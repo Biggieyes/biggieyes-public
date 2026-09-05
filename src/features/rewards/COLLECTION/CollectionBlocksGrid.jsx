@@ -1085,48 +1085,50 @@ function COLLECTIONBlocksGrid({
         className={`collection-grid__surface${isMobile ? " is-mobile" : ""}`}
       >
         <header className="collection-grid__header panel-header panel-header--collection">
-          <div>
+          <div className="collection-grid__headline">
             <h2 className="collection-grid__title">
               {activeSectionMeta.title}
             </h2>
             <p className="collection-grid__subtitle">
               {activeSectionMeta.subtitle}
             </p>
+          </div>
+
+          <div className="collection-grid__header-side">
             <span className="collection-grid__pill collection-grid__pill--outline">
               Chapter {displayedChapter.chapterId}:{" "}
               {displayedChapter.displayName}
               {displayedChapterIsActive ? " / Active" : " / Preview"}
             </span>
-          </div>
-
-          <div className="collection-grid__header-actions collection-grid__header-actions-gap">
-            <div className="collection-grid__tabs">
-              <button
-                type="button"
-                className={`collection-grid__tab${effectiveActive === "COLLECTION1" ? " is-active" : ""}`}
-                onClick={() => handleSwitchCOLLECTION("COLLECTION1")}
-              >
-                ORIGINALS COLLECTION
-              </button>
-              <button
-                type="button"
-                className={`collection-grid__tab${effectiveActive === "COLLECTION2" ? " is-active" : ""}`}
-                onClick={() => handleSwitchCOLLECTION("COLLECTION2")}
-              >
-                Public Collection
-              </button>
-              <button
-                type="button"
-                className={`collection-grid__tab${effectiveActive === "chapterSeries" ? " is-active" : ""}`}
-                onClick={() => handleSwitchCOLLECTION("chapterSeries")}
-              >
-                Chapters
-              </button>
-              <PanelInfoButton
-                className="panel-info-btn--transparent"
-                onClick={() => setInfoOpen(true)}
-                ariaLabel="COLLECTION buttons info"
-              />
+            <div className="collection-grid__header-actions collection-grid__header-actions-gap">
+              <div className="collection-grid__tabs">
+                <button
+                  type="button"
+                  className={`collection-grid__tab${effectiveActive === "COLLECTION1" ? " is-active" : ""}`}
+                  onClick={() => handleSwitchCOLLECTION("COLLECTION1")}
+                >
+                  ORIGINALS COLLECTION
+                </button>
+                <button
+                  type="button"
+                  className={`collection-grid__tab${effectiveActive === "COLLECTION2" ? " is-active" : ""}`}
+                  onClick={() => handleSwitchCOLLECTION("COLLECTION2")}
+                >
+                  Public Collection
+                </button>
+                <button
+                  type="button"
+                  className={`collection-grid__tab${effectiveActive === "chapterSeries" ? " is-active" : ""}`}
+                  onClick={() => handleSwitchCOLLECTION("chapterSeries")}
+                >
+                  Chapters
+                </button>
+                <PanelInfoButton
+                  className="panel-info-btn--transparent"
+                  onClick={() => setInfoOpen(true)}
+                  ariaLabel="COLLECTION buttons info"
+                />
+              </div>
             </div>
           </div>
         </header>

@@ -1122,13 +1122,13 @@ export default function VRFPanel({
       <div className="rewards-grid__surface biggi-token-surface vrf-surface">
         <header className="rewards-grid__header biggi-header panel-header panel-header--vrf">
           <div className="rewards-grid__headline">
-            <span className="vrf-badge">Chainlink VRF</span>
-            <h2 className="rewards-grid__title">VRF Dashboard</h2>
+            <div className="vrf-header__title-row">
+              <h2 className="rewards-grid__title">VRF Dashboard</h2>
+              <span className="vrf-badge">Chainlink VRF</span>
+            </div>
             <p className="rewards-grid__subtitle">
-              Observe the Chainlink VRF lifecycle on {netLabel}: request
-              creation, fulfillment timing, random words, health signals, and
-              proof checks. Live contract values are compared with the Polygon
-              mainnet configuration.
+              Track requests, fulfillment, randomness, health, and proof checks
+              on {netLabel}. Live values are checked against Polygon mainnet.
             </p>
           </div>
           <div className="rewards-grid__header-actions">
@@ -1165,15 +1165,15 @@ export default function VRFPanel({
             >
               Redeem Ticket
             </GhostBtn>
+            <PanelInfoButton
+              onClick={() => setInfoOpen(true)}
+              ariaLabel="VRF panel info"
+            />
             {requestBlockedReason && (
               <span className="vrf-request-blocked" role="status">
                 {requestBlockedReason}
               </span>
             )}
-            <PanelInfoButton
-              onClick={() => setInfoOpen(true)}
-              ariaLabel="VRF panel info"
-            />
           </div>
         </header>
 
