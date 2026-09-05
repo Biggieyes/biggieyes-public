@@ -3472,3 +3472,14 @@
     text-align: center;
   }
 }
+
+@media (min-width: 701px) and (max-width: 900px) {
+  .rewards-grid.biggi-skin .rewards-panel__hero,
+  .rewards-grid.biggi-skin .rewards-panel__stat-trio,
+  .rewards-grid.biggi-skin .nft-rewards__stat-grid,
+  .rewards-grid.biggi-skin .rewards-panel__status-grid,
+  .rewards-grid.biggi-skin .rewards-grid__status-grid,
+  .rewards-grid.biggi-skin .rewards-grid__stat-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

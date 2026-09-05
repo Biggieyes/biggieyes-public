@@ -1183,7 +1183,8 @@
   }
 
   .ecoToolbarRow {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
   }
   .ecoUpdateStamp {
     width: 100%;
