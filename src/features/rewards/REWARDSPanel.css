@@ -3387,3 +3387,88 @@
     max-height: min(58vh, 430px);
   }
 }
+
+/* Keep the primary panel head aligned with Community, VRF, and Collection. */
+.rewards-grid .panel-header--rewards {
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) minmax(460px, auto);
+  align-items: center;
+  gap: clamp(24px, 4vw, 72px);
+  min-height: 132px;
+  padding: 16px clamp(20px, 2.4vw, 36px);
+  text-align: left;
+}
+
+.rewards-grid .panel-header--rewards .rewards-grid__headline {
+  display: grid;
+  justify-items: start;
+  min-width: 0;
+  margin: 0;
+  text-align: left;
+}
+
+.rewards-grid .panel-header--rewards .rewards-grid__subtitle {
+  max-width: 720px;
+  margin: 5px 0 0;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.rewards-grid .panel-header--rewards .rewards-panel__header-meta {
+  justify-self: end;
+  justify-content: flex-end;
+  max-width: 720px;
+  margin: 0;
+}
+
+.rewards-grid .panel-header--rewards .rewards-panel__source-pill {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 9px;
+  white-space: nowrap;
+}
+
+@media (max-width: 1180px) {
+  .rewards-grid .panel-header--rewards {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    min-height: 0;
+    padding: 14px 18px;
+    text-align: center;
+  }
+
+  .rewards-grid .panel-header--rewards .rewards-grid__headline {
+    justify-items: center;
+    text-align: center;
+  }
+
+  .rewards-grid .panel-header--rewards .rewards-grid__subtitle {
+    max-width: 680px;
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  .rewards-grid .panel-header--rewards .rewards-panel__header-meta {
+    width: 100%;
+    max-width: none;
+    justify-self: stretch;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 520px) {
+  .rewards-grid .panel-header--rewards .rewards-panel__header-meta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rewards-grid .panel-header--rewards .rewards-panel__source-pill {
+    width: 100%;
+    justify-content: center;
+    white-space: normal;
+    text-align: center;
+  }
+}
