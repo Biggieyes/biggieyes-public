@@ -3,19 +3,13 @@
 import { createClient } from "@supabase/supabase-js";
 import { ethers } from "ethers";
 import crypto from "crypto";
+import { buildApiHeaders } from "./lib/httpSecurity.js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const TTL_MS = 2 * 60 * 1000;
 
-// Replace '*' on production with your front-end origin, e.g. process.env.ALLOWED_ORIGIN
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type,Authorization",
-};
+const corsHeaders = buildApiHeaders({ methods: "GET,POST,OPTIONS" });
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 

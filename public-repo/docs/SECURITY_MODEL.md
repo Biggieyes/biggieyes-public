@@ -14,10 +14,11 @@
 - RPC outages or stale data: use multiple RPCs and health checks.
 - VRF delays: UI shows pending state, no unsafe fallback.
 - IPFS availability: use gateway fallback and retries.
-- Abuse of pin endpoints: rate limit with Redis or gateway rules.
+- Abuse of pin endpoints: owner-signed, body-bound upload requests plus rate limiting.
 
 ## Recommended controls
 - Use ALLOWED_ORIGIN to restrict function calls.
+- Keep PINATA_UPLOAD_OWNER_ADDRESS restricted to the intended admin wallet.
 - Enable Redis rate limiting with REDIS_URL.
 - Rotate secrets and run secret scanning in CI.
 - Use multisig for admin roles and document ownership.

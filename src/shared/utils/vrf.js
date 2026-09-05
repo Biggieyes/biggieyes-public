@@ -324,7 +324,7 @@ export function openVRFExplorer(
       const c = getReadOnlyContractFn();
       const net = await c.provider.getNetwork();
       const base = explorerBaseFor(net?.chainId);
-      if (!base) return window.open("", "_blank");
+      if (!base) return null;
       const url = `${base}/tx/${hashOrId}`;
       window.open(url, "_blank", "noopener,noreferrer");
     } catch {

@@ -11,6 +11,12 @@ import { ADDR, CORE_CHAPTERS } from "../../utils/addresses.js";
 import { getROProvider } from "@/shared/utils/contract";
 import { BiggiCommunityCenter } from "@/config/abi/index.js";
 import { supabase, supabaseReady } from "../../services/chatClient";
+import {
+  buildChatModerationMessage,
+  buildChatRulesMessage,
+  MAX_CHAT_MESSAGE_LENGTH,
+  MAX_CHAT_RULES_LENGTH,
+} from "@/shared/utils/adminMessageAuth.js";
 
 const COMMUNITY_CENTER_ABI = Array.isArray(BiggiCommunityCenter)
   ? BiggiCommunityCenter
@@ -441,6 +447,10 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
         throw new Error("Message ID is invalid");
       if (action === "edit" && !nextContent)
         throw new Error("New content is required");
+      if (nextContent.length > MAX_CHAT_MESSAGE_LENGTH)
+        throw new Error(
+          `Message must be at most ${MAX_CHAT_MESSAGE_LENGTH} characters`,
+        );
       if (typeof window === "undefined" || !window.ethereum) {
         throw new Error("Wallet provider not found");
       }
@@ -454,7 +464,13 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       );
       const signer = await provider.getSigner();
       const address = await signer.getAddress();
-      const payload = `${action}|${id}|${nextContent || ""}`;
+      const timestamp = Date.now();
+      const payload = buildChatModerationMessage({
+        action,
+        messageId: id,
+        newContent: nextContent,
+        timestamp,
+      });
       const signature = await signer.signMessage(payload);
 
       const res = await fetch(buildChatApiUrl("/admin/editMessage"), {
@@ -466,6 +482,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
           action,
           messageId: id,
           newContent: nextContent || undefined,
+          timestamp,
         }),
       });
       const json = await res.json().catch(() => ({}));
@@ -479,6 +496,10 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
     run("chat_rules_update", async () => {
       const rulesText = chatRulesDraft.trim();
       if (!rulesText) throw new Error("Rules text is required");
+      if (rulesText.length > MAX_CHAT_RULES_LENGTH)
+        throw new Error(
+          `Rules must be at most ${MAX_CHAT_RULES_LENGTH} characters`,
+        );
       if (typeof window === "undefined" || !window.ethereum) {
         throw new Error("Wallet provider not found");
       }
@@ -492,7 +513,8 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
       );
       const signer = await provider.getSigner();
       const address = await signer.getAddress();
-      const payload = `rules|${rulesText}`;
+      const timestamp = Date.now();
+      const payload = buildChatRulesMessage({ rulesText, timestamp });
       const signature = await signer.signMessage(payload);
 
       const res = await fetch(buildChatApiUrl("/admin/updateRules"), {
@@ -502,6 +524,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
           address,
           signature,
           rulesText,
+          timestamp,
         }),
       });
       const json = await res.json().catch(() => ({}));
@@ -3417,7 +3440,6 @@ function copyToClipboard(text) {
     navigator.clipboard?.writeText(text);
   } catch {}
 }
-
 
 
 

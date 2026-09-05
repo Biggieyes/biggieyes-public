@@ -3,19 +3,19 @@
 import { createClient } from "@supabase/supabase-js";
 import { ethers } from "ethers";
 import { captureException, initSentry } from "../_sentry.js";
+import { buildApiHeaders } from "../lib/httpSecurity.js";
+import {
+  buildChatModerationMessage,
+  isFreshAdminTimestamp,
+  MAX_CHAT_MESSAGE_LENGTH,
+} from "../../src/shared/utils/adminMessageAuth.js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const CHAT_OWNER_ADDRESS = (process.env.CHAT_OWNER_ADDRESS || "").toLowerCase();
 
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-  "Access-Control-Allow-Methods": "POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type,Authorization",
-  Vary: "Origin",
-};
+const ALLOWED_ACTIONS = new Set(["edit", "soft-delete"]);
+const corsHeaders = buildApiHeaders({ methods: "POST,OPTIONS" });
 
 initSentry();
 
@@ -86,12 +86,22 @@ async function handleRequest({ method, body }) {
   const action = String(body?.action || "").trim();
   const messageId = Number(body?.messageId);
   const newContent = String(body?.newContent || "").trim();
+  const timestamp = Number(body?.timestamp);
 
   if (!isAddressSafe(address)) {
     return jsonResponse(400, { ok: false, error: "Invalid address" });
   }
-  if (!signature || !action || !Number.isFinite(messageId)) {
+  if (
+    !signature ||
+    !ALLOWED_ACTIONS.has(action) ||
+    !Number.isSafeInteger(messageId) ||
+    messageId <= 0 ||
+    !isFreshAdminTimestamp(timestamp)
+  ) {
     return jsonResponse(400, { ok: false, error: "Invalid payload" });
+  }
+  if (newContent.length > MAX_CHAT_MESSAGE_LENGTH) {
+    return jsonResponse(400, { ok: false, error: "Content is too long" });
   }
 
   const owner = await resolveOwnerAddress();
@@ -99,14 +109,27 @@ async function handleRequest({ method, body }) {
     return jsonResponse(403, { ok: false, error: "Owner only" });
   }
 
-  const payload = `${action}|${messageId}|${newContent || ""}`;
-  const recovered = verifySignedMessage(payload, signature);
-  if (recovered.toLowerCase() !== owner) {
+  const payload = buildChatModerationMessage({
+    action,
+    messageId,
+    newContent,
+    timestamp,
+  });
+  let recovered = "";
+  try {
+    recovered = verifySignedMessage(payload, signature);
+  } catch {
+    return jsonResponse(401, { ok: false, error: "Invalid signature" });
+  }
+  if (String(recovered || "").toLowerCase() !== owner) {
     return jsonResponse(401, { ok: false, error: "Signature mismatch" });
   }
 
   if (action === "edit" && !newContent) {
     return jsonResponse(400, { ok: false, error: "Missing newContent" });
+  }
+  if (action === "soft-delete" && newContent) {
+    return jsonResponse(400, { ok: false, error: "Unexpected newContent" });
   }
 
   const update = action === "soft-delete"

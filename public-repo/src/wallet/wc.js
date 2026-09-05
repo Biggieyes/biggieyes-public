@@ -36,17 +36,12 @@ export async function connectWithWalletConnect() {
       "eth_requestAccounts",
       "eth_sendTransaction",
       "personal_sign",
-      "eth_sign",
-      "eth_signTypedData",
-      "eth_signTypedData_v4",
       "wallet_switchEthereumChain",
       "wallet_addEthereumChain",
     ],
     optionalMethods: [
       "wallet_switchEthereumChain",
       "wallet_addEthereumChain",
-      "eth_signTypedData",
-      "eth_signTypedData_v4",
     ],
     events: ["chainChanged", "accountsChanged", "disconnect", "session_delete"],
     metadata: {
@@ -55,8 +50,8 @@ export async function connectWithWalletConnect() {
       url:
         typeof window !== "undefined"
           ? window.location.origin
-          : "https://example.org",
-      icons: ["https://walletconnect.com/walletconnect-logo.png"],
+          : "https://biggieyes.com",
+      icons: ["https://biggieyes.com/apple-touch-icon.png"],
     },
   });
 

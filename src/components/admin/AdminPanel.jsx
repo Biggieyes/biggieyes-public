@@ -14,6 +14,12 @@ import {
   getAdminAccessState,
   POLYGON_MAINNET_CHAIN_ID,
 } from "@/shared/utils/adminAccess.js";
+import {
+  buildChatModerationMessage,
+  buildChatRulesMessage,
+  MAX_CHAT_MESSAGE_LENGTH,
+  MAX_CHAT_RULES_LENGTH,
+} from "@/shared/utils/adminMessageAuth.js";
 import { BiggiCommunityCenter } from "@/config/abi/index.js";
 import AdminDashboard from "@/components/AdminDashboard";
 import {
@@ -1133,9 +1139,19 @@ export default function AdminPanel({
         throw new Error("Message ID is invalid");
       if (action === "edit" && !nextContent)
         throw new Error("New content is required");
+      if (nextContent.length > MAX_CHAT_MESSAGE_LENGTH)
+        throw new Error(
+          `Message must be at most ${MAX_CHAT_MESSAGE_LENGTH} characters`,
+        );
       const { signer, signerAddress: address } =
         await getVerifiedAdminSigner(expectedOwner);
-      const payload = `${action}|${id}|${nextContent || ""}`;
+      const timestamp = Date.now();
+      const payload = buildChatModerationMessage({
+        action,
+        messageId: id,
+        newContent: nextContent,
+        timestamp,
+      });
       const signature = await signer.signMessage(payload);
 
       const json = await fetchJsonWithTimeout(
@@ -1149,6 +1165,7 @@ export default function AdminPanel({
             action,
             messageId: id,
             newContent: nextContent || undefined,
+            timestamp,
           }),
         },
       );
@@ -1162,9 +1179,14 @@ export default function AdminPanel({
     run("chat_rules_update", async () => {
       const rulesText = chatRulesDraft.trim();
       if (!rulesText) throw new Error("Rules text is required");
+      if (rulesText.length > MAX_CHAT_RULES_LENGTH)
+        throw new Error(
+          `Rules must be at most ${MAX_CHAT_RULES_LENGTH} characters`,
+        );
       const { signer, signerAddress: address } =
         await getVerifiedAdminSigner(expectedOwner);
-      const payload = `rules|${rulesText}`;
+      const timestamp = Date.now();
+      const payload = buildChatRulesMessage({ rulesText, timestamp });
       const signature = await signer.signMessage(payload);
 
       const json = await fetchJsonWithTimeout(
@@ -1176,6 +1198,7 @@ export default function AdminPanel({
             address,
             signature,
             rulesText,
+            timestamp,
           }),
         },
       );

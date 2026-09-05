@@ -75,7 +75,10 @@ export async function handler(event) {
       err?.message ||
       "Pinata error";
     console.error("pinJson error", { error: details });
-    captureException(err, { stage: "pinata", status, details });
+    captureException(new Error(`Pinata JSON upload failed (${status})`), {
+      stage: "pinata",
+      status,
+    });
     return jsonResponse(status >= 400 && status < 600 ? status : 500, {
       success: false,
       error: String(details),

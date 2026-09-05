@@ -1,4 +1,8 @@
 import * as React from "react";
+import { BrowserProvider, getAddress, sha256, toUtf8Bytes } from "ethers";
+import { ADDR } from "../utils/addresses.js";
+import { getInjectedProvider } from "../utils/contract.js";
+import { buildPinataUploadMessage } from "../utils/pinataUploadAuth.js";
 
 const DEFAULT_MAX_SIZE = 5 * 1024 * 1024;
 const DEFAULT_ALLOWED = [
@@ -23,6 +27,38 @@ async function fileToDataUrl(file) {
       reject(reader.error || new Error("Failed to read file"));
     reader.readAsDataURL(file);
   });
+}
+
+async function buildOwnerUploadHeaders(operation, bodyText) {
+  const injectedProvider = getInjectedProvider();
+  if (!injectedProvider) throw new Error("Connect the owner wallet first.");
+
+  const provider = new BrowserProvider(injectedProvider, "any");
+  await provider.send("eth_requestAccounts", []);
+  const network = await provider.getNetwork();
+  if (Number(network.chainId) !== 137) {
+    throw new Error("Switch the wallet to Polygon mainnet.");
+  }
+
+  const signer = await provider.getSigner();
+  const signerAddress = getAddress(await signer.getAddress());
+  const ownerAddress = getAddress(ADDR.EXPECT_OWNER || ADDR.OWNER);
+  if (signerAddress !== ownerAddress) {
+    throw new Error(`Connect the owner wallet ${ownerAddress}.`);
+  }
+
+  const timestamp = String(Date.now());
+  const bodyHash = sha256(toUtf8Bytes(bodyText));
+  const signature = await signer.signMessage(
+    buildPinataUploadMessage({ operation, timestamp, bodyHash }),
+  );
+
+  return {
+    "Content-Type": "application/json",
+    "X-Biggi-Address": signerAddress,
+    "X-Biggi-Timestamp": timestamp,
+    "X-Biggi-Signature": signature,
+  };
 }
 
 export default function PinUploader({
@@ -92,14 +128,19 @@ export default function PinUploader({
       const dataUrl = await fileToDataUrl(file);
 
       setStatus("Uploading to Pinata...");
+      const pinFileBody = JSON.stringify({
+        name: file.name,
+        contentBase64: dataUrl,
+        metadata: { mime: file.type, size: file.size },
+      });
+      const pinFileHeaders = await buildOwnerUploadHeaders(
+        "pinFile",
+        pinFileBody,
+      );
       const pinFileRes = await fetch("/.netlify/functions/pinFile", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: file.name,
-          contentBase64: dataUrl,
-          metadata: { mime: file.type, size: file.size },
-        }),
+        headers: pinFileHeaders,
+        body: pinFileBody,
       });
       const pinFileJson = await pinFileRes.json();
       if (!pinFileRes.ok || !pinFileJson?.success) {
@@ -115,10 +156,15 @@ export default function PinUploader({
       };
 
       setStatus("Uploading metadata...");
+      const pinJsonBody = JSON.stringify({ metadata: tokenMetadata });
+      const pinJsonHeaders = await buildOwnerUploadHeaders(
+        "pinJson",
+        pinJsonBody,
+      );
       const pinJsonRes = await fetch("/.netlify/functions/pinJson", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ metadata: tokenMetadata }),
+        headers: pinJsonHeaders,
+        body: pinJsonBody,
       });
       const pinJson = await pinJsonRes.json();
       if (!pinJsonRes.ok || !pinJson?.success) {
@@ -179,4 +225,3 @@ export default function PinUploader({
     </div>
   );
 }
-

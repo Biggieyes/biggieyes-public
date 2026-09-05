@@ -1,4 +1,5 @@
 import {
+  authorizePinataUpload,
   buildPinataGatewayUrl,
   buildPinataHeaders,
   corsHeaders,
@@ -17,7 +18,14 @@ export async function handler(event) {
     return { statusCode: 200, headers: corsHeaders, body: "" };
   }
   if (method !== "POST") return jsonResponse(405, { success: false, error: "Method not allowed" });
-  const clientId = getRequestClientId(event);
+  const authorization = authorizePinataUpload(event, "pinJson");
+  if (!authorization.ok) {
+    return jsonResponse(authorization.statusCode, {
+      success: false,
+      error: authorization.error,
+    });
+  }
+  const clientId = authorization.address || getRequestClientId(event);
   if (!(await allowRequest(clientId))) {
     return jsonResponse(429, { success: false, error: "Rate limit exceeded" });
   }

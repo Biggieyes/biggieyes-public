@@ -245,7 +245,9 @@ export async function handler(event) {
       backupCid = await backupToNftStorage(buffer, { name, mime });
     } catch (backupErr) {
       console.error("pinFile backup failed:", backupErr?.message || backupErr);
-      captureException(backupErr, { stage: "nft_storage_backup" });
+      captureException(new Error("NFT.Storage backup failed"), {
+        stage: "nft_storage_backup",
+      });
     }
 
     console.info("pinFile success", { name, size: buffer.length, cid });
@@ -265,7 +267,10 @@ export async function handler(event) {
       err?.message ||
       "Pinata error";
     console.error("pinFile error", { error: details });
-    captureException(err, { stage: "pinata", status, details });
+    captureException(new Error(`Pinata file upload failed (${status})`), {
+      stage: "pinata",
+      status,
+    });
     return jsonResponse(status >= 400 && status < 600 ? status : 500, {
       success: false,
       error: String(details),

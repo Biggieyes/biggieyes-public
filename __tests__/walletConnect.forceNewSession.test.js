@@ -103,4 +103,20 @@ describe("connectWithWalletConnect", () => {
     expect(mocks.freshProvider.connect).toHaveBeenCalledTimes(1);
     expect(result.address).toBe(mocks.address);
   });
+
+  it("requests only the wallet methods used by the application", async () => {
+    await connectWithWalletConnect({ forceNewSession: true });
+
+    const requestedMethods = mocks.init.mock.calls[0][0].methods;
+    expect(requestedMethods).toEqual([
+      "eth_requestAccounts",
+      "eth_sendTransaction",
+      "personal_sign",
+      "wallet_switchEthereumChain",
+      "wallet_addEthereumChain",
+    ]);
+    expect(requestedMethods).not.toContain("eth_sign");
+    expect(requestedMethods).not.toContain("eth_signTypedData");
+    expect(requestedMethods).not.toContain("eth_signTypedData_v4");
+  });
 });

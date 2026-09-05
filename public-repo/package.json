@@ -7,7 +7,7 @@
     "dev": "vite",
     "dev:host": "vite --host --port 5173",
     "dev:netlify": "npx netlify dev",
-    "build": "vite build",
+    "build": "vite build && node scripts/generate-security-headers.mjs",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\"",
     "lint:fix": "eslint \"src/**/*.{js,jsx,ts,tsx}\" --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css}\"",
@@ -112,7 +112,7 @@
     }
   },
   "engines": {
-    "node": ">=18.18"
+    "node": ">=20.19"
   },
   "description": "BiggiEyes frontend: a gamified on-chain NFT experience with dynamic pricing and transparent tokenomics.",
   "main": "eslint.config.js",

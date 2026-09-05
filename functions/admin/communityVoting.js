@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { ethers } from "ethers";
 import { captureException, initSentry } from "../_sentry.js";
+import { buildApiHeaders } from "../lib/httpSecurity.js";
+import { isFreshAdminTimestamp } from "../../src/shared/utils/adminMessageAuth.js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -9,16 +11,7 @@ const COMMUNITY_OWNER_ADDRESS = (
   process.env.CHAT_OWNER_ADDRESS ||
   ""
 ).toLowerCase();
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
-const SIGNATURE_TTL_MS = 5 * 60 * 1000;
-const MAX_FUTURE_SKEW_MS = 60 * 1000;
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-  "Access-Control-Allow-Methods": "POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type,Authorization",
-  Vary: "Origin",
-};
+const corsHeaders = buildApiHeaders({ methods: "POST,OPTIONS" });
 
 initSentry();
 
@@ -181,8 +174,7 @@ function parseAdminPayload(payload) {
   if (!action || !Number.isFinite(timestamp)) {
     throw new Error("Admin payload is incomplete");
   }
-  const now = Date.now();
-  if (Math.abs(now - timestamp) > SIGNATURE_TTL_MS || timestamp > now + MAX_FUTURE_SKEW_MS) {
+  if (!isFreshAdminTimestamp(timestamp)) {
     throw new Error("Admin signature expired");
   }
   return parsed;

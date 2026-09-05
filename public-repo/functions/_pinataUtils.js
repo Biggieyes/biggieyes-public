@@ -1,7 +1,13 @@
 import axios from "axios";
+import { createHash } from "node:crypto";
+import { getAddress, verifyMessage } from "ethers";
 import Redis from "ioredis";
+import { buildApiHeaders } from "./lib/httpSecurity.js";
+import {
+  buildPinataUploadMessage,
+  PINATA_UPLOAD_SIGNATURE_TTL_MS,
+} from "../src/shared/utils/pinataUploadAuth.js";
 
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 const DEFAULT_PINATA_GATEWAY_BASE = "https://biggieyes.mypinata.cloud";
 
 function trimSlash(value) {
@@ -16,11 +22,11 @@ function getHeader(headers, key) {
   return matchKey ? headers[matchKey] : "";
 }
 
-export const corsHeaders = {
-  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-  "Access-Control-Allow-Methods": "POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type,Authorization",
-};
+export const corsHeaders = buildApiHeaders({
+  methods: "POST,OPTIONS",
+  allowedHeaders:
+    "Content-Type,Authorization,X-Biggi-Address,X-Biggi-Timestamp,X-Biggi-Signature",
+});
 
 export const jsonResponse = (statusCode, body) => ({
   statusCode,
@@ -37,6 +43,83 @@ export const parseJsonBody = (event) => {
     return JSON.parse(raw);
   } catch {
     return {};
+  }
+};
+
+function getRawBodyBuffer(event) {
+  if (!event?.body) return Buffer.alloc(0);
+  return event.isBase64Encoded
+    ? Buffer.from(event.body, "base64")
+    : Buffer.from(String(event.body), "utf8");
+}
+
+export const authorizePinataUpload = (event, operation) => {
+  const configuredOwner =
+    process.env.PINATA_UPLOAD_OWNER_ADDRESS ||
+    process.env.CHAT_OWNER_ADDRESS ||
+    "";
+
+  if (!configuredOwner) {
+    return {
+      ok: false,
+      statusCode: 503,
+      error: "Pinata upload owner is not configured",
+    };
+  }
+
+  const claimedAddressRaw = String(
+    getHeader(event?.headers, "x-biggi-address") || "",
+  );
+  const timestamp = String(
+    getHeader(event?.headers, "x-biggi-timestamp") || "",
+  );
+  const signature = String(
+    getHeader(event?.headers, "x-biggi-signature") || "",
+  );
+  if (!claimedAddressRaw || !timestamp || !signature) {
+    return {
+      ok: false,
+      statusCode: 401,
+      error: "Missing upload authorization",
+    };
+  }
+
+  try {
+    const owner = getAddress(configuredOwner);
+    const claimedAddress = getAddress(claimedAddressRaw);
+    const timestampMs = Number(timestamp);
+
+    if (!Number.isSafeInteger(timestampMs)) {
+      throw new Error("Invalid upload timestamp");
+    }
+    if (Math.abs(Date.now() - timestampMs) > PINATA_UPLOAD_SIGNATURE_TTL_MS) {
+      throw new Error("Upload signature expired");
+    }
+    if (claimedAddress !== owner) {
+      return { ok: false, statusCode: 403, error: "Owner wallet required" };
+    }
+
+    const bodyHash = `0x${createHash("sha256")
+      .update(getRawBodyBuffer(event))
+      .digest("hex")}`;
+    const message = buildPinataUploadMessage({
+      operation,
+      timestamp,
+      bodyHash,
+    });
+    const recoveredAddress = getAddress(verifyMessage(message, signature));
+
+    if (recoveredAddress !== owner) {
+      return { ok: false, statusCode: 403, error: "Invalid owner signature" };
+    }
+
+    return { ok: true, address: owner };
+  } catch {
+    return {
+      ok: false,
+      statusCode: 401,
+      error: "Invalid upload authorization",
+    };
   }
 };
 
@@ -78,7 +161,7 @@ export const createRateLimiter = ({ capacity = 10, refillMs = 60_000 } = {}) => 
           return Number(res) === 1;
         } catch (e) {
           console.error("redis rate limiter error", e?.message || e);
-          return true; // fail-open to avoid availability impact
+          return false;
         }
       };
     } catch (e) {

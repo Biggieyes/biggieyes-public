@@ -1,13 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
+import { buildApiHeaders } from "./httpSecurity.js";
 
 const SUPABASE_URL = String(process.env.SUPABASE_URL || "").trim();
 const SUPABASE_SERVICE_ROLE_KEY = String(
   process.env.SUPABASE_SERVICE_ROLE_KEY || "",
 ).trim();
-const ALLOWED_ORIGIN = String(
-  process.env.ALLOWED_ORIGIN || "https://biggieyes.com",
-).trim();
-
 let supabaseAdmin = null;
 
 export const hasSupabaseConfig = () =>
@@ -26,13 +23,7 @@ export const getSupabaseAdmin = () => {
   return supabaseAdmin;
 };
 
-export const buildCorsHeaders = (methods) => ({
-  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-  "Access-Control-Allow-Methods": methods,
-  "Access-Control-Allow-Headers": "Content-Type,Authorization",
-  "Cache-Control": "no-store",
-  Vary: "Origin",
-});
+export const buildCorsHeaders = (methods) => buildApiHeaders({ methods });
 
 export const jsonResponse = (corsHeaders, status, body) => ({
   status,

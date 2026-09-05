@@ -78,6 +78,26 @@ export function getBlockThumb(name?: unknown): string {
   return addBase(`/images/blocks/${block}/thumb.png`);
 }
 
+const toJpgName = (fileName?: unknown): string =>
+  String(fileName ?? "").replace(/\.\w+$/, ".jpg");
+
+export function buildBlockThumbPath(blockOrFile?: unknown, file?: unknown): string {
+  if (file == null) {
+    const fileName = String(blockOrFile ?? "");
+    if (!fileName) return PLACEHOLDER;
+    const match = fileName.match(/^Biggi_\d+_([A-Z]+)_[A-Z]+\.png$/);
+    const folder = match ? match[1] : "";
+    const jpgName = toJpgName(fileName);
+    return folder
+      ? addBase(`/images/blocks-thumb/${folder}/${jpgName}`)
+      : addBase(`/images/blocks-thumb/${jpgName}`);
+  }
+
+  return addBase(
+    `/images/blocks-thumb/${safeBlockFolder(blockOrFile)}/${toJpgName(file)}`,
+  );
+}
+
 /** Cesta k jednomu obrázku v bloku */
 export function buildBlockImagePath(blockOrFile?: unknown, file?: unknown): string {
   if (file == null) {
@@ -127,4 +147,3 @@ export function rewardImageFor(type?: unknown, idx?: unknown): string {
     `/images/rewards/${String(type ?? "")}/${String(idx ?? "")}.png`,
   );
 }
-

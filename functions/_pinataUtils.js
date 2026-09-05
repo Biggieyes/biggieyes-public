@@ -2,12 +2,12 @@ import axios from "axios";
 import { createHash } from "node:crypto";
 import { getAddress, verifyMessage } from "ethers";
 import Redis from "ioredis";
+import { buildApiHeaders } from "./lib/httpSecurity.js";
 import {
   buildPinataUploadMessage,
   PINATA_UPLOAD_SIGNATURE_TTL_MS,
 } from "../src/shared/utils/pinataUploadAuth.js";
 
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
 const DEFAULT_PINATA_GATEWAY_BASE = "https://biggieyes.mypinata.cloud";
 
 function trimSlash(value) {
@@ -22,12 +22,11 @@ function getHeader(headers, key) {
   return matchKey ? headers[matchKey] : "";
 }
 
-export const corsHeaders = {
-  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-  "Access-Control-Allow-Methods": "POST,OPTIONS",
-  "Access-Control-Allow-Headers":
+export const corsHeaders = buildApiHeaders({
+  methods: "POST,OPTIONS",
+  allowedHeaders:
     "Content-Type,Authorization,X-Biggi-Address,X-Biggi-Timestamp,X-Biggi-Signature",
-};
+});
 
 export const jsonResponse = (statusCode, body) => ({
   statusCode,
@@ -165,7 +164,7 @@ export const createRateLimiter = ({
           return Number(res) === 1;
         } catch (e) {
           console.error("redis rate limiter error", e?.message || e);
-          return true; // fail-open to avoid availability impact
+          return false;
         }
       };
     } catch (e) {

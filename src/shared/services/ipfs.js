@@ -54,20 +54,8 @@ function env(key) {
   return undefined;
 }
 
-const PINATA_GATEWAY_TOKEN = env("VITE_PINATA_GATEWAY_TOKEN");
-const PINATA_GATEWAY_JWT = env("VITE_PINATA_GATEWAY_JWT");
-
-function headersForUrl(url) {
-  if (!url) return undefined;
-  const u = String(url).toLowerCase();
-  const isPinata = u.includes("pinata") || u.includes("mypinata");
-  if (!isPinata) return undefined;
-  if (PINATA_GATEWAY_JWT) {
-    return { Authorization: `Bearer ${PINATA_GATEWAY_JWT}` };
-  }
-  if (PINATA_GATEWAY_TOKEN) {
-    return { "x-pinata-gateway-token": PINATA_GATEWAY_TOKEN };
-  }
+function headersForUrl() {
+  // Browser-side gateway credentials are never safe: every VITE_* value is public.
   return undefined;
 }
 
@@ -99,6 +87,71 @@ function extractIpfsPathFromHttp(url) {
 
 function trimSlash(s) {
   return String(s).replace(/\/+$/, "");
+}
+
+function isPrivateHostname(hostname) {
+  const host = String(hostname || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\[|\]$/g, "")
+    .replace(/\.$/, "");
+  if (!host) return true;
+  if (
+    host === "localhost" ||
+    host.endsWith(".localhost") ||
+    host.endsWith(".local") ||
+    host === "::" ||
+    host === "::1" ||
+    host === "0:0:0:0:0:0:0:0" ||
+    host === "0:0:0:0:0:0:0:1" ||
+    host.startsWith("::ffff:") ||
+    host.startsWith("0:0:0:0:0:ffff:") ||
+    (host.includes(":") &&
+      (host.startsWith("fc") ||
+        host.startsWith("fd") ||
+        /^fe[89abcdef]/.test(host)))
+  ) {
+    return true;
+  }
+
+  const octets = host.split(".").map(Number);
+  if (
+    octets.length === 4 &&
+    octets.every((part) => Number.isInteger(part) && part >= 0 && part <= 255)
+  ) {
+    const [a, b] = octets;
+    return (
+      a === 0 ||
+      a === 10 ||
+      a === 127 ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168)
+    );
+  }
+
+  return false;
+}
+
+function isLocalDevelopmentPage() {
+  if (typeof window === "undefined") return false;
+  const host = String(window.location?.hostname || "").toLowerCase();
+  return host === "localhost" || host === "127.0.0.1" || host === "::1";
+}
+
+export function isSafeRemoteUrl(value) {
+  try {
+    const parsed = new URL(String(value || "").trim());
+    if (parsed.username || parsed.password) return false;
+    if (parsed.protocol === "https:") return !isPrivateHostname(parsed.hostname);
+    return (
+      parsed.protocol === "http:" &&
+      isLocalDevelopmentPage() &&
+      isPrivateHostname(parsed.hostname)
+    );
+  } catch {
+    return false;
+  }
 }
 
 function isTrue(value) {
@@ -202,7 +255,8 @@ export async function fetchWithTimeout(
 /** Convert ipfs://... or ipns://... or /ipfs|/ipns to an HTTP URL via the primary gateway. */
 export function httpFromIpfs(uri) {
   if (!uri) return uri;
-  const s = String(uri);
+  const s = String(uri).trim();
+  if (s.startsWith("//")) return "";
   const isIpns =
     s.startsWith("ipns://") || s.startsWith("/ipns/") || s.startsWith("ipns/");
   const isIpfs =
@@ -212,6 +266,8 @@ export function httpFromIpfs(uri) {
     const builder = GWS[0] || makeGateway("https://ipfs.io");
     return builder(uri, isIpns);
   }
+  if (/^https?:\/\//i.test(s)) return isSafeRemoteUrl(s) ? s : "";
+  if (/^[a-z][a-z0-9+.-]*:/i.test(s)) return "";
   return uri;
 }
 
@@ -261,6 +317,7 @@ async function resolveImageUrlRaw(imageField, metadataUri, options = {}) {
 
   // already absolute http(s)
   if (/^https?:\/\//i.test(img)) {
+    if (!isSafeRemoteUrl(img)) return null;
     const ipfsInfo = extractIpfsPathFromHttp(img);
     if (ipfsInfo) {
       const candidates = [img];
@@ -291,6 +348,8 @@ async function resolveImageUrlRaw(imageField, metadataUri, options = {}) {
     return img;
   }
 
+  if (/^[a-z][a-z0-9+.-]*:/i.test(img)) return null;
+
   // relative path beside the metadata file
   const metaHttp = httpFromIpfs(metadataUri);
   try {
@@ -299,7 +358,7 @@ async function resolveImageUrlRaw(imageField, metadataUri, options = {}) {
     u.pathname = u.pathname.replace(/\/[^/]*$/, `/${clean}`);
     return u.toString();
   } catch {
-    return img;
+    return img.startsWith("//") ? null : img;
   }
 }
 
@@ -367,6 +426,7 @@ async function readJsonFromURIRaw(uri, options = {}) {
 
     const ipfsInfo = extractIpfsPathFromHttp(u);
     if (ipfsInfo) {
+      if (!isSafeRemoteUrl(u)) return null;
       // First try the original URL (may include gateway auth)
       const direct = await tryJson(u);
       if (direct) return direct;
@@ -378,6 +438,8 @@ async function readJsonFromURIRaw(uri, options = {}) {
       }
       return null;
     }
+
+    if (!isSafeRemoteUrl(u)) return null;
 
     const resp = await fetchWithTimeout(
       u,
@@ -416,4 +478,3 @@ export default {
   resolveImageUrl,
   readJsonFromURI,
 };
-

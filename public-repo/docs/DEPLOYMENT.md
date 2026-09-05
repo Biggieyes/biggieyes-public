@@ -35,6 +35,7 @@ Serverless (private)
 - REDIS_URL (optional)
 - ALLOWED_ORIGIN
 - CHAT_OWNER_ADDRESS
+- PINATA_UPLOAD_OWNER_ADDRESS (optional; defaults to CHAT_OWNER_ADDRESS)
 
 ## Supabase setup
 1. Run `sql/migration_init.sql` in the Supabase SQL editor.
@@ -43,6 +44,7 @@ Serverless (private)
 
 ## Pinning setup
 - Use Pinata for primary pinning.
+- Pinning requests require a fresh owner signature bound to the request body.
 - Optionally enable NFT.Storage backup with ENABLE_NFT_STORAGE_BACKUP=true.
 
 ## Production checklist

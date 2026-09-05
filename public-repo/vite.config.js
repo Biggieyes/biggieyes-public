@@ -1,8 +1,49 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import { resolve } from 'node:path';
+
+const FORBIDDEN_CLIENT_ENV_KEYS = new Set([
+  "VITE_DEPLOYER_PRIVATE_KEY",
+  "VITE_NETLIFY_AUTH_TOKEN",
+  "VITE_PINATA_API_KEY",
+  "VITE_PINATA_GATEWAY_JWT",
+  "VITE_PINATA_GATEWAY_TOKEN",
+  "VITE_PINATA_JWT",
+  "VITE_PINATA_SECRET_API_KEY",
+  "VITE_PRIVATE_KEY",
+  "VITE_SUPABASE_SERVICE_ROLE_KEY",
+]);
+
+const FORBIDDEN_CLIENT_ENV_SUFFIX =
+  /(?:^|_)(?:PRIVATE_KEY|MNEMONIC|SEED_PHRASE|SERVICE_ROLE_KEY|SECRET_API_KEY|AUTH_TOKEN|ACCESS_TOKEN|PASSWORD)$/;
+
+function clientSecretGuard() {
+  return {
+    name: "biggi-client-secret-guard",
+    configResolved(config) {
+      const env = loadEnv(config.mode, config.root, "");
+      const forbidden = Object.entries(env)
+        .filter(([, value]) => String(value || "").trim())
+        .map(([key]) => key)
+        .filter(
+          (key) =>
+            key.startsWith("VITE_") &&
+            (FORBIDDEN_CLIENT_ENV_KEYS.has(key) ||
+              FORBIDDEN_CLIENT_ENV_SUFFIX.test(key)),
+        )
+        .sort();
+
+      if (forbidden.length) {
+        throw new Error(
+          `Refusing to expose secret-like client environment variable(s): ${forbidden.join(", ")}`,
+        );
+      }
+    },
+  };
+}
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [clientSecretGuard(), react()],
   resolve: { alias: { '@': '/src' } },
   server: {
     headers: {
@@ -22,6 +63,10 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 1700,
     rollupOptions: {
+      input: {
+        landing: resolve(__dirname, 'index.html'),
+        app: resolve(__dirname, 'app/index.html'),
+      },
       onwarn(warning, warn) {
         const message = warning?.message || "";
         const id = warning?.id || warning?.loc?.file || "";

@@ -7,7 +7,7 @@
     "dev": "vite",
     "dev:host": "vite --host --port 5173",
     "dev:netlify": "npx netlify dev",
-    "build": "vite build",
+    "build": "vite build && node scripts/generate-security-headers.mjs",
     "android:prune-assets": "node scripts/android-prune-assets.mjs",
     "android:sync": "npx cap sync android && npm run android:prune-assets",
     "android:run": "npm run android:sync && npx cap run android",
