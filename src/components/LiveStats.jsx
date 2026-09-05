@@ -3762,7 +3762,7 @@ function LiveStats({
                       onClick={closeWeeklyModal}
                       aria-label="Close weekly panel"
                     >
-                      Close
+                      <span aria-hidden="true">X</span>
                     </button>
                     <div className="wc-fullscreen-wrapper wc-fullscreen-wrapper--stats-panel">
                       <WeeklyCountdown
