@@ -38,7 +38,7 @@ const PanelInfoModal = ({ open, title = "Button info", items = [], onClose }) =>
               onClick={onClose}
               aria-label="Close info modal"
             >
-              Close
+              X
             </button>
           </div>
           <div className="panel-info-modal__body">

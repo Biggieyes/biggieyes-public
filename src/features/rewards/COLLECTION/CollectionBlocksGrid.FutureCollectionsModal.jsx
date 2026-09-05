@@ -50,7 +50,7 @@ const FutureCollectionsModal = React.memo(
               className="collection-grid__close-btn"
               aria-label="Close upcoming chapters"
             >
-              Close
+              X
             </button>
           </header>
 

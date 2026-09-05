@@ -1213,9 +1213,11 @@ export default function NftCard({
           type="button"
           className="nft-card__zoom"
           aria-pressed={imageZoomed ? "true" : "false"}
+          aria-label={imageZoomed ? "Close image preview" : "Zoom image"}
+          title={imageZoomed ? "Close" : "Zoom"}
           onClick={handleZoom}
         >
-          {imageZoomed ? "Close" : "Zoom"}
+          {imageZoomed ? "X" : "Zoom"}
         </button>
         {nft.isTicket && (
           <span className="nft-card__badge">

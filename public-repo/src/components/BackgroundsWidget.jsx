@@ -414,8 +414,10 @@ const BackgroundsWidget = ({
               <button
                 className="bgw-modal-close-button"
                 onClick={() => setInfoVisible(false)}
+                aria-label="Close backgrounds information"
+                title="Close"
               >
-                Close
+                X
               </button>
             </div>
           </div>
@@ -426,5 +428,4 @@ const BackgroundsWidget = ({
 };
 
 export default BackgroundsWidget;
-
 

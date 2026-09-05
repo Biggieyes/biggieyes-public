@@ -1871,8 +1871,13 @@ export default function AdminPanel({
               {pending.refresh ? "Refreshing…" : "Refresh"}
             </button>
           )}
-          <button style={smallBtn(false)} onClick={onClose} title="Esc">
-            Close
+          <button
+            style={smallBtn(false)}
+            onClick={onClose}
+            aria-label="Close admin panel"
+            title="Close (Esc)"
+          >
+            X
           </button>
         </div>
       </div>

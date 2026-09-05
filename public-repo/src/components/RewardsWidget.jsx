@@ -754,8 +754,10 @@ const REWARDSWidget = ({
                   cursor: "pointer",
                 }}
                 onClick={() => setInfoVisible(false)}
+                aria-label="Close rewards information"
+                title="Close"
               >
-                Close
+                X
               </button>
             </div>
           </div>
@@ -766,4 +768,3 @@ const REWARDSWidget = ({
 };
 
 export default REWARDSWidget;
-

@@ -1208,8 +1208,10 @@ function COLLECTIONBlocksGrid({
                   type="button"
                   className="collection-grid__close-btn"
                   onClick={closeModal}
+                  aria-label="Close collection preview"
+                  title="Close"
                 >
-                  Close
+                  X
                 </button>
               </div>
 

@@ -388,8 +388,10 @@ const BlocksWidget = ({
               <button
                 className="bw-modal-close-button"
                 onClick={() => setInfoVisible(false)}
+                aria-label="Close blocks information"
+                title="Close"
               >
-                Close
+                X
               </button>
             </div>
           </div>
@@ -400,5 +402,4 @@ const BlocksWidget = ({
 };
 
 export default BlocksWidget;
-
 

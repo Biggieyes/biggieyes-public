@@ -33,7 +33,7 @@ export default function Modal({
   topOffset = "8vh",
   overlayZIndex = 12000,
   closeButtonClassName = "",
-  closeButtonContent = "Close",
+  closeButtonContent = "X",
 }) {
   const overlayRef = React.useRef(null);
   const windowRef = React.useRef(null);
@@ -244,5 +244,4 @@ export default function Modal({
 
   return ReactDOM.createPortal(content, document.body);
 }
-
 

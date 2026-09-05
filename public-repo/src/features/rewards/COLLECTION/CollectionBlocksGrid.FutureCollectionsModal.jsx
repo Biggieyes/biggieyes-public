@@ -54,7 +54,7 @@ const FutureCollectionsModal = React.memo(
                 className="collection-grid__close-btn"
                 aria-label="Close future COLLECTIONs modal"
               >
-                Close
+                X
               </button>
             </div>
           </header>
@@ -144,6 +144,5 @@ const FutureCollectionsModal = React.memo(
 FutureCollectionsModal.displayName = "FutureCollectionsModal";
 
 export default FutureCollectionsModal;
-
 
 

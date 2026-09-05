@@ -26,7 +26,7 @@ const InfoPanel = React.memo(
               onClick={onClose}
               aria-label="Close information panel"
             >
-              Close
+              X
             </button>
           </div>
 
@@ -93,5 +93,4 @@ const InfoPanel = React.memo(
 InfoPanel.displayName = "InfoPanel";
 
 export default InfoPanel;
-
 

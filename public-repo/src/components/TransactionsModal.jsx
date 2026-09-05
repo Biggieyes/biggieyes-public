@@ -28,12 +28,13 @@ export default function TransactionsModal({
             type="button"
             className="biggi-btn biggi-btn--ghost"
             onClick={onClose}
+            aria-label="Close transaction dialog"
+            title="Close"
           >
-            Close
+            X
           </button>
         </div>
       </div>
     </div>
   );
 }
-

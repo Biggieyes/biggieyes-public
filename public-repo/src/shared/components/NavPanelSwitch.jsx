@@ -50,8 +50,10 @@ class PanelErrorBoundary extends React.Component {
             <button
               onClick={() => this.props.onClose?.()}
               style={{ padding: "6px 10px" }}
+              aria-label="Close panel"
+              title="Close"
             >
-              Close
+              X
             </button>
           </div>
         </div>
@@ -297,7 +299,6 @@ export default function NavPanelSwitch({
     </React.Suspense>
   );
 }
-
 
 
 

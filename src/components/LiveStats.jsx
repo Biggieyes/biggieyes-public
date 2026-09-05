@@ -3811,7 +3811,7 @@ function LiveStats({
                           fontWeight: 700,
                         }}
                       >
-                        Close
+                        X
                       </button>
                     </div>
 
@@ -4148,7 +4148,7 @@ function LiveStats({
                           fontWeight: 700,
                         }}
                       >
-                        Close
+                        X
                       </button>
                     </div>
                     <div
@@ -4497,8 +4497,10 @@ function LiveStats({
                         type="button"
                         className="ls-info-modal-close-button"
                         onClick={() => setShowCollectionInfo(false)}
+                        aria-label="Close collection information"
+                        title="Close"
                       >
-                        Close
+                        X
                       </button>
                     </div>
                   </div>
