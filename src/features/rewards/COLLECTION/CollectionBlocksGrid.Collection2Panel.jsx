@@ -5,18 +5,12 @@ import {
   formatCount,
   formatPrice,
   isPublicNftInfoConsistent,
+  PUBLIC_MINT_BUSY_STATES,
 } from "./COLLECTIONBlocksGrid.utils";
 import { handleImageError } from "../../../utils/images";
 
 const PUBLIC_MAX_SUPPLY = 100;
 const POLYGON_CHAIN_ID = 137;
-const BUSY_MINT_STATES = new Set([
-  "connecting",
-  "switching",
-  "preparing",
-  "signature",
-  "pending",
-]);
 
 const SectionHeader = ({ label, accent = "#ffe800" }) => (
   <div
@@ -49,6 +43,7 @@ const resolveMintStatus = ({
   hasSelection,
   infoConsistent,
   artwork,
+  price,
 }) => {
   if (totals?.paused == null) {
     return {
@@ -147,6 +142,13 @@ const resolveMintStatus = ({
       hint: "This NFT still uses the prereveal placeholder. Mint opens after the final image is published.",
     };
   }
+  if (!Number.isFinite(price) || price <= 0) {
+    return {
+      label: "Price unavailable",
+      tone: "warn",
+      hint: "The current block price could not be verified. Refresh before minting.",
+    };
+  }
   return {
     label: "Available",
     tone: "ok",
@@ -175,7 +177,9 @@ const resolveActionLabel = ({
     case "pending":
       return "Mint transaction pending...";
     case "success":
-      return `NFT #${selectedIndex} minted`;
+      return `NFT #${mintState.index ?? selectedIndex} minted`;
+    case "unconfirmed":
+      return "Check transaction status";
     default:
       break;
   }
@@ -247,12 +251,14 @@ const COLLECTION2Panel = React.memo(
           hasSelection,
           infoConsistent,
           artwork: selectedArtwork,
+          price: selectedBlockPrice,
         });
     const canMint =
       !comingSoon &&
       mintStatus.tone === "ok" &&
       mintStatus.label === "Available";
-    const busy = walletConnecting || BUSY_MINT_STATES.has(mintState?.status);
+    const busy =
+      walletConnecting || PUBLIC_MINT_BUSY_STATES.has(mintState?.status);
     const actionLabel = resolveActionLabel({
       canMint,
       mintStatus,
@@ -262,7 +268,12 @@ const COLLECTION2Panel = React.memo(
       selectedIndex,
       selectedPrice: selectedBlockPrice,
     });
-    const actionDisabled = !canMint || busy || mintState?.status === "success";
+    const checkingSubmitted =
+      mintState?.status === "unconfirmed" && Boolean(mintState.txHash);
+    const actionDisabled =
+      (!canMint && !checkingSubmitted) ||
+      busy ||
+      mintState?.status === "success";
     const rangeStart = (selectedBlockNumber - 1) * 10 + 1;
     const rangeEnd = Math.min(rangeStart + 9, maxSupply);
     const tokenOptions = Array.from(
@@ -338,7 +349,7 @@ const COLLECTION2Panel = React.memo(
                 key={entry.id || blockNumber}
                 onClick={() => onBlockSelect(blockNumber)}
                 aria-pressed={active}
-                disabled={comingSoon}
+                disabled={comingSoon || busy}
               >
                 <span>{entry.name}</span>
                 <strong>{formatPrice(entry.currentPrice)}</strong>
@@ -374,7 +385,7 @@ const COLLECTION2Panel = React.memo(
                     className={`collection-public__token-button${selected ? " is-active" : ""}${minted ? " is-minted" : ""}`}
                     onClick={() => onTokenIdChange(String(tokenIndex))}
                     aria-pressed={selected}
-                    disabled={comingSoon}
+                    disabled={comingSoon || busy}
                     title={
                       minted
                         ? `NFT #${tokenIndex} is already minted`
@@ -521,9 +532,13 @@ const COLLECTION2Panel = React.memo(
               />
             </div>
             <span className="collection-grid__stat-foot">
-              {selectedArtwork?.finalized
-                ? "Final Public artwork"
-                : "Prereveal placeholders active"}
+              {comingSoon
+                ? "Future chapter"
+                : selectedArtwork?.valid
+                  ? selectedArtwork.finalized
+                    ? "Selected artwork finalized"
+                    : "Selected artwork in prereveal"
+                  : "Artwork verification pending"}
             </span>
           </article>
           <article className="collection-grid__stat-card collection-grid__stat-card--glass">

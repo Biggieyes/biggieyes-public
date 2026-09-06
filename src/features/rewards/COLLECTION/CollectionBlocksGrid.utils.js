@@ -153,6 +153,14 @@ export const normalizeNftInfo = (raw) => {
   return normalized;
 };
 
+export const PUBLIC_MINT_BUSY_STATES = new Set([
+  "connecting",
+  "switching",
+  "preparing",
+  "signature",
+  "pending",
+]);
+
 export const expectedPublicBlockForIndex = (index) => {
   const normalized = Number(index);
   if (!Number.isSafeInteger(normalized) || normalized < 1 || normalized > 100) {

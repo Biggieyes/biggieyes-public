@@ -35,6 +35,77 @@ const readyArtwork = {
 };
 
 describe("public collection panel", () => {
+  const renderReady = (overrides = {}) =>
+    render(
+      <Collection2Panel
+        blockEntries={makeBlocks()}
+        desiredTokenId="44"
+        selectedBlock={5}
+        selectedNftInfo={{
+          configured: true,
+          minted: false,
+          background: 1,
+          blockIdx: 5,
+          mainId: "44",
+        }}
+        selectedArtwork={readyArtwork}
+        COLLECTIONTotals={readyTotals}
+        onTokenIdChange={vi.fn()}
+        onBlockSelect={vi.fn()}
+        onMint={vi.fn()}
+        walletAccount="0x1234567890123456789012345678901234567890"
+        walletChainId={137}
+        mintState={{ status: "idle", message: "", txHash: "" }}
+        {...overrides}
+      />,
+    );
+
+  it("disables mint if the live price is unavailable", () => {
+    const blocks = makeBlocks();
+    blocks[4].currentPrice = null;
+    renderReady({ blockEntries: blocks });
+    expect(
+      screen.getByRole("button", { name: "Price unavailable" }).disabled,
+    ).toBe(true);
+  });
+
+  it("keeps the selection fixed while a transaction is pending", () => {
+    const onTokenIdChange = vi.fn();
+    const onBlockSelect = vi.fn();
+    renderReady({
+      onTokenIdChange,
+      onBlockSelect,
+      mintState: { status: "pending", index: 44 },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "#47" }));
+    fireEvent.click(screen.getByRole("button", { name: /BLOCK 8/ }));
+    expect(onTokenIdChange).not.toHaveBeenCalled();
+    expect(onBlockSelect).not.toHaveBeenCalled();
+  });
+
+  it("lets a user check a submitted transaction even after the contract pauses", () => {
+    const onMint = vi.fn();
+    renderReady({
+      onMint,
+      COLLECTIONTotals: { ...readyTotals, paused: true },
+      mintState: {
+        status: "unconfirmed",
+        index: 44,
+        txHash: `0x${"a".repeat(64)}`,
+        message: "Confirmation unavailable",
+      },
+    });
+    const button = screen.getByRole("button", {
+      name: "Check transaction status",
+    });
+    expect(button.disabled).toBe(false);
+    fireEvent.click(button);
+    expect(onMint).toHaveBeenCalledOnce();
+    expect(
+      screen.getByRole("link", { name: "View transaction" }).href,
+    ).toContain("polygonscan.com/tx/");
+  });
+
   it("shows the exact 10 x 10 selection and paired Originals price", () => {
     const onTokenIdChange = vi.fn();
     const onBlockSelect = vi.fn();

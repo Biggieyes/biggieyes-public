@@ -3570,6 +3570,10 @@
   box-shadow: 0 0 18px rgba(255, 232, 0, 0.24);
 }
 
+.collection-public .collection-public__token-button.is-active {
+  color: #10131a !important;
+}
+
 .collection-public__token-button.is-minted {
   border-color: rgba(255, 118, 118, 0.65);
   background: rgba(255, 118, 118, 0.12);

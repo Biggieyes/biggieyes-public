@@ -54,6 +54,7 @@ import {
   safeSyncCall,
   isExplicitlyEmptyContractCode,
   isPublicNftInfoConsistent,
+  PUBLIC_MINT_BUSY_STATES,
   readCollectionBlockSnapshot,
   normalizeNftInfo,
   normalizeMetadataConsistency,
@@ -201,7 +202,7 @@ const describePublicMintError = (error) => {
   if (/MINT_TRANSACTION_REVERTED/i.test(detail)) {
     return "The Polygon transaction reverted and the NFT was not minted.";
   }
-  return "The mint could not be completed. No successful transaction was submitted.";
+  return "The mint could not be completed. Check the wallet activity before retrying.";
 };
 
 const parseModalImageFile = (fileName) => {
@@ -303,6 +304,7 @@ function COLLECTIONBlocksGrid({
   const [publicMintState, setPublicMintState] = React.useState(
     EMPTY_PUBLIC_MINT_STATE,
   );
+  const publicMintInFlight = React.useRef(false);
   const [COLLECTIONMeta, setCOLLECTIONMeta] = React.useState({});
   const [onchainUnavailable, setOnchainUnavailable] = React.useState(false);
   const [reloadCounter, setReloadCounter] = React.useState(0);
@@ -398,7 +400,11 @@ function COLLECTIONBlocksGrid({
   );
 
   React.useEffect(() => {
-    setPublicMintState(EMPTY_PUBLIC_MINT_STATE);
+    setPublicMintState((current) =>
+      publicMintInFlight.current || current.status === "unconfirmed"
+        ? current
+        : EMPTY_PUBLIC_MINT_STATE,
+    );
   }, [desiredTokenId, displayedChapter.chapterId]);
 
   const getCollectionReadContract = React.useCallback(() => {
@@ -711,6 +717,7 @@ function COLLECTIONBlocksGrid({
   }, [blockNames]);
 
   const normalizedPrices = React.useMemo(() => {
+    if (activeCollectionKey === "COLLECTION2") return livePrices;
     const fromProps =
       displayedChapter.chapterId === 1 && Array.isArray(blockPricesProp)
         ? blockPricesProp.slice(0, MAX_BLOCKS)
@@ -728,9 +735,16 @@ function COLLECTIONBlocksGrid({
         return livePrices[i];
       return v == null ? (fallbackPrices[i] ?? null) : v;
     });
-  }, [blockPricesProp, displayedChapter.chapterId, livePrices, fallbackPrices]);
+  }, [
+    activeCollectionKey,
+    blockPricesProp,
+    displayedChapter.chapterId,
+    livePrices,
+    fallbackPrices,
+  ]);
 
   const normalizedMintCounts = React.useMemo(() => {
+    if (activeCollectionKey === "COLLECTION2") return liveMinted;
     const fromProps =
       displayedChapter.chapterId === 1 && Array.isArray(blockMintCountsProp)
         ? blockMintCountsProp.slice(0, MAX_BLOCKS)
@@ -749,6 +763,7 @@ function COLLECTIONBlocksGrid({
       return v == null ? (fallbackMinted[i] ?? null) : v;
     });
   }, [
+    activeCollectionKey,
     blockMintCountsProp,
     displayedChapter.chapterId,
     liveMinted,
@@ -872,6 +887,35 @@ function COLLECTIONBlocksGrid({
 
   const handlePublicMint = React.useCallback(
     async (requestedIndex) => {
+      if (publicMintInFlight.current) return;
+      if (publicMintState.status === "unconfirmed" && publicMintState.txHash) {
+        publicMintInFlight.current = true;
+        setPublicMintState({ ...publicMintState, status: "pending" });
+        try {
+          const receipt = await getROProvider().getTransactionReceipt(
+            publicMintState.txHash,
+          );
+          if (!receipt) {
+            setPublicMintState(publicMintState);
+          } else {
+            const succeeded = Number(receipt.status) === 1;
+            setPublicMintState({
+              ...publicMintState,
+              status: succeeded ? "success" : "error",
+              message: succeeded
+                ? `NFT #${publicMintState.index} mint is confirmed on Polygon.`
+                : "The Polygon transaction reverted and the NFT was not minted.",
+            });
+            setReloadCounter((counter) => counter + 1);
+            refreshChapterSeries?.().catch(() => {});
+          }
+        } catch {
+          setPublicMintState(publicMintState);
+        } finally {
+          publicMintInFlight.current = false;
+        }
+        return;
+      }
       const index = Number(requestedIndex);
       if (
         activeCollectionKey !== "COLLECTION2" ||
@@ -888,57 +932,65 @@ function COLLECTIONBlocksGrid({
         return;
       }
 
-      if (!web3?.account || !web3?.signer) {
+      publicMintInFlight.current = true;
+      let submittedHash = "";
+      const updateMintState = (state) =>
         setPublicMintState({
-          status: "connecting",
-          message: "Approve the wallet connection to continue.",
-          txHash: "",
+          ...state,
+          index,
+          chapterId: displayedChapter.chapterId,
         });
-        const connected = await web3?.connectMetaMask?.();
-        setPublicMintState(
-          connected
-            ? {
-                status: "idle",
-                message:
-                  "Wallet connected. Review the NFT and press mint again.",
-                txHash: "",
-              }
-            : {
-                status: "error",
-                message:
-                  "Wallet connection was not completed. Use MetaMask or WalletConnect above.",
-                txHash: "",
-              },
-        );
-        return;
-      }
-
-      if (Number(web3.chainId) !== POLYGON_CHAIN_ID) {
-        setPublicMintState({
-          status: "switching",
-          message: "Approve the Polygon mainnet network switch.",
-          txHash: "",
-        });
-        const switched = await web3.ensureChain?.(POLYGON_CHAIN_ID);
-        setPublicMintState(
-          switched
-            ? {
-                status: "idle",
-                message:
-                  "Polygon mainnet selected. Press mint again to continue.",
-                txHash: "",
-              }
-            : {
-                status: "error",
-                message: "Switch to Polygon mainnet before minting.",
-                txHash: "",
-              },
-        );
-        return;
-      }
-
       try {
-        setPublicMintState({
+        if (!web3?.account || !web3?.signer) {
+          updateMintState({
+            status: "connecting",
+            message: "Approve the wallet connection to continue.",
+            txHash: "",
+          });
+          const connected = await web3?.connectMetaMask?.();
+          updateMintState(
+            connected
+              ? {
+                  status: "idle",
+                  message:
+                    "Wallet connected. Review the NFT and press mint again.",
+                  txHash: "",
+                }
+              : {
+                  status: "error",
+                  message:
+                    "Wallet connection was not completed. Use MetaMask or WalletConnect above.",
+                  txHash: "",
+                },
+          );
+          return;
+        }
+
+        if (Number(web3.chainId) !== POLYGON_CHAIN_ID) {
+          updateMintState({
+            status: "switching",
+            message: "Approve the Polygon mainnet network switch.",
+            txHash: "",
+          });
+          const switched = await web3.ensureChain?.(POLYGON_CHAIN_ID);
+          updateMintState(
+            switched
+              ? {
+                  status: "idle",
+                  message:
+                    "Polygon mainnet selected. Press mint again to continue.",
+                  txHash: "",
+                }
+              : {
+                  status: "error",
+                  message: "Switch to Polygon mainnet before minting.",
+                  txHash: "",
+                },
+          );
+          return;
+        }
+
+        updateMintState({
           status: "preparing",
           message: "Checking supply, metadata, availability, and live price.",
           txHash: "",
@@ -1001,7 +1053,7 @@ function COLLECTIONBlocksGrid({
           if (balance <= livePrice) throw new Error("INSUFFICIENT_POL");
         }
 
-        setPublicMintState({
+        updateMintState({
           status: "signature",
           message: `Confirm NFT #${index} for ${formatPrice(
             Number(formatEther(livePrice)),
@@ -1011,42 +1063,68 @@ function COLLECTIONBlocksGrid({
         const transaction = await contract.mintPublic(index, {
           value: livePrice,
         });
+        submittedHash = transaction.hash;
 
-        setPublicMintState({
+        updateMintState({
           status: "pending",
           message: "Mint submitted. Waiting for Polygon confirmation.",
           txHash: transaction.hash,
         });
-        const receipt = await transaction.wait();
+        let receipt;
+        try {
+          receipt = await transaction.wait();
+        } catch (error) {
+          if (error?.code !== "TRANSACTION_REPLACED") throw error;
+          submittedHash =
+            error.replacement?.hash || error.receipt?.hash || submittedHash;
+          if (error.cancelled) {
+            updateMintState({
+              status: "error",
+              message:
+                "The mint transaction was cancelled or replaced in the wallet.",
+              txHash: submittedHash,
+            });
+            return;
+          }
+          receipt = error.receipt;
+        }
+        if (!receipt) throw new Error("MINT_CONFIRMATION_UNAVAILABLE");
         if (receipt?.status === 0 || receipt?.status === 0n) {
           throw new Error("MINT_TRANSACTION_REVERTED");
         }
 
-        setSelectedPublicNft((current) => ({
-          ...current,
-          info: current.info ? { ...current.info, minted: true } : current.info,
-          loading: false,
-          error: null,
-        }));
-        setPublicMintState({
+        updateMintState({
           status: "success",
-          message: `NFT #${index} is confirmed and belongs to your wallet.`,
-          txHash: transaction.hash,
+          message: `NFT #${index} mint is confirmed on Polygon.`,
+          txHash: receipt.hash || submittedHash,
         });
         setReloadCounter((counter) => counter + 1);
         refreshChapterSeries?.().catch(() => {});
       } catch (error) {
-        setPublicMintState({
-          status: "error",
-          message: describePublicMintError(error),
-          txHash: error?.transactionHash || error?.receipt?.hash || "",
+        const reverted =
+          error?.message === "MINT_TRANSACTION_REVERTED" ||
+          Number(error?.receipt?.status) === 0;
+        const unconfirmed = Boolean(submittedHash) && !reverted;
+        updateMintState({
+          status: unconfirmed ? "unconfirmed" : "error",
+          message: unconfirmed
+            ? `NFT #${index} was submitted, but confirmation is unavailable. Check this transaction before starting another mint.`
+            : describePublicMintError(error),
+          txHash:
+            submittedHash ||
+            error?.transactionHash ||
+            error?.receipt?.hash ||
+            "",
         });
+      } finally {
+        publicMintInFlight.current = false;
       }
     },
     [
       activeCollectionKey,
       displayedChapter.chapterId,
       isFutureChapter,
+      publicMintState,
       refreshChapterSeries,
       web3,
     ],
@@ -1328,6 +1406,7 @@ function COLLECTIONBlocksGrid({
             <button
               type="button"
               className="collection-grid__chapter-button collection-grid__chapter-button--original"
+              disabled={PUBLIC_MINT_BUSY_STATES.has(publicMintState.status)}
               onClick={() => setSelectedChapterId(1)}
             >
               Back to Original
@@ -1343,6 +1422,7 @@ function COLLECTIONBlocksGrid({
                 setSelectedChapterId(chapter.chapterId);
               }}
               aria-pressed={displayedChapter.chapterId === chapter.chapterId}
+              disabled={PUBLIC_MINT_BUSY_STATES.has(publicMintState.status)}
             >
               {chapter.displayName}
             </button>
@@ -1350,7 +1430,7 @@ function COLLECTIONBlocksGrid({
         </div>
       </nav>
     ),
-    [displayedChapter, isFutureChapter],
+    [displayedChapter, isFutureChapter, publicMintState.status],
   );
 
   const renderCOLLECTIONTwo = React.useCallback(
