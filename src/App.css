@@ -9176,8 +9176,10 @@ canvas {
   isolation: isolate;
 }
 
-.dashboard-header-shell button:not(:disabled):not([aria-disabled="true"]),
-.dashboard-shell button:not(:disabled):not([aria-disabled="true"]) {
+/* Keep this deliberately low-specificity so component controls such as the
+   gallery zoom button can retain absolute/fixed positioning. */
+:where(.dashboard-header-shell, .dashboard-shell)
+  :where(button:not(:disabled):not([aria-disabled="true"])) {
   position: relative;
 }
 

@@ -148,6 +148,7 @@
 .nft-card__zoom {
   position: absolute;
   inset: auto 12px 12px auto;
+  z-index: 3;
   border-radius: 999px;
   border: 1px solid rgba(255, 232, 0, 0.35);
   background: rgba(255, 232, 0, 0.16);
@@ -160,6 +161,7 @@
 }
 
 .nft-card--image-zoomed .nft-card__zoom {
+  z-index: 16;
   background: rgba(255, 232, 0, 0.34);
 }
 
@@ -168,6 +170,7 @@
   position: absolute;
   top: 12px;
   left: 12px;
+  z-index: 2;
   border-radius: 999px;
   padding: 6px 12px;
   background: linear-gradient(
