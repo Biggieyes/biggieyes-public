@@ -23,15 +23,18 @@ import {
   buildBlockThumbPath,
 } from "../../../utils/images";
 import { useOptionalContracts } from "../../../providers/ContractsProvider";
+import { useOptionalWeb3 } from "../../../providers/Web3Provider";
 import {
   ensurePolygon,
+  getChapterMain2,
   getReadOnlyChapterMain,
   getReadOnlyChapterMain2,
   getROProvider,
 } from "@/shared/utils/contract";
 import { CORE_CHAPTERS } from "@/shared/utils/addresses.js";
 import { coerceBool } from "@/shared/utils/boolean";
-import { formatEther } from "ethers";
+import { readJsonFromURI, resolveImageUrl } from "@/shared/utils/ipfs";
+import { Contract, formatEther } from "ethers";
 
 // Import constants a utilities
 import {
@@ -50,6 +53,7 @@ import {
   safeAsyncCall,
   safeSyncCall,
   isExplicitlyEmptyContractCode,
+  isPublicNftInfoConsistent,
   readCollectionBlockSnapshot,
   normalizeNftInfo,
   normalizeMetadataConsistency,
@@ -71,6 +75,134 @@ const MODAL_FILE_PATTERN = /^Biggi_(\d+)_([A-Z]+)_([A-Z]+)\.png$/i;
 const DEFAULT_MODAL_SCAN_SUPPLY = 550;
 const PUBLIC_MAX_SUPPLY = 100;
 const MODAL_SCAN_CHUNK = 32;
+const POLYGON_CHAIN_ID = 137;
+const EMPTY_PUBLIC_MINT_STATE = Object.freeze({
+  status: "idle",
+  message: "",
+  txHash: "",
+});
+const PUBLIC_UNLOCK_ABI = [
+  "function isPublicMintUnlocked(uint256 chapterId) view returns (bool)",
+];
+const EMPTY_PUBLIC_ARTWORK = Object.freeze({
+  imageUrl: "",
+  name: "",
+  metadataUri: "",
+  finalized: null,
+  valid: false,
+  loading: false,
+  error: "",
+});
+
+const readMetadataAttribute = (metadata, traitName) =>
+  (Array.isArray(metadata?.attributes) ? metadata.attributes : []).find(
+    (attribute) =>
+      String(attribute?.trait_type || "").toLowerCase() ===
+      String(traitName).toLowerCase(),
+  )?.value;
+
+const readPublicArtwork = async (contract, index, info) => {
+  if (!isPublicNftInfoConsistent(index, info)) {
+    throw new Error("PUBLIC_METADATA_MISMATCH");
+  }
+
+  const blockName = DEFAULT_BLOCKS[info.blockIdx - 1];
+  const baseUri = String(await contract.blockBaseURIs(info.blockIdx));
+  if (!blockName || !baseUri) throw new Error("PUBLIC_METADATA_URI_MISSING");
+
+  const metadataUri = `${baseUri.endsWith("/") ? baseUri : `${baseUri}/`}Biggi_${index}_${blockName}_PUBLIC.json`;
+  const metadata = await readJsonFromURI(metadataUri);
+  if (!metadata) throw new Error("PUBLIC_METADATA_UNAVAILABLE");
+
+  const attributes = Array.isArray(metadata.attributes)
+    ? metadata.attributes
+    : [];
+  const hasBackgroundTrait = attributes.some((attribute) =>
+    /^background(?:\s|$|\/)/i.test(String(attribute?.trait_type || "").trim()),
+  );
+  const collectionKind = readMetadataAttribute(metadata, "Collection Kind");
+  const blockIndex = Number(readMetadataAttribute(metadata, "Block Index"));
+  const mainId = Number(readMetadataAttribute(metadata, "Main ID"));
+  const finalizedRaw = readMetadataAttribute(metadata, "Image Finalized");
+  const finalized = /^(yes|true|final|finalized)$/i.test(
+    String(finalizedRaw || "").trim(),
+  );
+  const valid =
+    String(collectionKind || "").toUpperCase() === "PUBLIC" &&
+    blockIndex === info.blockIdx &&
+    mainId === index &&
+    !hasBackgroundTrait;
+  if (!valid) throw new Error("PUBLIC_METADATA_MISMATCH");
+
+  const imageUrl = await resolveImageUrl(metadata.image, metadataUri);
+  if (!imageUrl) throw new Error("PUBLIC_ARTWORK_UNAVAILABLE");
+
+  return {
+    imageUrl,
+    name: String(metadata.name || `BiggiEyesPublic #${index}`),
+    metadataUri,
+    finalized,
+    valid,
+    loading: false,
+    error: "",
+  };
+};
+
+const describePublicMintError = (error) => {
+  const code = error?.code ?? error?.info?.error?.code;
+  const detail = [
+    error?.errorName,
+    error?.shortMessage,
+    error?.reason,
+    error?.info?.error?.message,
+    error?.message,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  if (
+    code === 4001 ||
+    code === "ACTION_REJECTED" ||
+    /user rejected/i.test(detail)
+  ) {
+    return "The wallet request was cancelled.";
+  }
+  if (/INSUFFICIENT_POL|insufficient funds/i.test(detail)) {
+    return "This wallet does not have enough POL for the NFT price and network fee.";
+  }
+  if (/PUBLIC_SUPPLY_MISMATCH/i.test(detail)) {
+    return "The Public contract does not report the required supply of 100 NFTs.";
+  }
+  if (/PUBLIC_METADATA_MISMATCH/i.test(detail)) {
+    return "The complete 10 x 10 Public metadata matrix is not ready.";
+  }
+  if (/PUBLIC_ARTWORK_NOT_FINAL/i.test(detail)) {
+    return "This NFT still uses prereveal artwork. Mint stays blocked until its image is final.";
+  }
+  if (
+    /PUBLIC_METADATA_URI_MISSING|PUBLIC_METADATA_UNAVAILABLE|PUBLIC_ARTWORK_UNAVAILABLE/i.test(
+      detail,
+    )
+  ) {
+    return "The Public artwork metadata could not be verified through IPFS.";
+  }
+  if (/PublicMintLocked/i.test(detail)) {
+    return "Public mint is still locked by the chapter controller.";
+  }
+  if (/EnforcedPause|Pausable|paused/i.test(detail)) {
+    return "Public mint is currently paused.";
+  }
+  if (/InvalidIndex|AlreadyMinted/i.test(detail)) {
+    return "This NFT is already minted or its metadata is not valid.";
+  }
+  if (/ChapterPriceProviderUnavailable|price provider/i.test(detail)) {
+    return "The live Originals block price is temporarily unavailable.";
+  }
+  if (/MINT_TRANSACTION_REVERTED/i.test(detail)) {
+    return "The Polygon transaction reverted and the NFT was not minted.";
+  }
+  return "The mint could not be completed. No successful transaction was submitted.";
+};
 
 const parseModalImageFile = (fileName) => {
   const match = String(fileName || "").match(MODAL_FILE_PATTERN);
@@ -129,7 +261,7 @@ const COLLECTION_SECTION_META = {
   COLLECTION2: {
     title: "PUBLIC COLLECTION",
     subtitle:
-      "Track public mint pricing, availability, and mint setup inputs for the second collection layer in one control view.",
+      "Choose one of 100 fixed NFTs and mint it directly on Polygon at its live Originals block price.",
     accent: "#5ddcff",
     accentSoft: "rgba(93, 220, 255, 0.22)",
     accentGlow: "rgba(93, 220, 255, 0.38)",
@@ -160,12 +292,17 @@ function COLLECTIONBlocksGrid({
   const autoInfoOpened = React.useRef(false);
   const [selectedChapterId, setSelectedChapterId] = React.useState(1);
   const [selectedBlock, setSelectedBlock] = React.useState(1);
-  const [desiredTokenId, setDesiredTokenId] = React.useState("");
+  const [desiredTokenId, setDesiredTokenId] = React.useState("1");
   const [selectedPublicNft, setSelectedPublicNft] = React.useState({
     info: null,
     loading: false,
     error: null,
   });
+  const [selectedPublicArtwork, setSelectedPublicArtwork] =
+    React.useState(EMPTY_PUBLIC_ARTWORK);
+  const [publicMintState, setPublicMintState] = React.useState(
+    EMPTY_PUBLIC_MINT_STATE,
+  );
   const [COLLECTIONMeta, setCOLLECTIONMeta] = React.useState({});
   const [onchainUnavailable, setOnchainUnavailable] = React.useState(false);
   const [reloadCounter, setReloadCounter] = React.useState(0);
@@ -182,6 +319,7 @@ function COLLECTIONBlocksGrid({
     error: chapterSeriesError,
     refresh: refreshChapterSeries,
   } = useChapterSeriesReader();
+  const web3 = useOptionalWeb3();
 
   const isMobile = useIsMobile(MOBILE_BREAKPOINT);
   const isTouch = useIsTouch();
@@ -258,6 +396,10 @@ function COLLECTIONBlocksGrid({
       ) || null,
     [chapterSeriesData?.chapters, displayedChapter.chapterId],
   );
+
+  React.useEffect(() => {
+    setPublicMintState(EMPTY_PUBLIC_MINT_STATE);
+  }, [desiredTokenId, displayedChapter.chapterId]);
 
   const getCollectionReadContract = React.useCallback(() => {
     const readPublic = activeCollectionKey === "COLLECTION2";
@@ -454,6 +596,7 @@ function COLLECTIONBlocksGrid({
   React.useEffect(() => {
     if (activeCollectionKey !== "COLLECTION2") {
       setSelectedPublicNft({ info: null, loading: false, error: null });
+      setSelectedPublicArtwork(EMPTY_PUBLIC_ARTWORK);
       return undefined;
     }
 
@@ -462,11 +605,16 @@ function COLLECTIONBlocksGrid({
       Number(COLLECTIONMeta.maxSupply) || PUBLIC_MAX_SUPPLY;
     if (!Number.isInteger(index) || index < 1 || index > publicMaxSupply) {
       setSelectedPublicNft({ info: null, loading: false, error: null });
+      setSelectedPublicArtwork(EMPTY_PUBLIC_ARTWORK);
       return undefined;
     }
 
     let cancelled = false;
     setSelectedPublicNft({ info: null, loading: true, error: null });
+    setSelectedPublicArtwork({
+      ...EMPTY_PUBLIC_ARTWORK,
+      loading: true,
+    });
     const load = async () => {
       const contract = getCollectionReadContract();
       if (!contract || typeof contract.nftInfo !== "function") {
@@ -476,11 +624,17 @@ function COLLECTIONBlocksGrid({
             loading: false,
             error: "NFT metadata is unavailable.",
           });
+          setSelectedPublicArtwork({
+            ...EMPTY_PUBLIC_ARTWORK,
+            error: "Public artwork metadata is unavailable.",
+          });
         }
         return;
       }
+
+      let info;
       try {
-        const info = normalizeNftInfo(await contract.nftInfo(index));
+        info = normalizeNftInfo(await contract.nftInfo(index));
         if (!cancelled) {
           setSelectedPublicNft({ info, loading: false, error: null });
           if (info?.blockIdx >= 1 && info.blockIdx <= MAX_BLOCKS) {
@@ -494,6 +648,23 @@ function COLLECTIONBlocksGrid({
             loading: false,
             error: "Unable to read this NFT from Polygon.",
           });
+          setSelectedPublicArtwork({
+            ...EMPTY_PUBLIC_ARTWORK,
+            error: "Public artwork metadata is unavailable.",
+          });
+        }
+        return;
+      }
+
+      try {
+        const artwork = await readPublicArtwork(contract, index, info);
+        if (!cancelled) setSelectedPublicArtwork(artwork);
+      } catch {
+        if (!cancelled) {
+          setSelectedPublicArtwork({
+            ...EMPTY_PUBLIC_ARTWORK,
+            error: "Unable to verify this NFT's Public artwork metadata.",
+          });
         }
       }
     };
@@ -506,6 +677,7 @@ function COLLECTIONBlocksGrid({
     desiredTokenId,
     getCollectionReadContract,
     COLLECTIONMeta.maxSupply,
+    reloadCounter,
   ]);
 
   React.useEffect(() => {
@@ -663,11 +835,6 @@ function COLLECTIONBlocksGrid({
     };
   }, [normalizedPrices, normalizedMintCounts, blockEntries]);
 
-  const selectedEntry = React.useMemo(() => {
-    const idx = Number(selectedBlock) - 1;
-    return blockEntries[idx] || blockEntries[0] || null;
-  }, [selectedBlock, blockEntries]);
-
   const COLLECTIONTotals = React.useMemo(
     () => ({
       maxSupply: COLLECTIONMeta.maxSupply ?? null,
@@ -688,6 +855,201 @@ function COLLECTIONBlocksGrid({
       publicUnlocked: displayedChapterSnapshot?.publicUnlocked ?? false,
     }),
     [COLLECTIONMeta, displayedChapterSnapshot],
+  );
+
+  const handlePublicBlockSelect = React.useCallback((blockNumber) => {
+    const normalized = Number(blockNumber);
+    if (
+      !Number.isSafeInteger(normalized) ||
+      normalized < 1 ||
+      normalized > 10
+    ) {
+      return;
+    }
+    setSelectedBlock(normalized);
+    setDesiredTokenId(String((normalized - 1) * 10 + 1));
+  }, []);
+
+  const handlePublicMint = React.useCallback(
+    async (requestedIndex) => {
+      const index = Number(requestedIndex);
+      if (
+        activeCollectionKey !== "COLLECTION2" ||
+        isFutureChapter ||
+        !Number.isSafeInteger(index) ||
+        index < 1 ||
+        index > PUBLIC_MAX_SUPPLY
+      ) {
+        setPublicMintState({
+          status: "error",
+          message: "Select a valid Public NFT from 1 to 100.",
+          txHash: "",
+        });
+        return;
+      }
+
+      if (!web3?.account || !web3?.signer) {
+        setPublicMintState({
+          status: "connecting",
+          message: "Approve the wallet connection to continue.",
+          txHash: "",
+        });
+        const connected = await web3?.connectMetaMask?.();
+        setPublicMintState(
+          connected
+            ? {
+                status: "idle",
+                message:
+                  "Wallet connected. Review the NFT and press mint again.",
+                txHash: "",
+              }
+            : {
+                status: "error",
+                message:
+                  "Wallet connection was not completed. Use MetaMask or WalletConnect above.",
+                txHash: "",
+              },
+        );
+        return;
+      }
+
+      if (Number(web3.chainId) !== POLYGON_CHAIN_ID) {
+        setPublicMintState({
+          status: "switching",
+          message: "Approve the Polygon mainnet network switch.",
+          txHash: "",
+        });
+        const switched = await web3.ensureChain?.(POLYGON_CHAIN_ID);
+        setPublicMintState(
+          switched
+            ? {
+                status: "idle",
+                message:
+                  "Polygon mainnet selected. Press mint again to continue.",
+                txHash: "",
+              }
+            : {
+                status: "error",
+                message: "Switch to Polygon mainnet before minting.",
+                txHash: "",
+              },
+        );
+        return;
+      }
+
+      try {
+        setPublicMintState({
+          status: "preparing",
+          message: "Checking supply, metadata, availability, and live price.",
+          txHash: "",
+        });
+
+        const contract = await getChapterMain2(
+          displayedChapter.chapterId,
+          web3.signer,
+        );
+        const [maxSupplyRaw, paused, metadataRaw, nftInfoRaw] =
+          await Promise.all([
+            contract.MAX_SUPPLY(),
+            contract.paused(),
+            contract.metadataConsistency(),
+            contract.nftInfo(index),
+          ]);
+        const metadata = normalizeMetadataConsistency(metadataRaw);
+        const nftInfo = normalizeNftInfo(nftInfoRaw);
+
+        if (Number(maxSupplyRaw) !== PUBLIC_MAX_SUPPLY) {
+          throw new Error("PUBLIC_SUPPLY_MISMATCH");
+        }
+        if (paused) throw new Error("EnforcedPause");
+        if (
+          !metadata.fullyConfigured ||
+          !metadata.rewardMatrixConsistent ||
+          metadata.configuredCount !== PUBLIC_MAX_SUPPLY
+        ) {
+          throw new Error("PUBLIC_METADATA_MISMATCH");
+        }
+        if (!isPublicNftInfoConsistent(index, nftInfo) || nftInfo.minted) {
+          throw new Error("InvalidIndex");
+        }
+        const artwork = await readPublicArtwork(contract, index, nftInfo);
+        if (!artwork.finalized) throw new Error("PUBLIC_ARTWORK_NOT_FINAL");
+
+        const [controllerAddress, contractChapterId] = await Promise.all([
+          contract.chapterController(),
+          contract.chapterId(),
+        ]);
+        const controller = new Contract(
+          controllerAddress,
+          PUBLIC_UNLOCK_ABI,
+          web3.signer,
+        );
+        if (!(await controller.isPublicMintUnlocked(contractChapterId))) {
+          throw new Error("PublicMintLocked");
+        }
+
+        const livePrice = await contract.getEffectiveBlockPrice(
+          nftInfo.blockIdx,
+        );
+        if (livePrice <= 0n) {
+          throw new Error("ChapterPriceProviderUnavailable");
+        }
+
+        const balanceProvider = web3.signer.provider || web3.provider;
+        if (balanceProvider?.getBalance) {
+          const balance = await balanceProvider.getBalance(web3.account);
+          if (balance <= livePrice) throw new Error("INSUFFICIENT_POL");
+        }
+
+        setPublicMintState({
+          status: "signature",
+          message: `Confirm NFT #${index} for ${formatPrice(
+            Number(formatEther(livePrice)),
+          )} in your wallet.`,
+          txHash: "",
+        });
+        const transaction = await contract.mintPublic(index, {
+          value: livePrice,
+        });
+
+        setPublicMintState({
+          status: "pending",
+          message: "Mint submitted. Waiting for Polygon confirmation.",
+          txHash: transaction.hash,
+        });
+        const receipt = await transaction.wait();
+        if (receipt?.status === 0 || receipt?.status === 0n) {
+          throw new Error("MINT_TRANSACTION_REVERTED");
+        }
+
+        setSelectedPublicNft((current) => ({
+          ...current,
+          info: current.info ? { ...current.info, minted: true } : current.info,
+          loading: false,
+          error: null,
+        }));
+        setPublicMintState({
+          status: "success",
+          message: `NFT #${index} is confirmed and belongs to your wallet.`,
+          txHash: transaction.hash,
+        });
+        setReloadCounter((counter) => counter + 1);
+        refreshChapterSeries?.().catch(() => {});
+      } catch (error) {
+        setPublicMintState({
+          status: "error",
+          message: describePublicMintError(error),
+          txHash: error?.transactionHash || error?.receipt?.hash || "",
+        });
+      }
+    },
+    [
+      activeCollectionKey,
+      displayedChapter.chapterId,
+      isFutureChapter,
+      refreshChapterSeries,
+      web3,
+    ],
   );
 
   React.useEffect(() => {
@@ -994,26 +1356,38 @@ function COLLECTIONBlocksGrid({
   const renderCOLLECTIONTwo = React.useCallback(
     () => (
       <COLLECTION2Panel
-        renderBlockCardsGrid={renderBlockCardsGrid}
         blockEntries={blockEntries}
         desiredTokenId={desiredTokenId}
-        selectedEntry={selectedEntry}
+        selectedBlock={selectedBlock}
         selectedNftInfo={selectedPublicNft.info}
         selectedNftLoading={selectedPublicNft.loading}
         selectedNftError={selectedPublicNft.error}
+        selectedArtwork={selectedPublicArtwork}
         COLLECTIONTotals={COLLECTIONTotals}
         onTokenIdChange={setDesiredTokenId}
+        onBlockSelect={handlePublicBlockSelect}
+        onMint={handlePublicMint}
+        walletAccount={web3?.account || ""}
+        walletChainId={web3?.chainId}
+        walletConnecting={web3?.isConnecting}
+        mintState={publicMintState}
         renderChapterSwitcher={renderChapterSwitcher}
         comingSoon={isFutureChapter}
       />
     ),
     [
-      renderBlockCardsGrid,
       blockEntries,
       desiredTokenId,
-      selectedEntry,
+      selectedBlock,
       selectedPublicNft,
+      selectedPublicArtwork,
       COLLECTIONTotals,
+      handlePublicBlockSelect,
+      handlePublicMint,
+      web3?.account,
+      web3?.chainId,
+      web3?.isConnecting,
+      publicMintState,
       renderChapterSwitcher,
       isFutureChapter,
     ],

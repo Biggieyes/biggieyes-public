@@ -3349,3 +3349,470 @@
     overflow-wrap: anywhere;
   }
 }
+
+/* Public collection: exact 10 x 10 primary-mint flow. */
+.collection-public__steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.collection-public .collection-grid__chapter-switcher {
+  margin-top: 12px;
+  padding: 10px 12px;
+}
+
+.collection-public .collection-grid__chapter-switcher-heading {
+  margin-bottom: 8px;
+}
+
+.collection-public .collection-grid__chapter-switcher-buttons {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.collection-public .collection-grid__chapter-button {
+  min-height: 40px;
+  padding: 7px 9px;
+}
+
+.collection-public__steps li {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 52px;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid rgba(93, 220, 255, 0.22);
+  border-radius: 8px;
+  background: rgba(8, 14, 24, 0.72);
+  color: #eaf9ff;
+}
+
+.collection-public__steps li > span {
+  display: grid;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid rgba(255, 232, 0, 0.65);
+  border-radius: 50%;
+  background: rgba(255, 232, 0, 0.12);
+  color: #ffe800;
+  font-weight: 900;
+}
+
+.collection-public__steps strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.collection-public__mechanism {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+  color: #c7f4ff;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.collection-public__mechanism span {
+  padding: 7px 10px;
+  border: 1px solid rgba(93, 220, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(93, 220, 255, 0.07);
+}
+
+.collection-public__block-picker {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.collection-public__block-button {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  min-height: 96px;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid rgba(93, 220, 255, 0.24);
+  border-radius: 8px;
+  background: rgba(8, 12, 20, 0.9);
+  color: #e7f8ff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.collection-public__block-button > span {
+  min-width: 0;
+  overflow: hidden;
+  color: #f4f7ff;
+  font-size: 0.8rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.collection-public__block-button strong {
+  color: #8eeeff;
+  font-size: 0.9rem;
+}
+
+.collection-public__block-button small {
+  min-width: 0;
+  color: #9aaac1;
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+
+.collection-public__block-button:hover:not(:disabled),
+.collection-public__block-button:focus-visible,
+.collection-public__block-button.is-active {
+  border-color: #5ddcff;
+  background: rgba(20, 53, 68, 0.72);
+  box-shadow:
+    inset 0 0 20px rgba(93, 220, 255, 0.08),
+    0 8px 22px rgba(0, 0, 0, 0.35);
+  outline: none;
+}
+
+.collection-public__block-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.collection-public__block-button.is-active {
+  border-color: #ffe800;
+}
+
+.collection-public__block-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.collection-public__mint-layout {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.72fr) minmax(420px, 1.28fr);
+  gap: 18px;
+  margin-top: 20px;
+  align-items: stretch;
+}
+
+.collection-public__selector,
+.collection-public__checkout {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid rgba(93, 220, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(10, 14, 23, 0.82);
+  box-sizing: border-box;
+}
+
+.collection-public__selector h3,
+.collection-public__checkout h3 {
+  margin: 0;
+  color: #f5f8ff;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+}
+
+.collection-public__token-picker {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.collection-public__token-button {
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.035);
+  color: #dbe6f7;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.collection-public__token-button:hover:not(:disabled),
+.collection-public__token-button:focus-visible {
+  border-color: #5ddcff;
+  color: #5ddcff;
+  outline: none;
+}
+
+.collection-public__token-button.is-active {
+  border-color: #ffe800;
+  background: #ffe800;
+  color: #10131a;
+  box-shadow: 0 0 18px rgba(255, 232, 0, 0.24);
+}
+
+.collection-public__token-button.is-minted {
+  border-color: rgba(255, 118, 118, 0.65);
+  background: rgba(255, 118, 118, 0.12);
+  color: #ffb0b0;
+}
+
+.collection-public__token-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.collection-public__selector .collection-grid__helper {
+  margin: 14px 0 0;
+  line-height: 1.55;
+}
+
+.collection-public__checkout {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr);
+  gap: 18px;
+}
+
+.collection-public__preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  align-self: start;
+  overflow: hidden;
+  border: 1px solid rgba(255, 232, 0, 0.28);
+  border-radius: 8px;
+  background: rgba(4, 7, 13, 0.9);
+}
+
+.collection-public__preview > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.collection-public__preview > span:not(.collection-public__preview-label) {
+  display: grid;
+  height: 100%;
+  place-items: center;
+  color: #8f9bb0;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.collection-public__preview-label {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 232, 0, 0.5);
+  border-radius: 999px;
+  background: rgba(3, 5, 10, 0.9);
+  color: #ffe800;
+  font-size: 0.66rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.collection-public__checkout-content {
+  min-width: 0;
+}
+
+.collection-public__eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  color: #5ddcff;
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.collection-public__checkout .collection-grid__key-values div {
+  min-width: 0;
+  border-radius: 6px;
+}
+
+.collection-public__checkout .collection-grid__key-values dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.collection-public__status {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid #8294b4;
+  background: rgba(130, 148, 180, 0.08);
+  color: #cbd5e6;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.collection-public__status.is-ok {
+  border-color: #74ed91;
+  background: rgba(116, 237, 145, 0.08);
+  color: #b9fac8;
+}
+
+.collection-public__status.is-warn {
+  border-color: #ffbd66;
+  background: rgba(255, 189, 102, 0.08);
+  color: #ffdda8;
+}
+
+.collection-public__mint-button {
+  min-height: 48px;
+  border-radius: 8px;
+}
+
+.collection-public__mint-button:not(:disabled) {
+  cursor: pointer;
+  opacity: 1;
+  box-shadow: 0 8px 24px rgba(43, 226, 164, 0.2);
+}
+
+.collection-public__mint-button:not(:disabled):hover,
+.collection-public__mint-button:not(:disabled):focus-visible {
+  border-color: #ffe800;
+  box-shadow:
+    0 0 0 2px rgba(255, 232, 0, 0.18),
+    0 10px 28px rgba(43, 226, 164, 0.28);
+  outline: none;
+}
+
+.collection-public__transaction {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(93, 220, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(93, 220, 255, 0.07);
+  color: #d7f8ff;
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.collection-public__transaction.is-error {
+  border-color: rgba(255, 118, 118, 0.4);
+  background: rgba(255, 118, 118, 0.09);
+  color: #ffc1c1;
+}
+
+.collection-public__transaction.is-success {
+  border-color: rgba(116, 237, 145, 0.4);
+  background: rgba(116, 237, 145, 0.09);
+  color: #c4fbd0;
+}
+
+.collection-public__transaction a {
+  flex: 0 0 auto;
+  color: #ffe800;
+  font-weight: 900;
+}
+
+@media (max-width: 1100px) {
+  .collection-public__block-picker {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .collection-public__mint-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .collection-public .collection-grid__chapter-switcher-heading {
+    display: none;
+  }
+
+  .collection-public .collection-grid__chapter-switcher-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .collection-public .collection-grid__chapter-button {
+    width: 100%;
+    min-height: 38px;
+  }
+
+  .collection-public__steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .collection-public__steps li {
+    min-height: 46px;
+  }
+
+  .collection-public__checkout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .collection-public__preview {
+    width: min(100%, 300px);
+    margin-inline: auto;
+  }
+}
+
+@media (max-width: 460px) {
+  .collection-public__block-picker {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .collection-public__token-picker {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .collection-public__selector,
+  .collection-public__checkout {
+    padding: 12px;
+  }
+
+  .collection-public__mechanism {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .collection-public__mechanism span {
+    width: auto;
+    border-radius: 6px;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+  }
+
+  .collection-public__transaction {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 340px) {
+  .collection-public__block-picker {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .collection-public__token-picker {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

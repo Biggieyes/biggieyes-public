@@ -153,6 +153,26 @@ export const normalizeNftInfo = (raw) => {
   return normalized;
 };
 
+export const expectedPublicBlockForIndex = (index) => {
+  const normalized = Number(index);
+  if (!Number.isSafeInteger(normalized) || normalized < 1 || normalized > 100) {
+    return 0;
+  }
+  return Math.floor((normalized - 1) / 10) + 1;
+};
+
+export const isPublicNftInfoConsistent = (index, info) => {
+  const normalized = Number(index);
+  const expectedBlock = expectedPublicBlockForIndex(normalized);
+  return Boolean(
+    expectedBlock &&
+    info?.configured &&
+    info.background === 1 &&
+    info.blockIdx === expectedBlock &&
+    String(info.mainId) === String(normalized),
+  );
+};
+
 export const normalizeMetadataConsistency = (raw) => {
   if (raw == null) {
     return {
