@@ -18,4 +18,25 @@ describe("production app access", () => {
     expect(netlifyConfig).not.toContain('from = "/app"');
     expect(netlifyConfig).not.toContain('from = "/app/"');
   });
+
+  it("publishes Polygon Mainnet identity without stale testnet references", () => {
+    const landing = readProjectFile("index.html");
+    const appEntry = readProjectFile("app/index.html");
+    const publicLanding = readProjectFile("public-repo/index.html");
+    const publicAppEntry = readProjectFile("public-repo/app/index.html");
+    const sitemap = readProjectFile("public/sitemap.xml");
+    const publicEntries = [landing, appEntry, publicLanding, publicAppEntry];
+
+    for (const entry of publicEntries) {
+      expect(entry).toContain("Polygon Mainnet");
+      expect(entry).toContain('content="137"');
+      expect(entry).not.toMatch(/amoy|mumbai|testnet|80002/i);
+    }
+
+    expect(landing).toContain('id="mainnet-verification"');
+    expect(landing).toContain("polygonscan.com/address/");
+    expect(landing).toContain("opensea.io/collection/");
+    expect(sitemap).toContain("https://biggieyes.com/");
+    expect(sitemap).toContain("https://biggieyes.com/app/");
+  });
 });
