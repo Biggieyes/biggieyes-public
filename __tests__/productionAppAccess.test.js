@@ -26,6 +26,13 @@ describe("production app access", () => {
     const publicAppEntry = readProjectFile("public-repo/app/index.html");
     const sitemap = readProjectFile("public/sitemap.xml");
     const publicEntries = [landing, appEntry, publicLanding, publicAppEntry];
+    const seoRoutes = [
+      "collection",
+      "vrf-mint",
+      "rewards",
+      "ecosystem",
+      "community-center",
+    ];
 
     for (const entry of publicEntries) {
       expect(entry).toContain("Polygon Mainnet");
@@ -38,5 +45,15 @@ describe("production app access", () => {
     expect(landing).toContain("opensea.io/collection/");
     expect(sitemap).toContain("https://biggieyes.com/");
     expect(sitemap).toContain("https://biggieyes.com/app/");
+
+    for (const route of seoRoutes) {
+      const page = readProjectFile(`public/${route}/index.html`);
+
+      expect(page).toContain("Polygon Mainnet");
+      expect(page).toContain('content="137"');
+      expect(page).not.toMatch(/amoy|mumbai|testnet|80002/i);
+      expect(page).not.toMatch(/href="[^"]*index\.html"/);
+      expect(sitemap).toContain(`https://biggieyes.com/${route}/`);
+    }
   });
 });
