@@ -5,15 +5,19 @@ on:
     - cron: "0 * * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   health:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Use Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20.19
+          node-version: "20.19"
       - name: Install deps
         run: npm ci
       - name: Check RPC health
@@ -29,9 +33,10 @@ jobs:
           VITE_INFURA_PROJECT_ID: ${{ secrets.VITE_INFURA_PROJECT_ID }}
           VITE_ARCHIVE_RPC_URL: ${{ secrets.VITE_ARCHIVE_RPC_URL }}
           VITE_ARCHIVE_RPC_URLS: ${{ secrets.VITE_ARCHIVE_RPC_URLS }}
-          VITE_RPC_HEALTH_TIMEOUT_MS: ${{ secrets.VITE_RPC_HEALTH_TIMEOUT_MS }}
-          VITE_RPC_MAX_STALE_BLOCKS: ${{ secrets.VITE_RPC_MAX_STALE_BLOCKS }}
-          RPC_EXPECTED_CHAIN_ID: ${{ secrets.RPC_EXPECTED_CHAIN_ID }}
-          RPC_HEALTH_STRICT: ${{ secrets.RPC_HEALTH_STRICT }}
-          RPC_HEALTH_INCLUDE_ARCHIVE: ${{ secrets.RPC_HEALTH_INCLUDE_ARCHIVE }}
+          # Non-sensitive settings use repository variables with safe defaults.
+          VITE_RPC_HEALTH_TIMEOUT_MS: ${{ vars.VITE_RPC_HEALTH_TIMEOUT_MS || '6000' }}
+          VITE_RPC_MAX_STALE_BLOCKS: ${{ vars.VITE_RPC_MAX_STALE_BLOCKS || '16' }}
+          RPC_EXPECTED_CHAIN_ID: "137"
+          RPC_HEALTH_STRICT: ${{ vars.RPC_HEALTH_STRICT || '0' }}
+          RPC_HEALTH_INCLUDE_ARCHIVE: ${{ vars.RPC_HEALTH_INCLUDE_ARCHIVE || '1' }}
           RPC_HEALTH_MIN_HEALTHY: "2"

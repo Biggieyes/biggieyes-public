@@ -13,22 +13,43 @@ const env = (key) => {
   }
 };
 
-const strict = env("RPC_HEALTH_STRICT") === "1";
-const includeArchive = env("RPC_HEALTH_INCLUDE_ARCHIVE") !== "0";
-const minHealthyRaw = Number(env("RPC_HEALTH_MIN_HEALTHY"));
-const minHealthy =
-  Number.isFinite(minHealthyRaw) && minHealthyRaw > 0
-    ? Math.trunc(minHealthyRaw)
-    : 2;
-const expectedChainIdRaw = env("RPC_EXPECTED_CHAIN_ID") || env("VITE_CHAIN_ID");
-const expectedChainId =
-  expectedChainIdRaw != null && expectedChainIdRaw !== ""
-    ? Number(expectedChainIdRaw)
-    : ACTIVE_CHAIN.chainId;
-const maxStaleBlocks =
-  Number(env("VITE_RPC_MAX_STALE_BLOCKS")) > 0
-    ? Number(env("VITE_RPC_MAX_STALE_BLOCKS"))
-    : 16;
+function integerSetting(key, fallback, minimum = 1) {
+  const raw = env(key);
+  if (raw == null || raw === "") return fallback;
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value < minimum || !raw.trim()) {
+    throw new Error(`${key} must be an integer >= ${minimum}.`);
+  }
+  return value;
+}
+
+function flagSetting(key, fallback) {
+  const raw = env(key);
+  if (raw == null || raw === "") return fallback;
+  if (raw !== "0" && raw !== "1") {
+    throw new Error(`${key} must be 0 or 1.`);
+  }
+  return raw === "1";
+}
+
+let strict, includeArchive, minHealthy, maxStaleBlocks, timeoutMs;
+const expectedChainId = ACTIVE_CHAIN.chainId;
+try {
+  // Validate both inputs, so a conflicting legacy setting cannot be hidden.
+  for (const key of ["RPC_EXPECTED_CHAIN_ID", "VITE_CHAIN_ID"]) {
+    if (integerSetting(key, expectedChainId) !== expectedChainId) {
+      throw new Error(`${key} must be Polygon mainnet (${expectedChainId}).`);
+    }
+  }
+  strict = flagSetting("RPC_HEALTH_STRICT", false);
+  includeArchive = flagSetting("RPC_HEALTH_INCLUDE_ARCHIVE", true);
+  minHealthy = integerSetting("RPC_HEALTH_MIN_HEALTHY", 2);
+  maxStaleBlocks = integerSetting("VITE_RPC_MAX_STALE_BLOCKS", 16, 0);
+  timeoutMs = integerSetting("VITE_RPC_HEALTH_TIMEOUT_MS", 6000);
+} catch (error) {
+  console.error(`Invalid RPC health configuration: ${error.message}`);
+  process.exit(1);
+}
 
 const uniq = (values) => {
   const seen = new Set();
@@ -68,12 +89,6 @@ const endpointLabel = (url) => {
   }
 };
 
-const redactError = (value) =>
-  String(value || "unknown error").replace(
-    /https?:\/\/[^\s)'"\]]+/gi,
-    "<rpc-url-redacted>",
-  );
-
 const results = await Promise.all(
   urls.map(async (url) => ({
     url,
@@ -81,7 +96,7 @@ const results = await Promise.all(
       ...(primaryUrls.includes(url) ? ["read"] : []),
       ...(archiveUrls.includes(url) ? ["archive"] : []),
     ],
-    ...(await checkRpcHealth(url, { expectedChainId })),
+    ...(await checkRpcHealth(url, { expectedChainId, timeoutMs })),
   })),
 );
 
@@ -108,7 +123,7 @@ const lines = results
       const staleLabel = stale.includes(r) ? " | STALE" : "";
       return `OK   ${role} ${label} | chain=${r.chainId} | block=${r.blockNumber} | ${r.latencyMs}ms${staleLabel}`;
     }
-    return `FAIL ${role} ${label} | ${redactError(r.error)}`;
+    return `FAIL ${role} ${label} | ${r.error}`;
   });
 
 console.log(lines.join("\n"));

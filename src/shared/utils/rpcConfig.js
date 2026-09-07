@@ -1,4 +1,4 @@
-import { JsonRpcProvider } from "ethers";
+import { FetchRequest, JsonRpcProvider } from "ethers";
 import { getChainInfo } from "../../config/chains.js";
 /**
  * Dynamicky vybere nejzdravější RPC endpoint z dostupných.
@@ -17,9 +17,10 @@ export async function getHealthyRpcUrl() {
     const n = Number(cur?.blockNumber ?? 0);
     return Number.isFinite(n) ? Math.max(acc, n) : acc;
   }, 0);
+  const configuredMaxStale = Number(env("VITE_RPC_MAX_STALE_BLOCKS") || 16);
   const maxStaleBlocks =
-    Number(env("VITE_RPC_MAX_STALE_BLOCKS")) > 0
-      ? Number(env("VITE_RPC_MAX_STALE_BLOCKS"))
+    Number.isSafeInteger(configuredMaxStale) && configuredMaxStale >= 0
+      ? configuredMaxStale
       : 16;
 
   const fresh = healthy.filter((c) => {
@@ -42,9 +43,30 @@ export async function getHealthyRpcUrl() {
  * @returns {Promise<{ok: boolean, blockNumber?: number, latencyMs?: number, error?: string}>}
  */
 export async function checkRpcHealth(url, options = {}) {
+  const expectedChainId = options.expectedChainId ?? ACTIVE_CHAIN.chainId;
+  if (
+    !Number.isSafeInteger(expectedChainId) ||
+    expectedChainId !== ACTIVE_CHAIN.chainId
+  ) {
+    return {
+      ok: false,
+      error: "expectedChainId must be Polygon mainnet (137)",
+    };
+  }
+  try {
+    const parsed = new URL(url);
+    if (!/^https?:$/.test(parsed.protocol) || /\s/.test(url)) {
+      return { ok: false, error: "Invalid HTTP(S) RPC URL" };
+    }
+  } catch {
+    return { ok: false, error: "Invalid HTTP(S) RPC URL" };
+  }
+
   const withTimeout = async (promise, timeoutMs, label) => {
     const ms =
-      Number.isFinite(timeoutMs) && timeoutMs > 0 ? Math.trunc(timeoutMs) : 6000;
+      Number.isFinite(timeoutMs) && timeoutMs > 0
+        ? Math.trunc(timeoutMs)
+        : 6000;
     let timer = null;
     try {
       return await Promise.race([
@@ -64,28 +86,29 @@ export async function checkRpcHealth(url, options = {}) {
   const start = Date.now();
   let provider = null;
   try {
-    const timeoutMs =
+    const configuredTimeout =
       Number(options.timeoutMs) ||
       Number(env("VITE_RPC_HEALTH_TIMEOUT_MS")) ||
       6000;
-    provider = new JsonRpcProvider(url);
+    const timeoutMs =
+      Number.isSafeInteger(configuredTimeout) && configuredTimeout > 0
+        ? configuredTimeout
+        : 6000;
+    const request = new FetchRequest(url);
+    request.timeout = timeoutMs;
+    // A health probe should report throttling, not add retry traffic to it.
+    request.retryFunc = async () => false;
+    provider = new JsonRpcProvider(request, undefined, { batchMaxCount: 1 });
     const network = await withTimeout(
       provider.getNetwork(),
       timeoutMs,
       "eth_chainId",
     );
-    const expectedChainId =
-      typeof options.expectedChainId === "number"
-        ? options.expectedChainId
-        : ACTIVE_CHAIN.chainId;
-    const chainIdRaw =
-      typeof network?.chainId !== "undefined" ? network.chainId : null;
-    const chainId =
-      typeof chainIdRaw === "bigint" ? Number(chainIdRaw) : Number(chainIdRaw);
-    if (!Number.isFinite(chainId)) {
+    const chainId = Number(network?.chainId);
+    if (!Number.isSafeInteger(chainId) || chainId <= 0) {
       return { ok: false, error: "chainId unavailable" };
     }
-    if (expectedChainId && chainId !== expectedChainId) {
+    if (chainId !== expectedChainId) {
       return {
         ok: false,
         error: `chainId mismatch: ${chainId} != ${expectedChainId}`,
@@ -102,7 +125,7 @@ export async function checkRpcHealth(url, options = {}) {
     }
     return { ok: true, chainId, blockNumber, latencyMs };
   } catch (error) {
-    return { ok: false, error: error?.message || String(error) };
+    return { ok: false, error: rpcHealthError(error) };
   } finally {
     try {
       provider?.destroy?.();
@@ -110,6 +133,34 @@ export async function checkRpcHealth(url, options = {}) {
       // ignore provider cleanup failures
     }
   }
+}
+
+function rpcHealthError(error) {
+  // Provider errors can embed credentials, request URLs and response bodies.
+  const status = String(error?.info?.responseStatus || "").match(
+    /^([1-5]\d{2})\b/,
+  );
+  if (status) return `HTTP ${status[1]}`;
+  const rpcCode = error?.error?.code;
+  if (Number.isSafeInteger(rpcCode)) return `JSON-RPC error ${rpcCode}`;
+  const timeout = String(error?.message || "").match(
+    /^(eth_chainId|eth_blockNumber) timed out after \d+ms$/,
+  );
+  if (timeout) return timeout[0];
+  const safeCodes = [
+    "TIMEOUT",
+    "NETWORK_ERROR",
+    "SERVER_ERROR",
+    "BAD_DATA",
+    "INVALID_ARGUMENT",
+    "ENOTFOUND",
+    "ECONNREFUSED",
+    "ECONNRESET",
+    "ETIMEDOUT",
+  ];
+  return safeCodes.includes(error?.code)
+    ? `RPC request failed (${error.code})`
+    : "RPC request failed";
 }
 export async function ensurePreferredRpc() {
   if (typeof window === "undefined") return null;
@@ -199,8 +250,14 @@ export function getRpcBatchMaxCount(url) {
 const ACTIVE_CHAIN_ID = 137;
 
 function getInfuraRpcUrl() {
-  const projectId = env("VITE_INFURA_PROJECT_ID");
-  if (!projectId) return null;
+  const projectId = String(env("VITE_INFURA_PROJECT_ID") || "").trim();
+  if (
+    !projectId ||
+    /^(undefined|null)$/i.test(projectId) ||
+    /[\s/?#]/.test(projectId)
+  ) {
+    return null;
+  }
   return `https://polygon-mainnet.infura.io/v3/${projectId}`;
 }
 
@@ -295,7 +352,11 @@ export const ACTIVE_CHAIN = {
   ...ACTIVE_CHAIN_INFO,
   rpcUrls: POLYGON_RPC_CANDIDATES,
   rpcUrl: POLYGON_RPC_CANDIDATES[0] || PUBLIC_POLYGON_RPCS[0],
-  currency: ACTIVE_CHAIN_INFO.currency || { name: "POL", symbol: "POL", decimals: 18 },
+  currency: ACTIVE_CHAIN_INFO.currency || {
+    name: "POL",
+    symbol: "POL",
+    decimals: 18,
+  },
 };
 
 export function getPreferredRpc() {
@@ -446,7 +507,7 @@ export function getRpcUrls() {
   if (prioritized.length) return prioritized;
 
   const fallback = [];
-  if (ACTIVE_CHAIN.rpcUrl) fallback.push(ACTIVE_CHAIN.rpcUrl);
+  if (allowPublic && ACTIVE_CHAIN.rpcUrl) fallback.push(ACTIVE_CHAIN.rpcUrl);
   if (allowPublic) fallback.push(...PUBLIC_POLYGON_RPCS);
   fallback.push(...infura);
   return prioritizeHealthyRpcs(rankRpcUrls(filterOutBadRpcs(fallback)));
@@ -477,7 +538,8 @@ export function getWalletRpcUrls({ preferPublicFirst = null } = {}) {
   if (prioritized.length) return prioritized;
 
   const fallback = [];
-  if (ACTIVE_CHAIN.rpcUrl) fallback.push(ACTIVE_CHAIN.rpcUrl);
+  if (allowPublicFallback && ACTIVE_CHAIN.rpcUrl)
+    fallback.push(ACTIVE_CHAIN.rpcUrl);
   if (allowPublicFallback) fallback.push(...PUBLIC_POLYGON_RPCS);
   fallback.push(...infura);
   return prioritizeHealthyRpcs(rankRpcUrls(filterOutBadRpcs(fallback)));
