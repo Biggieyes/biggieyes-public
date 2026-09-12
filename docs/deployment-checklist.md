@@ -57,6 +57,31 @@ Use this list before each production deploy.
 - For local checks, export the needed variables before `npm run check:rpc`; the script does not load `.env` automatically. Do not print secrets while troubleshooting.
 - If a job has no runner or steps and reports an account billing lock, the failure is before this check. Repository edits cannot unlock GitHub Actions. Resolve the account issue with GitHub; deployed Netlify services and on-chain contracts are not directly stopped by this monitoring failure.
 
+## NFT metadata and image gateways
+
+- `src/shared/services/ipfs.js` is the shared resolver for JSON, image probes and
+  NFT card image fallbacks. `VITE_IPFS_GATEWAY_URL` (alias `VITE_IPFS_GATEWAY`) is
+  an optional custom primary. `VITE_PINATA_GATEWAY_URL` (alias
+  `VITE_PINATA_GATEWAY_BASE_URL`) sets the project Pinata base URL.
+- Supply an HTTPS gateway base without `/ipfs`, a CID, credentials or access
+  tokens. Browser `VITE_*` values are public. Do not put a Pinata JWT/API secret in
+  these variables; authenticated writes belong in server functions.
+- `VITE_IPFS_PINATA_ONLY=1` removes built-in public fallbacks, but retains any
+  explicitly configured custom gateway. Default mode keeps public fallbacks.
+- `cloudflare-ipfs.com` and `cf-ipfs.com` are no longer default candidates. The
+  former is a [deprecated legacy hostname](https://developers.cloudflare.com/web3/reference/migration-guide/);
+  both failed DNS resolution in the 2026-09-07 audit.
+- JSON and image probes allow 8 seconds per gateway and 20 seconds across the
+  whole attempt chain by default. JavaScript callers may override `timeout` and
+  `totalTimeout` with positive finite milliseconds. JSON body consumption is
+  included in the timeout, not just response headers.
+- Test real metadata through both the primary and an independent gateway, with
+  browser CORS enabled. A healthy gateway alone does not prove a CID is pinned or
+  available. Never repin or rewrite NFT metadata just to change the transport.
+- IPFS image fallbacks preserve the CID and exact case-sensitive filename; they
+  do not guess another image extension. CORS-blocked image probes still return a
+  candidate for `<img>`, whose error handler tries equivalent gateway URLs.
+
 ## Rollback plan
 
 - Keep the last known-good deploy in Netlify.

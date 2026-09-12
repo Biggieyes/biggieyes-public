@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import csv
 import datetime as dt
+import hashlib
 import json
 import mimetypes
 import os
@@ -21,6 +22,7 @@ import sys
 import uuid
 import urllib.error
 import urllib.request
+import urllib.parse
 from dataclasses import dataclass
 from typing import Any
 
@@ -260,7 +262,7 @@ def image_uri_from_row(row: dict[str, Any]) -> str:
     return normalize_uri(cid)
 
 
-def load_image_map(path: pathlib.Path | None) -> dict[str, str]:
+def load_image_map(path: pathlib.Path | None, *, reject_conflicts: bool = False) -> dict[str, str]:
     if not path:
         return {}
     mapping: dict[str, str] = {}
@@ -281,11 +283,14 @@ def load_image_map(path: pathlib.Path | None) -> dict[str, str]:
             keys.append(f"{block_idx}:{main_id}:{background}")
         for key in keys:
             if key:
-                mapping[key] = image
+                aliases = [key]
                 if key.endswith(".png") or key.endswith(".jpg") or key.endswith(".webp"):
                     stem = pathlib.PurePosixPath(key).stem
-                    mapping[stem] = image
-                    mapping[f"{stem}.json"] = image
+                    aliases.extend([stem, f"{stem}.json"])
+                for alias in aliases:
+                    if reject_conflicts and alias in mapping and mapping[alias] != image:
+                        fail(f"conflicting image URIs for image map key {alias}")
+                    mapping[alias] = image
     return mapping
 
 
@@ -544,19 +549,49 @@ def command_build(args: argparse.Namespace) -> None:
     if args.chapter_id is not None and args.chapter_id < 1:
         fail("--chapter-id must be at least 1")
     placeholder = normalize_uri(args.placeholder_image_uri or os.environ.get("PLACEHOLDER_IMAGE_URI", ""))
-    image_map = load_image_map(pathlib.Path(args.image_map).resolve() if args.image_map else None)
+    image_map = load_image_map(
+        pathlib.Path(args.image_map).resolve() if args.image_map else None,
+        reject_conflicts=args.collection_kind == "main2" and args.phase == "final",
+    )
     rows = build_layout(args.collection_kind)
     row_groups = group_layout_rows(rows, args.collection_kind)
     out_dir = pathlib.Path(args.out).resolve()
+    resolved_images = [
+        select_image_uri(group, args.collection_kind, image_map, placeholder)
+        for group in row_groups
+    ]
+    if args.collection_kind == "main2" and args.phase == "final":
+        if args.chapter_id is None or not args.series.strip():
+            fail("Public final metadata requires --chapter-id and --series")
+        if out_dir.exists() and any(out_dir.iterdir()):
+            fail("Public final metadata requires an empty output directory; keep the previous release intact")
+        seen_images: dict[str, str] = {}
+        for group, (image_uri, placeholder_used) in zip(row_groups, resolved_images):
+            filename = metadata_filename(group[0], "main2")
+            parsed_uri = urllib.parse.urlsplit(image_uri)
+            if (
+                placeholder_used
+                or not image_uri
+                or image_uri == placeholder
+                or parsed_uri.scheme not in ("ipfs", "https", "ar")
+                or not parsed_uri.netloc
+                or re.search(r"[<>\s]", image_uri)
+            ):
+                fail(f"{filename}: Public final metadata requires an explicit final image URI, not a placeholder or local path")
+            if image_uri in seen_images:
+                fail(f"{filename}: image URI already assigned to {seen_images[image_uri]}")
+            image_stem = pathlib.PurePosixPath(urllib.parse.unquote(parsed_uri.path)).stem
+            if image_stem.lower().startswith("biggi_") and image_stem != pathlib.Path(filename).stem:
+                fail(f"{filename}: image filename belongs to another NFT or a background variant: {image_stem}")
+            seen_images[image_uri] = filename
     out_dir.mkdir(parents=True, exist_ok=True)
 
     placeholder_count = 0
     finalized_count = 0
 
-    for shared_rows in row_groups:
+    for shared_rows, (image_uri, placeholder_used) in zip(row_groups, resolved_images):
         row = shared_rows[0]
         filename = metadata_filename(row, args.collection_kind)
-        image_uri, placeholder_used = select_image_uri(shared_rows, args.collection_kind, image_map, placeholder)
         if not image_uri and not args.allow_missing_image:
             fail(
                 "image URI missing. Provide --placeholder-image-uri for prereveal/marketing "
@@ -613,6 +648,114 @@ def command_build(args: argparse.Namespace) -> None:
     shared_rows = len(rows) - len(row_groups)
     if shared_rows:
         print(f"Layout rows sharing existing tokenURI files: {shared_rows}")
+
+
+def audit_public_artwork(image_root: pathlib.Path) -> dict[str, Any]:
+    rows = build_public_layout()
+    expected = {pathlib.Path(metadata_filename(row, "main2")).stem: row for row in rows}
+    candidates: dict[str, list[pathlib.Path]] = {stem: [] for stem in expected}
+    invalid_names: list[str] = []
+    legacy_variants: list[str] = []
+    unassigned: list[str] = []
+    for path in sorted(image_root.rglob("*")):
+        if not path.is_file() or path.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp"):
+            continue
+        relative = path.relative_to(image_root).as_posix()
+        if path.stem in expected:
+            candidates[path.stem].append(path)
+        elif re.fullmatch(r"Biggi_\d+_[A-Z]+_PUBLIC", path.stem, re.IGNORECASE):
+            invalid_names.append(relative)
+        elif re.fullmatch(r"Biggi_\d+_(?:PUBLIC_)?[A-Z]+_[A-Z]+", path.stem, re.IGNORECASE):
+            legacy_variants.append(relative)
+        else:
+            unassigned.append(relative)
+
+    items: list[dict[str, Any]] = []
+    hashes: dict[str, list[dict[str, Any]]] = {}
+    for stem, row in expected.items():
+        paths = candidates[stem]
+        item = {
+            "metadata_file": metadata_filename(row, "main2"),
+            "idx": row.idx,
+            "blockIdx": row.block_idx,
+            "mainId": row.main_id,
+            "expected_image_stem": stem,
+            "source_file": "",
+            "sha256": "",
+            "status": "missing" if not paths else "ambiguous",
+            "image": "",
+            "candidates": [p.relative_to(image_root).as_posix() for p in paths],
+        }
+        if len(paths) == 1:
+            path = paths[0]
+            item["source_file"] = path.relative_to(image_root).as_posix()
+            try:
+                with path.open("rb") as stream:
+                    header = stream.read(12)
+                    hasher = hashlib.sha256(header)
+                    for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                        hasher.update(chunk)
+                valid_signature = {
+                    ".png": header.startswith(b"\x89PNG\r\n\x1a\n"),
+                    ".jpg": header.startswith(b"\xff\xd8\xff"),
+                    ".jpeg": header.startswith(b"\xff\xd8\xff"),
+                    ".webp": header[:4] == b"RIFF" and header[8:12] == b"WEBP",
+                }[path.suffix.lower()]
+                item["sha256"] = hasher.hexdigest()
+                item["status"] = "matched" if valid_signature else "invalid-image-header"
+                if valid_signature:
+                    hashes.setdefault(item["sha256"], []).append(item)
+            except OSError as exc:
+                item["status"] = "unreadable"
+                item["error"] = str(exc)
+        items.append(item)
+    for duplicates in hashes.values():
+        if len(duplicates) > 1:
+            for item in duplicates:
+                item["status"] = "duplicate-content"
+
+    return {
+        "generatedAt": now_iso(),
+        "sourceRoot": str(image_root),
+        "expectedCount": PUBLIC_MAX_SUPPLY,
+        "matchedCount": sum(item["status"] == "matched" for item in items),
+        "missingCount": sum(item["status"] == "missing" for item in items),
+        "mappingComplete": all(item["status"] == "matched" for item in items),
+        "artworkApproved": False,
+        "notes": [
+            "Read-only source audit. No files are renamed, copied, uploaded, or marked final.",
+            "A matching filename/header is not visual approval or full image-decode validation.",
+            "Public has ten NFTs per block, no background variants, and unchanged paired VRF prices.",
+            "The image column remains empty until approved artwork is pinned and its URI is known.",
+        ],
+        "invalidPublicNames": invalid_names,
+        "legacyBackgroundVariants": legacy_variants,
+        "unassignedImages": unassigned,
+        "items": items,
+    }
+
+
+def command_audit_public_artwork(args: argparse.Namespace) -> None:
+    root = pathlib.Path(args.image_root).resolve()
+    out = pathlib.Path(args.out).resolve()
+    if not root.is_dir():
+        fail(f"image directory not found: {root}")
+    if out == root or out.is_relative_to(root):
+        fail("write the audit outside the source artwork directory")
+    if out.exists() and any(out.iterdir()):
+        fail("audit output must be empty to avoid overwriting an edited image map")
+    report = audit_public_artwork(root)
+    write_json(out / "public-artwork-audit.json", report)
+    fields = ["metadata_file", "idx", "blockIdx", "mainId", "expected_image_stem", "source_file", "sha256", "status", "image"]
+    with (out / "public-image-map.csv").open("w", encoding="utf-8", newline="") as stream:
+        writer = csv.DictWriter(stream, fieldnames=fields, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(report["items"])
+    print(f"Public artwork audit: {out}")
+    print(f"Matched filenames: {report['matchedCount']}/{PUBLIC_MAX_SUPPLY}; missing: {report['missingCount']}")
+    print(f"Invalid Public names: {len(report['invalidPublicNames'])}; legacy background variants: {len(report['legacyBackgroundVariants'])}")
+    if not report["mappingComplete"]:
+        fail("Public artwork mapping is incomplete; see public-artwork-audit.json")
 
 
 def iter_json_files(path: pathlib.Path) -> list[pathlib.Path]:
@@ -912,6 +1055,11 @@ def build_parser() -> argparse.ArgumentParser:
     build.add_argument("--allow-missing-image", action="store_true")
     build.add_argument("--metadata-cid-placeholder", default="<METADATA_FOLDER_CID>")
     build.set_defaults(func=command_build)
+
+    public_audit = sub.add_parser("audit-public-artwork", help="audit the 100 Public image filenames without modifying source artwork")
+    public_audit.add_argument("--image-root", required=True)
+    public_audit.add_argument("--out", required=True, help="empty audit directory outside the source artwork folder")
+    public_audit.set_defaults(func=command_audit_public_artwork)
 
     validate = sub.add_parser("validate", help="validate OpenSea-compatible metadata files")
     validate.add_argument("--path", required=True)

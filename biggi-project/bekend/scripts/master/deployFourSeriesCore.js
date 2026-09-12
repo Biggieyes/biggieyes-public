@@ -11,6 +11,7 @@
 // - wire all chapters to the central hub and chapter controller
 
 const fs = require("fs");
+const { nftRewardsVersion } = require("./nftRewardsVersion");
 const path = require("path");
 const hre = require("hardhat");
 
@@ -980,7 +981,7 @@ async function main() {
     }
   }
 
-  if (isAddress(A.NFT_REWARDS)) {
+  if (isAddress(A.NFT_REWARDS) && await nftRewardsVersion(A.NFT_REWARDS) === 1) {
     const nftRewards = await ethers.getContractAt("BiggiNFTRewards", A.NFT_REWARDS, ownerSigner);
     await setAddressIfDifferent(
       opts,

@@ -1,0 +1,114 @@
+.nft-admin {
+  min-width: 0;
+  color: #e7ecf0;
+}
+.nft-admin__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.nft-admin h3 {
+  margin: 0;
+  color: #ffe800;
+  font-size: 20px;
+  letter-spacing: 0;
+}
+.nft-admin .biggi-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  white-space: normal;
+}
+.nft-admin__details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 24px;
+  padding-block: 16px;
+  border-block: 1px solid #ffe80040;
+}
+.nft-admin dt {
+  font-size: 13px;
+  color: #a9b8c6;
+}
+.nft-admin dd {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.nft-admin a {
+  color: #7cdae5;
+}
+.nft-admin__forms {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.nft-admin fieldset {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid #ffe80040;
+  padding: 16px 0;
+}
+.nft-admin legend {
+  color: #ffe800;
+  font-weight: 700;
+  padding-right: 12px;
+}
+.nft-admin label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+.nft-admin input,
+.nft-admin textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #ffe80060;
+  border-radius: 6px;
+  background: #0d1118;
+  color: #e7ecf0;
+  padding: 10px;
+  font: inherit;
+}
+.nft-admin textarea {
+  resize: vertical;
+}
+.nft-admin input:focus-visible,
+.nft-admin textarea:focus-visible {
+  outline: 2px solid #7cdae5;
+  outline-offset: 2px;
+}
+.nft-admin__actions,
+.nft-admin__result {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.nft-admin__result {
+  padding-block: 12px;
+  overflow-wrap: anywhere;
+}
+.nft-admin__result > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.nft-admin [role="alert"] {
+  color: #ff9b9b;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 680px) {
+  .nft-admin__details,
+  .nft-admin__forms {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

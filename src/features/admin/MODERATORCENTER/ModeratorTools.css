@@ -1,0 +1,228 @@
+.moderator-tools {
+  min-width: 0;
+  letter-spacing: 0;
+}
+
+.moderator-center .moderator-tools div {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.moderator-tools__heading,
+.moderator-tools__period,
+.moderator-tools__table-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.moderator-tools h3,
+.moderator-tools h4 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--moderator-accent);
+  letter-spacing: 0;
+}
+
+.moderator-tools__heading > div > span {
+  display: block;
+  margin-top: 6px;
+  color: var(--moderator-copy);
+  font-size: 0.82rem;
+}
+
+.moderator-tools__toolbar {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 20px 0;
+  margin-top: 16px;
+  border-block: 1px solid var(--moderator-border-strong);
+}
+
+.moderator-tools__toolbar-end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.moderator-tools__week {
+  width: 224px;
+  max-width: 100%;
+}
+
+.moderator-tools__week-input {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  gap: 6px;
+}
+
+.moderator-tools .biggi-btn {
+  min-height: 44px;
+  margin: 0;
+  border-radius: 8px;
+  letter-spacing: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: normal;
+}
+
+.moderator-tools .moderator-tools__icon {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0;
+  font-size: 1.3rem;
+}
+
+.moderator-tools input {
+  min-width: 0;
+  box-sizing: border-box;
+  letter-spacing: 0;
+}
+
+.moderator-tools :is(button, input, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--moderator-cyan);
+  outline-offset: 3px;
+}
+
+.moderator-tools__period {
+  padding-top: 20px;
+  font-size: 0.88rem;
+}
+
+.moderator-tools__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin: 0;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--moderator-border-strong);
+}
+
+.moderator-tools dt {
+  color: var(--moderator-copy);
+  font-size: 0.8rem;
+}
+
+.moderator-tools dd {
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.moderator-tools__metrics dd {
+  font-size: 1.05rem;
+  color: var(--moderator-cyan);
+  font-weight: 700;
+}
+
+.moderator-tools__table-heading {
+  padding: 20px 0 12px;
+}
+
+.moderator-tools .moderator-center__toggle {
+  font-size: 0.85rem;
+  min-height: 44px;
+}
+
+.moderator-tools__table-scroll {
+  width: 100%;
+  overflow: auto;
+  scrollbar-width: thin;
+}
+
+.moderator-tools table {
+  width: 100%;
+  min-width: 610px;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.moderator-tools :is(th, td) {
+  text-align: right;
+  padding: 14px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.moderator-tools thead {
+  color: var(--moderator-copy);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.moderator-tools :is(th, td):nth-child(-n + 2) {
+  text-align: left;
+}
+
+.moderator-tools tbody th span {
+  display: block;
+  font-size: 0.76rem;
+  color: var(--moderator-copy);
+  margin-top: 5px;
+  font-weight: 400;
+}
+
+.moderator-tools a {
+  color: var(--moderator-cyan);
+}
+.moderator-tools a:hover {
+  text-decoration: underline;
+}
+
+.moderator-tools__empty {
+  padding: 28px 12px;
+  margin: 0;
+  color: var(--moderator-copy);
+  text-align: center;
+  border-bottom: 1px solid var(--moderator-border-strong);
+}
+
+.moderator-tools__details {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  margin: 24px 0 0;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 900px) {
+  .moderator-tools__details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 540px) {
+  .moderator-tools__week {
+    width: 100%;
+  }
+  .moderator-tools__toolbar-end {
+    margin-left: 0;
+    width: 100%;
+  }
+  .moderator-tools__metrics {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .moderator-tools__metrics > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+  }
+  .moderator-tools__metrics dd {
+    margin: 0;
+    text-align: right;
+  }
+  .moderator-tools__details {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}

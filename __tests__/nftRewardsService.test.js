@@ -8,6 +8,100 @@ import NFTREWARDSService, {
 const ADDRESS = "0x1111111111111111111111111111111111111111";
 
 describe("NFTREWARDSService", () => {
+  it("does not send a claim when gas estimation fails", async () => {
+    const service = Object.create(NFTREWARDSService.prototype);
+    service._signerConnected = true;
+    const claim = vi.fn();
+    claim.estimateGas = vi
+      .fn()
+      .mockRejectedValue(new Error("AlreadyClaimedError"));
+    service.contract = { claim };
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    await expect(service.claim(1)).rejects.toThrow("AlreadyClaimedError");
+    expect(claim).not.toHaveBeenCalled();
+    log.mockRestore();
+  });
+
+  it.each([
+    [80002, ADDRESS, ADDRESS, false, "Polygon mainnet"],
+    [
+      137,
+      "0x2222222222222222222222222222222222222222",
+      ADDRESS,
+      false,
+      "account changed",
+    ],
+    [
+      137,
+      ADDRESS,
+      "0x2222222222222222222222222222222222222222",
+      false,
+      "not assigned",
+    ],
+    [137, ADDRESS, ADDRESS, true, "already claimed"],
+  ])(
+    "blocks an invalid claim context (%s, %s)",
+    async (chainId, account, assigned, claimed, message) => {
+      const service = Object.create(NFTREWARDSService.prototype);
+      service.connectWithSigner = vi.fn();
+      service.rewardInfo = vi
+        .fn()
+        .mockResolvedValue([assigned, claimed, "ipfs://one"]);
+      service.claim = vi.fn();
+      const signer = {
+        provider: { getNetwork: vi.fn().mockResolvedValue({ chainId }) },
+        getAddress: vi.fn().mockResolvedValue(account),
+      };
+      await expect(service.claimForWallet(1, signer, ADDRESS)).rejects.toThrow(
+        message,
+      );
+      expect(service.claim).not.toHaveBeenCalled();
+    },
+  );
+
+  it("claims only after checking the signer and fresh assignment", async () => {
+    const service = Object.create(NFTREWARDSService.prototype);
+    service.connectWithSigner = vi.fn();
+    service.readOverrides = { blockTag: 12 };
+    service.rewardInfo = vi
+      .fn()
+      .mockResolvedValue([ADDRESS, false, "ipfs://one"]);
+    service.claim = vi.fn().mockResolvedValue({ status: 1 });
+    const signer = {
+      provider: { getNetwork: vi.fn().mockResolvedValue({ chainId: 137n }) },
+      getAddress: vi.fn().mockResolvedValue(ADDRESS),
+    };
+    await service.claimForWallet(1, signer, ADDRESS);
+    expect(service.readOverrides).toEqual({});
+    expect(service.connectWithSigner).toHaveBeenCalledWith(signer);
+    expect(service.claim).toHaveBeenCalledWith(1);
+  });
+
+  it("passes the snapshot block to reward reads", async () => {
+    const service = Object.create(NFTREWARDSService.prototype);
+    service.readOverrides = { blockTag: 123 };
+    service.contract = {
+      rewardInfo: vi.fn().mockResolvedValue([ADDRESS, false, "ipfs://one"]),
+    };
+    await service.rewardInfo(1);
+    expect(service.contract.rewardInfo).toHaveBeenCalledWith(1, {
+      blockTag: 123,
+    });
+  });
+
+  it("can read event history older than the first page", async () => {
+    const service = Object.create(NFTREWARDSService.prototype);
+    service.nextEventId = vi.fn().mockResolvedValue(103n);
+    service.events = vi
+      .fn()
+      .mockResolvedValue([2n, ADDRESS, 1n, 1n, false, false, 0n]);
+    service.eventEligibleCount = vi.fn().mockResolvedValue(0n);
+    const events = await service.fetchEventsDetailed({
+      limit: 100,
+      offset: 100,
+    });
+    expect(events.map((event) => event.eventId)).toEqual([1, 2]);
+  });
   it("normalizes named and positional ABI results", () => {
     expect(
       normalizeRewardEvent(
@@ -92,21 +186,22 @@ describe("NFTREWARDSService", () => {
     expect(wait).toHaveBeenCalledWith(1);
   });
 
-  it("treats removed V1-only wiring reads as optional for V2", async () => {
+  it("reads V2 ownership without calling removed V1 wiring getters", async () => {
     const service = Object.create(NFTREWARDSService.prototype);
     service.name = vi.fn().mockResolvedValue("Biggi Reward");
     service.symbol = vi.fn().mockResolvedValue("BGR");
     service.nextEventId = vi.fn().mockResolvedValue(1n);
     service.nextRewardId = vi.fn().mockResolvedValue(1n);
     service.vrfRouter = vi.fn().mockResolvedValue(ADDRESS);
-    service.mainContract = vi.fn().mockRejectedValue(new Error("missing selector"));
     service.owner = vi.fn().mockResolvedValue(ADDRESS);
-    service.registry = vi.fn().mockRejectedValue(new Error("missing selector"));
+    service.pendingOwner = vi
+      .fn()
+      .mockResolvedValue("0x0000000000000000000000000000000000000000");
     service.mysteryRetryDelay = vi.fn().mockResolvedValue(900n);
 
     await expect(service.getAllStats()).resolves.toMatchObject({
-      mainContract: null,
-      registry: null,
+      version: 2,
+      pendingOwner: "0x0000000000000000000000000000000000000000",
       totalEventsCreated: 0,
       totalRewardsCreated: 0,
     });

@@ -1,0 +1,120 @@
+{
+  "mode": "execute",
+  "createdAt": "2026-09-09T01:47:17.858Z",
+  "network": "polygon",
+  "chainId": 137,
+  "snapshotBlock": 93475602,
+  "addressesFile": "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\addresses.master.json",
+  "deployer": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+  "finalOwner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "dependencies": {
+    "nftRewardsV1": "0x939Df533b80943298E15ad4c8F188102954f34FF",
+    "nftRewardsReaderV1": "0x430376b1f4F12ce2D641CC28f2968297aA2b0c12",
+    "vrfRouter": "0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F"
+  },
+  "v1State": {
+    "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+    "nextEventId": "1",
+    "nextRewardId": "1",
+    "nativeBalanceWei": "0",
+    "readerTarget": "0x939Df533b80943298E15ad4c8F188102954f34FF",
+    "vrfConsumerApproved": true
+  },
+  "codeBytes": {
+    "NFT_REWARDS_V1": 11248,
+    "NFT_REWARDS_READER_V1": 3177,
+    "VRF_ROUTER": 4227
+  },
+  "predicted": {
+    "nftRewardsV2": "0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9",
+    "nftRewardsReaderV2": "0x789873e6b1d944b207D2E76a71D95135be4e33c6",
+    "deployerNonce": 416
+  },
+  "gas": {
+    "gasPriceWei": "268216576965",
+    "rewardsDeploy": "2383881",
+    "readerDeploy": "746124",
+    "vrfApproval": "55628",
+    "deployerRequiredWeiWithBuffer": "1049399033729168531",
+    "ownerRequiredWeiWithBuffer": "18650439679261275"
+  },
+  "balances": {
+    "deployerWei": "50163540487493014697",
+    "ownerWei": "53927407168283311500"
+  },
+  "blockers": [],
+  "transactions": [
+    {
+      "label": "deploy BiggiNFTRewardsV2",
+      "hash": "0x27db25694de91385f7cfd6f6c20d971e144982d0d86faf7289e98e95d4a61084",
+      "blockNumber": 93475606,
+      "gasUsed": "2363952"
+    },
+    {
+      "label": "deploy BiggiNftRewardsReader",
+      "hash": "0x9cc73f2e962718f119eaaed7740d220b79520e9df731d682a214ac9195bb07f7",
+      "blockNumber": 93475609,
+      "gasUsed": "739091"
+    },
+    {
+      "label": "approve V2 on BiggiVRFRouter",
+      "hash": "0x81bb4e7a83bb53a339305a528669b6ab4ea309249d71e3b001b283dae40d43dc",
+      "blockNumber": 93475675,
+      "gasUsed": "54828"
+    },
+    {
+      "label": "update NFT rewards in MasterConfig",
+      "hash": "0x8f5b805ec1cae02466a1c535765ac9b4d4f7ce85293da7d8c43deab48df08eb3",
+      "blockNumber": 93476190,
+      "gasUsed": "54923"
+    },
+    {
+      "label": "revoke legacy V1 reward-consumer approval",
+      "hash": "0x28115b8e0516aeae24df6eff0fd92c11f50bff473202b298041b9562c62be96f",
+      "blockNumber": 93478300,
+      "gasUsed": "32916",
+      "feePOL": "0.01086086010728082"
+    }
+  ],
+  "activated": true,
+  "onChainWiringComplete": true,
+  "frontendPublished": true,
+  "activationNote": "Public V2 frontend verified; legacy V1 reward-consumer approval revoked. V2 approval retained.",
+  "nftRewardsV2": "0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9",
+  "nftRewardsReaderV2": "0x789873e6b1d944b207D2E76a71D95135be4e33c6",
+  "postDeployment": {
+    "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+    "vrfRouter": "0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F",
+    "nextEventId": "1",
+    "nextRewardId": "1",
+    "readerTarget": "0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9",
+    "vrfConsumerApproved": true,
+    "nftRewardsCodeBytes": 9772,
+    "readerCodeBytes": 3177
+  },
+  "completedAt": "2026-09-09T01:49:09.726Z",
+  "masterConfig": {
+    "address": "0x4125DA806c7B0AaD6c443b7BD368e45ed123687C",
+    "before": [
+      "0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43",
+      "0xA455775BBe0BC863f644516147b95Ef5103b29FA",
+      "0x939Df533b80943298E15ad4c8F188102954f34FF",
+      "0x81C6E90a991d7D210c43B00B7EB1a5450cc372Ae"
+    ],
+    "after": [
+      "0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43",
+      "0xA455775BBe0BC863f644516147b95Ef5103b29FA",
+      "0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9",
+      "0x81C6E90a991d7D210c43B00B7EB1a5450cc372Ae"
+    ],
+    "updatedAt": "2026-09-09T02:01:59.798Z"
+  },
+  "activatedAt": "2026-09-09T02:54:44.546Z",
+  "netlifyDeployId": "6aa0ca18a06d42d1aaafcda8",
+  "legacyRetirement": {
+    "address": "0x939Df533b80943298E15ad4c8F188102954f34FF",
+    "approved": false,
+    "v2Approved": true,
+    "checkedAt": "2026-09-09T02:54:44.548Z"
+  }
+}

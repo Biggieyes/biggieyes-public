@@ -1,8 +1,7 @@
 import * as React from "react";
 import WalletConnectButton from "@/components/WalletConnectButton";
 import ModeratorPanel from "@/components/ModeratorPanel";
-import WeeklySummaryBuilder from "@/components/WeeklySummaryBuilder";
-import MerkleTool from "@/components/MerkleTool";
+import ModeratorTools from "./ModeratorTools.jsx";
 import {
   getConfig,
   getModeratorCenterV2Contract,
@@ -56,11 +55,11 @@ export default function MODERATORCENTERPanel({
     pending: false,
     message: "",
   });
-  const [weeklyEntries, setWeeklyEntries] = React.useState([]);
 
   const cfg = getConfig();
   const baseUrl = React.useMemo(
-    () => (typeof window !== "undefined" ? window.location.origin : ""),
+    () =>
+      typeof window !== "undefined" ? `${window.location.origin}/app/` : "",
     [],
   );
   const activeSlots = React.useMemo(
@@ -93,16 +92,16 @@ export default function MODERATORCENTERPanel({
         claimableResult,
         weekResult,
       ] = await Promise.all([
-          contract.globalUniquePerWeek(),
-          contract.paused(),
-          contract.operationallyReady(),
+        contract.globalUniquePerWeek(),
+        contract.paused(),
+        contract.operationallyReady(),
         walletAddress
           ? contract.claimable(walletAddress)
           : Promise.resolve(null),
-          matchedSlotId >= 0 && weekId
-            ? readWeekStats(contract, weekId, matchedSlotId)
-            : Promise.resolve(null),
-        ]);
+        matchedSlotId >= 0 && weekId
+          ? readWeekStats(contract, weekId, matchedSlotId)
+          : Promise.resolve(null),
+      ]);
       setSlots(loadedSlots.map((slot, slotId) => ({ ...slot, slotId })));
       setGlobalUnique(globalUniqueResult);
       setPaused(pausedResult);
@@ -116,11 +115,12 @@ export default function MODERATORCENTERPanel({
       setClaimable(null);
       setPaused(null);
       setOperationallyReady(null);
-      setContractState("legacy");
+      setGlobalUnique(null);
+      setContractState("unavailable");
       setChainError(
         error?.message?.includes("missing")
           ? error.message
-          : "ModeratorCenter V2 is not active at the configured address.",
+          : "Moderator V2 data is unavailable. Retry the Polygon connection.",
       );
     } finally {
       setChainLoading(false);
@@ -152,7 +152,9 @@ export default function MODERATORCENTERPanel({
 
   const accessState =
     contractState !== "v2"
-      ? "Legacy / staged"
+      ? contractState === "checking"
+        ? "Checking"
+        : "Unavailable"
       : !walletAddress
         ? "Wallet required"
         : walletSlot?.enabled
@@ -177,9 +179,13 @@ export default function MODERATORCENTERPanel({
           </div>
           <div className="moderator-center__header-side">
             <div className="moderator-center__header-meta">
-              <span className="moderator-center__chip">Polygon on-chain</span>
+              <span className="moderator-center__chip">Polygon mainnet</span>
               <span className="moderator-center__chip moderator-center__chip--cyan">
-                {contractState === "v2" ? "V2" : "Legacy"}
+                {contractState === "v2"
+                  ? "V2"
+                  : contractState === "checking"
+                    ? "Checking V2"
+                    : "V2 unavailable"}
               </span>
             </div>
             <WalletConnectButton
@@ -223,13 +229,13 @@ export default function MODERATORCENTERPanel({
             </span>
           </article>
           <article className="moderator-center__hero-card">
-            <span className="moderator-center__hero-label">Readiness</span>
+            <span className="moderator-center__hero-label">Slot setup</span>
             <strong className="moderator-center__hero-value">
               {operationallyReady == null
                 ? "--"
                 : operationallyReady
-                  ? "Ready"
-                  : "Blocked"}
+                  ? "Configured"
+                  : "Incomplete"}
             </strong>
             <span className="moderator-center__hero-hint">
               RPC {rpcLabel(cfg.chainRpc)}
@@ -246,6 +252,8 @@ export default function MODERATORCENTERPanel({
               key={tab.id}
               type="button"
               className={`tab-button${activeTab === tab.id ? " active" : ""}`}
+              role="tab"
+              aria-selected={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
             >
               {tab.label}
@@ -280,7 +288,7 @@ export default function MODERATORCENTERPanel({
                   <h3>
                     {contractState === "v2"
                       ? "Wallet not assigned"
-                      : "V2 not active"}
+                      : "V2 data unavailable"}
                   </h3>
                   <span className="moderator-center__chip moderator-center__chip--warn">
                     {chainLoading ? "Checking" : accessState}
@@ -322,10 +330,10 @@ export default function MODERATORCENTERPanel({
         )}
 
         {activeTab === "tools" && (
-          <div className="moderator-center__grid moderator-center__grid--wide">
-            <WeeklySummaryBuilder onEntries={setWeeklyEntries} />
-            <MerkleTool entries={weeklyEntries} />
-          </div>
+          <ModeratorTools
+            walletAddress={walletAddress}
+            onMyRewards={() => setActiveTab("moderator")}
+          />
         )}
       </div>
     </section>

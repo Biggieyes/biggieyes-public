@@ -580,6 +580,8 @@ export default function USERPANEL({
         : "--";
   const communityState = !communitySnapshot.configured
     ? "Missing"
+    : communityLoading || communityError || communitySnapshot.paused == null
+      ? "Unavailable"
     : communitySnapshot.paused
       ? "Paused"
       : "Live";

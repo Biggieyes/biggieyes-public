@@ -14,6 +14,8 @@ function NftREWARDSTab({
   claimState,
   onClaimReward,
   feedback,
+  onRewardPageChange,
+  onEventPageChange,
 }) {
   return (
     <section className="rewards-grid__section rewards-grid__section--nft">
@@ -30,6 +32,8 @@ function NftREWARDSTab({
         claimState={claimState}
         onClaimReward={onClaimReward}
         feedback={feedback}
+        onRewardPageChange={onRewardPageChange}
+        onEventPageChange={onEventPageChange}
       />
     </section>
   );

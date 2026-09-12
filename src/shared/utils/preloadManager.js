@@ -25,28 +25,32 @@ export function createPreloadManager({ smoothing = true } = {}) {
     notify();
   }
 
-  // smoothing helper: animates percent toward target
-  if (smoothing) {
-    let current = 0;
-    let raf;
-    const tick = () => {
-      const target = total === 0 ? 100 : (done / total) * 100;
-      current += (target - current) * 0.12; // smoothing factor
-      listeners.forEach((cb) =>
-        cb({ ratio: current / 100, percent: current, message }),
-      );
-      raf = requestAnimationFrame(tick);
-    };
+  let current = 0;
+  let raf = null;
+  const tick = () => {
+    if (raf == null) return;
+    const target = total === 0 ? 100 : (done / total) * 100;
+    current += (target - current) * 0.12; // smoothing factor
+    listeners.forEach((cb) =>
+      cb({ ratio: current / 100, percent: current, message }),
+    );
     raf = requestAnimationFrame(tick);
-    return {
-      onUpdate,
-      addTask,
-      setMessage,
-      stop: () => cancelAnimationFrame(raf),
-    };
+  };
+  function start() {
+    if (smoothing && raf == null) raf = requestAnimationFrame(tick);
+  }
+  function stop() {
+    if (raf != null) cancelAnimationFrame(raf);
+    raf = null;
+  }
+  function reset() {
+    total = 0;
+    done = 0;
+    current = 0;
+    message = "";
   }
 
-  return { onUpdate, addTask, setMessage, stop: () => {} };
+  return { onUpdate, addTask, setMessage, start, stop, reset };
 }
 
 /* Helpers */
@@ -114,4 +118,3 @@ export async function trackPromises(promises, manager) {
     ),
   );
 }
-

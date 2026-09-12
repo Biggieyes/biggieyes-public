@@ -1,4 +1,5 @@
 import * as React from "react";
+import { TICKET_PURCHASE_COPY } from "../../shared/ticketPurchaseCopy.js";
 
 const PROJECT_NAME = "BiggiEyes";
 
@@ -10,8 +11,15 @@ const FAQ_ITEMS = [
   },
   {
     question: "How does minting work?",
-    answer:
-      "A user mints a ticket first. A redeem action then requests Chainlink VRF, assigns the final traits, and mints the revealed NFT to the wallet when the request is fulfilled.",
+    answer: TICKET_PURCHASE_COPY.howItWorks,
+  },
+  {
+    question: "Can I buy a ticket before its chapter opens?",
+    answer: TICKET_PURCHASE_COPY.presale,
+  },
+  {
+    question: "Does the 10-ticket limit apply on OpenSea?",
+    answer: TICKET_PURCHASE_COPY.walletLimit,
   },
   {
     question: "What are chapters and paired collections?",

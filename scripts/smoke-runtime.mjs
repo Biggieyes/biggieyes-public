@@ -134,6 +134,8 @@ async function runSmoke(baseUrl) {
     console.log("[smoke] app shell ready");
 
     // Gallery shell and filtering controls smoke.
+    // Scroll the stable host first: DeferredSection mounts its content on approach.
+    await page.locator("#gallery").first().scrollIntoViewIfNeeded();
     const gallery = page.locator(".gallery-section");
     await gallery
       .getByRole("heading", { name: /My Biggi COLLECTION/i })
@@ -243,10 +245,11 @@ async function runSmoke(baseUrl) {
         state: "visible",
         timeout: 60_000,
       });
-      await mobilePage.waitForSelector(".gallery-section", {
+      await mobilePage.waitForSelector("#gallery", {
         state: "attached",
         timeout: 60_000,
       });
+      await mobilePage.locator("#gallery").first().scrollIntoViewIfNeeded();
       await mobilePage.locator(".gallery-section").scrollIntoViewIfNeeded();
       await mobilePage.locator(".gallery-section").waitFor({
         state: "visible",

@@ -60,11 +60,7 @@ function _sameAddress(a, b) {
 }
 
 function _decodeUtf8Bytes(value) {
-  if (
-    typeof value !== "string" ||
-    !value.startsWith("0x") ||
-    value === "0x"
-  ) {
+  if (typeof value !== "string" || !value.startsWith("0x") || value === "0x") {
     return null;
   }
   try {
@@ -188,7 +184,7 @@ export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
   let branchReaderVault = null;
 
   try {
-    if (helper?.address) {
+    if (helper?.target) {
       const info = await helper.routerInfo();
       routerAddress = info?.routerAddr ?? info?.[0] ?? null;
       factoryAddress = info?.factory ?? info?.[1] ?? null;
@@ -198,13 +194,17 @@ export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
   }
 
   try {
-    if (reserveTreasuryReader?.address) {
+    if (reserveTreasuryReader?.target) {
       const readerMulti = await _multicallOptional(
         readProvider,
         reserveTreasuryReader,
         [
           { key: "reserveSnapshot", method: "reserveSnapshot", unwrap: false },
-          { key: "treasurySnapshot", method: "treasurySnapshot", unwrap: false },
+          {
+            key: "treasurySnapshot",
+            method: "treasurySnapshot",
+            unwrap: false,
+          },
         ],
         "reserveTreasuryReader",
       );
@@ -234,7 +234,11 @@ export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
       readProvider,
       orchestrator,
       [
-        { key: "adminSnapshotCore", method: "adminSnapshotCore", unwrap: false },
+        {
+          key: "adminSnapshotCore",
+          method: "adminSnapshotCore",
+          unwrap: false,
+        },
         { key: "adminSnapshotLM", method: "adminSnapshotLM", unwrap: false },
         { key: "paused", method: "paused" },
       ],
@@ -246,8 +250,17 @@ export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
       [
         { key: "paused", method: "paused" },
         { key: "allowedCaller", method: "allowedCaller" },
-        { key: "computedAmountNow", method: "computedAmountNow", unwrap: false },
-        { key: "checkUpkeep", method: "checkUpkeep", params: ["0x"], unwrap: false },
+        {
+          key: "computedAmountNow",
+          method: "computedAmountNow",
+          unwrap: false,
+        },
+        {
+          key: "checkUpkeep",
+          method: "checkUpkeep",
+          params: ["0x"],
+          unwrap: false,
+        },
         { key: "minIntervalSec", method: "minIntervalSec" },
         { key: "minReservePol", method: "minReservePol" },
         { key: "maxPerTx", method: "maxPerTx" },
@@ -297,7 +310,8 @@ export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
         _callOptional(() => orchestrator?.adminSnapshotCore?.()),
       orchestratorMulti?.adminSnapshotLM ??
         _callOptional(() => orchestrator?.adminSnapshotLM?.()),
-      orchestratorMulti?.paused ?? _callOptional(() => orchestrator?.paused?.()),
+      orchestratorMulti?.paused ??
+        _callOptional(() => orchestrator?.paused?.()),
       keeperMulti?.paused ?? _callOptional(() => keeperProxy?.paused?.()),
       keeperMulti?.allowedCaller ??
         _callOptional(() => keeperProxy?.allowedCaller?.()),
@@ -316,12 +330,16 @@ export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
         _callOptional(() => keeperProxy?.orchestrator?.()),
       keeperMulti?.lastPerformTs ??
         _callOptional(() => keeperProxy?.lastPerformTs?.()),
-      keeperMulti?.amountMode ?? _callOptional(() => keeperProxy?.amountMode?.()),
-      keeperMulti?.fixedAmount ?? _callOptional(() => keeperProxy?.fixedAmount?.()),
-      keeperMulti?.percentBps ?? _callOptional(() => keeperProxy?.percentBps?.()),
+      keeperMulti?.amountMode ??
+        _callOptional(() => keeperProxy?.amountMode?.()),
+      keeperMulti?.fixedAmount ??
+        _callOptional(() => keeperProxy?.fixedAmount?.()),
+      keeperMulti?.percentBps ??
+        _callOptional(() => keeperProxy?.percentBps?.()),
       branchMulti?.wiringSnapshot ??
         _callOptional(() => branchUserReader?.wiringSnapshot?.()),
-      branchMulti?.reserve ?? _callOptional(() => branchUserReader?.reserve?.()),
+      branchMulti?.reserve ??
+        _callOptional(() => branchUserReader?.reserve?.()),
       branchMulti?.lm ?? _callOptional(() => branchUserReader?.lm?.()),
       branchMulti?.vault ?? _callOptional(() => branchUserReader?.vault?.()),
     ]);
@@ -329,7 +347,8 @@ export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
     console.warn("[LiquiditySnapshot] automation/keeper snapshot failed", err);
   }
 
-  reservePol = reservePol ?? automationCore?.reservePol ?? automationCore?.[0] ?? null;
+  reservePol =
+    reservePol ?? automationCore?.reservePol ?? automationCore?.[0] ?? null;
   dexRefillBiggi =
     dexRefillBiggi ??
     automationCore?.reserveDexRefillBiggi ??
@@ -340,7 +359,9 @@ export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
     try {
       [routerAddress, factoryAddress, vaultAddress] = await Promise.all([
         routerAddress || managerMulti?.router || _callOptional(manager.router),
-        factoryAddress || managerMulti?.factory || _callOptional(manager.factory),
+        factoryAddress ||
+          managerMulti?.factory ||
+          _callOptional(manager.factory),
         vaultAddress ||
           managerMulti?.liquidityVault ||
           _callOptional(manager.liquidityVault),
@@ -369,20 +390,23 @@ export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
     ]);
     if (DEBUG) {
       console.log(
-      "[LiquiditySnapshot] vault.liquidityManager:",
+        "[LiquiditySnapshot] vault.liquidityManager:",
         vaultLiquidityManager,
       );
       console.log("[LiquiditySnapshot] vault.totalLpLocked:", totalLpLocked);
     }
   } catch (err) {
-    console.warn("[LiquiditySnapshot] Chyba p‘ti naŽ›ÆðtÆónÆð vault hodnot:", err);
+    console.warn(
+      "[LiquiditySnapshot] Chyba p‘ti naŽ›ÆðtÆónÆð vault hodnot:",
+      err,
+    );
   }
 
   const pairAddress = tokenDex?.pairAddress || null;
   let pairWhitelisted = null;
   let vaultLpBalance = totalLpLocked;
   try {
-    if (helper?.address && pairAddress) {
+    if (helper?.target && pairAddress) {
       const v = await helper.vaultInfo(pairAddress);
       pairWhitelisted = v?.pairWhitelisted ?? v?.[0] ?? null;
       vaultLpBalance = v?.vaultLpBalance ?? v?.[1] ?? vaultLpBalance;
@@ -403,61 +427,64 @@ export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
   const branchConfiguredLm = branchReaderLm ?? null;
   const branchConfiguredVault = branchReaderVault ?? null;
   const branchReaderStale =
-    branchUserReader?.address &&
+    branchUserReader?.target &&
     branchConfiguredReserve &&
     branchConfiguredLm &&
     branchConfiguredVault
-    ? !(
-        _sameAddress(branchConfiguredReserve, reserve.address) &&
-        _sameAddress(branchConfiguredLm, manager.address) &&
-        _sameAddress(branchConfiguredVault, vault.address)
-      )
-    : null;
+      ? !(
+          _sameAddress(branchConfiguredReserve, reserve.target) &&
+          _sameAddress(branchConfiguredLm, manager.target) &&
+          _sameAddress(branchConfiguredVault, vault.target)
+        )
+      : null;
 
   return {
     ts: Date.now(),
     reserve: {
-      address: reserve.address,
+      address: reserve.target,
       maticBalance:
         reservePol != null
           ? reservePol
-          : reserveMulti?.maticBalance ??
-            (await _callContractMethod(reserve, ["polBalance", "maticBalance"])),
+          : (reserveMulti?.maticBalance ??
+            (await _callContractMethod(reserve, [
+              "polBalance",
+              "maticBalance",
+            ]))),
       biggiBalance:
         reserveBiggi != null
           ? reserveBiggi
-          : reserveMulti?.biggiBalance ??
-            (await _callOptional(reserve.biggiBalance)),
+          : (reserveMulti?.biggiBalance ??
+            (await _callOptional(reserve.biggiBalance))),
       totalMaticReceived:
         totalMaticReceived != null
           ? totalMaticReceived
-          : reserveMulti?.totalMaticReceived ??
+          : (reserveMulti?.totalMaticReceived ??
             (await _callContractMethod(reserve, [
               "totalPolReceived",
               "totalMaticReceived",
-            ])),
+            ]))),
       waitingBiggi:
         waitingBiggi != null
           ? waitingBiggi
-          : reserveMulti?.waitingBiggi ??
-            (await _callOptional(reserve.waitingBiggi)),
+          : (reserveMulti?.waitingBiggi ??
+            (await _callOptional(reserve.waitingBiggi))),
       dexRefillBiggi:
         dexRefillBiggi != null
           ? dexRefillBiggi
-          : reserveMulti?.dexRefillBiggi ??
-            (await _callOptional(reserve.dexRefillBiggi)),
-      liquidityManager: manager.address,
+          : (reserveMulti?.dexRefillBiggi ??
+            (await _callOptional(reserve.dexRefillBiggi))),
+      liquidityManager: manager.target,
     },
     manager: {
-      address: manager.address,
+      address: manager.target,
       routerAddress,
       factoryAddress,
       vaultAddress,
       keeper: managerKeeper,
     },
     vault: {
-      address: vault.address,
-      liquidityManager: vaultLiquidityManager || manager.address,
+      address: vault.target,
+      liquidityManager: vaultLiquidityManager || manager.target,
       totalLpLocked: vaultLpBalance ?? totalLpLocked,
       pairWhitelisted,
     },
@@ -467,7 +494,7 @@ export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
       tokenBalance: treasuryBiggi ?? null,
     },
     automation: {
-      address: orchestrator?.address ?? null,
+      address: orchestrator?.target ?? null,
       reservePol: automationCore?.reservePol ?? automationCore?.[0] ?? null,
       reserveDexRefillBiggi:
         automationCore?.reserveDexRefillBiggi ?? automationCore?.[1] ?? null,
@@ -476,7 +503,8 @@ export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
       minDexRefillBiggi:
         automationCore?._minDexRefillBiggi ?? automationCore?.[4] ?? null,
       cooldownSec: automationCore?._cooldownSec ?? automationCore?.[5] ?? null,
-      dailyQuotaPol: automationCore?._dailyQuotaPol ?? automationCore?.[6] ?? null,
+      dailyQuotaPol:
+        automationCore?._dailyQuotaPol ?? automationCore?.[6] ?? null,
       lastRun: automationCore?._lastRun ?? automationCore?.[7] ?? null,
       usedToday: automationCore?._usedToday ?? automationCore?.[8] ?? null,
       dayMarker: automationCore?._dayMarker ?? automationCore?.[9] ?? null,
@@ -494,7 +522,7 @@ export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
       lmReserve: automationLm?.lmReserve ?? automationLm?.[6] ?? null,
     },
     keeperProxy: {
-      address: keeperProxy?.address ?? null,
+      address: keeperProxy?.target ?? null,
       paused: keeperPaused,
       allowedCaller: keeperAllowedCaller,
       orchestrator: keeperOrchestrator,
@@ -516,7 +544,7 @@ export async function fetchLiquiditySnapshot({ chainId, provider } = {}) {
       ),
     },
     branchReader: {
-      address: branchUserReader?.address ?? null,
+      address: branchUserReader?.target ?? null,
       configuredReserve: branchConfiguredReserve,
       configuredLM: branchConfiguredLm,
       configuredVault: branchConfiguredVault,

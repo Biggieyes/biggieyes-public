@@ -13,16 +13,10 @@ import {
   httpFromIpfs,
   readJsonFromURI,
   resolveImageUrl,
+  getIpfsGatewayCandidates,
 } from "../shared/services/ipfs";
 
 const PLACEHOLDER_IMG = "/images/Biggi.png";
-const IPFS_HTTP_GATEWAYS = [
-  "https://biggieyes.mypinata.cloud/ipfs/",
-  "https://gateway.pinata.cloud/ipfs/",
-  "https://cloudflare-ipfs.com/ipfs/",
-  "https://ipfs.io/ipfs/",
-  "https://dweb.link/ipfs/",
-];
 
 const BG_NAMES = [
   "ORANGE",
@@ -151,28 +145,7 @@ const formatRarityLabel = (value) => {
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 };
 
-const normalizeCandidate = (value) =>
-  String(value || "")
-    .trim()
-    .toLowerCase();
-
-const trimIpfsPath = (value) => String(value || "").replace(/^\/+|\/+$/g, "");
-
-const extractIpfsPayload = (value) => {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  if (/^ipfs:\/\//i.test(raw)) {
-    return trimIpfsPath(raw.replace(/^ipfs:\/\//i, ""));
-  }
-  try {
-    const parsed = new URL(raw);
-    const match = String(parsed.pathname || "").match(/\/ipfs\/([^?#]+)/i);
-    if (match?.[1]) return trimIpfsPath(match[1]);
-  } catch {
-    // ignore malformed URLs
-  }
-  return "";
-};
+const normalizeCandidate = (value) => String(value || "").trim();
 
 const buildImageFallbackCandidates = (...values) => {
   const out = [];
@@ -202,12 +175,10 @@ const buildImageFallbackCandidates = (...values) => {
   for (const value of values) {
     const raw = String(value || "").trim();
     if (!raw) continue;
-    const payload = extractIpfsPayload(raw);
-    if (payload) {
-      for (const base of IPFS_HTTP_GATEWAYS) {
-        pushWithAlternatives(`${base}${payload}`);
-      }
-      pushWithAlternatives(ipfsToHttp(raw));
+    const ipfsCandidates = getIpfsGatewayCandidates(raw);
+    if (ipfsCandidates.length) {
+      // A fallback may change the gateway, never the content-addressed filename.
+      for (const candidate of ipfsCandidates) push(candidate);
       continue;
     }
     if (/^https?:\/\//i.test(raw)) pushWithAlternatives(raw);

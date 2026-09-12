@@ -42,6 +42,7 @@ import { buildBlockImagePath } from "@/shared/utils/images";
 import {
   BACKGROUND_BONUS_PCT,
   BASE_PRICES,
+  BTN_STYLES,
   DEFAULT_BLOCKS,
 } from "@/shared/blocks";
 import { getCachedPriceAttrs } from "@/shared/utils/metadata";
@@ -54,6 +55,7 @@ import {
 } from "./liveStatsImageState.js";
 import "./LiveStatsPools.css";
 import "./LiveStatsTables.css";
+import "./LiveStatsSummary.css";
 import "./InfoTables.css";
 import "../styles/panel-buttons.css";
 
@@ -2305,44 +2307,28 @@ function LiveStats({
   }, [handleReadRpcFailure]);
 
   // Layout
-  const BOX = isPhone ? (isTiny ? 110 : 130) : 150;
+  const BOX = 176;
   const PADDING = isPhone
     ? isTiny
       ? "14px 12px 12px 12px"
       : "24px 16px 18px 16px"
     : "38px 44px 32px 44px";
-  const boxFontSize = isTiny ? "0.78em" : isPhone ? "0.9em" : "1.02em";
-  const boxBigFontSize = isTiny ? "1.06em" : isPhone ? "1.22em" : "1.42em";
-  const infoCardFontSize = isTiny ? "0.54em" : isPhone ? "0.64em" : "0.74em";
-  const infoCardBigFontSize = isTiny ? "0.96em" : isPhone ? "1.12em" : "1.24em";
-  const tokenomicsLabelFontSize = isTiny
-    ? "0.68em"
-    : isPhone
-      ? "0.78em"
-      : "0.86em";
-  const marketCapBoxLabelFontSize = isTiny
-    ? "0.6em"
-    : isPhone
-      ? "0.7em"
-      : "0.78em";
-  const marketCapBoxValueFontSize = isTiny
-    ? "0.72em"
-    : isPhone
-      ? "0.82em"
-      : "0.92em";
-  const marketCapBoxBigValueFontSize = isTiny
-    ? "0.92em"
-    : isPhone
-      ? "1.04em"
-      : "1.16em";
+  const boxFontSize = 20;
+  const boxBigFontSize = 26;
+  const infoCardFontSize = 12;
+  const infoCardBigFontSize = 20;
+  const tokenomicsLabelFontSize = 12;
+  const marketCapBoxLabelFontSize = 12;
+  const marketCapBoxValueFontSize = 16;
+  const marketCapBoxBigValueFontSize = 20;
   const mobileMaxWidth = isPhone ? (isTiny ? 320 : 420) : undefined;
   const statsBoxWidth = isPhone ? (isTiny ? "100%" : "calc(50% - 6px)") : BOX;
   const statsBoxHeight = isPhone ? "auto" : BOX;
-  const statsBoxMinHeight = isPhone ? (isTiny ? 96 : 110) : BOX;
+  const statsBoxMinHeight = BOX;
   const infoBoxWidth = isPhone ? "100%" : statsBoxWidth;
   const infoBoxHeight = statsBoxHeight;
   const infoBoxMinHeight = statsBoxMinHeight;
-  const imageBox = isPhone ? (isTiny ? 150 : 170) : BOX;
+  const imageBox = BOX;
   const statsGroupDirection = isPhone ? (isTiny ? "column" : "row") : "column";
   const statsGroupWidth = isPhone ? "100%" : statsBoxWidth;
 
@@ -2377,7 +2363,7 @@ function LiveStats({
     flexDirection: isPhone ? "column" : "row",
     justifyContent: "center",
     alignItems: isPhone ? "stretch" : "flex-start",
-    gap: isPhone ? (isTiny ? "10px" : "14px") : "36px",
+    gap: isPhone ? (isTiny ? "10px" : "14px") : "18px",
     marginTop: isPhone ? "8px" : "20px",
   };
 
@@ -2386,17 +2372,18 @@ function LiveStats({
     flexDirection: "column",
     alignItems: isPhone ? "stretch" : "center",
     justifyContent: "center",
-    gap: isPhone ? "12px" : "8px",
+    gap: isPhone ? "12px" : "16px",
     marginTop: "0",
     width: isPhone ? "100%" : statsGroupWidth,
     maxWidth: mobileMaxWidth,
+    alignSelf: isPhone ? "center" : undefined,
   };
 
   const statsTable = {
     width: statsBoxWidth,
     height: statsBoxHeight,
     minHeight: statsBoxMinHeight,
-    fontSize: boxFontSize,
+    fontSize: 14,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -2409,33 +2396,34 @@ function LiveStats({
     backgroundSize: "cover",
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
-    padding: isPhone ? "10px 12px" : "14px 18px",
+    padding: "12px 10px",
     borderRadius: 16,
-    boxShadow: "0 6px 20px rgba(0,0,0,0.6), 0 0 12px #ffe800",
+    boxShadow: "0 4px 16px rgba(0,0,0,0.45), 0 0 6px rgba(255,232,0,0.2)",
     border: "1px solid rgba(255, 232, 0, 0.5)",
-    transition: "all 0.3s ease",
     boxSizing: "border-box",
   };
 
   const ticketPriceTable = {
     ...statsTable,
-    marginTop: isPhone ? (isTiny ? "6px" : "8px") : "12px",
+    marginTop: 0,
     height: statsBoxHeight,
-    padding: isPhone ? "10px 12px" : "14px 18px",
+    padding: "12px 10px",
   };
 
   const statsGroupStyle = {
     display: "flex",
     flexDirection: statsGroupDirection,
-    gap: isPhone ? "10px" : "8px",
+    gap: isPhone ? "12px" : "16px",
     marginTop: "0",
     width: statsGroupWidth,
+    maxWidth: mobileMaxWidth,
+    alignSelf: isPhone ? "center" : undefined,
     alignItems: "stretch",
     justifyContent: isPhone && !isTiny ? "space-between" : "center",
     flexWrap: isPhone && !isTiny ? "wrap" : "nowrap",
   };
 
-  const titleStyle = { color: "#fff", fontWeight: 700, fontSize: boxFontSize };
+  const titleStyle = { color: "#fff", fontWeight: 700, fontSize: 12 };
   const metricLabelStyle = {
     ...titleStyle,
     alignSelf: "center",
@@ -2469,9 +2457,7 @@ function LiveStats({
     lineHeight: 1.3,
     overflowWrap: "normal",
     wordBreak: "normal",
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
+    whiteSpace: "normal",
     flexShrink: 0,
   };
 
@@ -3304,12 +3290,12 @@ function LiveStats({
           Bottom buttons: Weekly rewards, tokenomics, live chat.
         </div>
       )}
-      <div style={columnCenter}>
+      <div className="ls-summary-column" style={columnCenter}>
         <div
-          className="image-table"
+          className="image-table ls-summary-card ls-summary-card--image"
           style={{
             width: isPhone ? "100%" : imageBox,
-            height: isPhone ? "auto" : imageBox,
+            height: imageBox,
             minHeight: imageBox,
             maxWidth: mobileMaxWidth,
             alignSelf: isPhone ? "center" : undefined,
@@ -3323,7 +3309,7 @@ function LiveStats({
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
             borderRadius: 16,
-            boxShadow: "0 6px 20px rgba(0,0,0,0.6), 0 0 12px #ffe800",
+            boxShadow: statsTable.boxShadow,
             border: "1px solid rgba(255, 232, 0,0.5)",
             padding: isPhone ? "8px" : "10px",
             position: "relative",
@@ -3424,7 +3410,7 @@ function LiveStats({
               style={{
                 color: "rgba(255, 232, 0, 0.9)",
                 fontWeight: 800,
-                letterSpacing: "0.08em",
+                letterSpacing: 0,
                 textTransform: "uppercase",
                 fontSize: 12,
                 textAlign: "center",
@@ -3450,7 +3436,7 @@ function LiveStats({
                 color: "#9adfff",
                 fontWeight: 700,
                 fontSize: 12,
-                letterSpacing: "0.08em",
+                letterSpacing: 0,
                 textTransform: "uppercase",
                 pointerEvents: "none",
               }}
@@ -3461,7 +3447,7 @@ function LiveStats({
         </div>
 
         <div
-          className="live-stats-info"
+          className="live-stats-info ls-summary-card ls-summary-card--nft"
           style={{
             ...statsTable,
             width: infoBoxWidth,
@@ -3469,31 +3455,54 @@ function LiveStats({
             minHeight: infoBoxMinHeight,
             maxWidth: mobileMaxWidth,
             alignSelf: isPhone ? "center" : undefined,
-            marginTop: isPhone ? "0" : "8px",
-            gap: isPhone ? 4 : 6,
-            paddingBottom: isPhone ? "10px" : "14px",
+            marginTop: 0,
+            gap: 4,
+            paddingBottom: 10,
             color: "#ffe800",
           }}
         >
-          <div style={infoRowStyle}>
-            LAST NFT:&nbsp;
-            <span className="highlight" style={{ color: "#ff0000" }}>
+          <div className="ls-summary-detail" style={infoRowStyle}>
+            <span>LAST NFT</span>
+            <span className="highlight" style={{ color: "#ffe800" }}>
               #{effectiveLastMinted.tokenId}
             </span>
           </div>
-          <div style={infoRowStyle}>
-            BLOCK:&nbsp;
-            <span className="highlight">
+          <div className="ls-summary-detail" style={infoRowStyle}>
+            <span>BLOCK</span>
+            <span className="highlight ls-summary-trait">
+              {BTN_STYLES[String(effectiveLastMinted.blockName).toUpperCase()] && (
+                <span
+                  className="ls-summary-swatch"
+                  aria-hidden="true"
+                  style={{
+                    background:
+                      BTN_STYLES[String(effectiveLastMinted.blockName).toUpperCase()]
+                        .background,
+                  }}
+                />
+              )}
               {String(effectiveLastMinted.blockName || "-").toUpperCase()}
             </span>
           </div>
-          <div style={infoRowStyle}>
-            BACKGROUND:&nbsp;
-            <span className="highlight">
+          <div className="ls-summary-detail" style={infoRowStyle}>
+            <span>BACKGROUND</span>
+            <span className="highlight ls-summary-trait">
+              {BTN_STYLES[String(effectiveLastMinted.backgroundName).toUpperCase()] && (
+                <span
+                  className="ls-summary-swatch"
+                  aria-hidden="true"
+                  style={{
+                    background:
+                      BTN_STYLES[String(effectiveLastMinted.backgroundName).toUpperCase()]
+                        .background,
+                  }}
+                />
+              )}
               {String(effectiveLastMinted.backgroundName || "-").toUpperCase()}
             </span>
           </div>
           <div
+            className="ls-summary-final-label"
             style={{
               ...infoRowStyle,
               color: "#9ee5ff",
@@ -3521,7 +3530,7 @@ function LiveStats({
               ...infoRowStyle,
               color: "#9ee5ff",
               textTransform: "none",
-              fontSize: isTiny ? "0.48em" : isPhone ? "0.58em" : "0.64em",
+              fontSize: 11,
               whiteSpace: "normal",
               overflow: "visible",
               textOverflow: "clip",
@@ -3538,16 +3547,22 @@ function LiveStats({
         </div>
       </div>
 
-      <div style={statsGroupStyle}>
-        <div style={statsTable}>
+      <div className="ls-summary-column" style={statsGroupStyle}>
+        <div
+          className="ls-summary-card ls-summary-card--supply"
+          style={statsTable}
+        >
           <div className="widget-title" style={metricLabelStyle}>
             TICKETS LEFT
           </div>
           <div style={{ ...metricValueRowStyle, fontSize: boxFontSize }}>
-            <span className="highlight" style={{ color: "#ffe800" }}>
+            <span
+              className="highlight ls-summary-number"
+              style={{ color: "#ffe800" }}
+            >
               {Math.max(0, (maxTickets || 0) - (ticketMinted || 0))}
             </span>{" "}
-            / <span style={{ color: "#fff" }}>{maxTickets}</span>
+            <span className="ls-summary-total">/ {maxTickets}</span>
           </div>
           <div
             className="widget-title"
@@ -3556,18 +3571,24 @@ function LiveStats({
             NFT MINTED
           </div>
           <div style={{ ...metricValueRowStyle, fontSize: boxFontSize }}>
-            <span className="highlight" style={{ color: "#ffe800" }}>
+            <span
+              className="highlight ls-summary-number"
+              style={{ color: "#ffe800" }}
+            >
               {biggiMinted}
             </span>{" "}
-            / <span style={{ color: "#fff" }}>{maxSupply}</span>
+            <span className="ls-summary-total">/ {maxSupply}</span>
           </div>
         </div>
 
-        <div style={ticketPriceTable}>
+        <div
+          className="ls-summary-card ls-summary-card--ticket"
+          style={ticketPriceTable}
+        >
           <div className="widget-title" style={metricLabelStyle}>
             TICKET PRICE
           </div>
-          <div style={metricValueRowStyle}>
+          <div className="ls-summary-price" style={metricValueRowStyle}>
             <span
               className="highlight"
               style={{
@@ -3580,12 +3601,16 @@ function LiveStats({
                 ? ticketPrice.toFixed(3)
                 : ticketPrice || "-"}
             </span>
+            <span className="ls-summary-unit">POL</span>
           </div>
         </div>
       </div>
 
-      <div style={statsGroupStyle}>
-        <div style={statsTable}>
+      <div className="ls-summary-column" style={statsGroupStyle}>
+        <div
+          className="ls-summary-card ls-summary-card--market"
+          style={statsTable}
+        >
           <div className="widget-title" style={tokenomicsLabelStyle}>
             BIGGI PRICE
           </div>
@@ -3629,6 +3654,7 @@ function LiveStats({
         </div>
 
         <div
+          className="ls-summary-card ls-summary-card--capital"
           style={{
             ...ticketPriceTable,
             gap: isPhone ? 2 : 4,
@@ -3694,6 +3720,7 @@ function LiveStats({
           {mainStats}
 
           <div
+            className="ls-summary-actions"
             style={{
               display: "flex",
               justifyContent: "center",

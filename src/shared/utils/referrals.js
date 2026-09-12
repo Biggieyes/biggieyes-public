@@ -1,4 +1,4 @@
-export const normalizeReferralValue = (value) => String(value || "").trim();
+export const normalizeReferralValue = (value) => String(value ?? "").trim();
 
 export const getMergedUrlSearchParams = (input) => {
   const url =
@@ -29,7 +29,7 @@ export const extractReferralParam = (input) =>
 export const buildModeratorReferralValue = (slotId, refCode = "") => {
   const slot = normalizeReferralValue(slotId);
   const code = normalizeReferralValue(refCode);
-  if (!slot || slot === "--" || !code) return "";
+  if (!/^[0-9]$/.test(slot) || !code) return "";
   return `slot${slot}:${code}`;
 };
 
@@ -37,7 +37,28 @@ export const buildModeratorReferralLink = (baseUrl, slotId, refCode = "") => {
   const base = normalizeReferralValue(baseUrl);
   const referral = buildModeratorReferralValue(slotId, refCode);
   if (!base || !referral) return "";
-  return `${base}${base.includes("?") ? "&" : "?"}ref=${referral}`;
+  try {
+    const url = new URL(base);
+    if (!["https:", "http:"].includes(url.protocol)) return "";
+    url.searchParams.set("ref", referral);
+    const hashQuery = url.hash.indexOf("?");
+    if (hashQuery >= 0) {
+      const hashParams = new URLSearchParams(url.hash.slice(hashQuery + 1));
+      hashParams.delete("ref");
+      url.hash =
+        url.hash.slice(0, hashQuery) +
+        (hashParams.size ? `?${hashParams}` : "");
+    } else if (url.hash && !url.hash.startsWith("#/")) {
+      const hashParams = new URLSearchParams(url.hash.slice(1));
+      if (hashParams.has("ref")) {
+        hashParams.delete("ref");
+        url.hash = hashParams.size ? `#${hashParams}` : "";
+      }
+    }
+    return url.toString();
+  } catch {
+    return "";
+  }
 };
 
 export const extractMintedTicketIdFromReceipt = (

@@ -1,9 +1,9 @@
 {
   "mode": "dry-run",
-  "createdAt": "2026-08-28T17:34:32.752Z",
+  "createdAt": "2026-09-09T01:46:13.813Z",
   "network": "polygon",
   "chainId": 137,
-  "snapshotBlock": 92822296,
+  "snapshotBlock": 93475560,
   "addressesFile": "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\addresses.master.json",
   "deployer": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
   "finalOwner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
@@ -26,26 +26,23 @@
     "VRF_ROUTER": 4227
   },
   "predicted": {
-    "nftRewardsV2": "0x5b1d7320064017e80D63C6dd1367e851fdc00FA7",
-    "nftRewardsReaderV2": "0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9",
-    "deployerNonce": 415
+    "nftRewardsV2": "0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9",
+    "nftRewardsReaderV2": "0x789873e6b1d944b207D2E76a71D95135be4e33c6",
+    "deployerNonce": 416
   },
   "gas": {
-    "gasPriceWei": "280453799590",
+    "gasPriceWei": "281476485269",
     "rewardsDeploy": "2383881",
     "readerDeploy": "746124",
     "vrfApproval": "55628",
-    "deployerRequiredWeiWithBuffer": "1097277243732122437",
-    "ownerRequiredWeiWithBuffer": "19501354954490650"
+    "deployerRequiredWeiWithBuffer": "1101278507842995431",
+    "ownerRequiredWeiWithBuffer": "19572467403179915"
   },
   "balances": {
-    "deployerWei": "320764160595805697",
-    "ownerWei": "1702373944068000"
+    "deployerWei": "50163540487493014697",
+    "ownerWei": "53927407168283311500"
   },
-  "blockers": [
-    "Deployer POL balance is too low: 320764160595805697 < 1097277243732122437",
-    "Owner POL balance is too low: 1702373944068000 < 19501354954490650"
-  ],
+  "blockers": [],
   "transactions": [],
   "activated": false
 }

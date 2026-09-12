@@ -96,7 +96,7 @@ const CORE_OUTPUT_MAP = {
   BiggiCompute: "BiggiCompute.abi.json",
   BiggiCollectionRewards: "BiggiCollectionRewards.abi.json",
   BiggiTokenRewards: "BiggiTokenRewards.abi.json",
-  BiggiNftRewards: "BiggiNFTRewards.abi.json",
+  BiggiNftRewards: "BiggiNFTRewardsV2.abi.json",
   BiggiVRFRouter: "BiggiVRFRouter.abi.json",
   BiggiMultiCollectionDistributor: "BiggiMultiCollectionDistributor.abi.json",
   BiggiMainReader: "BiggiMainReader.abi.json",

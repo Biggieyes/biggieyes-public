@@ -2271,6 +2271,30 @@
   align-items: stretch;
 }
 
+.nft-rewards__pagination {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.nft-rewards__pagination > span {
+  overflow-wrap: anywhere;
+  margin-right: auto;
+}
+
+.nft-rewards__pagination .biggi-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
+}
+
 .nft-rewards__layout > .nft-rewards__card {
   min-width: 0;
 }

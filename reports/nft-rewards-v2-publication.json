@@ -1,0 +1,28 @@
+{
+  "siteId": "dac321e9-74ae-4e07-b765-33be002cc7e8",
+  "previousDeploy": "6aa09dcf7a272120ec966e0c",
+  "envHash": "1d146f95fe1a5ba7079d81e271c2112b468c999a2a9f343ed7eac412eb98d159",
+  "htmlHash": "1e628c8c43b9345d8ccabf063671d8b5fcb8df5e4a7310d90312f37a665e8a77",
+  "entry": "/assets/app-DNlKCYy0.js",
+  "builtAt": "2026-09-09T02:50:55.571Z",
+  "deployId": "6aa0ca18a06d42d1aaafcda8",
+  "deployUrl": "https://6aa0ca18a06d42d1aaafcda8--biggieyescom.netlify.app",
+  "deployedAt": "2026-09-09T02:53:39.973Z",
+  "published": true,
+  "publishedVerifiedAt": "2026-09-09T02:55:49.137Z",
+  "domain": "biggieyes.com",
+  "publicVerification": {
+    "passed": true,
+    "checkedAt": "2026-09-09T02:54:18.582Z",
+    "url": "https://biggieyes.com/app/",
+    "contract": "0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9",
+    "reader": "0x789873e6b1d944b207D2E76a71D95135be4e33c6",
+    "viewports": [
+      1440,
+      768,
+      390,
+      320
+    ],
+    "uncaughtErrors": 0
+  }
+}

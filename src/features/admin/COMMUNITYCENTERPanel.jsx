@@ -90,7 +90,7 @@ function shorten(value, start = 6, end = 4) {
 }
 
 function formatPol(value) {
-  return formatNativeDisplay(value ?? 0n, 4);
+  return formatNativeDisplay(value, 4);
 }
 
 function formatDateTime(seconds) {
@@ -279,6 +279,7 @@ export default function COMMUNITYCENTERPanel({
   const {
     snapshot: userCommunitySnapshot,
     loading: userCommunityLoading,
+    error: userCommunityError,
     refresh: refreshUserCommunitySnapshot,
   } = useCommunityCenterUserSnapshot({
     walletAddress: activeWallet,
@@ -514,7 +515,7 @@ export default function COMMUNITYCENTERPanel({
         value: activeWallet
           ? userCommunityLoading
             ? "Syncing..."
-            : String(userCommunitySnapshot.assignedEvents)
+            : String(userCommunitySnapshot.assignedEvents ?? "--")
           : "--",
         hint: activeWallet
           ? "Events assigned to this wallet"
@@ -541,7 +542,7 @@ export default function COMMUNITYCENTERPanel({
         value: activeWallet
           ? pollsLoading || userCommunityLoading
             ? "Syncing..."
-            : String(userCommunitySnapshot.myVotes)
+            : String(userCommunitySnapshot.myVotes ?? "--")
           : "--",
         hint: activeWallet
           ? "Polls voted on by this wallet"
@@ -718,9 +719,12 @@ export default function COMMUNITYCENTERPanel({
                     ? "Connect wallet"
                     : userCommunityLoading
                       ? "Syncing..."
-                      : userCommunitySnapshot.claimableEvents > 0
-                        ? "Prize ready"
-                        : "No claim available"
+                      : userCommunityError ||
+                          userCommunitySnapshot.claimableEvents == null
+                        ? "Unavailable"
+                        : userCommunitySnapshot.claimableEvents > 0
+                          ? "Prize ready"
+                          : "No claim available"
                 }
               />
               <ValueRow
@@ -736,21 +740,23 @@ export default function COMMUNITYCENTERPanel({
                 label="Contract status"
                 value={
                   userCommunitySnapshot.configured
-                    ? userCommunitySnapshot.paused
-                      ? "Paused"
-                      : "Live"
+                    ? userCommunitySnapshot.paused == null
+                      ? "Unavailable"
+                      : userCommunitySnapshot.paused
+                        ? "Paused"
+                        : "Live"
                     : "Missing"
                 }
               />
               <ValueRow
                 label="Events tracked"
-                value={String(userCommunitySnapshot.eventsCount)}
+                value={String(userCommunitySnapshot.eventsCount ?? "--")}
               />
               <ValueRow
                 label="Assigned events"
                 value={
                   activeWallet
-                    ? String(userCommunitySnapshot.assignedEvents)
+                    ? String(userCommunitySnapshot.assignedEvents ?? "--")
                     : "--"
                 }
               />
@@ -758,14 +764,16 @@ export default function COMMUNITYCENTERPanel({
                 label="Claimable events"
                 value={
                   activeWallet
-                    ? String(userCommunitySnapshot.claimableEvents)
+                    ? String(userCommunitySnapshot.claimableEvents ?? "--")
                     : "--"
                 }
               />
               <ValueRow
                 label="My votes"
                 value={
-                  activeWallet ? String(userCommunitySnapshot.myVotes) : "--"
+                  activeWallet
+                    ? String(userCommunitySnapshot.myVotes ?? "--")
+                    : "--"
                 }
               />
               <ValueRow

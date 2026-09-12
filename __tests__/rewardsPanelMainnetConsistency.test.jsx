@@ -12,6 +12,22 @@ import {
 import { ADDR } from "../src/shared/utils/addresses.js";
 
 describe("rewards panel mainnet consistency", () => {
+  it("never enables unresolved collection claims", () => {
+    render(
+      <COLLECTIONREWARDSSection
+        canClaimCOLLECTION
+        blockPaid={Array(9).fill(false)}
+        orangeMainIdPaid={Array(10).fill(false)}
+        blockClaimability={Array(9).fill({ resolved: false, ok: null })}
+        orangeClaimability={Array(10).fill({ resolved: false, ok: null })}
+        rainbowClaimability={{ resolved: false, ok: null }}
+      />,
+    );
+    expect(screen.getAllByText("Unavailable")).toHaveLength(20);
+    const buttons = screen.getAllByRole("button", { name: /^Claim$/i });
+    expect(buttons.length).toBeGreaterThan(0);
+    expect(buttons.every((button) => button.disabled)).toBe(true);
+  });
   it("formats collection native rewards as POL without scientific notation", () => {
     const { container } = render(
       <COLLECTIONREWARDSSection
@@ -67,6 +83,8 @@ describe("rewards panel mainnet consistency", () => {
 
     expect(container.textContent).toContain("Universe");
     expect(container.textContent).toContain("Artwork soon");
-    expect(container.querySelector(".rewards-panel__claim-plate img")).toBeNull();
+    expect(
+      container.querySelector(".rewards-panel__claim-plate img"),
+    ).toBeNull();
   });
 });

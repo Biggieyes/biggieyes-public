@@ -1,11 +1,4 @@
-// src/services/NFTREWARDSService.js
-// Ethers v6 service wrapper for NFTREWARDS (viewer + claim wrapper)
-// - read getters mapují ABI
-// - claim(rewardId) (write) s gas estimate + buffer + wait(1)
-// - batch helpers: getAllStats(), fetchEventsDetailed(), fetchREWARDSRange(), fetchUserAssignedREWARDS()
-// - subscribeOnBlock / unsubscribeOnBlock()
-// - connectWithSigner() připravené pro write operace
-// NEZměnil jsem žádnou logiku kontraktu.
+// Ethers v6 wrapper for the deployed BiggiNFTRewardsV2 contract.
 
 import * as ethers from "ethers";
 import { BiggiNftRewards as ABI } from "@/config/abi/index.js";
@@ -13,8 +6,9 @@ import { BiggiNftRewards as ABI } from "@/config/abi/index.js";
 const withGasBuffer = (gas, pct = 120) => {
   if (gas == null) return null;
   if (typeof gas === "bigint") return (gas * BigInt(pct)) / 100n;
-  if (gas?._isBigNumber && typeof gas.mul === "function")
+  if (gas?._isBigNumber && typeof gas.mul === "function") {
     return gas.mul(pct).div(100);
+  }
   try {
     return (BigInt(gas) * BigInt(pct)) / 100n;
   } catch {
@@ -22,34 +16,71 @@ const withGasBuffer = (gas, pct = 120) => {
   }
 };
 
+const toSafeNumber = (value, fallback = 0) => {
+  const parsed = Number(value?.toString?.() ?? value);
+  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : fallback;
+};
+
+const pick = (result, key, index) => result?.[key] ?? result?.[index];
+
+export const normalizeRewardEvent = (result, eventId) => ({
+  eventId: toSafeNumber(eventId),
+  kind: toSafeNumber(pick(result, "kind", 0)),
+  creator: pick(result, "creator", 1) ?? null,
+  rewardStartId: toSafeNumber(pick(result, "rewardStartId", 2)),
+  rewardCount: toSafeNumber(pick(result, "rewardCount", 3)),
+  randomnessRequested: Boolean(pick(result, "randomnessRequested", 4)),
+  finished: Boolean(pick(result, "finished", 5)),
+  vrfRequestId: pick(result, "vrfRequestId", 6) ?? 0n,
+});
+
+export const normalizeRewardInfo = (result, rewardId) => ({
+  rewardId: toSafeNumber(rewardId),
+  assigned: pick(result, "assigned", 0) ?? null,
+  isClaimed: Boolean(pick(result, "isClaimed", 1)),
+  uri: pick(result, "uri", 2) ?? "",
+});
+
+const mapWithConcurrency = async (items, worker, concurrency = 3) => {
+  if (!items.length) return [];
+  const results = new Array(items.length);
+  let cursor = 0;
+  const workers = Array.from(
+    { length: Math.min(Math.max(1, concurrency), items.length) },
+    async () => {
+      while (cursor < items.length) {
+        const index = cursor++;
+        results[index] = await worker(items[index], index);
+      }
+    },
+  );
+  await Promise.all(workers);
+  return results;
+};
+
 export default class NFTREWARDSService {
-  /**
-   * @param {string} address - contract address
-   * @param {ethers.providers.Provider} provider - ethers provider
-   */
-  constructor(address, provider) {
+  constructor(address, provider, readOverrides = {}) {
     if (!address) throw new Error("Contract address required");
     if (!provider) throw new Error("Provider required");
     this.address = address;
     this.provider = provider;
+    this.readOverrides = readOverrides;
     this.contract = new ethers.Contract(address, ABI, provider);
     this._onBlockHandler = null;
     this._signerConnected = false;
   }
 
-  /** Init sanity check (volitelně) */
   async init() {
     try {
       await this.provider.getNetwork();
       await this.name();
       return true;
-    } catch (e) {
-      console.error("NFTREWARDSService.init failed:", e);
-      throw e;
+    } catch (error) {
+      console.error("NFTREWARDSService.init failed:", error);
+      throw error;
     }
   }
 
-  /** Připojí signer pro write operace (claim) */
   connectWithSigner(signer) {
     if (!signer) throw new Error("Signer required");
     this.contract = this.contract.connect(signer);
@@ -57,18 +88,17 @@ export default class NFTREWARDSService {
     this._signerConnected = true;
   }
 
-  // ----------- Read getters -----------
-  async balanceOf(ownerAddr) {
-    return await this.contract.balanceOf(ownerAddr);
+  async balanceOf(ownerAddress) {
+    return await this.contract.balanceOf(ownerAddress);
   }
   async ownerOf(tokenId) {
     return await this.contract.ownerOf(tokenId);
   }
   async name() {
-    return await this.contract.name();
+    return await this.contract.name(this.readOverrides || {});
   }
   async symbol() {
-    return await this.contract.symbol();
+    return await this.contract.symbol(this.readOverrides || {});
   }
   async tokenURI(tokenId) {
     return await this.contract.tokenURI(tokenId);
@@ -76,8 +106,6 @@ export default class NFTREWARDSService {
   async supportsInterface(interfaceId) {
     return await this.contract.supportsInterface(interfaceId);
   }
-
-  // REWARDS state
   async assignedTo(rewardId) {
     return await this.contract.assignedTo(rewardId);
   }
@@ -85,258 +113,265 @@ export default class NFTREWARDSService {
     return await this.contract.claimed(rewardId);
   }
   async rewardInfo(rewardId) {
-    return await this.contract.rewardInfo(rewardId);
-  } // {assigned, isClaimed, uri}
+    return await this.contract.rewardInfo(rewardId, this.readOverrides || {});
+  }
   async rewardTokenUri(rewardId) {
     return await this.contract.rewardTokenUri(rewardId);
   }
-
-  // events / mystery
-  async events(idx) {
-    return await this.contract.events(idx);
-  } // struct
-  async eventEligibleCount(eventId) {
-    return await this.contract.eventEligibleCount(eventId);
+  async events(eventId) {
+    return await this.contract.events(eventId, this.readOverrides || {});
   }
-  async getEligibleAt(eventId, idx) {
-    return await this.contract.getEligibleAt(eventId, idx);
+  async eventEligibleCount(eventId) {
+    return await this.contract.eventEligibleCount(
+      eventId,
+      this.readOverrides || {},
+    );
+  }
+  async getEligibleAt(eventId, index) {
+    return await this.contract.getEligibleAt(
+      eventId,
+      index,
+      this.readOverrides || {},
+    );
   }
   async nextEventId() {
-    return await this.contract.nextEventId();
+    return await this.contract.nextEventId(this.readOverrides || {});
   }
   async nextRewardId() {
-    return await this.contract.nextRewardId();
+    return await this.contract.nextRewardId(this.readOverrides || {});
   }
-
-  // VRF / helpers
-  async VRFRequestToEvent(reqId) {
-    return await this.contract.VRFRequestToEvent(reqId);
+  async vrfRequestToEvent(requestId) {
+    return await this.contract.vrfRequestToEvent(requestId);
+  }
+  async VRFRequestToEvent(requestId) {
+    return await this.vrfRequestToEvent(requestId);
+  }
+  async vrfRouter() {
+    return await this.contract.vrfRouter(this.readOverrides || {});
   }
   async VRFRouter() {
-    return await this.contract.VRFRouter();
+    return await this.vrfRouter();
   }
-  async mainContract() {
-    return await this.contract.mainContract();
+  async pendingOwner() {
+    return await this.contract.pendingOwner(this.readOverrides || {});
+  }
+  async mysteryRetryDelay() {
+    return await this.contract.mysteryRetryDelay(this.readOverrides || {});
   }
   async owner() {
-    return await this.contract.owner();
+    return await this.contract.owner(this.readOverrides || {});
   }
-  async isApprovedForAll(ownerAddr, operatorAddr) {
-    return await this.contract.isApprovedForAll(ownerAddr, operatorAddr);
+  async isApprovedForAll(ownerAddress, operatorAddress) {
+    return await this.contract.isApprovedForAll(ownerAddress, operatorAddress);
   }
   async getApproved(tokenId) {
     return await this.contract.getApproved(tokenId);
   }
 
-  // ----------- Write (claim) -----------
   async _sendTx(methodName, args = [], overrides = {}) {
-    if (!this._signerConnected)
+    if (!this._signerConnected) {
       throw new Error(
         "Signer not connected. Call connectWithSigner(signer) first.",
       );
+    }
     try {
       const method = this.contract[methodName];
-      if (!method) throw new Error("Method not found: " + methodName);
-      // estimate gas kdyz jde
+      if (!method) throw new Error(`Method not found: ${methodName}`);
       let gasEstimate = null;
-      try {
+      if (typeof method.estimateGas === "function") {
+        gasEstimate = await method.estimateGas(...args, overrides);
+      } else if (
+        typeof this.contract.estimateGas?.[methodName] === "function"
+      ) {
         gasEstimate = await this.contract.estimateGas[methodName](
           ...args,
           overrides,
         );
-      } catch {
-        gasEstimate = null;
       }
       const gasLimit = withGasBuffer(gasEstimate);
-      const sendOverrides = gasLimit
-        ? { gasLimit, ...overrides }
-        : overrides;
-      const tx = await method(...args, sendOverrides);
-      const receipt = await tx.wait(1);
-      return receipt;
-    } catch (err) {
-      console.error(`_sendTx ${methodName} failed:`, err);
-      throw err;
+      const sendOverrides = gasLimit ? { gasLimit, ...overrides } : overrides;
+      const transaction = await method(...args, sendOverrides);
+      return await transaction.wait(1);
+    } catch (error) {
+      console.error(`_sendTx ${methodName} failed:`, error);
+      throw error;
     }
   }
 
-  /**
-   * claim(rewardId) - volá claim na kontraktu (nutný signer, reward musí být assigned to caller)
-   * @param {number|string} rewardId
-   */
   async claim(rewardId, overrides = {}) {
     return await this._sendTx("claim", [rewardId], overrides);
   }
 
-  // ----------- Batch / dashboard helpers -----------
+  async claimForWallet(rewardId, signer, walletAddress) {
+    if (!Number.isSafeInteger(Number(rewardId)) || Number(rewardId) < 1) {
+      throw new Error("Invalid reward ID.");
+    }
+    // Check the signing provider, not just the independent read-only RPC.
+    const network = await signer?.provider?.getNetwork();
+    if (Number(network?.chainId) !== 137) {
+      throw new Error(
+        "Switch the wallet to Polygon mainnet (137) before claiming.",
+      );
+    }
+    const signerAddress = await signer.getAddress();
+    if (
+      signerAddress.toLowerCase() !== String(walletAddress || "").toLowerCase()
+    ) {
+      throw new Error("Wallet account changed. Reconnect and try again.");
+    }
+    this.connectWithSigner(signer);
+    this.readOverrides = {};
+    const reward = normalizeRewardInfo(
+      await this.rewardInfo(rewardId),
+      rewardId,
+    );
+    if (String(reward.assigned).toLowerCase() !== signerAddress.toLowerCase()) {
+      throw new Error("Reward is not assigned to the connected wallet.");
+    }
+    if (reward.isClaimed) throw new Error("Reward is already claimed.");
+    return this.claim(rewardId);
+  }
 
-  /** Returns basic dashboard stats */
   async getAllStats() {
-    const calls = [
-      this.name(),
-      this.symbol(),
-      this.nextEventId(),
-      this.nextRewardId(),
-      this.VRFRouter(),
-      this.mainContract(),
-      this.owner(),
-    ];
     const [
       name,
       symbol,
       nextEventId,
       nextRewardId,
-      VRFRouter,
-      mainContract,
+      vrfRouter,
       owner,
-    ] = await Promise.all(calls);
+      pendingOwner,
+      mysteryRetryDelay,
+    ] = await Promise.all([
+      this.name(),
+      this.symbol(),
+      this.nextEventId(),
+      this.nextRewardId(),
+      this.vrfRouter(),
+      this.owner(),
+      this.pendingOwner(),
+      this.mysteryRetryDelay(),
+    ]);
+
     return {
       name,
       symbol,
       nextEventId,
       nextRewardId,
-      VRFRouter,
-      mainContract,
+      vrfRouter,
+      VRFRouter: vrfRouter,
       owner,
+      pendingOwner,
+      version: 2,
+      mysteryRetryDelay,
+      totalEventsCreated: Math.max(0, toSafeNumber(nextEventId) - 1),
+      totalRewardsCreated: Math.max(0, toSafeNumber(nextRewardId) - 1),
     };
   }
 
-  /**
-   * fetchEventsDetailed()
-   * - načte nextEventId(), poté pro každý eventId zavolá events(id) + eventEligibleCount + (volitelně) winners/eligible
-   * - WARNING: může být heavy pokud je eventů hodně
-   */
-  async fetchEventsDetailed({ includeEligible = false, limit = 100 } = {}) {
-    const nextIdBn = await this.nextEventId();
-    const nextId = Number(nextIdBn?.toString?.() ?? nextIdBn) || 0;
-    const start = Math.max(0, nextId - limit);
-    const ids = [];
-    for (let i = start; i < nextId; i++) ids.push(i);
+  async fetchEventsDetailed({
+    includeEligible = false,
+    limit = 100,
+    offset = 0,
+  } = {}) {
+    const nextId = toSafeNumber(await this.nextEventId());
+    const lastId = nextId - 1 - toSafeNumber(offset);
+    if (lastId < 1) return [];
+    const safeLimit = Math.max(1, toSafeNumber(limit, 100));
+    const startId = Math.max(1, lastId - safeLimit + 1);
+    const ids = Array.from(
+      { length: lastId - startId + 1 },
+      (_, index) => startId + index,
+    );
 
-    const promises = ids.map(async (id) => {
-      const evt = await this.events(id);
-      const eligibleCountBn = await this.eventEligibleCount(id);
-      const eligibleCount = Number(
-        eligibleCountBn?.toString?.() ?? eligibleCountBn,
+    return await mapWithConcurrency(ids, async (eventId) => {
+      const event = normalizeRewardEvent(await this.events(eventId), eventId);
+      const eligibleCount = toSafeNumber(
+        await this.eventEligibleCount(eventId),
       );
       let eligible = [];
       if (includeEligible && eligibleCount > 0) {
-        // opatrně - volá RPC eligibleCount krát
-        const ePromises = [];
-        for (let j = 0; j < eligibleCount; j++)
-          ePromises.push(this.getEligibleAt(id, j));
-        eligible = await Promise.all(ePromises);
+        const indexes = Array.from({ length: eligibleCount }, (_, idx) => idx);
+        eligible = await mapWithConcurrency(indexes, (index) =>
+          this.getEligibleAt(eventId, index),
+        );
       }
-      return {
-        eventId: id,
-        kind: evt.kind,
-        creator: evt.creator,
-        REWARDStartId: evt.REWARDStartId,
-        rewardCount: evt.rewardCount,
-        randomnessRequested: evt.randomnessRequested,
-        finished: evt.finished,
-        VRFRequestId: evt.VRFRequestId,
-        eligibleCount,
-        eligible,
-      };
+      return { ...event, eligibleCount, eligible };
     });
-
-    return await Promise.all(promises);
   }
 
-  /**
-   * fetchREWARDSRange(startId, endId)
-   * - načte rewardInfo pro rozsah (startId <= id < endId)
-   * - užitečné pro stránkování/renderer
-   */
   async fetchREWARDSRange(startId, endId) {
-    if (endId <= startId) return [];
-    const ids = [];
-    for (let i = startId; i < endId; i++) ids.push(i);
-    const promises = ids.map(async (id) => {
-      const info = await this.rewardInfo(id);
-      const assigned = info.assigned;
-      const isClaimed = info.isClaimed;
-      const uri = info.uri;
-      return { rewardId: id, assigned, isClaimed, uri };
-    });
-    return await Promise.all(promises);
+    const firstId = Math.max(1, toSafeNumber(startId, 1));
+    const lastExclusive = toSafeNumber(endId);
+    if (lastExclusive <= firstId) return [];
+    const ids = Array.from(
+      { length: lastExclusive - firstId },
+      (_, index) => firstId + index,
+    );
+    return await mapWithConcurrency(ids, async (rewardId) =>
+      normalizeRewardInfo(await this.rewardInfo(rewardId), rewardId),
+    );
   }
 
-  /**
-   * fetchUserAssignedREWARDS(userAddr, limit = 500)
-   * - iteruje rewardId od 0 do nextRewardId (max limit) a sbírá ty, které jsou assigned == userAddr
-   * - WARNING: je to on-chain scan; pro větší rozsahy použij backend indexer nebo event logy
-   */
-  async fetchUserAssignedREWARDS(userAddr, { limit = 1000 } = {}) {
-    const nextBn = await this.nextRewardId();
-    const next = Number(nextBn?.toString?.() ?? nextBn) || 0;
-    const max = Math.min(next, limit);
-    const res = [];
-    for (let i = 0; i < max; i++) {
-      const info = await this.rewardInfo(i);
-      if (
-        String(info.assigned).toLowerCase() === String(userAddr).toLowerCase()
-      ) {
-        res.push({ rewardId: i, isClaimed: info.isClaimed, uri: info.uri });
-      }
-    }
-    return res;
+  async fetchUserAssignedREWARDS(userAddress, { limit = 1000 } = {}) {
+    const total = Math.max(0, toSafeNumber(await this.nextRewardId()) - 1);
+    const count = Math.min(total, Math.max(0, toSafeNumber(limit, 1000)));
+    const rewards = await this.fetchREWARDSRange(1, count + 1);
+    const normalizedUser = String(userAddress || "").toLowerCase();
+    return rewards.filter(
+      (reward) =>
+        String(reward.assigned || "").toLowerCase() === normalizedUser,
+    );
   }
 
-  // ----------- Subscribe / Unsubscribe (block) -----------
   subscribeOnBlock(callback) {
     if (this._onBlockHandler) this.unsubscribeOnBlock();
     this._onBlockHandler = async (blockNumber) => {
       try {
-        const stats = await this.getAllStats();
-        callback(blockNumber, stats);
-      } catch (e) {
-        console.error("NFTREWARDSService subscribeOnBlock error", e);
+        callback(blockNumber, await this.getAllStats());
+      } catch (error) {
+        console.error("NFTREWARDSService subscribeOnBlock error", error);
       }
     };
     this.provider.on("block", this._onBlockHandler);
   }
 
   unsubscribeOnBlock() {
-    if (this._onBlockHandler) {
-      this.provider.off("block", this._onBlockHandler);
-      this._onBlockHandler = null;
-    }
+    if (!this._onBlockHandler) return;
+    this.provider.off("block", this._onBlockHandler);
+    this._onBlockHandler = null;
   }
 
-  // ----------- Utilities -----------
-  static bnToString(bn, decimals = 18) {
-    if (bn === undefined || bn === null) return "0";
+  static bnToString(value, decimals = 18) {
+    if (value === undefined || value === null) return "0";
     try {
-      return ethers.formatUnits(bn, decimals);
+      return ethers.formatUnits(value, decimals);
     } catch {
-      return bn.toString();
+      return value.toString();
     }
   }
 
-  static formatReward(rewardObj) {
+  static formatReward(reward) {
     return {
-      rewardId: rewardObj.rewardId,
-      assigned: rewardObj.assigned,
-      isClaimed: rewardObj.isClaimed,
-      uri: rewardObj.uri,
+      rewardId: reward.rewardId,
+      assigned: reward.assigned,
+      isClaimed: reward.isClaimed,
+      uri: reward.uri,
     };
   }
 
-  static formatEvent(evt) {
+  static formatEvent(event) {
     return {
-      eventId: evt.eventId,
-      kind: evt.kind,
-      creator: evt.creator,
-      REWARDStartId: evt.REWARDStartId,
-      rewardCount: evt.rewardCount,
-      randomnessRequested: evt.randomnessRequested,
-      finished: evt.finished,
-      VRFRequestId: evt.VRFRequestId,
-      eligibleCount: evt.eligibleCount,
-      eligible: evt.eligible,
+      eventId: event.eventId,
+      kind: event.kind,
+      creator: event.creator,
+      rewardStartId: event.rewardStartId,
+      rewardCount: event.rewardCount,
+      randomnessRequested: event.randomnessRequested,
+      finished: event.finished,
+      vrfRequestId: event.vrfRequestId,
+      eligibleCount: event.eligibleCount,
+      eligible: event.eligible,
     };
   }
 }
-

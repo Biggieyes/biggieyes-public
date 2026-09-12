@@ -1,0 +1,49 @@
+{
+  "checkedAt": "2026-09-09T02:55:04.796Z",
+  "chainId": 137,
+  "blockNumber": 93478314,
+  "passed": true,
+  "contract": "0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9",
+  "reader": "0x789873e6b1d944b207D2E76a71D95135be4e33c6",
+  "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "vrfRouter": "0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F",
+  "vrfConsumerApproved": true,
+  "masterConfigNftRewards": "0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9",
+  "nextEventId": "1",
+  "nextRewardId": "1",
+  "mysteryRetryDelay": "900",
+  "legacyVrfApprovalRetained": false,
+  "transactions": [
+    {
+      "label": "deploy BiggiNFTRewardsV2",
+      "hash": "0x27db25694de91385f7cfd6f6c20d971e144982d0d86faf7289e98e95d4a61084",
+      "blockNumber": 93475606,
+      "feePOL": "0.723476323516245216"
+    },
+    {
+      "label": "deploy BiggiNftRewardsReader",
+      "hash": "0x9cc73f2e962718f119eaaed7740d220b79520e9df731d682a214ac9195bb07f7",
+      "blockNumber": 93475609,
+      "feePOL": "0.227773086209052685"
+    },
+    {
+      "label": "approve V2 on BiggiVRFRouter",
+      "hash": "0x81bb4e7a83bb53a339305a528669b6ab4ea309249d71e3b001b283dae40d43dc",
+      "blockNumber": 93475675,
+      "feePOL": "0.01804833146914956"
+    },
+    {
+      "label": "update NFT rewards in MasterConfig",
+      "hash": "0x8f5b805ec1cae02466a1c535765ac9b4d4f7ce85293da7d8c43deab48df08eb3",
+      "blockNumber": 93476190,
+      "feePOL": "0.01803679031573661"
+    },
+    {
+      "label": "revoke legacy V1 reward-consumer approval",
+      "hash": "0x28115b8e0516aeae24df6eff0fd92c11f50bff473202b298041b9562c62be96f",
+      "blockNumber": 93478300,
+      "feePOL": "0.01086086010728082"
+    }
+  ],
+  "transactionsSentByThisCheck": 0
+}

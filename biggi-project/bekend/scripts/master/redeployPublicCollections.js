@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const hre = require("hardhat");
+const { nftRewardsVersion } = require("./nftRewardsVersion");
 
 const { ethers, network } = hre;
 const ZERO = ethers.constants.AddressZero;
@@ -230,6 +231,7 @@ async function main() {
     "function allowedMainCollections(address) view returns (bool)",
     "function setAllowedMainCollection(address,bool)",
   ], owner);
+  const legacyNftRewards = await nftRewardsVersion(required.NFT_REWARDS) === 1;
   const drip = new ethers.Contract(required.DRIP_DISTRIBUTOR, [
     "function owner() view returns (address)",
     "function collections(address) view returns (bool)",
@@ -354,7 +356,7 @@ async function main() {
         distributor: await distributor.collections(oldPublicAddress),
         treasury: await treasury.ecosystemBiggiCallers(oldPublicAddress),
         reserve: await reserve.notifyCallers(oldPublicAddress),
-        nftRewards: await nftRewards.allowedMainCollections(oldPublicAddress),
+        nftRewards: legacyNftRewards ? await nftRewards.allowedMainCollections(oldPublicAddress) : null,
         drip: await drip.collections(oldPublicAddress),
       },
     });
@@ -503,12 +505,12 @@ async function main() {
     await ensureBool(`Chapter ${state.chapterId} Distributor add new`, () => distributor.collections(fresh.address), true, () => distributor.addCollection(fresh.address, fees));
     await ensureBool(`Chapter ${state.chapterId} Treasury allow new`, () => treasury.ecosystemBiggiCallers(fresh.address), true, () => treasury.setEcosystemBiggiCaller(fresh.address, true, fees));
     await ensureBool(`Chapter ${state.chapterId} Reserve allow new`, () => reserve.notifyCallers(fresh.address), true, () => reserve.setNotifyCaller(fresh.address, true, fees));
-    await ensureBool(`Chapter ${state.chapterId} NFTRewards allow new`, () => nftRewards.allowedMainCollections(fresh.address), true, () => nftRewards.setAllowedMainCollection(fresh.address, true, fees));
+    if (legacyNftRewards) await ensureBool(`Chapter ${state.chapterId} NFTRewards allow new`, () => nftRewards.allowedMainCollections(fresh.address), true, () => nftRewards.setAllowedMainCollection(fresh.address, true, fees));
     await ensureBool(`Chapter ${state.chapterId} Drip allow new`, () => drip.collections(fresh.address), true, () => drip.setCollection(fresh.address, true, fees));
     await ensureBool(`Chapter ${state.chapterId} Distributor remove old`, () => distributor.collections(state.oldPublic), false, () => distributor.removeCollection(state.oldPublic, fees));
     await ensureBool(`Chapter ${state.chapterId} Treasury remove old`, () => treasury.ecosystemBiggiCallers(state.oldPublic), false, () => treasury.setEcosystemBiggiCaller(state.oldPublic, false, fees));
     await ensureBool(`Chapter ${state.chapterId} Reserve remove old`, () => reserve.notifyCallers(state.oldPublic), false, () => reserve.setNotifyCaller(state.oldPublic, false, fees));
-    await ensureBool(`Chapter ${state.chapterId} NFTRewards remove old`, () => nftRewards.allowedMainCollections(state.oldPublic), false, () => nftRewards.setAllowedMainCollection(state.oldPublic, false, fees));
+    if (legacyNftRewards) await ensureBool(`Chapter ${state.chapterId} NFTRewards remove old`, () => nftRewards.allowedMainCollections(state.oldPublic), false, () => nftRewards.setAllowedMainCollection(state.oldPublic, false, fees));
     await ensureBool(`Chapter ${state.chapterId} Drip remove old`, () => drip.collections(state.oldPublic), false, () => drip.setCollection(state.oldPublic, false, fees));
     resumeChapter.migrated = true;
     resumeChapter.migratedAt = new Date().toISOString();
@@ -546,7 +548,7 @@ async function main() {
       fresh.blockInfos(0),
     ]);
     const expectedFullyConfigured = state.targetUris.every(Boolean);
-    const valid = maxSupply.eq(PUBLIC_SUPPLY) && asNumber(minted) === 0 && paused && metadata[0].eq(PUBLIC_SUPPLY) && metadata[1] === expectedFullyConfigured && metadata[2] && same(registryCollections[1], fresh.address) && same(provider, state.vrf) && same(boundController, required.CHAPTER_CONTROLLER) && boundChapter.eq(state.chapterId) && publicPrice.gt(0) && publicPrice.eq(vrfPrice) && localBlockInfo.basePrice.eq(0) && localBlockInfo.priceIncrease.eq(0) && localBlockInfo.currentPrice.eq(0) && await distributor.collections(fresh.address) && !(await distributor.collections(state.oldPublic)) && await treasury.ecosystemBiggiCallers(fresh.address) && !(await treasury.ecosystemBiggiCallers(state.oldPublic)) && await reserve.notifyCallers(fresh.address) && !(await reserve.notifyCallers(state.oldPublic)) && await nftRewards.allowedMainCollections(fresh.address) && !(await nftRewards.allowedMainCollections(state.oldPublic)) && await drip.collections(fresh.address) && !(await drip.collections(state.oldPublic)) && await tokenRewards.isAllowedCollection(fresh.address) && !(await collectionRewards.isEligibleCollection(fresh.address));
+    const valid = maxSupply.eq(PUBLIC_SUPPLY) && asNumber(minted) === 0 && paused && metadata[0].eq(PUBLIC_SUPPLY) && metadata[1] === expectedFullyConfigured && metadata[2] && same(registryCollections[1], fresh.address) && same(provider, state.vrf) && same(boundController, required.CHAPTER_CONTROLLER) && boundChapter.eq(state.chapterId) && publicPrice.gt(0) && publicPrice.eq(vrfPrice) && localBlockInfo.basePrice.eq(0) && localBlockInfo.priceIncrease.eq(0) && localBlockInfo.currentPrice.eq(0) && await distributor.collections(fresh.address) && !(await distributor.collections(state.oldPublic)) && await treasury.ecosystemBiggiCallers(fresh.address) && !(await treasury.ecosystemBiggiCallers(state.oldPublic)) && await reserve.notifyCallers(fresh.address) && !(await reserve.notifyCallers(state.oldPublic)) && (!legacyNftRewards || (await nftRewards.allowedMainCollections(fresh.address) && !(await nftRewards.allowedMainCollections(state.oldPublic)))) && await drip.collections(fresh.address) && !(await drip.collections(state.oldPublic)) && await tokenRewards.isAllowedCollection(fresh.address) && !(await collectionRewards.isEligibleCollection(fresh.address));
     if (!valid) throw new Error(`Chapter ${state.chapterId} post-migration verification failed`);
   }
 

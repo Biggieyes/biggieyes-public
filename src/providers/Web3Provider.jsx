@@ -75,11 +75,11 @@ function applyPollingInterval(provider) {
 const isDirectMetaMaskProvider = (provider) =>
   Boolean(
     provider &&
-      provider.isMetaMask &&
-      !provider.isBraveWallet &&
-      !provider.isCoinbaseWallet &&
-      !provider.isRabby &&
-      !provider.isTrust,
+    provider.isMetaMask &&
+    !provider.isBraveWallet &&
+    !provider.isCoinbaseWallet &&
+    !provider.isRabby &&
+    !provider.isTrust,
   );
 
 const getProviderErrorCode = (error) =>
@@ -108,14 +108,24 @@ export function Web3Provider({ children }) {
   const [injectedVersion, setInjectedVersion] = React.useState(0);
   const resumeTimerRef = React.useRef(null);
   const explicitConnectionRef = React.useRef(false);
+  const sessionEpochRef = React.useRef(0);
+  const refreshIdRef = React.useRef(0);
 
   React.useEffect(() => {
     startInjectedProviderDiscovery();
+    return () => {
+      sessionEpochRef.current += 1;
+      refreshIdRef.current += 1;
+    };
   }, []);
 
   /** Refresh state from the current wallet and attach signer + provider. */
   const refresh = React.useCallback(async () => {
+    const refreshId = ++refreshIdRef.current;
+    const epoch = sessionEpochRef.current;
     const injected = pickInjectedProvider();
+    const isCurrent = () =>
+      refreshId === refreshIdRef.current && epoch === sessionEpochRef.current;
     const isExplicitConnection =
       explicitConnectionRef.current || hasInjectedProviderOverride();
     if (!injected || !isExplicitConnection) {
@@ -143,11 +153,13 @@ export function Web3Provider({ children }) {
       const normalizedChainId =
         typeof net?.chainId === "bigint" ? Number(net.chainId) : net?.chainId;
 
+      if (!isCurrent() || pickInjectedProvider() !== injected) return;
       setSigner(nextSigner);
       setProvider(nextProvider);
       setAccount(addr || "");
       setChainId(normalizedChainId);
     } catch {
+      if (!isCurrent()) return;
       setProvider(null);
       setSigner(null);
       setAccount("");
@@ -159,11 +171,17 @@ export function Web3Provider({ children }) {
     if (!getWalletConnectResumeExpected()) return undefined;
 
     let cancelled = false;
+    const epoch = sessionEpochRef.current;
     setIsConnecting(true);
 
     restoreWalletConnectSessionLazy()
       .then((restoredSession) => {
-        if (cancelled || !restoredSession?.provider) return;
+        if (
+          cancelled ||
+          epoch !== sessionEpochRef.current ||
+          !restoredSession?.provider
+        )
+          return;
         explicitConnectionRef.current = true;
         setWalletConnectResumeExpected(true);
         setInjectedProvider(restoredSession.provider);
@@ -173,7 +191,8 @@ export function Web3Provider({ children }) {
         setChainId(restoredSession.chainId || ACTIVE_CHAIN.chainId);
       })
       .finally(() => {
-        if (!cancelled) setIsConnecting(false);
+        if (!cancelled && epoch === sessionEpochRef.current)
+          setIsConnecting(false);
       });
 
     return () => {
@@ -206,6 +225,8 @@ export function Web3Provider({ children }) {
 
   /** Primary connect for MetaMask/injected. */
   const connectMetaMask = React.useCallback(async () => {
+    const epoch = ++sessionEpochRef.current;
+    refreshIdRef.current += 1;
     clearWalletConnectResumeExpected();
     const metaMaskCandidates = getInjectedProviderCandidates({
       preferred: getInjectedProvider(),
@@ -241,6 +262,7 @@ export function Web3Provider({ children }) {
           const accounts = await requestInjectedAccounts(candidate, {
             forceSelection: true,
           });
+          if (epoch !== sessionEpochRef.current) return false;
           if (Array.isArray(accounts) && accounts[0]) {
             eth = candidate;
             break;
@@ -263,6 +285,7 @@ export function Web3Provider({ children }) {
           const accounts = await requestInjectedAccounts(window.ethereum, {
             forceSelection: true,
           });
+          if (epoch !== sessionEpochRef.current) return false;
           if (Array.isArray(accounts) && accounts[0]) {
             eth = window.ethereum;
           }
@@ -280,6 +303,7 @@ export function Web3Provider({ children }) {
         return false;
       }
 
+      if (epoch !== sessionEpochRef.current) return false;
       explicitConnectionRef.current = true;
       clearWalletConnectResumeExpected();
       setInjectedProvider(eth);
@@ -290,12 +314,13 @@ export function Web3Provider({ children }) {
         typeof chainHex === "string"
           ? Number.parseInt(chainHex, 16)
           : undefined;
+      if (epoch !== sessionEpochRef.current) return false;
       if (currentId !== ACTIVE_CHAIN.chainId) {
         await ensureChain(ACTIVE_CHAIN.chainId);
       } else {
         await refresh();
       }
-      return true;
+      return epoch === sessionEpochRef.current;
     } catch (err) {
       const code = getProviderErrorCode(err);
       if (code === 4001 || code === "ACTION_REJECTED") return false;
@@ -304,11 +329,13 @@ export function Web3Provider({ children }) {
       console.error("Web3Provider.connectMetaMask", err);
       return false;
     } finally {
-      setIsConnecting(false);
+      if (epoch === sessionEpochRef.current) setIsConnecting(false);
     }
   }, [ensureChain, refresh]);
 
   const disconnect = React.useCallback(() => {
+    sessionEpochRef.current += 1;
+    refreshIdRef.current += 1;
     explicitConnectionRef.current = false;
     clearWalletConnectResumeExpected();
     clearInjectedProvider();
@@ -322,12 +349,16 @@ export function Web3Provider({ children }) {
     }
     setSigner(null);
     setAccount("");
+    setIsConnecting(false);
   }, []);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return undefined;
     const onInjectedChanged = () => setInjectedVersion((v) => v + 1);
-    window.addEventListener("biggi:injected-provider-changed", onInjectedChanged);
+    window.addEventListener(
+      "biggi:injected-provider-changed",
+      onInjectedChanged,
+    );
     return () =>
       window.removeEventListener(
         "biggi:injected-provider-changed",
@@ -364,6 +395,7 @@ export function Web3Provider({ children }) {
     eth.on?.("disconnect", onDisconnect);
     eth.on?.("session_delete", onDisconnect);
     return () => {
+      refreshIdRef.current += 1;
       eth.removeListener?.("accountsChanged", onAccountsChanged);
       eth.removeListener?.("chainChanged", onChainChanged);
       eth.removeListener?.("disconnect", onDisconnect);

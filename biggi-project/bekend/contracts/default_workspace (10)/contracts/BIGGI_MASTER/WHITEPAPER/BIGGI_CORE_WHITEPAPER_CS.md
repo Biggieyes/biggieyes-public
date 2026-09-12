@@ -419,17 +419,24 @@ Ve snapshotu měl inicializovaný týden rozpočet `50 000 BIGGI` a sazbu
 
 ### 11.2 NFT Rewards
 
-`BiggiNftRewards` je samostatný ERC-721 odměnový systém. Jeho aktuálně dosažitelné
-produkční větve jsou manuální odměny vytvořené ownerem a vítězové mystery eventů
-vybraní přes VRF z unikátního seznamu způsobilých adres. Přiřazený uživatel mintne
-odměnové NFT voláním `claim(rewardId)`.
+`BiggiNFTRewardsV2`, nasazený na Polygonu 9. září 2026, je samostatný ERC-721
+odměnový systém. Owner vytváří manuální odměny nebo mystery eventy s URI metadat
+a deduplikovaným seznamem způsobilých adres. V jednom mystery eventu získá každý
+vítěz nejvýše jednu odměnu. NFT může mintnout pouze přiřazená peněženka pomocí
+`claim(rewardId)`, pro každou odměnu právě jednou.
 
-Nasazený kontrakt obsahuje také `createCharacterReward`, ale tuto funkci smí volat
-jen povolená kolekce a aktuální kontrakty `BiggiMain` ani `BiggiMain2` ji nevolají.
-Deset character NFT za dokončení bloků mintuje přímo každý `BiggiMain`; jde o
-oddělenou mechaniku. Owner-only nouzové dokončení mystery eventu může určit výsledek
-bez on-chain vynuceného timeoutu. Do nasazení hardenované verze NFT Rewards proto
-zůstává explicitní důvěryhodnostní hranicí ownera.
+Losování používá neměnný schválený `BiggiVRFRouter`. Opakování čekajícího požadavku
+vyžaduje uplynutí on-chain lhůty (výchozí hodnota 900 sekund). Callback nahrazeného
+požadavku se odmítne a request ID nelze znovu použít. V2 nemá nouzové losování
+s náhodností zvolenou ownerem. Owner však stále určuje manuální příjemce,
+způsobilost, URI při vytvoření, načasování požadavků a retry lhůtu. VRF proto
+neodstraňuje nutnost důvěry ve správu soutěže.
+
+V2 používá dvoukrokové předání vlastnictví, zakazuje vzdání se vlastnictví
+a odmítá přímé vklady POL. Nemá character-reward větev ani allowlist kolekcí.
+Deset character NFT za dokončení bloků nadále mintuje přímo každý `BiggiMain`;
+jde o oddělenou mechaniku. Frontend pro V2 byl zveřejněný 9. září 2026;
+následně bylo odebrané VRF consumer oprávnění staré V1.
 
 ## 12. Integrita metadat a herního stavu
 
@@ -514,7 +521,7 @@ neznamená, že je veřejný prodej nebo redeem aktivní.
 | MultiCollectionDistributor | `0xCE892698159D8D799D5eF7f0dF0111487511fD22` |
 | Collection Rewards | `0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43` |
 | Token Rewards | `0xA455775BBe0BC863f644516147b95Ef5103b29FA` |
-| NFT Rewards | `0x939Df533b80943298E15ad4c8F188102954f34FF` |
+| NFT Rewards V2 | `0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9` |
 
 Kanonická adresní data zůstávají v `biggi-project/bekend/addresses.master.json`.
 
@@ -539,7 +546,7 @@ Primární zdrojové kontrakty:
 - `CORE/BiggiChapterController.sol`
 - `CORE/BiggiCollectionRewards.sol`
 - `CORE/BiggiTokenRewards.sol`
-- `CORE/BiggiNftRewards.sol`
+- `CORE/BiggiNftRewardsV2.sol`
 - `CORE/BiggiMultiCollectionDistributor.sol`
 
 Každá pozdější změna konfigurace nebo deploymentu musí aktualizovat verzi a

@@ -1,7 +1,6 @@
 import * as React from "react";
 import { FALLBACK_VALUE } from "./COLLECTIONBlocksGrid.constants";
-import PanelInfoModal from "@/components/common/PanelInfoModal";
-import PanelInfoButton from "@/components/common/PanelInfoButton";
+import CollectionStructure from "./CollectionStructure";
 
 const SectionHeader = ({ label, accent = "#ffe800" }) => (
   <div
@@ -30,9 +29,10 @@ const COLLECTION1Panel = React.memo(
     topMintedName,
     additionalText,
     renderChapterSwitcher,
+    chapterId,
+    chapterName,
+    comingSoon = false,
   }) => {
-    const [schemaInfoOpen, setSchemaInfoOpen] = React.useState(false);
-
     const nf0 = React.useMemo(
       () => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }),
       [],
@@ -94,27 +94,6 @@ const COLLECTION1Panel = React.memo(
       lowestPriceName,
     ]);
 
-    const schemaInfoItems = React.useMemo(
-      () => [
-        {
-          label: "Rarity line",
-          description:
-            "Top row maps 10 block tiers from ORANGE to RAINBOW with base price, NFT count, linked block, and growth.",
-        },
-        {
-          label: "Background line",
-          description:
-            "Bottom row maps 10 backgrounds with fixed mint bonus percentages (+5% to +50%).",
-        },
-        {
-          label: "Mint formula",
-          description:
-            "Final Mint Price = Block Price + (Block Price x Background Bonus%).",
-        },
-      ],
-      [],
-    );
-
     if (!blockEntries || blockEntries.length === 0) {
       return (
         <div className="collection-grid__panel">
@@ -132,8 +111,8 @@ const COLLECTION1Panel = React.memo(
             {heroStats.map((stat) => (
               <article key={stat.label} className="collection-hero__card">
                 <span className="collection-hero__label">{stat.label}</span>
-                <span className="collection-hero__value">{stat.value}</span>
-                <span className="collection-hero__hint">{stat.hint}</span>
+                <span className="collection-hero__value">{comingSoon ? "SOON" : stat.value}</span>
+                <span className="collection-hero__hint">{comingSoon ? "Future chapter" : stat.hint}</span>
               </article>
             ))}
           </div>
@@ -150,26 +129,11 @@ const COLLECTION1Panel = React.memo(
         </section>
 
         <SectionHeader label="Structure" accent="#ff8a00" />
-        <section className="collection-grid__schema-image-wrap">
-          <PanelInfoButton
-            className="collection-grid__schema-info-btn"
-            onClick={() => setSchemaInfoOpen(true)}
-            ariaLabel="Open structure schema info"
-            title="Structure info"
-          />
-          <img
-            className="collection-grid__schema-image"
-            src="/images/schemas/collection-structure-schema.png?v=20260224b"
-            alt="Collection structure schema PNG with ten rarity blocks, base price, NFT count, linked block, and growth percent."
-            loading="lazy"
-            decoding="async"
-          />
-        </section>
-        <PanelInfoModal
-          open={schemaInfoOpen}
-          onClose={() => setSchemaInfoOpen(false)}
-          title="Structure schema info"
-          items={schemaInfoItems}
+        <CollectionStructure
+          blockEntries={blockEntries}
+          chapterId={chapterId}
+          chapterName={chapterName}
+          comingSoon={comingSoon}
         />
       </>
     );
@@ -181,6 +145,13 @@ const COLLECTION1Panel = React.memo(
       prevProps.blockPrices === nextProps.blockPrices &&
       prevProps.blockMints === nextProps.blockMints &&
       prevProps.stats === nextProps.stats &&
+      prevProps.chapterId === nextProps.chapterId &&
+      prevProps.chapterName === nextProps.chapterName &&
+      prevProps.comingSoon === nextProps.comingSoon &&
+      prevProps.renderBlockCardsGrid === nextProps.renderBlockCardsGrid &&
+      prevProps.highestPriceName === nextProps.highestPriceName &&
+      prevProps.lowestPriceName === nextProps.lowestPriceName &&
+      prevProps.topMintedName === nextProps.topMintedName &&
       prevProps.additionalText === nextProps.additionalText &&
       prevProps.renderChapterSwitcher === nextProps.renderChapterSwitcher
     );

@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const hre = require("hardhat");
+const { nftRewardsVersion } = require("./nftRewardsVersion");
 
 const { ethers, network } = hre;
 const ZERO = ethers.constants.AddressZero;
@@ -472,14 +473,18 @@ async function main() {
 
   if (nftRewards !== ZERO) {
     const nftRewardsContract = await ethers.getContractAt("BiggiNFTRewards", nftRewards);
+    const legacyRewards = await nftRewardsVersion(nftRewards) === 1;
+    if (!legacyRewards && vrfRouterAddress !== ZERO && (await nftRewardsContract.vrfRouter()).toLowerCase() !== vrfRouterAddress.toLowerCase()) {
+      throw new Error("Immutable NFT Rewards V2 router mismatch");
+    }
     try {
-      await maybeTx(() => nftRewardsContract.setMainContract(mainCollection.address));
+      if (legacyRewards) await maybeTx(() => nftRewardsContract.setMainContract(mainCollection.address));
     } catch (e) {
       console.warn(`WARN: NFT_REWARDS.setMainContract skipped: ${e.message}`);
     }
     if (vrfRouterAddress !== ZERO) {
       try {
-        await maybeTx(() => nftRewardsContract.setVrfRouter(vrfRouterAddress));
+        if (legacyRewards) await maybeTx(() => nftRewardsContract.setVrfRouter(vrfRouterAddress));
       } catch (e) {
         console.warn(`WARN: NFT_REWARDS.setVrfRouter skipped: ${e.message}`);
       }
@@ -490,14 +495,14 @@ async function main() {
         console.warn(`WARN: VRF_ROUTER.setRewardConsumerApproval skipped: ${e.message}`);
       }
     }
-    if (registryAddress !== ZERO) {
+    if (legacyRewards && registryAddress !== ZERO) {
       try {
         await maybeTx(() => nftRewardsContract.setRegistry(registryAddress));
       } catch (e) {
         console.warn(`WARN: NFT_REWARDS.setRegistry skipped: ${e.message}`);
       }
     }
-    if (publicCollectionAddress !== ZERO) {
+    if (legacyRewards && publicCollectionAddress !== ZERO) {
       try {
         await maybeTx(() => nftRewardsContract.setAllowedMainCollection(publicCollectionAddress, true));
       } catch (e) {

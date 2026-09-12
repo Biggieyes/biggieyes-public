@@ -12,6 +12,7 @@
 //   MASTER_ADDRESSES_FILE=./addresses.json npx hardhat run --config hardhat.biggi-master.cjs scripts/master/checkMasterStatus.js --network <net>
 
 const fs = require("fs");
+const { nftRewardsVersion } = require("./nftRewardsVersion");
 const path = require("path");
 const hre = require("hardhat");
 const { ethers, network } = hre;
@@ -1583,13 +1584,14 @@ async function main() {
       "function name() view returns (string)",
       "function symbol() view returns (string)",
     ]);
-    const mainContract = await safe("NFT_REWARDS.mainContract", () => nftRewards.mainContract());
+    const version = await nftRewardsVersion(addresses.NFT_REWARDS);
+    const mainContract = version === 1 ? await safe("NFT_REWARDS.mainContract", () => nftRewards.mainContract()) : null;
     const vrfRouter = await safe("NFT_REWARDS.vrfRouter", () => nftRewards.vrfRouter());
-    const registryAddr = await safe("NFT_REWARDS.registry", () => nftRewards.registry());
-    const mainAllowed = isAddress(addresses.MAIN)
+    const registryAddr = version === 1 ? await safe("NFT_REWARDS.registry", () => nftRewards.registry()) : null;
+    const mainAllowed = version === 1 && isAddress(addresses.MAIN)
       ? await safe("NFT_REWARDS.allowedMain[main]", () => nftRewards.allowedMainCollections(addresses.MAIN))
       : null;
-    const main2Allowed = isAddress(addresses.MAIN2)
+    const main2Allowed = version === 1 && isAddress(addresses.MAIN2)
       ? await safe("NFT_REWARDS.allowedMain[main2]", () => nftRewards.allowedMainCollections(addresses.MAIN2))
       : null;
     await safe("NFT_REWARDS.nextEventId", () => nftRewards.nextEventId());
@@ -1598,13 +1600,13 @@ async function main() {
     await safe("NFT_REWARDS.symbol", () => nftRewards.symbol());
 
     if (isAddress(addresses.MAIN)) {
-      expectAddressMatch("NFT_REWARDS.mainContract == MAIN", mainContract, addresses.MAIN, issues);
+      if (version === 1) expectAddressMatch("NFT_REWARDS.mainContract == MAIN", mainContract, addresses.MAIN, issues);
     }
     if (isAddress(addresses.VRF_ROUTER)) {
       expectAddressMatch("NFT_REWARDS.vrfRouter == VRF_ROUTER", vrfRouter, addresses.VRF_ROUTER, issues);
     }
     if (isAddress(addresses.REGISTRY)) {
-      expectAddressMatch("NFT_REWARDS.registry == REGISTRY", registryAddr, addresses.REGISTRY, issues);
+      if (version === 1) expectAddressMatch("NFT_REWARDS.registry == REGISTRY", registryAddr, addresses.REGISTRY, issues);
     }
     if (strict && mainAllowed != null) {
       expectBool("NFT_REWARDS.allowedMain[main]", mainAllowed, true, issues);
@@ -1621,6 +1623,7 @@ async function main() {
     ]);
     const nftRewardsAddr = await safe("NFT_REWARDS_READER.nftRewards", () => reader.nftRewards());
     const status = await safe("NFT_REWARDS_READER.status", () => reader.getStatus());
+    const version = await nftRewardsVersion(addresses.NFT_REWARDS);
 
     if (isAddress(addresses.NFT_REWARDS)) {
       expectAddressMatch("NFT_REWARDS_READER.nftRewards == NFT_REWARDS", nftRewardsAddr, addresses.NFT_REWARDS, issues);
@@ -1629,10 +1632,12 @@ async function main() {
       }
     }
     if (status && isAddress(addresses.MAIN)) {
-      expectAddressMatch("NFT_REWARDS_READER.status.main == MAIN", status.main, addresses.MAIN, issues);
+      if (version === 2) expectBool("NFT_REWARDS_READER.status.main absent in V2", status.main === ZERO, true, issues);
+      else expectAddressMatch("NFT_REWARDS_READER.status.main == MAIN", status.main, addresses.MAIN, issues);
     }
     if (status && isAddress(addresses.REGISTRY)) {
-      expectAddressMatch("NFT_REWARDS_READER.status.registry == REGISTRY", status.registry, addresses.REGISTRY, issues);
+      if (version === 2) expectBool("NFT_REWARDS_READER.status.registry absent in V2", status.registry === ZERO, true, issues);
+      else expectAddressMatch("NFT_REWARDS_READER.status.registry == REGISTRY", status.registry, addresses.REGISTRY, issues);
     }
   });
 

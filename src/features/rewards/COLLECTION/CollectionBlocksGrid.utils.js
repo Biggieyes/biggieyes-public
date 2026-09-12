@@ -50,14 +50,14 @@ export const computeDiff = (currentPrice, basePrice) => {
   if (Math.abs(delta) < Number.EPSILON) return null;
   const percent = basePrice === 0 ? 0 : (delta / basePrice) * 100;
   return {
-    value: `${delta >= 0 ? "+" : ""}${Math.abs(delta).toLocaleString(
+    value: `${delta >= 0 ? "+" : "-"}${Math.abs(delta).toLocaleString(
       undefined,
       {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       },
     )} POL`,
-    percent: `${delta >= 0 ? "+" : ""}${Math.abs(percent).toLocaleString(
+    percent: `${delta >= 0 ? "+" : "-"}${Math.abs(percent).toLocaleString(
       undefined,
       {
         minimumFractionDigits: 2,
@@ -79,6 +79,40 @@ export const isValidPrice = (price) =>
  */
 export const isValidCount = (count) =>
   typeof count === "number" && Number.isFinite(count);
+
+export const summarizeCollectionBlocks = (prices, minted) => {
+  const completeEntries = (values) =>
+    Array.isArray(values) &&
+    values.length === 10 &&
+    Array.from(values).every(Number.isFinite)
+      ? values.map((value, index) => ({ value, index }))
+      : [];
+  const priceEntries = completeEntries(prices);
+  const mintEntries = completeEntries(minted);
+  return {
+    totalMinted: mintEntries.length
+      ? mintEntries.reduce((sum, entry) => sum + entry.value, 0)
+      : null,
+    averagePrice: priceEntries.length
+      ? priceEntries.reduce((sum, entry) => sum + entry.value, 0) /
+        priceEntries.length
+      : null,
+    highestPrice: priceEntries.reduce(
+      (highest, entry) =>
+        highest && highest.value > entry.value ? highest : entry,
+      null,
+    ),
+    lowestPrice: priceEntries.reduce(
+      (lowest, entry) =>
+        lowest && lowest.value < entry.value ? lowest : entry,
+      null,
+    ),
+    topMinted: mintEntries.reduce(
+      (top, entry) => (top && top.value > entry.value ? top : entry),
+      null,
+    ),
+  };
+};
 
 export const isExplicitlyEmptyContractCode = (code) => {
   if (typeof code !== "string") return false;
@@ -120,15 +154,16 @@ export const readCollectionBlockSnapshot = async (contract, blockNumber) => {
   let priceWei = helperPrice;
   let mintedRaw = helperMinted;
 
-  if (priceWei == null) {
+  if (priceWei == null && typeof contract.getEffectiveBlockPrice === "function") {
+    // Public mint uses its chapter's price provider, not its local blockInfos price.
+    priceWei = await tryRead(() => contract.getEffectiveBlockPrice(blockId));
+  } else if (priceWei == null) {
     priceWei = info?.currentPrice ?? info?.[2] ?? null;
   }
   if (mintedRaw == null && typeof contract.blockMintCounts === "function") {
     mintedRaw = await tryRead(() => contract.blockMintCounts(storageIndex));
   }
-  if (mintedRaw == null) {
-    mintedRaw = info?.mintCount ?? info?.[3] ?? null;
-  }
+  // CORE updates blockMintCounts, not the legacy mintCount field in blockInfos.
 
   return { basePriceWei, priceWei, mintedRaw };
 };

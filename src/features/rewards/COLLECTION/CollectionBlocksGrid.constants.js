@@ -55,24 +55,24 @@ export const INFO_CONCEPTS = [
   {
     concept: "Blocks",
     explanation:
-      "Each block groups NFTs by eye colour. Tap a card to open the full preview.",
+      "Ten eye-color blocks contain 550 VRF NFTs per chapter: 100 ORANGE down to 10 RAINBOW. The Public companion has 100 fixed NFTs, ten per block.",
   },
   {
     concept: "Base vs live price",
     explanation:
-      "Base and live prices are read from the active chapter contract. Live price can rise with VRF mints and matching background usage.",
+      "Starting block prices are 100-1,000 POL. Live prices belong to the selected chapter. Each VRF redeem boosts the block matching its background color, regardless of eye color. The owner can also set a current price directly.",
   },
   {
     concept: "Minted",
-    explanation: "Live on-chain minted count per block.",
+    explanation: "On-chain minted count per block in the selected collection. Missing reads are shown as --, not zero.",
   },
   {
-    concept: "Rows per block",
-    explanation: "Different blocks use different preview grid rows.",
+    concept: "Background variants",
+    explanation: "Each VRF block has ten character IDs. ORANGE has ten backgrounds per character, BLACK nine, continuing down to RAINBOW with one. Public NFTs have no selectable background variants.",
   },
   {
-    concept: "Previews",
-    explanation: "Images are loaded from /images/blocks/<BLOCK>/.",
+    concept: "Bonus vs price growth",
+    explanation: "The 5-50% background bonus sets the recorded VRF NFT value. It is separate from the 2-10% permanent growth of the same-color block price, and is not an extra payment at redeem. Public primary mint uses its chapter's live VRF block price without a background bonus.",
   },
 ];
 

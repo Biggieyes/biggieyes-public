@@ -58,6 +58,7 @@ import {
   readCollectionBlockSnapshot,
   normalizeNftInfo,
   normalizeMetadataConsistency,
+  summarizeCollectionBlocks,
 } from "./COLLECTIONBlocksGrid.utils";
 import { mapLimit } from "@/shared/utils/shared";
 
@@ -525,8 +526,10 @@ function COLLECTIONBlocksGrid({
           displayedChapter.chapterId === 1 &&
           activeCollectionKey === "COLLECTION1" &&
           Array.isArray(blockPricesProp) &&
+          blockPricesProp.length >= MAX_BLOCKS &&
           blockPricesProp.slice(0, MAX_BLOCKS).every(Number.isFinite) &&
           Array.isArray(blockMintCountsProp) &&
+          blockMintCountsProp.length >= MAX_BLOCKS &&
           blockMintCountsProp.slice(0, MAX_BLOCKS).every(Number.isFinite);
 
         if (canReuseParentStats) {
@@ -810,42 +813,8 @@ function COLLECTIONBlocksGrid({
   );
 
   const stats = React.useMemo(() => {
-    const priceEntries = normalizedPrices
-      .map((value, index) => ({ value, index }))
-      .filter(({ value }) => Number.isFinite(value));
-
-    const mintEntries = normalizedMintCounts
-      .map((value, index) => ({ value, index }))
-      .filter(({ value }) => Number.isFinite(value));
-
-    const totalMinted = mintEntries.reduce((acc, { value }) => acc + value, 0);
-
-    const averagePrice = priceEntries.length
-      ? Math.round(
-          priceEntries.reduce((acc, { value }) => acc + value, 0) /
-            priceEntries.length,
-        )
-      : null;
-
-    const highestPrice = priceEntries.reduce(
-      (acc, e) => (acc && acc.value > e.value ? acc : e),
-      null,
-    );
-    const lowestPrice = priceEntries.reduce(
-      (acc, e) => (acc && acc.value < e.value ? acc : e),
-      null,
-    );
-    const topMinted = mintEntries.reduce(
-      (acc, e) => (acc && acc.value > e.value ? acc : e),
-      null,
-    );
-
     return {
-      totalMinted,
-      averagePrice,
-      highestPrice,
-      lowestPrice,
-      topMinted,
+      ...summarizeCollectionBlocks(normalizedPrices, normalizedMintCounts),
       blocksWithData: blockEntries.filter((entry) => entry.hasData).length,
     };
   }, [normalizedPrices, normalizedMintCounts, blockEntries]);
@@ -866,8 +835,8 @@ function COLLECTIONBlocksGrid({
       metadataConfiguredCount: COLLECTIONMeta.configuredCount ?? null,
       metadataFullyConfigured: COLLECTIONMeta.fullyConfigured ?? null,
       rewardMatrixConsistent: COLLECTIONMeta.rewardMatrixConsistent ?? null,
-      chapterActive: displayedChapterSnapshot?.active ?? false,
-      publicUnlocked: displayedChapterSnapshot?.publicUnlocked ?? false,
+      chapterActive: displayedChapterSnapshot?.active ?? null,
+      publicUnlocked: displayedChapterSnapshot?.publicUnlocked ?? null,
     }),
     [COLLECTIONMeta, displayedChapterSnapshot],
   );
@@ -1436,6 +1405,7 @@ function COLLECTIONBlocksGrid({
   const renderCOLLECTIONTwo = React.useCallback(
     () => (
       <COLLECTION2Panel
+        chapterName={displayedChapter.chapterId === 1 ? "Originals" : displayedChapter.displayName}
         blockEntries={blockEntries}
         desiredTokenId={desiredTokenId}
         selectedBlock={selectedBlock}
@@ -1464,6 +1434,7 @@ function COLLECTIONBlocksGrid({
       COLLECTIONTotals,
       handlePublicBlockSelect,
       handlePublicMint,
+      displayedChapter,
       web3?.account,
       web3?.chainId,
       web3?.isConnecting,
@@ -1493,6 +1464,9 @@ function COLLECTIONBlocksGrid({
   const renderCOLLECTIONOne = React.useCallback(
     () => (
       <COLLECTION1Panel
+        chapterId={displayedChapter.chapterId}
+        chapterName={displayedChapter.chapterId === 1 ? "Originals" : displayedChapter.displayName}
+        comingSoon={isFutureChapter}
         renderBlockCardsGrid={renderBlockCardsGrid}
         blockEntries={blockEntries}
         blockPrices={normalizedPrices}
@@ -1507,6 +1481,8 @@ function COLLECTIONBlocksGrid({
     ),
     [
       renderBlockCardsGrid,
+      displayedChapter,
+      isFutureChapter,
       blockEntries,
       normalizedPrices,
       normalizedMintCounts,

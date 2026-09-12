@@ -66,6 +66,13 @@ const resolveMintStatus = ({
       hint: "The collection is prepared, but primary minting is not open yet.",
     };
   }
+  if (totals.chapterActive == null || totals.publicUnlocked == null) {
+    return {
+      label: "Checking chapter",
+      tone: "neutral",
+      hint: "Chapter availability has not been confirmed yet.",
+    };
+  }
   if (!totals.chapterActive) {
     return {
       label: "Chapter inactive",
@@ -192,6 +199,7 @@ const resolveActionLabel = ({
 
 const COLLECTION2Panel = React.memo(
   ({
+    chapterName = "Originals",
     blockEntries,
     desiredTokenId,
     selectedBlock,
@@ -328,7 +336,7 @@ const COLLECTION2Panel = React.memo(
           <span>100 fixed NFTs</span>
           <span>10 NFTs per block</span>
           <span>No background choice</span>
-          <span>Live Originals block price</span>
+          <span>Live {chapterName} block price</span>
         </div>
 
         <SectionHeader label="1. Choose a block" accent="#5ddcff" />
@@ -546,9 +554,11 @@ const COLLECTION2Panel = React.memo(
             <strong className="collection-grid__stat-value-large">
               {comingSoon
                 ? "SOON"
-                : COLLECTIONTotals?.publicUnlocked
-                  ? "Unlocked"
-                  : "Locked"}
+                : COLLECTIONTotals?.publicUnlocked == null
+                  ? FALLBACK_VALUE
+                  : COLLECTIONTotals.publicUnlocked
+                    ? "Unlocked"
+                    : "Locked"}
             </strong>
             <span className="collection-grid__stat-foot">
               {comingSoon ? "Future chapter" : "Polygon mainnet"}

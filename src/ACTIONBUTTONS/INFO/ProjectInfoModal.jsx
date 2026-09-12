@@ -5,6 +5,7 @@ import "../../components/CollectionBlocksGrid.css";
 import "../../features/rewards/REWARDSPanel.css";
 import "../../styles/biggi-token.skin.css";
 import TrustPanel from "../../features/info/trust/TrustPanel.jsx";
+import { TICKET_PURCHASE_COPY } from "../../shared/ticketPurchaseCopy.js";
 import "./ProjectInfoModal.css";
 
 const SECTIONS = [
@@ -30,8 +31,15 @@ const PROJECT_FAQ_ITEMS = [
   },
   {
     question: "What do I buy first?",
-    answer:
-      "You mint a ticket first. The ticket is then redeemed to request Chainlink VRF, which finalizes the NFT outcome and mints the revealed NFT to your wallet.",
+    answer: TICKET_PURCHASE_COPY.howItWorks,
+  },
+  {
+    question: "Can I buy a ticket before its chapter opens?",
+    answer: TICKET_PURCHASE_COPY.presale,
+  },
+  {
+    question: "Does the 10-ticket limit apply on OpenSea?",
+    answer: TICKET_PURCHASE_COPY.walletLimit,
   },
   {
     question: "Why does the project use Chainlink VRF?",
@@ -264,8 +272,14 @@ BIGGI mint -> Treasury
             <Heading>Quick start</Heading>
             <ol style={{ marginLeft: 18 }}>
               <li>Connect your wallet (MetaMask or WalletConnect).</li>
-              <li>Mint a ticket with the native coin (POL).</li>
-              <li>Redeem the ticket to request Chainlink VRF.</li>
+              <li>
+                Mint a ticket in an active chapter, or buy an existing ticket
+                listed on OpenSea.
+              </li>
+              <li>
+                Once its chapter is active and redemption is available, redeem
+                the ticket to request Chainlink VRF.
+              </li>
               <li>Wait for VRF fulfillment and NFT mint confirmation.</li>
               <li>Track rarity in the gallery (block and background).</li>
               <li>Claim weekly BIGGI if your NFTs are eligible.</li>

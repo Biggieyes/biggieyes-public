@@ -1,4 +1,4 @@
-// Ethers v6 wrapper for the deployed BiggiNFTRewards contract and hardened V2.
+// Ethers v6 wrapper for the deployed BiggiNFTRewardsV2 contract.
 
 import * as ethers from "ethers";
 import { BiggiNftRewards as ABI } from "@/config/abi/index.js";
@@ -59,11 +59,12 @@ const mapWithConcurrency = async (items, worker, concurrency = 3) => {
 };
 
 export default class NFTREWARDSService {
-  constructor(address, provider) {
+  constructor(address, provider, readOverrides = {}) {
     if (!address) throw new Error("Contract address required");
     if (!provider) throw new Error("Provider required");
     this.address = address;
     this.provider = provider;
+    this.readOverrides = readOverrides;
     this.contract = new ethers.Contract(address, ABI, provider);
     this._onBlockHandler = null;
     this._signerConnected = false;
@@ -94,10 +95,10 @@ export default class NFTREWARDSService {
     return await this.contract.ownerOf(tokenId);
   }
   async name() {
-    return await this.contract.name();
+    return await this.contract.name(this.readOverrides || {});
   }
   async symbol() {
-    return await this.contract.symbol();
+    return await this.contract.symbol(this.readOverrides || {});
   }
   async tokenURI(tokenId) {
     return await this.contract.tokenURI(tokenId);
@@ -112,25 +113,32 @@ export default class NFTREWARDSService {
     return await this.contract.claimed(rewardId);
   }
   async rewardInfo(rewardId) {
-    return await this.contract.rewardInfo(rewardId);
+    return await this.contract.rewardInfo(rewardId, this.readOverrides || {});
   }
   async rewardTokenUri(rewardId) {
     return await this.contract.rewardTokenUri(rewardId);
   }
   async events(eventId) {
-    return await this.contract.events(eventId);
+    return await this.contract.events(eventId, this.readOverrides || {});
   }
   async eventEligibleCount(eventId) {
-    return await this.contract.eventEligibleCount(eventId);
+    return await this.contract.eventEligibleCount(
+      eventId,
+      this.readOverrides || {},
+    );
   }
   async getEligibleAt(eventId, index) {
-    return await this.contract.getEligibleAt(eventId, index);
+    return await this.contract.getEligibleAt(
+      eventId,
+      index,
+      this.readOverrides || {},
+    );
   }
   async nextEventId() {
-    return await this.contract.nextEventId();
+    return await this.contract.nextEventId(this.readOverrides || {});
   }
   async nextRewardId() {
-    return await this.contract.nextRewardId();
+    return await this.contract.nextRewardId(this.readOverrides || {});
   }
   async vrfRequestToEvent(requestId) {
     return await this.contract.vrfRequestToEvent(requestId);
@@ -139,22 +147,19 @@ export default class NFTREWARDSService {
     return await this.vrfRequestToEvent(requestId);
   }
   async vrfRouter() {
-    return await this.contract.vrfRouter();
+    return await this.contract.vrfRouter(this.readOverrides || {});
   }
   async VRFRouter() {
     return await this.vrfRouter();
   }
-  async mainContract() {
-    return await this.contract.mainContract();
-  }
-  async registry() {
-    return await this.contract.registry();
+  async pendingOwner() {
+    return await this.contract.pendingOwner(this.readOverrides || {});
   }
   async mysteryRetryDelay() {
-    return await this.contract.mysteryRetryDelay();
+    return await this.contract.mysteryRetryDelay(this.readOverrides || {});
   }
   async owner() {
-    return await this.contract.owner();
+    return await this.contract.owner(this.readOverrides || {});
   }
   async isApprovedForAll(ownerAddress, operatorAddress) {
     return await this.contract.isApprovedForAll(ownerAddress, operatorAddress);
@@ -173,19 +178,15 @@ export default class NFTREWARDSService {
       const method = this.contract[methodName];
       if (!method) throw new Error(`Method not found: ${methodName}`);
       let gasEstimate = null;
-      try {
-        if (typeof method.estimateGas === "function") {
-          gasEstimate = await method.estimateGas(...args, overrides);
-        } else if (
-          typeof this.contract.estimateGas?.[methodName] === "function"
-        ) {
-          gasEstimate = await this.contract.estimateGas[methodName](
-            ...args,
-            overrides,
-          );
-        }
-      } catch {
-        gasEstimate = null;
+      if (typeof method.estimateGas === "function") {
+        gasEstimate = await method.estimateGas(...args, overrides);
+      } else if (
+        typeof this.contract.estimateGas?.[methodName] === "function"
+      ) {
+        gasEstimate = await this.contract.estimateGas[methodName](
+          ...args,
+          overrides,
+        );
       }
       const gasLimit = withGasBuffer(gasEstimate);
       const sendOverrides = gasLimit ? { gasLimit, ...overrides } : overrides;
@@ -201,6 +202,36 @@ export default class NFTREWARDSService {
     return await this._sendTx("claim", [rewardId], overrides);
   }
 
+  async claimForWallet(rewardId, signer, walletAddress) {
+    if (!Number.isSafeInteger(Number(rewardId)) || Number(rewardId) < 1) {
+      throw new Error("Invalid reward ID.");
+    }
+    // Check the signing provider, not just the independent read-only RPC.
+    const network = await signer?.provider?.getNetwork();
+    if (Number(network?.chainId) !== 137) {
+      throw new Error(
+        "Switch the wallet to Polygon mainnet (137) before claiming.",
+      );
+    }
+    const signerAddress = await signer.getAddress();
+    if (
+      signerAddress.toLowerCase() !== String(walletAddress || "").toLowerCase()
+    ) {
+      throw new Error("Wallet account changed. Reconnect and try again.");
+    }
+    this.connectWithSigner(signer);
+    this.readOverrides = {};
+    const reward = normalizeRewardInfo(
+      await this.rewardInfo(rewardId),
+      rewardId,
+    );
+    if (String(reward.assigned).toLowerCase() !== signerAddress.toLowerCase()) {
+      throw new Error("Reward is not assigned to the connected wallet.");
+    }
+    if (reward.isClaimed) throw new Error("Reward is already claimed.");
+    return this.claim(rewardId);
+  }
+
   async getAllStats() {
     const [
       name,
@@ -208,9 +239,8 @@ export default class NFTREWARDSService {
       nextEventId,
       nextRewardId,
       vrfRouter,
-      mainContract,
       owner,
-      registry,
+      pendingOwner,
       mysteryRetryDelay,
     ] = await Promise.all([
       this.name(),
@@ -218,9 +248,8 @@ export default class NFTREWARDSService {
       this.nextEventId(),
       this.nextRewardId(),
       this.vrfRouter(),
-      this.mainContract().catch(() => null),
       this.owner(),
-      this.registry().catch(() => null),
+      this.pendingOwner(),
       this.mysteryRetryDelay(),
     ]);
 
@@ -231,18 +260,22 @@ export default class NFTREWARDSService {
       nextRewardId,
       vrfRouter,
       VRFRouter: vrfRouter,
-      mainContract,
       owner,
-      registry,
+      pendingOwner,
+      version: 2,
       mysteryRetryDelay,
       totalEventsCreated: Math.max(0, toSafeNumber(nextEventId) - 1),
       totalRewardsCreated: Math.max(0, toSafeNumber(nextRewardId) - 1),
     };
   }
 
-  async fetchEventsDetailed({ includeEligible = false, limit = 100 } = {}) {
+  async fetchEventsDetailed({
+    includeEligible = false,
+    limit = 100,
+    offset = 0,
+  } = {}) {
     const nextId = toSafeNumber(await this.nextEventId());
-    const lastId = nextId - 1;
+    const lastId = nextId - 1 - toSafeNumber(offset);
     if (lastId < 1) return [];
     const safeLimit = Math.max(1, toSafeNumber(limit, 100));
     const startId = Math.max(1, lastId - safeLimit + 1);

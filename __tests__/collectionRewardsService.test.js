@@ -19,19 +19,16 @@ const buildContractMock = (overrides = {}) => ({
   orangeWinnersCount: vi.fn().mockResolvedValue(1n),
   rainbowReward: vi.fn().mockResolvedValue(10000n),
   rainbowRewardClaimedGlobal: vi.fn().mockResolvedValue(false),
-  collectionBudgetSnapshot: vi.fn().mockResolvedValue([
-    true,
-    false,
-    47000n,
-    12500n,
-    0n,
-    12500n,
-    47000n,
-    0n,
-  ]),
-  distributor: vi.fn().mockResolvedValue("0x1111111111111111111111111111111111111111"),
+  collectionBudgetSnapshot: vi
+    .fn()
+    .mockResolvedValue([true, false, 47000n, 12500n, 0n, 12500n, 47000n, 0n]),
+  distributor: vi
+    .fn()
+    .mockResolvedValue("0x1111111111111111111111111111111111111111"),
   defaultMain: vi.fn().mockResolvedValue(COLLECTION),
-  owner: vi.fn().mockResolvedValue("0x3333333333333333333333333333333333333333"),
+  owner: vi
+    .fn()
+    .mockResolvedValue("0x3333333333333333333333333333333333333333"),
   blockPaid: vi
     .fn()
     .mockImplementation((collection, idx) =>
@@ -51,6 +48,43 @@ const buildContractMock = (overrides = {}) => ({
 describe("CollectionRewardsService", () => {
   beforeEach(() => {
     ContractMock.mockReset();
+  });
+
+  it("does not report an RPC outage as zero paid rewards", async () => {
+    const contract = buildContractMock({
+      blockPaid: vi.fn().mockRejectedValue(new Error("429")),
+    });
+    ContractMock.mockImplementation(function () {
+      return contract;
+    });
+    const service = new CollectionRewardsService(
+      "0xa708E016dEC7B6a5b3da640c0d995895979cE332",
+      {},
+      COLLECTION,
+    );
+    await expect(service.getAllStats()).rejects.toThrow();
+  });
+
+  it("does not send a claim when gas preflight reverts", async () => {
+    const claim = vi.fn();
+    claim.estimateGas = vi
+      .fn()
+      .mockRejectedValue(new Error("budget not enabled"));
+    const contract = buildContractMock({ claimBlockRewardFor: claim });
+    contract.connect = () => contract;
+    ContractMock.mockImplementation(function () {
+      return contract;
+    });
+    const service = new CollectionRewardsService(
+      "0xa708E016dEC7B6a5b3da640c0d995895979cE332",
+      {},
+      COLLECTION,
+    );
+    service.connectWithSigner({ provider: {} });
+    await expect(service.claimBlockRewardFor(COLLECTION, 1)).rejects.toThrow(
+      "budget not enabled",
+    );
+    expect(claim).not.toHaveBeenCalled();
   });
 
   it("returns core stats even when claimability reads revert", async () => {

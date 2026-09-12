@@ -312,7 +312,10 @@ async function main() {
 
   const ownerRouter = vrfRouter.connect(ownerSigner);
   await waitFor(
-    await ownerRouter.setRewardConsumerApproval(rewards.address, true),
+    await ownerRouter.setRewardConsumerApproval(rewards.address, true, {
+      gasPrice: (await ethers.provider.getGasPrice()).mul(120).div(100),
+      type: 0,
+    }),
     "approve V2 on BiggiVRFRouter",
     report,
   );

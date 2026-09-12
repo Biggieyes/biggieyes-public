@@ -1021,44 +1021,6 @@
   border: 1px solid rgba(255, 232, 0, 0.18);
 }
 
-.collection-grid__schema-image-wrap {
-  margin-top: 16px;
-  position: relative;
-  border-radius: 18px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 232, 0, 0.24);
-  background:
-    radial-gradient(
-      120% 120% at 8% 0%,
-      rgba(255, 138, 0, 0.14),
-      transparent 62%
-    ),
-    radial-gradient(
-      120% 120% at 92% 0%,
-      rgba(93, 220, 255, 0.12),
-      transparent 62%
-    ),
-    rgba(10, 12, 18, 0.9);
-  box-shadow:
-    0 14px 28px rgba(0, 0, 0, 0.36),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
-}
-
-.collection-grid__schema-info-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 3;
-}
-
-.collection-grid__schema-image {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 78vh;
-  object-fit: contain;
-}
-
 .collection-grid__cards {
   margin-top: 24px;
   display: grid;

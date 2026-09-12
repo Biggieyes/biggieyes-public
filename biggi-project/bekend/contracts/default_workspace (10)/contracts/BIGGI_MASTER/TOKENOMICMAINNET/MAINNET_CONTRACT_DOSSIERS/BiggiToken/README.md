@@ -67,6 +67,6 @@ Mainnet note: keep `rewardsOperator` unset unless this helper is intentionally u
 
 | Key | Address |
 | --- | --- |
-| `BIGGI_TOKEN` | `0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD` |
+| `BIGGI_TOKEN` | `su` |
 
 Canonical manifests: `addresses.master.json`, phase-specific Polygon manifests, and `MAINNET_DEPLOYMENT_MANIFEST_POLYGON.json`.

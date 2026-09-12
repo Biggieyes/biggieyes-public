@@ -1,10 +1,10 @@
 # BiggiTokenRewards - Mainnet Prep Dossier
 
 ## Source of truth
-- Source file: `BiggiTokenRewards.sol`
-- Frozen ABI: `./ABI.json`
-- Deployment status: live on Polygon mainnet as of 2026-06-16.
-- Canonical manifest: `biggi-project/bekend/addresses.master.json` plus phase-specific Polygon manifests.
+ Source file: `BiggiTokenRewards.sol`
+ Frozen ABI: `./ABI.json`
+ Deployment status: live on Polygon mainnet as of 2026-06-16.
+ Canonical manifest: `biggi-project/bekend/addresses.master.json` plus phase-specific Polygon manifests.
 
 ## Constructor
 ```solidity
@@ -12,10 +12,10 @@ constructor(address mainNFT_, address main2NFT_, address biggiToken_, address ow
 ```
 
 ## Main role
-- calculates weekly reward units from owned NFTs
-- transfers BIGGI from balance first, then mints remainder
-- enforces a global mint cap from `BiggiCapsLib`
-- supports registry-based or allowlist-based collection validation
+calculates weekly reward units from owned NFTs
+transfers BIGGI from balance first, then mints remainder
+enforces a global mint cap from `BiggiCapsLib`
+supports registry-based or allowlist-based collection validation
 
 ## Owner/admin surface
 ```solidity

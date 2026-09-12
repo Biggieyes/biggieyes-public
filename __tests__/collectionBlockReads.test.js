@@ -6,6 +6,7 @@ import {
   normalizeMetadataConsistency,
   normalizeNftInfo,
   readCollectionBlockSnapshot,
+  summarizeCollectionBlocks,
 } from "../src/features/rewards/COLLECTION/CollectionBlocksGrid.utils.js";
 
 describe("collection block reads", () => {
@@ -52,7 +53,7 @@ describe("collection block reads", () => {
     await expect(readCollectionBlockSnapshot(contract, 3)).resolves.toEqual({
       basePriceWei: 250n,
       priceWei: 300n,
-      mintedRaw: 9n,
+      mintedRaw: null,
     });
     expect(contract.blockInfos).toHaveBeenCalledWith(2);
   });
@@ -71,4 +72,53 @@ describe("collection block reads", () => {
       rewardMatrixConsistent: true,
     });
   });
+
+  it("does not report the unused blockInfos mintCount when live counters fail", async () => {
+    const fail = vi.fn(async () => { throw new Error("RPC offline"); });
+    const contract = {
+      getBlockMintCount: fail,
+      blockMintCounts: fail,
+      blockInfos: async () => [100n, 10000n, 100n, 0n],
+    };
+    expect((await readCollectionBlockSnapshot(contract, 1)).mintedRaw).toBeNull();
+  });
+
+  it("uses the Public chapter provider price, never the stale local price", async () => {
+    const contract = {
+      getCurrentBlockPrice: async () => { throw new Error("RPC offline"); },
+      getEffectiveBlockPrice: vi.fn(async () => 150n),
+      blockInfos: async () => [100n, 10000n, 100n, 0n],
+    };
+    expect((await readCollectionBlockSnapshot(contract, 1)).priceWei).toBe(150n);
+    contract.getEffectiveBlockPrice.mockRejectedValue(new Error("RPC offline"));
+    expect((await readCollectionBlockSnapshot(contract, 1)).priceWei).toBeNull();
+  });
+
+  it("keeps the minus sign when an owner lowers a current price", () => {
+    expect(computeDiff(90, 100)).toMatchObject({
+      value: expect.stringMatching(/^-10/),
+      percent: expect.stringMatching(/^-10/),
+      positive: false,
+    });
+  });
+
+  it("keeps fractional averages and confirmed zero minted totals", () => {
+    const prices = Array.from({ length: 10 }, (_, index) => (index + 1) * 100 + 0.25);
+    expect(summarizeCollectionBlocks(prices, Array(10).fill(0))).toMatchObject({
+      averagePrice: 550.25,
+      totalMinted: 0,
+      highestPrice: { index: 9, value: 1000.25 },
+      lowestPrice: { index: 0, value: 100.25 },
+    });
+  });
+
+  it.each([[], Array(10), Array(10).fill(null), [100, ...Array(9).fill(null)]].map(values => ({ values })))(
+    "does not treat incomplete reads as collection totals or price extremes: %j",
+    ({ values }) => {
+      expect(summarizeCollectionBlocks(values, values)).toEqual({
+        averagePrice: null, totalMinted: null,
+        highestPrice: null, lowestPrice: null, topMinted: null,
+      });
+    },
+  );
 });

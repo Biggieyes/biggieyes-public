@@ -16,6 +16,121 @@ const commonProps = {
 };
 
 describe("NFT Rewards panel consistency", () => {
+  it.each([{ loading: true }, { error: new Error("RPC unavailable") }])(
+    "does not present unavailable data as zero rewards (%j)",
+    (state) => {
+      const { container } = render(
+        <NftREWARDSSection
+          {...commonProps}
+          {...state}
+          data={{ userRewards: [], events: [], rewards: [] }}
+        />,
+      );
+      expect(container.textContent).not.toContain("No NFT reward is assigned");
+      expect(container.textContent).not.toContain("No reward record exists");
+      expect(container.textContent).not.toContain(
+        "No NFT reward event has been created",
+      );
+      expect(
+        [...container.querySelectorAll(".nft-rewards__summary-value")].map(
+          (el) => el.textContent,
+        ),
+      ).toEqual(["--", "--", "--", "--"]);
+    },
+  );
+
+  it("limits empty-wallet claims to the displayed page and provides history navigation", () => {
+    const onRewardPageChange = vi.fn();
+    render(
+      <NftREWARDSSection
+        {...commonProps}
+        onRewardPageChange={onRewardPageChange}
+        data={{
+          rewardsTruncated: true,
+          rewardPage: 0,
+          rewardPages: 2,
+          totalRewardsCreated: 501,
+          firstRewardId: 2,
+          lastRewardId: 501,
+        }}
+      />,
+    );
+    expect(
+      screen.getByText(
+        "No NFT reward is assigned to this wallet in these records.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Older rewards" }));
+    expect(onRewardPageChange).toHaveBeenCalledWith(1);
+    expect(screen.getByRole("button", { name: "Newer rewards" }).disabled).toBe(
+      true,
+    );
+  });
+
+  it("keeps V1 manual events assigned even when their reward is on another page", () => {
+    render(
+      <NftREWARDSSection
+        {...commonProps}
+        data={{
+          events: [
+            {
+              eventId: 1,
+              kind: 2,
+              rewardStartId: 1,
+              rewardCount: 1,
+              finished: false,
+            },
+          ],
+          rewards: [],
+        }}
+      />,
+    );
+    expect(screen.getByText("Assigned")).toBeTruthy();
+    expect(screen.queryByText("Created")).toBeNull();
+  });
+
+  it("does not mistake a completed draw for an NFT claim", () => {
+    render(
+      <NftREWARDSSection
+        {...commonProps}
+        data={{
+          events: [
+            {
+              eventId: 1,
+              kind: 3,
+              rewardStartId: 1,
+              rewardCount: 1,
+              finished: true,
+            },
+          ],
+        }}
+      />,
+    );
+    expect(screen.getByText("Draw completed")).toBeTruthy();
+    expect(screen.queryByText("Claimed")).toBeNull();
+  });
+
+  it("hides another wallet's stale assignments and disables all claims during a pending transaction", () => {
+    render(
+      <NftREWARDSSection
+        {...commonProps}
+        canClaim
+        claimState={1}
+        data={{
+          userRewards: [
+            { rewardId: 1, assigned: WALLET, kind: 2 },
+            { rewardId: 2, assigned: WALLET, kind: null },
+            { rewardId: 3, assigned: CONTRACT, kind: 2 },
+          ],
+        }}
+      />,
+    );
+    expect(screen.queryByText("Reward #3")).toBeNull();
+    expect(screen.getByRole("button", { name: "Claim NFT" }).disabled).toBe(
+      true,
+    );
+    expect(screen.getByText("Unknown")).toBeTruthy();
+  });
   it("shows the real empty on-chain state without invented rank data", () => {
     const { container } = render(
       <NftREWARDSSection

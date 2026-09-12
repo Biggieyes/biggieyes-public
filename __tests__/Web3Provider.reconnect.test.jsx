@@ -1,5 +1,5 @@
 import * as React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 
@@ -19,11 +19,9 @@ const mocks = vi.hoisted(() => {
     roProvider,
     signer,
     browserProviderInstance,
-    BrowserProvider: vi
-      .fn()
-      .mockImplementation(function BrowserProviderMock() {
-        return browserProviderInstance;
-      }),
+    BrowserProvider: vi.fn().mockImplementation(function BrowserProviderMock() {
+      return browserProviderInstance;
+    }),
     clearInjectedProvider: vi.fn(),
     ensurePolygon: vi.fn().mockResolvedValue(undefined),
     getInjectedProvider: vi.fn().mockReturnValue(null),
@@ -83,12 +81,13 @@ vi.mock("@/wallet/wc.js", () => ({
 import { Web3Provider, useWeb3 } from "../src/providers/Web3Provider.jsx";
 
 function Probe() {
-  const { account, connectMetaMask, provider } = useWeb3();
+  const { account, chainId, connectMetaMask, provider } = useWeb3();
 
   return (
     <div>
       <div data-testid="account">{account || "empty"}</div>
       <div data-testid="provider-kind">{provider?.kind || "wallet"}</div>
+      <div data-testid="chain-id">{chainId ?? "unknown"}</div>
       <button type="button" onClick={() => connectMetaMask()}>
         connect
       </button>
@@ -112,7 +111,83 @@ describe("Web3Provider reconnect policy", () => {
       return mocks.browserProviderInstance;
     });
     mocks.browserProviderInstance.getSigner.mockResolvedValue(mocks.signer);
-    mocks.browserProviderInstance.getNetwork.mockResolvedValue({ chainId: 137n });
+    mocks.browserProviderInstance.getNetwork.mockResolvedValue({
+      chainId: 137n,
+    });
+  });
+
+  it("does not restore a signer from an in-flight refresh after disconnect", async () => {
+    let resolveSigner;
+    const listeners = {};
+    const injected = {
+      isMetaMask: true,
+      request: vi.fn(),
+      on: vi.fn((event, cb) => {
+        listeners[event] = cb;
+      }),
+      removeListener: vi.fn(),
+    };
+    mocks.hasInjectedProviderOverride.mockReturnValue(true);
+    mocks.getInjectedProviderCandidates.mockReturnValue([injected]);
+    mocks.browserProviderInstance.getSigner.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveSigner = resolve;
+        }),
+    );
+    const { unmount } = render(
+      <Web3Provider>
+        <Probe />
+      </Web3Provider>,
+    );
+    await waitFor(() => expect(resolveSigner).toBeTypeOf("function"));
+    await act(async () => listeners.disconnect());
+    await act(async () => resolveSigner(mocks.signer));
+    expect(screen.getByTestId("account")).toHaveTextContent("empty");
+    expect(screen.getByTestId("provider-kind")).toHaveTextContent("read-only");
+    unmount();
+    expect(injected.removeListener).toHaveBeenCalledWith(
+      "accountsChanged",
+      listeners.accountsChanged,
+    );
+    expect(injected.removeListener).toHaveBeenCalledWith(
+      "disconnect",
+      listeners.disconnect,
+    );
+  });
+
+  it("retains the latest account when the preceding refresh finishes late", async () => {
+    let resolveOld;
+    const listeners = {};
+    const injected = {
+      isMetaMask: true,
+      request: vi.fn(),
+      on: vi.fn((event, cb) => {
+        listeners[event] = cb;
+      }),
+      removeListener: vi.fn(),
+    };
+    mocks.hasInjectedProviderOverride.mockReturnValue(true);
+    mocks.getInjectedProviderCandidates.mockReturnValue([injected]);
+    mocks.browserProviderInstance.getSigner.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveOld = resolve;
+        }),
+    );
+    render(
+      <Web3Provider>
+        <Probe />
+      </Web3Provider>,
+    );
+    await waitFor(() => expect(resolveOld).toBeTypeOf("function"));
+    const latest = "0x9999999999999999999999999999999999999999";
+    mocks.browserProviderInstance.getSigner.mockResolvedValue({
+      getAddress: async () => latest,
+    });
+    await act(async () => listeners.accountsChanged([latest]));
+    await act(async () => resolveOld(mocks.signer));
+    expect(screen.getByTestId("account")).toHaveTextContent(latest);
   });
 
   it("does not silently reconnect an injected wallet on mount", async () => {
@@ -139,6 +214,116 @@ describe("Web3Provider reconnect policy", () => {
     expect(mocks.getROProvider).toHaveBeenCalled();
     expect(mocks.BrowserProvider).not.toHaveBeenCalled();
     expect(mocks.browserProviderInstance.getSigner).not.toHaveBeenCalled();
+  });
+
+  it("does not restore the previous network after a newer chainChanged refresh", async () => {
+    let resolveOldNetwork;
+    const listeners = {};
+    const injected = {
+      isMetaMask: true,
+      request: vi.fn(),
+      on: vi.fn((event, handler) => {
+        listeners[event] = handler;
+      }),
+      removeListener: vi.fn(),
+    };
+    mocks.hasInjectedProviderOverride.mockReturnValue(true);
+    mocks.getInjectedProviderCandidates.mockReturnValue([injected]);
+    mocks.browserProviderInstance.getNetwork.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveOldNetwork = resolve;
+        }),
+    );
+    render(
+      <Web3Provider>
+        <Probe />
+      </Web3Provider>,
+    );
+    await waitFor(() => expect(resolveOldNetwork).toBeTypeOf("function"));
+    mocks.browserProviderInstance.getNetwork.mockResolvedValue({
+      chainId: 80002n,
+    });
+    await act(async () => listeners.chainChanged("0x13882"));
+    expect(screen.getByTestId("chain-id")).toHaveTextContent("80002");
+    await act(async () => resolveOldNetwork({ chainId: 137n }));
+    expect(screen.getByTestId("chain-id")).toHaveTextContent("80002");
+  });
+
+  it("keeps the explicit MetaMask session when an older WalletConnect restore arrives late", async () => {
+    let resolveRestore;
+    const injected = {
+      isMetaMask: true,
+      request: vi.fn(async ({ method }) =>
+        method === "eth_requestAccounts" ? [mocks.address] : "0x89",
+      ),
+      on: vi.fn(),
+      removeListener: vi.fn(),
+    };
+    window.localStorage.setItem("biggi_walletconnect_resume_v1", "1");
+    mocks.getInjectedProviderCandidates.mockReturnValue([injected]);
+    mocks.restoreWalletConnectSession.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveRestore = resolve;
+        }),
+    );
+    render(
+      <Web3Provider>
+        <Probe />
+      </Web3Provider>,
+    );
+    await waitFor(() => expect(resolveRestore).toBeTypeOf("function"));
+    await userEvent.click(screen.getByRole("button", { name: /connect/i }));
+    await waitFor(() =>
+      expect(screen.getByTestId("account")).toHaveTextContent(mocks.address),
+    );
+    const oldProvider = { request: vi.fn() };
+    await act(async () =>
+      resolveRestore({
+        provider: oldProvider,
+        ethersProvider: { kind: "old-walletconnect" },
+        signer: {
+          getAddress: async () => "0x9999999999999999999999999999999999999999",
+        },
+        address: "0x9999999999999999999999999999999999999999",
+        chainId: 137,
+      }),
+    );
+    expect(screen.getByTestId("account")).toHaveTextContent(mocks.address);
+    expect(mocks.setInjectedProvider).not.toHaveBeenCalledWith(oldProvider);
+  });
+
+  it("leaves one listener per wallet event during StrictMode replay and preserves other subscribers", async () => {
+    const external = () => {};
+    const listeners = { accountsChanged: new Set([external]) };
+    const injected = {
+      isMetaMask: true,
+      request: vi.fn(),
+      on: (event, handler) => (listeners[event] ??= new Set()).add(handler),
+      removeListener: (event, handler) => listeners[event]?.delete(handler),
+    };
+    mocks.hasInjectedProviderOverride.mockReturnValue(true);
+    mocks.getInjectedProviderCandidates.mockReturnValue([injected]);
+    const { unmount } = render(
+      <React.StrictMode>
+        <Web3Provider>
+          <Probe />
+        </Web3Provider>
+      </React.StrictMode>,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("account")).toHaveTextContent(mocks.address),
+    );
+    expect(listeners.accountsChanged.size).toBe(2);
+    expect(listeners.chainChanged.size).toBe(1);
+    expect(listeners.disconnect.size).toBe(1);
+    expect(listeners.session_delete.size).toBe(1);
+    unmount();
+    expect([...listeners.accountsChanged]).toEqual([external]);
+    expect(listeners.chainChanged.size).toBe(0);
+    expect(listeners.disconnect.size).toBe(0);
+    expect(listeners.session_delete.size).toBe(0);
   });
 
   it("connects only after an explicit user action", async () => {

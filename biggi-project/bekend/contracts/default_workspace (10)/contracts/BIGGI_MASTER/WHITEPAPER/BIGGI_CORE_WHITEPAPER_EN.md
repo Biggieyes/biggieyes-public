@@ -423,18 +423,24 @@ At the snapshot, the initialized week had a `50,000 BIGGI` budget and
 
 ### 11.2 NFT Rewards
 
-`BiggiNftRewards` is a separate ERC-721 reward system. Its currently reachable
-production paths are owner-created manual rewards and VRF-selected mystery-event
-winners from a unique eligibility list. Assigned users mint the reward NFT by
-calling `claim(rewardId)`.
+`BiggiNFTRewardsV2`, deployed on Polygon on 9 September 2026, is a separate
+ERC-721 reward system. The owner creates manual rewards or mystery events with
+metadata URIs and a deduplicated eligibility list. Each mystery winner receives
+at most one reward per event. Only the assigned wallet can mint its NFT through
+`claim(rewardId)`, once per reward.
 
-The deployed contract also contains `createCharacterReward`, but that function
-can be called only by an approved collection and the current `BiggiMain` and
-`BiggiMain2` contracts do not call it. The ten block-completion character NFTs
-are instead minted directly by each `BiggiMain` and are a separate mechanism.
-The owner-only emergency mystery resolver can select a result without an
-on-chain timeout requirement; this remains an explicit owner-trust boundary
-until a hardened NFT Rewards version is deployed.
+Mystery assignment uses the immutable approved `BiggiVRFRouter`. Retrying a
+pending request requires the on-chain retry delay (initially 900 seconds);
+callbacks for superseded requests are rejected and request IDs cannot be reused.
+V2 has no owner-selected emergency randomness. The owner still controls manual
+assignments, eligibility, metadata URIs at creation, request timing and the retry
+delay. Thus VRF selection does not make event administration trustless.
+
+V2 uses two-step ownership transfer, forbids ownership renunciation and rejects
+direct POL deposits. It does not contain a character-reward or collection
+allowlist path. The ten block-completion character NFTs remain minted directly
+by each `BiggiMain`, independently of this reward system. The V2 frontend was
+published on 9 September 2026; the legacy V1 VRF consumer approval was then revoked.
 
 ## 12. Metadata and game-state integrity
 
@@ -518,7 +524,7 @@ ticket does not mean public sale or redemption is enabled.
 | MultiCollectionDistributor | `0xCE892698159D8D799D5eF7f0dF0111487511fD22` |
 | Collection Rewards | `0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43` |
 | Token Rewards | `0xA455775BBe0BC863f644516147b95Ef5103b29FA` |
-| NFT Rewards | `0x939Df533b80943298E15ad4c8F188102954f34FF` |
+| NFT Rewards V2 | `0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9` |
 
 Canonical address data remain in `biggi-project/bekend/addresses.master.json`.
 
@@ -543,7 +549,7 @@ Primary source contracts:
 - `CORE/BiggiChapterController.sol`
 - `CORE/BiggiCollectionRewards.sol`
 - `CORE/BiggiTokenRewards.sol`
-- `CORE/BiggiNftRewards.sol`
+- `CORE/BiggiNftRewardsV2.sol`
 - `CORE/BiggiMultiCollectionDistributor.sol`
 
 Any later configuration or deployment must update this document's version and

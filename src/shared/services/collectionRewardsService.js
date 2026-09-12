@@ -177,23 +177,12 @@ export default class COLLECTIONREWARDSService {
       );
     const method = this.contract[methodName];
     if (!method) throw new Error("Method not found: " + methodName);
-    let gasEstimate = null;
-    try {
-      const estimate =
-        method.estimateGas || this.contract.estimateGas?.[methodName];
-      gasEstimate = estimate ? await estimate(...args, overrides) : null;
-    } catch (err) {
-      console.debug(
-        "COLLECTIONREWARDSService estimateGas failed",
-        methodName,
-        err,
-      );
-      gasEstimate = null;
-    }
+    const estimate =
+      method.estimateGas || this.contract.estimateGas?.[methodName];
+    if (!estimate) throw new Error("Claim preflight unavailable");
+    const gasEstimate = await estimate(...args, overrides);
     const gasLimit = withGasBuffer(gasEstimate);
-    const sendOverrides = gasLimit
-      ? { gasLimit, ...overrides }
-      : overrides;
+    const sendOverrides = gasLimit ? { gasLimit, ...overrides } : overrides;
     const tx = await method(...args, sendOverrides);
     const receipt = await tx.wait(1);
     return receipt;
@@ -201,19 +190,30 @@ export default class COLLECTIONREWARDSService {
 
   async getAllStats(walletAddress = null, collectionAddress = null) {
     const collection = await this._resolveCollection(collectionAddress);
+    const requiredErrors = [];
     const read = (fn, fallback = null) =>
       COLLECTIONREWARDSService.safeRead(fn, fallback);
+    const required = async (fn) => {
+      try {
+        const value = await fn();
+        if (value == null) throw new Error("Missing collection reward data");
+        return value;
+      } catch (error) {
+        requiredErrors.push(error);
+        return null;
+      }
+    };
     const readClaimability = (fn) =>
       read(fn, null).then(COLLECTIONREWARDSService.normalizeClaimability);
 
     const blockPaidPromise = Promise.all(
       BLOCK_INDICES.map((idx) =>
-        read(() => this.blockPaid(collection, idx), false),
+        required(() => this.blockPaid(collection, idx)),
       ),
     );
     const orangePaidPromise = Promise.all(
       ORANGE_MAIN_IDS.map((id) =>
-        read(() => this.orangeMainIdPaid(collection, id), false),
+        required(() => this.orangeMainIdPaid(collection, id)),
       ),
     );
     const blockClaimabilityPromise = walletAddress
@@ -244,12 +244,12 @@ export default class COLLECTIONREWARDSService {
       null,
     ).then(COLLECTIONREWARDSService.normalizeBudgetSnapshot);
     const promises = [
-      read(() => this.blockReward(), null),
-      read(() => this.blockWinnersCount(collection), null),
-      read(() => this.orangeReward(), null),
-      read(() => this.orangeWinnersCount(collection), null),
-      read(() => this.rainbowReward(), null),
-      read(() => this.rainbowRewardClaimedGlobal(collection), false),
+      required(() => this.blockReward()),
+      required(() => this.blockWinnersCount(collection)),
+      required(() => this.orangeReward()),
+      required(() => this.orangeWinnersCount(collection)),
+      required(() => this.rainbowReward()),
+      required(() => this.rainbowRewardClaimedGlobal(collection)),
       read(() => this.distributor(), null),
       read(() => this.defaultMain(), null),
       read(() => this.owner(), null),
@@ -277,6 +277,15 @@ export default class COLLECTIONREWARDSService {
       rainbowClaimability,
       budget,
     ] = await Promise.all(promises);
+
+    if (requiredErrors.length) {
+      throw new Error(
+        "Collection rewards are unavailable. Refresh before claiming.",
+        {
+          cause: requiredErrors[0],
+        },
+      );
+    }
 
     return {
       blockReward,

@@ -1,3 +1,5 @@
+import { TICKET_PURCHASE_COPY } from "./ticketPurchaseCopy.js";
+
 export const MODAL_TEXTS = {
   info: `
 🎰 BiggiEyes Lottery
@@ -75,7 +77,7 @@ The 500th paid ticket is approximately 2,587.89 POL. Marketing mints do not chan
 
 🛡️ Fairness & Transparency
 
-No whitelist, no presale, no bots — equal chance for everyone.
+Paid minting opens when the chapter is activated. Existing tickets may be traded before launch; redemption requires an active chapter and an available redeem path.
 
 All results verifiable on-chain.
 
@@ -135,7 +137,11 @@ Fairness and transparency mean a real chance to get a unique and valuable NFT, w
 Win Chances & REWARDS - BiggiEyes Style
 
 Tickets & Trading
-Entry tickets can be freely sold and traded on secondary markets like OpenSea. Each wallet can hold up to 10 tickets. Each chapter has 50 prelaunch marketing tickets with a 1 POL snapshot; the paid price starts at 500 POL and increases by 0.33% after every paid mint. Everything stays on-chain and transparent.
+${TICKET_PURCHASE_COPY.presale}
+
+${TICKET_PURCHASE_COPY.walletLimit}
+
+The currently issued marketing tickets have a 1 POL snapshot, which is not their resale price. The paid-ticket curve starts at 500 POL and increases by 0.33% after every paid mint. Marketing mints and resales do not advance that curve.
 
 Blocks = Eye Colors
 NFTs are split into 10 color-coded blocks (eye colors). Each block has its own rarity and base price.
@@ -205,6 +211,5 @@ We believe in a community-first approach, where transparency builds trust, and t
 If you’re ready to mix luck with strategy — welcome to BiggiEyes.
   `,
 };
-
 
 

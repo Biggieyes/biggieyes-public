@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const hre = require("hardhat");
+const { nftRewardsVersion } = require("./nftRewardsVersion");
 
 const { ethers, network } = hre;
 const ZERO = ethers.constants.AddressZero;
@@ -691,14 +692,17 @@ async function checkRewardsAndReaders(addresses, opts, recorder) {
       "function registry() view returns (address)",
       "function allowedMainCollections(address) view returns (bool)",
     ]);
-    const mainContract = await readValue(recorder, "NFT_REWARDS.mainContract", () => nftRewards.mainContract());
+    const version = await nftRewardsVersion(addresses.NFT_REWARDS);
     const vrfRouter = await readValue(recorder, "NFT_REWARDS.vrfRouter", () => nftRewards.vrfRouter());
-    const registry = await readValue(recorder, "NFT_REWARDS.registry", () => nftRewards.registry());
-    expectAddress(recorder, "NFT_REWARDS.mainContract == MAIN", mainContract, addresses.MAIN);
     expectAddress(recorder, "NFT_REWARDS.vrfRouter == VRF_ROUTER", vrfRouter, addresses.VRF_ROUTER);
-    if (isAddress(addresses.REGISTRY)) expectAddress(recorder, "NFT_REWARDS.registry == REGISTRY", registry, addresses.REGISTRY);
-    if (isAddress(addresses.MAIN2)) {
-      await readValue(recorder, "NFT_REWARDS.allowedMainCollections[MAIN2]", () => nftRewards.allowedMainCollections(addresses.MAIN2));
+    if (version === 1) {
+      const mainContract = await readValue(recorder, "NFT_REWARDS.mainContract", () => nftRewards.mainContract());
+      const registry = await readValue(recorder, "NFT_REWARDS.registry", () => nftRewards.registry());
+      expectAddress(recorder, "NFT_REWARDS.mainContract == MAIN", mainContract, addresses.MAIN);
+      if (isAddress(addresses.REGISTRY)) expectAddress(recorder, "NFT_REWARDS.registry == REGISTRY", registry, addresses.REGISTRY);
+      if (isAddress(addresses.MAIN2)) {
+        await readValue(recorder, "NFT_REWARDS.allowedMainCollections[MAIN2]", () => nftRewards.allowedMainCollections(addresses.MAIN2));
+      }
     }
   }
 

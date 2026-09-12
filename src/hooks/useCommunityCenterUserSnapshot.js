@@ -124,32 +124,25 @@ const emptySnapshot = (address = resolveCommunityCenterAddress()) => ({
   paused: null,
   owner: null,
   distributor: null,
-  poolBalance: 0n,
-  totalLocked: 0n,
-  eventsCount: 0,
-  liveEvents: 0,
-  upcomingEvents: 0,
-  finishedEvents: 0,
-  assignedEvents: 0,
-  claimableEvents: 0,
-  claimedEvents: 0,
-  assignedAmount: 0n,
-  claimableAmount: 0n,
-  pollsCount: 0,
-  livePolls: 0,
-  myVotes: 0,
+  poolBalance: null,
+  totalLocked: null,
+  eventsCount: null,
+  liveEvents: null,
+  upcomingEvents: null,
+  finishedEvents: null,
+  assignedEvents: null,
+  claimableEvents: null,
+  claimedEvents: null,
+  assignedAmount: null,
+  claimableAmount: null,
+  pollsCount: null,
+  livePolls: null,
+  myVotes: null,
   events: [],
   polls: [],
+  pollsError: null,
   updatedAt: null,
 });
-
-const safeCall = async (fn, fallback = null) => {
-  try {
-    return await fn();
-  } catch {
-    return fallback;
-  }
-};
 
 export default function useCommunityCenterUserSnapshot({
   walletAddress = "",
@@ -160,17 +153,28 @@ export default function useCommunityCenterUserSnapshot({
   const [snapshot, setSnapshot] = React.useState(() => emptySnapshot(address));
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
+  const requestId = React.useRef(0);
+  const context = React.useMemo(
+    () => ({ address, enabled, includePolls, walletAddress }),
+    [address, enabled, includePolls, walletAddress],
+  );
+  const [dataContext, setDataContext] = React.useState(null);
 
   const refresh = React.useCallback(async () => {
+    const id = ++requestId.current;
     const base = emptySnapshot(address);
     if (!enabled) {
       setSnapshot(base);
       setError(null);
+      setDataContext(context);
+      setLoading(false);
       return base;
     }
     if (!base.configured) {
       setSnapshot(base);
       setError(null);
+      setDataContext(context);
+      setLoading(false);
       return base;
     }
 
@@ -187,28 +191,24 @@ export default function useCommunityCenterUserSnapshot({
         poolBalance,
         totalLocked,
       ] = await Promise.all([
-        safeCall(() => contract.getEvents(), []),
-        safeCall(() => contract.paused(), null),
-        safeCall(() => contract.owner(), null),
-        safeCall(() => contract.distributor(), null),
-        safeCall(() => contract.poolBalance(), 0n),
-        safeCall(() => contract.totalLocked(), 0n),
+        contract.getEvents(),
+        contract.paused(),
+        contract.owner(),
+        contract.distributor(),
+        contract.poolBalance(),
+        contract.totalLocked(),
       ]);
 
-      const eventIds = Array.isArray(eventIdsRaw) ? eventIdsRaw : [];
+      if (!Array.isArray(eventIdsRaw))
+        throw new Error("Invalid community event response");
+      const eventIds = eventIdsRaw;
       const events = await Promise.all(
         eventIds.map(async (eventId) => {
-          const event = parseEvent(
-            await safeCall(() => contract.getEvent(eventId), null),
-            eventId,
-          );
+          const event = parseEvent(await contract.getEvent(eventId), eventId);
           const [userStatusRaw, canClaimRaw] = walletAddress
             ? await Promise.all([
-                safeCall(
-                  () => contract.userStatus(eventId, walletAddress),
-                  null,
-                ),
-                safeCall(() => contract.canClaim(eventId, walletAddress), null),
+                contract.userStatus(eventId, walletAddress),
+                contract.canClaim(eventId, walletAddress),
               ])
             : [null, null];
           const walletStatus = userStatusRaw
@@ -224,13 +224,18 @@ export default function useCommunityCenterUserSnapshot({
         }),
       );
 
-      let polls = [];
+      let polls = null;
+      let pollsError = null;
       if (includePolls) {
-        const pollJson = await safeCall(
-          () => fetchCommunityPolls({ walletAddress }),
-          null,
-        );
-        polls = Array.isArray(pollJson?.polls) ? pollJson.polls : [];
+        try {
+          const pollJson = await fetchCommunityPolls({ walletAddress });
+          if (!Array.isArray(pollJson?.polls))
+            throw new Error("Invalid community poll response");
+          polls = pollJson.polls;
+        } catch (err) {
+          // Voting availability is independent of confirmed onchain rewards.
+          pollsError = err;
+        }
       }
 
       const next = {
@@ -259,32 +264,41 @@ export default function useCommunityCenterUserSnapshot({
             sum + (event.claim?.ok ? toBigInt(event.claim.amount) : 0n),
           0n,
         ),
-        pollsCount: polls.length,
-        livePolls: polls.filter((poll) => poll.status === "Live").length,
-        myVotes: polls.filter((poll) => poll.myVoteOptionId).length,
+        pollsCount: polls?.length ?? null,
+        livePolls:
+          polls?.filter((poll) => poll.status === "Live").length ?? null,
+        myVotes: polls?.filter((poll) => poll.myVoteOptionId).length ?? null,
         events,
-        polls,
+        polls: polls ?? [],
+        pollsError,
         updatedAt: Date.now(),
       };
+      if (id !== requestId.current) return null;
+      setDataContext(context);
       setSnapshot(next);
       return next;
     } catch (err) {
+      if (id !== requestId.current) return null;
+      setDataContext(context);
       setError(err);
       setSnapshot(base);
       return base;
     } finally {
-      setLoading(false);
+      if (id === requestId.current) setLoading(false);
     }
-  }, [address, enabled, includePolls, walletAddress]);
+  }, [address, enabled, includePolls, walletAddress, context]);
 
   React.useEffect(() => {
     refresh();
+    return () => {
+      requestId.current += 1;
+    };
   }, [refresh]);
 
   return {
-    snapshot,
-    loading,
-    error,
+    snapshot: dataContext === context ? snapshot : emptySnapshot(address),
+    loading: dataContext !== context || loading,
+    error: dataContext === context ? error : null,
     refresh,
     address,
     configured: snapshot.configured,

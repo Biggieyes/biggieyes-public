@@ -194,6 +194,7 @@ function REWARDSPanel({
     React.useState(null);
   const [nftClaimingId, setNftClaimingId] = React.useState(null);
   const [nftClaimFeedback, setNftClaimFeedback] = React.useState(null);
+  const nftClaimLock = React.useRef(false);
   const [collectionBalance, setCollectionBalance] = React.useState(null);
   const [collectionRewardsChapterId, setCollectionRewardsChapterId] =
     React.useState(CORE_CHAPTERS[0]?.chapterId ?? 1);
@@ -320,28 +321,44 @@ function REWARDSPanel({
     ADDR.COLLECTION_REWARDS_READER ||
     ADDR.BIGGI_REWARDS_READER;
 
-  const { data: tokenStatsRaw, refresh: refreshTokenStats } = useTokenREWARDS(
-    readProvider,
-    tokenRewardsAddr,
-  );
+  const {
+    data: tokenStatsRaw,
+    loading: tokenLoading,
+    error: tokenReadError,
+    refresh: refreshTokenStats,
+  } = useTokenREWARDS(readProvider, tokenRewardsAddr);
   const { data: tokenStatsReader, refresh: refreshTokenReader } =
     useTokenRewardsReader(readProvider, tokenRewardsReaderAddr);
-  const { data: COLLECTIONStats, refresh: refreshCOLLECTIONStats } =
-    useCOLLECTIONREWARDS(
-      walletAddress,
-      readProvider,
-      collectionRewardsAddr,
-      collectionRewardsMain,
-    );
+  const {
+    data: COLLECTIONStats,
+    loading: collectionLoading,
+    error: collectionError,
+    refresh: refreshCOLLECTIONStats,
+  } = useCOLLECTIONREWARDS(
+    walletAddress,
+    readProvider,
+    collectionRewardsAddr,
+    collectionRewardsMain,
+  );
   const {
     data: nftSummary,
     loading: nftLoading,
     error: nftError,
     refresh: refreshNftStats,
+    setRewardPage: setNftRewardPage,
+    setEventPage: setNftEventPage,
   } = useNFTREWARDS(readProvider, nftRewardsAddr, walletAddress);
   const { data: nftReader, refresh: refreshNftReader } = useNftRewardsReader(
     readProvider,
     nftRewardsReaderAddr,
+  );
+  const nftConsistencyError = React.useMemo(
+    () =>
+      nftReader?.contractAddress &&
+      nftReader.contractAddress.toLowerCase() !== nftRewardsAddr?.toLowerCase()
+        ? new Error("NFT Rewards reader points to a different contract.")
+        : null,
+    [nftReader?.contractAddress, nftRewardsAddr],
   );
 
   const tokenStats = tokenStatsReader || tokenStatsRaw;
@@ -492,11 +509,22 @@ function REWARDSPanel({
     () =>
       Boolean(
         walletAddress &&
+        !collectionLoading &&
+        !collectionError &&
+        COLLECTIONStats?.budget?.resolved &&
+        COLLECTIONStats?.claimsEnabled === true &&
         writeProvider &&
         typeof writeProvider.getSigner === "function" &&
         COLLECTIONService,
       ),
-    [walletAddress, writeProvider, COLLECTIONService],
+    [
+      walletAddress,
+      writeProvider,
+      COLLECTIONService,
+      collectionLoading,
+      collectionError,
+      COLLECTIONStats,
+    ],
   );
 
   const canClaimNft = React.useMemo(
@@ -543,8 +571,16 @@ function REWARDSPanel({
     setClaiming(true);
     setClaimMessage("");
     try {
-      await onClaim();
-      setClaimMessage("Claim submitted. Watch your wallet for confirmation.");
+      const result = await onClaim();
+      setClaimMessage(
+        result?.status === "confirmed"
+          ? "Claim confirmed."
+          : result?.status === "cancelled"
+            ? "Claim cancelled in wallet."
+            : result?.status === "failed"
+              ? "Claim failed. Check wallet activity before retrying."
+              : "No claim transaction was confirmed.",
+      );
     } catch (err) {
       console.error("REWARDSPanel claim failed", err);
       setClaimMessage("Claim failed, check console.");
@@ -667,6 +703,8 @@ function REWARDSPanel({
 
   const handleClaimNftReward = React.useCallback(
     async (rewardId) => {
+      if (nftClaimLock.current) return;
+      if (nftLoading || nftError || nftConsistencyError) return;
       if (!canClaimNft) {
         setNftClaimFeedback({
           tone: "error",
@@ -681,30 +719,12 @@ function REWARDSPanel({
       }
 
       setNftClaimFeedback(null);
+      nftClaimLock.current = true;
       setNftClaimingId(normalizedRewardId);
       try {
         const service = new NFTREWARDSService(nftRewardsAddr, readProvider);
-        const reward = await service.rewardInfo(normalizedRewardId);
-        const assigned = reward?.assigned ?? reward?.[0];
-        const alreadyClaimed = Boolean(reward?.isClaimed ?? reward?.[1]);
-        if (
-          String(assigned || "").toLowerCase() !==
-          String(walletAddress || "").toLowerCase()
-        ) {
-          throw new Error("Reward is not assigned to the connected wallet.");
-        }
-        if (alreadyClaimed) throw new Error("Reward is already claimed.");
-
         const signer = await writeProvider.getSigner();
-        const signerAddress = await signer.getAddress();
-        if (
-          String(signerAddress).toLowerCase() !==
-          String(walletAddress).toLowerCase()
-        ) {
-          throw new Error("Wallet account changed. Reconnect and try again.");
-        }
-        service.connectWithSigner(signer);
-        await service.claim(normalizedRewardId);
+        await service.claimForWallet(normalizedRewardId, signer, walletAddress);
         setNftClaimFeedback({
           tone: "success",
           text: `NFT reward #${normalizedRewardId} claimed successfully.`,
@@ -721,11 +741,15 @@ function REWARDSPanel({
             "NFT reward claim failed.",
         });
       } finally {
+        nftClaimLock.current = false;
         setNftClaimingId(null);
       }
     },
     [
       canClaimNft,
+      nftLoading,
+      nftError,
+      nftConsistencyError,
       nftRewardsAddr,
       readProvider,
       refreshNftReader,
@@ -866,13 +890,11 @@ function REWARDSPanel({
     () => ({
       ...DEFAULT_NFT_SUMMARY,
       ...(nftSummary || {}),
-      ...(nftReader || {}),
       contractAddress:
-        nftReader?.contractAddress ||
-        nftSummary?.contractAddress ||
-        DEFAULT_NFT_SUMMARY.contractAddress,
+        nftSummary?.contractAddress || DEFAULT_NFT_SUMMARY.contractAddress,
+      readerAddress: nftRewardsReaderAddr,
     }),
-    [nftSummary, nftReader],
+    [nftSummary, nftRewardsReaderAddr],
   );
 
   const blockPaid = COLLECTIONStats?.blockPaid ?? [];
@@ -1026,7 +1048,13 @@ function REWARDSPanel({
               <button
                 type="button"
                 className="biggi-btn biggi-btn--accent"
-                disabled={!walletAddress || !onClaim || claiming}
+                disabled={
+                  !walletAddress ||
+                  !onClaim ||
+                  claiming ||
+                  tokenLoading ||
+                  Boolean(tokenReadError)
+                }
                 onClick={handleClaim}
               >
                 {claiming
@@ -1044,6 +1072,14 @@ function REWARDSPanel({
                 {refreshing ? "Refreshing..." : "Refresh stats"}
               </button>
             </div>
+            {tokenReadError && (
+              <div
+                role="alert"
+                className="rewards-grid__alert rewards-panel__alert"
+              >
+                Token rewards are unavailable. Refresh before claiming.
+              </div>
+            )}
             {claimMessage && (
               <div className="rewards-grid__alert rewards-panel__alert">
                 {claimMessage}
@@ -1154,6 +1190,8 @@ function REWARDSPanel({
         onChapterChange={setCollectionRewardsChapterId}
         rewardArtworkReady={collectionRewardsChapterId === 1}
         stats={COLLECTIONStats}
+        loading={collectionLoading}
+        error={collectionError}
         statusRows={COLLECTIONStatus}
         formatDecimal={formatDecimal}
         formatNativeAmount={formatRewardNative}
@@ -1165,6 +1203,7 @@ function REWARDSPanel({
         rainbowClaimed={rainbowClaimed}
         rainbowClaimability={rainbowClaimability}
         canClaimCOLLECTION={canClaimCOLLECTION}
+        walletAddress={walletAddress}
         claimState={COLLECTIONClaiming}
         onClaimBlockReward={handleClaimBlockReward}
         onClaimOrangeReward={handleClaimOrangeReward}
@@ -1182,7 +1221,7 @@ function REWARDSPanel({
       <NftREWARDSTab
         data={nftData}
         loading={nftLoading}
-        error={nftError}
+        error={nftError || nftConsistencyError}
         walletAddress={walletAddress}
         formatInteger={formatInteger}
         formatAddress={shortAddress}
@@ -1196,6 +1235,8 @@ function REWARDSPanel({
         claimState={nftClaimingId}
         onClaimReward={handleClaimNftReward}
         feedback={nftClaimFeedback}
+        onRewardPageChange={setNftRewardPage}
+        onEventPageChange={setNftEventPage}
       />
     </section>
   );

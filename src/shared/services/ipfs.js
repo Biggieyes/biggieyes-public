@@ -3,9 +3,10 @@ import { getCached } from "../utils/fetchCache.js";
 // Known public IPFS gateways (first is primary, others are fallbacks)
 
 // --- helpers ---
-const LIMIT_TEXT = "THIS GATEWAY HAS REACHED ITS LIMITS";
 const DEFAULT_JSON_CACHE_TTL_MS = 60_000;
 const DEFAULT_IMAGE_CACHE_TTL_MS = 5 * 60_000;
+const DEFAULT_ATTEMPT_TIMEOUT_MS = 8000;
+const DEFAULT_TOTAL_TIMEOUT_MS = 20_000;
 
 function buildCacheKey(prefix, ...parts) {
   return `${prefix}:${parts.map((p) => String(p ?? "")).join("|")}`;
@@ -85,6 +86,18 @@ function extractIpfsPathFromHttp(url) {
   }
 }
 
+function getIpfsResource(value) {
+  const raw = String(value || "").trim();
+  const match = raw.match(/^\/?(ipfs|ipns)(?::\/\/|\/)/i);
+  if (match) {
+    return {
+      path: normalizeIpfsPath(raw),
+      isIpns: match[1].toLowerCase() === "ipns",
+    };
+  }
+  return /^https?:\/\//i.test(raw) ? extractIpfsPathFromHttp(raw) : null;
+}
+
 function trimSlash(s) {
   return String(s).replace(/\/+$/, "");
 }
@@ -143,7 +156,8 @@ export function isSafeRemoteUrl(value) {
   try {
     const parsed = new URL(String(value || "").trim());
     if (parsed.username || parsed.password) return false;
-    if (parsed.protocol === "https:") return !isPrivateHostname(parsed.hostname);
+    if (parsed.protocol === "https:")
+      return !isPrivateHostname(parsed.hostname);
     return (
       parsed.protocol === "http:" &&
       isLocalDevelopmentPage() &&
@@ -179,10 +193,8 @@ const PINATA_ONLY = isTrue(env("VITE_IPFS_PINATA_ONLY"));
 
 const PUBLIC_FALLBACK_GATEWAYS = [
   "https://ipfs.io",
-  "https://cloudflare-ipfs.com",
   "https://dweb.link",
   "https://nftstorage.link",
-  "https://cf-ipfs.com",
   "https://ipfs.filebase.io",
   "https://gateway.lighthouse.storage",
 ];
@@ -191,9 +203,9 @@ const dedupeGatewayUrls = (urls) => {
   const out = [];
   const seen = new Set();
   for (const raw of urls) {
-    const normalized = trimSlash(raw || "");
-    if (!normalized) continue;
-    const key = normalized.toLowerCase();
+    const normalized = trimSlash(String(raw || "").trim());
+    if (!normalized || !isSafeRemoteUrl(normalized)) continue;
+    const key = new URL(normalized).href;
     if (seen.has(key)) continue;
     seen.add(key);
     out.push(normalized);
@@ -201,24 +213,23 @@ const dedupeGatewayUrls = (urls) => {
   return out;
 };
 
-let gatewayUrls = dedupeGatewayUrls([
+const gatewayUrls = dedupeGatewayUrls([
   EXTRA_GATEWAY_URL,
   PINATA_PRIMARY_GATEWAY,
   "https://gateway.pinata.cloud",
   ...(PINATA_ONLY ? [] : PUBLIC_FALLBACK_GATEWAYS),
 ]);
-let GWS = gatewayUrls.map((url) => makeGateway(url));
+const GWS = gatewayUrls.map((url) => makeGateway(url));
 
 // Allow adding a custom gateway from outside
 export function addIpfsGateway(fnOrBaseUrl) {
   if (typeof fnOrBaseUrl === "function") {
-    GWS.unshift(fnOrBaseUrl);
+    if (!GWS.includes(fnOrBaseUrl)) GWS.unshift(fnOrBaseUrl);
     return;
   }
   if (typeof fnOrBaseUrl === "string" && fnOrBaseUrl.trim()) {
     const normalized = trimSlash(fnOrBaseUrl.trim());
-    gatewayUrls = dedupeGatewayUrls([normalized, ...gatewayUrls]);
-    GWS = gatewayUrls.map((url) => makeGateway(url));
+    if (isSafeRemoteUrl(normalized)) GWS.unshift(makeGateway(normalized));
   }
 }
 
@@ -230,25 +241,87 @@ function buildGatewayUrl(gw, cidOrPath, isIpns = false) {
     : makeGateway(String(gw))(cidOrPath, isIpns);
 }
 
-/** Fetch with an AbortController-based timeout. */
+/** Keep the IPFS/IPNS path intact while changing gateways, with no duplicate URLs. */
+export function getIpfsGatewayCandidates(uri, gateways = GWS) {
+  const raw = String(uri || "").trim();
+  const resource = getIpfsResource(raw);
+  if (!resource?.path) return [];
+  if (/^https?:\/\//i.test(raw) && !isSafeRemoteUrl(raw)) return [];
+  const urls = /^https?:\/\//i.test(raw) ? [raw] : [];
+  for (const gw of gateways) {
+    try {
+      urls.push(buildGatewayUrl(gw, resource.path, resource.isIpns));
+    } catch {
+      // An invalid custom builder must not prevent trying the remaining gateways.
+    }
+  }
+  return [
+    ...new Set(urls.filter(isSafeRemoteUrl).map((url) => new URL(url).href)),
+  ];
+}
+
+function cancelBody(response) {
+  try {
+    response?.body?.cancel?.()?.catch?.(() => {});
+  } catch {
+    // A body being consumed by json() can already be locked or aborted.
+  }
+}
+
+function positiveTimeout(value, fallback) {
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function requestBudget(options) {
+  const deadline =
+    Date.now() +
+    positiveTimeout(options.totalTimeout, DEFAULT_TOTAL_TIMEOUT_MS);
+  const timeout = positiveTimeout(options.timeout, DEFAULT_ATTEMPT_TIMEOUT_MS);
+  return () => Math.max(0, Math.min(timeout, deadline - Date.now()));
+}
+
+/** The optional consumer keeps the deadline active while reading the response body. */
 export async function fetchWithTimeout(
   url,
   ms = 8000,
   fetchImpl = fetch,
   headers,
+  consume,
 ) {
   const hasAbort = typeof AbortController !== "undefined";
   const ctrl = hasAbort ? new AbortController() : null;
-  const t = hasAbort ? setTimeout(() => ctrl.abort(), ms) : null;
+  let response;
+  let expired = false;
+  let timer;
+  const timeoutError = new Error("IPFS request timed out");
+  timeoutError.name = "TimeoutError";
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(
+      () => {
+        expired = true;
+        ctrl?.abort();
+        cancelBody(response);
+        reject(timeoutError);
+      },
+      positiveTimeout(ms, DEFAULT_ATTEMPT_TIMEOUT_MS),
+    );
+  });
   try {
-    const resp = await fetchImpl(url, {
-      signal: ctrl?.signal,
-      cache: "no-cache",
-      ...(headers ? { headers } : {}),
-    });
-    return resp;
+    const work = (async () => {
+      response = await fetchImpl(url, {
+        signal: ctrl?.signal,
+        cache: "no-cache",
+        ...(headers ? { headers } : {}),
+      });
+      if (expired) {
+        cancelBody(response);
+        throw timeoutError;
+      }
+      return consume ? await consume(response) : response;
+    })();
+    return await Promise.race([work, timeout]);
   } finally {
-    if (t) clearTimeout(t);
+    clearTimeout(timer);
   }
 }
 
@@ -257,14 +330,8 @@ export function httpFromIpfs(uri) {
   if (!uri) return uri;
   const s = String(uri).trim();
   if (s.startsWith("//")) return "";
-  const isIpns =
-    s.startsWith("ipns://") || s.startsWith("/ipns/") || s.startsWith("ipns/");
-  const isIpfs =
-    s.startsWith("ipfs://") || s.startsWith("/ipfs/") || s.startsWith("ipfs/");
-
-  if (isIpfs || isIpns) {
-    const builder = GWS[0] || makeGateway("https://ipfs.io");
-    return builder(uri, isIpns);
+  if (/^\/?(ipfs|ipns)(?::\/\/|\/)/i.test(s)) {
+    return getIpfsGatewayCandidates(s)[0] || "";
   }
   if (/^https?:\/\//i.test(s)) return isSafeRemoteUrl(s) ? s : "";
   if (/^[a-z][a-z0-9+.-]*:/i.test(s)) return "";
@@ -276,76 +343,46 @@ export function httpFromIpfs(uri) {
  * Tries all known IPFS gateways if ipfs:// or ipns://, supports relative paths.
  */
 async function resolveImageUrlRaw(imageField, metadataUri, options = {}) {
-  const { gateways = GWS, timeout = 8000, fetchImpl = fetch } = options;
+  const { gateways = GWS, fetchImpl = fetch } = options;
   if (!imageField) return null;
   const img = String(imageField).trim();
-
-  // ipfs/ipns resource
-  if (
-    img.startsWith("ipfs://") ||
-    img.startsWith("ipns://") ||
-    img.startsWith("/ipfs/") ||
-    img.startsWith("/ipns/")
-  ) {
-    const isIpns =
-      img.startsWith("ipns://") ||
-      img.startsWith("/ipns/") ||
-      img.startsWith("ipns/");
-    const p = normalizeIpfsPath(img);
-    const fallbackUrl =
-      gateways && gateways.length
-        ? buildGatewayUrl(gateways[0], p, isIpns)
-        : makeGateway("https://ipfs.io")(p, isIpns);
-    for (const gw of gateways) {
+  if (img.startsWith("//")) return null;
+  if (getIpfsResource(img)) {
+    const candidates = getIpfsGatewayCandidates(img, gateways);
+    const remaining = requestBudget(options);
+    for (const url of candidates) {
+      const timeout = remaining();
+      if (!timeout) break;
       try {
-        const url = buildGatewayUrl(gw, p, isIpns);
-        const resp = await fetchWithTimeout(
+        const valid = await fetchWithTimeout(
           url,
           timeout,
           fetchImpl,
           headersForUrl(url),
+          (resp) => {
+            const ctype = (resp?.headers?.get?.("content-type") || "")
+              .toLowerCase()
+              .split(";")[0]
+              .trim();
+            const isImage =
+              !ctype ||
+              ctype.startsWith("image/") ||
+              ctype === "application/octet-stream";
+            cancelBody(resp);
+            return resp?.ok && isImage;
+          },
         );
-        const ctype = resp?.headers?.get?.("content-type") || "";
-        if (resp?.ok && !ctype.includes("text/html")) return url;
+        if (valid) return url;
       } catch {
         // try next gateway
       }
     }
-    // If all gateway fetches failed (often due to CORS), still return a usable URL.
-    return fallbackUrl;
+    // CORS can block fetch while <img> remains usable. The card has onError fallbacks.
+    return candidates[0] || null;
   }
 
-  // already absolute http(s)
   if (/^https?:\/\//i.test(img)) {
-    if (!isSafeRemoteUrl(img)) return null;
-    const ipfsInfo = extractIpfsPathFromHttp(img);
-    if (ipfsInfo) {
-      const candidates = [img];
-      for (const gw of gateways) {
-        try {
-          candidates.push(buildGatewayUrl(gw, ipfsInfo.path, ipfsInfo.isIpns));
-        } catch {
-          // ignore gateway build errors
-        }
-      }
-      for (const url of candidates) {
-        try {
-          const resp = await fetchWithTimeout(
-            url,
-            timeout,
-            fetchImpl,
-            headersForUrl(url),
-          );
-          const ctype = resp?.headers?.get?.("content-type") || "";
-          if (resp?.ok && !ctype.includes("text/html")) return url;
-        } catch {
-          // try next candidate
-        }
-      }
-      // fallback to original URL if all fetches failed
-      return img;
-    }
-    return img;
+    return isSafeRemoteUrl(img) ? img : null;
   }
 
   if (/^[a-z][a-z0-9+.-]*:/i.test(img)) return null;
@@ -353,10 +390,8 @@ async function resolveImageUrlRaw(imageField, metadataUri, options = {}) {
   // relative path beside the metadata file
   const metaHttp = httpFromIpfs(metadataUri);
   try {
-    const u = new URL(metaHttp);
-    const clean = img.replace(/^\.?\//, "");
-    u.pathname = u.pathname.replace(/\/[^/]*$/, `/${clean}`);
-    return u.toString();
+    const resolved = new URL(img, metaHttp).href;
+    return resolveImageUrlRaw(resolved, metadataUri, options);
   } catch {
     return img.startsWith("//") ? null : img;
   }
@@ -379,75 +414,42 @@ export async function resolveImageUrl(imageField, metadataUri, options = {}) {
 
 /** Read JSON from ipfs://, ipns://, /ipfs/, /ipns/ or http(s) URI, trying multiple gateways for IPFS/IPNS. */
 async function readJsonFromURIRaw(uri, options = {}) {
-  const { gateways = GWS, timeout = 8000, fetchImpl = fetch } = options;
+  const { gateways = GWS, fetchImpl = fetch } = options;
   try {
     if (!uri) return null;
     const u = String(uri).trim();
 
-    const isIpns =
-      u.startsWith("ipns://") ||
-      u.startsWith("/ipns/") ||
-      u.startsWith("ipns/");
-    const isIpfs =
-      u.startsWith("ipfs://") ||
-      u.startsWith("/ipfs/") ||
-      u.startsWith("ipfs/");
-
-    const tryJson = async (url) => {
+    const candidates = getIpfsResource(u)
+      ? getIpfsGatewayCandidates(u, gateways)
+      : isSafeRemoteUrl(u)
+        ? [u]
+        : [];
+    const remaining = requestBudget(options);
+    for (const url of candidates) {
+      const timeout = remaining();
+      if (!timeout) break;
       try {
-        const resp = await fetchWithTimeout(
+        const json = await fetchWithTimeout(
           url,
           timeout,
           fetchImpl,
           headersForUrl(url),
+          async (resp) => {
+            const ctype = (
+              resp?.headers?.get?.("content-type") || ""
+            ).toLowerCase();
+            if (!resp?.ok || ctype.includes("text/html")) {
+              cancelBody(resp);
+              return null;
+            }
+            return await resp.json();
+          },
         );
-        if (!resp?.ok) return null;
-        const ctype = resp?.headers?.get?.("content-type") || "";
-        if (ctype.includes("text/html")) {
-          const txt = await resp.text().catch(() => "");
-          if (txt && txt.includes(LIMIT_TEXT)) return null;
-          return null;
-        }
-        return await resp.json();
+        if (json) return json;
       } catch {
-        return null;
+        // Includes stalled bodies and invalid JSON, not just connection failures.
       }
-    };
-
-    if (isIpfs || isIpns) {
-      const p = normalizeIpfsPath(u);
-      for (const gw of gateways) {
-        const url = buildGatewayUrl(gw, p, isIpns);
-        const json = await tryJson(url);
-        if (json) return json;
-      }
-      return null;
     }
-
-    const ipfsInfo = extractIpfsPathFromHttp(u);
-    if (ipfsInfo) {
-      if (!isSafeRemoteUrl(u)) return null;
-      // First try the original URL (may include gateway auth)
-      const direct = await tryJson(u);
-      if (direct) return direct;
-      // Fallback to other gateways if the original fails
-      for (const gw of gateways) {
-        const url = buildGatewayUrl(gw, ipfsInfo.path, ipfsInfo.isIpns);
-        const json = await tryJson(url);
-        if (json) return json;
-      }
-      return null;
-    }
-
-    if (!isSafeRemoteUrl(u)) return null;
-
-    const resp = await fetchWithTimeout(
-      u,
-      timeout,
-      fetchImpl,
-      headersForUrl(u),
-    );
-    if (resp?.ok) return await resp.json();
     return null;
   } catch {
     return null;
@@ -472,6 +474,7 @@ export async function readJsonFromURI(uri, options = {}) {
 // Default export for legacy compatibility (bundle-safe object).
 export default {
   GWS,
+  getIpfsGatewayCandidates,
   addIpfsGateway,
   fetchWithTimeout,
   httpFromIpfs,

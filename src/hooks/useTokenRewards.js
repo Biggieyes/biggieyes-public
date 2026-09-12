@@ -31,6 +31,8 @@ export default function useTokenRewards(providerOverride, addressOverride) {
   const [data, setData] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
+  const requestId = React.useRef(0);
+  const [dataContext, setDataContext] = React.useState(null);
 
   const provider = React.useMemo(() => {
     if (providerOverride) return providerOverride;
@@ -42,10 +44,18 @@ export default function useTokenRewards(providerOverride, addressOverride) {
   }, [providerOverride]);
 
   const address = addressOverride || ADDR.TOKEN_REWARDS;
+  const context = React.useMemo(
+    () => ({ provider, address }),
+    [provider, address],
+  );
 
   const refresh = React.useCallback(async () => {
+    const id = ++requestId.current;
     if (!provider || !address || !ABI.length) {
       setData(null);
+      setDataContext(context);
+      setLoading(false);
+      setError(null);
       return null;
     }
     setLoading(true);
@@ -65,16 +75,16 @@ export default function useTokenRewards(providerOverride, addressOverride) {
         blockWeights,
         tokenMetaRaw,
       ] = await Promise.all([
-        safeCall(() => contract.unitReward?.(), null),
+        contract.unitReward(),
         safeCall(() => contract.rewardsMinted?.(), null),
         safeCall(() => contract.rewardsCap?.(), null),
         safeCall(() => contract.remainingCap?.(), null),
         safeCall(() => contract.totalDistributed?.(), null),
         safeCall(() => contract.distributedThisWeek?.(), null),
-        safeCall(() => contract.currentWeek?.(), null),
+        contract.currentWeek(),
         safeCall(() => contract.lastRecordedWeek?.(), null),
         safeCall(() => contract.lastWeekDistributed?.(), null),
-        safeCall(() => contract.getBlockWeights?.(), null),
+        contract.getBlockWeights(),
         safeCall(() => contract.tokenMeta?.(), null),
       ]);
 
@@ -98,20 +108,33 @@ export default function useTokenRewards(providerOverride, addressOverride) {
         tokenSymbol,
       };
 
+      if (id !== requestId.current) return null;
+      setDataContext(context);
       setData(next);
       return next;
     } catch (err) {
+      if (id !== requestId.current) return null;
+      setDataContext(context);
       setError(err);
       setData(null);
       return null;
     } finally {
-      setLoading(false);
+      if (id === requestId.current) setLoading(false);
     }
-  }, [provider, address]);
+  }, [provider, address, context]);
 
   React.useEffect(() => {
+    setData(null);
     refresh();
+    return () => {
+      requestId.current += 1;
+    };
   }, [refresh]);
 
-  return { data, loading, error, refresh };
+  return {
+    data: dataContext === context ? data : null,
+    loading: dataContext !== context || loading,
+    error: dataContext === context ? error : null,
+    refresh,
+  };
 }

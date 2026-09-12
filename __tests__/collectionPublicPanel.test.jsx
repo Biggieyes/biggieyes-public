@@ -69,6 +69,21 @@ describe("public collection panel", () => {
     ).toBe(true);
   });
 
+  it("does not report an unknown public gate as Locked or allow minting", () => {
+    renderReady({
+      COLLECTIONTotals: { ...readyTotals, chapterActive: null, publicUnlocked: null },
+    });
+    expect(screen.getByRole("button", { name: "Checking chapter" })).toBeDisabled();
+    expect(screen.queryByText("Locked")).not.toBeInTheDocument();
+    expect(screen.queryByText("Unlocked")).not.toBeInTheDocument();
+  });
+
+  it("uses the selected chapter name for its paired VRF price", () => {
+    renderReady({ chapterName: "Universe", comingSoon: true });
+    expect(screen.getByText("Live Universe block price")).toBeInTheDocument();
+    expect(screen.queryByText("Live Originals block price")).not.toBeInTheDocument();
+  });
+
   it("keeps the selection fixed while a transaction is pending", () => {
     const onTokenIdChange = vi.fn();
     const onBlockSelect = vi.fn();

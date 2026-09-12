@@ -21,7 +21,7 @@ import {
   getReadOnlyMain as getReadOnlyContract,
   getReadOnlyChapterMain,
   getReadOnlyChapterMain2,
-  getMainRW,
+  getChapterMain,
   getReadOnlyTicketHub,
   getTicketHub,
   getLMRO as getReadOnlyLiquidityContract,
@@ -38,7 +38,6 @@ import {
   setInjectedProvider,
   getVRFRO,
   resetROProvider,
-  syncPolygonRpcIfNeeded,
 } from "@/shared/utils/contract";
 import {
   clearPreferredRpc,
@@ -56,7 +55,21 @@ import {
   resolveRedeemableTicketForActiveChapter,
 } from "@/shared/utils/ticketChapters.js";
 import { isRateLimitedRpcError } from "@/shared/utils/rpcErrors";
-import { runWriteWithRpcRetry } from "@/shared/utils/writeRetry";
+import {
+  assertWriteContext,
+  sendWriteOnce,
+  waitForWriteReceipt,
+} from "@/shared/utils/writeRetry";
+import {
+  clearPendingVrf,
+  findVrfCompletion,
+  loadPendingVrf,
+  normalizePendingVrf,
+  pendingVrfFromReceipt,
+  resolvePendingVrf,
+  samePendingVrf,
+  savePendingVrf,
+} from "@/shared/utils/pendingVrf.js";
 import { coerceBool } from "@/shared/utils/boolean";
 import {
   queryLogsBatched as queryLogsBatchedShared,
@@ -1992,6 +2005,19 @@ export default function AppCore() {
   const latestVRFUIDataRef = React.useRef(VRFUIData);
 
   const pendingTicketIdRef = React.useRef(null);
+  const pendingVrfRef = React.useRef(null);
+  const vrfRefreshIdRef = React.useRef(0);
+  const rememberPendingVrf = React.useCallback((context) => {
+    const saved = savePendingVrf(context);
+    if (!saved) return null;
+    if (
+      String(walletAddressRef.current).toLowerCase() !==
+      String(saved.account).toLowerCase()
+    )
+      return saved;
+    pendingVrfRef.current = saved;
+    return pendingVrfRef.current;
+  }, []);
   const walletAddressRef = React.useRef("");
   const referralRegisterInFlightRef = React.useRef("");
   const latestWalletItemsRef = React.useRef([]);
@@ -2091,7 +2117,6 @@ export default function AppCore() {
   const walletFetchFailureRef = React.useRef(new Map());
   const walletFetchCooldownLogRef = React.useRef("");
   const claimableFetchRef = React.useRef(0);
-  const lastVRFFulfilledRef = React.useRef("");
   const txClearTimerRef = React.useRef(null);
   const alertDedupeRef = React.useRef({ key: "", ts: 0 });
   const connectInFlightRef = React.useRef(false);
@@ -2100,7 +2125,6 @@ export default function AppCore() {
     timer: null,
   });
   const rpcBackoffUntilRef = React.useRef(0);
-  const walletRpcResyncedAtRef = React.useRef(0);
   const delegatedInflightUntilRef = React.useRef(0);
   const writeTxLockRef = React.useRef({
     active: false,
@@ -2526,51 +2550,6 @@ export default function AppCore() {
     }
   }, []);
 
-  const sendWriteWithRpcRetry = React.useCallback(
-    async (sendFn, label = "transaction") => {
-      const retries = Math.max(
-        0,
-        Number(import.meta.env.VITE_WRITE_RATE_LIMIT_RETRIES ?? 2),
-      );
-      const baseDelay = getPollInterval(
-        4500,
-        "VITE_WRITE_RATE_LIMIT_BACKOFF_MS",
-      );
-      return runWriteWithRpcRetry(sendFn, {
-        maxRetries: retries,
-        baseDelayMs: baseDelay,
-        delayStepMs: 3000,
-        isRateLimitError: isRateLimitedRpcError,
-        onRateLimitRetry: async ({ attempt }) => {
-          const current = getPreferredRpc();
-          if (current) markRpcRateLimited(current);
-          const delay = engageRpcBackoff(baseDelay + attempt * 3000);
-
-          try {
-            rotatePreferredRpc({ preferPublicFirst: true });
-            const injected = getInjectedProvider();
-            if (injected) {
-              await syncPolygonRpcIfNeeded(injected, {
-                force: true,
-                preferPublicFirst: true,
-              });
-              await ensurePolygon(injected);
-              walletRpcResyncedAtRef.current = Date.now();
-            }
-          } catch (rpcErr) {
-            console.warn(
-              `${label}: RPC rotate/sync failed`,
-              rpcErr?.message || rpcErr,
-            );
-          }
-
-          return delay;
-        },
-      });
-    },
-    [engageRpcBackoff, rotatePreferredRpc],
-  );
-
   const prettyError = React.useCallback((err) => {
     if (isUserRejectedAction(err)) {
       return "Transaction was cancelled in MetaMask.";
@@ -2579,12 +2558,7 @@ export default function AppCore() {
       return "MetaMask reports another transaction is still pending for this delegated account. Confirm or cancel it in MetaMask Activity, then retry.";
     }
     if (isRateLimitedRpcError(err)) {
-      const recentlyResynced =
-        Date.now() - Number(walletRpcResyncedAtRef.current || 0) < 90_000;
-      if (recentlyResynced) {
-        return "MetaMask RPC is rate-limited (429). Wallet RPC endpoints were refreshed automatically; wait a few seconds and retry.";
-      }
-      return "MetaMask RPC is rate-limited (429). Wait a few seconds and retry; if it persists, switch Polygon mainnet RPC in MetaMask.";
+      return "RPC is rate-limited. Submission may be unconfirmed. Check MetaMask Activity and Polygon before submitting again.";
     }
 
     const lowerMsg = String(
@@ -3066,6 +3040,54 @@ export default function AppCore() {
       contract: fallback,
     };
   }, []);
+
+  const resolveVrfMain = React.useCallback(async () => {
+    if (walletAddress) {
+      const base = getReadOnlyContract();
+      const originalContext = pendingVrfRef.current;
+      const preferred =
+        normalizePendingVrf(originalContext, walletAddress) ||
+        loadPendingVrf(walletAddress);
+      const result = await resolvePendingVrf({
+        account: walletAddress,
+        provider: getProviderFor(base),
+        preferred,
+        getContract: getReadOnlyChapterMain,
+      });
+      if (
+        String(walletAddressRef.current).toLowerCase() !==
+        walletAddress.toLowerCase()
+      )
+        throw new Error("Wallet changed during VRF refresh");
+      if (
+        pendingVrfRef.current !== originalContext &&
+        !samePendingVrf(pendingVrfRef.current, result?.context)
+      )
+        throw new Error("VRF context changed during refresh");
+      if (result?.reverted) {
+        clearPendingVrf(walletAddress);
+        pendingVrfRef.current = null;
+        setVRFPending(false);
+        setRedeemMsg("Redeem transaction reverted. No NFT was minted.");
+        return {
+          contract: result.contract,
+          chapterId: result.context.chapterId,
+          activeChapterIds: [result.context.chapterId],
+          activeChapterCount: 1,
+        };
+      }
+      if (result) {
+        rememberPendingVrf(result.context);
+        return {
+          ...result,
+          chapterId: result.context.chapterId,
+          activeChapterIds: [result.context.chapterId],
+          activeChapterCount: 1,
+        };
+      }
+    }
+    return resolveDisplayedChapterMain();
+  }, [walletAddress, rememberPendingVrf, resolveDisplayedChapterMain]);
 
   const fetchStats = React.useCallback(async () => {
     if (isRpcBackoffActive()) return;
@@ -6728,9 +6750,10 @@ export default function AppCore() {
   );
 
   const refreshVRFPanel = React.useCallback(async () => {
+    const refreshId = ++vrfRefreshIdRef.current;
     const backoffActive = isRpcBackoffActive();
     try {
-      const displayedChapter = await resolveDisplayedChapterMain();
+      const displayedChapter = await resolveVrfMain();
       const c = displayedChapter.contract;
       const provider = getProviderFor(c);
       if (!provider) throw new Error("Provider not available");
@@ -6870,13 +6893,16 @@ export default function AppCore() {
 
       if (walletAddress) {
         try {
-          const pendingReqIdBN = await c
-            .pendingMintRequest(walletAddress)
-            .catch(() => 0n);
+          const pendingReqIdBN = await c.pendingMintRequest(walletAddress);
+          if (
+            refreshId !== vrfRefreshIdRef.current ||
+            walletAddressRef.current !== walletAddress
+          )
+            return;
           const ridStr = pendingReqIdBN?.toString?.() || "0";
           const hasPendingOnchain = ridStr !== "0";
-          setVRFPending(hasPendingOnchain);
-          if (!hasPendingOnchain) {
+          setVRFPending(hasPendingOnchain || Boolean(displayedChapter.context));
+          if (!hasPendingOnchain && !displayedChapter.context) {
             setPendingTicketId((prev) => (prev ? null : prev));
             pendingTicketIdRef.current = null;
           }
@@ -6910,7 +6936,12 @@ export default function AppCore() {
               if (typeof c.pendingTicketId === "function") {
                 const pendingTicket = await c.pendingTicketId(pendingReqIdBN);
                 const pendingTicketStr = pendingTicket?.toString?.() || "";
-                if (pendingTicketStr && pendingTicketStr !== "0") {
+                if (
+                  pendingTicketStr &&
+                  pendingTicketStr !== "0" &&
+                  refreshId === vrfRefreshIdRef.current &&
+                  walletAddressRef.current === walletAddress
+                ) {
                   resolvedPendingTicketId = pendingTicketStr;
                   setPendingTicketId(pendingTicketStr);
                   pendingTicketIdRef.current = pendingTicketStr;
@@ -6930,7 +6961,12 @@ export default function AppCore() {
                 resolvedPendingTicketId || pendingTicketIdRef.current || "",
             };
           } else if (history.length) {
-            const fulfilled = history.find((h) => h.status === "fulfilled");
+            const fulfilled = history.find(
+              (h) =>
+                h.status === "fulfilled" &&
+                (!displayedChapter.context ||
+                  h.requestId === displayedChapter.context.requestId),
+            );
             if (fulfilled) {
               last = {
                 requestId: fulfilled.requestId,
@@ -6949,6 +6985,11 @@ export default function AppCore() {
         setVRFPending(false);
       }
 
+      if (
+        refreshId !== vrfRefreshIdRef.current ||
+        String(walletAddressRef.current || "") !== String(walletAddress || "")
+      )
+        return;
       setVRFUIData({
         network: net?.name
           ? `${net.name} (${net.chainId})`
@@ -6977,7 +7018,7 @@ export default function AppCore() {
   }, [
     walletAddress,
     buildVRFHistory,
-    resolveDisplayedChapterMain,
+    resolveVrfMain,
     isRpcBackoffActive,
     isTransientRpcReadError,
     engageRpcBackoff,
@@ -7827,12 +7868,19 @@ export default function AppCore() {
           forceLegacy: true,
         },
       );
-      const tx = await sendWriteWithRpcRetry(
+      await assertWriteContext({
+        contract,
+        account: walletAddress,
+        getCurrentAccount: () => walletAddressRef.current,
+        chainId: ACTIVE_CHAIN.chainId,
+      });
+      const tx = await sendWriteOnce(
         () =>
           contract.mintTicketForChapter(activeChapterId, {
             value: price,
             ...(gasLimitOverride ? { gasLimit: gasLimitOverride } : {}),
             ...feeOverrides,
+            chainId: ACTIVE_CHAIN.chainId,
           }),
         "mintTicket",
       );
@@ -7842,17 +7890,17 @@ export default function AppCore() {
         hash: tx?.hash,
         chainId,
       });
-      const receipt = await tx.wait();
-      updateTxStatus({
-        type: "mint",
-        stage: "confirmed",
-        hash: tx?.hash,
-        chainId,
-      });
+      const receipt = await waitForWriteReceipt(tx);
       updateTxStatus(
-        { type: "mint", stage: "confirmed", hash: tx?.hash, chainId },
+        {
+          type: "mint",
+          stage: "confirmed",
+          hash: receipt.hash || tx?.hash,
+          chainId,
+        },
         9000,
       );
+      if (walletAddressRef.current !== walletAddress) return;
 
       const mintedTicketId = extractMintedTicketIdFromReceipt(
         receipt,
@@ -7875,11 +7923,13 @@ export default function AppCore() {
       }
 
       setTimeout(() => {
+        if (walletAddressRef.current !== walletAddress) return;
         fetchStats().catch(() => {});
         fetchREWARDS().catch(() => {});
-        refreshVRFPanel?.();
+        refreshVRFPanel().catch(() => {});
         fetchWalletAssets(walletAddress, { force: true }).catch(() => {});
         setTimeout(() => {
+          if (walletAddressRef.current !== walletAddress) return;
           fetchWalletAssets(walletAddress, { force: true }).catch(() => {});
         }, 2200);
       }, 800);
@@ -7947,7 +7997,6 @@ export default function AppCore() {
     markDelegatedInflight,
     recoverRpcConnectivity,
     releaseWriteTxLock,
-    sendWriteWithRpcRetry,
     showUserAlert,
     pendingReferral,
     attemptMintedTicketReferralAttribution,
@@ -8122,6 +8171,14 @@ export default function AppCore() {
             await readContract.pendingMintRequest(walletAddress);
           const pendingReqId = pendingReq?.toString?.() || "0";
           if (pendingReqId !== "0") {
+            rememberPendingVrf({
+              chainId: ACTIVE_CHAIN.chainId,
+              account: walletAddress,
+              chapterId: activeTicket.chapterId,
+              collection: readContract.target,
+              requestId: pendingReqId,
+              ticketId: String(await readContract.pendingTicketId(pendingReq)),
+            });
             setVRFPending(true);
             setRedeemMsg(
               "You already have a pending VRF request. Waiting for reveal...",
@@ -8132,6 +8189,14 @@ export default function AppCore() {
               "vrf-pending-redeem",
               5000,
             );
+          } else if (
+            normalizePendingVrf(pendingVrfRef.current, walletAddress) ||
+            loadPendingVrf(walletAddress)
+          ) {
+            await refreshVRFPanel();
+            return showUserAlert(
+              "The previous redeem is still being reconciled. Check its transaction before redeeming again.",
+            );
           } else if (VRFPending) {
             setVRFPending(false);
             setRedeemMsg("");
@@ -8139,8 +8204,11 @@ export default function AppCore() {
             pendingTicketIdRef.current = null;
           }
         }
-      } catch {
-        // ignore pending check failures
+      } catch (error) {
+        throw new Error(
+          "Pending VRF state could not be verified. Refresh before redeeming.",
+          { cause: error },
+        );
       }
 
       const startBlock = await getBlockNumberWithFallback(roProvider);
@@ -8239,14 +8307,32 @@ export default function AppCore() {
           forceLegacy: true,
         },
       );
-      const tx = await sendWriteWithRpcRetry(
+      await assertWriteContext({
+        contract: writeContract,
+        account: walletAddress,
+        getCurrentAccount: () => walletAddressRef.current,
+        chainId: ACTIVE_CHAIN.chainId,
+      });
+      const tx = await sendWriteOnce(
         () =>
           redeemFn(ticketIdBN, {
             ...(redeemGasOverride ? { gasLimit: redeemGasOverride } : {}),
             ...feeOverrides,
+            chainId: ACTIVE_CHAIN.chainId,
           }),
         "redeemTicket",
       );
+      const submittedVrf = {
+        chainId,
+        account: walletAddress,
+        chapterId: activeTicket.chapterId,
+        collection: readContract.target,
+        requestId: "",
+        ticketId: ticketIdStr,
+        txHash: tx.hash,
+        startBlock,
+      };
+      rememberPendingVrf(submittedVrf);
       updateTxStatus({
         type: "redeem",
         stage: "pending",
@@ -8254,7 +8340,11 @@ export default function AppCore() {
         chainId,
       });
       setRedeemMsg("Waiting for transaction confirmation...");
-      await tx.wait();
+      const receipt = await waitForWriteReceipt(tx);
+      rememberPendingVrf(
+        pendingVrfFromReceipt(submittedVrf, receipt, readContract),
+      );
+      if (walletAddressRef.current !== walletAddress) return;
 
       const pendingTicket = {
         tokenId: ticketIdStr,
@@ -8289,6 +8379,7 @@ export default function AppCore() {
       });
 
       setTimeout(() => {
+        if (walletAddressRef.current !== walletAddress) return;
         const refreshTasks = [Promise.resolve(refreshVRFPanel?.())];
         if (walletAddress) {
           refreshTasks.push(fetchWalletAssets(walletAddress));
@@ -8296,8 +8387,22 @@ export default function AppCore() {
         Promise.allSettled(refreshTasks).catch(() => {});
       }, 1200);
     } catch (err) {
+      let unresolvedVrf =
+        normalizePendingVrf(pendingVrfRef.current, walletAddress) ||
+        loadPendingVrf(walletAddress);
+      const originalNotMined =
+        err?.receipt &&
+        (Number(err.receipt.status) === 0 ||
+          (err.code === "TRANSACTION_REPLACED" && err.cancelled));
+      if (unresolvedVrf && !unresolvedVrf.requestId && originalNotMined) {
+        clearPendingVrf(walletAddress);
+        if (walletAddressRef.current === walletAddress)
+          pendingVrfRef.current = null;
+        unresolvedVrf = null;
+      }
+      if (walletAddressRef.current !== walletAddress) return;
       setIsRedeeming(false);
-      setVRFPending(false);
+      setVRFPending(Boolean(unresolvedVrf));
       setRedeemMsg("");
       setPendingTicketId(null);
       pendingTicketIdRef.current = null;
@@ -8314,6 +8419,7 @@ export default function AppCore() {
           ) {
             const pendingReq =
               await readContract.pendingMintRequest(walletAddress);
+            if (walletAddressRef.current !== walletAddress) return;
             if (pendingReq && pendingReq.toString?.() !== "0") {
               setVRFPending(true);
               setRedeemMsg(
@@ -8336,7 +8442,9 @@ export default function AppCore() {
 
       if (isUserRejectedAction(err)) {
         setRedeemMsg("Transaction cancelled in wallet.");
-        setTimeout(() => setRedeemMsg(""), 2200);
+        setTimeout(() => {
+          if (walletAddressRef.current === walletAddress) setRedeemMsg("");
+        }, 2200);
         console.info("redeemTicket cancelled in wallet");
         return;
       }
@@ -8372,7 +8480,7 @@ export default function AppCore() {
     recoverRpcConnectivity,
     releaseWriteTxLock,
     scheduleRefreshVRF,
-    sendWriteWithRpcRetry,
+    rememberPendingVrf,
     showUserAlert,
   ]);
 
@@ -8398,7 +8506,8 @@ export default function AppCore() {
     try {
       await ensurePolygon();
 
-      const readContract = contractRef.current || getReadOnlyContract();
+      const pendingMain = await resolveVrfMain();
+      const readContract = pendingMain.contract;
       const roProvider = getProviderFor(readContract);
       if (!roProvider) throw new Error("Provider not available");
       const net = await roProvider.getNetwork();
@@ -8433,8 +8542,6 @@ export default function AppCore() {
       const pendingReqId = pendingReq?.toString?.() || "0";
 
       if (pendingReqId === "0") {
-        setVRFPending(false);
-        setRedeemMsg("");
         await refreshVRFPanel();
         return showUserAlert(
           "No pending VRF request was found for this wallet.",
@@ -8480,7 +8587,7 @@ export default function AppCore() {
         return showUserAlert(message, "vrf-retry-too-early", 3200);
       }
 
-      const writeContract = await getMainRW();
+      const writeContract = await getChapterMain(pendingMain.chapterId);
       const writeProvider = getProviderFor(writeContract) || roProvider;
       if (writeProvider) {
         const writeNet = await writeProvider.getNetwork().catch(() => netAfter);
@@ -8509,8 +8616,14 @@ export default function AppCore() {
         },
       );
 
-      const tx = await sendWriteWithRpcRetry(
-        () => retryFn({ ...feeOverrides }),
+      await assertWriteContext({
+        contract: writeContract,
+        account: walletAddress,
+        getCurrentAccount: () => walletAddressRef.current,
+        chainId: ACTIVE_CHAIN.chainId,
+      });
+      const tx = await sendWriteOnce(
+        () => retryFn({ ...feeOverrides, chainId: ACTIVE_CHAIN.chainId }),
         "retryPendingMint",
       );
 
@@ -8522,7 +8635,17 @@ export default function AppCore() {
       });
       setRedeemMsg("Retry transaction submitted. Waiting for confirmation...");
 
-      await tx.wait();
+      const receipt = await waitForWriteReceipt(tx);
+      if (pendingMain.context) {
+        rememberPendingVrf(
+          pendingVrfFromReceipt(
+            { ...pendingMain.context, txHash: tx.hash },
+            receipt,
+            readContract,
+          ),
+        );
+      }
+      if (walletAddressRef.current !== walletAddress) return;
 
       setVRFPending(true);
       setRedeemStartedAt(Date.now());
@@ -8536,6 +8659,7 @@ export default function AppCore() {
 
       scheduleRefreshVRF(700, refreshVRFPanel);
       setTimeout(() => {
+        if (walletAddressRef.current !== walletAddress) return;
         const refreshTasks = [Promise.resolve(refreshVRFPanel?.())];
         if (walletAddress) {
           refreshTasks.push(fetchWalletAssets(walletAddress));
@@ -8543,6 +8667,7 @@ export default function AppCore() {
         Promise.allSettled(refreshTasks).catch(() => {});
       }, 1200);
     } catch (err) {
+      if (walletAddressRef.current !== walletAddress) return;
       clearTxStatus("redeem");
 
       if (isRateLimitedRpcError(err)) {
@@ -8551,20 +8676,30 @@ export default function AppCore() {
       }
 
       try {
-        const readContract = contractRef.current || getReadOnlyContract();
+        const readContract = (await resolveVrfMain()).contract;
         if (typeof readContract.pendingMintRequest === "function") {
           const pendingReqAfter =
             await readContract.pendingMintRequest(walletAddress);
           const stillPending = pendingReqAfter?.toString?.() !== "0";
-          setVRFPending(stillPending);
+          if (walletAddressRef.current === walletAddress) {
+            setVRFPending(
+              stillPending ||
+                Boolean(
+                  normalizePendingVrf(pendingVrfRef.current, walletAddress),
+                ),
+            );
+          }
         }
       } catch {
         // ignore best-effort resync failures
       }
 
+      if (walletAddressRef.current !== walletAddress) return;
       if (isUserRejectedAction(err)) {
         setRedeemMsg("Retry cancelled in wallet.");
-        setTimeout(() => setRedeemMsg(""), 2200);
+        setTimeout(() => {
+          if (walletAddressRef.current === walletAddress) setRedeemMsg("");
+        }, 2200);
         console.info("retryPendingMint cancelled in wallet");
         return;
       }
@@ -8595,8 +8730,9 @@ export default function AppCore() {
     recoverRpcConnectivity,
     releaseWriteTxLock,
     resolveRetryPendingSupport,
+    resolveVrfMain,
+    rememberPendingVrf,
     scheduleRefreshVRF,
-    sendWriteWithRpcRetry,
     showUserAlert,
   ]);
 
@@ -8679,9 +8815,14 @@ export default function AppCore() {
             status?.[0] ?? status?.claimable ?? null,
           );
         }
-      } catch {
-        // ignore preflight call errors; claim tx path will still surface exact revert
+      } catch (error) {
+        throw new Error(
+          "Claim preflight unavailable. Refresh before claiming.",
+          { cause: error },
+        );
       }
+      if (previewAmount == null)
+        throw new Error("Claim amount could not be verified.");
 
       if (previewUnits === 0n || previewAmount === 0n) {
         await refreshClaimable(walletAddress, myNFTs);
@@ -8701,13 +8842,23 @@ export default function AppCore() {
       const feeOverrides = await buildFeeOverrides(claimProvider, {
         forceLegacy: true,
       });
-      const tx = await sendWriteWithRpcRetry(() => {
+      await assertWriteContext({
+        contract: brl,
+        account: walletAddress,
+        getCurrentAccount: () => walletAddressRef.current,
+        chainId: ACTIVE_CHAIN.chainId,
+      });
+      const tx = await sendWriteOnce(() => {
         if (useCollectionAwareWrite) {
           return brl.claimWithCollections(rewardPayload.collections, tokenIds, {
             ...feeOverrides,
+            chainId: ACTIVE_CHAIN.chainId,
           });
         }
-        return brl.claim(tokenIds, { ...feeOverrides });
+        return brl.claim(tokenIds, {
+          ...feeOverrides,
+          chainId: ACTIVE_CHAIN.chainId,
+        });
       }, "claimREWARDS");
       updateTxStatus({
         type: "claim",
@@ -8715,21 +8866,37 @@ export default function AppCore() {
         hash: tx?.hash,
         chainId,
       });
-      await tx.wait();
+      const receipt = await waitForWriteReceipt(tx);
       updateTxStatus(
-        { type: "claim", stage: "confirmed", hash: tx?.hash, chainId },
+        {
+          type: "claim",
+          stage: "confirmed",
+          hash: receipt.hash || tx?.hash,
+          chainId,
+        },
         9000,
       );
 
-      await fetchREWARDS();
-      await fetchStats();
-      await refreshClaimable(walletAddress, myNFTs);
-      showUserAlert("REWARDS claimed.", "claim-success", 1200);
+      const result = {
+        status: "confirmed",
+        hash: receipt.hash || tx.hash,
+        receipt,
+      };
+      if (walletAddressRef.current !== walletAddress) return result;
+      await Promise.allSettled([
+        fetchREWARDS(),
+        fetchStats(),
+        refreshClaimable(walletAddress, myNFTs),
+      ]);
+      if (walletAddressRef.current === walletAddress) {
+        showUserAlert("REWARDS claimed.", "claim-success", 1200);
+      }
+      return result;
     } catch (err) {
       if (isUserRejectedAction(err)) {
         console.info("claimREWARDS cancelled in wallet");
         clearTxStatus("claim");
-        return;
+        return { status: "cancelled" };
       }
       if (isDelegatedInflightLimitError(err)) {
         markDelegatedInflight();
@@ -8747,6 +8914,7 @@ export default function AppCore() {
       );
       console.error("claimREWARDS", err);
       clearTxStatus("claim");
+      return { status: "failed" };
     } finally {
       releaseWriteTxLock();
       setIsClaiming(false);
@@ -8769,288 +8937,109 @@ export default function AppCore() {
     markDelegatedInflight,
     recoverRpcConnectivity,
     releaseWriteTxLock,
-    sendWriteWithRpcRetry,
     showUserAlert,
   ]);
 
-  const checkVrfFulfilledByTransfer = React.useCallback(async () => {
-    if (!walletAddress) return false;
-
-    const baseContract = contractRef.current || getReadOnlyContract();
-    const provider = getProviderFor(baseContract);
-    if (!provider) return false;
-
-    let latest = null;
-    try {
-      latest = await provider.getBlockNumber();
-    } catch {
-      return false;
-    }
-    if (!Number.isFinite(latest)) return false;
-
-    let startBlock = Number(redeemStartBlock);
-    if (!Number.isFinite(startBlock)) {
-      try {
-        const burnFilter = baseContract.filters.Transfer(
-          walletAddress,
-          ZERO_ADDRESS,
-          null,
-        );
-        const burnFrom = Math.max(0, latest - 50_000);
-        const burnLogs = await queryLogsBatched(
-          baseContract,
-          burnFilter,
-          burnFrom,
-          latest,
-        );
-        const lastBurn = burnLogs[burnLogs.length - 1];
-        if (lastBurn?.blockNumber != null) {
-          const bn = Number(lastBurn.blockNumber);
-          if (Number.isFinite(bn)) startBlock = bn;
-        }
-      } catch {
-        // ignore burn lookup failures
-      }
-    }
-
-    if (!Number.isFinite(startBlock)) return false;
-    if (startBlock > latest) return false;
-
-    let filter = null;
-    try {
-      filter = baseContract.filters.Transfer(ZERO_ADDRESS, walletAddress, null);
-    } catch {
-      return false;
-    }
-
-    let logs = [];
-    try {
-      logs = await queryLogsBatched(
-        baseContract,
-        filter,
-        Math.max(0, startBlock - 3),
-        latest,
-      );
-    } catch {
-      logs = [];
-    }
-
-    for (let i = logs.length - 1; i >= 0; i -= 1) {
-      const l = logs[i];
-      const tid = safeLogArg(l?.args, "tokenId", 2);
-      if (!tid) continue;
-
-      let isTicketNow = null;
-      if (typeof baseContract?.isTicket === "function") {
-        isTicketNow = await baseContract.isTicket(tid).catch(() => null);
-      }
-      const isTicketFlag = isTicketNow == null ? null : coerceBool(isTicketNow);
-      if (isTicketFlag === false) return true;
-
-      if (isTicketNow == null && typeof baseContract?.tokenURI === "function") {
-        const uri = await getTokenUriCached(baseContract, tid, {
-          force: true,
-        }).catch(() => null);
-        if (
-          uri &&
-          !/RANDOM_MINT_TICKET|MINT_TICKET|TICKET/i.test(String(uri))
-        ) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }, [walletAddress, redeemStartBlock]);
-
-  /* ====================================================================== */
-  /* ============================ VRF: AUTO POLL ============================ */
-  /* ====================================================================== */
-
+  /* VRF completion is tied to the original collection and request, not a ticket ID or an unrelated mint. */
   React.useEffect(() => {
     if (!VRFPending || !walletAddress) return;
-
     let cancelled = false;
-    let timer = null;
+    let timer;
     let pollCount = 0;
 
     const tick = async () => {
       if (cancelled) return;
       pollCount += 1;
-      let stopPolling = false;
       const backoffActive = isRpcBackoffActive();
-
-      const finalizeVrf = async (message = "VRF fulfilled. NFT minted.") => {
-        stopPolling = true;
-        setVRFPending(false);
-        setRedeemMsg(message);
-        clearTxStatus("redeem");
-        setRedeemStartedAt(null);
-        setRedeemStartBlock(null);
-        setPendingTicketId(null);
-        pendingTicketIdRef.current = null;
-        clearWalletCache(walletAddress);
-        if (pendingTicketId) clearTokenCaches(pendingTicketId);
-        await fetchWalletAssets(walletAddress);
-        await fetchStats();
-        await fetchREWARDS();
-        if (walletAddress) await fetchLastMinted(walletAddress);
-        await refreshVRFPanel();
-      };
-
       try {
-        if (shouldRunHeavyVrfRefresh(pollCount, backoffActive)) {
-          await fetchStats();
-          await fetchREWARDS();
-          await refreshVRFPanel();
+        const selected = await resolveVrfMain();
+        const context = selected.context;
+        const isCurrent = () =>
+          !cancelled &&
+          walletAddressRef.current === walletAddress &&
+          samePendingVrf(context, pendingVrfRef.current);
+        if (cancelled || walletAddressRef.current !== walletAddress) return;
+        if (!context) {
+          setVRFPending(false);
+          return;
         }
-        if (shouldRunWalletAssetRefresh(pollCount, backoffActive)) {
+
+        const pending =
+          await selected.contract.pendingMintRequest(walletAddress);
+        if (!isCurrent()) throw new Error("VRF request changed during polling");
+        if (pending != null && BigInt(pending) === 0n && context.requestId) {
+          const provider = getProviderFor(selected.contract);
+          const latest = await provider.getBlockNumber();
+          const completed = await findVrfCompletion(
+            context,
+            selected.contract,
+            queryLogsBatched,
+            latest,
+          );
+          if (!isCurrent())
+            throw new Error("VRF request changed during polling");
+          if (completed) {
+            pendingVrfRef.current = null;
+            clearPendingVrf(walletAddress);
+            setVRFPending(false);
+            setRedeemMsg("VRF fulfilled. NFT minted.");
+            clearTxStatus("redeem");
+            setRedeemStartedAt(null);
+            setRedeemStartBlock(null);
+            setPendingTicketId(null);
+            pendingTicketIdRef.current = null;
+            lastRedeemTicketIdRef.current = null;
+            setMyNFTs((prev) => prev.filter((item) => !item?.isPending));
+            clearWalletCache(walletAddress);
+            if (context.ticketId) clearTokenCaches(context.ticketId);
+            await Promise.allSettled([
+              fetchWalletAssets(walletAddress),
+              fetchStats(),
+              fetchREWARDS(),
+              fetchLastMinted(walletAddress),
+              refreshVRFPanel(),
+            ]);
+            return;
+          }
+        }
+
+        if (shouldRunHeavyVrfRefresh(pollCount, backoffActive)) {
+          await Promise.allSettled([
+            fetchStats(),
+            fetchREWARDS(),
+            refreshVRFPanel(),
+          ]);
+        }
+        if (
+          !cancelled &&
+          shouldRunWalletAssetRefresh(pollCount, backoffActive)
+        ) {
           await fetchWalletAssets(walletAddress);
         }
-      } catch {}
-
-      try {
-        const baseContract = contractRef.current || getReadOnlyContract();
-        let c = baseContract;
-        let pendingReq = null;
-        if (c && typeof c.pendingMintRequest === "function") {
-          pendingReq = await c
-            .pendingMintRequest(walletAddress)
-            .catch(() => null);
-        }
-        // If RO provider failed, retry once via archive RPC provider.
-        if (pendingReq == null) {
-          try {
-            const archive = getArchiveProvider();
-            if (!archive) throw new Error("archive provider unavailable");
-            c = baseContract?.connect
-              ? baseContract.connect(archive)
-              : baseContract;
-            pendingReq = await c
-              .pendingMintRequest(walletAddress)
-              .catch(() => null);
-          } catch {
-            pendingReq = null;
-          }
-        }
-        if (pendingReq != null) {
-          const pendingStr = pendingReq?.toString?.() || "0";
-          if (pendingStr === "0") {
-            await finalizeVrf();
-          }
-        }
-      } catch {}
-
-      // Fallback: if pending request cannot be read, but the ticket has already
-      // converted to a revealed NFT, stop the overlay.
-      if (!stopPolling && pendingTicketId) {
-        try {
-          const baseContract = contractRef.current || getReadOnlyContract();
-          if (typeof baseContract?.isTicket === "function") {
-            const isTicketNow = await baseContract
-              .isTicket(pendingTicketId)
-              .catch(() => null);
-            const isTicketFlag =
-              isTicketNow == null ? null : coerceBool(isTicketNow);
-            if (isTicketFlag === false) {
-              await finalizeVrf();
-            }
-          }
-          if (!stopPolling && typeof baseContract?.tokenURI === "function") {
-            const uri = await getTokenUriCached(baseContract, pendingTicketId, {
-              force: true,
-            }).catch(() => null);
-            if (
-              uri &&
-              !/RANDOM_MINT_TICKET|MINT_TICKET|TICKET/i.test(String(uri))
-            ) {
-              await finalizeVrf();
-            }
-          }
-        } catch {
-          // ignore fallback errors
-        }
+      } catch {
+        // Unknown RPC state must never be treated as a fulfilled request.
       }
-
-      if (!stopPolling && pollCount % 3 === 0) {
-        try {
-          const minted = await checkVrfFulfilledByTransfer();
-          if (minted) {
-            await finalizeVrf();
-          }
-        } catch {
-          // ignore log-scan fallback errors
-        }
+      if (!cancelled) {
+        const elapsed = redeemStartedAt ? Date.now() - redeemStartedAt : 0;
+        timer = setTimeout(tick, getNextVrfPollDelayMs(elapsed, backoffActive));
       }
-
-      const elapsed = redeemStartedAt ? Date.now() - redeemStartedAt : 0;
-      const nextDelay = getNextVrfPollDelayMs(elapsed, backoffActive);
-
-      if (stopPolling) return;
-      timer = setTimeout(tick, nextDelay);
     };
-
     timer = setTimeout(tick, 3000);
-
     return () => {
       cancelled = true;
-      if (timer) clearTimeout(timer);
+      clearTimeout(timer);
     };
   }, [
     VRFPending,
     walletAddress,
+    resolveVrfMain,
     fetchStats,
     fetchREWARDS,
     fetchWalletAssets,
     fetchLastMinted,
     refreshVRFPanel,
-    checkVrfFulfilledByTransfer,
     isRpcBackoffActive,
     redeemStartedAt,
-    pendingTicketId,
-    clearTxStatus,
-  ]);
-
-  React.useEffect(() => {
-    const status = VRFUIData?.last?.status || "";
-    const requestId = VRFUIData?.last?.requestId || "";
-    if (status !== "fulfilled" || !requestId) return;
-    if (lastVRFFulfilledRef.current === String(requestId)) return;
-    lastVRFFulfilledRef.current = String(requestId);
-
-    const pendingId = pendingTicketId;
-    setVRFPending(false);
-    setRedeemMsg("VRF fulfilled. NFT minted.");
-    clearTxStatus("redeem");
-    setRedeemStartedAt(null);
-    setRedeemStartBlock(null);
-    setPendingTicketId(null);
-    pendingTicketIdRef.current = null;
-    setMyNFTs((prev) => prev.filter((x) => !x?.isPending));
-
-    if (pendingId) {
-      clearTokenCaches(pendingId);
-      if (walletAddress) clearWalletCache(walletAddress);
-    }
-
-    (async () => {
-      try {
-        await fetchStats();
-        await fetchREWARDS();
-        if (walletAddress) await fetchWalletAssets(walletAddress);
-        if (walletAddress) await fetchLastMinted(walletAddress);
-        await refreshVRFPanel();
-      } catch {}
-    })();
-  }, [
-    VRFUIData?.last?.status,
-    VRFUIData?.last?.requestId,
-    walletAddress,
-    fetchStats,
-    fetchREWARDS,
-    fetchWalletAssets,
-    fetchLastMinted,
-    refreshVRFPanel,
     clearTxStatus,
   ]);
 
@@ -9437,6 +9426,9 @@ export default function AppCore() {
   }, [
     navAlt,
     navOpen,
+    blockPrices,
+    blockMintCounts,
+    autoOpenInfoPanel,
     walletAddress,
     connectMetaMask,
     connectWalletConnect,

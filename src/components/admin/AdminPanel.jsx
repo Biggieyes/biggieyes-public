@@ -22,6 +22,7 @@ import {
 } from "@/shared/utils/adminMessageAuth.js";
 import { BiggiCommunityCenter } from "@/config/abi/index.js";
 import AdminDashboard from "@/components/AdminDashboard";
+import NftRewardsAdmin from "./NftRewardsAdmin.jsx";
 import {
   fetchCommunityPolls,
   submitCommunityPollAdminAction,
@@ -230,16 +231,6 @@ export default function AdminPanel({
   const [communityEmergencyTo, setCommunityEmergencyTo] = React.useState("");
 
   // NFT REWARDS admin (manual + mystery)
-  const [nftMainContract, setNftMainContract] = React.useState("");
-  const [nftVRFRouter, setNftVRFRouter] = React.useState("");
-  const [nftManualWinner, setNftManualWinner] = React.useState("");
-  const [nftManualUri, setNftManualUri] = React.useState("");
-  const [nftMysteryUris, setNftMysteryUris] = React.useState("");
-  const [nftMysteryEligible, setNftMysteryEligible] = React.useState("");
-  const [nftMysteryEventId, setNftMysteryEventId] = React.useState("");
-  const [nftLastEventId, setNftLastEventId] = React.useState("");
-  const [nftLastRewardId, setNftLastRewardId] = React.useState("");
-  const [nftLastRequestId, setNftLastRequestId] = React.useState("");
 
   const [activeTab, setActiveTab] = React.useState("core");
   const [chatMessages, setChatMessages] = React.useState([]);
@@ -334,17 +325,7 @@ export default function AdminPanel({
       ]),
     [hasAnyAction],
   );
-  const nftAvailable = React.useMemo(
-    () =>
-      hasAnyAction([
-        "nft_setMainContract",
-        "nft_setVRFRouter",
-        "nft_createManualReward",
-        "nft_createMysteryEvent",
-        "nft_requestMysteryRandom",
-      ]),
-    [hasAnyAction],
-  );
+  const nftAvailable = Boolean(ADDR.NFT_REWARDS);
   const frontendAvailable = Boolean(data?.frontend);
   const ownerWallet = String(data?.frontend?.wallet || "");
   const expectedChainId = Number(data?.chainId || ADDR.CHAIN_ID || 137);
@@ -419,8 +400,6 @@ export default function AdminPanel({
       coordinator: data?.VRF?.coordinator || "",
       subscriptionId: data?.VRF?.subscriptionId || "",
     });
-    setNftMainContract(String(data?.nft?.mainContract || ""));
-    setNftVRFRouter(String(data?.nft?.vrfRouter || data?.VRF?.router || ""));
   }, [
     open,
     data?.baseURI,
@@ -437,8 +416,6 @@ export default function AdminPanel({
     data?.VRF?.coordinator,
     data?.VRF?.subscriptionId,
     data?.VRF?.router,
-    data?.nft?.mainContract,
-    data?.nft?.vrfRouter,
   ]);
 
   // --- Handlers helpers ---
@@ -1043,49 +1020,6 @@ export default function AdminPanel({
     return items;
   };
 
-  const applyNftMainContract = () =>
-    run("nft_setMain", async () => {
-      const addr = nftMainContract.trim();
-      if (!isAddress(addr)) throw new Error("Main contract address is invalid");
-      await actions.nft_setMainContract?.(addr);
-    });
-
-  const applyNftVRFRouter = () =>
-    run("nft_setVRF", async () => {
-      const addr = nftVRFRouter.trim();
-      if (!isAddress(addr)) throw new Error("VRF router address is invalid");
-      await actions.nft_setVRFRouter?.(addr);
-    });
-
-  const createNftManualReward = () =>
-    run("nft_manual", async () => {
-      const winner = nftManualWinner.trim();
-      const uri = nftManualUri.trim();
-      if (!isAddress(winner)) throw new Error("Winner address is invalid");
-      if (!uri) throw new Error("Token URI is required");
-      const res = await actions.nft_createManualReward?.(winner, uri);
-      if (res?.eventId != null) setNftLastEventId(String(res.eventId));
-      if (res?.rewardId != null) setNftLastRewardId(String(res.rewardId));
-    });
-
-  const createNftMysteryEvent = () =>
-    run("nft_mystery", async () => {
-      const uris = splitListInput(nftMysteryUris);
-      const eligible = parseAddressListInput(nftMysteryEligible);
-      if (!uris.length) throw new Error("At least one token URI is required");
-      if (!eligible.length)
-        throw new Error("At least one eligible address is required");
-      const res = await actions.nft_createMysteryEvent?.(uris, eligible);
-      if (res?.eventId != null) setNftLastEventId(String(res.eventId));
-    });
-
-  const requestNftMysteryRandom = () =>
-    run("nft_request", async () => {
-      const eventId = nftMysteryEventId.trim();
-      if (!eventId) throw new Error("Event ID is required");
-      const res = await actions.nft_requestMysteryRandom?.(eventId);
-      if (res?.requestId != null) setNftLastRequestId(String(res.requestId));
-    });
 
   const loadChatAdmin = React.useCallback(async () => {
     setChatLoading(true);
@@ -4460,209 +4394,11 @@ export default function AdminPanel({
         )}
 
         {activeTab === "nft" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18 }}>
-            <section style={{ ...card }}>
-              <div style={{ ...header, borderBottom: `1px solid ${C.line}` }}>
-                <h3
-                  style={{
-                    margin: 0,
-                    color: C.y,
-                    textShadow: "0 0 10px rgba(255,232,0,.35)",
-                  }}
-                >
-                  NFT REWARDS
-                </h3>
-              </div>
-              <div style={{ padding: 12, display: "grid", gap: 12 }}>
-                <p style={{ margin: 0, color: C.dim }}>
-                  Manual REWARDS and mystery events only. Character REWARDS are
-                  handled by the main contract.
-                </p>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr auto",
-                    gap: 8,
-                    alignItems: "center",
-                  }}
-                >
-                  <input
-                    value={nftMainContract}
-                    onChange={(e) => setNftMainContract(e.target.value)}
-                    style={inputStyle(true)}
-                    placeholder="Main contract address"
-                  />
-                  <button
-                    style={smallBtn(true)}
-                    disabled={!!pending.nft_setMain}
-                    onClick={applyNftMainContract}
-                  >
-                    {pending.nft_setMain ? "Saving..." : "Set main"}
-                  </button>
-                </div>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr auto",
-                    gap: 8,
-                    alignItems: "center",
-                  }}
-                >
-                  <input
-                    value={nftVRFRouter}
-                    onChange={(e) => setNftVRFRouter(e.target.value)}
-                    style={inputStyle(true)}
-                    placeholder="VRF router address"
-                  />
-                  <button
-                    style={smallBtn(true)}
-                    disabled={!!pending.nft_setVRF}
-                    onClick={applyNftVRFRouter}
-                  >
-                    {pending.nft_setVRF ? "Saving..." : "Set VRF"}
-                  </button>
-                </div>
-
-                <div
-                  style={{
-                    borderTop: `1px dashed ${C.line}`,
-                    paddingTop: 12,
-                    display: "grid",
-                    gap: 8,
-                  }}
-                >
-                  <div style={{ color: C.dim, fontWeight: 900 }}>
-                    Manual reward
-                  </div>
-                  <input
-                    value={nftManualWinner}
-                    onChange={(e) => setNftManualWinner(e.target.value)}
-                    style={inputStyle(true)}
-                    placeholder="Winner address"
-                  />
-                  <input
-                    value={nftManualUri}
-                    onChange={(e) => setNftManualUri(e.target.value)}
-                    style={inputStyle()}
-                    placeholder="Token URI (ipfs://...)"
-                  />
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <button
-                      style={smallBtn(true)}
-                      disabled={!!pending.nft_manual}
-                      onClick={createNftManualReward}
-                    >
-                      {pending.nft_manual
-                        ? "Creating..."
-                        : "Create manual reward"}
-                    </button>
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    borderTop: `1px dashed ${C.line}`,
-                    paddingTop: 12,
-                    display: "grid",
-                    gap: 8,
-                  }}
-                >
-                  <div style={{ color: C.dim, fontWeight: 900 }}>
-                    Mystery event
-                  </div>
-                  <textarea
-                    value={nftMysteryUris}
-                    onChange={(e) => setNftMysteryUris(e.target.value)}
-                    placeholder="Token URIs (one per line or comma separated)"
-                    style={{
-                      ...inputStyle(),
-                      minHeight: 88,
-                      resize: "vertical",
-                    }}
-                  />
-                  <textarea
-                    value={nftMysteryEligible}
-                    onChange={(e) => setNftMysteryEligible(e.target.value)}
-                    placeholder="Eligible addresses (one per line or comma separated)"
-                    style={{
-                      ...inputStyle(true),
-                      minHeight: 88,
-                      resize: "vertical",
-                    }}
-                  />
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <button
-                      style={smallBtn(true)}
-                      disabled={!!pending.nft_mystery}
-                      onClick={createNftMysteryEvent}
-                    >
-                      {pending.nft_mystery
-                        ? "Creating..."
-                        : "Create mystery event"}
-                    </button>
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    borderTop: `1px dashed ${C.line}`,
-                    paddingTop: 12,
-                    display: "grid",
-                    gap: 8,
-                  }}
-                >
-                  <div style={{ color: C.dim, fontWeight: 900 }}>
-                    Request mystery randomness
-                  </div>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr auto",
-                      gap: 8,
-                      alignItems: "center",
-                    }}
-                  >
-                    <input
-                      value={nftMysteryEventId}
-                      onChange={(e) => setNftMysteryEventId(e.target.value)}
-                      style={inputStyle()}
-                      placeholder="Event ID"
-                    />
-                    <button
-                      style={smallBtn(true)}
-                      disabled={!!pending.nft_request}
-                      onClick={requestNftMysteryRandom}
-                    >
-                      {pending.nft_request ? "Requesting..." : "Request random"}
-                    </button>
-                  </div>
-                </div>
-
-                {(nftLastEventId || nftLastRewardId || nftLastRequestId) && (
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 10,
-                      flexWrap: "wrap",
-                      color: C.dim,
-                    }}
-                  >
-                    {nftLastEventId && (
-                      <span>Last event ID: {nftLastEventId}</span>
-                    )}
-                    {nftLastRewardId && (
-                      <span>Last reward ID: {nftLastRewardId}</span>
-                    )}
-                    {nftLastRequestId && (
-                      <span>Last request ID: {nftLastRequestId}</span>
-                    )}
-                  </div>
-                )}
-              </div>
-            </section>
-          </div>
+          <NftRewardsAdmin
+            walletAddress={ownerWallet}
+            chainId={walletChainId}
+            getVerifiedSigner={getVerifiedAdminSigner}
+          />
         )}
 
         {activeTab === "chat" && (

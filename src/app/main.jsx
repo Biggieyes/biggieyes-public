@@ -7,7 +7,9 @@ import "../index.css";
 import LoadingOverlay from "@/components/LoadingOverlay.jsx";
 import { createPreloadManager } from "../shared/utils/preloadManager.js";
 
-const BiggiEyesDocsApp = React.lazy(() => import("../docs/BiggiEyesDocsApp.jsx"));
+const BiggiEyesDocsApp = React.lazy(
+  () => import("../docs/BiggiEyesDocsApp.jsx"),
+);
 const AppRuntime = React.lazy(() => import("./AppRuntime.jsx"));
 
 const isBiggiEyesDocsRoute =
@@ -37,9 +39,7 @@ if (SENTRY_DSN) {
   Sentry.init({
     dsn: SENTRY_DSN,
     environment: import.meta.env.MODE,
-    tracesSampleRate: Number.isFinite(tracesSampleRate)
-      ? tracesSampleRate
-      : 0,
+    tracesSampleRate: Number.isFinite(tracesSampleRate) ? tracesSampleRate : 0,
     enabled: true,
   });
 }
@@ -80,10 +80,12 @@ function Bootstrap({ children }) {
   const manager = managerRef.current;
 
   React.useEffect(() => {
+    manager.reset();
     const unsubscribe = manager.onUpdate(({ percent: p, message: msg }) => {
       if (Number.isFinite(p)) setPercent(p);
       if (msg) setMessage(msg);
     });
+    manager.start();
     return () => {
       unsubscribe();
       manager.stop();
@@ -96,6 +98,15 @@ function Bootstrap({ children }) {
 
   React.useEffect(() => {
     let cancelled = false;
+    const cleanups = [];
+    const delay = (ms) =>
+      new Promise((resolve) => {
+        const id = setTimeout(resolve, ms);
+        cleanups.push(() => {
+          clearTimeout(id);
+          resolve();
+        });
+      });
     const MIN_DURATION = 350;
     (async () => {
       try {
@@ -116,15 +127,14 @@ function Bootstrap({ children }) {
           const finish = () => {
             if (resolved) return;
             resolved = true;
-            doneWindowLoad(1);
+            window.removeEventListener("load", finish);
+            clearTimeout(timeoutId);
+            if (!cancelled) doneWindowLoad(1);
             res();
           };
-          const onLoad = () => {
-            window.removeEventListener("load", onLoad);
-            finish();
-          };
-          window.addEventListener("load", onLoad);
-          setTimeout(finish, 3000);
+          window.addEventListener("load", finish);
+          const timeoutId = setTimeout(finish, 3000);
+          cleanups.push(finish);
         });
 
         manager.setMessage("Loading fonts and UI...");
@@ -135,10 +145,11 @@ function Bootstrap({ children }) {
             if (settled) return;
             settled = true;
             window.clearTimeout(timeoutId);
-            doneFonts(1);
+            if (!cancelled) doneFonts(1);
             resolve();
           };
           const timeoutId = window.setTimeout(finish, 1500);
+          cleanups.push(finish);
           const readiness =
             document.fonts && document.fonts.ready
               ? document.fonts.ready
@@ -155,7 +166,7 @@ function Bootstrap({ children }) {
         const elapsed = Date.now() - startTime;
         const remaining = Math.max(0, MIN_DURATION - elapsed);
         if (remaining > 0) {
-          await new Promise((res) => setTimeout(res, remaining));
+          await delay(remaining);
         }
         if (cancelled) return;
 
@@ -163,7 +174,7 @@ function Bootstrap({ children }) {
         manager.setMessage("Done");
         setPercent(100);
 
-        await new Promise((res) => setTimeout(res, 80));
+        await delay(80);
         if (cancelled) return;
 
         setReady(true);
@@ -175,6 +186,7 @@ function Bootstrap({ children }) {
 
     return () => {
       cancelled = true;
+      cleanups.forEach((cleanup) => cleanup());
     };
   }, [manager]);
 
@@ -252,5 +264,3 @@ root.render(
     appWithBoundary
   ),
 );
-
-

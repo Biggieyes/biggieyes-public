@@ -21,6 +21,7 @@
 //   npx hardhat run --config hardhat.biggi-master.cjs scripts/master/configureChapterTokenomics.js --network polygon --execute
 
 const hre = require("hardhat");
+const { nftRewardsVersion } = require("./nftRewardsVersion");
 const { ethers } = hre;
 
 const ZERO = "0x0000000000000000000000000000000000000000";
@@ -535,7 +536,7 @@ async function main() {
     }
   }
 
-  if (isSet(A.NFT_REWARDS)) {
+  if (isSet(A.NFT_REWARDS) && await nftRewardsVersion(A.NFT_REWARDS) === 1) {
     const nftRewards = new ethers.Contract(A.NFT_REWARDS, ABI.nftRewards, signer);
     await ensureAddress("NFT_REWARDS.registry", () => nftRewards.registry(), A.REGISTRY, () => nftRewards.setRegistry(A.REGISTRY));
     await ensureBool("NFT_REWARDS.allowedMainCollections(MAIN2)", () => nftRewards.allowedMainCollections(A.MAIN2), true, () =>

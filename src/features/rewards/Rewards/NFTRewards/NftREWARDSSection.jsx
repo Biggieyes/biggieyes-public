@@ -28,26 +28,50 @@ const isAssigned = (address) =>
 const isConfiguredAddress = (address) =>
   Boolean(address) && String(address).toLowerCase() !== ZERO_ADDRESS;
 
-const getEventState = (event, rewards) => {
+const getEventState = (event) => {
   if (asNumber(event.kind) === 3) {
-    if (event.finished) return { label: "Completed", tone: "is-claimed" };
+    if (event.finished) return { label: "Draw completed", tone: "is-claimed" };
     if (event.randomnessRequested) {
       return { label: "VRF pending", tone: "is-pending" };
     }
     return { label: "Awaiting VRF", tone: "is-open" };
   }
-  const start = asNumber(event.rewardStartId);
-  const end = start + asNumber(event.rewardCount);
-  const assigned = rewards.some(
-    (reward) =>
-      reward.rewardId >= start &&
-      reward.rewardId < end &&
-      isAssigned(reward.assigned),
-  );
-  return assigned
+  // V1 leaves finished=false on manual/character events, but assigns at creation.
+  return [1, 2].includes(asNumber(event.kind))
     ? { label: "Assigned", tone: "is-open" }
     : { label: "Created", tone: "is-pending" };
 };
+
+function PageControls({ label, page, pages, disabled, onChange }) {
+  if (pages <= 1) return null;
+  return (
+    <nav className="nft-rewards__pagination" aria-label={`${label} pages`}>
+      <span>
+        {label}: {page + 1} / {pages}
+      </span>
+      <button
+        type="button"
+        className="biggi-btn"
+        title={`Newer ${label.toLowerCase()}`}
+        aria-label={`Newer ${label.toLowerCase()}`}
+        disabled={disabled || page === 0}
+        onClick={() => onChange?.(page - 1)}
+      >
+        <span aria-hidden="true">&larr;</span>
+      </button>
+      <button
+        type="button"
+        className="biggi-btn"
+        title={`Older ${label.toLowerCase()}`}
+        aria-label={`Older ${label.toLowerCase()}`}
+        disabled={disabled || page >= pages - 1}
+        onClick={() => onChange?.(page + 1)}
+      >
+        <span aria-hidden="true">&rarr;</span>
+      </button>
+    </nav>
+  );
+}
 
 function NftREWARDSSection({
   data,
@@ -62,6 +86,8 @@ function NftREWARDSSection({
   claimState = null,
   onClaimReward,
   feedback = null,
+  onRewardPageChange,
+  onEventPageChange,
 }) {
   const {
     events = [],
@@ -72,15 +98,32 @@ function NftREWARDSSection({
     totalClaimed = 0,
     rewardsTruncated = false,
     contractAddress = null,
-    mainContract = null,
     VRFRouter = null,
     vrfRouter = null,
-    registry = null,
     owner = null,
+    pendingOwner = null,
+    readerAddress = null,
+    version = null,
     name = null,
     symbol = null,
     mysteryRetryDelay = null,
+    rewardPage = 0,
+    rewardPages = 1,
+    eventPage = 0,
+    eventPages = 1,
+    firstRewardId,
+    lastRewardId,
   } = data || {};
+  const unavailable = loading || Boolean(error);
+  const emptyState = loading
+    ? "Loading on-chain records..."
+    : "On-chain records unavailable.";
+  const errorLabel =
+    error?.message === "NFT Rewards requires Polygon mainnet (137)."
+      ? "Switch to Polygon mainnet (137) and refresh NFT Rewards."
+      : error?.message === "NFT Rewards reader points to a different contract."
+        ? "NFT Rewards contract and reader do not match. Claims are disabled."
+        : "NFT Rewards data could not be read from Polygon. Try refresh.";
 
   const formatCount = (value) =>
     typeof formatInteger === "function"
@@ -103,8 +146,16 @@ function NftREWARDSSection({
     [rewards],
   );
   const sortedUserRewards = React.useMemo(
-    () => [...userRewards].sort((a, b) => b.rewardId - a.rewardId),
-    [userRewards],
+    () =>
+      userRewards
+        .filter(
+          (reward) =>
+            walletAddress &&
+            String(reward.assigned || "").toLowerCase() ===
+              walletAddress.toLowerCase(),
+        )
+        .sort((a, b) => b.rewardId - a.rewardId),
+    [userRewards, walletAddress],
   );
   const unclaimedForUser = sortedUserRewards.filter(
     (reward) => !reward.isClaimed,
@@ -115,11 +166,17 @@ function NftREWARDSSection({
     ? `${Math.floor(retrySeconds / 60)} min`
     : "--";
   const wiringRows = [
-    { label: "NFT Rewards", value: contractAddress },
-    { label: "Core main", value: mainContract },
-    { label: "VRF router", value: routerAddress },
-    { label: "Series registry", value: registry },
+    {
+      label: version === 2 ? "NFT Rewards V2" : "NFT Rewards",
+      value: contractAddress,
+    },
+    { label: "Reader", value: readerAddress },
+    {
+      label: version === 2 ? "VRF router (immutable)" : "VRF router",
+      value: routerAddress,
+    },
     { label: "Owner", value: owner },
+    { label: "Pending owner", value: pendingOwner },
   ].filter((row) => isConfiguredAddress(row.value));
 
   return (
@@ -129,7 +186,7 @@ function NftREWARDSSection({
           <article className="nft-rewards__summary-card">
             <span className="nft-rewards__summary-label">Rewards created</span>
             <strong className="nft-rewards__summary-value">
-              {formatCount(totalRewardsCreated)}
+              {unavailable ? "--" : formatCount(totalRewardsCreated)}
             </strong>
             <span className="nft-rewards__summary-hint">
               On-chain reward records
@@ -138,7 +195,7 @@ function NftREWARDSSection({
           <article className="nft-rewards__summary-card">
             <span className="nft-rewards__summary-label">NFTs claimed</span>
             <strong className="nft-rewards__summary-value">
-              {formatCount(totalClaimed)}
+              {unavailable ? "--" : formatCount(totalClaimed)}
             </strong>
             <span className="nft-rewards__summary-hint">
               {rewardsTruncated ? "Within loaded records" : "Minted by claim"}
@@ -147,20 +204,24 @@ function NftREWARDSSection({
           <article className="nft-rewards__summary-card">
             <span className="nft-rewards__summary-label">Reward events</span>
             <strong className="nft-rewards__summary-value">
-              {formatCount(totalEventsCreated)}
+              {unavailable ? "--" : formatCount(totalEventsCreated)}
             </strong>
             <span className="nft-rewards__summary-hint">
-              Manual and VRF mystery
+              On-chain event records
             </span>
           </article>
           <article className="nft-rewards__summary-card">
             <span className="nft-rewards__summary-label">My unclaimed</span>
             <strong className="nft-rewards__summary-value">
-              {walletAddress ? formatCount(unclaimedForUser) : "--"}
+              {walletAddress && !unavailable
+                ? formatCount(unclaimedForUser)
+                : "--"}
             </strong>
             <span className="nft-rewards__summary-hint">
               {walletAddress
-                ? "Assigned to connected wallet"
+                ? rewardsTruncated
+                  ? "Within loaded records"
+                  : "Assigned to connected wallet"
                 : "Connect wallet"}
             </span>
           </article>
@@ -168,7 +229,7 @@ function NftREWARDSSection({
 
         {error ? (
           <div className="nft-rewards__notice is-error" role="alert">
-            NFT Rewards data could not be read from Polygon. Try refresh.
+            {errorLabel}
           </div>
         ) : null}
         {loading ? (
@@ -176,11 +237,19 @@ function NftREWARDSSection({
             Syncing NFT Rewards from Polygon...
           </div>
         ) : null}
-        {rewardsTruncated ? (
+        {rewardsTruncated && !unavailable ? (
           <div className="nft-rewards__notice" role="status">
-            Showing the latest 500 reward records. Use the indexed event history for a complete archive.
+            Reward records #{firstRewardId ?? "--"} - #{lastRewardId ?? "--"} of{" "}
+            {formatCount(totalRewardsCreated)}.
           </div>
         ) : null}
+        <PageControls
+          label="Rewards"
+          page={rewardPage}
+          pages={rewardPages}
+          disabled={unavailable || claimState !== null}
+          onChange={onRewardPageChange}
+        />
         {feedback ? (
           <div
             className={`nft-rewards__notice ${feedback.tone === "error" ? "is-error" : "is-success"}`}
@@ -205,7 +274,11 @@ function NftREWARDSSection({
                 </div>
               ) : sortedUserRewards.length === 0 ? (
                 <div className="nft-rewards__empty">
-                  No NFT reward is assigned to this wallet.
+                  {unavailable
+                    ? emptyState
+                    : rewardsTruncated
+                      ? "No NFT reward is assigned to this wallet in these records."
+                      : "No NFT reward is assigned to this wallet."}
                 </div>
               ) : (
                 <div className="nft-rewards__claim-list">
@@ -217,8 +290,7 @@ function NftREWARDSSection({
                       <div className="nft-rewards__claim-meta">
                         <strong>Reward #{reward.rewardId}</strong>
                         <span>
-                          {EVENT_KIND_LABELS[asNumber(reward.kind)] ||
-                            "Unknown"}
+                          {EVENT_KIND_LABELS[reward.kind] || "Unknown"}
                           {reward.eventId ? ` / Event #${reward.eventId}` : ""}
                         </span>
                         <small title={reward.uri || undefined}>
@@ -231,7 +303,8 @@ function NftREWARDSSection({
                         disabled={
                           reward.isClaimed ||
                           !canClaim ||
-                          claimState === reward.rewardId
+                          unavailable ||
+                          claimState !== null
                         }
                         onClick={() => onClaimReward?.(reward.rewardId)}
                       >
@@ -251,7 +324,7 @@ function NftREWARDSSection({
           <article className="biggi-card biggi-card--c rewards-panel__card nft-rewards__card">
             <div className="biggi-card__header">
               <div className="biggi-card__heading">
-                <h3>Contract wiring</h3>
+                <h3>Contract details</h3>
                 <p>
                   {name || "Biggi Reward"}
                   {symbol ? ` (${symbol})` : ""} on Polygon mainnet.
@@ -291,9 +364,18 @@ function NftREWARDSSection({
             </div>
           </div>
           <div className="biggi-card__body">
+            <PageControls
+              label="Events"
+              page={eventPage}
+              pages={eventPages}
+              disabled={unavailable || claimState !== null}
+              onChange={onEventPageChange}
+            />
             {sortedEvents.length === 0 ? (
               <div className="nft-rewards__empty">
-                No NFT reward event has been created yet.
+                {unavailable
+                  ? emptyState
+                  : "No NFT reward event has been created yet."}
               </div>
             ) : (
               <table className="nft-rewards__table">
@@ -309,7 +391,7 @@ function NftREWARDSSection({
                 </thead>
                 <tbody>
                   {sortedEvents.map((event) => {
-                    const state = getEventState(event, rewards);
+                    const state = getEventState(event);
                     return (
                       <tr key={event.eventId}>
                         <td>#{event.eventId}</td>
@@ -356,7 +438,7 @@ function NftREWARDSSection({
           <div className="biggi-card__body">
             {sortedRewards.length === 0 ? (
               <div className="nft-rewards__empty">
-                No reward record exists yet.
+                {unavailable ? emptyState : "No reward record exists yet."}
               </div>
             ) : (
               <table className="nft-rewards__table">
@@ -375,9 +457,7 @@ function NftREWARDSSection({
                     <tr key={reward.rewardId}>
                       <td>#{reward.rewardId}</td>
                       <td>{reward.eventId ? `#${reward.eventId}` : "--"}</td>
-                      <td>
-                        {EVENT_KIND_LABELS[asNumber(reward.kind)] || "Unknown"}
-                      </td>
+                      <td>{EVENT_KIND_LABELS[reward.kind] || "Unknown"}</td>
                       <td title={reward.assigned || undefined}>
                         {isAssigned(reward.assigned)
                           ? formatContract(reward.assigned)

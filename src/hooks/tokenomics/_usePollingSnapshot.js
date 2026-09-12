@@ -26,7 +26,9 @@ function deepEqualIgnoringKeys(a, b, ignoreKeys, seen = new WeakMap()) {
   if (typeof a !== "object") return false;
 
   if (a instanceof Date || b instanceof Date) {
-    return a instanceof Date && b instanceof Date && a.getTime() === b.getTime();
+    return (
+      a instanceof Date && b instanceof Date && a.getTime() === b.getTime()
+    );
   }
 
   if (Array.isArray(a) || Array.isArray(b)) {
@@ -74,6 +76,7 @@ export default function usePollingSnapshot(fetcher, options = {}) {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
   const inFlightRef = React.useRef(false);
+  const generationRef = React.useRef(0);
   const lastRefreshAtRef = React.useRef(0);
   const hasLoadedRef = React.useRef(snapshot != null);
   const snapshotRef = React.useRef(snapshot);
@@ -86,12 +89,19 @@ export default function usePollingSnapshot(fetcher, options = {}) {
   }, [dedupeSnapshot, compareIgnoreKeys]);
 
   React.useEffect(() => {
-    if (!cacheKey) return;
+    generationRef.current += 1;
+    inFlightRef.current = false;
+    lastRefreshAtRef.current = 0;
+    setLoading(false);
+    setError(null);
     const cached = readCachedSnapshot(cacheKey, cacheTtlMs);
     setSnapshot(cached);
     snapshotRef.current = cached;
     hasLoadedRef.current = cached != null;
-  }, [cacheKey, cacheTtlMs]);
+    return () => {
+      generationRef.current += 1;
+    };
+  }, [cacheKey, cacheTtlMs, fetcher]);
 
   const [isVisible, setIsVisible] = React.useState(() => {
     if (typeof document === "undefined") return true;
@@ -106,7 +116,12 @@ export default function usePollingSnapshot(fetcher, options = {}) {
     const walk = (input) => {
       if (input == null) return input;
       if (typeof input === "bigint") return input.toString();
-      if (typeof input === "number" || typeof input === "string") return input;
+      if (
+        typeof input === "number" ||
+        typeof input === "string" ||
+        typeof input === "boolean"
+      )
+        return input;
       if (typeof input === "object") {
         if (input instanceof Date) return input;
         if (input._isBigNumber || input.type === "BigNumber") {
@@ -127,64 +142,73 @@ export default function usePollingSnapshot(fetcher, options = {}) {
     return walk(value);
   }, []);
 
-  const refresh = React.useCallback(async (force = false) => {
-    const startTransition =
-      typeof React.startTransition === "function"
-        ? React.startTransition
-        : (fn) => fn();
-    if (typeof fetcher !== "function") return null;
-    const now = Date.now();
-    const minGap = Number(minRefreshGapMs) || 0;
-    if (!force && minGap > 0 && now - lastRefreshAtRef.current < minGap) {
-      return null;
-    }
-    if (inFlightRef.current) return null;
-    inFlightRef.current = true;
-    lastRefreshAtRef.current = now;
-    const shouldSetLoading =
-      !hasLoadedRef.current && snapshotRef.current == null;
-    if (shouldSetLoading) setLoading(true);
-    setError(null);
-    try {
-      const data = await fetcher();
-      const safe =
-        data == null
-          ? null
-          : sanitizeOpt === false
-            ? data
-            : typeof sanitizeOpt === "function"
-              ? sanitizeOpt(data)
-              : sanitize(data);
-      if (safe != null) writeCachedSnapshot(cacheKey, safe);
-      const prev = snapshotRef.current;
-      const sameSnapshot =
-        dedupeSnapshot &&
-        prev != null &&
-        safe != null &&
-        deepEqualIgnoringKeys(prev, safe, compareIgnoreSet);
-      startTransition(() => {
-        if (!sameSnapshot) setSnapshot(safe);
-      });
-      if (safe != null) hasLoadedRef.current = true;
-      return safe;
-    } catch (err) {
-      startTransition(() => {
-        setError(err);
-      });
-      return null;
-    } finally {
-      inFlightRef.current = false;
-      if (shouldSetLoading) setLoading(false);
-    }
-  }, [
-    cacheKey,
-    compareIgnoreSet,
-    dedupeSnapshot,
-    fetcher,
-    minRefreshGapMs,
-    sanitize,
-    sanitizeOpt,
-  ]);
+  const refresh = React.useCallback(
+    async (force = false) => {
+      const startTransition =
+        typeof React.startTransition === "function"
+          ? React.startTransition
+          : (fn) => fn();
+      if (typeof fetcher !== "function") return null;
+      const now = Date.now();
+      const minGap = Number(minRefreshGapMs) || 0;
+      if (!force && minGap > 0 && now - lastRefreshAtRef.current < minGap) {
+        return null;
+      }
+      if (inFlightRef.current) return null;
+      const generation = generationRef.current;
+      inFlightRef.current = true;
+      lastRefreshAtRef.current = now;
+      const shouldSetLoading =
+        !hasLoadedRef.current && snapshotRef.current == null;
+      if (shouldSetLoading) setLoading(true);
+      setError(null);
+      try {
+        const data = await fetcher();
+        if (generation !== generationRef.current) return null;
+        const safe =
+          data == null
+            ? null
+            : sanitizeOpt === false
+              ? data
+              : typeof sanitizeOpt === "function"
+                ? sanitizeOpt(data)
+                : sanitize(data);
+        if (safe != null) writeCachedSnapshot(cacheKey, safe);
+        const prev = snapshotRef.current;
+        const sameSnapshot =
+          dedupeSnapshot &&
+          prev != null &&
+          safe != null &&
+          deepEqualIgnoringKeys(prev, safe, compareIgnoreSet);
+        startTransition(() => {
+          if (generation === generationRef.current && !sameSnapshot)
+            setSnapshot(safe);
+        });
+        if (safe != null) hasLoadedRef.current = true;
+        return safe;
+      } catch (err) {
+        if (generation !== generationRef.current) return null;
+        startTransition(() => {
+          setError(err);
+        });
+        return null;
+      } finally {
+        if (generation === generationRef.current) {
+          inFlightRef.current = false;
+          if (shouldSetLoading) setLoading(false);
+        }
+      }
+    },
+    [
+      cacheKey,
+      compareIgnoreSet,
+      dedupeSnapshot,
+      fetcher,
+      minRefreshGapMs,
+      sanitize,
+      sanitizeOpt,
+    ],
+  );
 
   React.useEffect(() => {
     if (!immediate) return undefined;
@@ -225,7 +249,8 @@ export default function usePollingSnapshot(fetcher, options = {}) {
       }
     };
     document.addEventListener("visibilitychange", handleVisibility);
-    return () => document.removeEventListener("visibilitychange", handleVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibility);
   }, [pauseWhenHidden, immediate, refresh]);
 
   React.useEffect(() => {

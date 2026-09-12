@@ -44,7 +44,7 @@ The frontend centralizes chain access in `src/shared/utils/contract.js`.
 
 - use injected or WalletConnect signer providers
 - enforce Polygon mainnet before transaction submission
-- use retry helpers for write paths that may hit RPC throttling
+- Retry read-only requests only. Never automatically repeat a wallet submission after RPC throttling or a lost response; reconcile wallet activity and the original transaction first.
 
 ## Address And ABI Discipline
 

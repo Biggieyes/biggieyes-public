@@ -117,6 +117,7 @@ const resolveClaimPresentation = ({
   paid = false,
   loading = false,
   canClaim = false,
+  walletConnected = false,
   claimability = null,
 }) => {
   if (loading) {
@@ -137,7 +138,7 @@ const resolveClaimPresentation = ({
   }
   if (!canClaim) {
     return {
-      label: "Wallet needed",
+      label: walletConnected ? "Unavailable" : "Wallet needed",
       tone: "is-locked",
       rowTone: "row-locked",
       disabled: true,
@@ -151,12 +152,12 @@ const resolveClaimPresentation = ({
       disabled: true,
     };
   }
-  if (claimability?.resolved === false) {
+  if (claimability?.resolved !== true || claimability?.ok !== true) {
     return {
-      label: "Check wallet",
-      tone: "is-available",
-      rowTone: "row-open",
-      disabled: false,
+      label: "Unavailable",
+      tone: "is-locked",
+      rowTone: "row-locked",
+      disabled: true,
     };
   }
   return {
@@ -169,6 +170,8 @@ const resolveClaimPresentation = ({
 
 function COLLECTIONREWARDSSection({
   stats = null,
+  loading = false,
+  error = null,
   statusRows = [],
   formatDecimal,
   formatNativeAmount,
@@ -184,6 +187,7 @@ function COLLECTIONREWARDSSection({
   onChapterChange,
   rewardArtworkReady = true,
   canClaimCOLLECTION = false,
+  walletAddress = "",
   claimState = { block: null, orange: null, rainbow: false },
   onClaimBlockReward,
   onClaimOrangeReward,
@@ -192,22 +196,24 @@ function COLLECTIONREWARDSSection({
   formatAddress,
   feedback,
 }) {
-  const hasStats = Boolean(stats);
+  const hasStats = Boolean(stats) && !loading && !error;
   const blockStatusesLoaded = blockPaid.length === BLOCK_INDICES.length;
-  const orangeStatusesLoaded = orangeMainIdPaid.length === ORANGE_MAIN_IDS.length;
+  const orangeStatusesLoaded =
+    orangeMainIdPaid.length === ORANGE_MAIN_IDS.length;
   const blockClaimedCount = blockPaid.filter(Boolean).length;
   const orangeClaimedCount = orangeMainIdPaid.filter(Boolean).length;
-  const formatValue = typeof formatDecimal === "function"
-    ? formatDecimal
-    : (value, digits = 2) =>
-        value == null
-          ? WAITING_VALUE
-          : Number.isFinite(Number(value))
-            ? Number(value).toLocaleString(undefined, {
-                minimumFractionDigits: digits,
-                maximumFractionDigits: digits,
-              })
-            : String(value);
+  const formatValue =
+    typeof formatDecimal === "function"
+      ? formatDecimal
+      : (value, digits = 2) =>
+          value == null
+            ? WAITING_VALUE
+            : Number.isFinite(Number(value))
+              ? Number(value).toLocaleString(undefined, {
+                  minimumFractionDigits: digits,
+                  maximumFractionDigits: digits,
+                })
+              : String(value);
   const formatNativeValue = (value, digits = 2) => {
     if (typeof formatNativeAmount === "function") {
       return formatNativeAmount(value, digits);
@@ -235,9 +241,7 @@ function COLLECTIONREWARDSSection({
   const COLLECTIONStatRows = [
     {
       label: "Block reward",
-      value: hasStats
-        ? formatNativeValue(stats.blockReward, 3)
-        : WAITING_VALUE,
+      value: hasStats ? formatNativeValue(stats.blockReward, 3) : WAITING_VALUE,
     },
     {
       label: "Orange reward",
@@ -273,9 +277,10 @@ function COLLECTIONREWARDSSection({
     },
     {
       label: "Contract balance",
-      value: collectionBalance != null
-        ? formatNativeValue(collectionBalance, 2)
-        : WAITING_VALUE,
+      value:
+        collectionBalance != null
+          ? formatNativeValue(collectionBalance, 2)
+          : WAITING_VALUE,
     },
   ];
 
@@ -290,11 +295,17 @@ function COLLECTIONREWARDSSection({
     kind: "rainbow",
     paid: rainbowClaimed,
     canClaim: canClaimCOLLECTION,
+    walletConnected: Boolean(walletAddress),
     claimability: rainbowClaimability,
   });
 
   return (
     <section className="rewards-panel__section rewards-panel__section--collection">
+      {error && (
+        <div role="alert" className="rewards-grid__alert">
+          Collection rewards are unavailable. Refresh before claiming.
+        </div>
+      )}
       {chapters.length > 1 && (
         <div
           className="rewards-panel__chapter-switcher"
@@ -336,7 +347,7 @@ function COLLECTIONREWARDSSection({
                   </div>
                 ))}
               </div>
-              {!hasStats && (
+              {loading && !error && (
                 <div className="rewards-grid__loading">
                   <span className="rewards-grid__spinner" />
                   <span>Loading REWARDS configuration</span>
@@ -420,8 +431,9 @@ function COLLECTIONREWARDSSection({
                     const presentation = resolveClaimPresentation({
                       kind: "block",
                       paid: blockPaid[idx],
-                      loading: !blockStatusesLoaded,
+                      loading: !blockStatusesLoaded && !error,
                       canClaim: canClaimCOLLECTION,
+                      walletConnected: Boolean(walletAddress),
                       claimability,
                     });
                     const blockThumbs = rewardArtworkReady
@@ -483,8 +495,9 @@ function COLLECTIONREWARDSSection({
                     const presentation = resolveClaimPresentation({
                       kind: "orange",
                       paid: orangeMainIdPaid[idx],
-                      loading: !orangeStatusesLoaded,
+                      loading: !orangeStatusesLoaded && !error,
                       canClaim: canClaimCOLLECTION,
+                      walletConnected: Boolean(walletAddress),
                       claimability,
                     });
                     const orangeThumbs = rewardArtworkReady

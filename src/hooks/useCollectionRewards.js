@@ -9,10 +9,8 @@ export default function useCollectionRewards(
   addressOverride,
   collectionAddress,
 ) {
-  const [data, setData] = React.useState(null);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState(null);
-
+  const [state, setState] = React.useState(null);
+  const requestId = React.useRef(0);
   const provider = React.useMemo(() => {
     if (providerOverride) return providerOverride;
     try {
@@ -21,40 +19,50 @@ export default function useCollectionRewards(
       return null;
     }
   }, [providerOverride]);
-
   const address = addressOverride || ADDR.COLLECTION_REWARDS;
+  const context = React.useMemo(
+    () => ({ provider, address, walletAddress, collectionAddress }),
+    [provider, address, walletAddress, collectionAddress],
+  );
 
   const refresh = React.useCallback(async () => {
+    const id = ++requestId.current;
     if (!provider || !address) {
-      setData(null);
+      setState({ context, data: null, loading: false, error: null });
       return null;
     }
-    setLoading(true);
-    setError(null);
+    setState({ context, data: null, loading: true, error: null });
     try {
       const service = new CollectionRewardsService(
         address,
         provider,
         collectionAddress,
       );
-      const stats = await service.getAllStats(
+      const data = await service.getAllStats(
         walletAddress || null,
         collectionAddress,
       );
-      setData(stats);
-      return stats;
-    } catch (err) {
-      setError(err);
-      setData(null);
+      if (id !== requestId.current) return null;
+      setState({ context, data, loading: false, error: null });
+      return data;
+    } catch (error) {
+      if (id === requestId.current)
+        setState({ context, data: null, loading: false, error });
       return null;
-    } finally {
-      setLoading(false);
     }
-  }, [address, collectionAddress, provider, walletAddress]);
+  }, [address, collectionAddress, provider, walletAddress, context]);
 
   React.useEffect(() => {
     refresh();
+    return () => {
+      requestId.current += 1;
+    };
   }, [refresh]);
-
-  return { data, loading, error, refresh };
+  const current = state?.context === context ? state : null;
+  return {
+    data: current?.data ?? null,
+    loading: current?.loading ?? Boolean(provider && address),
+    error: current?.error ?? null,
+    refresh,
+  };
 }

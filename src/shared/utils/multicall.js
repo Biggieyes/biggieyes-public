@@ -10,8 +10,7 @@ const MULTICALL_ABI = [
 function _hasFn(iface, name) {
   if (!iface || !name) return false;
   try {
-    iface.getFunction(name);
-    return true;
+    return iface.getFunction(name) != null;
   } catch {
     return false;
   }
@@ -67,6 +66,7 @@ export async function multicallAggregate(
   provider,
   calls = [],
   multicallAddress = null,
+  callOverrides = {},
 ) {
   if (!Array.isArray(calls) || !calls.length) return [];
   const addr = multicallAddress || _getMulticallAddress();
@@ -75,9 +75,11 @@ export async function multicallAggregate(
     const results = await Promise.all(
       calls.map(async (c) => {
         const data = c.iface.encodeFunctionData(c.method, c.params || []);
-        const res = await provider.call({ to: c.target, data }).catch((e) => {
-          throw e;
-        });
+        const res = await provider
+          .call({ ...callOverrides, to: c.target, data })
+          .catch((e) => {
+            throw e;
+          });
         return c.iface.decodeFunctionResult(c.method, res);
       }),
     );
@@ -89,7 +91,7 @@ export async function multicallAggregate(
     target: c.target,
     callData: c.iface.encodeFunctionData(c.method, c.params || []),
   }));
-  const [, returnData] = await mc["aggregate"](callInput);
+  const [, returnData] = await mc["aggregate"](callInput, callOverrides);
   return returnData.map((rd, i) =>
     calls[i].iface.decodeFunctionResult(calls[i].method, rd),
   );
@@ -100,6 +102,7 @@ export async function multicallReadContract(
   contractOrTarget,
   entries = [],
   iface = null,
+  callOverrides = {},
 ) {
   if (!provider || !Array.isArray(entries) || !entries.length) return null;
   const target = _resolveTarget(contractOrTarget);
@@ -119,6 +122,8 @@ export async function multicallReadContract(
       method: entry.method,
       params: entry.params || [],
     })),
+    null,
+    callOverrides,
   );
 
   const out = {};
@@ -132,4 +137,3 @@ export async function multicallReadContract(
 }
 
 export default { multicallAggregate, multicallReadContract };
-

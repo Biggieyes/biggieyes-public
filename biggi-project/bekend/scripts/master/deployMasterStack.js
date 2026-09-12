@@ -45,6 +45,7 @@
 const fs = require("fs");
 const path = require("path");
 const hre = require("hardhat");
+const { nftRewardsVersion } = require("./nftRewardsVersion");
 
 const { ethers, network } = hre;
 const ZERO = ethers.constants.AddressZero;
@@ -1107,16 +1108,23 @@ async function main() {
     nftRewards = (await deploy("BiggiNFTRewards", [deployer.address])).address;
   }
   if (nftRewards !== ZERO) {
+    const legacyRewards = await nftRewardsVersion(nftRewards) === 1;
+    if (!legacyRewards && vrfRouterAddress !== ZERO) {
+      const current = new ethers.Contract(nftRewards, ["function vrfRouter() view returns(address)"], ethers.provider);
+      if ((await current.vrfRouter()).toLowerCase() !== vrfRouterAddress.toLowerCase()) {
+        throw new Error("Immutable NFT Rewards V2 router mismatch");
+      }
+    }
     try {
       const nftRewardsContract = await ethers.getContractAt("BiggiNFTRewards", nftRewards);
       try {
-        await (await nftRewardsContract.setMainContract(mainCollection.address)).wait();
+        if (legacyRewards) await (await nftRewardsContract.setMainContract(mainCollection.address)).wait();
       } catch (e) {
         console.warn(`WARN: NFT_REWARDS.setMainContract skipped: ${e.message}`);
       }
       if (vrfRouterAddress !== ZERO) {
         try {
-          await (await nftRewardsContract.setVrfRouter(vrfRouterAddress)).wait();
+          if (legacyRewards) await (await nftRewardsContract.setVrfRouter(vrfRouterAddress)).wait();
         } catch (e) {
           console.warn(`WARN: NFT_REWARDS.setVrfRouter skipped: ${e.message}`);
         }
@@ -1128,12 +1136,12 @@ async function main() {
         }
       }
       try {
-        await (await nftRewardsContract.setRegistry(registry.address)).wait();
+        if (legacyRewards) await (await nftRewardsContract.setRegistry(registry.address)).wait();
       } catch (e) {
         console.warn(`WARN: NFT_REWARDS.setRegistry skipped: ${e.message}`);
       }
       try {
-        await (await nftRewardsContract.setAllowedMainCollection(publicCollection.address, true)).wait();
+        if (legacyRewards) await (await nftRewardsContract.setAllowedMainCollection(publicCollection.address, true)).wait();
       } catch (e) {
         console.warn(`WARN: NFT_REWARDS.setAllowedMainCollection skipped: ${e.message}`);
       }

@@ -5,6 +5,11 @@
         "internalType": "address",
         "name": "owner_",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "vrfRouter_",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
@@ -145,6 +150,21 @@
   },
   {
     "inputs": [],
+    "name": "EmptyTokenUri",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidRequestId",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NativeTokenNotAccepted",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "NoEligible",
     "type": "error"
   },
@@ -171,11 +191,6 @@
   {
     "inputs": [],
     "name": "NotMystery",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "OnlyApprovedMain",
     "type": "error"
   },
   {
@@ -207,7 +222,17 @@
   },
   {
     "inputs": [],
+    "name": "OwnershipRenounceDisabled",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "ReentrancyGuardReentrantCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RequestIdAlreadyUsed",
     "type": "error"
   },
   {
@@ -217,7 +242,7 @@
   },
   {
     "inputs": [],
-    "name": "VrfRouterNotSet",
+    "name": "VrfRouterNotContract",
     "type": "error"
   },
   {
@@ -278,50 +303,6 @@
       }
     ],
     "name": "ApprovalForAll",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "collection",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "approved",
-        "type": "bool"
-      }
-    ],
-    "name": "MainCollectionApprovalSet",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "eventId",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "requestId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "random",
-        "type": "uint256"
-      }
-    ],
-    "name": "MysteryEmergencyResolved",
     "type": "event"
   },
   {
@@ -428,7 +409,7 @@
         "type": "address"
       }
     ],
-    "name": "OwnershipTransferred",
+    "name": "OwnershipTransferStarted",
     "type": "event"
   },
   {
@@ -437,17 +418,17 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "oldRegistry",
+        "name": "previousOwner",
         "type": "address"
       },
       {
         "indexed": true,
         "internalType": "address",
-        "name": "newRegistry",
+        "name": "newOwner",
         "type": "address"
       }
     ],
-    "name": "RegistrySet",
+    "name": "OwnershipTransferred",
     "type": "event"
   },
   {
@@ -505,7 +486,7 @@
       },
       {
         "indexed": false,
-        "internalType": "enum BiggiNFTRewards.EventKind",
+        "internalType": "enum BiggiNFTRewardsV2.EventKind",
         "name": "kind",
         "type": "uint8"
       },
@@ -557,22 +538,23 @@
     "type": "event"
   },
   {
+    "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
         "internalType": "address",
-        "name": "",
+        "name": "router",
         "type": "address"
       }
     ],
-    "name": "allowedMainCollections",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
+    "name": "VrfRouterConfigured",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "acceptOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -676,35 +658,6 @@
         "type": "string"
       }
     ],
-    "name": "createCharacterReward",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "eventId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "rewardId",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "winner",
-        "type": "address"
-      },
-      {
-        "internalType": "string",
-        "name": "tokenUri",
-        "type": "string"
-      }
-    ],
     "name": "createManualReward",
     "outputs": [
       {
@@ -751,24 +704,6 @@
         "internalType": "uint256",
         "name": "eventId",
         "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "random",
-        "type": "uint256"
-      }
-    ],
-    "name": "emergencyResolveMystery",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "eventId",
-        "type": "uint256"
       }
     ],
     "name": "eventEligibleCount",
@@ -793,7 +728,7 @@
     "name": "events",
     "outputs": [
       {
-        "internalType": "enum BiggiNFTRewards.EventKind",
+        "internalType": "enum BiggiNFTRewardsV2.EventKind",
         "name": "kind",
         "type": "uint8"
       },
@@ -918,19 +853,6 @@
   },
   {
     "inputs": [],
-    "name": "mainContract",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "mysteryRetryDelay",
     "outputs": [
       {
@@ -1015,7 +937,7 @@
   },
   {
     "inputs": [],
-    "name": "registry",
+    "name": "pendingOwner",
     "outputs": [
       {
         "internalType": "address",
@@ -1030,7 +952,7 @@
     "inputs": [],
     "name": "renounceOwnership",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -1174,24 +1096,6 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "collection",
-        "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "approved",
-        "type": "bool"
-      }
-    ],
-    "name": "setAllowedMainCollection",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
         "name": "operator",
         "type": "address"
       },
@@ -1209,51 +1113,12 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "main_",
-        "type": "address"
-      }
-    ],
-    "name": "setMainContract",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "uint64",
         "name": "delaySec",
         "type": "uint64"
       }
     ],
     "name": "setMysteryRetryDelay",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "registry_",
-        "type": "address"
-      }
-    ],
-    "name": "setRegistry",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "router_",
-        "type": "address"
-      }
-    ],
-    "name": "setVrfRouter",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1343,6 +1208,25 @@
     "name": "transferOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "usedVrfRequestIds",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

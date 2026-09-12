@@ -14,6 +14,7 @@
 const fs = require("fs");
 const path = require("path");
 const hre = require("hardhat");
+const { nftRewardsVersion } = require("./nftRewardsVersion");
 
 const { ethers, network } = hre;
 const ZERO = ethers.constants.AddressZero;
@@ -1309,13 +1310,18 @@ async function main() {
     }
   }
 
-  if (nftRewards) {
+  if (nftRewards && await nftRewardsVersion(A.NFT_REWARDS) === 1) {
     await ensureAddress("NFT_REWARDS.mainContract", () => nftRewards.mainContract(), A.MAIN, () => nftRewards.setMainContract(A.MAIN));
     await ensureAddress("NFT_REWARDS.registry", () => nftRewards.registry(), A.REGISTRY, () => nftRewards.setRegistry(A.REGISTRY));
     if (isAddress(A.VRF_ROUTER)) {
       await ensureAddress("NFT_REWARDS.vrfRouter", () => nftRewards.vrfRouter(), A.VRF_ROUTER, () => nftRewards.setVrfRouter(A.VRF_ROUTER));
     }
     await ensureBool("NFT_REWARDS.allowedMainCollections(MAIN2)", () => nftRewards.allowedMainCollections(A.MAIN2), true, () => nftRewards.setAllowedMainCollection(A.MAIN2, true));
+  } else if (nftRewards) {
+    const router = await read("NFT_REWARDS.vrfRouter (immutable V2)", () => nftRewards.vrfRouter());
+    if (!router || !eqAddress(router, A.VRF_ROUTER)) {
+      block("NFT_REWARDS V2 immutable VRF router does not match configured VRF_ROUTER");
+    }
   }
 
   if (biggiToken) {

@@ -146,8 +146,9 @@ python scripts/metadata/biggi_metadata.py build `
   --out metadata-out/main-final
 ```
 
-Any missing final image falls back to the placeholder image and is counted in
-`_metadata_manifest.json`.
+For MAIN, any missing final image falls back to the placeholder image and is
+counted in `_metadata_manifest.json`. Public MAIN2 final releases are strict:
+all 100 explicit final image URIs must be present before any output is written.
 
 ## MAIN2 public branch
 
@@ -185,6 +186,83 @@ Biggi_2_ORANGE_PUBLIC.json,ipfs://bafy.../Biggi_2_ORANGE_PUBLIC.png
 ```
 
 Use `PUBLIC_BLOCK_URI_1..10` and `PUBLIC_METADATA_FILE` for the public branch.
+
+### Public Originals artwork preparation
+
+Originals is Chapter 1 (`--chapter-id 1 --series Original`). Use one approved
+image per Main ID, not the older `_PUBLIC_ORANGE_O` or VRF `_ORANGE_O` background
+variants. No image editing or background removal is performed by this pipeline.
+The restriction concerns background variants/traits, not scene content in the
+artwork. The block mapping is fixed:
+
+| Main IDs / mint indices | Block | Example image filename |
+| --- | --- | --- |
+| 1-10 | ORANGE | `Biggi_1_ORANGE_PUBLIC.png` |
+| 11-20 | BLACK | `Biggi_11_BLACK_PUBLIC.png` |
+| 21-30 | WHITE | `Biggi_21_WHITE_PUBLIC.png` |
+| 31-40 | BROWN | `Biggi_31_BROWN_PUBLIC.png` |
+| 41-50 | BLUE | `Biggi_41_BLUE_PUBLIC.png` |
+| 51-60 | GREEN | `Biggi_51_GREEN_PUBLIC.png` |
+| 61-70 | VIOLET | `Biggi_61_VIOLET_PUBLIC.png` |
+| 71-80 | RED | `Biggi_71_RED_PUBLIC.png` |
+| 81-90 | PINK | `Biggi_81_PINK_PUBLIC.png` |
+| 91-100 | RAINBOW | `Biggi_91_RAINBOW_PUBLIC.png` |
+
+PNG, JPEG and WebP source files are supported. Public on-chain token IDs are
+1001-1100; filenames use Main IDs 1-100. The internal layout `background=1`
+remains unchanged and is not a Public background trait or price modifier.
+
+Audit the source folder without modifying, copying, uploading or approving it:
+
+```powershell
+python scripts/metadata/biggi_metadata.py audit-public-artwork `
+  --image-root "C:\path\to\approved-public-artwork" `
+  --out tmp-public-artwork-audit
+```
+
+Use a new/empty output directory outside the source artwork folder. Outputs:
+
+- `public-artwork-audit.json`: missing files, wrong block/ID names, legacy
+  background variants, ambiguous matches, invalid file headers, duplicate bytes,
+  and SHA-256 fingerprints of matched files.
+- `public-image-map.csv`: all 100 deterministic metadata filenames, expected
+  image stems and matched source paths. The `image` column is intentionally empty.
+
+An incomplete mapping returns a nonzero exit code after writing the report.
+`mappingComplete=true` checks filenames, basic file headers and duplicate bytes
+only. It does not prove full image decoding, correct eye colors, visual uniqueness,
+or final artwork approval. Review the images before pinning them. Unassigned and
+legacy source files are listed but never selected automatically.
+
+After artwork approval, pin only the selected images and fill each CSV `image`
+cell with its actual IPFS image URI. Keep the CSV outside the upload folder.
+Do not upload the entire mixed legacy source folder or use local file paths.
+Then generate the release into a new/empty directory:
+
+```powershell
+python scripts/metadata/biggi_metadata.py build `
+  --collection-kind main2 --phase final `
+  --collection-name "BIGGI Originals Public" `
+  --chapter-id 1 --series Original `
+  --description "BiggiEyes Originals public companion collection." `
+  --image-map tmp-public-artwork-audit/public-image-map.csv `
+  --external-url "https://biggieyes.com/collection/" `
+  --out tmp-public-originals-final
+
+python scripts/metadata/biggi_metadata.py validate `
+  --path tmp-public-originals-final --require-image
+```
+
+The final Public build rejects missing images even with `--allow-missing-image`,
+configured placeholder URIs, duplicate URIs, conflicting map entries, local paths,
+template CID placeholders and recognizable wrong-NFT/background image filenames.
+Remote image content/availability is not verified by `build` or `validate`.
+The generated layout preserves all 100 index/block/Main ID mappings. MAIN/VRF
+metadata generation, background traits and on-chain pricing are unchanged.
+
+Building or auditing does not upload metadata, update contract URIs, unlock a
+chapter or unpause minting. Those remain separate release steps after image,
+metadata, contract wiring and purchase-preflight verification.
 
 ## Ticket metadata
 
