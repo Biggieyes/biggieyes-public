@@ -20,7 +20,7 @@ Verification status:
 - This request covers the remaining 53 addresses
 
 The missing tags are grouped by contract creator/deployer:
-- 0x8fa5c9545b2eef1ca3c6533951c286e05928f27b: 52 contract addresses
+- 0x8fa5c9545b2eef1ca3c6533951c286e05928f27b: 27 contract addresses
 - 0x402ce2ff958ab47edafc42296d2682cc8f9d92b2: 1 contract address
 
 The attached CSV contains only the 53 missing public tags. It includes each contract address, creator/deployer address, lifecycle, category, verified source-code URL, and the requested public name tag. The three replaced historical contracts are explicitly labeled "Deprecated" so they cannot be confused with current endpoints.

@@ -3,12 +3,28 @@ import { getProvider } from "../../../web3/provider";
 import { getTokenDexContracts } from "../../../web3/contracts/tokenDex.contracts";
 import { UniswapV2Pair as ABI_UniswapV2Pair } from "@/config/abi/index.js";
 import { multicallAggregate } from "@/shared/utils/multicall";
+import { isRateLimitedRpcError } from "@/shared/utils/rpcErrors.js";
+
+function optionalReadFailure(error, fallback = null) {
+  if (
+    !isRateLimitedRpcError(error) &&
+    (error?.code === "CALL_EXCEPTION" ||
+      (error?.code === "BAD_DATA" && error?.value === "0x"))
+  ) {
+    return fallback;
+  }
+  // Stop this snapshot on transport failure instead of retrying every field.
+  const failure = new Error(
+    "Token / DEX data could not be refreshed. Please try again shortly.",
+  );
+  failure.code = "TOKEN_DEX_READ_FAILED";
+  throw failure;
+}
 
 function hasFn(iface, name) {
   if (!iface || !name) return false;
   try {
-    iface.getFunction(name);
-    return true;
+    return iface.getFunction(name) != null;
   } catch {
     return false;
   }
@@ -30,7 +46,9 @@ async function multicallRead(provider, target, iface, methods = []) {
     method: m.method,
     params: m.params || [],
   }));
-  const decoded = await multicallAggregate(provider, calls).catch(() => null);
+  const decoded = await multicallAggregate(provider, calls).catch(
+    optionalReadFailure,
+  );
   if (!decoded) return null;
   const out = {};
   entries.forEach((m, idx) => {
@@ -42,10 +60,9 @@ async function multicallRead(provider, target, iface, methods = []) {
 async function _callOptional(method, fallback = null) {
   if (typeof method !== "function") return fallback;
   try {
-    return await method();
+    return (await method()) ?? fallback;
   } catch (error) {
-    console.warn("TokenDex snapshot helper call failed", method?.name, error);
-    return fallback;
+    return optionalReadFailure(error, fallback);
   }
 }
 
@@ -98,25 +115,24 @@ export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
       ])
     : null;
 
-  const decimals =
-    Number(tokenMulti?.decimals) ||
-    (await _callOptional(() => token.decimals(), 18)) ||
-    18;
+  const rawDecimals =
+    tokenMulti?.decimals ?? (await _callOptional(token.decimals));
+  const decimals = rawDecimals == null ? null : Number(rawDecimals);
+  if (
+    decimals == null || !Number.isInteger(decimals) ||
+    decimals < 0 || decimals > 255
+  ) {
+    throw new Error(
+      "Token decimals are unavailable. Token / DEX data could not be refreshed.",
+    );
+  }
   const oneToken = parseUnits("1", decimals);
   const wethAddress = normalizeAddress(
-    addrs.weth || (await _callOptional(() => router.WETH(), null)),
+    addrs.weth || (await _callOptional(router.WETH, null)),
   );
   const routerFactory = normalizeAddress(
-    addrs.factory || (await _callOptional(() => router.factory(), null)),
+    addrs.factory || (await _callOptional(router.factory, null)),
   );
-  const routerAmountsOut = await _callOptional(
-    () =>
-      wethAddress
-        ? router.getAmountsOut(oneToken, [tokenAddress, wethAddress])
-        : null,
-    null,
-  );
-
   let pairContract = configuredPair;
   let resolvedPairAddress = normalizeAddress(addrs.pairAddress);
   if (!pairContract && factory && wethAddress) {
@@ -158,52 +174,81 @@ export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
     pairTotalSupply = pairMulti?.totalSupply ?? null;
   }
 
-  if (pairContract && !pairReserves) {
+  if (
+    pairContract &&
+    [pairReserves, pairToken0, pairToken1, pairTotalSupply].some(
+      (value) => value == null,
+    )
+  ) {
     [pairReserves, pairToken0, pairToken1, pairTotalSupply] = await Promise.all(
       [
-        _callOptional(() => pairContract.getReserves(), null),
-        _callOptional(() => pairContract.token0(), null),
-        _callOptional(() => pairContract.token1(), null),
-        _callOptional(() => pairContract.totalSupply(), null),
+        pairReserves ?? _callOptional(() => pairContract.getReserves(), null),
+        pairToken0 ?? _callOptional(() => pairContract.token0(), null),
+        pairToken1 ?? _callOptional(() => pairContract.token1(), null),
+        pairTotalSupply ?? _callOptional(() => pairContract.totalSupply(), null),
       ],
     );
   }
 
+  const reserve0 = pairReserves?.reserve0 ?? pairReserves?.[0];
+  const reserve1 = pairReserves?.reserve1 ?? pairReserves?.[1];
+  const tokens = [pairToken0?.toLowerCase(), pairToken1?.toLowerCase()];
+  const matchesPath =
+    tokens.includes(tokenAddress.toLowerCase()) &&
+    wethAddress && tokens.includes(wethAddress.toLowerCase());
+  let quoteStatus = "unavailable";
+  let routerAmountsOut = null;
+  if (
+    pairContract && reserve0 != null && reserve1 != null &&
+    pairToken0 && pairToken1
+  ) {
+    if (!matchesPath) {
+      quoteStatus = "pair_mismatch";
+    } else if (BigInt(reserve0) === 0n || BigInt(reserve1) === 0n) {
+      quoteStatus = "no_liquidity";
+    } else {
+      routerAmountsOut = await _callOptional(() =>
+        router.getAmountsOut(oneToken, [tokenAddress, wethAddress]),
+      );
+      quoteStatus = routerAmountsOut == null ? "unavailable" : "ready";
+    }
+  }
+
   const priceFeedRound = priceFeed
-    ? await _callOptional(() => priceFeed.latestRoundData())
+    ? await _callOptional(priceFeed.latestRoundData)
     : null;
   const priceFeedReserves = priceFeed
-    ? await _callOptional(() => priceFeed.readReserves())
+    ? await _callOptional(priceFeed.readReserves)
     : null;
   const priceFeedPair = priceFeed
-    ? await _callOptional(() => priceFeed.pair())
+    ? await _callOptional(priceFeed.pair)
     : null;
   const priceFeedDecimals = priceFeed
-    ? await _callOptional(() => priceFeed.decimals(), null)
+    ? await _callOptional(priceFeed.decimals, null)
     : null;
 
-  const name = tokenMulti?.name ?? (await _callOptional(() => token.name(), null));
+  const name = tokenMulti?.name ?? (await _callOptional(token.name, null));
   const symbol =
-    tokenMulti?.symbol ?? (await _callOptional(() => token.symbol(), null));
+    tokenMulti?.symbol ?? (await _callOptional(token.symbol, null));
   const totalSupply =
     tokenMulti?.totalSupply ??
-    (await _callOptional(() => token.totalSupply(), null));
-  const cap = tokenMulti?.CAP ?? (await _callOptional(() => token.CAP(), null));
+    (await _callOptional(token.totalSupply, null));
+  const cap = tokenMulti?.CAP ?? (await _callOptional(token.CAP, null));
   const remainingMintable =
     tokenMulti?.remainingMintable ??
-    (await _callOptional(() => token.remainingMintable(), null));
+    (await _callOptional(token.remainingMintable, null));
   const reserveAddress =
     tokenMulti?.reserveAddr ??
-    (await _callOptional(() => token.reserveAddr(), null));
+    (await _callOptional(token.reserveAddr, null));
   const DRIPDistributorAddress =
     tokenMulti?.dripDistributorAddr ??
-    (await _callOptional(() => token.dripDistributorAddr(), null));
+    (await _callOptional(token.dripDistributorAddr, null));
   const tokenREWARDSAddress =
     tokenMulti?.tokenRewardsAddr ??
-    (await _callOptional(() => token.tokenRewardsAddr(), null));
+    (await _callOptional(token.tokenRewardsAddr, null));
   const REWARDSOperator =
     tokenMulti?.rewardsOperator ??
-    (await _callOptional(() => token.rewardsOperator(), null));
+    (await _callOptional(token.rewardsOperator, null));
 
   const normalizedReserveAddress = normalizeAddress(reserveAddress);
   const normalizedDRIPDistributorAddress =
@@ -270,6 +315,7 @@ export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
       weth: wethAddress,
       path: [tokenAddress, wethAddress].filter(Boolean),
       routerAmountsOut,
+      quoteStatus,
       routerNativeOut: routerAmountsOut?.[1] ?? null,
       pairAddress: resolvedPairAddress,
       pair: pairContract
@@ -283,7 +329,7 @@ export async function fetchTokenDexSnapshot({ chainId, provider } = {}) {
         : null,
       priceFeed: priceFeed
         ? {
-            address: priceFeed.address,
+            address: priceFeed.target ?? priceFeed.address,
             latestRoundData: priceFeedRound,
             reserves: priceFeedReserves,
             pair: priceFeedPair,

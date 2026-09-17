@@ -462,7 +462,7 @@ function LiveChatPanel({ walletAddress = "" }) {
     } finally {
       setSending(false);
     }
-  }, [API_BASE, content, isConnected, name, sending]);
+  }, [content, isConnected, name, sending]);
 
   return (
     <section
@@ -567,4 +567,3 @@ function LiveChatPanel({ walletAddress = "" }) {
 }
 
 export default LiveChatPanel;
-

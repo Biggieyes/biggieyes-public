@@ -50,6 +50,13 @@ export default function useHashRouting(
   }, [normTarget]);
 
   const [state, setState] = React.useState(() => parse());
+  const scrollFrameRef = React.useRef<number | null>(null);
+  const cancelScroll = React.useCallback(() => {
+    if (scrollFrameRef.current !== null) {
+      cancelAnimationFrame(scrollFrameRef.current);
+      scrollFrameRef.current = null;
+    }
+  }, []);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -65,18 +72,33 @@ export default function useHashRouting(
   // helper to smooth-scroll to current (or provided) anchor
   const scrollToAnchor = React.useCallback(
     (selector?: string | null) => {
+      cancelScroll();
       const sel = selector ?? state.anchor;
-      if (!sel || typeof document === "undefined") return;
+      if (!sel?.startsWith("#") || typeof document === "undefined") return;
+      let id: string;
+      try {
+        id = decodeURIComponent(sel.slice(1));
+      } catch {
+        return;
+      }
+      if (!id) return;
       // run after layout; try a couple of frames in case of React.lazy mount
       const tryScroll = (tries = 2) => {
-        const el = document.querySelector(sel);
+        scrollFrameRef.current = null;
+        const el = document.getElementById(id);
         if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-        else if (tries > 0) requestAnimationFrame(() => tryScroll(tries - 1));
+        else if (tries > 0) {
+          scrollFrameRef.current = requestAnimationFrame(() =>
+            tryScroll(tries - 1),
+          );
+        }
       };
-      requestAnimationFrame(() => tryScroll());
+      scrollFrameRef.current = requestAnimationFrame(() => tryScroll());
     },
-    [state.anchor],
+    [state.anchor, cancelScroll],
   );
+
+  React.useEffect(() => cancelScroll, [state.anchor, cancelScroll]);
 
   // auto-scroll on first mount if already on target path
   React.useEffect(() => {
@@ -93,6 +115,3 @@ export default function useHashRouting(
     [state.onREWARDS, state.anchor, scrollToAnchor],
   );
 }
-
-
-

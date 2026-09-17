@@ -15,7 +15,7 @@ This document describes the current frontend architecture in this repository. It
 - VRF diagnostics, redeem pending state, collection statistics, and LiveStats follow the single live active chapter; previously minted NFT remain visible after the next chapter opens.
 - Backend address mirror: `biggi-project/bekend/addresses.json`.
 - ABI exports: `src/config/abi/index.js`.
-- ABI inventory check: `npm run check:abis` reports 58 ABI files and 801 functions.
+- ABI inventory check: `npm run check:abis` reports 61 ABI files and 848 functions.
 - Address mirror check: `npm run check:contracts` reports 161 runtime frontend/backend keys plus five chapter/CORE ABI comparisons. Backend-only `OLD_TICKET_HUB` is intentionally excluded from runtime.
 - Runtime smoke: `npm run smoke:runtime` passes gallery, LiveStats, and Rewards panel flows.
 
@@ -46,6 +46,33 @@ Primary user and transparency areas:
 - user wallet panel
 - admin/moderator panels
 
+## React Module Boundaries
+
+Local frontend module update: 2026-09-13. Provider components remain in
+`src/providers/*Provider.jsx`; their contexts and consumer hooks live in the
+corresponding `*Context.js` module. Each context is created exactly once there.
+Import the component and hook separately, for example:
+
+```js
+import { Web3Provider } from "@/providers/Web3Provider.jsx";
+import { useWeb3, useOptionalWeb3 } from "@/providers/Web3Context.js";
+```
+
+The same split applies to Contracts, Rewards, Vrf, Stats and Inventory. The
+`src/app/providers` JSX aliases export provider components only. `useVRF` remains
+available through `src/hooks/useVRF.js`; the UI contracts hook reads the same
+`ContractsContext` as the canonical consumer hooks. This split does not change
+provider values, wallet selection, chain handling or contract transactions.
+
+`src/app/Bootstrap.jsx` owns the loading component; `src/app/main.jsx` owns
+mounting and initialization. Address helpers live in
+`src/shared/utils/addressFormatting.js`. Tokenomics amount/history helpers live
+in `src/features/tokenomics/utils/{amountFormatting,historyFormatting}.js`.
+The re-export-only Tokenomics API is `src/features/tokenomics/index.js`;
+extensionless imports retain the same component, formatter and hook exports.
+New JSX modules should export components only, keeping non-component consumers
+outside the Fast Refresh boundary.
+
 ## Contract Registry
 
 Do not hardcode addresses inside components. Read addresses from `ADDR` in `src/shared/utils/addresses.js`.
@@ -69,13 +96,15 @@ Selected live mainnet values at the last verification:
 
 The frontend is reader-first for dashboards and transparency views. It uses direct contract fallbacks only when needed.
 
+Historical V1 NFT Rewards addresses remain in audit-only files for evidence and migration traceability; the live Polygon mainnet registry uses the V2 values below.
+
 Current mainnet readers:
 
 | Reader key | Address |
 | --- | --- |
 | `MAIN_READER` | `0xde05be77024eABf37E4eA4fbBD58F161081be2f3` |
 | `MCD_READER_V2` | `0xa65B4e88E37F085B9009295eA0AcF05e18a82884` |
-| `NFT_REWARDS_READER` | `0x430376b1f4F12ce2D641CC28f2968297aA2b0c12` |
+| `NFT_REWARDS_READER` | `0x789873e6b1d944b207D2E76a71D95135be4e33c6` |
 | `TOKEN_REWARDS_READER` | `0xB558137Ce8a2e065de09f7ef7cF24911E49A9972` |
 | `RESERVE_TREASURY_READER` | `0xb379bB928f3B683528C209C28A95F4D2854EC407` |
 | `BUYBACK_READER` | `0x8eD6c94e5Fb336096E6C28480f3C514c9bddFa89` |

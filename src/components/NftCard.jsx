@@ -6,9 +6,10 @@ import { DEFAULT_BLOCKS, ROWS_BY_BLOCK } from "@/shared/blocks";
 import { buildBlockImagePath } from "@/shared/utils/images";
 import { toMainNftIndexFromTokenId } from "@/shared/utils/biggiIdIndex";
 import { mergeAttrs } from "@/shared/utils/metadata";
+import { getAssetIdentity, getAssetTokenId } from "@/shared/utils/assetIdentity";
 import "./NftCard.css";
 import ImportNftButton from "./ImportNftButton";
-import { useOptionalContracts } from "../providers/ContractsProvider";
+import { useOptionalContracts } from "../providers/ContractsContext.js";
 import {
   httpFromIpfs,
   readJsonFromURI,
@@ -34,10 +35,10 @@ const BG_CODES = ["O", "B", "W", "BR", "BL", "G", "V", "R", "P", "RB"];
 const RARITY_TIERS = ["legendary", "epic", "rare", "uncommon", "common"];
 
 const normalizeIndex = (val, max) => {
+  if (val == null || val === "") return null;
   const n = Number(val);
-  if (!Number.isFinite(n)) return null;
+  if (!Number.isInteger(n)) return null;
   if (n >= 1 && n <= max) return n - 1;
-  if (n >= 0 && n < max) return n;
   return null;
 };
 
@@ -128,8 +129,10 @@ const getAttrValue = (attrs, keys) => {
 };
 
 const rarityTierFromBlockRank = (blockRank) => {
+  if (blockRank == null || blockRank === "") return null;
   if (!Number.isFinite(Number(blockRank))) return null;
   const rank = Number(blockRank);
+  if (rank < 1 || rank > 10) return null;
   if (rank <= 2) return "legendary";
   if (rank <= 4) return "epic";
   if (rank <= 6) return "rare";
@@ -212,15 +215,12 @@ const metadataFingerprint = (meta) => {
 };
 
 const fmtEtherNum = (v) => {
+  if (v == null || v === "") return null;
   try {
-    return Number(formatEther(v));
+    const value = Number(formatEther(v));
+    return Number.isFinite(value) ? value : null;
   } catch {
-    try {
-      const bi = typeof v === "bigint" ? v : BigInt(v ?? 0);
-      return Number(bi) / 1e18;
-    } catch {
-      return 0;
-    }
+    return null;
   }
 };
 
@@ -234,6 +234,7 @@ const formatMatic = (value) => {
 };
 
 const formatTraitPrice = (value) => {
+  if (value == null || value === "") return null;
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return null;
   return `${numeric.toFixed(4)} POL`;
@@ -298,21 +299,76 @@ const COLOR_TO_BLOCKID = {
   Rainbow: 10,
 };
 
-export default function NftCard({
+export default function NftCard(props) {
+  const { nft = {}, fallbackContractAddress = null } = props;
+  const contracts = useOptionalContracts();
+  const contractAddress = React.useMemo(() => {
+    const explicitAddress = nft?.contractAddress || nft?.collectionAddress || nft?.collection;
+    if (explicitAddress) return explicitAddress;
+    if (fallbackContractAddress) return fallbackContractAddress;
+    try {
+      const main = contracts?.mainRead?.();
+      return main?.target ?? main?.address ?? null;
+    } catch {
+      return null;
+    }
+  }, [contracts, nft?.contractAddress, nft?.collectionAddress, nft?.collection, fallbackContractAddress]);
+
+  const metadataContract = React.useMemo(() => {
+    if (!contracts) return null;
+    try {
+      const resolved = contracts.collectionReadByAddress?.(contractAddress);
+      if (resolved) return resolved;
+    } catch {
+      // Older providers can still resolve an exact original contract address.
+    }
+    const target = String(contractAddress || "").toLowerCase();
+    for (const read of [contracts.mainRead, contracts.main2Read]) {
+      try {
+        const candidate = read?.();
+        if (
+          candidate &&
+          (!target ||
+            String(candidate.target || candidate.address || "").toLowerCase() === target)
+        ) {
+          return candidate;
+        }
+      } catch {
+        // An unavailable factory must not select another collection.
+      }
+    }
+    return null;
+  }, [contracts, contractAddress]);
+
+  // Isolate all local state, including pending reads, by the actual asset.
+  const identity = `${nft.chainId || 137}:${getAssetIdentity(nft, contractAddress)}:${nft.isTicket ? "ticket" : nft.isPending ? "pending" : "nft"}`;
+  return (
+    <NftCardContent
+      key={identity}
+      {...props}
+      nft={nft}
+      contracts={contracts}
+      contractAddress={contractAddress}
+      metadataContract={metadataContract}
+    />
+  );
+}
+
+function NftCardContent({
   nft = {},
+  ownerAddress,
   liveTicketPrice = null,
   activeTicketChapterId = null,
   activeTicketChapterCount = 0,
   dynamicTraits = {},
   onOpenDetails,
-  fallbackContractAddress = null,
+  contracts,
+  contractAddress,
+  metadataContract,
   highlight = false,
   promoted = false,
 }) {
-  // HOOKS must be called deterministically; keep outside conditionals
-  const contracts = useOptionalContracts();
-
-  const tokenId = nft?.tokenId != null ? String(nft.tokenId) : null;
+  const tokenId = getAssetTokenId(nft) || null;
   const ticketChapterId = Number.isSafeInteger(Number(nft?.chapterId))
     ? Number(nft.chapterId)
     : null;
@@ -338,31 +394,28 @@ export default function NftCard({
     if (mainIdx != null) return String(mainIdx);
     return tokenId;
   }, [tokenId]);
-  const seedImage = React.useMemo(
-    () => pickSeedImageFromNft(nft),
-    [nft?.image, nft?.meta?.image, nft?.meta?.image_url],
-  );
+  const seedImage = pickSeedImageFromNft(nft);
 
   const [metadata, setMetadata] = React.useState(nft.meta || null);
-  const [image, setImage] = React.useState(nft.image || null);
+  const [image, setImage] = React.useState(seedImage);
   const [imageLoaded, setImageLoaded] = React.useState(false);
   const [imageFailed, setImageFailed] = React.useState(false);
   const [isOffline, setIsOffline] = React.useState(
     typeof navigator !== "undefined" ? !navigator.onLine : false,
   );
-  const [mintData, setMintData] = React.useState(() => {
-    if (nft?.mint) {
-      const initialTicket = parseMatic(
-        nft.mint.ticketPrice ?? nft.mint.mintTicket,
-      );
-      return {
-        ticketPrice: isPositivePrice(initialTicket) ? initialTicket : null,
-        blockPrice: parseMatic(nft.mint.blockPrice ?? nft.mint.mintBlock),
-        finalPrice: parseMatic(nft.mint.finalPrice ?? nft.mint.mintFinal),
-      };
-    }
-    return null;
-  });
+  const suppliedTicketPrice = parseMatic(
+    nft.mint?.ticketPrice ?? nft.mint?.mintTicket,
+  );
+  const suppliedBlockPrice = parseMatic(nft.mint?.blockPrice ?? nft.mint?.mintBlock);
+  const suppliedFinalPrice = parseMatic(nft.mint?.finalPrice ?? nft.mint?.mintFinal);
+  const [mintData, setMintData] = React.useState(null);
+  React.useEffect(() => {
+    setMintData((prev) => ({
+      ticketPrice: suppliedTicketPrice ?? prev?.ticketPrice ?? null,
+      blockPrice: suppliedBlockPrice ?? prev?.blockPrice ?? null,
+      finalPrice: suppliedFinalPrice ?? prev?.finalPrice ?? null,
+    }));
+  }, [suppliedTicketPrice, suppliedBlockPrice, suppliedFinalPrice]);
   const [currentBlockPrice, setCurrentBlockPrice] = React.useState(null);
   const [loadingMeta, setLoadingMeta] = React.useState(false);
   const [loadingMint, setLoadingMint] = React.useState(false);
@@ -370,73 +423,30 @@ export default function NftCard({
   const [detailsOpen, setDetailsOpen] = React.useState(false);
   const [imageZoomed, setImageZoomed] = React.useState(false);
   const metadataRef = React.useRef(metadata);
-  const syncedTokenIdRef = React.useRef(tokenId);
   const onchainFallbackRef = React.useRef(new Set());
   const failedImageCandidatesRef = React.useRef(new Set());
-
-  const contractAddress = React.useMemo(() => {
-    if (nft?.contractAddress) return nft.contractAddress;
-    if (fallbackContractAddress) return fallbackContractAddress;
-    try {
-      const main = contracts?.mainRead?.();
-      return main?.target ?? main?.address ?? null;
-    } catch {
-      return null;
-    }
-  }, [contracts, nft?.contractAddress, fallbackContractAddress]);
-
-  const metadataContract = React.useMemo(() => {
-    if (!contracts) return null;
-    try {
-      const resolved = contracts?.collectionReadByAddress?.(contractAddress);
-      if (resolved) return resolved;
-    } catch {
-      // Fall back to the original chapter contracts below.
-    }
-    let main = null;
-    let main2 = null;
-    try {
-      main = contracts?.mainRead?.();
-    } catch {
-      main = null;
-    }
-    try {
-      main2 = contracts?.main2Read?.();
-    } catch {
-      main2 = null;
-    }
-    const target = contractAddress ? String(contractAddress).toLowerCase() : "";
-    if (target) {
-      if (
-        main &&
-        String(main.target || main.address || "").toLowerCase() === target
-      )
-        return main;
-      if (
-        main2 &&
-        String(main2.target || main2.address || "").toLowerCase() === target
-      )
-        return main2;
-    }
-    return main || main2 || null;
-  }, [contracts, contractAddress]);
 
   const forcedRefreshRef = React.useRef(new Set());
 
   React.useEffect(() => {
-    if (syncedTokenIdRef.current !== tokenId) {
-      syncedTokenIdRef.current = tokenId;
-      setMetadata(nft.meta || null);
-      return;
-    }
-
     const nextMeta = nft.meta || null;
     if (!nextMeta) return;
     const nextFingerprint = metadataFingerprint(nextMeta);
-    setMetadata((prev) =>
-      metadataFingerprint(prev) === nextFingerprint ? prev : nextMeta,
-    );
-  }, [tokenId, nft.meta]);
+    setMetadata((prev) => {
+      if (metadataFingerprint(prev) === nextFingerprint) return prev;
+      if (!prev || looksLikeTicketMeta(prev) || looksLikeTicketMeta(nextMeta)) {
+        return nextMeta;
+      }
+      return {
+        ...prev,
+        ...nextMeta,
+        name: nextMeta.name || prev.name,
+        image: nextMeta.image || prev.image,
+        image_url: nextMeta.image_url || prev.image_url,
+        attributes: mergeAttrs(prev.attributes, nextMeta.attributes),
+      };
+    });
+  }, [nft.meta]);
 
   React.useEffect(() => {
     setImage(seedImage);
@@ -447,7 +457,7 @@ export default function NftCard({
   }, [seedImage, tokenId]);
 
   React.useEffect(() => {
-    if (imageFailed && image === PLACEHOLDER_IMG) return;
+    if (image === PLACEHOLDER_IMG) return;
     setImageLoaded(false);
     setImageFailed(false);
   }, [image]);
@@ -487,14 +497,14 @@ export default function NftCard({
 
       if (!needsImage && !needsAttrs && !needsName) return;
 
-      const main = metadataContract || contracts?.mainRead?.();
+      const main = metadataContract;
       if (!main) return;
 
       let info = null;
       if (typeof main.nftInfo === "function") {
         info = await main.nftInfo(displayTokenId).catch(() => null);
       }
-      if (!info) return;
+      if (cancelled || !info) return;
 
       const blockIdx = info?.blockIdx ?? info?.[2];
       const background = info?.background ?? info?.[1];
@@ -504,23 +514,14 @@ export default function NftCard({
       const blockName = blockNameFromIdx(blockIdx);
       const bgCode = bgCodeFromIdx(background);
       const bgName = bgNameFromIdx(background);
+      if (!blockName || !bgCode) return;
 
       let baseUri = null;
-      if (typeof main.blockBaseURIs === "function" && blockIdx != null) {
-        const candidates = [];
-        const n = Number(blockIdx);
-        if (Number.isFinite(n)) {
-          candidates.push(n);
-          if (n > 0) candidates.push(n - 1);
-          candidates.push(n + 1);
-        }
-        for (const idx of candidates) {
-          const v = await main.blockBaseURIs(idx).catch(() => null);
-          if (typeof v === "string" && v.trim()) {
-            baseUri = v.trim();
-            break;
-          }
-        }
+      if (typeof main.blockBaseURIs === "function") {
+        const value = await main
+          .blockBaseURIs(Number(blockIdx))
+          .catch(() => null);
+        if (typeof value === "string" && value.trim()) baseUri = value.trim();
       }
 
       if (!cancelled) {
@@ -560,10 +561,12 @@ export default function NftCard({
         }
       }
 
-      onchainFallbackRef.current.add(tokenId);
+      if (!cancelled) onchainFallbackRef.current.add(tokenId);
     };
 
-    run();
+    run().catch(() => {
+      if (!cancelled) console.warn("NftCard on-chain metadata unavailable");
+    });
     return () => {
       cancelled = true;
     };
@@ -582,6 +585,7 @@ export default function NftCard({
   React.useEffect(() => {
     let cancelled = false;
     const currentMeta = metadataRef.current;
+    setLoadingMeta(false);
     const fetchMetadata = async () => {
       if (!tokenId) return;
       if (nft?.isTicket || nft?.isPending) return;
@@ -591,13 +595,14 @@ export default function NftCard({
         tokenId &&
         !forcedRefreshRef.current.has(tokenId);
       // always try to fetch on missing or incomplete metadata
-      const main = metadataContract || contracts?.mainRead?.();
+      const main = metadataContract;
       if (!main || typeof main.tokenURI !== "function") return;
       try {
         setLoadingMeta(true);
         const uri = await main.tokenURI(tokenId);
-        if (!uri) return;
+        if (cancelled || !uri) return;
         const json = await readJsonFromURI(uri);
+        if (cancelled) return;
         if (!json) {
           const parsed = parseTokenUriParts(uri);
           if (parsed && !cancelled) {
@@ -637,15 +642,30 @@ export default function NftCard({
             if (forceRefresh) return fixedMeta;
             if (!prev) return fixedMeta;
             if (!nft?.isTicket && looksLikeTicketMeta(prev)) return fixedMeta;
-            return prev;
+            return {
+              ...fixedMeta,
+              ...prev,
+              name: prev.name || fixedMeta.name,
+              image: prev.image || fixedMeta.image,
+              image_url: prev.image_url || fixedMeta.image_url,
+              attributes: mergeAttrs(fixedMeta.attributes, prev.attributes),
+            };
           });
           const img = ticketLike
             ? PLACEHOLDER_IMG
             : fixedMeta?.image || fixedMeta?.image_url;
           const shouldUpdateImage = !nft.image || nft.image === PLACEHOLDER_IMG;
           if (shouldUpdateImage && img) {
+            // Keep the metadata image usable while a preferred gateway is resolved.
+            let candidate = ipfsToHttp(img);
+            try {
+              candidate = ipfsToHttp(new URL(img, ipfsToHttp(uri)).href);
+            } catch {
+              // Already-resolved local paths need no metadata base URL.
+            }
+            if (candidate) setImage(candidate);
             const resolved = await resolveImageUrl(img, uri).catch(() => null);
-            setImage(resolved || ipfsToHttp(img));
+            if (!cancelled) setImage(resolved || ipfsToHttp(img));
           }
         }
       } catch (err) {
@@ -670,10 +690,10 @@ export default function NftCard({
           });
           setImage(PLACEHOLDER_IMG);
         }
-        console.error("NftCard metadata fetch failed", err);
+        if (!cancelled) console.warn("NftCard metadata fetch failed");
       } finally {
         if (!cancelled) setLoadingMeta(false);
-        if (forceRefresh && tokenId) {
+        if (!cancelled && forceRefresh && tokenId) {
           forcedRefreshRef.current.add(tokenId);
         }
       }
@@ -681,7 +701,7 @@ export default function NftCard({
     // fetch even if some metadata exists, but avoid refetch loop
     const shouldFetch =
       !currentMeta ||
-      !currentMeta.image ||
+      !(currentMeta.image || currentMeta.image_url) ||
       (!nft?.isTicket &&
         looksLikeTicketMeta(currentMeta) &&
         tokenId &&
@@ -694,6 +714,7 @@ export default function NftCard({
     contracts,
     metadataContract,
     nft.image,
+    seedImage,
     tokenId,
     displayTokenId,
     nft?.isTicket,
@@ -702,11 +723,14 @@ export default function NftCard({
 
   React.useEffect(() => {
     let cancelled = false;
+    setLoadingMint(false);
     const fetchMintData = async () => {
-      if (!tokenId) return;
-      const reader = metadataContract ? null : contracts?.readerRead?.();
-      const main = metadataContract || contracts?.mainRead?.();
+      if (!tokenId || nft?.isTicket || nft?.isPending) return;
       try {
+        const reader = !metadataContract && !contractAddress
+          ? contracts?.readerRead?.()
+          : null;
+        const main = metadataContract;
         setLoadingMint(true);
         let ticketPrice = null;
         let blockPrice = null;
@@ -717,10 +741,10 @@ export default function NftCard({
             .getMintDataByTokenId(tokenId)
             .catch(() => null);
           if (res) {
-            const tp = fmtEtherNum(res?.[0] ?? 0);
+            const tp = fmtEtherNum(res?.[0]);
             if (isPositivePrice(tp)) ticketPrice = tp;
-            blockPrice = fmtEtherNum(res?.[1] ?? 0);
-            finalPrice = fmtEtherNum(res?.[2] ?? 0);
+            blockPrice = fmtEtherNum(res?.[1]);
+            finalPrice = fmtEtherNum(res?.[2]);
           }
         }
 
@@ -734,10 +758,10 @@ export default function NftCard({
             .getMintData(displayTokenId)
             .catch(() => null);
           if (res) {
-            const tp = fmtEtherNum(res?.[0] ?? 0);
+            const tp = fmtEtherNum(res?.[0]);
             if (isPositivePrice(tp)) ticketPrice = tp;
-            if (blockPrice == null) blockPrice = fmtEtherNum(res?.[1] ?? 0);
-            if (finalPrice == null) finalPrice = fmtEtherNum(res?.[2] ?? 0);
+            if (blockPrice == null) blockPrice = fmtEtherNum(res?.[1]);
+            if (finalPrice == null) finalPrice = fmtEtherNum(res?.[2]);
           }
         }
 
@@ -748,43 +772,11 @@ export default function NftCard({
         ) {
           const res = await main.getMintData(displayTokenId).catch(() => null);
           if (res) {
-            const tp = fmtEtherNum(res?.[0] ?? 0);
+            const tp = fmtEtherNum(res?.[0]);
             if (isPositivePrice(tp)) ticketPrice = tp;
+            if (blockPrice == null) blockPrice = fmtEtherNum(res?.[1]);
+            if (finalPrice == null) finalPrice = fmtEtherNum(res?.[2]);
           }
-        }
-
-        // Fallback for deployments where the reader is missing/limited.
-        if (ticketPrice == null && main) {
-          const ticketCandidates = ["getTicketPrice", "ticketPrice"];
-          for (const fn of ticketCandidates) {
-            if (typeof main?.[fn] !== "function") continue;
-            try {
-              const v = await main[fn]();
-              if (v != null) {
-                ticketPrice = fmtEtherNum(v);
-                break;
-              }
-            } catch {
-              // try next candidate
-            }
-          }
-        }
-
-        if (
-          blockPrice == null &&
-          main &&
-          typeof main.getCurrentBlockPriceByTokenId === "function"
-        ) {
-          try {
-            const v = await main.getCurrentBlockPriceByTokenId(tokenId);
-            if (v != null) blockPrice = fmtEtherNum(v);
-          } catch {
-            // ignore block price fallback failures
-          }
-        }
-
-        if (finalPrice == null && blockPrice != null) {
-          finalPrice = blockPrice;
         }
 
         if (ticketPrice == null && blockPrice == null && finalPrice == null)
@@ -798,8 +790,8 @@ export default function NftCard({
             finalPrice: finalPrice ?? prev?.finalPrice ?? null,
           }));
         }
-      } catch (err) {
-        console.error("NftCard mint data fetch failed", err);
+      } catch {
+        if (!cancelled) console.warn("NftCard mint data unavailable");
       } finally {
         if (!cancelled) setLoadingMint(false);
       }
@@ -808,7 +800,15 @@ export default function NftCard({
     return () => {
       cancelled = true;
     };
-  }, [contracts, metadataContract, tokenId, displayTokenId]);
+  }, [
+    contracts,
+    metadataContract,
+    contractAddress,
+    tokenId,
+    displayTokenId,
+    nft?.isTicket,
+    nft?.isPending,
+  ]);
 
   /* === Current block price (on-chain now) === */
   const blockIdFromTraits = React.useMemo(() => {
@@ -826,8 +826,8 @@ export default function NftCard({
       byKey("linked block")?.value ||
       null;
 
-    if (blockColor && COLOR_TO_BLOCKID[blockColor])
-      return COLOR_TO_BLOCKID[blockColor];
+    const blockName = normalizeBlockName(blockColor);
+    if (blockName) return DEFAULT_BLOCKS.indexOf(blockName) + 1;
 
     if (
       typeof dynamicTraits?.linkedBlock === "string" &&
@@ -840,20 +840,23 @@ export default function NftCard({
 
   React.useEffect(() => {
     let cancelled = false;
+    setLoadingBlockNow(false);
+    setCurrentBlockPrice(null);
 
     const loadCurrentBlockPrice = async () => {
+      if (nft?.isTicket || nft?.isPending) return;
       if (!contracts) {
         setCurrentBlockPrice(
-          mintData?.blockPrice ??
-            parseMatic(dynamicTraits?.currentBlockPrice) ??
-            null,
+          parseMatic(dynamicTraits?.currentBlockPrice),
         );
         return;
       }
-      const reader = metadataContract ? null : contracts?.readerRead?.();
-      const main = metadataContract || contracts?.mainRead?.();
 
       try {
+        const reader = !metadataContract && !contractAddress
+          ? contracts?.readerRead?.()
+          : null;
+        const main = metadataContract;
         setLoadingBlockNow(true);
 
         // prefer reader by tokenId
@@ -868,7 +871,7 @@ export default function NftCard({
               setCurrentBlockPrice(fmtEtherNum(wei));
               return;
             }
-          } catch (e) {}
+          } catch {}
         }
 
         // reader by blockId
@@ -883,7 +886,7 @@ export default function NftCard({
               setCurrentBlockPrice(fmtEtherNum(wei));
               return;
             }
-          } catch (e) {}
+          } catch {}
         }
 
         // main fallbacks
@@ -898,7 +901,7 @@ export default function NftCard({
               setCurrentBlockPrice(fmtEtherNum(wei));
               return;
             }
-          } catch (e) {}
+          } catch {}
         }
         if (
           main &&
@@ -911,24 +914,20 @@ export default function NftCard({
               setCurrentBlockPrice(fmtEtherNum(wei));
               return;
             }
-          } catch (e) {}
+          } catch {}
         }
 
         // ultimate fallback
         if (!cancelled) {
           setCurrentBlockPrice(
-            mintData?.blockPrice ??
-              parseMatic(dynamicTraits?.currentBlockPrice) ??
-              parseMatic(dynamicTraits?.mintBlock),
+            parseMatic(dynamicTraits?.currentBlockPrice),
           );
         }
-      } catch (err) {
-        console.warn("loadCurrentBlockPrice failed", err);
+      } catch {
         if (!cancelled) {
+          console.warn("NftCard current block price unavailable");
           setCurrentBlockPrice(
-            mintData?.blockPrice ??
-              parseMatic(dynamicTraits?.mintBlock) ??
-              null,
+            parseMatic(dynamicTraits?.currentBlockPrice),
           );
         }
       } finally {
@@ -943,11 +942,12 @@ export default function NftCard({
   }, [
     contracts,
     metadataContract,
+    contractAddress,
     tokenId,
     blockIdFromTraits,
-    mintData?.blockPrice,
     dynamicTraits?.currentBlockPrice,
-    dynamicTraits?.mintBlock,
+    nft?.isTicket,
+    nft?.isPending,
   ]);
 
   const liveTicketPriceValue = React.useMemo(() => {
@@ -976,10 +976,7 @@ export default function NftCard({
   const derivedMintData = React.useMemo(
     () => ({
       ticketPrice: derivedTicketPrice,
-      blockPriceNow:
-        currentBlockPrice != null
-          ? currentBlockPrice
-          : (mintData?.blockPrice ?? parseMatic(dynamicTraits?.mintBlock)),
+      blockPriceNow: currentBlockPrice,
       finalPrice:
         mintData?.finalPrice ??
         parseMatic(dynamicTraits?.mintFinal ?? dynamicTraits?.finalPrice),
@@ -1046,7 +1043,7 @@ export default function NftCard({
         );
       });
     }
-    let merged = mergeAttrs(mergedBase, priceAttributes);
+    const merged = mergeAttrs(mergedBase, priceAttributes);
     if (merged.length) {
       if (nft?.isTicket && priceAttributes.length) {
         const priceKeys = new Set(
@@ -1069,7 +1066,7 @@ export default function NftCard({
       return [];
     }
     return merged;
-  }, [metadata, dynamicTraits, nft?.isTicket, nft?.isPending, priceAttributes]);
+  }, [metadata, dynamicTraits, nft?.isTicket, priceAttributes]);
 
   const visibleAttributes = React.useMemo(
     () => (detailsOpen ? attributes : attributes.slice(0, 4)),
@@ -1198,15 +1195,6 @@ export default function NftCard({
         {!nft.isTicket && promoted && (
           <span className="nft-card__fresh">Fresh redeem</span>
         )}
-        {!nft.isTicket && (
-          <ImportNftButton
-            contractAddress={contractAddress}
-            tokenId={tokenId}
-            name={title}
-            image={imageSrc}
-            className="nft-card__import"
-          />
-        )}
         <div className="nft-card__image-wrap">
           <img
             src={imageSrc}
@@ -1324,6 +1312,20 @@ export default function NftCard({
             </div>
           )}
         </div>
+
+        {!nft.isPending && tokenId != null && (
+          <div className="nft-card__wallet">
+            <ImportNftButton
+              contractAddress={contractAddress}
+              tokenId={tokenId}
+              ownerAddress={ownerAddress}
+              chainId={Number(nft.chainId ?? 137)}
+              name={title}
+              image={imageSrc}
+              className="nft-card__import"
+            />
+          </div>
+        )}
 
         <div className="nft-card__actions">
           <button

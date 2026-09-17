@@ -1,4 +1,4 @@
-// Public API for the ecosystem/tokenomics section.
+// Re-export-only public API; components live in their own refresh boundaries.
 
 export { default as EcosystemPanel } from "./EcosystemPanel.jsx";
 export { default } from "./EcosystemPanel.jsx";

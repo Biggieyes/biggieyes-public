@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Contract } from "ethers";
 
-import { useWeb3 } from "@/providers/Web3Provider";
+import { useWeb3 } from "@/providers/Web3Context.js";
 import { BiggiCommunityCenter as COMMUNITYCENTERAbi } from "@/config/abi/index.js";
 import useCommunityCenterUserSnapshot from "@/hooks/useCommunityCenterUserSnapshot.js";
 import { formatNativeDisplay } from "@/features/tokenomics/utils/amountFormatting.js";

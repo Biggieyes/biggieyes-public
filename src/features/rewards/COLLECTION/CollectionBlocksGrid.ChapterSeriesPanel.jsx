@@ -6,6 +6,7 @@ import { FALLBACK_VALUE } from "./COLLECTIONBlocksGrid.constants";
 
 const explorerBase =
   explorerBaseFor(ADDR.CHAIN_ID || 137) || "https://polygonscan.com";
+const EMPTY_LIST = Object.freeze([]);
 
 const asNumber = (value) => {
   if (value == null || value === "") return null;
@@ -78,8 +79,8 @@ function ChapterSeriesPanel({
 }) {
   const data = chapterSeries || {};
   const global = data.global || {};
-  const collections = Array.isArray(data.collections) ? data.collections : [];
-  const chapters = Array.isArray(data.chapters) ? data.chapters : [];
+  const collections = Array.isArray(data.collections) ? data.collections : EMPTY_LIST;
+  const chapters = Array.isArray(data.chapters) ? data.chapters : EMPTY_LIST;
 
   const chapterViews = React.useMemo(
     () =>

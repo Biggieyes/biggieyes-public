@@ -1,6 +1,6 @@
 # ABI Usage Audit
 
-Last verified: 2026-08-17
+Last verified: 2026-09-16
 
 ## Purpose
 
@@ -27,7 +27,7 @@ node scripts/check-abis.js
 
 Latest expected result:
 
-- 58 ABI files
+- 61 ABI files
 - 801 unique ABI functions
 - no blocking ABI usage mismatch reported
 

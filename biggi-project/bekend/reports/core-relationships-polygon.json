@@ -1,7 +1,7 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "checkedAt": "2026-08-27T21:45:07.796Z",
+  "checkedAt": "2026-09-16T20:42:49.317Z",
   "checks": [
     {
       "status": "ok",
@@ -56,6 +56,17 @@
       "configuredCount": "550",
       "fullyConfigured": true,
       "rewardMatrixConsistent": true
+    },
+    {
+      "status": "ok",
+      "label": "MAIN.assertMetadataConsistency",
+      "actual": "true"
+    },
+    {
+      "status": "ok",
+      "label": "MAIN.assertMetadataConsistency == true",
+      "actual": true,
+      "expected": true
     },
     {
       "status": "ok",
@@ -234,6 +245,12 @@
       "status": "ok",
       "label": "VRF_ROUTER.approvedRewardConsumers[NFT_REWARDS]",
       "actual": "true"
+    },
+    {
+      "status": "ok",
+      "label": "VRF_ROUTER NFT rewards approved == true",
+      "actual": true,
+      "expected": true
     },
     {
       "status": "ok",
@@ -622,12 +639,7 @@
     {
       "status": "ok",
       "label": "NFT_REWARDS.code",
-      "address": "0x939Df533b80943298E15ad4c8F188102954f34FF"
-    },
-    {
-      "status": "ok",
-      "label": "NFT_REWARDS.mainContract",
-      "actual": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4"
+      "address": "0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9"
     },
     {
       "status": "ok",
@@ -636,31 +648,9 @@
     },
     {
       "status": "ok",
-      "label": "NFT_REWARDS.registry",
-      "actual": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058"
-    },
-    {
-      "status": "ok",
-      "label": "NFT_REWARDS.mainContract == MAIN",
-      "actual": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
-      "expected": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4"
-    },
-    {
-      "status": "ok",
       "label": "NFT_REWARDS.vrfRouter == VRF_ROUTER",
       "actual": "0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F",
       "expected": "0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F"
-    },
-    {
-      "status": "ok",
-      "label": "NFT_REWARDS.registry == REGISTRY",
-      "actual": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
-      "expected": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058"
-    },
-    {
-      "status": "ok",
-      "label": "NFT_REWARDS.allowedMainCollections[MAIN2]",
-      "actual": "true"
     },
     {
       "status": "ok",
@@ -746,25 +736,25 @@
     {
       "status": "ok",
       "label": "NFT_REWARDS_READER.code",
-      "address": "0x430376b1f4F12ce2D641CC28f2968297aA2b0c12"
+      "address": "0x789873e6b1d944b207D2E76a71D95135be4e33c6"
     },
     {
       "status": "ok",
       "label": "NFT_REWARDS_READER.nftRewards",
-      "actual": "0x939Df533b80943298E15ad4c8F188102954f34FF"
+      "actual": "0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9"
     },
     {
       "status": "ok",
       "label": "NFT_REWARDS_READER.nftRewards expected",
-      "actual": "0x939Df533b80943298E15ad4c8F188102954f34FF",
-      "expected": "0x939Df533b80943298E15ad4c8F188102954f34FF"
+      "actual": "0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9",
+      "expected": "0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9"
     }
   ],
   "warnings": [],
   "issues": [],
   "addressesFile": "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\addresses.master.json",
-  "strict": false,
-  "requireCode": false,
+  "strict": true,
+  "requireCode": true,
   "expectPaidNative": false,
   "chapterId": 1
 }

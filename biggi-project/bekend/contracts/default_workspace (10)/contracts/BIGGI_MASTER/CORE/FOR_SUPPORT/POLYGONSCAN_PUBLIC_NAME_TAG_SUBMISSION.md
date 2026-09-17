@@ -1,6 +1,6 @@
 # PolygonScan Public Name Tag Submission
 
-Generated: 2026-08-26T22:00:38.866Z
+Generated: 2026-09-16T20:42:05.421Z
 
 Project website: `https://biggieyes.com`
 
@@ -12,13 +12,13 @@ This file covers current canonical and deprecated historical BIGGI-owned Polygon
 - Deprecated historical contracts: `3`
 - All BIGGI-owned contracts with bytecode: `63`
 - Source verified: `63`
-- Existing public name tags: `10`
-- Public name tags to request: `53`
-- Explorer lookup failures: `0`
+- Existing public name tags: `26`
+- Public name tags to request: `28`
+- Explorer lookup failures: `9`
 
 ## Request Groups
 
-- Deployer `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b`: `52` missing public tags
+- Deployer `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b`: `27` missing public tags
 - Deployer `0x402ce2ff958ab47edafc42296d2682cc8f9d92b2`: `1` missing public tags
 
 ## Submission Rows
@@ -33,11 +33,11 @@ This file covers current canonical and deprecated historical BIGGI-owned Polygon
 | current | `REGISTRY` | [`0x09f3728e8607e1B951A6396DcEE4EC134C5e4058`](https://polygonscan.com/address/0x09f3728e8607e1B951A6396DcEE4EC134C5e4058#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | NFT | - | BiggiEyes: Series Registry |
 | current | `CHAPTER_CONTROLLER` | [`0x9c084D89c0CB6c8424652d1fa82E83aD9c098288`](https://polygonscan.com/address/0x9c084D89c0CB6c8424652d1fa82E83aD9c098288#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | NFT | - | BiggiEyes: Chapter Controller |
 | current | `COLLECTION_REWARDS` | [`0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43`](https://polygonscan.com/address/0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | NFT | - | BiggiEyes: Collection Rewards |
-| current | `NFT_REWARDS` | [`0x939Df533b80943298E15ad4c8F188102954f34FF`](https://polygonscan.com/address/0x939Df533b80943298E15ad4c8F188102954f34FF#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | NFT | - | BiggiEyes: NFT Rewards |
+| current | `NFT_REWARDS` | [`0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9`](https://polygonscan.com/address/0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | NFT | - | BiggiEyes: NFT Rewards V2 |
 | current | `MAIN_READER` | [`0xde05be77024eABf37E4eA4fbBD58F161081be2f3`](https://polygonscan.com/address/0xde05be77024eABf37E4eA4fbBD58F161081be2f3#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | NFT | - | BiggiEyes: Main Reader |
 | current | `MULTI_COLLECTION_READER` | [`0xa65B4e88E37F085B9009295eA0AcF05e18a82884`](https://polygonscan.com/address/0xa65B4e88E37F085B9009295eA0AcF05e18a82884#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Collections Reader |
 | current | `CHAPTER_SERIES_READER` | [`0x421c8ed70fC893517481315aC62f4c95331e647f`](https://polygonscan.com/address/0x421c8ed70fC893517481315aC62f4c95331e647f#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | NFT | - | BiggiEyes: Chapters Reader |
-| current | `NFT_REWARDS_READER` | [`0x430376b1f4F12ce2D641CC28f2968297aA2b0c12`](https://polygonscan.com/address/0x430376b1f4F12ce2D641CC28f2968297aA2b0c12#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | NFT | - | BiggiEyes: NFT Rewards Reader |
+| current | `NFT_REWARDS_READER` | [`0x789873e6b1d944b207D2E76a71D95135be4e33c6`](https://polygonscan.com/address/0x789873e6b1d944b207D2E76a71D95135be4e33c6#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | NFT | - | BiggiEyes: NFT Rewards V2 Reader |
 | current | `DISTRIBUTOR` | [`0xCE892698159D8D799D5eF7f0dF0111487511fD22`](https://polygonscan.com/address/0xCE892698159D8D799D5eF7f0dF0111487511fD22#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Mint Distributor |
 | current | `BIGGI_TOKEN` | [`0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD`](https://polygonscan.com/address/0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: BIGGI Token |
 | current | `RESERVE` | [`0x2786e46e01a5d229118fEdC102267217C7e94574`](https://polygonscan.com/address/0x2786e46e01a5d229118fEdC102267217C7e94574#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: RESERVE V4 | BiggiEyes: Reserve |
@@ -55,27 +55,27 @@ This file covers current canonical and deprecated historical BIGGI-owned Polygon
 | current | `TOKENOMICS_SYSTEM_ADDON_READER` | [`0x28D73361F9E7778362cac9fEBe1c8E0a2B1121ea`](https://polygonscan.com/address/0x28D73361F9E7778362cac9fEBe1c8E0a2B1121ea#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: System Addon Reader |
 | current | `MODERATOR_CENTER` | [`0xda07a5fDee4d6d491cF31368F00e2aD584bB033D`](https://polygonscan.com/address/0xda07a5fDee4d6d491cF31368F00e2aD584bB033D#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: MODERATOR CENTER | BiggiEyes: Moderator V1 |
 | current | `MODERATOR_CENTER_V2` | [`0x82Ad5a0f379CCA21AC2979E88AC24db94e670bD8`](https://polygonscan.com/address/0x82Ad5a0f379CCA21AC2979E88AC24db94e670bD8#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Moderator V2 |
-| current | `SUPPLY_CONTROLLER` | [`0x810ba27C98aAB09737e3988a3C1b10D6CadaB8E8`](https://polygonscan.com/address/0x810ba27C98aAB09737e3988a3C1b10D6CadaB8E8#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Supply Controller |
-| current | `SUPPLY_GUARDIAN` | [`0xdCA0bEda4c96eCE2E23e30f6Aa95697106d99B49`](https://polygonscan.com/address/0xdCA0bEda4c96eCE2E23e30f6Aa95697106d99B49#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Supply Guardian |
-| current | `DEX_RESERVE_GUARD` | [`0x350370c248495758b80Ea1C564Df1290cA76588B`](https://polygonscan.com/address/0x350370c248495758b80Ea1C564Df1290cA76588B#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: DEX Reserve Guard |
+| current | `SUPPLY_CONTROLLER` | [`0x810ba27C98aAB09737e3988a3C1b10D6CadaB8E8`](https://polygonscan.com/address/0x810ba27C98aAB09737e3988a3C1b10D6CadaB8E8#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: Supply Controller | BiggiEyes: Supply Controller |
+| current | `SUPPLY_GUARDIAN` | [`0xdCA0bEda4c96eCE2E23e30f6Aa95697106d99B49`](https://polygonscan.com/address/0xdCA0bEda4c96eCE2E23e30f6Aa95697106d99B49#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: Supply Guardian | BiggiEyes: Supply Guardian |
+| current | `DEX_RESERVE_GUARD` | [`0x350370c248495758b80Ea1C564Df1290cA76588B`](https://polygonscan.com/address/0x350370c248495758b80Ea1C564Df1290cA76588B#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: Dex Reserve Guard | BiggiEyes: DEX Reserve Guard |
 | current | `LIQUIDITY_VAULT` | [`0xFe234394845B601B2c671c0dD631fA6290c02bb9`](https://polygonscan.com/address/0xFe234394845B601B2c671c0dD631fA6290c02bb9#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: Liquidity Vault | BiggiEyes: Liquidity Vault |
 | current | `LIQUIDITY_MANAGER` | [`0xfb770C5A5AC6e41C85f076DB7C3434eAcd8e0F19`](https://polygonscan.com/address/0xfb770C5A5AC6e41C85f076DB7C3434eAcd8e0F19#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: LIQUIDITY MANAGER | BiggiEyes: Liquidity Manager |
-| current | `LIQUIDITY_ORCHESTRATOR` | [`0xC72DB11941d8Ab76baF84B1af9dB43E09060b681`](https://polygonscan.com/address/0xC72DB11941d8Ab76baF84B1af9dB43E09060b681#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Liquidity Orchestrator |
-| current | `LIQUIDITY_KEEPER_PROXY` | [`0x4fC6EaD8CC6451e1A5EA7Ceaf6a072e18f91F04c`](https://polygonscan.com/address/0x4fC6EaD8CC6451e1A5EA7Ceaf6a072e18f91F04c#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Liquidity Keeper |
+| current | `LIQUIDITY_ORCHESTRATOR` | [`0xC72DB11941d8Ab76baF84B1af9dB43E09060b681`](https://polygonscan.com/address/0xC72DB11941d8Ab76baF84B1af9dB43E09060b681#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: Liquidity Orchestrator | BiggiEyes: Liquidity Orchestrator |
+| current | `LIQUIDITY_KEEPER_PROXY` | [`0x4fC6EaD8CC6451e1A5EA7Ceaf6a072e18f91F04c`](https://polygonscan.com/address/0x4fC6EaD8CC6451e1A5EA7Ceaf6a072e18f91F04c#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: Liquidity Keeper Proxy | BiggiEyes: Liquidity Keeper |
 | current | `DRIP_LM` | [`0xE258843bca54803a366413571b3B4d6a28eAF2eC`](https://polygonscan.com/address/0xE258843bca54803a366413571b3B4d6a28eAF2eC#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: DRIP LM | BiggiEyes: Drip LM V1 |
 | current | `DRIP_LM_V2` | [`0x1d2B3d3224dE553ff3138caeA45d162c62305d1A`](https://polygonscan.com/address/0x1d2B3d3224dE553ff3138caeA45d162c62305d1A#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Drip LM V2 |
 | current | `DRIP_KEEPER_PROXY` | [`0xf71b3B9E64bf48E1EC8F9195c3420464fe767cCc`](https://polygonscan.com/address/0xf71b3B9E64bf48E1EC8F9195c3420464fe767cCc#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: KEEPER PROXY | BiggiEyes: Drip Keeper |
-| current | `BUYBACK_UPKEEP_PROXY` | [`0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875`](https://polygonscan.com/address/0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Buyback Keeper |
-| current | `SUPPLY_CONTROLLER_READER` | [`0x3deE7089badc481BA91edF0023Bd0E6039BA1E3F`](https://polygonscan.com/address/0x3deE7089badc481BA91edF0023Bd0E6039BA1E3F#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Supply Reader |
-| current | `SUPPLY_GUARDIAN_READER` | [`0x970432CEB6279eA3585372457FF610F03A5f07Ca`](https://polygonscan.com/address/0x970432CEB6279eA3585372457FF610F03A5f07Ca#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Guardian Reader |
-| current | `DEX_RESERVE_GUARD_READER` | [`0xE70C056f0dD1Fb8c175E6CDf92F0767611fDd672`](https://polygonscan.com/address/0xE70C056f0dD1Fb8c175E6CDf92F0767611fDd672#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: DEX Guard Reader |
-| current | `SYSTEM_READER` | [`0x5C918B2E610BAF3E9f77B0b7dE456D63B7F8bD55`](https://polygonscan.com/address/0x5C918B2E610BAF3E9f77B0b7dE456D63B7F8bD55#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: System Reader |
-| current | `LIQUIDITY_BRANCH_READER` | [`0xC04FC52560fe5A8fcEf16a3ADE7126e83Da0D4f5`](https://polygonscan.com/address/0xC04FC52560fe5A8fcEf16a3ADE7126e83Da0D4f5#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Liquidity Reader |
-| current | `LIQUIDITY_HELPER_READER` | [`0x1879b76c3a923d58970a90e3D004bD067c272a22`](https://polygonscan.com/address/0x1879b76c3a923d58970a90e3D004bD067c272a22#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Liquidity Helper |
-| current | `BIGGI_TOKENOMICS_READER` | [`0x868640D9fd873AE3ecFCAbCbB458413A70D6f468`](https://polygonscan.com/address/0x868640D9fd873AE3ecFCAbCbB458413A70D6f468#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Tokenomics Reader |
-| current | `MULTICALL` | [`0x70bc315E4E5548e54F358Abf4515C1bB1551687b`](https://polygonscan.com/address/0x70bc315E4E5548e54F358Abf4515C1bB1551687b#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Multicall |
-| current | `BIGGI_NAMES_LIB` | [`0xFEfB6Cd04879715bb63E8a51811e68EC85D9dB78`](https://polygonscan.com/address/0xFEfB6Cd04879715bb63E8a51811e68EC85D9dB78#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Names Library V1 |
-| current | `BIGGI_NAMES_LIB2` | [`0xBd3C8f5A8A936071585e909d9ab5c1Df3D7EB78a`](https://polygonscan.com/address/0xBd3C8f5A8A936071585e909d9ab5c1Df3D7EB78a#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Names Library V2 |
+| current | `BUYBACK_UPKEEP_PROXY` | [`0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875`](https://polygonscan.com/address/0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: Buyback Upkeep Proxy | BiggiEyes: Buyback Keeper |
+| current | `SUPPLY_CONTROLLER_READER` | [`0x3deE7089badc481BA91edF0023Bd0E6039BA1E3F`](https://polygonscan.com/address/0x3deE7089badc481BA91edF0023Bd0E6039BA1E3F#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: Supply Controller Reader | BiggiEyes: Supply Reader |
+| current | `SUPPLY_GUARDIAN_READER` | [`0x970432CEB6279eA3585372457FF610F03A5f07Ca`](https://polygonscan.com/address/0x970432CEB6279eA3585372457FF610F03A5f07Ca#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: Supply Guardian Reader | BiggiEyes: Guardian Reader |
+| current | `DEX_RESERVE_GUARD_READER` | [`0xE70C056f0dD1Fb8c175E6CDf92F0767611fDd672`](https://polygonscan.com/address/0xE70C056f0dD1Fb8c175E6CDf92F0767611fDd672#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: Dex Reserve Guard Reader | BiggiEyes: DEX Guard Reader |
+| current | `SYSTEM_READER` | [`0x5C918B2E610BAF3E9f77B0b7dE456D63B7F8bD55`](https://polygonscan.com/address/0x5C918B2E610BAF3E9f77B0b7dE456D63B7F8bD55#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: System Reader | BiggiEyes: System Reader |
+| current | `LIQUIDITY_BRANCH_READER` | [`0xC04FC52560fe5A8fcEf16a3ADE7126e83Da0D4f5`](https://polygonscan.com/address/0xC04FC52560fe5A8fcEf16a3ADE7126e83Da0D4f5#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: Liquidity Branch User Reader | BiggiEyes: Liquidity Reader |
+| current | `LIQUIDITY_HELPER_READER` | [`0x1879b76c3a923d58970a90e3D004bD067c272a22`](https://polygonscan.com/address/0x1879b76c3a923d58970a90e3D004bD067c272a22#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: Liquidity Helper Reader | BiggiEyes: Liquidity Helper |
+| current | `BIGGI_TOKENOMICS_READER` | [`0x868640D9fd873AE3ecFCAbCbB458413A70D6f468`](https://polygonscan.com/address/0x868640D9fd873AE3ecFCAbCbB458413A70D6f468#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: Tokenomik Reader | BiggiEyes: Tokenomics Reader |
+| current | `MULTICALL` | [`0x70bc315E4E5548e54F358Abf4515C1bB1551687b`](https://polygonscan.com/address/0x70bc315E4E5548e54F358Abf4515C1bB1551687b#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: Multicall | BiggiEyes: Multicall |
+| current | `BIGGI_NAMES_LIB` | [`0xFEfB6Cd04879715bb63E8a51811e68EC85D9dB78`](https://polygonscan.com/address/0xFEfB6Cd04879715bb63E8a51811e68EC85D9dB78#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: Names Lib | BiggiEyes: Names Library V1 |
+| current | `BIGGI_NAMES_LIB2` | [`0xBd3C8f5A8A936071585e909d9ab5c1Df3D7EB78a`](https://polygonscan.com/address/0xBd3C8f5A8A936071585e909d9ab5c1Df3D7EB78a#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | BiggiEyes: Names Lib2 | BiggiEyes: Names Library V2 |
 | current | `CRE_AUTOMATION_RECEIVER` | [`0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6`](https://polygonscan.com/address/0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6#code) | `0x402ce2ff958ab47edafc42296d2682cc8f9d92b2` | Oracle | - | BiggiEyes: CRE Receiver |
 | current | `CHAPTER_2_MAIN` | [`0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036`](https://polygonscan.com/address/0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | NFT | - | BiggiEyes: Universe VRF |
 | current | `CHAPTER_2_MAIN2` | [`0x7EaB23497085cfF00Cb2E9809b2Af0e717187356`](https://polygonscan.com/address/0x7EaB23497085cfF00Cb2E9809b2Af0e717187356#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | NFT | - | BiggiEyes: Universe Public |
@@ -85,9 +85,9 @@ This file covers current canonical and deprecated historical BIGGI-owned Polygon
 | current | `CHAPTER_4_MAIN2` | [`0xecE7D61AB3FB2229C39B48380D704183532fE960`](https://polygonscan.com/address/0xecE7D61AB3FB2229C39B48380D704183532fE960#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | NFT | - | BiggiEyes: Apocalypse Public |
 | current | `CHAPTER_5_MAIN` | [`0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38`](https://polygonscan.com/address/0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | NFT | - | BiggiEyes: Super Hero VRF |
 | current | `CHAPTER_5_MAIN2` | [`0x99f049279BC545469F989d8f06CD915ef4B6f1d4`](https://polygonscan.com/address/0x99f049279BC545469F989d8f06CD915ef4B6f1d4#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | NFT | - | BiggiEyes: Super Hero Public |
-| deprecated | `OLD_TICKET_HUB` | [`0xe6d742D7DC66fA63434E6794C69798A5272e9873`](https://polygonscan.com/address/0xe6d742D7DC66fA63434E6794C69798A5272e9873#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Deprecated Ticket Hub |
-| deprecated | `OLD_COLLECTION_REWARDS` | [`0x5d1273070c9133381C570009768621762F024FB8`](https://polygonscan.com/address/0x5d1273070c9133381C570009768621762F024FB8#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Deprecated Rewards |
-| deprecated | `OLD_MAIN_READER` | [`0x4937CdcF1668255Cb46c78E19547ea96C94391Ef`](https://polygonscan.com/address/0x4937CdcF1668255Cb46c78E19547ea96C94391Ef#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | DeFi | - | BiggiEyes: Deprecated Main Reader |
+| deprecated | `OLD_TICKET_HUB` | [`0xe6d742D7DC66fA63434E6794C69798A5272e9873`](https://polygonscan.com/address/0xe6d742D7DC66fA63434E6794C69798A5272e9873#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | NFT | - | BiggiEyes: Deprecated Ticket Hub |
+| deprecated | `OLD_COLLECTION_REWARDS` | [`0x5d1273070c9133381C570009768621762F024FB8`](https://polygonscan.com/address/0x5d1273070c9133381C570009768621762F024FB8#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | NFT | - | BiggiEyes: Deprecated Rewards |
+| deprecated | `OLD_MAIN_READER` | [`0x4937CdcF1668255Cb46c78E19547ea96C94391Ef`](https://polygonscan.com/address/0x4937CdcF1668255Cb46c78E19547ea96C94391Ef#code) | `0x8fa5c9545b2eef1ca3c6533951c286e05928f27b` | NFT | - | BiggiEyes: Deprecated Main Reader |
 
 ## Form Values
 

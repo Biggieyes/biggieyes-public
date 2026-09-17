@@ -7,7 +7,7 @@ import { formatUnits } from "ethers";
 import styles from "./styles/BiggiToken.module.css";
 import "../../styles/panel-buttons.css";
 
-import { useWeb3 } from "@/providers/Web3Provider";
+import { useWeb3 } from "@/providers/Web3Context.js";
 
 import useFlowSnapshot from "@/hooks/tokenomics/useFlowSnapshot";
 import useBUYBACKTreasurySnapshot from "@/hooks/tokenomics/useBUYBACKTreasurySnapshot";

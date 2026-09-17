@@ -264,6 +264,57 @@ Building or auditing does not upload metadata, update contract URIs, unlock a
 chapter or unpause minting. Those remain separate release steps after image,
 metadata, contract wiring and purchase-preflight verification.
 
+### Originals Public artwork completion (2026-09-18)
+
+The complete release adds `Biggi_29_WHITE_PUBLIC.webp` and
+`Biggi_30_WHITE_PUBLIC.webp`. All 98 previously published image assignments and
+SHA-256 hashes are unchanged. There are now 100 images and 100 final metadata
+files, with no missing artwork IDs. The frontend registry points to:
+
+- Images: `ipfs://bafybeigj2tc6mfb22dexhtlka7hnyepqxwxnegsppuw7xrzc3bbdbtwn6i/`
+- Metadata: `ipfs://bafybeid6oc2tj7a7kenoqeidcdpbd7rg5fgy34qc2hc2wla7ldvlftd5x4/`
+
+The source metadata CID, on-chain block URIs, mint activation and all pricing
+and reward rules remain unchanged. A complete Pinata release is not an on-chain
+metadata update. New staging files and receipts are in
+`tmp-public-originals-release-20260918/`; the preceding release is retained.
+See `reports/public-originals-complete-release-2026-09-18.md` for the production
+deployment, complete verification results and unchanged on-chain boundaries.
+
+### Preceding Originals Public artwork release (2026-09-17)
+
+The preceding prepared release contained 98 original images. White Main IDs 29 and
+30 remained prereveal. See `reports/public-originals-artwork-2026-09-17.json` for
+the complete old/new filename mapping, SHA-256 hashes and verified IPFS URIs.
+The source PNG/WebP formats and bytes are unchanged.
+
+`prepare-public-artwork.mjs SOURCE OUTPUT` creates byte-identical staging copies,
+a rename plan and browser-rendered review sheets in an empty output directory.
+It does not rename source files. Existing canonical IDs take precedence; new
+files use ordinal filename order within each eye-color folder. Review the map
+before applying any source renames. Do not reassign already published IDs.
+
+`publish-public-artwork.mjs STAGE OUTPUT` is restricted to Chapter 1 Public on
+Polygon, contract `0xe56cC0657A89daf10994204eD745985a61b0E36F`. Stages are explicit:
+
+- `snapshot`: read chain ID, paused state, zero minted supply, all block URIs and
+  all 100 existing prereveal metadata files; validate the fixed Public matrix.
+- `pin-images`: upload the reviewed image copies; requires `PINATA_JWT` in
+  `biggi-project/bekend/.env.core.polygon`. **This is an actual Pinata upload.**
+- `metadata`: preserve all non-artwork fields and traits. Update image URI,
+  description, Phase and Image Finalized only for available images. Missing
+  images retain their original JSON unchanged.
+- `pin-metadata`: **upload** the new 100-file metadata folder as a separate pin.
+- `verify`: read every published JSON and image, compare all JSON fields and
+  image SHA-256 hashes. Retries are bounded and apply only to reads, never uploads.
+
+No stage signs transactions, updates contract URIs, unpauses minting or deploys
+Netlify. The frontend registry `publicOriginalsArtwork.json` displays a labeled
+preview only for the matching chain, chapter, contract and known prereveal URI.
+The mint preflight still reads the contract's own metadata and requires its
+Image Finalized status. Finalized or unrelated on-chain metadata is never
+overridden. Updating owner-controlled block URIs is a separate release decision.
+
 ## Ticket metadata
 
 TicketHub always resolves the same filename:

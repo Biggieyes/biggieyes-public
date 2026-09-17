@@ -1,7 +1,8 @@
 /* @refresh reload */
 // src/providers/ContractsProvider.jsx
 import * as React from "react";
-import { useWeb3 } from "../providers/Web3Provider";
+import { ContractsContext as Ctx } from "./ContractsContext.js";
+import { useWeb3 } from "../providers/Web3Context.js";
 
 import {
   getReadOnlyContract,
@@ -58,8 +59,6 @@ import {
 } from "@/shared/utils/contract";
 import { CORE_CHAPTERS } from "@/shared/utils/addresses.js";
 
-const Ctx = React.createContext(null);
-export const ContractsContext = Ctx;
 
 /**
  * ContractsProvider:
@@ -98,7 +97,7 @@ export function ContractsProvider({ children }) {
 
   // === sync resolver ===
   // Returns sync function: write contract if signer is present, otherwise read-only.
-  const rwOrRo = (rwFactory, roFactory) => {
+  const rwOrRo = React.useCallback((rwFactory, roFactory) => {
     return async () => {
       try {
         if (signer) {
@@ -120,7 +119,7 @@ export function ContractsProvider({ children }) {
         return roFactory();
       }
     };
-  };
+  }, [signer, effectiveROProvider]);
 
   const value = React.useMemo(
     () => ({
@@ -456,19 +455,8 @@ export function ContractsProvider({ children }) {
       // expose effectiveROProvider in case someone needs the concrete provider
       _effectiveROProvider: effectiveROProvider,
     }),
-    [signer, effectiveROProvider],
+    [signer, effectiveROProvider, rwOrRo],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
-}
-
-export function useContracts() {
-  const context = React.useContext(Ctx);
-  if (!context)
-    throw new Error("useContracts must be used inside <ContractsProvider>");
-  return context;
-}
-
-export function useOptionalContracts() {
-  return React.useContext(Ctx);
 }

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useWeb3 } from "@/providers/Web3Provider";
+import { useWeb3 } from "@/providers/Web3Context.js";
 import { fetchBUYBACKTreasurySnapshot } from "@/shared/services/tokenomics/buybackTreasury.reader";
 import { mapBUYBACKSnapshotToUI } from "@/shared/services/tokenomics/buybackTreasury.mappers";
 import usePollingSnapshot from "./_usePollingSnapshot";

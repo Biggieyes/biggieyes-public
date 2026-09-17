@@ -17,7 +17,6 @@ export default function FullscreenPanel({
   titleColor,
   onClose,
   children,
-  logoSrc = "/images/main-logo1.optimized.lossless.webp",
   // default behavior mirrors original
   closeOnEsc = false,
   closeOnOverlay = true,
@@ -180,7 +179,7 @@ export default function FullscreenPanel({
 
     // Always place BELOW the button (requested)
     let top = a.bottom + 10; // below the anchor
-    let origin = "top right"; // grow from top when opening
+    const origin = "top right"; // grow from top when opening
 
     // Horizontal: align right edges by default
     let left = (a.right || a.left) - r.width;
@@ -206,6 +205,8 @@ export default function FullscreenPanel({
     if (!open) return;
 
     lastActiveRef.current = document.activeElement;
+    const root = rootRef.current;
+    const previousOverscroll = root?.style.overscrollBehavior;
     lockScrollIfNeeded();
     document.addEventListener("keydown", onKeyDown, true);
 
@@ -220,8 +221,8 @@ export default function FullscreenPanel({
       capture: true,
     });
 
-    if (!isPopover && rootRef.current) {
-      rootRef.current.style.overscrollBehavior = "contain";
+    if (!isPopover && root) {
+      root.style.overscrollBehavior = "contain";
     }
 
     const focusTimer = setTimeout(() => {
@@ -257,7 +258,7 @@ export default function FullscreenPanel({
       }
       unlockScrollIfNeeded();
       if (lastActiveRef.current?.focus) lastActiveRef.current.focus();
-      if (rootRef.current) rootRef.current.style.overscrollBehavior = "";
+      if (!isPopover && root) root.style.overscrollBehavior = previousOverscroll;
     };
   }, [
     open,
@@ -448,7 +449,7 @@ export default function FullscreenPanel({
               >
                 <tbody>
                   <tr>
-                    <td>"i" button</td>
+                    <td>&quot;i&quot; button</td>
                     <td>
                       Opens this quick reference panel. Click outside the
                       overlay or press Escape to close it.
@@ -458,10 +459,10 @@ export default function FullscreenPanel({
                     <td>Add to MetaMask</td>
                     <td>
                       Uses <code>wallet_watchAsset</code> to add the selected
-                      NFT to MetaMask. After a successful import the button
-                      hides on this device. Clearing site data, switching
-                      devices, or changing the MetaMask account may show it
-                      again.
+                      NFT or ticket to MetaMask on Polygon mainnet. This does
+                      not grant transfer approval. The button stays available
+                      for re-import. If automatic import is unavailable, the
+                      contract address and token ID are shown for manual import.
                     </td>
                   </tr>
                   <tr>
@@ -651,4 +652,3 @@ export default function FullscreenPanel({
   if (typeof document === "undefined") return null;
   return ReactDOM.createPortal(content, document.body);
 }
-

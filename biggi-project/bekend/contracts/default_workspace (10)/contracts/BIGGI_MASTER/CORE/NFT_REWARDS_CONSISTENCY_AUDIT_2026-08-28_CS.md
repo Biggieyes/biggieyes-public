@@ -1,4 +1,6 @@
-# NFT Rewards consistency audit - Polygon mainnet
+# NFT Rewards consistency audit - Polygon mainnet (historical V1 snapshot)
+
+> Historical evidence captured before the V2 migration on 2026-09-09. The V1 addresses below are retained for audit traceability and are not the current deployment.
 
 Datum kontroly: 2026-08-28
 Snapshot: Polygon PoS, chain ID `137`, blok `92784902`, čas `2026-08-28T01:59:40Z`

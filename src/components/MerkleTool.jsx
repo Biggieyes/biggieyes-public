@@ -13,7 +13,7 @@ export default function MerkleTool({ entries = [] }) {
       try {
         setResult(buildProofs(entries));
         setError("");
-      } catch (err) {
+      } catch {
         setError("Merkle calculation failed.");
       }
     }
@@ -26,7 +26,7 @@ export default function MerkleTool({ entries = [] }) {
       if (!Array.isArray(list)) throw new Error("Bad input");
       setResult(buildProofs(list));
       setError("");
-    } catch (err) {
+    } catch {
       setError("Invalid JSON.");
     }
   };
@@ -80,4 +80,3 @@ export default function MerkleTool({ entries = [] }) {
     </section>
   );
 }
-

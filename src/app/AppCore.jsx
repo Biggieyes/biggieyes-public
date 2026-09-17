@@ -1960,17 +1960,16 @@ export default function AppCore() {
 
   const [dynamicTraitsById, setDynamicTraitsById] = React.useState({});
   const [rewardPool, setRewardPool] = React.useState(null);
-  const [myClaimable, setMyClaimable] = React.useState(null);
+  const claimableContext = React.useMemo(
+    () => ({ walletAddress, myNFTs }),
+    [walletAddress, myNFTs],
+  );
+  const [claimableSnapshot, setClaimableSnapshot] = React.useState(null);
+  const myClaimable =
+    claimableSnapshot?.context === claimableContext
+      ? claimableSnapshot.value
+      : null;
   const [mintVolumeMatic, setMintVolumeMatic] = React.useState(null);
-
-  const [biggiData, setBiggiData] = React.useState({
-    token: {},
-    REWARDS: {},
-    router: {},
-    liquidity: {},
-    POLICY: {},
-    BUYBACK: {},
-  });
 
   const [VRFUIData, setVRFUIData] = React.useState({
     network: "EVM",
@@ -2106,7 +2105,6 @@ export default function AppCore() {
 
   const contractRef = React.useRef(null);
   const unsubRef = React.useRef(() => {});
-  const mintIdxCacheRef = React.useRef(new Map());
   const walletFetchRef = React.useRef({ inFlight: null, addr: null });
   const lastMintedFetchRef = React.useRef({
     key: "",
@@ -2591,7 +2589,7 @@ export default function AppCore() {
     if (invalidConsumer) {
       const sub = invalidConsumer.subId || "unknown";
       const consumer = invalidConsumer.consumer || "unknown";
-      return `VRF subscription invalid: VRF Router ${consumer} is not a consumer of subscription ${sub}. Add it in Chainlink VRF or update the subId in Admin Ă˘â€ â€™ VRF.`;
+      return `VRF subscription invalid: VRF Router ${consumer} is not a consumer of subscription ${sub}. Add it in Chainlink VRF or update the subId in Admin > VRF.`;
     }
 
     const map = {
@@ -3296,16 +3294,25 @@ export default function AppCore() {
     async (addrOverride, assetsOverride) => {
       const reqId = ++claimableFetchRef.current;
       const addr = addrOverride ?? walletAddress;
-
-      if (!addr) {
-        if (claimableFetchRef.current === reqId) setMyClaimable(0);
-        return 0;
-      }
-
       const sourceItems = Array.isArray(assetsOverride)
         ? assetsOverride
         : myNFTs;
-      let next = 0;
+      const publish = (value) => {
+        if (
+          claimableFetchRef.current === reqId &&
+          String(walletAddressRef.current).toLowerCase() ===
+            String(addr).toLowerCase() &&
+          String(claimableContext.walletAddress).toLowerCase() ===
+            String(addr).toLowerCase() &&
+          claimableContext.myNFTs === sourceItems
+        ) {
+          setClaimableSnapshot({ context: claimableContext, value });
+        }
+      };
+      publish(null);
+      if (!addr || !sourceItems.length) return null;
+
+      let next = null;
       try {
         const brl = await getReadOnlyLiquidityContract();
         const rewardScope = await resolveRewardCollectionScope(brl);
@@ -3315,61 +3322,53 @@ export default function AppCore() {
         });
         const tokenIds = rewardPayload.tokenIds;
         if (!tokenIds.length) {
-          if (claimableFetchRef.current === reqId) setMyClaimable(0);
+          publish(0);
           return 0;
         }
         let amount = null;
-        const useCollectionAware =
-          rewardPayload.shouldUseCollectionAware &&
-          typeof brl?.claimablePreviewFor === "function";
-
-        if (useCollectionAware) {
-          try {
-            const preview = await brl.claimablePreviewFor(
-              rewardPayload.collections,
-              tokenIds,
-            );
-            amount = Array.isArray(preview)
-              ? (preview[1] ?? preview[0] ?? null)
-              : (preview?.amount ?? preview?.claimable ?? null);
-          } catch {
-            amount = null;
-          }
+        if (rewardPayload.shouldUseCollectionAware) {
+          if (typeof brl?.claimablePreviewFor !== "function") return null;
+          const preview = await brl.claimablePreviewFor(
+            rewardPayload.collections,
+            tokenIds,
+          );
+          amount = Array.isArray(preview)
+            ? (preview[1] ?? null)
+            : (preview?.amount ?? preview?.claimable ?? null);
         } else if (typeof brl?.claimablePreview === "function") {
-          try {
-            const preview = await brl.claimablePreview(tokenIds);
-            amount = Array.isArray(preview)
-              ? (preview[1] ?? preview[0] ?? null)
-              : (preview?.amount ?? preview?.claimable ?? null);
-          } catch {
-            amount = null;
-          }
+          const preview = await brl.claimablePreview(tokenIds);
+          amount = Array.isArray(preview)
+            ? (preview[1] ?? null)
+            : (preview?.amount ?? preview?.claimable ?? null);
+        } else if (typeof brl?.claimStatus === "function") {
+          const status = await brl.claimStatus(tokenIds);
+          amount = Array.isArray(status)
+            ? (status[0] ?? null)
+            : (status?.claimable ?? null);
         }
 
-        if (amount == null && typeof brl?.claimStatus === "function") {
-          try {
-            const status = await brl.claimStatus(tokenIds);
-            amount = Array.isArray(status)
-              ? (status[0] ?? null)
-              : (status?.claimable ?? null);
-          } catch {
-            amount = null;
-          }
+        if (
+          amount != null && /^\d+$/.test(String(amount)) &&
+          (typeof amount !== "number" || Number.isSafeInteger(amount))
+        ) {
+          const value = toNumEth(BigInt(amount));
+          if (Number.isFinite(value) && value >= 0) next = value;
         }
-
-        next = toNumEth(amount) ?? 0;
       } catch {
-        next = 0;
+        next = null;
       }
 
-      if (claimableFetchRef.current === reqId) setMyClaimable(next);
+      publish(next);
       return next;
     },
-    [walletAddress, myNFTs, maxSupply],
+    [walletAddress, myNFTs, maxSupply, claimableContext],
   );
 
   React.useEffect(() => {
     refreshClaimable(walletAddress, myNFTs);
+    return () => {
+      claimableFetchRef.current += 1;
+    };
   }, [walletAddress, myNFTs, refreshClaimable]);
 
   /* ====================================================================== */
@@ -3804,7 +3803,7 @@ export default function AppCore() {
         return [];
       }
     },
-    [findTicketsViaLogs, maxSupply, isTransientRpcReadError],
+    [findTicketsViaLogs, maxSupply],
   );
 
   const fetchOwnedNFTsFromCollection = React.useCallback(
@@ -4894,7 +4893,7 @@ export default function AppCore() {
         return [];
       }
     },
-    [enrichMetaWithPrices, maxSupply, isTransientRpcReadError],
+    [enrichMetaWithPrices, maxSupply],
   );
 
   const fetchOwnedNFTsViaTransfers = React.useCallback(
@@ -5574,7 +5573,6 @@ export default function AppCore() {
       fetchOwnedNFTsViaTransfers,
       mergeWithTopFirst,
       refreshClaimable,
-      isTransientRpcReadError,
       engageRpcBackoff,
       recoverRpcConnectivity,
       rotatePreferredRpc,
@@ -5832,7 +5830,7 @@ export default function AppCore() {
                 Math.min(Number(toBlock) || safeLatest, safeLatest),
               );
               let finalFrom = boundedFrom;
-              let finalTo = boundedTo;
+              const finalTo = boundedTo;
               if (finalFrom >= finalTo && finalTo > 0) {
                 finalFrom = Math.max(0, finalTo - 1);
               }
@@ -6418,7 +6416,7 @@ export default function AppCore() {
         }
       }
     },
-    [walletAddress, topFirstId, maxSupply, resolveDisplayedChapterMain],
+    [walletAddress, topFirstId, maxSupply, resolveDisplayedChapterMain, callFirst],
   );
 
   /* ====================================================================== */
@@ -7020,7 +7018,6 @@ export default function AppCore() {
     buildVRFHistory,
     resolveVrfMain,
     isRpcBackoffActive,
-    isTransientRpcReadError,
     engageRpcBackoff,
     recoverRpcConnectivity,
     resolveRetryPendingSupport,
@@ -7248,7 +7245,6 @@ export default function AppCore() {
       scheduleRefreshVRF,
       restoreTopFirstForAddress,
       maxSupply,
-      walletAddress,
     ],
   );
 
@@ -7269,6 +7265,10 @@ export default function AppCore() {
           (await signer.getAddress().catch(() => ""));
         if (!addr) throw new Error("WalletConnect returned no address.");
 
+        if (walletAddressRef.current.toLowerCase() !== addr.toLowerCase()) {
+          setMyNFTs([]);
+          setDynamicTraitsById({});
+        }
         setWalletAddress(addr);
         walletAddressRef.current = addr;
         setLastMinted((prev) => {
@@ -7454,6 +7454,10 @@ export default function AppCore() {
         }
       }
 
+      if (walletAddressRef.current.toLowerCase() !== addr.toLowerCase()) {
+        setMyNFTs([]);
+        setDynamicTraitsById({});
+      }
       setWalletAddress(addr);
       walletAddressRef.current = addr;
       setLastMinted((prev) => {
@@ -7627,6 +7631,8 @@ export default function AppCore() {
     }
 
     if (nextWallet && nextWallet !== currentWallet) {
+      setMyNFTs([]);
+      setDynamicTraitsById({});
       walletAddressRef.current = nextWallet;
       setWalletAddress(nextWallet);
       setLastMinted((prev) => {
@@ -8467,8 +8473,6 @@ export default function AppCore() {
     VRFPending,
     myNFTs,
     fetchWalletAssets,
-    fetchREWARDS,
-    fetchStats,
     prettyError,
     findTicketsViaLogs,
     refreshVRFPanel,
@@ -9076,11 +9080,11 @@ export default function AppCore() {
   React.useEffect(() => {
     if (typeof window === "undefined") return undefined;
 
+    const state = walletResumeSyncRef.current;
     const scheduleResumeSync = () => {
       if (!walletAddressRef.current && !walletConnectResumeAllowedRef.current) {
         return;
       }
-      const state = walletResumeSyncRef.current;
       if (state.timer) clearTimeout(state.timer);
       state.timer = setTimeout(() => {
         if (state.inFlight) return;
@@ -9104,7 +9108,6 @@ export default function AppCore() {
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
-      const state = walletResumeSyncRef.current;
       if (state.timer) clearTimeout(state.timer);
       state.timer = null;
       window.removeEventListener("focus", scheduleResumeSync);
@@ -9378,6 +9381,7 @@ export default function AppCore() {
           <USERPANEL
             autoOpenInfo={autoOpenInfoPanel === "USERS"}
             walletAddress={walletAddress}
+            onRefreshClaimable={refreshClaimable}
             onMint={mintTicket}
             onRedeem={redeemTicket}
             onClaim={claimREWARDS}
@@ -9441,6 +9445,7 @@ export default function AppCore() {
     refreshVRFPanel,
     mintTicket,
     claimREWARDS,
+    refreshClaimable,
     isMinting,
     isRedeeming,
     isClaiming,

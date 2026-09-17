@@ -97,7 +97,6 @@ function DistributorTokenTab({
   BUYBACKFallback,
   DRIPAvailable,
   tokenTotalSupply,
-  totalSeries = [],
   pendingSeries = [],
   reserveSeries = [],
   buybackSeries = [],

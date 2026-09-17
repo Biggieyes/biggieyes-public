@@ -1,4 +1,5 @@
 import * as React from "react";
+import { buildRows } from "../utils/historyFormatting.js";
 import Card from "../components/Card.jsx";
 import styles from "../styles/BiggiToken.module.css";
 import { fmtVal } from "../utils/format.js";
@@ -11,23 +12,6 @@ const toNumberLoose = (value) => {
 const fmt = (value, symbol, digits = 4) => {
   const num = toNumberLoose(value);
   return num == null ? "--" : fmtVal(num, symbol, digits);
-};
-
-export const buildRows = (entries, mapFn, limit = 12) => {
-  if (!Array.isArray(entries) || entries.length === 0) return [];
-  const mapped = entries.map(mapFn).filter(Boolean).reverse();
-  const rows = [];
-  let previousKey = null;
-
-  for (const row of mapped) {
-    const key = `${row.a}\u0000${row.b}`;
-    if (key === previousKey) continue;
-    rows.push(row);
-    previousKey = key;
-    if (rows.length >= limit) break;
-  }
-
-  return rows;
 };
 
 function HistoryTab({

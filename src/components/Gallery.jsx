@@ -2,8 +2,8 @@ import * as React from "react";
 import "./Gallery.css";
 import "../styles/panel-buttons.css";
 import NftCard from "./NftCard";
-import { useOptionalContracts } from "../providers/ContractsProvider";
-import { useOptionalWeb3 } from "../providers/Web3Provider";
+import { useOptionalContracts } from "../providers/ContractsContext.js";
+import { useOptionalWeb3 } from "../providers/Web3Context.js";
 import { formatEther } from "ethers";
 import { ADDR, CORE_CHAPTERS } from "@/shared/utils/addresses.js";
 import { DEFAULT_BLOCKS, ROWS_BY_BLOCK } from "../shared/blocks";
@@ -55,6 +55,7 @@ const CHAIN_FETCH_TIMEOUT_MS = (() => {
   return 45_000;
 })();
 const PLACEHOLDER_IMAGE = "/images/Biggi.png";
+const EMPTY_ITEMS = Object.freeze([]);
 
 // paralelní limit pro tokenURI / metadata fetch (snižuje šanci na RPC timeouts)
 const METADATA_PARALLELISM = 10;
@@ -644,7 +645,7 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
               if (typeof mainContract.tokenURI === "function") {
                 uri = await mainContract.tokenURI(id).catch(() => null);
               }
-            } catch (e) {
+            } catch {
               uri = null;
             }
             if (uri) {
@@ -1004,7 +1005,7 @@ async function hydrateTokens(mainContract, reader, tokenIds) {
 
 export default function Gallery({
   address: addressProp,
-  items: itemsProp = [],
+  items: itemsProp = EMPTY_ITEMS,
   loading = false,
   liveTicketPrice = null,
   activeTicketChapterId = null,
@@ -1046,7 +1047,7 @@ export default function Gallery({
     addressProp || ctxAddress ? String(addressProp || ctxAddress) : "";
   const isConnected = Boolean(address);
 
-  const providedItems = Array.isArray(itemsProp) ? itemsProp : [];
+  const providedItems = Array.isArray(itemsProp) ? itemsProp : EMPTY_ITEMS;
   const maxSupplyHint = 550;
   const debugEnabled = Boolean(
     typeof import.meta !== "undefined" && import.meta.env?.DEV,
@@ -1103,7 +1104,7 @@ export default function Gallery({
     return Array.from(map.values());
   }, [providedItems, hydratedItems]);
 
-  const renderedItems = isConnected ? mergedItems : [];
+  const renderedItems = isConnected ? mergedItems : EMPTY_ITEMS;
 
   const mainContractAddress = React.useMemo(() => {
     if (!contracts) return ADDR?.MAIN ?? null;
@@ -1621,6 +1622,7 @@ export default function Gallery({
       <NftCard
         key={key}
         nft={enriched}
+        ownerAddress={address}
         liveTicketPrice={liveTicketPrice}
         activeTicketChapterId={activeTicketChapterId}
         activeTicketChapterCount={activeTicketChapterCount}

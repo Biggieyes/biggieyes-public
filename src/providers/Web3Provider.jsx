@@ -1,6 +1,7 @@
 /* @refresh reload */
 // src/providers/Web3Provider.jsx
 import * as React from "react";
+import { Web3Context as Ctx } from "./Web3Context.js";
 import { BrowserProvider } from "ethers";
 
 import {
@@ -25,7 +26,6 @@ import {
   setWalletConnectResumeExpected,
 } from "@/shared/utils/walletConnectResume";
 
-const Ctx = React.createContext(null);
 const WALLET_RESUME_DEBOUNCE_MS = 350;
 let walletConnectModulePromise = null;
 
@@ -441,14 +441,4 @@ export function Web3Provider({ children }) {
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
-}
-
-export function useWeb3() {
-  const v = React.useContext(Ctx);
-  if (!v) throw new Error("useWeb3 must be used inside <Web3Provider>");
-  return v;
-}
-
-export function useOptionalWeb3() {
-  return React.useContext(Ctx);
 }

@@ -1,14 +1,14 @@
 /* @refresh reload */
 // src/context/StatsProvider.jsx
 import * as React from "react";
+import { StatsContext as Ctx } from "./StatsContext.js";
 import { formatEther } from "ethers";
-import { useContracts } from "./ContractsProvider";
+import { useContracts } from "./ContractsContext.js";
 import {
   resolveTicketPriceWeiFromHub,
   getFrontendSnapshotLiteActive,
 } from "@/shared/utils/contract";
 
-const Ctx = React.createContext(null);
 
 export function StatsProvider({ children }) {
   const { mainRead, readerRead } = useContracts();
@@ -124,10 +124,4 @@ export function StatsProvider({ children }) {
   return (
     <Ctx.Provider value={{ data, loading, refresh }}>{children}</Ctx.Provider>
   );
-}
-
-export function useStats() {
-  const v = React.useContext(Ctx);
-  if (!v) throw new Error("useStats must be used inside <StatsProvider>");
-  return v;
 }

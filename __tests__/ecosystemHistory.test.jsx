@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildRows } from "../src/features/tokenomics/tabs/HistoryTab.jsx";
-import { buildTimeline } from "../src/features/tokenomics/tabs/TransparencyTab.jsx";
+import { buildRows, buildTimeline } from "../src/features/tokenomics/utils/historyFormatting.js";
 
 describe("ecosystem snapshot history", () => {
   it("collapses unchanged polling samples but preserves later state changes", () => {

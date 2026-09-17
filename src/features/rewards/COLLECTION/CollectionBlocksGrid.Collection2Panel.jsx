@@ -146,7 +146,9 @@ const resolveMintStatus = ({
     return {
       label: "Artwork pending",
       tone: "warn",
-      hint: "This NFT still uses the prereveal placeholder. Mint opens after the final image is published.",
+      hint: artwork.previewOnly
+        ? "The artwork is pinned on IPFS. Mint remains blocked until the contract's metadata URI is updated."
+        : "This NFT still uses the prereveal placeholder. Mint opens after the final image is published.",
     };
   }
   if (!Number.isFinite(price) || price <= 0) {
@@ -292,16 +294,22 @@ const COLLECTION2Panel = React.memo(
       hasSelection && selectedArtwork?.valid ? selectedArtwork.imageUrl : "";
     const artworkState = selectedArtwork?.loading
       ? "Loading..."
+      : selectedArtwork?.previewOnly
+      ? "Awaiting on-chain update"
+      : selectedArtwork?.awaitingArtwork
+      ? "Soon"
       : selectedArtwork?.valid
-        ? selectedArtwork.finalized
-          ? "Final"
-          : "Prereveal placeholder"
-        : FALLBACK_VALUE;
+      ? selectedArtwork.finalized
+        ? "Final"
+        : "Prereveal placeholder"
+      : FALLBACK_VALUE;
     const previewLabel = selectedArtwork?.loading
       ? "Loading artwork"
+      : selectedArtwork?.previewOnly
+      ? "Preview"
       : selectedArtwork?.finalized
-        ? "Final artwork"
-        : "Artwork pending";
+      ? "Final artwork"
+      : "Artwork pending";
 
     if (!blockEntries || blockEntries.length === 0) {
       return (
@@ -353,7 +361,9 @@ const COLLECTION2Panel = React.memo(
             return (
               <button
                 type="button"
-                className={`collection-public__block-button${active ? " is-active" : ""}`}
+                className={`collection-public__block-button${
+                  active ? " is-active" : ""
+                }`}
                 key={entry.id || blockNumber}
                 onClick={() => onBlockSelect(blockNumber)}
                 aria-pressed={active}
@@ -390,7 +400,9 @@ const COLLECTION2Panel = React.memo(
                   <button
                     type="button"
                     key={tokenIndex}
-                    className={`collection-public__token-button${selected ? " is-active" : ""}${minted ? " is-minted" : ""}`}
+                    className={`collection-public__token-button${
+                      selected ? " is-active" : ""
+                    }${minted ? " is-minted" : ""}`}
                     onClick={() => onTokenIdChange(String(tokenIndex))}
                     aria-pressed={selected}
                     disabled={comingSoon || busy}
@@ -425,7 +437,9 @@ const COLLECTION2Panel = React.memo(
                   decoding="async"
                 />
               ) : (
-                <span>Select an NFT</span>
+                <span>
+                  {selectedArtwork?.awaitingArtwork ? "Soon" : "Select an NFT"}
+                </span>
               )}
               <span className="collection-public__preview-label">
                 {previewLabel}
@@ -517,12 +531,14 @@ const COLLECTION2Panel = React.memo(
             <strong className="collection-grid__stat-value-large">
               {comingSoon
                 ? "SOON"
-                : `${formatCount(COLLECTIONTotals?.biggiMinted)} / ${formatCount(COLLECTIONTotals?.maxSupply)}`}
+                : `${formatCount(
+                    COLLECTIONTotals?.biggiMinted,
+                  )} / ${formatCount(COLLECTIONTotals?.maxSupply)}`}
             </strong>
             <div className="collection-grid__progress">
               <span
                 className="collection-grid__progress-bar"
-                style={{ width: `${comingSoon ? 0 : (mintedPct ?? 0)}%` }}
+                style={{ width: `${comingSoon ? 0 : mintedPct ?? 0}%` }}
               />
             </div>
           </article>
@@ -531,22 +547,26 @@ const COLLECTION2Panel = React.memo(
             <strong className="collection-grid__stat-value-large">
               {comingSoon
                 ? "SOON"
-                : `${formatCount(COLLECTIONTotals?.metadataConfiguredCount)} / ${formatCount(COLLECTIONTotals?.maxSupply)}`}
+                : `${formatCount(
+                    COLLECTIONTotals?.metadataConfiguredCount,
+                  )} / ${formatCount(COLLECTIONTotals?.maxSupply)}`}
             </strong>
             <div className="collection-grid__progress">
               <span
                 className="collection-grid__progress-bar"
-                style={{ width: `${comingSoon ? 0 : (metadataPct ?? 0)}%` }}
+                style={{ width: `${comingSoon ? 0 : metadataPct ?? 0}%` }}
               />
             </div>
             <span className="collection-grid__stat-foot">
               {comingSoon
                 ? "Future chapter"
+                : selectedArtwork?.previewOnly
+                ? "On-chain artwork update pending"
                 : selectedArtwork?.valid
-                  ? selectedArtwork.finalized
-                    ? "Selected artwork finalized"
-                    : "Selected artwork in prereveal"
-                  : "Artwork verification pending"}
+                ? selectedArtwork.finalized
+                  ? "Selected artwork finalized"
+                  : "Selected artwork in prereveal"
+                : "Artwork verification pending"}
             </span>
           </article>
           <article className="collection-grid__stat-card collection-grid__stat-card--glass">
@@ -555,10 +575,10 @@ const COLLECTION2Panel = React.memo(
               {comingSoon
                 ? "SOON"
                 : COLLECTIONTotals?.publicUnlocked == null
-                  ? FALLBACK_VALUE
-                  : COLLECTIONTotals.publicUnlocked
-                    ? "Unlocked"
-                    : "Locked"}
+                ? FALLBACK_VALUE
+                : COLLECTIONTotals.publicUnlocked
+                ? "Unlocked"
+                : "Locked"}
             </strong>
             <span className="collection-grid__stat-foot">
               {comingSoon ? "Future chapter" : "Polygon mainnet"}

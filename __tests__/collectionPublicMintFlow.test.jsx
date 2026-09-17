@@ -13,10 +13,10 @@ const mocks = vi.hoisted(() => ({
   readJson: vi.fn(),
 }));
 
-vi.mock("../src/providers/Web3Provider", () => ({
+vi.mock("../src/providers/Web3Context.js", () => ({
   useOptionalWeb3: () => mocks.wallet,
 }));
-vi.mock("../src/providers/ContractsProvider", () => ({
+vi.mock("../src/providers/ContractsContext.js", () => ({
   useOptionalContracts: () => null,
 }));
 vi.mock("../src/hooks/useChapterSeriesReader", () => ({
@@ -36,7 +36,7 @@ vi.mock("../src/shared/utils/contract", () => ({
 }));
 vi.mock("../src/shared/utils/ipfs", () => ({
   readJsonFromURI: (...args) => mocks.readJson(...args),
-  resolveImageUrl: async () => "https://example.com/public.png",
+  resolveImageUrl: async (uri) => `https://example.com/ipfs/${uri.slice(7)}`,
 }));
 vi.mock("ethers", async (importOriginal) => ({
   ...(await importOriginal()),
@@ -55,6 +55,7 @@ vi.mock(
 );
 
 import CollectionBlocksGrid from "../src/features/rewards/COLLECTION/CollectionBlocksGrid.jsx";
+import publicArtworkRelease from "../src/features/rewards/COLLECTION/publicOriginalsArtwork.json";
 
 const hash = `0x${"a".repeat(64)}`;
 const replacementHash = `0x${"b".repeat(64)}`;
@@ -133,6 +134,65 @@ async function openPublic() {
 }
 
 describe("Public mint transaction flow", () => {
+  it("shows the pinned prerelease but never uses it to bypass on-chain mint checks", async () => {
+    mocks.contract.target = publicArtworkRelease.contract;
+    mocks.contract.blockBaseURIs.mockResolvedValue(
+      `ipfs://${publicArtworkRelease.sourceMetadataCid}/`,
+    );
+    const finalMetadata = mocks.readJson.getMockImplementation();
+    mocks.readJson.mockImplementation(async (uri) => {
+      const metadata = await finalMetadata(uri);
+      metadata.attributes.find(
+        (attribute) => attribute.trait_type === "Image Finalized",
+      ).value = "No";
+      return metadata;
+    });
+    await openPublic();
+    expect(mocks.panel.selectedArtwork.previewOnly).toBe(true);
+    expect(mocks.panel.selectedArtwork.finalized).toBe(false);
+    expect(mocks.panel.selectedArtwork.previewMetadataUri).toContain(
+      publicArtworkRelease.metadataCid,
+    );
+    await act(async () => {
+      await mocks.panel.onMint(1);
+    });
+    expect(mocks.panel.mintState.status).toBe("error");
+    expect(mocks.contract.mintPublic).not.toHaveBeenCalled();
+  });
+
+  it.each([29, 30])(
+    "shows the newly completed white preview #%s without unlocking mint",
+    async (id) => {
+      mocks.contract.target = publicArtworkRelease.contract;
+      mocks.contract.blockBaseURIs.mockResolvedValue(
+        `ipfs://${publicArtworkRelease.sourceMetadataCid}/`,
+      );
+      const finalMetadata = mocks.readJson.getMockImplementation();
+      mocks.readJson.mockImplementation(async (uri) => {
+        const metadata = await finalMetadata(uri);
+        metadata.attributes.find(
+          (attribute) => attribute.trait_type === "Image Finalized",
+        ).value = "No";
+        return metadata;
+      });
+      await openPublic();
+      act(() => mocks.panel.onTokenIdChange(String(id)));
+      await waitFor(() =>
+        expect(mocks.panel.selectedArtwork.imageUrl).toBe(
+          `https://example.com/ipfs/${publicArtworkRelease.imagesCid}/Biggi_${id}_WHITE_PUBLIC.webp`,
+        ),
+      );
+      expect(mocks.panel.selectedArtwork.awaitingArtwork).toBe(false);
+      expect(mocks.panel.selectedArtwork.previewOnly).toBe(true);
+      expect(mocks.panel.selectedArtwork.finalized).toBe(false);
+      await act(async () => {
+        await mocks.panel.onMint(id);
+      });
+      expect(mocks.panel.mintState.status).toBe("error");
+      expect(mocks.contract.mintPublic).not.toHaveBeenCalled();
+    },
+  );
+
   it("uses Public reads instead of the dashboard's VRF counts and prices", async () => {
     await openPublic();
     expect(mocks.panel.blockEntries[0].minted).toBe(0);

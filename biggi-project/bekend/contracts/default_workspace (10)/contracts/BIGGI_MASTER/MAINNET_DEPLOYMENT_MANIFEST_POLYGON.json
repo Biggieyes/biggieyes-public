@@ -1,7 +1,7 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "createdAt": "2026-08-26T21:55:15.569Z",
+  "createdAt": "2026-09-16T20:04:24.193Z",
   "source": "canonical BIGGI project addresses (core + tokenomics + readers + linked libraries + CRE receiver)",
   "summary": {
     "total": 60,
@@ -104,12 +104,12 @@
     },
     {
       "key": "NFT_REWARDS",
-      "address": "0x939Df533b80943298E15ad4c8F188102954f34FF",
+      "address": "0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9",
       "hasCode": true,
       "deployer": "0x8fa5c9545b2eef1ca3c6533951c286e05928f27b",
-      "txHash": "0x4588d8a767a84fb509cba7151c50a1618c241e13fbe35919bfe927f7d4b329c0",
+      "txHash": "0x27db25694de91385f7cfd6f6c20d971e144982d0d86faf7289e98e95d4a61084",
       "verified": true,
-      "contractName": "BiggiNFTRewards",
+      "contractName": "BiggiNFTRewardsV2",
       "compilerVersion": "v0.8.24+commit.e11b9ed9"
     },
     {
@@ -144,10 +144,10 @@
     },
     {
       "key": "NFT_REWARDS_READER",
-      "address": "0x430376b1f4F12ce2D641CC28f2968297aA2b0c12",
+      "address": "0x789873e6b1d944b207D2E76a71D95135be4e33c6",
       "hasCode": true,
       "deployer": "0x8fa5c9545b2eef1ca3c6533951c286e05928f27b",
-      "txHash": "0xbf821dec20a68de568f7bebc0d2ad773cb6eba2ef39aac5a4950bee9b34bc587",
+      "txHash": "0x9cc73f2e962718f119eaaed7740d220b79520e9df731d682a214ac9195bb07f7",
       "verified": true,
       "contractName": "BiggiNftRewardsReader",
       "compilerVersion": "v0.8.24+commit.e11b9ed9"

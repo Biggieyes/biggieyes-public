@@ -15,7 +15,7 @@ This document describes the current frontend architecture in this repository. It
 - VRF diagnostics, redeem pending state, collection statistics, and LiveStats follow the single live active chapter; previously minted NFT remain visible after the next chapter opens.
 - Backend address mirror: `biggi-project/bekend/addresses.json`.
 - ABI exports: `src/config/abi/index.js`.
-- ABI inventory check: `npm run check:abis` reports 58 ABI files and 801 functions.
+- ABI inventory check: `npm run check:abis` reports 61 ABI files and 848 functions.
 - Address mirror check: `npm run check:contracts` reports 161 runtime frontend/backend keys plus five chapter/CORE ABI comparisons. Backend-only `OLD_TICKET_HUB` is intentionally excluded from runtime.
 - Runtime smoke: `npm run smoke:runtime` passes gallery, LiveStats, and Rewards panel flows.
 
@@ -68,6 +68,8 @@ Selected live mainnet values at the last verification:
 ## Reader Layer
 
 The frontend is reader-first for dashboards and transparency views. It uses direct contract fallbacks only when needed.
+
+Historical V1 NFT Rewards addresses remain in audit-only files for evidence and migration traceability; the live Polygon mainnet registry uses the V2 values below.
 
 Current mainnet readers:
 

@@ -78,7 +78,8 @@ vi.mock("@/wallet/wc.js", () => ({
   restoreWalletConnectSession: mocks.restoreWalletConnectSession,
 }));
 
-import { Web3Provider, useWeb3 } from "../src/providers/Web3Provider.jsx";
+import { Web3Provider } from "../src/providers/Web3Provider.jsx";
+import { useWeb3 } from "../src/providers/Web3Context.js";
 
 function Probe() {
   const { account, chainId, connectMetaMask, provider } = useWeb3();

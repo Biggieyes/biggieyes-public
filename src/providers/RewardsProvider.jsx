@@ -1,10 +1,10 @@
 import * as React from "react";
+import { RewardsContext as Ctx } from "./RewardsContext.js";
 import { formatEther } from "ethers";
-import { useContracts } from "./ContractsProvider";
+import { useContracts } from "./ContractsContext.js";
 import { getProviderForContract } from "../shared/utils/contract";
 import { buildFeeOverrides } from "../shared/utils/txFees";
 
-const Ctx = React.createContext(null);
 
 export function REWARDSProvider({ children }) {
   const { chapterCollectionsRead, liqRO, liqRW } = useContracts();
@@ -77,7 +77,7 @@ export function REWARDSProvider({ children }) {
         // claimable preview (if we have an address)
         if (address) {
           try {
-            const lr = await liqRO();
+            await liqRO();
             // simple fallback: if we don't have token list yet, leave 0
             setMyClaimable(0);
             // detailed calc will be added later after InventoryProvider integration
@@ -110,10 +110,4 @@ export function REWARDSProvider({ children }) {
       {children}
     </Ctx.Provider>
   );
-}
-
-export function useREWARDS() {
-  const v = React.useContext(Ctx);
-  if (!v) throw new Error("useREWARDS must be used inside <REWARDSProvider>");
-  return v;
 }

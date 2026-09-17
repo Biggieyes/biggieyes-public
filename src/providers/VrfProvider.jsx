@@ -1,5 +1,6 @@
 import * as React from "react";
-import { useContracts } from "./ContractsProvider";
+import { VrfContext as Ctx } from "./VrfContext.js";
+import { useContracts } from "./ContractsContext.js";
 import {
   queryLogsBatched,
   getSafeDeployBlock,
@@ -20,7 +21,6 @@ import {
 } from "../shared/utils/ticketChapters.js";
 import { readVrfSubscriptionSnapshot } from "../shared/utils/vrfSubscription.js";
 
-const Ctx = React.createContext(null);
 const FULL_HISTORY = isFullHistoryEnabled();
 
 export function VRFProvider({ children }) {
@@ -542,10 +542,4 @@ export function VRFProvider({ children }) {
       {children}
     </Ctx.Provider>
   );
-}
-
-export function useVRF() {
-  const v = React.useContext(Ctx);
-  if (!v) throw new Error("useVRF must be used inside <VRFProvider>");
-  return v;
 }

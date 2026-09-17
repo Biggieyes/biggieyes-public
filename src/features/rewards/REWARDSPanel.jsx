@@ -100,7 +100,7 @@ const formatDecimal = (value, digits = 2) => {
       minimumFractionDigits: digits,
       maximumFractionDigits: digits,
     });
-  } catch (err) {
+  } catch {
     return "\u2014";
   }
 };
@@ -275,11 +275,7 @@ function REWARDSPanel({
   const {
     displayed: weeklyDisplayed,
     loading: weeklyLoading,
-    error: weeklyError,
-    isClaiming: weeklyIsClaiming,
-    claimSuccess: weeklyClaimSuccess,
     syncWeeklyInfo,
-    handleClaim: weeklyHandleClaim,
   } = useWeeklyCountdown();
 
   const readProvider = React.useMemo(() => {

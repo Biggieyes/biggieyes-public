@@ -1,8 +1,8 @@
 # Frontend / Mainnet Integration Audit Report
 
-Last verified: 2026-08-25
+Last verified: 2026-09-16
 
-This report replaces the old January report that contained historical deployed addresses and missing-reader notes. It reflects the current Polygon mainnet frontend state.
+This report replaces the old January report that contained historical deployed addresses and missing-reader notes. It reflects the current Polygon mainnet frontend state. Historical V1 NFT Rewards addresses are retained only in historical audit artifacts and are not treated as the current live registry.
 
 ## Scope
 
@@ -33,7 +33,7 @@ Selected live values:
 | `BUYBACK_AGENT` | `0x5A77E90c467576C82B8d0E74eD112B829C625BB4` |
 | `COLLECTION_REWARDS` | `0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43` |
 | `TOKEN_REWARDS` | `0xA455775BBe0BC863f644516147b95Ef5103b29FA` |
-| `NFT_REWARDS` | `0x939Df533b80943298E15ad4c8F188102954f34FF` |
+| `NFT_REWARDS` | `0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9` |
 | `PAIR` | `0x59C7B17B3ACD48979B25215a0c477dF6FFFF3e90` |
 
 ## Reader Addresses
@@ -42,7 +42,7 @@ Selected live values:
 | --- | --- |
 | `MAIN_READER` | `0xde05be77024eABf37E4eA4fbBD58F161081be2f3` |
 | `MCD_READER_V2` | `0xa65B4e88E37F085B9009295eA0AcF05e18a82884` |
-| `NFT_REWARDS_READER` | `0x430376b1f4F12ce2D641CC28f2968297aA2b0c12` |
+| `NFT_REWARDS_READER` | `0x789873e6b1d944b207D2E76a71D95135be4e33c6` |
 | `TOKEN_REWARDS_READER` | `0xB558137Ce8a2e065de09f7ef7cF24911E49A9972` |
 | `RESERVE_TREASURY_READER` | `0xb379bB928f3B683528C209C28A95F4D2854EC407` |
 | `BUYBACK_READER` | `0x8eD6c94e5Fb336096E6C28480f3C514c9bddFa89` |
@@ -57,12 +57,10 @@ Selected live values:
 
 Latest checked state:
 
-- `npm run lint`: passed
-- `npm run typecheck`: passed
 - `npm run build`: passed
-- `npm test`: passed, 32 files / 72 tests
-- `npm run check:contracts`: passed, 161 runtime frontend/backend keys, five chapters and seven canonical CORE ABI comparisons; historical `OLD_TICKET_HUB` is backend-only
-- `npm run check:abis`: passed, 58 ABI files / 801 functions
+- `npm test`: passed in the current project check run
+- `npm run check:contracts`: passed, 161 runtime frontend/backend keys, five chapters, and seven canonical CORE ABI comparisons; historical `OLD_TICKET_HUB` remains backend-only
+- `npm run check:abis`: passed, 61 ABI files / 848 functions
 - `npm run check:rpc`: passed, 2/2 healthy RPC endpoints
 - `npm run smoke:runtime`: passed Gallery, LiveStats, and Rewards
 

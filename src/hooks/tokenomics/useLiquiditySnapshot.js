@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useWeb3 } from "@/providers/Web3Provider";
+import { useWeb3 } from "@/providers/Web3Context.js";
 import { fetchLiquiditySnapshot } from "@/shared/services/tokenomics/liquidity.reader";
 import { mapRawSnapshotToUI } from "@/shared/services/tokenomics/liquidity.mappers";
 import usePollingSnapshot from "./_usePollingSnapshot";

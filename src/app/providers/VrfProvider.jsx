@@ -1,1 +1,1 @@
-export * from "../../providers/VrfProvider.jsx";
+export { VRFProvider } from "../../providers/VrfProvider.jsx";

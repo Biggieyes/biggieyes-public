@@ -1,6 +1,6 @@
 # ABI Inventory
 
-Last verified: 2026-08-17
+Last verified: 2026-09-16
 
 ## Source Of Truth
 
@@ -9,7 +9,7 @@ Last verified: 2026-08-17
 - Legacy ABI copies where still required: `src/abis/*.json`
 - Validation command: `npm run check:abis`
 
-Current validation result: 58 ABI files and 801 functions.
+Current validation result: 61 ABI files and 848 functions.
 
 ## Notes
 

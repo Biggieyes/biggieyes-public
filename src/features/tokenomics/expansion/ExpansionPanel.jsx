@@ -602,14 +602,15 @@ function StageCard({ stage, stageIndex, compact = false }) {
   );
 }
 
+const roadmapStages = Array.isArray(FUTURE_COLLECTION_STAGES)
+  ? FUTURE_COLLECTION_STAGES
+  : [];
+
 export default function ExpansionPanel({ compact = false } = {}) {
   const [infoOpen, setInfoOpen] = React.useState(false);
-  const roadmapStages = Array.isArray(FUTURE_COLLECTION_STAGES)
-    ? FUTURE_COLLECTION_STAGES
-    : [];
   const roadmapStats = React.useMemo(
     () => getFutureCollectionStats(roadmapStages),
-    [roadmapStages],
+    [],
   );
   const pairStages = roadmapStages.filter((stage) => stage.kind === "pair");
   const infoItems = React.useMemo(

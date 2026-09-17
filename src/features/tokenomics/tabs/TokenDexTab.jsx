@@ -413,7 +413,6 @@ function TokenDexTab({
   const pricePoints = historyBundle?.pricePoints || [];
   const reservePoints = historyBundle?.reservePoints || [];
   const biggiReservePoints = historyBundle?.biggiReservePoints || [];
-  const lpPoints = historyBundle?.lpPoints || [];
   const dexSeries = historyBundle?.dexSeries || [];
 
   const stats = [
@@ -558,6 +557,12 @@ function TokenDexTab({
           ) : null}
         </div>
       </header>
+
+      {error ? (
+        <div className="token-dex-tab--error" role="status">
+          Refresh failed. Showing the last successful snapshot.
+        </div>
+      ) : null}
 
       <MainnetDataRail title="Token DEX mainnet data" items={mainnetItems} />
 

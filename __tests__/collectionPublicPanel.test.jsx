@@ -60,6 +60,34 @@ describe("public collection panel", () => {
       />,
     );
 
+  it("labels pinned previews honestly and keeps mint blocked", () => {
+    renderReady({
+      selectedArtwork: { ...readyArtwork, previewOnly: true, finalized: false },
+    });
+    expect(screen.getByText("Preview", { exact: true })).toBeInTheDocument();
+    expect(screen.getByText("Awaiting on-chain update")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Artwork pending" }),
+    ).toBeDisabled();
+    expect(screen.queryByText("Final artwork")).not.toBeInTheDocument();
+  });
+
+  it("does not substitute an image when the selected artwork is missing", () => {
+    renderReady({
+      selectedArtwork: {
+        ...readyArtwork,
+        awaitingArtwork: true,
+        finalized: false,
+        imageUrl: "",
+      },
+    });
+    expect(screen.getAllByText("Soon").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Artwork pending" }),
+    ).toBeDisabled();
+  });
+
   it("disables mint if the live price is unavailable", () => {
     const blocks = makeBlocks();
     blocks[4].currentPrice = null;
@@ -71,9 +99,15 @@ describe("public collection panel", () => {
 
   it("does not report an unknown public gate as Locked or allow minting", () => {
     renderReady({
-      COLLECTIONTotals: { ...readyTotals, chapterActive: null, publicUnlocked: null },
+      COLLECTIONTotals: {
+        ...readyTotals,
+        chapterActive: null,
+        publicUnlocked: null,
+      },
     });
-    expect(screen.getByRole("button", { name: "Checking chapter" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Checking chapter" }),
+    ).toBeDisabled();
     expect(screen.queryByText("Locked")).not.toBeInTheDocument();
     expect(screen.queryByText("Unlocked")).not.toBeInTheDocument();
   });
@@ -81,7 +115,9 @@ describe("public collection panel", () => {
   it("uses the selected chapter name for its paired VRF price", () => {
     renderReady({ chapterName: "Universe", comingSoon: true });
     expect(screen.getByText("Live Universe block price")).toBeInTheDocument();
-    expect(screen.queryByText("Live Originals block price")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Live Originals block price"),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps the selection fixed while a transaction is pending", () => {

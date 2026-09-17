@@ -1,6 +1,7 @@
 // src/context/InventoryProvider.jsx
 import * as React from "react";
-import { useContracts } from "./ContractsProvider";
+import { InventoryContext as Ctx } from "./InventoryContext.js";
+import { useContracts } from "./ContractsContext.js";
 import { readJsonFromURI, resolveImageUrl } from "../services/ipfs";
 import { mergeAttrs, getCachedPriceAttrs } from "../services/prices";
 import {
@@ -10,7 +11,6 @@ import {
 } from "../shared/utils/shared";
 import { getProviderForContract } from "../shared/utils/contract";
 
-const Ctx = React.createContext(null);
 const FULL_HISTORY = isFullHistoryEnabled();
 
 // Helper to collect held tokenIds from Transfer logs
@@ -195,7 +195,3 @@ export function InventoryProvider({ children }) {
 
   return <Ctx.Provider value={ctxValue}>{children}</Ctx.Provider>;
 }
-
-export const useInventory = () => {
-  return React.useContext(Ctx);
-};

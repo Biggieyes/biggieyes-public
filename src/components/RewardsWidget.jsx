@@ -460,7 +460,7 @@ const REWARDSWidget = ({
                 max: 1,
                 price: "10000 $",
               },
-            ].map((r, index) => (
+            ].map((r) => (
               <tr key={r.name}>
                 <td
                   style={{

@@ -51,8 +51,8 @@ function _resolvePairReserves(pair = {}, tokenAddress = "", wethAddress = "") {
   const reserves = pair?.reserves || {};
   const directBiggi = reserves.token ?? reserves.biggi ?? null;
   const directNative = reserves.native ?? null;
-  const reserve0 = reserves.reserve0 || null;
-  const reserve1 = reserves.reserve1 || null;
+  const reserve0 = reserves.reserve0 ?? reserves[0] ?? null;
+  const reserve1 = reserves.reserve1 ?? reserves[1] ?? null;
   const token0 = pair?.token0?.toLowerCase();
   const token1 = pair?.token1?.toLowerCase();
   const biggiAddr = tokenAddress?.toLowerCase();
@@ -173,10 +173,10 @@ export function mapRawSnapshotToUI(raw) {
         })
       : PLACEHOLDER;
 
-  const pairNativePerBiggiNumeric = _safeDivide(
-    pairNativeReserve.numeric,
-    pairBiggiReserve.numeric,
-  );
+  const pairNativePerBiggiNumeric =
+    pairNativeReserve.numeric > 0 && pairBiggiReserve.numeric > 0
+      ? _safeDivide(pairNativeReserve.numeric, pairBiggiReserve.numeric)
+      : null;
   const pairNativePerBiggiDisplay =
     typeof pairNativePerBiggiNumeric === "number"
       ? pairNativePerBiggiNumeric.toLocaleString("en-US", {
@@ -241,7 +241,11 @@ export function mapRawSnapshotToUI(raw) {
 
   let marketHealth = "Thin";
   let marketHealthTone = "warning";
-  if (pairBiggiReserve.numeric >= 100_000 && pairNativeReserve.numeric >= 60) {
+  if (pairBiggiReserve.numeric == null || pairNativeReserve.numeric == null) {
+    marketHealth = "Unavailable";
+  } else if (pairBiggiReserve.numeric === 0 || pairNativeReserve.numeric === 0) {
+    marketHealth = "No liquidity";
+  } else if (pairBiggiReserve.numeric >= 100_000 && pairNativeReserve.numeric >= 60) {
     marketHealth = "Healthy";
     marketHealthTone = "primary";
   } else if (

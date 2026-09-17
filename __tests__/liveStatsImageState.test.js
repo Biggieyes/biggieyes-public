@@ -5,6 +5,17 @@ import {
 } from "@/components/liveStatsImageState.js";
 
 describe("LiveStats image selection", () => {
+  it.each([null, undefined, "", "-"])(
+    "does not give an absent token (%s) a usable cache identity",
+    (tokenId) => {
+      expect(buildLiveStatsAssetIdentity("0xAAA", tokenId)).toBe("");
+    },
+  );
+
+  it("does not erase a numeric zero token ID", () => {
+    expect(buildLiveStatsAssetIdentity("0xAAA", 0)).toBe("0xaaa:0");
+  });
+
   it("separates equal token IDs from different chapter contracts", () => {
     expect(buildLiveStatsAssetIdentity("0xAAA", "1")).toBe("0xaaa:1");
     expect(buildLiveStatsAssetIdentity("0xBBB", "1")).toBe("0xbbb:1");

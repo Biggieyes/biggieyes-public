@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useWeb3 } from "@/providers/Web3Provider";
+import { useWeb3 } from "@/providers/Web3Context.js";
 import { fetchDRIPSnapshot } from "@/shared/services/tokenomics/drip.reader";
 import { mapDRIPSnapshotToUI } from "@/shared/services/tokenomics/drip.mappers";
 import usePollingSnapshot from "./_usePollingSnapshot";

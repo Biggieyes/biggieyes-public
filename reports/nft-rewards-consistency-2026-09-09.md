@@ -1,4 +1,6 @@
-# NFT Rewards consistency check - 2026-09-09
+# NFT Rewards consistency check - 2026-09-09 (historical V1 snapshot)
+
+> Historical pre-V2 evidence. The V1 addresses below are retained for audit traceability and are not the current mainnet deployment. See `nft-rewards-v2-migration-2026-09-09.md` for the current V2 state.
 
 ## Scope and outcome
 

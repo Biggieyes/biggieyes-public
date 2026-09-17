@@ -44,11 +44,13 @@ Runtime smoke verified Gallery, LiveStats, and Rewards panel flows against the c
 
 ## Mainnet Readers
 
+Historical V1 NFT Rewards addresses are intentionally excluded from the current live registry and remain only in historical audit artifacts. The active Polygon mainnet reader set is:
+
 | Reader key | Address |
 | --- | --- |
 | `MAIN_READER` | `0xde05be77024eABf37E4eA4fbBD58F161081be2f3` |
 | `MCD_READER_V2` | `0xa65B4e88E37F085B9009295eA0AcF05e18a82884` |
-| `NFT_REWARDS_READER` | `0x430376b1f4F12ce2D641CC28f2968297aA2b0c12` |
+| `NFT_REWARDS_READER` | `0x789873e6b1d944b207D2E76a71D95135be4e33c6` |
 | `TOKEN_REWARDS_READER` | `0xB558137Ce8a2e065de09f7ef7cF24911E49A9972` |
 | `RESERVE_TREASURY_READER` | `0xb379bB928f3B683528C209C28A95F4D2854EC407` |
 | `BUYBACK_READER` | `0x8eD6c94e5Fb336096E6C28480f3C514c9bddFa89` |

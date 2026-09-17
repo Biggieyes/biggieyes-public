@@ -7,6 +7,7 @@ import { ADDR } from "../src/shared/utils/addresses.js";
 
 const mocks = vi.hoisted(() => {
   const balanceProvider = {
+    getNetwork: vi.fn(async () => ({ chainId: 137n })),
     getBalance: vi.fn(async () => 2_000_000_000_000_000_000n),
   };
   return {
@@ -41,11 +42,11 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock("@/providers/Web3Provider", () => ({
+vi.mock("@/providers/Web3Context.js", () => ({
   useWeb3: () => mocks.web3,
 }));
 
-vi.mock("@/providers/ContractsProvider", () => ({
+vi.mock("@/providers/ContractsContext.js", () => ({
   useContracts: () => mocks.contracts,
 }));
 

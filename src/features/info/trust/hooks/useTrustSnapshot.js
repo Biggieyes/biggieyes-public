@@ -10,7 +10,7 @@ import {
 } from "@/shared/utils/contract";
 import { fetchLiquiditySnapshot } from "@/shared/services/tokenomics/liquidity.reader";
 import { fetchDRIPSnapshot } from "@/shared/services/tokenomics/drip.reader";
-import { useWeb3 } from "@/providers/Web3Provider";
+import { useWeb3 } from "@/providers/Web3Context.js";
 
 const resolveTicketMinted = (snapshot) => {
   if (!snapshot) return null;

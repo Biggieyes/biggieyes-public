@@ -1,0 +1,10 @@
+{
+  "chainId": 137,
+  "chapterId": 1,
+  "contract": "0xe56cC0657A89daf10994204eD745985a61b0E36F",
+  "sourceMetadataCid": "bafybeihn4yqga5yuslc2577qsvoajt2fwdpcsr6oj7fdurivwnlrsi7qzy",
+  "imagesCid": "bafybeigj2tc6mfb22dexhtlka7hnyepqxwxnegsppuw7xrzc3bbdbtwn6i",
+  "metadataCid": "bafybeid6oc2tj7a7kenoqeidcdpbd7rg5fgy34qc2hc2wla7ldvlftd5x4",
+  "missingIds": [],
+  "webpIds": [15, 16, 17, 18, 19, 20, 23, 24, 25, 26, 27, 28, 29, 30]
+}

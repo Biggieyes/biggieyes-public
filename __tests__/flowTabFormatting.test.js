@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatFlowNative,
   formatFlowToken,
-} from "../src/features/tokenomics/tabs/FlowTab.jsx";
+} from "../src/features/tokenomics/utils/amountFormatting.js";
 
 describe("FlowTab amount formatting", () => {
   it("keeps token and native units separated", () => {

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useWeb3 } from "@/providers/Web3Provider";
+import { useWeb3 } from "@/providers/Web3Context.js";
 import { fetchTokenDexSnapshot } from "@/shared/services/tokenomics/tokenDex.reader";
 import usePollingSnapshot from "./_usePollingSnapshot";
 import { toNumberSafe } from "./_utils";
@@ -32,8 +32,8 @@ const resolvePriceFeedReserves = (priceFeed) => {
 
 const resolvePairReserves = (pair, tokenAddress, wethAddress) => {
   const reserves = pair?.reserves || {};
-  const reserve0 = reserves.reserve0 ?? null;
-  const reserve1 = reserves.reserve1 ?? null;
+  const reserve0 = reserves.reserve0 ?? reserves[0] ?? null;
+  const reserve1 = reserves.reserve1 ?? reserves[1] ?? null;
   const token0 = pair?.token0?.toLowerCase?.();
   const token1 = pair?.token1?.toLowerCase?.();
   const tokenAddr = tokenAddress?.toLowerCase?.();
@@ -57,7 +57,7 @@ const resolvePairReserves = (pair, tokenAddress, wethAddress) => {
     nativeReserve,
     reserve0,
     reserve1,
-    blockTimestampLast: reserves.blockTimestampLast ?? null,
+    blockTimestampLast: reserves.blockTimestampLast ?? reserves[2] ?? null,
   };
 };
 
@@ -94,11 +94,11 @@ export default function useTokenDexSnapshot(options = {}) {
       18,
     );
     const priceNativePerToken =
-      nativeNum != null && tokenNum != null && tokenNum > 0
+      nativeNum != null && nativeNum > 0 && tokenNum != null && tokenNum > 0
         ? nativeNum / tokenNum
         : routerNativeOut ?? null;
     const priceTokenPerNative =
-      nativeNum != null && nativeNum > 0 && tokenNum != null
+      nativeNum != null && nativeNum > 0 && tokenNum != null && tokenNum > 0
         ? tokenNum / nativeNum
         : null;
 

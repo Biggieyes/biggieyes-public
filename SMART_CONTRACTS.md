@@ -1,6 +1,6 @@
 # Smart Contracts
 
-Last verified: 2026-08-17. Canonical live addresses and chapter pairs are in `biggi-project/bekend/addresses.master.json`.
+Last verified: 2026-09-16. Canonical live addresses and chapter pairs are in `biggi-project/bekend/addresses.master.json` and the generated Polygon deployment manifest.
 
 ## Contract Map
 

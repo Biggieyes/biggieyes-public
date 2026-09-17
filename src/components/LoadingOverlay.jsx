@@ -16,8 +16,6 @@ export default function LoadingOverlay({
   showPercent = true,
   onClose = null,
 }) {
-  const progressRef = React.useRef(null);
-
   React.useEffect(() => {
     if (!open || typeof document === "undefined") return undefined;
     document.body.classList.add("loading-locked");
@@ -29,13 +27,6 @@ export default function LoadingOverlay({
   // bezpečné ošetření percent (číslo, 0..100)
   const p = Number.isFinite(percent) ? Math.floor(percent) : 0;
   const clamped = Math.min(100, Math.max(0, p));
-
-  React.useEffect(() => {
-    // animace šířky přímo na elementu (pokud existuje)
-    if (progressRef.current) {
-      progressRef.current.style.width = `${clamped}%`;
-    }
-  }, [clamped]);
 
   // zavření přes Escape (pokud onClose existuje)
   React.useEffect(() => {
@@ -63,7 +54,6 @@ export default function LoadingOverlay({
         <div className="progress-wrap" aria-hidden="true">
           <div
             className="progress-bar"
-            ref={progressRef}
             style={{ width: `${clamped}%` }}
           />
         </div>
@@ -79,7 +69,6 @@ export default function LoadingOverlay({
     </div>
   );
 }
-
 
 
 

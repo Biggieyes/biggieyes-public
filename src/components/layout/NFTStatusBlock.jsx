@@ -33,7 +33,7 @@ export default function NFTStatusBlock({
 
       {galleryLoading && <Loader text="Loading..." />}
       {!galleryLoading && myNFTs.length === 0 && (
-        <div style={{ color: "#aaa" }}>You don't own any NFTs or tickets.</div>
+        <div style={{ color: "#aaa" }}>You don&apos;t own any NFTs or tickets.</div>
       )}
     </>
   );

@@ -1,6 +1,12 @@
 // src/components/common/ModalTopbar.jsx
 import * as React from "react";
 
+const colors = {
+  text: "#f6f7fb",
+  line: "rgba(255,255,255,.12)",
+  accent: "#FFE800",
+};
+
 const ModalTopbar = React.memo(
   React.forwardRef(function ModalTopbar(
     {
@@ -25,12 +31,6 @@ const ModalTopbar = React.memo(
     },
     ref,
   ) {
-    const colors = {
-      text: "#f6f7fb",
-      line: "rgba(255,255,255,.12)",
-      accent: "#FFE800",
-    };
-
     // --- Raise Web3Modal/WalletConnect modal higher globally ---
     React.useEffect(() => {
       if (!raiseWalletModal || typeof document === "undefined") return;
@@ -293,5 +293,4 @@ const ModalTopbar = React.memo(
 );
 
 export default ModalTopbar;
-
 

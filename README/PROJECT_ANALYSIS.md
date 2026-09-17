@@ -40,7 +40,7 @@ The active frontend supports only Polygon mainnet; any other chain ID is rejecte
 Current checks:
 
 - `npm run check:contracts`: 161 runtime frontend/backend keys, five chapters and seven canonical CORE ABI comparisons; historical `OLD_TICKET_HUB` is excluded.
-- `npm run check:abis`: 58 ABI files and 801 functions.
+- `npm run check:abis`: 61 ABI files and 848 functions.
 
 ## External Services
 

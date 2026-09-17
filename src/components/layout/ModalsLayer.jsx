@@ -6,14 +6,6 @@ const ProjectInfoModal = React.lazy(() => import("../../ACTIONBUTTONS/INFO/Proje
 export default function ModalsLayer({
   zoomImg,
   setZoomImg,
-  isRedeeming,
-  VRFPending,
-  redeemMsg,
-  pendingTicketId,
-  fetchWalletAssets,
-  fetchStats,
-  fetchREWARDS,
-  walletAddress,
   isInfoOpen,
   setOpenNavIdx,
   goPrevPanel,
@@ -58,6 +50,5 @@ export default function ModalsLayer({
     </>
   );
 }
-
 
 

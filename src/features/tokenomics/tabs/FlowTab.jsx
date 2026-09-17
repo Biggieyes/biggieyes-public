@@ -12,18 +12,10 @@ import {
   summarizeAddresses,
 } from "../utils/panelFormatting.js";
 import {
-  formatNativeDisplay,
-  formatTokenDisplay,
+  formatFlowNative,
+  formatFlowToken,
   pickFormatted,
 } from "../utils/amountFormatting.js";
-
-export function formatFlowNative(value) {
-  return formatNativeDisplay(value, 4);
-}
-
-export function formatFlowToken(value, decimals = 18) {
-  return formatTokenDisplay(value, decimals, 4);
-}
 
 function buildAddressCheck(label, addresses = []) {
   const valid = addresses.filter((address) => isAddress(address));

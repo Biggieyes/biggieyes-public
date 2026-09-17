@@ -1,1 +1,1 @@
-export * from "../../providers/ContractsProvider.jsx";
+export { ContractsProvider } from "../../providers/ContractsProvider.jsx";

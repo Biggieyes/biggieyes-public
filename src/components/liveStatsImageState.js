@@ -1,9 +1,11 @@
-const normalizeTokenId = (value) => String(value || "").trim();
+const normalizeTokenId = (value) => String(value ?? "").trim();
 const normalizeImage = (value) => String(value || "").trim();
 
 export function buildLiveStatsAssetIdentity(contractAddress, tokenId) {
+  const token = normalizeTokenId(tokenId);
+  if (!token || token === "-") return "";
   const contract = String(contractAddress || "unknown").trim().toLowerCase();
-  return `${contract || "unknown"}:${normalizeTokenId(tokenId)}`;
+  return `${contract || "unknown"}:${token}`;
 }
 
 export function selectLiveStatsImage({

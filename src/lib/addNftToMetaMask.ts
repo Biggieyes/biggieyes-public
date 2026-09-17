@@ -1,4 +1,6 @@
 // src/lib/addNftToMetaMask.ts
+import { getInjectedProviderCandidates } from "@/shared/utils/injectedProviders";
+
 type HexChainId = `0x${string}`;
 
 type AssetOptions = {
@@ -9,7 +11,8 @@ type AssetOptions = {
 
 type AddSingleParams = {
   contractAddress: string;
-  tokenId: string | number;
+  tokenId: string | number | bigint;
+  expectedAccount?: string;
   chainId?: HexChainId; // např. "0x1" (Ethereum), "0x89" (Polygon mainnet)
   trySwitchChain?: boolean; // default: true
   assetOptions?: AssetOptions;
@@ -36,27 +39,52 @@ interface EthereumishProvider {
   ) => void;
 }
 
+const pendingImports = new WeakSet<EthereumishProvider>();
+
 /** Přidá JEDNO ERC-721 NFT do MetaMask (vrací true, pokud uživatel potvrdí). */
 export async function addNftToMetaMask({
   contractAddress,
   tokenId,
-  chainId = "0x1",
+  chainId = "0x89",
   trySwitchChain = true,
   assetOptions,
+  expectedAccount,
 }: AddSingleParams): Promise<boolean> {
-  const provider = getProvider();
-  await ensureOnChain(provider, chainId, trySwitchChain);
-
   const addr = normalizeAddress(contractAddress);
+  const id = normalizeTokenId(tokenId);
+  const provider = getProvider();
+  if (pendingImports.has(provider)) {
+    throw Object.assign(new Error("An NFT import is already pending"), {
+      code: -32002,
+    });
+  }
   const options: Record<string, string> = {
     address: addr,
-    tokenId: String(tokenId),
+    tokenId: id,
   };
   if (assetOptions?.name) options.name = assetOptions.name;
   if (assetOptions?.image) options.image = assetOptions.image;
   if (assetOptions?.symbol) options.symbol = assetOptions.symbol;
 
+  pendingImports.add(provider);
   try {
+    await ensureOnChain(provider, chainId, trySwitchChain);
+    if (expectedAccount) {
+      const accounts = await provider.request({ method: "eth_accounts" });
+      if (
+        !Array.isArray(accounts) ||
+        String(accounts[0] || "").toLowerCase() !==
+          expectedAccount.toLowerCase()
+      ) {
+        throw Object.assign(
+          new Error("Select the gallery account in MetaMask"),
+          {
+            code: "IMPORT_ACCOUNT_MISMATCH",
+          },
+        );
+      }
+    }
+    await ensureOnChain(provider, chainId, false);
     const wasAdded = await provider.request({
       method: "wallet_watchAsset",
       params: {
@@ -64,10 +92,12 @@ export async function addNftToMetaMask({
         options,
       },
     });
-    return !!wasAdded;
+    return wasAdded === true;
   } catch (err) {
     if (isUserRejected(err)) return false;
     throw err;
+  } finally {
+    pendingImports.delete(provider);
   }
 }
 
@@ -155,8 +185,7 @@ function isUserRejected(err: unknown): boolean {
 }
 
 function getProvider(): EthereumishProvider {
-  const eth = (globalThis as unknown as { ethereum?: EthereumishProvider })
-    .ethereum;
+  const eth = getInjectedProviderCandidates({ metaMaskOnly: true })[0];
   if (!eth || typeof eth.request !== "function") {
     throw new Error("MetaMask provider not found");
   }
@@ -188,8 +217,19 @@ function normalizeHex(v: string): string {
 function normalizeAddress(a: string): string {
   if (typeof a !== "string") throw new Error("Invalid contract address");
   const addr = a.trim();
-  if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) {
+  if (!/^0x[0-9a-fA-F]{40}$/.test(addr) || /^0x0{40}$/i.test(addr)) {
     throw new Error("Invalid contract address");
   }
   return addr;
+}
+
+function normalizeTokenId(tokenId: string | number | bigint): string {
+  if (typeof tokenId === "number" && !Number.isSafeInteger(tokenId)) {
+    throw new Error("Invalid token ID");
+  }
+  const id = String(tokenId).trim();
+  if (!/^\d+$/.test(id) || id.length > 78 || BigInt(id) >= 2n ** 256n) {
+    throw new Error("Invalid token ID");
+  }
+  return BigInt(id).toString();
 }

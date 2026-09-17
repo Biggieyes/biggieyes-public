@@ -2,7 +2,7 @@ import * as React from "react";
 import HeaderControls from "./HeaderControls";
 import StatusBanner from "@/shared/components/StatusBanner";
 import useHashRouting from "@/shared/hooks/useHashRouting";
-import { useWeb3 } from "@/providers/Web3Provider";
+import { useWeb3 } from "@/providers/Web3Context.js";
 import { ACTIVE_CHAIN } from "@/shared/utils/contract";
 import { chainNameFor } from "@/config/chains.js";
 import Button from "@/components/ui/Button.jsx";
@@ -236,7 +236,7 @@ function MainLayout({
           />
 
           <DeferredSection
-            forceRender={anchor === "gallery"}
+            forceRender={anchor === "#gallery"}
             minHeight={720}
             rootMargin="900px 0px"
             sectionId="gallery"
@@ -260,7 +260,7 @@ function MainLayout({
                 fetchWalletAssets={fetchWalletAssets}
                 walletAddress={walletAddress}
                 isMobile={isMobile}
-                sectionId={undefined}
+                sectionId={null}
               />
             </React.Suspense>
           </DeferredSection>

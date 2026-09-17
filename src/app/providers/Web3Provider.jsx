@@ -1,1 +1,1 @@
-export * from "../../providers/Web3Provider.jsx";
+export { Web3Provider } from "../../providers/Web3Provider.jsx";

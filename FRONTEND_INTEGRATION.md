@@ -1,6 +1,6 @@
 # Frontend Integration
 
-Last verified: 2026-08-17
+Last verified: 2026-09-16
 
 This document records how the frontend is currently wired to the Polygon mainnet protocol.
 

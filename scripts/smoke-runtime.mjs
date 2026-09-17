@@ -135,7 +135,7 @@ async function runSmoke(baseUrl) {
 
     // Gallery shell and filtering controls smoke.
     // Scroll the stable host first: DeferredSection mounts its content on approach.
-    await page.locator("#gallery").first().scrollIntoViewIfNeeded();
+    await page.locator("#gallery").scrollIntoViewIfNeeded();
     const gallery = page.locator(".gallery-section");
     await gallery
       .getByRole("heading", { name: /My Biggi COLLECTION/i })
@@ -148,6 +148,17 @@ async function runSmoke(baseUrl) {
     await gallery
       .getByText("Total Assets", { exact: true })
       .waitFor({ state: "visible", timeout: 15_000 });
+    if ((await page.locator("#gallery").count()) !== 1) {
+      throw new Error("Gallery must have exactly one anchor after lazy mount");
+    }
+    await page.evaluate(() =>
+      window.scrollTo(0, document.documentElement.scrollHeight),
+    );
+    await page
+      .locator("#footer")
+      .getByRole("link", { name: "Gallery", exact: true })
+      .click({ timeout: 30_000 });
+    await page.waitForFunction(() => window.location.hash === "#gallery");
     console.log("[smoke] gallery shell and controls flow ok");
 
     // Live stats smoke (open Tokenomics modal and verify pools/allocation section).
@@ -165,7 +176,19 @@ async function runSmoke(baseUrl) {
         state: "visible",
         timeout: 30_000,
       });
-    await page.getByRole("button", { name: "Close" }).first().click();
+    const poolsDialog = page.getByRole("dialog", { name: "Tokenomics" });
+    await page.waitForFunction(() => {
+      const button = document.querySelector('[aria-label="Refresh pool data"]');
+      return button && !button.disabled;
+    }, null, { timeout: 25_000 });
+    const poolsStatus = (await poolsDialog.getByRole("status").textContent()).trim();
+    if (/loading/i.test(poolsStatus)) throw new Error("Pool data remained in loading state");
+    const refreshIcon = await poolsDialog.getByRole("button", { name: "Refresh pool data" }).locator("svg").boundingBox();
+    if (!refreshIcon || refreshIcon.width !== 16 || refreshIcon.height !== 16)
+      throw new Error("Pool refresh icon is not visible at its expected size");
+    console.log(`[smoke] pool data state: ${poolsStatus || "ready"}`);
+    await poolsDialog.screenshot({ path: "tmp-runtime-pools.png" });
+    await poolsDialog.getByRole("button", { name: "Close pools", exact: true }).click();
     console.log("[smoke] live stats flow ok");
 
     // Token rewards claim status smoke in REWARDS panel.
@@ -195,6 +218,31 @@ async function runSmoke(baseUrl) {
       .first()
       .waitFor({ state: "visible", timeout: 45_000 });
     console.log("[smoke] token rewards claim-status flow ok");
+
+    await page.goto(new URL("/app/?panel=users", baseUrl).toString(), {
+      waitUntil: "domcontentloaded",
+      timeout: 60_000,
+    });
+    const userPanel = page.locator(".user-panel");
+    await userPanel
+      .getByRole("heading", { name: "User Panel", exact: true })
+      .waitFor();
+    if (
+      await userPanel
+        .getByRole("button", { name: "Claim rewards", exact: true })
+        .isEnabled()
+    ) {
+      throw new Error("Disconnected User Panel must not enable claim");
+    }
+    const walletBalances = await userPanel
+      .locator(".user-panel__balance-item strong")
+      .allTextContents();
+    if (walletBalances.some((value) => value !== "--")) {
+      throw new Error(
+        "Disconnected User Panel must not invent wallet balances",
+      );
+    }
+    console.log("[smoke] user panel disconnected read state ok");
 
     if (
       pageErrors.length ||
@@ -249,7 +297,7 @@ async function runSmoke(baseUrl) {
         state: "attached",
         timeout: 60_000,
       });
-      await mobilePage.locator("#gallery").first().scrollIntoViewIfNeeded();
+      await mobilePage.locator("#gallery").scrollIntoViewIfNeeded();
       await mobilePage.locator(".gallery-section").scrollIntoViewIfNeeded();
       await mobilePage.locator(".gallery-section").waitFor({
         state: "visible",
@@ -270,8 +318,30 @@ async function runSmoke(baseUrl) {
           `Mobile layout overflows horizontally (${layout.contentWidth}px > ${layout.viewportWidth}px)`,
         );
       }
+      await mobilePage.goto(new URL("/app/#gallery", baseUrl).toString(), {
+        waitUntil: "domcontentloaded",
+        timeout: 60_000,
+      });
+      await mobilePage.locator(".gallery-section").waitFor({
+        state: "visible",
+        timeout: 30_000,
+      });
+      if ((await mobilePage.locator("#gallery").count()) !== 1) {
+        throw new Error("Direct gallery link must retain exactly one anchor");
+      }
+      await mobilePage.evaluate(() => {
+        window.location.hash = "#[";
+      });
+      await mobilePage.evaluate(
+        () =>
+          new Promise((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(resolve));
+          }),
+      );
       if (mobileErrors.length) {
-        throw new Error(`Mobile runtime errors:\n- ${mobileErrors.join("\n- ")}`);
+        throw new Error(
+          `Mobile runtime errors:\n- ${mobileErrors.join("\n- ")}`,
+        );
       }
       console.log("[smoke] mobile shell and responsive layout ok");
     } finally {
@@ -308,9 +378,11 @@ async function main() {
     await waitForServer(baseUrl);
     await runSmoke(baseUrl);
   } finally {
-    await withTimeout(preview.close(), 5_000, "preview.close").catch((error) => {
-      console.warn(`[smoke] ${error.message}`);
-    });
+    await withTimeout(preview.close(), 5_000, "preview.close").catch(
+      (error) => {
+        console.warn(`[smoke] ${error.message}`);
+      },
+    );
   }
 }
 

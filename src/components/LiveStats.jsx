@@ -1,7 +1,7 @@
 // src/components/LiveStats.jsx
 import * as React from "react";
+import { RefreshCw } from "lucide-react";
 import {
-  BrowserProvider,
   Contract,
   ZeroAddress,
   formatEther,
@@ -10,7 +10,6 @@ import {
 import { BiggiLpPriceFeed } from "@/config/abi/index.js";
 import {
   getTokenREWARDSRO,
-  getDistributorRO,
   getROProvider,
   getReaderRO,
   getReadOnlyMain,
@@ -20,7 +19,6 @@ import {
   getPairRO,
   getReadOnlyLiquidityContract,
   getTokenRO,
-  getInjectedProvider,
   ADDR,
 } from "@/shared/utils/contract";
 import { CORE_CHAPTERS } from "@/shared/utils/addresses.js";
@@ -31,7 +29,10 @@ import {
   markRpcRateLimited,
   setPreferredRpc,
 } from "@/shared/utils/rpcConfig";
-import { isRateLimitedRpcError } from "@/shared/utils/rpcErrors";
+import {
+  isExhaustedFallbackError,
+  isRateLimitedRpcError,
+} from "@/shared/utils/rpcErrors";
 import { fetchDistributorSnapshot } from "@/shared/services/tokenomics/distributor.reader";
 import {
   httpFromIpfs,
@@ -60,6 +61,7 @@ import "./InfoTables.css";
 import "../styles/panel-buttons.css";
 
 const OKLINK_BASE = "https://www.oklink.com/polygon/address/";
+const EMPTY_VALUES = Object.freeze([]);
 
 const BlocksWidget = React.lazy(() => import("./BlocksWidget"));
 const BackgroundsWidget = React.lazy(() => import("./BackgroundsWidget"));
@@ -77,14 +79,6 @@ const LiveChatPanel = React.lazy(() =>
     return { default: LiveChatLoadError };
   }),
 );
-
-// ---- minimal ABI for write ops ----
-const TOKEN_REWARDS_MIN_ABI = [
-  "function claim(uint256[] tokenIds) external",
-  "function getBlockWeights() view returns(uint8[11])",
-  "function unitReward() view returns(uint256)",
-  "function tokenMeta() view returns(string name_,string symbol_,uint8 decimals_)",
-];
 
 const COLLECTION_INFO_ROWS = [
   {
@@ -176,6 +170,14 @@ const _bn = (v) => {
   }
 };
 const _mul = (a, b) => _bn(a) * _bn(b);
+
+const parseTokenDecimals = (value) => {
+  if (value == null || value === "" || typeof value === "boolean") return null;
+  const decimals = Number(value);
+  return Number.isInteger(decimals) && decimals >= 0 && decimals <= 255
+    ? decimals
+    : null;
+};
 
 const looksLikeTicketMeta = (meta) => {
   if (!meta) return false;
@@ -470,9 +472,9 @@ const buildLastMintedImageCandidates = ({
   const push = (raw) => {
     const normalized = normalizeLiveStatsImage(raw);
     if (!isUsableLiveStatsImage(normalized)) return;
-    const key = stripRetryParam(normalized).toLowerCase();
+    const key = stripRetryParam(normalized);
     if (!key) return;
-    if (out.some((item) => stripRetryParam(item).toLowerCase() === key)) return;
+    if (out.some((item) => stripRetryParam(item) === key)) return;
     out.push(normalized);
   };
 
@@ -518,15 +520,13 @@ function LiveStats({
   blockPrices,
   backgroundMintCounts,
   rewardPool,
-  myClaimable,
-  items = [],
+  items = EMPTY_VALUES,
   walletAddress = "",
   blocksMinted,
   currentBlockPrices,
   bgsMinted,
   mintVolumeMatic = null,
   epochStart = null,
-  userLastClaimTs = null,
   weekSeconds = 7 * 24 * 60 * 60,
   fetchChainNowTs = null,
   lastFinalPrice = null,
@@ -738,16 +738,16 @@ function LiveStats({
     () => normalizeLiveStatsImage(effectiveLastMinted.image),
     [effectiveLastMinted.image],
   );
-  const [resolvedLastImage, setResolvedLastImage] = React.useState("");
-  React.useEffect(() => {
-    setResolvedLastImage("");
-  }, [effectiveLastMinted.contractAddress, effectiveLastMinted.tokenId]);
+  const [resolvedImage, setResolvedImage] = React.useState(null);
+  const resolvedLastImage =
+    resolvedImage?.identity === effectiveImageIdentity
+      ? resolvedImage.image
+      : "";
 
   React.useEffect(() => {
-    const tokenId = effectiveImageIdentity;
+    const tokenId = effectiveTokenId;
     if (!tokenId || tokenId === "-" || !/^\d+$/.test(tokenId)) return;
     if (normalizedLastImage) return;
-    if (resolvedLastImage) return;
 
     let cancelled = false;
     (async () => {
@@ -761,9 +761,10 @@ function LiveStats({
           provider,
         );
         const uri = await contract.tokenURI(tokenId).catch(() => null);
-        if (!uri) return;
+        if (cancelled || !uri) return;
 
         const meta = await readJsonFromURI(uri).catch(() => null);
+        if (cancelled) return;
         const imgField = meta?.image || meta?.image_url || "";
         let resolved =
           (await resolveImageUrl(imgField, uri).catch(() => null)) ||
@@ -786,7 +787,10 @@ function LiveStats({
 
         const normalized = normalizeLiveStatsImage(resolved);
         if (!cancelled && normalized) {
-          setResolvedLastImage(normalized);
+          setResolvedImage({
+            identity: effectiveImageIdentity,
+            image: normalized,
+          });
         }
       } catch {
         // ignore best-effort image resolve failures
@@ -798,9 +802,9 @@ function LiveStats({
     };
   }, [
     effectiveLastMinted.contractAddress,
-    effectiveLastMinted.tokenId,
+    effectiveTokenId,
+    effectiveImageIdentity,
     normalizedLastImage,
-    resolvedLastImage,
   ]);
 
   const effectivePrimaryImage = normalizedLastImage || resolvedLastImage;
@@ -826,12 +830,13 @@ function LiveStats({
   const [lastImageLoaded, setLastImageLoaded] = React.useState(false);
   const [lastImageFailed, setLastImageFailed] = React.useState(false);
   const lastImageRetryRef = React.useRef(0);
-  const persistedStableRef = React.useRef(readPersistedLastLiveStatsImage());
+  const failedImageCandidatesRef = React.useRef(new Set());
+  const [persistedStable] = React.useState(readPersistedLastLiveStatsImage);
   const lastStableImageRef = React.useRef(
-    persistedStableRef.current.image || "",
+    persistedStable.image || "",
   );
   const lastStableTokenRef = React.useRef(
-    persistedStableRef.current.tokenId || "",
+    persistedStable.tokenId || "",
   );
   const lastPrimaryBaseRef = React.useRef("");
   const lastPrimaryTokenRef = React.useRef("");
@@ -845,19 +850,21 @@ function LiveStats({
       lastPrimaryBaseRef.current = "";
       lastPrimaryTokenRef.current = "";
       lastImageRetryRef.current = 0;
+      failedImageCandidatesRef.current = new Set();
       setLastImageSrc("");
       setLastImageLoaded(false);
       setLastImageFailed(false);
       return;
     }
-    const nextBase = stripRetryParam(next).toLowerCase();
-    const tokenId = String(effectiveLastMinted.tokenId || "").trim();
-    const prevBase = String(lastPrimaryBaseRef.current || "").toLowerCase();
+    const nextBase = stripRetryParam(next);
+    const tokenId = effectiveImageIdentity;
+    const prevBase = String(lastPrimaryBaseRef.current || "");
     const prevToken = String(lastPrimaryTokenRef.current || "").trim();
     if (prevBase === nextBase && prevToken === tokenId) return;
     lastPrimaryBaseRef.current = nextBase;
     lastPrimaryTokenRef.current = tokenId;
     lastImageRetryRef.current = 0;
+    failedImageCandidatesRef.current = new Set();
     setLastImageSrc(next);
     setLastImageLoaded(false);
     setLastImageFailed(false);
@@ -891,13 +898,6 @@ function LiveStats({
       firstCandidate,
     });
   }, [effectiveImageIdentity, lastImageCandidates, lastImageSrc]);
-
-  React.useEffect(() => {
-    if (!effectiveTokenId || effectiveTokenId === "-") return;
-    const primary = String(lastImageCandidates[0] || "").trim();
-    if (!primary) return;
-    cacheLiveStatsImageForToken(effectiveImageIdentity, primary);
-  }, [effectiveImageIdentity, effectiveTokenId, lastImageCandidates]);
 
   const lastImageIsIpfs = React.useMemo(() => {
     const raw =
@@ -936,6 +936,7 @@ function LiveStats({
     }, 1200);
     return () => clearTimeout(timer);
   }, [
+    effectiveImageIdentity,
     displayLastImageSrc,
     lastImageCandidates,
     lastImageFailed,
@@ -961,7 +962,7 @@ function LiveStats({
             if (Number.isFinite(price)) setLpPrice(price);
           }
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     })();
@@ -981,13 +982,15 @@ function LiveStats({
 
   const [poolsOpen, setPoolsOpen] = React.useState(false);
   const [chatOpen, setChatOpen] = React.useState(false);
-  const [modalViewportTop, setModalViewportTop] = React.useState(0);
-  const [modalViewportHeight, setModalViewportHeight] = React.useState(() =>
-    typeof window !== "undefined" ? window.innerHeight || 0 : 0,
-  );
   const modalViewportTopRef = React.useRef(0);
   const [pools, setPools] = React.useState(null);
-  const weekDuration = weekSeconds || 7 * 24 * 60 * 60;
+  const [poolsStatus, setPoolsStatus] = React.useState("idle");
+  const poolsRequestRef = React.useRef(0);
+  const poolsTimeoutRef = React.useRef(null);
+  React.useEffect(() => () => {
+    poolsRequestRef.current += 1;
+    clearTimeout(poolsTimeoutRef.current);
+  }, []);
   const {
     displayed: weeklyDisplayed,
     loading: weeklyLoading,
@@ -1075,20 +1078,31 @@ function LiveStats({
   const [poolFromContract, setPoolFromContract] = React.useState(null);
   const [weightsFromContract, setWeightsFromContract] = React.useState(null);
   const [unitRewardWei, setUnitRewardWei] = React.useState(null);
+  const [rewardDecimals, setRewardDecimals] = React.useState(null);
   const [tokenSymbol, setTokenSymbol] = React.useState("BIGGI");
   const [tokenDecimals, setTokenDecimals] = React.useState(18);
 
   // new: read some potentially useful derived chain values if available
   const [lastFinalFromChain, setLastFinalFromChain] = React.useState(null);
   const [blockPricesFromChain, setBlockPricesFromChain] = React.useState(null);
-  const [lastMintPriceData, setLastMintPriceData] = React.useState({
-    ticketPrice: null,
-    blockPrice: null,
-    finalPrice: null,
-  });
+  const [lastMintPriceSnapshot, setLastMintPriceData] = React.useState(null);
+  const lastMintPriceData =
+    lastMintPriceSnapshot?.identity === effectiveImageIdentity &&
+    lastMintPriceSnapshot?.maxSupply === maxSupply
+      ? lastMintPriceSnapshot
+      : null;
   const readRpcRotateAtRef = React.useRef(0);
 
   const handleReadRpcFailure = React.useCallback((err, scope = "LiveStats") => {
+    if (isExhaustedFallbackError(err)) {
+      const now = Date.now();
+      if (now - Number(readRpcRotateAtRef.current || 0) >= 4_000) {
+        readRpcRotateAtRef.current = now;
+        resetROProvider();
+        console.warn(`${scope}: read provider unavailable; cleared for the next read.`);
+      }
+      return true;
+    }
     const isRateLimited = isRateLimitedRpcError(err);
     const status = Number(
       err?.status ??
@@ -1133,7 +1147,7 @@ function LiveStats({
     let next = null;
     try {
       current = getPreferredRpc();
-      if (current) markRpcRateLimited(current);
+      if (current && isRateLimited) markRpcRateLimited(current);
       const urls = getRpcUrls();
       if (Array.isArray(urls) && urls.length) {
         const idx = current ? urls.indexOf(current) : -1;
@@ -1166,11 +1180,7 @@ function LiveStats({
   React.useEffect(() => {
     const tokenId = String(effectiveLastMinted.tokenId || "").trim();
     if (!tokenId || tokenId === "-" || !/^\d+$/.test(tokenId)) {
-      setLastMintPriceData({
-        ticketPrice: null,
-        blockPrice: null,
-        finalPrice: null,
-      });
+      setLastMintPriceData(null);
       return;
     }
 
@@ -1370,9 +1380,14 @@ function LiveStats({
         }
 
         if (!cancelled) {
-          setLastMintPriceData(next);
+          setLastMintPriceData({
+            ...next,
+            identity: effectiveImageIdentity,
+            maxSupply,
+          });
         }
       } catch (err) {
+        if (cancelled) return;
         const handled = handleReadRpcFailure(err, "LiveStats last mint prices");
         if (!handled) {
           console.warn("LiveStats: failed reading last mint prices", err);
@@ -1386,6 +1401,8 @@ function LiveStats({
   }, [
     effectiveLastMinted.contractAddress,
     effectiveLastMinted.tokenId,
+    effectiveImageIdentity,
+    maxSupply,
     handleReadRpcFailure,
   ]);
 
@@ -1410,9 +1427,11 @@ function LiveStats({
     return [];
   }, [blockPricesFromChain, currentBlockPrices, blockPrices]);
 
-  const effectiveBlockMintCounts = blocksMinted ?? blockMintCounts ?? [];
-  const effectiveBackgroundMintCounts = bgsMinted ?? backgroundMintCounts ?? [];
-  const safeBlockNames = Array.isArray(blockNames) ? blockNames : [];
+  const effectiveBlockMintCounts =
+    blocksMinted ?? blockMintCounts ?? EMPTY_VALUES;
+  const effectiveBackgroundMintCounts =
+    bgsMinted ?? backgroundMintCounts ?? EMPTY_VALUES;
+  const safeBlockNames = Array.isArray(blockNames) ? blockNames : EMPTY_VALUES;
 
   const onlyTickets = React.useMemo(() => {
     const arr = Array.isArray(normalizedItems) ? normalizedItems : [];
@@ -1563,14 +1582,20 @@ function LiveStats({
         const w = Array.from(wArr)
           .slice(1)
           .map((n) => Number(n || 0));
-        setWeightsFromContract(w.length === 10 ? w : null);
+        setWeightsFromContract(
+          w.length === 10 &&
+            w.every((weight) => Number.isInteger(weight) && weight >= 0)
+            ? w
+            : null,
+        );
       }
 
       if (unitWei != null) setUnitRewardWei(unitWei);
       const sym = meta?.symbol_ ?? meta?.[1] ?? null;
-      const dec = meta?.decimals_ ?? meta?.[2] ?? null;
+      const dec = parseTokenDecimals(meta?.decimals_ ?? meta?.[2]);
       if (sym && typeof sym === "string") setTokenSymbol(sym);
-      if (Number.isFinite(Number(dec))) setTokenDecimals(Number(dec));
+      setRewardDecimals(dec);
+      if (dec != null) setTokenDecimals(dec);
     })();
     return () => {
       alive = false;
@@ -1749,85 +1774,52 @@ function LiveStats({
     };
   }, []);
 
-  // Pools refresh (defensive contract usage)
+  // Each modal session owns its reads; a closed or timed-out session cannot publish.
   const refreshPools = React.useCallback(async () => {
+    const requestId = ++poolsRequestRef.current;
+    const isCurrent = () => poolsRequestRef.current === requestId;
+    clearTimeout(poolsTimeoutRef.current);
+    setPools(null);
+    setPoolsStatus("loading");
+    poolsTimeoutRef.current = setTimeout(() => {
+      if (!isCurrent()) return;
+      poolsRequestRef.current += 1;
+      setPoolsStatus("error");
+      handleReadRpcFailure(new Error("Pool read timed out"), "refreshPools");
+    }, 20_000);
+    let incomplete = false;
+    let firstReadError = null;
+    const read = async (fn) => {
+      if (!isCurrent()) return null;
+      try {
+        const value = await fn();
+        if (value == null) incomplete = true;
+        return value ?? null;
+      } catch (error) {
+        incomplete = true;
+        firstReadError ||= error;
+        return null;
+      }
+    };
+    const decimalsFrom = (value) => {
+      if (value == null || !/^\d+$/.test(String(value))) return null;
+      const number = Number(value);
+      return Number.isInteger(number) && number >= 0 && number <= 255 ? number : null;
+    };
     try {
-      const r = (() => {
-        try {
-          return getDistributorRO();
-        } catch {
-          return null;
-        }
-      })();
-      const prov = (() => {
-        try {
-          return getROProvider();
-        } catch {
-          return null;
-        }
-      })();
-
-      if (!r || !prov) throw new Error("Distributor or provider not available");
-
-      const resolveCollectionRewards = async () => {
-        if (typeof r.collectionRewards === "function")
-          return r.collectionRewards();
-        if (typeof r.COLLECTIONREWARDS === "function")
-          return r.COLLECTIONREWARDS();
-        return ADDR.COLLECTION_REWARDS || ZeroAddress;
-      };
-      const resolveCommunityCenter = async () => {
-        if (typeof r.communityCenter === "function") return r.communityCenter();
-        if (typeof r.COMMUNITYCENTER === "function") return r.COMMUNITYCENTER();
-        return ADDR.COMMUNITY_CENTER || ADDR.COMMUNITYCENTER || ZeroAddress;
-      };
-
-      const [
-        totalReceived,
-        receivedForMain,
-        reserveAddr,
-        collREWARDSAddr,
-        BUYBACKAddr,
-        treasuryAddr,
-        COMMUNITYCENTERAddr,
-      ] = await Promise.all([
-        typeof r.totalReceived === "function"
-          ? r.totalReceived()
-          : Promise.resolve(0n),
-        (async () => {
-          const readReceived =
-            typeof r.receivedByAddress === "function"
-              ? (address) => r.receivedByAddress(address)
-              : typeof r.receivedByCOLLECTION === "function"
-                ? (address) => r.receivedByCOLLECTION(address)
-                : null;
-          if (!readReceived) return 0n;
-          const addresses = CORE_CHAPTERS.flatMap((chapter) => [
-            chapter.main,
-            chapter.main2,
-          ]);
-          const values = await Promise.all(
-            addresses.map((address) => readReceived(address).catch(() => 0n)),
-          );
-          return values.reduce(
-            (sum, value) => sum + BigInt(value?.toString?.() || "0"),
-            0n,
-          );
-        })(),
-        typeof r.reserve === "function"
-          ? r.reserve()
-          : Promise.resolve(ADDR.RESERVE || ZeroAddress),
-        resolveCollectionRewards(),
-        typeof r.buybackAgent === "function"
-          ? r.buybackAgent()
-          : typeof r.BUYBACKAgent === "function"
-            ? r.BUYBACKAgent()
-            : Promise.resolve(ADDR.BUYBACK_AGENT || ZeroAddress),
-        typeof r.treasury === "function"
-          ? r.treasury()
-          : Promise.resolve(ADDR.TREASURY || ZeroAddress),
-        resolveCommunityCenter(),
-      ]);
+      const prov = getROProvider();
+      // Fail once at bootstrap instead of starting many calls on exhausted runners.
+      await prov.getBlockNumber();
+      if (!isCurrent()) return;
+      const distSnapshot = await read(() =>
+        fetchDistributorSnapshot({ provider: prov }),
+      );
+      if (!isCurrent()) return;
+      const reserveAddr = distSnapshot?.reserve || ADDR.RESERVE;
+      const BUYBACKAddr = distSnapshot?.BUYBACKAgent || ADDR.BUYBACK_AGENT;
+      const treasuryAddr = distSnapshot?.treasury || ADDR.TREASURY;
+      const collREWARDSAddr = distSnapshot?.COLLECTIONREWARDS || ADDR.COLLECTION_REWARDS;
+      const COMMUNITYCENTERAddr = distSnapshot?.COMMUNITYCENTER || ADDR.COMMUNITY_CENTER;
 
       const targets = [
         { key: "reserve", name: "Reserve", addr: reserveAddr },
@@ -1841,53 +1833,32 @@ function LiveStats({
         { key: "REWARDS", name: "Collection Rewards", addr: collREWARDSAddr },
       ];
 
-      let allocations = {};
-      try {
-        const distSnapshot = await fetchDistributorSnapshot({
-          provider: prov,
-        }).catch(() => null);
-        if (distSnapshot) {
-          allocations = {
-            reserve: distSnapshot.pendingReserve ?? null,
-            BUYBACK: distSnapshot.pendingBUYBACK ?? null,
-            treasury: distSnapshot.pendingTreasury ?? null,
-            community:
-              distSnapshot.pendingCOMMUNITYCENTER ??
-              distSnapshot.pendingCommunity ??
-              null,
-            REWARDS: distSnapshot.pendingCOLLECTIONREWARDS ?? null,
-          };
-        }
-      } catch {
-        allocations = {};
-      }
-
-      const communityNativeBalance = COMMUNITYCENTERAddr
-        ? await prov.getBalance(COMMUNITYCENTERAddr).catch(() => 0n)
-        : 0n;
+      const allocations = {
+        reserve: distSnapshot?.pendingReserve ?? null,
+        BUYBACK: distSnapshot?.pendingBUYBACK ?? null,
+        treasury: distSnapshot?.pendingTreasury ?? null,
+        community: distSnapshot?.pendingCOMMUNITYCENTER ?? distSnapshot?.pendingCommunity ?? null,
+        REWARDS: distSnapshot?.pendingCOLLECTIONREWARDS ?? null,
+      };
+      if (Object.values(allocations).some((value) => value == null)) incomplete = true;
 
       const balancesArr = await Promise.all(
-        targets.map((t) => {
-          if (t.key === "community")
-            return Promise.resolve(communityNativeBalance);
-          return prov.getBalance(t.addr).catch(() => 0n);
-        }),
+        targets.map((t) =>
+          read(() => t.addr && t.addr !== ZeroAddress ? prov.getBalance(t.addr) : null),
+        ),
       );
+      if (!isCurrent()) return;
 
       const balances = {};
       targets.forEach((t, i) => {
         balances[t.key] = balancesArr[i];
       });
 
-      const distBal = await prov.getBalance(ADDR.DISTRIBUTOR).catch(() => 0n);
-
       // ===== token + LP balances =====
-      let tokenMeta = {
+      const tokenMeta = {
         addr: ADDR.BIGGI || ADDR.BIGGI_TOKEN || null,
         symbol: tokenSymbol || "BIGGI",
-        decimals: Number.isFinite(Number(tokenDecimals))
-          ? Number(tokenDecimals)
-          : 18,
+        decimals: null,
       };
       let tokenBalances = [];
       let lpStats = null;
@@ -1903,16 +1874,18 @@ function LiveStats({
         if (tokenMeta.addr) {
           const token = new Contract(tokenMeta.addr, erc20Abi, prov);
           const [dec, sym] = await Promise.all([
-            token.decimals().catch(() => null),
-            token.symbol().catch(() => null),
+            read(() => token.decimals()),
+            read(() => token.symbol()),
           ]);
-          if (Number.isFinite(Number(dec))) tokenMeta.decimals = Number(dec);
+          if (!isCurrent()) return;
+          tokenMeta.decimals = decimalsFrom(dec);
+          if (tokenMeta.decimals == null) incomplete = true;
           if (typeof sym === "string" && sym) tokenMeta.symbol = sym;
 
           const tokenTargets = [
-            { key: "reserve", name: "Reserve", addr: ADDR.RESERVE },
-            { key: "treasury", name: "Treasury", addr: ADDR.TREASURY },
-            { key: "buyback", name: "Buyback Agent", addr: ADDR.BUYBACK_AGENT },
+            { key: "reserve", name: "Reserve", addr: reserveAddr },
+            { key: "treasury", name: "Treasury", addr: treasuryAddr },
+            { key: "buyback", name: "Buyback Agent", addr: BUYBACKAddr },
             {
               key: "tokenRewards",
               name: "Token Rewards",
@@ -1921,13 +1894,13 @@ function LiveStats({
             {
               key: "collectionRewards",
               name: "Collection Rewards",
-              addr: ADDR.COLLECTION_REWARDS,
+              addr: collREWARDSAddr,
             },
             { key: "nftRewards", name: "NFT Rewards", addr: ADDR.NFT_REWARDS },
             {
               key: "community",
               name: "Community Center",
-              addr: ADDR.COMMUNITY_CENTER || ADDR.COMMUNITYCENTER,
+              addr: COMMUNITYCENTERAddr,
             },
             {
               key: "liquidityVault",
@@ -1944,9 +1917,10 @@ function LiveStats({
 
           const tokenBalanceArr = await Promise.all(
             tokenTargets.map((t) =>
-              t.addr ? token.balanceOf(t.addr).catch(() => null) : null,
+              read(() => t.addr && t.addr !== ZeroAddress ? token.balanceOf(t.addr) : null),
             ),
           );
+          if (!isCurrent()) return;
 
           tokenBalances = tokenTargets.map((t, i) => ({
             ...t,
@@ -1954,25 +1928,23 @@ function LiveStats({
           }));
         }
       } catch (err) {
-        const handled = handleReadRpcFailure(
-          err,
-          "refreshPools token balances",
-        );
-        if (!handled) {
-          console.warn("refreshPools: token balances failed", err);
-        }
+        incomplete = true;
+        firstReadError ||= err;
       }
 
+      if (!isCurrent()) return;
       try {
         const lpAddr = ADDR.PAIR || null;
         if (lpAddr) {
           const lp = new Contract(lpAddr, erc20Abi, prov);
           const [dec, sym, totalSupply] = await Promise.all([
-            lp.decimals().catch(() => null),
-            lp.symbol().catch(() => null),
-            lp.totalSupply().catch(() => null),
+            read(() => lp.decimals()),
+            read(() => lp.symbol()),
+            read(() => lp.totalSupply()),
           ]);
-          const lpDecimals = Number.isFinite(Number(dec)) ? Number(dec) : 18;
+          if (!isCurrent()) return;
+          const lpDecimals = decimalsFrom(dec);
+          if (lpDecimals == null) incomplete = true;
           const lpSymbol = typeof sym === "string" && sym ? sym : "LP";
           const lpHolders = [
             {
@@ -1980,12 +1952,12 @@ function LiveStats({
               name: "Liquidity Vault",
               addr: ADDR.LIQUIDITY_VAULT,
             },
-            { key: "treasury", name: "Treasury", addr: ADDR.TREASURY },
-            { key: "reserve", name: "Reserve", addr: ADDR.RESERVE },
+            { key: "treasury", name: "Treasury", addr: treasuryAddr },
+            { key: "reserve", name: "Reserve", addr: reserveAddr },
           ];
           const lpBalanceArr = await Promise.all(
             lpHolders.map((t) =>
-              t.addr ? lp.balanceOf(t.addr).catch(() => null) : null,
+              read(() => t.addr && t.addr !== ZeroAddress ? lp.balanceOf(t.addr) : null),
             ),
           );
           lpStats = {
@@ -2000,17 +1972,13 @@ function LiveStats({
           };
         }
       } catch (err) {
-        const handled = handleReadRpcFailure(err, "refreshPools LP stats");
-        if (!handled) {
-          console.warn("refreshPools: LP stats failed", err);
-        }
+        incomplete = true;
+        firstReadError ||= err;
       }
 
+      if (!isCurrent()) return;
+      if (firstReadError) handleReadRpcFailure(firstReadError, "refreshPools");
       setPools({
-        distributor: ADDR.DISTRIBUTOR,
-        distributorBal: distBal,
-        totalReceived,
-        receivedForMain,
         targets,
         allocations,
         balances,
@@ -2018,19 +1986,21 @@ function LiveStats({
         tokenBalances,
         lpStats,
       });
+      setPoolsStatus(incomplete ? "partial" : "ready");
     } catch (e) {
-      const handled = handleReadRpcFailure(e, "refreshPools");
-      if (!handled) {
-        console.error("refreshPools error", e);
-        setPools(null);
-      }
+      if (!isCurrent()) return;
+      handleReadRpcFailure(e, "refreshPools");
+      setPools(null);
+      setPoolsStatus("error");
+    } finally {
+      if (isCurrent()) clearTimeout(poolsTimeoutRef.current);
     }
-  }, [tokenDecimals, tokenSymbol, handleReadRpcFailure]);
+  }, [tokenSymbol, handleReadRpcFailure]);
 
   // BIGGI ECOSYSTEM METRICS (unchanged intent, contract reads robustified)
   const [biggiPrice, setBiggiPrice] = React.useState(null);
   const [priceQuoteSymbol, setPriceQuoteSymbol] = React.useState("POL");
-  const [biggiChange24h, setBiggiChange24h] = React.useState(null);
+  const biggiChange24h = null;
   const [biggiSupply, setBiggiSupply] = React.useState(null);
   const [circulatingSupply, setCirculatingSupply] = React.useState(null);
   const [tradableSupply, setTradableSupply] = React.useState(null);
@@ -2081,11 +2051,12 @@ function LiveStats({
           if (sym && typeof sym === "string") {
             setTokenSymbol(sym);
           }
-          if (Number.isFinite(Number(dec))) {
-            setTokenDecimals(Number(dec));
+          const decimals = parseTokenDecimals(dec);
+          if (decimals != null) {
+            setTokenDecimals(decimals);
           }
-          if (supBn && Number.isFinite(Number(dec))) {
-            const sup = Number(_formatUnits(supBn, Number(dec)));
+          if (supBn != null && decimals != null) {
+            const sup = Number(_formatUnits(supBn, decimals));
             if (Number.isFinite(sup)) setBiggiSupply(sup);
           }
         }
@@ -2124,12 +2095,12 @@ function LiveStats({
 
   React.useEffect(() => {
     let alive = true;
+    setCirculatingSupply(null);
     if (
       biggiSupply == null ||
       typeof biggiSupply !== "number" ||
       biggiSupply === 0
     ) {
-      setCirculatingSupply(null);
       return () => {
         alive = false;
       };
@@ -2167,9 +2138,9 @@ function LiveStats({
           : 18;
 
         const balances = await Promise.all(
-          lockedAddrs.map((addr) => token.balanceOf(addr).catch(() => 0n)),
+          lockedAddrs.map((addr) => token.balanceOf(addr).catch(() => null)),
         );
-        if (!alive) return;
+        if (!alive || balances.some((balance) => balance == null)) return;
 
         const locked = balances.reduce((sum, bn) => {
           const n = Number(_formatUnits(bn ?? 0n, decimalsForLocked));
@@ -2227,25 +2198,25 @@ function LiveStats({
             ];
             const erc = new Contract(addr, abi, getROProvider());
             const [dec, sym] = await Promise.all([
-              erc.decimals().catch(() => 18),
+              erc.decimals().catch(() => null),
               erc.symbol().catch(() => ""),
             ]);
             return {
-              decimals: Number(dec) || 18,
+              decimals: parseTokenDecimals(dec),
               symbol: typeof sym === "string" && sym.length ? sym : "",
             };
           } catch {
-            return { decimals: 18, symbol: "" };
+            return { decimals: null, symbol: "" };
           }
         };
 
         const [m0, m1] = await Promise.all([erc20Meta(t0), erc20Meta(t1)]);
-        if (cancel) return;
+        if (cancel || m0.decimals == null || m1.decimals == null) return;
 
         const normalizeQuoteSymbol = (sym) => {
           const s = String(sym || "").toUpperCase();
-          if (!s) return "POL";
-          if (["WETH", "WMATIC", "WPOL", "W-POL"].includes(s)) return "POL";
+          if (!s) return "";
+          if (["WMATIC", "WPOL", "W-POL"].includes(s)) return "POL";
           return sym;
         };
 
@@ -2261,7 +2232,8 @@ function LiveStats({
             Number.isFinite(base) &&
             base > 0 &&
             Number.isFinite(quote) &&
-            quote > 0
+            quote > 0 &&
+            m1.symbol
           ) {
             price = quote / base;
             if (m1.symbol) setPriceQuoteSymbol(normalizeQuoteSymbol(m1.symbol));
@@ -2276,7 +2248,8 @@ function LiveStats({
             Number.isFinite(base) &&
             base > 0 &&
             Number.isFinite(quote) &&
-            quote > 0
+            quote > 0 &&
+            m0.symbol
           ) {
             price = quote / base;
             if (m0.symbol) setPriceQuoteSymbol(normalizeQuoteSymbol(m0.symbol));
@@ -2461,138 +2434,6 @@ function LiveStats({
     flexShrink: 0,
   };
 
-  const thBase = {
-    position: "sticky",
-    top: 0,
-    zIndex: 1,
-    background:
-      "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.85) 100%)",
-    backdropFilter: "blur(3px)",
-    color: "#ffe800",
-    textAlign: "center",
-    fontWeight: 900,
-    textTransform: "uppercase",
-    fontSize: "0.88em",
-    padding: isPhone ? "8px 6px" : "10px 8px",
-    borderBottom: "1px solid rgba(255,232,0,0.25)",
-    letterSpacing: "0.3px",
-  };
-
-  const tdBase = {
-    padding: isPhone ? "8px 6px" : "10px 8px",
-    textAlign: "center",
-    fontWeight: 700,
-    fontSize: isPhone ? "0.95em" : undefined,
-  };
-
-  const poolsTableStyle = React.useMemo(
-    () => ({
-      width: "100%",
-      borderCollapse: "collapse",
-      tableLayout: "fixed",
-    }),
-    [],
-  );
-
-  // ====== CLAIM integration ======
-  const [claimBusy, setClaimBusy] = React.useState(false);
-  const [claimMsg, setClaimMsg] = React.useState("");
-
-  const collectTokenIds = () => {
-    const out = [];
-    for (const it of Array.isArray(normalizedItems) ? normalizedItems : []) {
-      if (it?.isTicket || it?.isPending) continue;
-      const raw = it?.tokenId ?? it?.id;
-      if (raw == null) continue;
-      const s = String(raw);
-      const n = Number(s);
-      if (Number.isFinite(n) && n > 0) out.push(s); // pass as string; ethers handles
-    }
-    return out;
-  };
-
-  const canClaim = React.useMemo(
-    () => collectTokenIds().length > 0,
-    [normalizedItems],
-  );
-
-  const handleClaim = async () => {
-    if (claimBusy) return;
-    if (!canClaim) {
-      alert("No token IDs to claim for.");
-      return;
-    }
-    const eth = getInjectedProvider();
-    if (!eth?.request) {
-      alert("Injected wallet not detected.");
-      return;
-    }
-
-    setClaimBusy(true);
-    setClaimMsg("Preparing transaction…");
-    try {
-      // ensure account
-      const accounts = await eth.request({ method: "eth_requestAccounts" });
-      if (!accounts || !accounts.length) throw new Error("No accounts");
-
-      const provider = new BrowserProvider(eth, "any");
-      const signer = await provider.getSigner();
-
-      const REWARDSAddr =
-        ADDR?.TOKEN_REWARDS ||
-        ADDR?.BIGGI_TOKEN_REWARDS ||
-        ADDR?.REWARDS ||
-        null;
-      if (!REWARDSAddr) throw new Error("REWARDS contract address missing");
-
-      const REWARDS = new Contract(REWARDSAddr, TOKEN_REWARDS_MIN_ABI, signer);
-      const tokenIds = collectTokenIds();
-
-      // gas estimate
-      let gas;
-      try {
-        const estimateClaim =
-          REWARDS.estimateGas?.claim || REWARDS.claim?.estimateGas;
-        const est = estimateClaim ? await estimateClaim(tokenIds) : null;
-        if (est != null) {
-          if (isBigNumber(est) && typeof est.mul === "function") {
-            gas = est.mul(110).div(100);
-          } else if (typeof est === "bigint") {
-            gas = (est * 110n) / 100n;
-          } else {
-            gas = est;
-          }
-        } else {
-          gas = undefined;
-        }
-      } catch {
-        gas = undefined;
-      }
-
-      setClaimMsg("Sending transaction…");
-      const tx = await REWARDS.claim(tokenIds, gas ? { gasLimit: gas } : {});
-      setClaimMsg(`Pending: ${tx.hash || ""}`);
-
-      const receipt = await (tx.wait
-        ? tx.wait()
-        : provider.waitForTransaction(tx.hash));
-      if (receipt?.status === 0) throw new Error("Transaction failed");
-
-      setClaimMsg("Claim successful");
-      alert("Claim successful.");
-    } catch (err) {
-      console.error("Claim failed", err);
-      const msg = String(
-        err?.reason || err?.data?.message || err?.message || err,
-      );
-      setClaimMsg(`Failed: ${msg}`);
-      alert(`Claim failed: ${msg}`);
-    } finally {
-      setClaimBusy(false);
-      setTimeout(() => setClaimMsg(""), 4000);
-    }
-  };
-
   const actionBtnBase = React.useMemo(
     () => ({
       fontWeight: "bold",
@@ -2610,84 +2451,6 @@ function LiveStats({
     }),
     [actionBtnBase],
   );
-
-  const modalOverlayStyle = React.useMemo(() => {
-    if (desktopFullscreen) {
-      return {
-        position: "absolute",
-        top: modalViewportTop,
-        left: 0,
-        right: 0,
-        zIndex: 10060,
-        width: "100vw",
-        height: modalViewportHeight > 0 ? `${modalViewportHeight}px` : "100vh",
-        display: "flex",
-        justifyContent: "stretch",
-        alignItems: "stretch",
-        pointerEvents: "auto",
-        padding: 0,
-        overflow: "hidden",
-        overscrollBehavior: "none",
-        backgroundColor: "rgba(0,0,0,0.75)",
-        backdropFilter: "blur(6px)",
-        isolation: "isolate",
-      };
-    }
-
-    return {
-      position: "fixed",
-      inset: 0,
-      zIndex: 10060,
-      width: "100vw",
-      height: "100vh",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      pointerEvents: "auto",
-      padding: 0,
-      overflow: "hidden",
-      overscrollBehavior: "none",
-      backgroundColor: "rgba(0,0,0,0.75)",
-      backdropFilter: "blur(6px)",
-      isolation: "isolate",
-    };
-  }, [desktopFullscreen, modalViewportHeight, modalViewportTop]);
-
-  const fullscreenModalFrameStyle = React.useMemo(
-    () => ({
-      width: "100%",
-      height: "100%",
-      display: "flex",
-      justifyContent: desktopFullscreen ? "stretch" : "center",
-      alignItems: desktopFullscreen ? "stretch" : "center",
-      padding: 0,
-    }),
-    [desktopFullscreen],
-  );
-
-  const fullscreenModalCardStyle = React.useMemo(() => {
-    return {
-      width: "100vw",
-      height: "100vh",
-      maxWidth: "100vw",
-      maxHeight: "100vh",
-      overflowX: "hidden",
-      overflowY: desktopFullscreen ? "hidden" : "auto",
-      borderRadius: 0,
-      border: "2px solid #ffe800",
-      boxShadow: "none",
-      backgroundImage:
-        'linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.45) 100%), url("/images/widget-bg-dark.png")',
-      backgroundSize: "cover, cover",
-      backgroundPosition: "center, center",
-      backgroundRepeat: "no-repeat, no-repeat",
-      padding: 0,
-      display: "flex",
-      flexDirection: "column",
-      boxSizing: "border-box",
-      overscrollBehavior: desktopFullscreen ? "none" : "contain",
-    };
-  }, [desktopFullscreen]);
 
   const tokenomicsModalBodyStyle = React.useMemo(
     () => ({
@@ -2756,8 +2519,6 @@ function LiveStats({
     if (typeof window !== "undefined") {
       const nextTop = window.scrollY || window.pageYOffset || 0;
       modalViewportTopRef.current = nextTop;
-      setModalViewportTop(nextTop);
-      setModalViewportHeight(window.innerHeight || 0);
     }
     if (typeof document !== "undefined") {
       const active = document.activeElement;
@@ -2781,9 +2542,19 @@ function LiveStats({
   }, [restoreModalViewport]);
 
   const closePoolsModal = React.useCallback(() => {
+    poolsRequestRef.current += 1;
+    clearTimeout(poolsTimeoutRef.current);
     setPoolsOpen(false);
     restoreModalViewport();
   }, [restoreModalViewport]);
+
+  React.useEffect(() => {
+    if (!poolsOpen) return undefined;
+    return () => {
+      poolsRequestRef.current += 1;
+      clearTimeout(poolsTimeoutRef.current);
+    };
+  }, [poolsOpen]);
 
   const closeChatModal = React.useCallback(() => {
     setChatOpen(false);
@@ -2952,14 +2723,6 @@ function LiveStats({
       typeof BASE_PRICES?.[key] === "number" ? BASE_PRICES[key] : null;
     return Number.isFinite(Number(base)) ? Number(base) : null;
   }, [safeBlockNames, effectiveLastMinted.blockName, effectiveBlockPrices]);
-
-  const normalizedLastRedeemedBlock = React.useMemo(
-    () =>
-      String(effectiveLastMinted.blockName || "")
-        .trim()
-        .toUpperCase(),
-    [effectiveLastMinted.blockName],
-  );
 
   const normalizedLastRedeemedBackground = React.useMemo(
     () => normalizeBackgroundName(effectiveLastMinted.backgroundName),
@@ -3190,14 +2953,19 @@ function LiveStats({
 
   const unitsToTokenAmountStr = (units) => {
     try {
-      if (!unitRewardWei || !Number.isFinite(units))
-        return `${units} ${tokenSymbol}`;
+      if (
+        unitRewardWei == null ||
+        rewardDecimals == null ||
+        !weightsFromContract ||
+        !Number.isFinite(units)
+      )
+        return `-- ${tokenSymbol}`;
       const amountWei = _mul(unitRewardWei, units || 0);
-      const s = _formatUnits(amountWei, tokenDecimals);
+      const s = _formatUnits(amountWei, rewardDecimals);
       const n = Number(s);
       return `${Number.isFinite(n) ? n.toFixed(n >= 1 ? 3 : 6) : s} ${tokenSymbol}`;
     } catch {
-      return `${units} ${tokenSymbol}`;
+      return `-- ${tokenSymbol}`;
     }
   };
 
@@ -3212,7 +2980,8 @@ function LiveStats({
 
   const fmtToken = (bn, dec = 18, digits = 4) => {
     try {
-      const n = Number(_formatUnits(bn ?? 0n, dec));
+      if (bn == null || dec == null) return "-";
+      const n = Number(_formatUnits(bn, dec));
       if (!Number.isFinite(n)) return "-";
       const fixed = n >= 1 ? digits : Math.min(digits + 2, 6);
       return n.toFixed(fixed);
@@ -3221,32 +2990,22 @@ function LiveStats({
     }
   };
 
-  const shortAddr = (addr) => {
-    if (!addr) return "-";
-    const s = String(addr);
-    return `${s.slice(0, 6)}...${s.slice(-4)}`;
-  };
-
   const resolvedTokenMeta = React.useMemo(() => {
     const fallbackAddr =
       (ADDR && (ADDR.BIGGI || ADDR.BIGGI_TOKEN || ADDR.TOKEN)) || null;
     const source = pools?.tokenMeta || {};
-    const decimals = Number.isFinite(Number(source.decimals))
+    const decimals = source.decimals != null && Number.isFinite(Number(source.decimals))
       ? Number(source.decimals)
-      : Number.isFinite(Number(tokenDecimals))
-        ? Number(tokenDecimals)
-        : 18;
+      : null;
     return {
       addr: source.addr || fallbackAddr,
       symbol: source.symbol || tokenSymbol || "TOKEN",
       decimals,
     };
-  }, [pools, tokenDecimals, tokenSymbol]);
+  }, [pools, tokenSymbol]);
 
   const visibleTokenBalanceEntries = React.useMemo(() => {
-    const entries = (pools?.tokenBalances || []).filter(
-      (entry) => entry?.balance != null,
-    );
+    const entries = pools?.tokenBalances || [];
     return desktopFullscreen ? entries.slice(0, 4) : entries.slice(0, 6);
   }, [desktopFullscreen, pools]);
 
@@ -3317,6 +3076,7 @@ function LiveStats({
         >
           {hasLastImage ? (
             <img
+              key={`${effectiveImageIdentity}:${displayLastImageSrc}`}
               src={displayLastImageSrc}
               alt="Last Minted NFT"
               style={{
@@ -3344,17 +3104,19 @@ function LiveStats({
                 setLastImageFailed(true);
                 setLastImageLoaded(false);
 
-                const currentKey =
-                  stripRetryParam(displayLastImageSrc).toLowerCase();
+                const currentKey = stripRetryParam(displayLastImageSrc);
+                failedImageCandidatesRef.current.add(currentKey);
                 const currentIdx = lastImageCandidates.findIndex(
-                  (candidate) =>
-                    stripRetryParam(candidate).toLowerCase() === currentKey,
+                  (candidate) => stripRetryParam(candidate) === currentKey,
                 );
-                if (
-                  currentIdx >= 0 &&
-                  currentIdx < lastImageCandidates.length - 1
-                ) {
-                  setLastImageSrc(lastImageCandidates[currentIdx + 1]);
+                const nextCandidate = lastImageCandidates
+                  .slice(currentIdx + 1)
+                  .find(
+                    (candidate) =>
+                      !failedImageCandidatesRef.current.has(stripRetryParam(candidate)),
+                  );
+                if (nextCandidate) {
+                  setLastImageSrc(nextCandidate);
                   setLastImageFailed(false);
                   setLastImageLoaded(false);
                   return;
@@ -3368,7 +3130,7 @@ function LiveStats({
                   const cachedSrc = getCachedLiveStatsImageForToken(tokenId);
                   if (
                     cachedSrc &&
-                    stripRetryParam(cachedSrc).toLowerCase() !== currentKey
+                    !failedImageCandidatesRef.current.has(stripRetryParam(cachedSrc))
                   ) {
                     setLastImageSrc(cachedSrc);
                     setLastImageFailed(false);
@@ -3386,7 +3148,7 @@ function LiveStats({
                     effectiveTokenId &&
                     effectiveTokenId !== "-" &&
                     stableTokenId === tokenId &&
-                    stableSrc !== displayLastImageSrc
+                    !failedImageCandidatesRef.current.has(stripRetryParam(stableSrc))
                   ) {
                     setLastImageSrc(stableSrc);
                     setLastImageFailed(false);
@@ -3704,7 +3466,7 @@ function LiveStats({
             }}
           >
             {typeof biggiMcap === "number"
-              ? `${biggiMcap.toLocaleString(undefined, { maximumFractionDigits: 0 })} POL`
+              ? `${biggiMcap.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${priceQuoteSymbol}`
               : "-"}
           </div>
         </div>
@@ -3824,6 +3586,30 @@ function LiveStats({
                       <div style={{ color: "#ffe800", fontWeight: 900 }}>
                         TOKENOMICS
                       </div>
+                      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                      <button
+                        type="button"
+                        onClick={refreshPools}
+                        disabled={poolsStatus === "loading"}
+                        aria-label="Refresh pool data"
+                        title="Refresh pool data"
+                        style={{
+                          background: "transparent",
+                          border: "1px solid #ffe800",
+                          color: "#ffe800",
+                          borderRadius: 8,
+                          width: 32,
+                          height: 32,
+                          padding: 0,
+                          flexShrink: 0,
+                          display: "grid",
+                          placeItems: "center",
+                          cursor: poolsStatus === "loading" ? "wait" : "pointer",
+                          opacity: poolsStatus === "loading" ? 0.5 : 1,
+                        }}
+                      >
+                        <RefreshCw size={16} aria-hidden="true" />
+                      </button>
                       <button
                         onClick={closePoolsModal}
                         aria-label="Close pools"
@@ -3840,6 +3626,28 @@ function LiveStats({
                       >
                         X
                       </button>
+                      </div>
+                    </div>
+
+                    <div
+                      role="status"
+                      aria-live="polite"
+                      style={{
+                        minHeight: 24,
+                        flexShrink: 0,
+                        padding: "4px 12px",
+                        color: poolsStatus === "error" || poolsStatus === "partial"
+                          ? "#ffd166" : "#9ee5ff",
+                        fontSize: 12,
+                      }}
+                    >
+                      {poolsStatus === "loading"
+                        ? "Loading pool data..."
+                        : poolsStatus === "error"
+                          ? "Pool data is unavailable."
+                          : poolsStatus === "partial"
+                            ? "Some pool data is unavailable."
+                            : ""}
                     </div>
 
                     <div
@@ -3958,7 +3766,7 @@ function LiveStats({
                                   return (
                                     <div className="collection-stat-card">
                                       <div className="collection-stat-label">
-                                        Loading
+                                        {poolsStatus === "loading" ? "Loading" : "Unavailable"}
                                       </div>
                                       <div className="collection-stat-value">
                                         --
@@ -4032,7 +3840,7 @@ function LiveStats({
                                     return (
                                       <div className="collection-stat-card">
                                         <div className="collection-stat-label">
-                                          Loading
+                                          {poolsStatus === "loading" ? "Loading" : "Unavailable"}
                                         </div>
                                         <div className="collection-stat-value">
                                           --
@@ -4090,7 +3898,7 @@ function LiveStats({
                                   TOTAL SUPPLY
                                 </div>
                                 <div className="collection-stat-value">
-                                  {pools?.lpStats?.totalSupply != null
+                                  {pools?.lpStats?.totalSupply != null && pools.lpStats.decimals != null
                                     ? `${fmtToken(
                                         pools.lpStats.totalSupply,
                                         pools.lpStats.decimals,

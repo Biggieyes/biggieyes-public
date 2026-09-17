@@ -1,6 +1,6 @@
 # Sources Of Truth - BiggiNFT Web
 
-Last verified: 2026-08-17
+Last verified: 2026-09-16
 
 This document defines the authoritative configuration and data sources used by the frontend. Do not duplicate live values in feature components.
 
@@ -61,7 +61,7 @@ Current ABI check:
 npm run check:abis
 ```
 
-Expected current result: 58 ABI files and 801 functions.
+Expected current result: 61 ABI files and 848 functions.
 
 ## 4. Contract Metadata Registry
 

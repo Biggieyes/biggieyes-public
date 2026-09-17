@@ -1,20 +1,20 @@
 {
   "network": "polygon",
   "chainId": 137,
-  "createdAt": "2026-08-26T22:00:38.866Z",
-  "sourceManifestCreatedAt": "2026-08-26T21:55:15.569Z",
+  "createdAt": "2026-09-16T20:42:05.421Z",
+  "sourceManifestCreatedAt": "2026-09-16T20:04:24.193Z",
   "summary": {
     "canonical": 60,
     "historical": 3,
     "total": 63,
     "sourceVerified": 63,
-    "publicTagged": 10,
-    "tagRequests": 53,
+    "publicTagged": 26,
+    "tagRequests": 28,
     "tagRequestsByDeployer": {
-      "0x8fa5c9545b2eef1ca3c6533951c286e05928f27b": 52,
+      "0x8fa5c9545b2eef1ca3c6533951c286e05928f27b": 27,
       "0x402ce2ff958ab47edafc42296d2682cc8f9d92b2": 1
     },
-    "lookupFailures": 0
+    "lookupFailures": 9
   },
   "contracts": [
     {
@@ -26,13 +26,13 @@
       "verified": true,
       "contractName": "BiggiEyesMain",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "NFT",
-      "suggestedPublicNameTag": "BiggiEyes: Originals VRF",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Originals VRF"
     },
     {
       "key": "MAIN2",
@@ -43,13 +43,13 @@
       "verified": true,
       "contractName": "BiggiEyesMain2",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xe56cC0657A89daf10994204eD745985a61b0E36F",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "NFT",
-      "suggestedPublicNameTag": "BiggiEyes: Originals Public",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Originals Public"
     },
     {
       "key": "TICKET_HUB",
@@ -60,13 +60,13 @@
       "verified": true,
       "contractName": "BiggiTicketHub",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x7b7e561173f498C8274b821090Da64E8ee653f6A",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "NFT",
-      "suggestedPublicNameTag": "BiggiEyes: Ticket Hub",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Ticket Hub"
     },
     {
       "key": "VRF_ROUTER",
@@ -77,13 +77,13 @@
       "verified": true,
       "contractName": "BiggiVRFRouter",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "Oracle",
-      "suggestedPublicNameTag": "BiggiEyes: VRF Router",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: VRF Router"
     },
     {
       "key": "COMPUTE",
@@ -94,13 +94,13 @@
       "verified": true,
       "contractName": "BiggiCompute",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x0A09261631496B4aad9A5c2A82b62666249d773f",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Compute",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Compute"
     },
     {
       "key": "REGISTRY",
@@ -111,13 +111,13 @@
       "verified": true,
       "contractName": "BiggiSeriesRegistry",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "NFT",
-      "suggestedPublicNameTag": "BiggiEyes: Series Registry",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Series Registry"
     },
     {
       "key": "CHAPTER_CONTROLLER",
@@ -128,13 +128,13 @@
       "verified": true,
       "contractName": "BiggiChapterController",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x9c084D89c0CB6c8424652d1fa82E83aD9c098288",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "NFT",
-      "suggestedPublicNameTag": "BiggiEyes: Chapter Controller",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Chapter Controller"
     },
     {
       "key": "COLLECTION_REWARDS",
@@ -145,30 +145,30 @@
       "verified": true,
       "contractName": "BiggiCollectionRewards",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "NFT",
-      "suggestedPublicNameTag": "BiggiEyes: Collection Rewards",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Collection Rewards"
     },
     {
       "key": "NFT_REWARDS",
-      "address": "0x939Df533b80943298E15ad4c8F188102954f34FF",
+      "address": "0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9",
       "hasCode": true,
       "deployer": "0x8fa5c9545b2eef1ca3c6533951c286e05928f27b",
-      "txHash": "0x4588d8a767a84fb509cba7151c50a1618c241e13fbe35919bfe927f7d4b329c0",
+      "txHash": "0x27db25694de91385f7cfd6f6c20d971e144982d0d86faf7289e98e95d4a61084",
       "verified": true,
-      "contractName": "BiggiNFTRewards",
+      "contractName": "BiggiNFTRewardsV2",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
-      "explorerUrl": "https://polygonscan.com/address/0x939Df533b80943298E15ad4c8F188102954f34FF",
+      "lifecycle": "current",
+      "explorerUrl": "https://polygonscan.com/address/0xd1cefDf3b4ce4c174291F8eB0729980c50D293b9",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "NFT",
-      "suggestedPublicNameTag": "BiggiEyes: NFT Rewards",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: NFT Rewards V2"
     },
     {
       "key": "MAIN_READER",
@@ -179,13 +179,13 @@
       "verified": true,
       "contractName": "BiggiMainReader",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xde05be77024eABf37E4eA4fbBD58F161081be2f3",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "NFT",
-      "suggestedPublicNameTag": "BiggiEyes: Main Reader",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Main Reader"
     },
     {
       "key": "MULTI_COLLECTION_READER",
@@ -196,13 +196,13 @@
       "verified": true,
       "contractName": "BiggiMultiCollectionDistributorReaderV2",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xa65B4e88E37F085B9009295eA0AcF05e18a82884",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Collections Reader",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Collections Reader"
     },
     {
       "key": "CHAPTER_SERIES_READER",
@@ -213,30 +213,30 @@
       "verified": true,
       "contractName": "BiggiChapterSeriesReader",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x421c8ed70fC893517481315aC62f4c95331e647f",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "NFT",
-      "suggestedPublicNameTag": "BiggiEyes: Chapters Reader",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Chapters Reader"
     },
     {
       "key": "NFT_REWARDS_READER",
-      "address": "0x430376b1f4F12ce2D641CC28f2968297aA2b0c12",
+      "address": "0x789873e6b1d944b207D2E76a71D95135be4e33c6",
       "hasCode": true,
       "deployer": "0x8fa5c9545b2eef1ca3c6533951c286e05928f27b",
-      "txHash": "0xbf821dec20a68de568f7bebc0d2ad773cb6eba2ef39aac5a4950bee9b34bc587",
+      "txHash": "0x9cc73f2e962718f119eaaed7740d220b79520e9df731d682a214ac9195bb07f7",
       "verified": true,
       "contractName": "BiggiNftRewardsReader",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
-      "explorerUrl": "https://polygonscan.com/address/0x430376b1f4F12ce2D641CC28f2968297aA2b0c12",
+      "lifecycle": "current",
+      "explorerUrl": "https://polygonscan.com/address/0x789873e6b1d944b207D2E76a71D95135be4e33c6",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "NFT",
-      "suggestedPublicNameTag": "BiggiEyes: NFT Rewards Reader",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: NFT Rewards V2 Reader"
     },
     {
       "key": "DISTRIBUTOR",
@@ -247,13 +247,13 @@
       "verified": true,
       "contractName": "BiggiMultiCollectionDistributor",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xCE892698159D8D799D5eF7f0dF0111487511fD22",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Mint Distributor",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Mint Distributor"
     },
     {
       "key": "BIGGI_TOKEN",
@@ -264,13 +264,13 @@
       "verified": true,
       "contractName": "BiggiToken",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: BIGGI Token",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: BIGGI Token"
     },
     {
       "key": "RESERVE",
@@ -281,13 +281,13 @@
       "verified": true,
       "contractName": "BiggiReserveV4",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x2786e46e01a5d229118fEdC102267217C7e94574",
       "publicNameTag": "BiggiEyes: RESERVE V4",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Reserve",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Reserve"
     },
     {
       "key": "TREASURY",
@@ -298,13 +298,13 @@
       "verified": true,
       "contractName": "BiggiTreasury",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x35EE9523D20fFfe47c62dCcF01fA0136424A05e7",
       "publicNameTag": "BiggiEyes: TREASURY",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Treasury",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Treasury"
     },
     {
       "key": "DRIP_DISTRIBUTOR",
@@ -315,13 +315,13 @@
       "verified": true,
       "contractName": "BiggiDripDistributor",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x2E4677729cb8a02aDd752Bcbd2637809C20CBAf3",
       "publicNameTag": "BiggiEyes: DRIP DISTRIBUTOR",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Drip Distributor",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Drip Distributor"
     },
     {
       "key": "TOKEN_REWARDS",
@@ -332,13 +332,13 @@
       "verified": true,
       "contractName": "BiggiTokenRewards",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xA455775BBe0BC863f644516147b95Ef5103b29FA",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Token Rewards",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Token Rewards"
     },
     {
       "key": "TOKEN_REWARDS_EMISSION_CONTROLLER",
@@ -349,13 +349,13 @@
       "verified": true,
       "contractName": "BiggiTokenRewardsEmissionController",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xA7B71DFEBF89481b37d803dD0765E3612f29Ffb9",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Rewards Emission",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Rewards Emission"
     },
     {
       "key": "MASTER_CONFIG",
@@ -366,13 +366,13 @@
       "verified": true,
       "contractName": "BiggiMasterTokenomicsConfig",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x4125DA806c7B0AaD6c443b7BD368e45ed123687C",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Master Config",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Master Config"
     },
     {
       "key": "POLICY",
@@ -383,13 +383,13 @@
       "verified": true,
       "contractName": "BiggiPolicy",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x50485231A0602DE7a7b64e2760EF21133c77a43C",
       "publicNameTag": "BiggiEyes: POLICY",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Policy",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Policy"
     },
     {
       "key": "COMMUNITY_CENTER",
@@ -400,13 +400,13 @@
       "verified": true,
       "contractName": "BiggiCommunityCenter",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x81C6E90a991d7D210c43B00B7EB1a5450cc372Ae",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Community Center",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Community Center"
     },
     {
       "key": "BUYBACK_AGENT",
@@ -417,13 +417,13 @@
       "verified": true,
       "contractName": "BiggiBuybackAgent",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x5A77E90c467576C82B8d0E74eD112B829C625BB4",
       "publicNameTag": "BiggiEyes: BUYBACK AGENT",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Buyback Agent",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Buyback Agent"
     },
     {
       "key": "RESERVE_TREASURY_READER",
@@ -434,13 +434,13 @@
       "verified": true,
       "contractName": "BiggiReserveTreasuryReader",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xb379bB928f3B683528C209C28A95F4D2854EC407",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Reserve Reader",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Reserve Reader"
     },
     {
       "key": "BUYBACK_READER",
@@ -451,13 +451,13 @@
       "verified": true,
       "contractName": "BiggiBuybackReader",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x8eD6c94e5Fb336096E6C28480f3C514c9bddFa89",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Buyback Reader",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Buyback Reader"
     },
     {
       "key": "TOKEN_REWARDS_READER",
@@ -468,13 +468,13 @@
       "verified": true,
       "contractName": "BiggiTokenRewardsReader",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xB558137Ce8a2e065de09f7ef7cF24911E49A9972",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Rewards Reader",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Rewards Reader"
     },
     {
       "key": "TOKENOMICS_SYSTEM_ADDON_READER",
@@ -485,13 +485,13 @@
       "verified": true,
       "contractName": "BiggiTokenomicsSystemAddonReader",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x28D73361F9E7778362cac9fEBe1c8E0a2B1121ea",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: System Addon Reader",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: System Addon Reader"
     },
     {
       "key": "MODERATOR_CENTER",
@@ -502,13 +502,13 @@
       "verified": true,
       "contractName": "ModeratorCenter",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xda07a5fDee4d6d491cF31368F00e2aD584bB033D",
       "publicNameTag": "BiggiEyes: MODERATOR CENTER",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Moderator V1",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Moderator V1"
     },
     {
       "key": "MODERATOR_CENTER_V2",
@@ -519,13 +519,13 @@
       "verified": true,
       "contractName": "ModeratorCenterV2",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x82Ad5a0f379CCA21AC2979E88AC24db94e670bD8",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Moderator V2",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Moderator V2"
     },
     {
       "key": "SUPPLY_CONTROLLER",
@@ -536,13 +536,13 @@
       "verified": true,
       "contractName": "BiggiSupplyController",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x810ba27C98aAB09737e3988a3C1b10D6CadaB8E8",
-      "publicNameTag": null,
+      "publicNameTag": "BiggiEyes: Supply Controller",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Supply Controller",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Supply Controller"
     },
     {
       "key": "SUPPLY_GUARDIAN",
@@ -553,13 +553,13 @@
       "verified": true,
       "contractName": "BiggiSupplyGuardian",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xdCA0bEda4c96eCE2E23e30f6Aa95697106d99B49",
-      "publicNameTag": null,
+      "publicNameTag": "BiggiEyes: Supply Guardian",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Supply Guardian",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Supply Guardian"
     },
     {
       "key": "DEX_RESERVE_GUARD",
@@ -570,13 +570,13 @@
       "verified": true,
       "contractName": "BiggiDexReserveGuard",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x350370c248495758b80Ea1C564Df1290cA76588B",
-      "publicNameTag": null,
+      "publicNameTag": "BiggiEyes: Dex Reserve Guard",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: DEX Reserve Guard",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: DEX Reserve Guard"
     },
     {
       "key": "LIQUIDITY_VAULT",
@@ -587,13 +587,13 @@
       "verified": true,
       "contractName": "LiquidityVault",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xFe234394845B601B2c671c0dD631fA6290c02bb9",
       "publicNameTag": "BiggiEyes: Liquidity Vault",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Liquidity Vault",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Liquidity Vault"
     },
     {
       "key": "LIQUIDITY_MANAGER",
@@ -604,13 +604,13 @@
       "verified": true,
       "contractName": "BiggiLiquidityManager",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xfb770C5A5AC6e41C85f076DB7C3434eAcd8e0F19",
       "publicNameTag": "BiggiEyes: LIQUIDITY MANAGER",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Liquidity Manager",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Liquidity Manager"
     },
     {
       "key": "LIQUIDITY_ORCHESTRATOR",
@@ -621,13 +621,13 @@
       "verified": true,
       "contractName": "BiggiLiquidityOrchestrator",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xC72DB11941d8Ab76baF84B1af9dB43E09060b681",
-      "publicNameTag": null,
+      "publicNameTag": "BiggiEyes: Liquidity Orchestrator",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Liquidity Orchestrator",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Liquidity Orchestrator"
     },
     {
       "key": "LIQUIDITY_KEEPER_PROXY",
@@ -638,13 +638,13 @@
       "verified": true,
       "contractName": "BiggiLiquidityKeeperProxy",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x4fC6EaD8CC6451e1A5EA7Ceaf6a072e18f91F04c",
-      "publicNameTag": null,
+      "publicNameTag": "BiggiEyes: Liquidity Keeper Proxy",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Liquidity Keeper",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Liquidity Keeper"
     },
     {
       "key": "DRIP_LM",
@@ -655,13 +655,13 @@
       "verified": true,
       "contractName": "BiggiDripLMToModerator",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xE258843bca54803a366413571b3B4d6a28eAF2eC",
       "publicNameTag": "BiggiEyes: DRIP LM",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Drip LM V1",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Drip LM V1"
     },
     {
       "key": "DRIP_LM_V2",
@@ -672,13 +672,13 @@
       "verified": true,
       "contractName": "BiggiDripLMToModeratorV2",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x1d2B3d3224dE553ff3138caeA45d162c62305d1A",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Drip LM V2",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Drip LM V2"
     },
     {
       "key": "DRIP_KEEPER_PROXY",
@@ -689,13 +689,13 @@
       "verified": true,
       "contractName": "DripKeeperProxy",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xf71b3B9E64bf48E1EC8F9195c3420464fe767cCc",
       "publicNameTag": "BiggiEyes: KEEPER PROXY",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Drip Keeper",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Drip Keeper"
     },
     {
       "key": "BUYBACK_UPKEEP_PROXY",
@@ -706,13 +706,13 @@
       "verified": true,
       "contractName": "BiggiBuybackUpkeepProxy",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x3C260f987d1aD7cA3dC8D61a3B731b2068c38875",
-      "publicNameTag": null,
+      "publicNameTag": "BiggiEyes: Buyback Upkeep Proxy",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Buyback Keeper",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Buyback Keeper"
     },
     {
       "key": "SUPPLY_CONTROLLER_READER",
@@ -723,13 +723,13 @@
       "verified": true,
       "contractName": "BiggiSupplyControllerReader",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x3deE7089badc481BA91edF0023Bd0E6039BA1E3F",
-      "publicNameTag": null,
+      "publicNameTag": "BiggiEyes: Supply Controller Reader",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Supply Reader",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Supply Reader"
     },
     {
       "key": "SUPPLY_GUARDIAN_READER",
@@ -740,13 +740,13 @@
       "verified": true,
       "contractName": "BiggiSupplyGuardianReader",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x970432CEB6279eA3585372457FF610F03A5f07Ca",
-      "publicNameTag": null,
+      "publicNameTag": "BiggiEyes: Supply Guardian Reader",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Guardian Reader",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Guardian Reader"
     },
     {
       "key": "DEX_RESERVE_GUARD_READER",
@@ -757,13 +757,13 @@
       "verified": true,
       "contractName": "BiggiDexReserveGuardReader",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xE70C056f0dD1Fb8c175E6CDf92F0767611fDd672",
-      "publicNameTag": null,
+      "publicNameTag": "BiggiEyes: Dex Reserve Guard Reader",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: DEX Guard Reader",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: DEX Guard Reader"
     },
     {
       "key": "SYSTEM_READER",
@@ -774,13 +774,13 @@
       "verified": true,
       "contractName": "BiggiSystemReader",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x5C918B2E610BAF3E9f77B0b7dE456D63B7F8bD55",
-      "publicNameTag": null,
+      "publicNameTag": "BiggiEyes: System Reader",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: System Reader",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: System Reader"
     },
     {
       "key": "LIQUIDITY_BRANCH_READER",
@@ -791,13 +791,13 @@
       "verified": true,
       "contractName": "BiggiLiquidityBranchUserReader",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xC04FC52560fe5A8fcEf16a3ADE7126e83Da0D4f5",
-      "publicNameTag": null,
+      "publicNameTag": "BiggiEyes: Liquidity Branch User Reader",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Liquidity Reader",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Liquidity Reader"
     },
     {
       "key": "LIQUIDITY_HELPER_READER",
@@ -808,13 +808,13 @@
       "verified": true,
       "contractName": "BiggiLiquidityHelperReader",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x1879b76c3a923d58970a90e3D004bD067c272a22",
-      "publicNameTag": null,
+      "publicNameTag": "BiggiEyes: Liquidity Helper Reader",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Liquidity Helper",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Liquidity Helper"
     },
     {
       "key": "BIGGI_TOKENOMICS_READER",
@@ -825,13 +825,13 @@
       "verified": true,
       "contractName": "BiggiTokenomikReader",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x868640D9fd873AE3ecFCAbCbB458413A70D6f468",
-      "publicNameTag": null,
+      "publicNameTag": "BiggiEyes: Tokenomik Reader",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Tokenomics Reader",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Tokenomics Reader"
     },
     {
       "key": "MULTICALL",
@@ -842,13 +842,13 @@
       "verified": true,
       "contractName": "Multicall2",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x70bc315E4E5548e54F358Abf4515C1bB1551687b",
-      "publicNameTag": null,
+      "publicNameTag": "BiggiEyes: Multicall",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Multicall",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Multicall"
     },
     {
       "key": "BIGGI_NAMES_LIB",
@@ -859,13 +859,13 @@
       "verified": true,
       "contractName": "BiggiNamesLib",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xFEfB6Cd04879715bb63E8a51811e68EC85D9dB78",
-      "publicNameTag": null,
+      "publicNameTag": "BiggiEyes: Names Lib",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Names Library V1",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Names Library V1"
     },
     {
       "key": "BIGGI_NAMES_LIB2",
@@ -876,13 +876,13 @@
       "verified": true,
       "contractName": "BiggiNamesLib2",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xBd3C8f5A8A936071585e909d9ab5c1Df3D7EB78a",
-      "publicNameTag": null,
+      "publicNameTag": "BiggiEyes: Names Lib2",
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "DeFi",
-      "suggestedPublicNameTag": "BiggiEyes: Names Library V2",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Names Library V2"
     },
     {
       "key": "CRE_AUTOMATION_RECEIVER",
@@ -893,13 +893,13 @@
       "verified": true,
       "contractName": "BiggiCREAutomationReceiver",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xF1a21E04DA73580eD2D1311412e3639C40D47Fe6",
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
       "category": "Oracle",
-      "suggestedPublicNameTag": "BiggiEyes: CRE Receiver",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: CRE Receiver"
     },
     {
       "key": "CHAPTER_2_MAIN",
@@ -910,13 +910,11 @@
       "verified": true,
       "contractName": "BiggiEyesMain",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036",
-      "publicNameTag": null,
-      "pageReportsVerified": true,
-      "lookupError": null,
+      "lookupError": "HTTP 429",
       "category": "NFT",
-      "suggestedPublicNameTag": "BiggiEyes: Universe VRF",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Universe VRF"
     },
     {
       "key": "CHAPTER_2_MAIN2",
@@ -927,13 +925,11 @@
       "verified": true,
       "contractName": "BiggiEyesMain2",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x7EaB23497085cfF00Cb2E9809b2Af0e717187356",
-      "publicNameTag": null,
-      "pageReportsVerified": true,
-      "lookupError": null,
+      "lookupError": "HTTP 429",
       "category": "NFT",
-      "suggestedPublicNameTag": "BiggiEyes: Universe Public",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Universe Public"
     },
     {
       "key": "CHAPTER_3_MAIN",
@@ -944,13 +940,11 @@
       "verified": true,
       "contractName": "BiggiEyesMain",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2",
-      "publicNameTag": null,
-      "pageReportsVerified": true,
-      "lookupError": null,
+      "lookupError": "HTTP 429",
       "category": "NFT",
-      "suggestedPublicNameTag": "BiggiEyes: Mutant VRF",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Mutant VRF"
     },
     {
       "key": "CHAPTER_3_MAIN2",
@@ -961,13 +955,11 @@
       "verified": true,
       "contractName": "BiggiEyesMain2",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xda6A6f45053796d0f5edB965fe3FA47B9a35460c",
-      "publicNameTag": null,
-      "pageReportsVerified": true,
-      "lookupError": null,
+      "lookupError": "HTTP 429",
       "category": "NFT",
-      "suggestedPublicNameTag": "BiggiEyes: Mutant Public",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Mutant Public"
     },
     {
       "key": "CHAPTER_4_MAIN",
@@ -978,13 +970,11 @@
       "verified": true,
       "contractName": "BiggiEyesMain",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x8E862D9071120D69517D3F7Db0c101175E911115",
-      "publicNameTag": null,
-      "pageReportsVerified": true,
-      "lookupError": null,
+      "lookupError": "HTTP 429",
       "category": "NFT",
-      "suggestedPublicNameTag": "BiggiEyes: Apocalypse VRF",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Apocalypse VRF"
     },
     {
       "key": "CHAPTER_4_MAIN2",
@@ -995,13 +985,11 @@
       "verified": true,
       "contractName": "BiggiEyesMain2",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xecE7D61AB3FB2229C39B48380D704183532fE960",
-      "publicNameTag": null,
-      "pageReportsVerified": true,
-      "lookupError": null,
+      "lookupError": "HTTP 429",
       "category": "NFT",
-      "suggestedPublicNameTag": "BiggiEyes: Apocalypse Public",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Apocalypse Public"
     },
     {
       "key": "CHAPTER_5_MAIN",
@@ -1012,13 +1000,11 @@
       "verified": true,
       "contractName": "BiggiEyesMain",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38",
-      "publicNameTag": null,
-      "pageReportsVerified": true,
-      "lookupError": null,
+      "lookupError": "HTTP 429",
       "category": "NFT",
-      "suggestedPublicNameTag": "BiggiEyes: Super Hero VRF",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Super Hero VRF"
     },
     {
       "key": "CHAPTER_5_MAIN2",
@@ -1029,13 +1015,11 @@
       "verified": true,
       "contractName": "BiggiEyesMain2",
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
+      "lifecycle": "current",
       "explorerUrl": "https://polygonscan.com/address/0x99f049279BC545469F989d8f06CD915ef4B6f1d4",
-      "publicNameTag": null,
-      "pageReportsVerified": true,
-      "lookupError": null,
+      "lookupError": "HTTP 429",
       "category": "NFT",
-      "suggestedPublicNameTag": "BiggiEyes: Super Hero Public",
-      "lifecycle": "current"
+      "suggestedPublicNameTag": "BiggiEyes: Super Hero Public"
     },
     {
       "key": "OLD_TICKET_HUB",
@@ -1048,10 +1032,8 @@
       "compilerVersion": "v0.8.24+commit.e11b9ed9",
       "lifecycle": "deprecated",
       "explorerUrl": "https://polygonscan.com/address/0xe6d742D7DC66fA63434E6794C69798A5272e9873",
-      "publicNameTag": null,
-      "pageReportsVerified": true,
-      "lookupError": null,
-      "category": "DeFi",
+      "lookupError": "HTTP 429",
+      "category": "NFT",
       "suggestedPublicNameTag": "BiggiEyes: Deprecated Ticket Hub"
     },
     {
@@ -1068,7 +1050,7 @@
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
-      "category": "DeFi",
+      "category": "NFT",
       "suggestedPublicNameTag": "BiggiEyes: Deprecated Rewards"
     },
     {
@@ -1085,7 +1067,7 @@
       "publicNameTag": null,
       "pageReportsVerified": true,
       "lookupError": null,
-      "category": "DeFi",
+      "category": "NFT",
       "suggestedPublicNameTag": "BiggiEyes: Deprecated Main Reader"
     }
   ]

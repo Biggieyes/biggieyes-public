@@ -8,7 +8,7 @@ import {
   getIpfsGatewayCandidates,
 } from "../src/shared/services/ipfs.js";
 
-vi.mock("../src/providers/ContractsProvider", () => ({
+vi.mock("../src/providers/ContractsContext.js", () => ({
   useOptionalContracts: () => null,
 }));
 

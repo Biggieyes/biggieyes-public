@@ -22,8 +22,8 @@ import {
   buildBlockImagePath,
   buildBlockThumbPath,
 } from "../../../utils/images";
-import { useOptionalContracts } from "../../../providers/ContractsProvider";
-import { useOptionalWeb3 } from "../../../providers/Web3Provider";
+import { useOptionalContracts } from "../../../providers/ContractsContext.js";
+import { useOptionalWeb3 } from "../../../providers/Web3Context.js";
 import {
   ensurePolygon,
   getChapterMain2,
@@ -43,13 +43,8 @@ import {
   PREVIEW_SIZE,
 } from "./COLLECTIONBlocksGrid.constants";
 import {
-  parseCount,
-  parsePrice,
   formatPrice,
-  formatCount,
   computeDiff,
-  isValidPrice,
-  isValidCount,
   safeAsyncCall,
   safeSyncCall,
   isExplicitlyEmptyContractCode,
@@ -61,6 +56,8 @@ import {
   summarizeCollectionBlocks,
 } from "./COLLECTIONBlocksGrid.utils";
 import { mapLimit } from "@/shared/utils/shared";
+import { getPublicArtworkPreview } from "./publicArtworkPreview.js";
+import publicOriginalsArtwork from "./publicOriginalsArtwork.json";
 
 // Import sub-komponenty
 import BlockCard from "./CollectionBlocksGrid.BlockCard";
@@ -344,9 +341,6 @@ function COLLECTIONBlocksGrid({
   const [fallbackMinted, setFallbackMinted] = React.useState(
     Array(MAX_BLOCKS).fill(null),
   );
-  const [fallbackBgMinted, setFallbackBgMinted] = React.useState(
-    Array(MAX_BLOCKS).fill(null),
-  );
 
   const { fetchStats: fetchSnapshotStats } = useStatsREWARDS({
     setTicketPrice: NOOP,
@@ -354,7 +348,7 @@ function COLLECTIONBlocksGrid({
     setBiggiMinted: NOOP,
     setBlockPrices: setFallbackPrices,
     setBlockMintCounts: setFallbackMinted,
-    setBackgroundMintCounts: setFallbackBgMinted,
+    setBackgroundMintCounts: NOOP,
     setRewardPool: NOOP,
     setMintVolumeMatic: NOOP,
     walletAddress: "",
@@ -491,7 +485,6 @@ function COLLECTIONBlocksGrid({
             ? await providerForCode.getCode(contractAddress)
             : null;
           if (isExplicitlyEmptyContractCode(code)) {
-            // eslint-disable-next-line no-console
             console.warn(
               "COLLECTION contract not found at address, skipping block reads:",
               contractAddress,
@@ -515,7 +508,6 @@ function COLLECTIONBlocksGrid({
           }
         } catch (err) {
           // if getCode failed, fall back to attempting reads but don't crash
-          // eslint-disable-next-line no-console
           console.debug(
             "Failed to verify contract code, attempting reads anyway:",
             err,
@@ -598,7 +590,6 @@ function COLLECTIONBlocksGrid({
     setCOLLECTIONMeta({});
     setFallbackPrices(Array(MAX_BLOCKS).fill(null));
     setFallbackMinted(Array(MAX_BLOCKS).fill(null));
-    setFallbackBgMinted(Array(MAX_BLOCKS).fill(null));
     modalMintedCacheRef.current = { snapshotKey: "", byBlock: {} };
   }, [displayedChapter.chapterId, activeCollectionKey]);
 
@@ -667,7 +658,30 @@ function COLLECTIONBlocksGrid({
 
       try {
         const artwork = await readPublicArtwork(contract, index, info);
-        if (!cancelled) setSelectedPublicArtwork(artwork);
+        const preview = getPublicArtworkPreview({
+          release: publicOriginalsArtwork,
+          chainId: POLYGON_CHAIN_ID,
+          chapterId: displayedChapter.chapterId,
+          contractAddress: contract.target,
+          index,
+          artwork,
+        });
+        const imageUrl = preview?.imageUri
+          ? await resolveImageUrl(preview.imageUri, preview.metadataUri)
+          : "";
+        if (!cancelled) {
+          setSelectedPublicArtwork(
+            preview
+              ? {
+                  ...artwork,
+                  imageUrl,
+                  previewOnly: !preview.awaitingArtwork,
+                  awaitingArtwork: preview.awaitingArtwork,
+                  previewMetadataUri: preview.metadataUri,
+                }
+              : artwork,
+          );
+        }
       } catch {
         if (!cancelled) {
           setSelectedPublicArtwork({
@@ -686,6 +700,7 @@ function COLLECTIONBlocksGrid({
     desiredTokenId,
     getCollectionReadContract,
     COLLECTIONMeta.maxSupply,
+    displayedChapter.chapterId,
     reloadCounter,
   ]);
 
@@ -1309,7 +1324,6 @@ function COLLECTIONBlocksGrid({
       if (typeof onCOLLECTIONChange === "function") onCOLLECTIONChange(key);
     } catch (e) {
       // log error so it doesn't silently swallow and hide the UI
-      // eslint-disable-next-line no-console
       console.error("[COLLECTIONBlocksGrid] handleSwitchCOLLECTION error:", e);
     }
   };
@@ -1321,7 +1335,6 @@ function COLLECTIONBlocksGrid({
       setOnchainUnavailable(false);
       setReloadCounter((c) => c + 1);
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error("ensurePolygon failed:", err);
     }
   }, []);

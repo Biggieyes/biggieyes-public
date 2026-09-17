@@ -1,5 +1,6 @@
 /* === CARD WRAPPER === */
 .nft-card {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -224,13 +225,64 @@
 }
 
 .nft-card__import {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 2;
+  width: 100%;
+  min-height: 40px;
+}
+
+.nft-card__wallet {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.nft-import__status,
+.nft-import__manual {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  color: #9adfff;
+}
+
+.nft-import__manual {
+  display: grid;
+  gap: 8px;
+}
+
+.nft-import__field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  gap: 4px 8px;
+  align-items: center;
+}
+
+.nft-import__field > span {
+  grid-column: 1 / -1;
+}
+
+.nft-import__field code {
+  user-select: text;
+}
+
+.nft-import__field button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
 }
 
 .import-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  letter-spacing: 0;
   border-radius: 8px;
   border: 1px solid #1d4bff;
   background: #2461ff;
@@ -245,12 +297,23 @@
   background: #1a3fcc;
   color: #d4deff;
   border-color: #152fa1;
-  cursor: default;
+  cursor: pointer;
   box-shadow: none;
 }
 .import-button:disabled {
   opacity: 0.65;
   cursor: not-allowed;
+}
+
+.import-button:focus-visible,
+.nft-import__field button:focus-visible {
+  outline: 2px solid #ffe800;
+  outline-offset: 2px;
+}
+
+.import-button:not(:disabled):hover {
+  background: #1d4bdb;
+  box-shadow: 0 0 14px rgba(36, 97, 255, 0.5);
 }
 
 /* === BODY === */
@@ -616,6 +679,13 @@
   .nft-card__attribute strong {
     justify-self: center;
     text-align: center;
+  }
+}
+
+@container (max-width: 250px) {
+  .nft-card__stats,
+  .nft-card__stats.nft-card__stats--ticket {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

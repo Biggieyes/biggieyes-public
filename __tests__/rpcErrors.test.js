@@ -1,8 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { isRateLimitedRpcError } from "../src/shared/utils/rpcErrors.js";
+import { isExhaustedFallbackError, isRateLimitedRpcError } from "../src/shared/utils/rpcErrors.js";
 
 describe("RPC error classification", () => {
+  it("recognizes exhausted ethers bootstrap without calling it a rate limit", () => {
+    const error = new Error("no runners?!");
+    expect(isExhaustedFallbackError(error)).toBe(true);
+    expect(isExhaustedFallbackError({info:{error}})).toBe(true);
+    expect(isRateLimitedRpcError(error)).toBe(false);
+  });
+
+  it("does not treat wallet rejection or a contract revert as provider exhaustion", () => {
+    expect(isExhaustedFallbackError({code:"ACTION_REJECTED", message:"no runners?!"})).toBe(false);
+    expect(isExhaustedFallbackError({code:"CALL_EXCEPTION", message:"no runners?!"})).toBe(false);
+    const cyclic = {}; cyclic.cause = cyclic;
+    expect(isExhaustedFallbackError(cyclic)).toBe(false);
+  });
   it("detects direct -32005 rate limit errors", () => {
     expect(
       isRateLimitedRpcError({

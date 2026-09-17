@@ -21,8 +21,6 @@ const COLLECTION1Panel = React.memo(
   ({
     renderBlockCardsGrid,
     blockEntries,
-    blockPrices,
-    blockMints,
     stats,
     highestPriceName,
     lowestPriceName,
@@ -42,10 +40,9 @@ const COLLECTION1Panel = React.memo(
       [],
     );
 
-    const fmt = (v, digits = 0) =>
-      Number.isFinite(v) ? (digits ? nf2.format(v) : nf0.format(v)) : null;
-
     const heroStats = React.useMemo(() => {
+      const fmt = (v, digits = 0) =>
+        Number.isFinite(v) ? (digits ? nf2.format(v) : nf0.format(v)) : null;
       const high = Number.isFinite(stats?.highestPrice?.value)
         ? stats.highestPrice.value
         : null;
@@ -83,7 +80,8 @@ const COLLECTION1Panel = React.memo(
         },
       ];
     }, [
-      fmt,
+      nf0,
+      nf2,
       stats.blocksWithData,
       stats.totalMinted,
       stats.averagePrice,

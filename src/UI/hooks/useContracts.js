@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ContractsContext } from "../../providers/ContractsProvider";
+import { ContractsContext } from "../../providers/ContractsContext.js";
 
 /**
  * Vrací všechny instance kontraktů z ContractsProvideru.
@@ -13,4 +13,3 @@ export function useContracts() {
 }
 
 export default useContracts;
-

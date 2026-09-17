@@ -1,1 +1,1 @@
-export * from "../../providers/RewardsProvider.jsx";
+export { REWARDSProvider } from "../../providers/RewardsProvider.jsx";

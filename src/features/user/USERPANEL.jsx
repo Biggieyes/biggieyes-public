@@ -1,8 +1,8 @@
 import * as React from "react";
 import copy from "clipboard-copy";
 import { formatEther, formatUnits } from "ethers";
-import { useWeb3 } from "@/providers/Web3Provider";
-import { useContracts } from "@/providers/ContractsProvider";
+import { useWeb3 } from "@/providers/Web3Context.js";
+import { useContracts } from "@/providers/ContractsContext.js";
 import { chainNameFor, explorerBaseFor } from "@/config/chains.js";
 import { ADDR } from "@/shared/utils/addresses";
 import useCommunityCenterUserSnapshot from "@/hooks/useCommunityCenterUserSnapshot.js";
@@ -58,6 +58,27 @@ function formatToken(value, digits = 4) {
 }
 
 const ACTIVITY_MAX = 5;
+const EMPTY_OVERVIEW = {
+  loading: false,
+  error: null,
+  native: null,
+  biggi: null,
+  totalTokens: null,
+  tickets: null,
+  nfts: null,
+  updatedAt: null,
+};
+
+function readCount(value) {
+  if (value == null || !/^\d+$/.test(String(value))) {
+    throw new Error("Missing or invalid integer response");
+  }
+  const count = Number(value);
+  if (!Number.isSafeInteger(count) || count < 0) {
+    throw new Error("Integer response out of range");
+  }
+  return count;
+}
 
 function toBigIntSafe(value) {
   try {
@@ -107,6 +128,7 @@ export default function USERPANEL({
   onMint,
   onRedeem,
   onClaim,
+  onRefreshClaimable,
   isMinting = false,
   isRedeeming = false,
   isClaiming = false,
@@ -145,16 +167,15 @@ export default function USERPANEL({
   const autoInfoOpened = React.useRef(false);
   const [activity, setActivity] = React.useState([]);
   const activityRef = React.useRef("");
-  const [overview, setOverview] = React.useState({
-    loading: false,
-    error: null,
-    native: null,
-    biggi: null,
-    totalTokens: null,
-    tickets: null,
-    nfts: null,
-    updatedAt: null,
-  });
+  const overviewContext = React.useMemo(
+    () => ({ activeAccount, chainId, provider, contracts }),
+    [activeAccount, chainId, provider, contracts],
+  );
+  const [overviewSnapshot, setOverview] = React.useState(EMPTY_OVERVIEW);
+  const overview =
+    overviewSnapshot.context === overviewContext
+      ? overviewSnapshot
+      : { ...EMPTY_OVERVIEW, loading: Boolean(activeAccount) };
   const overviewRequestRef = React.useRef(0);
 
   React.useEffect(() => {
@@ -229,12 +250,17 @@ export default function USERPANEL({
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const referralLink = activeAccount ? `${baseUrl}?ref=${activeAccount}` : "";
   const connected = Boolean(activeAccount);
+  const parentAccount = walletAddress || address;
+  const walletDataMatches =
+    !parentAccount ||
+    parentAccount.toLowerCase() === activeAccount.toLowerCase();
   const walletItems = React.useMemo(() => {
+    if (!walletDataMatches) return [];
     const sourceItems = Array.isArray(myNFTs) && myNFTs.length ? myNFTs : items;
     return Array.isArray(sourceItems)
       ? sourceItems.filter((item) => item && !item.isPending)
       : [];
-  }, [items, myNFTs]);
+  }, [items, myNFTs, walletDataMatches]);
   const inventorySummary = React.useMemo(
     () =>
       walletItems.reduce(
@@ -320,33 +346,31 @@ export default function USERPANEL({
   const refreshOverview = React.useCallback(async () => {
     const requestId = ++overviewRequestRef.current;
     if (!activeAccount) {
-      setOverview((prev) => ({
-        ...prev,
-        loading: false,
-        native: null,
-        biggi: null,
-        totalTokens: null,
-        tickets: null,
-        nfts: null,
-        updatedAt: null,
-        error: null,
-      }));
+      setOverview({ ...EMPTY_OVERVIEW, context: overviewContext });
       return;
     }
-    setOverview((prev) => ({ ...prev, loading: true, error: null }));
+    setOverview({ ...EMPTY_OVERVIEW, context: overviewContext, loading: true });
     try {
       const failures = new Set();
       const safeFactory = (label, factory, fallback) => {
         try {
-          return typeof factory === "function" ? factory() : fallback;
+          if (typeof factory !== "function") throw new Error("Missing reader");
+          const value = factory();
+          if (value == null) throw new Error("Missing reader");
+          return value;
         } catch {
           failures.add(label);
           return fallback;
         }
       };
       const balanceProvider =
-        provider ||
-        safeFactory("provider", contracts?._effectiveROProvider, null);
+        safeFactory("provider", contracts?._effectiveROProvider, null) ||
+        provider;
+      const network = await balanceProvider?.getNetwork?.();
+      if (requestId !== overviewRequestRef.current) return;
+      if (Number(network?.chainId) !== 137) {
+        throw new Error("Polygon mainnet read provider unavailable");
+      }
       const collections = safeFactory(
         "collections",
         contracts?.chapterCollectionsRead,
@@ -356,40 +380,47 @@ export default function USERPANEL({
       const token = safeFactory("BIGGI", contracts?.tokenRead, null);
 
       const nativePromise = (async () => {
-        if (!balanceProvider?.getBalance) return null;
         try {
           return formatEther(await balanceProvider.getBalance(activeAccount));
         } catch {
           failures.add("POL");
           return null;
-      }
+        }
       })();
 
       const biggiPromise = (async () => {
-        if (!token?.balanceOf) return null;
         try {
+          if (typeof token?.balanceOf !== "function" || typeof token?.decimals !== "function") {
+            throw new Error("Missing token reader");
+          }
           const [balance, decimals] = await Promise.all([
-            token.balanceOf(activeAccount),
-            typeof token.decimals === "function" ? token.decimals() : 18,
-        ]);
-          return formatUnits(balance, decimals ?? 18);
+            Promise.resolve().then(() => token.balanceOf(activeAccount)),
+            Promise.resolve().then(() => token.decimals()),
+          ]);
+          const digits = readCount(decimals);
+          if (digits > 255) throw new Error("Invalid token decimals");
+          return formatUnits(balance, digits);
         } catch {
           failures.add("BIGGI");
           return null;
-      }
+        }
       })();
 
       const nftPromise = (async () => {
-        if (!Array.isArray(collections) || !collections.length) return null;
+        if (!Array.isArray(collections) || !collections.length) {
+          failures.add("NFTs");
+          return null;
+        }
         const balances = await Promise.all(
-          collections.map(async ({ contract }) => {
+          collections.map(async (entry) => {
+            const contract = entry?.contract;
             if (typeof contract?.balanceOf !== "function") {
               return { ok: false, value: 0n };
             }
             try {
               return {
                 ok: true,
-                value: await contract.balanceOf(activeAccount),
+                value: readCount(await contract.balanceOf(activeAccount)),
               };
             } catch {
               return { ok: false, value: 0n };
@@ -400,20 +431,18 @@ export default function USERPANEL({
           failures.add("NFTs");
           return null;
         }
-        return balances.reduce(
-          (sum, result) => sum + Number(result.value || 0),
-          0,
+        return readCount(
+          balances.reduce((sum, result) => sum + result.value, 0),
         );
       })();
 
       const ticketPromise = (async () => {
-        if (typeof ticketHub?.balanceOf !== "function") return null;
         try {
-          return Number(await ticketHub.balanceOf(activeAccount));
+          return readCount(await ticketHub.balanceOf(activeAccount));
         } catch {
           failures.add("tickets");
           return null;
-      }
+        }
       })();
 
       const [native, biggi, totalTokens, tickets] = await Promise.all([
@@ -426,6 +455,7 @@ export default function USERPANEL({
       if (requestId !== overviewRequestRef.current) return;
 
       setOverview({
+        context: overviewContext,
         loading: false,
         error:
           failures.size > 0
@@ -440,17 +470,20 @@ export default function USERPANEL({
       });
     } catch (err) {
       if (requestId !== overviewRequestRef.current) return;
-      setOverview((prev) => ({
-        ...prev,
-        loading: false,
+      setOverview({
+        ...EMPTY_OVERVIEW,
+        context: overviewContext,
         error: err,
-      }));
+      });
     }
-  }, [activeAccount, provider, contracts]);
+  }, [activeAccount, provider, contracts, overviewContext]);
 
   React.useEffect(() => {
     refreshOverview();
-  }, [refreshOverview, chainId, activeAccount]);
+    return () => {
+      overviewRequestRef.current += 1;
+    };
+  }, [refreshOverview]);
 
   const buildTxLink = React.useCallback(
     (hash, chainIdOverride) => {
@@ -474,14 +507,14 @@ export default function USERPANEL({
     (Number.isFinite(Number(overview.tickets)) &&
       Number(overview.tickets) > 0) ||
     inventorySummary.tickets > 0;
-  const hasNFTs =
-    (Number.isFinite(Number(overview.nfts)) && Number(overview.nfts) > 0) ||
-    inventorySummary.nfts > 0;
   const claimableValue = Number(claimable);
-  const claimableKnown = Number.isFinite(claimableValue);
+  const claimableKnown =
+    connected && walletDataMatches && claimable != null &&
+    ["string", "number", "bigint"].includes(typeof claimable) &&
+    String(claimable).trim() !== "" &&
+    Number.isFinite(claimableValue) && claimableValue >= 0;
   const canClaim =
-    connected &&
-    (claimableKnown ? claimableValue > 0 : hasNFTs || previewItems.length > 0);
+    connected && claimableKnown && claimableValue > 0;
   const actionBusy = isMinting || isRedeeming || isClaiming || VRFPending;
   const statusText = (() => {
     if (actionStatusLabel) return actionStatusLabel;
@@ -520,7 +553,7 @@ export default function USERPANEL({
         : [];
   const ticketPriceLabel =
     ticketPrice != null ? formatNative(ticketPrice, 4) : "--";
-  const claimableLabel = claimableKnown ? formatToken(claimableValue, 4) : "--";
+  const claimableLabel = claimableKnown ? formatToken(claimable, 4) : "--";
   const rewardPoolLabel =
     rewardPool != null ? formatNative(rewardPool, 4) : "--";
   const mintVolumeLabel =
@@ -560,22 +593,23 @@ export default function USERPANEL({
   const refreshAll = React.useCallback(async () => {
     await Promise.allSettled([
       refreshOverview(),
-      Promise.resolve(refreshCommunitySnapshot()),
+      Promise.resolve().then(() => refreshCommunitySnapshot()),
+      Promise.resolve().then(() => onRefreshClaimable?.()),
     ]);
-  }, [refreshCommunitySnapshot, refreshOverview]);
+  }, [refreshCommunitySnapshot, refreshOverview, onRefreshClaimable]);
 
   const nftCountLabel =
     overview.nfts != null
       ? formatValue(overview.nfts, 0)
       : overview.totalTokens != null
         ? formatValue(overview.totalTokens, 0)
-        : connected
+        : connected && inventorySummary.nfts > 0
           ? formatValue(inventorySummary.nfts, 0)
           : "--";
   const ticketCountLabel =
     overview.tickets != null
       ? formatValue(overview.tickets, 0)
-      : connected
+      : connected && inventorySummary.tickets > 0
         ? formatValue(inventorySummary.tickets, 0)
         : "--";
   const communityState = !communitySnapshot.configured
@@ -759,7 +793,13 @@ export default function USERPANEL({
               ) : (
                 <div className="user-panel__empty">
                   {connected
-                    ? "No NFTs detected yet. Mint a ticket to begin."
+                    ? overview.loading
+                      ? "Loading your collection..."
+                      : overview.nfts == null || overview.tickets == null
+                        ? "Collection data is temporarily unavailable."
+                        : overview.nfts > 0 || overview.tickets > 0
+                          ? "NFT previews are not available yet."
+                          : "No NFTs detected yet. Mint a ticket to begin."
                     : "Connect your wallet to load your collection."}
           </div>
               )}
@@ -812,7 +852,9 @@ export default function USERPANEL({
                 <span>
               {!connected
                     ? "Connect wallet to check community assignments."
-                : communityError
+                : communityLoading
+                      ? "Loading community assignments..."
+                : communityError || communitySnapshot.claimableEvents == null
                       ? "Community data is temporarily unavailable."
                   : communitySnapshot.claimableEvents > 0
                         ? "A community prize is ready to claim in Community Center."

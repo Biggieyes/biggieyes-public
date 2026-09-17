@@ -41,7 +41,7 @@ Status: post-deploy launch checklist. TOKENOMICMAINNET phase 1 and phase 2 are d
 - [ ] MultiCollectionDistributor split sums and recipients validated.
 
 ## 7. Verification and release control
-- [x] All 58 canonical project deployments verified on Polygon explorer (deployment manifest, 2026-08-17).
+- [x] All 60 current canonical project deployments verified on Polygon explorer (deployment manifest, 2026-09-16); 3 historical deployments are retained separately.
 - [ ] ABI packages frozen for backend/frontend release.
 - [ ] Release tag created and deployment manifests archived.
 - [ ] Incident runbook and alerting thresholds approved.

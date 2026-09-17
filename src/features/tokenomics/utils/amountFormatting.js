@@ -149,3 +149,11 @@ export function pickFormatted(formatter, ...values) {
   }
   return "--";
 }
+
+export function formatFlowNative(value) {
+  return formatNativeDisplay(value, 4);
+}
+
+export function formatFlowToken(value, decimals = 18) {
+  return formatTokenDisplay(value, decimals, 4);
+}

@@ -43,3 +43,15 @@ function hasRateLimitSignal(value, seen = new WeakSet(), depth = 0) {
 export function isRateLimitedRpcError(err) {
   return hasRateLimitSignal(err);
 }
+
+// ethers 6.17 retains failed bootstrap runners for that provider instance.
+export function isExhaustedFallbackError(err, seen = new WeakSet(), depth = 0) {
+  if (err == null || depth > 5) return false;
+  if (typeof err === "string") return err.trim().toLowerCase() === "no runners?!";
+  if (typeof err !== "object" || seen.has(err)) return false;
+  if (err.code === "CALL_EXCEPTION" || err.code === "ACTION_REJECTED") return false;
+  seen.add(err);
+  return [err.message, err.shortMessage, err.error, err.info, err.cause].some(
+    (value) => isExhaustedFallbackError(value, seen, depth + 1),
+  );
+}

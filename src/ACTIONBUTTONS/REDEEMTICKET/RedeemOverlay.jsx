@@ -20,20 +20,20 @@ export default function RedeemOverlay({
   const [anchorPos, setAnchorPos] = React.useState(null);
 
   // Network hint for newer contracts/chains
-  const [chainId, setChainId] = React.useState(null);
   const [networkLabel, setNetworkLabel] = React.useState("");
 
   React.useEffect(() => {
     let alive = true;
+    let requestId = 0;
+    const injected = getInjectedProvider();
     async function loadNet() {
+      const currentRequest = ++requestId;
       try {
-        const injected = getInjectedProvider();
         const idHex = await injected?.request?.({
           method: "eth_chainId",
         });
         const id = idHex ? parseInt(idHex, 16) : null;
-        if (alive) {
-          setChainId(id);
+        if (alive && currentRequest === requestId) {
           setNetworkLabel(
             Number.isFinite(id)
               ? id === 137
@@ -43,17 +43,18 @@ export default function RedeemOverlay({
           );
         }
       } catch {
-        if (alive) {
-          setChainId(null);
+        if (alive && currentRequest === requestId) {
           setNetworkLabel("EVM");
         }
       }
     }
     loadNet();
     const onChain = () => loadNet();
-    const injected = getInjectedProvider();
     injected?.on?.("chainChanged", onChain);
-    return () => injected?.removeListener?.("chainChanged", onChain);
+    return () => {
+      alive = false;
+      injected?.removeListener?.("chainChanged", onChain);
+    };
   }, []);
 
   // Find and store the anchor widget reference when opened
@@ -736,4 +737,3 @@ const styles = {
     lineHeight: 1.4,
   },
 };
-
