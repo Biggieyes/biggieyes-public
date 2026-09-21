@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "chainId": 137,
+  "status": "staged-chapters-1-2-configured",
+  "sourceFile": "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\addresses.core-v2-migration.resume.polygon.json",
+  "snapshotFile": "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\reports\\checkpoints\\core-v2-stage-chapters-1-2.polygon.json",
+  "sha256": "072ad458974ae718b78f7e37431dbcebf5759e771c7457721038a3651f788788",
+  "successfulTransactions": 43,
+  "failedTransactions": 1,
+  "pendingTransaction": false,
+  "router": "0xc6278C8392a3a8A13D2C26fc40D8AE41186AdC82",
+  "chapters": [
+    {
+      "id": 1,
+      "oldMain": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+      "newMain": "0x5bCA6124D4dD097216AeE5b9e403C830EF658A2F",
+      "configured": true
+    },
+    {
+      "id": 2,
+      "oldMain": "0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036",
+      "newMain": "0x5ca1342Fd05CbC2a712Dcbb97D4289289123996f",
+      "configured": true
+    },
+    {
+      "id": 3,
+      "oldMain": "0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2",
+      "newMain": "0x6C543b80b6BF885B6E48d135a6a833E25616C02c",
+      "configured": false
+    },
+    {
+      "id": 4,
+      "oldMain": "0x8E862D9071120D69517D3F7Db0c101175E911115",
+      "newMain": "0x66cdcB82983eA7Ce8fF0AcB966E60eaFE0f644B2",
+      "configured": false
+    },
+    {
+      "id": 5,
+      "oldMain": "0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38",
+      "newMain": "0x8476cF4687E89095e81842e23162a39215C055a9",
+      "configured": false
+    }
+  ],
+  "snapshottedAt": "2026-09-19T16:30:52.593Z"
+}

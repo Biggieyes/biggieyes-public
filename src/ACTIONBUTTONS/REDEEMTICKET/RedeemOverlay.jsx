@@ -1,739 +1,513 @@
-// src/components/redeem/RedeemOverlay.jsx
 import * as React from "react";
-import { getInjectedProvider } from "@/shared/utils/contract";
+import {
+  AlertTriangle,
+  Check,
+  ExternalLink,
+  Images,
+  RefreshCw,
+  X,
+} from "lucide-react";
 
-export default function RedeemOverlay({
-  open,
-  isRedeeming,
-  VRFPending,
-  redeemMsg,
-  pendingTicketId,
-  onRefresh,
-}) {
-  const layerRef = React.useRef(null);
-  const anchorElRef = React.useRef(null);
-  const rafIdRef = React.useRef(0);
-  const resizeObserverRef = React.useRef(null);
-  const intersectionObserverRef = React.useRef(null);
-  const VRFPollRef = React.useRef(null);
+import {
+  VRF_FRAME_SEQUENCES,
+  VRF_STEPS,
+  VRF_TRANSFORMATION_FRAMES,
+  deriveVrfUiStage,
+  getVrfActiveStep,
+  getVrfStageProgress,
+} from "./vrfTransformationFrames.js";
+import "./VrfTransformationModal.css";
 
-  const [anchorPos, setAnchorPos] = React.useState(null);
+const PLACEHOLDER_IMAGES = new Set(["", "/images/Biggi.png"]);
 
-  // Network hint for newer contracts/chains
-  const [networkLabel, setNetworkLabel] = React.useState("");
+function usePrefersReducedMotion() {
+  const [reducedMotion, setReducedMotion] = React.useState(() =>
+    typeof window === "undefined"
+      ? false
+      : window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
 
   React.useEffect(() => {
-    let alive = true;
-    let requestId = 0;
-    const injected = getInjectedProvider();
-    async function loadNet() {
-      const currentRequest = ++requestId;
-      try {
-        const idHex = await injected?.request?.({
-          method: "eth_chainId",
-        });
-        const id = idHex ? parseInt(idHex, 16) : null;
-        if (alive && currentRequest === requestId) {
-          setNetworkLabel(
-            Number.isFinite(id)
-              ? id === 137
-                ? "Polygon mainnet (137)"
-                : `Unsupported chain (${id})`
-              : "Not connected",
-          );
-        }
-      } catch {
-        if (alive && currentRequest === requestId) {
-          setNetworkLabel("EVM");
-        }
-      }
-    }
-    loadNet();
-    const onChain = () => loadNet();
-    injected?.on?.("chainChanged", onChain);
-    return () => {
-      alive = false;
-      injected?.removeListener?.("chainChanged", onChain);
-    };
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReducedMotion(query.matches);
+    query.addEventListener?.("change", update);
+    return () => query.removeEventListener?.("change", update);
   }, []);
 
-  // Find and store the anchor widget reference when opened
-  const findWidgetEl = React.useCallback(() => {
-    return (
-      document.querySelector(".live-stats-widget-new") ||
-      document.querySelector(".widget-center-wrapper")
-    );
-  }, []);
+  return reducedMotion;
+}
 
-  const shallowEqualPos = (a, b) => {
-    if (!a || !b) return false;
-    return (
-      a.top === b.top &&
-      a.left === b.left &&
-      a.width === b.width &&
-      a.height === b.height
-    );
-  };
+function useFramePreloader(enabled) {
+  const startedRef = React.useRef(false);
+  const [state, setState] = React.useState({ loaded: 0, ready: false });
 
-  const measurePos = React.useCallback(() => {
-    const el = anchorElRef.current;
-    if (!el) return null;
-    const rect = el.getBoundingClientRect();
-    // Use viewport coordinates (layer is FIXED); no scroll offsets
-    const next = {
-      top: Math.round(rect.top),
-      left: Math.round(rect.left),
-      width: Math.round(rect.width),
-      height: Math.round(rect.height),
-    };
-    return next;
-  }, []);
+  React.useEffect(() => {
+    if (!enabled || startedRef.current) return undefined;
+    startedRef.current = true;
+    let active = true;
+    let loaded = 0;
 
-  // Throttle via rAF: if a request is already scheduled, ignore new ones
-  const updatePosRaf = React.useCallback(() => {
-    if (rafIdRef.current) return;
-    rafIdRef.current = window.requestAnimationFrame(() => {
-      rafIdRef.current = 0;
-      const next = measurePos();
-      setAnchorPos((prev) => {
-        if (!next) return null;
-        if (prev && shallowEqualPos(prev, next)) return prev;
-        return next;
+    const load = (src) =>
+      new Promise((resolve) => {
+        const image = new Image();
+        const settle = () => {
+          image.onload = null;
+          image.onerror = null;
+          loaded += 1;
+          if (active) setState({ loaded, ready: false });
+          resolve();
+        };
+        image.onload = settle;
+        image.onerror = settle;
+        image.src = src;
       });
+
+    Promise.all(VRF_TRANSFORMATION_FRAMES.map(load)).then(() => {
+      if (active) {
+        setState({
+          loaded: VRF_TRANSFORMATION_FRAMES.length,
+          ready: true,
+        });
+      }
     });
-  }, [measurePos]);
-
-  React.useLayoutEffect(() => {
-    if (!open) return;
-    // Find and store element
-    const el = findWidgetEl();
-    anchorElRef.current = el || null;
-    // Measure immediately on open
-    updatePosRaf();
-  }, [open, findWidgetEl, updatePosRaf]);
-
-  React.useEffect(() => {
-    if (!open) return;
-
-    const onScroll = () => updatePosRaf();
-    const onResize = () => updatePosRaf();
-
-    // Passive listeners + rAF throttle
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onResize);
-
-    // Observe anchor size changes
-    if (anchorElRef.current && "ResizeObserver" in window) {
-      resizeObserverRef.current = new ResizeObserver(() => updatePosRaf());
-      resizeObserverRef.current.observe(anchorElRef.current);
-    }
-
-    // If anchor is barely visible, scroll it into view once
-    if (anchorElRef.current && "IntersectionObserver" in window) {
-      intersectionObserverRef.current = new IntersectionObserver(
-        (entries, obs) => {
-          const entry = entries[0];
-          if (!entry) return;
-          // If less than ~70% visible, center it
-          if (entry.intersectionRatio < 0.7) {
-            try {
-              anchorElRef.current.scrollIntoView({
-                behavior: "smooth",
-                block: "center",
-              });
-            } catch {}
-          }
-          // Disconnect after one adjustment
-          obs.disconnect();
-          intersectionObserverRef.current = null;
-        },
-        { threshold: [0.7] },
-      );
-      intersectionObserverRef.current.observe(anchorElRef.current);
-    }
-
-    // Initial measurement
-    updatePosRaf();
 
     return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onResize);
-      if (resizeObserverRef.current) {
-        try {
-          resizeObserverRef.current.disconnect();
-        } catch {}
-        resizeObserverRef.current = null;
-      }
-      if (intersectionObserverRef.current) {
-        try {
-          intersectionObserverRef.current.disconnect();
-        } catch {}
-        intersectionObserverRef.current = null;
-      }
-      if (rafIdRef.current) {
-        cancelAnimationFrame(rafIdRef.current);
-        rafIdRef.current = 0;
-      }
+      active = false;
     };
-  }, [open, updatePosRaf]);
+  }, [enabled]);
 
-  // Auto-refresh while VRF is pending (light polling)
+  return state;
+}
+
+function useTransformationFrame({ mode, ready, reducedMotion, onFinalFrame }) {
+  const currentRef = React.useRef(0);
+  const fadeTimerRef = React.useRef(null);
+  const callbackRef = React.useRef(onFinalFrame);
+  const [current, setCurrent] = React.useState(0);
+  const [previous, setPrevious] = React.useState(null);
+
   React.useEffect(() => {
-    if (!open) return;
-    if (VRFPending) {
-      if (!VRFPollRef.current) {
-        VRFPollRef.current = setInterval(() => {
-          try {
-            onRefresh?.();
-          } catch {}
-        }, 6500);
+    callbackRef.current = onFinalFrame;
+  }, [onFinalFrame]);
+
+  const showFrame = React.useCallback((next) => {
+    if (currentRef.current === next) return;
+    setPrevious(currentRef.current);
+    currentRef.current = next;
+    setCurrent(next);
+    if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+    fadeTimerRef.current = setTimeout(() => setPrevious(null), 210);
+  }, []);
+
+  React.useEffect(() => {
+    if (!ready) return undefined;
+    const sequence = VRF_FRAME_SEQUENCES[mode] || VRF_FRAME_SEQUENCES.burning;
+    let cancelled = false;
+    let timer = null;
+
+    if (reducedMotion) {
+      const majorFrame = sequence.frames.at(-1) ?? 0;
+      showFrame(majorFrame);
+      if (mode === "revealing") {
+        timer = setTimeout(() => {
+          if (!cancelled) callbackRef.current?.();
+        }, 420);
       }
-    } else {
-      if (VRFPollRef.current) {
-        clearInterval(VRFPollRef.current);
-        VRFPollRef.current = null;
-      }
+      return () => {
+        cancelled = true;
+        if (timer) clearTimeout(timer);
+      };
     }
-    return () => {
-      if (VRFPollRef.current) {
-        clearInterval(VRFPollRef.current);
-        VRFPollRef.current = null;
+
+    let cursor = 0;
+    const advance = () => {
+      if (cancelled) return;
+      showFrame(sequence.frames[cursor] ?? sequence.frames[0] ?? 0);
+      cursor += 1;
+      if (cursor < sequence.frames.length) {
+        timer = setTimeout(advance, sequence.durationMs);
+        return;
+      }
+      if (sequence.loop) {
+        cursor = 0;
+        timer = setTimeout(advance, sequence.durationMs);
+        return;
+      }
+      if (mode === "revealing") {
+        timer = setTimeout(() => {
+          if (!cancelled) callbackRef.current?.();
+        }, 380);
       }
     };
-  }, [open, VRFPending, onRefresh]);
 
-  if (!open) return null;
+    advance();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [mode, ready, reducedMotion, showFrame]);
 
-  const phase = VRFPending ? "VRF" : isRedeeming ? "tx" : "idle";
-  const title =
-    phase === "tx"
-      ? "Redeeming Your NFT"
-      : phase === "VRF"
-        ? "Generating Your NFT"
-        : "Working...";
-  const note =
-    phase === "tx"
-      ? redeemMsg || "Waiting for your confirmation and on-chain transaction..."
-      : redeemMsg || "Generating unique properties with Chainlink VRF...";
-  const pct = phase === "tx" ? 40 : 80;
+  React.useEffect(
+    () => () => {
+      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+    },
+    [],
+  );
 
-  const S = styles;
+  return { current, previous };
+}
 
+function short(value, start = 8, end = 6) {
+  const text = String(value || "");
+  if (text.length <= start + end + 3) return text;
+  return `${text.slice(0, start)}...${text.slice(-end)}`;
+}
+
+function isSelectedNftReady(selectedNft, fulfillment) {
+  if (!selectedNft || !fulfillment?.tokenId) return false;
+  const tokenId = String(selectedNft.tokenId ?? selectedNft.id ?? "");
+  const image = String(selectedNft.image || selectedNft.meta?.image || "").trim();
   return (
-    <div
-      ref={layerRef}
-      style={S.layer}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Redeem progress"
-    >
-      <style>{`
-        @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
-        @keyframes pulse { 0%{opacity:.7} 50%{opacity:1} 100%{opacity:.7} }
-        @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
-        @media (prefers-reduced-motion: reduce) {
-          * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
-        }
-      `}</style>
-
-      <div
-        style={
-          anchorPos
-            ? {
-                ...S.anchorWrap,
-                left: anchorPos.left + anchorPos.width / 2,
-                top: anchorPos.top + anchorPos.height,
-                transform: "translate(-50%, 14px)",
-              }
-            : { ...S.centerWrap }
-        }
-      >
-        <div style={S.card}>
-          <div style={S.header}>
-            <div style={S.iconContainer}>
-              <img
-                src="/images/icons/mint.optimized.lossless.webp"
-                alt=""
-                style={S.icon}
-                loading="eager"
-                decoding="async"
-                fetchPriority="high"
-                onError={(event) => {
-                  if (event.currentTarget.dataset.fallbackApplied === "1") {
-                    return;
-                  }
-                  event.currentTarget.dataset.fallbackApplied = "1";
-                  event.currentTarget.src = "/images/icons/mint.fallback.png";
-                }}
-              />
-            </div>
-            <div style={S.headerTxts}>
-              <div style={S.title}>{title}</div>
-              {pendingTicketId && (
-                <div style={S.subTitle}>
-                  Ticket ID: <span style={S.badge}>#{pendingTicketId}</span>
-                </div>
-              )}
-              {/* Network badge from connected wallet */}
-              {networkLabel && (
-                <div style={{ ...S.subTitle, display: "inline-flex", gap: 8 }}>
-                  <span
-                    style={{
-                      border: "1px solid rgba(93,220,255,.45)",
-                      borderRadius: 8,
-                      padding: "2px 8px",
-                      color: "#5ddcff",
-                      background: "rgba(93,220,255,.08)",
-                      fontWeight: 700,
-                    }}
-                    title="Active Network"
-                  >
-                    {networkLabel}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div style={S.progressContainer}>
-            <div style={S.progressWrap} aria-label="progress bar">
-              <div style={{ ...S.progressBar, width: `${pct}%` }} />
-            </div>
-            <div style={S.progressText}>{pct}% Complete</div>
-          </div>
-
-          {/* ---- Steps ---- */}
-          <div style={S.stepList} role="list" aria-label="Redeem steps">
-            <Row
-              step={1}
-              label="Wallet confirmation"
-              active={phase === "tx"}
-              done={phase === "VRF"}
-            />
-            <Row
-              step={2}
-              label="On-chain transaction (ticket burn)"
-              active={phase === "tx"}
-              done={phase === "VRF"}
-              even
-            />
-            <Row
-              step={3}
-              label="Chainlink VRF & metadata generation"
-              active={phase === "VRF"}
-              done={false}
-            />
-          </div>
-
-          <div style={S.note} aria-live="polite">
-            <div style={S.noteIcon}>i</div>
-            {note}
-          </div>
-
-          {phase === "VRF" && (
-            <button style={S.refreshBtn} onClick={onRefresh}>
-              Check Status
-              <span style={S.refreshIcon}>⟳</span>
-            </button>
-          )}
-
-          <div style={S.footer}>
-            <img
-              src="/images/Biggi.png"
-              alt=""
-              style={S.thumb}
-              loading="React.lazy"
-              decoding="async"
-              fetchPriority="low"
-            />
-            <div style={S.tip}>
-              Your NFT will automatically appear in your gallery once revealed.
-            </div>
-          </div>
-
-          <div style={S.arrowUp} />
-        </div>
-      </div>
-    </div>
+    tokenId === String(fulfillment.tokenId) &&
+    !selectedNft.isTicket &&
+    !selectedNft.isPending &&
+    !PLACEHOLDER_IMAGES.has(image)
   );
 }
 
-// Memoized row to avoid rerender unless props change
-const Row = React.memo(function Row({ step, active, done, label, even }) {
-  const S = styles;
-  const chipStyle = done
-    ? S.statusDone
-    : active
-      ? S.statusActive
-      : S.statusIdle;
-  const statusText = done ? "Completed" : active ? "In Progress" : "Pending";
-  const rowStyle = {
-    ...S.stepRow,
-    ...(even ? S.stepRowAlt : {}),
-    ...(done ? S.stepRowDone : {}),
-    ...(active && !done ? S.stepRowActive : {}),
+function getStatusText(stage, message, selectedNftReady) {
+  if (stage === "error") return message || "The redeem operation did not complete.";
+  if (stage === "complete") return "NFT selected and metadata loaded";
+  if (stage === "revealing") {
+    return selectedNftReady
+      ? "VRF fulfilled - revealing NFT"
+      : "VRF fulfilled - loading NFT metadata";
+  }
+  if (message) return message;
+  const labels = {
+    burning: "Waiting for wallet confirmation",
+    confirming: "Waiting for transaction confirmation",
+    requesting_vrf: "Requesting Chainlink VRF",
+    waiting_vrf: "Waiting for Chainlink VRF",
   };
-  const pillStyle = {
-    ...S.stepPill,
-    ...(done ? S.stepPillDone : {}),
-    ...(active && !done ? S.stepPillActive : {}),
-  };
-  const labelStyle = {
-    ...S.stepLabel,
-    ...(done ? S.stepLabelDone : {}),
-    ...(active && !done ? S.stepLabelActive : {}),
+  return labels[stage] || "Preparing transformation";
+}
+
+export default function RedeemOverlay({
+  isRedeeming = false,
+  VRFPending = false,
+  redeemMsg = "",
+  redeemError = "",
+  pendingTicketId = "",
+  txStatus = null,
+  txLink = "",
+  requestId = "",
+  fulfillment = null,
+  selectedNft = null,
+  onRefresh,
+}) {
+  const processActive = Boolean(isRedeeming || VRFPending);
+  const hasInitialPresentation = Boolean(
+    processActive || fulfillment || redeemError,
+  );
+  const reducedMotion = usePrefersReducedMotion();
+  const [visible, setVisible] = React.useState(hasInitialPresentation);
+  const [processStarted, setProcessStarted] = React.useState(
+    hasInitialPresentation,
+  );
+  const [revealComplete, setRevealComplete] = React.useState(false);
+  const [retainedTicketId, setRetainedTicketId] = React.useState(
+    pendingTicketId || "",
+  );
+  const activeRef = React.useRef(processActive);
+  const fulfillmentKeyRef = React.useRef("");
+  const errorKeyRef = React.useRef("");
+  const closeButtonRef = React.useRef(null);
+
+  const fulfillmentKey = fulfillment
+    ? `${fulfillment.requestId || ""}:${fulfillment.tokenId || ""}:${fulfillment.txHash || ""}`
+    : "";
+  const effectiveRequestId = String(
+    requestId || fulfillment?.requestId || "",
+  );
+  const selectedNftReady = isSelectedNftReady(selectedNft, fulfillment);
+
+  React.useEffect(() => {
+    if (processActive && !activeRef.current) {
+      setProcessStarted(true);
+      setVisible(true);
+      setRevealComplete(false);
+      fulfillmentKeyRef.current = "";
+    }
+    activeRef.current = processActive;
+  }, [processActive]);
+
+  React.useEffect(() => {
+    if (pendingTicketId) setRetainedTicketId(String(pendingTicketId));
+  }, [pendingTicketId]);
+
+  React.useEffect(() => {
+    if (!fulfillmentKey || fulfillmentKey === fulfillmentKeyRef.current) return;
+    fulfillmentKeyRef.current = fulfillmentKey;
+    setProcessStarted(true);
+    setVisible(true);
+    setRevealComplete(false);
+  }, [fulfillmentKey]);
+
+  React.useEffect(() => {
+    if (!redeemError || redeemError === errorKeyRef.current) return;
+    errorKeyRef.current = redeemError;
+    setProcessStarted(true);
+    setVisible(true);
+  }, [redeemError]);
+
+  const stage = deriveVrfUiStage({
+    isRedeeming,
+    vrfPending: VRFPending,
+    txStage: txStatus?.type === "redeem" ? txStatus?.stage : "",
+    requestId: effectiveRequestId,
+    fulfillment,
+    revealComplete,
+    selectedNftReady,
+    error: redeemError,
+  });
+  const shouldPrepareFrames = processStarted || processActive || Boolean(fulfillment);
+  const preload = useFramePreloader(shouldPrepareFrames);
+  const animationMode =
+    stage === "complete"
+      ? "flash_hold"
+      : stage === "revealing" && revealComplete
+        ? "flash_hold"
+        : stage === "idle"
+          ? "burning"
+          : stage;
+  const { current, previous } = useTransformationFrame({
+    mode: animationMode,
+    ready: preload.ready,
+    reducedMotion,
+    onFinalFrame: () => setRevealComplete(true),
+  });
+
+  React.useEffect(() => {
+    if (!visible) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setVisible(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    const focusTimer = setTimeout(() => closeButtonRef.current?.focus(), 0);
+    return () => {
+      clearTimeout(focusTimer);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [visible]);
+
+  if (!processStarted && !processActive && !fulfillment && !redeemError) {
+    return null;
+  }
+
+  if (!visible) {
+    return processActive ? (
+      <button
+        type="button"
+        className="vrf-transform-reopen"
+        onClick={() => setVisible(true)}
+      >
+        <Images size={18} aria-hidden="true" />
+        Show VRF transformation
+      </button>
+    ) : null;
+  }
+
+  const progress = getVrfStageProgress(stage);
+  const activeStep = getVrfActiveStep(stage);
+  const statusText = getStatusText(
+    stage,
+    redeemError || redeemMsg,
+    selectedNftReady,
+  );
+  const selectedImage = selectedNftReady
+    ? selectedNft.image || selectedNft.meta?.image
+    : "";
+  const tokenId = fulfillment?.tokenId || selectedNft?.tokenId || "";
+  const title =
+    stage === "complete"
+      ? "MUTATION COMPLETE"
+      : stage === "error"
+        ? "TRANSFORMATION INTERRUPTED"
+        : "VRF TRANSFORMATION IN PROGRESS";
+
+  const viewInGallery = () => {
+    setVisible(false);
+    document.getElementById("gallery")?.scrollIntoView({
+      behavior: reducedMotion ? "auto" : "smooth",
+      block: "start",
+    });
   };
 
   return (
-    <div style={rowStyle} role="listitem">
-      <div style={S.stepLeft}>
-        <span style={pillStyle}>{step}</span>
-        <div style={labelStyle}>{label}</div>
-      </div>
-      <div style={S.stepRight}>
-        <span style={{ ...S.statusChip, ...chipStyle }}>
-          {statusText}
-          {active && (
-            <span style={S.spinnerWrap} aria-hidden>
-              <span style={S.spinner} />
-            </span>
+    <div className="vrf-transform-layer" role="presentation">
+      <section
+        className={`vrf-transform-modal vrf-transform-modal--${stage}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="vrf-transform-title"
+      >
+        <button
+          ref={closeButtonRef}
+          type="button"
+          className="vrf-transform-close"
+          onClick={() => setVisible(false)}
+          aria-label="Close transformation"
+          title="Close"
+        >
+          <X size={20} aria-hidden="true" />
+        </button>
+
+        <header className="vrf-transform-header">
+          <p className="vrf-transform-kicker">BIGGIEYES / CHAINLINK VRF</p>
+          <h2 id="vrf-transform-title">{title}</h2>
+          <p>
+            Burning ticket <span aria-hidden="true">&bull;</span> Requesting
+            randomness <span aria-hidden="true">&bull;</span> Finalizing mutation
+          </p>
+          <div className="vrf-transform-identifiers">
+            {retainedTicketId ? <span>Ticket #{retainedTicketId}</span> : null}
+            {effectiveRequestId && effectiveRequestId !== "0" ? (
+              <span title={effectiveRequestId}>
+                Request {short(effectiveRequestId)}
+              </span>
+            ) : null}
+          </div>
+        </header>
+
+        <div
+          className={`vrf-transform-viewer ${
+            stage === "waiting_vrf" ? "vrf-transform-viewer--waiting" : ""
+          } ${stage === "revealing" ? "vrf-transform-viewer--flash" : ""}`}
+        >
+          {stage === "complete" && selectedImage ? (
+            <img
+              className="vrf-transform-nft"
+              src={selectedImage}
+              alt={`BIGGI NFT #${tokenId}`}
+              decoding="async"
+            />
+          ) : preload.ready ? (
+            <>
+              {previous != null ? (
+                <img
+                  className="vrf-transform-frame vrf-transform-frame--previous"
+                  src={VRF_TRANSFORMATION_FRAMES[previous]}
+                  alt=""
+                  aria-hidden="true"
+                />
+              ) : null}
+              <img
+                key={VRF_TRANSFORMATION_FRAMES[current]}
+                className="vrf-transform-frame vrf-transform-frame--current"
+                src={VRF_TRANSFORMATION_FRAMES[current]}
+                alt="Illustrative Biggi transformation"
+              />
+            </>
+          ) : (
+            <div className="vrf-transform-preload" role="status">
+              <RefreshCw size={28} aria-hidden="true" />
+              <span>
+                Preparing transformation {preload.loaded}/
+                {VRF_TRANSFORMATION_FRAMES.length}
+              </span>
+            </div>
           )}
-        </span>
-      </div>
+          <div className="vrf-transform-bloom" aria-hidden="true" />
+        </div>
+
+        {stage === "complete" ? (
+          <div className="vrf-transform-result" aria-live="polite">
+            <strong>BIGGI #{tokenId}</strong>
+            <span>
+              Block: {selectedNft?.blockName || "-"} / Background:{" "}
+              {selectedNft?.backgroundName || "-"}
+            </span>
+          </div>
+        ) : null}
+
+        <ol className="vrf-transform-steps" aria-label="VRF transformation stages">
+          {VRF_STEPS.map((label, index) => {
+            const done = stage === "complete" || index < activeStep;
+            const active = stage !== "complete" && index === activeStep;
+            return (
+              <li
+                key={label}
+                className={`${done ? "is-done" : ""} ${active ? "is-active" : ""}`}
+              >
+                <span className="vrf-transform-step-dot" aria-hidden="true">
+                  {done ? <Check size={15} /> : index + 1}
+                </span>
+                <span>{label}</span>
+              </li>
+            );
+          })}
+        </ol>
+
+        <div className="vrf-transform-progress-wrap">
+          <div
+            className="vrf-transform-progress"
+            role="progressbar"
+            aria-label="On-chain process stage"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow={progress}
+          >
+            <span style={{ width: `${progress}%` }} />
+          </div>
+          <span>{progress}%</span>
+        </div>
+
+        <div
+          className={`vrf-transform-status ${stage === "error" ? "is-error" : ""}`}
+          aria-live="polite"
+        >
+          {stage === "error" ? (
+            <AlertTriangle size={20} aria-hidden="true" />
+          ) : (
+            <span className="vrf-transform-status-pulse" aria-hidden="true" />
+          )}
+          <div>
+            <span>On-chain status</span>
+            <strong>{statusText}</strong>
+          </div>
+        </div>
+
+        <p className="vrf-transform-disclaimer">
+          Visual mutation is illustrative only. The final NFT appears only after
+          on-chain fulfillment.
+        </p>
+
+        <footer className="vrf-transform-actions">
+          {(VRFPending || stage === "revealing") && onRefresh ? (
+            <button type="button" onClick={onRefresh}>
+              <RefreshCw size={17} aria-hidden="true" />
+              Check status
+            </button>
+          ) : null}
+          {txLink ? (
+            <a href={txLink} target="_blank" rel="noreferrer">
+              <ExternalLink size={17} aria-hidden="true" />
+              Transaction
+            </a>
+          ) : null}
+          {stage === "complete" ? (
+            <button type="button" onClick={viewInGallery}>
+              <Images size={17} aria-hidden="true" />
+              View NFT
+            </button>
+          ) : null}
+          <button type="button" onClick={() => setVisible(false)}>
+            <X size={17} aria-hidden="true" />
+            Close
+          </button>
+        </footer>
+      </section>
     </div>
   );
-});
-
-const styles = {
-  layer: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(0,0,0,0.75)",
-    backdropFilter: "blur(5px)",
-    zIndex: 9998,
-    pointerEvents: "auto",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  anchorWrap: {
-    position: "fixed", // anchor to viewport
-    pointerEvents: "auto", // must be auto for button clicks
-    zIndex: 9999,
-  },
-  centerWrap: {
-    position: "fixed",
-    left: "50%",
-    top: "50%",
-    transform: "translate(-50%, -50%)",
-    pointerEvents: "auto",
-    zIndex: 9999,
-  },
-  card: {
-    width: "min(700px, 92vw)",
-    background:
-      "linear-gradient(135deg, rgba(25,28,45,0.95) 0%, rgba(15,18,35,0.98) 100%)",
-    border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: "20px",
-    boxShadow: "0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,232,0,0.2)",
-    color: "#fff",
-    padding: "24px",
-    fontFamily: "'Inter', sans-serif",
-    pointerEvents: "auto",
-    position: "relative",
-    overFLOW: "hidden",
-    willChange: "transform",
-  },
-  arrowUp: {
-    position: "absolute",
-    left: "50%",
-    top: -10,
-    width: 20,
-    height: 20,
-    transform: "translateX(-50%) rotate(45deg)",
-    background: "rgba(25,28,45,0.95)",
-    borderLeft: "1px solid rgba(255,255,255,0.1)",
-    borderTop: "1px solid rgba(255,255,255,0.1)",
-    boxShadow: "-2px -2px 10px rgba(0,0,0,0.3)",
-  },
-  header: {
-    display: "flex",
-    alignItems: "center",
-    gap: 16,
-    marginBottom: 20,
-    paddingBottom: 16,
-    borderBottom: "1px solid rgba(255,255,255,0.1)",
-  },
-  iconContainer: {
-    width: 54,
-    height: 54,
-    borderRadius: "12px",
-    background: "rgba(255,232,0,0.1)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "1px solid rgba(255,232,0,0.2)",
-  },
-  icon: {
-    width: 32,
-    height: "auto",
-    filter: "drop-shadow(0 0 5px rgba(255,232,0,0.5))",
-  },
-  headerTxts: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-  },
-  title: {
-    fontWeight: 700,
-    fontSize: "20px",
-    color: "#FFFFFF",
-    letterSpacing: "0.5px",
-  },
-  subTitle: {
-    fontSize: "14px",
-    color: "rgba(255,255,255,0.7)",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  },
-  badge: {
-    display: "inline-block",
-    border: "1px solid rgba(255,232,0,0.3)",
-    borderRadius: "6px",
-    padding: "4px 8px",
-    color: "#FFE800",
-    background: "rgba(255,232,0,0.1)",
-    fontWeight: 600,
-    fontSize: "12px",
-  },
-  progressContainer: {
-    marginBottom: "24px",
-  },
-  progressWrap: {
-    height: "8px",
-    background: "rgba(255,255,255,0.1)",
-    borderRadius: "10px",
-    overFLOW: "hidden",
-    marginBottom: "8px",
-  },
-  progressBar: {
-    height: "100%",
-    background: "linear-gradient(90deg, #FFE800, #FF9D00)",
-    boxShadow: "0 0 20px rgba(255,232,0,0.4)",
-    transition: "width .5s ease",
-    borderRadius: "10px",
-    animation: "shimmer 2s infinite linear",
-    backgroundSize: "1000px 100%",
-  },
-  progressText: {
-    textAlign: "right",
-    fontSize: "12px",
-    color: "rgba(255,255,255,0.7)",
-    fontWeight: 500,
-  },
-
-  /* ---- Steps ---- */
-  stepList: {
-    position: "relative",
-    border: "1px solid rgba(8,255,230,0.15)",
-    borderRadius: "16px",
-    overFLOW: "hidden",
-    background:
-      "linear-gradient(145deg, rgba(13,20,38,0.9) 0%, rgba(9,13,26,0.85) 100%)",
-    marginTop: "22px",
-    marginBottom: "22px",
-    boxShadow:
-      "0 16px 36px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.04)",
-    backdropFilter: "blur(12px)",
-    padding: "10px",
-  },
-  stepRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "16px",
-    minHeight: "56px",
-    padding: "12px 14px",
-    borderRadius: "12px",
-    border: "1px solid rgba(255,255,255,0.06)",
-    boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.01)",
-    transition: "all 0.25s ease",
-  },
-  stepRowAlt: {
-    background: "rgba(255,255,255,0.02)",
-  },
-  stepRowActive: {
-    background:
-      "linear-gradient(90deg, rgba(8,255,230,0.22) 0%, rgba(8,255,230,0.04) 100%)",
-    boxShadow: "inset 0 0 0 1px rgba(8,255,230,0.22)",
-  },
-  stepRowDone: {
-    background:
-      "linear-gradient(90deg, rgba(255,232,0,0.18) 0%, rgba(255,232,0,0.03) 100%)",
-    boxShadow: "inset 0 0 0 1px rgba(255,232,0,0.22)",
-  },
-  stepLeft: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    flex: "1 1 auto",
-  },
-  stepLabel: {
-    fontSize: "14px",
-    fontWeight: 600,
-    color: "rgba(255,255,255,0.8)",
-    lineHeight: 1.4,
-    transition: "color 0.25s ease, text-shadow 0.25s ease",
-  },
-  stepLabelActive: {
-    color: "#08FFE6",
-    textShadow: "0 0 12px rgba(8,255,230,0.35)",
-  },
-  stepLabelDone: {
-    color: "#FFE800",
-  },
-  stepRight: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    flexShrink: 0,
-  },
-  stepPill: {
-    display: "inline-grid",
-    placeItems: "center",
-    width: "36px",
-    height: "36px",
-    borderRadius: "12px",
-    borderWidth: "1px",
-    borderStyle: "solid",
-    borderColor: "rgba(255,255,255,0.18)",
-    color: "rgba(255,255,255,0.8)",
-    background:
-      "linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%)",
-    fontWeight: 700,
-    fontSize: "15px",
-    boxShadow: "0 6px 16px rgba(0,0,0,0.3)",
-    transition: "all 0.25s ease",
-  },
-  stepPillActive: {
-    borderColor: "rgba(8,255,230,0.7)",
-    color: "#08FFE6",
-    background:
-      "linear-gradient(135deg, rgba(8,255,230,0.25) 0%, rgba(8,255,230,0.05) 100%)",
-    boxShadow:
-      "0 0 0 1px rgba(8,255,230,0.3), 0 12px 24px rgba(8,255,230,0.22)",
-  },
-  stepPillDone: {
-    borderColor: "rgba(255,232,0,0.65)",
-    color: "#FFE800",
-    background:
-      "linear-gradient(135deg, rgba(255,232,0,0.25) 0%, rgba(255,232,0,0.05) 100%)",
-    boxShadow:
-      "0 0 0 1px rgba(255,232,0,0.3), 0 12px 24px rgba(255,232,0,0.25)",
-  },
-  statusChip: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "8px",
-    minHeight: "30px",
-    padding: "6px 16px",
-    borderRadius: "999px",
-    fontSize: "12px",
-    fontWeight: 600,
-    borderWidth: "1px",
-    borderStyle: "solid",
-    transition: "all 0.3s ease",
-    textTransform: "uppercase",
-    letterSpacing: "0.4px",
-  },
-  statusIdle: {
-    borderColor: "rgba(255,255,255,0.18)",
-    color: "rgba(255,255,255,0.65)",
-    background: "rgba(255,255,255,0.06)",
-  },
-  statusActive: {
-    borderColor: "rgba(8,255,230,0.6)",
-    color: "#0AF0FF",
-    background: "rgba(8,255,230,0.12)",
-    boxShadow: "0 0 14px rgba(8,255,230,0.35)",
-  },
-  statusDone: {
-    borderColor: "rgba(255,232,0,0.6)",
-    background: "rgba(255,232,0,0.12)",
-    color: "#FFE800",
-    boxShadow: "0 0 14px rgba(255,232,0,0.28)",
-  },
-  spinnerWrap: {
-    display: "inline-grid",
-    placeItems: "center",
-    width: "14px",
-    height: "14px",
-  },
-  spinner: {
-    width: "12px",
-    height: "12px",
-    borderRadius: "50%",
-    border: "2px solid #08FFE6",
-    borderTopColor: "transparent",
-    animation: "spin 0.9s linear infinite",
-  },
-
-  note: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    marginBottom: "16px",
-    padding: "12px 16px",
-    fontSize: "14px",
-    color: "rgba(255,255,255,0.8)",
-    background: "rgba(255,232,0,0.05)",
-    borderRadius: "8px",
-    border: "1px solid rgba(255,255,255,0.1)",
-  },
-  noteIcon: {
-    fontSize: "16px",
-    animation: "pulse 2s ease-in-out infinite",
-  },
-  refreshBtn: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    margin: "0 auto 16px",
-    background: "linear-gradient(135deg, #08FFE6 0%, #00D1FF 100%)",
-    border: "none",
-    color: "#0A1F2D",
-    fontWeight: 600,
-    padding: "10px 20px",
-    borderRadius: "10px",
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-    boxShadow: "0 4px 10px rgba(8,255,230,0.3)",
-  },
-  refreshIcon: {
-    fontSize: "16px",
-    transition: "transform 0.3s ease",
-  },
-  footer: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    padding: "12px 16px",
-    background: "rgba(255,255,255,0.03)",
-    borderRadius: "12px",
-    border: "1px solid rgba(255,255,255,0.05)",
-  },
-  thumb: {
-    width: "40px",
-    height: "40px",
-    border: "1px solid rgba(255,232,0,0.3)",
-    borderRadius: "8px",
-    background: "rgba(0,0,0,0.2)",
-    objectFit: "cover",
-  },
-  tip: {
-    fontSize: "12px",
-    color: "rgba(255,255,255,0.6)",
-    lineHeight: 1.4,
-  },
-};
+}

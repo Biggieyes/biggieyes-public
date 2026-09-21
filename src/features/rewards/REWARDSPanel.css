@@ -3484,9 +3484,27 @@
 }
 
 @media (max-width: 520px) {
+  .rewards-grid .panel-header--rewards {
+    gap: 8px;
+    padding: 12px 14px;
+  }
+
+  .rewards-grid .panel-header--rewards .rewards-grid__title {
+    font-size: 1.55rem;
+    line-height: 1.15;
+    letter-spacing: 0.04em;
+  }
+
+  .rewards-grid .panel-header--rewards .rewards-grid__subtitle {
+    margin-top: 3px;
+    font-size: 0.82rem;
+    line-height: 1.42;
+  }
+
   .rewards-grid .panel-header--rewards .rewards-panel__header-meta {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(105px, 0.8fr) minmax(0, 1.2fr);
+    gap: 6px;
   }
 
   .rewards-grid .panel-header--rewards .rewards-panel__source-pill {
@@ -3494,6 +3512,7 @@
     justify-content: center;
     white-space: normal;
     text-align: center;
+    font-size: 0.68rem;
   }
 }
 
@@ -3505,5 +3524,613 @@
   .rewards-grid.biggi-skin .rewards-grid__status-grid,
   .rewards-grid.biggi-skin .rewards-grid__stat-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Holder-first token rewards experience */
+.rewards-panel__tabs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px;
+  border-radius: 8px;
+}
+
+.rewards-panel__tab-list,
+.rewards-panel__tab-tools {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.rewards-panel__tab-list {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.rewards-panel__tabs .tab-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  border-radius: 6px !important;
+}
+
+.rewards-panel__tab-tools {
+  flex: 0 0 auto;
+}
+
+.rewards-panel__tool-button {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid rgba(255, 232, 0, 0.42);
+  border-radius: 6px;
+  background: rgba(10, 13, 20, 0.92);
+  color: #ffe800;
+  cursor: pointer;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.34),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.rewards-panel__tool-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: #ffe800;
+  background: rgba(255, 232, 0, 0.13);
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.4),
+    0 0 15px rgba(255, 232, 0, 0.16);
+}
+
+.rewards-panel__tool-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.rewards-holder__claim-center {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+  min-height: 310px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 232, 0, 0.58);
+  border-radius: 8px;
+  background:
+    linear-gradient(125deg, rgba(255, 232, 0, 0.08), transparent 42%),
+    linear-gradient(180deg, rgba(13, 17, 25, 0.98), rgba(6, 9, 15, 0.99));
+  box-shadow:
+    0 22px 46px rgba(0, 0, 0, 0.56),
+    0 0 24px rgba(255, 232, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.rewards-holder__claim-center::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, #ffe800, #5ddcff 72%, transparent);
+  pointer-events: none;
+}
+
+.rewards-holder__claim-center.is-ready {
+  border-color: rgba(91, 238, 167, 0.58);
+}
+
+.rewards-holder__claim-center.is-paused {
+  border-color: rgba(255, 184, 77, 0.62);
+}
+
+.rewards-holder__claim-center.is-error {
+  border-color: rgba(255, 102, 125, 0.62);
+}
+
+.rewards-holder__claim-main {
+  min-width: 0;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.rewards-holder__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffe800;
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rewards-holder__claim-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 17px;
+}
+
+.rewards-holder__amount-label {
+  display: block;
+  color: #aeb8ce;
+  font-size: 0.8rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.rewards-holder__amount {
+  display: block;
+  max-width: 100%;
+  margin-top: 6px;
+  color: #ffffff;
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  font-size: 2rem;
+  line-height: 1.18;
+  overflow-wrap: anywhere;
+  text-shadow: 0 0 20px rgba(93, 220, 255, 0.22);
+}
+
+.rewards-holder__claim-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid rgba(160, 177, 207, 0.34);
+  border-radius: 999px;
+  background: rgba(116, 132, 162, 0.12);
+  color: #dce6f8;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.rewards-holder__claim-status.is-ready {
+  border-color: rgba(91, 238, 167, 0.5);
+  background: rgba(91, 238, 167, 0.12);
+  color: #8af2bd;
+}
+
+.rewards-holder__claim-status.is-paused {
+  border-color: rgba(255, 184, 77, 0.48);
+  background: rgba(255, 184, 77, 0.12);
+  color: #ffd08a;
+}
+
+.rewards-holder__claim-status.is-error {
+  border-color: rgba(255, 102, 125, 0.48);
+  background: rgba(255, 102, 125, 0.12);
+  color: #ff9aac;
+}
+
+.rewards-holder__claim-status.is-syncing {
+  border-color: rgba(93, 220, 255, 0.46);
+  background: rgba(93, 220, 255, 0.1);
+  color: #8beaff;
+}
+
+.rewards-holder__claim-status.is-empty {
+  border-color: rgba(160, 177, 207, 0.4);
+  background: rgba(160, 177, 207, 0.1);
+  color: #c8d2e4;
+}
+
+.rewards-holder__claim-detail {
+  max-width: 690px;
+  margin: 16px 0 0;
+  color: #c2ccdd;
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+.rewards-holder__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.rewards-holder__actions .biggi-btn {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border-radius: 6px;
+}
+
+.rewards-holder__claim-button {
+  min-width: 230px;
+}
+
+.rewards-holder__refresh-button {
+  min-width: 118px;
+}
+
+.rewards-holder__facts {
+  min-width: 0;
+  margin: 0;
+  padding: 22px 24px;
+  display: grid;
+  align-content: center;
+  background: rgba(5, 8, 14, 0.66);
+  border-left: 1px solid rgba(93, 220, 255, 0.2);
+}
+
+.rewards-holder__fact {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(0, auto);
+  align-items: center;
+  gap: 18px;
+  padding: 15px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.rewards-holder__fact:last-child {
+  border-bottom: 0;
+}
+
+.rewards-holder__fact dt,
+.rewards-holder__fact dd {
+  margin: 0;
+}
+
+.rewards-holder__fact dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #9eabc1;
+  font-size: 0.76rem;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.rewards-holder__fact dt svg {
+  color: #5ddcff;
+}
+
+.rewards-holder__fact dd {
+  min-width: 0;
+  color: #f7f9ff;
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.rewards-holder__fact--timer dd {
+  color: #7cecff;
+  font-size: 0.8rem;
+}
+
+.rewards-panel__section--token .rewards-panel__hero {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.rewards-panel__section--token .rewards-panel__hero .biggi-hero__stat {
+  min-height: 112px;
+  padding: 16px;
+  border-radius: 8px;
+  text-align: left;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.rewards-panel__section--token .rewards-panel__hero .biggi-hero__value {
+  font-size: 1.15rem;
+}
+
+.rewards-holder__weights {
+  padding: 20px;
+  border: 1px solid rgba(93, 220, 255, 0.34);
+  border-radius: 8px;
+  background: rgba(8, 12, 19, 0.9);
+  box-shadow:
+    0 16px 34px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.rewards-holder__weights-head,
+.rewards-holder__weights-title {
+  display: flex;
+  align-items: center;
+}
+
+.rewards-holder__weights-head {
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.rewards-holder__weights-title {
+  min-width: 0;
+  align-items: flex-start;
+  gap: 11px;
+}
+
+.rewards-holder__weights-title > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: #5ddcff;
+}
+
+.rewards-holder__weights-title h3,
+.rewards-holder__weights-title p {
+  margin: 0;
+}
+
+.rewards-holder__weights-title h3 {
+  color: #f8faff;
+  font-size: 1rem;
+}
+
+.rewards-holder__weights-title p {
+  margin-top: 4px;
+  color: #9eabc1;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.rewards-holder__weights-head .biggi-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  border-radius: 6px;
+}
+
+.rewards-holder__weight-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+}
+
+.rewards-holder__weight-grid .rewards-panel__status {
+  min-width: 0;
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+.rewards-holder__weight-grid .label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rewards-holder__technical,
+.rewards-holder__explainer {
+  border: 1px solid rgba(130, 148, 180, 0.24);
+  border-radius: 8px;
+  background: rgba(7, 10, 16, 0.84);
+  overflow: hidden;
+}
+
+.rewards-holder__technical > summary,
+.rewards-holder__explainer > summary {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  color: #dce5f4;
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.rewards-holder__technical > summary::-webkit-details-marker,
+.rewards-holder__explainer > summary::-webkit-details-marker {
+  display: none;
+}
+
+.rewards-holder__technical > summary:hover,
+.rewards-holder__explainer > summary:hover {
+  background: rgba(93, 220, 255, 0.06);
+}
+
+.rewards-holder__technical-title,
+.rewards-holder__explainer > summary > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.rewards-holder__technical-title svg,
+.rewards-holder__explainer > summary svg {
+  color: #5ddcff;
+}
+
+.rewards-holder__technical-chevron {
+  flex: 0 0 auto;
+  transition: transform 0.18s ease;
+}
+
+.rewards-holder__technical[open] > summary .rewards-holder__technical-chevron,
+.rewards-holder__explainer[open] > summary .rewards-holder__technical-chevron {
+  transform: rotate(90deg);
+}
+
+.rewards-holder__technical-body {
+  padding: 0 16px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.rewards-holder__technical .rewards-panel__mainnet-rail {
+  max-height: none;
+  margin: 16px 0;
+  overflow: visible;
+  padding: 0;
+}
+
+.rewards-holder__technical .rewards-panel__address-row {
+  border-radius: 6px;
+}
+
+.rewards-panel__address-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-decoration: none;
+}
+
+.rewards-holder__not-configured {
+  color: #8f9bb0;
+  font-size: 0.76rem;
+}
+
+.rewards-holder__explainer {
+  margin-top: 22px;
+}
+
+.rewards-holder__explainer .rewards-grid__diagram-wrap {
+  margin: 0;
+  border-width: 1px 0 0;
+  border-radius: 0;
+}
+
+.is-spinning {
+  animation: rewards-refresh-spin 0.85s linear infinite;
+}
+
+@keyframes rewards-refresh-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1100px) {
+  .rewards-holder__claim-center {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rewards-holder__facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-top: 1px solid rgba(93, 220, 255, 0.2);
+    border-left: 0;
+  }
+
+  .rewards-holder__fact:nth-child(odd) {
+    padding-right: 18px;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .rewards-holder__fact:nth-child(even) {
+    padding-left: 18px;
+  }
+
+  .rewards-panel__section--token .rewards-panel__hero,
+  .rewards-holder__weight-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .rewards-panel__tabs {
+    align-items: stretch;
+  }
+
+  .rewards-panel__tab-list {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rewards-panel__tabs .tab-button {
+    width: 100%;
+  }
+
+  .rewards-panel__tab-tools {
+    flex-direction: column;
+  }
+
+  .rewards-holder__claim-main {
+    padding: 22px 18px;
+  }
+
+  .rewards-holder__claim-heading {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .rewards-holder__amount {
+    font-size: 1.6rem;
+  }
+
+  .rewards-holder__claim-status {
+    align-self: flex-start;
+  }
+
+  .rewards-holder__actions,
+  .rewards-holder__actions .biggi-btn {
+    width: 100%;
+  }
+
+  .rewards-holder__facts,
+  .rewards-panel__section--token .rewards-panel__hero,
+  .rewards-holder__weight-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rewards-holder__facts {
+    padding: 12px 18px;
+  }
+
+  .rewards-holder__fact:nth-child(odd),
+  .rewards-holder__fact:nth-child(even) {
+    padding: 14px 0;
+    border-right: 0;
+  }
+
+  .rewards-holder__weights {
+    padding: 16px;
+  }
+
+  .rewards-holder__weights-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .rewards-holder__weights-head .biggi-btn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-spinning {
+    animation-duration: 1.8s;
   }
 }

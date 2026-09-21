@@ -170,6 +170,11 @@
   },
   {
     "inputs": [],
+    "name": "InvalidRandomnessSource",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidTokenId",
     "type": "error"
   },
@@ -181,6 +186,11 @@
   {
     "inputs": [],
     "name": "MetadataNotInitialized",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "MetadataNotSealed",
     "type": "error"
   },
   {
@@ -247,17 +257,22 @@
   },
   {
     "inputs": [],
-    "name": "PendingRetryDelayZero",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "PendingRetryTooEarly",
+    "name": "PendingMintsExist",
     "type": "error"
   },
   {
     "inputs": [],
     "name": "PendingStateCorrupted",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "PreferredIndexDisabled",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RandomnessNotReady",
     "type": "error"
   },
   {
@@ -268,6 +283,11 @@
   {
     "inputs": [],
     "name": "RewardMatrixInconsistent",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RoutingLocked",
     "type": "error"
   },
   {
@@ -444,6 +464,12 @@
   },
   {
     "anonymous": false,
+    "inputs": [],
+    "name": "MetadataSealed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
     "inputs": [
       {
         "indexed": true,
@@ -516,6 +542,31 @@
       }
     ],
     "name": "Paused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "requestId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "minter",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "nftIndex",
+        "type": "uint256"
+      }
+    ],
+    "name": "PendingMintAssigned",
     "type": "event"
   },
   {
@@ -834,6 +885,25 @@
         "type": "uint256"
       }
     ],
+    "name": "assignedIndex",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "name": "backgroundMintCounts",
     "outputs": [
       {
@@ -1052,6 +1122,25 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "requestId",
+        "type": "uint256"
+      }
+    ],
+    "name": "completePendingMint",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -1312,6 +1401,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "hasRequests",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -1404,6 +1506,19 @@
       {
         "internalType": "bool",
         "name": "rewardMatrixConsistent",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "metadataSealed",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
         "type": "bool"
       }
     ],
@@ -1529,7 +1644,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "newRequestId",
+        "name": "requestId",
         "type": "uint256"
       }
     ],
@@ -1551,6 +1666,19 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pendingMintCount",
+    "outputs": [
+      {
+        "internalType": "uint16",
+        "name": "",
+        "type": "uint16"
       }
     ],
     "stateMutability": "view",
@@ -1713,7 +1841,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "newRequestId",
+        "name": "requestId",
         "type": "uint256"
       }
     ],
@@ -1798,6 +1926,13 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "sealMetadata",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -1873,19 +2008,6 @@
       }
     ],
     "name": "setModules",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint64",
-        "name": "delaySec",
-        "type": "uint64"
-      }
-    ],
-    "name": "setPendingRetryDelay",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -2031,6 +2153,19 @@
     "name": "unpause",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "vrfRecoveryVersion",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "pure",
     "type": "function"
   },
   {

@@ -11,7 +11,8 @@ pragma solidity ^0.8.24;
  - pending retry mechanismus
 
  Přidáno:
- - optional registry-based chapter attribution
+ - strict registry-based chapter attribution
+ - collection-specific rewards budget forwarding and retry
  - accounting per series/chapter/source collection
 */
 
@@ -27,6 +28,10 @@ interface IBiggiSeriesRegistryDistributor {
     function getChapterCollections(uint256 chapterId) external view returns (address vrfCollection, address publicCollection, address ticketHub);
 }
 
+interface IBiggiCollectionRewardsBudget {
+    function fundCollectionBudget(address collection) external payable;
+}
+
 contract BiggiMultiCollectionDistributor is Ownable, ReentrancyGuard, Pausable {
     error CallerNotWhitelisted();
     error ZeroAddress();
@@ -37,6 +42,9 @@ contract BiggiMultiCollectionDistributor is Ownable, ReentrancyGuard, Pausable {
     error InsufficientFreeBalance();
     error WithdrawFailed();
     error InvalidChapterAttribution();
+    error CollectionRewardRetryRequired();
+    error RecipientHasPending();
+    error RoutingLocked();
 
     address public collectionRewards;
     address public reserve;
@@ -49,6 +57,8 @@ contract BiggiMultiCollectionDistributor is Ownable, ReentrancyGuard, Pausable {
 
     mapping(address => uint256) public pending;
     uint256 public totalPending;
+    mapping(address => uint256) public pendingCollectionRewards;
+    uint256 public totalPendingCollectionRewards;
 
     uint256 public totalReceived;
     mapping(address => uint256) public receivedByCollection;
@@ -72,6 +82,9 @@ contract BiggiMultiCollectionDistributor is Ownable, ReentrancyGuard, Pausable {
     event PendingWithdrawn(address indexed to, uint256 amount);
     event TreasuryRemainderHandled(uint256 remainder);
     event ChapterAttributionFailed(address indexed source, address indexed registry, uint256 amount);
+    event CollectionBudgetForwardSucceeded(address indexed collection, uint256 amount);
+    event CollectionBudgetForwardFailed(address indexed collection, uint256 amount);
+    event CollectionBudgetPendingRetried(address indexed collection, uint256 amount, bool success);
 
     modifier onlyWhitelisted() {
         if (!collections[msg.sender]) revert CallerNotWhitelisted();
@@ -79,6 +92,8 @@ contract BiggiMultiCollectionDistributor is Ownable, ReentrancyGuard, Pausable {
     }
 
     constructor(address initialOwner) Ownable(initialOwner) {}
+
+    function distributorVersion() external pure returns (uint256) { return 2; }
 
     function addCollection(address coll) external onlyOwner {
         if (coll == address(0)) revert ZeroAddress();
@@ -94,39 +109,50 @@ contract BiggiMultiCollectionDistributor is Ownable, ReentrancyGuard, Pausable {
 
     function setRegistry(address registry_) external onlyOwner {
         if (registry_ == address(0)) revert ZeroAddress();
+        if (totalReceived != 0 && registry_ != registry) revert RoutingLocked();
         emit RegistrySet(registry, registry_);
         registry = registry_;
     }
 
     function clearRegistry() external onlyOwner {
+        if (totalReceived != 0) revert RoutingLocked();
         emit RegistrySet(registry, address(0));
         registry = address(0);
     }
 
     function setCollectionRewards(address addr) external onlyOwner {
         if (addr == address(0)) revert ZeroAddress();
+        _requireRecipientCanChange(collectionRewards, addr);
         emit RecipientSet("collectionRewards", collectionRewards, addr);
         collectionRewards = addr;
     }
     function setReserve(address addr) external onlyOwner {
         if (addr == address(0)) revert ZeroAddress();
+        _requireRecipientCanChange(reserve, addr);
         emit RecipientSet("reserve", reserve, addr);
         reserve = addr;
     }
     function setBuybackAgent(address addr) external onlyOwner {
         if (addr == address(0)) revert ZeroAddress();
+        _requireRecipientCanChange(buybackAgent, addr);
         emit RecipientSet("buybackAgent", buybackAgent, addr);
         buybackAgent = addr;
     }
     function setTreasury(address addr) external onlyOwner {
         if (addr == address(0)) revert ZeroAddress();
+        _requireRecipientCanChange(treasury, addr);
         emit RecipientSet("treasury", treasury, addr);
         treasury = addr;
     }
     function setCommunityCenter(address addr) external onlyOwner {
         if (addr == address(0)) revert ZeroAddress();
+        _requireRecipientCanChange(communityCenter, addr);
         emit RecipientSet("communityCenter", communityCenter, addr);
         communityCenter = addr;
+    }
+
+    function _requireRecipientCanChange(address current, address next) private view {
+        if (current != next && current != address(0) && pending[current] != 0) revert RecipientHasPending();
     }
 
     function distribute() external payable nonReentrant whenNotPaused onlyWhitelisted {
@@ -144,7 +170,6 @@ contract BiggiMultiCollectionDistributor is Ownable, ReentrancyGuard, Pausable {
 
     function receiveMintShareForChapter(uint256 chapterId) external payable nonReentrant whenNotPaused {
         if (!collections[msg.sender]) revert CallerNotWhitelisted();
-        if (!_isValidChapterSource(msg.sender, chapterId)) revert InvalidChapterAttribution();
         _distributeFromChapter(msg.sender, msg.value, chapterId);
     }
 
@@ -162,10 +187,15 @@ contract BiggiMultiCollectionDistributor is Ownable, ReentrancyGuard, Pausable {
             communityCenter == address(0)
         ) revert RecipientsNotSet();
 
+        (uint256 chapterId, uint256 seriesId, address rewardCollection) =
+            _resolveAttribution(collection, explicitChapterId);
+
         totalReceived += value;
         receivedByCollection[collection] += value;
-        _recordChapterAttribution(collection, value, explicitChapterId);
+        receivedByChapter[chapterId] += value;
+        receivedBySeries[seriesId] += value;
         emit MintShareReceived(collection, value);
+        emit ChapterAttributed(collection, seriesId, chapterId, value);
 
         uint256 shareCollection = BiggiBpsLib.part(value, BiggiBpsLib.DIST_COLLECTION_BPS);
         uint256 shareReserve    = BiggiBpsLib.part(value, BiggiBpsLib.DIST_RESERVE_BPS);
@@ -180,51 +210,85 @@ contract BiggiMultiCollectionDistributor is Ownable, ReentrancyGuard, Pausable {
             emit TreasuryRemainderHandled(remainder);
         }
 
-        _tryForwardWithFunc(collectionRewards, shareCollection);
+        _tryForwardCollectionBudget(rewardCollection, shareCollection);
         _tryForwardWithFunc(reserve, shareReserve);
         _tryForwardWithFunc(buybackAgent, shareBuyback);
         _tryForwardWithFunc(treasury, shareTreasury);
         _tryForwardWithFunc(communityCenter, shareCommunity);
     }
 
-    function _recordChapterAttribution(address source, uint256 amount, uint256 explicitChapterId) internal {
-        if (registry == address(0)) return;
-        uint256 chapterId;
-        if (explicitChapterId != 0) {
-            chapterId = explicitChapterId;
-        } else {
+    function _resolveAttribution(address source, uint256 explicitChapterId)
+        internal
+        view
+        returns (uint256 chapterId, uint256 seriesId, address rewardCollection)
+    {
+        if (registry == address(0)) revert InvalidChapterAttribution();
+        chapterId = explicitChapterId;
+        if (chapterId == 0) {
             try IBiggiSeriesRegistryDistributor(registry).chapterByCollection(source) returns (uint256 resolvedChapterId) {
                 chapterId = resolvedChapterId;
             } catch {
-                emit ChapterAttributionFailed(source, registry, amount);
-                return;
+                revert InvalidChapterAttribution();
             }
         }
-        if (chapterId == 0) return;
+        if (chapterId == 0) revert InvalidChapterAttribution();
 
-        uint256 seriesId;
-        try IBiggiSeriesRegistryDistributor(registry).getChapterMeta(chapterId) returns (uint256 resolvedSeriesId, uint256) {
-            seriesId = resolvedSeriesId;
-        } catch {
-            emit ChapterAttributionFailed(source, registry, amount);
-            return;
-        }
-
-        receivedByChapter[chapterId] += amount;
-        receivedBySeries[seriesId] += amount;
-        emit ChapterAttributed(source, seriesId, chapterId, amount);
-    }
-
-    function _isValidChapterSource(address source, uint256 chapterId) internal view returns (bool) {
-        if (registry == address(0) || chapterId == 0) return false;
         try IBiggiSeriesRegistryDistributor(registry).getChapterCollections(chapterId) returns (
             address vrfCollection,
             address publicCollection,
             address ticketHub
         ) {
-            return source == vrfCollection || source == publicCollection || source == ticketHub;
+            if (source != vrfCollection && source != publicCollection && source != ticketHub) {
+                revert InvalidChapterAttribution();
+            }
+            if (vrfCollection == address(0)) revert InvalidChapterAttribution();
+            rewardCollection = vrfCollection;
         } catch {
-            return false;
+            revert InvalidChapterAttribution();
+        }
+
+        try IBiggiSeriesRegistryDistributor(registry).getChapterMeta(chapterId) returns (
+            uint256 resolvedSeriesId,
+            uint256
+        ) {
+            if (resolvedSeriesId == 0) revert InvalidChapterAttribution();
+            seriesId = resolvedSeriesId;
+        } catch {
+            revert InvalidChapterAttribution();
+        }
+    }
+
+    function rewardCollectionForChapter(uint256 chapterId) external view returns (address rewardCollection) {
+        if (registry == address(0) || chapterId == 0) revert InvalidChapterAttribution();
+        try IBiggiSeriesRegistryDistributor(registry).getChapterCollections(chapterId) returns (
+            address vrfCollection,
+            address,
+            address
+        ) {
+            if (vrfCollection == address(0)) revert InvalidChapterAttribution();
+            return vrfCollection;
+        } catch {
+            revert InvalidChapterAttribution();
+        }
+    }
+
+    function _tryForwardCollectionBudget(address collection, uint256 amt) internal {
+        if (amt == 0) return;
+        (bool ok, ) = collectionRewards.call{value: amt}(
+            abi.encodeWithSelector(IBiggiCollectionRewardsBudget.fundCollectionBudget.selector, collection)
+        );
+        if (ok) {
+            emit CollectionBudgetForwardSucceeded(collection, amt);
+            emit ForwardSucceeded(collectionRewards, amt);
+            emit SuccessTransfer(collectionRewards, amt);
+        } else {
+            pending[collectionRewards] += amt;
+            pendingCollectionRewards[collection] += amt;
+            totalPending += amt;
+            totalPendingCollectionRewards += amt;
+            emit CollectionBudgetForwardFailed(collection, amt);
+            emit ForwardFailed(collectionRewards, amt);
+            emit FailedTransfer(collectionRewards, amt);
         }
     }
 
@@ -246,6 +310,7 @@ contract BiggiMultiCollectionDistributor is Ownable, ReentrancyGuard, Pausable {
     function retryPending(address recipient) external onlyOwner nonReentrant {
         uint256 amt = pending[recipient];
         if (amt == 0) revert NoPendingAmount();
+        if (recipient == collectionRewards) revert CollectionRewardRetryRequired();
 
         pending[recipient] = 0;
         totalPending -= amt;
@@ -266,6 +331,7 @@ contract BiggiMultiCollectionDistributor is Ownable, ReentrancyGuard, Pausable {
         if (amount == 0) revert NoValue();
         uint256 available = pending[recipient];
         if (available < amount) revert PendingAmountTooHigh();
+        if (recipient == collectionRewards) revert CollectionRewardRetryRequired();
 
         pending[recipient] = available - amount;
         totalPending -= amount;
@@ -280,6 +346,36 @@ contract BiggiMultiCollectionDistributor is Ownable, ReentrancyGuard, Pausable {
             totalPending += amount;
             emit PendingPartiallyRetried(recipient, amount, false);
         }
+    }
+
+    function retryPendingCollectionReward(address collection) external onlyOwner nonReentrant {
+        uint256 amount = pendingCollectionRewards[collection];
+        if (amount == 0) revert NoPendingAmount();
+        _retryPendingCollectionReward(collection, amount);
+    }
+
+    function retryPendingCollectionRewardAmount(address collection, uint256 amount) external onlyOwner nonReentrant {
+        if (amount == 0) revert NoValue();
+        if (pendingCollectionRewards[collection] < amount) revert PendingAmountTooHigh();
+        _retryPendingCollectionReward(collection, amount);
+    }
+
+    function _retryPendingCollectionReward(address collection, uint256 amount) private {
+        pendingCollectionRewards[collection] -= amount;
+        pending[collectionRewards] -= amount;
+        totalPendingCollectionRewards -= amount;
+        totalPending -= amount;
+
+        (bool ok, ) = collectionRewards.call{value: amount}(
+            abi.encodeWithSelector(IBiggiCollectionRewardsBudget.fundCollectionBudget.selector, collection)
+        );
+        if (!ok) {
+            pendingCollectionRewards[collection] += amount;
+            pending[collectionRewards] += amount;
+            totalPendingCollectionRewards += amount;
+            totalPending += amount;
+        }
+        emit CollectionBudgetPendingRetried(collection, amount, ok);
     }
 
     function withdrawEther(address payable to, uint256 amount) external onlyOwner nonReentrant {

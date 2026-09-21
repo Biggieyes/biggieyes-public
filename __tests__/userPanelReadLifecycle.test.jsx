@@ -176,8 +176,25 @@ describe("User Panel read consistency", () => {
     expect(balances(container).slice(2)).toEqual(["0", "0"]);
     expect(claimLabel(container)).toBe("0 BIGGI");
     expect(
-      screen.getByRole("button", { name: "Claim rewards" }),
+      screen.getByRole("button", { name: "Nothing to claim" }),
     ).toBeDisabled();
+  });
+
+  it("resolves an empty loaded wallet to a real zero reward", async () => {
+    collection.balanceOf.mockResolvedValue(0n);
+    tickets.balanceOf.mockResolvedValue(0n);
+    const { container } = render(
+      <USERPANEL
+        rewardEntitlement={{ status: "inventory-unavailable" }}
+        onClaim={vi.fn()}
+      />,
+    );
+    await settled();
+    expect(claimLabel(container)).toBe("0 BIGGI");
+    expect(
+      screen.getByRole("button", { name: "Nothing to claim" }),
+    ).toBeDisabled();
+    expect(screen.getAllByText("No eligible NFTs").length).toBeGreaterThan(0);
   });
 
   it.each([null, undefined, "", "  ", "NaN", NaN, -1])(
@@ -193,7 +210,7 @@ describe("User Panel read consistency", () => {
       await settled();
       expect(claimLabel(container)).toBe("--");
       expect(
-        screen.getByRole("button", { name: "Claim rewards" }),
+        screen.getByRole("button", { name: "Checking rewards..." }),
       ).toBeDisabled();
     },
   );
@@ -207,7 +224,7 @@ describe("User Panel read consistency", () => {
     expect(screen.getByRole("button", { name: "Claim rewards" })).toBeEnabled();
   });
 
-  it("hides inventory and claim props belonging to the previous parent wallet", async () => {
+  it("uses the AppCore wallet data while the secondary Web3 context catches up", async () => {
     mocks.web3 = { ...mocks.web3, account: other };
     tickets.balanceOf.mockRejectedValue(new Error("unavailable"));
     const { container } = render(
@@ -220,14 +237,40 @@ describe("User Panel read consistency", () => {
       />,
     );
     await settled();
-    expect(claimLabel(container)).toBe("--");
+    expect(readProvider.getBalance).toHaveBeenCalledWith(account);
+    expect(claimLabel(container)).toBe("5 BIGGI");
     expect(
       screen.getByRole("button", { name: "Claim rewards" }),
-    ).toBeDisabled();
+    ).toBeEnabled();
     expect(
       screen.getByRole("button", { name: "Redeem ticket" }),
+    ).toBeEnabled();
+    expect(screen.getByText("#12")).toBeInTheDocument();
+  });
+
+  it("shows a confirmed paused entitlement without enabling the claim", async () => {
+    const { container } = render(
+      <USERPANEL
+        walletAddress={account}
+        claimable="12.5"
+        rewardEntitlement={{
+          status: "paused",
+          amount: "12.5",
+          units: "7",
+          eligibleCount: 2,
+          paused: true,
+        }}
+        onClaim={vi.fn()}
+      />,
+    );
+    await settled();
+    expect(claimLabel(container)).toBe("12.5 BIGGI");
+    expect(screen.getAllByText("Claims paused").length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("button", { name: "Claims paused" }),
     ).toBeDisabled();
-    expect(screen.queryByText("#12")).not.toBeInTheDocument();
+    expect(screen.getAllByText("2").length).toBeGreaterThan(0);
+    expect(screen.getByText("7")).toBeInTheDocument();
   });
 
   it.each([null, undefined, -1, 1.5, 9007199254740992])(

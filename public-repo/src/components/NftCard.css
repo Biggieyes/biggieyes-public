@@ -120,6 +120,18 @@
   color: #ffe800;
 }
 
+.nft-card__token-id {
+  flex: 1 0 100%;
+  max-width: 100%;
+  color: #8ee8ff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
 .nft-card__rarity {
   padding: 4px 10px;
   border-radius: 999px;

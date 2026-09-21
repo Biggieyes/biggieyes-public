@@ -1,0 +1,25 @@
+{
+  "network": "polygon",
+  "chainId": 137,
+  "chapterId": 1,
+  "mode": "execute",
+  "publicCollection": "0xe56cC0657A89daf10994204eD745985a61b0E36F",
+  "previousDistributor": "0xCE892698159D8D799D5eF7f0dF0111487511fD22",
+  "targetDistributor": "0x237DEdb4F8738610013891B0c2f87Ed9EF768D08",
+  "checks": {
+    "chapterInactive": true,
+    "ownerMatches": true,
+    "distributorV2": true,
+    "publicCollectionWhitelisted": true,
+    "currentDistributorExpected": true
+  },
+  "result": "wired",
+  "failures": [],
+  "checkedAt": "2026-09-19T17:27:14.356Z",
+  "transaction": {
+    "hash": "0x242e337f1e88af9b5d5c533ef9df82bf2cdd8360bd76d281c15519cadb688ca5",
+    "blockNumber": 94089200,
+    "gasUsed": "36657"
+  },
+  "completedAt": "2026-09-19T17:27:20.529Z"
+}

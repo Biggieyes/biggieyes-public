@@ -4,6 +4,7 @@ import { CORE_CHAPTERS } from "../src/shared/utils/addresses.js";
 import {
   clearPendingVrf,
   findVrfCompletion,
+  findVrfCompletionInReceipt,
   loadPendingVrf,
   normalizePendingVrf,
   pendingVrfFromReceipt,
@@ -27,6 +28,8 @@ const contextFor = (chapterId = 2) => ({
 const iface = new Interface([
   "event VRFRequested(address indexed user,uint256 requestId,uint256 ticketId)",
   "event PendingMintRetried(address indexed user,uint256 indexed oldRequestId,uint256 indexed newRequestId,uint256 ticketId)",
+  "event VRFFulfillStarted(uint256 requestId,address minter,uint256 randomWord)",
+  "event NFTMinted(address indexed minter,uint256 tokenId,uint256 nftIndex)",
 ]);
 const contractFor = (chapterId, request = 0n) => ({
   target: contextFor(chapterId).collection,
@@ -154,6 +157,50 @@ describe("chapter-scoped VRF reconciliation", () => {
       ticketId: "3",
       startBlock: 140,
     });
+  });
+
+  it("recognizes a V2 retry that completes the original request in its receipt", () => {
+    const context = contextFor();
+    const started = iface.encodeEventLog(iface.getEvent("VRFFulfillStarted"), [
+      9123n,
+      account,
+      77n,
+    ]);
+    const minted = iface.encodeEventLog(iface.getEvent("NFTMinted"), [
+      account,
+      1001n,
+      1n,
+    ]);
+    const receipt = {
+      logs: [
+        { ...started, address: context.collection },
+        { ...minted, address: context.collection },
+      ],
+    };
+    expect(
+      findVrfCompletionInReceipt(context, receipt, contractFor(2))?.name,
+    ).toBe("NFTMinted");
+    expect(
+      findVrfCompletionInReceipt(
+        { ...context, requestId: "9999" },
+        receipt,
+        contractFor(2),
+      ),
+    ).toBeNull();
+    expect(
+      findVrfCompletionInReceipt(
+        { ...context, account: other },
+        receipt,
+        contractFor(2),
+      ),
+    ).toBeNull();
+    expect(
+      findVrfCompletionInReceipt(
+        context,
+        { logs: [{ ...minted, address: context.collection }] },
+        contractFor(2),
+      ),
+    ).toBeNull();
   });
 
   it("requires the request, wallet and NFT mint in the same fulfillment transaction", async () => {

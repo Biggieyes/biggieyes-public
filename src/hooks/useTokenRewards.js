@@ -74,6 +74,7 @@ export default function useTokenRewards(providerOverride, addressOverride) {
         lastWeekDistributed,
         blockWeights,
         tokenMetaRaw,
+        paused,
       ] = await Promise.all([
         contract.unitReward(),
         safeCall(() => contract.rewardsMinted?.(), null),
@@ -86,6 +87,7 @@ export default function useTokenRewards(providerOverride, addressOverride) {
         safeCall(() => contract.lastWeekDistributed?.(), null),
         contract.getBlockWeights(),
         safeCall(() => contract.tokenMeta?.(), null),
+        safeCall(() => contract.paused?.(), null),
       ]);
 
       const tokenMeta = normalizeTokenMeta(tokenMetaRaw);
@@ -106,6 +108,7 @@ export default function useTokenRewards(providerOverride, addressOverride) {
         tokenMeta,
         tokenDecimals,
         tokenSymbol,
+        paused,
       };
 
       if (id !== requestId.current) return null;

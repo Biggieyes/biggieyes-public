@@ -1,5 +1,14 @@
 import { parseEther } from "ethers";
-import { ensurePolygon, getMainRW, getVRF } from "./contract";
+import {
+  ensurePolygon,
+  getMainRW,
+  getSignerProvider,
+  getVRF,
+} from "./contract";
+import {
+  assertAdminSigner,
+  POLYGON_MAINNET_CHAIN_ID,
+} from "./adminAccess.js";
 
 export const parseEth = (n) => {
   const num = Number(n);
@@ -45,7 +54,23 @@ export const writeFirst = async (targets, names, ...args) => {
   );
 };
 
-export const setVRFAllOrPartial = async (VRF) => {
+export const setVRFAllOrPartial = async (
+  VRF,
+  {
+    ownerAddress,
+    expectedChainId = POLYGON_MAINNET_CHAIN_ID,
+  } = {},
+) => {
+  if (!ownerAddress) {
+    throw new Error("Verified admin owner is required");
+  }
+  await ensurePolygon();
+  await assertAdminSigner({
+    provider: getSignerProvider(),
+    ownerAddress,
+    expectedChainId,
+  });
+
   const routerTargets = [getVRF];
   const routerNames = ["setVrfParams", "setVRFParams"];
   const routerArgs = [

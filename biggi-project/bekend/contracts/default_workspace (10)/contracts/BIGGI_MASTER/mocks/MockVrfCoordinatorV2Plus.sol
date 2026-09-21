@@ -13,6 +13,9 @@ contract MockVrfCoordinatorV2Plus is VRFCoordinatorV2PlusInterface {
 
     mapping(uint256 => address) public requester;
     mapping(uint256 => uint32) public requestedNumWords;
+    mapping(uint256 => uint32) public requestedGasLimit;
+    mapping(uint256 => bool) public callbackAttempted;
+    event GasLimitedCallback(uint256 indexed requestId, bool success, uint256 gasUsed);
 
     event MockRandomWordsRequested(
         uint256 indexed requestId,
@@ -34,6 +37,7 @@ contract MockVrfCoordinatorV2Plus is VRFCoordinatorV2PlusInterface {
         requestId = nextRequestId++;
         requester[requestId] = msg.sender;
         requestedNumWords[requestId] = req.numWords;
+        requestedGasLimit[requestId] = req.callbackGasLimit;
 
         emit MockRandomWordsRequested(
             requestId,
@@ -52,6 +56,21 @@ contract MockVrfCoordinatorV2Plus is VRFCoordinatorV2PlusInterface {
         words[0] = randomWord;
         IVrfRawConsumer(consumer).rawFulfillRandomWords(requestId, words);
         emit MockRandomWordsFulfilled(consumer, requestId, randomWord);
+    }
+
+    // The legacy fulfill helper intentionally stays unbounded for existing unit tests.
+    // Recovery regressions must use this one-shot helper with the requested callback gas.
+    function fulfillGasLimited(uint256 requestId, uint256 randomWord) external {
+        require(!callbackAttempted[requestId] && requester[requestId] != address(0), "INVALID_CALLBACK");
+        callbackAttempted[requestId] = true;
+        uint256[] memory words = new uint256[](1);
+        words[0] = randomWord;
+        bytes memory data = abi.encodeCall(IVrfRawConsumer.rawFulfillRandomWords, (requestId, words));
+        uint256 cap = requestedGasLimit[requestId];
+        require(gasleft() > cap + cap / 63 + 50_000, "INSUFFICIENT_OUTER_GAS");
+        uint256 beforeGas = gasleft();
+        (bool success,) = requester[requestId].call{gas: cap}(data);
+        emit GasLimitedCallback(requestId, success, beforeGas - gasleft());
     }
 
     function getConfig()

@@ -121,11 +121,18 @@ function extendAbi(baseAbi, extraFragments = []) {
 const MAIN_ABI_EXTENSIONS = [
   "function retryPendingMint() returns (uint256)",
   "function ownerRetryPendingMint(address user) returns (uint256)",
+  "function vrfRecoveryVersion() view returns (uint256)",
   "function pendingRetryDelay() view returns (uint256)",
   "function pendingTicketId(uint256 requestId) view returns (uint256)",
   "error NoPendingMint()",
+  "error RandomnessNotReady()",
+  "error InvalidRandomnessSource()",
   "error PendingRetryTooEarly()",
   "error PendingStateCorrupted()",
+];
+const VRF_ABI_EXTENSIONS = [
+  "function vrfRecoveryVersion() view returns (uint256)",
+  "function getRequestResult(uint256 requestId) view returns (address consumer,bool ready,uint256 word)",
 ];
 const ABI_READER = BiggiMainReader;
 const ABI_LIQUIDITY_HELPER = BiggiLiquidityHelperReader;
@@ -133,7 +140,7 @@ const ABI_RESERVE_TREASURY = BiggiReserveTreasuryReader;
 const ABI_COLLECTION_VRF = extendAbi(BiggiMain, MAIN_ABI_EXTENSIONS);
 const ABI_COLLECTION_PUBLIC = BiggiMain2;
 const ABI_TICKET_HUB = BiggiTicketHub;
-const ABI_VRF = BiggiVrfRouter;
+const ABI_VRF = extendAbi(BiggiVrfRouter, VRF_ABI_EXTENSIONS);
 const ABI_TOKEN = BiggiToken;
 const ABI_DISTRIBUTOR = BiggiMultiCollectionDistributor;
 const ABI_RESERVE = BiggiReserveV4;

@@ -145,6 +145,7 @@ function fixture(chapterId = 2) {
     attemptMintedTicketReferralAttribution: vi.fn().mockResolvedValue(true),
     fetchStats: vi.fn().mockResolvedValue(undefined),
     fetchREWARDS: vi.fn().mockResolvedValue(undefined),
+    fetchLastMinted: vi.fn().mockResolvedValue(undefined),
     fetchWalletAssets: vi.fn().mockResolvedValue(undefined),
     refreshVRFPanel: vi.fn().mockResolvedValue(undefined),
     scheduleRefreshVRF: vi.fn(),
@@ -163,12 +164,15 @@ function fixture(chapterId = 2) {
     }),
     getLiquidityContract: vi.fn().mockResolvedValue(write),
     refreshClaimable: vi.fn().mockResolvedValue(undefined),
+    buildVrfRevealResult: vi.fn().mockReturnValue(null),
   };
   for (const name of [
     "setIsMinting",
     "setIsRedeeming",
     "setIsClaiming",
     "setRedeemMsg",
+    "setRedeemError",
+    "setVrfRevealResult",
     "setRedeemStartBlock",
     "setRedeemStartedAt",
     "setVRFPending",
@@ -406,6 +410,13 @@ describe("AppCore write lifecycle", () => {
       expect(completion).toBe(mint);
     },
   );
+
+  it("does not label the burned ticket as the latest NFT while VRF is pending", async () => {
+    const f = fixture();
+    await f.run("redeemTicket");
+    expect(f.scope.setTopFirstId).not.toHaveBeenCalled();
+    expect(f.scope.setVRFPending).toHaveBeenCalledWith(true);
+  });
 
   it("does not overwrite the new wallet's VRF state with an old wallet rejection", async () => {
     const f = fixture();

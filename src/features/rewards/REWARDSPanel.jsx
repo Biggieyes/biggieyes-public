@@ -1,5 +1,22 @@
 ﻿import * as React from "react";
 import * as ethers from "ethers";
+import {
+  BarChart3,
+  ChevronRight,
+  CircleAlert,
+  CircleCheck,
+  CircleMinus,
+  CirclePause,
+  Coins,
+  ExternalLink,
+  Gift,
+  Image as ImageIcon,
+  Layers3,
+  RefreshCw,
+  ShieldCheck,
+  Timer,
+  Wallet,
+} from "lucide-react";
 import TokenREWARDSService from "../../services/tokenRewardsService";
 import COLLECTIONREWARDSService from "../../services/collectionRewardsService";
 import NFTREWARDSService from "../../services/nftRewardsService";
@@ -34,16 +51,16 @@ import "../../styles/biggi-token.skin.css";
 import "../../styles/panel-buttons.css";
 
 const TAB_ORDER = [
-  { id: "token", label: "TOKEN REWARDS" },
-  { id: "COLLECTION", label: "COLLECTION REWARDS" },
-  { id: "nft", label: "NFT REWARDS" },
+  { id: "token", label: "BIGGI CLAIMS", icon: Coins },
+  { id: "COLLECTION", label: "COLLECTION PRIZES", icon: Layers3 },
+  { id: "nft", label: "NFT PRIZES", icon: ImageIcon },
 ];
 
 const SECTION_META = {
   token: {
-    title: "TOKEN REWARDS",
+    title: "BIGGI HOLDER REWARDS",
     subtitle:
-      "Track weekly token payouts, preview your live claim, and verify the contract rails behind every reward route.",
+      "Eligible BiggiEyes NFTs earn weighted weekly BIGGI rewards. Review your wallet and claim from one place.",
     accent: "#ffe800",
     accentSoft: "rgba(255, 232, 0, 0.22)",
     accentGlow: "rgba(255, 232, 0, 0.38)",
@@ -164,6 +181,7 @@ function REWARDSPanel({
 }) {
   const [activeTab, setActiveTab] = React.useState("token");
   const [claimPreview, setClaimPreview] = React.useState(null);
+  const [claimPreviewError, setClaimPreviewError] = React.useState(null);
   const [previewLoading, setPreviewLoading] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
   const [claiming, setClaiming] = React.useState(false);
@@ -210,21 +228,21 @@ function REWARDSPanel({
   const infoItems = React.useMemo(
     () => [
       {
-        label: "TOKEN",
+        label: "BIGGI CLAIMS",
         description: [
-          "Token REWARDS pools, your claim preview, and weekly block weights.",
-          "Reads from TokenRewards + Reader contracts.",
+          "Shows your current BIGGI holder reward and the NFTs contributing to it.",
+          "The claim button stays unavailable until the wallet and Polygon data are ready.",
         ],
       },
       {
-        label: "COLLECTION",
+        label: "COLLECTION PRIZES",
         description: [
           "Block, orange, and rainbow COLLECTION REWARDS with claim actions.",
           "Updates after redeem/claim.",
         ],
       },
       {
-        label: "NFT",
+        label: "NFT PRIZES",
         description: [
           "Live NFT reward events, assigned wallets, metadata, and claim status.",
           "Claims mint the assigned ERC-721 reward from NFTRewards.",
@@ -323,8 +341,12 @@ function REWARDSPanel({
     error: tokenReadError,
     refresh: refreshTokenStats,
   } = useTokenREWARDS(readProvider, tokenRewardsAddr);
-  const { data: tokenStatsReader, refresh: refreshTokenReader } =
-    useTokenRewardsReader(readProvider, tokenRewardsReaderAddr);
+  const {
+    data: tokenStatsReader,
+    loading: tokenReaderLoading,
+    error: tokenReaderError,
+    refresh: refreshTokenReader,
+  } = useTokenRewardsReader(readProvider, tokenRewardsReaderAddr);
   const {
     data: COLLECTIONStats,
     loading: collectionLoading,
@@ -358,6 +380,12 @@ function REWARDSPanel({
   );
 
   const tokenStats = tokenStatsReader || tokenStatsRaw;
+  const tokenDataLoading = !tokenStats && (tokenLoading || tokenReaderLoading);
+  const tokenDataError = tokenStats
+    ? null
+    : tokenReaderError || tokenReadError;
+  const tokenClaimsPaused =
+    tokenStatsRaw?.paused === true || tokenStatsReader?.paused === true;
   const rewardClaimPayload = React.useMemo(
     () =>
       buildRewardClaimPayload(items, {
@@ -441,19 +469,24 @@ function REWARDSPanel({
 
   const loadClaimPreview = React.useCallback(
     async (signal = {}) => {
-      if (!tokenService) {
-        setClaimPreview(null);
-        setPreviewLoading(false);
-        return;
-      }
       if (!eligibleTokenIds.length) {
         if (!signal.aborted) {
           setClaimPreview(null);
+          setClaimPreviewError(null);
+          setPreviewLoading(false);
+        }
+        return;
+      }
+      if (!tokenService) {
+        if (!signal.aborted) {
+          setClaimPreview(null);
+          setClaimPreviewError(new Error("Claim preview service unavailable."));
           setPreviewLoading(false);
         }
         return;
       }
       setPreviewLoading(true);
+      setClaimPreviewError(null);
       try {
         const useCollectionAware =
           rewardClaimPayload.shouldUseCollectionAware &&
@@ -475,7 +508,10 @@ function REWARDSPanel({
         });
       } catch (err) {
         console.error("REWARDSPanel claim preview failed", err);
-        if (!signal.aborted) setClaimPreview(null);
+        if (!signal.aborted) {
+          setClaimPreview(null);
+          setClaimPreviewError(err);
+        }
       } finally {
         if (!signal.aborted) setPreviewLoading(false);
       }
@@ -564,6 +600,10 @@ function REWARDSPanel({
 
   const handleClaim = React.useCallback(async () => {
     if (!onClaim) return;
+    if (tokenClaimsPaused) {
+      setClaimMessage("Weekly BIGGI claims are temporarily paused.");
+      return;
+    }
     setClaiming(true);
     setClaimMessage("");
     try {
@@ -583,7 +623,7 @@ function REWARDSPanel({
     } finally {
       setClaiming(false);
     }
-  }, [onClaim]);
+  }, [onClaim, tokenClaimsPaused]);
 
   const tokenSymbol =
     tokenStats?.tokenMeta?.symbol_ ??
@@ -757,8 +797,6 @@ function REWARDSPanel({
 
   const heroCards = React.useMemo(() => {
     const symbol = tokenSymbol;
-    const previewAmount = claimPreview?.amount;
-    const previewUnits = claimPreview?.units;
 
     const formatTokenValue = (raw, digits = 2) => {
       return formatRewardToken(raw, digits, symbol, tokenDecimals);
@@ -766,17 +804,27 @@ function REWARDSPanel({
 
     return [
       {
-        label: "Token pool",
-        value: tokenStats ? formatTokenValue(tokenStats.REWARDSCap, 0) : "--",
-        hint: "Treasury cap",
-        tone: "token",
-      },
-      {
-        label: "Unit reward",
+        label: "Reward per unit",
         value: tokenStats
           ? formatTokenValue(tokenStats.unitReward, 4)
           : "\u2014",
-        hint: "Per block weight",
+        hint: "Applied to your NFT weights",
+        tone: "token",
+      },
+      {
+        label: "Distributed this week",
+        value: tokenStats
+          ? formatTokenValue(tokenStats.distributedThisWeek, 2)
+          : "\u2014",
+        hint: `Week ${tokenStats?.currentWeek ?? "\u2014"}`,
+        tone: "token",
+      },
+      {
+        label: "Rewards remaining",
+        value: tokenStats
+          ? formatTokenValue(tokenStats.remainingCap, 2)
+          : "\u2014",
+        hint: "Available under the reward cap",
         tone: "token",
       },
       {
@@ -784,27 +832,11 @@ function REWARDSPanel({
         value: tokenStats
           ? formatTokenValue(tokenStats.totalDistributed, 2)
           : "\u2014",
-        hint: "Since launch",
-        tone: "token",
-      },
-      {
-        label: "This week",
-        value: tokenStats
-          ? formatTokenValue(tokenStats.distributedThisWeek, 2)
-          : "\u2014",
-        hint: `Week ${tokenStats?.currentWeek ?? "\u2014"}`,
-        tone: "native",
-      },
-      {
-        label: "My preview",
-        value: previewAmount ? formatTokenValue(previewAmount, 4) : "\u2014",
-        hint: previewUnits
-          ? `${formatInteger(previewUnits)} units tracked`
-          : "Sync to compute",
+        hint: "Confirmed since launch",
         tone: "token",
       },
     ];
-  }, [tokenDecimals, tokenSymbol, tokenStats, claimPreview]);
+  }, [tokenDecimals, tokenSymbol, tokenStats]);
 
   const tokenStatusGrid = React.useMemo(() => {
     const weightsRaw = tokenStats?.blockWeights;
@@ -838,24 +870,33 @@ function REWARDSPanel({
     const scale = max > 0 && max <= 10 ? 10 : 1;
     return parsed.map((weight, idx) => ({
       id: idx + 1,
-      label: `Block ${idx + 1}`,
+      label: blockNames[idx] || `Block ${idx + 1}`,
       value: Number.isFinite(weight) ? weight * scale : "-",
     }));
-  }, [tokenStats]);
+  }, [blockNames, tokenStats]);
 
-  const claimableLabel = walletAddress
-    ? claimable != null
+  const claimAmountLabel = !walletAddress
+    ? "\u2014"
+    : claimable != null
       ? formatRewardToken(claimable, 4, tokenSymbol, tokenDecimals)
-      : "Syncing..."
-    : "Connect wallet";
-  const claimPreviewLabel = claimPreview?.amount
-    ? `${formatRewardToken(
-        claimPreview.amount,
-        4,
-        tokenSymbol,
-        tokenDecimals,
-      )} / ${claimPreview.units} units`
-    : "No tokens tracked yet.";
+      : claimPreview?.amount != null
+        ? formatRewardToken(
+            claimPreview.amount,
+            4,
+            tokenSymbol,
+            tokenDecimals,
+          )
+        : previewLoading
+          ? "Syncing..."
+          : "\u2014";
+
+  const claimAmountConfirmedZero = React.useMemo(() => {
+    const value = claimable ?? claimPreview?.amount;
+    if (value == null || value === "") return false;
+    if (typeof value === "bigint") return value === 0n;
+    const parsed = Number(String(value).replace(/,/g, "").trim());
+    return Number.isFinite(parsed) && parsed === 0;
+  }, [claimPreview?.amount, claimable]);
 
   const COLLECTIONStatus = React.useMemo(() => {
     if (!COLLECTIONStats) return [];
@@ -919,15 +960,40 @@ function REWARDSPanel({
     const hasTokenReader = isRealAddress(tokenRewardsReaderAddr);
     const hasNftReader = isRealAddress(nftRewardsReaderAddr);
     const hasReader = hasRewardsReader || hasTokenReader || hasNftReader;
-    if (readerLoading) return { label: "Source: loading", tone: "dim" };
+    const activeLoading =
+      activeTab === "token"
+        ? tokenDataLoading
+        : activeTab === "COLLECTION"
+          ? collectionLoading
+          : nftLoading;
+    const activeError =
+      activeTab === "token"
+        ? tokenDataError
+        : activeTab === "COLLECTION"
+          ? collectionError
+          : nftError || nftConsistencyError;
+    if (readerLoading || activeLoading) {
+      return { label: "Source: loading", tone: "dim" };
+    }
+    if (activeError) {
+      return { label: "Source: unavailable", tone: "warn" };
+    }
     if (readerError) return { label: "Source: fallback", tone: "warn" };
     return hasReader
       ? { label: "Source: reader", tone: "ok" }
       : { label: "Source: direct", tone: "warn" };
   }, [
     readerAddresses?.reader,
+    activeTab,
+    collectionError,
+    collectionLoading,
+    nftConsistencyError,
+    nftError,
+    nftLoading,
     readerLoading,
     readerError,
+    tokenDataError,
+    tokenDataLoading,
     tokenRewardsReaderAddr,
     nftRewardsReaderAddr,
   ]);
@@ -941,15 +1007,11 @@ function REWARDSPanel({
       },
       {
         label: "Data source",
-        value: readerLoading
-          ? "Syncing readers"
-          : readerError
-            ? "Fallback reads"
-            : rewardsSource.label.replace("Source: ", ""),
-        tone: readerError ? "warn" : readerLoading ? "dim" : "ok",
+        value: rewardsSource.label.replace("Source: ", ""),
+        tone: rewardsSource.tone,
       },
     ],
-    [readerError, readerLoading, rewardsSource.label],
+    [rewardsSource.label, rewardsSource.tone],
   );
 
   const padTime = (value) => String(value).padStart(2, "0");
@@ -963,6 +1025,94 @@ function REWARDSPanel({
     const parts = [days, hours, minutes, seconds].map(padTime);
     return `${parts[0]} : ${parts[1]} : ${parts[2]} : ${parts[3]}`;
   }, [weeklyDisplayed.remainingSeconds]);
+
+  const claimAvailability = React.useMemo(() => {
+    if (!walletAddress) {
+      return {
+        label: "Wallet required",
+        tone: "wallet",
+        detail: "Connect the wallet that holds your eligible NFTs.",
+      };
+    }
+    if (tokenDataLoading || tokenLoading || previewLoading) {
+      return {
+        label: "Syncing rewards",
+        tone: "syncing",
+        detail: "Reading your NFT weights and current reward from Polygon.",
+      };
+    }
+    if (tokenDataError || tokenReadError || claimPreviewError) {
+      return {
+        label: "Data unavailable",
+        tone: "error",
+        detail: "Reward data could not be confirmed. Refresh before claiming.",
+      };
+    }
+    if (tokenClaimsPaused) {
+      return {
+        label: "Claims paused",
+        tone: "paused",
+        detail:
+          "Your eligible NFTs remain tracked while weekly BIGGI claims are paused.",
+      };
+    }
+    if (!eligibleTokenIds.length) {
+      return {
+        label: "No eligible NFTs",
+        tone: "empty",
+        detail: "No eligible BiggiEyes NFT is available in this wallet.",
+      };
+    }
+    if (claimAmountConfirmedZero) {
+      return {
+        label: "Nothing to claim",
+        tone: "empty",
+        detail:
+          "Your eligible NFTs are tracked, but this wallet has no BIGGI available in the current cycle.",
+      };
+    }
+    return {
+      label: "Ready to claim",
+      tone: "ready",
+      detail: "Your wallet and reward data are ready for a Polygon claim.",
+    };
+  }, [
+    eligibleTokenIds.length,
+    claimAmountConfirmedZero,
+    claimPreviewError,
+    previewLoading,
+    tokenClaimsPaused,
+    tokenDataError,
+    tokenDataLoading,
+    tokenLoading,
+    tokenReadError,
+    walletAddress,
+  ]);
+
+  const claimButtonLabel = (() => {
+    if (tokenClaimsPaused) return "Weekly claims paused";
+    if (claiming) return "Claiming BIGGI...";
+    if (!walletAddress) return "Connect wallet first";
+    if (tokenDataLoading || tokenLoading || previewLoading) {
+      return "Checking rewards";
+    }
+    if (tokenDataError || tokenReadError || claimPreviewError) {
+      return "Claim unavailable";
+    }
+    if (!eligibleTokenIds.length) return "No eligible NFTs";
+    if (claimAmountConfirmedZero) return "Nothing to claim";
+    return "Claim BIGGI rewards";
+  })();
+
+  const claimStatusIcons = {
+    empty: CircleMinus,
+    error: CircleAlert,
+    paused: CirclePause,
+    ready: CircleCheck,
+    syncing: RefreshCw,
+    wallet: Wallet,
+  };
+  const ClaimStatusIcon = claimStatusIcons[claimAvailability.tone] || Wallet;
 
   const heroSection = (
     <div
@@ -979,166 +1129,216 @@ function REWARDSPanel({
           {card.hint && <div className="biggi-hero__sub">{card.hint}</div>}
         </article>
       ))}
-      <article
-        className="biggi-hero__stat rewards-panel__countdown-tile"
-        key="weekly-countdown"
-      >
-        <div className="rewards-panel__countdown-title">Next claim window</div>
-        <div className="rewards-panel__countdown-value" aria-live="polite">
-          {countdownText}
-        </div>
-        <div className="rewards-panel__countdown-meta">
-          {weeklyDisplayed.status === "claimable"
-            ? "Claim open"
-            : "Claim pending"}
-        </div>
-      </article>
     </div>
   );
 
   const tokenTab = (
-    <section className="rewards-panel__section">
-      <SectionHeader label="TOKEN REWARDS" accent={SECTION_META.token.accent} />
-      {heroSection}
-      <SectionHeader label="Claims & rails" accent="#9b7bff" />
-      <div className="rewards-panel__grid">
-        <article className="biggi-card biggi-card--y rewards-panel__card">
-          <div className="biggi-card__glow" aria-hidden />
-          <div className="biggi-card__header">
-            <div className="biggi-card__heading">
-              <h3>Claim preview</h3>
-              <p>Live pull from TokenREWARDS with your tracked tokens.</p>
+    <section
+      id="rewards-tabpanel-token"
+      role="tabpanel"
+      aria-labelledby="rewards-tab-token"
+      className="rewards-panel__section rewards-panel__section--token"
+    >
+      <section
+        className={`rewards-holder__claim-center is-${claimAvailability.tone}`}
+        aria-labelledby="holder-reward-title"
+      >
+        <div className="rewards-holder__claim-main">
+          <div className="rewards-holder__eyebrow">
+            <Gift size={17} aria-hidden />
+            <span>Your weekly holder reward</span>
+          </div>
+          <div className="rewards-holder__claim-heading">
+            <div>
+              <span className="rewards-holder__amount-label" id="holder-reward-title">
+                Available to claim
+              </span>
+              <strong className="rewards-holder__amount" aria-live="polite">
+                {claimAmountLabel}
+              </strong>
             </div>
-            <span className="biggi-accent-chip">
-              <span className="label">Tracked</span>
-              <span className="value">{eligibleTokenIds.length}</span>
+            <span
+              className={`rewards-holder__claim-status is-${claimAvailability.tone}`}
+            >
+              <ClaimStatusIcon
+                size={16}
+                aria-hidden
+                className={
+                  claimAvailability.tone === "syncing" ? "is-spinning" : ""
+                }
+              />
+              {claimAvailability.label}
             </span>
           </div>
-          <div className="biggi-card__body">
-            <div className="rewards-panel__stat-trio">
-              <div className="rewards-panel__stat">
-                <span className="label">Claimable now</span>
-                <span className="value">{claimableLabel}</span>
-              </div>
-              <div className="rewards-panel__stat">
-                <span className="label">Preview</span>
-                <span className="value">
-                  {previewLoading ? "Syncing preview..." : claimPreviewLabel}
-                </span>
-              </div>
-              <div className="rewards-panel__stat">
-                <span className="label">Remaining pool</span>
-                <span className="value">
-                  {tokenStats
-                    ? formatRewardToken(
-                        tokenStats.remainingCap,
-                        2,
-                        tokenSymbol,
-                        tokenDecimals,
-                      )
-                    : "--"}
-                </span>
-              </div>
-            </div>
-            <div className="rewards-panel__cta-row">
-              <button
-                type="button"
-                className="biggi-btn biggi-btn--accent"
-                disabled={
-                  !walletAddress ||
-                  !onClaim ||
-                  claiming ||
-                  tokenLoading ||
-                  Boolean(tokenReadError)
-                }
-                onClick={handleClaim}
-              >
-                {claiming
-                  ? "Claiming..."
-                  : walletAddress
-                    ? "Claim REWARDS"
-                    : "Connect wallet to claim"}
-              </button>
-              <button
-                type="button"
-                className="biggi-btn biggi-btn--ghost"
-                onClick={handleRefresh}
-                disabled={refreshing}
-              >
-                {refreshing ? "Refreshing..." : "Refresh stats"}
-              </button>
-            </div>
-            {tokenReadError && (
-              <div
-                role="alert"
-                className="rewards-grid__alert rewards-panel__alert"
-              >
-                Token rewards are unavailable. Refresh before claiming.
-              </div>
-            )}
-            {claimMessage && (
-              <div className="rewards-grid__alert rewards-panel__alert">
-                {claimMessage}
-              </div>
-            )}
-          </div>
-        </article>
-
-        <article className="biggi-card biggi-card--c rewards-panel__card">
-          <div className="biggi-card__glow" aria-hidden />
-          <div className="biggi-card__header">
-            <div className="biggi-card__heading">
-              <h3>Block weights</h3>
-              <p>Weekly unit weights pulled from the contract.</p>
-            </div>
-          </div>
-          <div className="rewards-panel__status-grid">
-            {tokenStatusGrid.length ? (
-              tokenStatusGrid.map((status) => (
-                <div key={status.id} className="rewards-panel__status">
-                  <span className="label">{status.label}</span>
-                  <span className="value">{status.value}</span>
-                </div>
-              ))
-            ) : (
-              <div className="rewards-panel__status">
-                <span className="label">Loading</span>
-                <span className="value">--</span>
-              </div>
-            )}
-          </div>
-          <div
-            style={{
-              marginTop: 12,
-              display: "flex",
-              justifyContent: "center",
-            }}
-          >
+          <p className="rewards-holder__claim-detail">
+            {claimAvailability.detail}
+          </p>
+          <div className="rewards-holder__actions">
             <button
               type="button"
-              className="biggi-btn biggi-btn--ghost"
-              onClick={() => setBlockSummaryOpen(true)}
+              className="biggi-btn biggi-btn--accent rewards-holder__claim-button"
+              disabled={
+                !walletAddress ||
+                !onClaim ||
+                !eligibleTokenIds.length ||
+                claimAmountConfirmedZero ||
+                tokenClaimsPaused ||
+                claiming ||
+                tokenDataLoading ||
+                tokenLoading ||
+                Boolean(tokenDataError || tokenReadError || claimPreviewError)
+              }
+              onClick={handleClaim}
             >
-              Open block summary
+              <Gift size={18} aria-hidden />
+              {claimButtonLabel}
+            </button>
+            <button
+              type="button"
+              className="biggi-btn biggi-btn--ghost rewards-holder__refresh-button"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              title="Refresh reward data"
+            >
+              <RefreshCw
+                size={17}
+                aria-hidden
+                className={refreshing ? "is-spinning" : ""}
+              />
+              {refreshing ? "Refreshing" : "Refresh"}
             </button>
           </div>
-        </article>
+          {walletAddress &&
+            (tokenDataError || tokenReadError || claimPreviewError) && (
+            <div
+              role="alert"
+              className="rewards-grid__alert rewards-panel__alert"
+            >
+              Token rewards are unavailable. Refresh before claiming.
+            </div>
+          )}
+          {claimMessage && (
+            <div className="rewards-grid__alert rewards-panel__alert" role="status">
+              {claimMessage}
+            </div>
+          )}
+        </div>
 
-        <article className="biggi-card biggi-card--v rewards-panel__card">
-          <div className="biggi-card__glow" aria-hidden />
-          <div className="biggi-card__header">
-            <div className="biggi-card__heading">
-              <h3>Contracts</h3>
-              <p>Explorer shortcuts for all reward rails.</p>
+        <dl className="rewards-holder__facts" aria-label="Your reward details">
+          <div className="rewards-holder__fact">
+            <dt>
+              <Wallet size={16} aria-hidden /> Wallet
+            </dt>
+            <dd title={walletAddress || undefined}>
+              {walletAddress ? shortAddress(walletAddress) : "Not connected"}
+            </dd>
+          </div>
+          <div className="rewards-holder__fact">
+            <dt>
+              <ImageIcon size={16} aria-hidden /> Eligible NFTs
+            </dt>
+            <dd>
+              {walletAddress ? formatInteger(eligibleTokenIds.length) : "\u2014"}
+            </dd>
+          </div>
+          <div className="rewards-holder__fact">
+            <dt>
+              <BarChart3 size={16} aria-hidden /> Reward units
+            </dt>
+            <dd>
+              {previewLoading
+                ? "Syncing"
+                : claimPreview?.units != null
+                  ? formatInteger(claimPreview.units)
+                  : "\u2014"}
+            </dd>
+          </div>
+          <div className="rewards-holder__fact rewards-holder__fact--timer">
+            <dt>
+              <Timer size={16} aria-hidden /> Next reward cycle
+            </dt>
+            <dd>
+              {tokenDataLoading || weeklyLoading
+                ? "Syncing"
+                : tokenDataError
+                  ? "Unavailable"
+                  : countdownText}
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <SectionHeader label="Reward activity" accent={SECTION_META.token.accent} />
+      {heroSection}
+
+      <SectionHeader label="NFT reward weights" accent="#5ddcff" />
+      <section className="rewards-holder__weights" aria-labelledby="reward-weights-title">
+        <div className="rewards-holder__weights-head">
+          <div className="rewards-holder__weights-title">
+            <BarChart3 size={20} aria-hidden />
+            <div>
+              <h3 id="reward-weights-title">Eye-color weights</h3>
+              <p>Each eligible NFT contributes its eye-color weight every week.</p>
             </div>
           </div>
+          <button
+            type="button"
+            className="biggi-btn biggi-btn--ghost"
+            onClick={() => setBlockSummaryOpen(true)}
+          >
+            <BarChart3 size={17} aria-hidden />
+            My NFT breakdown
+          </button>
+        </div>
+        <div className="rewards-panel__status-grid rewards-holder__weight-grid">
+          {tokenStatusGrid.length ? (
+            tokenStatusGrid.map((status) => (
+              <div key={status.id} className="rewards-panel__status">
+                <span className="label">{status.label}</span>
+                <span className="value">
+                  {status.value === "-" ? "\u2014" : `${status.value}x`}
+                </span>
+              </div>
+            ))
+          ) : (
+            <div className="rewards-panel__status">
+              <span className="label">Weights</span>
+              <span className="value">Syncing</span>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <details className="rewards-holder__technical">
+        <summary>
+          <span className="rewards-holder__technical-title">
+            <ShieldCheck size={18} aria-hidden />
+            Network and contract details
+          </span>
+          <ChevronRight className="rewards-holder__technical-chevron" size={18} aria-hidden />
+        </summary>
+        <div className="rewards-holder__technical-body">
+          <section
+            className="rewards-panel__mainnet-rail"
+            aria-label="Rewards mainnet data"
+          >
+            {rewardsMainnetRows.map((row) => (
+              <div
+                className={`rewards-panel__mainnet-item rewards-panel__mainnet-item--${row.tone || "dim"}`}
+                key={row.label}
+              >
+                <span className="rewards-panel__mainnet-label">{row.label}</span>
+                <span className="rewards-panel__mainnet-value">{row.value}</span>
+              </div>
+            ))}
+          </section>
           <div className="rewards-panel__address-grid">
             {[
-              { label: "Token REWARDS", addr: tokenRewardsAddr },
+              { label: "Token rewards", addr: tokenRewardsAddr },
               { label: "Token reader", addr: tokenRewardsReaderAddr },
-              { label: "COLLECTION REWARDS", addr: collectionRewardsAddr },
-              { label: "MCD reader", addr: collectionRewardsReaderAddr },
-              { label: "NFT REWARDS", addr: nftRewardsAddr },
+              { label: "Collection rewards", addr: collectionRewardsAddr },
+              { label: "Collection reader", addr: collectionRewardsReaderAddr },
+              { label: "NFT rewards", addr: nftRewardsAddr },
               { label: "NFT reader", addr: nftRewardsReaderAddr },
               { label: "Core reader", addr: ADDR.MAIN_READER || ADDR.READER },
               { label: "Multicall", addr: ADDR.MULTICALL2 || ADDR.MULTICALL },
@@ -1150,32 +1350,35 @@ function REWARDSPanel({
                     <div className="label">{row.label}</div>
                     <div className="value">{shortAddress(row.addr)}</div>
                   </div>
-                  <button
-                    type="button"
-                    className="biggi-btn biggi-btn--ghost rewards-panel__address-btn"
-                    disabled={!liveAddress}
-                    onClick={() => {
-                      if (!liveAddress || typeof window === "undefined") return;
-                      window.open(
-                        `${explorerBase}/address/${row.addr}`,
-                        "_blank",
-                        "noopener,noreferrer",
-                      );
-                    }}
-                  >
-                    Explorer
-                  </button>
+                  {liveAddress ? (
+                    <a
+                      className="biggi-btn biggi-btn--ghost rewards-panel__address-btn"
+                      href={`${explorerBase}/address/${row.addr}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <ExternalLink size={14} aria-hidden />
+                      Explorer
+                    </a>
+                  ) : (
+                    <span className="rewards-holder__not-configured">Unavailable</span>
+                  )}
                 </div>
               );
             })}
           </div>
-        </article>
-      </div>
+        </div>
+      </details>
     </section>
   );
 
   const COLLECTIONTab = (
-    <section className="rewards-panel__section">
+    <section
+      id="rewards-tabpanel-COLLECTION"
+      role="tabpanel"
+      aria-labelledby="rewards-tab-COLLECTION"
+      className="rewards-panel__section"
+    >
       <SectionHeader
         label="COLLECTION REWARDS"
         accent={SECTION_META.COLLECTION.accent}
@@ -1212,7 +1415,12 @@ function REWARDSPanel({
   );
 
   const nftTab = (
-    <section className="rewards-panel__section rewards-grid__section--nft">
+    <section
+      id="rewards-tabpanel-nft"
+      role="tabpanel"
+      aria-labelledby="rewards-tab-nft"
+      className="rewards-panel__section rewards-grid__section--nft"
+    >
       <SectionHeader label="NFT REWARDS" accent={SECTION_META.nft.accent} />
       <NftREWARDSTab
         data={nftData}
@@ -1286,11 +1494,13 @@ function REWARDSPanel({
               {rewardsSource.label}
             </span>
             <span className="rewards-grid__pill rewards-panel__source-pill">
-              {weeklyLoading
-                ? "Weekly claim window: syncing"
-                : weeklyDisplayed.status === "claimable"
-                  ? "Weekly claim window: OPEN"
-                  : "Weekly claim window: pending"}
+              {tokenClaimsPaused
+                ? "BIGGI claims: PAUSED"
+                : tokenDataLoading || weeklyLoading
+                  ? "Reward cycle: syncing"
+                  : tokenStats?.currentWeek != null
+                    ? `Reward cycle: week ${tokenStats.currentWeek}`
+                    : "Reward cycle: unavailable"}
             </span>
           </div>
         </header>
@@ -1306,85 +1516,73 @@ function REWARDSPanel({
           title="Rewards diagram info"
           items={diagramInfoItems}
         />
-        <section
-          className="rewards-panel__mainnet-rail"
-          aria-label="Rewards mainnet data"
-        >
-          {rewardsMainnetRows.map((row) => {
-            const liveAddress = isRealAddress(row.addr);
-            const href = liveAddress
-              ? `${explorerBase}/address/${row.addr}`
-              : null;
-            return (
-              <div
-                className={`rewards-panel__mainnet-item rewards-panel__mainnet-item--${row.tone || (liveAddress ? "ok" : "warn")}`}
-                key={row.label}
-              >
-                <span className="rewards-panel__mainnet-label">
-                  {row.label}
-                </span>
-                <span className="rewards-panel__mainnet-value">
-                  <span title={liveAddress ? row.addr : undefined}>
-                    {liveAddress
-                      ? shortAddress(row.addr)
-                      : row.value || (row.addr ? "Not configured" : "\u2014")}
-                  </span>
-                  {href ? (
-                    <a
-                      className="rewards-panel__mainnet-link"
-                      href={href}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Explorer
-                    </a>
-                  ) : null}
-                </span>
-              </div>
-            );
-          })}
-        </section>
-        <div className="view-tabs rewards-panel__tabs" role="tablist">
-          {TAB_ORDER.map((tab) => (
+        <nav className="view-tabs rewards-panel__tabs" aria-label="Reward sections">
+          <div className="rewards-panel__tab-list" role="tablist">
+            {TAB_ORDER.map((tab) => {
+              const TabIcon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  id={`rewards-tab-${tab.id}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
+                  aria-controls={`rewards-tabpanel-${tab.id}`}
+                  className={`tab-button ${activeTab === tab.id ? "active" : ""}`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  <TabIcon size={16} aria-hidden />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="rewards-panel__tab-tools">
             <button
-              key={tab.id}
               type="button"
-              className={`tab-button ${activeTab === tab.id ? "active" : ""}`}
-              onClick={() => setActiveTab(tab.id)}
+              className="rewards-panel__tool-button"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              title="Refresh all reward data"
+              aria-label={refreshing ? "Refreshing reward data" : "Refresh reward data"}
             >
-              {tab.label}
+              <RefreshCw
+                size={17}
+                aria-hidden
+                className={refreshing ? "is-spinning" : ""}
+              />
             </button>
-          ))}
-          <button
-            type="button"
-            className="tab-button"
-            onClick={handleRefresh}
-            disabled={refreshing}
-          >
-            {refreshing ? "Refreshing..." : "Refresh stats"}
-          </button>
-          <PanelInfoButton
-            onClick={() => setInfoOpen(true)}
-            ariaLabel="REWARDS buttons info"
-          />
-        </div>
+            <PanelInfoButton
+              onClick={() => setInfoOpen(true)}
+              ariaLabel="Rewards panel information"
+            />
+          </div>
+        </nav>
         {renderTab()}
-        <SectionHeader label="Rewards Diagram" accent="#27d9d2" />
-        <section className="rewards-grid__diagram-wrap">
-          <PanelInfoButton
-            className="rewards-grid__diagram-info-btn"
-            onClick={() => setDiagramInfoOpen(true)}
-            ariaLabel="Open rewards diagram info"
-            title="Rewards diagram info"
-          />
-          <img
-            className="rewards-grid__diagram-image"
-            src="/images/schemas/rewards-flow-diagram.png?v=20260828"
-            alt="Rewards diagram showing reward contracts, readers, and native or token flows to wallet claims."
-            loading="lazy"
-            decoding="async"
-          />
-        </section>
+        <details className="rewards-holder__explainer">
+          <summary>
+            <span>
+              <ShieldCheck size={18} aria-hidden />
+              How rewards move on-chain
+            </span>
+            <ChevronRight className="rewards-holder__technical-chevron" size={18} aria-hidden />
+          </summary>
+          <section className="rewards-grid__diagram-wrap">
+            <PanelInfoButton
+              className="rewards-grid__diagram-info-btn"
+              onClick={() => setDiagramInfoOpen(true)}
+              ariaLabel="Open rewards diagram info"
+              title="Rewards diagram info"
+            />
+            <img
+              className="rewards-grid__diagram-image"
+              src="/images/schemas/rewards-flow-diagram.png?v=20260828"
+              alt="Rewards diagram showing reward contracts, readers, and native or token flows to wallet claims."
+              loading="lazy"
+              decoding="async"
+            />
+          </section>
+        </details>
       </div>
     </section>
   );

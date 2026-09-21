@@ -107,8 +107,8 @@ const HAS_ARCHIVE_ENV = (() => {
       const env = import.meta.env;
       return Boolean(
         env.VITE_ARCHIVE_RPC_URL ||
-          env.VITE_ACTIVE_CHAIN_ARCHIVE_RPC_URL ||
-          env.VITE_ARCHIVE_RPC_URLS,
+        env.VITE_ACTIVE_CHAIN_ARCHIVE_RPC_URL ||
+        env.VITE_ARCHIVE_RPC_URLS,
       );
     }
   } catch {
@@ -134,7 +134,9 @@ const FULL_HISTORY = (() => {
       import.meta.env &&
       import.meta.env.VITE_LOG_LOOKBACK != null
     ) {
-      const raw = String(import.meta.env.VITE_LOG_LOOKBACK).trim().toLowerCase();
+      const raw = String(import.meta.env.VITE_LOG_LOOKBACK)
+        .trim()
+        .toLowerCase();
       if (raw === "full") requested = true;
       const v = Number(raw);
       if (Number.isFinite(v) && v === 0) requested = true;
@@ -235,15 +237,14 @@ export async function queryLogsBatched(
   const archiveProvider = preferArchive ? getArchiveProvider() : null;
   const hasArchive = Boolean(archiveProvider);
   const fullHistoryActive =
-    (FULL_HISTORY && !forceRecentOnly) ||
-    (requestFullHistory && hasArchive);
+    (FULL_HISTORY && !forceRecentOnly) || (requestFullHistory && hasArchive);
   const useArchiveProvider = fullHistoryActive && hasArchive;
   let downgradedFromArchive = false;
   // Force RPC provider for log queries to avoid MetaMask -32603 errors.
   const isInjectedProvider = Boolean(
     provider &&
-      provider.provider &&
-      typeof provider.provider.request === "function",
+    provider.provider &&
+    typeof provider.provider.request === "function",
   );
   if (useArchiveProvider) {
     provider = archiveProvider;
@@ -373,7 +374,8 @@ export async function queryLogsBatched(
       const isPruned = code === -32701 || /history has been pruned/i.test(msg);
       const isInvalidRange =
         (code === -32000 && /invalid block range/i.test(msg)) ||
-        (/ranges over\s*10000 blocks/i.test(combinedMsg) && Number(code) === 35);
+        (/ranges over\s*10000 blocks/i.test(combinedMsg) &&
+          Number(code) === 35);
       const isUnknownBlock =
         code === 26 ||
         /unknown block/i.test(msg) ||
@@ -391,13 +393,24 @@ export async function queryLogsBatched(
       if (isUnsupportedMethod) {
         return out;
       }
-      if (isPruned || isInvalidRange || isUnknownBlock) {
+      if (isInvalidRange) {
+        // Some free-tier RPCs report a misleading range error well below their
+        // documented limit. Prefer another configured backend before shrinking
+        // the request so a single restrictive endpoint cannot erase log data.
+        if (rotateLogProvider()) continue;
+        if (batch > 1) {
+          batch = Math.max(1, Math.floor(batch / 2));
+          continue;
+        }
+        return out;
+      }
+      if (isPruned || isUnknownBlock) {
         // If even archive hits pruning, disable full-history for this session.
         if (archiveProvider) forceRecentOnly = true;
         if (!prunedWarned) {
           prunedWarned = true;
           console.warn(
-            isInvalidRange || isUnknownBlock
+            isUnknownBlock
               ? "RPC rejected log range: falling back to recent blocks. Use an archive RPC for full history."
               : "RPC history pruned: falling back to recent blocks. Use an archive RPC for full history.",
           );

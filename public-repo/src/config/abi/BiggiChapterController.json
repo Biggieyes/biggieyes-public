@@ -17,37 +17,47 @@
   },
   {
     "inputs": [],
-    "name": "ChapterControllerCapMismatch",
+    "name": "ChapterControllerV2CapMismatch",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "ChapterControllerHubCapsMismatch",
+    "name": "ChapterControllerV2HubCapsMismatch",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "ChapterControllerInvalidChapter",
+    "name": "ChapterControllerV2InvalidChapter",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "ChapterControllerOwnerZero",
+    "name": "ChapterControllerV2InvalidUnlockThreshold",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "ChapterControllerRegistryMismatch",
+    "name": "ChapterControllerV2OwnerZero",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "ChapterControllerStackMismatch",
+    "name": "ChapterControllerV2RegistryMismatch",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "ChapterControllerZeroAddress",
+    "name": "ChapterControllerV2StackMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ChapterControllerV2UnlockThresholdLocked",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ChapterControllerV2ZeroAddress",
     "type": "error"
   },
   {
@@ -144,6 +154,50 @@
       }
     ],
     "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "chapterId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "threshold",
+        "type": "uint16"
+      }
+    ],
+    "name": "PublicUnlockSaleThresholdLocked",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "chapterId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "previousThreshold",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "newThreshold",
+        "type": "uint16"
+      }
+    ],
+    "name": "PublicUnlockSaleThresholdSet",
     "type": "event"
   },
   {
@@ -283,6 +337,72 @@
         "internalType": "uint256",
         "name": "chapterId",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "seriesId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "vrfCollection",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "publicCollection",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "ticketHub",
+        "type": "address"
+      },
+      {
+        "internalType": "uint16",
+        "name": "saleCap_",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "marketingCap_",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "totalCap_",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "unlockSaleThreshold_",
+        "type": "uint16"
+      }
+    ],
+    "name": "configureChapterWithUnlockThreshold",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "controllerVersion",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "chapterId",
+        "type": "uint256"
       }
     ],
     "name": "getChapterCollections",
@@ -383,6 +503,19 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "chapterId",
+        "type": "uint256"
+      }
+    ],
+    "name": "lockPublicUnlockSaleThreshold",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "owner",
     "outputs": [
@@ -390,6 +523,88 @@
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "chapterId",
+        "type": "uint256"
+      }
+    ],
+    "name": "publicUnlockProgress",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "saleMinted_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "unlockSaleThreshold_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "thresholdLocked",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "capsConsistent",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "stackConsistent",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "publicUnlocked",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "publicUnlockSaleThreshold",
+    "outputs": [
+      {
+        "internalType": "uint16",
+        "name": "",
+        "type": "uint16"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "publicUnlockThresholdLocked",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -411,6 +626,77 @@
   {
     "inputs": [],
     "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "chapterId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint16",
+        "name": "threshold",
+        "type": "uint16"
+      }
+    ],
+    "name": "setPublicUnlockSaleThreshold",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "chapterId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "seriesId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "vrfCollection",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "publicCollection",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "ticketHub",
+        "type": "address"
+      },
+      {
+        "internalType": "uint16",
+        "name": "saleCap_",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "marketingCap_",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "totalCap_",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "unlockSaleThreshold_",
+        "type": "uint16"
+      }
+    ],
+    "name": "stageChapterWithUnlockThreshold",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

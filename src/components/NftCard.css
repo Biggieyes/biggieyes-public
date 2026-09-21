@@ -347,6 +347,19 @@
   text-overflow: ellipsis;
 }
 
+.nft-card__token-id {
+  grid-column: 1 / -1;
+  justify-self: start;
+  max-width: 100%;
+  color: #8ee8ff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
 .nft-card__rarity {
   justify-self: end;
   padding: 5px 11px;

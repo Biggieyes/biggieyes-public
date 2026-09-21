@@ -16,11 +16,18 @@ interface IMultiCollectionDistributorView {
     function receivedByCollection(address) external view returns (uint256);
     function receivedBySeries(uint256) external view returns (uint256);
     function receivedByChapter(uint256) external view returns (uint256);
+    function pendingCollectionRewards(address) external view returns (uint256);
+    function totalPendingCollectionRewards() external view returns (uint256);
+    function rewardCollectionForChapter(uint256 chapterId) external view returns (address);
 }
 
 interface ISeriesRegistryLite {
     function chapterByCollection(address collection) external view returns (uint256);
     function getChapterMeta(uint256 chapterId) external view returns (uint256 seriesId, uint256 chapterNumber);
+    function getChapterCollections(uint256 chapterId)
+        external
+        view
+        returns (address vrfCollection, address publicCollection, address ticketHub);
 }
 
 contract BiggiMultiCollectionDistributorReaderV2 {
@@ -60,6 +67,40 @@ contract BiggiMultiCollectionDistributorReaderV2 {
         IMultiCollectionDistributorView d = IMultiCollectionDistributorView(distributor);
         recipientPending = d.pending(recipient);
         totalPending_ = d.totalPending();
+    }
+
+    function collectionRewardPendingSnapshot(address collection)
+        external
+        view
+        returns (uint256 collectionPending, uint256 totalCollectionPending)
+    {
+        IMultiCollectionDistributorView d = IMultiCollectionDistributorView(distributor);
+        collectionPending = d.pendingCollectionRewards(collection);
+        totalCollectionPending = d.totalPendingCollectionRewards();
+    }
+
+    function chapterSnapshot(uint256 chapterId)
+        external
+        view
+        returns (
+            uint256 seriesId,
+            uint256 chapterNumber,
+            address vrfCollection,
+            address publicCollection,
+            address ticketHub,
+            uint256 chapterReceived,
+            uint256 collectionRewardPending
+        )
+    {
+        IMultiCollectionDistributorView d = IMultiCollectionDistributorView(distributor);
+        address registryAddr = d.registry();
+        require(registryAddr != address(0), "registry=0");
+        ISeriesRegistryLite r = ISeriesRegistryLite(registryAddr);
+        (seriesId, chapterNumber) = r.getChapterMeta(chapterId);
+        (vrfCollection, publicCollection, ticketHub) = r.getChapterCollections(chapterId);
+        require(vrfCollection == d.rewardCollectionForChapter(chapterId), "reward target mismatch");
+        chapterReceived = d.receivedByChapter(chapterId);
+        collectionRewardPending = d.pendingCollectionRewards(vrfCollection);
     }
 
     function sourceSnapshot(address source)

@@ -12,24 +12,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import FullscreenPanel from "../src/shared/components/FullscreenPanel.jsx";
 import RedeemOverlay from "../src/ACTIONBUTTONS/REDEEMTICKET/RedeemOverlay.jsx";
 
-const wallet = vi.hoisted(() => ({
-  request: vi.fn(),
-  on: vi.fn(),
-  removeListener: vi.fn(),
-}));
-vi.mock("@/shared/utils/contract", () => ({
-  getInjectedProvider: () => wallet,
-}));
-const deferred = () => {
-  let resolve;
-  const promise = new Promise((done) => {
-    resolve = done;
-  });
-  return { resolve, promise };
-};
 beforeEach(() => {
   vi.clearAllMocks();
-  wallet.request.mockResolvedValue("0x89");
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
     value: () => ({
@@ -66,50 +50,31 @@ describe("fullscreen effect ownership", () => {
   );
 });
 
-describe("legacy redeem network label", () => {
-  it("ignores an older network response after a chain change", async () => {
-    const old = deferred();
-    wallet.request.mockReturnValueOnce(old.promise);
-    render(<RedeemOverlay open />);
-    const onChain = wallet.on.mock.calls.find(
-      ([event]) => event === "chainChanged",
-    )[1];
-    await act(async () => onChain());
-    expect(screen.getByText("Polygon mainnet (137)")).toBeInTheDocument();
-    await act(async () => old.resolve("0x13882"));
-    expect(
-      screen.queryByText("Unsupported chain (80002)"),
-    ).not.toBeInTheDocument();
-  });
-  it("removes only its own listener on unmount", async () => {
-    const old = deferred();
-    wallet.request.mockReturnValueOnce(old.promise);
-    const view = render(<RedeemOverlay open />);
-    const onChain = wallet.on.mock.calls[0][1];
-    view.unmount();
-    await act(async () => old.resolve("0x89"));
-    expect(wallet.removeListener).toHaveBeenCalledExactlyOnceWith(
-      "chainChanged",
-      onChain,
-    );
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  });
-  it("invalidates the discarded StrictMode session", async () => {
-    const old = deferred();
-    wallet.request.mockReturnValueOnce(old.promise);
+describe("VRF transformation modal lifecycle", () => {
+  it("keeps an active redeem available after the modal is closed", () => {
     render(
-      <React.StrictMode>
-        <RedeemOverlay open />
-      </React.StrictMode>,
+      <RedeemOverlay
+        isRedeeming
+        pendingTicketId="3"
+        txStatus={{ type: "redeem", stage: "wallet" }}
+      />,
     );
-    await act(async () => {});
-    expect(screen.getByText("Polygon mainnet (137)")).toBeInTheDocument();
-    await act(async () => old.resolve("0x13882"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Close transformation" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Show VRF transformation" }),
+    );
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("surfaces a redeem error even when no process is active", () => {
+    render(<RedeemOverlay redeemError="Redeem reverted" />);
     expect(
-      screen.queryByText("Unsupported chain (80002)"),
-    ).not.toBeInTheDocument();
-    expect(wallet.on).toHaveBeenCalledTimes(2);
-    expect(wallet.removeListener).toHaveBeenCalledTimes(1);
+      screen.getByRole("dialog", { name: "TRANSFORMATION INTERRUPTED" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Redeem reverted")).toBeInTheDocument();
   });
 });
 

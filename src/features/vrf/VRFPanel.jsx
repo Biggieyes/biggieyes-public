@@ -615,19 +615,33 @@ export default function VRFPanel({
     return `${safeSeconds}s`;
   }, []);
 
+  const recoveryV2 = Number(params?.vrfRecoveryVersion || 1) >= 2;
+  const recoveryWordReady =
+    params?.pendingRandomnessReady === true &&
+    params?.pendingRandomnessConsumerMatches === true;
   const pendingRetryReady =
     String(effectiveLast.status).toLowerCase() === "pending" &&
-    (pendingRetryDelaySec <= 0 ||
-      pendingAgeMs == null ||
-      retryRemainingSeconds === 0);
+    (recoveryV2
+      ? recoveryWordReady
+      : pendingRetryDelaySec <= 0 ||
+        pendingAgeMs == null ||
+        retryRemainingSeconds === 0);
 
-  const pendingActionLabel = pendingRetryReady
-    ? "Retry Pending"
-    : `Retry in ${formatRetryCountdown(retryRemainingSeconds)}`;
+  const pendingActionLabel = recoveryV2
+    ? recoveryWordReady
+      ? "Complete Pending"
+      : "Waiting for Chainlink"
+    : pendingRetryReady
+      ? "Retry Pending"
+      : `Retry in ${formatRetryCountdown(retryRemainingSeconds)}`;
 
-  const pendingActionTitle = pendingRetryReady
-    ? "Submit a fresh VRF request for the current pending ticket."
-    : `Retry becomes available in ${formatRetryCountdown(retryRemainingSeconds)}.`;
+  const pendingActionTitle = recoveryV2
+    ? recoveryWordReady
+      ? "Complete the original draw using randomness already stored by the recovery router. No new VRF request is created."
+      : "The original request is still waiting for its Chainlink result."
+    : pendingRetryReady
+      ? "Submit a fresh VRF request for the current pending ticket."
+      : `Retry becomes available in ${formatRetryCountdown(retryRemainingSeconds)}.`;
 
   const latestFulfilled = React.useMemo(
     () =>

@@ -113,6 +113,7 @@ function normalizeAddresses(raw) {
     TICKET_HUB: pickAddress(raw, ["TICKET_HUB"]),
     COMPUTE: pickAddress(raw, ["COMPUTE"]),
     VRF_ROUTER: pickAddress(raw, ["VRF_ROUTER"]),
+    NFT_REWARDS_VRF_ROUTER: pickAddress(raw, ["NFT_REWARDS_VRF_ROUTER", "VRF_ROUTER"]),
     REGISTRY: pickAddress(raw, ["REGISTRY"]),
     CHAPTER_CONTROLLER: pickAddress(raw, ["CHAPTER_CONTROLLER"]),
     DISTRIBUTOR: pickAddress(raw, ["DISTRIBUTOR", "MULTI_COLLECTION_DISTRIBUTOR"]),
@@ -452,12 +453,20 @@ async function checkVrf(addresses, opts, recorder) {
   }
 
   if (isAddress(addresses.NFT_REWARDS)) {
+    const rewardsRouterAddress = addresses.NFT_REWARDS_VRF_ROUTER || addresses.VRF_ROUTER;
+    const rewardsRouter = eqAddress(rewardsRouterAddress, addresses.VRF_ROUTER)
+      ? router
+      : contractAt(rewardsRouterAddress, [
+          "function approvedRewardConsumers(address) view returns (bool)",
+        ]);
     const approvedRewards = await readValue(
       recorder,
-      "VRF_ROUTER.approvedRewardConsumers[NFT_REWARDS]",
-      () => router.approvedRewardConsumers(addresses.NFT_REWARDS)
+      "NFT_REWARDS_VRF_ROUTER.approvedRewardConsumers[NFT_REWARDS]",
+      () => rewardsRouter.approvedRewardConsumers(addresses.NFT_REWARDS)
     );
-    if (opts.strict) expectBool(recorder, "VRF_ROUTER NFT rewards approved == true", approvedRewards, true);
+    if (opts.strict) {
+      expectBool(recorder, "NFT_REWARDS_VRF_ROUTER NFT rewards approved == true", approvedRewards, true);
+    }
   }
 }
 
@@ -694,7 +703,12 @@ async function checkRewardsAndReaders(addresses, opts, recorder) {
     ]);
     const version = await nftRewardsVersion(addresses.NFT_REWARDS);
     const vrfRouter = await readValue(recorder, "NFT_REWARDS.vrfRouter", () => nftRewards.vrfRouter());
-    expectAddress(recorder, "NFT_REWARDS.vrfRouter == VRF_ROUTER", vrfRouter, addresses.VRF_ROUTER);
+    expectAddress(
+      recorder,
+      "NFT_REWARDS.vrfRouter == NFT_REWARDS_VRF_ROUTER",
+      vrfRouter,
+      addresses.NFT_REWARDS_VRF_ROUTER || addresses.VRF_ROUTER,
+    );
     if (version === 1) {
       const mainContract = await readValue(recorder, "NFT_REWARDS.mainContract", () => nftRewards.mainContract());
       const registry = await readValue(recorder, "NFT_REWARDS.registry", () => nftRewards.registry());

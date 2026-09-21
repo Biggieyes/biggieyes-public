@@ -8,7 +8,13 @@ import {
   isAddress,
 } from "ethers";
 import { ADDR, CORE_CHAPTERS } from "../../utils/addresses.js";
-import { getROProvider } from "@/shared/utils/contract";
+import { ensurePolygon, getROProvider } from "@/shared/utils/contract";
+import {
+  assertAdminSigner,
+  getAdminAccessState,
+  getAdminPanelAccessState,
+  POLYGON_MAINNET_CHAIN_ID,
+} from "@/shared/utils/adminAccess.js";
 import { BiggiCommunityCenter } from "@/config/abi/index.js";
 import { supabase, supabaseReady } from "../../services/chatClient";
 import {
@@ -24,6 +30,7 @@ const COMMUNITY_CENTER_ABI = Array.isArray(BiggiCommunityCenter)
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const CHAT_API_BASE = import.meta.env.VITE_CHAT_API_BASE || "";
+const ADMIN_READ_ONLY_RUN_KEYS = new Set(["refresh", "community_loadEvent"]);
 
 function buildChatApiUrl(path) {
   const safePath = (() => {
@@ -56,7 +63,13 @@ function resolveCOMMUNITYCENTERAddress() {
   return null;
 }
 
-export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
+export default function AdminPanel({
+  open,
+  authorized,
+  onClose,
+  data = {},
+  actions = {},
+}) {
   const C = {
     y: "#FFE800",
     line: "rgba(255,255,255,.12)",
@@ -166,17 +179,80 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
   // pending stavy pro tlačítka + status info
   const [pending, setPending] = React.useState({});
   const [statusMsg, setStatusMsg] = React.useState("");
+  const [walletChainId, setWalletChainId] = React.useState(null);
+
+  const ownerWallet = String(data?.frontend?.wallet || "");
+  const expectedChainId = Number(
+    data?.chainId || ADDR.CHAIN_ID || POLYGON_MAINNET_CHAIN_ID,
+  );
+  const expectedOwner = String(
+    data?.owner || ADDR.EXPECT_OWNER || ADDR.OWNER || "",
+  );
+  const configuredOwner = String(ADDR.EXPECT_OWNER || ADDR.OWNER || "");
+  const adminAccess = React.useMemo(
+    () =>
+      getAdminAccessState({
+        walletAddress: ownerWallet,
+        ownerAddress: expectedOwner,
+        chainId: walletChainId,
+        expectedChainId,
+      }),
+    [expectedChainId, expectedOwner, ownerWallet, walletChainId],
+  );
+  const panelAccess = React.useMemo(
+    () =>
+      getAdminPanelAccessState({
+        walletAddress: ownerWallet,
+        contractOwnerAddress: expectedOwner,
+        configuredOwnerAddress: configuredOwner,
+      }),
+    [configuredOwner, expectedOwner, ownerWallet],
+  );
+  const hasPanelAccess =
+    (typeof authorized === "boolean" ? authorized : panelAccess.canOpen) &&
+    panelAccess.canOpen;
+
+  React.useEffect(() => {
+    if (!open || typeof window === "undefined" || !window.ethereum?.request) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    const updateChainId = (value) => {
+      if (cancelled) return;
+      const parsed =
+        typeof value === "string" ? Number.parseInt(value, 16) : Number(value);
+      setWalletChainId(Number.isFinite(parsed) ? parsed : null);
+    };
+    window.ethereum
+      .request({ method: "eth_chainId" })
+      .then(updateChainId)
+      .catch(() => updateChainId(null));
+    window.ethereum.on?.("chainChanged", updateChainId);
+
+    return () => {
+      cancelled = true;
+      window.ethereum?.removeListener?.("chainChanged", updateChainId);
+    };
+  }, [open]);
 
   // --- Handlers helpers ---
   const run = async (key, fn) => {
     if (!fn) return;
+    const isReadOnlyAction = ADMIN_READ_ONLY_RUN_KEYS.has(String(key));
+    if (!isReadOnlyAction && (!hasPanelAccess || !adminAccess.canWrite)) {
+      setStatusMsg(
+        `Admin action locked. Connect the verified owner wallet on Polygon mainnet (${expectedChainId}).`,
+      );
+      return;
+    }
     try {
       setPending((p) => ({ ...p, [key]: true }));
       setStatusMsg("");
       await fn();
       setStatusMsg("✅ Done");
       // auto-refresh, pokud existuje akce refresh
-      if (actions.refresh) {
+      if (!isReadOnlyAction && actions.refresh) {
         await actions.refresh();
         setStatusMsg("✅ Done & refreshed");
       }
@@ -197,6 +273,22 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
     communityAddress && COMMUNITY_CENTER_ABI.length,
   );
 
+  const getVerifiedAdminSigner = React.useCallback(async () => {
+    if (typeof window === "undefined" || !window.ethereum) {
+      throw new Error("Wallet provider not found");
+    }
+    await ensurePolygon(window.ethereum);
+    await window.ethereum.request?.({ method: "eth_requestAccounts" });
+    const provider = new BrowserProvider(window.ethereum, "any");
+    const verified = await assertAdminSigner({
+      provider,
+      ownerAddress: expectedOwner,
+      expectedChainId,
+    });
+    setWalletChainId(verified.chainId);
+    return verified;
+  }, [expectedChainId, expectedOwner]);
+
   const getCommunityContract = React.useCallback(
     async (rw = false) => {
       if (!communityAddress)
@@ -205,17 +297,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
         throw new Error("Community Center ABI missing");
 
       if (rw) {
-        if (typeof window === "undefined" || !window.ethereum) {
-          throw new Error("Wallet provider not found");
-        }
-        await window.ethereum
-          .request?.({ method: "eth_requestAccounts" })
-          .catch(() => {});
-        const provider = new BrowserProvider(
-          window.ethereum,
-          "any",
-        );
-        const signer = await provider.getSigner();
+        const { signer } = await getVerifiedAdminSigner();
         return new Contract(
           communityAddress,
           COMMUNITY_CENTER_ABI,
@@ -237,7 +319,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
         provider,
       );
     },
-    [communityAddress],
+    [communityAddress, getVerifiedAdminSigner],
   );
 
   const bnToString = (value) => {
@@ -451,19 +533,8 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
         throw new Error(
           `Message must be at most ${MAX_CHAT_MESSAGE_LENGTH} characters`,
         );
-      if (typeof window === "undefined" || !window.ethereum) {
-        throw new Error("Wallet provider not found");
-      }
-
-      await window.ethereum
-        .request?.({ method: "eth_requestAccounts" })
-        .catch(() => {});
-      const provider = new BrowserProvider(
-        window.ethereum,
-        "any",
-      );
-      const signer = await provider.getSigner();
-      const address = await signer.getAddress();
+      const { signer, signerAddress: address } =
+        await getVerifiedAdminSigner();
       const timestamp = Date.now();
       const payload = buildChatModerationMessage({
         action,
@@ -500,19 +571,8 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
         throw new Error(
           `Rules must be at most ${MAX_CHAT_RULES_LENGTH} characters`,
         );
-      if (typeof window === "undefined" || !window.ethereum) {
-        throw new Error("Wallet provider not found");
-      }
-
-      await window.ethereum
-        .request?.({ method: "eth_requestAccounts" })
-        .catch(() => {});
-      const provider = new BrowserProvider(
-        window.ethereum,
-        "any",
-      );
-      const signer = await provider.getSigner();
-      const address = await signer.getAddress();
+      const { signer, signerAddress: address } =
+        await getVerifiedAdminSigner();
       const timestamp = Date.now();
       const payload = buildChatRulesMessage({ rulesText, timestamp });
       const signature = await signer.signMessage(payload);
@@ -1016,6 +1076,10 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, VRF, actions, onClose]);
 
+  React.useEffect(() => {
+    if (open && !hasPanelAccess) onClose?.();
+  }, [hasPanelAccess, onClose, open]);
+
   const tabs = [
     { id: "core", label: "Core" },
     { id: "liquidity", label: "Liquidity" },
@@ -1028,7 +1092,7 @@ export default function AdminPanel({ open, onClose, data = {}, actions = {} }) {
   ];
 
   // ---- UI ----
-  if (!open) return null;
+  if (!open || !hasPanelAccess) return null;
 
   return (
     <div
@@ -3445,5 +3509,4 @@ function copyToClipboard(text) {
     navigator.clipboard?.writeText(text);
   } catch {}
 }
-
 

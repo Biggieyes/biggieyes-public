@@ -12,6 +12,7 @@ import { ensurePolygon, getROProvider } from "@/shared/utils/contract";
 import {
   assertAdminSigner,
   getAdminAccessState,
+  getAdminPanelAccessState,
   POLYGON_MAINNET_CHAIN_ID,
 } from "@/shared/utils/adminAccess.js";
 import {
@@ -50,6 +51,12 @@ const CHAT_API_TIMEOUT_MS = (() => {
   if (Number.isFinite(parsed) && parsed > 0) return Math.trunc(parsed);
   return 12_000;
 })();
+const ADMIN_READ_ONLY_RUN_KEYS = new Set([
+  "refresh",
+  "community_overview",
+  "community_loadEvent",
+  "community_poll_refresh",
+]);
 
 function buildChatApiUrl(path) {
   const safePath = (() => {
@@ -118,6 +125,7 @@ function resolveCOMMUNITYCENTERAddress() {
 
 export default function AdminPanel({
   open,
+  authorized,
   onClose,
   data = {},
   actions: actionsInput = {},
@@ -332,6 +340,7 @@ export default function AdminPanel({
   const expectedOwner = String(
     data?.owner || ADDR.EXPECT_OWNER || ADDR.OWNER || "",
   );
+  const configuredOwner = String(ADDR.EXPECT_OWNER || ADDR.OWNER || "");
   const adminAccess = React.useMemo(
     () =>
       getAdminAccessState({
@@ -342,6 +351,18 @@ export default function AdminPanel({
       }),
     [expectedChainId, expectedOwner, ownerWallet, walletChainId],
   );
+  const panelAccess = React.useMemo(
+    () =>
+      getAdminPanelAccessState({
+        walletAddress: ownerWallet,
+        contractOwnerAddress: expectedOwner,
+        configuredOwnerAddress: configuredOwner,
+      }),
+    [configuredOwner, expectedOwner, ownerWallet],
+  );
+  const hasPanelAccess =
+    (typeof authorized === "boolean" ? authorized : panelAccess.canOpen) &&
+    panelAccess.canOpen;
 
   React.useEffect(() => {
     if (!open || typeof window === "undefined" || !window.ethereum?.request) {
@@ -421,26 +442,42 @@ export default function AdminPanel({
   // --- Handlers helpers ---
   const run = React.useCallback(
     async (key, fn) => {
-    if (!fn) return;
-    try {
-      setPending((p) => ({ ...p, [key]: true }));
-      setStatusMsg("");
-      await fn();
+      if (!fn) return;
+      const isReadOnlyAction = ADMIN_READ_ONLY_RUN_KEYS.has(String(key));
+      if (
+        !isReadOnlyAction &&
+        (!hasPanelAccess || !adminAccess.canWrite)
+      ) {
+        setStatusMsg(
+          `Admin action locked. Connect the verified owner wallet on Polygon mainnet (${expectedChainId}).`,
+        );
+        return;
+      }
+      try {
+        setPending((p) => ({ ...p, [key]: true }));
+        setStatusMsg("");
+        await fn();
       setStatusMsg("✅ Done");
       // auto-refresh, pokud existuje akce refresh
-      if (hasAction("refresh")) {
-        await actions.refresh();
+        if (!isReadOnlyAction && hasAction("refresh")) {
+          await actions.refresh();
         setStatusMsg("✅ Done & refreshed");
-      }
-    } catch (e) {
+        }
+      } catch (e) {
       setStatusMsg(`❌ ${shortErr(e)}`);
-    } finally {
-      setPending((p) => ({ ...p, [key]: false }));
+      } finally {
+        setPending((p) => ({ ...p, [key]: false }));
       // smazat hlášku po chvíli
-      setTimeout(() => setStatusMsg(""), 3500);
-    }
+        setTimeout(() => setStatusMsg(""), 3500);
+      }
     },
-    [actions, hasAction],
+    [
+      actions,
+      adminAccess.canWrite,
+      expectedChainId,
+      hasAction,
+      hasPanelAccess,
+    ],
   );
 
   const submitVRFParams = React.useCallback(async () => {
@@ -1737,8 +1774,12 @@ export default function AdminPanel({
     setActiveTab(tabs[0]?.id || "core");
   }, [activeTab, tabs]);
 
+  React.useEffect(() => {
+    if (open && !hasPanelAccess) onClose?.();
+  }, [hasPanelAccess, onClose, open]);
+
   // ---- UI ----
-  if (!open) return null;
+  if (!open || !hasPanelAccess) return null;
 
   return (
     <div

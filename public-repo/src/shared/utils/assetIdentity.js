@@ -87,7 +87,8 @@ export function buildRewardClaimPayload(assets, options = {}) {
     });
     if (nftIndex == null) continue;
 
-    const tokenId = BigInt(nftIndex);
+    // The index validates the NFT range; contract calls require the original ERC721 ID.
+    const tokenId = BigInt(getAssetTokenId(asset));
     const key = `${collection}:${tokenId}`;
     if (seen.has(key)) continue;
     seen.add(key);

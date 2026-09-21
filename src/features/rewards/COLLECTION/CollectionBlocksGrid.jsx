@@ -33,7 +33,11 @@ import {
 } from "@/shared/utils/contract";
 import { CORE_CHAPTERS } from "@/shared/utils/addresses.js";
 import { coerceBool } from "@/shared/utils/boolean";
-import { readJsonFromURI, resolveImageUrl } from "@/shared/utils/ipfs";
+import {
+  httpFromIpfs,
+  readJsonFromURI,
+  resolveImageUrl,
+} from "@/shared/utils/ipfs";
 import { Contract, formatEther } from "ethers";
 
 // Import constants a utilities
@@ -56,7 +60,10 @@ import {
   summarizeCollectionBlocks,
 } from "./COLLECTIONBlocksGrid.utils";
 import { mapLimit } from "@/shared/utils/shared";
-import { getPublicArtworkPreview } from "./publicArtworkPreview.js";
+import {
+  getPublicArtworkPreview,
+  getPublicArtworkPreviewAsset,
+} from "./publicArtworkPreview.js";
 import publicOriginalsArtwork from "./publicOriginalsArtwork.json";
 
 // Import sub-komponenty
@@ -632,6 +639,27 @@ function COLLECTIONBlocksGrid({
         return;
       }
 
+      const preparedPreview = getPublicArtworkPreviewAsset({
+        release: publicOriginalsArtwork,
+        chainId: POLYGON_CHAIN_ID,
+        chapterId: displayedChapter.chapterId,
+        contractAddress: contract.target,
+        index,
+      });
+      if (!cancelled && preparedPreview) {
+        setSelectedPublicArtwork({
+          ...EMPTY_PUBLIC_ARTWORK,
+          imageUrl: preparedPreview.imageUri
+            ? httpFromIpfs(preparedPreview.imageUri)
+            : "",
+          name: `BiggiEyes Public #${index}`,
+          loading: true,
+          previewOnly: Boolean(preparedPreview.imageUri),
+          awaitingArtwork: preparedPreview.awaitingArtwork,
+          previewMetadataUri: preparedPreview.metadataUri,
+        });
+      }
+
       let info;
       try {
         info = normalizeNftInfo(await contract.nftInfo(index));
@@ -667,8 +695,8 @@ function COLLECTIONBlocksGrid({
           artwork,
         });
         const imageUrl = preview?.imageUri
-          ? await resolveImageUrl(preview.imageUri, preview.metadataUri)
-          : "";
+          ? httpFromIpfs(preview.imageUri)
+          : artwork.imageUrl;
         if (!cancelled) {
           setSelectedPublicArtwork(
             preview
@@ -845,6 +873,10 @@ function COLLECTIONBlocksGrid({
         displayedChapterSnapshot?.totalMinted == null
           ? null
           : Number(displayedChapterSnapshot.totalMinted),
+      saleMinted:
+        displayedChapterSnapshot?.saleMinted == null
+          ? null
+          : Number(displayedChapterSnapshot.saleMinted),
       biggiMinted: COLLECTIONMeta.biggiMinted ?? null,
       paused: COLLECTIONMeta.paused ?? null,
       metadataConfiguredCount: COLLECTIONMeta.configuredCount ?? null,
@@ -1260,19 +1292,6 @@ function COLLECTIONBlocksGrid({
     };
   }, [openBlock, mintSnapshotKey, getCollectionReadContract]);
 
-  const highestPriceName =
-    stats.highestPrice &&
-    blockEntries[stats.highestPrice.index] &&
-    blockEntries[stats.highestPrice.index].name;
-  const lowestPriceName =
-    stats.lowestPrice &&
-    blockEntries[stats.lowestPrice.index] &&
-    blockEntries[stats.lowestPrice.index].name;
-  const topMintedName =
-    stats.topMinted &&
-    blockEntries[stats.topMinted.index] &&
-    blockEntries[stats.topMinted.index].name;
-
   const panelInfoItems = React.useMemo(
     () => [
       {
@@ -1418,7 +1437,11 @@ function COLLECTIONBlocksGrid({
   const renderCOLLECTIONTwo = React.useCallback(
     () => (
       <COLLECTION2Panel
-        chapterName={displayedChapter.chapterId === 1 ? "Originals" : displayedChapter.displayName}
+        chapterName={
+          displayedChapter.chapterId === 1
+            ? "Originals"
+            : displayedChapter.displayName
+        }
         blockEntries={blockEntries}
         desiredTokenId={desiredTokenId}
         selectedBlock={selectedBlock}
@@ -1478,16 +1501,20 @@ function COLLECTIONBlocksGrid({
     () => (
       <COLLECTION1Panel
         chapterId={displayedChapter.chapterId}
-        chapterName={displayedChapter.chapterId === 1 ? "Originals" : displayedChapter.displayName}
+        chapterName={
+          displayedChapter.chapterId === 1
+            ? "Originals"
+            : displayedChapter.displayName
+        }
         comingSoon={isFutureChapter}
         renderBlockCardsGrid={renderBlockCardsGrid}
         blockEntries={blockEntries}
         blockPrices={normalizedPrices}
         blockMints={normalizedMintCounts}
         stats={stats}
-        highestPriceName={highestPriceName}
-        lowestPriceName={lowestPriceName}
-        topMintedName={topMintedName}
+        mintedSupply={COLLECTIONMeta.biggiMinted}
+        maxSupply={COLLECTIONMeta.maxSupply}
+        paused={COLLECTIONMeta.paused}
         additionalText={additionalText}
         renderChapterSwitcher={renderChapterSwitcher}
       />
@@ -1500,9 +1527,9 @@ function COLLECTIONBlocksGrid({
       normalizedPrices,
       normalizedMintCounts,
       stats,
-      highestPriceName,
-      lowestPriceName,
-      topMintedName,
+      COLLECTIONMeta.biggiMinted,
+      COLLECTIONMeta.maxSupply,
+      COLLECTIONMeta.paused,
       additionalText,
       renderChapterSwitcher,
     ],

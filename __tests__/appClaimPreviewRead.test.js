@@ -59,6 +59,7 @@ function fixture(assets = [{ tokenId: "1", contractAddress: primary }]) {
       primaryCollectionAddress: primary,
       allowedCollectionAddresses: [primary, secondary],
     })),
+    formatEther,
     toNumEth: (v) => (v == null ? null : Number(formatEther(v))),
     setMyClaimable: vi.fn(),
     claimableContext: { walletAddress: account, myNFTs: assets },
@@ -107,6 +108,12 @@ describe("AppCore token claim preview reads", () => {
     expect(f.scope.setClaimableSnapshot).toHaveBeenLastCalledWith({
       context: f.scope.claimableContext,
       value: 5,
+      status: "ready",
+      amount: "5.0",
+      units: "2",
+      eligibleCount: 1,
+      paused: null,
+      updatedAt: expect.any(Number),
     });
     expect(f.brl.claimablePreview).toHaveBeenCalledWith([1n]);
   });

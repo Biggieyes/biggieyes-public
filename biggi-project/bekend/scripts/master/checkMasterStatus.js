@@ -103,6 +103,7 @@ function normalizeAddresses(raw) {
     TICKET_HUB: pickAddress(raw, ["TICKET_HUB"]),
     COMPUTE: pickAddress(raw, ["COMPUTE"]),
     VRF_ROUTER: pickAddress(raw, ["VRF_ROUTER"]),
+    NFT_REWARDS_VRF_ROUTER: pickAddress(raw, ["NFT_REWARDS_VRF_ROUTER", "VRF_ROUTER"]),
     REGISTRY: pickAddress(raw, ["REGISTRY"]),
     CHAPTER_CONTROLLER: pickAddress(raw, ["CHAPTER_CONTROLLER"]),
     SERIES_ID: pickNumber(raw, ["SERIES_ID"], null),
@@ -410,10 +411,16 @@ async function main() {
     const mainApproved = isAddress(addresses.MAIN)
       ? await safe("VRF_ROUTER.approved[main]", () => vrfRouter.approvedMains(addresses.MAIN))
       : null;
+    const nftRewardsRouterAddress = addresses.NFT_REWARDS_VRF_ROUTER || addresses.VRF_ROUTER;
+    const nftRewardsRouter = eqAddress(nftRewardsRouterAddress, addresses.VRF_ROUTER)
+      ? vrfRouter
+      : viewContract(nftRewardsRouterAddress, [
+          "function approvedRewardConsumers(address) view returns (bool)",
+        ]);
     const nftRewardsApproved = isAddress(addresses.NFT_REWARDS)
       ? await safe(
-          "VRF_ROUTER.approvedRewardConsumer[nftRewards]",
-          () => vrfRouter.approvedRewardConsumers(addresses.NFT_REWARDS)
+          "NFT_REWARDS_VRF_ROUTER.approvedRewardConsumer[nftRewards]",
+          () => nftRewardsRouter.approvedRewardConsumers(addresses.NFT_REWARDS)
         )
       : null;
     await safe("VRF_ROUTER.keyHash", () => vrfRouter.keyHash());
@@ -1602,8 +1609,13 @@ async function main() {
     if (isAddress(addresses.MAIN)) {
       if (version === 1) expectAddressMatch("NFT_REWARDS.mainContract == MAIN", mainContract, addresses.MAIN, issues);
     }
-    if (isAddress(addresses.VRF_ROUTER)) {
-      expectAddressMatch("NFT_REWARDS.vrfRouter == VRF_ROUTER", vrfRouter, addresses.VRF_ROUTER, issues);
+    if (isAddress(addresses.NFT_REWARDS_VRF_ROUTER)) {
+      expectAddressMatch(
+        "NFT_REWARDS.vrfRouter == NFT_REWARDS_VRF_ROUTER",
+        vrfRouter,
+        addresses.NFT_REWARDS_VRF_ROUTER,
+        issues,
+      );
     }
     if (isAddress(addresses.REGISTRY)) {
       if (version === 1) expectAddressMatch("NFT_REWARDS.registry == REGISTRY", registryAddr, addresses.REGISTRY, issues);

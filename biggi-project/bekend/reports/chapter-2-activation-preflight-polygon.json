@@ -1,0 +1,100 @@
+{
+  "network": "polygon",
+  "chainId": 137,
+  "chapterId": 2,
+  "mode": "dry-run",
+  "policy": "only one chapter active; every earlier chapter must be sold out",
+  "addresses": {
+    "targetMain": "0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036",
+    "targetPublic": "0x7EaB23497085cfF00Cb2E9809b2Af0e717187356",
+    "ticketHub": "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
+    "registry": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
+    "router": "0xc6278C8392a3a8A13D2C26fc40D8AE41186AdC82",
+    "distributor": "0x237DEdb4F8738610013891B0c2f87Ed9EF768D08",
+    "collectionRewards": "0xDfD29350EA1237D39Ff2F2453cE496eE2eba7F43"
+  },
+  "chapterStates": [
+    {
+      "chapterId": 1,
+      "active": false,
+      "minted": "50",
+      "cap": "550",
+      "soldOut": false
+    },
+    {
+      "chapterId": 2,
+      "active": false,
+      "minted": "50",
+      "cap": "550",
+      "soldOut": false
+    },
+    {
+      "chapterId": 3,
+      "active": false,
+      "minted": "50",
+      "cap": "550",
+      "soldOut": false
+    },
+    {
+      "chapterId": 4,
+      "active": false,
+      "minted": "50",
+      "cap": "550",
+      "soldOut": false
+    },
+    {
+      "chapterId": 5,
+      "active": false,
+      "minted": "50",
+      "cap": "550",
+      "soldOut": false
+    }
+  ],
+  "checks": {
+    "allChaptersCurrentlyInactive": true,
+    "allEarlierChaptersSoldOut": false,
+    "targetExists": true,
+    "targetInactive": true,
+    "targetNotSoldOut": true,
+    "targetCanonicalInactive": true,
+    "targetPublicMetadataReady": false,
+    "ticketHubOwner": true,
+    "rewardsOwner": true,
+    "mainOwner": true,
+    "routerV2": true,
+    "distributorV2": true,
+    "mainV2": false,
+    "targetHubBinding": true,
+    "registryMainBinding": true,
+    "registryPublicBinding": true,
+    "registryHubBinding": true,
+    "mainChapterBinding": true,
+    "mainTicketHubBinding": true,
+    "mainRouterBinding": false,
+    "metadataSealed": false,
+    "metadataComplete": false,
+    "rewardMatrixConsistent": false,
+    "mainUnpaused": true,
+    "routerApproval": false,
+    "distributorChapterAttribution": true,
+    "distributorMainWhitelisted": true,
+    "distributorPublicWhitelisted": true,
+    "distributorHubWhitelisted": true,
+    "distributorRewardsPendingZero": true,
+    "targetRewardsPendingZero": true,
+    "collectionBudgetConfigured": true
+  },
+  "currentFundingCollection": "0x5bCA6124D4dD097216AeE5b9e403C830EF658A2F",
+  "result": "blocked",
+  "failures": [
+    "allEarlierChaptersSoldOut",
+    "targetPublicMetadataReady",
+    "mainV2",
+    "mainRouterBinding",
+    "metadataSealed",
+    "metadataComplete",
+    "rewardMatrixConsistent",
+    "routerApproval"
+  ],
+  "checkedAt": "2026-09-19T17:17:59.124Z"
+}

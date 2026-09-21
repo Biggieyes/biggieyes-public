@@ -11,6 +11,79 @@
     "type": "constructor"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "chapterId",
+        "type": "uint256"
+      }
+    ],
+    "name": "chapterSnapshot",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "seriesId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "chapterNumber",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "vrfCollection",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "publicCollection",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "ticketHub",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "chapterReceived",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "collectionRewardPending",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "collection",
+        "type": "address"
+      }
+    ],
+    "name": "collectionRewardPendingSnapshot",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "collectionPending",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalCollectionPending",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "distributor",
     "outputs": [

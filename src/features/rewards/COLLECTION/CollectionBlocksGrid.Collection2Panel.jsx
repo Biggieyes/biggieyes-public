@@ -10,6 +10,7 @@ import {
 import { handleImageError } from "../../../utils/images";
 
 const PUBLIC_MAX_SUPPLY = 100;
+const ORIGINALS_PUBLIC_UNLOCK_SALES = 10;
 const POLYGON_CHAIN_ID = 137;
 
 const SectionHeader = ({ label, accent = "#ffe800" }) => (
@@ -91,10 +92,14 @@ const resolveMintStatus = ({
     };
   }
   if (!totals.publicUnlocked) {
+    const paidSales = Number(totals.saleMinted);
+    const paidProgress = Number.isFinite(paidSales)
+      ? `${Math.min(paidSales, ORIGINALS_PUBLIC_UNLOCK_SALES)} / ${ORIGINALS_PUBLIC_UNLOCK_SALES}`
+      : `0 / ${ORIGINALS_PUBLIC_UNLOCK_SALES}`;
     return {
       label: "Public mint locked",
       tone: "warn",
-      hint: "Public mint opens only after this chapter's ticket phase is complete.",
+      hint: `Public mint opens after ${ORIGINALS_PUBLIC_UNLOCK_SALES} paid ticket sales (${paidProgress}). Marketing tickets do not count.`,
     };
   }
   if (!hasSelection) {
@@ -291,25 +296,25 @@ const COLLECTION2Panel = React.memo(
       (_, index) => rangeStart + index,
     );
     const selectedImage =
-      hasSelection && selectedArtwork?.valid ? selectedArtwork.imageUrl : "";
+      hasSelection && selectedArtwork?.imageUrl ? selectedArtwork.imageUrl : "";
     const artworkState = selectedArtwork?.loading
       ? "Loading..."
       : selectedArtwork?.previewOnly
-      ? "Awaiting on-chain update"
-      : selectedArtwork?.awaitingArtwork
-      ? "Soon"
-      : selectedArtwork?.valid
-      ? selectedArtwork.finalized
-        ? "Final"
-        : "Prereveal placeholder"
-      : FALLBACK_VALUE;
+        ? "Awaiting on-chain update"
+        : selectedArtwork?.awaitingArtwork
+          ? "Soon"
+          : selectedArtwork?.valid
+            ? selectedArtwork.finalized
+              ? "Final"
+              : "Prereveal placeholder"
+            : FALLBACK_VALUE;
     const previewLabel = selectedArtwork?.loading
       ? "Loading artwork"
       : selectedArtwork?.previewOnly
-      ? "Preview"
-      : selectedArtwork?.finalized
-      ? "Final artwork"
-      : "Artwork pending";
+        ? "Preview"
+        : selectedArtwork?.finalized
+          ? "Final artwork"
+          : "Artwork pending";
 
     if (!blockEntries || blockEntries.length === 0) {
       return (
@@ -435,6 +440,7 @@ const COLLECTION2Panel = React.memo(
                   onError={handleImageError}
                   loading="eager"
                   decoding="async"
+                  fetchPriority="high"
                 />
               ) : (
                 <span>
@@ -538,7 +544,7 @@ const COLLECTION2Panel = React.memo(
             <div className="collection-grid__progress">
               <span
                 className="collection-grid__progress-bar"
-                style={{ width: `${comingSoon ? 0 : mintedPct ?? 0}%` }}
+                style={{ width: `${comingSoon ? 0 : (mintedPct ?? 0)}%` }}
               />
             </div>
           </article>
@@ -554,19 +560,19 @@ const COLLECTION2Panel = React.memo(
             <div className="collection-grid__progress">
               <span
                 className="collection-grid__progress-bar"
-                style={{ width: `${comingSoon ? 0 : metadataPct ?? 0}%` }}
+                style={{ width: `${comingSoon ? 0 : (metadataPct ?? 0)}%` }}
               />
             </div>
             <span className="collection-grid__stat-foot">
               {comingSoon
                 ? "Future chapter"
                 : selectedArtwork?.previewOnly
-                ? "On-chain artwork update pending"
-                : selectedArtwork?.valid
-                ? selectedArtwork.finalized
-                  ? "Selected artwork finalized"
-                  : "Selected artwork in prereveal"
-                : "Artwork verification pending"}
+                  ? "On-chain artwork update pending"
+                  : selectedArtwork?.valid
+                    ? selectedArtwork.finalized
+                      ? "Selected artwork finalized"
+                      : "Selected artwork in prereveal"
+                    : "Artwork verification pending"}
             </span>
           </article>
           <article className="collection-grid__stat-card collection-grid__stat-card--glass">
@@ -575,13 +581,17 @@ const COLLECTION2Panel = React.memo(
               {comingSoon
                 ? "SOON"
                 : COLLECTIONTotals?.publicUnlocked == null
-                ? FALLBACK_VALUE
-                : COLLECTIONTotals.publicUnlocked
-                ? "Unlocked"
-                : "Locked"}
+                  ? FALLBACK_VALUE
+                  : COLLECTIONTotals.publicUnlocked
+                    ? "Unlocked"
+                    : "Locked"}
             </strong>
             <span className="collection-grid__stat-foot">
-              {comingSoon ? "Future chapter" : "Polygon mainnet"}
+              {comingSoon
+                ? "Future chapter"
+                : `Paid tickets ${formatCount(
+                    COLLECTIONTotals?.saleMinted,
+                  )} / ${ORIGINALS_PUBLIC_UNLOCK_SALES}`}
             </span>
           </article>
         </div>

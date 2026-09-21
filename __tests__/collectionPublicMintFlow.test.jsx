@@ -35,6 +35,7 @@ vi.mock("../src/shared/utils/contract", () => ({
   getROProvider: () => mocks.provider,
 }));
 vi.mock("../src/shared/utils/ipfs", () => ({
+  httpFromIpfs: (uri) => `https://example.com/ipfs/${uri.slice(7)}`,
   readJsonFromURI: (...args) => mocks.readJson(...args),
   resolveImageUrl: async (uri) => `https://example.com/ipfs/${uri.slice(7)}`,
 }));
@@ -134,6 +135,30 @@ async function openPublic() {
 }
 
 describe("Public mint transaction flow", () => {
+  it("starts the contract-bound preview before Public metadata finishes loading", async () => {
+    mocks.contract.target = publicArtworkRelease.contract;
+    mocks.contract.blockBaseURIs.mockResolvedValue(
+      `ipfs://${publicArtworkRelease.sourceMetadataCid}/`,
+    );
+    mocks.readJson.mockImplementation(() => new Promise(() => {}));
+
+    render(
+      <CollectionBlocksGrid
+        activeCOLLECTION="COLLECTION2"
+        blockPrices={Array(10).fill(999)}
+        blockMintCounts={Array(10).fill(45)}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(mocks.panel?.selectedArtwork).toMatchObject({
+        imageUrl: `https://example.com/ipfs/${publicArtworkRelease.imagesCid}/Biggi_1_ORANGE_PUBLIC.png`,
+        loading: true,
+        previewOnly: true,
+      }),
+    );
+  });
+
   it("shows the pinned prerelease but never uses it to bypass on-chain mint checks", async () => {
     mocks.contract.target = publicArtworkRelease.contract;
     mocks.contract.blockBaseURIs.mockResolvedValue(

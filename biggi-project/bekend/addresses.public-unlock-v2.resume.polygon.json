@@ -1,0 +1,92 @@
+{
+  "stateFile": "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\addresses.public-unlock-v2.resume.polygon.json",
+  "status": "staged",
+  "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "deployer": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+  "registry": "0x09f3728e8607e1B951A6396DcEE4EC134C5e4058",
+  "ticketHub": "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
+  "publicCollection": "0xe56cC0657A89daf10994204eD745985a61b0E36F",
+  "oldController": "0x9c084D89c0CB6c8424652d1fa82E83aD9c098288",
+  "controller": "0x323B9147e7a18afce6435d742C83d4E867368117",
+  "reader": "0xf5B5a46Bf9eCe1f806b6789c3Cc36035Fd092b72",
+  "configuredChapters": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "thresholdLocked": true,
+  "publicBound": true,
+  "transactions": [
+    {
+      "label": "deploy BiggiChapterControllerV2",
+      "hash": "0xff962da46c31f8fc35ce1924b5d8038e55c4dca4a06de5bf7c4c4b6f07320e79",
+      "blockNumber": 94161939,
+      "gasUsed": "1842239"
+    },
+    {
+      "label": "stage chapter 1",
+      "hash": "0x961d8b460d520a68f672348724aef7ad91bfea465e8499fe1dfbe3b48f843736",
+      "blockNumber": 94161942,
+      "gasUsed": "150598"
+    },
+    {
+      "label": "stage chapter 2",
+      "hash": "0x448f52ed45267ed72b497d6dec8f89d3c8a870c50b5066dd46e41ff6564b55ef",
+      "blockNumber": 94161946,
+      "gasUsed": "150500"
+    },
+    {
+      "label": "stage chapter 3",
+      "hash": "0xa17df643318f2cb771676ec3a04f8fddb4a017deeb7349384d4605ef0ca54f39",
+      "blockNumber": 94161949,
+      "gasUsed": "150512"
+    },
+    {
+      "label": "stage chapter 4",
+      "hash": "0x950edc6db491f53cfad11fa018d342968835824536bf48481c3eaaef59674a26",
+      "blockNumber": 94161953,
+      "gasUsed": "150512"
+    },
+    {
+      "label": "stage chapter 5",
+      "hash": "0x0ef5be1c3d04bb522c54213eef937a0799a29f469ddd1073dada98f2ab1e8529",
+      "blockNumber": 94161957,
+      "gasUsed": "150512"
+    },
+    {
+      "label": "lock Originals unlock threshold",
+      "hash": "0xae52104f199eaf8aec66362e0152a286e224906d96a803cdc0356dcc2dafd2c4",
+      "blockNumber": 94161960,
+      "gasUsed": "65026"
+    },
+    {
+      "label": "deploy BiggiChapterSeriesReader",
+      "hash": "0xa52c0813c6b017e48b418c9a2aa986c8ac1f9955699e0fadde54a8ac071b56d4",
+      "blockNumber": 94161964,
+      "gasUsed": "1515594"
+    },
+    {
+      "label": "bind Public Originals to ChapterControllerV2",
+      "hash": "0x4553c4b3aab50a0ac7c06e7bd2758adad5f347568e976863775bbbaa38550089",
+      "blockNumber": 94161968,
+      "gasUsed": "75903"
+    }
+  ],
+  "startedAt": "2026-09-20T23:46:17.173Z",
+  "updatedAt": "2026-09-20T23:47:06.248Z",
+  "checks": {
+    "controllerV2": true,
+    "originalsThresholdTen": true,
+    "originalsThresholdLocked": true,
+    "stackConsistent": true,
+    "capMismatchStillBlocksDuringTemporaryMode": true,
+    "publicStillLocked": true,
+    "publicBoundToV2": true,
+    "publicStillPaused": true,
+    "readerUsesV2": true,
+    "readerUsesRegistry": true
+  },
+  "completedAt": "2026-09-20T23:47:50.598Z"
+}

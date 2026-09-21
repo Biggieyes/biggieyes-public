@@ -1,0 +1,366 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "mainContract",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "ticketHub_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "collectionRewards_",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "collectionRewards",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "findTicket",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "out",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getAllBackgroundMintCounts",
+    "outputs": [
+      {
+        "internalType": "uint16[10]",
+        "name": "counts",
+        "type": "uint16[10]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getAllBlockMintCounts",
+    "outputs": [
+      {
+        "internalType": "uint16[10]",
+        "name": "counts",
+        "type": "uint16[10]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getAllBlockPrices",
+    "outputs": [
+      {
+        "internalType": "uint256[10]",
+        "name": "prices",
+        "type": "uint256[10]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getFrontendSnapshot",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "ticketPriceWei",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint16",
+        "name": "ticketMinted_",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "biggiMinted_",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint256[10]",
+        "name": "currentBlockPrices",
+        "type": "uint256[10]"
+      },
+      {
+        "internalType": "uint16[10]",
+        "name": "blocksMinted",
+        "type": "uint16[10]"
+      },
+      {
+        "internalType": "uint16[10]",
+        "name": "bgsMinted",
+        "type": "uint16[10]"
+      },
+      {
+        "internalType": "uint8",
+        "name": "orange_",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "blockWinners_",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bool",
+        "name": "rainbow_",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint8",
+        "name": "charactersMinted_",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getMintDataByTokenId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "ticketPrice_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "blockPrice_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "finalPrice_",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getRewardsCounters",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "orange",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "blockWinners",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bool",
+        "name": "rainbow",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint8",
+        "name": "charactersMinted",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "treasury",
+        "type": "address"
+      }
+    ],
+    "name": "getTicketHubFrontendSnapshot",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "ticketHub",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "biggi",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "distributor",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "tokenSink",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "reserveAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenSinkBps",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "tokenSinkDepositMode",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "treasuryAllowsTicketHub",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "ecosystemTreasuryRouteOk",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "ticketPriceWei",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "ticketPriceBiggi",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint16",
+            "name": "ticketMinted",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "saleMinted",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "marketingMinted",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "saleCap",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "marketingCap",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "maxTickets",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "maxPerWallet",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint256",
+            "name": "userTicketCount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "fullyExhausted",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "paused",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct BiggiMainReader.TicketHubFrontendSnapshot",
+        "name": "s",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "main",
+    "outputs": [
+      {
+        "internalType": "contract IBiggiMainMinimal",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ticketHub",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

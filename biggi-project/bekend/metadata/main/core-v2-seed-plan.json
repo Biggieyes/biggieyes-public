@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "chainId": 137,
+  "layoutFile": "main-layout.json",
+  "layoutSha256": "216fe5e134e2919ab176b633d508908a91ec166cb7f7869ea82260e23ebfa473",
+  "rowsPerChapter": 550,
+  "decision": "defer-future-layouts-until-user-defined",
+  "decisionDate": "2026-09-19",
+  "broadcastAuthorized": false,
+  "chapters": [
+    {
+      "chapterId": 1,
+      "source": "historical-onchain-copy"
+    },
+    {
+      "chapterId": 2,
+      "source": "deferred-user-definition"
+    },
+    {
+      "chapterId": 3,
+      "source": "deferred-user-definition"
+    },
+    {
+      "chapterId": 4,
+      "source": "deferred-user-definition"
+    },
+    {
+      "chapterId": 5,
+      "source": "deferred-user-definition"
+    }
+  ]
+}

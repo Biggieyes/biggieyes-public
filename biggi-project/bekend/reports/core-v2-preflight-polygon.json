@@ -1,0 +1,84 @@
+{
+  "mode": "dry-run",
+  "chainId": 137,
+  "snapshotBlock": 94088119,
+  "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "deployer": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+  "balancesPOL": {
+    "deployer": "8.791934219531498941",
+    "owner": "7.990961215399217126"
+  },
+  "maxFeeGwei": "523.3543839",
+  "priorityFeeGwei": "30.0",
+  "financialPlan": {
+    "baselineForkBlock": 94082827,
+    "baselineTestResult": "5 passing",
+    "safetyBps": 12500,
+    "projectedEffectiveFeeGwei": "276.67719195",
+    "deployer": {
+      "baselineGas": "29762843",
+      "recordedGas": "28053753",
+      "remainingGas": "1709090",
+      "requiredPOL": "0.591082777487281875",
+      "balancePOL": "8.791934219531498941",
+      "sufficient": true
+    },
+    "owner": {
+      "baselineGas": "96158159",
+      "recordedGas": "95660234",
+      "remainingGas": "497925",
+      "requiredPOL": "0.172205613502129688",
+      "balancePOL": "7.990961215399217126",
+      "sufficient": true
+    }
+  },
+  "financialReady": true,
+  "stageChapters": null,
+  "cutoverThrough": 1,
+  "oldRouter": "0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F",
+  "coordinator": "0xec0Ed46f36576541C75739E915ADbCb3DE24bD77",
+  "subscriptionId": "81201946401186585545741412524989119977867721966007705722641563343499481545614",
+  "subscriptionNativeBalance": "2.0",
+  "subscriptionRequestCount": "0",
+  "seedLayoutSha256": "216fe5e134e2919ab176b633d508908a91ec166cb7f7869ea82260e23ebfa473",
+  "seedFileBroadcastAuthorized": false,
+  "chapters": [
+    {
+      "id": 1,
+      "oldMain": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+      "publicCollection": "0xe56cC0657A89daf10994204eD745985a61b0E36F",
+      "metadataSource": "historical-onchain-copy",
+      "metadataHash": "6a099076f7f5c2ad7b4ef1dbafbeef9a5f29e445ef855ce8060a5e0c4f6725a1"
+    },
+    {
+      "id": 2,
+      "oldMain": "0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036",
+      "publicCollection": "0x7EaB23497085cfF00Cb2E9809b2Af0e717187356",
+      "metadataSource": "hash-pinned-layout-seed",
+      "metadataHash": "6a099076f7f5c2ad7b4ef1dbafbeef9a5f29e445ef855ce8060a5e0c4f6725a1"
+    },
+    {
+      "id": 3,
+      "oldMain": "0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2",
+      "publicCollection": "0xda6A6f45053796d0f5edB965fe3FA47B9a35460c",
+      "metadataSource": "hash-pinned-layout-seed",
+      "metadataHash": "6a099076f7f5c2ad7b4ef1dbafbeef9a5f29e445ef855ce8060a5e0c4f6725a1"
+    },
+    {
+      "id": 4,
+      "oldMain": "0x8E862D9071120D69517D3F7Db0c101175E911115",
+      "publicCollection": "0xecE7D61AB3FB2229C39B48380D704183532fE960",
+      "metadataSource": "hash-pinned-layout-seed",
+      "metadataHash": "6a099076f7f5c2ad7b4ef1dbafbeef9a5f29e445ef855ce8060a5e0c4f6725a1"
+    },
+    {
+      "id": 5,
+      "oldMain": "0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38",
+      "publicCollection": "0x99f049279BC545469F989d8f06CD915ef4B6f1d4",
+      "metadataSource": "hash-pinned-layout-seed",
+      "metadataHash": "6a099076f7f5c2ad7b4ef1dbafbeef9a5f29e445ef855ce8060a5e0c4f6725a1"
+    }
+  ],
+  "result": "preflight-pass-no-transactions",
+  "checkedAt": "2026-09-19T17:01:06.213Z"
+}

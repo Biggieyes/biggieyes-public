@@ -85,6 +85,33 @@ afterEach(() => {
 });
 
 describe("NFT card metadata lifecycle", () => {
+  it("shows the exact on-chain token ID for a ticket", async () => {
+    const ticketId = "1000000000000000000000000000201";
+    render(
+      <NftCard
+        nft={nft({
+          tokenId: ticketId,
+          isTicket: true,
+          chapterId: 2,
+          meta: meta("Universe ticket"),
+        })}
+      />,
+    );
+    await act(async () => {});
+    expect(screen.getByText(`Token ID #${ticketId}`)).toBeInTheDocument();
+  });
+
+  it("uses a persistent latest-mint label only for promoted NFTs", async () => {
+    const asset = nft({ meta: meta("Latest NFT") });
+    const { rerender } = render(<NftCard nft={asset} promoted />);
+    await act(async () => {});
+    expect(screen.getByText("Latest mint")).toBeInTheDocument();
+
+    rerender(<NftCard nft={{ ...asset, isTicket: true }} promoted />);
+    await act(async () => {});
+    expect(screen.queryByText("Latest mint")).not.toBeInTheDocument();
+  });
+
   it("does not overwrite a newer direct image after an old resolveImageUrl completes", async () => {
     const old = deferred();
     mainA.tokenURI.mockResolvedValue("https://metadata.example/old");

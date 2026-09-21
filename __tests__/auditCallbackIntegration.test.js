@@ -44,8 +44,9 @@ describe("audit integration invariants", () => {
         "onClaim",
         "setClaimMessage",
         "setClaiming",
+        "tokenClaimsPaused",
         `return (${source.slice(callback.start, callback.end)});`,
-      )(onClaim, setClaimMessage, setClaiming);
+      )(onClaim, setClaimMessage, setClaiming, false);
       await run();
       expect(onClaim).toHaveBeenCalledOnce();
       expect(setClaimMessage).toHaveBeenLastCalledWith(expected);

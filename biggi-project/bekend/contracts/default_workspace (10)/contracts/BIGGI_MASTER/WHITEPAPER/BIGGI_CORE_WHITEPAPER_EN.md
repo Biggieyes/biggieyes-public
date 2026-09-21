@@ -295,12 +295,10 @@ Public blockPrice = Public finalPrice = that price
 A Public mint does not trigger a background increase and does not alter the
 paired VRF block prices.
 
-Public mint unlocks only when the same chapter reports all of the following:
-
-- `saleMinted == 500`,
-- `marketingMinted == 50`,
-- `totalMinted == 550`,
-- the registered VRF/Public/TicketHub stack and caps are consistent.
+Originals Public mint unlocks when the same chapter reports at least `10` paid
+ticket sales and the registered VRF/Public/TicketHub stack and caps are
+consistent. Marketing allocations do not count toward this threshold. The
+on-chain threshold is locked after configuration.
 
 The Public collection must also be unpaused. At this snapshot, Originals Public
 metadata are `100/100` and consistent, but the contract is paused and the chapter

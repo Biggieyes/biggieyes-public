@@ -22,9 +22,9 @@ const COLLECTION1Panel = React.memo(
     renderBlockCardsGrid,
     blockEntries,
     stats,
-    highestPriceName,
-    lowestPriceName,
-    topMintedName,
+    mintedSupply,
+    maxSupply,
+    paused,
     additionalText,
     renderChapterSwitcher,
     chapterId,
@@ -35,61 +35,88 @@ const COLLECTION1Panel = React.memo(
       () => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }),
       [],
     );
-    const nf2 = React.useMemo(
-      () => new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }),
-      [],
-    );
-
     const heroStats = React.useMemo(() => {
-      const fmt = (v, digits = 0) =>
-        Number.isFinite(v) ? (digits ? nf2.format(v) : nf0.format(v)) : null;
-      const high = Number.isFinite(stats?.highestPrice?.value)
-        ? stats.highestPrice.value
+      const minted =
+        mintedSupply != null && Number.isFinite(Number(mintedSupply))
+          ? Number(mintedSupply)
+          : Number.isFinite(stats?.totalMinted)
+            ? stats.totalMinted
+            : null;
+      const supply =
+        maxSupply != null && Number.isFinite(Number(maxSupply))
+          ? Number(maxSupply)
+          : null;
+      const remaining =
+        minted != null && supply != null ? Math.max(0, supply - minted) : null;
+      const mintedByBlock = (Array.isArray(blockEntries) ? blockEntries : [])
+        .filter((entry) => entry?.hasData && Number.isFinite(entry?.minted))
+        .map((entry) => ({ name: entry.name, minted: entry.minted }));
+      const mostDrawnCount = mintedByBlock.length
+        ? Math.max(...mintedByBlock.map((entry) => entry.minted))
         : null;
-      const low = Number.isFinite(stats?.lowestPrice?.value)
-        ? stats.lowestPrice.value
-        : null;
-      const spread = high != null && low != null ? high - low : null;
+      const mostDrawnBlocks =
+        mostDrawnCount != null && mostDrawnCount > 0
+          ? mintedByBlock.filter((entry) => entry.minted === mostDrawnCount)
+          : [];
+      const mostDrawnValue =
+        mostDrawnCount == null
+          ? FALLBACK_VALUE
+          : mostDrawnCount === 0
+            ? "None yet"
+            : mostDrawnBlocks.length === 1
+              ? mostDrawnBlocks[0].name
+              : "Tie";
+      const mostDrawnHint =
+        mostDrawnCount == null
+          ? "Waiting for Polygon data"
+          : mostDrawnCount === 0
+            ? "The first draw will set the leader"
+            : mostDrawnBlocks.length === 1
+              ? `${nf0.format(mostDrawnCount)} ${mostDrawnCount === 1 ? "NFT" : "NFTs"} drawn`
+              : `${mostDrawnBlocks.length} eye colors with ${nf0.format(mostDrawnCount)} each`;
+      const statusValue =
+        paused == null ? "Checking" : paused ? "Paused" : "Active";
+      const statusHint =
+        paused == null
+          ? "Reading the Polygon contract"
+          : paused
+            ? "On-chain VRF minting is paused"
+            : "VRF collection contract is active";
 
       return [
         {
-          label: "Blocks configured",
-          value: fmt(stats.blocksWithData) ?? FALLBACK_VALUE,
-          hint: "Renderable cards",
-        },
-        {
-          label: "Total minted",
-          value: fmt(stats.totalMinted) ?? FALLBACK_VALUE,
-          hint: topMintedName || "Live supply depth",
-        },
-        {
-          label: "Average price",
+          label: "NFTs minted",
           value:
-            stats.averagePrice != null
-              ? `${fmt(stats.averagePrice, 2)} POL`
-              : FALLBACK_VALUE,
-          hint: highestPriceName || "Pricing snapshot",
+            minted != null && supply != null
+              ? `${nf0.format(minted)} / ${nf0.format(supply)}`
+              : minted != null
+                ? nf0.format(minted)
+                : FALLBACK_VALUE,
+          hint: "Confirmed VRF draws on Polygon",
         },
         {
-          label: "Price spread",
-          value: spread != null ? `${fmt(spread, 2)} POL` : FALLBACK_VALUE,
-          hint:
-            low != null && high != null
-              ? `${fmt(low, 2)}–${fmt(high, 2)} POL`
-              : lowestPriceName || "Range pending",
+          label: "NFTs remaining",
+          value: remaining != null ? nf0.format(remaining) : FALLBACK_VALUE,
+          hint: "Still available in this collection",
+        },
+        {
+          label: "Most drawn eye color",
+          value: mostDrawnValue,
+          hint: mostDrawnHint,
+        },
+        {
+          label: "VRF collection",
+          value: statusValue,
+          hint: statusHint,
         },
       ];
     }, [
+      blockEntries,
+      maxSupply,
+      mintedSupply,
       nf0,
-      nf2,
-      stats.blocksWithData,
-      stats.totalMinted,
-      stats.averagePrice,
-      stats.highestPrice?.value,
-      stats.lowestPrice?.value,
-      topMintedName,
-      highestPriceName,
-      lowestPriceName,
+      paused,
+      stats?.totalMinted,
     ]);
 
     if (!blockEntries || blockEntries.length === 0) {
@@ -147,9 +174,9 @@ const COLLECTION1Panel = React.memo(
       prevProps.chapterName === nextProps.chapterName &&
       prevProps.comingSoon === nextProps.comingSoon &&
       prevProps.renderBlockCardsGrid === nextProps.renderBlockCardsGrid &&
-      prevProps.highestPriceName === nextProps.highestPriceName &&
-      prevProps.lowestPriceName === nextProps.lowestPriceName &&
-      prevProps.topMintedName === nextProps.topMintedName &&
+      prevProps.mintedSupply === nextProps.mintedSupply &&
+      prevProps.maxSupply === nextProps.maxSupply &&
+      prevProps.paused === nextProps.paused &&
       prevProps.additionalText === nextProps.additionalText &&
       prevProps.renderChapterSwitcher === nextProps.renderChapterSwitcher
     );

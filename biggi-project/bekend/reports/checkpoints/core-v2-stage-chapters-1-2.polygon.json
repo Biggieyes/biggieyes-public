@@ -1,0 +1,364 @@
+{
+  "schemaVersion": 1,
+  "chainId": 137,
+  "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "deployer": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+  "status": "staged-chapters-1-2-configured",
+  "oldRouter": "0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F",
+  "coordinator": "0xec0Ed46f36576541C75739E915ADbCb3DE24bD77",
+  "subscriptionId": "81201946401186585545741412524989119977867721966007705722641563343499481545614",
+  "chapters": [
+    {
+      "id": 1,
+      "oldMain": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+      "publicCollection": "0xe56cC0657A89daf10994204eD745985a61b0E36F",
+      "metadataHash": "6a099076f7f5c2ad7b4ef1dbafbeef9a5f29e445ef855ce8060a5e0c4f6725a1",
+      "newMain": "0x5bCA6124D4dD097216AeE5b9e403C830EF658A2F",
+      "configured": true
+    },
+    {
+      "id": 2,
+      "oldMain": "0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036",
+      "publicCollection": "0x7EaB23497085cfF00Cb2E9809b2Af0e717187356",
+      "metadataHash": "6a099076f7f5c2ad7b4ef1dbafbeef9a5f29e445ef855ce8060a5e0c4f6725a1",
+      "newMain": "0x5ca1342Fd05CbC2a712Dcbb97D4289289123996f",
+      "configured": true
+    },
+    {
+      "id": 3,
+      "oldMain": "0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2",
+      "publicCollection": "0xda6A6f45053796d0f5edB965fe3FA47B9a35460c",
+      "metadataHash": "6a099076f7f5c2ad7b4ef1dbafbeef9a5f29e445ef855ce8060a5e0c4f6725a1",
+      "newMain": "0x6C543b80b6BF885B6E48d135a6a833E25616C02c"
+    },
+    {
+      "id": 4,
+      "oldMain": "0x8E862D9071120D69517D3F7Db0c101175E911115",
+      "publicCollection": "0xecE7D61AB3FB2229C39B48380D704183532fE960",
+      "metadataHash": "6a099076f7f5c2ad7b4ef1dbafbeef9a5f29e445ef855ce8060a5e0c4f6725a1",
+      "newMain": "0x66cdcB82983eA7Ce8fF0AcB966E60eaFE0f644B2"
+    },
+    {
+      "id": 5,
+      "oldMain": "0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38",
+      "publicCollection": "0x99f049279BC545469F989d8f06CD915ef4B6f1d4",
+      "metadataHash": "6a099076f7f5c2ad7b4ef1dbafbeef9a5f29e445ef855ce8060a5e0c4f6725a1",
+      "newMain": "0x8476cF4687E89095e81842e23162a39215C055a9"
+    }
+  ],
+  "transactions": [
+    {
+      "label": "deploy BiggiVRFRouterV2",
+      "hash": "0xa477678e8cc8a9cde319b52ce2ae0fd584a17dde6c665b11ea61abac30b4c36d",
+      "from": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "blockNumber": 94085964,
+      "gasUsed": "1290308"
+    },
+    {
+      "label": "deploy BiggiEyesMainV2 chapter 1",
+      "hash": "0x86c43970cbb6340284b254c2b8d53fd86315d6b3b62ce44f4474c0e6aa3a2783",
+      "from": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "blockNumber": 94085970,
+      "gasUsed": "5352689"
+    },
+    {
+      "label": "deploy BiggiEyesMainV2 chapter 2",
+      "hash": "0xda0e1f3f9c2d1113831291092c3c0bfa661fd9050629642eb1864d99b4e853e3",
+      "from": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "blockNumber": 94085974,
+      "gasUsed": "5352689"
+    },
+    {
+      "label": "deploy BiggiEyesMainV2 chapter 3",
+      "hash": "0xfb0be02facd183103848b6f2e4ee3a605f9b2f5e60375af2c2ede1d22d4dd8a4",
+      "from": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "blockNumber": 94085981,
+      "gasUsed": "5352689"
+    },
+    {
+      "label": "deploy BiggiEyesMainV2 chapter 4",
+      "hash": "0xd132c968349c72e90e29f752cf83c853775aa69a1ff4afe24436e9fa0d7230da",
+      "from": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "blockNumber": 94085985,
+      "gasUsed": "5352689"
+    },
+    {
+      "label": "deploy BiggiEyesMainV2 chapter 5",
+      "hash": "0x8ded517581d2be5a99aa28e37d32ef4efe45a82e8394e27e7b844aadd3172da1",
+      "from": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "blockNumber": 94085991,
+      "gasUsed": "5352689"
+    },
+    {
+      "label": "chapter 1 setModules",
+      "hash": "0x1efc6cba873aa20b27bf9226c58e18cdc84853b6ee10d8db33c615a90fa23498",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94085995,
+      "gasUsed": "119286"
+    },
+    {
+      "label": "chapter 1 seed rows 1-55",
+      "hash": "0x555ed1ec1362fda29f8c5989e3bf9299e41f87f3783840535a332a19389e161b",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086000,
+      "gasUsed": "3060640"
+    },
+    {
+      "label": "chapter 1 seed rows 56-110",
+      "hash": "0x96967e2e27d0f7fb2c982da59a0c966a4bd9ce92a1e9a4355a5a01427f8e75c7",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086007,
+      "gasUsed": "3042700"
+    },
+    {
+      "label": "chapter 1 seed rows 111-165",
+      "hash": "0x7b54d4a941dae5537720482d7d00443073a9f8547a0f869aec803c1bca236fb4",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086011,
+      "gasUsed": "3042700"
+    },
+    {
+      "label": "chapter 1 seed rows 166-220",
+      "hash": "0x00b1f5ec015e875604469e524af93631cba00d34dc86c32eb29789cc77eef06e",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086017,
+      "gasUsed": "3042700"
+    },
+    {
+      "label": "chapter 1 seed rows 221-275",
+      "hash": "0xe0fa8319b74453e1f23c5c97d2c5c90dbaa073458ca1e4c912cd3f7a91d8af59",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086022,
+      "gasUsed": "3068188"
+    },
+    {
+      "label": "chapter 1 seed rows 276-330",
+      "hash": "0xe8e831ad10af0af3336eeaa12851f1891fe8ee1b495acd9d0060aeb7cf80bbc6",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086028,
+      "gasUsed": "3043360"
+    },
+    {
+      "label": "chapter 1 seed rows 331-385",
+      "hash": "0x20465c11896232b2de79ef8534b35773bff981d2466c13ccc70148f7329c9dd8",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086034,
+      "gasUsed": "3043360"
+    },
+    {
+      "label": "chapter 1 seed rows 386-440",
+      "hash": "0xddaf791069d235b5fb164b87f285669a2bd351ba1d78c056eb31e25049e650b9",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086039,
+      "gasUsed": "3043360"
+    },
+    {
+      "label": "chapter 1 seed rows 441-495",
+      "hash": "0x206284f24e28eae3878ddf1e8a8ff0ada50e4387a4b05c5a31296b137230974c",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086046,
+      "gasUsed": "3043360"
+    },
+    {
+      "label": "chapter 1 seed rows 496-550",
+      "hash": "0x139e24d23df42e21cb334288b171679acc1bb9afe3578a3da930453d57f12302",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086052,
+      "gasUsed": "3068608"
+    },
+    {
+      "label": "chapter 1 sealMetadata",
+      "hash": "0xe1d0ac378b292305d5c56155cc4733f1b67e14e2cb145ef99700c5fe5665a22a",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086173,
+      "gasUsed": "16416698"
+    },
+    {
+      "label": "chapter 1 set rewards URI",
+      "hash": "0xaf5a49957f7fceaeeb846d254973375df010fb38f4ccdff047c174dd9f8f38d9",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086180,
+      "gasUsed": "128270"
+    },
+    {
+      "label": "chapter 1 set characters URI",
+      "hash": "0xe0d640a56bef6cbfa8c6344c24105532c5931c3fd85e5d7cea976af222523abd",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086186,
+      "gasUsed": "128314"
+    },
+    {
+      "label": "chapter 1 set block 1 URI",
+      "hash": "0xeb1f6053307f3bd6937acd1821c354032fbf7c083d7b422c58435f3cb0d69c3b",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086193,
+      "gasUsed": "128522"
+    },
+    {
+      "label": "chapter 1 set block 2 URI",
+      "hash": "0xa35bed8bad9ca7c707b18016a981346ec9149b2b19c6a3b840912afb6b10612b",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086199,
+      "gasUsed": "128522"
+    },
+    {
+      "label": "chapter 1 set block 3 URI",
+      "hash": "0x2d1e4d91785d62e259dd1d00a64ec0f92a77595499ef6d775149a6cae457b8fa",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086203,
+      "gasUsed": "128522"
+    },
+    {
+      "label": "chapter 1 set block 4 URI",
+      "hash": "0x4abf4ff2f3261fb85116d6af9798ec0610f0d75eed3f0f1b0375ab874be0ea52",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086209,
+      "gasUsed": "128522"
+    },
+    {
+      "label": "chapter 1 set block 5 URI",
+      "hash": "0xf839c183150d68894a2ca32bce84ecccb4051132fb76b491df9108a146209a5f",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086213,
+      "gasUsed": "128522"
+    },
+    {
+      "label": "chapter 1 set block 6 URI",
+      "hash": "0x114b7f72ddd58f3708f60c707b38e7835784717652d755678f324ccf708a840e",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086217,
+      "gasUsed": "128522"
+    },
+    {
+      "label": "chapter 1 set block 7 URI",
+      "hash": "0xb6ef190a70fba3131114625f2a778dfce14c146f66cc24d3da14931af4f9e999",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086221,
+      "gasUsed": "128522"
+    },
+    {
+      "label": "chapter 1 set block 8 URI",
+      "hash": "0xe3af1040ee568f7df32d944caacb75da2af31bebc0bdeab231b8fdddf38b7408",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086225,
+      "gasUsed": "128522"
+    },
+    {
+      "label": "chapter 1 set block 9 URI",
+      "hash": "0x905bf11e3d16adc9563db141b60a2c6d4be228ae39bb63b018ef61d7372752b5",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086229,
+      "gasUsed": "128522"
+    },
+    {
+      "label": "chapter 1 set block 10 URI",
+      "hash": "0x3d06bbcc10bf55df4d04d9012cb6304fa85a525f970a3970f5b760b67041ecc0",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086235,
+      "gasUsed": "128522"
+    },
+    {
+      "label": "chapter 2 setModules",
+      "hash": "0x711eda73e443ca5f4a3cc0d93e784d37929cbde34d5428a71ad18df1f13b43f1",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086239,
+      "gasUsed": "119286"
+    },
+    {
+      "label": "chapter 2 setChapterId",
+      "hash": "0x5275694434c0d0e96583d38d540fc40a1e62c271fa62471f8091d1858886a113",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086246,
+      "gasUsed": "48510"
+    },
+    {
+      "label": "chapter 2 seed rows 1-55",
+      "hash": "0x1490be141d3e9ece4b6fca5154dfdb35b6b0f0fc23d884fca02c8d4155188809",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086253,
+      "gasUsed": "3060640"
+    },
+    {
+      "label": "chapter 2 seed rows 56-110",
+      "hash": "0x56150c476ed2826b05967ca9cd7570b00124e57486c6f10efbfea87703b6f438",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086259,
+      "gasUsed": "3042700"
+    },
+    {
+      "label": "chapter 2 seed rows 111-165",
+      "hash": "0x7462de38fd187baaf300fd79a62420342f3f23e800fcb9d84e7624c6f9042cb4",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086265,
+      "gasUsed": "3042700"
+    },
+    {
+      "label": "chapter 2 seed rows 166-220",
+      "hash": "0xe41692d51f3e179ca6c8c05d8ff7b7a1996701f4d42b077abf7a85b317ed5833",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086269,
+      "gasUsed": "3042700"
+    },
+    {
+      "label": "chapter 2 seed rows 221-275",
+      "hash": "0xaebbeeaffd4356b6f1495e9a1b19cd4938a32bfe9c4dcfe562114655f91e5202",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086275,
+      "gasUsed": "3068188"
+    },
+    {
+      "label": "chapter 2 seed rows 276-330",
+      "hash": "0x53ba8be6fe4025fd064768d6a6f94403e0586d6a3e99abdb3f68145d1cb6f523",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086279,
+      "gasUsed": "3043360"
+    },
+    {
+      "label": "chapter 2 seed rows 331-385",
+      "hash": "0x28c1772f81b76a95a0267bc4b45540e0eb12df38e153a31cde5554b15707c07f",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086286,
+      "gasUsed": "3043360"
+    },
+    {
+      "label": "chapter 2 seed rows 386-440",
+      "hash": "0xd70845e55d93907e081b00e354f92d95cc328d560a1e95df08f2b0b515a85a01",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086293,
+      "gasUsed": "3043360"
+    },
+    {
+      "label": "chapter 2 seed rows 441-495",
+      "hash": "0x1379995a7f77497558618fafc550dc14e92364f53e9df785e3af6c09c3bb018e",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086299,
+      "gasUsed": "3043360"
+    },
+    {
+      "label": "chapter 2 seed rows 496-550",
+      "hash": "0xecf88a6dc3141f586000be4a5f9e402832997202ae159c5e59e6e715d43f41da",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086303,
+      "gasUsed": "3068608"
+    },
+    {
+      "label": "chapter 2 sealMetadata",
+      "hash": "0x3df1656fc09186a4c849030dc9b3aaeac82d4975b35581a98807df34434ca594",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086309,
+      "gasUsed": "16416698"
+    }
+  ],
+  "updatedAt": "2026-09-19T16:15:07.655Z",
+  "router": "0xc6278C8392a3a8A13D2C26fc40D8AE41186AdC82",
+  "failedTransactions": [
+    {
+      "label": "chapter 1 sealMetadata",
+      "hash": "0xff82f2bae93e1d263b3b7d4e4bd9bd2acbd428396146b26db688ed5296f9f99d",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94086055,
+      "gasUsed": "9000000",
+      "reason": "gas-limit-exhausted"
+    }
+  ]
+}

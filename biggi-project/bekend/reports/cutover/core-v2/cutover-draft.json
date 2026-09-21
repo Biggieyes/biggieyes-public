@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "chainId": 137,
+  "activationAllowed": false,
+  "checkpointStatus": "partial-cutover-through-1-chapters-inactive",
+  "checkpointSha256": "b1720a5590b24930416bd9ffbd55562fc28d80c532417ddb250eeb7422e16274",
+  "canonicalAddressBookSha256": "6b4e1eb5667775d34d09b0209441cfb5d2a236dceae533d075dd06fd397b3bed",
+  "knownAddressChanges": {
+    "VRF_ROUTER": {
+      "expectedOld": "0x1386d42C11dA3D6cd08C4B7141A7cE67A082da9F",
+      "proposedNew": "0xc6278C8392a3a8A13D2C26fc40D8AE41186AdC82"
+    },
+    "MAIN": {
+      "expectedOld": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+      "proposedNew": "0x5bCA6124D4dD097216AeE5b9e403C830EF658A2F"
+    },
+    "chapters": [
+      {
+        "chapterId": 1,
+        "expectedOldMain": "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+        "proposedMainV2": "0x5bCA6124D4dD097216AeE5b9e403C830EF658A2F",
+        "publicCollectionUnchanged": "0xe56cC0657A89daf10994204eD745985a61b0E36F",
+        "currentlyConfigured": true,
+        "currentlyCutOver": true
+      },
+      {
+        "chapterId": 2,
+        "expectedOldMain": "0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036",
+        "proposedMainV2": "0x5ca1342Fd05CbC2a712Dcbb97D4289289123996f",
+        "publicCollectionUnchanged": "0x7EaB23497085cfF00Cb2E9809b2Af0e717187356",
+        "currentlyConfigured": true,
+        "currentlyCutOver": false
+      },
+      {
+        "chapterId": 3,
+        "expectedOldMain": "0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2",
+        "proposedMainV2": "0x6C543b80b6BF885B6E48d135a6a833E25616C02c",
+        "publicCollectionUnchanged": "0xda6A6f45053796d0f5edB965fe3FA47B9a35460c",
+        "currentlyConfigured": false,
+        "currentlyCutOver": false
+      },
+      {
+        "chapterId": 4,
+        "expectedOldMain": "0x8E862D9071120D69517D3F7Db0c101175E911115",
+        "proposedMainV2": "0x66cdcB82983eA7Ce8fF0AcB966E60eaFE0f644B2",
+        "publicCollectionUnchanged": "0xecE7D61AB3FB2229C39B48380D704183532fE960",
+        "currentlyConfigured": false,
+        "currentlyCutOver": false
+      },
+      {
+        "chapterId": 5,
+        "expectedOldMain": "0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38",
+        "proposedMainV2": "0x8476cF4687E89095e81842e23162a39215C055a9",
+        "publicCollectionUnchanged": "0x99f049279BC545469F989d8f06CD915ef4B6f1d4",
+        "currentlyConfigured": false,
+        "currentlyCutOver": false
+      }
+    ]
+  },
+  "resolvedDeploymentAddresses": {
+    "MAIN_READER": "0x5CAc8E83194a558710019956d75828d7Dc2E26B1",
+    "DISTRIBUTOR": "0x237DEdb4F8738610013891B0c2f87Ed9EF768D08",
+    "MULTI_COLLECTION_READER": "0x559d428d76aaDaAE7B81b1C8Dca04F4d28c158cF"
+  },
+  "abiOutputs": {
+    "BiggiMainV2": {
+      "file": "biggi-project/bekend/reports/cutover/core-v2/abi/BiggiMainV2.abi.json",
+      "sha256": "848fbff857be66f333acb93e30fef84a91ad4a0e540fe89af9c2b38beb39acb6",
+      "entries": 150
+    },
+    "BiggiVRFRouterV2": {
+      "file": "biggi-project/bekend/reports/cutover/core-v2/abi/BiggiVRFRouterV2.abi.json",
+      "sha256": "9262a726f2a985ad3697bd57e9f1d2004e86abc99c51e72ab7b1ce67804809c3",
+      "entries": 38
+    },
+    "BiggiMainReader": {
+      "file": "biggi-project/bekend/reports/cutover/core-v2/abi/BiggiMainReader.abi.json",
+      "sha256": "95bb320c08484fd70cf1191b71cea2635c1751094233de3035165d653e4a01aa",
+      "entries": 12
+    },
+    "BiggiMultiCollectionDistributorV2": {
+      "file": "biggi-project/bekend/reports/cutover/core-v2/abi/BiggiMultiCollectionDistributorV2.abi.json",
+      "sha256": "9aca27e1e48b9ab318253733a3fe8313338ee7867079aa22eb0e62ad894dd12d",
+      "entries": 82
+    },
+    "BiggiMultiCollectionDistributorReaderV2": {
+      "file": "biggi-project/bekend/reports/cutover/core-v2/abi/BiggiMultiCollectionDistributorReaderV2.abi.json",
+      "sha256": "901320b1263e1c1f7e0b4b94cb3265743d371c61e4617bdcb99824673ffe70e1",
+      "entries": 8
+    }
+  },
+  "applyOnlyAfter": [
+    "Target chapter is prepared and remains inactive before activation",
+    "Every earlier chapter is sold out and inactive",
+    "Distributor V2 migration and strict CORE relationship checks pass",
+    "All target contracts are source verified and runtime verified"
+  ],
+  "productionFilesToUpdateTogether": [
+    "biggi-project/bekend/addresses.master.json",
+    "src/shared/utils/addresses.js",
+    "public-repo/src/shared/utils/addresses.js",
+    "src/config/abi/BiggiMain.json",
+    "src/config/abi/BiggiVRFRouter.json",
+    "src/config/abi/BiggiMultiCollectionDistributor.json",
+    "src/config/abi/BiggiMultiCollectionDistributorReaderV2.json",
+    "public-repo/src/config/abi/BiggiMain.json",
+    "public-repo/src/config/abi/BiggiVRFRouter.json",
+    "public-repo/src/config/abi/BiggiMultiCollectionDistributor.json",
+    "public-repo/src/config/abi/BiggiMultiCollectionDistributorReaderV2.json",
+    "biggi-project/bekend/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_ABI/BiggiEyesMain.abi.json",
+    "biggi-project/bekend/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_ABI/BiggiVRFRouter.abi.json",
+    "biggi-project/bekend/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_ABI/BiggiMultiCollectionDistributor.abi.json",
+    "biggi-project/bekend/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_ABI/BiggiMultiCollectionDistributorReaderV2.abi.json"
+  ],
+  "generatedAt": "2026-09-19T17:34:04.079Z"
+}

@@ -3509,8 +3509,8 @@
       ]
     },
     "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\CORE\\BiggiMultiCollectionDistributor.sol": {
-      "lastModificationDate": 1786822104283,
-      "contentHash": "538fec2d622e1c5059d9bd502aaea014",
+      "lastModificationDate": 1789822241356,
+      "contentHash": "da4e2ec336abdbe0219af29999e95861",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiMultiCollectionDistributor.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -3548,6 +3548,7 @@
       ],
       "artifacts": [
         "BiggiMultiCollectionDistributor",
+        "IBiggiCollectionRewardsBudget",
         "IBiggiSeriesRegistryDistributor"
       ]
     },
@@ -3954,8 +3955,8 @@
       ]
     },
     "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\mocks\\MockVrfCoordinatorV2Plus.sol": {
-      "lastModificationDate": 1778618748502,
-      "contentHash": "770410620184604e4a31cc7ee0d09989",
+      "lastModificationDate": 1789768151461,
+      "contentHash": "c0f193fb3e913f6d5b40930df966600e",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/mocks/MockVrfCoordinatorV2Plus.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -4148,8 +4149,8 @@
       ]
     },
     "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\CORE\\CORE_READERS\\BiggiMultiCollectionDistributorReaderV2.sol": {
-      "lastModificationDate": 1778619570856,
-      "contentHash": "78e8f4c2f818732c38ee60306bfc712b",
+      "lastModificationDate": 1789821097616,
+      "contentHash": "85011387a560aac022763b2b4b8c32a1",
       "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/CORE_READERS/BiggiMultiCollectionDistributorReaderV2.sol",
       "solcConfig": {
         "version": "0.8.24",
@@ -5545,6 +5546,189 @@
       "artifacts": [
         "IMockRewardVrfConsumerV2",
         "MockRewardVrfRouterV2"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\CORE\\BiggiVrfRouterV2.sol": {
+      "lastModificationDate": 1789767855924,
+      "contentHash": "cbdd7a9e674555abc4c10a90675fe438",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiVrfRouterV2.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "../chainlink/VRFConsumerBaseV2Plus.sol",
+        "../chainlink/VRFCoordinatorV2PlusInterface.sol",
+        "../chainlink/VRFV2PlusClient.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiVRFRouterV2",
+        "IBiggiRecoverableMain"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\CORE\\BiggiMainV2.sol": {
+      "lastModificationDate": 1789768280933,
+      "contentHash": "74a89a8a2a4c8199fd25c573e22d22cf",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiMainV2.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC721/ERC721.sol",
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/utils/Pausable.sol",
+        "@openzeppelin/contracts/utils/math/Math.sol",
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "./CORE_LIBRARY/BiggiPriceMathLib.sol",
+        "./CORE_LIBRARY/BiggiIdIndexLib.sol",
+        "./CORE_LIBRARY/BiggiMetaRedeemLib.sol",
+        "./CORE_LIBRARY/BiggiNamesLib.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiEyesMainV2",
+        "IBiggiCompute",
+        "IBiggiTicketHubMainView",
+        "IBiggiVRFRecoveryRouter",
+        "IBiggiVRFRouter",
+        "IBiggiVRFView"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\mocks\\MockVrfRecovery.sol": {
+      "lastModificationDate": 1789767958481,
+      "contentHash": "616f38a2e4b437feabb5fba69fa569b7",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/mocks/MockVrfRecovery.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol",
+        "../CORE/BiggiMainV2.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "IRecoveryEntry",
+        "IRecoveryRouterRequest",
+        "MockVrfRecoveryConsumer",
+        "MockVrfRecoveryHub",
+        "MockVrfRecoveryMain",
+        "MockVrfRecoveryReceiver"
+      ]
+    },
+    "C:\\dev\\BIGGINFTWEB\\biggi-project\\bekend\\contracts\\default_workspace (10)\\contracts\\BIGGI_MASTER\\CORE\\BiggiChapterControllerV2.sol": {
+      "lastModificationDate": 1789947624931,
+      "contentHash": "13338a37c8615b1bff724f7daa2143e2",
+      "sourceName": "contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiChapterControllerV2.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "./BiggiSeriesRegistry.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "BiggiChapterControllerV2",
+        "IBiggiMainChapterViewV2",
+        "IBiggiTicketHubChapterViewV2"
       ]
     }
   }

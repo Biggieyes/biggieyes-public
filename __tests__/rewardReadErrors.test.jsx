@@ -59,6 +59,23 @@ describe("reward read failures", () => {
     expect(result.current.error.message).toBe("429");
   });
 
+  it("exposes the onchain paused state for reward claim controls", async () => {
+    const paused = vi.fn().mockResolvedValue(true);
+    mocks.create.mockReturnValue({
+      unitReward: async () => 1n,
+      currentWeek: async () => 7n,
+      getBlockWeights: async () => [1n],
+      paused,
+    });
+
+    const { result } = renderHook(() => useTokenRewards(mocks.provider));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.data.paused).toBe(true);
+    expect(paused).toHaveBeenCalledOnce();
+  });
+
   it("ignores an outdated token contract snapshot", async () => {
     let resolveOld;
     mocks.create.mockImplementation((address) => ({

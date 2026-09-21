@@ -10,6 +10,9 @@ import Button from "@/components/ui/Button.jsx";
 const GallerySection = React.lazy(() => import("./GallerySection"));
 const LiveStatsPanel = React.lazy(() => import("./LiveStatsPanel"));
 const SiteFooter = React.lazy(() => import("./SiteFooter"));
+const RedeemOverlay = React.lazy(
+  () => import("../../ACTIONBUTTONS/REDEEMTICKET/RedeemOverlay.jsx"),
+);
 
 function SectionPlaceholder({ minHeight = 0 }) {
   return <div aria-hidden="true" style={{ minHeight, width: "100%" }} />;
@@ -107,6 +110,11 @@ function MainLayout({
   fetchStats,
   fetchREWARDS,
   redeemMsg,
+  redeemError,
+  pendingTicketId,
+  vrfRequestId,
+  vrfFulfillment,
+  selectedVrfNft,
   txStatus,
   txExplorerLink,
   onStatusRefresh,
@@ -234,6 +242,24 @@ function MainLayout({
             txLink={txExplorerLink}
             onRefresh={onStatusRefresh}
           />
+
+          {isRedeeming || VRFPending || vrfFulfillment || redeemError ? (
+            <React.Suspense fallback={null}>
+              <RedeemOverlay
+                isRedeeming={isRedeeming}
+                VRFPending={VRFPending}
+                redeemMsg={redeemMsg}
+                redeemError={redeemError}
+                pendingTicketId={pendingTicketId}
+                txStatus={txStatus}
+                txLink={txExplorerLink}
+                requestId={vrfRequestId}
+                fulfillment={vrfFulfillment}
+                selectedNft={selectedVrfNft}
+                onRefresh={onStatusRefresh}
+              />
+            </React.Suspense>
+          ) : null}
 
           <DeferredSection
             forceRender={anchor === "#gallery"}

@@ -30,7 +30,7 @@ const CORE_ABI_MAP = {
   BiggiMain2: "BiggiEyesMain2.abi.json",
   BiggiTicketHub: "BiggiTicketHub.abi.json",
   BiggiSeriesRegistry: "BiggiSeriesRegistry.abi.json",
-  BiggiChapterController: "BiggiChapterController.abi.json",
+  BiggiChapterController: "BiggiChapterControllerV2.abi.json",
   BiggiMainReader: "BiggiMainReader.abi.json",
   BiggiChapterSeriesReader: "BiggiChapterSeriesReader.abi.json",
   BiggiCollectionRewards: "BiggiCollectionRewards.abi.json",

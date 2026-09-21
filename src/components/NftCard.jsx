@@ -1193,7 +1193,7 @@ function NftCardContent({
           </span>
         )}
         {!nft.isTicket && promoted && (
-          <span className="nft-card__fresh">Fresh redeem</span>
+          <span className="nft-card__fresh">Latest mint</span>
         )}
         <div className="nft-card__image-wrap">
           <img
@@ -1243,6 +1243,14 @@ function NftCardContent({
               className={`nft-card__rarity nft-card__rarity--${rarityTier}`}
             >
               {rarityLabel}
+            </span>
+          )}
+          {nft?.isTicket && tokenId && (
+            <span
+              className="nft-card__token-id"
+              title={`On-chain ticket token ID ${tokenId}`}
+            >
+              Token ID #{tokenId}
             </span>
           )}
         </div>

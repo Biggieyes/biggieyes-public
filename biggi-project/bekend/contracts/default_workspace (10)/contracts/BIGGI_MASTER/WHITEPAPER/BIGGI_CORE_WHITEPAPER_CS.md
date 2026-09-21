@@ -293,12 +293,10 @@ Public blockPrice = Public finalPrice = tato cena
 
 Public mint nespouští zvýšení podle pozadí a nemění ceny párové VRF kolekce.
 
-Public mint se odemkne pouze tehdy, když stejná kapitola splní vše následující:
-
-- `saleMinted == 500`,
-- `marketingMinted == 50`,
-- `totalMinted == 550`,
-- registrovaný VRF/Public/TicketHub stack a limity jsou konzistentní.
+Public mint Originals se odemkne, když stejná kapitola eviduje alespoň `10`
+prodaných placených ticketů a registrovaný VRF/Public/TicketHub stack i limity
+jsou konzistentní. Marketingové tickety se do tohoto limitu nepočítají. On-chain
+threshold je po konfiguraci uzamčený.
 
 Public kontrakt musí být také unpaused. V tomto snapshotu jsou metadata Originals
 Public konzistentní `100/100`, ale kontrakt je paused a kapitola neaktivní, takže

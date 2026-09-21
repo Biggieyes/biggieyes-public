@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/config/abi/index.js", async (importOriginal) => {
@@ -59,6 +59,28 @@ const data = {
 };
 
 describe("AdminPanel mainnet consistency", () => {
+  it("fails closed when the connected wallet is not the configured owner", () => {
+    const onClose = vi.fn();
+    render(
+      <AdminPanel
+        open
+        data={{
+          ...data,
+          frontend: {
+            wallet: "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+          },
+        }}
+        actions={{}}
+        onClose={onClose}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("dialog", { name: "Admin panel" }),
+    ).not.toBeInTheDocument();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it("shows the TicketHub and chapter registry in the Core snapshot", () => {
     render(<AdminPanel open data={data} actions={{}} onClose={vi.fn()} />);
 
@@ -66,6 +88,21 @@ describe("AdminPanel mainnet consistency", () => {
     expect(screen.getByText("TicketHub paused")).toBeInTheDocument();
     expect(screen.getByText("Chapter registry")).toBeInTheDocument();
     expect(screen.getByText("1. Original")).toBeInTheDocument();
+  });
+
+  it("runs a manual read refresh exactly once", async () => {
+    const refresh = vi.fn(async () => {});
+    render(
+      <AdminPanel
+        open
+        data={data}
+        actions={{ refresh }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByTitle("Reload on-chain snapshot"));
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
   });
 
   it("keeps owner ops, voting, and events together in Community", async () => {

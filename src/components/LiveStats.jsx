@@ -3181,7 +3181,7 @@ function LiveStats({
             >
               {hasLastToken
                 ? "Last NFT image unavailable"
-                : "No wallet NFT yet"}
+                : "No NFT minted yet"}
             </div>
           )}
           {showLastImageFallback && (

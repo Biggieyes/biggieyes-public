@@ -746,6 +746,14 @@ export default function NftCard({
           {rarityLabel && (
             <span className="nft-card__rarity">{rarityLabel}</span>
           )}
+          {nft?.isTicket && tokenId && (
+            <span
+              className="nft-card__token-id"
+              title={`On-chain ticket token ID ${tokenId}`}
+            >
+              Token ID #{tokenId}
+            </span>
+          )}
         </div>
 
         <div className="nft-card__section">

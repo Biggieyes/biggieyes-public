@@ -60,7 +60,7 @@
     <title>BiggiEyes | Polygon Mainnet NFT Tickets, VRF &amp; BIGGI</title>
     <meta
       name="description"
-      content="Explore BiggiEyes on Polygon Mainnet (chain ID 137): tradable NFT tickets, VRF reveals, chapter collections, live contract data, and BIGGI tokenomics."
+      content="BiggiEyes is a Polygon NFT ecosystem with Chainlink VRF reveals, selectable Public Collections, capped BIGGI tokenomics, weekly holder rewards, and transparent on-chain value routing."
     />
     <meta name="blockchain-network" content="Polygon Mainnet" />
     <meta name="chain-id" content="137" />
@@ -77,7 +77,7 @@
     />
     <meta
       property="og:description"
-      content="Live Polygon Mainnet contract data, tradable NFT tickets, verifiable reveals, chapter collections, and connected BIGGI tokenomics."
+      content="Turn a chapter ticket into a verifiably random Biggi NFT and explore capped BIGGI supply, mint-revenue routing, weekly holder rewards, buyback, reserve, and liquidity mechanics."
     />
     <meta property="og:url" content="https://biggieyes.com/" />
     <meta property="og:type" content="website" />
@@ -98,7 +98,7 @@
     />
     <meta
       name="twitter:description"
-      content="Explore BiggiEyes on Polygon Mainnet: on-chain tickets, VRF NFT reveals, chapter collections, and connected BIGGI tokenomics."
+      content="Discover BiggiEyes on Polygon: ticket-to-NFT reveals, selectable Public Collections, capped BIGGI tokenomics, and transparent on-chain reward rules."
     />
     <meta name="twitter:url" content="https://biggieyes.com/" />
     <meta
@@ -144,7 +144,7 @@
             "@id": "https://biggieyes.com/#website",
             "name": "BiggiEyes",
             "url": "https://biggieyes.com/",
-            "description": "Official BiggiEyes website with live Polygon Mainnet contract data, ticket flow, VRF explanation, chapter collections, and BIGGI rewards.",
+            "description": "Official BiggiEyes website explaining the Polygon ticket-to-NFT flow, Chainlink VRF reveals, selectable Public Collections, and holder rewards.",
             "publisher": { "@id": "https://biggieyes.com/#organization" },
             "inLanguage": "en"
           },
@@ -153,7 +153,7 @@
             "@id": "https://biggieyes.com/#project",
             "name": "BiggiEyes",
             "url": "https://biggieyes.com/",
-            "description": "Web3 ticket-to-reveal project deployed on Polygon Mainnet with live on-chain pricing, verifiable randomness, chapter collections, and connected BIGGI tokenomics.",
+            "description": "Polygon NFT ecosystem with ticket-to-NFT reveals, Chainlink VRF randomness, paired chapter collections, BIGGI holder rewards, and community prize infrastructure.",
             "image": "https://biggieyes.com/og/og-biggieyes.png",
             "creator": { "@id": "https://biggieyes.com/#organization" },
             "keywords": ["Web3", "NFT", "VRF", "Polygon Mainnet", "Chain ID 137", "Ticket to Reveal", "BIGGI", "Chapter Collections"],
@@ -193,14 +193,14 @@
             "@id": "https://biggieyes.com/#webpage",
             "url": "https://biggieyes.com/",
             "name": "BiggiEyes | Polygon Mainnet NFT Tickets, VRF & BIGGI",
-            "description": "Official BiggiEyes landing page with live Polygon Mainnet ticket pricing, VRF reveal flow, chapter collections, and BIGGI tokenomics.",
+            "description": "Official BiggiEyes landing page explaining tickets, Chainlink VRF reveals, paired chapter collections, BIGGI rewards, and community features on Polygon Mainnet.",
             "inLanguage": "en",
             "isPartOf": { "@id": "https://biggieyes.com/#website" },
             "about": [
               "Polygon Mainnet NFT",
               "VRF reveal",
               "tradable ticket mint",
-              "weekly BIGGI rewards",
+              "eligibility-based weekly BIGGI rewards",
               "public on-chain ticket pricing",
               "collection rewards",
               "app guide"
@@ -215,7 +215,7 @@
                 "name": "How does BiggiEyes minting work?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Each chapter reserves 50 marketing tickets with a 1 POL price snapshot. The first paid public ticket starts at 500 POL, the configured public curve updates after each paid mint, and redemption uses VRF to reveal the final NFT on Polygon Mainnet."
+                  "text": "A collector gets or acquires a chapter ticket, then redeems it. Redemption burns the ticket, requests Chainlink VRF randomness, and mints one still-available NFT from that chapter to the collector."
                 }
               },
               {
@@ -223,7 +223,7 @@
                 "name": "How do BIGGI rewards work?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Eligible finalized NFTs can claim BIGGI once per week, and the amount depends on block weight and rarity tier."
+                  "text": "Eligible VRF and Public Collection NFTs can claim BIGGI once per EVM week. The amount is based on the NFT's eye-color block weight and the active weekly reward budget."
                 }
               },
               {
@@ -809,6 +809,7 @@
       .landing-focus,
       .landing-paths,
       .landing-state,
+      .landing-tokenomics,
       .landing-trust {
         margin-top: 24px;
         display: grid;
@@ -831,8 +832,277 @@
         border: 1px solid var(--frame-green);
       }
 
+      .landing-tokenomics {
+        border: 1px solid var(--frame-gold);
+      }
+
       .landing-trust {
         border: 1px solid var(--frame-cyan);
+      }
+
+      .tokenomics-header {
+        display: grid;
+        gap: 8px;
+      }
+
+      .tokenomics-eyebrow {
+        margin: 0;
+        color: var(--accent-2);
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .tokenomics-title {
+        margin: 0;
+        font-size: 1.55rem;
+        line-height: 1.25;
+      }
+
+      .tokenomics-lead {
+        max-width: 980px;
+        margin: 0;
+        color: #dfe8ff;
+      }
+
+      .tokenomics-metrics,
+      .tokenomics-supply-grid,
+      .tokenomics-flow,
+      .tokenomics-routing {
+        display: grid;
+        gap: 12px;
+      }
+
+      .tokenomics-metrics {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .tokenomics-metric {
+        min-width: 0;
+        padding: 13px 14px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.035);
+      }
+
+      .tokenomics-metric strong,
+      .tokenomics-route strong {
+        display: block;
+        color: var(--text);
+      }
+
+      .tokenomics-metric strong {
+        margin-bottom: 3px;
+        color: var(--accent);
+        font-size: 1.12rem;
+      }
+
+      .tokenomics-metric span,
+      .tokenomics-route span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .tokenomics-metric:nth-child(1) {
+        border-color: var(--frame-gold);
+      }
+
+      .tokenomics-metric:nth-child(2) {
+        border-color: var(--frame-cyan);
+      }
+
+      .tokenomics-metric:nth-child(3) {
+        border-color: var(--frame-green);
+      }
+
+      .tokenomics-supply-grid {
+        grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+      }
+
+      .tokenomics-block {
+        min-width: 0;
+        padding: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        background: rgba(7, 13, 28, 0.68);
+      }
+
+      .tokenomics-block h3 {
+        margin-bottom: 6px;
+      }
+
+      .tokenomics-block > p:last-child {
+        margin-bottom: 0;
+      }
+
+      .tokenomics-allocation-bar {
+        display: grid;
+        grid-template-columns: 3fr 1fr 1fr 1fr;
+        min-height: 18px;
+        margin: 14px 0;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 8px;
+      }
+
+      .tokenomics-allocation-bar span:nth-child(1) {
+        background: #f6cf32;
+      }
+
+      .tokenomics-allocation-bar span:nth-child(2) {
+        background: #5bd6ff;
+      }
+
+      .tokenomics-allocation-bar span:nth-child(3) {
+        background: #70e5a2;
+      }
+
+      .tokenomics-allocation-bar span:nth-child(4) {
+        background: #ff7676;
+      }
+
+      .tokenomics-allocation-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 14px;
+      }
+
+      .tokenomics-allocation-item {
+        display: grid;
+        grid-template-columns: 10px minmax(0, 1fr);
+        gap: 8px;
+        align-items: start;
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .tokenomics-allocation-item::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        margin-top: 0.45em;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+
+      .tokenomics-allocation-item:nth-child(2)::before {
+        background: var(--accent-2);
+      }
+
+      .tokenomics-allocation-item:nth-child(3)::before {
+        background: #7bffb2;
+      }
+
+      .tokenomics-allocation-item:nth-child(4)::before {
+        background: #ff7676;
+      }
+
+      .tokenomics-rules {
+        display: grid;
+        gap: 9px;
+        margin-top: 12px;
+      }
+
+      .tokenomics-rule {
+        position: relative;
+        padding-left: 17px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .tokenomics-rule::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0.62em;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent-2);
+        transform: translateY(-50%);
+      }
+
+      .tokenomics-flow {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .tokenomics-flow-step {
+        min-width: 0;
+        padding: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .tokenomics-flow-step:nth-child(1) {
+        border-color: var(--frame-red);
+      }
+
+      .tokenomics-flow-step:nth-child(2) {
+        border-color: var(--frame-gold);
+      }
+
+      .tokenomics-flow-step:nth-child(3) {
+        border-color: var(--frame-green);
+      }
+
+      .tokenomics-flow-step:nth-child(4) {
+        border-color: var(--frame-cyan);
+      }
+
+      .tokenomics-flow-step__number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        margin-bottom: 10px;
+        border: 1px solid rgba(255, 232, 0, 0.38);
+        border-radius: 50%;
+        color: var(--accent);
+        font-weight: 800;
+      }
+
+      .tokenomics-flow-step p {
+        margin: 0;
+        font-size: 0.88rem;
+      }
+
+      .tokenomics-routing {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+      }
+
+      .tokenomics-route {
+        min-width: 0;
+        padding: 12px;
+        border-left: 3px solid var(--accent-2);
+        background: rgba(97, 217, 255, 0.06);
+      }
+
+      .tokenomics-route strong {
+        color: var(--accent);
+        font-size: 1rem;
+      }
+
+      .tokenomics-note {
+        margin: 0;
+        padding: 12px 14px;
+        border-left: 3px solid #7bffb2;
+        background: rgba(123, 255, 178, 0.07);
+        color: #dfffee;
+        font-size: 0.9rem;
+      }
+
+      .tokenomics-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .tokenomics-actions .btn {
+        text-align: center;
       }
 
       .flow-strip,
@@ -1583,6 +1853,7 @@
       .landing-mobile-compact .landing-focus,
       .landing-mobile-compact .landing-paths,
       .landing-mobile-compact .landing-state,
+      .landing-mobile-compact .landing-tokenomics,
       .landing-mobile-compact .landing-trust,
       .landing-mobile-compact .topic-browser,
       .landing-mobile-compact .app-launch,
@@ -1676,6 +1947,10 @@
       .landing-mobile-compact .path-grid,
       .landing-mobile-compact .state-grid,
       .landing-mobile-compact .trust-strip,
+      .landing-mobile-compact .tokenomics-metrics,
+      .landing-mobile-compact .tokenomics-supply-grid,
+      .landing-mobile-compact .tokenomics-flow,
+      .landing-mobile-compact .tokenomics-routing,
       .landing-mobile-compact .grid,
       .landing-mobile-compact .live-grid,
       .landing-mobile-compact .links-list,
@@ -1686,6 +1961,7 @@
       .landing-mobile-compact .landing-focus,
       .landing-mobile-compact .landing-paths,
       .landing-mobile-compact .landing-state,
+      .landing-mobile-compact .landing-tokenomics,
       .landing-mobile-compact .landing-trust,
       .landing-mobile-compact .topic-browser,
       .landing-mobile-compact .app-launch,
@@ -1901,6 +2177,11 @@
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 12px;
         }
+
+        .tokenomics-flow,
+        .tokenomics-routing {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
       }
 
       @media (max-width: 760px) {
@@ -1927,6 +2208,17 @@
           width: 100%;
           padding: 16px 14px 18px;
           margin-bottom: 16px;
+        }
+
+        .tokenomics-metrics,
+        .tokenomics-supply-grid,
+        .tokenomics-flow,
+        .tokenomics-routing {
+          grid-template-columns: 1fr;
+        }
+
+        .tokenomics-allocation-list {
+          grid-template-columns: 1fr;
         }
 
         .preview-rail__label,
@@ -2067,49 +2359,43 @@
       <section class="hero">
         <div class="hero-grid">
           <div class="hero-main">
-            <div class="hero-kicker">Polygon Mainnet Architecture</div>
+            <div class="hero-kicker">Collect. Reveal. Explore.</div>
             <h1>BiggiEyes</h1>
-            <p class="hero-title-copy">One on-chain ticket flow connecting VRF collections with the BIGGI ecosystem.</p>
+            <p class="hero-title-copy">
+              Discover a collectible world where every reveal can introduce a
+              new Biggi and every NFT can unlock more of the ecosystem.
+            </p>
             <p class="hero-copy">
-              Each chapter starts with <strong>50 marketing tickets at 1 POL</strong>.
-              The first paid public ticket starts at <strong>500 POL</strong>, its
-              price rises by <strong>0.33%</strong> after each paid mint, and
-              redemption uses verifiable randomness to create the final NFT.
-              Rewards, treasury, reserve, drip, buyback, and liquidity are
-              connected behind the collector flow. The contracts and public
-              dashboard run on <strong>Polygon Mainnet, chain ID 137</strong>;
-              each transaction remains controlled by its live on-chain state.
+              Collect a ticket and reveal your NFT through Chainlink VRF, or
+              choose an exact artwork from an unlocked Public Collection.
+              Trade your collectibles, discover rare eye-color blocks, and use
+              eligible NFTs across BIGGI rewards, collection challenges, and
+              community events.
             </p>
             <div class="hero-badges" aria-label="Landing overview">
-              <span class="hero-badge">Polygon Mainnet / chain ID 137</span>
-              <span class="hero-badge">Public ticket curve + verifiable reveal</span>
-              <span class="hero-badge">Treasury, reserve, buyback, liquidity</span>
+              <span class="hero-badge">Provably fair NFT reveals</span>
+              <span class="hero-badge">Choose or reveal your Biggi</span>
+              <span class="hero-badge">Rewards, challenges, and community</span>
             </div>
             <div class="hero-note">
-              <strong>Most important:</strong> BiggiEyes is not built as
-              separate NFT and token products. Tickets, VRF reveal, finalized
-              NFTs, rewards, tokenomics, and future chapter expansion all read
-              from one connected public architecture. The public dashboard
-              reads Polygon Mainnet contracts directly, while mint, redeem,
-              claim, and automation actions follow their current on-chain controls.
+              <strong>Start your journey:</strong> choose the surprise of a
+              verifiable reveal or select a specific Biggi when its Public
+              Collection opens. Your collection, rewards, gallery, and
+              community activity stay together in one Polygon app.
             </div>
             <div class="grid hero-keyfacts">
               <article class="card">
-                <h3>Collector flow with public rules</h3>
+                <h3>Two ways to collect</h3>
                 <p>
-                  Buy the ticket from the <strong>500 POL public starting price</strong>,
-                  follow the paid-mint curve, redeem through VRF, and
-                  hold the final NFT that later determines rarity and reward
-                  weight.
+                  Let Chainlink VRF reveal a random available NFT, or choose an
+                  exact artwork from a Public Collection after it unlocks.
                 </p>
               </article>
               <article class="card">
-                <h3>Ecosystem logic with visible branches</h3>
+                <h3>More than a collectible</h3>
                 <p>
-                  BIGGI rewards, treasury routing, reserve support, drip,
-                  buyback branches, and liquidity protection are built to move
-                  value through clear destinations instead of a hidden black
-                  box.
+                  Eligible NFTs connect to BIGGI rewards, collection goals,
+                  community events, live ownership data, and future chapters.
                 </p>
               </article>
             </div>
@@ -2145,47 +2431,21 @@
             </div>
           </div>
         </div>
-        <div class="hero-stats">
-          <p class="hero-stats__label">Live Entry Stats</p>
-          <div class="live-grid">
-            <article class="live-card">
-              <p class="live-label">Current TicketHub Price</p>
-              <div class="live-value" id="stat-ticket-price">Loading...</div>
-              <div class="live-meta">Polygon Mainnet curve; availability follows the active chapter</div>
-            </article>
-            <article class="live-card">
-              <p class="live-label">Current BIGGI Token Price</p>
-              <div class="live-value" id="stat-biggi-price">Loading...</div>
-              <div class="live-meta">Source: BIGGI / WPOL DEX pair</div>
-            </article>
-            <article class="live-card">
-              <p class="live-label">Public Sale Progress</p>
-              <div class="live-value" id="stat-sale-progress">Loading...</div>
-              <div class="live-meta">Source: TicketHub saleMinted() / saleCap()</div>
-            </article>
-            <article class="live-card">
-              <p class="live-label">Public Launch Price</p>
-              <div class="live-value">500 POL</div>
-              <div class="live-meta">Required before the first paid application mint</div>
-            </article>
-          </div>
-          <div class="live-status" id="stat-updated">Waiting for first update...</div>
-        </div>
         <div class="hero-onboarding" aria-label="Quick start">
           <div class="launch-group">
             <div class="launch-group__label">UNDERSTAND BIGGIEYES FIRST</div>
             <p class="launch-group__copy">
-              Start here if you want the system to make sense before you touch
-              a wallet. This landing explains what the ticket does, how the NFT
-              reveal works, why some NFTs earn more BIGGI, and how the broader
-              ecosystem routes value in the background.
+              Start here before connecting a wallet. This page explains what a
+              ticket does, what you receive after redeem, how the selectable
+              Public Collection differs, and which rewards an eligible NFT can
+              unlock.
             </p>
             <div class="quick-steps">
               <article class="quick-step">
                 <div class="quick-step__number">1</div>
                 <div class="quick-step__body">
                   <strong>Choose a topic</strong>
-                  <p>Start with Rewards, Collection, VRF Mint, Ecosystem, or Community.</p>
+                  <p>Start with the ticket flow, collections, rewards, ecosystem, or community.</p>
                 </div>
               </article>
               <article class="quick-step">
@@ -2211,25 +2471,25 @@
         <div class="launch-group">
           <div class="launch-group__label">How BiggiEyes Works</div>
           <p class="launch-group__copy">
-            The full user flow is simple: enter through the ticket, redeem
-            through verifiable randomness, then hold the final NFT for
-            collection status and possible weekly BIGGI utility.
+            The main collector flow has three steps. Public Collection minting
+            is a separate route that opens after all 550 tickets in the same
+            chapter have been minted.
           </p>
           <div class="flow-strip">
             <article class="flow-step flow-step--ticket">
               <div class="flow-step__number">1</div>
-              <h3>Buy Ticket</h3>
-              <p>The first paid ticket starts at 500 POL. Each later paid mint applies the +0.33% public curve.</p>
+              <h3>Get a Chapter Ticket</h3>
+              <p>Get a chapter ticket or acquire an existing one. The ticket is your tradable entry to a verifiable random reveal.</p>
             </article>
             <article class="flow-step flow-step--redeem">
               <div class="flow-step__number">2</div>
               <h3>Redeem Through VRF</h3>
-              <p>Redeem requests verifiable randomness, so the final NFT is not assigned from a hidden list.</p>
+              <p>Redeem burns the ticket and requests Chainlink randomness, which selects one still-available result from the chapter.</p>
             </article>
             <article class="flow-step flow-step--claim">
               <div class="flow-step__number">3</div>
-              <h3>Hold, Track, Claim</h3>
-              <p>The final NFT enters collection progression and can unlock weekly BIGGI claims if it is eligible.</p>
+              <h3>Own, Trade, or Use the NFT</h3>
+              <p>The final NFT is sent to your wallet. Eligible NFTs can be traded, used for weekly BIGGI, or combined into reward sets.</p>
             </article>
           </div>
         </div>
@@ -2245,56 +2505,161 @@
           <div class="path-grid">
             <a class="path-card path-card--collector" href="/app/?panel=VRF%20MINT">
               <span class="path-card__eyebrow">Collector</span>
-              <h3>Start with the ticket flow</h3>
-              <p>See the 1 POL marketing snapshot, 500 POL public start, paid-mint curve, and VRF redeem path.</p>
+              <h3>Mint, redeem, or choose an NFT</h3>
+              <p>Use the ticket route for a random VRF reveal, or use the paired Public Collection to select an available artwork after unlock.</p>
               <span class="path-card__cta">Open ticket flow</span>
             </a>
             <a class="path-card path-card--holder" href="/app/?panel=REWARDS">
               <span class="path-card__eyebrow">Holder</span>
-              <h3>Check weekly BIGGI utility</h3>
-              <p>See whether a finalized NFT is eligible, how much it can claim, and when the next claim window opens.</p>
+              <h3>Check NFT rewards</h3>
+              <p>See weekly BIGGI eligibility, eye-block weight, claim timing, and the VRF sets required for funded POL rewards.</p>
               <span class="path-card__cta">Open rewards</span>
             </a>
             <a class="path-card path-card--ecosystem" href="/app/?panel=BIGGI%20ECOSYSTEM">
               <span class="path-card__eyebrow">Ecosystem</span>
-              <h3>Read the token and treasury layer</h3>
-              <p>Follow how rewards, treasury, reserve, buyback, drip, and liquidity fit into one public system.</p>
+              <h3>Understand where value goes</h3>
+              <p>Follow how mint payments connect to rewards, reserve, buyback, treasury, community, drip, and liquidity infrastructure.</p>
               <span class="path-card__cta">Open ecosystem</span>
             </a>
           </div>
         </div>
       </section>
 
-      <section class="landing-state" aria-label="Polygon Mainnet status and future expansion">
+      <section class="landing-state" aria-label="BiggiEyes collection structure and expansion">
         <div class="launch-group">
-          <div class="launch-group__label">Polygon Mainnet Status</div>
+          <div class="launch-group__label">Project Structure</div>
           <p class="launch-group__copy">
-            BiggiEyes contracts are deployed on Polygon Mainnet. Individual
-            mint, redeem, claim, liquidity, and automation branches become
-            available according to their explicit on-chain state.
+            BiggiEyes is deployed on Polygon Mainnet and organized into
+            sequential chapters. Only one chapter opens at a time; the next one
+            follows after the previous chapter's ticket supply is complete.
           </p>
           <div class="state-grid">
             <article class="state-card state-card--live">
-              <p class="state-card__eyebrow">Deployed Now</p>
-              <h3>What is already visible on Polygon Mainnet</h3>
+              <p class="state-card__eyebrow">Inside Every Chapter</p>
+              <h3>Two linked ways to collect Biggi NFTs</h3>
               <div class="state-card__list">
-                <span class="state-point">Central TicketHub with chapter routing and a configured 500 POL public starting price.</span>
-                <span class="state-point">VRF collection contracts and verifiable metadata state.</span>
-                <span class="state-point">50 marketing tickets minted for each of five configured chapters (250 total).</span>
-                <span class="state-point">BIGGI treasury, reserve, rewards, drip, and buyback branches.</span>
+                <span class="state-point">550 VRF NFTs revealed randomly from redeemed chapter tickets.</span>
+                <span class="state-point">100 selectable Public NFTs with ten artworks in each eye-color block and no background clones.</span>
+                <span class="state-point">Public mint unlocks only after all 550 chapter tickets are minted.</span>
+                <span class="state-point">Public NFT price is read from the paired VRF collection's current eye-block price.</span>
               </div>
             </article>
             <article class="state-card state-card--future">
-              <p class="state-card__eyebrow">Built For Expansion</p>
-              <h3>What the system is designed to support</h3>
+              <p class="state-card__eyebrow">Connected Utility</p>
+              <h3>What the NFT connects to</h3>
               <div class="state-card__list">
-                <span class="state-point">Additional chapters and future collection growth without rebuilding the project.</span>
-                <span class="state-point">Broader BIGGI utility branches connected to the same ecosystem state.</span>
-                <span class="state-point">Treasury, reserve, drip, buyback, and liquidity working as coordinated layers.</span>
-                <span class="state-point">A stronger community and onboarding layer as the public system expands.</span>
+                <span class="state-point">Weekly BIGGI claims use the owned NFT's eye-color block weight and the active weekly budget.</span>
+                <span class="state-point">Funded Collection Rewards motivate holders to assemble specific VRF NFT sets.</span>
+                <span class="state-point">Community events can assign claimable prizes to selected wallets.</span>
+                <span class="state-point">Treasury, reserve, drip, buyback, and liquidity contracts provide the tokenomics infrastructure.</span>
               </div>
             </article>
           </div>
+        </div>
+      </section>
+
+      <section class="landing-tokenomics" id="biggi-tokenomics" aria-labelledby="biggi-tokenomics-title">
+        <div class="tokenomics-header">
+          <p class="tokenomics-eyebrow">BIGGI Tokenomics</p>
+          <h2 class="tokenomics-title" id="biggi-tokenomics-title">How the BIGGI token connects collecting, rewards, and protocol liquidity</h2>
+          <p class="tokenomics-lead">
+            BIGGI is the capped ERC-20 ecosystem token of BiggiEyes on Polygon.
+            It links eligible NFT rewards with reserve, drip, buyback, treasury,
+            and liquidity modules. It is utility and accounting infrastructure,
+            not a promise of profit or a guaranteed fixed return.
+          </p>
+        </div>
+
+        <div class="tokenomics-metrics" aria-label="BIGGI token facts">
+          <div class="tokenomics-metric">
+            <strong>2.2B BIGGI</strong>
+            <span>Global token contract cap</span>
+          </div>
+          <div class="tokenomics-metric">
+            <strong>1.2B BIGGI</strong>
+            <span>Initial allocation design across four defined destinations</span>
+          </div>
+          <div class="tokenomics-metric">
+            <strong>1 EVM week</strong>
+            <span>Claim cycle for each eligible NFT</span>
+          </div>
+        </div>
+
+        <div class="tokenomics-supply-grid">
+          <article class="tokenomics-block">
+            <h3>Initial BIGGI allocation</h3>
+            <p>The token contract initializes four explicit ecosystem balances totaling 1.2 billion BIGGI.</p>
+            <div class="tokenomics-allocation-bar" role="img" aria-label="600 million Reserve, 200 million Token Rewards, 200 million Drip, and 200 million Marketing Support">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="tokenomics-allocation-list">
+              <span class="tokenomics-allocation-item"><span><strong>600M</strong> Reserve and liquidity support</span></span>
+              <span class="tokenomics-allocation-item"><span><strong>200M</strong> Token Rewards</span></span>
+              <span class="tokenomics-allocation-item"><span><strong>200M</strong> Drip Distributor</span></span>
+              <span class="tokenomics-allocation-item"><span><strong>200M</strong> Marketing Support</span></span>
+            </div>
+          </article>
+
+          <article class="tokenomics-block">
+            <h3>Hard limits and refill controls</h3>
+            <p>The remaining supply is not an uncapped reward printer. Every mint remains below the 2.2B global cap.</p>
+            <div class="tokenomics-rules">
+              <span class="tokenomics-rule">DEX and drip refill authority has its own 500M BIGGI cumulative cap.</span>
+              <span class="tokenomics-rule">Token Rewards refill authority has a separate 500M BIGGI cumulative cap.</span>
+              <span class="tokenomics-rule">Guardian refills can be paused and are tracked independently on-chain.</span>
+              <span class="tokenomics-rule">BIGGI is burnable, pausable, and supports permit approvals.</span>
+            </div>
+          </article>
+        </div>
+
+        <div class="tokenomics-flow" aria-label="BIGGI economic flow">
+          <article class="tokenomics-flow-step">
+            <span class="tokenomics-flow-step__number">1</span>
+            <h3>Collection activity</h3>
+            <p>Supported ticket and Public Collection mints create POL inflow and can also expose configured BIGGI payment paths.</p>
+          </article>
+          <article class="tokenomics-flow-step">
+            <span class="tokenomics-flow-step__number">2</span>
+            <h3>Transparent routing</h3>
+            <p>Forty percent of native mint value goes to development and sixty percent enters the ecosystem distributor.</p>
+          </article>
+          <article class="tokenomics-flow-step">
+            <span class="tokenomics-flow-step__number">3</span>
+            <h3>Buyback recycling</h3>
+            <p>Bought BIGGI is routed through Treasury: 34% to Token Rewards, 33% to Reserve, and 33% to Drip.</p>
+          </article>
+          <article class="tokenomics-flow-step">
+            <span class="tokenomics-flow-step__number">4</span>
+            <h3>Budgeted NFT rewards</h3>
+            <p>Eligible NFTs contribute 10 to 100 units by eye-color block. The weekly controller limits payouts to the active budget.</p>
+          </article>
+        </div>
+
+        <div class="tokenomics-block">
+          <h3>Where each paid mint is routed</h3>
+          <p>The percentages below show the effective share of the full native mint payment after the 40% / 60% top-level split.</p>
+          <div class="tokenomics-routing">
+            <div class="tokenomics-route"><strong>40%</strong><span>Development</span></div>
+            <div class="tokenomics-route"><strong>21%</strong><span>Reserve</span></div>
+            <div class="tokenomics-route"><strong>15%</strong><span>Collection Rewards</span></div>
+            <div class="tokenomics-route"><strong>12%</strong><span>Buyback</span></div>
+            <div class="tokenomics-route"><strong>6%</strong><span>Treasury</span></div>
+            <div class="tokenomics-route"><strong>6%</strong><span>Community Center</span></div>
+          </div>
+        </div>
+
+        <p class="tokenomics-note">
+          Weekly BIGGI is variable by design: ownership, collection eligibility,
+          eye-block weight, remaining budget, reward balance, claim history, and
+          current contract state are all checked before a payout.
+        </p>
+
+        <div class="tokenomics-actions">
+          <a class="btn secondary" href="/app/?panel=BIGGI%20ECOSYSTEM">Inspect live BIGGI ecosystem data</a>
+          <a class="btn secondary" href="/app/?panel=REWARDS">Check NFT reward eligibility</a>
         </div>
       </section>
 
@@ -2307,16 +2672,16 @@
           </p>
           <div class="trust-strip">
             <article class="trust-item trust-item--gold">
-              <strong>1 POL</strong>
-              <span>Marketing ticket price snapshot</span>
+              <strong>550 NFTs</strong>
+              <span>Random VRF collection in each chapter</span>
             </article>
             <article class="trust-item trust-item--cyan">
-              <strong>500 POL</strong>
-              <span>First paid public ticket</span>
+              <strong>100 NFTs</strong>
+              <span>Selectable Public Collection in each chapter</span>
             </article>
             <article class="trust-item trust-item--red">
               <strong>+0.33%</strong>
-              <span>Current configured sale-mint curve</span>
+              <span>Configured increase after each paid ticket mint</span>
             </article>
             <article class="trust-item trust-item--cyan">
               <strong>VRF Reveal</strong>
@@ -2324,11 +2689,11 @@
             </article>
             <article class="trust-item trust-item--green">
               <strong>Weekly BIGGI</strong>
-              <span>Eligibility-based reward architecture</span>
+              <span>Eligible NFT reward based on eye-block weight and budget</span>
             </article>
             <article class="trust-item trust-item--violet">
-              <strong>Guardrails</strong>
-              <span>Treasury, reserve, buyback, and liquidity stay visible</span>
+              <strong>POL Sets</strong>
+              <span>Funded rewards for qualifying VRF collection sets</span>
             </article>
           </div>
         </div>
@@ -2394,7 +2759,7 @@
               aria-controls="topic-panel-ecosystem"
               data-topic-tab="ecosystem"
             >
-              Ecosystem
+              BIGGI Tokenomics
             </button>
             <button
               class="btn secondary launch-link launch-link--page topic-tab"
@@ -2418,29 +2783,30 @@
           data-topic-panel="rewards"
         >
           <p class="topic-panel__eyebrow">Rewards Guide</p>
-          <h2>Finalized NFTs unlock weekly BIGGI claims, and stronger rarity can lift the payout</h2>
+          <h2>Eligible NFTs connect to weekly BIGGI and funded collection challenges</h2>
           <p class="topic-panel__lead">
-            This is the holder utility layer. Once a ticket becomes its final
-            NFT, the app can show whether that NFT is eligible, how much BIGGI
-            it can claim, and when the next claim window opens.
+            VRF and Public Collection NFTs can claim BIGGI once per EVM week.
+            The contract calculates units from the NFT's eye-color block weight,
+            then applies the active weekly budget. A separate POL reward system
+            recognizes specific completed sets from VRF collections.
           </p>
           <div class="topic-panel__highlights">
-            <span class="topic-highlight">Weekly holder utility</span>
-            <span class="topic-highlight">Rarity can increase rewards</span>
-            <span class="topic-highlight">Live claim status in the app</span>
+            <span class="topic-highlight">VRF and Public NFTs can be eligible</span>
+            <span class="topic-highlight">Higher eye blocks carry more reward units</span>
+            <span class="topic-highlight">Separate funded POL set rewards</span>
           </div>
           <div class="grid">
             <article class="card">
               <h3>What the holder does</h3>
-              <p>Hold the finalized NFT, return to the rewards panel, and claim BIGGI when that week's window is open.</p>
+              <p>Hold an eligible NFT, open the Rewards panel, review the preview, and claim when the current weekly window permits it.</p>
             </article>
             <article class="card">
-              <h3>Why some NFTs earn more</h3>
-              <p>Claim amounts are not flat. Rarity tier and collection weight can raise the weekly BIGGI attached to a stronger NFT.</p>
+              <h3>How weekly BIGGI is calculated</h3>
+              <p>Each eye-color block has a weight from 10 to 100 units. The active weekly budget can reduce the default amount, but cannot raise it above the configured maximum.</p>
             </article>
             <article class="card">
-              <h3>Why it feels credible</h3>
-              <p>The reward logic reads from the same on-chain collection state as the reveal, so the payout stays tied to the NFT you actually own.</p>
+              <h3>How collection rewards differ</h3>
+              <p>Collection Rewards use current ownership of qualifying VRF sets. A chapter must be fully funded before claims open, and each target can pay only once.</p>
             </article>
           </div>
           <div class="topic-panel__actions">
@@ -2457,30 +2823,30 @@
           hidden
         >
           <p class="topic-panel__eyebrow">Collection Guide</p>
-          <h2>A chapter-based collection structure built to scale far beyond a one-time drop</h2>
+          <h2>Every chapter contains one random collection and one selectable collection</h2>
           <p class="topic-panel__lead">
-            BiggiEyes is designed as an expandable collectible system. Chapters
-            and blocks keep future releases organized, while preserving clear
-            pricing, rarity paths, and reward context across the wider
-            collection.
+            The 550-item VRF collection is revealed through redeemed tickets.
+            The paired 100-item Public Collection has ten selectable artworks
+            in each of ten eye-color blocks, without background variants. Its
+            mint price comes from the matching VRF eye block.
           </p>
           <div class="topic-panel__highlights">
-            <span class="topic-highlight">Built for future collection growth</span>
-            <span class="topic-highlight">Ticket phase before final reveal</span>
-            <span class="topic-highlight">Tradable before and after reveal</span>
+            <span class="topic-highlight">550 random VRF outcomes</span>
+            <span class="topic-highlight">100 selectable Public artworks</span>
+            <span class="topic-highlight">Public mint opens after 550 tickets</span>
           </div>
           <div class="grid">
             <article class="card">
-              <h3>Why the structure matters</h3>
-              <p>New chapters can be added without breaking the whole system, which makes long-term collection expansion far cleaner.</p>
+              <h3>Random VRF collection</h3>
+              <p>A redeemed ticket receives one still-available result from a 550-position eye-color and background matrix.</p>
             </article>
             <article class="card">
-              <h3>What blocks actually do</h3>
-              <p>Blocks help organize pricing and reward context, so every mint sits in a known place inside the broader collectible map.</p>
+              <h3>Selectable Public Collection</h3>
+              <p>Choose a specific available artwork after the chapter unlocks. Public NFTs do not create background-based price increases.</p>
             </article>
             <article class="card">
-              <h3>What collectors can hold</h3>
-              <p>Before reveal you own the ticket. After redeem and randomness, you own the final NFT. Both states belong to the same public collectible flow.</p>
+              <h3>Sequential chapters</h3>
+              <p>Only one chapter opens at a time. A later chapter follows after the previous chapter's full ticket supply is complete.</p>
             </article>
           </div>
           <div class="topic-panel__actions">
@@ -2499,28 +2865,28 @@
           <p class="topic-panel__eyebrow">VRF Mint Guide</p>
           <h2>Entry begins with a tradable ticket and ends with a verifiable NFT reveal</h2>
           <p class="topic-panel__lead">
-            The mint flow is intentionally public and readable. TicketHub
-            exposes the current price and configured sale-mint curve, and the
-            ticket later redeems into a final NFT through verifiable randomness
-            rather than a hidden manual reveal.
+            A user mints or acquires a chapter ticket, then redeems it. The
+            ticket is burned before the randomness request, and Chainlink VRF
+            selects one still-unminted position from that chapter's 550-item
+            matrix.
           </p>
           <div class="topic-panel__highlights">
-            <span class="topic-highlight">1 POL marketing snapshot</span>
-            <span class="topic-highlight">500 POL public start + paid-mint curve</span>
-            <span class="topic-highlight">Verifiable reveal after redeem</span>
+            <span class="topic-highlight">Tradable ticket before redeem</span>
+            <span class="topic-highlight">Ticket is burned at redeem</span>
+            <span class="topic-highlight">Retry path for a delayed VRF request</span>
           </div>
           <div class="grid">
             <article class="card">
               <h3>Step 1: Enter through the ticket</h3>
-              <p>Your first asset is the ticket itself, and its price moves on a public curve after every new mint.</p>
+              <p>Your first asset is the ticket itself. Paid ticket mints use the current TicketHub price, which increases by the configured curve after each paid mint.</p>
             </article>
             <article class="card">
               <h3>Step 2: Redeem into randomness</h3>
-              <p>When you redeem, the system requests verifiable randomness so the final result is not chosen by a team wallet or private list.</p>
+              <p>Redeem burns the ticket and requests Chainlink VRF so the normal result is not selected from a private off-chain list.</p>
             </article>
             <article class="card">
               <h3>Step 3: Hold the final asset</h3>
-              <p>After reveal, the NFT becomes the collectible that enters rarity, collection progression, and the weekly reward system.</p>
+              <p>After fulfillment, the selected NFT is minted to the redeemer. Delayed requests have a contract retry path after the configured delay.</p>
             </article>
           </div>
           <div class="topic-panel__actions">
@@ -2536,31 +2902,31 @@
           data-topic-panel="ecosystem"
           hidden
         >
-          <p class="topic-panel__eyebrow">Ecosystem Guide</p>
-          <h2>BIGGI runs inside a transparent ecosystem of rewards, treasury, reserve, buyback, and liquidity guardrails</h2>
+          <p class="topic-panel__eyebrow">BIGGI Tokenomics Guide</p>
+          <h2>BIGGI connects NFT rewards with the wider tokenomics system</h2>
           <p class="topic-panel__lead">
-            The collectible side and the token side are designed to work
-            together. BIGGI rewards, treasury routing, reserve support, drip
-            distribution, buyback logic, and liquidity protection are built as
-            one readable system instead of scattered disconnected features.
+            BIGGI is the ecosystem token used by weekly NFT rewards and as an
+            alternative settlement asset for supported mints. Treasury, reserve,
+            drip, buyback, and liquidity contracts separate the main financial
+            responsibilities into visible on-chain modules.
           </p>
           <div class="topic-panel__highlights">
-            <span class="topic-highlight">Rewards and token branches share one system</span>
-            <span class="topic-highlight">Treasury routes value to clear destinations</span>
-            <span class="topic-highlight">Reserve and liquidity add guardrails</span>
+            <span class="topic-highlight">Weekly NFT rewards use BIGGI</span>
+            <span class="topic-highlight">Mint value follows fixed routing rules</span>
+            <span class="topic-highlight">Reserve, drip, buyback, and liquidity are separate modules</span>
           </div>
           <div class="grid">
             <article class="card">
               <h3>What BIGGI is used for</h3>
-              <p>BIGGI is not only a token on a chart. It powers weekly NFT rewards and supports the wider ecosystem as the project expands.</p>
+              <p>BIGGI funds weekly rewards for eligible NFT holders and can be used by supported TicketHub and Public Collection mint paths.</p>
             </article>
             <article class="card">
               <h3>What treasury and reserve mean</h3>
-              <p>Treasury routes value into clear branches such as token rewards, reserve, and drip, while reserve acts as a protective layer when the ecosystem needs support.</p>
+              <p>Treasury redistributes received BIGGI to Token Rewards, Reserve, and Drip, while Reserve keeps a separately accounted support balance.</p>
             </article>
             <article class="card">
               <h3>Why liquidity and buyback matter</h3>
-              <p>Liquidity keeps BIGGI tradable on DEX markets, and buyback plus guardrails are designed to help the system respond more safely in stressed conditions.</p>
+              <p>Liquidity provides the DEX market route for BIGGI. Buyback and guard contracts define controlled market-support actions rather than promising a price or return.</p>
             </article>
           </div>
           <div class="topic-panel__actions">
@@ -2577,30 +2943,30 @@
           hidden
         >
           <p class="topic-panel__eyebrow">Community Guide</p>
-          <h2>The community layer turns a complex on-chain system into a clear public story</h2>
+          <h2>Community Center combines voting, events, and claimable prizes</h2>
           <p class="topic-panel__lead">
-            Before anyone mints, claims, or connects a wallet, they need to
-            understand what the project is and why it matters. This layer ties
-            the collectible flow, reward logic, and ecosystem structure into
-            one readable first impression.
+            The Community Center shows public polls and project events in one
+            place. Users can submit wallet-signed votes, see assigned event
+            rewards, and claim a prize from the on-chain Community Center when
+            their wallet is listed as a winner.
           </p>
           <div class="topic-panel__highlights">
-            <span class="topic-highlight">Made for first-time visitors</span>
-            <span class="topic-highlight">One story across collection and token layers</span>
-            <span class="topic-highlight">Scales with future chapters</span>
+            <span class="topic-highlight">Wallet-signed community polls</span>
+            <span class="topic-highlight">On-chain event prize assignments</span>
+            <span class="topic-highlight">Winner claims stay tied to the assigned wallet</span>
           </div>
           <div class="grid">
             <article class="card">
-              <h3>What visitors get first</h3>
-              <p>They can understand the collectible idea, mint flow, and reward model before connecting a wallet or entering the mainnet dashboard.</p>
+              <h3>Vote in public polls</h3>
+              <p>Connect a wallet, choose an available option, and sign the vote requested by the app so the community result can be tracked.</p>
             </article>
             <article class="card">
-              <h3>Why this matters</h3>
-              <p>If the first explanation is weak, the project feels fragmented. This layer makes a complex on-chain system understandable to normal users.</p>
+              <h3>Receive an event prize</h3>
+              <p>Project events can assign a specific POL amount to a winner. Only the assigned wallet can claim that event allocation.</p>
             </article>
             <article class="card">
-              <h3>Built for long-term growth</h3>
-              <p>As more chapters, collections, and token utilities arrive, the community layer keeps the whole project consistent instead of fragmented.</p>
+              <h3>Check everything in one place</h3>
+              <p>The panel shows active polls, event timing, wallet eligibility, allocated amounts, and whether a prize was already claimed.</p>
             </article>
           </div>
           <div class="topic-panel__actions">
@@ -2634,17 +3000,17 @@
           <article class="card">
             <h3>How does minting start?</h3>
             <p>
-              Each chapter begins with 50 marketing tickets carrying a 1 POL
-              snapshot. The first paid Ticket starts at 500 POL and each later
-              paid mint applies the configured curve, while the
-              final NFT appears only after redeem and VRF completion.
+              Get or acquire a chapter ticket, then redeem it. The ticket is
+              burned and Chainlink VRF selects one still-available NFT from the
+              chapter.
             </p>
           </article>
           <article class="card">
             <h3>What do NFT holders get every week?</h3>
             <p>
-              Eligible finalized NFTs can claim BIGGI once per week, and the
-              amount depends on block weight and rarity tier.
+              Eligible VRF and Public Collection NFTs can claim BIGGI once per
+              EVM week. The amount is based on eye-color block weight and the
+              active weekly reward budget; it is not a guaranteed fixed return.
             </p>
           </article>
           <article class="card">
@@ -2662,11 +3028,11 @@
             </p>
           </article>
           <article class="card">
-            <h3>Where should I start?</h3>
+            <h3>What is the Public Collection?</h3>
             <p>
-              Start with the guide topic that matches your intent, then open the
-              corresponding app panel to inspect live Polygon Mainnet wallet and
-              contract data.
+              It is the paired 100-item collection for a chapter. Collectors
+              choose an available artwork, there are no background clones, and
+              minting opens only after all 550 tickets in that chapter are minted.
             </p>
           </article>
           <article class="card">
@@ -2694,7 +3060,7 @@
             <a href="https://polygonscan.com/token/0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD" rel="noopener noreferrer" target="_blank">BIGGI token on PolygonScan</a>
           </li>
           <li>
-            <a href="https://polygonscan.com/address/0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4" rel="noopener noreferrer" target="_blank">Originals VRF collection on PolygonScan</a>
+            <a href="https://polygonscan.com/address/0x5bCA6124D4dD097216AeE5b9e403C830EF658A2F" rel="noopener noreferrer" target="_blank">Originals VRF collection on PolygonScan</a>
           </li>
           <li>
             <a href="https://opensea.io/collection/biggi-ticket-339884819/overview" rel="noopener noreferrer" target="_blank">Biggi Ticket collection on OpenSea</a>
@@ -2726,7 +3092,7 @@
         ];
 
         const ADDR = {
-          MAIN: "0x6786491Ffc82d80E3ee627aFE81cc7168FF00De4",
+          MAIN: "0x5bCA6124D4dD097216AeE5b9e403C830EF658A2F",
           TICKET_HUB: "0x7b7e561173f498C8274b821090Da64E8ee653f6A",
           BIGGI: "0xD73152845Bc5a9b8253ea0100BB10388CC5c0EeD",
           PAIR: "0x59C7B17B3ACD48979B25215a0c477dF6FFFF3e90",
@@ -2749,6 +3115,8 @@
         const biggiNode = document.getElementById("stat-biggi-price");
         const saleNode = document.getElementById("stat-sale-progress");
         const updatedNode = document.getElementById("stat-updated");
+
+        if (!ticketNode && !biggiNode && !saleNode && !updatedNode) return;
 
         let activeRpc = null;
 

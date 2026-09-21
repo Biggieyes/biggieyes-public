@@ -25,6 +25,11 @@
     "abiLength": 24
   },
   {
+    "output": "BiggiChapterControllerV2.abi.json",
+    "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiChapterControllerV2.sol/BiggiChapterControllerV2.json",
+    "abiLength": 36
+  },
+  {
     "output": "BiggiCompute.abi.json",
     "artifact": "biggi-project/bekend/artifacts-master/contracts/default_workspace (10)/contracts/BIGGI_MASTER/CORE/BiggiCompute.sol/BiggiCompute.json",
     "abiLength": 2

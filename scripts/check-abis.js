@@ -13,6 +13,8 @@ const FILE_GLOBS = [
   `${SRC_DIR}/**/*.ts`,
   `${SRC_DIR}/**/*.tsx`,
 ];
+const RUNTIME_ABI_FRAGMENT_RE =
+  /["'`]function\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
 
 const IGNORE_METHODS = new Set([
   "then",
@@ -247,7 +249,28 @@ function loadAbiFunctions() {
     }
   }
 
-  return { abiByFile, allFunctions, abiFileCount };
+  // Some version-gated methods are deliberately declared as ethers ABI
+  // fragments so the canonical deployed V1 ABI can remain byte-for-byte exact.
+  const sourceFiles = FILE_GLOBS.flatMap((pattern) =>
+    globSync(pattern, { nodir: true }),
+  );
+  const runtimeFunctions = new Set();
+  for (const file of sourceFiles) {
+    const code = fs.readFileSync(file, "utf8");
+    RUNTIME_ABI_FRAGMENT_RE.lastIndex = 0;
+    let match;
+    while ((match = RUNTIME_ABI_FRAGMENT_RE.exec(code)) !== null) {
+      runtimeFunctions.add(match[1]);
+      allFunctions.add(match[1]);
+    }
+  }
+
+  return {
+    abiByFile,
+    allFunctions,
+    abiFileCount,
+    runtimeFunctionCount: runtimeFunctions.size,
+  };
 }
 
 function parseFile(filePath, abiByFile, allFunctions) {
@@ -532,7 +555,12 @@ function formatLoc(entry) {
 }
 
 function main() {
-  const { abiByFile, allFunctions, abiFileCount } = loadAbiFunctions();
+  const {
+    abiByFile,
+    allFunctions,
+    abiFileCount,
+    runtimeFunctionCount,
+  } = loadAbiFunctions();
   const files = FILE_GLOBS.flatMap((pattern) =>
     globSync(pattern, { nodir: true }),
   ).filter((file) => !file.includes(`${path.sep}config${path.sep}abi`));
@@ -553,7 +581,7 @@ function main() {
 
    
   console.log(
-    `ABI audit: ${files.length} files, ${abiFileCount} ABI files, ${allFunctions.size} functions`,
+    `ABI audit: ${files.length} files, ${abiFileCount} ABI files, ${allFunctions.size} functions (${runtimeFunctionCount} runtime fragments)`,
   );
   if (parseErrors) {
      

@@ -56,4 +56,20 @@ describe("production app access", () => {
       expect(sitemap).toContain(`https://biggieyes.com/${route}/`);
     }
   });
+
+  it("keeps the landing introduction collector-friendly and pricing-free", () => {
+    const landing = readProjectFile("index.html");
+
+    expect(landing).toContain("Discover a collectible world");
+    expect(landing).toContain("Two ways to collect");
+    expect(landing).toContain("More than a collectible");
+    expect(landing).toContain("active weekly reward budget");
+    expect(landing).toContain('id="biggi-tokenomics"');
+    expect(landing).toContain("2.2B BIGGI");
+    expect(landing).toContain("Forty percent of native mint value");
+    expect(landing).toContain("34% to Token Rewards");
+    expect(landing).not.toContain("Public Launch Price");
+    expect(landing).not.toContain("Live Entry Stats");
+    expect(landing).not.toMatch(/marketing tickets?/i);
+  });
 });

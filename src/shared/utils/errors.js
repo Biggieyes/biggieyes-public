@@ -54,6 +54,10 @@ export function prettyError(err) {
       "Pending VRF retry is not available yet. Wait a bit longer and try again.",
     PendingStateCorrupted:
       "Pending VRF state is inconsistent. Refresh the app and try again.",
+    RandomnessNotReady:
+      "Chainlink randomness has not arrived yet. Wait for fulfillment and try completion again.",
+    InvalidRandomnessSource:
+      "The saved randomness does not belong to this collection. Refresh the app and check VRF wiring.",
     PresaleNotActive: "Presale is turned off.",
     Paused: "Contract is paused.",
     NoEligibleTokens: "No eligible NFTs to claim this week.",
@@ -64,5 +68,4 @@ export function prettyError(err) {
   };
   return map[name] || reason;
 }
-
 

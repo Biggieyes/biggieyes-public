@@ -1,0 +1,218 @@
+{
+  "network": "polygon",
+  "chainId": 137,
+  "previousDistributor": "0xCE892698159D8D799D5eF7f0dF0111487511fD22",
+  "DISTRIBUTOR": "0x237DEdb4F8738610013891B0c2f87Ed9EF768D08",
+  "MULTI_COLLECTION_READER": "0x559d428d76aaDaAE7B81b1C8Dca04F4d28c158cF",
+  "owner": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+  "chapters": [
+    {
+      "chapterId": 1,
+      "vrfCollection": "0x5bCA6124D4dD097216AeE5b9e403C830EF658A2F",
+      "publicCollection": "0xe56cC0657A89daf10994204eD745985a61b0E36F",
+      "ticketHub": "0x7b7e561173f498C8274b821090Da64E8ee653f6A"
+    },
+    {
+      "chapterId": 2,
+      "vrfCollection": "0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036",
+      "publicCollection": "0x7EaB23497085cfF00Cb2E9809b2Af0e717187356",
+      "ticketHub": "0x7b7e561173f498C8274b821090Da64E8ee653f6A"
+    },
+    {
+      "chapterId": 3,
+      "vrfCollection": "0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2",
+      "publicCollection": "0xda6A6f45053796d0f5edB965fe3FA47B9a35460c",
+      "ticketHub": "0x7b7e561173f498C8274b821090Da64E8ee653f6A"
+    },
+    {
+      "chapterId": 4,
+      "vrfCollection": "0x8E862D9071120D69517D3F7Db0c101175E911115",
+      "publicCollection": "0xecE7D61AB3FB2229C39B48380D704183532fE960",
+      "ticketHub": "0x7b7e561173f498C8274b821090Da64E8ee653f6A"
+    },
+    {
+      "chapterId": 5,
+      "vrfCollection": "0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38",
+      "publicCollection": "0x99f049279BC545469F989d8f06CD915ef4B6f1d4",
+      "ticketHub": "0x7b7e561173f498C8274b821090Da64E8ee653f6A"
+    }
+  ],
+  "transactions": [
+    {
+      "label": "deploy BiggiMultiCollectionDistributor V2",
+      "hash": "0x398047eabe14970c5e42b490403b23982cf707fce6fd85de2d9724831872b407",
+      "from": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "blockNumber": 94088346,
+      "gasUsed": "1727177"
+    },
+    {
+      "label": "setRegistry",
+      "hash": "0x7cb3204e783b8ee4ff118195ee5db8759f08d83e7a5cf6d20e623e6352046307",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088351,
+      "gasUsed": "60372"
+    },
+    {
+      "label": "setCollectionRewards",
+      "hash": "0x24164a281ad0f70d4fc8061807171679490ef6a23cfa924fba33757eff135c6b",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088355,
+      "gasUsed": "55033"
+    },
+    {
+      "label": "setReserve",
+      "hash": "0x60c94ae2344c42c9e7e89910c02f099e6317fde3c7a021effbbf08949a088cf7",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088360,
+      "gasUsed": "55374"
+    },
+    {
+      "label": "setBuybackAgent",
+      "hash": "0xb1a8feb5040158ba54f28370d787545bbf11bab09ebc1663d56cc19e44c9a354",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088366,
+      "gasUsed": "55061"
+    },
+    {
+      "label": "setTreasury",
+      "hash": "0xb43956f8b09924df80bc06eb9744fd7bdf34c982ce6de85441606afacb9101e1",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088369,
+      "gasUsed": "55638"
+    },
+    {
+      "label": "setCommunityCenter",
+      "hash": "0x10327aeac5768de0ce6db9b7adc640bbdb6db2baa83800c804e9f43fc0016a3f",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088375,
+      "gasUsed": "54890"
+    },
+    {
+      "label": "addCollection(0x7b7e561173f498C8274b821090Da64E8ee653f6A)",
+      "hash": "0xed5fe7557cb0a9e35f86299acb48f241b13aeea552434af47b13976c2e56c7f1",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088379,
+      "gasUsed": "54482"
+    },
+    {
+      "label": "addCollection(0x5bCA6124D4dD097216AeE5b9e403C830EF658A2F)",
+      "hash": "0x9b29de6df65125bed89bbe38c261cc500d0f090b89bd80dbe3f1a29cd350c567",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088386,
+      "gasUsed": "54482"
+    },
+    {
+      "label": "addCollection(0xe56cC0657A89daf10994204eD745985a61b0E36F)",
+      "hash": "0xf192fd7f1761fefe1efbc9f58dcfbafd3005a04f3b34542f6618ae25ccd3d6f9",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088390,
+      "gasUsed": "54482"
+    },
+    {
+      "label": "addCollection(0x5Bec5aeE4Ff8b1B5e7CBddcEEC61555354002036)",
+      "hash": "0x9133f9e58e1f3ac127768320dcb0cd53975fe86a5913d4b8c04d40bc69bfa960",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088395,
+      "gasUsed": "54470"
+    },
+    {
+      "label": "addCollection(0x7EaB23497085cfF00Cb2E9809b2Af0e717187356)",
+      "hash": "0x9885e832cf0ed996a8d0a47f363a6e0a99199d5433762d47512bc86a69c52456",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088400,
+      "gasUsed": "54482"
+    },
+    {
+      "label": "addCollection(0x72e6DE66f340E0243DAF45917E7Ce8057Faeedc2)",
+      "hash": "0x14b9a8b568fdd693abc4409e1ee1b26d1c80203dcf7ffc2722a5c434d4710e40",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088421,
+      "gasUsed": "54482"
+    },
+    {
+      "label": "addCollection(0xda6A6f45053796d0f5edB965fe3FA47B9a35460c)",
+      "hash": "0x67c4130d922a8a41576264609dd14cb9a64df0bfe1ab5132ec9b889eb792ecf9",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088441,
+      "gasUsed": "54482"
+    },
+    {
+      "label": "addCollection(0x8E862D9071120D69517D3F7Db0c101175E911115)",
+      "hash": "0x62c27195f5d09500406ab3d294abe37b1a7f8c23d78a407df29d40dccf9168ef",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088446,
+      "gasUsed": "54482"
+    },
+    {
+      "label": "addCollection(0xecE7D61AB3FB2229C39B48380D704183532fE960)",
+      "hash": "0xf6624ad2ef342e153bd671793717750a55171f371c7275aaa2324952b056f6c8",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088453,
+      "gasUsed": "54482"
+    },
+    {
+      "label": "addCollection(0xCA09F0b1f06AD3aA2302ED40Cb12013B84b52B38)",
+      "hash": "0x5ff8d7f4913f3b0e970f6feefb57bf8385d10a6b4a5ee0c5ebdae3a66dd77e35",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088458,
+      "gasUsed": "54482"
+    },
+    {
+      "label": "addCollection(0x99f049279BC545469F989d8f06CD915ef4B6f1d4)",
+      "hash": "0xb3ba0c6f4969941128819195a9b8079a60c4a0f8c428c6a21ef628108587f5cd",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088462,
+      "gasUsed": "54482"
+    },
+    {
+      "label": "deploy BiggiMultiCollectionDistributorReaderV2",
+      "hash": "0x836ccd26e9fad6aea57b72355b7e64083a6fd38a9a9174b1552a32fb5c202249",
+      "from": "0x8fa5C9545B2eEF1ca3c6533951C286e05928f27B",
+      "blockNumber": 94088471,
+      "gasUsed": "938890"
+    },
+    {
+      "label": "collectionRewards.setDistributor",
+      "hash": "0xa5561e19d6fdee5937924addcec0c590e6915160da52a75e4beffe308e886048",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088477,
+      "gasUsed": "36790"
+    },
+    {
+      "label": "reserve.setDistributor",
+      "hash": "0x9fcd0407791e3fc71f4a1ef7beacb228d1b9deeaaf9c035be89262a5589b9697",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088482,
+      "gasUsed": "36651"
+    },
+    {
+      "label": "buyback.setDistributor",
+      "hash": "0x1fe50be014d334bcf15544d08f43216bd42e4cd141842cc872de6829b6de68a2",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088486,
+      "gasUsed": "36171"
+    },
+    {
+      "label": "treasury.setDistributor",
+      "hash": "0xaea22660d378321e8265cf22d6e95be9ec67424b2e29ea9e7490c6d54610e4f7",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088493,
+      "gasUsed": "36724"
+    },
+    {
+      "label": "community.setDistributor",
+      "hash": "0x58c74ed1c1e1107120ff471df1bf044e829f314012955914a5342c825e5c7dc6",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088498,
+      "gasUsed": "36678"
+    },
+    {
+      "label": "TicketHub.setDistributor",
+      "hash": "0x6bdfc224fe7dee82722a3b5ede1b5e71dcdaa898f673ffc32ac7133c167033c5",
+      "from": "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2",
+      "blockNumber": 94088505,
+      "gasUsed": "36747"
+    }
+  ],
+  "migratedAt": "2026-09-19T17:10:21.614Z"
+}

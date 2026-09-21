@@ -3,6 +3,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { ethers } from "ethers";
 import { buildApiHeaders } from "../lib/httpSecurity.js";
+import { resolveConfiguredAdminOwner } from "../lib/adminOwner.js";
 import {
   buildChatRulesMessage,
   isFreshAdminTimestamp,
@@ -11,7 +12,8 @@ import {
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const CHAT_OWNER_ADDRESS = (process.env.CHAT_OWNER_ADDRESS || "").toLowerCase();
+const CHAT_OWNER_ADDRESS = process.env.CHAT_OWNER_ADDRESS || "";
+const COMMUNITY_OWNER_ADDRESS = process.env.COMMUNITY_OWNER_ADDRESS || "";
 
 const corsHeaders = buildApiHeaders({ methods: "POST,OPTIONS" });
 
@@ -37,7 +39,11 @@ const parseBody = (req) => {
 };
 
 async function resolveOwnerAddress() {
-  if (CHAT_OWNER_ADDRESS) return CHAT_OWNER_ADDRESS;
+  const configuredOwner = resolveConfiguredAdminOwner({
+    chatOwnerAddress: CHAT_OWNER_ADDRESS,
+    communityOwnerAddress: COMMUNITY_OWNER_ADDRESS,
+  });
+  if (configuredOwner) return configuredOwner;
   const { data } = await supabase.from("chat_config").select("owner_address").eq("id", 1).maybeSingle();
   return String(data?.owner_address || "").toLowerCase();
 }
@@ -94,7 +100,15 @@ async function handleRequest({ method, body }) {
     return jsonResponse(400, { ok: false, error: "Invalid payload" });
   }
 
-  const owner = await resolveOwnerAddress();
+  let owner = "";
+  try {
+    owner = await resolveOwnerAddress();
+  } catch {
+    return jsonResponse(500, {
+      ok: false,
+      error: "Admin owner configuration error",
+    });
+  }
   if (!owner || owner !== address.toLowerCase()) {
     return jsonResponse(403, { ok: false, error: "Owner only" });
   }

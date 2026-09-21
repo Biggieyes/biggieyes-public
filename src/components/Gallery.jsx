@@ -1615,8 +1615,11 @@ export default function Gallery({
       highlightId &&
       tokenId &&
       isAssetReferenceMatch(item, highlightId, mainContractAddress);
-    const isPromoted =
-      inMainGrid && page === 0 && index === 0 && Boolean(isHighlight);
+    const isLatestMint =
+      inMainGrid &&
+      page === 0 &&
+      Boolean(pinnedTopId) &&
+      isAssetReferenceMatch(item, pinnedTopId, mainContractAddress);
     const key = assetKey || `${mainContractAddress || "unknown"}:${index}`;
     return (
       <NftCard
@@ -1631,7 +1634,7 @@ export default function Gallery({
         onZoom={onZoom}
         fallbackContractAddress={mainContractAddress}
         highlight={Boolean(isHighlight)}
-        promoted={Boolean(isPromoted)}
+        promoted={Boolean(isLatestMint)}
       />
     );
   };

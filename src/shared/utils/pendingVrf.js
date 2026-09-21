@@ -121,6 +121,40 @@ export function pendingVrfFromReceipt(context, receipt, contract) {
   return confirmedContext;
 }
 
+export function findVrfCompletionInReceipt(context, receipt, contract) {
+  if (
+    !context?.requestId ||
+    !same(contract?.target || contract?.address, context.collection)
+  )
+    return null;
+
+  let fulfillmentStarted = false;
+  let minted = null;
+  for (const log of receipt?.logs || []) {
+    if (!same(log.address, context.collection)) continue;
+    try {
+      const parsed = contract.interface.parseLog(log);
+      if (
+        parsed?.name === "VRFFulfillStarted" &&
+        String(parsed.args?.requestId ?? parsed.args?.[0]) ===
+          String(context.requestId) &&
+        same(parsed.args?.minter ?? parsed.args?.[1], context.account)
+      ) {
+        fulfillmentStarted = true;
+      }
+      if (
+        parsed?.name === "NFTMinted" &&
+        same(parsed.args?.minter ?? parsed.args?.[0], context.account)
+      ) {
+        minted = parsed;
+      }
+    } catch {
+      /* Other receipt logs are unrelated to this VRF completion. */
+    }
+  }
+  return fulfillmentStarted && minted ? minted : null;
+}
+
 // With a remembered request, zero pending is not proof of a completed mint.
 export async function resolvePendingVrf({
   account,

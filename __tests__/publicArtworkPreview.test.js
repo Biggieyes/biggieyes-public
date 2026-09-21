@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getPublicArtworkPreview } from "../src/features/rewards/COLLECTION/publicArtworkPreview.js";
+import {
+  getPublicArtworkPreview,
+  getPublicArtworkPreviewAsset,
+} from "../src/features/rewards/COLLECTION/publicArtworkPreview.js";
 import publishedRelease from "../src/features/rewards/COLLECTION/publicOriginalsArtwork.json";
 
 const release = {
@@ -26,6 +29,22 @@ const input = (id = 1, color = "ORANGE") => ({
 });
 
 describe("Public artwork prerelease isolation", () => {
+  it("exposes only a contract-bound display asset before metadata verification", () => {
+    const args = input();
+    const asset = getPublicArtworkPreviewAsset(args);
+    expect(asset).toMatchObject({
+      imageUri: "ipfs://images/Biggi_1_ORANGE_PUBLIC.png",
+      sourceUri: "ipfs://source/Biggi_1_ORANGE_PUBLIC.json",
+      awaitingArtwork: false,
+    });
+    expect(
+      getPublicArtworkPreviewAsset({
+        ...args,
+        contractAddress: `0x${"b".repeat(40)}`,
+      }),
+    ).toBeNull();
+  });
+
   it.each([29, 30])(
     "includes the completed white artwork #%s in the current release",
     (id) => {

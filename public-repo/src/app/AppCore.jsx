@@ -62,6 +62,7 @@ import {
   isFullHistoryEnabled,
 } from "@/shared/utils/shared";
 import { setVRFAllOrPartial } from "@/shared/utils/adminActions";
+import { getAdminPanelAccessState } from "@/shared/utils/adminAccess.js";
 import { resolveActiveTicketChapterId } from "@/shared/utils/ticketChapters.js";
 import { toMainNftIndexFromTokenId } from "@/shared/utils/biggiIdIndex";
 import {
@@ -934,10 +935,12 @@ export default function AppCore() {
   const navOpen = openNavIdx !== null;
   const navAlt = navOpen ? ICONS[openNavIdx]?.alt : "";
 
-  const isAdmin =
-    adminOwner &&
-    walletAddress &&
-    adminOwner.toLowerCase() === walletAddress.toLowerCase();
+  const adminPanelAccess = getAdminPanelAccessState({
+    walletAddress,
+    contractOwnerAddress: adminOwner,
+    configuredOwnerAddress: ADDR.EXPECT_OWNER || ADDR.OWNER,
+  });
+  const isAdmin = adminPanelAccess.canOpen;
 
   /* ====================================================================== */
   /* ============================ CORE HELPERS ============================= */
@@ -1056,25 +1059,40 @@ export default function AppCore() {
 
   React.useEffect(() => {
     let cancelled = false;
+    let retryTimer = null;
+    let attempt = 0;
 
-    (async () => {
+    const loadAdminOwner = async () => {
+      attempt += 1;
       try {
-        const c = contractRef.current || getReadOnlyContract();
+        const c = getReadOnlyContract();
         if (c && typeof c.owner === "function") {
-          const addr = await c.owner().catch(() => "");
-          if (!cancelled) setAdminOwner(addr || "");
-        } else if (!cancelled) {
-          setAdminOwner("");
+          const addr = String(await c.owner()).trim();
+          if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) {
+            throw new Error("Invalid Core owner address");
+          }
+          if (!cancelled) setAdminOwner(addr);
+          return;
         }
       } catch {
-        if (!cancelled) setAdminOwner("");
+        // Fail closed, then retry a bounded number of times for transient RPC errors.
       }
-    })();
+
+      if (cancelled) return;
+      setAdminOwner("");
+      if (attempt < 3) {
+        retryTimer = setTimeout(loadAdminOwner, attempt * 1_000);
+      }
+    };
+
+    setAdminOwner("");
+    loadAdminOwner();
 
     return () => {
       cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
     };
-  }, []);
+  }, [walletAddress]);
 
   React.useEffect(() => {
     if (!isAdmin && adminOpen) setAdminOpen(false);
@@ -3590,7 +3608,6 @@ export default function AppCore() {
       setPendingTicketId(ticketIdStr);
       setVRFPending(true);
       setRedeemMsg("Redeem confirmed. Waiting for VRF reveal…");
-      setTopFirstId(ticketIdStr);
 
       const [ticketsNow, nftsNow] = await Promise.all([
         fetchMyTickets(walletAddress),
@@ -4118,7 +4135,9 @@ export default function AppCore() {
     const vrfParams = VRFUIData?.params || {};
     const subscriptionId = VRFUIData?.subscription?.id || "";
     return {
+      owner: adminOwner || "",
       networkLabel: VRFUIData?.network || "EVM",
+      chainId: Number(VRFUIData?.chainId || ADDR.CHAIN_ID || 137),
       contractAddress: ADDR.COLLECTION_VRF || ADDR.MAIN || "",
       ticketPrice: ticketPrice ?? "",
       REWARDSPool: rewardPool ?? "",
@@ -4135,14 +4154,31 @@ export default function AppCore() {
         minted: blockMintCounts[idx] ?? 0,
         price: blockPrices[idx] ?? 0,
       })),
+      frontend:
+        typeof window === "undefined"
+          ? null
+          : {
+              wallet: walletAddress || "",
+            },
     };
-  }, [VRFUIData, ticketPrice, rewardPool, blockMintCounts, blockPrices]);
+  }, [
+    VRFUIData,
+    adminOwner,
+    ticketPrice,
+    rewardPool,
+    blockMintCounts,
+    blockPrices,
+    walletAddress,
+  ]);
 
   const adminActions = React.useMemo(
     () => ({
       setVRFParams: async (nextVRF) => {
         if (!nextVRF) return;
-        await setVRFAllOrPartial(nextVRF);
+        if (!isAdmin || !adminOwner) {
+          throw new Error("Connected wallet is not the verified Core owner");
+        }
+        await setVRFAllOrPartial(nextVRF, { ownerAddress: adminOwner });
       },
       refresh: async () => {
         await fetchStats();
@@ -4150,7 +4186,7 @@ export default function AppCore() {
         await refreshVRFPanel();
       },
     }),
-    [fetchStats, fetchREWARDS, refreshVRFPanel],
+    [adminOwner, fetchStats, fetchREWARDS, isAdmin, refreshVRFPanel],
   );
 
   /* ====================================================================== */
@@ -4336,10 +4372,11 @@ export default function AppCore() {
       {/* REDEEM OVERLAY REMOVED: status banner is shown on dashboard instead */}
 
       {/* ADMIN PANEL */}
-      {adminOpen ? (
+      {adminOpen && isAdmin ? (
         <React.Suspense fallback={<Loader label="Loading Admin Panel..." />}>
           <AdminPanel
             open={adminOpen}
+            authorized={isAdmin}
             onClose={() => setAdminOpen(false)}
             data={adminData}
             actions={adminActions}

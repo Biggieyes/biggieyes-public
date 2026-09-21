@@ -15,6 +15,8 @@ Use this list before each production deploy.
   - `SUPABASE_URL`
   - `SUPABASE_SERVICE_ROLE_KEY`
   - `CHAT_OWNER_ADDRESS`
+  - `COMMUNITY_OWNER_ADDRESS` (must match `CHAT_OWNER_ADDRESS`)
+  - `VITE_MOD_OWNER_ADDRESS` (must match the live contract owner)
   - `ALLOWED_ORIGIN` (your production domain)
   - `PINATA_API_KEY` / `PINATA_SECRET_API_KEY` or `PINATA_JWT`
   - `PINATA_GATEWAY_BASE_URL` (optional)

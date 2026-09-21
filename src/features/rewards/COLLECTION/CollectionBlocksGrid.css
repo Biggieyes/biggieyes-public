@@ -3554,8 +3554,9 @@
 
 .collection-public__checkout {
   display: grid;
-  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: clamp(320px, 30vw, 430px) minmax(0, 1fr);
+  align-items: stretch;
+  gap: clamp(20px, 2vw, 32px);
 }
 
 .collection-public__preview {
@@ -3600,7 +3601,24 @@
 }
 
 .collection-public__checkout-content {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  align-content: stretch;
+  gap: 12px;
   min-width: 0;
+}
+
+.collection-public__checkout-content .collection-grid__cardbox-head,
+.collection-public__checkout-content .collection-grid__key-values,
+.collection-public__checkout-content .collection-public__status,
+.collection-public__checkout-content .collection-public__mint-button,
+.collection-public__checkout-content .collection-public__transaction {
+  margin-block: 0;
+}
+
+.collection-public__checkout .collection-grid__key-values {
+  grid-template-rows: repeat(5, minmax(42px, 1fr));
+  align-content: stretch;
 }
 
 .collection-public__eyebrow {
@@ -3613,6 +3631,7 @@
 }
 
 .collection-public__checkout .collection-grid__key-values div {
+  align-items: center;
   min-width: 0;
   border-radius: 6px;
 }
@@ -3708,7 +3727,7 @@
   }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 760px) {
   .collection-public .collection-grid__chapter-switcher-heading {
     display: none;
   }
@@ -3737,8 +3756,16 @@
   }
 
   .collection-public__preview {
-    width: min(100%, 300px);
+    width: min(100%, 430px);
     margin-inline: auto;
+  }
+
+  .collection-public__checkout-content {
+    grid-template-rows: auto auto auto auto;
+  }
+
+  .collection-public__checkout .collection-grid__key-values {
+    grid-template-rows: none;
   }
 }
 

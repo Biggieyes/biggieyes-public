@@ -57,6 +57,30 @@ function formatToken(value, digits = 4) {
   return formatTokenDisplay(value, 18, digits, "BIGGI");
 }
 
+function isNonNegativeAmount(value) {
+  if (typeof value === "number") return Number.isFinite(value) && value >= 0;
+  if (typeof value === "bigint") return value >= 0n;
+  if (typeof value !== "string") return false;
+  const normalized = value.trim().replace(/,/g, "");
+  return /^\d+(?:\.\d+)?$/.test(normalized);
+}
+
+function isPositiveAmount(value) {
+  if (!isNonNegativeAmount(value)) return false;
+  if (typeof value === "number") return value > 0;
+  if (typeof value === "bigint") return value > 0n;
+  return /[1-9]/.test(value.replace(/[,.\s]/g, ""));
+}
+
+function formatIntegerValue(value) {
+  if (value == null || !/^\d+$/.test(String(value))) return "--";
+  try {
+    return BigInt(value).toLocaleString("en-US");
+  } catch {
+    return "--";
+  }
+}
+
 const ACTIVITY_MAX = 5;
 const EMPTY_OVERVIEW = {
   loading: false,
@@ -144,14 +168,18 @@ export default function USERPANEL({
   maxSupply = null,
   ticketsLeft = null,
   claimable = null,
-  rewardPool = null,
+  rewardEntitlement = null,
   mintVolumeMatic = null,
   compact = false,
 }) {
   const { account, chainId, connectMetaMask, isConnecting, provider } =
     useWeb3();
   const contracts = useContracts();
-  const activeAccount = account || walletAddress || address || "";
+  const parentAccount = walletAddress || address || "";
+  // AppCore owns the wallet-specific inventory and action callbacks. Prefer its
+  // account so a lagging secondary Web3 context cannot hide valid reward data.
+  const activeAccount = parentAccount || account || "";
+  const mainnetChainId = Number(ADDR.CHAIN_ID || 137);
   const {
     snapshot: communitySnapshot,
     loading: communityLoading,
@@ -250,17 +278,12 @@ export default function USERPANEL({
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const referralLink = activeAccount ? `${baseUrl}?ref=${activeAccount}` : "";
   const connected = Boolean(activeAccount);
-  const parentAccount = walletAddress || address;
-  const walletDataMatches =
-    !parentAccount ||
-    parentAccount.toLowerCase() === activeAccount.toLowerCase();
   const walletItems = React.useMemo(() => {
-    if (!walletDataMatches) return [];
     const sourceItems = Array.isArray(myNFTs) && myNFTs.length ? myNFTs : items;
     return Array.isArray(sourceItems)
       ? sourceItems.filter((item) => item && !item.isPending)
       : [];
-  }, [items, myNFTs, walletDataMatches]);
+  }, [items, myNFTs]);
   const inventorySummary = React.useMemo(
     () =>
       walletItems.reduce(
@@ -488,10 +511,10 @@ export default function USERPANEL({
   const buildTxLink = React.useCallback(
     (hash, chainIdOverride) => {
       if (!hash) return "";
-      const base = explorerBaseFor(chainIdOverride || chainId);
+      const base = explorerBaseFor(chainIdOverride || mainnetChainId);
       return base ? `${base}/tx/${hash}` : "";
     },
-    [chainId],
+    [mainnetChainId],
   );
 
   const contractLinks = [
@@ -507,14 +530,42 @@ export default function USERPANEL({
     (Number.isFinite(Number(overview.tickets)) &&
       Number(overview.tickets) > 0) ||
     inventorySummary.tickets > 0;
-  const claimableValue = Number(claimable);
+  const rewardAmount = rewardEntitlement?.amount ?? claimable;
+  const rawRewardStatus = String(rewardEntitlement?.status || "").toLowerCase();
+  const rewardStatus =
+    rawRewardStatus === "inventory-unavailable"
+      ? overview.loading
+        ? "loading"
+        : overview.nfts === 0
+          ? "empty"
+          : "error"
+      : rawRewardStatus ||
+        (!connected
+          ? "disconnected"
+          : isNonNegativeAmount(rewardAmount)
+            ? isPositiveAmount(rewardAmount)
+              ? "ready"
+              : "empty"
+            : "loading");
+  const rewardLoading = rewardStatus === "loading";
+  const rewardPaused =
+    rewardStatus === "paused" || rewardEntitlement?.paused === true;
+  const rewardError = rewardStatus === "error";
+  const effectiveRewardAmount =
+    rewardAmount == null && rewardStatus === "empty" && overview.nfts === 0
+      ? 0
+      : rewardAmount;
   const claimableKnown =
-    connected && walletDataMatches && claimable != null &&
-    ["string", "number", "bigint"].includes(typeof claimable) &&
-    String(claimable).trim() !== "" &&
-    Number.isFinite(claimableValue) && claimableValue >= 0;
+    connected &&
+    !rewardLoading &&
+    !rewardError &&
+    rewardStatus !== "disconnected" &&
+    isNonNegativeAmount(effectiveRewardAmount);
   const canClaim =
-    connected && claimableKnown && claimableValue > 0;
+    connected &&
+    claimableKnown &&
+    isPositiveAmount(effectiveRewardAmount) &&
+    !rewardPaused;
   const actionBusy = isMinting || isRedeeming || isClaiming || VRFPending;
   const statusText = (() => {
     if (actionStatusLabel) return actionStatusLabel;
@@ -546,16 +597,49 @@ export default function USERPANEL({
               type: txStatus.type,
               stage: txStatus.stage || "",
               hash: txStatus.hash || "",
-              chainId: txStatus.chainId || chainId || null,
+              chainId: txStatus.chainId || mainnetChainId,
               ts: Date.now(),
             },
           ]
         : [];
   const ticketPriceLabel =
     ticketPrice != null ? formatNative(ticketPrice, 4) : "--";
-  const claimableLabel = claimableKnown ? formatToken(claimable, 4) : "--";
-  const rewardPoolLabel =
-    rewardPool != null ? formatNative(rewardPool, 4) : "--";
+  const claimableLabel = claimableKnown
+    ? formatToken(effectiveRewardAmount, 4)
+    : "--";
+  const eligibleNftsLabel =
+    rewardEntitlement?.eligibleCount != null
+      ? formatIntegerValue(rewardEntitlement.eligibleCount)
+      : rewardStatus === "empty" && overview.nfts === 0
+        ? "0"
+        : "--";
+  const rewardUnitsLabel = formatIntegerValue(rewardEntitlement?.units);
+  const rewardStatusLabel = (() => {
+    if (!connected || rewardStatus === "disconnected") return "Connect wallet";
+    if (rewardLoading) return "Checking";
+    if (rewardError) return "Unavailable";
+    if (rewardPaused) return "Claims paused";
+    if (rewardStatus === "empty") {
+      return eligibleNftsLabel === "0" ? "No eligible NFTs" : "Nothing to claim";
+    }
+    return canClaim ? "Ready to claim" : "Up to date";
+  })();
+  const rewardStatusDetail = (() => {
+    if (!connected) return "Connect your wallet to calculate holder rewards.";
+    if (rewardLoading) return "Reading eligible NFTs and the current BIGGI preview.";
+    if (rewardError) {
+      return "Reward data could not be confirmed. Refresh before claiming.";
+    }
+    if (rewardPaused) {
+      return "Eligible NFTs remain tracked while weekly BIGGI claims are paused.";
+    }
+    if (rewardStatus === "empty") {
+      return eligibleNftsLabel === "0"
+        ? "This wallet has no eligible BiggiEyes NFT."
+        : "Eligible NFTs are tracked, but no BIGGI is claimable in this cycle.";
+    }
+    return "The on-chain reward preview is ready for this wallet.";
+  })();
   const mintVolumeLabel =
     mintVolumeMatic != null ? formatNative(mintVolumeMatic, 4) : "--";
   const communityClaimableLabel = formatNative(
@@ -580,7 +664,17 @@ export default function USERPANEL({
     : isRedeeming
       ? "Redeeming..."
       : "Redeem ticket";
-  const claimLabel = isClaiming ? "Claiming..." : "Claim rewards";
+  const claimLabel = isClaiming
+    ? "Claiming..."
+    : rewardPaused
+      ? "Claims paused"
+      : rewardLoading
+        ? "Checking rewards..."
+        : rewardError
+          ? "Claim unavailable"
+          : claimableKnown && !isPositiveAmount(effectiveRewardAmount)
+            ? "Nothing to claim"
+            : "Claim rewards";
   const mintDisabled = !connected || actionBusy || typeof onMint !== "function";
   const redeemDisabled =
     !connected || actionBusy || !canRedeem || typeof onRedeem !== "function";
@@ -707,13 +801,13 @@ export default function USERPANEL({
               <strong>{claimableLabel}</strong>
             </div>
                 <div>
-                  <span>Tickets left</span>
-                  <strong>{ticketsLeftLabel}</strong>
-            </div>
+                  <span>Eligible NFTs</span>
+                  <strong>{eligibleNftsLabel}</strong>
+                </div>
                 <div>
-              <span>Minted supply</span>
-              <strong>{supplyLabel}</strong>
-            </div>
+                  <span>Reward status</span>
+                  <strong>{rewardStatusLabel}</strong>
+                </div>
             </div>
 
             <div className="user-panel__action-row">
@@ -887,11 +981,11 @@ export default function USERPANEL({
                 </div>
                 <div>
                   <dt>Network</dt>
-                  <dd>{chainNameFor(chainId)}</dd>
+                  <dd>{chainNameFor(mainnetChainId)}</dd>
                 </div>
                 <div>
                   <dt>Chain ID</dt>
-                  <dd>{chainId || "--"}</dd>
+                  <dd>{mainnetChainId}</dd>
                 </div>
                 <div>
                   <dt>Last update</dt>
@@ -906,7 +1000,7 @@ export default function USERPANEL({
               <div className="user-panel__inline-actions">
                 <ExplorerLink
                   address={activeAccount}
-                  chainId={chainId}
+                  chainId={mainnetChainId}
                   label={connected ? "Open in explorer" : "--"}
                 />
                 <button
@@ -924,8 +1018,19 @@ export default function USERPANEL({
               <div className="user-panel__section-head">
                 <div>
                   <h3>Rewards</h3>
-                  <p>Current reward amounts available to this wallet.</p>
+                  <p>Verified BIGGI holder reward data for this wallet.</p>
                 </div>
+                <span
+                  className={`user-panel__badge ${
+                    rewardStatus === "ready"
+                      ? "is-live"
+                      : rewardPaused || rewardError
+                        ? "is-warning"
+                        : ""
+                  }`}
+                >
+                  {rewardStatusLabel}
+                </span>
               </div>
               <dl className="user-panel__rows">
                 <div>
@@ -933,14 +1038,24 @@ export default function USERPANEL({
                   <dd>{claimableLabel}</dd>
                 </div>
                 <div>
-                  <dt>Weekly pool</dt>
-                  <dd>{rewardPoolLabel}</dd>
+                  <dt>Eligible NFTs</dt>
+                  <dd>{eligibleNftsLabel}</dd>
                 </div>
                 <div>
-                  <dt>Community POL</dt>
-                  <dd>{communityClaimableLabel}</dd>
+                  <dt>Reward units</dt>
+                  <dd>{rewardUnitsLabel}</dd>
+                </div>
+                <div>
+                  <dt>Claim status</dt>
+                  <dd>{rewardStatusLabel}</dd>
                 </div>
               </dl>
+              <div
+                className={`user-panel__reward-note is-${rewardStatus}`}
+                role={rewardError ? "alert" : "status"}
+              >
+                {rewardStatusDetail}
+              </div>
             </section>
 
             <section className="user-panel__section">
@@ -1028,8 +1143,8 @@ export default function USERPANEL({
                   <dd>{mintVolumeLabel}</dd>
               </div>
                 <div>
-                  <dt>Weekly pool</dt>
-                  <dd>{rewardPoolLabel}</dd>
+                  <dt>Holder reward status</dt>
+                  <dd>{rewardStatusLabel}</dd>
               </div>
                 <div>
                   <dt>Minted supply</dt>
@@ -1063,7 +1178,7 @@ export default function USERPANEL({
                   <dd>
                     <ExplorerLink
                       address={communitySnapshot.address}
-                      chainId={ADDR.CHAIN_ID || chainId}
+                      chainId={mainnetChainId}
                       label={shortAddress(communitySnapshot.address)}
               />
                   </dd>
@@ -1078,7 +1193,7 @@ export default function USERPANEL({
                   <span>{item.label}</span>
                   <ExplorerLink
                     address={item.address}
-                    chainId={chainId}
+                    chainId={mainnetChainId}
                     label={shortAddress(item.address)}
                   />
                 </div>

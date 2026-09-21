@@ -501,6 +501,32 @@
   line-height: 1.4;
 }
 
+.user-panel__reward-note {
+  margin-top: 12px;
+  padding: 9px 10px;
+  color: #d7dbe5;
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 3px solid #71798d;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.user-panel__reward-note.is-ready {
+  border-left-color: var(--user-green);
+}
+
+.user-panel__reward-note.is-paused,
+.user-panel__reward-note.is-loading {
+  border-left-color: var(--user-warning);
+}
+
+.user-panel__reward-note.is-error {
+  color: #ffc7c7;
+  background: rgba(255, 99, 99, 0.06);
+  border-left-color: #ff7c7c;
+}
+
 .user-panel__referral {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

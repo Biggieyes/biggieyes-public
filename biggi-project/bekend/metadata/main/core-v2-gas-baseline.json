@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "chainId": 137,
+  "forkBlock": 94082827,
+  "testCommand": "npm run rehearse:core-v2-migration:fork",
+  "testResult": "5 passing",
+  "safetyBps": 12500,
+  "core": {
+    "totalGas": "252801914",
+    "deployerGas": "30007227",
+    "ownerGas": "222794687",
+    "stagedOwnerGasPerChapter": "45000000",
+    "selectiveCutover": {
+      "throughChapter": 1,
+      "forkBlock": 94088035,
+      "testResult": "1 passing",
+      "deployerGas": "1709090",
+      "ownerGas": "497925"
+    }
+  },
+  "distributor": {
+    "totalGas": "3661046",
+    "deployerGas": "2689561",
+    "ownerGas": "971485"
+  },
+  "combined": {
+    "totalGas": "256462960",
+    "deployerGas": "32696788",
+    "ownerGas": "223766172"
+  },
+  "recordedAt": "2026-09-19T15:47:00.000Z",
+  "notes": [
+    "Gas totals combine Polygon-fork transaction receipts with the later Polygon-mainnet seal estimate documented below.",
+    "Role split assigns the separately estimated contract-creation gas to deployer and all remaining measured migration gas to owner.",
+    "CORE seal gas replaces the fork measurement with the September 19, 2026 Polygon mainnet eth_estimateGas value of 16548157 for each of five chapters.",
+    "The Originals-only selective cutover baseline was measured independently on a Polygon fork after chapters 1-2 were staged; it includes MainReader deployment and chapter-1-only owner wiring while chapters 2-5 remain unchanged.",
+    "The safety factor covers moderate gas-estimate and base-fee movement; it is not a spending target."
+  ]
+}

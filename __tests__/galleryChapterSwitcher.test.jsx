@@ -1,6 +1,6 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeAll, describe, expect, it } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import Gallery from "../src/components/Gallery.jsx";
 import { ADDR, CORE_CHAPTERS } from "../src/shared/utils/addresses.js";
@@ -32,6 +32,39 @@ const nft = (name, contractAddress, chapterId, collectionType) => ({
 });
 
 describe("gallery chapter switcher", () => {
+  it("marks the exact collection asset as the latest mint when token IDs collide", async () => {
+    vi.useFakeTimers();
+    const originals = CORE_CHAPTERS[0];
+    const items = [
+      nft("Originals VRF", originals.main, originals.chapterId, "vrf"),
+      nft("Originals Public", originals.main2, originals.chapterId, "public"),
+    ];
+
+    try {
+      render(
+        <Gallery
+          address="0x0000000000000000000000000000000000000001"
+          items={items}
+          topFirstId={`${originals.main2.toLowerCase()}:11`}
+          useProvidedOnly
+        />,
+      );
+      await act(async () => {});
+
+      const marker = screen.getByText("Latest mint");
+      const markedCard = marker.closest("article");
+      expect(markedCard).toHaveTextContent("Originals Public");
+      expect(markedCard).not.toHaveTextContent("Originals VRF");
+      expect(screen.getAllByText("Latest mint")).toHaveLength(1);
+
+      act(() => vi.advanceTimersByTime(70_001));
+      expect(screen.getByText("Latest mint")).toBeInTheDocument();
+      expect(markedCard).not.toHaveClass("nft-card--highlight");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("shows TicketHub, VRF, and Public assets together for the selected chapter", () => {
     const universe = CORE_CHAPTERS[1];
     const mutant = CORE_CHAPTERS[2];
