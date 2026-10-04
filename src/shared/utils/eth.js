@@ -32,15 +32,16 @@ function firstNonZeroAddress(...values) {
   return "";
 }
 
-const MOD_REWARDS_ADDRESS = firstNonZeroAddress(
+const LEGACY_MODERATOR_CENTER_ADDRESS = firstNonZeroAddress(
   import.meta.env.VITE_MOD_REWARDS_CONTRACT,
   import.meta.env.VITE_MOD_REWARDS_ADDRESS,
+  ADDR.MODERATOR_CENTER_V1,
   ADDR.BIGGI_MODERATOR_CENTER,
 );
 const MODERATOR_CENTER_V2_ADDRESS = firstNonZeroAddress(
   import.meta.env.VITE_MODERATOR_CENTER_V2,
   ADDR.MODERATOR_CENTER_V2,
-  MOD_REWARDS_ADDRESS,
+  ADDR.MODERATOR_CENTER,
 );
 const RAW_CHAIN_RPC_URL =
   import.meta.env.VITE_MOD_CHAIN_RPC ||
@@ -64,8 +65,9 @@ const OWNER_ADDRESS = firstNonZeroAddress(
 );
 
 export const getConfig = () => ({
-  contractAddress: MOD_REWARDS_ADDRESS,
+  contractAddress: MODERATOR_CENTER_V2_ADDRESS,
   v2ContractAddress: MODERATOR_CENTER_V2_ADDRESS,
+  legacyContractAddress: LEGACY_MODERATOR_CENTER_ADDRESS,
   chainRpc: CHAIN_RPC_URL,
   ownerAddress: OWNER_ADDRESS,
   abiReady:
@@ -107,15 +109,21 @@ export const getSignerProvider = async () => {
   return new BrowserProvider(window.ethereum, "any");
 };
 
-export const getModeratorsREWARDSContract = async ({ signer = false } = {}) => {
-  const { contractAddress, abiReady } = getConfig();
+export const getLegacyModeratorCenterContract = async ({ signer = false } = {}) => {
+  if (signer) {
+    throw new Error("ModeratorCenter V1 is deprecated and read-only.");
+  }
+  const { legacyContractAddress: contractAddress } = getConfig();
   if (!contractAddress) throw new Error("Contract address is missing.");
-  if (!abiReady) throw new Error("ModeratorsREWARDS ABI is missing.");
-  const provider = signer ? await getSignerProvider() : getReadOnlyProvider();
+  if (!Array.isArray(moderatorsREWARDSAbi) || moderatorsREWARDSAbi.length === 0) {
+    throw new Error("Legacy ModeratorCenter ABI is missing.");
+  }
+  const provider = getReadOnlyProvider();
   if (!provider) throw new Error("Provider is not available.");
-  const target = signer ? await provider.getSigner() : provider;
-  return new Contract(contractAddress, moderatorsREWARDSAbi, target);
+  return new Contract(contractAddress, moderatorsREWARDSAbi, provider);
 };
+
+export const getModeratorsREWARDSContract = getLegacyModeratorCenterContract;
 
 export const getModeratorCenterV2Contract = async ({ signer = false } = {}) => {
   const { v2ContractAddress: contractAddress } = getConfig();

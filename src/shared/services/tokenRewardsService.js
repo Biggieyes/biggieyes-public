@@ -9,6 +9,10 @@
 
 import * as ethers from "ethers";
 import { BiggiTokenRewards as BiggiTokenRewardsABI } from "@/config/abi/index.js";
+import {
+  assertWriteContext,
+  waitForWriteReceipt,
+} from "@/shared/utils/writeRetry";
 
 const ABI = Array.isArray(BiggiTokenRewardsABI) ? BiggiTokenRewardsABI : [];
 const withGasBuffer = (gas, pct = 120) => {
@@ -52,10 +56,12 @@ export default class TokenRewardsService {
   }
 
   /** Připojí signer pro write operace (claim) */
-  connectWithSigner(signer) {
+  connectWithSigner(signer, expectedAccount = "") {
     if (!signer) throw new Error("Signer required");
     this.contract = this.contract.connect(signer);
     this.provider = signer.provider ?? this.provider;
+    this._signer = signer;
+    this._expectedAccount = String(expectedAccount || "").trim();
     this._signerConnected = true;
   }
 
@@ -163,13 +169,18 @@ export default class TokenRewardsService {
       const method = this.contract[methodName];
       if (!method)
         throw new Error("Method not found on contract: " + methodName);
-      // attempt gas estimate
       let gasEstimate = null;
       try {
-        gasEstimate = await this.contract.estimateGas[methodName](
-          ...args,
-          overrides,
-        );
+        if (typeof method.estimateGas === "function") {
+          gasEstimate = await method.estimateGas(...args, overrides);
+        } else if (
+          typeof this.contract.estimateGas?.[methodName] === "function"
+        ) {
+          gasEstimate = await this.contract.estimateGas[methodName](
+            ...args,
+            overrides,
+          );
+        }
       } catch {
         gasEstimate = null;
       }
@@ -177,9 +188,18 @@ export default class TokenRewardsService {
       const sendOverrides = gasLimit
         ? { gasLimit, ...overrides }
         : overrides;
+      if (this._signer) {
+        const expectedAccount =
+          this._expectedAccount || (await this._signer.getAddress());
+        await assertWriteContext({
+          contract: { runner: this._signer },
+          account: expectedAccount,
+          getCurrentAccount: () => expectedAccount,
+          chainId: 137,
+        });
+      }
       const tx = await method(...args, sendOverrides);
-      const receipt = await tx.wait(1);
-      return receipt;
+      return await waitForWriteReceipt(tx, 1);
     } catch (err) {
       // bubble up (frontend can parse)
       console.error(`_sendTx ${methodName} failed:`, err);

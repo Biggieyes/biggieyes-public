@@ -93,3 +93,8 @@ biggi-project/bekend/tmp-*.json
 **/binary.wasm
 **/*.wasm
 **/bun.lockb
+
+# Keep repository-specific AI instructions local, not in the public project.
+AGENTS.md
+.agents/
+.github/agents/

@@ -28,7 +28,6 @@ import {
   fetchCommunityPolls,
   submitCommunityPollAdminAction,
 } from "@/shared/services/communityVotingApi.js";
-import { supabase, supabaseReady } from "../../services/chatClient";
 import "./AdminPanel.css";
 import "../../styles/panel-buttons.css";
 
@@ -69,6 +68,12 @@ function buildChatApiUrl(path) {
   if (CHAT_API_BASE.includes("/.netlify/functions"))
     return `${CHAT_API_BASE}${safePath}`;
   return `${CHAT_API_BASE}/api${safePath}`;
+}
+
+function createCommunityPollId() {
+  const randomId = globalThis.crypto?.randomUUID?.().replaceAll("-", "");
+  if (randomId) return `poll_${randomId}`;
+  return `poll_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
 async function fetchJsonWithTimeout(
@@ -809,13 +814,14 @@ export default function AdminPanel({
         throw new Error("Linked event ID must be a non-negative integer");
       }
 
+      const pollId =
+        String(communityPollId || "").trim() || createCommunityPollId();
+
       const payload = JSON.stringify({
         action: "upsert",
         timestamp: Date.now(),
         poll: {
-          ...(String(communityPollId || "").trim()
-            ? { id: String(communityPollId || "").trim() }
-            : {}),
+          id: pollId,
           title,
           description: String(communityPollDescription || "").trim(),
           linkedEventId: linkedEventIdRaw || null,
@@ -1062,26 +1068,13 @@ export default function AdminPanel({
     setChatLoading(true);
     setChatError("");
     try {
-      if (!supabaseReady || !supabase) {
-        setChatError("Chat storage is not configured.");
-        return;
-      }
-      const [rulesRes, msgsRes] = await Promise.all([
-        supabase
-          .from("rules")
-          .select("text,updated_at")
-          .eq("id", 1)
-          .maybeSingle(),
-        supabase
-          .from("messages")
-          .select(
-            "id,author_address,author_name,content,created_at,edited_at,deleted",
-          )
-          .order("created_at", { ascending: false })
-          .limit(60),
-      ]);
+      const json = await fetchJsonWithTimeout(
+        buildChatApiUrl("/chat-bootstrap"),
+        { method: "GET" },
+      );
+      if (!json?.ok) throw new Error(json?.error || "Chat load failed");
 
-      const rulesText = rulesRes?.data?.text ? String(rulesRes.data.text) : "";
+      const rulesText = json?.rulesText ? String(json.rulesText) : "";
       setChatRules((prevRules) => {
         setChatRulesDraft((prevDraft) => {
           if (!prevDraft || prevDraft === prevRules) return rulesText;
@@ -1090,8 +1083,7 @@ export default function AdminPanel({
         return rulesText;
       });
 
-      if (msgsRes?.error) throw msgsRes.error;
-      const list = Array.isArray(msgsRes?.data) ? msgsRes.data : [];
+      const list = Array.isArray(json?.messages) ? json.messages : [];
       setChatMessages(list);
     } catch (err) {
       console.error("Admin chat load failed", err);
@@ -3929,13 +3921,13 @@ export default function AdminPanel({
                     }}
                   >
                     <span style={{ color: C.dim, fontWeight: 900 }}>
-                      Poll ID (optional)
+                      Poll ID
                     </span>
                     <input
                       value={communityPollId}
                       onChange={(e) => setCommunityPollId(e.target.value)}
                       style={inputStyle()}
-                      placeholder="Leave empty to create a new poll"
+                      placeholder="Generated automatically for a new poll"
                     />
                   </div>
                   <div

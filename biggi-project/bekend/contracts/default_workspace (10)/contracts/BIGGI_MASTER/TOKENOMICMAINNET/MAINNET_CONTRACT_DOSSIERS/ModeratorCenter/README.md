@@ -1,5 +1,7 @@
 # ModeratorCenter Mainnet Dossier
 
+> Historical V1 dossier. V1 is deprecated. The canonical design is ModeratorCenterV2; see `docs/biggieyes/MODERATOR_CENTER_V2.md`. This historical record does not indicate that production routing has migrated.
+
 ## Source of truth
 
 - Source file: `../../ModeratorCenter.sol`

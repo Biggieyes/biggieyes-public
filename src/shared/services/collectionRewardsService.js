@@ -3,6 +3,7 @@
 
 import { Contract } from "ethers";
 import { BiggiCollectionRewards as ABI_COLLECTION_REWARDS } from "@/config/abi/index.js";
+import { assertWriteContext, waitForWriteReceipt } from "@/shared/utils/writeRetry";
 
 const ABI = Array.isArray(ABI_COLLECTION_REWARDS) ? ABI_COLLECTION_REWARDS : [];
 export const BLOCK_INDICES = Array.from({ length: 9 }, (_, idx) => idx + 1);
@@ -30,10 +31,12 @@ export default class COLLECTIONREWARDSService {
     this._signerConnected = false;
   }
 
-  connectWithSigner(signer) {
+  connectWithSigner(signer, expectedAccount = "") {
     if (!signer) throw new Error("Signer required");
     this.contract = this.contract.connect(signer);
     this.provider = signer.provider ?? this.provider;
+    this._signer = signer;
+    this._expectedAccount = String(expectedAccount || "").trim();
     this._signerConnected = true;
   }
 
@@ -183,9 +186,18 @@ export default class COLLECTIONREWARDSService {
     const gasEstimate = await estimate(...args, overrides);
     const gasLimit = withGasBuffer(gasEstimate);
     const sendOverrides = gasLimit ? { gasLimit, ...overrides } : overrides;
+    if (this._signer) {
+      const expectedAccount =
+        this._expectedAccount || (await this._signer.getAddress());
+      await assertWriteContext({
+        contract: { runner: this._signer },
+        account: expectedAccount,
+        getCurrentAccount: () => expectedAccount,
+        chainId: 137,
+      });
+    }
     const tx = await method(...args, sendOverrides);
-    const receipt = await tx.wait(1);
-    return receipt;
+    return await waitForWriteReceipt(tx, 1);
   }
 
   async getAllStats(walletAddress = null, collectionAddress = null) {

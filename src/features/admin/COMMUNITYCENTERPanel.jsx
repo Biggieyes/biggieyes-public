@@ -7,7 +7,11 @@ import useCommunityCenterUserSnapshot from "@/hooks/useCommunityCenterUserSnapsh
 import { formatNativeDisplay } from "@/features/tokenomics/utils/amountFormatting.js";
 import PanelInfoModal from "@/components/common/PanelInfoModal";
 import PanelInfoButton from "@/components/common/PanelInfoButton";
-import { getROProvider, ADDR } from "@/shared/utils/contract";
+import { ACTIVE_CHAIN, getROProvider, ADDR } from "@/shared/utils/contract";
+import {
+  assertWriteContext,
+  waitForWriteReceipt,
+} from "@/shared/utils/writeRetry";
 import {
   httpFromIpfs,
   readJsonFromURI,
@@ -292,6 +296,9 @@ export default function COMMUNITYCENTERPanel({
   const [infoOpen, setInfoOpen] = React.useState(false);
   const [moderatorOpen, setModeratorOpen] = React.useState(false);
   const [claimingEventId, setClaimingEventId] = React.useState(null);
+  const claimLockRef = React.useRef(false);
+  const activeWalletRef = React.useRef("");
+  activeWalletRef.current = String(activeWallet || "");
   const [claimMessage, setClaimMessage] = React.useState("");
   const [events, setEvents] = React.useState([]);
   const [polls, setPolls] = React.useState([]);
@@ -406,10 +413,12 @@ export default function COMMUNITYCENTERPanel({
 
   const handleClaim = React.useCallback(
     async (eventId) => {
+      if (claimLockRef.current) return;
       if (!signer || !activeWallet) {
         setClaimMessage("Connect your wallet first.");
         return;
       }
+      claimLockRef.current = true;
       setClaimingEventId(eventId);
       setClaimMessage("");
       try {
@@ -418,8 +427,14 @@ export default function COMMUNITYCENTERPanel({
           COMMUNITY_CENTER_ABI,
           signer,
         );
+        await assertWriteContext({
+          contract,
+          account: activeWallet,
+          getCurrentAccount: () => activeWalletRef.current,
+          chainId: ACTIVE_CHAIN.chainId,
+        });
         const tx = await contract.claim(eventId);
-        await tx.wait();
+        await waitForWriteReceipt(tx);
         setClaimMessage(`Claim for event #${eventId} confirmed.`);
         await Promise.allSettled([
           loadEvents(),
@@ -430,6 +445,7 @@ export default function COMMUNITYCENTERPanel({
           nextError?.shortMessage || nextError?.message || "Claim failed.",
         );
       } finally {
+        claimLockRef.current = false;
         setClaimingEventId(null);
       }
     },

@@ -9,9 +9,8 @@ const ABI = Array.isArray(BiggiNftRewardsReaderABI)
   : [];
 
 export default function useNftRewardsReader(providerOverride, addressOverride) {
-  const [data, setData] = React.useState(null);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState(null);
+  const [state, setState] = React.useState(null);
+  const requestId = React.useRef(0);
 
   const provider = React.useMemo(() => {
     if (providerOverride) return providerOverride;
@@ -23,19 +22,24 @@ export default function useNftRewardsReader(providerOverride, addressOverride) {
   }, [providerOverride]);
 
   const address = addressOverride || ADDR.NFT_REWARDS_READER;
+  const context = React.useMemo(
+    () => ({ provider, address }),
+    [provider, address],
+  );
 
   const refresh = React.useCallback(async () => {
+    const id = ++requestId.current;
     if (!provider || !address || !ABI.length) {
-      setData(null);
+      setState({ context, data: null, loading: false, error: null });
       return null;
     }
-    setLoading(true);
-    setError(null);
+    setState({ context, data: null, loading: true, error: null });
     try {
       const contract = new Contract(address, ABI, provider);
       const status = await contract.getStatus();
+      if (id !== requestId.current) return null;
       if (!status) {
-        setData(null);
+        setState({ context, data: null, loading: false, error: null });
         return null;
       }
 
@@ -52,20 +56,28 @@ export default function useNftRewardsReader(providerOverride, addressOverride) {
         symbol: status.symbol ?? null,
       };
 
-      setData(next);
+      setState({ context, data: next, loading: false, error: null });
       return next;
     } catch (err) {
-      setError(err);
-      setData(null);
+      if (id === requestId.current) {
+        setState({ context, data: null, loading: false, error: err });
+      }
       return null;
-    } finally {
-      setLoading(false);
     }
-  }, [provider, address]);
+  }, [provider, address, context]);
 
   React.useEffect(() => {
     refresh();
+    return () => {
+      requestId.current += 1;
+    };
   }, [refresh]);
 
-  return { data, loading, error, refresh };
+  const current = state?.context === context ? state : null;
+  return {
+    data: current?.data ?? null,
+    loading: current?.loading ?? Boolean(provider && address && ABI.length),
+    error: current?.error ?? null,
+    refresh,
+  };
 }

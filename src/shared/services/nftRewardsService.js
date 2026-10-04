@@ -2,6 +2,7 @@
 
 import * as ethers from "ethers";
 import { BiggiNftRewards as ABI } from "@/config/abi/index.js";
+import { assertWriteContext, waitForWriteReceipt } from "@/shared/utils/writeRetry";
 
 const withGasBuffer = (gas, pct = 120) => {
   if (gas == null) return null;
@@ -81,10 +82,12 @@ export default class NFTREWARDSService {
     }
   }
 
-  connectWithSigner(signer) {
+  connectWithSigner(signer, expectedAccount = "") {
     if (!signer) throw new Error("Signer required");
     this.contract = this.contract.connect(signer);
     this.provider = signer.provider ?? this.provider;
+    this._signer = signer;
+    this._expectedAccount = String(expectedAccount || "").trim();
     this._signerConnected = true;
   }
 
@@ -190,8 +193,18 @@ export default class NFTREWARDSService {
       }
       const gasLimit = withGasBuffer(gasEstimate);
       const sendOverrides = gasLimit ? { gasLimit, ...overrides } : overrides;
+      if (this._signer) {
+        const expectedAccount =
+          this._expectedAccount || (await this._signer.getAddress());
+        await assertWriteContext({
+          contract: { runner: this._signer },
+          account: expectedAccount,
+          getCurrentAccount: () => expectedAccount,
+          chainId: 137,
+        });
+      }
       const transaction = await method(...args, sendOverrides);
-      return await transaction.wait(1);
+      return await waitForWriteReceipt(transaction, 1);
     } catch (error) {
       console.error(`_sendTx ${methodName} failed:`, error);
       throw error;
@@ -219,7 +232,7 @@ export default class NFTREWARDSService {
     ) {
       throw new Error("Wallet account changed. Reconnect and try again.");
     }
-    this.connectWithSigner(signer);
+    this.connectWithSigner(signer, walletAddress);
     this.readOverrides = {};
     const reward = normalizeRewardInfo(
       await this.rewardInfo(rewardId),

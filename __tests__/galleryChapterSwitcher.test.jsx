@@ -111,5 +111,13 @@ describe("gallery chapter switcher", () => {
     expect(screen.getByText("Universe Public")).toBeTruthy();
     expect(screen.queryByText("Mutant VRF")).toBeNull();
     expect(screen.getByText("VRF + Public / 2 total")).toBeTruthy();
+    const nftHeading = screen.getByRole("heading", { name: "Universe NFTs" });
+    const ticketHeading = screen.getByRole("heading", {
+      name: "Universe tickets",
+    });
+    expect(
+      nftHeading.compareDocumentPosition(ticketHeading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 });

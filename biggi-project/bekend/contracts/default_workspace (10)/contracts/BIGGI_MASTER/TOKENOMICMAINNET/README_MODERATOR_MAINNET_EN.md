@@ -1,5 +1,7 @@
 # BIGGI Mainnet README for Moderators
 
+> Historical onboarding for ModeratorCenter V1. V1 is deprecated; use `docs/biggieyes/MODERATOR_CENTER_V2.md` for the current design and status. Production chain routing has not yet been fully migrated; see the current V2 status.
+
 This document is an onboarding note for moderators and community team members who do not need to read Solidity, but do need to understand the real mainnet flow.
 
 ## One sentence

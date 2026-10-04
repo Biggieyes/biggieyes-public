@@ -62,6 +62,8 @@ The repository contains the frontend application, address registry, deployment s
 - [ARCHITECTURE_DIAGRAMS.md](./ARCHITECTURE_DIAGRAMS.md)
 - [USER_FLOWS.md](./USER_FLOWS.md)
 - [VISUAL_DIAGRAM_PROMPTS.md](./VISUAL_DIAGRAM_PROMPTS.md)
+- [Moderator Center V2 status and activation guide (EN)](./docs/biggieyes/MODERATOR_CENTER_V2.md)
+- [Stav a návod k aktivaci Moderator Center V2 (CS)](./docs/biggieyes/MODERATOR_CENTER_V2_CS.md)
 
 ### Marketing Materials
 

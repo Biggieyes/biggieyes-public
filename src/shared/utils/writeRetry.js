@@ -60,10 +60,13 @@ export async function assertWriteContext({
   }
 }
 
-export async function waitForWriteReceipt(tx) {
+export async function waitForWriteReceipt(tx, confirmations = null) {
   let receipt;
   try {
-    receipt = await tx.wait();
+    receipt =
+      confirmations == null
+        ? await tx.wait()
+        : await tx.wait(confirmations);
   } catch (error) {
     if (
       error?.code !== "TRANSACTION_REPLACED" ||

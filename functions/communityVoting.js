@@ -1,18 +1,17 @@
-import { createClient } from "@supabase/supabase-js";
 import { ethers } from "ethers";
 import { captureException, initSentry } from "./_sentry.js";
 import { buildApiHeaders } from "./lib/httpSecurity.js";
+import {
+  getSupabaseAdmin,
+  hasSupabaseConfig,
+} from "./lib/chatUtils.js";
 
-const SUPABASE_URL = process.env.SUPABASE_URL || "";
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const SIGNATURE_TTL_MS = 5 * 60 * 1000;
 const MAX_FUTURE_SKEW_MS = 60 * 1000;
 
 const corsHeaders = buildApiHeaders({ methods: "GET,POST,OPTIONS" });
 
 initSentry();
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 const jsonResponse = (status, body) => ({
   status,
@@ -155,7 +154,10 @@ function normalizePollRow(row, votes = [], walletAddress = "") {
   return poll;
 }
 
-async function loadPolls({ walletAddress = "", includeAll = false } = {}) {
+async function loadPolls(
+  supabase,
+  { walletAddress = "", includeAll = false } = {},
+) {
   const limit = includeAll ? 50 : 24;
   const pollRes = await supabase
     .from("community_polls")
@@ -230,16 +232,17 @@ function validateVotePayload(payload) {
 
 async function handleRequest({ method, query, body }) {
   if (method === "OPTIONS") return jsonResponse(200, { ok: true });
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  if (!hasSupabaseConfig()) {
     return jsonResponse(500, { ok: false, error: "Missing Supabase env" });
   }
+  const supabase = getSupabaseAdmin();
 
   if (method === "GET") {
     try {
       const rawAddress = String(query?.address || "").trim();
       const walletAddress = rawAddress ? normalizeAddress(rawAddress).toLowerCase() : "";
       const includeAll = String(query?.includeAll || "").trim() === "1";
-      const polls = await loadPolls({ walletAddress, includeAll });
+      const polls = await loadPolls(supabase, { walletAddress, includeAll });
       return jsonResponse(200, { ok: true, polls });
     } catch (error) {
       const message = parseErrorMessage(error) || "Failed to load community voting";

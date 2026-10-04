@@ -1,18 +1,19 @@
 // api/admin/editMessage.js
 // Owner-only moderation actions (edit or soft-delete).
-import { createClient } from "@supabase/supabase-js";
 import { ethers } from "ethers";
 import { captureException, initSentry } from "../_sentry.js";
 import { buildApiHeaders } from "../lib/httpSecurity.js";
 import { resolveConfiguredAdminOwner } from "../lib/adminOwner.js";
+import {
+  getSupabaseAdmin,
+  hasSupabaseConfig,
+} from "../lib/chatUtils.js";
 import {
   buildChatModerationMessage,
   isFreshAdminTimestamp,
   MAX_CHAT_MESSAGE_LENGTH,
 } from "../../src/shared/utils/adminMessageAuth.js";
 
-const SUPABASE_URL = process.env.SUPABASE_URL || "";
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const CHAT_OWNER_ADDRESS = process.env.CHAT_OWNER_ADDRESS || "";
 const COMMUNITY_OWNER_ADDRESS = process.env.COMMUNITY_OWNER_ADDRESS || "";
 
@@ -20,8 +21,6 @@ const ALLOWED_ACTIONS = new Set(["edit", "soft-delete"]);
 const corsHeaders = buildApiHeaders({ methods: "POST,OPTIONS" });
 
 initSentry();
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 const jsonResponse = (status, body) => ({
   status,
@@ -70,7 +69,7 @@ const verifySignedMessage = (payload, signature) => {
   throw new Error("verifyMessage not available");
 };
 
-async function resolveOwnerAddress() {
+async function resolveOwnerAddress(supabase) {
   const configuredOwner = resolveConfiguredAdminOwner({
     chatOwnerAddress: CHAT_OWNER_ADDRESS,
     communityOwnerAddress: COMMUNITY_OWNER_ADDRESS,
@@ -82,11 +81,12 @@ async function resolveOwnerAddress() {
 
 async function handleRequest({ method, body }) {
   if (method === "OPTIONS") return jsonResponse(200, { ok: true });
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  if (!hasSupabaseConfig()) {
     return jsonResponse(500, { ok: false, error: "Missing Supabase env" });
   }
   if (method !== "POST") return jsonResponse(405, { ok: false, error: "Method not allowed" });
 
+  const supabase = getSupabaseAdmin();
   const address = String(body?.address || "").trim();
   const signature = String(body?.signature || "").trim();
   const action = String(body?.action || "").trim();
@@ -112,7 +112,7 @@ async function handleRequest({ method, body }) {
 
   let owner = "";
   try {
-    owner = await resolveOwnerAddress();
+    owner = await resolveOwnerAddress(supabase);
   } catch (error) {
     captureException(error, { stage: "chat_admin_owner_config" });
     return jsonResponse(500, {

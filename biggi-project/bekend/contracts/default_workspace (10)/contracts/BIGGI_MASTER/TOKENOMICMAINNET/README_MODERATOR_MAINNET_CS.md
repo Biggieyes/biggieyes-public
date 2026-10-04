@@ -1,5 +1,7 @@
 # BIGGI Mainnet README pro Moderatora
 
+> Historicky onboarding pro ModeratorCenter V1. V1 je deprecated; pro aktualni navrh a stav pouzijte `docs/biggieyes/MODERATOR_CENTER_V2_CS.md`. Produkcni routovani na chainu dosud neni kompletne migrovano, viz aktualni V2 status.
+
 Tento dokument je onboarding pro moderatora nebo community cloveka, ktery nepotrebuje cist Solidity, ale musi rozumet skutecnemu mainnet flow.
 
 ## Jedna veta

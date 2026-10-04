@@ -466,7 +466,9 @@ export async function fetchDRIPSnapshot({ chainId, provider } = {}) {
     _callOptional(() => DRIPLM?.reserve?.(), ADDR.RESERVE ?? null),
     _callOptional(
       () => DRIPLM?.moderatorCenter?.(),
-      ADDR.BIGGI_MODERATOR_CENTER ?? null,
+      _sameAddress(lmAddr, ADDR.DRIP_LM_V2)
+        ? ADDR.MODERATOR_CENTER_V2 ?? null
+        : ADDR.MODERATOR_CENTER_V1 ?? ADDR.BIGGI_MODERATOR_CENTER ?? null,
     ),
     _callOptional(() => DRIPLM?.buybackAgent?.(), ADDR.BUYBACK_AGENT ?? null),
     _callOptional(() => DRIPLM?.router?.(), ADDR.ROUTER ?? null),

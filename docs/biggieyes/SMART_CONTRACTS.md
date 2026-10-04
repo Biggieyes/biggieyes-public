@@ -22,6 +22,9 @@ Last verified: 2026-09-16. Canonical live addresses and chapter pairs are in `bi
 | `CollectionRewards` | `BiggiCollectionRewards` | Set-completion rewards |
 | `DripDistributor` | `BiggiDripDistributor` | Drip token accounting |
 | `DripLiquidityManager` | `BiggiDripLMToModerator` | Drip conversion rail |
+| `DripLiquidityManager V2` | `BiggiDripLMToModeratorV2` | Staged Moderator V2 conversion rail |
+| `ModeratorCenter V1` | `ModeratorCenter` | Legacy moderator payout contract; still referenced upstream |
+| `ModeratorCenter V2` | `ModeratorCenterV2` | Deployed but paused and not production-activated |
 | `CommunityCenter` | `BiggiCommunityCenter` | Community grant claims |
 | `VRFRouter` | `BiggiVRFRouter` | Chainlink randomness mediation |
 
@@ -83,7 +86,7 @@ Central ERC721 ticket mint/redeem contract shared by all chapters. Current addre
 
 ## Series Registry And Chapter Controller
 
-`BiggiSeriesRegistry` stores each series/chapter and its unique VRF/Public pair while allowing the central TicketHub to be shared. `BiggiChapterController` verifies chapter-specific caps and wiring, supplies the paired VRF price provider, and unlocks public mint only after all 550 chapter tickets are minted.
+`BiggiSeriesRegistry` stores each series/chapter and its unique VRF/Public pair while allowing the central TicketHub to be shared. `BiggiChapterControllerV2` verifies chapter-specific caps and wiring and supplies the paired VRF price provider. Public eligibility requires the chapter's paid Ticket sales to reach its configured unlock threshold; marketing mints do not increase that counter. For Originals (chapter 1), the configured threshold is 10 paid sales. A consistent chapter stack and matching TicketHub caps are also required, and the Public collection must separately be unpaused before anyone can mint. Other chapters use their own configured thresholds and are not assumed to unlock at the same time.
 
 ## BiggiEyesMain2
 
@@ -481,6 +484,14 @@ Converts drip BIGGI inventory into native value and routes it into ecosystem sin
 - only buyback agent may trigger the main drip execution path
 - swap slippage and deadline parameters must be monitored
 - downstream receiver failures may lead to partial execution
+
+## Moderator Center V1 And V2
+
+The V1 and V2 contracts are separate deployments with separate ABIs. V2 is canonical for new integrations; V1 is deprecated and retained only as an explicitly named legacy address for live-routing diagnostics. Do not treat the V2 address or UI read support as evidence that production payouts have migrated.
+
+At Polygon block `94786081` on 2026-10-01, `ModeratorCenterV2` and `BiggiDripLMToModeratorV2` were both paused. Drip V2 was internally wired to Moderator V2, but the production `DripDistributor` and `BuybackAgent` still pointed to Drip V1. Moderator V2 had no enabled slots, and the configured BIGGI/WPOL pair had no reserves, so V2 was not ready for activation.
+
+The snapshot confirms that V2 is deployed, but not production-connected. See the [English V2 operations/status guide](MODERATOR_CENTER_V2.md) or [Czech guide](MODERATOR_CENTER_V2_CS.md) before changing its wiring.
 
 ## CommunityCenter
 

@@ -210,6 +210,7 @@ function REWARDSPanel({
   });
   const [COLLECTIONClaimFeedback, setCOLLECTIONClaimFeedback] =
     React.useState(null);
+  const collectionClaimLock = React.useRef(false);
   const [nftClaimingId, setNftClaimingId] = React.useState(null);
   const [nftClaimFeedback, setNftClaimFeedback] = React.useState(null);
   const nftClaimLock = React.useRef(false);
@@ -637,12 +638,14 @@ function REWARDSPanel({
 
   const handleClaimBlockReward = React.useCallback(
     async (blockIdx) => {
+      if (collectionClaimLock.current) return;
       if (!canClaimCOLLECTION || !COLLECTIONService) return;
+      collectionClaimLock.current = true;
       setCOLLECTIONClaimFeedback(null);
       setCOLLECTIONClaiming((prev) => ({ ...prev, block: blockIdx }));
       try {
         const signer = await writeProvider.getSigner();
-        COLLECTIONService.connectWithSigner(signer);
+        COLLECTIONService.connectWithSigner(signer, walletAddress);
         await COLLECTIONService.claimBlockRewardFor(
           collectionRewardsMain,
           blockIdx,
@@ -659,6 +662,7 @@ function REWARDSPanel({
           text: "Block claim failed. Check the console.",
         });
       } finally {
+        collectionClaimLock.current = false;
         setCOLLECTIONClaiming((prev) => ({ ...prev, block: null }));
       }
     },
@@ -667,18 +671,21 @@ function REWARDSPanel({
       COLLECTIONService,
       collectionRewardsMain,
       writeProvider,
+      walletAddress,
       handleRefresh,
     ],
   );
 
   const handleClaimOrangeReward = React.useCallback(
     async (mainId) => {
+      if (collectionClaimLock.current) return;
       if (!canClaimCOLLECTION || !COLLECTIONService) return;
+      collectionClaimLock.current = true;
       setCOLLECTIONClaimFeedback(null);
       setCOLLECTIONClaiming((prev) => ({ ...prev, orange: mainId }));
       try {
         const signer = await writeProvider.getSigner();
-        COLLECTIONService.connectWithSigner(signer);
+        COLLECTIONService.connectWithSigner(signer, walletAddress);
         await COLLECTIONService.claimOrangeRewardFor(
           collectionRewardsMain,
           mainId,
@@ -695,6 +702,7 @@ function REWARDSPanel({
           text: "Orange claim failed. Check the console.",
         });
       } finally {
+        collectionClaimLock.current = false;
         setCOLLECTIONClaiming((prev) => ({ ...prev, orange: null }));
       }
     },
@@ -703,17 +711,20 @@ function REWARDSPanel({
       COLLECTIONService,
       collectionRewardsMain,
       writeProvider,
+      walletAddress,
       handleRefresh,
     ],
   );
 
   const handleClaimRainbowReward = React.useCallback(async () => {
+    if (collectionClaimLock.current) return;
     if (!canClaimCOLLECTION || !COLLECTIONService) return;
+    collectionClaimLock.current = true;
     setCOLLECTIONClaimFeedback(null);
     setCOLLECTIONClaiming((prev) => ({ ...prev, rainbow: true }));
     try {
       const signer = await writeProvider.getSigner();
-      COLLECTIONService.connectWithSigner(signer);
+      COLLECTIONService.connectWithSigner(signer, walletAddress);
       await COLLECTIONService.claimRainbowRewardFor(collectionRewardsMain);
       setCOLLECTIONClaimFeedback({
         tone: "success",
@@ -727,6 +738,7 @@ function REWARDSPanel({
         text: "Rainbow claim failed. Check the console.",
       });
     } finally {
+      collectionClaimLock.current = false;
       setCOLLECTIONClaiming((prev) => ({ ...prev, rainbow: false }));
     }
   }, [
@@ -734,6 +746,7 @@ function REWARDSPanel({
     COLLECTIONService,
     collectionRewardsMain,
     writeProvider,
+    walletAddress,
     handleRefresh,
   ]);
 

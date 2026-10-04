@@ -73,7 +73,7 @@ describe("NFTREWARDSService", () => {
     };
     await service.claimForWallet(1, signer, ADDRESS);
     expect(service.readOverrides).toEqual({});
-    expect(service.connectWithSigner).toHaveBeenCalledWith(signer);
+    expect(service.connectWithSigner).toHaveBeenCalledWith(signer, ADDRESS);
     expect(service.claim).toHaveBeenCalledWith(1);
   });
 

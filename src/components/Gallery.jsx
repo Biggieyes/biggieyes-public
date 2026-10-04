@@ -1787,51 +1787,6 @@ export default function Gallery({
         </div>
       </nav>
 
-      {ticketItems.length > 0 && (
-        <section className="gallery__ticket-panel" aria-label="Wallet tickets">
-          <div className="gallery__ticket-head">
-            <h3>{selectedChapter?.displayName} tickets</h3>
-            <span>
-              {showSummaryLoading
-                ? "Loading..."
-                : `${totalTickets} total / page ${ticketPage + 1}/${totalTicketPages}`}
-            </span>
-          </div>
-          <div className="gallery__grid gallery__grid--tickets">
-            {pagedTicketItems.map((item, index) =>
-              renderCard(item, index, false),
-            )}
-          </div>
-          {totalTicketPages > 1 ? (
-            <footer className="gallery__pager">
-              <button
-                type="button"
-                className="gallery__pager-btn"
-                onClick={() => setTicketPage((value) => Math.max(0, value - 1))}
-                disabled={ticketPage === 0}
-              >
-                Prev
-              </button>
-              <span className="gallery__pager-status">
-                Page {ticketPage + 1} of {totalTicketPages}
-              </span>
-              <button
-                type="button"
-                className="gallery__pager-btn"
-                onClick={() =>
-                  setTicketPage((value) =>
-                    Math.min(totalTicketPages - 1, value + 1),
-                  )
-                }
-                disabled={ticketPage >= totalTicketPages - 1}
-              >
-                Next
-              </button>
-            </footer>
-          ) : null}
-        </section>
-      )}
-
       <div className="gallery__asset-head">
         <h3>{selectedChapter?.displayName} NFTs</h3>
         <span>VRF + Public / {totalNfts} total</span>
@@ -1919,6 +1874,51 @@ export default function Gallery({
             Next
           </button>
         </footer>
+      )}
+
+      {ticketItems.length > 0 && (
+        <section className="gallery__ticket-panel" aria-label="Wallet tickets">
+          <div className="gallery__ticket-head">
+            <h3>{selectedChapter?.displayName} tickets</h3>
+            <span>
+              {showSummaryLoading
+                ? "Loading..."
+                : `${totalTickets} total / page ${ticketPage + 1}/${totalTicketPages}`}
+            </span>
+          </div>
+          <div className="gallery__grid gallery__grid--tickets">
+            {pagedTicketItems.map((item, index) =>
+              renderCard(item, index, false),
+            )}
+          </div>
+          {totalTicketPages > 1 ? (
+            <footer className="gallery__pager">
+              <button
+                type="button"
+                className="gallery__pager-btn"
+                onClick={() => setTicketPage((value) => Math.max(0, value - 1))}
+                disabled={ticketPage === 0}
+              >
+                Prev
+              </button>
+              <span className="gallery__pager-status">
+                Page {ticketPage + 1} of {totalTicketPages}
+              </span>
+              <button
+                type="button"
+                className="gallery__pager-btn"
+                onClick={() =>
+                  setTicketPage((value) =>
+                    Math.min(totalTicketPages - 1, value + 1),
+                  )
+                }
+                disabled={ticketPage >= totalTicketPages - 1}
+              >
+                Next
+              </button>
+            </footer>
+          ) : null}
+        </section>
       )}
     </section>
   );

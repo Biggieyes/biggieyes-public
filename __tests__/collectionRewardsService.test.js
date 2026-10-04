@@ -11,6 +11,18 @@ vi.mock("ethers", () => ({
 import CollectionRewardsService from "@/shared/services/collectionRewardsService.js";
 
 const COLLECTION = "0x2222222222222222222222222222222222222222";
+const ACCOUNT = "0x4444444444444444444444444444444444444444";
+
+const buildSigner = (account = ACCOUNT) => ({
+  getAddress: vi.fn().mockResolvedValue(account),
+  provider: {
+    send: vi.fn(async (method) => {
+      if (method === "eth_accounts") return [account];
+      if (method === "eth_chainId") return "0x89";
+      return null;
+    }),
+  },
+});
 
 const buildContractMock = (overrides = {}) => ({
   blockReward: vi.fn().mockResolvedValue(3000n),
@@ -239,7 +251,7 @@ describe("CollectionRewardsService", () => {
       { provider: true },
       COLLECTION,
     );
-    service.connectWithSigner({ provider: { provider: true } });
+    service.connectWithSigner(buildSigner(), ACCOUNT);
 
     await service.claimBlockRewardFor(COLLECTION, 1);
 
@@ -252,5 +264,34 @@ describe("CollectionRewardsService", () => {
       gasLimit: 120n,
     });
     expect(wait).toHaveBeenCalledWith(1);
+  });
+
+  it("does not submit when the wallet account changes after gas preflight", async () => {
+    const claimBlockRewardFor = vi.fn();
+    claimBlockRewardFor.estimateGas = vi.fn().mockResolvedValue(100n);
+    const contractMock = buildContractMock({ claimBlockRewardFor });
+    contractMock.connect = vi.fn().mockReturnValue(contractMock);
+    ContractMock.mockImplementation(function MockContract() {
+      return contractMock;
+    });
+    const signer = buildSigner();
+    signer.provider.send.mockImplementation(async (method) => {
+      if (method === "eth_accounts") {
+        return ["0x5555555555555555555555555555555555555555"];
+      }
+      if (method === "eth_chainId") return "0x89";
+      return null;
+    });
+    const service = new CollectionRewardsService(
+      "0xa708E016dEC7B6a5b3da640c0d995895979cE332",
+      {},
+      COLLECTION,
+    );
+    service.connectWithSigner(signer, ACCOUNT);
+
+    await expect(
+      service.claimBlockRewardFor(COLLECTION, 1),
+    ).rejects.toThrow(/account changed|disconnected/i);
+    expect(claimBlockRewardFor).not.toHaveBeenCalled();
   });
 });

@@ -52,7 +52,9 @@ export const CONTRACTS = {
   COLLECTION_REWARDS_READER: { addressKey: "COLLECTION_REWARDS_READER", abiName: "BiggiMultiCollectionDistributorReaderV2" },
   BIGGI_REWARDS_READER: { addressKey: "BIGGI_REWARDS_READER", abiName: "BiggiMultiCollectionDistributorReaderV2" },
   COMMUNITY_CENTER: { addressKey: "COMMUNITY_CENTER", abiName: "BiggiCommunityCenter" },
-  MODERATOR_CENTER: { addressKey: "MODERATOR_CENTER", abiName: "ModeratorCenter" },
+  MODERATOR_CENTER: { addressKey: "MODERATOR_CENTER", abiName: "ModeratorCenterV2" },
+  MODERATOR_CENTER_V2: { addressKey: "MODERATOR_CENTER_V2", abiName: "ModeratorCenterV2" },
+  MODERATOR_CENTER_V1: { addressKey: "MODERATOR_CENTER_V1", abiName: "ModeratorCenter" },
 
   VRF_ROUTER: { addressKey: "VRF_ROUTER", abiName: "BiggiVrfRouter" },
 

@@ -1,19 +1,18 @@
-import { createClient } from "@supabase/supabase-js";
 import { ethers } from "ethers";
 import { captureException, initSentry } from "../_sentry.js";
 import { buildApiHeaders } from "../lib/httpSecurity.js";
 import { resolveConfiguredAdminOwner } from "../lib/adminOwner.js";
+import {
+  getSupabaseAdmin,
+  hasSupabaseConfig,
+} from "../lib/chatUtils.js";
 import { isFreshAdminTimestamp } from "../../src/shared/utils/adminMessageAuth.js";
 
-const SUPABASE_URL = process.env.SUPABASE_URL || "";
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const COMMUNITY_OWNER_ADDRESS = process.env.COMMUNITY_OWNER_ADDRESS || "";
 const CHAT_OWNER_ADDRESS = process.env.CHAT_OWNER_ADDRESS || "";
 const corsHeaders = buildApiHeaders({ methods: "POST,OPTIONS" });
 
 initSentry();
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 const jsonResponse = (status, body) => ({
   status,
@@ -65,7 +64,7 @@ function verifySignedMessage(message, signature) {
   throw new Error("verifyMessage not available");
 }
 
-async function resolveOwnerAddress() {
+async function resolveOwnerAddress(supabase) {
   const configuredOwner = resolveConfiguredAdminOwner({
     chatOwnerAddress: CHAT_OWNER_ADDRESS,
     communityOwnerAddress: COMMUNITY_OWNER_ADDRESS,
@@ -150,9 +149,14 @@ function normalizePollInput(input) {
 
   const idRaw = String(input?.id || "").trim();
   const safeId = idRaw.replace(/[^a-zA-Z0-9_-]+/g, "").slice(0, 64);
+  if (!safeId || safeId !== idRaw) {
+    throw new Error(
+      "Poll ID is required and must contain only letters, numbers, hyphens, or underscores",
+    );
+  }
 
   return {
-    id: safeId || `poll_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+    id: safeId,
     title,
     description,
     options,
@@ -184,12 +188,13 @@ function parseAdminPayload(payload) {
 
 async function handleRequest({ method, body }) {
   if (method === "OPTIONS") return jsonResponse(200, { ok: true });
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  if (!hasSupabaseConfig()) {
     return jsonResponse(500, { ok: false, error: "Missing Supabase env" });
   }
   if (method !== "POST") {
     return jsonResponse(405, { ok: false, error: "Method not allowed" });
   }
+  const supabase = getSupabaseAdmin();
 
   try {
     const address = normalizeAddress(body?.address).toLowerCase();
@@ -201,7 +206,7 @@ async function handleRequest({ method, body }) {
 
     let owner = "";
     try {
-      owner = await resolveOwnerAddress();
+      owner = await resolveOwnerAddress(supabase);
     } catch (error) {
       captureException(error, { stage: "community_admin_owner_config" });
       return jsonResponse(500, {

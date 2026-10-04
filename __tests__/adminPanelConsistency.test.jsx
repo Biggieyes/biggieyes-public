@@ -1,6 +1,6 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/config/abi/index.js", async (importOriginal) => {
   const actual = await importOriginal();
@@ -57,6 +57,10 @@ const data = {
   VRF: {},
   frontend: { wallet: OWNER },
 };
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("AdminPanel mainnet consistency", () => {
   it("fails closed when the connected wallet is not the configured owner", () => {
@@ -125,5 +129,39 @@ describe("AdminPanel mainnet consistency", () => {
     expect(
       screen.queryByRole("heading", { name: "POLICY Controls" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("loads admin chat through the server API without browser Supabase credentials", async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        rulesText: "Use verified project links only.",
+        messages: [
+          {
+            id: 7,
+            author_address: OWNER,
+            author_name: "BiggiEyes",
+            content: "Official update",
+            created_at: "2026-09-21T10:00:00.000Z",
+            edited_at: null,
+            deleted: false,
+          },
+        ],
+      }),
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<AdminPanel open data={data} actions={{}} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Live Chat" }));
+
+    expect(
+      await screen.findAllByText("Use verified project links only."),
+    ).toHaveLength(2);
+    expect(screen.getByText("Official update")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/chat-bootstrap",
+      expect.objectContaining({ method: "GET", cache: "no-store" }),
+    );
   });
 });

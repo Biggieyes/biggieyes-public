@@ -192,8 +192,8 @@ export default function AdminDashboard({
             </strong>
           </div>
           <div className="moderator-center__statline">
-            <span>Legacy address</span>
-            <strong className="mono">{shortValue(cfg.contractAddress)}</strong>
+            <span>V1 legacy address</span>
+            <strong className="mono">{shortValue(cfg.legacyContractAddress)}</strong>
           </div>
         </div>
         <div className="moderator-center__actions">

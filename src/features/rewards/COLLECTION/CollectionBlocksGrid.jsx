@@ -33,6 +33,7 @@ import {
 } from "@/shared/utils/contract";
 import { CORE_CHAPTERS } from "@/shared/utils/addresses.js";
 import { coerceBool } from "@/shared/utils/boolean";
+import { assertWriteContext } from "@/shared/utils/writeRetry";
 import {
   httpFromIpfs,
   readJsonFromURI,
@@ -327,6 +328,8 @@ function COLLECTIONBlocksGrid({
     refresh: refreshChapterSeries,
   } = useChapterSeriesReader();
   const web3 = useOptionalWeb3();
+  const walletAccountRef = React.useRef("");
+  walletAccountRef.current = String(web3?.account || "");
 
   const isMobile = useIsMobile(MOBILE_BREAKPOINT);
   const isTouch = useIsTouch();
@@ -1075,6 +1078,12 @@ function COLLECTIONBlocksGrid({
             Number(formatEther(livePrice)),
           )} in your wallet.`,
           txHash: "",
+        });
+        await assertWriteContext({
+          contract,
+          account: web3.account,
+          getCurrentAccount: () => walletAccountRef.current,
+          chainId: POLYGON_CHAIN_ID,
         });
         const transaction = await contract.mintPublic(index, {
           value: livePrice,

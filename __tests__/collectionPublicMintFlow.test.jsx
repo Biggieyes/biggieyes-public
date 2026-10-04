@@ -72,15 +72,24 @@ const info = (index) => ({
 });
 
 beforeEach(() => {
+  const account = `0x${"1".repeat(40)}`;
   mocks.panel = null;
   mocks.provider = {
     getBalance: vi.fn().mockResolvedValue(price * 100n),
     getTransactionReceipt: vi.fn(),
+    send: vi.fn(async (method) => {
+      if (method === "eth_accounts") return [account];
+      if (method === "eth_chainId") return "0x89";
+      return null;
+    }),
   };
   mocks.wallet = {
-    account: `0x${"1".repeat(40)}`,
+    account,
     chainId: 137,
-    signer: { provider: mocks.provider },
+    signer: {
+      provider: mocks.provider,
+      getAddress: vi.fn().mockResolvedValue(account),
+    },
   };
   mocks.reader = {
     data: {
@@ -90,6 +99,7 @@ beforeEach(() => {
   };
   mocks.controller = { isPublicMintUnlocked: vi.fn().mockResolvedValue(true) };
   mocks.contract = {
+    runner: mocks.wallet.signer,
     MAX_SUPPLY: vi.fn().mockResolvedValue(100n),
     paused: vi.fn().mockResolvedValue(false),
     metadataConsistency: vi.fn().mockResolvedValue([100n, true, true]),
@@ -298,5 +308,23 @@ describe("Public mint transaction flow", () => {
     });
     expect(mocks.panel.mintState.status).toBe("error");
     expect(mocks.contract.mintPublic).not.toHaveBeenCalled();
+  });
+
+  it("blocks minting when the wallet account changes during preflight", async () => {
+    await openPublic();
+    const changedAccount = `0x${"3".repeat(40)}`;
+    mocks.provider.send.mockImplementation(async (method) => {
+      if (method === "eth_accounts") return [changedAccount];
+      if (method === "eth_chainId") return "0x89";
+      return null;
+    });
+
+    await act(async () => {
+      await mocks.panel.onMint(1);
+    });
+
+    expect(mocks.contract.mintPublic).not.toHaveBeenCalled();
+    expect(mocks.panel.mintState.status).toBe("error");
+    expect(mocks.panel.mintState.message).toMatch(/wallet|account/i);
   });
 });

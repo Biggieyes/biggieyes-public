@@ -1,5 +1,4 @@
 import * as React from "react";
-import copy from "clipboard-copy";
 import { formatEther, formatUnits } from "ethers";
 import { useWeb3 } from "@/providers/Web3Context.js";
 import { useContracts } from "@/providers/ContractsContext.js";
@@ -190,7 +189,6 @@ export default function USERPANEL({
     includePolls: true,
   });
   const handleConnect = onConnect || connectMetaMask;
-  const [copied, setCopied] = React.useState(false);
   const [infoOpen, setInfoOpen] = React.useState(false);
   const autoInfoOpened = React.useRef(false);
   const [activity, setActivity] = React.useState([]);
@@ -218,7 +216,7 @@ export default function USERPANEL({
       {
         label: "CONNECT WALLET",
         description: [
-          "Connects your wallet to read balances, claims, and referrals.",
+          "Connects your wallet to read balances and claims.",
           "Required for redeem, claim, and on-chain actions.",
         ],
       },
@@ -258,13 +256,6 @@ export default function USERPANEL({
         ],
       },
       {
-        label: "COPY REFERRAL",
-        description: [
-          "Copies your referral link to share with friends.",
-          "Links are generated from your connected wallet address.",
-        ],
-      },
-      {
         label: "REFRESH CONNECTION",
         description: [
           "Re-checks wallet connection and network status.",
@@ -275,8 +266,6 @@ export default function USERPANEL({
     [],
   );
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const referralLink = activeAccount ? `${baseUrl}?ref=${activeAccount}` : "";
   const connected = Boolean(activeAccount);
   const walletItems = React.useMemo(() => {
     const sourceItems = Array.isArray(myNFTs) && myNFTs.length ? myNFTs : items;
@@ -296,17 +285,6 @@ export default function USERPANEL({
       ),
     [walletItems],
   );
-
-  const handleCopy = React.useCallback(async () => {
-    if (!referralLink) return;
-    try {
-      await copy(referralLink);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      setCopied(false);
-    }
-  }, [referralLink]);
 
   const callAction = React.useCallback(async (fn, label) => {
     if (typeof fn !== "function") return;
@@ -1061,25 +1039,9 @@ export default function USERPANEL({
             <section className="user-panel__section">
               <div className="user-panel__section-head">
                 <div>
-                  <h3>Referral</h3>
-                  <p>Share your wallet-linked referral URL.</p>
+                  <h3>Referrals</h3>
+                  <p>Only verified moderator links can be attributed to paid tickets.</p>
                 </div>
-              </div>
-              <div className="user-panel__referral">
-                <input
-                  type="text"
-                  readOnly
-                  aria-label="Referral link"
-                  value={referralLink || "Connect wallet to generate link"}
-                />
-                <button
-                  type="button"
-                  className="user-panel__btn user-panel__btn--ghost"
-                  onClick={handleCopy}
-                  disabled={!referralLink}
-                >
-                  {copied ? "Copied" : "Copy"}
-                </button>
               </div>
             </section>
 

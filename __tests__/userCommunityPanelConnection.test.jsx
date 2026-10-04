@@ -93,6 +93,12 @@ describe("User Panel community connection", () => {
     expect(screen.getByText("Protocol details")).toBeInTheDocument();
     expect(screen.queryByText("Connection health")).not.toBeInTheDocument();
     expect(screen.getByText("Claimable POL")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Only verified moderator links can be attributed to paid tickets.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Referral link" })).toBeNull();
     expect(container.textContent).toContain("1.25 POL");
     expect(container.textContent).toContain("5 BIGGI");
     expect(container.textContent).not.toContain("Claimable5 POL");

@@ -16,6 +16,7 @@ const OWNER = "0x402CE2Ff958ab47eDaFC42296d2682CC8F9D92b2";
 const originalEnv = {
   ALLOWED_ORIGIN: process.env.ALLOWED_ORIGIN,
   CHAT_OWNER_ADDRESS: process.env.CHAT_OWNER_ADDRESS,
+  COMMUNITY_OWNER_ADDRESS: process.env.COMMUNITY_OWNER_ADDRESS,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   SUPABASE_URL: process.env.SUPABASE_URL,
 };
@@ -48,6 +49,24 @@ describe("frontend security boundaries", () => {
     expect(isSafeRemoteUrl("https://[::ffff:127.0.0.1]/private")).toBe(false);
     expect(isSafeRemoteUrl("http://example.com/metadata.json")).toBe(false);
     expect(httpFromIpfs("//example.com/metadata.json")).toBe("");
+  });
+
+  it("loads community functions without Supabase credentials and fails closed", async () => {
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    vi.resetModules();
+
+    const { handler } = await import("../functions/communityVoting.js");
+    const response = await handler({
+      httpMethod: "GET",
+      queryStringParameters: {},
+    });
+
+    expect(response.statusCode).toBe(500);
+    expect(JSON.parse(response.body)).toEqual({
+      ok: false,
+      error: "Missing Supabase env",
+    });
   });
 
   it("builds domain-separated admin messages with expiring timestamps", () => {
@@ -155,5 +174,38 @@ describe("frontend security boundaries", () => {
 
     expect(response.statusCode).toBe(200);
     expect(JSON.parse(response.body)).toEqual({ ok: true });
+  });
+
+  it("rejects a community poll create payload without a signed poll ID", async () => {
+    const wallet = new Wallet(`0x${"22".repeat(32)}`);
+    process.env.CHAT_OWNER_ADDRESS = wallet.address;
+    process.env.COMMUNITY_OWNER_ADDRESS = wallet.address;
+    process.env.SUPABASE_URL = "https://example.supabase.co";
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
+    vi.resetModules();
+
+    const payload = JSON.stringify({
+      action: "upsert",
+      timestamp: Date.now(),
+      poll: {
+        title: "Choose the next community event",
+        startsAt: "2026-09-21T10:00:00.000Z",
+        endsAt: "2026-09-22T10:00:00.000Z",
+        options: ["AMA", "Art contest"],
+      },
+    });
+    const signature = await wallet.signMessage(`community-admin|${payload}`);
+    const { handler } = await import("../functions/admin/communityVoting.js");
+    const response = await handler({
+      httpMethod: "POST",
+      body: JSON.stringify({
+        address: wallet.address,
+        payload,
+        signature,
+      }),
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(JSON.parse(response.body).error).toMatch(/Poll ID is required/);
   });
 });
