@@ -42,6 +42,21 @@ const BACKEND_ONLY_RUNTIME_KEYS = new Set([
   "MODERATOR_V2_ACTIVATED",
 ]);
 const FRONTEND_ONLY_ALIAS_KEYS = new Set(["MODERATORCENTER_V2"]);
+const ROOT_FRONTEND_ALIAS_KEYS = new Set([
+  "BIGGIMODERATORCENTER",
+  "LEGACY_MODERATOR_CENTER",
+  "MODERATORCENTER",
+  "MODERATOR_CENTER",
+  "MODERATOR_CENTER_V1",
+]);
+const ROOT_FRONTEND_ALIAS_TARGETS = {
+  BIGGIMODERATORCENTER: "MODERATOR_CENTER_V2",
+  LEGACY_MODERATOR_CENTER: "MODERATOR_CENTER",
+  MODERATORCENTER: "MODERATOR_CENTER_V2",
+  MODERATOR_CENTER: "MODERATOR_CENTER_V2",
+  MODERATOR_CENTER_V1: "MODERATOR_CENTER",
+  MODERATORCENTER_V2: "MODERATOR_CENTER_V2",
+};
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, "utf8").replace(/^\uFEFF/, ""));
@@ -78,15 +93,16 @@ async function loadFrontend(relativePath) {
   };
 }
 
-function compareMaps(label, expected, actual, failures) {
+function compareMaps(label, expected, actual, failures, aliasKeys = new Set()) {
+  const ignoredKeys = new Set([...FRONTEND_ONLY_ALIAS_KEYS, ...aliasKeys]);
   const runtimeExpected = Object.fromEntries(
     Object.entries(expected || {}).filter(
-      ([key]) => !BACKEND_ONLY_RUNTIME_KEYS.has(key),
+      ([key]) => !BACKEND_ONLY_RUNTIME_KEYS.has(key) && !ignoredKeys.has(key),
     ),
   );
   const runtimeActual = Object.fromEntries(
     Object.entries(actual || {}).filter(
-      ([key]) => !FRONTEND_ONLY_ALIAS_KEYS.has(key),
+      ([key]) => !ignoredKeys.has(key),
     ),
   );
   const expectedKeys = new Set(Object.keys(runtimeExpected));
@@ -108,6 +124,16 @@ function compareMaps(label, expected, actual, failures) {
   console.log(
     `${label}: expected=${expectedKeys.size}, actual=${actualKeys.size}, issues=${missing.length + extra.length + mismatches.length}`,
   );
+}
+
+function compareAliases(label, addresses, canonicalAddresses, aliases, failures) {
+  for (const [alias, target] of Object.entries(aliases)) {
+    if (!sameValue(canonicalAddresses[target], addresses?.[alias])) {
+      failures.push(
+        `${label}: ${alias} expected alias of ${target}=${JSON.stringify(canonicalAddresses[target])} actual=${JSON.stringify(addresses?.[alias])}`,
+      );
+    }
+  }
 }
 
 function compareChapters(label, frontendChapters, manifest, failures) {
@@ -172,6 +198,14 @@ async function main() {
     "root frontend addresses",
     backendAddresses,
     rootFrontend.addresses,
+    failures,
+    ROOT_FRONTEND_ALIAS_KEYS,
+  );
+  compareAliases(
+    "root frontend addresses",
+    rootFrontend.addresses,
+    backendAddresses,
+    ROOT_FRONTEND_ALIAS_TARGETS,
     failures,
   );
   compareMaps(
