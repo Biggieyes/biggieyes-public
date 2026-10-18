@@ -32,7 +32,7 @@
     "check:rpc": "node scripts/check-rpc-health.mjs"
   },
   "dependencies": {
-    "@capacitor/android": "^8.1.0",
+    "@capacitor/android": "^8.4.3",
     "@capacitor/cli": "^8.1.0",
     "@capacitor/core": "^8.1.0",
     "@noble/hashes": "^2.0.1",
