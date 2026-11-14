@@ -104,7 +104,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.26",
     "fast-glob": "^3.3.3",
-    "glob": "^13.0.0",
+    "glob": "^14.0.2",
     "globals": "^17.0.0",
     "hardhat": "^3.1.5",
     "identity-obj-proxy": "^3.0.0",
